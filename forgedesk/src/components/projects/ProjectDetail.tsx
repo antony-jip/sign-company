@@ -1435,14 +1435,14 @@ export function ProjectDetail() {
                     </div>
 
                     <div className="text-xs text-muted-foreground">
-                      Verstuurd naar {gk.email_aan} op {formatDate(gk.created_at)}
+                      Verstuurd naar {gk.email_aan} op <span className="font-mono">{formatDate(gk.created_at)}</span>
                       {gk.revisie_nummer > 1 && ` (revisie ${gk.revisie_nummer})`}
                     </div>
 
                     {gk.status === 'goedgekeurd' && gk.goedgekeurd_door && (
                       <div className="bg-green-50 dark:bg-green-950/30 rounded-lg px-3 py-2 text-xs text-green-700 dark:text-green-400">
                         Goedgekeurd door <strong>{gk.goedgekeurd_door}</strong>
-                        {gk.goedgekeurd_op && ` op ${formatDate(gk.goedgekeurd_op)}`}
+                        {gk.goedgekeurd_op && <> op <span className="font-mono">{formatDate(gk.goedgekeurd_op)}</span></>}
                       </div>
                     )}
 
@@ -1572,7 +1572,7 @@ export function ProjectDetail() {
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-sage to-sage-deep flex items-center justify-center">
+                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
                     <Users className="h-3.5 w-3.5 text-white" />
                   </div>
                   Team
@@ -1588,7 +1588,7 @@ export function ProjectDetail() {
                       key={lid}
                       className="flex items-center gap-2.5 bg-background rounded-lg px-3 py-2 border border-border/40 group"
                     >
-                      <div className="h-7 w-7 rounded-full bg-gradient-to-br from-sage to-sage-deep flex items-center justify-center text-white text-2xs font-bold flex-shrink-0">
+                      <div className="h-7 w-7 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white text-2xs font-bold flex-shrink-0">
                         {getInitials(lid)}
                       </div>
                       <span className="text-sm font-medium text-foreground truncate flex-1">{lid}</span>
@@ -1672,7 +1672,7 @@ export function ProjectDetail() {
                         <p className="text-sm font-medium truncate">{m.titel}</p>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <CalendarDays className="h-3 w-3 flex-shrink-0" />
-                          <span>{new Date(m.datum).toLocaleDateString('nl-NL')} {m.start_tijd}–{m.eind_tijd}</span>
+                          <span className="font-mono">{new Date(m.datum).toLocaleDateString('nl-NL')} {m.start_tijd}–{m.eind_tijd}</span>
                         </div>
                         {m.locatie && (
                           <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -1728,7 +1728,7 @@ export function ProjectDetail() {
                     >
                       <div>
                         <p className="text-sm font-medium font-mono">{wb.werkbon_nummer}</p>
-                        <p className="text-xs text-muted-foreground">{new Date(wb.datum).toLocaleDateString('nl-NL')}</p>
+                        <p className="text-xs text-muted-foreground font-mono">{new Date(wb.datum).toLocaleDateString('nl-NL')}</p>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className={`text-xs px-2 py-0.5 rounded-full ${
@@ -1800,7 +1800,7 @@ export function ProjectDetail() {
                     >
                       <div>
                         <p className="text-sm font-medium font-mono">{factuur.nummer}</p>
-                        <p className="text-xs text-muted-foreground">{new Date(factuur.factuurdatum).toLocaleDateString('nl-NL')}</p>
+                        <p className="text-xs text-muted-foreground font-mono">{new Date(factuur.factuurdatum).toLocaleDateString('nl-NL')}</p>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-bold font-mono">{formatCurrency(factuur.totaal)}</span>
@@ -1844,7 +1844,7 @@ export function ProjectDetail() {
                     >
                       <div>
                         <p className="text-sm font-medium font-mono">{uitgave.uitgave_nummer}</p>
-                        <p className="text-xs text-muted-foreground">{new Date(uitgave.datum).toLocaleDateString('nl-NL')}</p>
+                        <p className="text-xs text-muted-foreground font-mono">{new Date(uitgave.datum).toLocaleDateString('nl-NL')}</p>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-bold font-mono">{formatCurrency(uitgave.bedrag_incl_btw)}</span>
@@ -1928,7 +1928,7 @@ export function ProjectDetail() {
                           )}
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-xs text-muted-foreground">{offerte.nummer}</span>
+                          <span className="text-xs text-muted-foreground font-mono">{offerte.nummer}</span>
                           <span className="text-sm font-bold text-foreground font-mono">{formatCurrency(offerte.totaal)}</span>
                         </div>
                         <div className="flex items-center gap-1 pt-0.5 flex-wrap">
@@ -2667,7 +2667,7 @@ function TaakCard({ taak, onStatusChange }: { key?: React.Key; taak: Taak; onSta
             )}
             {taak.deadline && (
               <span className={cn(
-                'text-2xs ml-auto',
+                'text-2xs ml-auto font-mono',
                 isOverdue ? 'text-red-500 font-medium' : 'text-muted-foreground/60'
               )}>
                 {formatDate(taak.deadline)}

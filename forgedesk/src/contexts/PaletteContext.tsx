@@ -20,7 +20,7 @@ export const APP_THEMES: AppTheme[] = [
     naam: 'Normaal',
     beschrijving: 'Warm & neutraal',
     isDark: false,
-    preview: { bg: '#F4F3F0', sidebar: '#FBFAF7', card: '#FFFFFF', accent: '#5A8264' },
+    preview: { bg: '#F4F3F0', sidebar: '#FBFAF7', card: '#FFFFFF', accent: '#CC8A3F' },
     vars: {},
   },
   {
@@ -45,6 +45,7 @@ export interface AccentPalette {
 
 export const ACCENT_PALETTES: AccentPalette[] = [
   { id: 'sage', naam: 'Sage', sidebarActive: '145 22% 45%', gradientStart: '#5A8264', gradientEnd: '#C8D5CC', ring: '145 22% 45%' },
+  { id: 'forge', naam: 'Forge', sidebarActive: '28 60% 52%', gradientStart: '#CC8A3F', gradientEnd: '#E0C9A8', ring: '28 60% 52%' },
   { id: 'terracotta', naam: 'Terracotta', sidebarActive: '15 45% 50%', gradientStart: '#B8694E', gradientEnd: '#F0D9D0', ring: '15 45% 50%' },
   { id: 'ocean', naam: 'Ocean', sidebarActive: '210 40% 45%', gradientStart: '#4A7AB5', gradientEnd: '#CDD5DE', ring: '210 40% 45%' },
   { id: 'amber', naam: 'Amber', sidebarActive: '38 55% 48%', gradientStart: '#B8883A', gradientEnd: '#EDE8D8', ring: '38 55% 48%' },

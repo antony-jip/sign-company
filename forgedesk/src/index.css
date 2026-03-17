@@ -4,7 +4,7 @@
 
 /* ================================================================
    FORGEDESK DESIGN SYSTEM v3
-   Earthy, premium, distinctive — #3D3522 #4A442D #386150 #58B09C #CAF7E2
+   Earthy, premium, distinctive — #CC8A3F #E0C9A8 #F4F3F0 #1A1A1A
    Fonts: Plus Jakarta Sans (headings + body)
    ================================================================ */
 
@@ -29,12 +29,12 @@
     /* Sidebar */
     --sidebar-background: 40 20% 97%;  /* #FBFAF7 */
     --sidebar-foreground: 0 0% 42%;    /* #6B6B6B */
-    --sidebar-primary: 145 22% 45%;    /* #5A8264 sage-deep */
+    --sidebar-primary: 28 60% 52%;     /* #CC8A3F warm amber */
     --sidebar-primary-foreground: 0 0% 10%;
     --sidebar-accent: 40 14% 95%;
     --sidebar-accent-foreground: 0 0% 10%;
     --sidebar-border: 36 12% 90%;      /* #E8E6E0 */
-    --sidebar-ring: 145 22% 45%;
+    --sidebar-ring: 28 60% 52%;
 
     /* Primary: zwart — voor hoofdknoppen */
     --primary: 0 0% 10%;               /* #1A1A1A */
@@ -49,13 +49,13 @@
     --muted-foreground: 0 0% 42%;      /* #6B6B6B */
 
     /* Accent */
-    --accent: 145 22% 45%;              /* #5A8264 sage — zichtbaar als tekst */
+    --accent: 28 60% 52%;               /* #CC8A3F warm amber — zichtbaar als tekst */
     --accent-foreground: 0 0% 100%;
 
     /* Borders */
     --border: 36 12% 90%;              /* #E8E6E0 */
     --input: 36 12% 90%;
-    --ring: 145 22% 45%;
+    --ring: 28 60% 52%;
 
     /* Destructive */
     --destructive: 5 52% 54%;          /* #C45B4F */
@@ -90,19 +90,19 @@
     --radius-2xl: 18px;
 
     /* FORGEdesk design tokens */
-    --wm-gradient-start: #5A8264;
-    --wm-gradient-mid: #C8D5CC;
+    --wm-gradient-start: #CC8A3F;
+    --wm-gradient-mid: #E0C9A8;
     --wm-gradient-end: #F0D9D0;
     --wm-sidebar-bg: 40 20% 97%;
     --wm-sidebar-hover: 36 18% 93%;
-    --wm-sidebar-active: 145 22% 45%;
-    --wm-hover: 145 22% 45%;
-    --wm-light: 145 22% 65%;
-    --wm-pale: 145 30% 88%;
+    --wm-sidebar-active: 28 60% 52%;
+    --wm-hover: 28 60% 52%;
+    --wm-light: 28 55% 65%;
+    --wm-pale: 28 50% 88%;
     --wm-glass: rgba(255, 255, 255, 0.72);
     --wm-glass-border: rgba(255, 255, 255, 0.20);
     --wm-shadow-color: 0 0% 50%;
-    --wm-glow: 0 0 40px rgba(90, 130, 100, 0.15);
+    --wm-glow: 0 0 40px rgba(204, 138, 63, 0.15);
     --wm-noise: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
 
     /* FORGEdesk Pastel Status Palette */
@@ -145,7 +145,7 @@
     --secondary-foreground: 40 4% 54%;
     --muted: 40 8% 18%;
     --muted-foreground: 40 4% 36%;
-    --accent: 145 22% 55%;              /* sage-light — zichtbaar als tekst in dark mode */
+    --accent: 28 55% 58%;               /* amber-light — zichtbaar als tekst in dark mode */
     --accent-foreground: 0 0% 10%;
     --border: 40 8% 18%;
     --input: 40 8% 18%;
@@ -153,7 +153,7 @@
     --destructive-foreground: 0 0% 100%;
     --popover: 40 6% 12%;
     --popover-foreground: 40 6% 90%;
-    --ring: 145 22% 45%;
+    --ring: 28 60% 52%;
 
     /* Semantic UI tokens — dark */
     --border-subtle: 40 8% 20%;
@@ -164,12 +164,12 @@
 
     --wm-sidebar-bg: 40 4% 10%;
     --wm-sidebar-hover: 40 8% 14%;
-    --wm-hover: 145 22% 50%;
-    --wm-light: 145 22% 65%;
-    --wm-pale: 145 30% 20%;
+    --wm-hover: 28 55% 55%;
+    --wm-light: 28 55% 65%;
+    --wm-pale: 28 50% 20%;
     --wm-glass: rgba(20, 20, 18, 0.85);
     --wm-glass-border: rgba(255, 255, 255, 0.06);
-    --wm-glow: 0 0 40px rgba(90, 130, 100, 0.08);
+    --wm-glow: 0 0 40px rgba(204, 138, 63, 0.08);
 
     /* Pastel palette — dark mode */
     --color-blush: rgba(192, 81, 74, 0.15);

@@ -38,7 +38,7 @@ export function RecenteActiviteitWidget() {
             activities.push({
               id: `off-gk-${o.id}`,
               type: 'offerte',
-              color: 'bg-[#5A8264]',
+              color: 'bg-[#CC8A3F]',
               text: <>Offerte <strong>{o.nummer}</strong> goedgekeurd — {o.klant_naam || 'Onbekend'}</>,
               time: formatDistanceToNow(new Date(o.akkoord_op!), { addSuffix: true, locale: nl }),
               sortDate: new Date(o.akkoord_op!),
