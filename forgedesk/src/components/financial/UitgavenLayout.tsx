@@ -381,7 +381,7 @@ export function UitgavenLayout() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b bg-background dark:bg-foreground/80/50">
+                <tr className="border-b bg-background dark:bg-muted/50">
                   <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Datum</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Leverancier</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Omschrijving</th>

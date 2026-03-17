@@ -1419,7 +1419,7 @@ export function ProjectDetail() {
                 {goedkeuringen.map((gk) => (
                   <div
                     key={gk.id}
-                    className="bg-background dark:bg-foreground/80/50 rounded-xl p-4 space-y-2"
+                    className="bg-background dark:bg-muted/50 rounded-xl p-4 space-y-2"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -1903,7 +1903,7 @@ export function ProjectDetail() {
                     return (
                       <div
                         key={offerte.id}
-                        className="bg-background dark:bg-foreground/80/50 rounded-lg px-3 py-2.5 space-y-1.5"
+                        className="bg-background dark:bg-muted/50 rounded-lg px-3 py-2.5 space-y-1.5"
                       >
                         <div className="flex items-center justify-between gap-2">
                           <p className="text-sm font-medium text-foreground truncate">{offerte.titel}</p>
@@ -2047,7 +2047,7 @@ export function ProjectDetail() {
                     id="email-aan"
                     value={klant?.email || project.klant_naam || 'Klant'}
                     readOnly
-                    className="bg-background dark:bg-foreground/80"
+                    className="bg-background dark:bg-muted"
                   />
                 </div>
                 <div className="space-y-2">
@@ -2190,7 +2190,7 @@ export function ProjectDetail() {
                   {projectDocumenten.map((doc) => (
                     <div
                       key={doc.id}
-                      className="flex items-center gap-2.5 bg-background dark:bg-foreground/80/50 rounded-lg px-3 py-2 group hover:bg-muted dark:hover:bg-foreground/80 transition-colors cursor-pointer"
+                      className="flex items-center gap-2.5 bg-background dark:bg-muted/50 rounded-lg px-3 py-2 group hover:bg-muted dark:hover:bg-foreground/80 transition-colors cursor-pointer"
                     >
                       <div className="flex-shrink-0 group-hover:scale-110 transition-transform duration-200">
                         {getFileIcon(doc.type)}
@@ -2357,7 +2357,7 @@ export function ProjectDetail() {
                       className={`flex items-center gap-2.5 rounded-lg px-3 py-2 cursor-pointer transition-colors ${
                         selectedDocIds.includes(doc.id)
                           ? 'bg-primary/10 dark:bg-primary/20 border border-primary/30 dark:border-primary/30'
-                          : 'bg-background dark:bg-foreground/80/50 hover:bg-muted dark:hover:bg-foreground/80 border border-transparent'
+                          : 'bg-background dark:bg-muted/50 hover:bg-muted dark:hover:bg-foreground/80 border border-transparent'
                       }`}
                     >
                       <input
@@ -2410,7 +2410,7 @@ export function ProjectDetail() {
               <Input
                 value={klant?.email || project.klant_naam || ''}
                 readOnly
-                className="bg-background dark:bg-foreground/80"
+                className="bg-background dark:bg-muted"
               />
             </div>
 
@@ -2493,7 +2493,7 @@ export function ProjectDetail() {
                 onChange={(e) => setKopieStartDatum(e.target.value)}
               />
             </div>
-            <div className="bg-background dark:bg-foreground/80/50 rounded-lg p-3 text-xs text-muted-foreground space-y-1">
+            <div className="bg-background dark:bg-muted/50 rounded-lg p-3 text-xs text-muted-foreground space-y-1">
               <p>Wordt gekopieerd:</p>
               <ul className="list-disc list-inside space-y-0.5">
                 <li>{projectTaken.length} taken (status wordt reset naar 'todo')</li>
@@ -2563,7 +2563,7 @@ export function ProjectDetail() {
                         'px-2 py-1 rounded-md text-xs border transition-colors',
                         montageMonteurs.includes(m.id)
                           ? 'bg-blue-100 border-blue-300 text-blue-700 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300'
-                          : 'bg-background border-border text-muted-foreground hover:bg-muted dark:bg-foreground/80 dark:border-border'
+                          : 'bg-background border-border text-muted-foreground hover:bg-muted dark:bg-muted dark:border-border'
                       )}
                     >
                       {m.naam}

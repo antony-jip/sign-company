@@ -776,7 +776,7 @@ export function CalendarLayout() {
                 </div>
                 {/* Medewerker switcher tabs */}
                 {medewerkers.length > 0 && (
-                  <div className="hidden md:flex items-center gap-1 bg-muted dark:bg-foreground/80 rounded-lg p-0.5">
+                  <div className="hidden md:flex items-center gap-1 bg-muted dark:bg-muted rounded-lg p-0.5">
                     <button
                       onClick={() => setActiveMedewerker(null)}
                       className={cn(
@@ -1063,7 +1063,7 @@ export function CalendarLayout() {
                           isSelected
                             ? 'bg-primary/10 ring-1 ring-primary/30 hover:bg-primary/15'
                             : isActive
-                              ? 'bg-background dark:bg-foreground/80/50 hover:bg-muted dark:hover:bg-foreground/80'
+                              ? 'bg-background dark:bg-muted/50 hover:bg-muted dark:hover:bg-foreground/80'
                               : 'opacity-40 hover:opacity-70'
                         )}
                       >

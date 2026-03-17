@@ -1215,7 +1215,7 @@ export function ClientProfile() {
                   >
                     <CardContent className="py-4">
                       <div className="flex items-start gap-3">
-                        <div className="w-9 h-9 rounded-full bg-muted dark:bg-foreground/80 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <div className="w-9 h-9 rounded-full bg-muted dark:bg-muted flex items-center justify-center flex-shrink-0 mt-0.5">
                           <Mail className="w-4 h-4 text-muted-foreground dark:text-muted-foreground/60" />
                         </div>
                         <div className="flex-1 min-w-0">

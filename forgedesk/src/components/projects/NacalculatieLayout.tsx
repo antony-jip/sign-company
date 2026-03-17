@@ -636,7 +636,7 @@ export function NacalculatieLayout() {
                         </span>
                       </div>
                     </div>
-                    <div className="relative h-2 bg-muted dark:bg-foreground/80 rounded-full overflow-hidden">
+                    <div className="relative h-2 bg-muted dark:bg-muted rounded-full overflow-hidden">
                       <div
                         className={cn(
                           'absolute top-0 left-0 h-full rounded-full transition-all duration-500',
@@ -694,7 +694,7 @@ export function NacalculatieLayout() {
                       {detailData.offerteItems.map((item) => (
                         <div
                           key={item.id}
-                          className="flex items-center justify-between p-2 bg-background dark:bg-foreground/80/50 rounded-lg text-sm"
+                          className="flex items-center justify-between p-2 bg-background dark:bg-muted/50 rounded-lg text-sm"
                         >
                           <div className="min-w-0 flex-1">
                             <p className="font-medium text-foreground/80 dark:text-muted-foreground/30 truncate">
@@ -826,7 +826,7 @@ export function NacalculatieLayout() {
               <Separator className="my-4" />
 
               {/* Totaal vergelijking with profit/loss */}
-              <div className="bg-background dark:bg-foreground/80/50 rounded-xl p-5">
+              <div className="bg-background dark:bg-muted/50 rounded-xl p-5">
                 <h3 className="text-sm font-semibold text-foreground/70 dark:text-muted-foreground/50 mb-4">
                   Totaal vergelijking
                 </h3>

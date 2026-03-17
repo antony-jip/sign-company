@@ -490,7 +490,7 @@ export function AITextGenerator() {
               <p className="text-sm">Tekst wordt gegenereerd...</p>
             </div>
           ) : output ? (
-            <div className="bg-background dark:bg-foreground/80/50 rounded-lg p-4 min-h-[300px]">
+            <div className="bg-background dark:bg-muted/50 rounded-lg p-4 min-h-[300px]">
               <pre className="whitespace-pre-wrap text-sm text-foreground/80 dark:text-muted-foreground/30 font-sans leading-relaxed">
                 {output}
               </pre>

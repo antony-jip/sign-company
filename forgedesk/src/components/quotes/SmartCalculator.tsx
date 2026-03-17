@@ -157,7 +157,7 @@ export function SmartCalculator({ onAddToOfferte }: SmartCalculatorProps) {
         <Separator />
 
         {/* Calculated Results */}
-        <div className="space-y-3 bg-background dark:bg-foreground/80/50 rounded-lg p-4">
+        <div className="space-y-3 bg-background dark:bg-muted/50 rounded-lg p-4">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground dark:text-muted-foreground/60">Arbeidskosten</span>
             <span className="font-medium text-foreground dark:text-muted-foreground/20">

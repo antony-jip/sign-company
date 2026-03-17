@@ -2472,7 +2472,7 @@ export function QuoteCreation() {
                       <>
                         {selectedKlant ? (
                           <div className="rounded-xl border border-border dark:border-border bg-card overflow-hidden shadow-sm">
-                            <button onClick={() => setKlantPanelOpen(!klantPanelOpen)} className="w-full flex items-center gap-2 px-4 py-3 bg-background/80 dark:bg-foreground/80/50 border-b border-border dark:border-border hover:bg-muted dark:hover:bg-foreground/80 transition-colors">
+                            <button onClick={() => setKlantPanelOpen(!klantPanelOpen)} className="w-full flex items-center gap-2 px-4 py-3 bg-background/80 dark:bg-muted/50 border-b border-border dark:border-border hover:bg-muted dark:hover:bg-foreground/80 transition-colors">
                               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent to-primary flex items-center justify-center flex-shrink-0">
                                 <span className="text-white font-bold text-sm">{selectedKlant.bedrijfsnaam[0]?.toUpperCase()}</span>
                               </div>
@@ -2693,11 +2693,11 @@ export function QuoteCreation() {
 
                         <div className="p-4 space-y-4">
                           <div className="grid grid-cols-2 gap-2">
-                            <div className="rounded-lg bg-background/80 dark:bg-foreground/80/50 p-2.5">
+                            <div className="rounded-lg bg-background/80 dark:bg-muted/50 p-2.5">
                               <p className="text-2xs uppercase tracking-label text-muted-foreground font-medium">Subtotaal</p>
                               <p className="text-sm font-medium font-mono text-foreground mt-0.5">{formatCurrency(round2(subtotaal + afrondingskorting + urenCorrectieBedrag))}</p>
                             </div>
-                            <div className="rounded-lg bg-background/80 dark:bg-foreground/80/50 p-2.5">
+                            <div className="rounded-lg bg-background/80 dark:bg-muted/50 p-2.5">
                               <p className="text-2xs uppercase tracking-label text-muted-foreground font-medium">BTW</p>
                               <p className="text-sm font-medium font-mono text-foreground mt-0.5">{formatCurrency(round2(btwBedrag + (afrondingskorting + urenCorrectieBedrag) * (subtotaal > 0 ? btwBedrag / subtotaal : 0.21)))}</p>
                             </div>
@@ -2856,7 +2856,7 @@ export function QuoteCreation() {
                       <div className="rounded-xl border border-border dark:border-border bg-card overflow-hidden shadow-sm">
                         <button
                           onClick={() => setInkoopPaneelOpen(!inkoopPaneelOpen)}
-                          className="w-full flex items-center gap-2 px-4 py-3 bg-background/80 dark:bg-foreground/80/50 border-b border-border dark:border-border hover:bg-muted dark:hover:bg-foreground/80 transition-colors"
+                          className="w-full flex items-center gap-2 px-4 py-3 bg-background/80 dark:bg-muted/50 border-b border-border dark:border-border hover:bg-muted dark:hover:bg-foreground/80 transition-colors"
                         >
                           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center flex-shrink-0">
                             <ShoppingCart className="h-4 w-4 text-white" />

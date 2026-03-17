@@ -31,7 +31,7 @@ import { useAppSettings } from '@/contexts/AppSettingsContext'
 // ============ CONSTANTS ============
 
 const ACTIVITEIT_TYPE_CONFIG: Record<DealActiviteit['type'], { label: string; icon: typeof Phone; color: string }> = {
-  notitie: { label: 'Notitie', icon: StickyNote, color: 'text-muted-foreground bg-muted dark:bg-foreground/80' },
+  notitie: { label: 'Notitie', icon: StickyNote, color: 'text-muted-foreground bg-muted dark:bg-muted' },
   email: { label: 'Email', icon: Mail, color: 'text-blue-500 bg-blue-100 dark:bg-blue-900/30' },
   telefoon: { label: 'Telefoon', icon: Phone, color: 'text-emerald-500 bg-emerald-100 dark:bg-emerald-900/30' },
   vergadering: { label: 'Vergadering', icon: Calendar, color: 'text-purple-500 bg-purple-100 dark:bg-purple-900/30' },

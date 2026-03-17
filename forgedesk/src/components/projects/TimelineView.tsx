@@ -100,7 +100,7 @@ export function TimelineView({ taken, projectStart, projectEind }: TimelineViewP
       {/* Timeline chart */}
       <div className="border border-black/[0.06] rounded-xl overflow-hidden">
         {/* Month headers */}
-        <div className="relative h-8 bg-background dark:bg-foreground/80/50 border-b border-border dark:border-border">
+        <div className="relative h-8 bg-background dark:bg-muted/50 border-b border-border dark:border-border">
           {timeline.maanden.map((maand, index) => (
             <div
               key={index}

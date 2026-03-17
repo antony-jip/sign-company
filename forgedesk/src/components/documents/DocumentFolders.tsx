@@ -65,7 +65,7 @@ export function DocumentFolders({ activeFolder, onFolderChange, documents }: Doc
                 'text-xs px-2 py-0.5 rounded-full',
                 isActive
                   ? 'bg-blue-100 text-blue-700 dark:bg-blue-800 dark:text-blue-200'
-                  : 'bg-muted text-muted-foreground dark:bg-foreground/80 dark:text-muted-foreground/60'
+                  : 'bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground/60'
               )}>
                 {count}
               </span>

@@ -334,7 +334,7 @@ export function CommandPalette() {
           {isLoading && (
             <Loader2 className="w-4 h-4 text-muted-foreground/60 dark:text-muted-foreground animate-spin flex-shrink-0" />
           )}
-          <kbd className="hidden sm:inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-muted-foreground/60 dark:text-muted-foreground bg-muted dark:bg-foreground/80 rounded-md border border-border dark:border-border flex-shrink-0">
+          <kbd className="hidden sm:inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-muted-foreground/60 dark:text-muted-foreground bg-muted dark:bg-muted rounded-md border border-border dark:border-border flex-shrink-0">
             Esc
           </kbd>
         </div>
@@ -406,7 +406,7 @@ export function CommandPalette() {
                         ${
                           isSelected
                             ? 'bg-blue-100 dark:bg-blue-800/50 text-blue-600 dark:text-blue-400'
-                            : 'bg-muted dark:bg-foreground/80 text-muted-foreground dark:text-muted-foreground/60'
+                            : 'bg-muted dark:bg-muted text-muted-foreground dark:text-muted-foreground/60'
                         }
                       `}
                     >
@@ -439,7 +439,7 @@ export function CommandPalette() {
         </div>
 
         {/* Footer hints */}
-        <div className="flex items-center gap-4 px-4 py-2.5 border-t border-border dark:border-border bg-background dark:bg-foreground/80/50">
+        <div className="flex items-center gap-4 px-4 py-2.5 border-t border-border dark:border-border bg-background dark:bg-muted/50">
           <span className="flex items-center gap-1.5 text-xs text-muted-foreground/60 dark:text-muted-foreground">
             <kbd className="inline-flex items-center justify-center w-5 h-5 rounded bg-secondary dark:bg-foreground/70 text-2xs font-semibold text-muted-foreground dark:text-muted-foreground/60">
               &uarr;

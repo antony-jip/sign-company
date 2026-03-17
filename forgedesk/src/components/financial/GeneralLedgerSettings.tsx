@@ -305,7 +305,7 @@ export function GeneralLedgerSettings() {
                 {(Object.entries(categoryTotals) as [string, number][]).map(([cat, total]) => (
                   <div
                     key={cat}
-                    className="flex items-center justify-between p-3 rounded-lg bg-background dark:bg-foreground/80/50"
+                    className="flex items-center justify-between p-3 rounded-lg bg-background dark:bg-muted/50"
                   >
                     <Badge className={categorieColors[cat]}>
                       {categorieLabels[cat]}

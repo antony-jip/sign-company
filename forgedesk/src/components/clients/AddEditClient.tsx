@@ -654,7 +654,7 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
                       isSelected
                         ? opt.kleur + ' border-current shadow-sm'
-                        : 'bg-background dark:bg-foreground/80 text-muted-foreground dark:text-muted-foreground/60 border-border dark:border-border hover:border-border'
+                        : 'bg-background dark:bg-muted text-muted-foreground dark:text-muted-foreground/60 border-border dark:border-border hover:border-border'
                     }`}
                   >
                     {isSelected && <span className="mr-1">&#10003;</span>}

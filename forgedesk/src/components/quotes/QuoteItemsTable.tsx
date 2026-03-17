@@ -879,7 +879,7 @@ export function QuoteItemsTable({
               "flex items-center gap-3 px-4 py-2 border-b border-border dark:border-border",
               item.is_optioneel
                 ? "bg-amber-50/60 dark:bg-amber-900/10 border-dashed"
-                : "bg-background/80 dark:bg-foreground/80/50"
+                : "bg-background/80 dark:bg-muted/50"
             )}>
               <div className={cn(
                 "h-7 w-7 rounded-full flex items-center justify-center flex-shrink-0",
@@ -1242,7 +1242,7 @@ export function QuoteItemsTable({
                 {/* ──── PRIJSBEREKENING ──── */}
                 <div
                   className={cn(
-                    'px-4 py-2 bg-background/50 dark:bg-foreground/80/30 transition-all',
+                    'px-4 py-2 bg-background/50 dark:bg-muted/30 transition-all',
                     inkoopDropTargetId === item.id && 'ring-2 ring-primary/40 ring-inset bg-primary/5'
                   )}
                   onDragOver={(e) => handleInkoopDragOver(e, item.id)}
@@ -1287,7 +1287,7 @@ export function QuoteItemsTable({
                                 'absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 rounded-md flex items-center justify-center transition-colors',
                                 item.heeft_calculatie
                                   ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400'
-                                  : 'bg-muted text-muted-foreground hover:bg-blue-100 hover:text-blue-600 dark:bg-foreground/80 dark:text-muted-foreground/60 dark:hover:bg-blue-900/40 dark:hover:text-blue-400'
+                                  : 'bg-muted text-muted-foreground hover:bg-blue-100 hover:text-blue-600 dark:bg-muted dark:text-muted-foreground/60 dark:hover:bg-blue-900/40 dark:hover:text-blue-400'
                               )}
                               title={item.heeft_calculatie ? 'Calculatie bewerken' : 'Calculatie openen'}
                             >
@@ -1498,7 +1498,7 @@ export function QuoteItemsTable({
                                       'absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 rounded flex items-center justify-center transition-colors',
                                       variant.heeft_calculatie
                                         ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400'
-                                        : 'bg-muted text-muted-foreground hover:bg-blue-100 hover:text-blue-600 dark:bg-foreground/80 dark:text-muted-foreground/60'
+                                        : 'bg-muted text-muted-foreground hover:bg-blue-100 hover:text-blue-600 dark:bg-muted dark:text-muted-foreground/60'
                                     )}
                                     title={variant.heeft_calculatie ? 'Calculatie bewerken' : 'Calculatie openen'}
                                   >

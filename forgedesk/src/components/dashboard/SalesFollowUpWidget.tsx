@@ -401,7 +401,7 @@ export function SalesFollowUpWidget() {
             {/* Follow-up tabs */}
             {hasFollowUps && (
               <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="w-full grid grid-cols-3 h-9 bg-muted/80 dark:bg-foreground/80/60 rounded-xl p-0.5">
+                <TabsList className="w-full grid grid-cols-3 h-9 bg-muted/80 dark:bg-muted/60 rounded-xl p-0.5">
                   <TabsTrigger
                     value="achterstallig"
                     className={cn(
@@ -538,7 +538,7 @@ export function SalesFollowUpWidget() {
         {/* Quick stats row */}
         {!loading && (
           <div className="grid grid-cols-3 gap-2 pt-2 border-t border-border dark:border-border">
-            <div className="flex flex-col items-center gap-0.5 p-2 rounded-xl bg-background/80 dark:bg-foreground/80/40 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-0.5 p-2 rounded-xl bg-background/80 dark:bg-muted/40 backdrop-blur-sm">
               <div className="flex items-center gap-1">
                 <TrendingUp className="h-3 w-3 text-primary" />
                 <span className="text-xs text-muted-foreground dark:text-muted-foreground/60">Open</span>
@@ -551,7 +551,7 @@ export function SalesFollowUpWidget() {
               </span>
             </div>
 
-            <div className="flex flex-col items-center gap-0.5 p-2 rounded-xl bg-background/80 dark:bg-foreground/80/40 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-0.5 p-2 rounded-xl bg-background/80 dark:bg-muted/40 backdrop-blur-sm">
               <div className="flex items-center gap-1">
                 <CheckCircle2 className="h-3 w-3 text-green-500" />
                 <span className="text-xs text-muted-foreground dark:text-muted-foreground/60">Conversie</span>
@@ -564,7 +564,7 @@ export function SalesFollowUpWidget() {
               </span>
             </div>
 
-            <div className="flex flex-col items-center gap-0.5 p-2 rounded-xl bg-background/80 dark:bg-foreground/80/40 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-0.5 p-2 rounded-xl bg-background/80 dark:bg-muted/40 backdrop-blur-sm">
               <div className="flex items-center gap-1">
                 <Timer className="h-3 w-3 text-[#4A442D]" />
                 <span className="text-xs text-muted-foreground dark:text-muted-foreground/60">Gem. reactie</span>

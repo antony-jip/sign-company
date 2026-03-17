@@ -369,7 +369,7 @@ export function CalculatieModal({
           <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse">
               <thead>
-                <tr className="bg-background dark:bg-foreground/80/50">
+                <tr className="bg-background dark:bg-muted/50">
                   {/* Kolom headers met uitleg tooltips */}
                   <th className="text-left px-3 py-2.5 font-medium text-muted-foreground dark:text-muted-foreground/60 min-w-[200px]">
                     <TooltipProvider>
@@ -485,7 +485,7 @@ export function CalculatieModal({
                       className={`border-b border-border dark:border-border ${
                         index % 2 === 0
                           ? 'bg-card'
-                          : 'bg-background/50 dark:bg-foreground/80/20'
+                          : 'bg-background/50 dark:bg-muted/20'
                       } hover:bg-blue-50/50 dark:hover:bg-blue-950/20 transition-colors`}
                     >
                       {/* Product */}
@@ -697,7 +697,7 @@ export function CalculatieModal({
           </div>
 
           {/* Totalen blok rechts */}
-          <div className="bg-background dark:bg-foreground/80/50 rounded-lg p-4 border border-border dark:border-border space-y-2">
+          <div className="bg-background dark:bg-muted/50 rounded-lg p-4 border border-border dark:border-border space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground dark:text-muted-foreground/60">Totaal inkoop</span>
               <span className="font-medium text-foreground/70 dark:text-muted-foreground/50">

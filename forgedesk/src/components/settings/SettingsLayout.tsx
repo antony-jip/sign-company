@@ -95,7 +95,7 @@ interface SubTab {
 
 function SubTabNav({ tabs, active, onChange }: { tabs: SubTab[]; active: string; onChange: (id: string) => void }) {
   return (
-    <div className="flex items-center gap-1 p-1 bg-muted dark:bg-foreground/80 rounded-xl overflow-x-auto mb-6">
+    <div className="flex items-center gap-1 p-1 bg-muted/60 dark:bg-muted/40 rounded-xl overflow-x-auto mb-6">
       {tabs.map((tab) => {
         const Icon = tab.icon
         const isActive = active === tab.id
@@ -213,7 +213,7 @@ export function SettingsLayout() {
     <div className="space-y-6">
       {/* Page Header */}
       <div className="flex items-center gap-3">
-        <div className="p-2 bg-muted dark:bg-foreground/80 rounded-lg flex-shrink-0">
+        <div className="p-2 bg-muted dark:bg-muted rounded-lg flex-shrink-0">
           <Settings className="w-6 h-6 text-muted-foreground dark:text-muted-foreground/60" />
         </div>
         <div className="min-w-0">
@@ -241,16 +241,16 @@ export function SettingsLayout() {
                     onClick={() => setActiveTab(tab.id)}
                     className={`w-full flex-shrink-0 md:flex-shrink flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all duration-150 ${
                       isActive
-                        ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 shadow-sm'
-                        : 'text-muted-foreground dark:text-muted-foreground/60 hover:bg-muted dark:hover:bg-foreground/80 hover:text-foreground dark:hover:text-muted-foreground/30'
+                        ? 'bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary shadow-sm'
+                        : 'text-muted-foreground hover:bg-bg-hover hover:text-foreground'
                     }`}
                   >
-                    <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-blue-600 dark:text-blue-400' : ''}`} />
+                    <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-primary' : ''}`} />
                     <div className="min-w-0">
                       <span className={`text-sm block truncate ${isActive ? 'font-semibold' : 'font-medium'}`}>
                         {tab.label}
                       </span>
-                      <span className={`text-xs hidden md:block truncate ${isActive ? 'text-blue-600/70 dark:text-blue-400/70' : 'text-muted-foreground/60 dark:text-muted-foreground'}`}>
+                      <span className={`text-xs hidden md:block truncate ${isActive ? 'text-primary/70' : 'text-muted-foreground/60'}`}>
                         {tab.description}
                       </span>
                     </div>
@@ -262,7 +262,7 @@ export function SettingsLayout() {
               <div className="my-2 border-t border-border dark:border-border hidden md:block" />
               <button
                 onClick={() => navigate('/team')}
-                className="w-full flex-shrink-0 md:flex-shrink flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all duration-150 text-muted-foreground dark:text-muted-foreground/60 hover:bg-muted dark:hover:bg-foreground/80 hover:text-foreground dark:hover:text-muted-foreground/30"
+                className="w-full flex-shrink-0 md:flex-shrink flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all duration-150 text-muted-foreground hover:bg-bg-hover hover:text-foreground"
               >
                 <Users className="w-4 h-4 flex-shrink-0" />
                 <div className="min-w-0 flex-1">
@@ -404,7 +404,7 @@ function ProfielTab() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" value={email} readOnly disabled className="bg-background dark:bg-foreground/80 cursor-not-allowed" />
+                <Input id="email" value={email} readOnly disabled className="bg-background dark:bg-muted cursor-not-allowed" />
                 <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Email kan niet worden gewijzigd</p>
               </div>
               <div className="space-y-2">
@@ -430,7 +430,7 @@ function ProfielTab() {
           <CardContent className="space-y-6">
             <div className="flex items-center gap-6">
               <div
-                className="relative w-24 h-24 rounded-full bg-muted dark:bg-foreground/80 border-2 border-dashed border-border dark:border-border flex items-center justify-center cursor-pointer group overflow-hidden hover:border-blue-400 transition-colors"
+                className="relative w-24 h-24 rounded-full bg-muted dark:bg-muted border-2 border-dashed border-border dark:border-border flex items-center justify-center cursor-pointer group overflow-hidden hover:border-primary/50 transition-colors"
                 onClick={handleAvatarClick}
               >
                 {avatarPreview ? (
@@ -593,7 +593,7 @@ function BedrijfTab() {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex items-center gap-6">
-              <div className="relative w-32 h-20 rounded-lg bg-muted dark:bg-foreground/80 border-2 border-dashed border-border dark:border-border flex items-center justify-center cursor-pointer group overflow-hidden hover:border-blue-400 transition-colors" onClick={handleLogoClick}>
+              <div className="relative w-32 h-20 rounded-lg bg-muted dark:bg-muted border-2 border-dashed border-border dark:border-border flex items-center justify-center cursor-pointer group overflow-hidden hover:border-primary/50 transition-colors" onClick={handleLogoClick}>
                 {logoPreview ? (
                   <img src={logoPreview} alt="Logo" className="w-full h-full object-contain p-2" />
                 ) : (
@@ -2313,7 +2313,7 @@ function IntegratiesTab() {
                   className={
                     exactConnected
                       ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-                      : 'bg-muted text-muted-foreground dark:bg-foreground/80 dark:text-muted-foreground/60'
+                      : 'bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground/60'
                   }
                 >
                   {exactConnected ? (
@@ -2685,7 +2685,7 @@ function BeveiligingTab() {
                 Actief
               </Badge>
             </div>
-            <div className="flex items-center justify-between p-3 rounded-lg bg-background dark:bg-foreground/80/50">
+            <div className="flex items-center justify-between p-3 rounded-lg bg-background dark:bg-muted/50">
               <div className="flex items-center gap-3">
                 <div className="w-2 h-2 rounded-full bg-muted-foreground/40" />
                 <div>
@@ -3295,7 +3295,7 @@ function WeergaveTab() {
         })}
 
         {/* Instellingen (altijd aan) */}
-        <div className="flex items-center justify-between py-1.5 px-3 rounded-lg bg-background dark:bg-foreground/80/30">
+        <div className="flex items-center justify-between py-1.5 px-3 rounded-lg bg-background dark:bg-muted/30">
           <span className="text-sm text-foreground dark:text-white">Instellingen</span>
           <span className="text-xs text-muted-foreground dark:text-muted-foreground/60">Altijd zichtbaar</span>
         </div>
