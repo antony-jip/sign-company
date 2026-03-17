@@ -1,5 +1,18 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { supabaseAdmin, verifyUser } from './shared-utils'
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseAdmin = createClient(
+  process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '',
+  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+)
+async function verifyUser(req: VercelRequest): Promise<string> {
+  const authHeader = req.headers.authorization
+  if (!authHeader?.startsWith('Bearer ')) throw new Error('Niet geautoriseerd')
+  const token = authHeader.split(' ')[1]
+  const { data: { user }, error } = await supabaseAdmin.auth.getUser(token)
+  if (error || !user) throw new Error('Ongeldige sessie')
+  return user.id
+}
 
 const EXACT_API_BASE = 'https://start.exactonline.nl/api/v1'
 
