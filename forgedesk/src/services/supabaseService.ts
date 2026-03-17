@@ -4273,17 +4273,17 @@ export async function generateCreditnotaNummer(): Promise<string> {
   return `${prefix}${String(maxNr + 1).padStart(3, '0')}`
 }
 
-export async function generateProjectNummer(): Promise<string> {
+export async function generateProjectNummer(prefix: string = 'PRJ'): Promise<string> {
   const jaar = new Date().getFullYear()
-  const prefix = `PRJ-${jaar}-`
-  let maxNr = await getMaxNummer('projecten', 'naam', prefix)
+  const jaarPrefix = `${prefix}-${jaar}-`
+  let maxNr = await getMaxNummer('projecten', 'project_nummer', jaarPrefix)
   if (maxNr === 0) {
     const projecten = isSupabaseConfigured() ? [] : getLocalData<Project>('projecten')
     maxNr = projecten
-      .filter((p) => (p.naam || '').startsWith(prefix))
-      .reduce((max, p) => Math.max(max, parseInt((p.naam || '').replace(prefix, ''), 10) || 0), 0)
+      .filter((p) => (p.project_nummer || '').startsWith(jaarPrefix))
+      .reduce((max, p) => Math.max(max, parseInt((p.project_nummer || '').replace(jaarPrefix, ''), 10) || 0), 0)
   }
-  return `${prefix}${String(maxNr + 1).padStart(3, '0')}`
+  return `${jaarPrefix}${String(maxNr + 1).padStart(3, '0')}`
 }
 
 // ============ CONVERSIE FUNCTIES ============
