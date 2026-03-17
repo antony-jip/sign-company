@@ -1824,34 +1824,34 @@ export function QuoteCreation() {
   // ────────────────────────────────────────────────────────────────────
   if (showKlantSelector && !isEditMode) {
     return (
-      <div className="relative -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 min-h-full">
-        <div className="fixed inset-0 bg-gradient-to-br from-[#fce7f3] via-[#ede9fe] to-[#dbeafe] dark:from-background dark:via-background dark:to-background pointer-events-none" />
+      <div className="relative -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 min-h-[100dvh]">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#fce7f3] via-[#ede9fe] to-[#dbeafe] dark:from-background dark:via-background dark:to-background pointer-events-none" />
         <div className="relative max-w-2xl mx-auto px-4 py-8 md:py-12 animate-fade-in-up">
           {/* Header */}
           <div className="flex items-center gap-4 mb-8">
-            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-white/60 hover:bg-white/80 backdrop-blur-sm border border-white/40 shadow-sm" onClick={() => {
+            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-white/50 hover:bg-white/70 backdrop-blur-sm border border-white/30" onClick={() => {
               const from = (location.state as { from?: string })?.from
               navigate(from || '/offertes')
             }}>
               <ArrowLeft className="h-4 w-4" />
             </Button>
-            <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-rose-400 to-pink-600 flex items-center justify-center shadow-lg shadow-rose-500/25 ring-4 ring-rose-100/50">
-              <Receipt className="h-5 w-5 text-white" />
+            <div className="h-11 w-11 rounded-xl bg-foreground/[0.07] dark:bg-foreground/10 flex items-center justify-center">
+              <Receipt className="h-5 w-5 text-foreground/70" />
             </div>
             <div>
-              <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Nieuwe Offerte</h1>
+              <h1 className="text-2xl font-bold tracking-tight text-foreground">Nieuwe Offerte</h1>
               <p className="text-sm text-muted-foreground">Selecteer een klant en vul de details in</p>
             </div>
           </div>
 
         <div className="space-y-4">
           {/* Klant */}
-          <div className="group rounded-2xl bg-white/80 dark:bg-card backdrop-blur-xl border border-white/60 dark:border-border shadow-lg shadow-black/[0.03] hover:shadow-xl hover:shadow-black/[0.06] transition-all duration-300 overflow-hidden">
-            <div className="h-1 bg-gradient-to-r from-rose-400 via-pink-400 to-rose-300" />
+          <div className="group rounded-2xl bg-white/70 dark:bg-card/80 backdrop-blur-xl border border-white/50 dark:border-border shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden">
+            <div className="h-[3px] bg-gradient-to-r from-rose-200 via-pink-100 to-rose-100 dark:from-rose-800/40 dark:to-pink-800/20" />
             <div className="flex items-center gap-3 px-6 pt-5 pb-1">
-              <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-rose-400 to-pink-500 text-white text-xs font-bold shadow-md shadow-rose-500/20">1</div>
+              <div className="flex items-center justify-center h-7 w-7 rounded-lg bg-foreground/[0.06] text-foreground/50 text-xs font-semibold">1</div>
               <div>
-                <span className="text-sm font-bold text-foreground">Klant</span>
+                <span className="text-sm font-semibold text-foreground">Klant</span>
                 <p className="text-xs text-muted-foreground">Wie is de opdrachtgever?</p>
               </div>
             </div>
@@ -1859,10 +1859,10 @@ export function QuoteCreation() {
               <div className="space-y-2">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
-                  <Input value={klantSearch} onChange={(e) => setKlantSearch(e.target.value)} placeholder="Zoek op bedrijfsnaam, contactpersoon of email..." className="pl-10 h-11 bg-white/60 dark:bg-background border-gray-200 dark:border-border rounded-xl" />
+                  <Input value={klantSearch} onChange={(e) => setKlantSearch(e.target.value)} placeholder="Zoek op bedrijfsnaam, contactpersoon of email..." className="pl-10 h-10 bg-white/50 dark:bg-background border-black/[0.08] dark:border-border rounded-xl" />
                 </div>
                 <Select value={selectedKlantId} onValueChange={(val) => { setSelectedKlantId(val); setKlantSearch('') }}>
-                  <SelectTrigger className="h-11 bg-white/60 dark:bg-background border-gray-200 dark:border-border rounded-xl"><SelectValue placeholder="Selecteer een klant..." /></SelectTrigger>
+                  <SelectTrigger className="h-10 bg-white/50 dark:bg-background border-black/[0.08] dark:border-border rounded-xl"><SelectValue placeholder="Selecteer een klant..." /></SelectTrigger>
                   <SelectContent>
                     {filteredKlanten.map((klant) => (
                       <SelectItem key={klant.id} value={klant.id}>
@@ -1876,10 +1876,10 @@ export function QuoteCreation() {
                 </Select>
               </div>
               {selectedKlant && (
-                <div className="border border-rose-200/60 dark:border-border bg-gradient-to-r from-rose-50/50 to-white dark:from-card dark:to-card rounded-xl p-3">
+                <div className="border border-black/[0.06] dark:border-border bg-foreground/[0.02] dark:from-card dark:to-card rounded-xl p-3">
                   <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center flex-shrink-0 shadow-sm">
-                      <span className="text-white font-bold text-sm">{selectedKlant.bedrijfsnaam[0]?.toUpperCase()}</span>
+                    <div className="w-9 h-9 rounded-lg bg-foreground/[0.07] dark:bg-muted flex items-center justify-center flex-shrink-0">
+                      <span className="text-foreground font-bold text-sm">{selectedKlant.bedrijfsnaam[0]?.toUpperCase()}</span>
                     </div>
                     <div className="flex-1 min-w-0">
                       <h4 className="font-semibold text-foreground text-sm">{selectedKlant.bedrijfsnaam}</h4>
@@ -1896,10 +1896,10 @@ export function QuoteCreation() {
               )}
               {selectedKlantId && (
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">Project <span className="text-xs text-muted-foreground font-normal normal-case tracking-normal">(optioneel)</span></Label>
+                  <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">Project <span className="text-xs text-muted-foreground font-normal">(optioneel)</span></Label>
                   {klantProjecten.length > 0 ? (
                     <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
-                      <SelectTrigger className="h-11 bg-white/60 dark:bg-background border-gray-200 dark:border-border rounded-xl"><SelectValue placeholder="Koppel aan een project..." /></SelectTrigger>
+                      <SelectTrigger className="h-10 bg-white/50 dark:bg-background border-black/[0.08] dark:border-border rounded-xl"><SelectValue placeholder="Koppel aan een project..." /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="geen"><span className="text-muted-foreground">Geen project</span></SelectItem>
                         {klantProjecten.map((project) => (
@@ -1916,12 +1916,12 @@ export function QuoteCreation() {
           </div>
 
           {/* Contactpersoon */}
-          <div className="group rounded-2xl bg-white/80 dark:bg-card backdrop-blur-xl border border-white/60 dark:border-border shadow-lg shadow-black/[0.03] hover:shadow-xl hover:shadow-black/[0.06] transition-all duration-300 overflow-hidden">
-            <div className="h-1 bg-gradient-to-r from-violet-400 via-purple-400 to-violet-300" />
+          <div className="group rounded-2xl bg-white/70 dark:bg-card/80 backdrop-blur-xl border border-white/50 dark:border-border shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden">
+            <div className="h-[3px] bg-gradient-to-r from-violet-200/80 via-purple-100 to-violet-100 dark:from-violet-800/40 dark:to-purple-800/20" />
             <div className="flex items-center gap-3 px-6 pt-5 pb-1">
-              <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-violet-400 to-purple-500 text-white text-xs font-bold shadow-md shadow-violet-500/20">2</div>
+              <div className="flex items-center justify-center h-7 w-7 rounded-lg bg-foreground/[0.06] text-foreground/50 text-xs font-semibold">2</div>
               <div>
-                <span className="text-sm font-bold text-foreground">Contactpersoon</span>
+                <span className="text-sm font-semibold text-foreground">Contactpersoon</span>
                 <p className="text-xs text-muted-foreground">Wie ontvangt de offerte?</p>
               </div>
             </div>
@@ -1931,21 +1931,21 @@ export function QuoteCreation() {
                   {(selectedKlant.contactpersonen?.length > 0 || selectedKlant.contactpersoon) && (
                     <div className="space-y-1.5">
                       {selectedKlant.contactpersonen?.map((cp) => (
-                        <button key={cp.id} onClick={() => handleSelectContact(cp.id)} className={cn('w-full text-left rounded-xl border p-3 transition-all', selectedContactId === cp.id ? 'border-violet-300 bg-violet-50/50 dark:bg-violet-900/10 ring-1 ring-violet-200' : 'border-gray-200 dark:border-border hover:border-violet-200 hover:bg-violet-50/30')}>
+                        <button key={cp.id} onClick={() => handleSelectContact(cp.id)} className={cn('w-full text-left rounded-xl border p-3 transition-all', selectedContactId === cp.id ? 'border-primary/30 bg-primary/[0.04] ring-1 ring-primary/10' : 'border-black/[0.06] dark:border-border hover:border-primary/20 hover:bg-primary/[0.02]')}>
                           <div className="flex items-center gap-2.5">
-                            <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-bold', selectedContactId === cp.id ? 'bg-gradient-to-br from-violet-400 to-purple-500 text-white shadow-sm' : 'bg-gray-100 dark:bg-muted text-muted-foreground')}>{cp.naam[0]?.toUpperCase()}</div>
+                            <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-bold', selectedContactId === cp.id ? 'bg-primary text-primary-foreground' : 'bg-foreground/[0.06] text-muted-foreground')}>{cp.naam[0]?.toUpperCase()}</div>
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium text-foreground truncate">{cp.naam}</p>
                               {cp.functie && <p className="text-xs text-muted-foreground truncate">{cp.functie}</p>}
                             </div>
-                            {cp.is_primair && <span className="text-2xs font-medium text-violet-600 bg-violet-100 dark:bg-violet-900/20 dark:text-violet-400 px-2 py-0.5 rounded-full flex-shrink-0">primair</span>}
+                            {cp.is_primair && <span className="text-2xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full flex-shrink-0">primair</span>}
                           </div>
                         </button>
                       ))}
                       {(!selectedKlant.contactpersonen || selectedKlant.contactpersonen.length === 0) && selectedKlant.contactpersoon && (
-                        <div className="rounded-xl border border-violet-300 bg-violet-50/50 dark:bg-violet-900/10 ring-1 ring-violet-200 p-3">
+                        <div className="rounded-xl border border-primary/30 bg-primary/[0.04] ring-1 ring-primary/10 p-3">
                           <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-400 to-purple-500 text-white flex items-center justify-center flex-shrink-0 text-xs font-bold shadow-sm">{selectedKlant.contactpersoon[0]?.toUpperCase()}</div>
+                            <div className="w-8 h-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center flex-shrink-0 text-xs font-bold">{selectedKlant.contactpersoon[0]?.toUpperCase()}</div>
                             <p className="text-sm font-medium text-foreground">{selectedKlant.contactpersoon}</p>
                           </div>
                         </div>
@@ -1953,12 +1953,12 @@ export function QuoteCreation() {
                     </div>
                   )}
                   {!showNewContact ? (
-                    <button onClick={() => setShowNewContact(true)} className="w-full flex items-center gap-2 text-xs text-muted-foreground hover:text-violet-600 transition-colors py-2.5 px-3 rounded-xl hover:bg-violet-50/50 dark:hover:bg-violet-900/10 border border-dashed border-gray-200 dark:border-border hover:border-violet-300">
+                    <button onClick={() => setShowNewContact(true)} className="w-full flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors py-2.5 px-3 rounded-xl hover:bg-foreground/[0.03] border border-dashed border-black/[0.08] dark:border-border hover:border-foreground/20">
                       <UserPlus className="h-3.5 w-3.5" />Nieuwe contactpersoon toevoegen
                     </button>
                   ) : (
-                    <div className="rounded-xl border border-violet-200 dark:border-border bg-violet-50/30 dark:bg-muted/20 p-4 space-y-2.5">
-                      <p className="text-xs font-semibold text-foreground flex items-center gap-1.5"><UserPlus className="h-3.5 w-3.5 text-violet-500" />Nieuwe contactpersoon</p>
+                    <div className="rounded-xl border border-black/[0.06] dark:border-border bg-foreground/[0.02] dark:bg-muted/20 p-4 space-y-2.5">
+                      <p className="text-xs font-semibold text-foreground flex items-center gap-1.5"><UserPlus className="h-3.5 w-3.5 text-muted-foreground" />Nieuwe contactpersoon</p>
                       <Input value={newContactNaam} onChange={(e) => setNewContactNaam(e.target.value)} placeholder="Naam *" className="h-9 text-sm rounded-lg bg-white/80 dark:bg-background" autoFocus />
                       <Input value={newContactFunctie} onChange={(e) => setNewContactFunctie(e.target.value)} placeholder="Functie" className="h-9 text-sm rounded-lg bg-white/80 dark:bg-background" />
                       <Input value={newContactEmail} onChange={(e) => setNewContactEmail(e.target.value)} placeholder="E-mailadres" type="email" className="h-9 text-sm rounded-lg bg-white/80 dark:bg-background" />
@@ -1970,15 +1970,15 @@ export function QuoteCreation() {
                     </div>
                   )}
                   {!showNewContact && (
-                    <div className="space-y-1.5 pt-2 border-t border-gray-100 dark:border-border">
+                    <div className="space-y-1.5 pt-2 border-t border-black/[0.04] dark:border-border">
                       <Label className="text-xs text-muted-foreground">Of typ een naam</Label>
-                      <Input value={contactpersoon} onChange={(e) => { setContactpersoon(e.target.value); setSelectedContactId('') }} placeholder="Contactpersoon naam..." className="h-9 text-sm rounded-lg bg-white/60 dark:bg-background" />
+                      <Input value={contactpersoon} onChange={(e) => { setContactpersoon(e.target.value); setSelectedContactId('') }} placeholder="Contactpersoon naam..." className="h-9 text-sm rounded-lg bg-white/50 dark:bg-background" />
                     </div>
                   )}
                 </>
               ) : (
                 <div className="flex flex-col items-center py-6 text-center">
-                  <div className="w-12 h-12 rounded-2xl bg-gray-100 dark:bg-muted flex items-center justify-center mb-3">
+                  <div className="w-12 h-12 rounded-2xl bg-foreground/[0.04] dark:bg-muted flex items-center justify-center mb-3">
                     <User className="h-5 w-5 text-muted-foreground/40" />
                   </div>
                   <p className="text-sm text-muted-foreground">Selecteer eerst een klant</p>
@@ -1988,59 +1988,59 @@ export function QuoteCreation() {
           </div>
 
           {/* Offerte details */}
-          <div className="group rounded-2xl bg-white/80 dark:bg-card backdrop-blur-xl border border-white/60 dark:border-border shadow-lg shadow-black/[0.03] hover:shadow-xl hover:shadow-black/[0.06] transition-all duration-300 overflow-hidden">
-            <div className="h-1 bg-gradient-to-r from-blue-400 via-indigo-400 to-blue-300" />
+          <div className="group rounded-2xl bg-white/70 dark:bg-card/80 backdrop-blur-xl border border-white/50 dark:border-border shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden">
+            <div className="h-[3px] bg-gradient-to-r from-blue-200/80 via-indigo-100 to-blue-100 dark:from-blue-800/40 dark:to-indigo-800/20" />
             <div className="flex items-center gap-3 px-6 pt-5 pb-1">
-              <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-blue-400 to-indigo-500 text-white text-xs font-bold shadow-md shadow-blue-500/20">3</div>
+              <div className="flex items-center justify-center h-7 w-7 rounded-lg bg-foreground/[0.06] text-foreground/50 text-xs font-semibold">3</div>
               <div>
-                <span className="text-sm font-bold text-foreground">Offerte details</span>
+                <span className="text-sm font-semibold text-foreground">Offerte details</span>
                 <p className="text-xs text-muted-foreground">Titel, nummer en geldigheid</p>
               </div>
             </div>
             <div className="px-6 pb-6 pt-3 space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="offerte-titel" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Titel</Label>
-                <Input id="offerte-titel" value={offerteTitel} onChange={(e) => setOfferteTitel(e.target.value)} placeholder="bijv. Gevelreclame nieuwe locatie, Autobelettering wagenpark..." className="text-base h-11 bg-white/60 dark:bg-background border-gray-200 dark:border-border rounded-xl" autoFocus />
+                <Label htmlFor="offerte-titel" className="text-xs font-medium text-muted-foreground">Titel</Label>
+                <Input id="offerte-titel" value={offerteTitel} onChange={(e) => setOfferteTitel(e.target.value)} placeholder="bijv. Gevelreclame nieuwe locatie, Autobelettering wagenpark..." className="h-10 bg-white/50 dark:bg-background border-black/[0.08] dark:border-border rounded-xl" autoFocus />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="offerte-nummer" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Nummer</Label>
-                  <Input id="offerte-nummer" value={offerteNummer} readOnly className="bg-gray-50/80 dark:bg-muted/50 text-sm h-11 rounded-xl border-gray-200 dark:border-border" />
+                  <Label htmlFor="offerte-nummer" className="text-xs font-medium text-muted-foreground">Nummer</Label>
+                  <Input id="offerte-nummer" value={offerteNummer} readOnly className="bg-foreground/[0.03] dark:bg-muted/50 text-sm h-10 rounded-xl border-black/[0.06] dark:border-border" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="geldig-tot" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Geldig tot</Label>
-                  <Input id="geldig-tot" type="date" value={geldigTot} onChange={(e) => setGeldigTot(e.target.value)} className="text-sm h-11 bg-white/60 dark:bg-background border-gray-200 dark:border-border rounded-xl" />
+                  <Label htmlFor="geldig-tot" className="text-xs font-medium text-muted-foreground">Geldig tot</Label>
+                  <Input id="geldig-tot" type="date" value={geldigTot} onChange={(e) => setGeldigTot(e.target.value)} className="text-sm h-10 bg-white/50 dark:bg-background border-black/[0.08] dark:border-border rounded-xl" />
                 </div>
               </div>
             </div>
           </div>
 
           {/* Hoeveel items? */}
-          <div className="group rounded-2xl bg-white/80 dark:bg-card backdrop-blur-xl border border-white/60 dark:border-border shadow-lg shadow-black/[0.03] hover:shadow-xl hover:shadow-black/[0.06] transition-all duration-300 overflow-hidden">
-            <div className="h-1 bg-gradient-to-r from-amber-400 via-orange-400 to-amber-300" />
+          <div className="group rounded-2xl bg-white/70 dark:bg-card/80 backdrop-blur-xl border border-white/50 dark:border-border shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden">
+            <div className="h-[3px] bg-gradient-to-r from-amber-200/80 via-orange-100 to-amber-100 dark:from-amber-800/40 dark:to-orange-800/20" />
             <div className="flex items-center gap-3 px-6 pt-5 pb-1">
-              <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 text-white text-xs font-bold shadow-md shadow-amber-500/20">4</div>
+              <div className="flex items-center justify-center h-7 w-7 rounded-lg bg-foreground/[0.06] text-foreground/50 text-xs font-semibold">4</div>
               <div>
-                <span className="text-sm font-bold text-foreground">Aantal items</span>
+                <span className="text-sm font-semibold text-foreground">Aantal items</span>
                 <p className="text-xs text-muted-foreground">Hoeveel prijsberekeningen?</p>
               </div>
             </div>
             <div className="px-6 pb-6 pt-3">
               <p className="text-sm text-muted-foreground mb-4">Elk item is een complete prijsberekening. Je kunt later altijd items toevoegen of verwijderen.</p>
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-2">
                 {ITEM_COUNT_OPTIONS.map((count) => (
-                  <button key={count} onClick={() => setItemCount(count)} className={cn('h-12 w-12 rounded-xl text-base font-bold transition-all border-2', itemCount === count ? 'border-amber-400 bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-lg shadow-amber-500/20' : 'border-gray-200 dark:border-border bg-white/60 dark:bg-background text-foreground hover:border-amber-300 hover:shadow-md')}>
+                  <button key={count} onClick={() => setItemCount(count)} className={cn('h-11 w-11 rounded-xl text-base font-bold transition-all border', itemCount === count ? 'border-primary bg-primary text-primary-foreground shadow-sm' : 'border-black/[0.08] dark:border-border bg-white/50 dark:bg-background text-foreground hover:border-foreground/20')}>
                     {count}
                   </button>
                 ))}
-                <span className="text-sm text-muted-foreground ml-2 font-medium">{itemCount === 1 ? 'item' : 'items'}</span>
+                <span className="text-sm text-muted-foreground ml-2">{itemCount === 1 ? 'item' : 'items'}</span>
               </div>
             </div>
           </div>
 
           {/* Start button */}
           <div className="flex justify-end pt-2">
-            <Button onClick={handleStartEditing} disabled={!canStartEditing} size="lg" className="px-8 rounded-xl shadow-lg shadow-primary/20 font-semibold">
+            <Button onClick={handleStartEditing} disabled={!canStartEditing} size="sm" className="px-6 rounded-xl shadow-sm">
               Items toevoegen
               <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
@@ -2055,8 +2055,8 @@ export function QuoteCreation() {
   // MAIN LAYOUT: Two columns — Left: scrollable content, Right: sticky sidebar (380px)
   // ────────────────────────────────────────────────────────────────────
   return (
-    <div className="relative -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 min-h-full">
-      <div className="fixed inset-0 bg-gradient-to-br from-[#fdf2f8] via-[#faf5ff] to-[#eff6ff] dark:from-background dark:via-background dark:to-background pointer-events-none" />
+    <div className="relative -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 min-h-[100dvh]">
+      <div className="absolute inset-0 bg-gradient-to-br from-[#fdf2f8] via-[#faf5ff] to-[#eff6ff] dark:from-background dark:via-background dark:to-background pointer-events-none" />
     <div className="relative pb-6 px-4 py-8 md:py-12 mod-strip mod-strip-offertes">
       {/* ──── HEADER BAR ──── */}
       <div className="rounded-xl bg-gradient-to-r from-white/90 to-rose-50/60 dark:bg-card dark:from-card dark:to-card backdrop-blur-sm border border-border-primary/50 px-4 py-3 mb-6">
