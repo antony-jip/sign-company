@@ -299,7 +299,7 @@ export async function readEmailFromIMAP(
   return response.json()
 }
 
-// ============ EMAIL SETTINGS (direct Supabase — geen API endpoint nodig) ============
+// ============ EMAIL SETTINGS (via API endpoint — server-side encryptie) ============
 
 export interface EmailSettingsData {
   gmail_address: string
@@ -311,81 +311,73 @@ export interface EmailSettingsData {
   is_verified?: boolean
 }
 
-// Simple obfuscation for password storage (combined with RLS for real security)
-function obfuscate(text: string): string {
-  return 'b64:' + btoa(unescape(encodeURIComponent(text)))
-}
-function deobfuscate(text: string): string {
-  if (text.startsWith('b64:')) {
-    return decodeURIComponent(escape(atob(text.slice(4))))
-  }
-  // Legacy encrypted format — can't decrypt client-side, return placeholder
-  return ''
-}
-
 export async function loadEmailSettingsFromDb(): Promise<EmailSettingsData | null> {
-  if (!supabase) return null
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session?.user?.id) return null
+  try {
+    const token = await getAuthToken()
+    const response = await fetch('/api/email-settings', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    })
 
-  const { data, error } = await supabase
-    .from('user_email_settings')
-    .select('gmail_address, encrypted_app_password, smtp_host, smtp_port, imap_host, imap_port, is_verified')
-    .eq('user_id', session.user.id)
-    .single()
+    if (!response.ok) {
+      if (response.status === 404) return null
+      return null
+    }
 
-  if (error) {
-    if (error.code === 'PGRST116') return null
-    console.error('loadEmailSettingsFromDb:', error.message)
+    const data = await response.json()
+    if (!data?.gmail_address) return null
+
+    return {
+      gmail_address: data.gmail_address,
+      app_password: data.app_password || '',
+      smtp_host: data.smtp_host || 'smtp.gmail.com',
+      smtp_port: data.smtp_port || 587,
+      imap_host: data.imap_host || 'imap.gmail.com',
+      imap_port: data.imap_port || 993,
+      is_verified: data.is_verified,
+    }
+  } catch (err) {
+    console.error('loadEmailSettingsFromDb:', err)
     return null
-  }
-
-  if (!data?.gmail_address) return null
-
-  return {
-    gmail_address: data.gmail_address,
-    app_password: data.encrypted_app_password ? deobfuscate(data.encrypted_app_password) : '',
-    smtp_host: data.smtp_host || 'smtp.gmail.com',
-    smtp_port: data.smtp_port || 587,
-    imap_host: data.imap_host || 'imap.gmail.com',
-    imap_port: data.imap_port || 993,
-    is_verified: data.is_verified,
   }
 }
 
 export async function saveEmailSettingsToDb(settings: EmailSettingsData): Promise<void> {
-  if (!supabase) throw new Error('Supabase niet geconfigureerd')
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session?.user?.id) throw new Error('Niet ingelogd')
+  const token = await getAuthToken()
 
-  const { error } = await supabase
-    .from('user_email_settings')
-    .upsert({
-      user_id: session.user.id,
+  const response = await fetch('/api/email-settings', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify({
       gmail_address: settings.gmail_address,
-      encrypted_app_password: obfuscate(settings.app_password),
+      app_password: settings.app_password,
       smtp_host: settings.smtp_host || 'smtp.gmail.com',
       smtp_port: settings.smtp_port || 587,
       imap_host: settings.imap_host || 'imap.gmail.com',
       imap_port: settings.imap_port || 993,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: 'user_id' })
+    }),
+  })
 
-  if (error) {
-    console.error('saveEmailSettingsToDb:', error)
-    throw new Error(`Opslaan mislukt: ${error.message}`)
+  if (!response.ok) {
+    const error: { error?: string } = await response.json().catch(() => ({}))
+    throw new Error(error?.error || `Opslaan mislukt: ${response.status}`)
   }
 }
 
 export async function deleteEmailSettingsFromDb(): Promise<void> {
-  if (!supabase) return
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session?.user?.id) return
+  const token = await getAuthToken()
 
-  await supabase
-    .from('user_email_settings')
-    .delete()
-    .eq('user_id', session.user.id)
+  await fetch('/api/email-settings', {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  })
 }
 
 // Legacy — keep for backward compat
