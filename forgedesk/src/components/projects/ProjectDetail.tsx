@@ -141,7 +141,10 @@ const statusLabels: Record<string, string> = {
   afgerond: 'Afgerond',
   'on-hold': 'On-hold',
   'te-factureren': 'Te factureren',
+  gefactureerd: 'Gefactureerd',
 }
+
+type ProjectTab = 'overzicht' | 'financieel' | 'bestanden' | 'portaal'
 
 const goedkeuringStatusLabels: Record<string, string> = {
   verzonden: 'Verzonden',
@@ -204,6 +207,16 @@ export function ProjectDetail() {
   const { offertePrefix, offerteGeldigheidDagen, standaardBtw, bedrijfsnaam, primaireKleur, emailHandtekening } = useAppSettings()
   const { config: sidebarConfig } = useProjectSidebarConfig()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [activeTab, setActiveTab] = useState<ProjectTab>(() => {
+    const tabParam = new URLSearchParams(window.location.search).get('tab')
+    return (['overzicht', 'financieel', 'bestanden', 'portaal'].includes(tabParam || '') ? tabParam : 'overzicht') as ProjectTab
+  })
+  const handleTabChange = (tab: ProjectTab) => {
+    setActiveTab(tab)
+    const params = new URLSearchParams(window.location.search)
+    params.set('tab', tab)
+    window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`)
+  }
   const [takenWeergave, setTakenWeergave] = useState<'board' | 'tabel'>('board')
   const [nieuweTaakOpen, setNieuweTaakOpen] = useState(false)
   const [nieuweTaakTitel, setNieuweTaakTitel] = useState('')
@@ -888,6 +901,7 @@ export function ProjectDetail() {
                 <option value="actief">Actief</option>
                 <option value="in-review">In review</option>
                 <option value="te-factureren">Te factureren</option>
+                <option value="gefactureerd">Gefactureerd</option>
                 <option value="on-hold">On-hold</option>
                 <option value="afgerond">Afgerond</option>
               </select>
@@ -904,90 +918,103 @@ export function ProjectDetail() {
                 <Copy className="h-3.5 w-3.5 mr-1" />
                 Kopiëren
               </Button>
+              <div className="w-px h-5 bg-border mx-1 hidden sm:block" />
+              {/* Snelkoppelingen */}
+              <Button variant="outline" size="sm" className="h-7 px-2.5 text-xs" onClick={openNieuweOfferte}>
+                <Plus className="h-3 w-3 mr-1" />Offerte
+              </Button>
+              <Button variant="outline" size="sm" className="h-7 px-2.5 text-xs" onClick={() => setShowWerkbonDialog(true)}>
+                <Plus className="h-3 w-3 mr-1" />Werkbon
+              </Button>
+              <Button variant="outline" size="sm" className="h-7 px-2.5 text-xs" onClick={handleOpenMontageDialog}>
+                <Plus className="h-3 w-3 mr-1" />Montage
+              </Button>
             </div>
           </div>
 
-          {/* ── Offerte snelkoppeling (prominente CTA) ── */}
-          {projectOffertes.length === 0 ? (
-            <button
-              onClick={openNieuweOfferte}
-              className="mt-4 w-full group relative overflow-hidden rounded-xl border-2 border-dashed border-primary/30 bg-gradient-to-br from-primary/5 via-primary/3 to-transparent p-5 text-left transition-all hover:border-primary/50 hover:shadow-md hover:shadow-primary/5"
-            >
-              <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary transition-transform group-hover:scale-110">
-                  <FileText className="h-6 w-6" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-base font-semibold text-foreground">Maak een offerte</p>
-                  <p className="text-sm text-muted-foreground">Begin met het opstellen van een offerte voor dit project</p>
-                </div>
-                <ArrowRight className="h-5 w-5 text-primary/50 transition-transform group-hover:translate-x-1 group-hover:text-primary" />
-              </div>
-            </button>
-          ) : (
-            <div
-              className="mt-4 rounded-xl border bg-card p-4 cursor-pointer transition-all hover:shadow-md hover:border-primary/30"
-              onClick={() => navigate(`/offertes/${projectOffertes[0].id}/bewerken`, { state: { from: location.pathname } })}
-            >
-              <div className="flex items-center gap-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <FileText className="h-5 w-5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-semibold text-foreground truncate">{projectOffertes[0].titel || 'Offerte'}</p>
-                    <span className="text-xs text-muted-foreground font-mono">{projectOffertes[0].nummer}</span>
-                    <span className={`${getStatusColor(projectOffertes[0].status)} text-2xs px-1.5 py-0.5 rounded-full font-medium`}>
-                      {projectOffertes[0].status}
-                    </span>
-                  </div>
-                  <p className="text-lg font-bold text-foreground font-mono">{formatCurrency(projectOffertes[0].totaal)}</p>
-                </div>
-                <Button
-                  size="sm"
-                  className="shrink-0 gap-1.5"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    navigate(`/offertes/${projectOffertes[0].id}/bewerken`, { state: { from: location.pathname } })
-                  }}
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                  Offerte bewerken
-                </Button>
-              </div>
+          {/* Contactpersoon + adres compact */}
+          {klant && (
+            <div className="mt-3 flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
+              {klant.contactpersoon && (
+                <span className="flex items-center gap-1.5">
+                  <Users className="h-3.5 w-3.5" />
+                  {klant.contactpersoon}
+                  {klant.telefoon && <span className="font-mono text-xs">· {klant.telefoon}</span>}
+                </span>
+              )}
+              {klant.adres && (
+                <span className="flex items-center gap-1.5">
+                  <MapPin className="h-3.5 w-3.5" />
+                  <span className="text-xs">{klant.adres}{klant.stad ? `, ${klant.stad}` : ''}</span>
+                </span>
+              )}
             </div>
           )}
-
-          {/* Budget waarschuwing */}
-          {(() => {
-            const bs = berekenBudgetStatus(project, projectTijdregistraties)
-            if (bs.budget <= 0 || bs.niveau === 'normaal') return null
-            return (
-              <div className={`mt-3 flex items-center gap-3 rounded-lg px-4 py-2 ${
-                bs.niveau === 'overschreden'
-                  ? 'bg-red-50 border border-red-200'
-                  : 'bg-amber-50 border border-amber-200'
-              }`}>
-                <AlertTriangle className={`h-4 w-4 flex-shrink-0 ${
-                  bs.niveau === 'overschreden' ? 'text-red-500' : 'text-amber-500'
-                }`} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-foreground">
-                    {bs.niveau === 'overschreden'
-                      ? `Budget overschreden: ${bs.percentage.toFixed(0)}%`
-                      : `Budget waarschuwing: ${bs.percentage.toFixed(0)}% verbruikt`}
-                  </p>
-                  <p className="text-2xs text-muted-foreground font-mono">
-                    {formatCurrency(bs.verbruikt)} van {formatCurrency(bs.budget)}
-                  </p>
-                </div>
-              </div>
-            )
-          })()}
         </div>
       </div>
 
-      {/* ── Te factureren banner ── */}
+      {/* ── Tab Bar ── */}
+      <div className="flex items-center gap-1 border-b border-border">
+        {([
+          { key: 'overzicht' as ProjectTab, label: 'Overzicht', count: projectTaken.length },
+          { key: 'financieel' as ProjectTab, label: 'Financieel', count: projectOffertes.length + projectFacturen.length },
+          { key: 'bestanden' as ProjectTab, label: 'Bestanden', count: projectDocumenten.length + projectFotos.length },
+          { key: 'portaal' as ProjectTab, label: 'Portaal' },
+        ]).map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => handleTabChange(tab.key)}
+            className={cn(
+              'px-4 py-2.5 text-sm font-medium transition-colors relative',
+              activeTab === tab.key
+                ? 'text-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            {tab.label}
+            {tab.count !== undefined && tab.count > 0 && (
+              <span className="ml-1.5 text-2xs bg-muted text-muted-foreground rounded-full px-1.5 py-0.5 font-mono">
+                {tab.count}
+              </span>
+            )}
+            {activeTab === tab.key && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-full" />
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* ══════════ FINANCIEEL TAB ══════════ */}
+      {activeTab === 'financieel' && <>
+
+      {/* Budget waarschuwing */}
+      {(() => {
+        const bs = berekenBudgetStatus(project, projectTijdregistraties)
+        if (bs.budget <= 0 || bs.niveau === 'normaal') return null
+        return (
+          <div className={`flex items-center gap-3 rounded-lg px-4 py-2 ${
+            bs.niveau === 'overschreden'
+              ? 'bg-red-50 border border-red-200'
+              : 'bg-amber-50 border border-amber-200'
+          }`}>
+            <AlertTriangle className={`h-4 w-4 flex-shrink-0 ${
+              bs.niveau === 'overschreden' ? 'text-red-500' : 'text-amber-500'
+            }`} />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium text-foreground">
+                {bs.niveau === 'overschreden'
+                  ? `Budget overschreden: ${bs.percentage.toFixed(0)}%`
+                  : `Budget waarschuwing: ${bs.percentage.toFixed(0)}% verbruikt`}
+              </p>
+              <p className="text-2xs text-muted-foreground font-mono">
+                {formatCurrency(bs.verbruikt)} van {formatCurrency(bs.budget)}
+              </p>
+            </div>
+          </div>
+        )
+      })()}
+
+      {/* Te factureren banner */}
       {project.status === 'te-factureren' && (
         <Card className="border-indigo-300 dark:border-indigo-700 bg-indigo-50/50 dark:bg-indigo-950/20">
           <CardContent className="p-4">
@@ -1055,6 +1082,11 @@ export function ProjectDetail() {
           </CardContent>
         </Card>
       )}
+
+      </>}
+
+      {/* ══════════ OVERZICHT TAB ══════════ */}
+      {activeTab === 'overzicht' && <>
 
       {/* ── Briefing Sectie ── */}
       <Card className="border-border/80 dark:border-border/80">
@@ -1125,10 +1157,9 @@ export function ProjectDetail() {
         )}
       </Card>
 
-      {/* ── Main Layout: Taken + Sidebar ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* ────────────── Taken (hoofdcontent) ────────────── */}
-        <div className="lg:col-span-2 space-y-4">
+      {/* ── Taken + Team + Montage + Audit ── */}
+      <div className="space-y-6">
+        <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-2">
               <Button
@@ -1499,21 +1530,15 @@ export function ProjectDetail() {
             </Card>
           )}
 
-          {/* ── Klantportaal Sectie ── */}
-          {project && (
-            <ProjectPortaalTab projectId={project.id} projectNaam={project.naam} />
-          )}
-
           {/* Audit Log */}
           {project && (
             <AuditLogPanel entityType="project" entityId={project.id} />
           )}
         </div>
 
-        {/* ────────────── Rechter Sidebar ────────────── */}
-        <div className="space-y-6 lg:sticky lg:top-4 lg:self-start lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto scrollbar-thin">
+        {/* Voortgang + Team + Montage (in overzicht tab) */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* ── Projectvoortgang ── */}
-          {sidebarConfig.voortgang && (
           <Card className="border-border/80 dark:border-border/80">
             <CardContent className="pt-5 pb-4">
               <ProjectProgressIndicator
@@ -1524,50 +1549,8 @@ export function ProjectDetail() {
               />
             </CardContent>
           </Card>
-          )}
-
-          {/* ── Klant & Contact ── */}
-          {sidebarConfig.klant && klant && (
-            <Card className="border-blush/40 bg-blush/5">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-blush to-blush-deep flex items-center justify-center">
-                    <MapPin className="h-3.5 w-3.5 text-white" />
-                  </div>
-                  Klant & Contact
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div>
-                  <Link to={`/klanten/${klant.id}`} className="text-sm font-semibold text-foreground hover:underline">
-                    {klant.bedrijfsnaam}
-                  </Link>
-                  {klant.adres && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {klant.adres}
-                      {klant.postcode && `, ${klant.postcode}`}
-                      {klant.stad && ` ${klant.stad}`}
-                    </p>
-                  )}
-                </div>
-                {klant.contactpersoon && (
-                  <div className="flex items-center gap-2 bg-background rounded-lg px-3 py-2 border border-border/40">
-                    <div className="h-6 w-6 rounded-full bg-gradient-to-br from-blush to-blush-deep flex items-center justify-center text-white text-2xs font-bold flex-shrink-0">
-                      {getInitials(klant.contactpersoon)}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">{klant.contactpersoon}</p>
-                      {klant.telefoon && <p className="text-xs text-muted-foreground">{klant.telefoon}</p>}
-                      {klant.email && <p className="text-xs text-muted-foreground truncate">{klant.email}</p>}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
 
           {/* ── Team ── */}
-          {sidebarConfig.team && (
           <Card className="border-sage/40 bg-sage/5">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
@@ -1636,10 +1619,9 @@ export function ProjectDetail() {
               ) : null}
             </CardContent>
           </Card>
-          )}
 
           {/* ── Montage Planning ── */}
-          {sidebarConfig.montage && projectMontages.length > 0 && (
+          {projectMontages.length > 0 && (
           <Card className="border-border/80 dark:border-border/80">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
@@ -1697,9 +1679,12 @@ export function ProjectDetail() {
             </CardContent>
           </Card>
           )}
+        </div>
+      </div>
+      </>}
 
           {/* ── Werkbonnen ── */}
-          {sidebarConfig.werkbonnen && projectWerkbonnen.length > 0 && (
+          {activeTab === 'financieel' && projectWerkbonnen.length > 0 && (
           <Card className="border-border/80 dark:border-border/80">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
@@ -1777,7 +1762,7 @@ export function ProjectDetail() {
           )}
 
           {/* ── Facturen ── */}
-          {sidebarConfig.facturen && projectFacturen.length > 0 && (
+          {activeTab === 'financieel' && projectFacturen.length > 0 && (
             <Card className="border-border/80 dark:border-border/80">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
@@ -1821,7 +1806,7 @@ export function ProjectDetail() {
           )}
 
           {/* ── Uitgaven ── */}
-          {sidebarConfig.uitgaven && projectUitgaven.length > 0 && (
+          {activeTab === 'financieel' && projectUitgaven.length > 0 && (
             <Card className="border-border/80 dark:border-border/80">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
@@ -1864,7 +1849,7 @@ export function ProjectDetail() {
           )}
 
           {/* ── Signing Visualisaties ── */}
-          {sidebarConfig.visualisaties && (
+          {activeTab === 'bestanden' && (
           <Card className="border-border/80 dark:border-border/80">
             <CardContent className="pt-5">
               <VisualisatieGallery project_id={project.id} klant_id={project.klant_id} compact />
@@ -1873,7 +1858,7 @@ export function ProjectDetail() {
           )}
 
           {/* ── Offertes ── */}
-          {sidebarConfig.offertes && projectOffertes.length > 0 && (
+          {activeTab === 'financieel' && projectOffertes.length > 0 && (
           <Card className="border-border/80 dark:border-border/80">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
@@ -2103,7 +2088,7 @@ export function ProjectDetail() {
           </Dialog>
 
           {/* ── Situatiefoto's ── */}
-          {sidebarConfig.fotos && (
+          {activeTab === 'bestanden' && (
           <ProjectPhotoGallery
             projectId={id!}
             userId={user?.id || ''}
@@ -2113,7 +2098,7 @@ export function ProjectDetail() {
           )}
 
           {/* ── Bestanden (drag & drop + upload button) ── */}
-          {sidebarConfig.bestanden && (
+          {activeTab === 'bestanden' && (
           <Card className="border-border/80 dark:border-border/80">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
@@ -2233,28 +2218,11 @@ export function ProjectDetail() {
           </Card>
           )}
 
-          {/* ── Snelle toevoeg-links voor lege categorieën ── */}
-          {(projectOffertes.length === 0 || projectWerkbonnen.length === 0 || projectMontages.length === 0) && (
-            <div className="flex flex-wrap gap-2">
-              {projectOffertes.length === 0 && (
-                <Button variant="outline" size="sm" className="h-7 text-xs" onClick={openNieuweOfferte}>
-                  <Plus className="h-3 w-3 mr-1" /> Offerte
-                </Button>
-              )}
-              {projectWerkbonnen.length === 0 && (
-                <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setShowWerkbonDialog(true)}>
-                  <Plus className="h-3 w-3 mr-1" /> Werkbon
-                </Button>
-              )}
-              {projectMontages.length === 0 && (
-                <Button variant="outline" size="sm" className="h-7 text-xs" onClick={handleOpenMontageDialog}>
-                  <Plus className="h-3 w-3 mr-1" /> Montage
-                </Button>
-              )}
-            </div>
+          {/* ── Portaal Tab ── */}
+          {activeTab === 'portaal' && project && (
+            <ProjectPortaalTab projectId={project.id} projectNaam={project.naam} />
           )}
-        </div>
-      </div>
+
 
       {/* ── AI Analyse dialog ── */}
       <Dialog open={aiAnalysisOpen} onOpenChange={setAiAnalysisOpen}>
