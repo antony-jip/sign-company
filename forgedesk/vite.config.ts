@@ -43,5 +43,46 @@ export default defineConfig({
     commonjsOptions: {
       transformMixedEsModules: true,
     },
+    rollupOptions: {
+      output: {
+        // Split chunks to prevent TDZ "Cannot access 'X' before initialization"
+        // errors caused by Rollup concatenating too many modules into a single
+        // scope where the initialisation order breaks.
+        manualChunks(id) {
+          // Vendor: React ecosystem
+          if (id.includes('node_modules/react/') ||
+              id.includes('node_modules/react-dom/') ||
+              id.includes('node_modules/react-router') ||
+              id.includes('node_modules/scheduler/')) {
+            return 'vendor-react'
+          }
+          // Vendor: Supabase
+          if (id.includes('node_modules/@supabase/')) {
+            return 'vendor-supabase'
+          }
+          // Vendor: Radix UI + class-variance-authority
+          if (id.includes('node_modules/@radix-ui/') ||
+              id.includes('node_modules/class-variance-authority')) {
+            return 'vendor-ui'
+          }
+          // Vendor: lucide icons
+          if (id.includes('node_modules/lucide-react')) {
+            return 'vendor-icons'
+          }
+          // Vendor: DOMPurify (CJS module — isolate to prevent TDZ with ESM)
+          if (id.includes('node_modules/dompurify')) {
+            return 'vendor-dompurify'
+          }
+          // Services layer — shared by many lazy chunks, must be separate
+          if (id.includes('/src/services/')) {
+            return 'services'
+          }
+          // Contexts — loaded eagerly, shared across all routes
+          if (id.includes('/src/contexts/')) {
+            return 'contexts'
+          }
+        },
+      },
+    },
   },
 })
