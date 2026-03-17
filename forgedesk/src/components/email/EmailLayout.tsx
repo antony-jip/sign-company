@@ -551,12 +551,15 @@ export function EmailLayout() {
 
   // ─── Handlers ───
   const handleSelectEmail = useCallback(async (email: Email) => {
-    const withBody = await loadEmailBody(email, selectedFolder)
-    if (!withBody.gelezen) {
-      setEmails(prev => prev.map(e => e.id === email.id ? { ...e, gelezen: true } : e))
-    }
-    setSelectedEmail(withBody)
+    // Show email immediately with what we have (subject, from, date)
+    setEmails(prev => prev.map(e => e.id === email.id ? { ...e, gelezen: true } : e))
+    setSelectedEmail({ ...email, gelezen: true })
     setViewMode('reading')
+
+    // Load body in background (async)
+    loadEmailBody(email, selectedFolder).then((withBody) => {
+      setSelectedEmail(withBody)
+    })
   }, [loadEmailBody, selectedFolder])
 
   const handleCompose = useCallback((defaults?: { to?: string; subject?: string; body?: string }) => {
