@@ -1829,7 +1829,7 @@ export function QuoteCreation() {
         <div className="relative max-w-2xl mx-auto px-4 py-8 md:py-12 animate-fade-in-up">
           {/* Header */}
           <div className="flex items-center gap-4 mb-8">
-            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-white/60 hover:bg-white/80 backdrop-blur-sm border border-white/40 shadow-sm" onClick={() => {
+            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-card/60 hover:bg-card/80 backdrop-blur-sm border border-card/40 shadow-sm" onClick={() => {
               const from = (location.state as { from?: string })?.from
               navigate(from || '/offertes')
             }}>
@@ -1846,7 +1846,7 @@ export function QuoteCreation() {
 
         <div className="space-y-4">
           {/* Klant */}
-          <div className="group rounded-2xl bg-white/80 dark:bg-card backdrop-blur-xl border border-white/60 dark:border-border shadow-lg shadow-black/[0.03] hover:shadow-xl hover:shadow-black/[0.06] transition-all duration-300 overflow-hidden">
+          <div className="group rounded-2xl bg-card/80 dark:bg-card backdrop-blur-xl border border-card/60 dark:border-border shadow-lg shadow-black/[0.03] hover:shadow-xl hover:shadow-black/[0.06] transition-all duration-300 overflow-hidden">
             <div className="h-1 bg-gradient-to-r from-rose-400 via-pink-400 to-rose-300" />
             <div className="flex items-center gap-3 px-6 pt-5 pb-1">
               <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-rose-400 to-pink-500 text-white text-xs font-bold shadow-md shadow-rose-500/20">1</div>
@@ -1859,10 +1859,10 @@ export function QuoteCreation() {
               <div className="space-y-2">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
-                  <Input value={klantSearch} onChange={(e) => setKlantSearch(e.target.value)} placeholder="Zoek op bedrijfsnaam, contactpersoon of email..." className="pl-10 h-11 bg-white/60 dark:bg-background border-border rounded-xl" />
+                  <Input value={klantSearch} onChange={(e) => setKlantSearch(e.target.value)} placeholder="Zoek op bedrijfsnaam, contactpersoon of email..." className="pl-10 h-11 bg-card/60 dark:bg-background border-border rounded-xl" />
                 </div>
                 <Select value={selectedKlantId} onValueChange={(val) => { setSelectedKlantId(val); setKlantSearch('') }}>
-                  <SelectTrigger className="h-11 bg-white/60 dark:bg-background border-border rounded-xl"><SelectValue placeholder="Selecteer een klant..." /></SelectTrigger>
+                  <SelectTrigger className="h-11 bg-card/60 dark:bg-background border-border rounded-xl"><SelectValue placeholder="Selecteer een klant..." /></SelectTrigger>
                   <SelectContent>
                     {filteredKlanten.map((klant) => (
                       <SelectItem key={klant.id} value={klant.id}>
@@ -1899,7 +1899,7 @@ export function QuoteCreation() {
                   <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">Project <span className="text-xs text-muted-foreground font-normal normal-case tracking-normal">(optioneel)</span></Label>
                   {klantProjecten.length > 0 ? (
                     <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
-                      <SelectTrigger className="h-11 bg-white/60 dark:bg-background border-border rounded-xl"><SelectValue placeholder="Koppel aan een project..." /></SelectTrigger>
+                      <SelectTrigger className="h-11 bg-card/60 dark:bg-background border-border rounded-xl"><SelectValue placeholder="Koppel aan een project..." /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="geen"><span className="text-muted-foreground">Geen project</span></SelectItem>
                         {klantProjecten.map((project) => (
@@ -1916,7 +1916,7 @@ export function QuoteCreation() {
           </div>
 
           {/* Contactpersoon */}
-          <div className="group rounded-2xl bg-white/80 dark:bg-card backdrop-blur-xl border border-white/60 dark:border-border shadow-lg shadow-black/[0.03] hover:shadow-xl hover:shadow-black/[0.06] transition-all duration-300 overflow-hidden">
+          <div className="group rounded-2xl bg-card/80 dark:bg-card backdrop-blur-xl border border-card/60 dark:border-border shadow-lg shadow-black/[0.03] hover:shadow-xl hover:shadow-black/[0.06] transition-all duration-300 overflow-hidden">
             <div className="h-1 bg-gradient-to-r from-violet-400 via-purple-400 to-violet-300" />
             <div className="flex items-center gap-3 px-6 pt-5 pb-1">
               <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-violet-400 to-purple-500 text-white text-xs font-bold shadow-md shadow-violet-500/20">2</div>
@@ -1959,10 +1959,10 @@ export function QuoteCreation() {
                   ) : (
                     <div className="rounded-xl border border-violet-200 dark:border-border bg-violet-50/30 dark:bg-muted/20 p-4 space-y-2.5">
                       <p className="text-xs font-semibold text-foreground flex items-center gap-1.5"><UserPlus className="h-3.5 w-3.5 text-violet-500" />Nieuwe contactpersoon</p>
-                      <Input value={newContactNaam} onChange={(e) => setNewContactNaam(e.target.value)} placeholder="Naam *" className="h-9 text-sm rounded-lg bg-white/80 dark:bg-background" autoFocus />
-                      <Input value={newContactFunctie} onChange={(e) => setNewContactFunctie(e.target.value)} placeholder="Functie" className="h-9 text-sm rounded-lg bg-white/80 dark:bg-background" />
-                      <Input value={newContactEmail} onChange={(e) => setNewContactEmail(e.target.value)} placeholder="E-mailadres" type="email" className="h-9 text-sm rounded-lg bg-white/80 dark:bg-background" />
-                      <Input value={newContactTelefoon} onChange={(e) => setNewContactTelefoon(e.target.value)} placeholder="Telefoonnummer" className="h-9 text-sm rounded-lg bg-white/80 dark:bg-background" />
+                      <Input value={newContactNaam} onChange={(e) => setNewContactNaam(e.target.value)} placeholder="Naam *" className="h-9 text-sm rounded-lg bg-card/80 dark:bg-background" autoFocus />
+                      <Input value={newContactFunctie} onChange={(e) => setNewContactFunctie(e.target.value)} placeholder="Functie" className="h-9 text-sm rounded-lg bg-card/80 dark:bg-background" />
+                      <Input value={newContactEmail} onChange={(e) => setNewContactEmail(e.target.value)} placeholder="E-mailadres" type="email" className="h-9 text-sm rounded-lg bg-card/80 dark:bg-background" />
+                      <Input value={newContactTelefoon} onChange={(e) => setNewContactTelefoon(e.target.value)} placeholder="Telefoonnummer" className="h-9 text-sm rounded-lg bg-card/80 dark:bg-background" />
                       <div className="flex items-center gap-2 pt-1">
                         <Button size="sm" onClick={handleAddContact} disabled={!newContactNaam.trim()} className="h-7 text-xs gap-1 rounded-lg"><Plus className="h-3 w-3" />Toevoegen</Button>
                         <Button variant="ghost" size="sm" onClick={() => { setShowNewContact(false); setNewContactNaam(''); setNewContactFunctie(''); setNewContactEmail(''); setNewContactTelefoon('') }} className="h-7 text-xs">Annuleren</Button>
@@ -1972,7 +1972,7 @@ export function QuoteCreation() {
                   {!showNewContact && (
                     <div className="space-y-1.5 pt-2 border-t border-border">
                       <Label className="text-xs text-muted-foreground">Of typ een naam</Label>
-                      <Input value={contactpersoon} onChange={(e) => { setContactpersoon(e.target.value); setSelectedContactId('') }} placeholder="Contactpersoon naam..." className="h-9 text-sm rounded-lg bg-white/60 dark:bg-background" />
+                      <Input value={contactpersoon} onChange={(e) => { setContactpersoon(e.target.value); setSelectedContactId('') }} placeholder="Contactpersoon naam..." className="h-9 text-sm rounded-lg bg-card/60 dark:bg-background" />
                     </div>
                   )}
                 </>
@@ -1988,7 +1988,7 @@ export function QuoteCreation() {
           </div>
 
           {/* Offerte details */}
-          <div className="group rounded-2xl bg-white/80 dark:bg-card backdrop-blur-xl border border-white/60 dark:border-border shadow-lg shadow-black/[0.03] hover:shadow-xl hover:shadow-black/[0.06] transition-all duration-300 overflow-hidden">
+          <div className="group rounded-2xl bg-card/80 dark:bg-card backdrop-blur-xl border border-card/60 dark:border-border shadow-lg shadow-black/[0.03] hover:shadow-xl hover:shadow-black/[0.06] transition-all duration-300 overflow-hidden">
             <div className="h-1 bg-gradient-to-r from-blue-400 via-indigo-400 to-blue-300" />
             <div className="flex items-center gap-3 px-6 pt-5 pb-1">
               <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-blue-400 to-indigo-500 text-white text-xs font-bold shadow-md shadow-blue-500/20">3</div>
@@ -2000,7 +2000,7 @@ export function QuoteCreation() {
             <div className="px-6 pb-6 pt-3 space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="offerte-titel" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Titel</Label>
-                <Input id="offerte-titel" value={offerteTitel} onChange={(e) => setOfferteTitel(e.target.value)} placeholder="bijv. Gevelreclame nieuwe locatie, Autobelettering wagenpark..." className="text-base h-11 bg-white/60 dark:bg-background border-border rounded-xl" autoFocus />
+                <Input id="offerte-titel" value={offerteTitel} onChange={(e) => setOfferteTitel(e.target.value)} placeholder="bijv. Gevelreclame nieuwe locatie, Autobelettering wagenpark..." className="text-base h-11 bg-card/60 dark:bg-background border-border rounded-xl" autoFocus />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -2009,14 +2009,14 @@ export function QuoteCreation() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="geldig-tot" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Geldig tot</Label>
-                  <Input id="geldig-tot" type="date" value={geldigTot} onChange={(e) => setGeldigTot(e.target.value)} className="text-sm h-11 bg-white/60 dark:bg-background border-border rounded-xl" />
+                  <Input id="geldig-tot" type="date" value={geldigTot} onChange={(e) => setGeldigTot(e.target.value)} className="text-sm h-11 bg-card/60 dark:bg-background border-border rounded-xl" />
                 </div>
               </div>
             </div>
           </div>
 
           {/* Hoeveel items? */}
-          <div className="group rounded-2xl bg-white/80 dark:bg-card backdrop-blur-xl border border-white/60 dark:border-border shadow-lg shadow-black/[0.03] hover:shadow-xl hover:shadow-black/[0.06] transition-all duration-300 overflow-hidden">
+          <div className="group rounded-2xl bg-card/80 dark:bg-card backdrop-blur-xl border border-card/60 dark:border-border shadow-lg shadow-black/[0.03] hover:shadow-xl hover:shadow-black/[0.06] transition-all duration-300 overflow-hidden">
             <div className="h-1 bg-gradient-to-r from-amber-400 via-orange-400 to-amber-300" />
             <div className="flex items-center gap-3 px-6 pt-5 pb-1">
               <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 text-white text-xs font-bold shadow-md shadow-amber-500/20">4</div>
@@ -2029,7 +2029,7 @@ export function QuoteCreation() {
               <p className="text-sm text-muted-foreground mb-4">Elk item is een complete prijsberekening. Je kunt later altijd items toevoegen of verwijderen.</p>
               <div className="flex items-center gap-2.5">
                 {ITEM_COUNT_OPTIONS.map((count) => (
-                  <button key={count} onClick={() => setItemCount(count)} className={cn('h-12 w-12 rounded-xl text-base font-bold transition-all border-2', itemCount === count ? 'border-amber-400 bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-lg shadow-amber-500/20' : 'border-border bg-white/60 dark:bg-background text-foreground hover:border-amber-300 hover:shadow-md')}>
+                  <button key={count} onClick={() => setItemCount(count)} className={cn('h-12 w-12 rounded-xl text-base font-bold transition-all border-2', itemCount === count ? 'border-amber-400 bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-lg shadow-amber-500/20' : 'border-border bg-card/60 dark:bg-background text-foreground hover:border-amber-300 hover:shadow-md')}>
                     {count}
                   </button>
                 ))}
@@ -2059,11 +2059,11 @@ export function QuoteCreation() {
       <div className="fixed inset-0 bg-gradient-to-br from-[#fdf2f8] via-[#faf5ff] to-[#eff6ff] dark:from-background dark:via-background dark:to-background pointer-events-none" />
     <div className="relative pb-6 px-4 py-8 md:py-12 mod-strip mod-strip-offertes">
       {/* ──── HEADER BAR ──── */}
-      <div className="rounded-xl bg-gradient-to-r from-white/90 to-rose-50/60 dark:bg-card dark:from-card dark:to-card backdrop-blur-sm border border-border-primary/50 px-4 py-3 mb-6">
+      <div className="rounded-xl bg-gradient-to-r from-card/90 to-rose-50/60 dark:bg-card dark:from-card dark:to-card backdrop-blur-sm border border-border-primary/50 px-4 py-3 mb-6">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           {/* Left: Back + Title + Badges */}
           <div className="flex items-center gap-3 min-w-0">
-            <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-white/50 dark:hover:bg-foreground/80/50 flex-shrink-0" onClick={() => {
+            <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-card/50 dark:hover:bg-card/50 flex-shrink-0" onClick={() => {
               const from = (location.state as { from?: string })?.from
               navigate(from || '/offertes')
             }}>
@@ -2072,7 +2072,7 @@ export function QuoteCreation() {
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-2xl font-bold tracking-tight text-foreground truncate">{isEditMode ? 'Offerte Bewerken' : 'Nieuwe Offerte'}</h1>
-                <Badge variant="outline" className="text-xs font-mono bg-white/50 dark:bg-foreground/80/50 flex-shrink-0"><Hash className="h-3 w-3 mr-1" />{offerteNummer}</Badge>
+                <Badge variant="outline" className="text-xs font-mono bg-card/50 dark:bg-card/50 flex-shrink-0"><Hash className="h-3 w-3 mr-1" />{offerteNummer}</Badge>
                 {versieNummer > 1 && (
                   <Badge variant="outline" className="text-2xs bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 border-purple-200 cursor-pointer flex-shrink-0" onClick={() => setShowVersieHistorie(!showVersieHistorie)}>v{versieNummer}</Badge>
                 )}

@@ -841,7 +841,7 @@ export function WerkbonDetail() {
                 </div>
                 {handtekeningData && !isEditingSignature ? (
                   <div className="space-y-2">
-                    <img src={handtekeningData} alt="Handtekening" className="border rounded-lg bg-white max-w-[300px]" />
+                    <img src={handtekeningData} alt="Handtekening" className="border rounded-lg bg-card max-w-[300px]" />
                     <div className="flex gap-2">
                       <Button variant="outline" size="sm" onClick={() => setIsEditingSignature(true)}>
                         <Pen className="h-3 w-3 mr-1" /> Bewerken
@@ -857,7 +857,7 @@ export function WerkbonDetail() {
                       ref={canvasRef}
                       width={300}
                       height={150}
-                      className="border rounded-lg bg-white cursor-crosshair touch-none"
+                      className="border rounded-lg bg-card cursor-crosshair touch-none"
                       onMouseDown={startDraw}
                       onMouseMove={draw}
                       onMouseUp={endDraw}

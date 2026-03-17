@@ -273,7 +273,7 @@ export function EmailCompose({
   if (!open) return null
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full bg-card">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-2 border-b border-border/50 flex-shrink-0">
         <div className="flex items-center gap-2">
@@ -314,7 +314,7 @@ export function EmailCompose({
             </div>
             {/* Autocomplete dropdown */}
             {showSuggestions && suggestions.length > 0 && (
-              <div className="absolute left-12 top-full mt-1 w-80 bg-white rounded-lg border border-border shadow-lg z-50 py-1">
+              <div className="absolute left-12 top-full mt-1 w-80 bg-card rounded-lg border border-border shadow-lg z-50 py-1">
                 {suggestions.map(klant => (
                   <button
                     key={klant.id}
@@ -385,7 +385,7 @@ export function EmailCompose({
               {showTemplateMenu && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setShowTemplateMenu(false)} />
-                  <div className="absolute left-0 top-full mt-1 w-48 bg-white rounded-lg border border-border shadow-lg z-50 py-1">
+                  <div className="absolute left-0 top-full mt-1 w-48 bg-card rounded-lg border border-border shadow-lg z-50 py-1">
                     {Object.entries(emailTemplates).filter(([k]) => k !== 'none').map(([key, tmpl]) => (
                       <button
                         key={key}
@@ -412,7 +412,7 @@ export function EmailCompose({
               {showMergeFields && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setShowMergeFields(false)} />
-                  <div className="absolute left-0 top-full mt-1 w-40 bg-white rounded-lg border border-border shadow-lg z-50 py-1">
+                  <div className="absolute left-0 top-full mt-1 w-40 bg-card rounded-lg border border-border shadow-lg z-50 py-1">
                     {mergeFields.map(field => (
                       <button
                         key={field.id}

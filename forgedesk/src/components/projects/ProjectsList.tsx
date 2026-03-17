@@ -571,7 +571,7 @@ export function ProjectsList() {
             {/* Selecteer alles toggle */}
             <button
               onClick={toggleSelectAll}
-              className="text-xs font-semibold px-2.5 py-1 rounded-md transition-all hover:bg-white/40"
+              className="text-xs font-semibold px-2.5 py-1 rounded-md transition-all hover:bg-card/40"
               style={{ color: 'var(--color-sage-text)' }}
             >
               {selectedIds.size === gefilterdeProjecten.length ? 'Deselecteer alles' : 'Selecteer alles'}
@@ -582,7 +582,7 @@ export function ProjectsList() {
             {/* Status wijzigen knop */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-1.5 h-8 px-3.5 rounded-lg text-xs font-semibold shadow-sm transition-all hover:shadow-md bg-white/90 backdrop-blur-sm border" style={{ color: 'var(--color-sage-text)', borderColor: 'var(--color-sage-border)' }}>
+                <button className="flex items-center gap-1.5 h-8 px-3.5 rounded-lg text-xs font-semibold shadow-sm transition-all hover:shadow-md bg-card/90 backdrop-blur-sm border" style={{ color: 'var(--color-sage-text)', borderColor: 'var(--color-sage-border)' }}>
                   <ArrowUpDown className="w-3 h-3" />
                   Status wijzigen
                   <ChevronDown className="w-3 h-3 opacity-50" />
@@ -605,7 +605,7 @@ export function ProjectsList() {
             {/* Sluiten */}
             <button
               onClick={() => setSelectedIds(new Set())}
-              className="h-7 w-7 rounded-lg flex items-center justify-center transition-all hover:bg-white/40"
+              className="h-7 w-7 rounded-lg flex items-center justify-center transition-all hover:bg-card/40"
               style={{ color: 'var(--color-sage-text)' }}
             >
               <X className="w-3.5 h-3.5" />

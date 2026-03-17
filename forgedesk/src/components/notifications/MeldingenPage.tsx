@@ -41,7 +41,7 @@ const typeConfig: Record<
   portaal_goedkeuring: { icon: CheckCircle2, colorClass: 'text-green-600', bgClass: 'bg-green-100', label: 'Portaal goedkeuring', categorie: 'portaal' },
   portaal_revisie:     { icon: RotateCcw, colorClass: 'text-amber-600', bgClass: 'bg-amber-100', label: 'Portaal revisie', categorie: 'portaal' },
   portaal_bericht:     { icon: MessageSquare, colorClass: 'text-blue-600', bgClass: 'bg-blue-100', label: 'Portaal bericht', categorie: 'portaal' },
-  portaal_bekeken:     { icon: Eye, colorClass: 'text-gray-600', bgClass: 'bg-gray-100', label: 'Portaal bekeken', categorie: 'portaal' },
+  portaal_bekeken:     { icon: Eye, colorClass: 'text-muted-foreground', bgClass: 'bg-gray-100', label: 'Portaal bekeken', categorie: 'portaal' },
   portaal_herinnering: { icon: BellRing, colorClass: 'text-orange-600', bgClass: 'bg-orange-100', label: 'Portaal herinnering', categorie: 'portaal' },
 }
 

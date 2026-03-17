@@ -851,7 +851,7 @@ export function ProjectDetail() {
                 <div>
                   <h1 className="text-xl font-medium text-foreground leading-tight">{project.naam}</h1>
                   {project.project_nummer && (
-                    <span className="text-xs text-gray-400 font-mono">{project.project_nummer}</span>
+                    <span className="text-xs text-muted-foreground/60 font-mono">{project.project_nummer}</span>
                   )}
                 </div>
                 <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1.5">

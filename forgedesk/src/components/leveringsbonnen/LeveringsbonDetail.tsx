@@ -574,7 +574,7 @@ export function LeveringsbonDetail() {
                 ref={canvasRef}
                 width={500}
                 height={160}
-                className="w-full h-40 cursor-crosshair bg-white rounded touch-none"
+                className="w-full h-40 cursor-crosshair bg-card rounded touch-none"
                 onMouseDown={startDraw}
                 onMouseMove={draw}
                 onMouseUp={endDraw}

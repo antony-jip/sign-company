@@ -2307,7 +2307,7 @@ function InstellingenSection() {
             </div>
 
             {/* Rechts: live preview */}
-            <div className="bg-white dark:bg-card rounded-xl border border-black/[0.06] shadow-sm p-4 space-y-3">
+            <div className="bg-card rounded-xl border border-border shadow-sm p-4 space-y-3">
               <p className="text-2xs font-bold text-text-tertiary uppercase tracking-label">Uren &amp; Materiaal</p>
               <div className="space-y-1.5">
                 {urenVelden.map((veld, i) => {

@@ -1257,7 +1257,7 @@ function SignatureImageUpload({
       {imageUrl ? (
         <div className="space-y-3">
           <div className="flex items-start gap-3">
-            <div className="relative border rounded-lg p-2 bg-white dark:bg-muted">
+            <div className="relative border border-border rounded-lg p-2 bg-card">
               <img
                 src={imageUrl}
                 alt="Handtekening afbeelding"
@@ -1335,7 +1335,7 @@ function SignaturePreview({
   return (
     <div className="space-y-2">
       <Label className="text-xs uppercase tracking-label text-muted-foreground">Voorbeeld</Label>
-      <div className="border rounded-lg p-4 bg-white dark:bg-muted/30 space-y-3">
+      <div className="border border-border rounded-lg p-4 bg-card space-y-3">
         <div className="border-t border-muted pt-3">
           {afbeelding && (
             <img

@@ -63,7 +63,7 @@ function SubTabNav({ tabs, active, onChange }: { tabs: SubTab[]; active: string;
             className={cn(
               'flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap',
               isActive
-                ? 'bg-white dark:bg-foreground/70 text-foreground dark:text-white shadow-sm'
+                ? 'bg-card text-foreground shadow-sm'
                 : 'text-muted-foreground dark:text-muted-foreground/60 hover:text-foreground/70 dark:hover:text-muted-foreground/50'
             )}
           >
@@ -110,8 +110,8 @@ function DocumentPreview({ style, logoUrl, bedrijfsnaam, bedrijfsAdres, kvkNumme
     : 'relative'
 
   const pageClass = fullscreen
-    ? 'w-[595px] h-[842px] bg-white shadow-2xl overflow-hidden'
-    : 'w-full aspect-[210/297] bg-white shadow-lg border border-border dark:border-border overflow-hidden rounded-lg'
+    ? 'w-[595px] h-[842px] bg-card shadow-2xl overflow-hidden'
+    : 'w-full aspect-[210/297] bg-card shadow-lg border border-border overflow-hidden rounded-lg'
 
   return (
     <div className={containerClass}>
@@ -128,7 +128,7 @@ function DocumentPreview({ style, logoUrl, bedrijfsnaam, bedrijfsAdres, kvkNumme
         {!fullscreen && (
           <button
             onClick={() => setFullscreen(true)}
-            className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 dark:bg-foreground/80/90 rounded-lg p-1.5 shadow-sm"
+            className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-card/90 rounded-lg p-1.5 shadow-sm"
           >
             <Maximize2 className="w-3.5 h-3.5 text-muted-foreground dark:text-muted-foreground/50" />
           </button>

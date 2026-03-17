@@ -120,7 +120,7 @@ const typeConfig: Record<
   },
   portaal_bekeken: {
     icon: Eye,
-    colorClass: "text-gray-600",
+    colorClass: "text-muted-foreground",
     bgClass: "bg-gray-100",
   },
   portaal_herinnering: {
@@ -264,7 +264,7 @@ function NotificatieToast({
     <div className="fixed top-4 right-4 z-[100] animate-in slide-in-from-top-2 fade-in duration-300">
       <button
         onClick={onClick}
-        className="flex items-start gap-3 w-96 bg-white dark:bg-gray-900 border border-border rounded-lg shadow-lg p-4 hover:bg-accent/50 transition-colors text-left"
+        className="flex items-start gap-3 w-96 bg-card dark:bg-foreground border border-border rounded-lg shadow-lg p-4 hover:bg-accent/50 transition-colors text-left"
       >
         <div
           className={cn(

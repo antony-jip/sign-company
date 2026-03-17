@@ -127,7 +127,7 @@ export function ProjectCreate() {
       <div className="relative max-w-2xl mx-auto px-4 py-8 md:py-12 animate-fade-in-up">
       {/* Header */}
       <div className="flex items-center gap-4 mb-8">
-        <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-white/60 hover:bg-white/80 backdrop-blur-sm border border-white/40 shadow-sm" onClick={() => navigate('/projecten')}>
+        <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-card/60 hover:bg-card/80 backdrop-blur-sm border border-white/40 shadow-sm" onClick={() => navigate('/projecten')}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-teal-400 to-emerald-600 flex items-center justify-center shadow-lg shadow-teal-500/25 ring-4 ring-teal-100/50">
@@ -141,7 +141,7 @@ export function ProjectCreate() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Project info */}
-        <div className="group rounded-2xl bg-white/80 dark:bg-card backdrop-blur-xl border border-white/60 dark:border-border shadow-lg shadow-black/[0.03] hover:shadow-xl hover:shadow-black/[0.06] transition-all duration-300 overflow-hidden">
+        <div className="group rounded-2xl bg-card/80 dark:bg-card backdrop-blur-xl border border-white/60 dark:border-border shadow-lg shadow-black/[0.03] hover:shadow-xl hover:shadow-black/[0.06] transition-all duration-300 overflow-hidden">
           <div className="h-1 bg-gradient-to-r from-teal-400 via-emerald-400 to-teal-300" />
           <div className="flex items-center gap-3 px-6 pt-5 pb-1">
             <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-teal-400 to-emerald-500 text-white text-xs font-bold shadow-md shadow-teal-500/20">1</div>
@@ -160,7 +160,7 @@ export function ProjectCreate() {
                 value={naam}
                 onChange={(e) => setNaam(e.target.value)}
                 placeholder="Bijv. Gevelbelettering Bakkerij Jansen"
-                className="h-11 bg-white/60 dark:bg-background border-border focus:border-teal-400 focus:ring-2 focus:ring-teal-400/20 rounded-xl text-base"
+                className="h-11 bg-card/60 dark:bg-background border-border focus:border-teal-400 focus:ring-2 focus:ring-teal-400/20 rounded-xl text-base"
                 required
               />
             </div>
@@ -175,14 +175,14 @@ export function ProjectCreate() {
                 onChange={(e) => setBeschrijving(e.target.value)}
                 placeholder="Korte omschrijving van het project..."
                 rows={3}
-                className="resize-none bg-white/60 dark:bg-background border-border focus:border-teal-400 focus:ring-2 focus:ring-teal-400/20 rounded-xl"
+                className="resize-none bg-card/60 dark:bg-background border-border focus:border-teal-400 focus:ring-2 focus:ring-teal-400/20 rounded-xl"
               />
             </div>
           </div>
         </div>
 
         {/* Klant + Contactpersoon */}
-        <div className="group rounded-2xl bg-white/80 dark:bg-card backdrop-blur-xl border border-white/60 dark:border-border shadow-lg shadow-black/[0.03] hover:shadow-xl hover:shadow-black/[0.06] transition-all duration-300 overflow-hidden">
+        <div className="group rounded-2xl bg-card/80 dark:bg-card backdrop-blur-xl border border-white/60 dark:border-border shadow-lg shadow-black/[0.03] hover:shadow-xl hover:shadow-black/[0.06] transition-all duration-300 overflow-hidden">
           <div className="h-1 bg-gradient-to-r from-blue-400 via-indigo-400 to-blue-300" />
           <div className="flex items-center gap-3 px-6 pt-5 pb-1">
             <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-blue-400 to-indigo-500 text-white text-xs font-bold shadow-md shadow-blue-500/20">2</div>
@@ -197,7 +197,7 @@ export function ProjectCreate() {
                 Klant
               </Label>
               <Select value={klantId} onValueChange={setKlantId}>
-                <SelectTrigger className="h-11 bg-white/60 dark:bg-background border-border rounded-xl">
+                <SelectTrigger className="h-11 bg-card/60 dark:bg-background border-border rounded-xl">
                   <SelectValue placeholder={klanten.length === 0 ? 'Geen klanten' : 'Selecteer klant'} />
                 </SelectTrigger>
                 <SelectContent>
@@ -221,7 +221,7 @@ export function ProjectCreate() {
                 onValueChange={setContactpersoonId}
                 disabled={!klantId || contactpersonen.length === 0}
               >
-                <SelectTrigger className="h-11 bg-white/60 dark:bg-background border-border rounded-xl">
+                <SelectTrigger className="h-11 bg-card/60 dark:bg-background border-border rounded-xl">
                   <SelectValue
                     placeholder={
                       !klantId
@@ -250,7 +250,7 @@ export function ProjectCreate() {
                   Vestiging
                 </Label>
                 <Select value={vestigingId} onValueChange={setVestigingId}>
-                  <SelectTrigger className="h-11 bg-white/60 dark:bg-background border-border rounded-xl">
+                  <SelectTrigger className="h-11 bg-card/60 dark:bg-background border-border rounded-xl">
                     <SelectValue placeholder="Selecteer vestiging (optioneel)" />
                   </SelectTrigger>
                   <SelectContent>
@@ -268,7 +268,7 @@ export function ProjectCreate() {
         </div>
 
         {/* Status + Datums */}
-        <div className="group rounded-2xl bg-white/80 dark:bg-card backdrop-blur-xl border border-white/60 dark:border-border shadow-lg shadow-black/[0.03] hover:shadow-xl hover:shadow-black/[0.06] transition-all duration-300 overflow-hidden">
+        <div className="group rounded-2xl bg-card/80 dark:bg-card backdrop-blur-xl border border-white/60 dark:border-border shadow-lg shadow-black/[0.03] hover:shadow-xl hover:shadow-black/[0.06] transition-all duration-300 overflow-hidden">
           <div className="h-1 bg-gradient-to-r from-amber-400 via-orange-400 to-amber-300" />
           <div className="flex items-center gap-3 px-6 pt-5 pb-1">
             <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 text-white text-xs font-bold shadow-md shadow-amber-500/20">3</div>
@@ -281,7 +281,7 @@ export function ProjectCreate() {
             <div>
               <Label className="text-xs font-semibold text-muted-foreground mb-2 block uppercase tracking-wider">Status</Label>
               <Select value={status} onValueChange={(value: typeof status) => setStatus(value)}>
-                <SelectTrigger className="h-11 bg-white/60 dark:bg-background border-border rounded-xl">
+                <SelectTrigger className="h-11 bg-card/60 dark:bg-background border-border rounded-xl">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -301,7 +301,7 @@ export function ProjectCreate() {
                 type="date"
                 value={startDatum}
                 onChange={(e) => setStartDatum(e.target.value)}
-                className="h-11 bg-white/60 dark:bg-background border-border rounded-xl"
+                className="h-11 bg-card/60 dark:bg-background border-border rounded-xl"
               />
             </div>
 
@@ -311,7 +311,7 @@ export function ProjectCreate() {
                 type="date"
                 value={eindDatum}
                 onChange={(e) => setEindDatum(e.target.value)}
-                className="h-11 bg-white/60 dark:bg-background border-border rounded-xl"
+                className="h-11 bg-card/60 dark:bg-background border-border rounded-xl"
               />
             </div>
           </div>
@@ -324,7 +324,7 @@ export function ProjectCreate() {
             variant="ghost"
             size="sm"
             onClick={() => navigate('/projecten')}
-            className="text-muted-foreground hover:bg-white/60 rounded-xl px-5"
+            className="text-muted-foreground hover:bg-card/60 rounded-xl px-5"
           >
             Annuleren
           </Button>

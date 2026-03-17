@@ -408,7 +408,7 @@ export function SalesFollowUpWidget() {
                       'text-xs rounded-lg data-[state=active]:shadow-sm transition-all',
                       overdueItems.length > 0
                         ? 'data-[state=active]:bg-red-50 data-[state=active]:text-red-700 dark:data-[state=active]:bg-red-900/40 dark:data-[state=active]:text-red-300'
-                        : 'data-[state=active]:bg-white dark:data-[state=active]:bg-foreground/70'
+                        : 'data-[state=active]:bg-card dark:data-[state=active]:bg-foreground/70'
                     )}
                   >
                     <AlertTriangle className="h-3 w-3 mr-1" />
@@ -426,7 +426,7 @@ export function SalesFollowUpWidget() {
                       'text-xs rounded-lg data-[state=active]:shadow-sm transition-all',
                       todayItems.length > 0
                         ? 'data-[state=active]:bg-orange-50 data-[state=active]:text-orange-700 dark:data-[state=active]:bg-orange-900/40 dark:data-[state=active]:text-orange-300'
-                        : 'data-[state=active]:bg-white dark:data-[state=active]:bg-foreground/70'
+                        : 'data-[state=active]:bg-card dark:data-[state=active]:bg-foreground/70'
                     )}
                   >
                     <Clock className="h-3 w-3 mr-1" />
@@ -443,7 +443,7 @@ export function SalesFollowUpWidget() {
                       'text-xs rounded-lg data-[state=active]:shadow-sm transition-all',
                       upcomingItems.length > 0
                         ? 'data-[state=active]:bg-primary/10 data-[state=active]:text-accent dark:data-[state=active]:bg-primary/20 dark:data-[state=active]:text-wm-light'
-                        : 'data-[state=active]:bg-white dark:data-[state=active]:bg-foreground/70'
+                        : 'data-[state=active]:bg-card dark:data-[state=active]:bg-foreground/70'
                     )}
                   >
                     <CalendarClock className="h-3 w-3 mr-1" />

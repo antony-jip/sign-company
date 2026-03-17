@@ -138,7 +138,7 @@ export function CalendarMiniWidget() {
                     className={cn(
                       'absolute bottom-0.5 h-1 w-1 rounded-full',
                       isTodayDate
-                        ? 'bg-white'
+                        ? 'bg-card'
                         : 'bg-primary dark:bg-primary'
                     )}
                   />
