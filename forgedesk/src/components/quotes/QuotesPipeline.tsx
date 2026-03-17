@@ -1241,7 +1241,7 @@ export function QuotesPipeline() {
                 return (
                   <div
                     key={col.key}
-                    className="text-center p-5 rounded-xl bg-background/80 dark:bg-foreground/70/30 border border-border dark:border-border/50 transition-shadow hover:shadow-sm"
+                    className="text-center p-5 rounded-xl bg-background/80 dark:bg-muted/30 border border-border dark:border-border/50 transition-shadow hover:shadow-sm"
                   >
                     <div className="flex items-center justify-center gap-1.5 mb-2">
                       <div className={`w-2 h-2 rounded-full ${col.accent}`} />

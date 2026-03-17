@@ -2737,7 +2737,7 @@ export function QuoteCreation() {
                                 <span className={cn('text-lg font-bold font-mono', margeColor.text)}>{totaalInkoop > 0 ? `${margePercentage.toFixed(1)}%` : '—'}</span>
                               </div>
                               {totaalInkoop > 0 && (
-                                <div className="mt-2 h-1.5 rounded-full bg-secondary dark:bg-foreground/70">
+                                <div className="mt-2 h-1.5 rounded-full bg-secondary dark:bg-muted">
                                   <div className={cn('h-full rounded-full transition-all', margeColor.bar)} style={{ width: `${Math.min(100, Math.max(0, margePercentage))}%` }} />
                                 </div>
                               )}

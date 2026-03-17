@@ -1368,7 +1368,7 @@ export function QuoteItemsTable({
                                 <span className="text-xs text-muted-foreground">
                                   ({formatCurrency(margeData.marge)})
                                 </span>
-                                <div className="flex-1 h-1.5 rounded-full bg-secondary dark:bg-foreground/70 max-w-[120px]">
+                                <div className="flex-1 h-1.5 rounded-full bg-secondary dark:bg-muted max-w-[120px]">
                                   <div
                                     className={cn('h-full rounded-full transition-all', colors.bar)}
                                     style={{ width: `${Math.min(100, Math.max(0, margeData.percentage))}%` }}
@@ -1569,7 +1569,7 @@ export function QuoteItemsTable({
                                       <span className="text-2xs text-muted-foreground">
                                         ({formatCurrency(margeData.marge)})
                                       </span>
-                                      <div className="flex-1 h-1 rounded-full bg-secondary dark:bg-foreground/70 max-w-[100px]">
+                                      <div className="flex-1 h-1 rounded-full bg-secondary dark:bg-muted max-w-[100px]">
                                         <div
                                           className={cn('h-full rounded-full transition-all', colors.bar)}
                                           style={{ width: `${Math.min(100, Math.max(0, margeData.percentage))}%` }}

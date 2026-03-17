@@ -379,7 +379,7 @@ export function DealDetail() {
                   type="range" min={0} max={100} step={5}
                   value={kansPercentage}
                   onChange={(e) => setKansPercentage(parseInt(e.target.value))}
-                  className="w-full h-2 bg-secondary rounded-lg appearance-none cursor-pointer dark:bg-foreground/70 accent-blue-500"
+                  className="w-full h-2 bg-secondary rounded-lg appearance-none cursor-pointer dark:bg-muted accent-blue-500"
                 />
                 <div className="flex justify-between text-2xs text-muted-foreground/60">
                   <span>0%</span><span>50%</span><span>100%</span>

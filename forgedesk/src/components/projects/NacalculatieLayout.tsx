@@ -284,8 +284,8 @@ export function NacalculatieLayout() {
             <Card key={i}>
               <CardContent className="p-5">
                 <div className="animate-pulse space-y-3">
-                  <div className="h-4 bg-secondary dark:bg-foreground/70 rounded w-24" />
-                  <div className="h-8 bg-secondary dark:bg-foreground/70 rounded w-32" />
+                  <div className="h-4 bg-secondary dark:bg-muted rounded w-24" />
+                  <div className="h-8 bg-secondary dark:bg-muted rounded w-32" />
                 </div>
               </CardContent>
             </Card>
@@ -294,9 +294,9 @@ export function NacalculatieLayout() {
         <Card>
           <CardContent className="p-8">
             <div className="animate-pulse space-y-4">
-              <div className="h-4 bg-secondary dark:bg-foreground/70 rounded w-full" />
-              <div className="h-4 bg-secondary dark:bg-foreground/70 rounded w-3/4" />
-              <div className="h-4 bg-secondary dark:bg-foreground/70 rounded w-1/2" />
+              <div className="h-4 bg-secondary dark:bg-muted rounded w-full" />
+              <div className="h-4 bg-secondary dark:bg-muted rounded w-3/4" />
+              <div className="h-4 bg-secondary dark:bg-muted rounded w-1/2" />
             </div>
           </CardContent>
         </Card>
@@ -887,7 +887,7 @@ export function NacalculatieLayout() {
                       }
                     </span>
                   </div>
-                  <div className="h-3 bg-secondary dark:bg-foreground/70 rounded-full overflow-hidden flex">
+                  <div className="h-3 bg-secondary dark:bg-muted rounded-full overflow-hidden flex">
                     <div
                       className="bg-primary h-full transition-all duration-300"
                       style={{

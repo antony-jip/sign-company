@@ -441,22 +441,22 @@ export function CommandPalette() {
         {/* Footer hints */}
         <div className="flex items-center gap-4 px-4 py-2.5 border-t border-border dark:border-border bg-background dark:bg-muted/50">
           <span className="flex items-center gap-1.5 text-xs text-muted-foreground/60 dark:text-muted-foreground">
-            <kbd className="inline-flex items-center justify-center w-5 h-5 rounded bg-secondary dark:bg-foreground/70 text-2xs font-semibold text-muted-foreground dark:text-muted-foreground/60">
+            <kbd className="inline-flex items-center justify-center w-5 h-5 rounded bg-secondary dark:bg-muted text-2xs font-semibold text-muted-foreground dark:text-muted-foreground/60">
               &uarr;
             </kbd>
-            <kbd className="inline-flex items-center justify-center w-5 h-5 rounded bg-secondary dark:bg-foreground/70 text-2xs font-semibold text-muted-foreground dark:text-muted-foreground/60">
+            <kbd className="inline-flex items-center justify-center w-5 h-5 rounded bg-secondary dark:bg-muted text-2xs font-semibold text-muted-foreground dark:text-muted-foreground/60">
               &darr;
             </kbd>
             Navigeer
           </span>
           <span className="flex items-center gap-1.5 text-xs text-muted-foreground/60 dark:text-muted-foreground">
-            <kbd className="inline-flex items-center justify-center h-5 px-1.5 rounded bg-secondary dark:bg-foreground/70 text-2xs font-semibold text-muted-foreground dark:text-muted-foreground/60">
+            <kbd className="inline-flex items-center justify-center h-5 px-1.5 rounded bg-secondary dark:bg-muted text-2xs font-semibold text-muted-foreground dark:text-muted-foreground/60">
               Enter
             </kbd>
             Openen
           </span>
           <span className="flex items-center gap-1.5 text-xs text-muted-foreground/60 dark:text-muted-foreground">
-            <kbd className="inline-flex items-center justify-center h-5 px-1.5 rounded bg-secondary dark:bg-foreground/70 text-2xs font-semibold text-muted-foreground dark:text-muted-foreground/60">
+            <kbd className="inline-flex items-center justify-center h-5 px-1.5 rounded bg-secondary dark:bg-muted text-2xs font-semibold text-muted-foreground dark:text-muted-foreground/60">
               Esc
             </kbd>
             Sluiten

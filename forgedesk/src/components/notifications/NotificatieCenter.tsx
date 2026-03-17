@@ -121,7 +121,7 @@ const typeConfig: Record<
   portaal_bekeken: {
     icon: Eye,
     colorClass: "text-muted-foreground",
-    bgClass: "bg-gray-100",
+    bgClass: "bg-muted",
   },
   portaal_herinnering: {
     icon: BellRing,

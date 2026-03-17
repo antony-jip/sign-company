@@ -517,11 +517,11 @@ export function SalesFollowUpWidget() {
             {hasExpiringQuotes && (
               <div className="space-y-2">
                 <div className="flex items-center gap-2 pt-1">
-                  <div className="h-px flex-1 bg-secondary dark:bg-foreground/70" />
+                  <div className="h-px flex-1 bg-secondary dark:bg-muted" />
                   <span className="text-xs font-medium text-muted-foreground/60 dark:text-muted-foreground uppercase tracking-wider flex-shrink-0">
                     Verlopende offertes
                   </span>
-                  <div className="h-px flex-1 bg-secondary dark:bg-foreground/70" />
+                  <div className="h-px flex-1 bg-secondary dark:bg-muted" />
                 </div>
                 <ScrollArea className="max-h-[160px]">
                   <div className="space-y-1.5 pr-2">

@@ -553,7 +553,7 @@ export function CalendarLayout() {
           <div
             className={cn(
               dims,
-              'rounded-full flex items-center justify-center text-muted-foreground dark:text-muted-foreground/50 bg-secondary dark:bg-foreground/70 font-bold ring-2 ring-white dark:ring-border'
+              'rounded-full flex items-center justify-center text-muted-foreground dark:text-muted-foreground/50 bg-secondary dark:bg-muted font-bold ring-2 ring-white dark:ring-border'
             )}
           >
             +{monteurIds.length - 3}
