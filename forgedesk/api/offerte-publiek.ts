@@ -19,6 +19,7 @@ const OFFERTE_VELDEN = [
   'wijziging_opmerking', 'wijziging_ingediend_op',
   'publieke_link_geopend_op', 'publieke_link_views',
   'afrondingskorting_excl_btw', 'aangepast_totaal',
+  'gekozen_items', 'gekozen_varianten',
 ] as const
 
 const ITEM_VELDEN = [

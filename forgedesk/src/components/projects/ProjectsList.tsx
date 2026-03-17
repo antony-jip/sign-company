@@ -68,6 +68,7 @@ const statusOpties = [
   { value: 'gepland', label: 'Gepland' },
   { value: 'in-review', label: 'In review' },
   { value: 'te-factureren', label: 'Te factureren' },
+  { value: 'gefactureerd', label: 'Gefactureerd' },
   { value: 'on-hold', label: 'On-hold' },
   { value: 'afgerond', label: 'Afgerond' },
 ]
@@ -79,6 +80,7 @@ const statusLabels: Record<string, string> = {
   afgerond: 'Afgerond',
   'on-hold': 'On-hold',
   'te-factureren': 'Te factureren',
+  'gefactureerd': 'Gefactureerd',
 }
 
 function getStatusDotColor(status: string): string {
@@ -89,6 +91,7 @@ function getStatusDotColor(status: string): string {
     case 'afgerond': return 'bg-[var(--color-sage-text)]'
     case 'on-hold': return 'bg-[var(--color-blush-text)]'
     case 'te-factureren': return 'bg-[var(--color-lavender-text)]'
+    case 'gefactureerd': return 'bg-[var(--color-lavender-text)]'
     default: return 'bg-[var(--color-cream-text)]'
   }
 }
@@ -101,6 +104,7 @@ function getStatusBorderColor(status: string): string {
     case 'afgerond': return 'border-l-[var(--color-sage-border)]'
     case 'on-hold': return 'border-l-[var(--color-blush-border)]'
     case 'te-factureren': return 'border-l-[var(--color-lavender-border)]'
+    case 'gefactureerd': return 'border-l-[var(--color-lavender-border)]'
     default: return 'border-l-[var(--color-cream-border)]'
   }
 }
@@ -113,6 +117,7 @@ function getStatusCellBg(status: string): string {
     case 'afgerond': return 'bg-[var(--color-sage)]/50'
     case 'on-hold': return 'bg-[var(--color-blush)]/50'
     case 'te-factureren': return 'bg-[var(--color-lavender)]/50'
+    case 'gefactureerd': return 'bg-[var(--color-lavender)]/50'
     default: return 'bg-muted/30 dark:bg-muted/20'
   }
 }

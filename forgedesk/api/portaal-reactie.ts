@@ -59,13 +59,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { token, portaal_item_id, type, bericht, klant_naam, bestanden } = req.body as {
+    const { token, portaal_item_id, type, bericht, klant_naam, bestanden, gekozen_items, gekozen_varianten } = req.body as {
       token: string
       portaal_item_id: string
       type: 'goedkeuring' | 'revisie' | 'bericht'
       bericht?: string
       klant_naam?: string
       bestanden?: string[] // URLs van geüploade bestanden
+      gekozen_items?: string[]
+      gekozen_varianten?: Record<string, string>
     }
 
     if (!token || !portaal_item_id || !type) {
@@ -135,6 +137,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .from('portaal_items')
         .update({ status: newStatus, updated_at: new Date().toISOString() })
         .eq('id', portaal_item_id)
+    }
+
+    // Als het een offerte goedkeuring is met opties, sla keuzes op bij de offerte
+    if (type === 'goedkeuring' && item.type === 'offerte' && (gekozen_items || gekozen_varianten)) {
+      // Haal de offerte_id op via het portaal item
+      const { data: fullPortaalItem } = await supabaseAdmin
+        .from('portaal_items')
+        .select('referentie_id')
+        .eq('id', portaal_item_id)
+        .single()
+
+      if (fullPortaalItem?.referentie_id) {
+        const offerteUpdate: Record<string, unknown> = { updated_at: new Date().toISOString() }
+        if (gekozen_items) offerteUpdate.gekozen_items = gekozen_items
+        if (gekozen_varianten) offerteUpdate.gekozen_varianten = gekozen_varianten
+        await supabaseAdmin.from('offertes').update(offerteUpdate).eq('id', fullPortaalItem.referentie_id)
+      }
     }
 
     // Koppel eventuele bestanden aan de reactie

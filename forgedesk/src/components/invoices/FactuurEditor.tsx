@@ -761,6 +761,11 @@ export function FactuurEditor() {
       const updated = await updateFactuur(existingFactuur.id, { status: 'verzonden' })
       setExistingFactuur({ ...existingFactuur, ...updated, status: 'verzonden' })
 
+      // Update gekoppeld project naar 'gefactureerd'
+      if (existingFactuur.project_id) {
+        try { await updateProject(existingFactuur.project_id, { status: 'gefactureerd' }) } catch { /* ignore */ }
+      }
+
       setSendDialogOpen(false)
       toast.success(`Factuur ${nummer} verzonden naar ${selectedKlant.email}`)
     } catch (err) {
@@ -787,6 +792,10 @@ export function FactuurEditor() {
       if (user?.id) {
         const naam = user.voornaam ? `${user.voornaam} ${user.achternaam || ''}`.trim() : user.email || ''
         logWijziging({ userId: user.id, entityType: 'factuur', entityId: existingFactuur.id, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: existingFactuur.status, nieuweWaarde: 'betaald' })
+      }
+      // Update gekoppeld project naar 'gefactureerd'
+      if (existingFactuur.project_id) {
+        try { await updateProject(existingFactuur.project_id, { status: 'gefactureerd' }) } catch { /* ignore */ }
       }
       toast.success(`${nummer} gemarkeerd als betaald`)
     } catch {

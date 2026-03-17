@@ -68,6 +68,7 @@ import {
   createFactuurItem,
   getHerinneringTemplates,
   generateBetaalToken,
+  updateProject,
 } from '@/services/supabaseService'
 import type { Factuur, FactuurItem, Klant, Offerte, OfferteItem, HerinneringTemplate } from '@/types'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -655,6 +656,10 @@ export function FacturenLayout() {
         toast.error('Kon status niet bijwerken')
         return
       }
+      // Update gekoppeld project naar 'gefactureerd'
+      if (factuur.project_id) {
+        try { await updateProject(factuur.project_id, { status: 'gefactureerd' }) } catch { /* ignore */ }
+      }
       toast.success(`${factuur.nummer} gemarkeerd als betaald`)
     },
     []
@@ -947,6 +952,11 @@ export function FacturenLayout() {
                 : f
             )
           )
+        }
+
+        // Update gekoppeld project naar 'gefactureerd'
+        if (factuur.project_id) {
+          try { await updateProject(factuur.project_id, { status: 'gefactureerd' }) } catch { /* ignore */ }
         }
 
         toast.success(`Factuur ${factuur.nummer} verzonden naar ${klant.email}`)
