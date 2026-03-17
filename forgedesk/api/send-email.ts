@@ -113,6 +113,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Ontvanger en onderwerp zijn verplicht' })
     }
 
+    // Haal bedrijfsnaam op voor afzendernaam
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('bedrijfsnaam')
+      .eq('id', user_id)
+      .maybeSingle()
+
+    const fromAddress = profile?.bedrijfsnaam
+      ? `"${profile.bedrijfsnaam.replace(/"/g, '')}" <${gmail_address}>`
+      : gmail_address
+
     const transporter = createTransport({
       host: smtp_host,
       port: smtp_port,
@@ -121,7 +132,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     })
 
     const mailOptions: Record<string, unknown> = {
-      from: gmail_address,
+      from: fromAddress,
       to,
       subject,
       text: body,

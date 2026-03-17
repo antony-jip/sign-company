@@ -417,7 +417,7 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
         klant_naam: klantNaam,
         project_naam: projectNaam,
         portaal_link: portaalUrl,
-        bedrijfsnaam: bedrijfsnaam || 'Update',
+        bedrijfsnaam: bedrijfsnaam || '',
         item_type: titel,
         // Legacy {var} format
         projectnaam: projectNaam,
