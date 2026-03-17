@@ -125,9 +125,12 @@ export function EmailLayout() {
   }
 
   // ─── Trigger IMAP sync (background, writes to Supabase) ───
-  async function triggerImapSync(folder: string): Promise<{ total: number }> {
+  async function triggerImapSync(folder: string): Promise<{ total: number; synced: number }> {
     const result = await fetchEmailsFromIMAP(folder, fetchLimitRef.current, 0)
-    return { total: result.total || 0 }
+    if (result.errors) {
+      console.warn('[Email] Sync errors:', result.errors)
+    }
+    return { total: result.total || 0, synced: result.synced || 0 }
   }
 
   // ─── Initial load: Supabase first, then IMAP sync in background ───
@@ -145,7 +148,8 @@ export function EmailLayout() {
           setIsLoading(false)
           // Step 2: Background IMAP sync for fresh data
           triggerImapSync('INBOX')
-            .then(async ({ total }) => {
+            .then(async ({ total, synced }) => {
+              console.log(`[Email] Sync klaar: ${synced} gesynct, ${total} totaal`)
               setImapTotal(total)
               setUseIMAP(true)
               // Re-read from Supabase after sync
