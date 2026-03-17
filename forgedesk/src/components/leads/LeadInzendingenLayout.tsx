@@ -142,7 +142,7 @@ export function LeadInzendingenLayout() {
           {gefilterd.length === 0 ? (
             <div className="flex flex-col items-center gap-3 py-16 text-muted-foreground">
               <UserPlus className="h-10 w-10 opacity-30" />
-              <p className="text-sm">Geen inzendingen gevonden</p>
+              <p className="text-sm font-medium">Geen inzendingen gevonden</p>
             </div>
           ) : (
             <table className="w-full">

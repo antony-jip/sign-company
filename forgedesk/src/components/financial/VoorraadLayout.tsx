@@ -417,9 +417,9 @@ export function VoorraadLayout() {
           </CardHeader>
           <CardContent>
             {mutaties.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <ArrowDownUp className="h-8 w-8 mx-auto opacity-30 mb-2" />
-                <p className="text-sm">Nog geen mutaties geregistreerd.</p>
+              <div className="flex flex-col items-center py-8 text-muted-foreground">
+                <ArrowDownUp className="h-8 w-8 opacity-30 mb-2" />
+                <p className="text-sm font-medium">Nog geen mutaties geregistreerd.</p>
               </div>
             ) : (
               <div className="space-y-2">

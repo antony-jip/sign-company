@@ -281,9 +281,9 @@ function DocumentGrid({ documents }: { documents: Document[] }) {
   if (documents.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-        <File className="w-12 h-12 mb-4 opacity-50" />
-        <p className="text-lg font-medium">Geen documenten gevonden</p>
-        <p className="text-sm mt-1">Pas de filters aan of upload een nieuw document.</p>
+        <File className="w-12 h-12 mb-4 opacity-30" />
+        <p className="text-sm font-medium">Geen documenten gevonden</p>
+        <p className="text-xs text-muted-foreground/60 mt-1">Pas de filters aan of upload een nieuw document.</p>
       </div>
     )
   }
@@ -350,9 +350,9 @@ function DocumentList({ documents }: { documents: Document[] }) {
   if (documents.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-        <File className="w-12 h-12 mb-4 opacity-50" />
-        <p className="text-lg font-medium">Geen documenten gevonden</p>
-        <p className="text-sm mt-1">Pas de filters aan of upload een nieuw document.</p>
+        <File className="w-12 h-12 mb-4 opacity-30" />
+        <p className="text-sm font-medium">Geen documenten gevonden</p>
+        <p className="text-xs text-muted-foreground/60 mt-1">Pas de filters aan of upload een nieuw document.</p>
       </div>
     )
   }

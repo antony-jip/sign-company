@@ -70,9 +70,10 @@ export function TimelineView({ taken, projectStart, projectEind }: TimelineViewP
 
   if (taken.length === 0) {
     return (
-      <div className="text-center py-12 text-muted-foreground">
-        <p className="text-base font-medium">Nog geen taken</p>
-        <p className="text-sm mt-1">Voeg taken toe om de tijdlijn te vullen.</p>
+      <div className="flex flex-col items-center py-12 text-muted-foreground">
+        <Calendar className="h-10 w-10 opacity-30 mb-3" />
+        <p className="text-sm font-medium">Nog geen taken</p>
+        <p className="text-xs text-muted-foreground/60 mt-1">Voeg taken toe om de tijdlijn te vullen.</p>
       </div>
     )
   }

@@ -898,10 +898,10 @@ export function TeamLayout() {
           <p className="text-muted-foreground">Medewerkers laden...</p>
         </div>
       ) : gefilterd.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12">
-          <Users className="mb-4 h-12 w-12 text-muted-foreground" />
-          <p className="text-lg font-medium">Geen medewerkers gevonden</p>
-          <p className="text-sm text-muted-foreground">
+        <div className="flex flex-col items-center justify-center py-16">
+          <Users className="mb-4 h-10 w-10 text-muted-foreground opacity-30" />
+          <p className="text-sm font-medium text-muted-foreground">Geen medewerkers gevonden</p>
+          <p className="text-xs text-muted-foreground/60 mt-1">
             Pas je filters aan of voeg een nieuwe medewerker toe.
           </p>
         </div>

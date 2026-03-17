@@ -741,7 +741,7 @@ export function ProjectsList() {
                     )}
                   </button>
                 </th>
-                <th className="w-10 py-2.5 px-2" />
+                <th className="w-10 py-3 px-2" />
               </tr>
             </thead>
             <tbody className="row-stagger">
