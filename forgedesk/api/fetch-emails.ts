@@ -240,13 +240,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         onderwerp: message.envelope.subject || '(geen onderwerp)',
         datum: message.envelope.date?.toISOString() || new Date().toISOString(),
         gelezen: message.flags?.has('\\Seen') || false,
-        bijlagen: attachmentMeta.length,
+        bijlagen: attachmentMeta.length || (hasAttachmentParts(message.bodyStructure) ? 1 : 0),
         attachment_meta: attachmentMeta.length > 0 ? attachmentMeta : null,
         body_html: bodyHtml || null,
         body_text: bodyText || null,
         inhoud: bodyHtml || bodyText || '',
         gmail_id: String(message.uid),
-        has_attachments: hasAttachmentParts(message.bodyStructure),
         cached_at: new Date().toISOString(),
       })
     }
