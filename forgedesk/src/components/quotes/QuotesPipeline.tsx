@@ -1403,7 +1403,7 @@ export function QuotesPipeline() {
                         )}
                       </button>
                     </th>
-                    <th className="text-right py-2.5 px-4 hidden md:table-cell">
+                    <th className="text-right py-3 px-4 hidden md:table-cell">
                       <button
                         onClick={() => handleListSort('created_at')}
                         className="flex items-center gap-1 text-xs font-bold text-text-tertiary uppercase tracking-label hover:text-foreground transition-colors ml-auto"
@@ -1416,7 +1416,7 @@ export function QuotesPipeline() {
                         )}
                       </button>
                     </th>
-                    <th className="text-right py-2.5 px-4 hidden lg:table-cell">
+                    <th className="text-right py-3 px-4 hidden lg:table-cell">
                       <button
                         onClick={() => handleListSort('days_open')}
                         className="flex items-center gap-1 text-xs font-bold text-text-tertiary uppercase tracking-label hover:text-foreground transition-colors ml-auto"
@@ -1429,7 +1429,7 @@ export function QuotesPipeline() {
                         )}
                       </button>
                     </th>
-                    <th className="text-right py-2.5 px-4 hidden md:table-cell">
+                    <th className="text-right py-3 px-4 hidden md:table-cell">
                       <button
                         onClick={() => handleListSort('geldig_tot')}
                         className="flex items-center gap-1 text-xs font-bold text-text-tertiary uppercase tracking-label hover:text-foreground transition-colors ml-auto"
@@ -1442,7 +1442,7 @@ export function QuotesPipeline() {
                         )}
                       </button>
                     </th>
-                    <th className="w-10 py-2.5 px-2" />
+                    <th className="w-10 py-3 px-2" />
                   </tr>
                 </thead>
                 <tbody className="row-stagger">

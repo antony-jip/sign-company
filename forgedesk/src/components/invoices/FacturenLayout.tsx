@@ -1539,7 +1539,7 @@ export function FacturenLayout() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border bg-muted/50">
-                <th className="w-10 px-3 py-2.5">
+                <th className="w-10 px-3 py-3">
                   <Checkbox
                     checked={filteredFacturen.length > 0 && selectedIds.size === filteredFacturen.length}
                     onCheckedChange={toggleSelectAll}

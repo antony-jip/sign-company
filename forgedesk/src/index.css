@@ -162,8 +162,10 @@
     --bg-hover: 40 8% 14%;
     --bg-subtle: 40 6% 10%;
 
+    --sidebar-primary: 28 55% 58%;
     --wm-sidebar-bg: 40 4% 10%;
     --wm-sidebar-hover: 40 8% 14%;
+    --wm-sidebar-active: 28 55% 58%;
     --wm-hover: 28 55% 55%;
     --wm-light: 28 55% 65%;
     --wm-pale: 28 50% 20%;

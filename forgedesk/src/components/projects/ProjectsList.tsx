@@ -683,17 +683,17 @@ export function ProjectsList() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border/60 bg-muted/30">
-                <th className="py-2.5 px-3 w-10">
+                <th className="py-3 px-3 w-10">
                   <Checkbox
                     checked={selectedIds.size > 0 && selectedIds.size === gefilterdeProjecten.length}
                     onCheckedChange={toggleSelectAll}
                     aria-label="Selecteer alle projecten"
                   />
                 </th>
-                <th className="text-left py-2.5 px-4 w-[110px]">
+                <th className="text-left py-3 px-4 w-[110px]">
                   <span className="text-xs font-bold text-text-tertiary uppercase tracking-label">Status</span>
                 </th>
-                <th className="text-left py-2.5 px-4">
+                <th className="text-left py-3 px-4">
                   <button
                     onClick={() => handleSort('naam')}
                     className="flex items-center gap-1 text-xs font-bold text-text-tertiary uppercase tracking-label hover:text-foreground transition-colors"
@@ -706,13 +706,13 @@ export function ProjectsList() {
                     )}
                   </button>
                 </th>
-                <th className="text-left py-2.5 px-4 hidden lg:table-cell">
+                <th className="text-left py-3 px-4 hidden lg:table-cell">
                   <span className="text-xs font-bold text-text-tertiary uppercase tracking-label">Klant</span>
                 </th>
-                <th className="text-left py-2.5 px-4 hidden md:table-cell">
+                <th className="text-left py-3 px-4 hidden md:table-cell">
                   <span className="text-xs font-bold text-text-tertiary uppercase tracking-label">Team</span>
                 </th>
-                <th className="text-right py-2.5 px-4 hidden xl:table-cell">
+                <th className="text-right py-3 px-4 hidden xl:table-cell">
                   <button
                     onClick={() => handleSort('bedrag')}
                     className="flex items-center gap-1 text-xs font-bold text-text-tertiary uppercase tracking-label hover:text-foreground transition-colors ml-auto"
@@ -725,10 +725,10 @@ export function ProjectsList() {
                     )}
                   </button>
                 </th>
-                <th className="text-right py-2.5 px-4 hidden xl:table-cell">
+                <th className="text-right py-3 px-4 hidden xl:table-cell">
                   <span className="text-xs font-bold text-text-tertiary uppercase tracking-label">Open</span>
                 </th>
-                <th className="text-right py-2.5 px-4 hidden lg:table-cell">
+                <th className="text-right py-3 px-4 hidden lg:table-cell">
                   <button
                     onClick={() => handleSort('start_datum')}
                     className="flex items-center gap-1 text-xs font-bold text-text-tertiary uppercase tracking-label hover:text-foreground transition-colors ml-auto"
