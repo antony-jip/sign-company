@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import { AuthProvider } from '@/contexts/AuthContext'
@@ -11,70 +11,131 @@ import { AppSettingsProvider } from '@/contexts/AppSettingsContext'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { AppLayout } from '@/components/layouts/AppLayout'
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
-import { NotFoundPage } from '@/components/shared/NotFoundPage'
-import { LoginPage } from '@/components/auth/LoginPage'
-import { RegisterPage } from '@/components/auth/RegisterPage'
-import { CheckInboxPage } from '@/components/auth/CheckInboxPage'
-import { ForgotPasswordPage } from '@/components/auth/ForgotPasswordPage'
-import { ResetPasswordPage } from '@/components/auth/ResetPasswordPage'
-import { WelkomPagina } from '@/components/onboarding/WelkomPagina'
-import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard'
-import { FORGEdeskDashboard } from '@/components/dashboard/FORGEdeskDashboard'
-import { ProjectsList } from '@/components/projects/ProjectsList'
-import { ProjectDetail } from '@/components/projects/ProjectDetail'
-import { ProjectCreate } from '@/components/projects/ProjectCreate'
-import { ClientsLayout } from '@/components/clients/ClientsLayout'
-import { ClientProfile } from '@/components/clients/ClientProfile'
-import { KlantenImportPage } from '@/components/clients/KlantenImportPage'
-import { QuotesPipeline } from '@/components/quotes/QuotesPipeline'
-import { QuoteCreation } from '@/components/quotes/QuoteCreation'
-import { ForgeQuotePreview } from '@/components/quotes/ForgeQuotePreview'
-import { InkoopOffertesPage } from '@/components/quotes/InkoopOffertesPage'
-import { OfferteDetail } from '@/components/quotes/OfferteDetail'
-import { DocumentsLayout } from '@/components/documents/DocumentsLayout'
-import { EmailLayout } from '@/components/email/EmailLayout'
-import { EmailComposePage } from '@/components/email/EmailComposePage'
-import { PlanningLayout } from '@/components/planning/PlanningLayout'
-import { FinancialLayout } from '@/components/financial/FinancialLayout'
-import { TasksLayout } from '@/components/planning/TasksLayout'
-import { FORGEdeskAIChat } from '@/components/forgie/FORGEdeskAIChat'
-import { SettingsLayout } from '@/components/settings/SettingsLayout'
-import { DataImportLayout } from '@/components/settings/DataImportLayout'
-import { NewsletterBuilder } from '@/components/email/NewsletterBuilder'
-import { FacturenLayout } from '@/components/invoices/FacturenLayout'
-import { FactuurEditor } from '@/components/invoices/FactuurEditor'
-import { RapportagesLayout } from '@/components/reports/RapportagesLayout'
-import { TijdregistratieLayout } from '@/components/projects/TijdregistratieLayout'
-import { NacalculatieLayout } from '@/components/projects/NacalculatieLayout'
-import { TeamLayout } from '@/components/settings/TeamLayout'
 import { CommandPalette } from '@/components/shared/CommandPalette'
-// ClientApprovalPage deprecated — goedkeuring tokens now handled via PortaalPagina
-import { BookingBeheer } from '@/components/planning/BookingBeheer'
-import { PublicBookingPage } from '@/components/planning/PublicBookingPage'
-import { WerkbonnenLayout } from '@/components/werkbonnen/WerkbonnenLayout'
-import { WerkbonDetail } from '@/components/werkbonnen/WerkbonDetail'
-import { BetaalPagina } from '@/components/invoices/BetaalPagina'
-import { BetaaldPagina } from '@/components/invoices/BetaaldPagina'
-import { OffertePubliekPagina } from '@/components/quotes/OffertePubliekPagina'
-import { BestelbonnenLayout } from '@/components/bestelbonnen/BestelbonnenLayout'
-import { BestelbonDetail } from '@/components/bestelbonnen/BestelbonDetail'
-import { LeveringsbonnenLayout } from '@/components/leveringsbonnen/LeveringsbonnenLayout'
-import { LeveringsbonDetail } from '@/components/leveringsbonnen/LeveringsbonDetail'
-import { VoorraadLayout } from '@/components/financial/VoorraadLayout'
-import { DealsLayout } from '@/components/clients/DealsLayout'
-import { DealDetail } from '@/components/clients/DealDetail'
-import { LeadCaptureLayout } from '@/components/leads/LeadCaptureLayout'
-import { LeadFormulierEditor } from '@/components/leads/LeadFormulierEditor'
-import { LeadFormulierPubliek } from '@/components/leads/LeadFormulierPubliek'
-import { PortaalPagina } from '@/components/portaal/PortaalPagina'
-import { PortalenOverzicht } from '@/components/portaal/PortalenOverzicht'
-import { MeldingenPage } from '@/components/notifications/MeldingenPage'
-import { LeadInzendingenLayout } from '@/components/leads/LeadInzendingenLayout'
-import { ForecastLayout } from '@/components/reports/ForecastLayout'
-import { ForgieChatPage } from '@/components/forgie/ForgieChatPage'
-import { VisualizerLayout } from '@/components/visualizer/VisualizerLayout'
 import { useDataInit } from '@/hooks/useDataInit'
 import { useParams } from 'react-router-dom'
+
+// ---------------------------------------------------------------------------
+// Lazy-loaded page components – prevents TDZ errors in production Rollup
+// bundles caused by 70+ eager imports with complex initialisation order.
+// ---------------------------------------------------------------------------
+const lazy = (importFn: () => Promise<{ [key: string]: React.ComponentType<any> }>, name: string) =>
+  React.lazy(() => importFn().then(m => ({ default: (m as any)[name] })))
+
+// Auth pages
+const LoginPage = lazy(() => import('@/components/auth/LoginPage'), 'LoginPage')
+const RegisterPage = lazy(() => import('@/components/auth/RegisterPage'), 'RegisterPage')
+const CheckInboxPage = lazy(() => import('@/components/auth/CheckInboxPage'), 'CheckInboxPage')
+const ForgotPasswordPage = lazy(() => import('@/components/auth/ForgotPasswordPage'), 'ForgotPasswordPage')
+const ResetPasswordPage = lazy(() => import('@/components/auth/ResetPasswordPage'), 'ResetPasswordPage')
+
+// Onboarding
+const WelkomPagina = lazy(() => import('@/components/onboarding/WelkomPagina'), 'WelkomPagina')
+const OnboardingWizard = lazy(() => import('@/components/onboarding/OnboardingWizard'), 'OnboardingWizard')
+
+// Dashboard
+const FORGEdeskDashboard = lazy(() => import('@/components/dashboard/FORGEdeskDashboard'), 'FORGEdeskDashboard')
+
+// Projects
+const ProjectsList = lazy(() => import('@/components/projects/ProjectsList'), 'ProjectsList')
+const ProjectDetail = lazy(() => import('@/components/projects/ProjectDetail'), 'ProjectDetail')
+const ProjectCreate = lazy(() => import('@/components/projects/ProjectCreate'), 'ProjectCreate')
+const TijdregistratieLayout = lazy(() => import('@/components/projects/TijdregistratieLayout'), 'TijdregistratieLayout')
+const NacalculatieLayout = lazy(() => import('@/components/projects/NacalculatieLayout'), 'NacalculatieLayout')
+
+// Clients
+const ClientsLayout = lazy(() => import('@/components/clients/ClientsLayout'), 'ClientsLayout')
+const ClientProfile = lazy(() => import('@/components/clients/ClientProfile'), 'ClientProfile')
+const KlantenImportPage = lazy(() => import('@/components/clients/KlantenImportPage'), 'KlantenImportPage')
+const DealsLayout = lazy(() => import('@/components/clients/DealsLayout'), 'DealsLayout')
+const DealDetail = lazy(() => import('@/components/clients/DealDetail'), 'DealDetail')
+
+// Quotes
+const QuotesPipeline = lazy(() => import('@/components/quotes/QuotesPipeline'), 'QuotesPipeline')
+const QuoteCreation = lazy(() => import('@/components/quotes/QuoteCreation'), 'QuoteCreation')
+const ForgeQuotePreview = lazy(() => import('@/components/quotes/ForgeQuotePreview'), 'ForgeQuotePreview')
+const InkoopOffertesPage = lazy(() => import('@/components/quotes/InkoopOffertesPage'), 'InkoopOffertesPage')
+const OfferteDetail = lazy(() => import('@/components/quotes/OfferteDetail'), 'OfferteDetail')
+const OffertePubliekPagina = lazy(() => import('@/components/quotes/OffertePubliekPagina'), 'OffertePubliekPagina')
+
+// Documents
+const DocumentsLayout = lazy(() => import('@/components/documents/DocumentsLayout'), 'DocumentsLayout')
+
+// Email
+const EmailLayout = lazy(() => import('@/components/email/EmailLayout'), 'EmailLayout')
+const EmailComposePage = lazy(() => import('@/components/email/EmailComposePage'), 'EmailComposePage')
+const NewsletterBuilder = lazy(() => import('@/components/email/NewsletterBuilder'), 'NewsletterBuilder')
+
+// Planning
+const PlanningLayout = lazy(() => import('@/components/planning/PlanningLayout'), 'PlanningLayout')
+const TasksLayout = lazy(() => import('@/components/planning/TasksLayout'), 'TasksLayout')
+const BookingBeheer = lazy(() => import('@/components/planning/BookingBeheer'), 'BookingBeheer')
+const PublicBookingPage = lazy(() => import('@/components/planning/PublicBookingPage'), 'PublicBookingPage')
+
+// Financial
+const FinancialLayout = lazy(() => import('@/components/financial/FinancialLayout'), 'FinancialLayout')
+const VoorraadLayout = lazy(() => import('@/components/financial/VoorraadLayout'), 'VoorraadLayout')
+
+// Invoices
+const FacturenLayout = lazy(() => import('@/components/invoices/FacturenLayout'), 'FacturenLayout')
+const FactuurEditor = lazy(() => import('@/components/invoices/FactuurEditor'), 'FactuurEditor')
+const BetaalPagina = lazy(() => import('@/components/invoices/BetaalPagina'), 'BetaalPagina')
+const BetaaldPagina = lazy(() => import('@/components/invoices/BetaaldPagina'), 'BetaaldPagina')
+
+// Reports
+const RapportagesLayout = lazy(() => import('@/components/reports/RapportagesLayout'), 'RapportagesLayout')
+const ForecastLayout = lazy(() => import('@/components/reports/ForecastLayout'), 'ForecastLayout')
+
+// Settings
+const SettingsLayout = lazy(() => import('@/components/settings/SettingsLayout'), 'SettingsLayout')
+const DataImportLayout = lazy(() => import('@/components/settings/DataImportLayout'), 'DataImportLayout')
+const TeamLayout = lazy(() => import('@/components/settings/TeamLayout'), 'TeamLayout')
+
+// Werkbonnen
+const WerkbonnenLayout = lazy(() => import('@/components/werkbonnen/WerkbonnenLayout'), 'WerkbonnenLayout')
+const WerkbonDetail = lazy(() => import('@/components/werkbonnen/WerkbonDetail'), 'WerkbonDetail')
+
+// Bestelbonnen
+const BestelbonnenLayout = lazy(() => import('@/components/bestelbonnen/BestelbonnenLayout'), 'BestelbonnenLayout')
+const BestelbonDetail = lazy(() => import('@/components/bestelbonnen/BestelbonDetail'), 'BestelbonDetail')
+
+// Leveringsbonnen
+const LeveringsbonnenLayout = lazy(() => import('@/components/leveringsbonnen/LeveringsbonnenLayout'), 'LeveringsbonnenLayout')
+const LeveringsbonDetail = lazy(() => import('@/components/leveringsbonnen/LeveringsbonDetail'), 'LeveringsbonDetail')
+
+// Leads
+const LeadCaptureLayout = lazy(() => import('@/components/leads/LeadCaptureLayout'), 'LeadCaptureLayout')
+const LeadFormulierEditor = lazy(() => import('@/components/leads/LeadFormulierEditor'), 'LeadFormulierEditor')
+const LeadFormulierPubliek = lazy(() => import('@/components/leads/LeadFormulierPubliek'), 'LeadFormulierPubliek')
+const LeadInzendingenLayout = lazy(() => import('@/components/leads/LeadInzendingenLayout'), 'LeadInzendingenLayout')
+
+// Portaal
+const PortaalPagina = lazy(() => import('@/components/portaal/PortaalPagina'), 'PortaalPagina')
+const PortalenOverzicht = lazy(() => import('@/components/portaal/PortalenOverzicht'), 'PortalenOverzicht')
+
+// Notifications
+const MeldingenPage = lazy(() => import('@/components/notifications/MeldingenPage'), 'MeldingenPage')
+
+// AI / Forgie
+const FORGEdeskAIChat = lazy(() => import('@/components/forgie/FORGEdeskAIChat'), 'FORGEdeskAIChat')
+const ForgieChatPage = lazy(() => import('@/components/forgie/ForgieChatPage'), 'ForgieChatPage')
+
+// Visualizer
+const VisualizerLayout = lazy(() => import('@/components/visualizer/VisualizerLayout'), 'VisualizerLayout')
+
+// Shared (lazy)
+const NotFoundPage = lazy(() => import('@/components/shared/NotFoundPage'), 'NotFoundPage')
+
+// ---------------------------------------------------------------------------
+// Loading spinner used as Suspense fallback
+// ---------------------------------------------------------------------------
+function LoadingSpinner() {
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+    </div>
+  )
+}
 
 /** Redirect /goedkeuring/:token → /portaal/:token (backward-compatibiliteit) */
 function GoedkeuringRedirect() {
@@ -86,17 +147,14 @@ function AppContent() {
   const { isReady } = useDataInit()
 
   if (!isReady) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-      </div>
-    )
+    return <LoadingSpinner />
   }
 
   return (
     <>
     <CommandPalette />
     <ErrorBoundary>
+    <Suspense fallback={<LoadingSpinner />}>
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
@@ -189,6 +247,7 @@ function AppContent() {
       </Route>
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
+    </Suspense>
     </ErrorBoundary>
     </>
   )
