@@ -4,7 +4,7 @@ import { createProject, getKlanten, generateProjectNummer, getAppSettings } from
 import { useAuth } from '@/contexts/AuthContext'
 import type { Klant } from '@/types'
 import { toast } from 'sonner'
-import { ArrowLeft, Save, FolderKanban, User } from 'lucide-react'
+import { ArrowLeft, Save, FolderKanban, User, CalendarDays, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -122,15 +122,15 @@ export function ProjectCreate() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#ecfdf5] via-[#eff6ff] to-[#fdf4ff] dark:from-background dark:via-background dark:to-background">
+    <div className="min-h-screen bg-gradient-to-br from-[#d5f5e3] via-[#dbeafe] to-[#ede9fe] dark:from-background dark:via-background dark:to-background">
       <div className="max-w-2xl mx-auto px-4 py-8 md:py-12 animate-fade-in-up">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-8">
-        <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => navigate('/projecten')}>
+      <div className="flex items-center gap-4 mb-10">
+        <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-white/60" onClick={() => navigate('/projecten')}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <div className="h-9 w-9 rounded-lg flex items-center justify-center" style={{ background: '#7EB5A6' }}>
-          <FolderKanban className="h-4 w-4 text-white" />
+        <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center shadow-lg shadow-teal-200/50">
+          <FolderKanban className="h-5 w-5 text-white" />
         </div>
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Nieuw project</h1>
@@ -138,10 +138,16 @@ export function ProjectCreate() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-5">
         {/* Project info */}
-        <div className="rounded-xl border border-border-primary/50 bg-gradient-to-br from-white/90 to-teal-50/60 dark:bg-card dark:from-card dark:to-card backdrop-blur-sm p-6">
-          <div className="space-y-4">
+        <div className="rounded-2xl border border-teal-200/60 bg-gradient-to-br from-white via-white to-teal-50 dark:bg-card dark:from-card dark:via-card dark:to-card shadow-sm shadow-teal-100/40 overflow-hidden">
+          <div className="flex items-center gap-2.5 px-6 pt-5 pb-3">
+            <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center">
+              <FileText className="h-3.5 w-3.5 text-white" />
+            </div>
+            <span className="text-sm font-semibold text-foreground">Projectgegevens</span>
+          </div>
+          <div className="px-6 pb-6 space-y-4">
             <div>
               <Label htmlFor="naam" className="text-xs font-medium text-muted-foreground mb-1.5 block">
                 Projectnaam *
@@ -151,7 +157,7 @@ export function ProjectCreate() {
                 value={naam}
                 onChange={(e) => setNaam(e.target.value)}
                 placeholder="Bijv. Gevelbelettering Bakkerij Jansen"
-                className="h-9"
+                className="h-10 bg-white/70 dark:bg-background border-teal-200/40 focus:border-teal-400 focus:ring-teal-400/20"
                 required
               />
             </div>
@@ -165,26 +171,28 @@ export function ProjectCreate() {
                 value={beschrijving}
                 onChange={(e) => setBeschrijving(e.target.value)}
                 placeholder="Korte omschrijving van het project..."
-                rows={2}
-                className="resize-none"
+                rows={3}
+                className="resize-none bg-white/70 dark:bg-background border-teal-200/40 focus:border-teal-400 focus:ring-teal-400/20"
               />
             </div>
           </div>
         </div>
 
         {/* Klant + Contactpersoon */}
-        <div className="rounded-xl border border-border-primary/50 bg-gradient-to-br from-white/90 to-blue-50/60 dark:bg-card dark:from-card dark:to-card backdrop-blur-sm p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <User className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">Klant & Contact</span>
+        <div className="rounded-2xl border border-blue-200/60 bg-gradient-to-br from-white via-white to-blue-50 dark:bg-card dark:from-card dark:via-card dark:to-card shadow-sm shadow-blue-100/40 overflow-hidden">
+          <div className="flex items-center gap-2.5 px-6 pt-5 pb-3">
+            <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center">
+              <User className="h-3.5 w-3.5 text-white" />
+            </div>
+            <span className="text-sm font-semibold text-foreground">Klant & Contact</span>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="px-6 pb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="klant" className="text-xs font-medium text-muted-foreground mb-1.5 block">
                 Klant
               </Label>
               <Select value={klantId} onValueChange={setKlantId}>
-                <SelectTrigger className="h-9">
+                <SelectTrigger className="h-10 bg-white/70 dark:bg-background border-blue-200/40">
                   <SelectValue placeholder={klanten.length === 0 ? 'Geen klanten' : 'Selecteer klant'} />
                 </SelectTrigger>
                 <SelectContent>
@@ -208,7 +216,7 @@ export function ProjectCreate() {
                 onValueChange={setContactpersoonId}
                 disabled={!klantId || contactpersonen.length === 0}
               >
-                <SelectTrigger className="h-9">
+                <SelectTrigger className="h-10 bg-white/70 dark:bg-background border-blue-200/40">
                   <SelectValue
                     placeholder={
                       !klantId
@@ -237,7 +245,7 @@ export function ProjectCreate() {
                   Vestiging
                 </Label>
                 <Select value={vestigingId} onValueChange={setVestigingId}>
-                  <SelectTrigger className="h-9">
+                  <SelectTrigger className="h-10 bg-white/70 dark:bg-background border-blue-200/40">
                     <SelectValue placeholder="Selecteer vestiging (optioneel)" />
                   </SelectTrigger>
                   <SelectContent>
@@ -255,12 +263,18 @@ export function ProjectCreate() {
         </div>
 
         {/* Status + Datums */}
-        <div className="rounded-xl border border-border-primary/50 bg-gradient-to-br from-white/90 to-amber-50/60 dark:bg-card dark:from-card dark:to-card backdrop-blur-sm p-6">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="rounded-2xl border border-amber-200/60 bg-gradient-to-br from-white via-white to-amber-50 dark:bg-card dark:from-card dark:via-card dark:to-card shadow-sm shadow-amber-100/40 overflow-hidden">
+          <div className="flex items-center gap-2.5 px-6 pt-5 pb-3">
+            <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
+              <CalendarDays className="h-3.5 w-3.5 text-white" />
+            </div>
+            <span className="text-sm font-semibold text-foreground">Planning</span>
+          </div>
+          <div className="px-6 pb-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Status</Label>
               <Select value={status} onValueChange={(value: typeof status) => setStatus(value)}>
-                <SelectTrigger className="h-9">
+                <SelectTrigger className="h-10 bg-white/70 dark:bg-background border-amber-200/40">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -280,7 +294,7 @@ export function ProjectCreate() {
                 type="date"
                 value={startDatum}
                 onChange={(e) => setStartDatum(e.target.value)}
-                className="h-9"
+                className="h-10 bg-white/70 dark:bg-background border-amber-200/40"
               />
             </div>
 
@@ -290,24 +304,24 @@ export function ProjectCreate() {
                 type="date"
                 value={eindDatum}
                 onChange={(e) => setEindDatum(e.target.value)}
-                className="h-9"
+                className="h-10 bg-white/70 dark:bg-background border-amber-200/40"
               />
             </div>
           </div>
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-end gap-3 pt-2">
+        <div className="flex items-center justify-end gap-3 pt-3">
           <Button
             type="button"
             variant="ghost"
             size="sm"
             onClick={() => navigate('/projecten')}
-            className="text-muted-foreground"
+            className="text-muted-foreground hover:bg-white/60"
           >
             Annuleren
           </Button>
-          <Button type="submit" size="sm" disabled={loading}>
+          <Button type="submit" size="sm" disabled={loading} className="shadow-md bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600">
             <Save className="h-3.5 w-3.5 mr-1.5" />
             {loading ? 'Opslaan...' : 'Project aanmaken'}
           </Button>
