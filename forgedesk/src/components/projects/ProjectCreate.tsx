@@ -126,31 +126,33 @@ export function ProjectCreate() {
       <div className="fixed inset-0 bg-gradient-to-br from-[#d5f5e3] via-[#dbeafe] to-[#ede9fe] dark:from-background dark:via-background dark:to-background pointer-events-none" />
       <div className="relative max-w-2xl mx-auto px-4 py-8 md:py-12 animate-fade-in-up">
       {/* Header */}
-      <div className="flex items-center gap-4 mb-10">
-        <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-white/60" onClick={() => navigate('/projecten')}>
+      <div className="flex items-center gap-4 mb-8">
+        <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-white/60 hover:bg-white/80 backdrop-blur-sm border border-white/40 shadow-sm" onClick={() => navigate('/projecten')}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center shadow-lg shadow-teal-200/50">
-          <FolderKanban className="h-5 w-5 text-white" />
+        <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-teal-400 to-emerald-600 flex items-center justify-center shadow-lg shadow-teal-500/25 ring-4 ring-teal-100/50">
+          <FolderKanban className="h-5.5 w-5.5 text-white" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Nieuw project</h1>
-          <p className="text-sm text-muted-foreground">Maak een nieuw project aan</p>
+          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Nieuw project</h1>
+          <p className="text-sm text-muted-foreground">Vul de gegevens in om te starten</p>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-4">
         {/* Project info */}
-        <div className="rounded-2xl border border-teal-200/60 bg-gradient-to-br from-white via-white to-teal-50 dark:bg-card dark:from-card dark:via-card dark:to-card shadow-sm shadow-teal-100/40 overflow-hidden">
-          <div className="flex items-center gap-2.5 px-6 pt-5 pb-3">
-            <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center">
-              <FileText className="h-3.5 w-3.5 text-white" />
-            </div>
-            <span className="text-sm font-semibold text-foreground">Projectgegevens</span>
-          </div>
-          <div className="px-6 pb-6 space-y-4">
+        <div className="group rounded-2xl bg-white/80 dark:bg-card backdrop-blur-xl border border-white/60 dark:border-border shadow-lg shadow-black/[0.03] hover:shadow-xl hover:shadow-black/[0.06] transition-all duration-300 overflow-hidden">
+          <div className="h-1 bg-gradient-to-r from-teal-400 via-emerald-400 to-teal-300" />
+          <div className="flex items-center gap-3 px-6 pt-5 pb-1">
+            <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-teal-400 to-emerald-500 text-white text-xs font-bold shadow-md shadow-teal-500/20">1</div>
             <div>
-              <Label htmlFor="naam" className="text-xs font-medium text-muted-foreground mb-1.5 block">
+              <span className="text-sm font-bold text-foreground">Projectgegevens</span>
+              <p className="text-xs text-muted-foreground">Naam en omschrijving</p>
+            </div>
+          </div>
+          <div className="px-6 pb-6 pt-3 space-y-4">
+            <div>
+              <Label htmlFor="naam" className="text-xs font-semibold text-muted-foreground mb-2 block uppercase tracking-wider">
                 Projectnaam *
               </Label>
               <Input
@@ -158,13 +160,13 @@ export function ProjectCreate() {
                 value={naam}
                 onChange={(e) => setNaam(e.target.value)}
                 placeholder="Bijv. Gevelbelettering Bakkerij Jansen"
-                className="h-10 bg-white/70 dark:bg-background border-teal-200/40 focus:border-teal-400 focus:ring-teal-400/20"
+                className="h-11 bg-white/60 dark:bg-background border-gray-200 dark:border-border focus:border-teal-400 focus:ring-2 focus:ring-teal-400/20 rounded-xl text-base"
                 required
               />
             </div>
 
             <div>
-              <Label htmlFor="beschrijving" className="text-xs font-medium text-muted-foreground mb-1.5 block">
+              <Label htmlFor="beschrijving" className="text-xs font-semibold text-muted-foreground mb-2 block uppercase tracking-wider">
                 Beschrijving
               </Label>
               <Textarea
@@ -173,27 +175,29 @@ export function ProjectCreate() {
                 onChange={(e) => setBeschrijving(e.target.value)}
                 placeholder="Korte omschrijving van het project..."
                 rows={3}
-                className="resize-none bg-white/70 dark:bg-background border-teal-200/40 focus:border-teal-400 focus:ring-teal-400/20"
+                className="resize-none bg-white/60 dark:bg-background border-gray-200 dark:border-border focus:border-teal-400 focus:ring-2 focus:ring-teal-400/20 rounded-xl"
               />
             </div>
           </div>
         </div>
 
         {/* Klant + Contactpersoon */}
-        <div className="rounded-2xl border border-blue-200/60 bg-gradient-to-br from-white via-white to-blue-50 dark:bg-card dark:from-card dark:via-card dark:to-card shadow-sm shadow-blue-100/40 overflow-hidden">
-          <div className="flex items-center gap-2.5 px-6 pt-5 pb-3">
-            <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center">
-              <User className="h-3.5 w-3.5 text-white" />
-            </div>
-            <span className="text-sm font-semibold text-foreground">Klant & Contact</span>
-          </div>
-          <div className="px-6 pb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="group rounded-2xl bg-white/80 dark:bg-card backdrop-blur-xl border border-white/60 dark:border-border shadow-lg shadow-black/[0.03] hover:shadow-xl hover:shadow-black/[0.06] transition-all duration-300 overflow-hidden">
+          <div className="h-1 bg-gradient-to-r from-blue-400 via-indigo-400 to-blue-300" />
+          <div className="flex items-center gap-3 px-6 pt-5 pb-1">
+            <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-blue-400 to-indigo-500 text-white text-xs font-bold shadow-md shadow-blue-500/20">2</div>
             <div>
-              <Label htmlFor="klant" className="text-xs font-medium text-muted-foreground mb-1.5 block">
+              <span className="text-sm font-bold text-foreground">Klant & Contact</span>
+              <p className="text-xs text-muted-foreground">Koppel aan een klant</p>
+            </div>
+          </div>
+          <div className="px-6 pb-6 pt-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="klant" className="text-xs font-semibold text-muted-foreground mb-2 block uppercase tracking-wider">
                 Klant
               </Label>
               <Select value={klantId} onValueChange={setKlantId}>
-                <SelectTrigger className="h-10 bg-white/70 dark:bg-background border-blue-200/40">
+                <SelectTrigger className="h-11 bg-white/60 dark:bg-background border-gray-200 dark:border-border rounded-xl">
                   <SelectValue placeholder={klanten.length === 0 ? 'Geen klanten' : 'Selecteer klant'} />
                 </SelectTrigger>
                 <SelectContent>
@@ -209,7 +213,7 @@ export function ProjectCreate() {
             </div>
 
             <div>
-              <Label htmlFor="contactpersoon" className="text-xs font-medium text-muted-foreground mb-1.5 block">
+              <Label htmlFor="contactpersoon" className="text-xs font-semibold text-muted-foreground mb-2 block uppercase tracking-wider">
                 Contactpersoon
               </Label>
               <Select
@@ -217,7 +221,7 @@ export function ProjectCreate() {
                 onValueChange={setContactpersoonId}
                 disabled={!klantId || contactpersonen.length === 0}
               >
-                <SelectTrigger className="h-10 bg-white/70 dark:bg-background border-blue-200/40">
+                <SelectTrigger className="h-11 bg-white/60 dark:bg-background border-gray-200 dark:border-border rounded-xl">
                   <SelectValue
                     placeholder={
                       !klantId
@@ -242,11 +246,11 @@ export function ProjectCreate() {
             {/* Vestiging - alleen tonen als klant meerdere vestigingen heeft */}
             {vestigingen.length > 0 && (
               <div className="sm:col-span-2">
-                <Label htmlFor="vestiging" className="text-xs font-medium text-muted-foreground mb-1.5 block">
+                <Label htmlFor="vestiging" className="text-xs font-semibold text-muted-foreground mb-2 block uppercase tracking-wider">
                   Vestiging
                 </Label>
                 <Select value={vestigingId} onValueChange={setVestigingId}>
-                  <SelectTrigger className="h-10 bg-white/70 dark:bg-background border-blue-200/40">
+                  <SelectTrigger className="h-11 bg-white/60 dark:bg-background border-gray-200 dark:border-border rounded-xl">
                     <SelectValue placeholder="Selecteer vestiging (optioneel)" />
                   </SelectTrigger>
                   <SelectContent>
@@ -264,18 +268,20 @@ export function ProjectCreate() {
         </div>
 
         {/* Status + Datums */}
-        <div className="rounded-2xl border border-amber-200/60 bg-gradient-to-br from-white via-white to-amber-50 dark:bg-card dark:from-card dark:via-card dark:to-card shadow-sm shadow-amber-100/40 overflow-hidden">
-          <div className="flex items-center gap-2.5 px-6 pt-5 pb-3">
-            <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
-              <CalendarDays className="h-3.5 w-3.5 text-white" />
-            </div>
-            <span className="text-sm font-semibold text-foreground">Planning</span>
-          </div>
-          <div className="px-6 pb-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="group rounded-2xl bg-white/80 dark:bg-card backdrop-blur-xl border border-white/60 dark:border-border shadow-lg shadow-black/[0.03] hover:shadow-xl hover:shadow-black/[0.06] transition-all duration-300 overflow-hidden">
+          <div className="h-1 bg-gradient-to-r from-amber-400 via-orange-400 to-amber-300" />
+          <div className="flex items-center gap-3 px-6 pt-5 pb-1">
+            <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 text-white text-xs font-bold shadow-md shadow-amber-500/20">3</div>
             <div>
-              <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Status</Label>
+              <span className="text-sm font-bold text-foreground">Planning</span>
+              <p className="text-xs text-muted-foreground">Status en tijdlijn</p>
+            </div>
+          </div>
+          <div className="px-6 pb-6 pt-3 grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <Label className="text-xs font-semibold text-muted-foreground mb-2 block uppercase tracking-wider">Status</Label>
               <Select value={status} onValueChange={(value: typeof status) => setStatus(value)}>
-                <SelectTrigger className="h-10 bg-white/70 dark:bg-background border-amber-200/40">
+                <SelectTrigger className="h-11 bg-white/60 dark:bg-background border-gray-200 dark:border-border rounded-xl">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -290,40 +296,40 @@ export function ProjectCreate() {
             </div>
 
             <div>
-              <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Startdatum</Label>
+              <Label className="text-xs font-semibold text-muted-foreground mb-2 block uppercase tracking-wider">Startdatum</Label>
               <Input
                 type="date"
                 value={startDatum}
                 onChange={(e) => setStartDatum(e.target.value)}
-                className="h-10 bg-white/70 dark:bg-background border-amber-200/40"
+                className="h-11 bg-white/60 dark:bg-background border-gray-200 dark:border-border rounded-xl"
               />
             </div>
 
             <div>
-              <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Einddatum</Label>
+              <Label className="text-xs font-semibold text-muted-foreground mb-2 block uppercase tracking-wider">Einddatum</Label>
               <Input
                 type="date"
                 value={eindDatum}
                 onChange={(e) => setEindDatum(e.target.value)}
-                className="h-10 bg-white/70 dark:bg-background border-amber-200/40"
+                className="h-11 bg-white/60 dark:bg-background border-gray-200 dark:border-border rounded-xl"
               />
             </div>
           </div>
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-end gap-3 pt-3">
+        <div className="flex items-center justify-end gap-3 pt-4">
           <Button
             type="button"
             variant="ghost"
             size="sm"
             onClick={() => navigate('/projecten')}
-            className="text-muted-foreground hover:bg-white/60"
+            className="text-muted-foreground hover:bg-white/60 rounded-xl px-5"
           >
             Annuleren
           </Button>
-          <Button type="submit" size="sm" disabled={loading} className="shadow-md bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600">
-            <Save className="h-3.5 w-3.5 mr-1.5" />
+          <Button type="submit" size="lg" disabled={loading} className="shadow-lg shadow-teal-500/20 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 rounded-xl px-8 font-semibold">
+            <Save className="h-4 w-4 mr-2" />
             {loading ? 'Opslaan...' : 'Project aanmaken'}
           </Button>
         </div>
