@@ -220,7 +220,8 @@ export async function testEmailConnection(
   })
 
   if (!response.ok) {
-    return { imap_ok: false, smtp_ok: false, error: `Server fout: ${response.status}` }
+    const errBody: { error?: string } = await response.json().catch(() => ({}))
+    return { imap_ok: false, smtp_ok: false, error: errBody?.error || `Server fout: ${response.status}` }
   }
 
   return response.json()

@@ -45,21 +45,29 @@ export interface EmailCredentials {
 }
 
 function decryptPassword(encrypted: string): string {
-  // New format: base64-encoded (saved directly from frontend)
+  // New format: base64-encoded (saved directly from frontend or as fallback)
   if (encrypted.startsWith('b64:')) {
     return Buffer.from(encrypted.slice(4), 'base64').toString('utf8')
   }
 
   // Legacy format: AES-256-CBC encrypted (via API endpoint)
   const ENCRYPTION_KEY = process.env.EMAIL_ENCRYPTION_KEY
-  if (!ENCRYPTION_KEY) throw new Error('EMAIL_ENCRYPTION_KEY niet geconfigureerd')
-  const key = crypto.scryptSync(ENCRYPTION_KEY, 'salt', 32)
-  const [ivHex, encryptedHex] = encrypted.split(':')
-  const iv = Buffer.from(ivHex, 'hex')
-  const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv)
-  let decrypted = decipher.update(encryptedHex, 'hex', 'utf8')
-  decrypted += decipher.final('utf8')
-  return decrypted
+  if (!ENCRYPTION_KEY) {
+    console.error('[_shared] decryptPassword: EMAIL_ENCRYPTION_KEY niet geconfigureerd, kan AES wachtwoord niet ontsleutelen')
+    throw new Error('EMAIL_ENCRYPTION_KEY niet geconfigureerd — sla je wachtwoord opnieuw op in Instellingen > Email > Verbinding')
+  }
+  try {
+    const key = crypto.scryptSync(ENCRYPTION_KEY, 'salt', 32)
+    const [ivHex, encryptedHex] = encrypted.split(':')
+    const iv = Buffer.from(ivHex, 'hex')
+    const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv)
+    let decrypted = decipher.update(encryptedHex, 'hex', 'utf8')
+    decrypted += decipher.final('utf8')
+    return decrypted
+  } catch (err) {
+    console.error('[_shared] decryptPassword: AES decryptie mislukt:', err)
+    throw new Error('Wachtwoord ontsleutelen mislukt — sla je wachtwoord opnieuw op in Instellingen > Email > Verbinding')
+  }
 }
 
 export async function getEmailCredentials(userId: string): Promise<EmailCredentials> {
