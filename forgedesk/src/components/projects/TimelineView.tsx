@@ -153,7 +153,7 @@ export function TimelineView({ taken, projectStart, projectEind }: TimelineViewP
               <div className="absolute left-0 top-full z-20 hidden group-hover:block bg-card border border-border dark:border-border rounded-lg shadow-lg p-3 min-w-[200px] pointer-events-none">
                 <p className="font-medium text-sm text-foreground">{taak.titel}</p>
                 <div className="mt-1.5 space-y-1">
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground font-mono">
                     {formatDate(taak.created_at)} - {formatDate(taak.deadline ?? "")}
                   </p>
                   <div className="flex gap-1.5">

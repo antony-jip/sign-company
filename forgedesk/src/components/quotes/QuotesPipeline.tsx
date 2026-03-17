@@ -1586,7 +1586,7 @@ export function QuotesPipeline() {
                             <Link
                               to={`/offertes/${offerte.id}/preview`}
                               onClick={(e) => e.stopPropagation()}
-                              className="p-1 rounded-md hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors opacity-0 group-hover:opacity-100"
+                              className="p-1 rounded-md hover:bg-muted transition-colors opacity-0 group-hover:opacity-100"
                               title="Preview"
                             >
                               <Eye className="w-4 h-4 text-muted-foreground hover:text-blue-600 dark:hover:text-blue-400 transition-colors" />

@@ -160,7 +160,7 @@ export function ProjectCreate() {
                 value={naam}
                 onChange={(e) => setNaam(e.target.value)}
                 placeholder="Bijv. Gevelbelettering Bakkerij Jansen"
-                className="h-11 bg-white/60 dark:bg-background border-gray-200 dark:border-border focus:border-teal-400 focus:ring-2 focus:ring-teal-400/20 rounded-xl text-base"
+                className="h-11 bg-white/60 dark:bg-background border-border focus:border-teal-400 focus:ring-2 focus:ring-teal-400/20 rounded-xl text-base"
                 required
               />
             </div>
@@ -175,7 +175,7 @@ export function ProjectCreate() {
                 onChange={(e) => setBeschrijving(e.target.value)}
                 placeholder="Korte omschrijving van het project..."
                 rows={3}
-                className="resize-none bg-white/60 dark:bg-background border-gray-200 dark:border-border focus:border-teal-400 focus:ring-2 focus:ring-teal-400/20 rounded-xl"
+                className="resize-none bg-white/60 dark:bg-background border-border focus:border-teal-400 focus:ring-2 focus:ring-teal-400/20 rounded-xl"
               />
             </div>
           </div>
@@ -197,7 +197,7 @@ export function ProjectCreate() {
                 Klant
               </Label>
               <Select value={klantId} onValueChange={setKlantId}>
-                <SelectTrigger className="h-11 bg-white/60 dark:bg-background border-gray-200 dark:border-border rounded-xl">
+                <SelectTrigger className="h-11 bg-white/60 dark:bg-background border-border rounded-xl">
                   <SelectValue placeholder={klanten.length === 0 ? 'Geen klanten' : 'Selecteer klant'} />
                 </SelectTrigger>
                 <SelectContent>
@@ -221,7 +221,7 @@ export function ProjectCreate() {
                 onValueChange={setContactpersoonId}
                 disabled={!klantId || contactpersonen.length === 0}
               >
-                <SelectTrigger className="h-11 bg-white/60 dark:bg-background border-gray-200 dark:border-border rounded-xl">
+                <SelectTrigger className="h-11 bg-white/60 dark:bg-background border-border rounded-xl">
                   <SelectValue
                     placeholder={
                       !klantId
@@ -250,7 +250,7 @@ export function ProjectCreate() {
                   Vestiging
                 </Label>
                 <Select value={vestigingId} onValueChange={setVestigingId}>
-                  <SelectTrigger className="h-11 bg-white/60 dark:bg-background border-gray-200 dark:border-border rounded-xl">
+                  <SelectTrigger className="h-11 bg-white/60 dark:bg-background border-border rounded-xl">
                     <SelectValue placeholder="Selecteer vestiging (optioneel)" />
                   </SelectTrigger>
                   <SelectContent>
@@ -281,7 +281,7 @@ export function ProjectCreate() {
             <div>
               <Label className="text-xs font-semibold text-muted-foreground mb-2 block uppercase tracking-wider">Status</Label>
               <Select value={status} onValueChange={(value: typeof status) => setStatus(value)}>
-                <SelectTrigger className="h-11 bg-white/60 dark:bg-background border-gray-200 dark:border-border rounded-xl">
+                <SelectTrigger className="h-11 bg-white/60 dark:bg-background border-border rounded-xl">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -301,7 +301,7 @@ export function ProjectCreate() {
                 type="date"
                 value={startDatum}
                 onChange={(e) => setStartDatum(e.target.value)}
-                className="h-11 bg-white/60 dark:bg-background border-gray-200 dark:border-border rounded-xl"
+                className="h-11 bg-white/60 dark:bg-background border-border rounded-xl"
               />
             </div>
 
@@ -311,7 +311,7 @@ export function ProjectCreate() {
                 type="date"
                 value={eindDatum}
                 onChange={(e) => setEindDatum(e.target.value)}
-                className="h-11 bg-white/60 dark:bg-background border-gray-200 dark:border-border rounded-xl"
+                className="h-11 bg-white/60 dark:bg-background border-border rounded-xl"
               />
             </div>
           </div>

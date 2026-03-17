@@ -828,7 +828,7 @@ export function ProjectsList() {
                               {project.naam}
                             </Link>
                             {project.project_nummer && (
-                              <span className="text-xs text-gray-400 font-mono">{project.project_nummer}</span>
+                              <span className="text-xs text-muted-foreground font-mono">{project.project_nummer}</span>
                             )}
                           </div>
                           {project.beschrijving && (

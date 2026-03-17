@@ -173,21 +173,21 @@ function ExpiringQuoteRow({ item }: { key?: string | number; item: ExpiringQuote
         <p className="text-xs text-foreground/70 dark:text-muted-foreground/50 leading-snug">
           {isExpired ? (
             <>
-              Offerte <span className="font-semibold">{item.offerte.nummer}</span> is{' '}
+              Offerte <span className="font-semibold font-mono">{item.offerte.nummer}</span> is{' '}
               <span className="text-red-600 dark:text-red-400 font-medium">
                 {daysAbs} {daysAbs === 1 ? 'dag' : 'dagen'} verlopen
               </span>
             </>
           ) : item.daysUntilExpiry === 0 ? (
             <>
-              Offerte <span className="font-semibold">{item.offerte.nummer}</span>{' '}
+              Offerte <span className="font-semibold font-mono">{item.offerte.nummer}</span>{' '}
               <span className="text-amber-600 dark:text-amber-400 font-medium">
                 verloopt vandaag
               </span>
             </>
           ) : (
             <>
-              Offerte <span className="font-semibold">{item.offerte.nummer}</span> verloopt over{' '}
+              Offerte <span className="font-semibold font-mono">{item.offerte.nummer}</span> verloopt over{' '}
               <span className="text-amber-600 dark:text-amber-400 font-medium">
                 {daysAbs} {daysAbs === 1 ? 'dag' : 'dagen'}
               </span>

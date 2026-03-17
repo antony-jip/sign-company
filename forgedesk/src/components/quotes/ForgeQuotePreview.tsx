@@ -531,7 +531,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground dark:text-muted-foreground/60">Nummer:</span>
-                  <span className="font-medium text-foreground dark:text-white">{offerteData.nummer}</span>
+                  <span className="font-medium font-mono text-foreground dark:text-white">{offerteData.nummer}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground dark:text-muted-foreground/60">Datum:</span>
