@@ -291,6 +291,9 @@ export interface Offerte {
   // Quick Win 4: Auto-status bij facturatie
   factuur_ids?: string[];
   geconverteerd_naar_factuur_op?: string;
+  // Klant opties-selectie bij acceptatie
+  gekozen_items?: string[];
+  gekozen_varianten?: Record<string, string>;
   created_at: string;
   updated_at: string;
 }

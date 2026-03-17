@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react'
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -41,6 +41,17 @@ interface PubliekOfferte {
   wijziging_ingediend_op?: string
   afrondingskorting_excl_btw?: number
   aangepast_totaal?: number
+  gekozen_items?: string[]
+  gekozen_varianten?: Record<string, string>
+}
+
+interface PubliekItemPrijsVariant {
+  id: string
+  label: string
+  aantal: number
+  eenheidsprijs: number
+  btw_percentage: number
+  korting_percentage: number
 }
 
 interface PubliekItem {
@@ -56,6 +67,8 @@ interface PubliekItem {
   is_optioneel?: boolean
   foto_url?: string
   foto_op_offerte?: boolean
+  prijs_varianten?: PubliekItemPrijsVariant[]
+  actieve_variant_id?: string
 }
 
 interface Bedrijf {
@@ -118,19 +131,52 @@ function dagenTotVerlopen(geldigTot: string): number {
   return Math.ceil((eind.getTime() - vandaag.getTime()) / (1000 * 60 * 60 * 24))
 }
 
-// BTW groepering
-function groepeerBtw(items: PubliekItem[]): { percentage: number; basis: number; btw: number }[] {
+// Get effective item values based on selected variant
+function getEffectiveItemValues(item: PubliekItem, selectedVariantId?: string): { aantal: number; eenheidsprijs: number; btw_percentage: number; korting_percentage: number } {
+  if (selectedVariantId && item.prijs_varianten?.length) {
+    const variant = item.prijs_varianten.find(v => v.id === selectedVariantId)
+    if (variant) {
+      return {
+        aantal: variant.aantal,
+        eenheidsprijs: variant.eenheidsprijs,
+        btw_percentage: variant.btw_percentage,
+        korting_percentage: variant.korting_percentage,
+      }
+    }
+  }
+  return {
+    aantal: item.aantal,
+    eenheidsprijs: item.eenheidsprijs,
+    btw_percentage: item.btw_percentage,
+    korting_percentage: item.korting_percentage || 0,
+  }
+}
+
+function getEffectiveItemTotal(item: PubliekItem, selectedVariantId?: string): number {
+  const v = getEffectiveItemValues(item, selectedVariantId)
+  return round2(v.aantal * v.eenheidsprijs * (1 - v.korting_percentage / 100))
+}
+
+// BTW groepering with selection awareness
+function groepeerBtwMetSelectie(
+  items: PubliekItem[],
+  selectedItems: Set<string>,
+  selectedVariants: Record<string, string>,
+  hasOptionalItems: boolean
+): { percentage: number; basis: number; btw: number }[] {
   const map = new Map<number, { basis: number; btw: number }>()
   for (const item of items) {
     if (item.soort === 'tekst') continue
-    const pct = item.btw_percentage
-    const korting = item.korting_percentage || 0
-    const regelExcl = round2(item.aantal * item.eenheidsprijs * (1 - korting / 100))
-    const regelBtw = round2(regelExcl * pct / 100)
-    const existing = map.get(pct) || { basis: 0, btw: 0 }
+    // Skip unselected items (only filter if there are optional items)
+    if (hasOptionalItems && !selectedItems.has(item.id)) continue
+    const v = getEffectiveItemValues(item, selectedVariants[item.id])
+    const korting = v.korting_percentage || 0
+    const regelExcl = round2(v.aantal * v.eenheidsprijs * (1 - korting / 100))
+    const regelBtw = round2(regelExcl * v.btw_percentage / 100)
+    const existing = map.get(v.btw_percentage) || { basis: 0, btw: 0 }
     existing.basis += regelExcl
     existing.btw += regelBtw
-    map.set(pct, existing)
+    map.set(v.btw_percentage, existing)
   }
   return Array.from(map.entries())
     .sort((a, b) => a[0] - b[0])
@@ -162,6 +208,10 @@ export function OffertePubliekPagina() {
   const [wijzigingNaam, setWijzigingNaam] = useState('')
   const [wijzigingOpmerking, setWijzigingOpmerking] = useState('')
   const [wijzigingLoading, setWijzigingLoading] = useState(false)
+
+  // Option selection state
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set())
+  const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({})
 
   // Confetti / success
   const [showSuccess, setShowSuccess] = useState(false)
@@ -200,6 +250,37 @@ export function OffertePubliekPagina() {
     }
   }, [token])
 
+  // Derived: check if offerte has optional items or variants
+  const hasOptionalItems = useMemo(() => items.some(i => i.is_optioneel), [items])
+  const hasVariants = useMemo(() => items.some(i => i.prijs_varianten && i.prijs_varianten.length > 0), [items])
+  const hasSelections = hasOptionalItems || hasVariants
+
+  // Initialize selection state when items load
+  useEffect(() => {
+    if (items.length === 0) return
+    // If offerte already has saved selections (after acceptance), use those
+    if (offerte?.gekozen_items) {
+      setSelectedItems(new Set(offerte.gekozen_items))
+      setSelectedVariants(offerte.gekozen_varianten || {})
+      return
+    }
+    // Default: all non-text items selected, optional items deselected
+    const initial = new Set<string>()
+    const initialVariants: Record<string, string> = {}
+    for (const item of items) {
+      if (item.soort === 'tekst') continue
+      if (!item.is_optioneel) {
+        initial.add(item.id)
+      }
+      // Set active variant if defined
+      if (item.actieve_variant_id && item.prijs_varianten?.length) {
+        initialVariants[item.id] = item.actieve_variant_id
+      }
+    }
+    setSelectedItems(initial)
+    setSelectedVariants(initialVariants)
+  }, [items, offerte?.gekozen_items, offerte?.gekozen_varianten])
+
   // Accepteren
   const handleAccepteren = useCallback(async () => {
     if (!token || acceptNaam.trim().length < 2 || !acceptAkkoord) return
@@ -208,7 +289,12 @@ export function OffertePubliekPagina() {
       const resp = await fetch('/api/offerte-accepteren', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, naam: acceptNaam.trim() }),
+        body: JSON.stringify({
+          token,
+          naam: acceptNaam.trim(),
+          gekozen_items: hasOptionalItems ? Array.from(selectedItems) : undefined,
+          gekozen_varianten: Object.keys(selectedVariants).length > 0 ? selectedVariants : undefined,
+        }),
       })
       const data = await resp.json()
       if (!resp.ok) {
@@ -230,7 +316,7 @@ export function OffertePubliekPagina() {
     } finally {
       setAcceptLoading(false)
     }
-  }, [token, acceptNaam, acceptAkkoord])
+  }, [token, acceptNaam, acceptAkkoord, selectedItems, selectedVariants, hasOptionalItems])
 
   // Wijziging aanvragen
   const handleWijziging = useCallback(async () => {
@@ -424,8 +510,27 @@ export function OffertePubliekPagina() {
   const isWijzigingGevraagd = offerte.status === 'wijziging_gevraagd'
   const kanActie = !isVerlopen && !isGeaccepteerd && !isAfgewezen && !isGefactureerd
   const dagenOver = dagenTotVerlopen(offerte.geldig_tot)
-  const btwGroepen = groepeerBtw(items)
-  const totaalBedrag = offerte.aangepast_totaal ?? offerte.totaal
+  const btwGroepen = groepeerBtwMetSelectie(items, selectedItems, selectedVariants, hasOptionalItems)
+
+  // Compute live total based on selections
+  const berekendeSubtotaal = useMemo(() => {
+    let sum = 0
+    for (const item of items) {
+      if (item.soort === 'tekst') continue
+      if (hasOptionalItems && !selectedItems.has(item.id)) continue
+      sum += getEffectiveItemTotal(item, selectedVariants[item.id])
+    }
+    return round2(sum)
+  }, [items, selectedItems, selectedVariants, hasOptionalItems])
+
+  const berekendeBtw = useMemo(() => {
+    return round2(btwGroepen.reduce((sum, g) => sum + g.btw, 0))
+  }, [btwGroepen])
+
+  // Use live-computed totals if there are selections to make, otherwise use server totals
+  const subtotaalBedrag = hasSelections ? berekendeSubtotaal : offerte.subtotaal
+  const btwBedrag = hasSelections ? berekendeBtw : offerte.btw_bedrag
+  const totaalBedrag = hasSelections ? round2(berekendeSubtotaal + berekendeBtw) : (offerte.aangepast_totaal ?? offerte.totaal)
 
   return (
     <div className={`min-h-screen bg-[#f8f9fa] transition-opacity duration-500 ${fadeIn ? 'opacity-100' : 'opacity-0'}`}>
@@ -570,10 +675,24 @@ export function OffertePubliekPagina() {
           {/* Items tabel */}
           {items.length > 0 && (
             <div className="px-6 md:px-8 py-6">
+              {/* Info banner when there are selectable options */}
+              {hasSelections && kanActie && (
+                <div className="mb-4 rounded-lg bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-800 flex items-start gap-2">
+                  <svg className="h-4 w-4 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"/></svg>
+                  <span>
+                    {hasOptionalItems && hasVariants
+                      ? 'Selecteer de gewenste opties en kies uw voorkeur bij de staffelprijzen.'
+                      : hasOptionalItems
+                      ? 'Vink de optionele items aan die u wenst.'
+                      : 'Kies uw voorkeur bij de staffelprijzen.'}
+                  </span>
+                </div>
+              )}
               <div className="overflow-x-auto -mx-2">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="text-left text-xs text-gray-400 uppercase tracking-wide border-b border-gray-100">
+                      {hasOptionalItems && <th className="pb-3 pl-2 pr-2 font-medium w-8"></th>}
                       <th className="pb-3 pr-4 pl-2 font-medium">Omschrijving</th>
                       <th className="pb-3 pr-4 text-right font-medium whitespace-nowrap">Aantal</th>
                       <th className="pb-3 pr-4 text-right font-medium whitespace-nowrap hidden md:table-cell">Eenheid</th>
@@ -583,27 +702,92 @@ export function OffertePubliekPagina() {
                     </tr>
                   </thead>
                   <tbody>
-                    {items.map((item: PubliekItem) => (
-                      <tr key={item.id} className="border-b border-gray-50 last:border-0">
-                        <td className="py-3 pr-4 pl-2">
-                          <span className="text-gray-800">{item.beschrijving}</span>
-                          {item.is_optioneel && (
-                            <span className="ml-2 text-2xs uppercase tracking-wide bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">Optioneel</span>
+                    {items.map((item: PubliekItem) => {
+                      const isSelected = selectedItems.has(item.id)
+                      const effectiveValues = item.soort !== 'tekst' ? getEffectiveItemValues(item, selectedVariants[item.id]) : null
+                      const effectiveTotal = item.soort !== 'tekst' ? getEffectiveItemTotal(item, selectedVariants[item.id]) : 0
+                      const isDeselected = hasOptionalItems && !isSelected && item.soort !== 'tekst'
+
+                      return (
+                        <React.Fragment key={item.id}>
+                          <tr className={`border-b border-gray-50 last:border-0 transition-opacity ${isDeselected ? 'opacity-40' : ''}`}>
+                            {/* Checkbox column */}
+                            {hasOptionalItems && (
+                              <td className="py-3 pl-2 pr-2 align-top">
+                                {item.soort !== 'tekst' && (
+                                  item.is_optioneel && kanActie ? (
+                                    <Checkbox
+                                      checked={isSelected}
+                                      onCheckedChange={(checked: boolean) => {
+                                        setSelectedItems(prev => {
+                                          const next = new Set(prev)
+                                          if (checked) next.add(item.id)
+                                          else next.delete(item.id)
+                                          return next
+                                        })
+                                      }}
+                                      className="mt-0.5"
+                                    />
+                                  ) : (
+                                    <CheckCircle2 className="h-4 w-4 text-gray-300 mt-0.5" />
+                                  )
+                                )}
+                              </td>
+                            )}
+                            <td className="py-3 pr-4 pl-2">
+                              <span className="text-gray-800">{item.beschrijving}</span>
+                              {item.is_optioneel && (
+                                <span className="ml-2 text-2xs uppercase tracking-wide bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">Optioneel</span>
+                              )}
+                            </td>
+                            {item.soort === 'tekst' ? (
+                              <td colSpan={5} />
+                            ) : (
+                              <>
+                                <td className="py-3 pr-4 text-right text-gray-600 tabular-nums">{effectiveValues?.aantal ?? item.aantal}</td>
+                                <td className="py-3 pr-4 text-right text-gray-500 hidden md:table-cell">stuk</td>
+                                <td className="py-3 pr-4 text-right text-gray-600 tabular-nums">{formatCurrency(effectiveValues?.eenheidsprijs ?? item.eenheidsprijs)}</td>
+                                <td className="py-3 pr-4 text-right text-gray-500 hidden md:table-cell">{effectiveValues?.btw_percentage ?? item.btw_percentage}%</td>
+                                <td className="py-3 pl-4 text-right font-semibold text-gray-900 tabular-nums">{formatCurrency(effectiveTotal)}</td>
+                              </>
+                            )}
+                          </tr>
+                          {/* Variant selector row */}
+                          {item.prijs_varianten && item.prijs_varianten.length > 0 && kanActie && !isDeselected && (
+                            <tr className="border-b border-gray-50">
+                              {hasOptionalItems && <td />}
+                              <td colSpan={6} className="py-2 pl-2 pr-4">
+                                <div className="flex items-center gap-2 pl-1">
+                                  <span className="text-xs text-gray-500 shrink-0">Kies variant:</span>
+                                  <select
+                                    value={selectedVariants[item.id] || ''}
+                                    onChange={(e) => {
+                                      const val = e.target.value
+                                      setSelectedVariants(prev => {
+                                        if (!val) {
+                                          const next = { ...prev }
+                                          delete next[item.id]
+                                          return next
+                                        }
+                                        return { ...prev, [item.id]: val }
+                                      })
+                                    }}
+                                    className="text-xs border border-gray-200 rounded-md px-2 py-1.5 bg-white text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 max-w-[300px]"
+                                  >
+                                    <option value="">Standaard — {item.aantal} x {formatCurrency(item.eenheidsprijs)}</option>
+                                    {item.prijs_varianten.map((v) => (
+                                      <option key={v.id} value={v.id}>
+                                        {v.label} — {v.aantal} x {formatCurrency(v.eenheidsprijs)}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                              </td>
+                            </tr>
                           )}
-                        </td>
-                        {item.soort === 'tekst' ? (
-                          <td colSpan={5} />
-                        ) : (
-                          <>
-                            <td className="py-3 pr-4 text-right text-gray-600 tabular-nums">{item.aantal}</td>
-                            <td className="py-3 pr-4 text-right text-gray-500 hidden md:table-cell">stuk</td>
-                            <td className="py-3 pr-4 text-right text-gray-600 tabular-nums">{formatCurrency(item.eenheidsprijs)}</td>
-                            <td className="py-3 pr-4 text-right text-gray-500 hidden md:table-cell">{item.btw_percentage}%</td>
-                            <td className="py-3 pl-4 text-right font-semibold text-gray-900 tabular-nums">{formatCurrency(item.totaal)}</td>
-                          </>
-                        )}
-                      </tr>
-                    ))}
+                        </React.Fragment>
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -615,7 +799,7 @@ export function OffertePubliekPagina() {
             <div className="max-w-xs ml-auto space-y-2">
               <div className="flex justify-between text-sm text-gray-500">
                 <span>Subtotaal</span>
-                <span className="tabular-nums">{formatCurrency(offerte.subtotaal)}</span>
+                <span className="tabular-nums">{formatCurrency(subtotaalBedrag)}</span>
               </div>
               {btwGroepen.map((g) => (
                 <div key={g.percentage} className="flex justify-between text-sm text-gray-500">
@@ -761,10 +945,24 @@ export function OffertePubliekPagina() {
                 <p className="text-xl font-bold text-gray-900">{formatCurrency(totaalBedrag)}</p>
               </div>
 
+              {/* Geselecteerde opties samenvatting */}
+              {hasOptionalItems && (
+                <div className="text-xs text-gray-500 space-y-1">
+                  <p className="font-medium text-gray-600">Geselecteerde items:</p>
+                  {items.filter(i => i.soort !== 'tekst' && selectedItems.has(i.id)).map(i => (
+                    <div key={i.id} className="flex justify-between">
+                      <span className="truncate mr-2">{i.is_optioneel ? '✓ ' : ''}{i.beschrijving}</span>
+                      <span className="shrink-0 tabular-nums">{formatCurrency(getEffectiveItemTotal(i, selectedVariants[i.id]))}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {/* Tekst */}
               <p className="text-sm text-gray-600">
                 Door uw naam in te vullen en op Bevestigen te klikken, gaat u akkoord met deze offerte
-                {bedrijf?.bedrijfsnaam ? ` van ${bedrijf.bedrijfsnaam}` : ''}.
+                {bedrijf?.bedrijfsnaam ? ` van ${bedrijf.bedrijfsnaam}` : ''}
+                {hasOptionalItems ? ' met bovenstaande selectie' : ''}.
               </p>
 
               {/* Naam input */}

@@ -71,7 +71,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { token, naam } = req.body as { token: string; naam: string }
+    const { token, naam, gekozen_items, gekozen_varianten } = req.body as {
+      token: string
+      naam: string
+      gekozen_items?: string[]
+      gekozen_varianten?: Record<string, string>
+    }
 
     if (!token) return res.status(400).json({ error: 'Token is verplicht' })
     if (!naam || naam.trim().length < 2) {
@@ -101,14 +106,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const nu = new Date().toISOString()
 
-    // Update offerte status
-    await supabaseAdmin.from('offertes').update({
+    // Update offerte status + opslaan van klant-keuzes
+    const updateData: Record<string, unknown> = {
       status: 'goedgekeurd',
       geaccepteerd_door: naam.trim(),
       geaccepteerd_op: nu,
       akkoord_op: nu,
       updated_at: nu,
-    }).eq('id', offerte.id)
+    }
+    if (gekozen_items) updateData.gekozen_items = gekozen_items
+    if (gekozen_varianten) updateData.gekozen_varianten = gekozen_varianten
+
+    await supabaseAdmin.from('offertes').update(updateData).eq('id', offerte.id)
 
     // Maak notificatie aan
     await supabaseAdmin.from('notificaties').insert({
