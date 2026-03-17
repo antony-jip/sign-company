@@ -1,5 +1,15 @@
 import { useState, useRef, useCallback, useEffect, useMemo, memo } from 'react'
-import DOMPurify from 'dompurify'
+import type DOMPurifyT from 'dompurify'
+
+// Lazy-initialised DOMPurify to avoid TDZ errors – CJS default export can be
+// mis-ordered by Rollup when bundled into a shared chunk.
+let _DOMPurify: typeof DOMPurifyT | null = null
+async function getDOMPurify() {
+  if (!_DOMPurify) {
+    _DOMPurify = (await import('dompurify')).default
+  }
+  return _DOMPurify
+}
 import { Button } from '@/components/ui/button'
 import {
   ArrowLeft, Trash2, Star, Archive, MailOpen,
@@ -150,13 +160,20 @@ export function EmailReader({
   const senderEmail = useMemo(() => email ? extractSenderEmail(email.van) : '', [email?.van])
   const avatarColor = useMemo(() => getAvatarColor(senderName), [senderName])
 
-  // Memoize DOMPurify — expensive HTML sanitization
-  const sanitizedBody = useMemo(() => {
-    if (!email?.inhoud) return ''
-    return DOMPurify.sanitize(email.inhoud, {
-      ADD_TAGS: ['style'],
-      ADD_ATTR: ['target', 'style'],
+  // Async DOMPurify sanitization — avoids TDZ with CJS module
+  const [sanitizedBody, setSanitizedBody] = useState('')
+  useEffect(() => {
+    if (!email?.inhoud) { setSanitizedBody(''); return }
+    let cancelled = false
+    getDOMPurify().then(purify => {
+      if (!cancelled) {
+        setSanitizedBody(purify.sanitize(email.inhoud, {
+          ADD_TAGS: ['style'],
+          ADD_ATTR: ['target', 'style'],
+        }))
+      }
     })
+    return () => { cancelled = true }
   }, [email?.inhoud])
 
   if (!email) {
