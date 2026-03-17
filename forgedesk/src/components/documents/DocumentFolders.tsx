@@ -53,7 +53,7 @@ export function DocumentFolders({ activeFolder, onFolderChange, documents }: Doc
                 'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200',
                 isActive
                   ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground dark:text-muted-foreground/60 dark:hover:bg-foreground/80 dark:hover:text-muted-foreground/30'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground dark:text-muted-foreground/60 dark:hover:bg-muted dark:hover:text-muted-foreground/30'
               )}
             >
               <Icon className={cn(

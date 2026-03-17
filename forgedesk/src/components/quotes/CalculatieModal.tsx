@@ -302,7 +302,7 @@ export function CalculatieModal({
                     <button
                       key={t.id}
                       onClick={() => laadTemplate(t)}
-                      className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-muted dark:hover:bg-foreground/80 transition-colors"
+                      className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-muted dark:hover:bg-muted transition-colors"
                     >
                       <span className="font-medium">{t.naam}</span>
                       {t.beschrijving && (
@@ -319,7 +319,7 @@ export function CalculatieModal({
                       onClose()
                       navigate('/instellingen', { state: { tab: 'calculatie' } })
                     }}
-                    className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-muted dark:hover:bg-foreground/80 transition-colors flex items-center gap-2 text-muted-foreground"
+                    className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-muted dark:hover:bg-muted transition-colors flex items-center gap-2 text-muted-foreground"
                   >
                     <Settings className="h-3.5 w-3.5" />
                     Templates beheren

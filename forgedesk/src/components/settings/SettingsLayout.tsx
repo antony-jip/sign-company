@@ -3279,7 +3279,7 @@ function WeergaveTab() {
                 {sectionItems.map((item) => (
                   <div
                     key={item.label}
-                    className="flex items-center justify-between py-1.5 px-3 rounded-lg hover:bg-background dark:hover:bg-foreground/80/30"
+                    className="flex items-center justify-between py-1.5 px-3 rounded-lg hover:bg-background dark:hover:bg-muted/30"
                   >
                     <span className="text-sm text-foreground dark:text-white">{item.label}</span>
                     <Switch
@@ -3356,7 +3356,7 @@ function DashboardSettingsTab() {
                   onDragOver={dashLayout.handleDragOver}
                   onDrop={(e) => dashLayout.handleDrop(e, id)}
                   className={cn(
-                    'flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-background dark:hover:bg-foreground/80/30 transition-colors group',
+                    'flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-background dark:hover:bg-muted/30 transition-colors group',
                     dashLayout.draggedWidget === id && 'opacity-40',
                     dashLayout.dragOverWidget === id && 'ring-2 ring-primary/30',
                   )}
@@ -3396,7 +3396,7 @@ function DashboardSettingsTab() {
                 return (
                   <div
                     key={id}
-                    className="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-background dark:hover:bg-foreground/80/30 transition-colors opacity-60"
+                    className="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-background dark:hover:bg-muted/30 transition-colors opacity-60"
                   >
                     <div className="w-4" />
                     <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-muted flex-shrink-0">

@@ -126,7 +126,7 @@ export function ProjectTasksTable({ taken }: ProjectTasksTableProps) {
             return (
               <tr
                 key={taak.id}
-                className="border-b border-border dark:border-border hover:bg-background dark:hover:bg-foreground/80/50 transition-colors duration-150"
+                className="border-b border-border dark:border-border hover:bg-background dark:hover:bg-muted/50 transition-colors duration-150"
               >
                 <td className="py-3 px-4">
                   <div>

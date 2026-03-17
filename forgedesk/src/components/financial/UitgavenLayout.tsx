@@ -396,7 +396,7 @@ export function UitgavenLayout() {
                 {gefilterd.map((u) => {
                   const cfg = STATUS_CONFIG[u.status] || STATUS_CONFIG.open
                   return (
-                    <tr key={u.id} className="group hover:bg-background/80 dark:hover:bg-foreground/80/50">
+                    <tr key={u.id} className="group hover:bg-background/80 dark:hover:bg-muted/50">
                       <td className="px-4 py-3 text-sm">{new Date(u.datum).toLocaleDateString('nl-NL')}</td>
                       <td className="px-4 py-3 text-sm">{getLeverancierNaam(u.leverancier_id)}</td>
                       <td className="px-4 py-3 text-sm max-w-[200px] truncate">{u.omschrijving}</td>

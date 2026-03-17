@@ -394,7 +394,7 @@ export function CommandPalette() {
                       ${
                         isSelected
                           ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                          : 'text-foreground/70 dark:text-muted-foreground/50 hover:bg-background dark:hover:bg-foreground/80/50'
+                          : 'text-foreground/70 dark:text-muted-foreground/50 hover:bg-background dark:hover:bg-muted/50'
                       }
                     `}
                     onClick={() => selectItem(item)}

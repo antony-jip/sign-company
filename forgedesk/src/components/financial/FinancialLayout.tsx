@@ -331,7 +331,7 @@ export function FinancialLayout() {
                       {openstaandeOffertes.map((offerte) => (
                         <tr
                           key={offerte.id}
-                          className="border-b border-border dark:border-border hover:bg-background dark:hover:bg-foreground/80/50 transition-colors"
+                          className="border-b border-border dark:border-border hover:bg-background dark:hover:bg-muted/50 transition-colors"
                         >
                           <td className="py-3 px-4 font-mono text-xs text-muted-foreground dark:text-muted-foreground/60">
                             {offerte.nummer}

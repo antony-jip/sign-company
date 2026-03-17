@@ -1665,7 +1665,7 @@ export function ProjectDetail() {
                   {projectMontages.map((m) => (
                     <div
                       key={m.id}
-                      className="flex items-center justify-between p-2 rounded-lg hover:bg-background dark:hover:bg-foreground/80/50 cursor-pointer transition-colors"
+                      className="flex items-center justify-between p-2 rounded-lg hover:bg-background dark:hover:bg-muted/50 cursor-pointer transition-colors"
                       onClick={() => navigate('/montage')}
                     >
                       <div className="min-w-0 flex-1">
@@ -1723,7 +1723,7 @@ export function ProjectDetail() {
                   {projectWerkbonnen.map((wb) => (
                     <div
                       key={wb.id}
-                      className="group flex items-center justify-between p-2 rounded-lg hover:bg-background dark:hover:bg-foreground/80/50 cursor-pointer transition-colors"
+                      className="group flex items-center justify-between p-2 rounded-lg hover:bg-background dark:hover:bg-muted/50 cursor-pointer transition-colors"
                       onClick={() => navigate(`/werkbonnen/${wb.id}`)}
                     >
                       <div>
@@ -1795,7 +1795,7 @@ export function ProjectDetail() {
                   {projectFacturen.map((factuur) => (
                     <div
                       key={factuur.id}
-                      className="flex items-center justify-between p-2 rounded-lg hover:bg-background dark:hover:bg-foreground/80/50 cursor-pointer transition-colors"
+                      className="flex items-center justify-between p-2 rounded-lg hover:bg-background dark:hover:bg-muted/50 cursor-pointer transition-colors"
                       onClick={() => navigate(`/facturen/${factuur.id}`)}
                     >
                       <div>
@@ -1839,7 +1839,7 @@ export function ProjectDetail() {
                   {projectUitgaven.map((uitgave) => (
                     <div
                       key={uitgave.id}
-                      className="flex items-center justify-between p-2 rounded-lg hover:bg-background dark:hover:bg-foreground/80/50 cursor-pointer transition-colors"
+                      className="flex items-center justify-between p-2 rounded-lg hover:bg-background dark:hover:bg-muted/50 cursor-pointer transition-colors"
                       onClick={() => navigate('/uitgaven')}
                     >
                       <div>
@@ -2190,7 +2190,7 @@ export function ProjectDetail() {
                   {projectDocumenten.map((doc) => (
                     <div
                       key={doc.id}
-                      className="flex items-center gap-2.5 bg-background dark:bg-muted/50 rounded-lg px-3 py-2 group hover:bg-muted dark:hover:bg-foreground/80 transition-colors cursor-pointer"
+                      className="flex items-center gap-2.5 bg-background dark:bg-muted/50 rounded-lg px-3 py-2 group hover:bg-muted dark:hover:bg-muted transition-colors cursor-pointer"
                     >
                       <div className="flex-shrink-0 group-hover:scale-110 transition-transform duration-200">
                         {getFileIcon(doc.type)}
@@ -2357,7 +2357,7 @@ export function ProjectDetail() {
                       className={`flex items-center gap-2.5 rounded-lg px-3 py-2 cursor-pointer transition-colors ${
                         selectedDocIds.includes(doc.id)
                           ? 'bg-primary/10 dark:bg-primary/20 border border-primary/30 dark:border-primary/30'
-                          : 'bg-background dark:bg-muted/50 hover:bg-muted dark:hover:bg-foreground/80 border border-transparent'
+                          : 'bg-background dark:bg-muted/50 hover:bg-muted dark:hover:bg-muted border border-transparent'
                       }`}
                     >
                       <input

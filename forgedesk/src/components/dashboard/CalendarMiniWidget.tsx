@@ -163,7 +163,7 @@ export function CalendarMiniWidget() {
               return (
                 <div
                   key={event.id}
-                  className="flex items-start gap-2 p-2 rounded-lg hover:bg-background dark:hover:bg-foreground/80/50 transition-colors cursor-pointer"
+                  className="flex items-start gap-2 p-2 rounded-lg hover:bg-background dark:hover:bg-muted/50 transition-colors cursor-pointer"
                 >
                   <div
                     className="w-1 h-full min-h-[32px] rounded-full flex-shrink-0"

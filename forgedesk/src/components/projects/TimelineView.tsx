@@ -119,7 +119,7 @@ export function TimelineView({ taken, projectStart, projectEind }: TimelineViewP
           {timeline.taken.map((taak, index) => (
             <div
               key={taak.id}
-              className="relative h-10 border-b border-border dark:border-border last:border-b-0 group hover:bg-background dark:hover:bg-foreground/80/30 transition-colors duration-150"
+              className="relative h-10 border-b border-border dark:border-border last:border-b-0 group hover:bg-background dark:hover:bg-muted/30 transition-colors duration-150"
             >
               {/* Month grid lines */}
               {timeline.maanden.map((maand, mi) => (

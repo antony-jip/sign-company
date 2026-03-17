@@ -176,7 +176,7 @@ export function VATCodesSettings() {
                   btwCodes.map((btw) => (
                     <tr
                       key={btw.id}
-                      className="border-b border-border dark:border-border hover:bg-background dark:hover:bg-foreground/80/50 transition-colors"
+                      className="border-b border-border dark:border-border hover:bg-background dark:hover:bg-muted/50 transition-colors"
                     >
                       <td className="py-3 px-4 font-mono text-xs font-semibold text-foreground/70 dark:text-muted-foreground/50">
                         {btw.code}

@@ -133,7 +133,7 @@ export function AutofillInput({
                 'w-full text-left px-3 py-2 text-sm transition-colors',
                 i === focusedIndex
                   ? 'bg-accent text-accent-foreground'
-                  : 'hover:bg-muted dark:hover:bg-foreground/80'
+                  : 'hover:bg-muted dark:hover:bg-muted'
               )}
               onMouseDown={(e) => {
                 e.preventDefault()

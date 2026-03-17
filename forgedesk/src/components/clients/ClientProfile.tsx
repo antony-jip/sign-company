@@ -530,7 +530,7 @@ export function ClientProfile() {
             </Badge>
             <button
               onClick={() => setEditDialogOpen(true)}
-              className="p-1 rounded hover:bg-muted dark:hover:bg-foreground/80 transition-colors"
+              className="p-1 rounded hover:bg-muted dark:hover:bg-muted transition-colors"
               title="Bewerken"
             >
               <Pencil className="w-4 h-4 text-muted-foreground/60" />
@@ -663,7 +663,7 @@ export function ClientProfile() {
             </CardTitle>
             <button
               onClick={openAddContact}
-              className="p-1 rounded hover:bg-muted dark:hover:bg-foreground/80 transition-colors"
+              className="p-1 rounded hover:bg-muted dark:hover:bg-muted transition-colors"
               title="Contactpersoon toevoegen"
             >
               <Plus className="w-4 h-4 text-muted-foreground/60 hover:text-blue-500" />
@@ -736,7 +736,7 @@ export function ClientProfile() {
             </CardTitle>
             <button
               onClick={openAddVestiging}
-              className="p-1 rounded hover:bg-muted dark:hover:bg-foreground/80 transition-colors"
+              className="p-1 rounded hover:bg-muted dark:hover:bg-muted transition-colors"
               title="Vestiging toevoegen"
             >
               <Plus className="w-4 h-4 text-muted-foreground/60 hover:text-green-500" />
@@ -893,7 +893,7 @@ export function ClientProfile() {
                             <tr
                               key={project.id}
                               className={cn(
-                                'hover:bg-background dark:hover:bg-foreground/80/50 cursor-pointer transition-colors border-l-4',
+                                'hover:bg-background dark:hover:bg-muted/50 cursor-pointer transition-colors border-l-4',
                                 getStatusBorderColor(project.status)
                               )}
                               onClick={() => navigate(`/projecten/${project.id}`)}
@@ -978,7 +978,7 @@ export function ClientProfile() {
                                     ]
                                     exportCSV(project.naam.replace(/\s+/g, '-').toLowerCase(), headers, rows)
                                   }}
-                                  className="p-1.5 rounded-md hover:bg-muted dark:hover:bg-foreground/80 transition-colors inline-flex"
+                                  className="p-1.5 rounded-md hover:bg-muted dark:hover:bg-muted transition-colors inline-flex"
                                   title="Download CSV"
                                 >
                                   <FileText className="w-4 h-4 text-muted-foreground hover:text-blue-600" />
@@ -1018,7 +1018,7 @@ export function ClientProfile() {
                       {clientOffertes.map((offerte) => (
                         <tr
                           key={offerte.id}
-                          className="hover:bg-background dark:hover:bg-foreground/80/50 cursor-pointer transition-colors"
+                          className="hover:bg-background dark:hover:bg-muted/50 cursor-pointer transition-colors"
                           onClick={() => navigate(`/offertes/${offerte.id}/bewerken`, { state: { from: `/klanten/${id}` } })}
                         >
                           <td className="py-3 px-4">
@@ -1077,7 +1077,7 @@ export function ClientProfile() {
                       {clientDeals.map((deal) => (
                         <tr
                           key={deal.id}
-                          className="hover:bg-background dark:hover:bg-foreground/80/50 cursor-pointer transition-colors"
+                          className="hover:bg-background dark:hover:bg-muted/50 cursor-pointer transition-colors"
                           onClick={() => navigate(`/deals/${deal.id}`)}
                         >
                           <td className="py-3 px-4 text-sm font-medium">{deal.titel}</td>
@@ -1125,7 +1125,7 @@ export function ClientProfile() {
                     </thead>
                     <tbody className="divide-y divide-border dark:divide-border">
                       {clientFacturen.map((factuur) => (
-                        <tr key={factuur.id} className="hover:bg-background dark:hover:bg-foreground/80/50 transition-colors">
+                        <tr key={factuur.id} className="hover:bg-background dark:hover:bg-muted/50 transition-colors">
                           <td className="py-3 px-4">
                             <span className="text-sm font-medium font-mono text-blue-600 dark:text-blue-400">{factuur.nummer}</span>
                           </td>
@@ -1385,14 +1385,14 @@ export function ClientProfile() {
                         <div className="flex items-center gap-1 flex-shrink-0">
                           <button
                             onClick={() => openEditContact(cp)}
-                            className="p-1.5 rounded-md hover:bg-muted dark:hover:bg-foreground/80 transition-colors"
+                            className="p-1.5 rounded-md hover:bg-muted dark:hover:bg-muted transition-colors"
                             title="Bewerken"
                           >
                             <Pencil className="w-3.5 h-3.5 text-muted-foreground/60" />
                           </button>
                           <button
                             onClick={() => openMoveDialog(cp)}
-                            className="p-1.5 rounded-md hover:bg-muted dark:hover:bg-foreground/80 transition-colors"
+                            className="p-1.5 rounded-md hover:bg-muted dark:hover:bg-muted transition-colors"
                             title="Verplaats naar ander bedrijf"
                           >
                             <ArrowRightLeft className="w-3.5 h-3.5 text-muted-foreground/60" />
@@ -1786,7 +1786,7 @@ export function ClientProfile() {
                       'w-full text-left px-3 py-2 rounded-md text-sm transition-colors',
                       selectedMoveKlant?.id === k.id
                         ? 'bg-primary text-primary-foreground'
-                        : 'hover:bg-muted dark:hover:bg-foreground/80'
+                        : 'hover:bg-muted dark:hover:bg-muted'
                     )}
                   >
                     <p className="font-medium">{k.bedrijfsnaam}</p>

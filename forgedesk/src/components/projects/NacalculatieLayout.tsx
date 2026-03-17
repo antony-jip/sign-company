@@ -528,7 +528,7 @@ export function NacalculatieLayout() {
                     return (
                       <tr
                         key={regel.projectId}
-                        className="border-b border-border dark:border-border hover:bg-background dark:hover:bg-foreground/80/50 transition-colors"
+                        className="border-b border-border dark:border-border hover:bg-background dark:hover:bg-muted/50 transition-colors"
                       >
                         <td className="py-3 px-4 font-medium text-foreground dark:text-white">
                           {regel.projectNaam}
@@ -607,7 +607,7 @@ export function NacalculatieLayout() {
               return (
                 <div
                   key={regel.projectId}
-                  className="flex items-center gap-4 p-3 rounded-lg hover:bg-background dark:hover:bg-foreground/80/50 transition-colors cursor-pointer"
+                  className="flex items-center gap-4 p-3 rounded-lg hover:bg-background dark:hover:bg-muted/50 transition-colors cursor-pointer"
                   onClick={() => setDetailProjectId(regel.projectId)}
                 >
                   <div className="flex-1 min-w-0">

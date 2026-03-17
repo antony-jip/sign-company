@@ -438,7 +438,7 @@ function Section({ title, icon: Icon, children, defaultOpen = true }: {
     <div className="border border-border dark:border-border rounded-lg overflow-hidden">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between px-4 py-3 bg-background dark:bg-muted/50 hover:bg-muted dark:hover:bg-foreground/80 transition-colors"
+        className="w-full flex items-center justify-between px-4 py-3 bg-background dark:bg-muted/50 hover:bg-muted dark:hover:bg-muted transition-colors"
       >
         <div className="flex items-center gap-2.5">
           <Icon className="w-4 h-4 text-muted-foreground dark:text-muted-foreground/60" />

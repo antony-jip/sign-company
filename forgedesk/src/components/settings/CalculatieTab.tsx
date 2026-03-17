@@ -958,7 +958,7 @@ function ProductenSection({
                     </thead>
                     <tbody>
                       {prods.map((p) => (
-                        <tr key={p.id} className="border-t border-border dark:border-border/50 hover:bg-background dark:hover:bg-foreground/80/30 transition-colors">
+                        <tr key={p.id} className="border-t border-border dark:border-border/50 hover:bg-background dark:hover:bg-muted/30 transition-colors">
                           <td className="px-4 py-2.5">
                             <span className="font-medium text-foreground dark:text-white">{p.naam}</span>
                             {p.notitie && <span className="block text-xs text-muted-foreground/60 dark:text-muted-foreground">{p.notitie}</span>}
@@ -1345,7 +1345,7 @@ function TemplatesSection({
                       </thead>
                       <tbody>
                         {tplRegels.map((regel) => (
-                          <tr key={regel.id} className="border-t border-border dark:border-border hover:bg-background/50 dark:hover:bg-foreground/80/20">
+                          <tr key={regel.id} className="border-t border-border dark:border-border hover:bg-background/50 dark:hover:bg-muted/20">
                             <td className="px-1 py-1.5">
                               <div className="flex items-center gap-1">
                                 {producten.length > 0 && (
@@ -2089,7 +2089,7 @@ function InstellingenSection() {
                 {cat}
                 <button
                   onClick={() => setCategorieen(categorieen.filter((c) => c !== cat))}
-                  className="ml-1 hover:bg-secondary dark:hover:bg-foreground/70 rounded-full p-0.5"
+                  className="ml-1 hover:bg-secondary dark:hover:bg-muted rounded-full p-0.5"
                 >
                   <Trash2 className="h-3 w-3" />
                 </button>
@@ -2141,7 +2141,7 @@ function InstellingenSection() {
                 {e}
                 <button
                   onClick={() => setEenheden(eenheden.filter((ee) => ee !== e))}
-                  className="ml-1 hover:bg-secondary dark:hover:bg-foreground/70 rounded-full p-0.5"
+                  className="ml-1 hover:bg-secondary dark:hover:bg-muted rounded-full p-0.5"
                 >
                   <Trash2 className="h-3 w-3" />
                 </button>
@@ -2193,7 +2193,7 @@ function InstellingenSection() {
                 {veld}
                 <button
                   onClick={() => setRegelVelden(regelVelden.filter((v) => v !== veld))}
-                  className="ml-1 hover:bg-secondary dark:hover:bg-foreground/70 rounded-full p-0.5"
+                  className="ml-1 hover:bg-secondary dark:hover:bg-muted rounded-full p-0.5"
                 >
                   <Trash2 className="h-3 w-3" />
                 </button>

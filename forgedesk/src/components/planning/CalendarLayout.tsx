@@ -1063,7 +1063,7 @@ export function CalendarLayout() {
                           isSelected
                             ? 'bg-primary/10 ring-1 ring-primary/30 hover:bg-primary/15'
                             : isActive
-                              ? 'bg-background dark:bg-muted/50 hover:bg-muted dark:hover:bg-foreground/80'
+                              ? 'bg-background dark:bg-muted/50 hover:bg-muted dark:hover:bg-muted'
                               : 'opacity-40 hover:opacity-70'
                         )}
                       >
@@ -1293,7 +1293,7 @@ export function CalendarLayout() {
                           'flex items-center gap-2.5 p-1.5 rounded-lg cursor-pointer transition-colors',
                           isChecked
                             ? 'bg-primary/10'
-                            : 'hover:bg-background dark:hover:bg-foreground/80'
+                            : 'hover:bg-background dark:hover:bg-muted'
                         )}
                       >
                         <Checkbox

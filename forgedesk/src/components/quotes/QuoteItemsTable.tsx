@@ -547,7 +547,7 @@ function AutocompleteInput({
               type="button"
               className={cn(
                 'w-full text-left px-3 py-2 text-sm transition-colors flex items-center justify-between gap-2',
-                i === focusedIndex ? 'bg-accent text-accent-foreground' : 'hover:bg-muted dark:hover:bg-foreground/80'
+                i === focusedIndex ? 'bg-accent text-accent-foreground' : 'hover:bg-muted dark:hover:bg-muted'
               )}
               onMouseDown={(e) => {
                 e.preventDefault()
