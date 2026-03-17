@@ -1526,26 +1526,24 @@ function EmailTab() {
         }
       } catch { /* ignore */ }
 
-      // 2. Try Supabase direct (source of truth)
-      if (isSupabaseConfigured()) {
-        try {
-          const { loadEmailSettingsFromDb } = await import('@/services/gmailService')
-          const dbSettings = await loadEmailSettingsFromDb()
-          if (dbSettings?.gmail_address) {
-            const merged = {
-              ...DEFAULT_EMAIL_SETTINGS,
-              ...dbSettings,
-              smtp_encryption: 'TLS' as const,
-              accept_self_signed: false,
-            }
-            setEmailSettings(merged)
-            setEmailConnected(true)
-            // Update cache
-            sessionStorage.setItem('forgedesk_email_settings', JSON.stringify(merged))
+      // 2. Load from API endpoint (source of truth, handles decryption server-side)
+      try {
+        const { loadEmailSettingsFromDb } = await import('@/services/gmailService')
+        const dbSettings = await loadEmailSettingsFromDb()
+        if (dbSettings?.gmail_address) {
+          const merged = {
+            ...DEFAULT_EMAIL_SETTINGS,
+            ...dbSettings,
+            smtp_encryption: 'TLS' as const,
+            accept_self_signed: false,
           }
-        } catch (err) {
-          console.error('Email settings laden mislukt:', err)
+          setEmailSettings(merged)
+          setEmailConnected(true)
+          // Update cache
+          sessionStorage.setItem('forgedesk_email_settings', JSON.stringify(merged))
         }
+      } catch (err) {
+        console.error('Email settings laden mislukt:', err)
       }
     }
     loadEmailSettings()
@@ -1870,18 +1868,16 @@ function EmailSettingsInline({
 
     setIsSaving(true)
     try {
-      // Save direct to Supabase (no API endpoint needed)
-      if (isSupabaseConfigured()) {
-        const { saveEmailSettingsToDb } = await import('@/services/gmailService')
-        await saveEmailSettingsToDb({
-          gmail_address: settings.gmail_address,
-          app_password: settings.app_password,
-          smtp_host: settings.smtp_host,
-          smtp_port: settings.smtp_port,
-          imap_host: settings.imap_host,
-          imap_port: settings.imap_port,
-        })
-      }
+      // Save via API endpoint (server-side encryptie, supabaseAdmin bypass RLS)
+      const { saveEmailSettingsToDb } = await import('@/services/gmailService')
+      await saveEmailSettingsToDb({
+        gmail_address: settings.gmail_address,
+        app_password: settings.app_password,
+        smtp_host: settings.smtp_host,
+        smtp_port: settings.smtp_port,
+        imap_host: settings.imap_host,
+        imap_port: settings.imap_port,
+      })
 
       // Cache in sessionStorage for quick loads
       sessionStorage.setItem('forgedesk_email_settings', JSON.stringify(settings))

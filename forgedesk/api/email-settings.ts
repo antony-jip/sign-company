@@ -15,6 +15,12 @@ function encrypt(text: string): string {
 }
 
 function decrypt(encryptedText: string): string {
+  // New format: base64-encoded (saved from frontend direct save)
+  if (encryptedText.startsWith('b64:')) {
+    return Buffer.from(encryptedText.slice(4), 'base64').toString('utf8')
+  }
+
+  // Legacy format: AES-256-CBC encrypted (via API endpoint)
   if (!ENCRYPTION_KEY) throw new Error('EMAIL_ENCRYPTION_KEY niet geconfigureerd')
   const key = crypto.scryptSync(ENCRYPTION_KEY, 'salt', 32)
   const [ivHex, encrypted] = encryptedText.split(':')
@@ -34,7 +40,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const userId = await verifyUser(req)
       const { data, error } = await supabaseAdmin
         .from('user_email_settings')
-        .select('gmail_address, encrypted_app_password, smtp_host, smtp_port, imap_host, imap_port')
+        .select('gmail_address, encrypted_app_password, smtp_host, smtp_port, imap_host, imap_port, is_verified')
         .eq('user_id', userId)
         .single()
 
@@ -43,22 +49,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       let app_password = ''
-      try {
-        app_password = decrypt(data.encrypted_app_password)
-      } catch {
-        return res.status(500).json({ error: 'Kon wachtwoord niet ontsleutelen' })
+      if (data.encrypted_app_password) {
+        try {
+          app_password = decrypt(data.encrypted_app_password)
+        } catch {
+          return res.status(500).json({ error: 'Kon wachtwoord niet ontsleutelen' })
+        }
       }
 
       return res.status(200).json({
         gmail_address: data.gmail_address,
         app_password,
-        smtp_host: data.smtp_host,
-        smtp_port: data.smtp_port,
-        imap_host: data.imap_host,
-        imap_port: data.imap_port,
+        smtp_host: data.smtp_host || 'smtp.gmail.com',
+        smtp_port: data.smtp_port || 587,
+        imap_host: data.imap_host || 'imap.gmail.com',
+        imap_port: data.imap_port || 993,
+        is_verified: data.is_verified || false,
       })
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : 'Fout bij ophalen'
+      return res.status(401).json({ error: msg })
+    }
+  }
+
+  // DELETE: verwijder email instellingen
+  if (req.method === 'DELETE') {
+    try {
+      const userId = await verifyUser(req)
+      await supabaseAdmin
+        .from('user_email_settings')
+        .delete()
+        .eq('user_id', userId)
+      return res.status(200).json({ success: true, message: 'Email instellingen verwijderd' })
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Fout bij verwijderen'
       return res.status(401).json({ error: msg })
     }
   }
@@ -73,7 +97,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Email adres en app wachtwoord zijn verplicht' })
     }
 
-    const encryptedPassword = encrypt(app_password)
+    // Encrypt password: prefer AES if key available, fallback to base64 obfuscation
+    let encryptedPassword: string
+    try {
+      encryptedPassword = encrypt(app_password)
+    } catch {
+      // Fallback: base64 obfuscation (when EMAIL_ENCRYPTION_KEY not set)
+      encryptedPassword = 'b64:' + Buffer.from(app_password, 'utf8').toString('base64')
+    }
 
     const { error } = await supabaseAdmin
       .from('user_email_settings')
