@@ -6,7 +6,7 @@ import {
 } from 'lucide-react'
 import { sendEmail as sendEmailViaApi, fetchEmailsFromIMAP, readEmailFromIMAP } from '@/services/gmailService'
 import type { IMAPEmailSummary } from '@/services/gmailService'
-import { getEmails, updateEmail, deleteEmail as deleteEmailDb } from '@/services/supabaseService'
+import { getEmails, getEmail, updateEmail, deleteEmail as deleteEmailDb } from '@/services/supabaseService'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { EmailReader } from './EmailReader'
@@ -469,12 +469,19 @@ export function EmailLayout() {
     // Already has body content — no need to fetch
     if (email.inhoud) return { ...email, gelezen: true }
 
-    // Use gmail_id (IMAP UID) for the read-email API, fallback to id
-    const uid = Number(email.gmail_id || email.id)
-    if (isNaN(uid)) return email
-
     setIsLoadingBody(true)
     try {
+      // Step 1: Try Supabase first (fast, body is already synced)
+      const dbEmail = await getEmail(email.id).catch(() => null)
+      const dbBody = dbEmail?.body_html || dbEmail?.body_text || dbEmail?.inhoud || ''
+      if (dbBody) {
+        bodyCacheRef.current.set(email.id, dbBody)
+        return { ...email, gelezen: true, inhoud: dbBody }
+      }
+
+      // Step 2: Fallback to IMAP if Supabase has no body
+      const uid = Number(email.gmail_id || email.id)
+      if (isNaN(uid)) return email
       const detail = await readEmailFromIMAP(uid, IMAP_FOLDER_MAP[folder] || 'INBOX')
       const body = detail.bodyHtml || detail.bodyText || ''
       bodyCacheRef.current.set(email.id, body)
