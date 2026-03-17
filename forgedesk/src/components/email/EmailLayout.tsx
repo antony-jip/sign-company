@@ -6,7 +6,7 @@ import {
 } from 'lucide-react'
 import { sendEmail as sendEmailViaApi, fetchEmailsFromIMAP, readEmailFromIMAP } from '@/services/gmailService'
 import type { IMAPEmailSummary } from '@/services/gmailService'
-import { getEmails, getKlanten, updateEmail, deleteEmail as deleteEmailDb, cacheEmailsToSupabase, getCachedEmails as getSupabaseCachedEmails } from '@/services/supabaseService'
+import { getEmails, updateEmail, deleteEmail as deleteEmailDb, cacheEmailsToSupabase } from '@/services/supabaseService'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { EmailReader } from './EmailReader'
@@ -126,24 +126,35 @@ export function EmailLayout() {
     const imapFolder = folder || 'INBOX'
     try {
       const result = await fetchEmailsFromIMAP(imapFolder, fetchLimit, 0)
-      setImapTotal(result.total)
+      setImapTotal(result.total || 0)
       setUseIMAP(true)
-      const emailData = result.emails.map((msg) => imapToEmail(msg, imapFolder, user?.id || ''))
-      setCachedEmails(imapFolder, emailData)
-      if (user?.id) {
-        cacheEmailsToSupabase(user.id, result.emails, imapFolder).catch(() => {})
-      }
-      return emailData
-    } catch {
-      if (user?.id) {
-        const dbCached = await getSupabaseCachedEmails(user.id, imapFolder).catch(() => null)
-        if (dbCached && dbCached.length > 0) {
-          setUseIMAP(false)
-          return dbCached
+
+      // API returns { emails } (legacy) or { synced, total } (sync-first)
+      if (result.emails && Array.isArray(result.emails) && result.emails.length > 0) {
+        const emailData = result.emails.map((msg) => imapToEmail(msg, imapFolder, user?.id || ''))
+        setCachedEmails(imapFolder, emailData)
+        if (user?.id) {
+          cacheEmailsToSupabase(user.id, result.emails, imapFolder).catch(() => {})
         }
+        return emailData
+      }
+
+      // Sync-first: API synced to Supabase, read from there
+      const dbEmails = await getEmails(fetchLimit).catch(() => [])
+      if (dbEmails.length > 0) {
+        setCachedEmails(imapFolder, dbEmails)
+        return dbEmails
+      }
+      return []
+    } catch {
+      // IMAP failed — try reading from Supabase
+      const dbEmails = await getEmails(fetchLimit).catch(() => [])
+      if (dbEmails.length > 0) {
+        setUseIMAP(false)
+        return dbEmails
       }
       setUseIMAP(false)
-      return await getEmails().catch(() => [])
+      return []
     }
   }, [fetchLimit, user?.id, setCachedEmails])
 
@@ -418,16 +429,18 @@ export function EmailLayout() {
 
   // ─── Load more (infinite scroll) ───
   const loadMoreEmails = useCallback(async (folder: EmailFolder) => {
-    if (!useIMAP || isLoadingMore) return
+    if (isLoadingMore) return
     const imapFolder = IMAP_FOLDER_MAP[folder] || 'INBOX'
     const currentCount = emails.length
-    if (currentCount >= imapTotal) return
+    if (imapTotal > 0 && currentCount >= imapTotal) return
     setIsLoadingMore(true)
     try {
       const result = await fetchEmailsFromIMAP(imapFolder, fetchLimit, currentCount)
-      const moreEmails = result.emails.map((msg) => imapToEmail(msg, imapFolder, user?.id || ''))
-      setEmails((prev) => [...prev, ...moreEmails])
-      setImapTotal(result.total)
+      if (result.emails && Array.isArray(result.emails) && result.emails.length > 0) {
+        const moreEmails = result.emails.map((msg) => imapToEmail(msg, imapFolder, user?.id || ''))
+        setEmails((prev) => [...prev, ...moreEmails])
+      }
+      setImapTotal(result.total || 0)
     } catch {
       toast.error('Kon meer emails niet laden')
     } finally {
@@ -439,11 +452,16 @@ export function EmailLayout() {
   const loadEmailBody = useCallback(async (email: Email, folder: EmailFolder): Promise<Email> => {
     const cached = bodyCacheRef.current.get(email.id)
     if (cached) return { ...email, gelezen: true, inhoud: cached }
-    if (!useIMAP || email.inhoud) return email
+    // Already has body content — no need to fetch
+    if (email.inhoud) return { ...email, gelezen: true }
+
+    // Use gmail_id (IMAP UID) for the read-email API, fallback to id
+    const uid = Number(email.gmail_id || email.id)
+    if (isNaN(uid)) return email
 
     setIsLoadingBody(true)
     try {
-      const detail = await readEmailFromIMAP(Number(email.id), IMAP_FOLDER_MAP[folder] || 'INBOX')
+      const detail = await readEmailFromIMAP(uid, IMAP_FOLDER_MAP[folder] || 'INBOX')
       const body = detail.bodyHtml || detail.bodyText || ''
       bodyCacheRef.current.set(email.id, body)
       return { ...email, gelezen: true, inhoud: body, aan: detail.to || email.aan }
@@ -454,7 +472,7 @@ export function EmailLayout() {
     } finally {
       setIsLoadingBody(false)
     }
-  }, [useIMAP])
+  }, [])
 
   // ─── Polling: refresh every 60s or on window focus ───
   useEffect(() => {
