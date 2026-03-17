@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createTransport } from 'nodemailer'
 import crypto from 'crypto'
-import { supabaseAdmin, isRateLimited } from './_shared'
+import { supabaseAdmin, isRateLimited } from './shared-utils'
 
 const ENCRYPTION_KEY = process.env.EMAIL_ENCRYPTION_KEY || ''
 const APP_URL = process.env.VITE_APP_URL || 'https://forgedesk-ten.vercel.app'

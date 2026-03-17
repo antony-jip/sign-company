@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createTransport } from 'nodemailer'
-import { verifyUser, getEmailCredentials } from './_shared'
+import { verifyUser, getEmailCredentials } from './shared-utils'
 
 export const config = { maxDuration: 30 }
 

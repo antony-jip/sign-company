@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import crypto from 'crypto'
-import { verifyUser, supabaseAdmin } from './_shared'
+import { verifyUser, supabaseAdmin } from './shared-utils'
 
 const ENCRYPTION_KEY = process.env.EMAIL_ENCRYPTION_KEY || ''
 

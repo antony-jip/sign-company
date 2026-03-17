@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { supabaseAdmin, verifyUser } from './_shared'
+import { supabaseAdmin, verifyUser } from './shared-utils'
 
 const EXACT_API_BASE = 'https://start.exactonline.nl/api/v1'
 
