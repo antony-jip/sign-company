@@ -429,25 +429,12 @@ export function EmailLayout() {
   }, [])
 
   const handleFolderLoad = useCallback(async (folder: EmailFolder) => {
-    // Step 1: Show cached Supabase data instantly
+    // Read from Supabase only — no IMAP sync on folder switch
     try {
       const cached = await readFromSupabase()
-      if (cached.length > 0) {
-        setEmails(cached)
-        setIsLoading(false)
-      }
-    } catch { /* ignore */ }
-
-    // Step 2: Background IMAP sync, then refresh from Supabase
-    const imapFolder = IMAP_FOLDER_MAP[folder] || 'INBOX'
-    triggerImapSync(imapFolder)
-      .then(async ({ total }) => {
-        setImapTotal(total)
-        const fresh = await readFromSupabase()
-        if (fresh.length > 0) setEmails(fresh)
-      })
-      .catch(() => {})
-      .finally(() => setIsLoading(false))
+      setEmails(cached)
+    } catch { /* keep existing */ }
+    finally { setIsLoading(false) }
   }, [])
 
   // ─── Load more (infinite scroll) ───
@@ -501,16 +488,14 @@ export function EmailLayout() {
     }
   }, [])
 
-  // ─── Polling: silent background sync every 2min + on window focus ───
+  // ─── Polling: silent background sync every 3min ───
+  // No window focus sync — too aggressive (full IMAP connection each time)
   useEffect(() => {
     pollingRef.current = setInterval(() => {
       handleRefresh(selectedFolder, true)
-    }, 120000)
-    const handleFocus = () => handleRefresh(selectedFolder, true)
-    window.addEventListener('focus', handleFocus)
+    }, 180000)
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current)
-      window.removeEventListener('focus', handleFocus)
     }
   }, [selectedFolder, handleRefresh])
 
