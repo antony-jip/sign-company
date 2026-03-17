@@ -424,6 +424,14 @@ export function generateOffertePDF(
       const m2 = item.oppervlakte_m2 || ((item.breedte_mm / 1000) * (item.hoogte_mm / 1000))
       beschrijving += `\nAfmeting: ${item.breedte_mm} × ${item.hoogte_mm} mm (${m2.toFixed(2)} m²)`
     }
+    // Append detail_regels (Materiaal, Lay-out, Montage, Opmerking, etc.)
+    if (item.detail_regels?.length) {
+      for (const regel of item.detail_regels) {
+        if (regel.label && regel.waarde) {
+          beschrijving += `\n${regel.label}: ${regel.waarde}`
+        }
+      }
+    }
     return [
       (index + 1).toString(),
       beschrijving,
