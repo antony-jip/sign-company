@@ -61,6 +61,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { ModuleHeader } from '@/components/shared/ModuleHeader'
+import { DagenOpenFilterBar, getDaysOpen, getDaysColor, matchDagenFilter } from '@/components/shared/DagenOpenFilter'
+import type { DagenOpenFilter } from '@/components/shared/DagenOpenFilter'
 import { exportCSV, exportExcel } from '@/lib/export'
 import { round2 } from '@/utils/budgetUtils'
 import { logger } from '../../utils/logger'
@@ -178,29 +180,6 @@ function getOfferteStatusCellBg(status: string): string {
   }
 }
 
-function getDaysOpen(createdAt: string): number {
-  const created = new Date(createdAt)
-  const now = new Date()
-  return Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24))
-}
-
-function getDaysColor(days: number): string {
-  if (days <= 3) return 'text-green-700 dark:text-green-400 bg-green-50/80 dark:bg-green-900/20'
-  if (days <= 7) return 'text-amber-600 dark:text-amber-400 bg-amber-50/80 dark:bg-amber-900/20'
-  if (days <= 14) return 'text-orange-600 dark:text-orange-400 bg-orange-50/80 dark:bg-orange-900/20'
-  if (days <= 30) return 'text-red-600 dark:text-red-400 bg-red-50/80 dark:bg-red-900/20'
-  return 'text-red-800 dark:text-red-300 bg-red-100/80 dark:bg-red-900/30'
-}
-
-type DagenOpenFilter = 'alle' | '<7' | '7-14' | '14-30' | '>30'
-
-const dagenOpenOpties: { value: DagenOpenFilter; label: string }[] = [
-  { value: 'alle', label: 'Alle' },
-  { value: '<7', label: '< 7 dagen' },
-  { value: '7-14', label: '7-14 dagen' },
-  { value: '14-30', label: '14-30 dagen' },
-  { value: '>30', label: '> 30 dagen' },
-]
 
 const OPEN_STATUSES = ['concept', 'verzonden', 'bekeken', 'wijziging_gevraagd']
 
@@ -394,14 +373,7 @@ export function QuotesPipeline() {
     if (dagenOpenFilter !== 'alle') {
       result = result.filter((o) => {
         if (!OPEN_STATUSES.includes(o.status)) return false
-        const days = getDaysOpen(o.created_at)
-        switch (dagenOpenFilter) {
-          case '<7': return days < 7
-          case '7-14': return days >= 7 && days <= 14
-          case '14-30': return days > 14 && days <= 30
-          case '>30': return days > 30
-          default: return true
-        }
+        return matchDagenFilter(getDaysOpen(o.created_at), dagenOpenFilter)
       })
     }
 
@@ -879,40 +851,11 @@ export function QuotesPipeline() {
         </div>
 
         {/* Dagen open filter pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide -mx-3 px-3 sm:mx-0 sm:px-0 sm:flex-wrap">
-          <span className="text-xs text-muted-foreground mr-1 flex-shrink-0">Dagen open:</span>
-          {dagenOpenOpties.map((optie) => {
-            const count = optie.value === 'alle'
-              ? offertes.filter((o) => OPEN_STATUSES.includes(o.status)).length
-              : offertes.filter((o) => {
-                  if (!OPEN_STATUSES.includes(o.status)) return false
-                  const days = getDaysOpen(o.created_at)
-                  switch (optie.value) {
-                    case '<7': return days < 7
-                    case '7-14': return days >= 7 && days <= 14
-                    case '14-30': return days > 14 && days <= 30
-                    case '>30': return days > 30
-                    default: return true
-                  }
-                }).length
-            if (optie.value !== 'alle' && count === 0) return null
-            return (
-              <button
-                key={optie.value}
-                onClick={() => setDagenOpenFilter(optie.value)}
-                className={cn(
-                  'px-2.5 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition-colors flex-shrink-0',
-                  dagenOpenFilter === optie.value
-                    ? 'bg-foreground text-background'
-                    : 'bg-muted/60 text-muted-foreground hover:bg-muted'
-                )}
-              >
-                {optie.label}
-                {count > 0 && <span className="ml-1 opacity-60">{count}</span>}
-              </button>
-            )
-          })}
-        </div>
+        <DagenOpenFilterBar
+          value={dagenOpenFilter}
+          onChange={setDagenOpenFilter}
+          items={offertes.filter((o) => OPEN_STATUSES.includes(o.status)).map((o) => ({ dateField: o.created_at }))}
+        />
       </div>
 
       {/* Pipeline Settings Panel */}

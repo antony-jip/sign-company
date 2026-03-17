@@ -59,6 +59,8 @@ import type { Project, Klant, Offerte } from '@/types'
 import { toast } from 'sonner'
 import { logger } from '../../utils/logger'
 import { ModuleHeader } from '@/components/shared/ModuleHeader'
+import { DagenOpenFilterBar, getDaysOpen, getDaysColor, matchDagenFilter } from '@/components/shared/DagenOpenFilter'
+import type { DagenOpenFilter } from '@/components/shared/DagenOpenFilter'
 
 const statusOpties = [
   { value: 'alle', label: 'Alle' },
@@ -124,6 +126,7 @@ export function ProjectsList() {
   const [isLoading, setIsLoading] = useState(true)
   const [zoekterm, setZoekterm] = useState('')
   const [statusFilter, setStatusFilter] = useState('alle')
+  const [dagenOpenFilter, setDagenOpenFilter] = useState<DagenOpenFilter>('alle')
   const [sortField, setSortField] = useState<'naam' | 'bedrag' | 'start_datum'>('start_datum')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [currentPage, setCurrentPage] = useState(1)
@@ -229,6 +232,14 @@ export function ProjectsList() {
       result = result.filter((p) => p.status === statusFilter)
     }
 
+    if (dagenOpenFilter !== 'alle') {
+      const openStatuses = ['actief', 'gepland', 'in-review', 'on-hold', 'te-factureren']
+      result = result.filter((p) => {
+        if (!openStatuses.includes(p.status)) return false
+        return matchDagenFilter(getDaysOpen(p.start_datum || p.created_at), dagenOpenFilter)
+      })
+    }
+
     result.sort((a, b) => {
       let cmp = 0
       switch (sortField) {
@@ -246,10 +257,10 @@ export function ProjectsList() {
     })
 
     return result
-  }, [projecten, klanten, offertes, zoekterm, statusFilter, sortField, sortDir])
+  }, [projecten, klanten, offertes, zoekterm, statusFilter, dagenOpenFilter, sortField, sortDir])
 
   // Reset page when filters change
-  useEffect(() => { setCurrentPage(1) }, [zoekterm, statusFilter, sortField, sortDir])
+  useEffect(() => { setCurrentPage(1) }, [zoekterm, statusFilter, dagenOpenFilter, sortField, sortDir])
 
   const totalPages = Math.ceil(gefilterdeProjecten.length / PAGE_SIZE)
   const paginatedProjecten = useMemo(
@@ -482,7 +493,7 @@ export function ProjectsList() {
           })}
         </div>
 
-        <div className="hidden sm:flex items-center gap-1">
+        <div className="hidden sm:flex items-center gap-1 ml-auto">
           <Button
             variant="ghost"
             size="sm"
@@ -525,6 +536,16 @@ export function ProjectsList() {
           </Button>
         </div>
       </div>
+
+      {/* ── Dagen open filter ── */}
+      <DagenOpenFilterBar
+        value={dagenOpenFilter}
+        onChange={setDagenOpenFilter}
+        items={projecten
+          .filter((p) => ['actief', 'gepland', 'in-review', 'on-hold', 'te-factureren'].includes(p.status))
+          .map((p) => ({ dateField: p.start_datum || p.created_at }))
+        }
+      />
 
       {/* ── Bulk action bar ── */}
       {selectedIds.size > 0 && (
@@ -704,6 +725,9 @@ export function ProjectsList() {
                     )}
                   </button>
                 </th>
+                <th className="text-right py-2.5 px-4 hidden xl:table-cell">
+                  <span className="text-xs font-bold text-text-tertiary uppercase tracking-label">Open</span>
+                </th>
                 <th className="text-right py-2.5 px-4 hidden lg:table-cell">
                   <button
                     onClick={() => handleSort('start_datum')}
@@ -876,6 +900,18 @@ export function ProjectsList() {
                           </span>
                         ) : (
                           <span className="text-xs text-muted-foreground/50">—</span>
+                        )
+                      })()}
+                    </td>
+
+                    {/* Dagen open */}
+                    <td className="py-3 px-4 text-right hidden xl:table-cell">
+                      {project.status !== 'afgerond' && (() => {
+                        const days = getDaysOpen(project.start_datum || project.created_at)
+                        return (
+                          <span className={cn('text-xs font-medium px-2 py-0.5 rounded-md tabular-nums', getDaysColor(days))}>
+                            {days}d
+                          </span>
                         )
                       })()}
                     </td>
