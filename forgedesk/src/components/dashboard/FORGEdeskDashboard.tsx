@@ -154,7 +154,7 @@ export function FORGEdeskDashboard() {
       {/* Welcome header */}
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.1em] text-muted-foreground mb-1.5">{formattedDate}</p>
+          <p className="text-xs font-bold uppercase tracking-[0.1em] text-muted-foreground/70 mb-1.5 font-mono">{formattedDate}</p>
           <h1 className="text-[32px] sm:text-[38px] font-extrabold tracking-[-0.04em] leading-[1.1] text-foreground">
             {greeting}{userName ? ', ' : ''}
             {userName && <span className="wm-gradient-text">{userName}</span>}
@@ -163,7 +163,7 @@ export function FORGEdeskDashboard() {
         <div className="flex gap-2">
           <button
             onClick={() => navigate('/offertes/nieuw')}
-            className="inline-flex items-center gap-1.5 text-sm font-bold px-5 py-2.5 rounded-[12px] bg-foreground text-background hover:shadow-lg hover:-translate-y-0.5 transition-all active:scale-[0.96]"
+            className="inline-flex items-center gap-1.5 text-sm font-bold px-5 py-2.5 rounded-[12px] bg-foreground text-background shadow-elevation-sm hover:shadow-elevation-md hover:-translate-y-0.5 transition-all duration-300 ease-spring active:scale-[0.96]"
           >
             + Nieuwe offerte
           </button>

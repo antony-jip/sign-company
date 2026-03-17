@@ -4,13 +4,13 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-semibold ring-offset-background transition-all duration-fast ease-out-expo focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.97]",
+  "inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-semibold ring-offset-background transition-all duration-200 ease-smooth focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.97]",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(0,0,0,0.15)]",
+        default: "bg-primary text-primary-foreground shadow-elevation-xs hover:-translate-y-px hover:shadow-elevation-md",
         destructive: "bg-[var(--color-coral)] text-[var(--color-coral-text)] border border-[var(--color-coral-border)] hover:brightness-95",
-        outline: "border border-border-subtle bg-card text-foreground hover:bg-bg-hover hover:-translate-y-px hover:shadow-sm",
+        outline: "border border-border-subtle bg-card text-foreground shadow-elevation-xs hover:bg-bg-hover hover:-translate-y-px hover:shadow-elevation-sm",
         secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/70",
         ghost: "text-text-tertiary hover:bg-bg-hover hover:text-foreground",
         link: "text-primary underline-offset-4 hover:underline",

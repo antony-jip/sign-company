@@ -68,20 +68,20 @@ export function QuickActions() {
           const Icon = action.icon
           return (
             <Link key={action.label} to={action.href}>
-              <Card className="wm-quick-action cursor-pointer group overflow-hidden border-border/50">
+              <Card className="wm-quick-action cursor-pointer group overflow-hidden border-black/[0.04] dark:border-white/[0.06]">
                 <CardContent className="p-4 flex flex-col items-center justify-center gap-3 text-center relative">
-                  <div className={`wm-action-icon flex items-center justify-center h-11 w-11 rounded-xl bg-gradient-to-br ${action.gradient} shadow-md`}>
-                    <Icon className="h-5 w-5 text-white" />
+                  <div className={`wm-action-icon flex items-center justify-center h-11 w-11 rounded-xl bg-gradient-to-br ${action.gradient} shadow-[0_4px_12px_-2px_rgba(0,0,0,0.2)]`}>
+                    <Icon className="h-5 w-5 text-white drop-shadow-sm" />
                   </div>
                   <div>
-                    <span className="text-sm font-medium text-foreground block">
+                    <span className="text-sm font-semibold text-foreground block tracking-tight">
                       {action.label}
                     </span>
                     <span className="text-xs text-muted-foreground hidden sm:block">
                       {action.description}
                     </span>
                   </div>
-                  <ArrowUpRight className="absolute top-3 right-3 w-3.5 h-3.5 text-muted-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                  <ArrowUpRight className="absolute top-3 right-3 w-3.5 h-3.5 text-muted-foreground/30 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-300" />
                 </CardContent>
               </Card>
             </Link>

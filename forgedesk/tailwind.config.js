@@ -121,6 +121,17 @@ export default {
       },
       transitionTimingFunction: {
         "out-expo": "var(--ease-out)",
+        "spring": "var(--ease-spring)",
+        "smooth": "var(--ease-smooth)",
+      },
+      boxShadow: {
+        "elevation-xs": "var(--shadow-xs)",
+        "elevation-sm": "var(--shadow-sm)",
+        "elevation-md": "var(--shadow-md)",
+        "elevation-lg": "var(--shadow-lg)",
+        "elevation-xl": "var(--shadow-xl)",
+        "glow": "var(--shadow-glow)",
+        "inner-light": "var(--shadow-inner-light)",
       },
       borderRadius: {
         sm: "var(--radius-sm)",
@@ -179,6 +190,29 @@ export default {
           "0%": { opacity: "0", transform: "translateX(40px)" },
           "100%": { opacity: "1", transform: "translateX(0)" },
         },
+        "spring-in": {
+          "0%": { opacity: "0", transform: "scale(0.9) translateY(8px)" },
+          "60%": { opacity: "1", transform: "scale(1.02) translateY(-2px)" },
+          "100%": { transform: "scale(1) translateY(0)" },
+        },
+        "slide-up-spring": {
+          "0%": { opacity: "0", transform: "translateY(16px) scale(0.98)" },
+          "70%": { opacity: "1", transform: "translateY(-3px) scale(1.005)" },
+          "100%": { transform: "translateY(0) scale(1)" },
+        },
+        "number-tick": {
+          "0%": { transform: "translateY(100%)", opacity: "0" },
+          "60%": { transform: "translateY(-6%)" },
+          "100%": { transform: "translateY(0)", opacity: "1" },
+        },
+        "glow-pulse": {
+          "0%, 100%": { boxShadow: "0 0 0 0 rgba(204,138,63,0.0)" },
+          "50%": { boxShadow: "0 0 24px 4px rgba(204,138,63,0.08)" },
+        },
+        "shimmer-premium": {
+          "0%": { backgroundPosition: "-200% 0" },
+          "100%": { backgroundPosition: "200% 0" },
+        },
       },
       animation: {
         "stagger-item": "stagger-item 0.3s var(--ease-out) both",
@@ -193,6 +227,11 @@ export default {
         "orb-float": "orb-float 12s ease-in-out infinite",
         "orb-float-slow": "orb-float 18s ease-in-out infinite",
         "fade-up": "fade-up 0.7s cubic-bezier(.4,0,.2,1) forwards",
+        "spring-in": "spring-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both",
+        "slide-up-spring": "slide-up-spring 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both",
+        "number-tick": "number-tick 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both",
+        "glow-pulse": "glow-pulse 3s ease-in-out infinite",
+        "shimmer-premium": "shimmer-premium 2.5s ease-in-out infinite",
       },
     },
   },
