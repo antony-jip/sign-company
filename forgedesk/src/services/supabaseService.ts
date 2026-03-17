@@ -925,7 +925,7 @@ export async function getEmails(limit = 200): Promise<Email[]> {
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('emails')
-      .select('id, user_id, message_id, uid, imap_folder, map, from_address, from_name, van, aan, to_addresses, cc_addresses, onderwerp, datum, gelezen, bijlagen, has_attachments, attachment_meta, inhoud, gmail_id, inbox_type, toegewezen_aan, created_at')
+      .select('*')
       .order('datum', { ascending: false })
       .limit(limit)
     if (error) throw error
