@@ -144,7 +144,7 @@ const statusLabels: Record<string, string> = {
   gefactureerd: 'Gefactureerd',
 }
 
-type ProjectTab = 'overzicht' | 'financieel' | 'bestanden' | 'portaal'
+type ProjectTab = 'overzicht' | 'financieel'
 
 const goedkeuringStatusLabels: Record<string, string> = {
   verzonden: 'Verzonden',
@@ -209,7 +209,7 @@ export function ProjectDetail() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [activeTab, setActiveTab] = useState<ProjectTab>(() => {
     const tabParam = new URLSearchParams(window.location.search).get('tab')
-    return (['overzicht', 'financieel', 'bestanden', 'portaal'].includes(tabParam || '') ? tabParam : 'overzicht') as ProjectTab
+    return (['overzicht', 'financieel'].includes(tabParam || '') ? tabParam : 'overzicht') as ProjectTab
   })
   const handleTabChange = (tab: ProjectTab) => {
     setActiveTab(tab)
@@ -920,8 +920,8 @@ export function ProjectDetail() {
               </Button>
               <div className="w-px h-5 bg-border mx-1 hidden sm:block" />
               {/* Snelkoppelingen */}
-              <Button variant="outline" size="sm" className="h-7 px-2.5 text-xs" onClick={openNieuweOfferte}>
-                <Plus className="h-3 w-3 mr-1" />Offerte
+              <Button size="sm" className="h-7 px-3 text-xs bg-primary hover:bg-primary/90 text-white font-medium" onClick={openNieuweOfferte}>
+                <Receipt className="h-3.5 w-3.5 mr-1.5" />Offerte maken
               </Button>
               <Button variant="outline" size="sm" className="h-7 px-2.5 text-xs" onClick={() => setShowWerkbonDialog(true)}>
                 <Plus className="h-3 w-3 mr-1" />Werkbon
@@ -958,8 +958,6 @@ export function ProjectDetail() {
         {([
           { key: 'overzicht' as ProjectTab, label: 'Overzicht', count: projectTaken.length },
           { key: 'financieel' as ProjectTab, label: 'Financieel', count: projectOffertes.length + projectFacturen.length },
-          { key: 'bestanden' as ProjectTab, label: 'Bestanden', count: projectDocumenten.length + projectFotos.length },
-          { key: 'portaal' as ProjectTab, label: 'Portaal' },
         ]).map((tab) => (
           <button
             key={tab.key}
@@ -1087,6 +1085,9 @@ export function ProjectDetail() {
 
       {/* ══════════ OVERZICHT TAB ══════════ */}
       {activeTab === 'overzicht' && <>
+      <div className="flex flex-col lg:flex-row gap-6">
+        {/* ── Linkerkolom: hoofd-content ── */}
+        <div className="flex-1 min-w-0 space-y-6">
 
       {/* ── Briefing Sectie ── */}
       <Card className="border-border/80 dark:border-border/80">
@@ -1681,6 +1682,151 @@ export function ProjectDetail() {
           )}
         </div>
       </div>
+
+          {/* ── Portaal (altijd zichtbaar in overzicht) ── */}
+          {project && (
+            <ProjectPortaalTab projectId={project.id} projectNaam={project.naam} />
+          )}
+
+        </div>{/* einde linkerkolom */}
+
+        {/* ── Rechterkolom: Bestanden sidebar ── */}
+        <div className="w-full lg:w-80 xl:w-96 flex-shrink-0 space-y-4 lg:self-start">
+          {/* Visualisaties */}
+          <Card className="border-border/80 dark:border-border/80">
+            <CardContent className="pt-5">
+              <VisualisatieGallery project_id={project.id} klant_id={project.klant_id} compact />
+            </CardContent>
+          </Card>
+
+          {/* Foto's */}
+          <ProjectPhotoGallery
+            projectId={id!}
+            userId={user?.id || ''}
+            photos={projectFotos}
+            onPhotosChanged={fetchProjectFotos}
+          />
+
+          {/* Bestanden upload + lijst */}
+          <Card className="border-border/80 dark:border-border/80">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-accent to-primary flex items-center justify-center">
+                    <FileText className="h-3.5 w-3.5 text-white" />
+                  </div>
+                  Bestanden
+                  <span className="text-xs text-muted-foreground font-normal">{projectDocumenten.length}</span>
+                </CardTitle>
+                <div className="flex items-center gap-1">
+                  {projectDocumenten.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-xs"
+                      onClick={openVerstuurDialog}
+                      title="Verstuur naar klant"
+                    >
+                      <Send className="h-3.5 w-3.5 mr-1" />
+                      Verstuur
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0"
+                    onClick={() => fileInputRef.current?.click()}
+                    title="Bestand uploaden"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {/* Drag & drop zone */}
+              <div
+                className={`border-2 border-dashed rounded-xl p-4 text-center transition-all duration-200 cursor-pointer ${
+                  isDragging
+                    ? 'border-primary bg-primary/10 dark:bg-primary/20'
+                    : 'border-border dark:border-border hover:border-primary'
+                }`}
+                onClick={() => fileInputRef.current?.click()}
+                onDragOver={(e) => {
+                  e.preventDefault()
+                  setIsDragging(true)
+                }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={(e) => {
+                  e.preventDefault()
+                  setIsDragging(false)
+                  const files = Array.from(e.dataTransfer.files)
+                  if (files.length > 0) {
+                    handleFileUpload(files)
+                  }
+                }}
+              >
+                <div className="flex flex-col items-center gap-2">
+                  <Upload className={`h-5 w-5 transition-colors ${
+                    isDragging
+                      ? 'text-accent dark:text-primary'
+                      : 'text-muted-foreground opacity-60'
+                  }`} />
+                  <p className={`text-xs font-medium ${isDragging ? 'text-accent dark:text-primary' : 'text-muted-foreground'}`}>
+                    {isDragging ? 'Laat los om te uploaden' : 'Sleep bestanden of klik om te uploaden'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Bestandenlijst */}
+              {projectDocumenten.length > 0 && (
+                <div className="space-y-2">
+                  {projectDocumenten.map((doc) => (
+                    <div
+                      key={doc.id}
+                      className="flex items-center gap-2.5 bg-background dark:bg-muted/50 rounded-lg px-3 py-2 group hover:bg-muted dark:hover:bg-muted transition-colors cursor-pointer"
+                    >
+                      <div className="flex-shrink-0 group-hover:scale-110 transition-transform duration-200">
+                        {getFileIcon(doc.type)}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-foreground truncate group-hover:text-accent dark:group-hover:text-primary transition-colors">
+                          {doc.naam}
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <span className="text-2xs text-muted-foreground">{formatFileSize(doc.grootte)}</span>
+                          <Badge className={`${getStatusColor(doc.status)} text-2xs px-1 py-0`}>
+                            {doc.status}
+                          </Badge>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-red-400 hover:text-red-600"
+                        onClick={async (e) => {
+                          e.stopPropagation()
+                          try {
+                            await deleteDocument(doc.id)
+                            toast.success(`"${doc.naam}" verwijderd`)
+                            await fetchDocumenten()
+                          } catch (err) {
+                            logger.error('Fout bij verwijderen:', err)
+                            toast.error('Kon bestand niet verwijderen')
+                          }
+                        }}
+                        title="Verwijderen"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>{/* einde rechterkolom/sidebar */}
+      </div>{/* einde flex container */}
       </>}
 
           {/* ── Werkbonnen ── */}
@@ -1848,14 +1994,6 @@ export function ProjectDetail() {
             </Card>
           )}
 
-          {/* ── Signing Visualisaties ── */}
-          {activeTab === 'bestanden' && (
-          <Card className="border-border/80 dark:border-border/80">
-            <CardContent className="pt-5">
-              <VisualisatieGallery project_id={project.id} klant_id={project.klant_id} compact />
-            </CardContent>
-          </Card>
-          )}
 
           {/* ── Offertes ── */}
           {activeTab === 'financieel' && projectOffertes.length > 0 && (
@@ -2087,141 +2225,7 @@ export function ProjectDetail() {
             </DialogContent>
           </Dialog>
 
-          {/* ── Situatiefoto's ── */}
-          {activeTab === 'bestanden' && (
-          <ProjectPhotoGallery
-            projectId={id!}
-            userId={user?.id || ''}
-            photos={projectFotos}
-            onPhotosChanged={fetchProjectFotos}
-          />
-          )}
 
-          {/* ── Bestanden (drag & drop + upload button) ── */}
-          {activeTab === 'bestanden' && (
-          <Card className="border-border/80 dark:border-border/80">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-accent to-primary flex items-center justify-center">
-                    <FileText className="h-3.5 w-3.5 text-white" />
-                  </div>
-                  Bestanden
-                  <span className="text-xs text-muted-foreground font-normal">{projectDocumenten.length}</span>
-                </CardTitle>
-                <div className="flex items-center gap-1">
-                  {projectDocumenten.length > 0 && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 px-2 text-xs"
-                      onClick={openVerstuurDialog}
-                      title="Verstuur naar klant"
-                    >
-                      <Send className="h-3.5 w-3.5 mr-1" />
-                      Verstuur
-                    </Button>
-                  )}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 w-7 p-0"
-                    onClick={() => fileInputRef.current?.click()}
-                    title="Bestand uploaden"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {/* Drag & drop zone */}
-              <div
-                className={`border-2 border-dashed rounded-xl p-4 text-center transition-all duration-200 cursor-pointer ${
-                  isDragging
-                    ? 'border-primary bg-primary/10 dark:bg-primary/20'
-                    : 'border-border dark:border-border hover:border-primary'
-                }`}
-                onClick={() => fileInputRef.current?.click()}
-                onDragOver={(e) => {
-                  e.preventDefault()
-                  setIsDragging(true)
-                }}
-                onDragLeave={() => setIsDragging(false)}
-                onDrop={(e) => {
-                  e.preventDefault()
-                  setIsDragging(false)
-                  const files = Array.from(e.dataTransfer.files)
-                  if (files.length > 0) {
-                    handleFileUpload(files)
-                  }
-                }}
-              >
-                <div className="flex flex-col items-center gap-2">
-                  <Upload className={`h-5 w-5 transition-colors ${
-                    isDragging
-                      ? 'text-accent dark:text-primary'
-                      : 'text-muted-foreground opacity-60'
-                  }`} />
-                  <p className={`text-xs font-medium ${isDragging ? 'text-accent dark:text-primary' : 'text-muted-foreground'}`}>
-                    {isDragging ? 'Laat los om te uploaden' : 'Sleep bestanden of klik om te uploaden'}
-                  </p>
-                </div>
-              </div>
-
-              {/* Bestandenlijst */}
-              {projectDocumenten.length > 0 && (
-                <div className="space-y-2">
-                  {projectDocumenten.map((doc) => (
-                    <div
-                      key={doc.id}
-                      className="flex items-center gap-2.5 bg-background dark:bg-muted/50 rounded-lg px-3 py-2 group hover:bg-muted dark:hover:bg-muted transition-colors cursor-pointer"
-                    >
-                      <div className="flex-shrink-0 group-hover:scale-110 transition-transform duration-200">
-                        {getFileIcon(doc.type)}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-foreground truncate group-hover:text-accent dark:group-hover:text-primary transition-colors">
-                          {doc.naam}
-                        </p>
-                        <div className="flex items-center gap-2">
-                          <span className="text-2xs text-muted-foreground">{formatFileSize(doc.grootte)}</span>
-                          <Badge className={`${getStatusColor(doc.status)} text-2xs px-1 py-0`}>
-                            {doc.status}
-                          </Badge>
-                        </div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-red-400 hover:text-red-600"
-                        onClick={async (e) => {
-                          e.stopPropagation()
-                          try {
-                            await deleteDocument(doc.id)
-                            toast.success(`"${doc.naam}" verwijderd`)
-                            await fetchDocumenten()
-                          } catch (err) {
-                            logger.error('Fout bij verwijderen:', err)
-                            toast.error('Kon bestand niet verwijderen')
-                          }
-                        }}
-                        title="Verwijderen"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-          )}
-
-          {/* ── Portaal Tab ── */}
-          {activeTab === 'portaal' && project && (
-            <ProjectPortaalTab projectId={project.id} projectNaam={project.naam} />
-          )}
 
 
       {/* ── AI Analyse dialog ── */}
