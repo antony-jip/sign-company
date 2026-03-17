@@ -351,7 +351,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
             <div className="flex items-center gap-3 min-w-0">
               <button
                 onClick={() => navigate(-1)}
-                className="flex-shrink-0 p-1.5 rounded-lg hover:bg-muted dark:hover:bg-foreground/80 transition-colors"
+                className="flex-shrink-0 p-1.5 rounded-lg hover:bg-muted dark:hover:bg-muted transition-colors"
               >
                 <ArrowLeft className="h-4 w-4 text-muted-foreground dark:text-muted-foreground/60" />
               </button>
@@ -363,7 +363,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
                   <select
                     value={offerteData.status}
                     onChange={(e) => handleStatusUpdate(e.target.value as Offerte['status'])}
-                    className="text-xs border border-border dark:border-border rounded-md px-2 py-0.5 bg-white dark:bg-foreground/80 text-foreground/70 dark:text-muted-foreground/50"
+                    className="text-xs border border-border rounded-md px-2 py-0.5 bg-card dark:bg-muted text-foreground/70 dark:text-muted-foreground/50"
                   >
                     {(pipelineStappen && pipelineStappen.length > 0
                       ? pipelineStappen.filter(s => s.actief).sort((a, b) => a.volgorde - b.volgorde)
@@ -405,7 +405,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
             <div className="flex items-center gap-2 flex-shrink-0">
               <button
                 onClick={() => navigate(`/offertes/${fetchedOfferte.id}/bewerken`, { state: { from: location.pathname } })}
-                className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-foreground/70 dark:text-muted-foreground/50 bg-white dark:bg-foreground/80 border border-border dark:border-border rounded-lg hover:bg-background dark:hover:bg-foreground/70 transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-foreground/70 dark:text-muted-foreground/50 bg-card dark:bg-muted border border-border rounded-lg hover:bg-bg-hover transition-colors"
               >
                 <Pencil className="h-3.5 w-3.5" />
                 Bewerk offerte
@@ -462,7 +462,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
       )}
 
       {/* A4-like document */}
-      <div className="bg-white dark:bg-foreground shadow-xl rounded-lg border border-border dark:border-border overflow-hidden">
+      <div className="bg-white dark:bg-card shadow-xl rounded-lg border border-border dark:border-border overflow-hidden">
         {/* Header */}
         <div className="px-10 pt-10 pb-6">
           <div className="flex justify-between items-start">
@@ -500,7 +500,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
           {/* Client Info & Quote Details */}
           <div className="grid grid-cols-2 gap-8">
             {/* Client */}
-            <div className="bg-background dark:bg-foreground/80/50 rounded-lg p-4">
+            <div className="bg-background dark:bg-muted/50 rounded-lg p-4">
               <h3 className="text-xs font-bold text-text-tertiary dark:text-muted-foreground/60 uppercase tracking-label mb-2">
                 Klantgegevens
               </h3>
@@ -524,24 +524,24 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
             </div>
 
             {/* Quote Details */}
-            <div className="bg-background dark:bg-foreground/80/50 rounded-lg p-4">
+            <div className="bg-background dark:bg-muted/50 rounded-lg p-4">
               <h3 className="text-xs font-bold text-text-tertiary dark:text-muted-foreground/60 uppercase tracking-label mb-2">
                 Offertegegevens
               </h3>
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground dark:text-muted-foreground/60">Nummer:</span>
-                  <span className="font-medium text-foreground dark:text-white">{offerteData.nummer}</span>
+                  <span className="font-medium font-mono text-foreground dark:text-white">{offerteData.nummer}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground dark:text-muted-foreground/60">Datum:</span>
-                  <span className="font-medium text-foreground dark:text-white">
+                  <span className="font-medium font-mono text-foreground dark:text-white">
                     {formatDate(offerteData.created_at)}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground dark:text-muted-foreground/60">Geldig tot:</span>
-                  <span className="font-medium text-foreground dark:text-white">
+                  <span className="font-medium font-mono text-foreground dark:text-white">
                     {formatDate(offerteData.geldig_tot)}
                   </span>
                 </div>
@@ -600,7 +600,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
                   return (
                     <React.Fragment key={index}>
                       {/* Item header row spanning full width */}
-                      <tr className={`border-b border-border dark:border-border ${index % 2 === 0 ? '' : 'bg-background/50 dark:bg-foreground/80/20'}`}>
+                      <tr className={`border-b border-border dark:border-border ${index % 2 === 0 ? '' : 'bg-background/50 dark:bg-muted/20'}`}>
                         <td className="py-3 px-2 text-muted-foreground dark:text-muted-foreground/60 align-top">{index + 1}</td>
                         <td colSpan={5} className="py-3 px-2">
                           <span className="font-medium text-foreground dark:text-muted-foreground/20">{item.beschrijving}</span>
@@ -617,7 +617,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
                             className={`border-b border-border dark:border-border/50 ${
                               isActive
                                 ? 'bg-blue-50/50 dark:bg-blue-900/10'
-                                : 'bg-background/30 dark:bg-foreground/80/10'
+                                : 'bg-background/30 dark:bg-muted/10'
                             }`}
                           >
                             <td className="py-2 px-2" />
@@ -666,7 +666,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
                   <tr
                     key={index}
                     className={`border-b border-border dark:border-border ${
-                      index % 2 === 0 ? '' : 'bg-background/50 dark:bg-foreground/80/20'
+                      index % 2 === 0 ? '' : 'bg-background/50 dark:bg-muted/20'
                     }`}
                   >
                     <td className="py-3 px-2 text-muted-foreground dark:text-muted-foreground/60">{index + 1}</td>
@@ -710,14 +710,14 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
               const isPdf = item.bijlage_type === 'application/pdf'
               return (
                 <div key={index} className="border border-border dark:border-border rounded-lg overflow-hidden">
-                  <div className="px-4 py-2 bg-background/50 dark:bg-foreground/80/30 border-b border-border dark:border-border flex items-center gap-2">
+                  <div className="px-4 py-2 bg-background/50 dark:bg-muted/30 border-b border-border dark:border-border flex items-center gap-2">
                     <span className="text-xs font-semibold text-muted-foreground">{index + 1}.</span>
                     <span className="text-sm font-medium text-foreground dark:text-white">{item.beschrijving}</span>
                     {item.bijlage_naam && (
                       <span className="ml-auto text-xs text-muted-foreground">{item.bijlage_naam}</span>
                     )}
                   </div>
-                  <div className="p-4 flex items-center justify-center bg-white dark:bg-foreground/80">
+                  <div className="p-4 flex items-center justify-center bg-card dark:bg-muted">
                     {isPdf ? (
                       <div className="flex items-center gap-3 py-4">
                         <Paperclip className="h-6 w-6 text-rose-500" />
@@ -798,7 +798,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
           )}
 
           {offerteData.voorwaarden && (
-            <div className="bg-background dark:bg-foreground/80/30 rounded-lg p-4">
+            <div className="bg-background dark:bg-muted/30 rounded-lg p-4">
               <h4 className="font-bold text-text-tertiary dark:text-muted-foreground/50 text-xs uppercase tracking-label mb-2">
                 Voorwaarden
               </h4>

@@ -1281,7 +1281,7 @@ function TaskCard({
         !isResizing && 'cursor-grab active:cursor-grabbing',
         'hover:shadow-lg hover:shadow-black/5 hover:z-10 hover:-translate-y-[1px]',
         isDone
-          ? 'opacity-40 border-l-slate-300 bg-slate-50 dark:bg-slate-800/20 hover:opacity-60'
+          ? 'opacity-40 border-l-border bg-muted/40 dark:bg-muted/20 hover:opacity-60'
           : `${colors.border} ${colors.bg}`,
         isPast && !isDone && 'opacity-60',
         justCompleted && 'scale-95 opacity-50',

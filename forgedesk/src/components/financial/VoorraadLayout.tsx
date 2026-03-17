@@ -417,9 +417,9 @@ export function VoorraadLayout() {
           </CardHeader>
           <CardContent>
             {mutaties.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <ArrowDownUp className="h-8 w-8 mx-auto opacity-30 mb-2" />
-                <p className="text-sm">Nog geen mutaties geregistreerd.</p>
+              <div className="flex flex-col items-center py-8 text-muted-foreground">
+                <ArrowDownUp className="h-8 w-8 opacity-30 mb-2" />
+                <p className="text-sm font-medium">Nog geen mutaties geregistreerd.</p>
               </div>
             ) : (
               <div className="space-y-2">
@@ -532,7 +532,7 @@ export function VoorraadLayout() {
                 {gefilterd.map((art) => {
                   const isLaag = art.actief && art.huidige_voorraad < art.minimum_voorraad
                   return (
-                    <tr key={art.id} className="group hover:bg-muted/30 transition-colors cursor-pointer" onClick={() => openDetailView(art)}>
+                    <tr key={art.id} className="group hover:bg-bg-hover transition-colors duration-150 cursor-pointer" onClick={() => openDetailView(art)}>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-semibold text-foreground">{art.naam}</span>

@@ -851,7 +851,7 @@ export function ProjectDetail() {
                 <div>
                   <h1 className="text-xl font-medium text-foreground leading-tight">{project.naam}</h1>
                   {project.project_nummer && (
-                    <span className="text-xs text-gray-400 font-mono">{project.project_nummer}</span>
+                    <span className="text-xs text-muted-foreground/60 font-mono">{project.project_nummer}</span>
                   )}
                 </div>
                 <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1.5">
@@ -1419,7 +1419,7 @@ export function ProjectDetail() {
                 {goedkeuringen.map((gk) => (
                   <div
                     key={gk.id}
-                    className="bg-background dark:bg-foreground/80/50 rounded-xl p-4 space-y-2"
+                    className="bg-background dark:bg-muted/50 rounded-xl p-4 space-y-2"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -1435,14 +1435,14 @@ export function ProjectDetail() {
                     </div>
 
                     <div className="text-xs text-muted-foreground">
-                      Verstuurd naar {gk.email_aan} op {formatDate(gk.created_at)}
+                      Verstuurd naar {gk.email_aan} op <span className="font-mono">{formatDate(gk.created_at)}</span>
                       {gk.revisie_nummer > 1 && ` (revisie ${gk.revisie_nummer})`}
                     </div>
 
                     {gk.status === 'goedgekeurd' && gk.goedgekeurd_door && (
                       <div className="bg-green-50 dark:bg-green-950/30 rounded-lg px-3 py-2 text-xs text-green-700 dark:text-green-400">
                         Goedgekeurd door <strong>{gk.goedgekeurd_door}</strong>
-                        {gk.goedgekeurd_op && ` op ${formatDate(gk.goedgekeurd_op)}`}
+                        {gk.goedgekeurd_op && <> op <span className="font-mono">{formatDate(gk.goedgekeurd_op)}</span></>}
                       </div>
                     )}
 
@@ -1572,7 +1572,7 @@ export function ProjectDetail() {
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-sage to-sage-deep flex items-center justify-center">
+                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
                     <Users className="h-3.5 w-3.5 text-white" />
                   </div>
                   Team
@@ -1588,7 +1588,7 @@ export function ProjectDetail() {
                       key={lid}
                       className="flex items-center gap-2.5 bg-background rounded-lg px-3 py-2 border border-border/40 group"
                     >
-                      <div className="h-7 w-7 rounded-full bg-gradient-to-br from-sage to-sage-deep flex items-center justify-center text-white text-2xs font-bold flex-shrink-0">
+                      <div className="h-7 w-7 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white text-2xs font-bold flex-shrink-0">
                         {getInitials(lid)}
                       </div>
                       <span className="text-sm font-medium text-foreground truncate flex-1">{lid}</span>
@@ -1665,14 +1665,14 @@ export function ProjectDetail() {
                   {projectMontages.map((m) => (
                     <div
                       key={m.id}
-                      className="flex items-center justify-between p-2 rounded-lg hover:bg-background dark:hover:bg-foreground/80/50 cursor-pointer transition-colors"
+                      className="flex items-center justify-between p-2 rounded-lg hover:bg-background dark:hover:bg-muted/50 cursor-pointer transition-colors"
                       onClick={() => navigate('/montage')}
                     >
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium truncate">{m.titel}</p>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <CalendarDays className="h-3 w-3 flex-shrink-0" />
-                          <span>{new Date(m.datum).toLocaleDateString('nl-NL')} {m.start_tijd}–{m.eind_tijd}</span>
+                          <span className="font-mono">{new Date(m.datum).toLocaleDateString('nl-NL')} {m.start_tijd}–{m.eind_tijd}</span>
                         </div>
                         {m.locatie && (
                           <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -1723,12 +1723,12 @@ export function ProjectDetail() {
                   {projectWerkbonnen.map((wb) => (
                     <div
                       key={wb.id}
-                      className="group flex items-center justify-between p-2 rounded-lg hover:bg-background dark:hover:bg-foreground/80/50 cursor-pointer transition-colors"
+                      className="group flex items-center justify-between p-2 rounded-lg hover:bg-background dark:hover:bg-muted/50 cursor-pointer transition-colors"
                       onClick={() => navigate(`/werkbonnen/${wb.id}`)}
                     >
                       <div>
                         <p className="text-sm font-medium font-mono">{wb.werkbon_nummer}</p>
-                        <p className="text-xs text-muted-foreground">{new Date(wb.datum).toLocaleDateString('nl-NL')}</p>
+                        <p className="text-xs text-muted-foreground font-mono">{new Date(wb.datum).toLocaleDateString('nl-NL')}</p>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className={`text-xs px-2 py-0.5 rounded-full ${
@@ -1795,12 +1795,12 @@ export function ProjectDetail() {
                   {projectFacturen.map((factuur) => (
                     <div
                       key={factuur.id}
-                      className="flex items-center justify-between p-2 rounded-lg hover:bg-background dark:hover:bg-foreground/80/50 cursor-pointer transition-colors"
+                      className="flex items-center justify-between p-2 rounded-lg hover:bg-background dark:hover:bg-muted/50 cursor-pointer transition-colors"
                       onClick={() => navigate(`/facturen/${factuur.id}`)}
                     >
                       <div>
                         <p className="text-sm font-medium font-mono">{factuur.nummer}</p>
-                        <p className="text-xs text-muted-foreground">{new Date(factuur.factuurdatum).toLocaleDateString('nl-NL')}</p>
+                        <p className="text-xs text-muted-foreground font-mono">{new Date(factuur.factuurdatum).toLocaleDateString('nl-NL')}</p>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-bold font-mono">{formatCurrency(factuur.totaal)}</span>
@@ -1839,12 +1839,12 @@ export function ProjectDetail() {
                   {projectUitgaven.map((uitgave) => (
                     <div
                       key={uitgave.id}
-                      className="flex items-center justify-between p-2 rounded-lg hover:bg-background dark:hover:bg-foreground/80/50 cursor-pointer transition-colors"
+                      className="flex items-center justify-between p-2 rounded-lg hover:bg-background dark:hover:bg-muted/50 cursor-pointer transition-colors"
                       onClick={() => navigate('/uitgaven')}
                     >
                       <div>
                         <p className="text-sm font-medium font-mono">{uitgave.uitgave_nummer}</p>
-                        <p className="text-xs text-muted-foreground">{new Date(uitgave.datum).toLocaleDateString('nl-NL')}</p>
+                        <p className="text-xs text-muted-foreground font-mono">{new Date(uitgave.datum).toLocaleDateString('nl-NL')}</p>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-bold font-mono">{formatCurrency(uitgave.bedrag_incl_btw)}</span>
@@ -1903,7 +1903,7 @@ export function ProjectDetail() {
                     return (
                       <div
                         key={offerte.id}
-                        className="bg-background dark:bg-foreground/80/50 rounded-lg px-3 py-2.5 space-y-1.5"
+                        className="bg-background dark:bg-muted/50 rounded-lg px-3 py-2.5 space-y-1.5"
                       >
                         <div className="flex items-center justify-between gap-2">
                           <p className="text-sm font-medium text-foreground truncate">{offerte.titel}</p>
@@ -1928,7 +1928,7 @@ export function ProjectDetail() {
                           )}
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-xs text-muted-foreground">{offerte.nummer}</span>
+                          <span className="text-xs text-muted-foreground font-mono">{offerte.nummer}</span>
                           <span className="text-sm font-bold text-foreground font-mono">{formatCurrency(offerte.totaal)}</span>
                         </div>
                         <div className="flex items-center gap-1 pt-0.5 flex-wrap">
@@ -2047,7 +2047,7 @@ export function ProjectDetail() {
                     id="email-aan"
                     value={klant?.email || project.klant_naam || 'Klant'}
                     readOnly
-                    className="bg-background dark:bg-foreground/80"
+                    className="bg-background dark:bg-muted"
                   />
                 </div>
                 <div className="space-y-2">
@@ -2190,7 +2190,7 @@ export function ProjectDetail() {
                   {projectDocumenten.map((doc) => (
                     <div
                       key={doc.id}
-                      className="flex items-center gap-2.5 bg-background dark:bg-foreground/80/50 rounded-lg px-3 py-2 group hover:bg-muted dark:hover:bg-foreground/80 transition-colors cursor-pointer"
+                      className="flex items-center gap-2.5 bg-background dark:bg-muted/50 rounded-lg px-3 py-2 group hover:bg-muted dark:hover:bg-muted transition-colors cursor-pointer"
                     >
                       <div className="flex-shrink-0 group-hover:scale-110 transition-transform duration-200">
                         {getFileIcon(doc.type)}
@@ -2357,7 +2357,7 @@ export function ProjectDetail() {
                       className={`flex items-center gap-2.5 rounded-lg px-3 py-2 cursor-pointer transition-colors ${
                         selectedDocIds.includes(doc.id)
                           ? 'bg-primary/10 dark:bg-primary/20 border border-primary/30 dark:border-primary/30'
-                          : 'bg-background dark:bg-foreground/80/50 hover:bg-muted dark:hover:bg-foreground/80 border border-transparent'
+                          : 'bg-background dark:bg-muted/50 hover:bg-muted dark:hover:bg-muted border border-transparent'
                       }`}
                     >
                       <input
@@ -2410,7 +2410,7 @@ export function ProjectDetail() {
               <Input
                 value={klant?.email || project.klant_naam || ''}
                 readOnly
-                className="bg-background dark:bg-foreground/80"
+                className="bg-background dark:bg-muted"
               />
             </div>
 
@@ -2493,7 +2493,7 @@ export function ProjectDetail() {
                 onChange={(e) => setKopieStartDatum(e.target.value)}
               />
             </div>
-            <div className="bg-background dark:bg-foreground/80/50 rounded-lg p-3 text-xs text-muted-foreground space-y-1">
+            <div className="bg-background dark:bg-muted/50 rounded-lg p-3 text-xs text-muted-foreground space-y-1">
               <p>Wordt gekopieerd:</p>
               <ul className="list-disc list-inside space-y-0.5">
                 <li>{projectTaken.length} taken (status wordt reset naar 'todo')</li>
@@ -2563,7 +2563,7 @@ export function ProjectDetail() {
                         'px-2 py-1 rounded-md text-xs border transition-colors',
                         montageMonteurs.includes(m.id)
                           ? 'bg-blue-100 border-blue-300 text-blue-700 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300'
-                          : 'bg-background border-border text-muted-foreground hover:bg-muted dark:bg-foreground/80 dark:border-border'
+                          : 'bg-background border-border text-muted-foreground hover:bg-muted dark:bg-muted dark:border-border'
                       )}
                     >
                       {m.naam}
@@ -2667,7 +2667,7 @@ function TaakCard({ taak, onStatusChange }: { key?: React.Key; taak: Taak; onSta
             )}
             {taak.deadline && (
               <span className={cn(
-                'text-2xs ml-auto',
+                'text-2xs ml-auto font-mono',
                 isOverdue ? 'text-red-500 font-medium' : 'text-muted-foreground/60'
               )}>
                 {formatDate(taak.deadline)}

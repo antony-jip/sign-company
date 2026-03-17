@@ -253,7 +253,7 @@ export function GeneralLedgerSettings() {
                     filteredAccounts.map((account) => (
                       <tr
                         key={account.id}
-                        className="border-b border-border dark:border-border hover:bg-background dark:hover:bg-foreground/80/50 transition-colors"
+                        className="border-b border-border dark:border-border hover:bg-background dark:hover:bg-muted/50 transition-colors"
                       >
                         <td className="py-3 px-4 font-mono text-xs text-muted-foreground dark:text-muted-foreground/60">
                           {account.code}
@@ -305,7 +305,7 @@ export function GeneralLedgerSettings() {
                 {(Object.entries(categoryTotals) as [string, number][]).map(([cat, total]) => (
                   <div
                     key={cat}
-                    className="flex items-center justify-between p-3 rounded-lg bg-background dark:bg-foreground/80/50"
+                    className="flex items-center justify-between p-3 rounded-lg bg-background dark:bg-muted/50"
                   >
                     <Badge className={categorieColors[cat]}>
                       {categorieLabels[cat]}

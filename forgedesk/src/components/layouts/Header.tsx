@@ -171,7 +171,7 @@ export function Header() {
             aria-expanded={userMenuOpen}
             aria-haspopup="true"
           >
-            <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-gradient-to-br from-sage to-blush flex items-center justify-center ring-2 ring-border">
+            <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-gradient-to-br from-amber-400 to-blush flex items-center justify-center ring-2 ring-border">
               <span className="text-white text-2xs md:text-xs font-semibold">
                 {userInitial}
               </span>

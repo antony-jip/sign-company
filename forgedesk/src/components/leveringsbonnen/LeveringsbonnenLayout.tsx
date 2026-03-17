@@ -172,12 +172,12 @@ export function LeveringsbonnenLayout() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-4">
         {FILTER_OPTIONS.filter((f) => f.value !== 'alle').map((opt) => {
           const cfg = STATUS_CONFIG[opt.value as Leveringsbon['status']]
           return (
             <button key={opt.value} onClick={() => setFilterStatus(opt.value)}
-              className={cn('text-left rounded-xl border p-3 transition-all hover:shadow-md', filterStatus === opt.value ? 'ring-2 ring-primary/50 border-primary' : 'border-border')}>
+              className={cn('text-left rounded-xl border p-5 transition-all hover:shadow-md', filterStatus === opt.value ? 'ring-2 ring-primary/50 border-primary' : 'border-border')}>
               <div className="flex items-center gap-2 mb-1">
                 <span className={cn('w-2 h-2 rounded-full', cfg.dot)} />
                 <span className="text-xs font-medium text-muted-foreground">{opt.label}</span>
@@ -210,6 +210,7 @@ export function LeveringsbonnenLayout() {
             <div className="flex flex-col items-center gap-3 py-16 text-muted-foreground">
               <PackageCheck className="h-10 w-10 opacity-30" />
               <p className="text-sm font-medium">Geen leveringsbonnen gevonden</p>
+              <p className="text-xs text-muted-foreground/60">Registreer leveringen aan klanten of projectlocaties.</p>
               <Button variant="outline" size="sm" onClick={() => navigate('/leveringsbonnen/nieuw')}>
                 <Plus className="h-4 w-4 mr-2" /> Eerste leveringsbon aanmaken
               </Button>
@@ -227,13 +228,13 @@ export function LeveringsbonnenLayout() {
                 {gefilterd.map((lb) => {
                   const cfg = STATUS_CONFIG[lb.status]
                   return (
-                    <tr key={lb.id} className={`group hover:bg-bg-subtle/60 transition-colors cursor-pointer border-l-2 ${getRowAccentClass(lb.status)}`} onClick={() => navigateWithTab({ path: `/leveringsbonnen/${lb.id}`, label: lb.leveringsbon_nummer || 'Leveringsbon', id: `/leveringsbonnen/${lb.id}` })}>
+                    <tr key={lb.id} className={`group hover:bg-bg-hover transition-colors duration-150 cursor-pointer border-l-2 ${getRowAccentClass(lb.status)}`} onClick={() => navigateWithTab({ path: `/leveringsbonnen/${lb.id}`, label: lb.leveringsbon_nummer || 'Leveringsbon', id: `/leveringsbonnen/${lb.id}` })}>
                       <td className="px-4 py-3">
                         <span className="text-sm font-mono font-semibold text-teal-600 dark:text-teal-400">{lb.leveringsbon_nummer}</span>
                       </td>
                       <td className="px-4 py-3 text-sm text-foreground/80">{getKlantNaam(lb.klant_id)}</td>
                       <td className="px-4 py-3 text-sm text-foreground/80">{getProjectNaam(lb.project_id)}</td>
-                      <td className="px-4 py-3 text-sm text-muted-foreground dark:text-muted-foreground">{lb.datum ? formatDate(lb.datum) : '-'}</td>
+                      <td className="px-4 py-3 text-sm font-mono text-muted-foreground dark:text-muted-foreground">{lb.datum ? formatDate(lb.datum) : '-'}</td>
                       <td className="px-4 py-3 text-sm text-muted-foreground dark:text-muted-foreground max-w-[200px] truncate">{lb.locatie_adres || '-'}</td>
                       <td className="px-4 py-3">
                         <Badge variant="secondary" className={cn('text-xs font-semibold px-2 py-0.5 rounded-lg', cfg.color)}>

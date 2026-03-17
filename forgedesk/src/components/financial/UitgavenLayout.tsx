@@ -370,8 +370,9 @@ export function UitgavenLayout() {
       {gefilterd.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16">
-            <Receipt className="h-12 w-12 text-muted-foreground/30 mb-4" />
-            <p className="text-lg font-medium text-muted-foreground">Geen uitgaven gevonden</p>
+            <Receipt className="h-10 w-10 text-muted-foreground/30 mb-3" />
+            <p className="text-sm font-medium text-muted-foreground">Geen uitgaven gevonden</p>
+            <p className="text-xs text-muted-foreground/60 mt-1">Registreer inkoop- en bedrijfskosten.</p>
             <Button className="mt-4" onClick={openNieuw}><Plus className="h-4 w-4 mr-1" /> Nieuwe uitgave</Button>
           </CardContent>
         </Card>
@@ -380,7 +381,7 @@ export function UitgavenLayout() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b bg-background dark:bg-foreground/80/50">
+                <tr className="border-b bg-background dark:bg-muted/50">
                   <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Datum</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Leverancier</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Omschrijving</th>
@@ -395,7 +396,7 @@ export function UitgavenLayout() {
                 {gefilterd.map((u) => {
                   const cfg = STATUS_CONFIG[u.status] || STATUS_CONFIG.open
                   return (
-                    <tr key={u.id} className="group hover:bg-background/80 dark:hover:bg-foreground/80/50">
+                    <tr key={u.id} className="group hover:bg-background/80 dark:hover:bg-muted/50">
                       <td className="px-4 py-3 text-sm">{new Date(u.datum).toLocaleDateString('nl-NL')}</td>
                       <td className="px-4 py-3 text-sm">{getLeverancierNaam(u.leverancier_id)}</td>
                       <td className="px-4 py-3 text-sm max-w-[200px] truncate">{u.omschrijving}</td>

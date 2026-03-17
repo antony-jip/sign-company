@@ -200,7 +200,7 @@ export function EmailReader({
         {/* ─── MAIN: full-screen compose ─── */}
         <div className="flex-1 flex flex-col min-w-0">
           {/* Top action bar — same as reading view */}
-          <div className="flex items-center justify-between px-5 h-12 border-b border-foreground/[0.06] flex-shrink-0 bg-white">
+          <div className="flex items-center justify-between px-5 h-12 border-b border-foreground/[0.06] flex-shrink-0 bg-card">
             <div className="flex items-center gap-1">
               <Button
                 variant="ghost"
@@ -238,7 +238,7 @@ export function EmailReader({
           </div>
 
           {/* ─── Compose fields ─── */}
-          <div className="border-b border-foreground/[0.06] bg-white flex-shrink-0">
+          <div className="border-b border-foreground/[0.06] bg-card flex-shrink-0">
             {/* Aan field */}
             <div className="flex items-center px-6 py-2.5 border-b border-foreground/[0.04]">
               <span className="text-sm text-foreground/35 w-10 flex-shrink-0">Aan</span>
@@ -320,7 +320,7 @@ export function EmailReader({
           </div>
 
           {/* ─── Scrollable: editor + toolbar + original email ─── */}
-          <div className="flex-1 overflow-y-auto bg-white">
+          <div className="flex-1 overflow-y-auto bg-card">
             {/* Editor */}
             <div
               ref={editorRef}
@@ -415,7 +415,7 @@ export function EmailReader({
       {/* ─── MAIN: email content ─── */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top action bar */}
-        <div className="flex items-center justify-between px-5 h-12 border-b border-foreground/[0.06] flex-shrink-0 bg-white">
+        <div className="flex items-center justify-between px-5 h-12 border-b border-foreground/[0.06] flex-shrink-0 bg-card">
           <div className="flex items-center gap-1">
             <Button
               variant="ghost"
@@ -451,7 +451,7 @@ export function EmailReader({
         </div>
 
         {/* Scrollable email content */}
-        <div className="flex-1 overflow-y-auto bg-white">
+        <div className="flex-1 overflow-y-auto bg-card">
           <div className="max-w-[880px] mx-auto px-8 py-8">
             {/* Subject */}
             <h1 className="text-[22px] font-semibold text-foreground mb-8 leading-snug tracking-tight">
@@ -666,7 +666,7 @@ const CRMSidebar = memo(function CRMSidebar({
         </div>
 
         {/* Contact details */}
-        <div className="bg-white rounded-lg p-3 space-y-2 shadow-sm border border-foreground/[0.04]">
+        <div className="bg-card rounded-lg p-3 space-y-2 shadow-sm border border-foreground/[0.04]">
           <div className="flex items-center gap-2.5 text-xs text-foreground/55">
             <Mail className="h-3.5 w-3.5 flex-shrink-0 text-foreground/30" />
             <span className="truncate">{senderEmail}</span>
@@ -692,7 +692,7 @@ const CRMSidebar = memo(function CRMSidebar({
                 'w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all duration-150',
                 showAddKlant
                   ? 'bg-primary/[0.06] text-primary font-medium'
-                  : 'text-foreground/55 hover:bg-white hover:text-foreground hover:shadow-sm',
+                  : 'text-foreground/55 hover:bg-card hover:text-foreground hover:shadow-sm',
               )}
             >
               <UserPlus className="h-4 w-4" />
@@ -701,7 +701,7 @@ const CRMSidebar = memo(function CRMSidebar({
 
             {/* Inline add klant form */}
             {showAddKlant && (
-              <div className="bg-white rounded-lg border border-foreground/[0.06] p-3 mt-1.5 mb-1.5 shadow-sm space-y-2.5">
+              <div className="bg-card rounded-lg border border-foreground/[0.06] p-3 mt-1.5 mb-1.5 shadow-sm space-y-2.5">
                 {klantSaved ? (
                   <div className="flex items-center gap-2 py-3 justify-center text-emerald-600">
                     <Check className="h-4 w-4" />
@@ -715,7 +715,7 @@ const CRMSidebar = memo(function CRMSidebar({
                         type="text"
                         value={klantForm.bedrijfsnaam}
                         onChange={(e) => setKlantForm(f => ({ ...f, bedrijfsnaam: e.target.value }))}
-                        className="w-full mt-0.5 px-2.5 py-1.5 text-sm bg-foreground/[0.02] border border-foreground/[0.08] rounded-md outline-none focus:border-primary/30 focus:bg-white transition-colors"
+                        className="w-full mt-0.5 px-2.5 py-1.5 text-sm bg-foreground/[0.02] border border-foreground/[0.08] rounded-md outline-none focus:border-primary/30 focus:bg-card transition-colors"
                         placeholder="Bedrijf B.V."
                       />
                     </div>
@@ -725,7 +725,7 @@ const CRMSidebar = memo(function CRMSidebar({
                         type="text"
                         value={klantForm.contactpersoon}
                         onChange={(e) => setKlantForm(f => ({ ...f, contactpersoon: e.target.value }))}
-                        className="w-full mt-0.5 px-2.5 py-1.5 text-sm bg-foreground/[0.02] border border-foreground/[0.08] rounded-md outline-none focus:border-primary/30 focus:bg-white transition-colors"
+                        className="w-full mt-0.5 px-2.5 py-1.5 text-sm bg-foreground/[0.02] border border-foreground/[0.08] rounded-md outline-none focus:border-primary/30 focus:bg-card transition-colors"
                         placeholder="Naam"
                       />
                     </div>
@@ -735,7 +735,7 @@ const CRMSidebar = memo(function CRMSidebar({
                         type="email"
                         value={klantForm.email}
                         onChange={(e) => setKlantForm(f => ({ ...f, email: e.target.value }))}
-                        className="w-full mt-0.5 px-2.5 py-1.5 text-sm bg-foreground/[0.02] border border-foreground/[0.08] rounded-md outline-none focus:border-primary/30 focus:bg-white transition-colors"
+                        className="w-full mt-0.5 px-2.5 py-1.5 text-sm bg-foreground/[0.02] border border-foreground/[0.08] rounded-md outline-none focus:border-primary/30 focus:bg-card transition-colors"
                         placeholder="email@bedrijf.nl"
                       />
                     </div>
@@ -745,7 +745,7 @@ const CRMSidebar = memo(function CRMSidebar({
                         type="tel"
                         value={klantForm.telefoon}
                         onChange={(e) => setKlantForm(f => ({ ...f, telefoon: e.target.value }))}
-                        className="w-full mt-0.5 px-2.5 py-1.5 text-sm bg-foreground/[0.02] border border-foreground/[0.08] rounded-md outline-none focus:border-primary/30 focus:bg-white transition-colors"
+                        className="w-full mt-0.5 px-2.5 py-1.5 text-sm bg-foreground/[0.02] border border-foreground/[0.08] rounded-md outline-none focus:border-primary/30 focus:bg-card transition-colors"
                         placeholder="06-12345678"
                       />
                     </div>
@@ -778,7 +778,7 @@ const CRMSidebar = memo(function CRMSidebar({
               <button
                 key={path}
                 onClick={() => navigate(path)}
-                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] text-foreground/55 hover:bg-white hover:text-foreground hover:shadow-sm transition-all duration-150"
+                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] text-foreground/55 hover:bg-card hover:text-foreground hover:shadow-sm transition-all duration-150"
               >
                 <Icon className="h-4 w-4 text-foreground/30" />
                 {label}

@@ -149,7 +149,7 @@ export function MontagePlanningWidget() {
     <Card>
       <CardContent className="p-5">
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-5">
           <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
             <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-orange-500 to-amber-400 shadow-md">
               <Wrench className="h-4 w-4 text-white" />

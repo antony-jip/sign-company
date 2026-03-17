@@ -203,7 +203,7 @@ export function CalculatieTab() {
   return (
     <div className="space-y-5">
       {/* Sub-tab navigation */}
-      <div className="flex items-center gap-1 p-1 bg-muted dark:bg-foreground/80 rounded-xl overflow-x-auto">
+      <div className="flex items-center gap-1 p-1 bg-muted dark:bg-muted rounded-xl overflow-x-auto">
         {SUB_TABS.map((tab) => {
           const Icon = tab.icon
           const isActive = subTab === tab.id
@@ -396,7 +396,7 @@ function StartSection({
           </div>
 
           {/* Progress bar */}
-          <div className="h-2 bg-muted dark:bg-foreground/80 rounded-full mb-5 overflow-hidden">
+          <div className="h-2 bg-muted dark:bg-muted rounded-full mb-5 overflow-hidden">
             <div
               className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-500"
               style={{ width: `${progressPct}%` }}
@@ -420,7 +420,7 @@ function StartSection({
                     'flex items-center justify-center h-8 w-8 rounded-full text-sm font-bold flex-shrink-0',
                     step.done
                       ? 'bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400'
-                      : 'bg-muted dark:bg-foreground/80 text-muted-foreground dark:text-muted-foreground/60'
+                      : 'bg-muted dark:bg-muted text-muted-foreground dark:text-muted-foreground/60'
                   )}
                 >
                   {step.done ? <Check className="h-4 w-4" /> : step.nr}
@@ -859,7 +859,7 @@ function ProductenSection({
 
             {/* Margin preview */}
             {productInkoop > 0 && productVerkoop > 0 && (
-              <div className="p-3 rounded-lg bg-background dark:bg-foreground/80/50 flex items-center gap-4 text-xs">
+              <div className="p-3 rounded-lg bg-background dark:bg-muted/50 flex items-center gap-4 text-xs">
                 <span className="text-muted-foreground">Winst per eenheid:</span>
                 <span className={cn(
                   'font-semibold',
@@ -938,7 +938,7 @@ function ProductenSection({
           {(Object.entries(productenPerCategorie) as [string, CalculatieProduct[]][]).map(([categorie, prods]) => (
             <Card key={categorie}>
               <CardContent className="p-0">
-                <div className="px-4 py-2.5 border-b border-border dark:border-border bg-background/50 dark:bg-foreground/80/30">
+                <div className="px-4 py-2.5 border-b border-border dark:border-border bg-background/50 dark:bg-muted/30">
                   <h4 className="text-xs font-bold text-text-tertiary uppercase tracking-label">
                     {categorie} <span className="text-muted-foreground/60 dark:text-muted-foreground font-normal">({prods.length})</span>
                   </h4>
@@ -958,7 +958,7 @@ function ProductenSection({
                     </thead>
                     <tbody>
                       {prods.map((p) => (
-                        <tr key={p.id} className="border-t border-border dark:border-border/50 hover:bg-background dark:hover:bg-foreground/80/30 transition-colors">
+                        <tr key={p.id} className="border-t border-border dark:border-border/50 hover:bg-background dark:hover:bg-muted/30 transition-colors">
                           <td className="px-4 py-2.5">
                             <span className="font-medium text-foreground dark:text-white">{p.naam}</span>
                             {p.notitie && <span className="block text-xs text-muted-foreground/60 dark:text-muted-foreground">{p.notitie}</span>}
@@ -1332,7 +1332,7 @@ function TemplatesSection({
                   <div className="overflow-x-auto rounded-xl border border-border dark:border-border">
                     <table className="w-full text-xs">
                       <thead>
-                        <tr className="bg-background dark:bg-foreground/80/50 border-b border-border dark:border-border">
+                        <tr className="bg-background dark:bg-muted/50 border-b border-border dark:border-border">
                           <th className="text-left px-3 py-2 font-bold text-text-tertiary text-xs uppercase tracking-label min-w-[180px]">Product / Dienst</th>
                           <th className="text-center px-2 py-2 font-bold text-text-tertiary text-xs uppercase tracking-label w-16">Aantal</th>
                           <th className="text-center px-2 py-2 font-bold text-text-tertiary text-xs uppercase tracking-label w-16">Eenh.</th>
@@ -1345,7 +1345,7 @@ function TemplatesSection({
                       </thead>
                       <tbody>
                         {tplRegels.map((regel) => (
-                          <tr key={regel.id} className="border-t border-border dark:border-border hover:bg-background/50 dark:hover:bg-foreground/80/20">
+                          <tr key={regel.id} className="border-t border-border dark:border-border hover:bg-background/50 dark:hover:bg-muted/20">
                             <td className="px-1 py-1.5">
                               <div className="flex items-center gap-1">
                                 {producten.length > 0 && (
@@ -1456,7 +1456,7 @@ function TemplatesSection({
                   {(() => {
                     const t = berekenTotalen(tplRegels)
                     return (
-                      <div className="flex items-center justify-between p-3 rounded-lg bg-background dark:bg-foreground/80/50">
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-background dark:bg-muted/50">
                         <div className="flex items-center gap-4 text-xs text-muted-foreground">
                           <span>Inkoop: <strong className="text-foreground/70 dark:text-muted-foreground/50">{formatCurrency(t.inkoop)}</strong></span>
                           <span>Verkoop: <strong className="text-foreground/70 dark:text-muted-foreground/50">{formatCurrency(t.verkoop)}</strong></span>
@@ -2089,7 +2089,7 @@ function InstellingenSection() {
                 {cat}
                 <button
                   onClick={() => setCategorieen(categorieen.filter((c) => c !== cat))}
-                  className="ml-1 hover:bg-secondary dark:hover:bg-foreground/70 rounded-full p-0.5"
+                  className="ml-1 hover:bg-secondary dark:hover:bg-muted rounded-full p-0.5"
                 >
                   <Trash2 className="h-3 w-3" />
                 </button>
@@ -2141,7 +2141,7 @@ function InstellingenSection() {
                 {e}
                 <button
                   onClick={() => setEenheden(eenheden.filter((ee) => ee !== e))}
-                  className="ml-1 hover:bg-secondary dark:hover:bg-foreground/70 rounded-full p-0.5"
+                  className="ml-1 hover:bg-secondary dark:hover:bg-muted rounded-full p-0.5"
                 >
                   <Trash2 className="h-3 w-3" />
                 </button>
@@ -2193,7 +2193,7 @@ function InstellingenSection() {
                 {veld}
                 <button
                   onClick={() => setRegelVelden(regelVelden.filter((v) => v !== veld))}
-                  className="ml-1 hover:bg-secondary dark:hover:bg-foreground/70 rounded-full p-0.5"
+                  className="ml-1 hover:bg-secondary dark:hover:bg-muted rounded-full p-0.5"
                 >
                   <Trash2 className="h-3 w-3" />
                 </button>
@@ -2307,7 +2307,7 @@ function InstellingenSection() {
             </div>
 
             {/* Rechts: live preview */}
-            <div className="bg-white dark:bg-card rounded-xl border border-black/[0.06] shadow-sm p-4 space-y-3">
+            <div className="bg-card rounded-xl border border-border shadow-sm p-4 space-y-3">
               <p className="text-2xs font-bold text-text-tertiary uppercase tracking-label">Uren &amp; Materiaal</p>
               <div className="space-y-1.5">
                 {urenVelden.map((veld, i) => {

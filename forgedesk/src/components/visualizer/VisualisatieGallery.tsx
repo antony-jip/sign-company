@@ -157,7 +157,7 @@ export function VisualisatieGallery({
                     {SIGNING_TYPE_LABELS[v.signing_type] || v.signing_type}
                   </Badge>
                   <span
-                    className="w-3 h-3 rounded-full border border-gray-300"
+                    className="w-3 h-3 rounded-full border border-border"
                     style={{ backgroundColor: v.kleur_instelling.startsWith('#') ? v.kleur_instelling : undefined }}
                     title={v.kleur_instelling}
                   />

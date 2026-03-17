@@ -3,8 +3,9 @@
 @tailwind utilities;
 
 /* ================================================================
-   FORGEDESK DESIGN SYSTEM v3
-   Earthy, premium, distinctive — #3D3522 #4A442D #386150 #58B09C #CAF7E2
+   FORGEDESK DESIGN SYSTEM v4 — PREMIUM
+   $200/mo SaaS energy — warm, deep, liquid
+   #CC8A3F #E0C9A8 #F4F3F0 #1A1A1A
    Fonts: Plus Jakarta Sans (headings + body)
    ================================================================ */
 
@@ -19,61 +20,61 @@
     --font-size: 14px;
 
     /* Achtergrond */
-    --background: 40 14% 95%;          /* #F4F3F0 warm off-white */
-    --foreground: 0 0% 10%;            /* #1A1A1A */
+    --background: 38 25% 96%;          /* warm crème, niet koud grijs */
+    --foreground: 25 15% 12%;          /* warm near-black */
 
     /* Cards */
-    --card: 0 0% 100%;                 /* #FFFFFF */
-    --card-foreground: 0 0% 10%;
+    --card: 40 20% 99%;                /* subtiel warm wit — cards tillen op */
+    --card-foreground: 25 15% 12%;
 
     /* Sidebar */
-    --sidebar-background: 40 20% 97%;  /* #FBFAF7 */
-    --sidebar-foreground: 0 0% 42%;    /* #6B6B6B */
-    --sidebar-primary: 145 22% 45%;    /* #5A8264 sage-deep */
-    --sidebar-primary-foreground: 0 0% 10%;
-    --sidebar-accent: 40 14% 95%;
-    --sidebar-accent-foreground: 0 0% 10%;
-    --sidebar-border: 36 12% 90%;      /* #E8E6E0 */
-    --sidebar-ring: 145 22% 45%;
+    --sidebar-background: 38 22% 97%;  /* warm off-white */
+    --sidebar-foreground: 25 8% 42%;   /* warm grey */
+    --sidebar-primary: 28 60% 52%;     /* #CC8A3F warm amber */
+    --sidebar-primary-foreground: 25 15% 12%;
+    --sidebar-accent: 38 25% 95%;
+    --sidebar-accent-foreground: 25 15% 12%;
+    --sidebar-border: 33 15% 88%;      /* warm zandkleurig */
+    --sidebar-ring: 28 60% 52%;
 
-    /* Primary: zwart — voor hoofdknoppen */
-    --primary: 0 0% 10%;               /* #1A1A1A */
-    --primary-foreground: 0 0% 100%;
+    /* Primary: warm near-black — voor hoofdknoppen */
+    --primary: 25 20% 18%;             /* zacht warm donkerbruin */
+    --primary-foreground: 40 20% 99%;
 
     /* Secondary */
-    --secondary: 36 12% 90%;           /* #E8E6E0 */
-    --secondary-foreground: 0 0% 42%;
+    --secondary: 35 18% 93%;           /* warm zand */
+    --secondary-foreground: 25 12% 28%;
 
     /* Muted */
-    --muted: 36 12% 90%;
-    --muted-foreground: 0 0% 42%;      /* #6B6B6B */
+    --muted: 35 18% 93%;              /* warm crème, niet koud grijs */
+    --muted-foreground: 25 10% 45%;    /* warm middengrijs */
 
     /* Accent */
-    --accent: 145 22% 45%;              /* #5A8264 sage — zichtbaar als tekst */
+    --accent: 28 60% 52%;               /* #CC8A3F warm amber — zichtbaar als tekst */
     --accent-foreground: 0 0% 100%;
 
     /* Borders */
-    --border: 36 12% 90%;              /* #E8E6E0 */
-    --input: 36 12% 90%;
-    --ring: 145 22% 45%;
+    --border: 33 15% 87%;              /* warm zandkleurige border */
+    --input: 33 15% 87%;
+    --ring: 28 60% 52%;                /* amber focus ring */
 
     /* Destructive */
     --destructive: 5 52% 54%;          /* #C45B4F */
-    --destructive-foreground: 0 0% 100%;
+    --destructive-foreground: 40 20% 99%;
 
     /* Popover */
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 10%;
+    --popover: 40 20% 99%;            /* warm wit */
+    --popover-foreground: 25 15% 12%;
 
     /* Radius */
     --radius: 0.625rem;                /* 10px voor buttons/inputs */
 
     /* Semantic UI tokens */
-    --border-subtle: 36 10% 89%;           /* #e8e6e1 — light borders on inputs, buttons */
-    --text-placeholder: 30 6% 68%;         /* #b5b0aa — placeholder text */
-    --text-tertiary: 30 3% 52%;            /* #8a8680 — labels, table headers, muted UI */
-    --bg-hover: 40 8% 95%;                 /* #f5f4f1 — hover backgrounds */
-    --bg-subtle: 40 14% 95%;              /* #F4F3F0 — subtle backgrounds */
+    --border-subtle: 33 14% 88%;           /* warm zand border */
+    --text-placeholder: 28 8% 66%;         /* warm placeholder */
+    --text-tertiary: 25 8% 50%;            /* warm mid-grey — labels, headers */
+    --bg-hover: 38 25% 97%;               /* warm crème hover */
+    --bg-subtle: 38 22% 95%;              /* warm subtle background */
 
     /* Animation timing */
     --duration-fast: 120ms;
@@ -90,20 +91,39 @@
     --radius-2xl: 18px;
 
     /* FORGEdesk design tokens */
-    --wm-gradient-start: #5A8264;
-    --wm-gradient-mid: #C8D5CC;
+    --wm-gradient-start: #CC8A3F;
+    --wm-gradient-mid: #E0C9A8;
     --wm-gradient-end: #F0D9D0;
-    --wm-sidebar-bg: 40 20% 97%;
-    --wm-sidebar-hover: 36 18% 93%;
-    --wm-sidebar-active: 145 22% 45%;
-    --wm-hover: 145 22% 45%;
-    --wm-light: 145 22% 65%;
-    --wm-pale: 145 30% 88%;
+    --wm-sidebar-bg: 38 22% 97%;
+    --wm-sidebar-hover: 35 20% 94%;
+    --wm-sidebar-active: 28 60% 52%;
+    --wm-hover: 28 60% 52%;
+    --wm-light: 28 55% 65%;
+    --wm-pale: 28 50% 88%;
     --wm-glass: rgba(255, 255, 255, 0.72);
     --wm-glass-border: rgba(255, 255, 255, 0.20);
     --wm-shadow-color: 0 0% 50%;
-    --wm-glow: 0 0 40px rgba(90, 130, 100, 0.15);
+    --wm-glow: 0 0 40px rgba(204, 138, 63, 0.15);
     --wm-noise: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+
+    /* Elevation system — layered depth */
+    /* Warm shadows — not cold black but warm brown-tinted */
+    --shadow-xs: 0 1px 2px rgba(120,90,50,0.05);
+    --shadow-sm: 0 1px 3px rgba(120,90,50,0.07), 0 1px 2px rgba(120,90,50,0.04);
+    --shadow-md: 0 4px 16px -2px rgba(120,90,50,0.10), 0 2px 4px -1px rgba(120,90,50,0.05);
+    --shadow-lg: 0 12px 40px -8px rgba(120,90,50,0.14), 0 4px 12px -4px rgba(120,90,50,0.06);
+    --shadow-xl: 0 20px 60px -12px rgba(120,90,50,0.20), 0 8px 24px -8px rgba(120,90,50,0.10);
+    --shadow-glow: 0 0 0 1px rgba(204,138,63,0.06), 0 4px 24px -4px rgba(204,138,63,0.12);
+    --shadow-inner-light: inset 0 1px 0 rgba(255,255,255,0.08);
+
+    /* Surface layers — for premium depth */
+    --surface-raised: 40 20% 99%;         /* Cards: warm wit */
+    --surface-overlay: 38 22% 98%;        /* Elevated overlays */
+    --surface-sunken: 35 18% 93%;         /* Inset areas, warm */
+
+    /* Spring easing — natural, organic feel */
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --ease-smooth: cubic-bezier(0.25, 0.46, 0.45, 0.94);
 
     /* FORGEdesk Pastel Status Palette */
     --color-blush: #F9E8E8;
@@ -132,44 +152,58 @@
   }
 
   .dark {
-    --background: 40 6% 8%;            /* #141413 */
-    --foreground: 40 6% 90%;           /* #E8E8E4 */
-    --card: 40 6% 12%;                 /* #1E1E1C */
-    --card-foreground: 40 6% 90%;
-    --sidebar-background: 40 4% 10%;   /* #191918 */
-    --sidebar-foreground: 40 4% 54%;
-    --sidebar-border: 40 8% 18%;       /* #2E2E2A */
-    --primary: 40 6% 90%;
-    --primary-foreground: 40 6% 8%;
-    --secondary: 40 8% 18%;
-    --secondary-foreground: 40 4% 54%;
-    --muted: 40 8% 18%;
-    --muted-foreground: 40 4% 36%;
-    --accent: 145 22% 55%;              /* sage-light — zichtbaar als tekst in dark mode */
-    --accent-foreground: 0 0% 10%;
-    --border: 40 8% 18%;
-    --input: 40 8% 18%;
+    --background: 30 12% 8%;           /* warm donker, niet koud zwart */
+    --foreground: 35 10% 90%;          /* warm light text */
+    --card: 30 12% 10%;                /* warm dark surface */
+    --card-foreground: 35 10% 90%;
+    --sidebar-background: 30 10% 9%;   /* iets donkerder dan content */
+    --sidebar-foreground: 30 8% 55%;
+    --sidebar-border: 30 10% 18%;
+    --primary: 35 10% 90%;
+    --primary-foreground: 30 12% 8%;
+    --secondary: 30 10% 16%;
+    --secondary-foreground: 35 8% 70%;
+    --muted: 30 10% 16%;
+    --muted-foreground: 30 8% 50%;
+    --accent: 28 55% 58%;               /* amber-light — zichtbaar als tekst */
+    --accent-foreground: 30 12% 8%;
+    --border: 30 10% 18%;
+    --input: 30 10% 18%;
     --destructive: 5 58% 65%;
-    --destructive-foreground: 0 0% 100%;
-    --popover: 40 6% 12%;
-    --popover-foreground: 40 6% 90%;
-    --ring: 145 22% 45%;
+    --destructive-foreground: 35 10% 95%;
+    --popover: 30 12% 10%;
+    --popover-foreground: 35 10% 90%;
+    --ring: 28 60% 55%;
 
-    /* Semantic UI tokens — dark */
-    --border-subtle: 40 8% 20%;
-    --text-placeholder: 40 4% 40%;
-    --text-tertiary: 40 4% 50%;            /* #a0a0a0 equiv */
-    --bg-hover: 40 8% 14%;
-    --bg-subtle: 40 6% 10%;
+    /* Semantic UI tokens — dark, warm */
+    --border-subtle: 30 10% 20%;
+    --text-placeholder: 30 8% 42%;
+    --text-tertiary: 30 8% 52%;
+    --bg-hover: 30 10% 14%;
+    --bg-subtle: 30 10% 10%;
 
-    --wm-sidebar-bg: 40 4% 10%;
-    --wm-sidebar-hover: 40 8% 14%;
-    --wm-hover: 145 22% 50%;
-    --wm-light: 145 22% 65%;
-    --wm-pale: 145 30% 20%;
+    --sidebar-primary: 28 55% 58%;
+    --wm-sidebar-bg: 30 10% 9%;
+    --wm-sidebar-hover: 30 10% 14%;
+    --wm-sidebar-active: 28 55% 58%;
+    --wm-hover: 28 55% 55%;
+    --wm-light: 28 55% 65%;
+    --wm-pale: 28 50% 20%;
     --wm-glass: rgba(20, 20, 18, 0.85);
     --wm-glass-border: rgba(255, 255, 255, 0.06);
-    --wm-glow: 0 0 40px rgba(90, 130, 100, 0.08);
+    --wm-glow: 0 0 40px rgba(204, 138, 63, 0.08);
+
+    /* Elevation — dark */
+    --shadow-xs: 0 1px 2px rgba(0,0,0,0.2);
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
+    --shadow-md: 0 4px 16px -2px rgba(0,0,0,0.4), 0 2px 4px -1px rgba(0,0,0,0.2);
+    --shadow-lg: 0 12px 40px -8px rgba(0,0,0,0.5), 0 4px 12px -4px rgba(0,0,0,0.3);
+    --shadow-xl: 0 20px 60px -12px rgba(0,0,0,0.6), 0 8px 24px -8px rgba(0,0,0,0.35);
+    --shadow-glow: 0 0 0 1px rgba(204,138,63,0.10), 0 4px 24px -4px rgba(204,138,63,0.18);
+    --shadow-inner-light: inset 0 1px 0 rgba(255,255,255,0.03);
+    --surface-raised: 30 12% 11%;
+    --surface-overlay: 30 12% 13%;
+    --surface-sunken: 30 12% 6%;
 
     /* Pastel palette — dark mode */
     --color-blush: rgba(192, 81, 74, 0.15);
@@ -230,9 +264,9 @@
     font-variant-numeric: tabular-nums;
   }
 
-  /* Selection color — blush */
+  /* Selection color — warm amber tint */
   ::selection {
-    background: #F0D9D0;
+    background: hsl(28 60% 52% / 0.18);
     color: hsl(var(--foreground));
   }
 }
@@ -246,21 +280,38 @@ button, a, [role="button"], input, select, textarea {
   transition: all 0.15s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* Button press effect */
+/* Button press effect — spring snap */
 button:active:not(:disabled), [role="button"]:active:not(:disabled) {
   transform: scale(0.96);
+  transition-duration: 0.08s;
+  transition-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* Stat card hover: lift + glow */
+/* Reduced motion — respect user preference */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Stat card hover: spring lift + ambient glow */
 .stat-card-hover {
-  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              border-color 0.3s ease;
 }
 .stat-card-hover:hover {
-  transform: translateY(-4px) scale(1.015);
-  box-shadow: 0 12px 32px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
+  transform: translateY(-3px) scale(1.01);
+  box-shadow: var(--shadow-lg);
+}
+.stat-card-hover:active {
+  transform: translateY(0) scale(0.99);
+  transition-duration: 0.1s;
 }
 
-/* Table row: subtle left border on hover — blush-deep accent */
+/* Table row: accent indicator with spring entrance */
 table tbody tr td:first-child {
   position: relative;
 }
@@ -268,24 +319,24 @@ table tbody tr td:first-child::before {
   content: '';
   position: absolute;
   left: 0;
-  top: 25%;
-  bottom: 25%;
+  top: 20%;
+  bottom: 20%;
   width: 2.5px;
-  background: #C49585;
-  border-radius: 0 2px 2px 0;
+  background: linear-gradient(180deg, hsl(var(--accent)), hsl(var(--accent) / 0.4));
+  border-radius: 0 3px 3px 0;
   opacity: 0;
-  transform: scaleY(0.5);
-  transition: all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform: scaleY(0.3);
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 table tbody tr:hover td:first-child::before {
   opacity: 1;
   transform: scaleY(1);
 }
 
-/* Focus visible: blush-deep ring */
+/* Focus visible: amber accent ring with background gap */
 *:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px #C49585;
+  box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--accent) / 0.5);
   border-radius: 6px;
 }
 
@@ -480,6 +531,7 @@ tbody tr:hover {
   }
   .wm-table tbody tr {
     cursor: pointer;
+    transition: background-color 120ms ease;
   }
   .wm-table tbody tr:hover {
     background: hsl(var(--background));
@@ -524,7 +576,7 @@ tbody tr:hover {
   animation-timeline: scroll(nearest);
 }
 
-/* Interactive table rows — subtle scale + press feedback */
+/* Interactive table rows — spring scale + press feedback */
 .tr-interactive {
   transition: all var(--duration-fast) var(--ease-out);
   cursor: pointer;
@@ -532,12 +584,14 @@ tbody tr:hover {
 .tr-interactive:hover {
   background: hsl(var(--bg-subtle));
   transform: scale(1.003);
+  box-shadow: var(--shadow-xs);
 }
 .tr-interactive:active {
-  transform: scale(0.997);
+  transform: scale(0.998);
+  transition-duration: 0.06s;
 }
 .tr-interactive:focus-visible {
-  outline: 2px solid hsl(var(--primary) / 0.3);
+  outline: 2px solid hsl(var(--accent) / 0.4);
   outline-offset: -2px;
   border-radius: var(--radius-md);
 }
@@ -582,8 +636,8 @@ tbody tr:hover {
 }
 
 @keyframes pulseGlow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(88, 176, 156, 0.3); }
-  50% { box-shadow: 0 0 16px 3px rgba(88, 176, 156, 0.12); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(204, 138, 63, 0.3); }
+  50% { box-shadow: 0 0 16px 3px rgba(204, 138, 63, 0.12); }
 }
 .animate-pulse-glow {
   animation: pulseGlow 2.5s ease-in-out infinite;
@@ -634,19 +688,39 @@ tbody tr:hover {
 }
 
 /* ================================================================
-   GLASSMORPHISM — Frosted glass with subtle noise
+   GLASSMORPHISM — Liquid glass with depth and light refraction
    ================================================================ */
 .wm-glass {
   background: var(--wm-glass);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
   border-bottom: 1px solid var(--wm-glass-border);
+  box-shadow: var(--shadow-inner-light);
 }
 
 .wm-glass-subtle {
   background: var(--wm-glass);
-  backdrop-filter: blur(10px) saturate(150%);
-  -webkit-backdrop-filter: blur(10px) saturate(150%);
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+}
+
+/* Premium glass card — for elevated floating elements */
+.wm-glass-card {
+  background: rgba(255, 255, 255, 0.60);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow:
+    0 4px 24px -4px rgba(0,0,0,0.06),
+    0 1px 3px rgba(0,0,0,0.04),
+    inset 0 1px 0 rgba(255,255,255,0.40);
+}
+.dark .wm-glass-card {
+  background: rgba(30, 30, 28, 0.70);
+  border-color: rgba(255, 255, 255, 0.06);
+  box-shadow:
+    0 4px 24px -4px rgba(0,0,0,0.3),
+    inset 0 1px 0 rgba(255,255,255,0.03);
 }
 
 /* ================================================================
@@ -695,7 +769,7 @@ tbody tr:hover {
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  color: #a09a94;
+  color: #a09788;
   padding: 20px 16px 8px;
   position: relative;
 }
@@ -710,69 +784,89 @@ tbody tr:hover {
 }
 
 /* ================================================================
-   CARD SYSTEM — Layered shadows, subtle depth
+   CARD SYSTEM — Premium layered depth with inner light
    ================================================================ */
 .wm-card {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   border: 1px solid hsl(var(--border));
-  box-shadow:
-    0 1px 3px hsl(var(--wm-shadow-color) / 0.06),
-    0 1px 2px hsl(var(--wm-shadow-color) / 0.03);
+  box-shadow: var(--shadow-sm), var(--shadow-inner-light);
+  position: relative;
+}
+
+.wm-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  background: linear-gradient(135deg, hsl(var(--accent) / 0.03), transparent 60%);
 }
 
 .wm-card:hover {
-  border-color: hsl(var(--primary) / 0.15);
-  box-shadow:
-    0 4px 24px -4px hsl(var(--wm-shadow-color) / 0.08),
-    0 2px 8px -2px hsl(var(--wm-shadow-color) / 0.04),
-    0 0 0 1px hsl(var(--primary) / 0.04);
-  transform: translateY(-1px);
+  border-color: hsl(var(--primary) / 0.12);
+  box-shadow: var(--shadow-lg), var(--shadow-inner-light);
+  transform: translateY(-2px);
 }
 
-/* Stat cards — premium feel */
+.wm-card:hover::after {
+  opacity: 1;
+}
+
+/* Stat cards — premium feel with glow + inner light */
 .wm-stat-card {
   position: relative;
   overflow: hidden;
-  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow:
-    0 1px 3px hsl(var(--wm-shadow-color) / 0.05),
-    0 1px 2px hsl(var(--wm-shadow-color) / 0.03);
+  transition: all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  box-shadow: var(--shadow-sm), var(--shadow-inner-light);
 }
 
 .wm-stat-card:hover {
-  transform: translateY(-3px);
-  box-shadow:
-    0 12px 40px -12px hsl(var(--wm-shadow-color) / 0.12),
-    0 4px 12px -4px hsl(var(--wm-shadow-color) / 0.06),
-    0 0 0 1px hsl(var(--border));
+  transform: translateY(-2px) scale(1.008);
+  box-shadow: var(--shadow-lg), var(--shadow-inner-light);
 }
 
 /* Subtle glow behind gradient icon on hover */
 .wm-stat-card:hover .wm-stat-icon {
   box-shadow: 0 8px 24px -4px currentColor;
+  transform: scale(1.05);
 }
 
 .wm-stat-icon {
-  transition: box-shadow 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Elevated surface — for modals, popovers, raised sections */
+.wm-surface-raised {
+  background: hsl(var(--surface-raised));
+  box-shadow: var(--shadow-md), var(--shadow-inner-light);
+}
+
+/* Sunken surface — for inset areas, code blocks */
+.wm-surface-sunken {
+  background: hsl(var(--surface-sunken));
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.04);
 }
 
 /* ================================================================
-   GRADIENT BACKGROUNDS
+   GRADIENT BACKGROUNDS — Rich multi-layer mesh
    ================================================================ */
 .wm-mesh-gradient {
   background:
-    radial-gradient(ellipse at 10% 90%, rgba(56, 97, 80, 0.10) 0, transparent 45%),
-    radial-gradient(ellipse at 90% 10%, rgba(88, 176, 156, 0.08) 0, transparent 45%),
-    radial-gradient(ellipse at 50% 50%, rgba(202, 247, 226, 0.06) 0, transparent 55%),
-    radial-gradient(ellipse at 80% 80%, rgba(74, 68, 45, 0.04) 0, transparent 40%),
+    radial-gradient(ellipse at 0% 100%, rgba(204, 138, 63, 0.07) 0, transparent 50%),
+    radial-gradient(ellipse at 100% 0%, rgba(126, 181, 166, 0.06) 0, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(202, 247, 226, 0.04) 0, transparent 60%),
+    radial-gradient(ellipse at 80% 80%, rgba(139, 175, 212, 0.03) 0, transparent 45%),
+    radial-gradient(ellipse at 20% 20%, rgba(204, 138, 63, 0.03) 0, transparent 40%),
     hsl(var(--background));
 }
 
 .dark .wm-mesh-gradient {
   background:
-    radial-gradient(ellipse at 10% 90%, rgba(56, 97, 80, 0.08) 0, transparent 45%),
-    radial-gradient(ellipse at 90% 10%, rgba(88, 176, 156, 0.06) 0, transparent 45%),
-    radial-gradient(ellipse at 50% 50%, rgba(202, 247, 226, 0.03) 0, transparent 55%),
+    radial-gradient(ellipse at 0% 100%, rgba(204, 138, 63, 0.06) 0, transparent 50%),
+    radial-gradient(ellipse at 100% 0%, rgba(126, 181, 166, 0.04) 0, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(202, 247, 226, 0.02) 0, transparent 60%),
     hsl(var(--background));
 }
 
@@ -818,7 +912,7 @@ tbody tr:hover {
   position: absolute;
   inset: 0;
   background-image:
-    radial-gradient(circle at 25% 25%, rgba(88, 176, 156, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 25% 25%, rgba(204, 138, 63, 0.08) 0%, transparent 50%),
     radial-gradient(circle at 75% 75%, rgba(202, 247, 226, 0.05) 0%, transparent 50%),
     linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
@@ -828,25 +922,27 @@ tbody tr:hover {
 }
 
 /* ================================================================
-   QUICK ACTION BUTTONS — Interactive, playful
+   QUICK ACTION BUTTONS — Spring-animated, premium
    ================================================================ */
 .wm-quick-action {
   position: relative;
   overflow: hidden;
-  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              border-color 0.3s ease;
 }
 
 .wm-quick-action::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    135deg,
-    hsl(var(--primary) / 0.02),
-    hsl(var(--accent) / 0.02)
+  background: radial-gradient(
+    ellipse at 50% 0%,
+    hsl(var(--accent) / 0.06),
+    transparent 70%
   );
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.4s ease;
 }
 
 .wm-quick-action:hover::before {
@@ -854,18 +950,23 @@ tbody tr:hover {
 }
 
 .wm-quick-action:hover {
-  transform: translateY(-4px);
-  box-shadow:
-    0 12px 32px -8px hsl(var(--wm-shadow-color) / 0.15),
-    0 4px 12px -4px hsl(var(--wm-shadow-color) / 0.06);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
+  border-color: hsl(var(--accent) / 0.15);
+}
+
+.wm-quick-action:active {
+  transform: translateY(0) scale(0.97);
+  transition-duration: 0.1s;
 }
 
 .wm-quick-action:hover .wm-action-icon {
-  transform: scale(1.12) rotate(-2deg);
+  transform: scale(1.1) rotate(-3deg);
+  box-shadow: 0 6px 20px -4px rgba(0,0,0,0.25);
 }
 
 .wm-action-icon {
-  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /* ================================================================
@@ -899,7 +1000,7 @@ tbody tr:hover {
 }
 
 /* ================================================================
-   GRADIENT BORDER — Animated, subtle
+   GRADIENT BORDER — Animated with ambient glow
    ================================================================ */
 .wm-border-gradient {
   border: 1px solid transparent;
@@ -913,64 +1014,92 @@ tbody tr:hover {
   inset: 0;
   border-radius: inherit;
   padding: 1px;
-  background: linear-gradient(135deg, var(--wm-gradient-start), var(--wm-gradient-end));
+  background: linear-gradient(135deg, var(--wm-gradient-start), var(--wm-gradient-end), var(--wm-gradient-start));
+  background-size: 200% 200%;
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
   pointer-events: none;
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+}
+
+.wm-border-gradient:hover::before {
+  opacity: 1;
 }
 
 /* ================================================================
-   STAGGER ANIMATION — Orchestrated entrance
+   STAGGER ANIMATION — Spring-based orchestrated entrance
    ================================================================ */
+@keyframes springFadeUp {
+  0% { opacity: 0; transform: translateY(14px) scale(0.98); }
+  60% { opacity: 1; transform: translateY(-2px) scale(1.005); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
 .wm-stagger > * {
   opacity: 0;
-  animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: springFadeUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
-.wm-stagger > *:nth-child(1) { animation-delay: 0.05s; }
-.wm-stagger > *:nth-child(2) { animation-delay: 0.1s; }
-.wm-stagger > *:nth-child(3) { animation-delay: 0.15s; }
-.wm-stagger > *:nth-child(4) { animation-delay: 0.2s; }
-.wm-stagger > *:nth-child(5) { animation-delay: 0.25s; }
-.wm-stagger > *:nth-child(6) { animation-delay: 0.3s; }
-.wm-stagger > *:nth-child(7) { animation-delay: 0.35s; }
-.wm-stagger > *:nth-child(8) { animation-delay: 0.4s; }
+.wm-stagger > *:nth-child(1) { animation-delay: 0.03s; }
+.wm-stagger > *:nth-child(2) { animation-delay: 0.07s; }
+.wm-stagger > *:nth-child(3) { animation-delay: 0.11s; }
+.wm-stagger > *:nth-child(4) { animation-delay: 0.15s; }
+.wm-stagger > *:nth-child(5) { animation-delay: 0.19s; }
+.wm-stagger > *:nth-child(6) { animation-delay: 0.23s; }
+.wm-stagger > *:nth-child(7) { animation-delay: 0.27s; }
+.wm-stagger > *:nth-child(8) { animation-delay: 0.31s; }
 
 /* ================================================================
-   WELCOME BANNER — Gradient hero section
+   WELCOME BANNER — Premium gradient hero with ambient orbs
    ================================================================ */
 .wm-welcome-banner {
   background: linear-gradient(135deg,
-    hsl(155 27% 30% / 0.07),
-    hsl(163 36% 52% / 0.05),
-    hsl(150 78% 88% / 0.06)
+    hsl(28 60% 52% / 0.05),
+    hsl(155 27% 50% / 0.04),
+    hsl(28 60% 52% / 0.03)
   );
-  border: 1px solid hsl(var(--primary) / 0.10);
+  border: 1px solid hsl(var(--accent) / 0.10);
+  box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.15);
   position: relative;
   overflow: hidden;
 }
 
 .dark .wm-welcome-banner {
   background: linear-gradient(135deg,
-    hsl(155 27% 30% / 0.08),
-    hsl(163 36% 52% / 0.05),
-    hsl(150 78% 88% / 0.02)
+    hsl(28 60% 52% / 0.06),
+    hsl(155 27% 50% / 0.03),
+    hsl(28 60% 52% / 0.02)
   );
-  border-color: hsl(var(--primary) / 0.08);
+  border-color: hsl(var(--accent) / 0.08);
+  box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.02);
 }
 
-/* Animated orb inside banner */
+/* Animated orbs inside banner */
 .wm-welcome-banner::after {
   content: '';
   position: absolute;
   top: -50%;
-  right: -20%;
+  right: -15%;
   width: 300px;
   height: 300px;
-  background: radial-gradient(circle, hsl(var(--primary) / 0.12), transparent 70%);
+  background: radial-gradient(circle, hsl(var(--accent) / 0.10), transparent 65%);
   border-radius: 50%;
   pointer-events: none;
   animation: float 8s ease-in-out infinite;
+}
+.wm-welcome-banner::before {
+  content: '';
+  position: absolute;
+  bottom: -40%;
+  left: -10%;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, hsl(155 40% 50% / 0.06), transparent 65%);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: float 10s ease-in-out infinite reverse;
+  z-index: 0;
 }
 
 /* ================================================================
@@ -1023,8 +1152,12 @@ tbody tr:hover {
   padding: 6px 12px;
   border-radius: 8px;
   box-shadow:
-    0 4px 16px rgba(0, 0, 0, 0.2),
-    0 0 0 1px rgba(255, 255, 255, 0.06);
+    0 8px 24px rgba(0, 0, 0, 0.25),
+    0 2px 6px rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(255, 255, 255, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 /* ================================================================
@@ -1035,10 +1168,11 @@ textarea::placeholder {
   color: hsl(var(--muted-foreground) / 0.45);
 }
 
-/* Active input has a warm underline glow */
+/* Active input — warm accent glow ring */
 input:focus,
 textarea:focus {
-  border-color: hsl(var(--primary) / 0.35);
+  border-color: hsl(var(--accent) / 0.4);
+  box-shadow: 0 0 0 3px hsl(var(--accent) / 0.08), var(--shadow-xs);
 }
 
 /* ================================================================
@@ -1598,6 +1732,82 @@ html, body {
 }
 
 /* ================================================================
+   PREMIUM DATA VIZ — Chart, progress bars, KPI styling
+   ================================================================ */
+
+/* Progress bar — smooth fill with inner glow */
+.wm-progress-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: hsl(var(--muted));
+  overflow: hidden;
+  position: relative;
+}
+.wm-progress-bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, hsl(var(--accent)), hsl(var(--accent) / 0.7));
+  transform-origin: left;
+  transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.wm-progress-bar[data-value]::after {
+  transform: scaleX(var(--progress, 0));
+}
+
+/* KPI card — oversized number with subtle gradient text */
+.wm-kpi-value {
+  font-family: 'DM Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+/* Mini sparkline container */
+.wm-sparkline-area {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 50%;
+  height: 50%;
+  opacity: 0.06;
+  pointer-events: none;
+}
+
+/* Ambient glow ring — for active/live indicators */
+.wm-live-indicator {
+  position: relative;
+}
+.wm-live-indicator::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  background: hsl(var(--accent) / 0.15);
+  animation: glow-pulse 3s ease-in-out infinite;
+}
+
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+/* Premium separator — gradient fade */
+.wm-separator {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, hsl(var(--border)), transparent);
+}
+
+/* Number highlight — for inline metrics */
+.wm-number-highlight {
+  font-family: 'DM Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: hsl(var(--foreground));
+}
+
+/* ================================================================
    LANDING PAGE — Scroll Reveal Animations
    ================================================================ */
 
@@ -1830,34 +2040,47 @@ html {
 .mod-strip-inkoop::before     { background: linear-gradient(180deg, #9B8EC4 0%, transparent 100%); }
 .dark .mod-strip::before { opacity: 0.06; }
 
-/* ── Enhanced Stat Cards — bold gradient backgrounds with glow ── */
+/* ── Enhanced Stat Cards — rich gradient with liquid glass inner light ── */
 .stat-card-gradient-blush {
-  background: linear-gradient(135deg, #E8B8A8 0%, #F0CFC0 40%, #FAE4DA 100%);
-  box-shadow: 0 2px 12px rgba(232,134,106,0.12), inset 0 1px 0 rgba(255,255,255,0.6);
+  background: linear-gradient(145deg, #E4AE9C 0%, #F0C8B8 35%, #FAE4DA 70%, #FFF4EE 100%);
+  box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.65), inset 0 -1px 0 rgba(0,0,0,0.02);
 }
 .stat-card-gradient-sage {
-  background: linear-gradient(135deg, #A4C8B0 0%, #BCD8C8 40%, #D8ECE0 100%);
-  box-shadow: 0 2px 12px rgba(126,181,166,0.12), inset 0 1px 0 rgba(255,255,255,0.6);
+  background: linear-gradient(145deg, #98C0A8 0%, #B4D4C2 35%, #D4E8DE 70%, #EFF8F3 100%);
+  box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.65), inset 0 -1px 0 rgba(0,0,0,0.02);
 }
 .stat-card-gradient-mist {
-  background: linear-gradient(135deg, #A8BED0 0%, #C0D4E4 40%, #DAE8F4 100%);
-  box-shadow: 0 2px 12px rgba(139,175,212,0.12), inset 0 1px 0 rgba(255,255,255,0.6);
+  background: linear-gradient(145deg, #9CB4CA 0%, #B8CDE0 35%, #D6E4F0 70%, #EEF4FA 100%);
+  box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.65), inset 0 -1px 0 rgba(0,0,0,0.02);
 }
 .stat-card-gradient-cream {
-  background: linear-gradient(135deg, #D6CCAC 0%, #E4DACA 40%, #F0ECE0 100%);
-  box-shadow: 0 2px 12px rgba(196,168,130,0.12), inset 0 1px 0 rgba(255,255,255,0.6);
+  background: linear-gradient(145deg, #CCC0A0 0%, #DED4BC 35%, #EDE8DA 70%, #F9F6EE 100%);
+  box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.65), inset 0 -1px 0 rgba(0,0,0,0.02);
 }
-.dark .stat-card-gradient-blush { background: linear-gradient(135deg, rgba(232,134,106,0.18) 0%, rgba(232,134,106,0.08) 100%); box-shadow: 0 2px 12px rgba(232,134,106,0.08); }
-.dark .stat-card-gradient-sage  { background: linear-gradient(135deg, rgba(126,181,166,0.18) 0%, rgba(126,181,166,0.08) 100%); box-shadow: 0 2px 12px rgba(126,181,166,0.08); }
-.dark .stat-card-gradient-mist  { background: linear-gradient(135deg, rgba(139,175,212,0.18) 0%, rgba(139,175,212,0.08) 100%); box-shadow: 0 2px 12px rgba(139,175,212,0.08); }
-.dark .stat-card-gradient-cream { background: linear-gradient(135deg, rgba(196,168,130,0.18) 0%, rgba(196,168,130,0.08) 100%); box-shadow: 0 2px 12px rgba(196,168,130,0.08); }
 
-/* Stat card inner glow on hover */
+/* Dark mode stat cards — ambient glow */
+.dark .stat-card-gradient-blush {
+  background: linear-gradient(145deg, rgba(232,134,106,0.20) 0%, rgba(232,134,106,0.08) 100%);
+  box-shadow: 0 2px 16px rgba(232,134,106,0.10), inset 0 1px 0 rgba(232,134,106,0.06);
+}
+.dark .stat-card-gradient-sage {
+  background: linear-gradient(145deg, rgba(126,181,166,0.20) 0%, rgba(126,181,166,0.08) 100%);
+  box-shadow: 0 2px 16px rgba(126,181,166,0.10), inset 0 1px 0 rgba(126,181,166,0.06);
+}
+.dark .stat-card-gradient-mist {
+  background: linear-gradient(145deg, rgba(139,175,212,0.20) 0%, rgba(139,175,212,0.08) 100%);
+  box-shadow: 0 2px 16px rgba(139,175,212,0.10), inset 0 1px 0 rgba(139,175,212,0.06);
+}
+.dark .stat-card-gradient-cream {
+  background: linear-gradient(145deg, rgba(196,168,130,0.20) 0%, rgba(196,168,130,0.08) 100%);
+  box-shadow: 0 2px 16px rgba(196,168,130,0.10), inset 0 1px 0 rgba(196,168,130,0.06);
+}
+
+/* Stat card inner glow on hover — premium depth */
 .stat-card-glow:hover {
   box-shadow:
-    0 16px 48px -12px rgba(0,0,0,0.12),
-    0 4px 16px rgba(0,0,0,0.04),
-    inset 0 1px 0 rgba(255,255,255,0.7);
+    var(--shadow-lg),
+    inset 0 1px 0 rgba(255,255,255,0.75);
 }
 
 /* ── Sidebar Icon Glow ── */
@@ -2044,10 +2267,10 @@ html {
 
 /* ── Number Display — Large, premium data presentation ── */
 .display-number {
-  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-  font-weight: 800;
+  font-family: 'DM Mono', ui-monospace, SFMono-Regular, monospace;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.02em;
   line-height: 1;
 }
 .display-number-xl { font-size: 38px; }
@@ -2140,8 +2363,8 @@ html {
   font-weight: 900;
   font-size: 15px;
   color: white;
-  background: linear-gradient(135deg, #1A1A1A 0%, #333 100%);
-  box-shadow: 0 2px 10px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.1);
+  background: linear-gradient(135deg, hsl(var(--accent)) 0%, hsl(28, 50%, 42%) 100%);
+  box-shadow: 0 2px 10px rgba(204, 138, 63, 0.3), inset 0 1px 0 rgba(255,255,255,0.15);
   transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
   flex-shrink: 0;
 }

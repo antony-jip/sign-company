@@ -38,7 +38,7 @@ export function VisualizerDashboardWidget() {
         {stats.gegenereerd_deze_maand}
         <span className="text-sm font-medium text-muted-foreground ml-1">deze maand</span>
       </p>
-      <p className="text-xs font-semibold mt-2 text-[#5A8264] dark:text-[#7AAF85]">
+      <p className="text-xs font-semibold mt-2 text-[#CC8A3F] dark:text-[#D4A86A]">
         <span className="font-mono">€{round2(stats.kosten_deze_maand_eur)}</span> kosten
       </p>
     </div>

@@ -359,7 +359,7 @@ function getMetricColors(color: string) {
     teal: { bg: 'bg-teal-50 dark:bg-teal-950/40', text: 'text-teal-700 dark:text-teal-300', icon: 'text-teal-500' },
     amber: { bg: 'bg-amber-50 dark:bg-amber-950/40', text: 'text-amber-700 dark:text-amber-300', icon: 'text-amber-500' },
     red: { bg: 'bg-red-50 dark:bg-red-950/40', text: 'text-red-700 dark:text-red-300', icon: 'text-red-500' },
-    gray: { bg: 'bg-background dark:bg-foreground/80/40', text: 'text-foreground/70 dark:text-muted-foreground/50', icon: 'text-muted-foreground' },
+    gray: { bg: 'bg-background dark:bg-muted/40', text: 'text-foreground/70 dark:text-muted-foreground/50', icon: 'text-muted-foreground' },
   }
   return map[color] || map.gray
 }

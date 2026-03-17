@@ -142,7 +142,8 @@ export function LeadInzendingenLayout() {
           {gefilterd.length === 0 ? (
             <div className="flex flex-col items-center gap-3 py-16 text-muted-foreground">
               <UserPlus className="h-10 w-10 opacity-30" />
-              <p className="text-sm">Geen inzendingen gevonden</p>
+              <p className="text-sm font-medium">Geen inzendingen gevonden</p>
+              <p className="text-xs text-muted-foreground/60">Inzendingen van lead-formulieren verschijnen hier.</p>
             </div>
           ) : (
             <table className="w-full">
@@ -158,7 +159,7 @@ export function LeadInzendingenLayout() {
                   const info = getLeadInfo(inz)
                   const cfg = STATUS_CONFIG[inz.status]
                   return (
-                    <tr key={inz.id} className="group hover:bg-muted/30 cursor-pointer" onClick={() => handleViewDetail(inz)}>
+                    <tr key={inz.id} className="group hover:bg-bg-hover transition-colors duration-150 cursor-pointer" onClick={() => handleViewDetail(inz)}>
                       <td className="px-4 py-3 text-sm text-muted-foreground">{formatDateTime(inz.created_at)}</td>
                       <td className="px-4 py-3 text-sm">{getFormulierNaam(inz.formulier_id)}</td>
                       <td className="px-4 py-3 text-sm font-medium text-foreground">{info.naam}</td>

@@ -284,8 +284,8 @@ export function NacalculatieLayout() {
             <Card key={i}>
               <CardContent className="p-5">
                 <div className="animate-pulse space-y-3">
-                  <div className="h-4 bg-secondary dark:bg-foreground/70 rounded w-24" />
-                  <div className="h-8 bg-secondary dark:bg-foreground/70 rounded w-32" />
+                  <div className="h-4 bg-secondary dark:bg-muted rounded w-24" />
+                  <div className="h-8 bg-secondary dark:bg-muted rounded w-32" />
                 </div>
               </CardContent>
             </Card>
@@ -294,9 +294,9 @@ export function NacalculatieLayout() {
         <Card>
           <CardContent className="p-8">
             <div className="animate-pulse space-y-4">
-              <div className="h-4 bg-secondary dark:bg-foreground/70 rounded w-full" />
-              <div className="h-4 bg-secondary dark:bg-foreground/70 rounded w-3/4" />
-              <div className="h-4 bg-secondary dark:bg-foreground/70 rounded w-1/2" />
+              <div className="h-4 bg-secondary dark:bg-muted rounded w-full" />
+              <div className="h-4 bg-secondary dark:bg-muted rounded w-3/4" />
+              <div className="h-4 bg-secondary dark:bg-muted rounded w-1/2" />
             </div>
           </CardContent>
         </Card>
@@ -528,7 +528,7 @@ export function NacalculatieLayout() {
                     return (
                       <tr
                         key={regel.projectId}
-                        className="border-b border-border dark:border-border hover:bg-background dark:hover:bg-foreground/80/50 transition-colors"
+                        className="border-b border-border dark:border-border hover:bg-background dark:hover:bg-muted/50 transition-colors"
                       >
                         <td className="py-3 px-4 font-medium text-foreground dark:text-white">
                           {regel.projectNaam}
@@ -607,7 +607,7 @@ export function NacalculatieLayout() {
               return (
                 <div
                   key={regel.projectId}
-                  className="flex items-center gap-4 p-3 rounded-lg hover:bg-background dark:hover:bg-foreground/80/50 transition-colors cursor-pointer"
+                  className="flex items-center gap-4 p-3 rounded-lg hover:bg-background dark:hover:bg-muted/50 transition-colors cursor-pointer"
                   onClick={() => setDetailProjectId(regel.projectId)}
                 >
                   <div className="flex-1 min-w-0">
@@ -636,7 +636,7 @@ export function NacalculatieLayout() {
                         </span>
                       </div>
                     </div>
-                    <div className="relative h-2 bg-muted dark:bg-foreground/80 rounded-full overflow-hidden">
+                    <div className="relative h-2 bg-muted dark:bg-muted rounded-full overflow-hidden">
                       <div
                         className={cn(
                           'absolute top-0 left-0 h-full rounded-full transition-all duration-500',
@@ -694,7 +694,7 @@ export function NacalculatieLayout() {
                       {detailData.offerteItems.map((item) => (
                         <div
                           key={item.id}
-                          className="flex items-center justify-between p-2 bg-background dark:bg-foreground/80/50 rounded-lg text-sm"
+                          className="flex items-center justify-between p-2 bg-background dark:bg-muted/50 rounded-lg text-sm"
                         >
                           <div className="min-w-0 flex-1">
                             <p className="font-medium text-foreground/80 dark:text-muted-foreground/30 truncate">
@@ -826,7 +826,7 @@ export function NacalculatieLayout() {
               <Separator className="my-4" />
 
               {/* Totaal vergelijking with profit/loss */}
-              <div className="bg-background dark:bg-foreground/80/50 rounded-xl p-5">
+              <div className="bg-background dark:bg-muted/50 rounded-xl p-5">
                 <h3 className="text-sm font-semibold text-foreground/70 dark:text-muted-foreground/50 mb-4">
                   Totaal vergelijking
                 </h3>
@@ -887,7 +887,7 @@ export function NacalculatieLayout() {
                       }
                     </span>
                   </div>
-                  <div className="h-3 bg-secondary dark:bg-foreground/70 rounded-full overflow-hidden flex">
+                  <div className="h-3 bg-secondary dark:bg-muted rounded-full overflow-hidden flex">
                     <div
                       className="bg-primary h-full transition-all duration-300"
                       style={{

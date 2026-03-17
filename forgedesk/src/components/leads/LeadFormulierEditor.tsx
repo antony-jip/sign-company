@@ -216,7 +216,7 @@ export function LeadFormulierEditor() {
             </CardHeader>
             <CardContent className="space-y-3">
               {velden.map((veld, index) => (
-                <div key={veld.id} className="flex items-start gap-2 p-3 bg-background dark:bg-foreground/80/50 rounded-lg">
+                <div key={veld.id} className="flex items-start gap-2 p-3 bg-background dark:bg-muted/50 rounded-lg">
                   <GripVertical className="h-4 w-4 text-muted-foreground/60 mt-2 flex-shrink-0" />
                   <div className="flex-1 space-y-2">
                     <div className="grid grid-cols-2 gap-2">

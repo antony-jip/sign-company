@@ -102,7 +102,7 @@ export function EmailCommunicationHub() {
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => e.key === 'Enter' && navigate('/email')}
-                className="flex items-start gap-3 p-3 rounded-lg hover:bg-background dark:hover:bg-foreground/80/50 transition-colors duration-150 cursor-pointer"
+                className="flex items-start gap-3 p-3 rounded-lg hover:bg-background dark:hover:bg-muted/50 transition-colors duration-150 cursor-pointer"
               >
                 {/* Avatar */}
                 <div

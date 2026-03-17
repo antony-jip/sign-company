@@ -229,7 +229,7 @@ export function EmailLayout() {
   // ─── FULL-SCREEN EMAIL READER ───
   if (viewMode === 'reading') {
     return (
-      <div className="h-[calc(100vh-56px)] bg-white overflow-hidden">
+      <div className="h-[calc(100vh-56px)] bg-card overflow-hidden">
         <EmailReader
           email={selectedEmail}
           isLoadingBody={isLoadingBody}
@@ -250,7 +250,7 @@ export function EmailLayout() {
   // ─── FULL-SCREEN COMPOSE ───
   if (viewMode === 'composing') {
     return (
-      <div className="h-[calc(100vh-56px)] bg-white overflow-hidden">
+      <div className="h-[calc(100vh-56px)] bg-card overflow-hidden">
         <EmailCompose
           open={true}
           onOpenChange={(open) => { if (!open) handleBack() }}
@@ -268,9 +268,9 @@ export function EmailLayout() {
 
   // ─── INBOX VIEW: sidebar + email list ───
   return (
-    <div className="flex h-[calc(100vh-56px)] bg-[#F8F7F5] overflow-hidden">
+    <div className="flex h-[calc(100vh-56px)] bg-background overflow-hidden">
       {/* ─── SIDEBAR ─── */}
-      <div className="w-[240px] bg-white border-r border-foreground/[0.06] flex flex-col flex-shrink-0">
+      <div className="w-[240px] bg-card border-r border-foreground/[0.06] flex flex-col flex-shrink-0">
         <div className="p-3">
           <Button
             className="w-full h-10 rounded-lg gap-2 text-sm font-medium shadow-sm"
@@ -336,7 +336,7 @@ export function EmailLayout() {
       </div>
 
       {/* ─── EMAIL LIST (full remaining width) ─── */}
-      <div className="flex-1 bg-white flex flex-col min-w-0">
+      <div className="flex-1 bg-card flex flex-col min-w-0">
         {/* Toolbar */}
         <div className="flex items-center justify-between px-4 h-12 border-b border-foreground/[0.06] flex-shrink-0">
           <div className="flex items-center gap-3">
@@ -375,7 +375,7 @@ export function EmailLayout() {
                       className={cn(
                         'px-3 py-1.5 rounded-md text-xs transition-all duration-150',
                         isActiveFilter
-                          ? 'bg-white text-foreground font-medium shadow-sm'
+                          ? 'bg-card text-foreground font-medium shadow-sm'
                           : 'text-foreground/45 hover:text-foreground/65',
                       )}
                     >
@@ -403,7 +403,7 @@ export function EmailLayout() {
                   className={cn(
                     'px-1.5 py-1 rounded transition-all duration-150',
                     fontSize === size
-                      ? 'bg-white text-foreground shadow-sm'
+                      ? 'bg-card text-foreground shadow-sm'
                       : 'text-foreground/35 hover:text-foreground/55',
                   )}
                   title={size === 'small' ? 'Klein' : size === 'medium' ? 'Normaal' : 'Groot'}
@@ -523,7 +523,7 @@ export function EmailLayout() {
       {showShortcuts && (
         <>
           <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" onClick={() => setShowShortcuts(false)} />
-          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-white rounded-xl shadow-2xl border border-foreground/10 p-6 w-[340px]">
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-card rounded-xl shadow-2xl border border-foreground/10 p-6 w-[340px]">
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-sm font-semibold text-foreground">Sneltoetsen</h3>
               <button onClick={() => setShowShortcuts(false)} className="p-1 hover:bg-foreground/5 rounded">

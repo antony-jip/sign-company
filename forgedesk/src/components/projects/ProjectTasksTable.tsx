@@ -85,9 +85,10 @@ export function ProjectTasksTable({ taken }: ProjectTasksTableProps) {
 
   if (taken.length === 0) {
     return (
-      <div className="text-center py-12 text-muted-foreground">
-        <p className="text-base font-medium">Nog geen taken</p>
-        <p className="text-sm mt-1">Er zijn nog geen taken voor dit project.</p>
+      <div className="flex flex-col items-center py-12 text-muted-foreground">
+        <ClipboardList className="h-10 w-10 opacity-30 mb-3" />
+        <p className="text-sm font-medium">Nog geen taken</p>
+        <p className="text-xs text-muted-foreground/60 mt-1">Er zijn nog geen taken voor dit project.</p>
       </div>
     )
   }
@@ -125,7 +126,7 @@ export function ProjectTasksTable({ taken }: ProjectTasksTableProps) {
             return (
               <tr
                 key={taak.id}
-                className="border-b border-border dark:border-border hover:bg-background dark:hover:bg-foreground/80/50 transition-colors duration-150"
+                className="border-b border-border dark:border-border hover:bg-background dark:hover:bg-muted/50 transition-colors duration-150"
               >
                 <td className="py-3 px-4">
                   <div>

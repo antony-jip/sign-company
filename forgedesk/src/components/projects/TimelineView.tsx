@@ -70,9 +70,10 @@ export function TimelineView({ taken, projectStart, projectEind }: TimelineViewP
 
   if (taken.length === 0) {
     return (
-      <div className="text-center py-12 text-muted-foreground">
-        <p className="text-base font-medium">Nog geen taken</p>
-        <p className="text-sm mt-1">Voeg taken toe om de tijdlijn te vullen.</p>
+      <div className="flex flex-col items-center py-12 text-muted-foreground">
+        <Calendar className="h-10 w-10 opacity-30 mb-3" />
+        <p className="text-sm font-medium">Nog geen taken</p>
+        <p className="text-xs text-muted-foreground/60 mt-1">Voeg taken toe om de tijdlijn te vullen.</p>
       </div>
     )
   }
@@ -99,7 +100,7 @@ export function TimelineView({ taken, projectStart, projectEind }: TimelineViewP
       {/* Timeline chart */}
       <div className="border border-black/[0.06] rounded-xl overflow-hidden">
         {/* Month headers */}
-        <div className="relative h-8 bg-background dark:bg-foreground/80/50 border-b border-border dark:border-border">
+        <div className="relative h-8 bg-background dark:bg-muted/50 border-b border-border dark:border-border">
           {timeline.maanden.map((maand, index) => (
             <div
               key={index}
@@ -118,7 +119,7 @@ export function TimelineView({ taken, projectStart, projectEind }: TimelineViewP
           {timeline.taken.map((taak, index) => (
             <div
               key={taak.id}
-              className="relative h-10 border-b border-border dark:border-border last:border-b-0 group hover:bg-background dark:hover:bg-foreground/80/30 transition-colors duration-150"
+              className="relative h-10 border-b border-border dark:border-border last:border-b-0 group hover:bg-background dark:hover:bg-muted/30 transition-colors duration-150"
             >
               {/* Month grid lines */}
               {timeline.maanden.map((maand, mi) => (
@@ -153,7 +154,7 @@ export function TimelineView({ taken, projectStart, projectEind }: TimelineViewP
               <div className="absolute left-0 top-full z-20 hidden group-hover:block bg-card border border-border dark:border-border rounded-lg shadow-lg p-3 min-w-[200px] pointer-events-none">
                 <p className="font-medium text-sm text-foreground">{taak.titel}</p>
                 <div className="mt-1.5 space-y-1">
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground font-mono">
                     {formatDate(taak.created_at)} - {formatDate(taak.deadline ?? "")}
                   </p>
                   <div className="flex gap-1.5">

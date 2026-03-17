@@ -294,7 +294,7 @@ export function TeamledenTab() {
       </div>
 
       {/* Sub-tabs */}
-      <div className="flex items-center gap-1 p-1 bg-muted dark:bg-foreground/80 rounded-xl overflow-x-auto">
+      <div className="flex items-center gap-1 p-1 bg-muted dark:bg-muted rounded-xl overflow-x-auto">
         {tabs.map((tab) => (
           <button
             key={tab.id}

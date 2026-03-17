@@ -281,9 +281,9 @@ function DocumentGrid({ documents }: { documents: Document[] }) {
   if (documents.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-        <File className="w-12 h-12 mb-4 opacity-50" />
-        <p className="text-lg font-medium">Geen documenten gevonden</p>
-        <p className="text-sm mt-1">Pas de filters aan of upload een nieuw document.</p>
+        <File className="w-12 h-12 mb-4 opacity-30" />
+        <p className="text-sm font-medium">Geen documenten gevonden</p>
+        <p className="text-xs text-muted-foreground/60 mt-1">Pas de filters aan of upload een nieuw document.</p>
       </div>
     )
   }
@@ -350,9 +350,9 @@ function DocumentList({ documents }: { documents: Document[] }) {
   if (documents.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-        <File className="w-12 h-12 mb-4 opacity-50" />
-        <p className="text-lg font-medium">Geen documenten gevonden</p>
-        <p className="text-sm mt-1">Pas de filters aan of upload een nieuw document.</p>
+        <File className="w-12 h-12 mb-4 opacity-30" />
+        <p className="text-sm font-medium">Geen documenten gevonden</p>
+        <p className="text-xs text-muted-foreground/60 mt-1">Pas de filters aan of upload een nieuw document.</p>
       </div>
     )
   }
@@ -377,7 +377,7 @@ function DocumentList({ documents }: { documents: Document[] }) {
           return (
             <div
               key={doc.id}
-              className="grid grid-cols-12 gap-4 px-4 py-3 items-center hover:bg-muted/30 cursor-pointer transition-colors"
+              className="grid grid-cols-12 gap-4 px-4 py-3 items-center hover:bg-bg-hover cursor-pointer transition-colors duration-150"
             >
               <div className="col-span-5 flex items-center gap-3 min-w-0">
                 <Icon className={cn('w-5 h-5 flex-shrink-0', iconColor)} />

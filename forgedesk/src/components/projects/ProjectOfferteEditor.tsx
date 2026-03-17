@@ -261,7 +261,7 @@ export function ProjectOfferteEditor({ offerteId, open, onClose, onSaved }: Proj
               </div>
               <div className="space-y-2">
                 <Label>Nummer</Label>
-                <Input value={offerte?.nummer || ''} readOnly className="bg-background dark:bg-foreground/80" />
+                <Input value={offerte?.nummer || ''} readOnly className="bg-background dark:bg-muted" />
               </div>
               <div className="space-y-2">
                 <Label>Status</Label>
@@ -307,7 +307,7 @@ export function ProjectOfferteEditor({ offerteId, open, onClose, onSaved }: Proj
                     {items.map((item, index) => {
                       if (item._deleted) return null
                       return (
-                        <div key={item.id} className="bg-background dark:bg-foreground/80/50 rounded-lg p-3 space-y-2">
+                        <div key={item.id} className="bg-background dark:bg-muted/50 rounded-lg p-3 space-y-2">
                           <div className="flex items-start gap-2">
                             <div className="flex-1 space-y-2">
                               <Input

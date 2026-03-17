@@ -571,7 +571,7 @@ export function ProjectsList() {
             {/* Selecteer alles toggle */}
             <button
               onClick={toggleSelectAll}
-              className="text-xs font-semibold px-2.5 py-1 rounded-md transition-all hover:bg-white/40"
+              className="text-xs font-semibold px-2.5 py-1 rounded-md transition-all hover:bg-card/40"
               style={{ color: 'var(--color-sage-text)' }}
             >
               {selectedIds.size === gefilterdeProjecten.length ? 'Deselecteer alles' : 'Selecteer alles'}
@@ -582,7 +582,7 @@ export function ProjectsList() {
             {/* Status wijzigen knop */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-1.5 h-8 px-3.5 rounded-lg text-xs font-semibold shadow-sm transition-all hover:shadow-md bg-white/90 backdrop-blur-sm border" style={{ color: 'var(--color-sage-text)', borderColor: 'var(--color-sage-border)' }}>
+                <button className="flex items-center gap-1.5 h-8 px-3.5 rounded-lg text-xs font-semibold shadow-sm transition-all hover:shadow-md bg-card/90 backdrop-blur-sm border" style={{ color: 'var(--color-sage-text)', borderColor: 'var(--color-sage-border)' }}>
                   <ArrowUpDown className="w-3 h-3" />
                   Status wijzigen
                   <ChevronDown className="w-3 h-3 opacity-50" />
@@ -605,7 +605,7 @@ export function ProjectsList() {
             {/* Sluiten */}
             <button
               onClick={() => setSelectedIds(new Set())}
-              className="h-7 w-7 rounded-lg flex items-center justify-center transition-all hover:bg-white/40"
+              className="h-7 w-7 rounded-lg flex items-center justify-center transition-all hover:bg-card/40"
               style={{ color: 'var(--color-sage-text)' }}
             >
               <X className="w-3.5 h-3.5" />
@@ -666,7 +666,7 @@ export function ProjectsList() {
                     )}>
                       {project.prioriteit}
                     </span>
-                    <span>{formatDate(project.created_at)}</span>
+                    <span className="font-mono">{formatDate(project.created_at)}</span>
                   </div>
                   {bedrag > 0 && (
                     <span className="font-mono font-semibold text-foreground">{formatCurrency(bedrag)}</span>
@@ -683,17 +683,17 @@ export function ProjectsList() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border/60 bg-muted/30">
-                <th className="py-2.5 px-3 w-10">
+                <th className="py-3 px-3 w-10">
                   <Checkbox
                     checked={selectedIds.size > 0 && selectedIds.size === gefilterdeProjecten.length}
                     onCheckedChange={toggleSelectAll}
                     aria-label="Selecteer alle projecten"
                   />
                 </th>
-                <th className="text-left py-2.5 px-4 w-[110px]">
+                <th className="text-left py-3 px-4 w-[110px]">
                   <span className="text-xs font-bold text-text-tertiary uppercase tracking-label">Status</span>
                 </th>
-                <th className="text-left py-2.5 px-4">
+                <th className="text-left py-3 px-4">
                   <button
                     onClick={() => handleSort('naam')}
                     className="flex items-center gap-1 text-xs font-bold text-text-tertiary uppercase tracking-label hover:text-foreground transition-colors"
@@ -706,13 +706,13 @@ export function ProjectsList() {
                     )}
                   </button>
                 </th>
-                <th className="text-left py-2.5 px-4 hidden lg:table-cell">
+                <th className="text-left py-3 px-4 hidden lg:table-cell">
                   <span className="text-xs font-bold text-text-tertiary uppercase tracking-label">Klant</span>
                 </th>
-                <th className="text-left py-2.5 px-4 hidden md:table-cell">
+                <th className="text-left py-3 px-4 hidden md:table-cell">
                   <span className="text-xs font-bold text-text-tertiary uppercase tracking-label">Team</span>
                 </th>
-                <th className="text-right py-2.5 px-4 hidden xl:table-cell">
+                <th className="text-right py-3 px-4 hidden xl:table-cell">
                   <button
                     onClick={() => handleSort('bedrag')}
                     className="flex items-center gap-1 text-xs font-bold text-text-tertiary uppercase tracking-label hover:text-foreground transition-colors ml-auto"
@@ -725,10 +725,10 @@ export function ProjectsList() {
                     )}
                   </button>
                 </th>
-                <th className="text-right py-2.5 px-4 hidden xl:table-cell">
+                <th className="text-right py-3 px-4 hidden xl:table-cell">
                   <span className="text-xs font-bold text-text-tertiary uppercase tracking-label">Open</span>
                 </th>
-                <th className="text-right py-2.5 px-4 hidden lg:table-cell">
+                <th className="text-right py-3 px-4 hidden lg:table-cell">
                   <button
                     onClick={() => handleSort('start_datum')}
                     className="flex items-center gap-1 text-xs font-bold text-text-tertiary uppercase tracking-label hover:text-foreground transition-colors ml-auto"
@@ -741,7 +741,7 @@ export function ProjectsList() {
                     )}
                   </button>
                 </th>
-                <th className="w-10 py-2.5 px-2" />
+                <th className="w-10 py-3 px-2" />
               </tr>
             </thead>
             <tbody className="row-stagger">
@@ -828,7 +828,7 @@ export function ProjectsList() {
                               {project.naam}
                             </Link>
                             {project.project_nummer && (
-                              <span className="text-xs text-gray-400 font-mono">{project.project_nummer}</span>
+                              <span className="text-xs text-muted-foreground font-mono">{project.project_nummer}</span>
                             )}
                           </div>
                           {project.beschrijving && (
@@ -918,7 +918,7 @@ export function ProjectsList() {
 
                     {/* Datum */}
                     <td className="py-3 px-4 text-right hidden lg:table-cell">
-                      <span className="text-xs text-muted-foreground tabular-nums">
+                      <span className="text-xs text-muted-foreground font-mono tabular-nums">
                         {formatDate(project.created_at)}
                       </span>
                     </td>
@@ -926,22 +926,6 @@ export function ProjectsList() {
                     {/* Quick actions + Menu */}
                     <td className="py-3 px-2">
                       <div className="flex items-center gap-0.5 justify-end">
-                        {/* Quick offerte preview button */}
-                        {(() => {
-                          const projOffertes = getProjectOffertes(project.id)
-                          if (projOffertes.length === 0) return null
-                          const latestOfferte = projOffertes[0]
-                          return (
-                            <Link
-                              to={`/offertes/${latestOfferte.id}/preview`}
-                              onClick={(e) => e.stopPropagation()}
-                              className="p-1 rounded-md hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors opacity-0 group-hover:opacity-100"
-                              title={`Offerte bekijken: ${latestOfferte.nummer || latestOfferte.titel}`}
-                            >
-                              <Eye className="w-4 h-4 text-muted-foreground hover:text-blue-600 dark:hover:text-blue-400 transition-colors" />
-                            </Link>
-                          )
-                        })()}
                         {/* Quick photo upload button */}
                         <button
                           onClick={(e) => {

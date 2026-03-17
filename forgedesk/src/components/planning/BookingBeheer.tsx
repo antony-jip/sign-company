@@ -151,7 +151,7 @@ export function BookingBeheer() {
                   {slots
                     .sort((a, b) => a.dag_van_week - b.dag_van_week)
                     .map((slot) => (
-                    <div key={slot.id} className="flex items-center justify-between bg-background dark:bg-foreground/80/50 rounded-lg px-3 py-2">
+                    <div key={slot.id} className="flex items-center justify-between bg-background dark:bg-muted/50 rounded-lg px-3 py-2">
                       <div className="flex items-center gap-2">
                         <Badge variant="outline" className="text-2xs w-8 justify-center">
                           {DAGEN_KORT[slot.dag_van_week]}
@@ -218,7 +218,7 @@ export function BookingBeheer() {
                   {afspraken
                     .sort((a, b) => b.datum.localeCompare(a.datum) || b.start_tijd.localeCompare(a.start_tijd))
                     .map((afspraak) => (
-                    <div key={afspraak.id} className="flex items-center gap-3 bg-background dark:bg-foreground/80/50 rounded-lg px-4 py-3">
+                    <div key={afspraak.id} className="flex items-center gap-3 bg-background dark:bg-muted/50 rounded-lg px-4 py-3">
                       <div className="flex-shrink-0">
                         <div className={cn(
                           'w-10 h-10 rounded-lg flex flex-col items-center justify-center text-white',

@@ -440,7 +440,7 @@ export function PortaalTab() {
             {/* Logo preview */}
             {logoUrl ? (
               <div className="flex items-center gap-4 rounded-md border bg-muted/30 p-3">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded border bg-white">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded border border-border bg-card">
                   <img src={logoUrl} alt="Bedrijfslogo" className="h-full w-full object-contain" />
                 </div>
                 <div className="text-sm">

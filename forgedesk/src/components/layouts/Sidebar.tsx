@@ -30,7 +30,7 @@ interface NavSection {
 
 // Module accent colors for icon glows
 const MODULE_COLORS: Record<string, string> = {
-  '/': '#5A8264',
+  '/': '#CC8A3F',
   '/klanten': '#8BAFD4',
   '/offertes': '#9B8EC4',
   '/inkoopoffertes': '#9B8EC4',
@@ -292,7 +292,7 @@ export function Sidebar() {
       <div className="border-t border-border/50 p-3 space-y-2 flex-shrink-0">
         {!isCollapsed && user && (
           <div className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-muted/50 transition-colors duration-200">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sage to-blush flex items-center justify-center flex-shrink-0 ring-2 ring-primary/10">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-blush flex items-center justify-center flex-shrink-0 ring-2 ring-primary/10">
               <span className="text-white text-xs font-semibold">
                 {(user.user_metadata?.voornaam?.[0] || user.email?.[0] || 'U').toUpperCase()}
               </span>
@@ -320,7 +320,7 @@ export function Sidebar() {
 
         {isCollapsed && user && (
           <div className="relative group flex justify-center">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sage to-blush flex items-center justify-center cursor-pointer ring-2 ring-primary/10">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-blush flex items-center justify-center cursor-pointer ring-2 ring-primary/10">
               <span className="text-white text-xs font-semibold">
                 {(user.user_metadata?.voornaam?.[0] || user.email?.[0] || 'U').toUpperCase()}
               </span>

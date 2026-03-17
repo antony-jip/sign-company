@@ -1560,7 +1560,7 @@ export function NewsletterBuilder() {
                             <Users className="h-3 w-3" />
                             {nieuwsbrief.ontvangers?.length || 0} ontvangers
                           </span>
-                          <span className="flex items-center gap-1">
+                          <span className="flex items-center gap-1 font-mono">
                             <Clock className="h-3 w-3" />
                             {formatDate(nieuwsbrief.updated_at)}
                           </span>
@@ -1639,7 +1639,7 @@ export function NewsletterBuilder() {
                           </span>
                           <span className="flex items-center gap-1">
                             <CheckCircle2 className="h-3 w-3" />
-                            Verzonden op {nieuwsbrief.verzonden_op ? formatDateTime(nieuwsbrief.verzonden_op) : formatDate(nieuwsbrief.updated_at)}
+                            Verzonden op <span className="font-mono">{nieuwsbrief.verzonden_op ? formatDateTime(nieuwsbrief.verzonden_op) : formatDate(nieuwsbrief.updated_at)}</span>
                           </span>
                         </div>
                       </div>

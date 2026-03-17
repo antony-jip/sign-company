@@ -20,7 +20,7 @@ interface PortalEmailParams {
   quote?: string
   /** URL van bedrijfslogo (wordt bovenaan email getoond) */
   logoUrl?: string
-  /** Primaire merkkleur, bijv. '#5A8264'. Fallback: sage groen */
+  /** Primaire merkkleur, bijv. '#CC8A3F'. Fallback: warm amber */
   primaireKleur?: string
 }
 
@@ -37,8 +37,8 @@ export function buildPortalEmailHtml(params: PortalEmailParams): string {
     primaireKleur,
   } = params
 
-  const sage = primaireKleur || '#5A8264'
-  const sageLight = primaireKleur ? `${primaireKleur}18` : '#E4EBE6'
+  const sage = primaireKleur || '#CC8A3F'
+  const sageLight = primaireKleur ? `${primaireKleur}18` : '#F0E4D6'
   const bgOuter = '#F4F3F0'
   const bgCard = '#FFFFFF'
   const textDark = '#1A1A1A'

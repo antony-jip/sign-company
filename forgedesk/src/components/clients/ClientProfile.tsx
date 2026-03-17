@@ -530,14 +530,14 @@ export function ClientProfile() {
             </Badge>
             <button
               onClick={() => setEditDialogOpen(true)}
-              className="p-1 rounded hover:bg-muted dark:hover:bg-foreground/80 transition-colors"
+              className="p-1 rounded hover:bg-muted dark:hover:bg-muted transition-colors"
               title="Bewerken"
             >
               <Pencil className="w-4 h-4 text-muted-foreground/60" />
             </button>
           </div>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Aangemaakt op: {formatDate(klant.created_at)}
+            Aangemaakt op: <span className="font-mono">{formatDate(klant.created_at)}</span>
           </p>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
@@ -663,7 +663,7 @@ export function ClientProfile() {
             </CardTitle>
             <button
               onClick={openAddContact}
-              className="p-1 rounded hover:bg-muted dark:hover:bg-foreground/80 transition-colors"
+              className="p-1 rounded hover:bg-muted dark:hover:bg-muted transition-colors"
               title="Contactpersoon toevoegen"
             >
               <Plus className="w-4 h-4 text-muted-foreground/60 hover:text-blue-500" />
@@ -736,7 +736,7 @@ export function ClientProfile() {
             </CardTitle>
             <button
               onClick={openAddVestiging}
-              className="p-1 rounded hover:bg-muted dark:hover:bg-foreground/80 transition-colors"
+              className="p-1 rounded hover:bg-muted dark:hover:bg-muted transition-colors"
               title="Vestiging toevoegen"
             >
               <Plus className="w-4 h-4 text-muted-foreground/60 hover:text-green-500" />
@@ -893,7 +893,7 @@ export function ClientProfile() {
                             <tr
                               key={project.id}
                               className={cn(
-                                'hover:bg-background dark:hover:bg-foreground/80/50 cursor-pointer transition-colors border-l-4',
+                                'hover:bg-background dark:hover:bg-muted/50 cursor-pointer transition-colors border-l-4',
                                 getStatusBorderColor(project.status)
                               )}
                               onClick={() => navigate(`/projecten/${project.id}`)}
@@ -911,7 +911,7 @@ export function ClientProfile() {
                                   <p className="text-sm font-semibold text-foreground hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                                     {project.naam}
                                   </p>
-                                  <p className="text-xs text-muted-foreground mt-0.5">
+                                  <p className="text-xs text-muted-foreground mt-0.5 font-mono">
                                     {formatDate(project.start_datum ?? "")}
                                   </p>
                                 </div>
@@ -938,7 +938,7 @@ export function ClientProfile() {
                               {/* Deadline */}
                               <td className="py-3 px-4 hidden lg:table-cell">
                                 <span className={cn(
-                                  'text-sm',
+                                  'text-sm font-mono',
                                   isOverdue ? 'text-red-600 dark:text-red-400 font-medium' : 'text-foreground'
                                 )}>
                                   {formatDate(project.eind_datum ?? "")}
@@ -978,7 +978,7 @@ export function ClientProfile() {
                                     ]
                                     exportCSV(project.naam.replace(/\s+/g, '-').toLowerCase(), headers, rows)
                                   }}
-                                  className="p-1.5 rounded-md hover:bg-muted dark:hover:bg-foreground/80 transition-colors inline-flex"
+                                  className="p-1.5 rounded-md hover:bg-muted dark:hover:bg-muted transition-colors inline-flex"
                                   title="Download CSV"
                                 >
                                   <FileText className="w-4 h-4 text-muted-foreground hover:text-blue-600" />
@@ -1018,7 +1018,7 @@ export function ClientProfile() {
                       {clientOffertes.map((offerte) => (
                         <tr
                           key={offerte.id}
-                          className="hover:bg-background dark:hover:bg-foreground/80/50 cursor-pointer transition-colors"
+                          className="hover:bg-background dark:hover:bg-muted/50 cursor-pointer transition-colors"
                           onClick={() => navigate(`/offertes/${offerte.id}/bewerken`, { state: { from: `/klanten/${id}` } })}
                         >
                           <td className="py-3 px-4">
@@ -1040,7 +1040,7 @@ export function ClientProfile() {
                             </span>
                           </td>
                           <td className="py-3 px-4 hidden md:table-cell">
-                            <span className="text-sm text-muted-foreground">
+                            <span className="text-sm text-muted-foreground font-mono">
                               {formatDate(offerte.geldig_tot)}
                             </span>
                           </td>
@@ -1077,7 +1077,7 @@ export function ClientProfile() {
                       {clientDeals.map((deal) => (
                         <tr
                           key={deal.id}
-                          className="hover:bg-background dark:hover:bg-foreground/80/50 cursor-pointer transition-colors"
+                          className="hover:bg-background dark:hover:bg-muted/50 cursor-pointer transition-colors"
                           onClick={() => navigate(`/deals/${deal.id}`)}
                         >
                           <td className="py-3 px-4 text-sm font-medium">{deal.titel}</td>
@@ -1125,7 +1125,7 @@ export function ClientProfile() {
                     </thead>
                     <tbody className="divide-y divide-border dark:divide-border">
                       {clientFacturen.map((factuur) => (
-                        <tr key={factuur.id} className="hover:bg-background dark:hover:bg-foreground/80/50 transition-colors">
+                        <tr key={factuur.id} className="hover:bg-background dark:hover:bg-muted/50 transition-colors">
                           <td className="py-3 px-4">
                             <span className="text-sm font-medium font-mono text-blue-600 dark:text-blue-400">{factuur.nummer}</span>
                           </td>
@@ -1141,7 +1141,7 @@ export function ClientProfile() {
                             </Badge>
                           </td>
                           <td className="py-3 px-4 text-right text-sm font-semibold">{formatCurrency(factuur.totaal)}</td>
-                          <td className="py-3 px-4 hidden md:table-cell text-sm text-muted-foreground">{formatDate(factuur.factuurdatum)}</td>
+                          <td className="py-3 px-4 hidden md:table-cell text-sm text-muted-foreground font-mono">{formatDate(factuur.factuurdatum)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -1215,7 +1215,7 @@ export function ClientProfile() {
                   >
                     <CardContent className="py-4">
                       <div className="flex items-start gap-3">
-                        <div className="w-9 h-9 rounded-full bg-muted dark:bg-foreground/80 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <div className="w-9 h-9 rounded-full bg-muted dark:bg-muted flex items-center justify-center flex-shrink-0 mt-0.5">
                           <Mail className="w-4 h-4 text-muted-foreground dark:text-muted-foreground/60" />
                         </div>
                         <div className="flex-1 min-w-0">
@@ -1277,7 +1277,7 @@ export function ClientProfile() {
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-foreground truncate">{doc.naam}</p>
                             <p className="text-xs text-muted-foreground mt-0.5">
-                              {doc.map} &middot; {formatDate(doc.updated_at)}
+                              {doc.map} &middot; <span className="font-mono">{formatDate(doc.updated_at)}</span>
                             </p>
                           </div>
                         </div>
@@ -1385,14 +1385,14 @@ export function ClientProfile() {
                         <div className="flex items-center gap-1 flex-shrink-0">
                           <button
                             onClick={() => openEditContact(cp)}
-                            className="p-1.5 rounded-md hover:bg-muted dark:hover:bg-foreground/80 transition-colors"
+                            className="p-1.5 rounded-md hover:bg-muted dark:hover:bg-muted transition-colors"
                             title="Bewerken"
                           >
                             <Pencil className="w-3.5 h-3.5 text-muted-foreground/60" />
                           </button>
                           <button
                             onClick={() => openMoveDialog(cp)}
-                            className="p-1.5 rounded-md hover:bg-muted dark:hover:bg-foreground/80 transition-colors"
+                            className="p-1.5 rounded-md hover:bg-muted dark:hover:bg-muted transition-colors"
                             title="Verplaats naar ander bedrijf"
                           >
                             <ArrowRightLeft className="w-3.5 h-3.5 text-muted-foreground/60" />
@@ -1786,7 +1786,7 @@ export function ClientProfile() {
                       'w-full text-left px-3 py-2 rounded-md text-sm transition-colors',
                       selectedMoveKlant?.id === k.id
                         ? 'bg-primary text-primary-foreground'
-                        : 'hover:bg-muted dark:hover:bg-foreground/80'
+                        : 'hover:bg-muted dark:hover:bg-muted'
                     )}
                   >
                     <p className="font-medium">{k.bedrijfsnaam}</p>

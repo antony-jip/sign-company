@@ -942,9 +942,9 @@ export function QuotesPipeline() {
       {viewMode === 'pipeline' && (
         <>
         {/* Financial Overview per Status */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {([
-            { key: 'concept' as const, label: 'Concept', borderColor: 'border-stone-200/60 dark:border-stone-700/60', bgColor: 'from-stone-50/80 to-card dark:from-stone-900/30 dark:to-card', dotColor: 'bg-stone-400', textColor: 'text-stone-600 dark:text-stone-400' },
+            { key: 'concept' as const, label: 'Concept', borderColor: 'border-border/60 dark:border-stone-700/60', bgColor: 'from-muted/60 to-card dark:from-stone-900/30 dark:to-card', dotColor: 'bg-muted-foreground/40', textColor: 'text-muted-foreground dark:text-stone-400' },
             { key: 'verzonden' as const, label: 'Verstuurd', borderColor: 'border-sky-200/60 dark:border-sky-800/60', bgColor: 'from-sky-50/80 to-card dark:from-sky-950/30 dark:to-card', dotColor: 'bg-sky-400', textColor: 'text-sky-600 dark:text-sky-400' },
             { key: 'bekeken' as const, label: 'Bekeken', borderColor: 'border-amber-200/60 dark:border-amber-800/60', bgColor: 'from-amber-50/80 to-card dark:from-amber-950/30 dark:to-card', dotColor: 'bg-amber-400', textColor: 'text-amber-600 dark:text-amber-400' },
             { key: 'goedgekeurd' as const, label: 'Akkoord', borderColor: 'border-primary/20 dark:border-primary/15', bgColor: 'from-wm-pale/20 to-card dark:from-primary/10 dark:to-card', dotColor: 'bg-primary', textColor: 'text-accent dark:text-wm-light' },
@@ -955,7 +955,7 @@ export function QuotesPipeline() {
             return (
               <div
                 key={col.key}
-                className={`relative overflow-hidden rounded-xl border ${col.borderColor} bg-gradient-to-br ${col.bgColor} backdrop-blur-sm p-4 text-left`}
+                className={`relative overflow-hidden rounded-xl border ${col.borderColor} bg-gradient-to-br ${col.bgColor} backdrop-blur-sm p-5 text-left`}
               >
                 <div className="flex items-center gap-2 mb-1.5">
                   <div className={`w-2 h-2 rounded-full ${col.dotColor}`} />
@@ -1241,7 +1241,7 @@ export function QuotesPipeline() {
                 return (
                   <div
                     key={col.key}
-                    className="text-center p-4 rounded-xl bg-background/80 dark:bg-foreground/70/30 border border-border dark:border-border/50 transition-shadow hover:shadow-sm"
+                    className="text-center p-5 rounded-xl bg-background/80 dark:bg-muted/30 border border-border dark:border-border/50 transition-shadow hover:shadow-sm"
                   >
                     <div className="flex items-center justify-center gap-1.5 mb-2">
                       <div className={`w-2 h-2 rounded-full ${col.accent}`} />
@@ -1289,7 +1289,7 @@ export function QuotesPipeline() {
             </div>
             <button
               onClick={toggleSelectAll}
-              className="text-xs font-semibold px-2.5 py-1 rounded-md transition-all hover:bg-white/40"
+              className="text-xs font-semibold px-2.5 py-1 rounded-md transition-all hover:bg-card/40"
               style={{ color: 'var(--color-sage-text)' }}
             >
               {selectedIds.size === filteredOffertes.length ? 'Deselecteer alles' : 'Selecteer alles'}
@@ -1297,7 +1297,7 @@ export function QuotesPipeline() {
             <div className="flex-1" />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-1.5 h-8 px-3.5 rounded-lg text-xs font-semibold shadow-sm transition-all hover:shadow-md bg-white/90 backdrop-blur-sm border" style={{ color: 'var(--color-sage-text)', borderColor: 'var(--color-sage-border)' }}>
+                <button className="flex items-center gap-1.5 h-8 px-3.5 rounded-lg text-xs font-semibold shadow-sm transition-all hover:shadow-md bg-card/90 backdrop-blur-sm border" style={{ color: 'var(--color-sage-text)', borderColor: 'var(--color-sage-border)' }}>
                   <ArrowUpDown className="w-3 h-3" />
                   Status wijzigen
                   <ChevronDown className="w-3 h-3 opacity-50" />
@@ -1318,7 +1318,7 @@ export function QuotesPipeline() {
             </DropdownMenu>
             <button
               onClick={() => setSelectedIds(new Set())}
-              className="h-7 w-7 rounded-lg flex items-center justify-center transition-all hover:bg-white/40"
+              className="h-7 w-7 rounded-lg flex items-center justify-center transition-all hover:bg-card/40"
               style={{ color: 'var(--color-sage-text)' }}
             >
               <X className="w-3.5 h-3.5" />
@@ -1354,17 +1354,17 @@ export function QuotesPipeline() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border bg-muted/50">
-                    <th className="w-10 px-3 py-2.5">
+                    <th className="w-10 px-3 py-3">
                       <Checkbox
                         checked={sortedListOffertes.length > 0 && selectedIds.size === sortedListOffertes.length}
                         onCheckedChange={toggleSelectAll}
                         aria-label="Selecteer alles"
                       />
                     </th>
-                    <th className="text-left py-2.5 px-4 w-[110px]">
+                    <th className="text-left py-3 px-4 w-[110px]">
                       <span className="text-xs font-bold text-text-tertiary uppercase tracking-label">Status</span>
                     </th>
-                    <th className="text-left py-2.5 px-4">
+                    <th className="text-left py-3 px-4">
                       <button
                         onClick={() => handleListSort('nummer')}
                         className="flex items-center gap-1 text-xs font-bold text-text-tertiary uppercase tracking-label hover:text-foreground transition-colors"
@@ -1377,7 +1377,7 @@ export function QuotesPipeline() {
                         )}
                       </button>
                     </th>
-                    <th className="text-left py-2.5 px-4 hidden lg:table-cell">
+                    <th className="text-left py-3 px-4 hidden lg:table-cell">
                       <button
                         onClick={() => handleListSort('klant_naam')}
                         className="flex items-center gap-1 text-xs font-bold text-text-tertiary uppercase tracking-label hover:text-foreground transition-colors"
@@ -1390,7 +1390,7 @@ export function QuotesPipeline() {
                         )}
                       </button>
                     </th>
-                    <th className="text-right py-2.5 px-4 hidden xl:table-cell">
+                    <th className="text-right py-3 px-4 hidden xl:table-cell">
                       <button
                         onClick={() => handleListSort('totaal')}
                         className="flex items-center gap-1 text-xs font-bold text-text-tertiary uppercase tracking-label hover:text-foreground transition-colors ml-auto"
@@ -1403,7 +1403,7 @@ export function QuotesPipeline() {
                         )}
                       </button>
                     </th>
-                    <th className="text-right py-2.5 px-4 hidden md:table-cell">
+                    <th className="text-right py-3 px-4 hidden md:table-cell">
                       <button
                         onClick={() => handleListSort('created_at')}
                         className="flex items-center gap-1 text-xs font-bold text-text-tertiary uppercase tracking-label hover:text-foreground transition-colors ml-auto"
@@ -1416,7 +1416,7 @@ export function QuotesPipeline() {
                         )}
                       </button>
                     </th>
-                    <th className="text-right py-2.5 px-4 hidden lg:table-cell">
+                    <th className="text-right py-3 px-4 hidden lg:table-cell">
                       <button
                         onClick={() => handleListSort('days_open')}
                         className="flex items-center gap-1 text-xs font-bold text-text-tertiary uppercase tracking-label hover:text-foreground transition-colors ml-auto"
@@ -1429,7 +1429,7 @@ export function QuotesPipeline() {
                         )}
                       </button>
                     </th>
-                    <th className="text-right py-2.5 px-4 hidden md:table-cell">
+                    <th className="text-right py-3 px-4 hidden md:table-cell">
                       <button
                         onClick={() => handleListSort('geldig_tot')}
                         className="flex items-center gap-1 text-xs font-bold text-text-tertiary uppercase tracking-label hover:text-foreground transition-colors ml-auto"
@@ -1442,7 +1442,7 @@ export function QuotesPipeline() {
                         )}
                       </button>
                     </th>
-                    <th className="w-10 py-2.5 px-2" />
+                    <th className="w-10 py-3 px-2" />
                   </tr>
                 </thead>
                 <tbody className="row-stagger">
@@ -1453,7 +1453,7 @@ export function QuotesPipeline() {
                       <tr
                         key={offerte.id}
                         className={cn(
-                          'border-b border-border/50 last:border-0 hover:bg-bg-subtle/60 cursor-pointer transition-colors group border-l-2',
+                          'border-b border-border/50 last:border-0 hover:bg-bg-hover cursor-pointer transition-colors duration-150 group border-l-2',
                           getOfferteStatusBorderColor(offerte.status),
                           selectedIds.has(offerte.id) && 'bg-primary/5'
                         )}
@@ -1552,7 +1552,7 @@ export function QuotesPipeline() {
 
                         {/* Datum */}
                         <td className="py-3 px-4 text-right hidden md:table-cell">
-                          <span className="text-xs text-muted-foreground tabular-nums">
+                          <span className="text-xs text-muted-foreground font-mono tabular-nums">
                             {formatDate(offerte.created_at)}
                           </span>
                         </td>
@@ -1572,7 +1572,7 @@ export function QuotesPipeline() {
                         {/* Geldig tot */}
                         <td className="py-3 px-4 text-right hidden md:table-cell">
                           <div className="flex items-center gap-1.5 justify-end">
-                            <span className="text-xs text-muted-foreground tabular-nums">
+                            <span className="text-xs text-muted-foreground font-mono tabular-nums">
                               {formatDate(offerte.geldig_tot)}
                             </span>
                             {expiryStatus === 'expired' && <span className="w-1.5 h-1.5 rounded-full bg-red-500" />}
@@ -1586,7 +1586,7 @@ export function QuotesPipeline() {
                             <Link
                               to={`/offertes/${offerte.id}/preview`}
                               onClick={(e) => e.stopPropagation()}
-                              className="p-1 rounded-md hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors opacity-0 group-hover:opacity-100"
+                              className="p-1 rounded-md hover:bg-muted transition-colors opacity-0 group-hover:opacity-100"
                               title="Preview"
                             >
                               <Eye className="w-4 h-4 text-muted-foreground hover:text-blue-600 dark:hover:text-blue-400 transition-colors" />

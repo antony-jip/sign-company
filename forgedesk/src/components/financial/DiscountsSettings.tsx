@@ -208,7 +208,7 @@ export function DiscountsSettings() {
                   kortingen.map((korting) => (
                     <tr
                       key={korting.id}
-                      className="border-b border-border dark:border-border hover:bg-background dark:hover:bg-foreground/80/50 transition-colors"
+                      className="border-b border-border dark:border-border hover:bg-background dark:hover:bg-muted/50 transition-colors"
                     >
                       <td className="py-3 px-4 font-medium text-foreground dark:text-white">
                         {korting.naam}

@@ -52,7 +52,7 @@ interface SubTab {
 
 function SubTabNav({ tabs, active, onChange }: { tabs: SubTab[]; active: string; onChange: (id: string) => void }) {
   return (
-    <div className="flex items-center gap-1 p-1 bg-muted dark:bg-foreground/80 rounded-xl overflow-x-auto mb-6">
+    <div className="flex items-center gap-1 p-1 bg-muted dark:bg-muted rounded-xl overflow-x-auto mb-6">
       {tabs.map((tab) => {
         const Icon = tab.icon
         const isActive = active === tab.id
@@ -63,7 +63,7 @@ function SubTabNav({ tabs, active, onChange }: { tabs: SubTab[]; active: string;
             className={cn(
               'flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap',
               isActive
-                ? 'bg-white dark:bg-foreground/70 text-foreground dark:text-white shadow-sm'
+                ? 'bg-card text-foreground shadow-sm'
                 : 'text-muted-foreground dark:text-muted-foreground/60 hover:text-foreground/70 dark:hover:text-muted-foreground/50'
             )}
           >
@@ -110,8 +110,8 @@ function DocumentPreview({ style, logoUrl, bedrijfsnaam, bedrijfsAdres, kvkNumme
     : 'relative'
 
   const pageClass = fullscreen
-    ? 'w-[595px] h-[842px] bg-white shadow-2xl overflow-hidden'
-    : 'w-full aspect-[210/297] bg-white shadow-lg border border-border dark:border-border overflow-hidden rounded-lg'
+    ? 'w-[595px] h-[842px] bg-card shadow-2xl overflow-hidden'
+    : 'w-full aspect-[210/297] bg-card shadow-lg border border-border overflow-hidden rounded-lg'
 
   return (
     <div className={containerClass}>
@@ -128,7 +128,7 @@ function DocumentPreview({ style, logoUrl, bedrijfsnaam, bedrijfsAdres, kvkNumme
         {!fullscreen && (
           <button
             onClick={() => setFullscreen(true)}
-            className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 dark:bg-foreground/80/90 rounded-lg p-1.5 shadow-sm"
+            className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-card/90 rounded-lg p-1.5 shadow-sm"
           >
             <Maximize2 className="w-3.5 h-3.5 text-muted-foreground dark:text-muted-foreground/50" />
           </button>
@@ -438,7 +438,7 @@ function Section({ title, icon: Icon, children, defaultOpen = true }: {
     <div className="border border-border dark:border-border rounded-lg overflow-hidden">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between px-4 py-3 bg-background dark:bg-foreground/80/50 hover:bg-muted dark:hover:bg-foreground/80 transition-colors"
+        className="w-full flex items-center justify-between px-4 py-3 bg-background dark:bg-muted/50 hover:bg-muted dark:hover:bg-muted transition-colors"
       >
         <div className="flex items-center gap-2.5">
           <Icon className="w-4 h-4 text-muted-foreground dark:text-muted-foreground/60" />
@@ -934,7 +934,7 @@ export function HuisstijlTab() {
               <Label className="text-xs font-medium">Briefpapier (eerste pagina)</Label>
               {style.briefpapier_url ? (
                 <div className="flex items-center gap-3">
-                  <div className="rounded-lg border border-border dark:border-border p-2 bg-background dark:bg-foreground/80/50 flex-1">
+                  <div className="rounded-lg border border-border dark:border-border p-2 bg-background dark:bg-muted/50 flex-1">
                     <div className="flex items-center gap-2 text-xs text-green-600 dark:text-green-400">
                       <Check className="w-3.5 h-3.5" />
                       Briefpapier geüpload
@@ -986,7 +986,7 @@ export function HuisstijlTab() {
               <Label className="text-xs font-medium">Vervolgpapier (pagina 2+)</Label>
               {style.vervolgpapier_url ? (
                 <div className="flex items-center gap-3">
-                  <div className="rounded-lg border border-border dark:border-border p-2 bg-background dark:bg-foreground/80/50 flex-1">
+                  <div className="rounded-lg border border-border dark:border-border p-2 bg-background dark:bg-muted/50 flex-1">
                     <div className="flex items-center gap-2 text-xs text-green-600 dark:text-green-400">
                       <Check className="w-3.5 h-3.5" />
                       Vervolgpapier geüpload

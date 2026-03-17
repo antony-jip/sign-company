@@ -486,7 +486,7 @@ export function OffertePubliekPagina() {
           <div className="bg-gray-100 border border-gray-200 rounded-xl p-4 flex items-start gap-3">
             <Clock className="h-5 w-5 text-gray-500 shrink-0 mt-0.5" />
             <div>
-              <p className="font-semibold text-gray-700">Deze offerte is verlopen op {formatDate(offerte.geldig_tot)}</p>
+              <p className="font-semibold text-gray-700">Deze offerte is verlopen op <span className="font-mono">{formatDate(offerte.geldig_tot)}</span></p>
               <p className="text-sm text-gray-500 mt-1">Neem contact op voor een nieuwe offerte.</p>
             </div>
           </div>
@@ -537,12 +537,12 @@ export function OffertePubliekPagina() {
             <div className="mt-6 grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
               <div>
                 <p className="text-gray-400 text-xs uppercase tracking-wide mb-1">Datum</p>
-                <p className="font-medium text-gray-700">{formatDate(offerte.created_at)}</p>
+                <p className="font-medium font-mono text-gray-700">{formatDate(offerte.created_at)}</p>
               </div>
               {offerte.geldig_tot && (
                 <div>
                   <p className="text-gray-400 text-xs uppercase tracking-wide mb-1">Geldig tot</p>
-                  <p className={`font-medium ${!isVerlopen && dagenOver <= 7 ? 'text-red-600' : 'text-gray-700'}`}>
+                  <p className={`font-medium font-mono ${!isVerlopen && dagenOver <= 7 ? 'text-red-600' : 'text-gray-700'}`}>
                     {formatDate(offerte.geldig_tot)}
                     {!isVerlopen && dagenOver <= 7 && dagenOver > 0 && (
                       <span className="text-xs ml-1">({dagenOver} {dagenOver === 1 ? 'dag' : 'dagen'} resterend)</span>

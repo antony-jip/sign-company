@@ -267,7 +267,8 @@ export function GedeeldeInboxLayout() {
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-16 text-muted-foreground">
             <Users className="h-10 w-10 opacity-30" />
-            <p className="text-sm">Geen tickets gevonden</p>
+            <p className="text-sm font-medium">Geen tickets gevonden</p>
+            <p className="text-xs text-muted-foreground/60">Inkomende emails worden hier als ticket weergegeven.</p>
           </div>
         ) : (
           <div className="divide-y divide-border">

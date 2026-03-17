@@ -1477,7 +1477,10 @@ export function FacturenLayout() {
       {/* ── Mobile card view ── */}
       <div className="md:hidden space-y-2 -mx-1">
         {filteredFacturen.length === 0 && (
-          <p className="text-sm text-muted-foreground text-center py-8">Geen facturen gevonden</p>
+          <div className="flex flex-col items-center gap-2 py-12 text-muted-foreground">
+            <p className="text-sm font-medium">Geen facturen gevonden</p>
+            <p className="text-xs text-muted-foreground/60">Pas je filters aan of maak een nieuwe factuur.</p>
+          </div>
         )}
         {paginatedFacturen.map((factuur) => {
           const config = STATUS_CONFIG[factuur.status]
@@ -1513,7 +1516,7 @@ export function FacturenLayout() {
               </div>
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <div className="flex items-center gap-2">
-                  <span>{formatDate(factuur.factuurdatum)}</span>
+                  <span className="font-mono">{formatDate(factuur.factuurdatum)}</span>
                   {isOverdue && (
                     <span className="text-red-600 dark:text-red-400 font-medium flex items-center gap-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
@@ -1539,7 +1542,7 @@ export function FacturenLayout() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border bg-muted/50">
-                <th className="w-10 px-3 py-2.5">
+                <th className="w-10 px-3 py-3">
                   <Checkbox
                     checked={filteredFacturen.length > 0 && selectedIds.size === filteredFacturen.length}
                     onCheckedChange={toggleSelectAll}
@@ -1592,7 +1595,7 @@ export function FacturenLayout() {
                   <tr
                     key={factuur.id}
                     className={cn(
-                      'group hover:bg-bg-subtle/60 transition-colors',
+                      'group hover:bg-bg-hover transition-colors duration-150',
                       'border-l-2',
                       isOverdue ? 'border-l-[var(--color-coral-border)]' : config.border,
                       factuur.status === 'betaald' && 'factuur-row-betaald',
@@ -1637,7 +1640,7 @@ export function FacturenLayout() {
                       </span>
                     </td>
                     <td className="px-4 py-3 hidden sm:table-cell">
-                      <span className="text-sm text-muted-foreground">
+                      <span className="text-sm font-mono text-muted-foreground">
                         {formatDate(factuur.factuurdatum)}
                       </span>
                     </td>
@@ -1655,7 +1658,7 @@ export function FacturenLayout() {
                       <div className="flex items-center gap-1.5">
                         <span
                           className={cn(
-                            'text-sm',
+                            'text-sm font-mono',
                             isOverdue
                               ? 'text-red-600 dark:text-red-400 font-medium'
                               : 'text-muted-foreground'
@@ -1851,16 +1854,16 @@ export function FacturenLayout() {
                 </div>
                 <div>
                   <p className="text-xs font-bold text-text-tertiary uppercase tracking-label mb-1">Factuurdatum</p>
-                  <p className="text-sm">{formatDate(viewingFactuur.factuurdatum)}</p>
+                  <p className="text-sm font-mono">{formatDate(viewingFactuur.factuurdatum)}</p>
                 </div>
                 <div>
                   <p className="text-xs font-bold text-text-tertiary uppercase tracking-label mb-1">Vervaldatum</p>
-                  <p className="text-sm">{formatDate(viewingFactuur.vervaldatum)}</p>
+                  <p className="text-sm font-mono">{formatDate(viewingFactuur.vervaldatum)}</p>
                 </div>
                 {viewingFactuur.betaaldatum && (
                   <div>
                     <p className="text-xs font-bold text-text-tertiary uppercase tracking-label mb-1">Betaaldatum</p>
-                    <p className="text-sm">{formatDate(viewingFactuur.betaaldatum)}</p>
+                    <p className="text-sm font-mono">{formatDate(viewingFactuur.betaaldatum)}</p>
                   </div>
                 )}
               </div>
@@ -2317,7 +2320,7 @@ export function FacturenLayout() {
                         <p className="text-sm font-mono font-bold text-foreground">
                           {formatCurrency(offerte.totaal)}
                         </p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
+                        <p className="text-xs text-muted-foreground mt-0.5 font-mono">
                           {formatDate(offerte.created_at)}
                         </p>
                       </div>

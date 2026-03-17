@@ -331,7 +331,7 @@ function BijlageDropZone({
           <span className="text-xs text-violet-600 dark:text-violet-400 font-medium">Uploaden...</span>
         </div>
       ) : item.bijlage_url && resolvedUrl ? (
-        <div className="mt-2 relative group rounded-lg overflow-hidden bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700">
+        <div className="mt-2 relative group rounded-lg overflow-hidden bg-muted/40 dark:bg-muted/20 border border-border">
           {item.bijlage_type === 'application/pdf' ? (
             <div className="flex items-center gap-3 p-4">
               <div className="h-12 w-12 rounded-lg bg-rose-50 dark:bg-rose-900/30 border border-rose-200 dark:border-rose-800 flex items-center justify-center flex-shrink-0">
@@ -364,7 +364,7 @@ function BijlageDropZone({
           {/* Delete button */}
           <button
             onClick={onRemove}
-            className="absolute top-2 right-2 h-7 w-7 rounded-lg bg-white/90 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-600 text-slate-400 hover:text-red-500 hover:border-red-300 dark:hover:border-red-700 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-sm backdrop-blur-sm"
+            className="absolute top-2 right-2 h-7 w-7 rounded-lg bg-card/90 dark:bg-card/90 border border-border dark:border-border text-muted-foreground/60 hover:text-red-500 hover:border-red-300 dark:hover:border-red-700 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-sm backdrop-blur-sm"
             title="Bijlage verwijderen"
           >
             <X className="h-3.5 w-3.5" />
@@ -380,7 +380,7 @@ function BijlageDropZone({
             'flex flex-col items-center justify-center gap-1.5 py-3',
             isDragOver
               ? 'border-violet-400 bg-gradient-to-br from-violet-50 to-indigo-50 dark:from-violet-950/40 dark:to-indigo-950/40 scale-[1.01] shadow-sm'
-              : 'border-slate-200 dark:border-slate-700 hover:border-violet-300 dark:hover:border-violet-700 hover:bg-gradient-to-br hover:from-violet-50/50 hover:to-indigo-50/50 dark:hover:from-violet-950/20 dark:hover:to-indigo-950/20'
+              : 'border-border hover:border-violet-300 dark:hover:border-violet-700 hover:bg-gradient-to-br hover:from-violet-50/50 hover:to-indigo-50/50 dark:hover:from-violet-950/20 dark:hover:to-indigo-950/20'
           )}
           onClick={() => fileInputRef.current?.click()}
         >
@@ -388,13 +388,13 @@ function BijlageDropZone({
             'h-7 w-7 rounded-full flex items-center justify-center transition-colors',
             isDragOver
               ? 'bg-violet-100 dark:bg-violet-900/40'
-              : 'bg-slate-100 dark:bg-slate-800'
+              : 'bg-muted dark:bg-muted'
           )}>
             <Upload className={cn(
               'h-3.5 w-3.5 transition-colors',
               isDragOver
                 ? 'text-violet-500 dark:text-violet-400'
-                : 'text-slate-400 dark:text-slate-500'
+                : 'text-muted-foreground/60 dark:text-muted-foreground'
             )} />
           </div>
           <div className="text-center">
@@ -402,11 +402,11 @@ function BijlageDropZone({
               'text-xs font-medium transition-colors',
               isDragOver
                 ? 'text-violet-600 dark:text-violet-400'
-                : 'text-slate-500 dark:text-slate-400'
+                : 'text-muted-foreground dark:text-muted-foreground/60'
             )}>
               {isDragOver ? 'Laat los om te uploaden' : 'Sleep, plak of klik om te uploaden'}
             </p>
-            <p className="text-2xs text-slate-400 dark:text-slate-500 mt-0.5">JPG, PNG of PDF — max 10MB</p>
+            <p className="text-2xs text-muted-foreground/60 dark:text-muted-foreground mt-0.5">JPG, PNG of PDF — max 10MB</p>
           </div>
           <input
             ref={fileInputRef}
@@ -433,7 +433,7 @@ function BijlageDropZone({
               <div
                 key={v.id}
                 onClick={() => onSelectVisualisatie?.(v)}
-                className="relative group cursor-pointer rounded-md overflow-hidden border border-slate-200 dark:border-slate-700 hover:border-violet-400 dark:hover:border-violet-500 hover:shadow-md transition-all w-[80px] flex-shrink-0"
+                className="relative group cursor-pointer rounded-md overflow-hidden border border-border dark:border-border hover:border-violet-400 dark:hover:border-violet-500 hover:shadow-md transition-all w-[80px] flex-shrink-0"
                 title="Klik om als tekening te gebruiken"
               >
                 <img
@@ -547,7 +547,7 @@ function AutocompleteInput({
               type="button"
               className={cn(
                 'w-full text-left px-3 py-2 text-sm transition-colors flex items-center justify-between gap-2',
-                i === focusedIndex ? 'bg-accent text-accent-foreground' : 'hover:bg-muted dark:hover:bg-foreground/80'
+                i === focusedIndex ? 'bg-accent text-accent-foreground' : 'hover:bg-muted dark:hover:bg-muted'
               )}
               onMouseDown={(e) => {
                 e.preventDefault()
@@ -879,7 +879,7 @@ export function QuoteItemsTable({
               "flex items-center gap-3 px-4 py-2 border-b border-border dark:border-border",
               item.is_optioneel
                 ? "bg-amber-50/60 dark:bg-amber-900/10 border-dashed"
-                : "bg-background/80 dark:bg-foreground/80/50"
+                : "bg-background/80 dark:bg-muted/50"
             )}>
               <div className={cn(
                 "h-7 w-7 rounded-full flex items-center justify-center flex-shrink-0",
@@ -1242,7 +1242,7 @@ export function QuoteItemsTable({
                 {/* ──── PRIJSBEREKENING ──── */}
                 <div
                   className={cn(
-                    'px-4 py-2 bg-background/50 dark:bg-foreground/80/30 transition-all',
+                    'px-4 py-2 bg-background/50 dark:bg-muted/30 transition-all',
                     inkoopDropTargetId === item.id && 'ring-2 ring-primary/40 ring-inset bg-primary/5'
                   )}
                   onDragOver={(e) => handleInkoopDragOver(e, item.id)}
@@ -1287,7 +1287,7 @@ export function QuoteItemsTable({
                                 'absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 rounded-md flex items-center justify-center transition-colors',
                                 item.heeft_calculatie
                                   ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400'
-                                  : 'bg-muted text-muted-foreground hover:bg-blue-100 hover:text-blue-600 dark:bg-foreground/80 dark:text-muted-foreground/60 dark:hover:bg-blue-900/40 dark:hover:text-blue-400'
+                                  : 'bg-muted text-muted-foreground hover:bg-blue-100 hover:text-blue-600 dark:bg-muted dark:text-muted-foreground/60 dark:hover:bg-blue-900/40 dark:hover:text-blue-400'
                               )}
                               title={item.heeft_calculatie ? 'Calculatie bewerken' : 'Calculatie openen'}
                             >
@@ -1368,7 +1368,7 @@ export function QuoteItemsTable({
                                 <span className="text-xs text-muted-foreground">
                                   ({formatCurrency(margeData.marge)})
                                 </span>
-                                <div className="flex-1 h-1.5 rounded-full bg-secondary dark:bg-foreground/70 max-w-[120px]">
+                                <div className="flex-1 h-1.5 rounded-full bg-secondary dark:bg-muted max-w-[120px]">
                                   <div
                                     className={cn('h-full rounded-full transition-all', colors.bar)}
                                     style={{ width: `${Math.min(100, Math.max(0, margeData.percentage))}%` }}
@@ -1498,7 +1498,7 @@ export function QuoteItemsTable({
                                       'absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 rounded flex items-center justify-center transition-colors',
                                       variant.heeft_calculatie
                                         ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400'
-                                        : 'bg-muted text-muted-foreground hover:bg-blue-100 hover:text-blue-600 dark:bg-foreground/80 dark:text-muted-foreground/60'
+                                        : 'bg-muted text-muted-foreground hover:bg-blue-100 hover:text-blue-600 dark:bg-muted dark:text-muted-foreground/60'
                                     )}
                                     title={variant.heeft_calculatie ? 'Calculatie bewerken' : 'Calculatie openen'}
                                   >
@@ -1569,7 +1569,7 @@ export function QuoteItemsTable({
                                       <span className="text-2xs text-muted-foreground">
                                         ({formatCurrency(margeData.marge)})
                                       </span>
-                                      <div className="flex-1 h-1 rounded-full bg-secondary dark:bg-foreground/70 max-w-[100px]">
+                                      <div className="flex-1 h-1 rounded-full bg-secondary dark:bg-muted max-w-[100px]">
                                         <div
                                           className={cn('h-full rounded-full transition-all', colors.bar)}
                                           style={{ width: `${Math.min(100, Math.max(0, margeData.percentage))}%` }}

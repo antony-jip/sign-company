@@ -62,8 +62,8 @@ const WMO_DESCRIPTIONS: Record<number, string> = {
 
 function getWeatherIcon(code: number, size: string = 'h-5 w-5') {
   if (code === 0 || code === 1) return <Sun className={`${size} text-amber-500`} />
-  if (code === 2 || code === 3) return <Cloud className={`${size} text-slate-400`} />
-  if (code === 45 || code === 48) return <CloudFog className={`${size} text-slate-400`} />
+  if (code === 2 || code === 3) return <Cloud className={`${size} text-muted-foreground/60`} />
+  if (code === 45 || code === 48) return <CloudFog className={`${size} text-muted-foreground/60`} />
   if (code >= 51 && code <= 55) return <CloudDrizzle className={`${size} text-blue-400`} />
   if (code >= 61 && code <= 65) return <CloudRain className={`${size} text-blue-500`} />
   if (code >= 71 && code <= 77) return <CloudSnow className={`${size} text-sky-300`} />

@@ -126,7 +126,7 @@ export function PriorityTasks() {
               </div>
 
               <div>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground font-mono">
                   {formatDate(task.deadline ?? "")}
                 </p>
               </div>

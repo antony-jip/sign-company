@@ -191,12 +191,12 @@ export function BestelbonnenLayout() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         {FILTER_OPTIONS.filter((f) => f.value !== 'alle').map((opt) => {
           const cfg = STATUS_CONFIG[opt.value as Bestelbon['status']]
           return (
             <button key={opt.value} onClick={() => setFilterStatus(opt.value)}
-              className={cn('text-left rounded-xl border p-3 transition-all hover:shadow-md', filterStatus === opt.value ? 'ring-2 ring-primary/50 border-primary' : 'border-border')}>
+              className={cn('text-left rounded-xl border p-5 transition-all hover:shadow-md', filterStatus === opt.value ? 'ring-2 ring-primary/50 border-primary' : 'border-border')}>
               <div className="flex items-center gap-2 mb-1">
                 <span className={cn('w-2 h-2 rounded-full', cfg.dot)} />
                 <span className="text-xs font-medium text-muted-foreground">{opt.label}</span>
@@ -229,6 +229,7 @@ export function BestelbonnenLayout() {
             <div className="flex flex-col items-center gap-3 py-16 text-muted-foreground">
               <ShoppingCart className="h-10 w-10 opacity-30" />
               <p className="text-sm font-medium">Geen bestelbonnen gevonden</p>
+              <p className="text-xs text-muted-foreground/60">Maak een bestelbon aan voor je leveranciers.</p>
               <Button variant="outline" size="sm" onClick={() => navigate('/bestelbonnen/nieuw')}>
                 <Plus className="h-4 w-4 mr-2" /> Eerste bestelbon aanmaken
               </Button>
@@ -246,13 +247,13 @@ export function BestelbonnenLayout() {
                 {gefilterd.map((bst) => {
                   const cfg = STATUS_CONFIG[bst.status]
                   return (
-                    <tr key={bst.id} className={`group hover:bg-bg-subtle/60 transition-colors cursor-pointer border-l-2 ${getRowAccentClass(bst.status)}`} onClick={() => navigateWithTab({ path: `/bestelbonnen/${bst.id}`, label: bst.bestelbon_nummer || 'Bestelbon', id: `/bestelbonnen/${bst.id}` })}>
+                    <tr key={bst.id} className={`group hover:bg-bg-hover transition-colors duration-150 cursor-pointer border-l-2 ${getRowAccentClass(bst.status)}`} onClick={() => navigateWithTab({ path: `/bestelbonnen/${bst.id}`, label: bst.bestelbon_nummer || 'Bestelbon', id: `/bestelbonnen/${bst.id}` })}>
                       <td className="px-4 py-3">
                         <span className="text-sm font-mono font-semibold text-orange-600 dark:text-orange-400">{bst.bestelbon_nummer}</span>
                       </td>
                       <td className="px-4 py-3 text-sm text-foreground/80">{getLeverancierNaam(bst.leverancier_id)}</td>
                       <td className="px-4 py-3 text-sm text-foreground/80">{getProjectNaam(bst.project_id)}</td>
-                      <td className="px-4 py-3 text-sm text-muted-foreground dark:text-muted-foreground">{bst.besteld_op ? formatDate(bst.besteld_op) : '-'}</td>
+                      <td className="px-4 py-3 text-sm font-mono text-muted-foreground dark:text-muted-foreground">{bst.besteld_op ? formatDate(bst.besteld_op) : '-'}</td>
                       <td className="px-4 py-3">
                         <Badge variant="secondary" className={cn('text-xs font-semibold px-2 py-0.5 rounded-lg', cfg.color)}>
                           <span className={cn('w-1.5 h-1.5 rounded-full mr-1.5 inline-block', cfg.dot)} />{cfg.label}

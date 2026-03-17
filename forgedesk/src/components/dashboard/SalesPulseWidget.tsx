@@ -126,7 +126,7 @@ export function SalesPulseWidget() {
         <Link
           key={m.label}
           to={m.href}
-          className="group relative rounded-xl border border-border/50 bg-card p-4 hover:border-primary/15 hover:shadow-md transition-all duration-200"
+          className="group relative rounded-xl border border-black/[0.04] dark:border-white/[0.06] bg-card p-4 shadow-elevation-xs hover:shadow-elevation-md hover:-translate-y-[2px] transition-all duration-300 ease-smooth"
         >
           <div className="flex items-center justify-between mb-2">
             <span className={`flex items-center justify-center h-7 w-7 rounded-lg ${m.accent}`}>

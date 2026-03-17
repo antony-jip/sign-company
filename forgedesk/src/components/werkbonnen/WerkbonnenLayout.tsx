@@ -190,7 +190,7 @@ export function WerkbonnenLayout() {
           return (
             <Card key={status} className="cursor-pointer hover-lift"
               onClick={() => setFilterStatus(status === filterStatus ? 'alle' : status)}>
-              <CardContent className="p-4">
+              <CardContent className="p-5">
                 <p className="text-xs font-bold text-text-tertiary uppercase tracking-label">{cfg.label}</p>
                 <p className="text-2xl font-bold mt-1">{statusCounts[status] || 0}</p>
               </CardContent>
@@ -262,7 +262,7 @@ export function WerkbonnenLayout() {
                   const projectRef = getProjectNaam(wb.project_id)
                   const ref = offerteRef !== '-' ? offerteRef : projectRef
                   return (
-                    <tr key={wb.id} className="group hover:bg-muted/30 transition-colors cursor-pointer"
+                    <tr key={wb.id} className="group hover:bg-bg-hover transition-colors duration-150 cursor-pointer"
                       onClick={() => navigateWithTab({ path: `/werkbonnen/${wb.id}`, label: wb.werkbon_nummer || 'Werkbon', id: `/werkbonnen/${wb.id}` })}>
                       <td className="px-4 py-3">
                         <div>
@@ -272,7 +272,7 @@ export function WerkbonnenLayout() {
                       </td>
                       <td className="px-4 py-3 text-sm">{getKlantNaam(wb.klant_id)}</td>
                       <td className="px-4 py-3 text-sm hidden md:table-cell">{ref}</td>
-                      <td className="px-4 py-3 text-sm hidden sm:table-cell">{new Date(wb.datum).toLocaleDateString('nl-NL')}</td>
+                      <td className="px-4 py-3 text-sm font-mono hidden sm:table-cell">{new Date(wb.datum).toLocaleDateString('nl-NL')}</td>
                       <td className="px-4 py-3">
                         <span className={cn('inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium', cfg.bg, cfg.color)}>
                           {cfg.label}
