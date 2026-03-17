@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { ImapFlow } from 'imapflow'
 import { createTransport } from 'nodemailer'
-import { verifyUser } from './_shared'
+import { verifyUser } from './shared-utils'
 
 export const config = { maxDuration: 30 }
 

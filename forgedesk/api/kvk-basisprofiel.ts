@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { supabaseAdmin, isRateLimited } from './_shared'
+import { supabaseAdmin, isRateLimited } from './shared-utils'
 
 const KVK_TEST_KEY = 'l7xx1f2691f2520d487b902f4e0b57a0b197'
 const KVK_PROD_BASE = 'https://api.kvk.nl/api/v1/basisprofielen'

@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { supabaseAdmin, isRateLimited } from './_shared'
+import { supabaseAdmin, isRateLimited } from './shared-utils'
 import { createTransport } from 'nodemailer'
 import crypto from 'crypto'
 

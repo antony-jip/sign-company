@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { ImapFlow } from 'imapflow'
 import { simpleParser } from 'mailparser'
-import { supabaseAdmin, verifyUser, getEmailCredentials } from './_shared'
+import { supabaseAdmin, verifyUser, getEmailCredentials } from './shared-utils'
 
 export const config = { maxDuration: 30 }
 
