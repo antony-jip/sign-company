@@ -288,7 +288,7 @@ export function BetaalPagina() {
             <div>
               <p className="font-medium text-emerald-800">Deze factuur is betaald</p>
               {factuur.betaaldatum && (
-                <p className="text-sm text-emerald-600">Betaald op {formatDate(factuur.betaaldatum)}</p>
+                <p className="text-sm text-emerald-600">Betaald op <span className="font-mono">{formatDate(factuur.betaaldatum)}</span></p>
               )}
             </div>
           </div>
@@ -299,7 +299,7 @@ export function BetaalPagina() {
             <AlertTriangle className="h-5 w-5 text-red-600 shrink-0" />
             <div>
               <p className="font-medium text-red-800">Deze factuur is vervallen</p>
-              <p className="text-sm text-red-600">Vervaldatum was {formatDate(factuur.vervaldatum)}</p>
+              <p className="text-sm text-red-600">Vervaldatum was <span className="font-mono">{formatDate(factuur.vervaldatum)}</span></p>
             </div>
           </div>
         )}
@@ -336,13 +336,13 @@ export function BetaalPagina() {
                 <Calendar className="h-4 w-4" />
                 <span>Factuurdatum</span>
               </div>
-              <div className="font-medium text-foreground">{formatDate(factuur.factuurdatum)}</div>
+              <div className="font-medium font-mono text-foreground">{formatDate(factuur.factuurdatum)}</div>
 
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Calendar className="h-4 w-4" />
                 <span>Vervaldatum</span>
               </div>
-              <div className="font-medium text-foreground">{formatDate(factuur.vervaldatum)}</div>
+              <div className="font-medium font-mono text-foreground">{formatDate(factuur.vervaldatum)}</div>
             </div>
 
             <Separator />
@@ -475,7 +475,7 @@ export function BetaalPagina() {
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
                       Uiterlijk betalen voor
                     </p>
-                    <p className="text-base font-semibold text-foreground">
+                    <p className="text-base font-semibold font-mono text-foreground">
                       {formatDate(factuur.vervaldatum)}
                     </p>
                   </div>

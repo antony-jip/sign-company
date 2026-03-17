@@ -537,7 +537,7 @@ export function ClientProfile() {
             </button>
           </div>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Aangemaakt op: {formatDate(klant.created_at)}
+            Aangemaakt op: <span className="font-mono">{formatDate(klant.created_at)}</span>
           </p>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
@@ -911,7 +911,7 @@ export function ClientProfile() {
                                   <p className="text-sm font-semibold text-foreground hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                                     {project.naam}
                                   </p>
-                                  <p className="text-xs text-muted-foreground mt-0.5">
+                                  <p className="text-xs text-muted-foreground mt-0.5 font-mono">
                                     {formatDate(project.start_datum ?? "")}
                                   </p>
                                 </div>
@@ -938,7 +938,7 @@ export function ClientProfile() {
                               {/* Deadline */}
                               <td className="py-3 px-4 hidden lg:table-cell">
                                 <span className={cn(
-                                  'text-sm',
+                                  'text-sm font-mono',
                                   isOverdue ? 'text-red-600 dark:text-red-400 font-medium' : 'text-foreground'
                                 )}>
                                   {formatDate(project.eind_datum ?? "")}
@@ -1040,7 +1040,7 @@ export function ClientProfile() {
                             </span>
                           </td>
                           <td className="py-3 px-4 hidden md:table-cell">
-                            <span className="text-sm text-muted-foreground">
+                            <span className="text-sm text-muted-foreground font-mono">
                               {formatDate(offerte.geldig_tot)}
                             </span>
                           </td>
@@ -1141,7 +1141,7 @@ export function ClientProfile() {
                             </Badge>
                           </td>
                           <td className="py-3 px-4 text-right text-sm font-semibold">{formatCurrency(factuur.totaal)}</td>
-                          <td className="py-3 px-4 hidden md:table-cell text-sm text-muted-foreground">{formatDate(factuur.factuurdatum)}</td>
+                          <td className="py-3 px-4 hidden md:table-cell text-sm text-muted-foreground font-mono">{formatDate(factuur.factuurdatum)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -1277,7 +1277,7 @@ export function ClientProfile() {
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-foreground truncate">{doc.naam}</p>
                             <p className="text-xs text-muted-foreground mt-0.5">
-                              {doc.map} &middot; {formatDate(doc.updated_at)}
+                              {doc.map} &middot; <span className="font-mono">{formatDate(doc.updated_at)}</span>
                             </p>
                           </div>
                         </div>

@@ -666,7 +666,7 @@ export function ProjectsList() {
                     )}>
                       {project.prioriteit}
                     </span>
-                    <span>{formatDate(project.created_at)}</span>
+                    <span className="font-mono">{formatDate(project.created_at)}</span>
                   </div>
                   {bedrag > 0 && (
                     <span className="font-mono font-semibold text-foreground">{formatCurrency(bedrag)}</span>
@@ -918,7 +918,7 @@ export function ProjectsList() {
 
                     {/* Datum */}
                     <td className="py-3 px-4 text-right hidden lg:table-cell">
-                      <span className="text-xs text-muted-foreground tabular-nums">
+                      <span className="text-xs text-muted-foreground font-mono tabular-nums">
                         {formatDate(project.created_at)}
                       </span>
                     </td>

@@ -1111,7 +1111,7 @@ export function FactuurEditor() {
             {currentStatus === 'gecrediteerd' && <MinusCircle className="h-4 w-4" />}
             {isVervallen && <AlertTriangle className="h-4 w-4" />}
             <span>
-              {currentStatus === 'betaald' && `Betaald op ${formatDate(existingFactuur.betaaldatum || '')}`}
+              {currentStatus === 'betaald' && <>Betaald op <span className="font-mono">{formatDate(existingFactuur.betaaldatum || '')}</span></>}
               {currentStatus === 'verzonden' && !isVervallen && 'Verstuurd — wachtend op betaling'}
               {currentStatus === 'concept' && 'Concept — nog niet verstuurd'}
               {currentStatus === 'gecrediteerd' && 'Gecrediteerd'}
@@ -1326,7 +1326,7 @@ export function FactuurEditor() {
                     <div key={field} className="flex items-center justify-between text-xs">
                       <span className="text-muted-foreground">{labels[idx]}</span>
                       {value ? (
-                        <span className="text-emerald-600">{formatDate(value)}</span>
+                        <span className="text-emerald-600 font-mono">{formatDate(value)}</span>
                       ) : (
                         <span className="text-muted-foreground/50">—</span>
                       )}
@@ -1596,7 +1596,7 @@ export function FactuurEditor() {
             </div>
             <div className="text-sm">
               <span className="text-muted-foreground">Vervaldatum:</span>{' '}
-              <span>{formatDate(vervaldatum)}</span>
+              <span className="font-mono">{formatDate(vervaldatum)}</span>
             </div>
           </div>
           <DialogFooter>

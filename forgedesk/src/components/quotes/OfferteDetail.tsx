@@ -826,11 +826,11 @@ export function OfferteDetail() {
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Aangemaakt</span>
-              <span className="font-medium text-foreground">{formatDate(offerte.created_at)}</span>
+              <span className="font-medium font-mono text-foreground">{formatDate(offerte.created_at)}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Geldig tot</span>
-              <span className="font-medium text-foreground">{formatDate(offerte.geldig_tot)}</span>
+              <span className="font-medium font-mono text-foreground">{formatDate(offerte.geldig_tot)}</span>
             </div>
             {offerte.verstuurd_op && (
               <div className="flex justify-between text-sm">

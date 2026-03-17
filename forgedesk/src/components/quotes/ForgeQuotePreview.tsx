@@ -535,13 +535,13 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground dark:text-muted-foreground/60">Datum:</span>
-                  <span className="font-medium text-foreground dark:text-white">
+                  <span className="font-medium font-mono text-foreground dark:text-white">
                     {formatDate(offerteData.created_at)}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground dark:text-muted-foreground/60">Geldig tot:</span>
-                  <span className="font-medium text-foreground dark:text-white">
+                  <span className="font-medium font-mono text-foreground dark:text-white">
                     {formatDate(offerteData.geldig_tot)}
                   </span>
                 </div>

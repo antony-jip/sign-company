@@ -1552,7 +1552,7 @@ export function QuotesPipeline() {
 
                         {/* Datum */}
                         <td className="py-3 px-4 text-right hidden md:table-cell">
-                          <span className="text-xs text-muted-foreground tabular-nums">
+                          <span className="text-xs text-muted-foreground font-mono tabular-nums">
                             {formatDate(offerte.created_at)}
                           </span>
                         </td>
@@ -1572,7 +1572,7 @@ export function QuotesPipeline() {
                         {/* Geldig tot */}
                         <td className="py-3 px-4 text-right hidden md:table-cell">
                           <div className="flex items-center gap-1.5 justify-end">
-                            <span className="text-xs text-muted-foreground tabular-nums">
+                            <span className="text-xs text-muted-foreground font-mono tabular-nums">
                               {formatDate(offerte.geldig_tot)}
                             </span>
                             {expiryStatus === 'expired' && <span className="w-1.5 h-1.5 rounded-full bg-red-500" />}

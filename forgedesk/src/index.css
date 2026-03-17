@@ -2044,10 +2044,10 @@ html {
 
 /* ── Number Display — Large, premium data presentation ── */
 .display-number {
-  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-  font-weight: 800;
+  font-family: 'DM Mono', ui-monospace, SFMono-Regular, monospace;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.02em;
   line-height: 1;
 }
 .display-number-xl { font-size: 38px; }

@@ -1513,7 +1513,7 @@ export function FacturenLayout() {
               </div>
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <div className="flex items-center gap-2">
-                  <span>{formatDate(factuur.factuurdatum)}</span>
+                  <span className="font-mono">{formatDate(factuur.factuurdatum)}</span>
                   {isOverdue && (
                     <span className="text-red-600 dark:text-red-400 font-medium flex items-center gap-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
@@ -1637,7 +1637,7 @@ export function FacturenLayout() {
                       </span>
                     </td>
                     <td className="px-4 py-3 hidden sm:table-cell">
-                      <span className="text-sm text-muted-foreground">
+                      <span className="text-sm font-mono text-muted-foreground">
                         {formatDate(factuur.factuurdatum)}
                       </span>
                     </td>
@@ -1655,7 +1655,7 @@ export function FacturenLayout() {
                       <div className="flex items-center gap-1.5">
                         <span
                           className={cn(
-                            'text-sm',
+                            'text-sm font-mono',
                             isOverdue
                               ? 'text-red-600 dark:text-red-400 font-medium'
                               : 'text-muted-foreground'
@@ -1851,16 +1851,16 @@ export function FacturenLayout() {
                 </div>
                 <div>
                   <p className="text-xs font-bold text-text-tertiary uppercase tracking-label mb-1">Factuurdatum</p>
-                  <p className="text-sm">{formatDate(viewingFactuur.factuurdatum)}</p>
+                  <p className="text-sm font-mono">{formatDate(viewingFactuur.factuurdatum)}</p>
                 </div>
                 <div>
                   <p className="text-xs font-bold text-text-tertiary uppercase tracking-label mb-1">Vervaldatum</p>
-                  <p className="text-sm">{formatDate(viewingFactuur.vervaldatum)}</p>
+                  <p className="text-sm font-mono">{formatDate(viewingFactuur.vervaldatum)}</p>
                 </div>
                 {viewingFactuur.betaaldatum && (
                   <div>
                     <p className="text-xs font-bold text-text-tertiary uppercase tracking-label mb-1">Betaaldatum</p>
-                    <p className="text-sm">{formatDate(viewingFactuur.betaaldatum)}</p>
+                    <p className="text-sm font-mono">{formatDate(viewingFactuur.betaaldatum)}</p>
                   </div>
                 )}
               </div>
@@ -2317,7 +2317,7 @@ export function FacturenLayout() {
                         <p className="text-sm font-mono font-bold text-foreground">
                           {formatCurrency(offerte.totaal)}
                         </p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
+                        <p className="text-xs text-muted-foreground mt-0.5 font-mono">
                           {formatDate(offerte.created_at)}
                         </p>
                       </div>

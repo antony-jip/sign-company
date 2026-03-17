@@ -252,7 +252,7 @@ export function BestelbonnenLayout() {
                       </td>
                       <td className="px-4 py-3 text-sm text-foreground/80">{getLeverancierNaam(bst.leverancier_id)}</td>
                       <td className="px-4 py-3 text-sm text-foreground/80">{getProjectNaam(bst.project_id)}</td>
-                      <td className="px-4 py-3 text-sm text-muted-foreground dark:text-muted-foreground">{bst.besteld_op ? formatDate(bst.besteld_op) : '-'}</td>
+                      <td className="px-4 py-3 text-sm font-mono text-muted-foreground dark:text-muted-foreground">{bst.besteld_op ? formatDate(bst.besteld_op) : '-'}</td>
                       <td className="px-4 py-3">
                         <Badge variant="secondary" className={cn('text-xs font-semibold px-2 py-0.5 rounded-lg', cfg.color)}>
                           <span className={cn('w-1.5 h-1.5 rounded-full mr-1.5 inline-block', cfg.dot)} />{cfg.label}

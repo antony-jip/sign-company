@@ -209,7 +209,7 @@ export function KlantHistorieTab({ klantId, klantNaam }: KlantHistorieTabProps) 
                 {filteredItems.map((item, i) => (
                   <tr key={i} className="hover:bg-muted/20">
                     <td className="py-2 pr-3 text-muted-foreground whitespace-nowrap">
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 font-mono">
                         <Calendar className="w-3 h-3" />
                         {formatDate(item.datum)}
                       </div>
