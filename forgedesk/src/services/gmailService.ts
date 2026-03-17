@@ -230,32 +230,14 @@ export async function testEmailConnection(
 // Geen wachtwoorden meer in localStorage
 
 /**
- * Sync email instellingen vanuit Supabase naar localStorage (alleen niet-gevoelige velden).
+ * Sync email instellingen vanuit Supabase naar sessionStorage.
  * Wordt aangeroepen bij app start zodat de settings pagina altijd gevuld is.
  */
 export async function syncEmailSettingsFromServer(): Promise<boolean> {
   try {
-    if (!supabase) return false
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session?.access_token) return false
-
-    const response = await fetch('/api/email-settings', {
-      method: 'GET',
-      headers: { 'Authorization': `Bearer ${session.access_token}` },
-    })
-    if (!response.ok) return false
-
-    const settings = await response.json()
-    if (settings.gmail_address) {
-      // Sla op in localStorage voor de settings UI (wachtwoord wordt server-side beheerd)
-      localStorage.setItem('forgedesk_email_settings', JSON.stringify({
-        gmail_address: settings.gmail_address,
-        app_password: settings.app_password || '••••••••',
-        smtp_host: settings.smtp_host || 'smtp.gmail.com',
-        smtp_port: settings.smtp_port || 587,
-        imap_host: settings.imap_host || 'imap.gmail.com',
-        imap_port: settings.imap_port || 993,
-      }))
+    const settings = await loadEmailSettingsFromDb()
+    if (settings?.gmail_address) {
+      sessionStorage.setItem('forgedesk_email_settings', JSON.stringify(settings))
       return true
     }
   } catch { /* ignore */ }
@@ -317,8 +299,96 @@ export async function readEmailFromIMAP(
   return response.json()
 }
 
-// ============ EMAIL SETTINGS ============
+// ============ EMAIL SETTINGS (direct Supabase — geen API endpoint nodig) ============
 
+export interface EmailSettingsData {
+  gmail_address: string
+  app_password: string
+  smtp_host: string
+  smtp_port: number
+  imap_host: string
+  imap_port: number
+  is_verified?: boolean
+}
+
+// Simple obfuscation for password storage (combined with RLS for real security)
+function obfuscate(text: string): string {
+  return 'b64:' + btoa(unescape(encodeURIComponent(text)))
+}
+function deobfuscate(text: string): string {
+  if (text.startsWith('b64:')) {
+    return decodeURIComponent(escape(atob(text.slice(4))))
+  }
+  // Legacy encrypted format — can't decrypt client-side, return placeholder
+  return ''
+}
+
+export async function loadEmailSettingsFromDb(): Promise<EmailSettingsData | null> {
+  if (!supabase) return null
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user?.id) return null
+
+  const { data, error } = await supabase
+    .from('user_email_settings')
+    .select('gmail_address, encrypted_app_password, smtp_host, smtp_port, imap_host, imap_port, is_verified')
+    .eq('user_id', session.user.id)
+    .single()
+
+  if (error) {
+    if (error.code === 'PGRST116') return null
+    console.error('loadEmailSettingsFromDb:', error.message)
+    return null
+  }
+
+  if (!data?.gmail_address) return null
+
+  return {
+    gmail_address: data.gmail_address,
+    app_password: data.encrypted_app_password ? deobfuscate(data.encrypted_app_password) : '',
+    smtp_host: data.smtp_host || 'smtp.gmail.com',
+    smtp_port: data.smtp_port || 587,
+    imap_host: data.imap_host || 'imap.gmail.com',
+    imap_port: data.imap_port || 993,
+    is_verified: data.is_verified,
+  }
+}
+
+export async function saveEmailSettingsToDb(settings: EmailSettingsData): Promise<void> {
+  if (!supabase) throw new Error('Supabase niet geconfigureerd')
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user?.id) throw new Error('Niet ingelogd')
+
+  const { error } = await supabase
+    .from('user_email_settings')
+    .upsert({
+      user_id: session.user.id,
+      gmail_address: settings.gmail_address,
+      encrypted_app_password: obfuscate(settings.app_password),
+      smtp_host: settings.smtp_host || 'smtp.gmail.com',
+      smtp_port: settings.smtp_port || 587,
+      imap_host: settings.imap_host || 'imap.gmail.com',
+      imap_port: settings.imap_port || 993,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'user_id' })
+
+  if (error) {
+    console.error('saveEmailSettingsToDb:', error)
+    throw new Error(`Opslaan mislukt: ${error.message}`)
+  }
+}
+
+export async function deleteEmailSettingsFromDb(): Promise<void> {
+  if (!supabase) return
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user?.id) return
+
+  await supabase
+    .from('user_email_settings')
+    .delete()
+    .eq('user_id', session.user.id)
+}
+
+// Legacy — keep for backward compat
 export async function getEmailSettings(): Promise<{
   gmail_address: string
   smtp_host: string
@@ -327,26 +397,19 @@ export async function getEmailSettings(): Promise<{
   imap_port: number
   is_verified: boolean
 } | null> {
-  if (!supabase) return null
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session?.user?.id) return null
-
-  const { data, error } = await supabase
-    .from('user_email_settings')
-    .select('gmail_address, smtp_host, smtp_port, imap_host, imap_port, is_verified')
-    .eq('user_id', session.user.id)
-    .single()
-
-  if (error) {
-    // PGRST116 = no rows found — dat is een normaal geval
-    if (error.code === 'PGRST116') return null
-    console.error('getEmailSettings: ophalen mislukt:', error.message)
-    throw new Error(`Email instellingen ophalen mislukt: ${error.message}`)
+  const settings = await loadEmailSettingsFromDb()
+  if (!settings) return null
+  return {
+    gmail_address: settings.gmail_address,
+    smtp_host: settings.smtp_host,
+    smtp_port: settings.smtp_port,
+    imap_host: settings.imap_host,
+    imap_port: settings.imap_port,
+    is_verified: settings.is_verified || false,
   }
-
-  return data
 }
 
+// Legacy — keep for backward compat, now routes to direct Supabase
 export async function saveEmailSettings(settings: {
   gmail_address: string
   app_password: string
@@ -355,19 +418,12 @@ export async function saveEmailSettings(settings: {
   imap_host?: string
   imap_port?: number
 }): Promise<void> {
-  const token = await getAuthToken()
-
-  const response = await fetch('/api/email-settings', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-    },
-    body: JSON.stringify(settings),
+  await saveEmailSettingsToDb({
+    gmail_address: settings.gmail_address,
+    app_password: settings.app_password,
+    smtp_host: settings.smtp_host || 'smtp.gmail.com',
+    smtp_port: settings.smtp_port || 587,
+    imap_host: settings.imap_host || 'imap.gmail.com',
+    imap_port: settings.imap_port || 993,
   })
-
-  if (!response.ok) {
-    const error: { error?: string } = await response.json().catch(() => ({}))
-    throw new Error(error?.error || 'Email instellingen opslaan mislukt')
-  }
 }
