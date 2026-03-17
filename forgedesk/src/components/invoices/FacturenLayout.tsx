@@ -88,6 +88,8 @@ import { SkeletonTable } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/ui/empty-state'
 import { PaginationControls } from '@/components/ui/pagination-controls'
 import { ModuleHeader } from '@/components/shared/ModuleHeader'
+import { DagenOpenFilterBar, getDaysOpen, getDaysColor, matchDagenFilter } from '@/components/shared/DagenOpenFilter'
+import type { DagenOpenFilter } from '@/components/shared/DagenOpenFilter'
 
 // ============ TYPES ============
 
@@ -266,6 +268,7 @@ export function FacturenLayout() {
   // Filter & sort state
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('alle')
+  const [dagenOpenFilter, setDagenOpenFilter] = useState<DagenOpenFilter>('alle')
   const [sortField, setSortField] = useState<SortField>('datum')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
   const [currentPage, setCurrentPage] = useState(1)
@@ -385,6 +388,14 @@ export function FacturenLayout() {
       result = result.filter((f) => f.status === filterStatus)
     }
 
+    if (dagenOpenFilter !== 'alle') {
+      const openStatuses = ['concept', 'verzonden', 'vervallen']
+      result = result.filter((f) => {
+        if (!openStatuses.includes(f.status)) return false
+        return matchDagenFilter(getDaysOpen(f.factuurdatum), dagenOpenFilter)
+      })
+    }
+
     result.sort((a, b) => {
       let cmp = 0
       switch (sortField) {
@@ -402,10 +413,10 @@ export function FacturenLayout() {
     })
 
     return result
-  }, [facturen, searchQuery, filterStatus, sortField, sortDir])
+  }, [facturen, searchQuery, filterStatus, dagenOpenFilter, sortField, sortDir])
 
   // Reset page when filters change
-  useEffect(() => { setCurrentPage(1) }, [searchQuery, filterStatus, sortField, sortDir])
+  useEffect(() => { setCurrentPage(1) }, [searchQuery, filterStatus, dagenOpenFilter, sortField, sortDir])
 
   const totalPages = Math.ceil(filteredFacturen.length / PAGE_SIZE)
   const paginatedFacturen = useMemo(
@@ -1424,6 +1435,16 @@ export function FacturenLayout() {
         })}
       </div>
 
+      {/* ── Dagen open filter ── */}
+      <DagenOpenFilterBar
+        value={dagenOpenFilter}
+        onChange={setDagenOpenFilter}
+        items={facturen
+          .filter((f) => ['concept', 'verzonden', 'vervallen'].includes(f.status))
+          .map((f) => ({ dateField: f.factuurdatum }))
+        }
+      />
+
       {/* ── Sort toolbar ──────────────────────────────────────────── */}
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         <ArrowUpDown className="w-3.5 h-3.5" />
@@ -1530,6 +1551,7 @@ export function FacturenLayout() {
                   { key: 'klant', label: 'Klant', hide: '' },
                   { key: 'titel', label: 'Titel', hide: 'hidden md:table-cell' },
                   { key: 'factuurdatum', label: 'Datum', hide: 'hidden sm:table-cell' },
+                  { key: 'dagen_open', label: 'Open', hide: 'hidden xl:table-cell' },
                   { key: 'vervaldatum', label: 'Vervaldatum', hide: 'hidden lg:table-cell' },
                   { key: 'bedrag', label: 'Bedrag', hide: '' },
                   { key: 'status', label: 'Status', hide: '' },
@@ -1618,6 +1640,16 @@ export function FacturenLayout() {
                       <span className="text-sm text-muted-foreground">
                         {formatDate(factuur.factuurdatum)}
                       </span>
+                    </td>
+                    <td className="px-4 py-3 hidden xl:table-cell">
+                      {factuur.status !== 'betaald' && factuur.status !== 'gecrediteerd' && (() => {
+                        const days = getDaysOpen(factuur.factuurdatum)
+                        return (
+                          <span className={cn('text-xs font-medium px-2 py-0.5 rounded-md tabular-nums', getDaysColor(days))}>
+                            {days}d
+                          </span>
+                        )
+                      })()}
                     </td>
                     <td className="px-4 py-3 hidden lg:table-cell">
                       <div className="flex items-center gap-1.5">
