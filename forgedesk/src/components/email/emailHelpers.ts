@@ -14,14 +14,21 @@ export function stripHtml(html: string): string {
   return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim()
 }
 
+const avatarColorCache = new Map<string, string>()
+const AVATAR_COLORS = [
+  'bg-primary', 'bg-emerald-500', 'bg-[#4A442D]', 'bg-amber-500',
+  'bg-rose-500', 'bg-cyan-500', 'bg-accent', 'bg-pink-500',
+  'bg-teal-500', 'bg-orange-500',
+]
+
 export function getAvatarColor(name: string): string {
-  const colors = [
-    'bg-primary', 'bg-emerald-500', 'bg-[#4A442D]', 'bg-amber-500',
-    'bg-rose-500', 'bg-cyan-500', 'bg-accent', 'bg-pink-500',
-    'bg-teal-500', 'bg-orange-500',
-  ]
-  const index = name.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) % colors.length
-  return colors[index]
+  const cached = avatarColorCache.get(name)
+  if (cached) return cached
+  let hash = 0
+  for (let i = 0; i < name.length; i++) hash += name.charCodeAt(i)
+  const color = AVATAR_COLORS[hash % AVATAR_COLORS.length]
+  avatarColorCache.set(name, color)
+  return color
 }
 
 export function formatShortDate(dateStr: string): string {

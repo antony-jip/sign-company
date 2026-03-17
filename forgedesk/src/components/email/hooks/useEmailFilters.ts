@@ -161,12 +161,14 @@ export function useEmailFilters(
       case 'geen-antwoord': filtered = getNoReplyEmails(filtered, emails, noReplyRange || '0-3'); break
     }
 
-    // Sort: pinned first, then by date
-    return [...filtered].sort((a, b) => {
-      if (a.pinned && !b.pinned) return -1
-      if (!a.pinned && b.pinned) return 1
-      return new Date(b.datum).getTime() - new Date(a.datum).getTime()
+    // Sort: pinned first, then by date (pre-compute timestamps)
+    const withTs = filtered.map(e => ({ e, ts: new Date(e.datum).getTime() }))
+    withTs.sort((a, b) => {
+      if (a.e.pinned && !b.e.pinned) return -1
+      if (!a.e.pinned && b.e.pinned) return 1
+      return b.ts - a.ts
     })
+    return withTs.map(x => x.e)
   }, [emails, selectedFolder, searchQuery, filter, noReplyRange])
 
   // Thread grouping
@@ -190,7 +192,7 @@ export function useEmailFilters(
 
     threads.forEach((threadEmails) => {
       // Sort thread by date, latest first
-      threadEmails.sort((a, b) => new Date(b.datum).getTime() - new Date(a.datum).getTime())
+      threadEmails.sort((a, b) => Date.parse(b.datum) - Date.parse(a.datum))
       const head = threadEmails[0]
       result.push({ ...head, threadCount: threadEmails.length, isThreadHead: true })
     })
@@ -199,11 +201,13 @@ export function useEmailFilters(
       result.push({ ...email, threadCount: 1 })
     })
 
-    // Re-sort combined list
+    // Re-sort combined list (pre-compute timestamps)
+    const tsMap = new Map<string, number>()
+    result.forEach(e => tsMap.set(e.id, new Date(e.datum).getTime()))
     result.sort((a, b) => {
       if (a.pinned && !b.pinned) return -1
       if (!a.pinned && b.pinned) return 1
-      return new Date(b.datum).getTime() - new Date(a.datum).getTime()
+      return (tsMap.get(b.id) || 0) - (tsMap.get(a.id) || 0)
     })
 
     return result

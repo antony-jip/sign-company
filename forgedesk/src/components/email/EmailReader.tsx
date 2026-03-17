@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
+import { useState, useRef, useCallback, useEffect, useMemo, memo } from 'react'
 import DOMPurify from 'dompurify'
 import { Button } from '@/components/ui/button'
 import {
@@ -145,6 +145,20 @@ export function EmailReader({
     editorRef.current?.focus()
   }, [])
 
+  // Memoize sender data — avoid recalculating on every render
+  const senderName = useMemo(() => email ? extractSenderName(email.van) : '', [email?.van])
+  const senderEmail = useMemo(() => email ? extractSenderEmail(email.van) : '', [email?.van])
+  const avatarColor = useMemo(() => getAvatarColor(senderName), [senderName])
+
+  // Memoize DOMPurify — expensive HTML sanitization
+  const sanitizedBody = useMemo(() => {
+    if (!email?.inhoud) return ''
+    return DOMPurify.sanitize(email.inhoud, {
+      ADD_TAGS: ['style'],
+      ADD_ATTR: ['target', 'style'],
+    })
+  }, [email?.inhoud])
+
   if (!email) {
     return (
       <div className="flex-1 flex items-center justify-center text-foreground/30 h-full">
@@ -152,14 +166,6 @@ export function EmailReader({
       </div>
     )
   }
-
-  const senderName = extractSenderName(email.van)
-  const senderEmail = extractSenderEmail(email.van)
-  const avatarColor = getAvatarColor(senderName)
-  const sanitizedBody = email.inhoud ? DOMPurify.sanitize(email.inhoud, {
-    ADD_TAGS: ['style'],
-    ADD_ATTR: ['target', 'style'],
-  }) : ''
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // FULL-SCREEN REPLY MODE (like Pipedrive)
@@ -296,7 +302,7 @@ export function EmailReader({
             </div>
           </div>
 
-          {/* ─── Scrollable: editor + original email underneath ─── */}
+          {/* ─── Scrollable: editor + toolbar + original email ─── */}
           <div className="flex-1 overflow-y-auto bg-white">
             {/* Editor */}
             <div
@@ -313,10 +319,58 @@ export function EmailReader({
               }}
             />
 
-            {/* ─── Original email shown directly below editor ─── */}
+            {/* ─── Toolbar (inline, under signature) ─── */}
+            <div className="flex items-center justify-between px-5 py-2.5 border-t border-b border-foreground/[0.06] bg-foreground/[0.015]">
+              <div className="flex items-center">
+                <div className="flex items-center gap-px mr-2">
+                  <button onClick={() => execCommand('undo')} className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/25 hover:text-foreground/55 hover:bg-foreground/[0.04] transition-colors" title="Ongedaan maken"><Undo2 className="h-4 w-4" /></button>
+                  <button onClick={() => execCommand('redo')} className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/25 hover:text-foreground/55 hover:bg-foreground/[0.04] transition-colors" title="Opnieuw"><Redo2 className="h-4 w-4" /></button>
+                </div>
+                <div className="w-px h-5 bg-foreground/[0.06] mr-2" />
+                <div className="flex items-center gap-px">
+                  <button onClick={() => execCommand('bold')} className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/30 hover:text-foreground/60 hover:bg-foreground/[0.04] transition-colors" title="Vet"><Bold className="h-4 w-4" /></button>
+                  <button onClick={() => execCommand('italic')} className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/30 hover:text-foreground/60 hover:bg-foreground/[0.04] transition-colors" title="Cursief"><Italic className="h-4 w-4" /></button>
+                  <button onClick={() => execCommand('underline')} className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/30 hover:text-foreground/60 hover:bg-foreground/[0.04] transition-colors" title="Onderstrepen"><Underline className="h-4 w-4" /></button>
+                </div>
+                <div className="w-px h-5 bg-foreground/[0.06] mx-1" />
+                <div className="flex items-center gap-px">
+                  <button onClick={() => execCommand('insertUnorderedList')} className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/30 hover:text-foreground/60 hover:bg-foreground/[0.04] transition-colors" title="Lijst"><List className="h-4 w-4" /></button>
+                  <button onClick={() => execCommand('insertOrderedList')} className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/30 hover:text-foreground/60 hover:bg-foreground/[0.04] transition-colors" title="Genummerde lijst"><ListOrdered className="h-4 w-4" /></button>
+                </div>
+                <div className="w-px h-5 bg-foreground/[0.06] mx-1" />
+                <div className="flex items-center gap-px">
+                  <button onClick={() => { const url = prompt('URL:'); if (url) execCommand('createLink', url) }} className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/30 hover:text-foreground/60 hover:bg-foreground/[0.04] transition-colors" title="Link"><Link2 className="h-4 w-4" /></button>
+                  <button className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/30 hover:text-foreground/60 hover:bg-foreground/[0.04] transition-colors" title="Bijlage"><Paperclip className="h-4 w-4" /></button>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setReplyMode(null)}
+                  className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/25 hover:text-foreground/55 hover:bg-foreground/[0.04] transition-colors"
+                  title="Annuleren"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+                <span className="text-[10px] text-foreground/20 hidden sm:block">
+                  {navigator.platform.includes('Mac') ? '\u2318' : 'Ctrl'}+Enter
+                </span>
+                <Button
+                  size="sm"
+                  className="h-9 gap-2 text-sm px-6 rounded-lg shadow-sm"
+                  onClick={handleSend}
+                  disabled={isSending}
+                >
+                  <Send className="h-3.5 w-3.5" />
+                  {isSending ? 'Verzenden...' : 'Verzenden'}
+                </Button>
+              </div>
+            </div>
+
+            {/* ─── Original email shown below toolbar ─── */}
             {sanitizedBody && (
-              <div className="border-t border-foreground/[0.06] mx-6">
-                <div className="py-5 pl-4 border-l-2 border-foreground/[0.08]">
+              <div className="mx-6 py-5">
+                <div className="pl-4 border-l-2 border-foreground/[0.08]">
                   <div className="flex items-center gap-2 mb-3 text-xs text-foreground/35">
                     <span>Op {formatShortDate(email.datum)} schreef {senderName}:</span>
                   </div>
@@ -327,56 +381,6 @@ export function EmailReader({
                 </div>
               </div>
             )}
-          </div>
-
-          {/* ─── Bottom toolbar (fixed at bottom) ─── */}
-          <div className="flex items-center justify-between px-5 py-2.5 border-t border-foreground/[0.06] bg-white flex-shrink-0">
-            <div className="flex items-center">
-              {/* Undo/Redo */}
-              <div className="flex items-center gap-px mr-2">
-                <button onClick={() => execCommand('undo')} className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/25 hover:text-foreground/55 hover:bg-foreground/[0.04] transition-colors" title="Ongedaan maken"><Undo2 className="h-4 w-4" /></button>
-                <button onClick={() => execCommand('redo')} className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/25 hover:text-foreground/55 hover:bg-foreground/[0.04] transition-colors" title="Opnieuw"><Redo2 className="h-4 w-4" /></button>
-              </div>
-              <div className="w-px h-5 bg-foreground/[0.06] mr-2" />
-              {/* Formatting */}
-              <div className="flex items-center gap-px">
-                <button onClick={() => execCommand('bold')} className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/30 hover:text-foreground/60 hover:bg-foreground/[0.04] transition-colors" title="Vet (Ctrl+B)"><Bold className="h-4 w-4" /></button>
-                <button onClick={() => execCommand('italic')} className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/30 hover:text-foreground/60 hover:bg-foreground/[0.04] transition-colors" title="Cursief (Ctrl+I)"><Italic className="h-4 w-4" /></button>
-                <button onClick={() => execCommand('underline')} className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/30 hover:text-foreground/60 hover:bg-foreground/[0.04] transition-colors" title="Onderstrepen (Ctrl+U)"><Underline className="h-4 w-4" /></button>
-              </div>
-              <div className="w-px h-5 bg-foreground/[0.06] mx-1" />
-              <div className="flex items-center gap-px">
-                <button onClick={() => execCommand('insertUnorderedList')} className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/30 hover:text-foreground/60 hover:bg-foreground/[0.04] transition-colors" title="Lijst"><List className="h-4 w-4" /></button>
-                <button onClick={() => execCommand('insertOrderedList')} className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/30 hover:text-foreground/60 hover:bg-foreground/[0.04] transition-colors" title="Genummerde lijst"><ListOrdered className="h-4 w-4" /></button>
-              </div>
-              <div className="w-px h-5 bg-foreground/[0.06] mx-1" />
-              <div className="flex items-center gap-px">
-                <button onClick={() => { const url = prompt('URL:'); if (url) execCommand('createLink', url) }} className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/30 hover:text-foreground/60 hover:bg-foreground/[0.04] transition-colors" title="Link invoegen"><Link2 className="h-4 w-4" /></button>
-                <button className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/30 hover:text-foreground/60 hover:bg-foreground/[0.04] transition-colors" title="Bijlage toevoegen"><Paperclip className="h-4 w-4" /></button>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setReplyMode(null)}
-                className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/25 hover:text-foreground/55 hover:bg-foreground/[0.04] transition-colors"
-                title="Annuleren"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
-              <span className="text-[10px] text-foreground/20 hidden sm:block">
-                {navigator.platform.includes('Mac') ? '\u2318' : 'Ctrl'}+Enter
-              </span>
-              <Button
-                size="sm"
-                className="h-9 gap-2 text-sm px-6 rounded-lg shadow-sm"
-                onClick={handleSend}
-                disabled={isSending}
-              >
-                <Send className="h-3.5 w-3.5" />
-                {isSending ? 'Verzenden...' : 'Verzenden'}
-              </Button>
-            </div>
           </div>
         </div>
 
@@ -559,7 +563,7 @@ function extractCompanyName(senderName: string, email: string): string {
 }
 
 // ─── CRM Sidebar component with inline klant creation ───
-function CRMSidebar({
+const CRMSidebar = memo(function CRMSidebar({
   email,
   senderName,
   senderEmail,
@@ -774,7 +778,7 @@ function CRMSidebar({
           <div className="space-y-3 text-xs">
             <div className="flex justify-between">
               <span className="text-foreground/35">Datum</span>
-              <span className="text-foreground/60">{new Date(email.datum).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+              <span className="text-foreground/60">{formatShortDate(email.datum)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-foreground/35">Map</span>
@@ -803,4 +807,4 @@ function CRMSidebar({
       </div>
     </div>
   )
-}
+})
