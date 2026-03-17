@@ -1846,10 +1846,10 @@ export function QuoteCreation() {
 
         <div className="space-y-4">
           {/* Klant */}
-          <div className="group rounded-2xl bg-card/80 dark:bg-card backdrop-blur-xl border border-card/60 dark:border-border shadow-lg shadow-black/[0.03] hover:shadow-xl hover:shadow-black/[0.06] transition-all duration-300 overflow-hidden">
-            <div className="h-1 bg-gradient-to-r from-rose-400 via-pink-400 to-rose-300" />
+          <div className="group rounded-2xl bg-card/80 dark:bg-card backdrop-blur-xl border border-border/60 dark:border-border shadow-elevation-sm hover:shadow-elevation-md transition-all duration-300 overflow-hidden">
+            <div className="h-1 bg-gradient-to-r from-[#9B8EC4] via-[#B0A5D0] to-[#C5BCDC]" />
             <div className="flex items-center gap-3 px-6 pt-5 pb-1">
-              <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-rose-400 to-pink-500 text-white text-xs font-bold shadow-md shadow-rose-500/20">1</div>
+              <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-[#9B8EC4] to-[#7E72AB] text-white text-xs font-bold shadow-md shadow-[#9B8EC4]/20">1</div>
               <div>
                 <span className="text-sm font-bold text-foreground">Klant</span>
                 <p className="text-xs text-muted-foreground">Wie is de opdrachtgever?</p>
@@ -1878,7 +1878,7 @@ export function QuoteCreation() {
               {selectedKlant && (
                 <div className="border border-rose-200/60 dark:border-border bg-gradient-to-r from-rose-50/50 to-white dark:from-card dark:to-card rounded-xl p-3">
                   <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center flex-shrink-0 shadow-sm">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#9B8EC4] to-[#7E72AB] flex items-center justify-center flex-shrink-0 shadow-sm">
                       <span className="text-white font-bold text-sm">{selectedKlant.bedrijfsnaam[0]?.toUpperCase()}</span>
                     </div>
                     <div className="flex-1 min-w-0">
@@ -1916,10 +1916,10 @@ export function QuoteCreation() {
           </div>
 
           {/* Contactpersoon */}
-          <div className="group rounded-2xl bg-card/80 dark:bg-card backdrop-blur-xl border border-card/60 dark:border-border shadow-lg shadow-black/[0.03] hover:shadow-xl hover:shadow-black/[0.06] transition-all duration-300 overflow-hidden">
-            <div className="h-1 bg-gradient-to-r from-violet-400 via-purple-400 to-violet-300" />
+          <div className="group rounded-2xl bg-card/80 dark:bg-card backdrop-blur-xl border border-border/60 dark:border-border shadow-elevation-sm hover:shadow-elevation-md transition-all duration-300 overflow-hidden">
+            <div className="h-1 bg-gradient-to-r from-[#8BAFD4] via-[#A3C2DE] to-[#BDD5E8]" />
             <div className="flex items-center gap-3 px-6 pt-5 pb-1">
-              <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-violet-400 to-purple-500 text-white text-xs font-bold shadow-md shadow-violet-500/20">2</div>
+              <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-[#8BAFD4] to-[#6E9AC4] text-white text-xs font-bold shadow-md shadow-[#8BAFD4]/20">2</div>
               <div>
                 <span className="text-sm font-bold text-foreground">Contactpersoon</span>
                 <p className="text-xs text-muted-foreground">Wie ontvangt de offerte?</p>
@@ -1988,10 +1988,10 @@ export function QuoteCreation() {
           </div>
 
           {/* Offerte details */}
-          <div className="group rounded-2xl bg-card/80 dark:bg-card backdrop-blur-xl border border-card/60 dark:border-border shadow-lg shadow-black/[0.03] hover:shadow-xl hover:shadow-black/[0.06] transition-all duration-300 overflow-hidden">
-            <div className="h-1 bg-gradient-to-r from-blue-400 via-indigo-400 to-blue-300" />
+          <div className="group rounded-2xl bg-card/80 dark:bg-card backdrop-blur-xl border border-border/60 dark:border-border shadow-elevation-sm hover:shadow-elevation-md transition-all duration-300 overflow-hidden">
+            <div className="h-1 bg-gradient-to-r from-[#E4AE9C] via-[#ECC4B6] to-[#F2D8CE]" />
             <div className="flex items-center gap-3 px-6 pt-5 pb-1">
-              <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-blue-400 to-indigo-500 text-white text-xs font-bold shadow-md shadow-blue-500/20">3</div>
+              <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-[#E4AE9C] to-[#D49585] text-white text-xs font-bold shadow-md shadow-[#E4AE9C]/20">3</div>
               <div>
                 <span className="text-sm font-bold text-foreground">Offerte details</span>
                 <p className="text-xs text-muted-foreground">Titel, nummer en geldigheid</p>
@@ -2016,10 +2016,10 @@ export function QuoteCreation() {
           </div>
 
           {/* Hoeveel items? */}
-          <div className="group rounded-2xl bg-card/80 dark:bg-card backdrop-blur-xl border border-card/60 dark:border-border shadow-lg shadow-black/[0.03] hover:shadow-xl hover:shadow-black/[0.06] transition-all duration-300 overflow-hidden">
-            <div className="h-1 bg-gradient-to-r from-amber-400 via-orange-400 to-amber-300" />
+          <div className="group rounded-2xl bg-card/80 dark:bg-card backdrop-blur-xl border border-border/60 dark:border-border shadow-elevation-sm hover:shadow-elevation-md transition-all duration-300 overflow-hidden">
+            <div className="h-1 bg-gradient-to-r from-[#C4A882] via-[#D4BC9C] to-[#E2D0B8]" />
             <div className="flex items-center gap-3 px-6 pt-5 pb-1">
-              <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 text-white text-xs font-bold shadow-md shadow-amber-500/20">4</div>
+              <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-[#C4A882] to-[#B09670] text-white text-xs font-bold shadow-md shadow-[#C4A882]/20">4</div>
               <div>
                 <span className="text-sm font-bold text-foreground">Aantal items</span>
                 <p className="text-xs text-muted-foreground">Hoeveel prijsberekeningen?</p>
@@ -2056,10 +2056,10 @@ export function QuoteCreation() {
   // ────────────────────────────────────────────────────────────────────
   return (
     <div className="relative -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 min-h-full">
-      <div className="fixed inset-0 bg-gradient-to-br from-[#fdf2f8] via-[#faf5ff] to-[#eff6ff] dark:from-background dark:via-background dark:to-background pointer-events-none" />
+      <div className="fixed inset-0 bg-gradient-to-br from-[#EDE8F2] via-[#F2EDE6] to-[#EDE8E0] dark:from-background dark:via-background dark:to-background pointer-events-none" />
     <div className="relative pb-6 px-4 py-8 md:py-12 mod-strip mod-strip-offertes">
       {/* ──── HEADER BAR ──── */}
-      <div className="rounded-xl bg-gradient-to-r from-card/90 to-rose-50/60 dark:bg-card dark:from-card dark:to-card backdrop-blur-sm border border-border-primary/50 px-4 py-3 mb-6">
+      <div className="rounded-xl bg-gradient-to-r from-card/90 to-[#EDE8F2]/60 dark:bg-card dark:from-card dark:to-card backdrop-blur-sm border border-border/50 px-4 py-3 mb-6">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           {/* Left: Back + Title + Badges */}
           <div className="flex items-center gap-3 min-w-0">

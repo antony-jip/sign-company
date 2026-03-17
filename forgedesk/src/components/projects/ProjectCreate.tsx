@@ -123,14 +123,14 @@ export function ProjectCreate() {
 
   return (
     <div className="relative -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 min-h-full">
-      <div className="fixed inset-0 bg-gradient-to-br from-[#d5f5e3] via-[#dbeafe] to-[#ede9fe] dark:from-background dark:via-background dark:to-background pointer-events-none" />
+      <div className="fixed inset-0 bg-gradient-to-br from-[#E8F0EC] via-[#F2EDE6] to-[#EDE8E0] dark:from-background dark:via-background dark:to-background pointer-events-none" />
       <div className="relative max-w-2xl mx-auto px-4 py-8 md:py-12 animate-fade-in-up">
       {/* Header */}
       <div className="flex items-center gap-4 mb-8">
-        <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-card/60 hover:bg-card/80 backdrop-blur-sm border border-white/40 shadow-sm" onClick={() => navigate('/projecten')}>
+        <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-card/60 hover:bg-card/80 backdrop-blur-sm border border-border/40 shadow-elevation-xs" onClick={() => navigate('/projecten')}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-teal-400 to-emerald-600 flex items-center justify-center shadow-lg shadow-teal-500/25 ring-4 ring-teal-100/50">
+        <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-[#7EB5A6] to-[#5A9E8F] flex items-center justify-center shadow-lg shadow-[#7EB5A6]/25 ring-4 ring-[#7EB5A6]/15">
           <FolderKanban className="h-5.5 w-5.5 text-white" />
         </div>
         <div>
@@ -141,10 +141,10 @@ export function ProjectCreate() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Project info */}
-        <div className="group rounded-2xl bg-card/80 dark:bg-card backdrop-blur-xl border border-white/60 dark:border-border shadow-lg shadow-black/[0.03] hover:shadow-xl hover:shadow-black/[0.06] transition-all duration-300 overflow-hidden">
-          <div className="h-1 bg-gradient-to-r from-teal-400 via-emerald-400 to-teal-300" />
+        <div className="group rounded-2xl bg-card/80 dark:bg-card backdrop-blur-xl border border-border/60 dark:border-border shadow-elevation-sm hover:shadow-elevation-md transition-all duration-300 overflow-hidden">
+          <div className="h-1 bg-gradient-to-r from-[#7EB5A6] via-[#98C8BB] to-[#B4D8CF]" />
           <div className="flex items-center gap-3 px-6 pt-5 pb-1">
-            <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-teal-400 to-emerald-500 text-white text-xs font-bold shadow-md shadow-teal-500/20">1</div>
+            <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-[#7EB5A6] to-[#5A9E8F] text-white text-xs font-bold shadow-md shadow-[#7EB5A6]/20">1</div>
             <div>
               <span className="text-sm font-bold text-foreground">Projectgegevens</span>
               <p className="text-xs text-muted-foreground">Naam en omschrijving</p>
@@ -160,7 +160,7 @@ export function ProjectCreate() {
                 value={naam}
                 onChange={(e) => setNaam(e.target.value)}
                 placeholder="Bijv. Gevelbelettering Bakkerij Jansen"
-                className="h-11 bg-card/60 dark:bg-background border-border focus:border-teal-400 focus:ring-2 focus:ring-teal-400/20 rounded-xl text-base"
+                className="h-11 bg-card/60 dark:bg-background border-border focus:border-primary/40 focus:ring-2 focus:ring-primary/10 rounded-xl text-base"
                 required
               />
             </div>
@@ -175,17 +175,17 @@ export function ProjectCreate() {
                 onChange={(e) => setBeschrijving(e.target.value)}
                 placeholder="Korte omschrijving van het project..."
                 rows={3}
-                className="resize-none bg-card/60 dark:bg-background border-border focus:border-teal-400 focus:ring-2 focus:ring-teal-400/20 rounded-xl"
+                className="resize-none bg-card/60 dark:bg-background border-border focus:border-primary/40 focus:ring-2 focus:ring-primary/10 rounded-xl"
               />
             </div>
           </div>
         </div>
 
         {/* Klant + Contactpersoon */}
-        <div className="group rounded-2xl bg-card/80 dark:bg-card backdrop-blur-xl border border-white/60 dark:border-border shadow-lg shadow-black/[0.03] hover:shadow-xl hover:shadow-black/[0.06] transition-all duration-300 overflow-hidden">
-          <div className="h-1 bg-gradient-to-r from-blue-400 via-indigo-400 to-blue-300" />
+        <div className="group rounded-2xl bg-card/80 dark:bg-card backdrop-blur-xl border border-border/60 dark:border-border shadow-elevation-sm hover:shadow-elevation-md transition-all duration-300 overflow-hidden">
+          <div className="h-1 bg-gradient-to-r from-[#8BAFD4] via-[#A3C2DE] to-[#BDD5E8]" />
           <div className="flex items-center gap-3 px-6 pt-5 pb-1">
-            <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-blue-400 to-indigo-500 text-white text-xs font-bold shadow-md shadow-blue-500/20">2</div>
+            <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-[#8BAFD4] to-[#6E9AC4] text-white text-xs font-bold shadow-md shadow-[#8BAFD4]/20">2</div>
             <div>
               <span className="text-sm font-bold text-foreground">Klant & Contact</span>
               <p className="text-xs text-muted-foreground">Koppel aan een klant</p>
@@ -268,10 +268,10 @@ export function ProjectCreate() {
         </div>
 
         {/* Status + Datums */}
-        <div className="group rounded-2xl bg-card/80 dark:bg-card backdrop-blur-xl border border-white/60 dark:border-border shadow-lg shadow-black/[0.03] hover:shadow-xl hover:shadow-black/[0.06] transition-all duration-300 overflow-hidden">
-          <div className="h-1 bg-gradient-to-r from-amber-400 via-orange-400 to-amber-300" />
+        <div className="group rounded-2xl bg-card/80 dark:bg-card backdrop-blur-xl border border-border/60 dark:border-border shadow-elevation-sm hover:shadow-elevation-md transition-all duration-300 overflow-hidden">
+          <div className="h-1 bg-gradient-to-r from-[#C4A882] via-[#D4BC9C] to-[#E2D0B8]" />
           <div className="flex items-center gap-3 px-6 pt-5 pb-1">
-            <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 text-white text-xs font-bold shadow-md shadow-amber-500/20">3</div>
+            <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-[#C4A882] to-[#B09670] text-white text-xs font-bold shadow-md shadow-[#C4A882]/20">3</div>
             <div>
               <span className="text-sm font-bold text-foreground">Planning</span>
               <p className="text-xs text-muted-foreground">Status en tijdlijn</p>
@@ -328,7 +328,7 @@ export function ProjectCreate() {
           >
             Annuleren
           </Button>
-          <Button type="submit" size="lg" disabled={loading} className="shadow-lg shadow-teal-500/20 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 rounded-xl px-8 font-semibold">
+          <Button type="submit" size="lg" disabled={loading} className="shadow-lg shadow-[#7EB5A6]/20 bg-gradient-to-r from-[#7EB5A6] to-[#5A9E8F] hover:from-[#6EA99A] hover:to-[#4E9183] rounded-xl px-8 font-semibold">
             <Save className="h-4 w-4 mr-2" />
             {loading ? 'Opslaan...' : 'Project aanmaken'}
           </Button>
