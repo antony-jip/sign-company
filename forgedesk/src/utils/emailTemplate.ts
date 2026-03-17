@@ -129,7 +129,10 @@ export function buildPortalEmailHtml(params: PortalEmailParams): string {
  * Supported: {projectnaam}, {itemtitel}, {klantNaam}, {bedrijfsnaam}, {portaalUrl}
  */
 export function replaceEmailVariables(template: string, vars: Record<string, string>): string {
-  return template.replace(/\{(\w+)\}/g, (match, key) => vars[key] ?? match)
+  // Support both {{var}} and {var} placeholder formats
+  return template
+    .replace(/\{\{(\w+)\}\}/g, (match, key) => vars[key] ?? match)
+    .replace(/\{(\w+)\}/g, (match, key) => vars[key] ?? match)
 }
 
 function escapeHtml(str: string): string {

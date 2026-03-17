@@ -5133,6 +5133,7 @@ export async function deleteInkoopOfferte(id: string): Promise<void> {
 // ============ KLANTPORTAAL ============
 
 const DEFAULT_PORTAAL_INSTELLINGEN: PortaalInstellingen = {
+  portaal_module_actief: true,
   portaal_standaard_actief: false,
   link_geldigheid_dagen: 30,
   instructie_tekst: 'Bekijk de items hieronder en geef uw reactie.',
@@ -5147,11 +5148,18 @@ const DEFAULT_PORTAAL_INSTELLINGEN: PortaalInstellingen = {
   bedrijfslogo_op_portaal: true,
   bedrijfskleuren_gebruiken: true,
   contactgegevens_tonen: true,
-  herinnering_ook_voor_factuur: false,
-  email_nieuw_item_onderwerp: '{bedrijfsnaam} — {itemtitel}',
-  email_nieuw_item_tekst: 'Er is een nieuw item gedeeld voor project {projectnaam}.',
-  email_herinnering_onderwerp: 'Herinnering: {itemtitel} wacht op uw reactie',
-  email_herinnering_tekst: 'U heeft nog niet gereageerd op {itemtitel} voor project {projectnaam}.',
+  template_portaallink: {
+    onderwerp: 'Uw projectportaal bij {{bedrijfsnaam}}',
+    inhoud: 'Beste {{klant_naam}},\n\nU heeft een portaallink ontvangen voor project {{project_naam}}.\n\nKlik op de onderstaande link om uw portaal te openen:\n{{portaal_link}}\n\nMet vriendelijke groet,\n{{bedrijfsnaam}}',
+  },
+  template_nieuw_item: {
+    onderwerp: '{{bedrijfsnaam}} — nieuw {{item_type}} beschikbaar',
+    inhoud: 'Beste {{klant_naam}},\n\nEr is een nieuw {{item_type}} gedeeld voor project {{project_naam}}.\n\nBekijk het via uw portaal:\n{{portaal_link}}\n\nMet vriendelijke groet,\n{{bedrijfsnaam}}',
+  },
+  template_herinnering: {
+    onderwerp: 'Herinnering: {{item_type}} wacht op uw reactie',
+    inhoud: 'Beste {{klant_naam}},\n\nU heeft nog niet gereageerd op het {{item_type}} voor project {{project_naam}}.\n\nBekijk het via uw portaal:\n{{portaal_link}}\n\nMet vriendelijke groet,\n{{bedrijfsnaam}}',
+  },
 }
 
 export function getDefaultPortaalInstellingen(): PortaalInstellingen {

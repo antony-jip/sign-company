@@ -413,18 +413,24 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
       // Gebruik email templates uit portaal instellingen
       const instellingen = user?.id ? await getPortaalInstellingen(user.id) : null
       const vars: Record<string, string> = {
+        // New {{var}} format
+        klant_naam: klantNaam,
+        project_naam: projectNaam,
+        portaal_link: portaalUrl,
+        bedrijfsnaam: bedrijfsnaam || 'Update',
+        item_type: titel,
+        // Legacy {var} format
         projectnaam: projectNaam,
         itemtitel: titel,
         klantNaam,
-        bedrijfsnaam: bedrijfsnaam || 'Update',
         portaalUrl,
       }
 
-      const onderwerp = instellingen
-        ? replaceEmailVariables(instellingen.email_nieuw_item_onderwerp, vars)
+      const onderwerp = instellingen?.template_nieuw_item?.onderwerp
+        ? replaceEmailVariables(instellingen.template_nieuw_item.onderwerp, vars)
         : `${bedrijfsnaam || 'Nieuw item'} — ${titel}`
-      const heading = instellingen
-        ? replaceEmailVariables(instellingen.email_nieuw_item_tekst, vars)
+      const heading = instellingen?.template_nieuw_item?.inhoud
+        ? replaceEmailVariables(instellingen.template_nieuw_item.inhoud, vars)
         : `Er is een nieuw item gedeeld voor project ${projectNaam}.`
 
       const plainBody = [
