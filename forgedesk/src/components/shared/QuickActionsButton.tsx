@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Plus, FolderKanban, Mail, FileText, Users } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 
 const ALL_ACTIONS = [
@@ -52,56 +51,49 @@ export function QuickActionsButton() {
       style={{ position: 'fixed', bottom: bottomPosition, right: 24, zIndex: 9998 }}
     >
       {/* Fan-out menu items */}
-      <AnimatePresence>
-        {isOpen && visibleActions.map((action, index) => {
-          const Icon = action.icon
-          return (
-            <motion.button
-              key={action.id}
-              className="absolute right-0 flex items-center gap-3 group"
-              style={{ bottom: (index + 1) * 52 }}
-              initial={{ opacity: 0, y: 20, scale: 0.8 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 10, scale: 0.8 }}
-              transition={{
-                type: 'spring',
-                stiffness: 400,
-                damping: 22,
-                delay: index * 0.05,
-              }}
-              onClick={() => {
-                navigate(action.route)
-                setIsOpen(false)
-              }}
+      {isOpen && visibleActions.map((action, index) => {
+        const Icon = action.icon
+        return (
+          <button
+            key={action.id}
+            className="absolute right-0 flex items-center gap-3 group animate-in fade-in slide-in-from-bottom-2 duration-200"
+            style={{
+              bottom: (index + 1) * 52,
+              animationDelay: `${index * 50}ms`,
+              animationFillMode: 'both',
+            }}
+            onClick={() => {
+              navigate(action.route)
+              setIsOpen(false)
+            }}
+          >
+            {/* Label */}
+            <span className="text-sm font-medium text-foreground bg-card/90 backdrop-blur-sm border border-border/50 rounded-lg px-3 py-1.5 shadow-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
+              {action.label}
+            </span>
+            {/* Icon circle */}
+            <div
+              className="w-11 h-11 rounded-full flex items-center justify-center shadow-lg border border-white/20 transition-transform hover:scale-110 active:scale-95"
+              style={{ backgroundColor: action.color }}
             >
-              {/* Label */}
-              <span className="text-sm font-medium text-foreground bg-card/90 backdrop-blur-sm border border-border/50 rounded-lg px-3 py-1.5 shadow-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
-                {action.label}
-              </span>
-              {/* Icon circle */}
-              <div
-                className="w-11 h-11 rounded-full flex items-center justify-center shadow-lg border border-white/20 transition-transform hover:scale-110 active:scale-95"
-                style={{ backgroundColor: action.color }}
-              >
-                <Icon className="w-5 h-5 text-white" />
-              </div>
-            </motion.button>
-          )
-        })}
-      </AnimatePresence>
+              <Icon className="w-5 h-5 text-white" />
+            </div>
+          </button>
+        )
+      })}
 
       {/* Main + button */}
-      <motion.button
-        className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-xl hover:shadow-2xl border border-white/20 transition-shadow"
+      <button
+        className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-xl hover:shadow-2xl border border-white/20 transition-all hover:scale-[1.08] active:scale-95"
         onClick={() => setIsOpen(!isOpen)}
-        animate={{ rotate: isOpen ? 45 : 0 }}
-        transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-        whileHover={{ scale: 1.08 }}
-        whileTap={{ scale: 0.95 }}
         title="Snelkoppelingen"
       >
-        <Plus className="w-6 h-6" strokeWidth={2.5} />
-      </motion.button>
+        <Plus
+          className="w-6 h-6 transition-transform duration-200"
+          style={{ transform: isOpen ? 'rotate(45deg)' : 'rotate(0deg)' }}
+          strokeWidth={2.5}
+        />
+      </button>
     </div>
   )
 }
