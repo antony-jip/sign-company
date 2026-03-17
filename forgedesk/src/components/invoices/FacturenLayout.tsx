@@ -1477,7 +1477,10 @@ export function FacturenLayout() {
       {/* ── Mobile card view ── */}
       <div className="md:hidden space-y-2 -mx-1">
         {filteredFacturen.length === 0 && (
-          <p className="text-sm text-muted-foreground text-center py-8">Geen facturen gevonden</p>
+          <div className="flex flex-col items-center gap-2 py-12 text-muted-foreground">
+            <p className="text-sm font-medium">Geen facturen gevonden</p>
+            <p className="text-xs text-muted-foreground/60">Pas je filters aan of maak een nieuwe factuur.</p>
+          </div>
         )}
         {paginatedFacturen.map((factuur) => {
           const config = STATUS_CONFIG[factuur.status]

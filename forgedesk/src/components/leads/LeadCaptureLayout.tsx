@@ -120,6 +120,7 @@ export function LeadCaptureLayout() {
         <Card className="flex flex-col items-center gap-3 py-16 text-muted-foreground">
           <UserPlus className="h-10 w-10 opacity-30" />
           <p className="text-sm font-medium">Nog geen formulieren</p>
+          <p className="text-xs text-muted-foreground/60">Maak een lead-formulier aan om aanvragen te ontvangen.</p>
           <Button variant="outline" size="sm" onClick={() => navigate('/leads/formulieren/nieuw')}>
             <Plus className="h-4 w-4 mr-2" /> Eerste formulier aanmaken
           </Button>

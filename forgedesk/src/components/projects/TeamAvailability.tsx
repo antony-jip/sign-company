@@ -37,8 +37,8 @@ export function TeamAvailability({ teamLeden }: TeamAvailabilityProps) {
     return (
       <div className="text-center py-12 text-muted-foreground">
         <User className="h-10 w-10 mx-auto mb-3 opacity-30" />
-        <p className="text-base font-medium">Nog geen teamleden</p>
-        <p className="text-sm mt-1">Er zijn nog geen teamleden toegewezen aan dit project.</p>
+        <p className="text-sm font-medium">Nog geen teamleden</p>
+        <p className="text-xs text-muted-foreground/60 mt-1">Er zijn nog geen teamleden toegewezen aan dit project.</p>
       </div>
     )
   }

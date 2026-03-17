@@ -229,6 +229,7 @@ export function BestelbonnenLayout() {
             <div className="flex flex-col items-center gap-3 py-16 text-muted-foreground">
               <ShoppingCart className="h-10 w-10 opacity-30" />
               <p className="text-sm font-medium">Geen bestelbonnen gevonden</p>
+              <p className="text-xs text-muted-foreground/60">Maak een bestelbon aan voor je leveranciers.</p>
               <Button variant="outline" size="sm" onClick={() => navigate('/bestelbonnen/nieuw')}>
                 <Plus className="h-4 w-4 mr-2" /> Eerste bestelbon aanmaken
               </Button>

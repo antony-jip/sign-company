@@ -370,8 +370,9 @@ export function UitgavenLayout() {
       {gefilterd.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16">
-            <Receipt className="h-12 w-12 text-muted-foreground/30 mb-4" />
-            <p className="text-lg font-medium text-muted-foreground">Geen uitgaven gevonden</p>
+            <Receipt className="h-10 w-10 text-muted-foreground/30 mb-3" />
+            <p className="text-sm font-medium text-muted-foreground">Geen uitgaven gevonden</p>
+            <p className="text-xs text-muted-foreground/60 mt-1">Registreer inkoop- en bedrijfskosten.</p>
             <Button className="mt-4" onClick={openNieuw}><Plus className="h-4 w-4 mr-1" /> Nieuwe uitgave</Button>
           </CardContent>
         </Card>

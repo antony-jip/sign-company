@@ -143,6 +143,7 @@ export function LeadInzendingenLayout() {
             <div className="flex flex-col items-center gap-3 py-16 text-muted-foreground">
               <UserPlus className="h-10 w-10 opacity-30" />
               <p className="text-sm font-medium">Geen inzendingen gevonden</p>
+              <p className="text-xs text-muted-foreground/60">Inzendingen van lead-formulieren verschijnen hier.</p>
             </div>
           ) : (
             <table className="w-full">
