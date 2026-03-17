@@ -3,6 +3,8 @@ import { ImapFlow } from 'imapflow'
 import { createTransport } from 'nodemailer'
 import { verifyUser } from './_shared'
 
+export const config = { maxDuration: 30 }
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
@@ -22,46 +24,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'E-mailadres en app-wachtwoord zijn verplicht' })
     }
 
-    let imap_ok = false
-    let smtp_ok = false
-    let error = ''
+    // Test IMAP en SMTP parallel (sneller, past binnen Vercel timeout)
+    const [imapResult, smtpResult] = await Promise.allSettled([
+      testImap({ gmail_address, app_password, imap_host, imap_port }),
+      testSmtp({ gmail_address, app_password, smtp_host, smtp_port }),
+    ])
 
-    // Test IMAP
-    try {
-      const client = new ImapFlow({
-        host: imap_host,
-        port: imap_port,
-        secure: imap_port === 993,
-        auth: { user: gmail_address, pass: app_password },
-        logger: false,
-      })
-      await client.connect()
-      await client.logout()
-      imap_ok = true
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Onbekende IMAP fout'
-      error += `IMAP: ${msg}. `
+    const imap_ok = imapResult.status === 'fulfilled' && imapResult.value === true
+    const smtp_ok = smtpResult.status === 'fulfilled' && smtpResult.value === true
+
+    const errors: string[] = []
+    if (imapResult.status === 'rejected') {
+      errors.push(`IMAP: ${imapResult.reason?.message || 'Onbekende fout'}`)
     }
-
-    // Test SMTP
-    try {
-      const transporter = createTransport({
-        host: smtp_host,
-        port: smtp_port,
-        secure: smtp_port === 465,
-        auth: { user: gmail_address, pass: app_password },
-      })
-      await transporter.verify()
-      smtp_ok = true
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Onbekende SMTP fout'
-      error += `SMTP: ${msg}. `
+    if (smtpResult.status === 'rejected') {
+      errors.push(`SMTP: ${smtpResult.reason?.message || 'Onbekende fout'}`)
     }
 
     return res.status(200).json({
       imap_ok,
       smtp_ok,
-      error: error || undefined,
+      error: errors.length > 0 ? errors.join('. ') : undefined,
     })
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Verbindingstest mislukt'
@@ -71,4 +54,43 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.error('Email verbindingstest mislukt:', error)
     return res.status(500).json({ imap_ok: false, smtp_ok: false, error: msg })
   }
+}
+
+async function testImap(opts: {
+  gmail_address: string
+  app_password: string
+  imap_host: string
+  imap_port: number
+}): Promise<boolean> {
+  const client = new ImapFlow({
+    host: opts.imap_host,
+    port: opts.imap_port,
+    secure: opts.imap_port === 993,
+    auth: { user: opts.gmail_address, pass: opts.app_password },
+    logger: false,
+    emitLogs: false,
+    greetingTimeout: 8000,
+    socketTimeout: 8000,
+  })
+  await client.connect()
+  await client.logout()
+  return true
+}
+
+async function testSmtp(opts: {
+  gmail_address: string
+  app_password: string
+  smtp_host: string
+  smtp_port: number
+}): Promise<boolean> {
+  const transporter = createTransport({
+    host: opts.smtp_host,
+    port: opts.smtp_port,
+    secure: opts.smtp_port === 465,
+    auth: { user: opts.gmail_address, pass: opts.app_password },
+    connectionTimeout: 8000,
+    socketTimeout: 8000,
+  })
+  await transporter.verify()
+  return true
 }
