@@ -20,61 +20,61 @@
     --font-size: 14px;
 
     /* Achtergrond */
-    --background: 40 14% 95%;          /* #F4F3F0 warm off-white */
-    --foreground: 0 0% 10%;            /* #1A1A1A */
+    --background: 38 25% 96%;          /* warm crème, niet koud grijs */
+    --foreground: 25 15% 12%;          /* warm near-black */
 
     /* Cards */
-    --card: 0 0% 100%;                 /* #FFFFFF */
-    --card-foreground: 0 0% 10%;
+    --card: 40 20% 99%;                /* subtiel warm wit — cards tillen op */
+    --card-foreground: 25 15% 12%;
 
     /* Sidebar */
-    --sidebar-background: 40 20% 97%;  /* #FBFAF7 */
-    --sidebar-foreground: 0 0% 42%;    /* #6B6B6B */
+    --sidebar-background: 38 22% 97%;  /* warm off-white */
+    --sidebar-foreground: 25 8% 42%;   /* warm grey */
     --sidebar-primary: 28 60% 52%;     /* #CC8A3F warm amber */
-    --sidebar-primary-foreground: 0 0% 10%;
-    --sidebar-accent: 40 14% 95%;
-    --sidebar-accent-foreground: 0 0% 10%;
-    --sidebar-border: 36 12% 90%;      /* #E8E6E0 */
+    --sidebar-primary-foreground: 25 15% 12%;
+    --sidebar-accent: 38 25% 95%;
+    --sidebar-accent-foreground: 25 15% 12%;
+    --sidebar-border: 33 15% 88%;      /* warm zandkleurig */
     --sidebar-ring: 28 60% 52%;
 
-    /* Primary: zwart — voor hoofdknoppen */
-    --primary: 0 0% 10%;               /* #1A1A1A */
-    --primary-foreground: 0 0% 100%;
+    /* Primary: warm near-black — voor hoofdknoppen */
+    --primary: 25 15% 12%;             /* warm near-black */
+    --primary-foreground: 40 20% 99%;
 
     /* Secondary */
-    --secondary: 36 12% 90%;           /* #E8E6E0 */
-    --secondary-foreground: 0 0% 42%;
+    --secondary: 35 18% 93%;           /* warm zand */
+    --secondary-foreground: 25 12% 28%;
 
     /* Muted */
-    --muted: 36 12% 90%;
-    --muted-foreground: 0 0% 42%;      /* #6B6B6B */
+    --muted: 35 18% 93%;              /* warm crème, niet koud grijs */
+    --muted-foreground: 25 10% 45%;    /* warm middengrijs */
 
     /* Accent */
     --accent: 28 60% 52%;               /* #CC8A3F warm amber — zichtbaar als tekst */
     --accent-foreground: 0 0% 100%;
 
     /* Borders */
-    --border: 36 12% 90%;              /* #E8E6E0 */
-    --input: 36 12% 90%;
-    --ring: 28 60% 52%;
+    --border: 33 15% 87%;              /* warm zandkleurige border */
+    --input: 33 15% 87%;
+    --ring: 28 60% 52%;                /* amber focus ring */
 
     /* Destructive */
     --destructive: 5 52% 54%;          /* #C45B4F */
-    --destructive-foreground: 0 0% 100%;
+    --destructive-foreground: 40 20% 99%;
 
     /* Popover */
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 10%;
+    --popover: 40 20% 99%;            /* warm wit */
+    --popover-foreground: 25 15% 12%;
 
     /* Radius */
     --radius: 0.625rem;                /* 10px voor buttons/inputs */
 
     /* Semantic UI tokens */
-    --border-subtle: 36 10% 89%;           /* #e8e6e1 — light borders on inputs, buttons */
-    --text-placeholder: 30 6% 68%;         /* #b5b0aa — placeholder text */
-    --text-tertiary: 30 3% 52%;            /* #8a8680 — labels, table headers, muted UI */
-    --bg-hover: 40 8% 95%;                 /* #f5f4f1 — hover backgrounds */
-    --bg-subtle: 40 14% 95%;              /* #F4F3F0 — subtle backgrounds */
+    --border-subtle: 33 14% 88%;           /* warm zand border */
+    --text-placeholder: 28 8% 66%;         /* warm placeholder */
+    --text-tertiary: 25 8% 50%;            /* warm mid-grey — labels, headers */
+    --bg-hover: 38 25% 97%;               /* warm crème hover */
+    --bg-subtle: 38 22% 95%;              /* warm subtle background */
 
     /* Animation timing */
     --duration-fast: 120ms;
@@ -94,8 +94,8 @@
     --wm-gradient-start: #CC8A3F;
     --wm-gradient-mid: #E0C9A8;
     --wm-gradient-end: #F0D9D0;
-    --wm-sidebar-bg: 40 20% 97%;
-    --wm-sidebar-hover: 36 18% 93%;
+    --wm-sidebar-bg: 38 22% 97%;
+    --wm-sidebar-hover: 35 20% 94%;
     --wm-sidebar-active: 28 60% 52%;
     --wm-hover: 28 60% 52%;
     --wm-light: 28 55% 65%;
@@ -107,18 +107,19 @@
     --wm-noise: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
 
     /* Elevation system — layered depth */
-    --shadow-xs: 0 1px 2px rgba(0,0,0,0.04);
-    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
-    --shadow-md: 0 4px 16px -2px rgba(0,0,0,0.08), 0 2px 4px -1px rgba(0,0,0,0.04);
-    --shadow-lg: 0 12px 40px -8px rgba(0,0,0,0.12), 0 4px 12px -4px rgba(0,0,0,0.05);
-    --shadow-xl: 0 20px 60px -12px rgba(0,0,0,0.18), 0 8px 24px -8px rgba(0,0,0,0.08);
+    /* Warm shadows — not cold black but warm brown-tinted */
+    --shadow-xs: 0 1px 2px rgba(120,90,50,0.05);
+    --shadow-sm: 0 1px 3px rgba(120,90,50,0.07), 0 1px 2px rgba(120,90,50,0.04);
+    --shadow-md: 0 4px 16px -2px rgba(120,90,50,0.10), 0 2px 4px -1px rgba(120,90,50,0.05);
+    --shadow-lg: 0 12px 40px -8px rgba(120,90,50,0.14), 0 4px 12px -4px rgba(120,90,50,0.06);
+    --shadow-xl: 0 20px 60px -12px rgba(120,90,50,0.20), 0 8px 24px -8px rgba(120,90,50,0.10);
     --shadow-glow: 0 0 0 1px rgba(204,138,63,0.06), 0 4px 24px -4px rgba(204,138,63,0.12);
-    --shadow-inner-light: inset 0 1px 0 rgba(255,255,255,0.06);
+    --shadow-inner-light: inset 0 1px 0 rgba(255,255,255,0.08);
 
     /* Surface layers — for premium depth */
-    --surface-raised: 0 0% 100%;          /* Cards: white */
-    --surface-overlay: 40 20% 98%;        /* Elevated overlays */
-    --surface-sunken: 40 14% 93%;         /* Inset areas */
+    --surface-raised: 40 20% 99%;         /* Cards: warm wit */
+    --surface-overlay: 38 22% 98%;        /* Elevated overlays */
+    --surface-sunken: 35 18% 93%;         /* Inset areas, warm */
 
     /* Spring easing — natural, organic feel */
     --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -151,39 +152,39 @@
   }
 
   .dark {
-    --background: 40 6% 8%;            /* #141413 */
-    --foreground: 40 6% 90%;           /* #E8E8E4 */
-    --card: 40 6% 12%;                 /* #1E1E1C */
-    --card-foreground: 40 6% 90%;
-    --sidebar-background: 40 4% 10%;   /* #191918 */
-    --sidebar-foreground: 40 4% 54%;
-    --sidebar-border: 40 8% 18%;       /* #2E2E2A */
-    --primary: 40 6% 90%;
-    --primary-foreground: 40 6% 8%;
-    --secondary: 40 8% 18%;
-    --secondary-foreground: 40 4% 54%;
-    --muted: 40 8% 18%;
-    --muted-foreground: 40 4% 36%;
-    --accent: 28 55% 58%;               /* amber-light — zichtbaar als tekst in dark mode */
-    --accent-foreground: 0 0% 10%;
-    --border: 40 8% 18%;
-    --input: 40 8% 18%;
+    --background: 30 12% 8%;           /* warm donker, niet koud zwart */
+    --foreground: 35 10% 90%;          /* warm light text */
+    --card: 30 12% 10%;                /* warm dark surface */
+    --card-foreground: 35 10% 90%;
+    --sidebar-background: 30 10% 9%;   /* iets donkerder dan content */
+    --sidebar-foreground: 30 8% 55%;
+    --sidebar-border: 30 10% 18%;
+    --primary: 35 10% 90%;
+    --primary-foreground: 30 12% 8%;
+    --secondary: 30 10% 16%;
+    --secondary-foreground: 35 8% 70%;
+    --muted: 30 10% 16%;
+    --muted-foreground: 30 8% 50%;
+    --accent: 28 55% 58%;               /* amber-light — zichtbaar als tekst */
+    --accent-foreground: 30 12% 8%;
+    --border: 30 10% 18%;
+    --input: 30 10% 18%;
     --destructive: 5 58% 65%;
-    --destructive-foreground: 0 0% 100%;
-    --popover: 40 6% 12%;
-    --popover-foreground: 40 6% 90%;
-    --ring: 28 60% 52%;
+    --destructive-foreground: 35 10% 95%;
+    --popover: 30 12% 10%;
+    --popover-foreground: 35 10% 90%;
+    --ring: 28 60% 55%;
 
-    /* Semantic UI tokens — dark */
-    --border-subtle: 40 8% 20%;
-    --text-placeholder: 40 4% 40%;
-    --text-tertiary: 40 4% 50%;            /* #a0a0a0 equiv */
-    --bg-hover: 40 8% 14%;
-    --bg-subtle: 40 6% 10%;
+    /* Semantic UI tokens — dark, warm */
+    --border-subtle: 30 10% 20%;
+    --text-placeholder: 30 8% 42%;
+    --text-tertiary: 30 8% 52%;
+    --bg-hover: 30 10% 14%;
+    --bg-subtle: 30 10% 10%;
 
     --sidebar-primary: 28 55% 58%;
-    --wm-sidebar-bg: 40 4% 10%;
-    --wm-sidebar-hover: 40 8% 14%;
+    --wm-sidebar-bg: 30 10% 9%;
+    --wm-sidebar-hover: 30 10% 14%;
     --wm-sidebar-active: 28 55% 58%;
     --wm-hover: 28 55% 55%;
     --wm-light: 28 55% 65%;
@@ -200,9 +201,9 @@
     --shadow-xl: 0 20px 60px -12px rgba(0,0,0,0.6), 0 8px 24px -8px rgba(0,0,0,0.35);
     --shadow-glow: 0 0 0 1px rgba(204,138,63,0.10), 0 4px 24px -4px rgba(204,138,63,0.18);
     --shadow-inner-light: inset 0 1px 0 rgba(255,255,255,0.03);
-    --surface-raised: 40 6% 12%;
-    --surface-overlay: 40 6% 14%;
-    --surface-sunken: 40 6% 7%;
+    --surface-raised: 30 12% 11%;
+    --surface-overlay: 30 12% 13%;
+    --surface-sunken: 30 12% 6%;
 
     /* Pastel palette — dark mode */
     --color-blush: rgba(192, 81, 74, 0.15);
@@ -263,9 +264,9 @@
     font-variant-numeric: tabular-nums;
   }
 
-  /* Selection color — blush */
+  /* Selection color — warm amber tint */
   ::selection {
-    background: #F0D9D0;
+    background: hsl(28 60% 52% / 0.18);
     color: hsl(var(--foreground));
   }
 }
