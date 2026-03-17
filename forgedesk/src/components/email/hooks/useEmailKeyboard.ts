@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import type { Email } from '@/types'
 import type { ViewMode } from '../emailTypes'
 
@@ -32,6 +32,16 @@ export function useEmailKeyboard({
   const [focusedIndex, setFocusedIndex] = useState<number>(-1)
   const [showShortcuts, setShowShortcuts] = useState(false)
 
+  // Store callbacks and data in refs to avoid re-registering the event listener
+  const callbacksRef = useRef({ onSelectEmail, onToggleStar, onTogglePin, onArchive, onDelete, onCompose, onReply, onForward, onShowSnooze })
+  callbacksRef.current = { onSelectEmail, onToggleStar, onTogglePin, onArchive, onDelete, onCompose, onReply, onForward, onShowSnooze }
+
+  const emailsRef = useRef(filteredEmails)
+  emailsRef.current = filteredEmails
+
+  const focusedRef = useRef(focusedIndex)
+  focusedRef.current = focusedIndex
+
   useEffect(() => {
     if (viewMode !== 'idle') return
 
@@ -39,10 +49,14 @@ export function useEmailKeyboard({
       const target = e.target as HTMLElement
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return
 
+      const emails = emailsRef.current
+      const idx = focusedRef.current
+      const cb = callbacksRef.current
+
       switch (e.key) {
         case 'j':
           e.preventDefault()
-          setFocusedIndex((prev) => Math.min(prev + 1, filteredEmails.length - 1))
+          setFocusedIndex((prev) => Math.min(prev + 1, emails.length - 1))
           break
         case 'k':
           e.preventDefault()
@@ -51,55 +65,39 @@ export function useEmailKeyboard({
         case 'o':
         case 'Enter':
           e.preventDefault()
-          if (focusedIndex >= 0 && focusedIndex < filteredEmails.length) {
-            onSelectEmail(filteredEmails[focusedIndex])
-          }
+          if (idx >= 0 && idx < emails.length) cb.onSelectEmail(emails[idx])
           break
         case 's':
           e.preventDefault()
-          if (focusedIndex >= 0 && focusedIndex < filteredEmails.length) {
-            onToggleStar(filteredEmails[focusedIndex])
-          }
+          if (idx >= 0 && idx < emails.length) cb.onToggleStar(emails[idx])
           break
         case 'p':
           e.preventDefault()
-          if (focusedIndex >= 0 && focusedIndex < filteredEmails.length) {
-            onTogglePin(filteredEmails[focusedIndex])
-          }
+          if (idx >= 0 && idx < emails.length) cb.onTogglePin(emails[idx])
           break
         case 'e':
           e.preventDefault()
-          if (focusedIndex >= 0 && focusedIndex < filteredEmails.length) {
-            onArchive(filteredEmails[focusedIndex])
-          }
+          if (idx >= 0 && idx < emails.length) cb.onArchive(emails[idx])
           break
         case '#':
           e.preventDefault()
-          if (focusedIndex >= 0 && focusedIndex < filteredEmails.length) {
-            onDelete(filteredEmails[focusedIndex])
-          }
+          if (idx >= 0 && idx < emails.length) cb.onDelete(emails[idx])
           break
         case 'c':
           e.preventDefault()
-          onCompose()
+          cb.onCompose()
           break
         case 'r':
           e.preventDefault()
-          if (focusedIndex >= 0 && focusedIndex < filteredEmails.length) {
-            onReply(filteredEmails[focusedIndex])
-          }
+          if (idx >= 0 && idx < emails.length) cb.onReply(emails[idx])
           break
         case 'f':
           e.preventDefault()
-          if (focusedIndex >= 0 && focusedIndex < filteredEmails.length) {
-            onForward(filteredEmails[focusedIndex])
-          }
+          if (idx >= 0 && idx < emails.length) cb.onForward(emails[idx])
           break
         case 'z':
           e.preventDefault()
-          if (focusedIndex >= 0 && focusedIndex < filteredEmails.length) {
-            onShowSnooze(filteredEmails[focusedIndex].id)
-          }
+          if (idx >= 0 && idx < emails.length) cb.onShowSnooze(emails[idx].id)
           break
         case '?':
           e.preventDefault()
@@ -114,7 +112,7 @@ export function useEmailKeyboard({
 
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [viewMode, focusedIndex, filteredEmails, onSelectEmail, onToggleStar, onTogglePin, onArchive, onDelete, onCompose, onReply, onForward, onShowSnooze])
+  }, [viewMode]) // Only re-register when viewMode changes
 
   return {
     focusedIndex,

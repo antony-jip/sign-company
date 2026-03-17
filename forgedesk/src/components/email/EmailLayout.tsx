@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react'
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   Search, Pencil, Inbox, Send, FileEdit, Trash2,
@@ -43,6 +43,8 @@ export function EmailLayout() {
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null)
   const [viewMode, setViewMode] = useState<ViewMode>('idle')
   const [searchQuery, setSearchQuery] = useState('')
+  const [searchInput, setSearchInput] = useState('')
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [filter, setFilter] = useState<FilterType>('alle')
   const [showSearch, setShowSearch] = useState(false)
   const [fontSize, setFontSize] = useState<FontSize>('medium')
@@ -78,18 +80,21 @@ export function EmailLayout() {
     handleBulkDelete, handleBulkArchive, handleBulkMarkRead, handleBulkMarkUnread,
   } = useEmailSelection({ filteredEmails, setEmails })
 
+  const noopSnooze = useCallback(() => {}, [])
+  const handleComposeEmpty = useCallback(() => handleCompose(), [handleCompose])
+
   const { focusedIndex, setFocusedIndex, showShortcuts, setShowShortcuts } = useEmailKeyboard({
     viewMode,
     filteredEmails: threadedEmails,
-    onSelectEmail: (email) => handleSelectEmail(email),
+    onSelectEmail: handleSelectEmail,
     onToggleStar: handleToggleStar,
     onTogglePin: handleTogglePin,
     onArchive: handleArchive,
     onDelete: handleDelete,
-    onCompose: () => handleCompose(),
-    onReply: (email) => handleReply(email),
-    onForward: (email) => handleForward(email),
-    onShowSnooze: () => {},
+    onCompose: handleComposeEmpty,
+    onReply: handleReply,
+    onForward: handleForward,
+    onShowSnooze: noopSnooze,
   })
 
   // Polling: refresh every 60s or on window focus
@@ -168,9 +173,16 @@ export function EmailLayout() {
     setViewMode('idle')
     setFilter('alle')
     setSearchQuery('')
+    setSearchInput('')
     clearChecked()
     handleFolderLoad(folder)
   }, [clearChecked, handleFolderLoad])
+
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchInput(value)
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current)
+    searchDebounceRef.current = setTimeout(() => setSearchQuery(value), 200)
+  }, [])
 
   const handleBack = useCallback(() => {
     setSelectedEmail(null)
@@ -194,7 +206,25 @@ export function EmailLayout() {
     }
   }, [isLoadingMore, loadMoreEmails, selectedFolder])
 
-  const emailIndex = selectedEmail ? threadedEmails.findIndex(e => e.id === selectedEmail.id) : -1
+  const emailIndex = useMemo(
+    () => selectedEmail ? threadedEmails.findIndex(e => e.id === selectedEmail.id) : -1,
+    [selectedEmail, threadedEmails],
+  )
+
+  // Navigate to next email after delete/archive
+  const navigateAfterAction = useCallback((action: (email: Email) => void) => (email: Email) => {
+    action(email)
+    const idx = threadedEmails.findIndex(e => e.id === email.id)
+    const nextIdx = idx + 1 < threadedEmails.length ? idx + 1 : idx - 1
+    if (nextIdx >= 0 && nextIdx < threadedEmails.length) {
+      handleSelectEmail(threadedEmails[nextIdx])
+    } else {
+      handleBack()
+    }
+  }, [threadedEmails, handleSelectEmail, handleBack])
+
+  const handleDeleteAndNavigate = useMemo(() => navigateAfterAction(handleDelete), [navigateAfterAction, handleDelete])
+  const handleArchiveAndNavigate = useMemo(() => navigateAfterAction(handleArchive), [navigateAfterAction, handleArchive])
 
   // ─── FULL-SCREEN EMAIL READER ───
   if (viewMode === 'reading') {
@@ -207,24 +237,8 @@ export function EmailLayout() {
           emailTotal={threadedEmails.length}
           onToggleStar={handleToggleStar}
           onToggleRead={handleToggleRead}
-          onDelete={(email) => {
-            handleDelete(email)
-            const nextIdx = emailIndex + 1 < threadedEmails.length ? emailIndex + 1 : emailIndex - 1
-            if (nextIdx >= 0 && nextIdx < threadedEmails.length) {
-              handleSelectEmail(threadedEmails[nextIdx])
-            } else {
-              handleBack()
-            }
-          }}
-          onArchive={(email) => {
-            handleArchive(email)
-            const nextIdx = emailIndex + 1 < threadedEmails.length ? emailIndex + 1 : emailIndex - 1
-            if (nextIdx >= 0 && nextIdx < threadedEmails.length) {
-              handleSelectEmail(threadedEmails[nextIdx])
-            } else {
-              handleBack()
-            }
-          }}
+          onDelete={handleDeleteAndNavigate}
+          onArchive={handleArchiveAndNavigate}
           onBack={handleBack}
           onNavigate={handleNavigate}
           onSendReply={handleSendReply}
@@ -429,14 +443,14 @@ export function EmailLayout() {
             <Search className="h-4 w-4 text-foreground/25 mr-3 flex-shrink-0" />
             <input
               type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              value={searchInput}
+              onChange={(e) => handleSearchChange(e.target.value)}
               placeholder="Zoeken in emails... (from: to: has: label:)"
               className="flex-1 bg-transparent text-sm outline-none placeholder:text-foreground/25"
               autoFocus
             />
-            {searchQuery && (
-              <button onClick={() => setSearchQuery('')} className="p-1 hover:bg-foreground/5 rounded">
+            {searchInput && (
+              <button onClick={() => { setSearchInput(''); setSearchQuery('') }} className="p-1 hover:bg-foreground/5 rounded">
                 <X className="h-4 w-4 text-foreground/30" />
               </button>
             )}

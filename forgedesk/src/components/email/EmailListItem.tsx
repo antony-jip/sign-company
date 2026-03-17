@@ -1,4 +1,4 @@
-import { memo, useCallback } from 'react'
+import { memo, useCallback, useMemo } from 'react'
 import { Star, Paperclip } from 'lucide-react'
 import type { Email } from '@/types'
 import { extractSenderName, stripHtml, formatShortDate, fontSizeClasses, getAvatarColor } from './emailHelpers'
@@ -29,12 +29,15 @@ export const EmailListItem = memo(function EmailListItem({
   onToggleCheck,
 }: EmailListItemProps) {
   const isUnread = !email.gelezen
-  const senderName = extractSenderName(email.van)
+  const senderName = useMemo(() => extractSenderName(email.van), [email.van])
   const sizes = fontSizeClasses[fontSize]
   const avatarColor = getAvatarColor(senderName)
 
-  // Preview: use inhoud if available, otherwise empty (IMAP bodies load on click)
-  const preview = email.inhoud ? stripHtml(email.inhoud).slice(0, 140) : ''
+  // Preview: memoize expensive HTML strip
+  const preview = useMemo(
+    () => email.inhoud ? stripHtml(email.inhoud).slice(0, 140) : '',
+    [email.inhoud],
+  )
 
   const handleClick = useCallback(() => {
     onSelect(email)

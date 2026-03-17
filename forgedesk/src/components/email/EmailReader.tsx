@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
+import { useState, useRef, useCallback, useEffect, useMemo, memo } from 'react'
 import DOMPurify from 'dompurify'
 import { Button } from '@/components/ui/button'
 import {
@@ -145,6 +145,20 @@ export function EmailReader({
     editorRef.current?.focus()
   }, [])
 
+  // Memoize sender data — avoid recalculating on every render
+  const senderName = useMemo(() => email ? extractSenderName(email.van) : '', [email?.van])
+  const senderEmail = useMemo(() => email ? extractSenderEmail(email.van) : '', [email?.van])
+  const avatarColor = useMemo(() => getAvatarColor(senderName), [senderName])
+
+  // Memoize DOMPurify — expensive HTML sanitization
+  const sanitizedBody = useMemo(() => {
+    if (!email?.inhoud) return ''
+    return DOMPurify.sanitize(email.inhoud, {
+      ADD_TAGS: ['style'],
+      ADD_ATTR: ['target', 'style'],
+    })
+  }, [email?.inhoud])
+
   if (!email) {
     return (
       <div className="flex-1 flex items-center justify-center text-foreground/30 h-full">
@@ -152,14 +166,6 @@ export function EmailReader({
       </div>
     )
   }
-
-  const senderName = extractSenderName(email.van)
-  const senderEmail = extractSenderEmail(email.van)
-  const avatarColor = getAvatarColor(senderName)
-  const sanitizedBody = email.inhoud ? DOMPurify.sanitize(email.inhoud, {
-    ADD_TAGS: ['style'],
-    ADD_ATTR: ['target', 'style'],
-  }) : ''
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // FULL-SCREEN REPLY MODE (like Pipedrive)
@@ -557,7 +563,7 @@ function extractCompanyName(senderName: string, email: string): string {
 }
 
 // ─── CRM Sidebar component with inline klant creation ───
-function CRMSidebar({
+const CRMSidebar = memo(function CRMSidebar({
   email,
   senderName,
   senderEmail,
@@ -772,7 +778,7 @@ function CRMSidebar({
           <div className="space-y-3 text-xs">
             <div className="flex justify-between">
               <span className="text-foreground/35">Datum</span>
-              <span className="text-foreground/60">{new Date(email.datum).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+              <span className="text-foreground/60">{formatShortDate(email.datum)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-foreground/35">Map</span>
@@ -801,4 +807,4 @@ function CRMSidebar({
       </div>
     </div>
   )
-}
+})
