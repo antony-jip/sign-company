@@ -2024,7 +2024,7 @@ export function QuoteCreation() {
   // MAIN LAYOUT: Two columns — Left: scrollable content, Right: sticky sidebar (380px)
   // ────────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#fdf2f8] via-[#faf5ff] to-[#eff6ff] dark:from-background dark:via-background dark:to-background">
+    <div className="-m-3 sm:-m-4 md:-m-6 min-h-full bg-gradient-to-br from-[#fdf2f8] via-[#faf5ff] to-[#eff6ff] dark:from-background dark:via-background dark:to-background">
     <div className="pb-6 px-4 py-8 md:py-12 mod-strip mod-strip-offertes">
       {/* ──── HEADER BAR ──── */}
       <div className="rounded-xl bg-gradient-to-r from-white/90 to-rose-50/60 dark:bg-card dark:from-card dark:to-card backdrop-blur-sm border border-border-primary/50 px-4 py-3 mb-6">

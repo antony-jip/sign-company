@@ -122,7 +122,7 @@ export function ProjectCreate() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#d5f5e3] via-[#dbeafe] to-[#ede9fe] dark:from-background dark:via-background dark:to-background">
+    <div className="-m-3 sm:-m-4 md:-m-6 min-h-full bg-gradient-to-br from-[#d5f5e3] via-[#dbeafe] to-[#ede9fe] dark:from-background dark:via-background dark:to-background">
       <div className="max-w-2xl mx-auto px-4 py-8 md:py-12 animate-fade-in-up">
       {/* Header */}
       <div className="flex items-center gap-4 mb-10">
