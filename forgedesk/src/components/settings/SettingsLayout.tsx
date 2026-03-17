@@ -1354,6 +1354,30 @@ function SignaturePreview({
   )
 }
 
+// ============ EMAIL SETTINGS TYPES ============
+
+interface EmailSettings {
+  smtp_host: string
+  smtp_port: number
+  smtp_encryption: 'TLS' | 'SSL' | 'Geen'
+  imap_host: string
+  imap_port: number
+  gmail_address: string
+  app_password: string
+  accept_self_signed: boolean
+}
+
+const DEFAULT_EMAIL_SETTINGS: EmailSettings = {
+  smtp_host: 'smtp.gmail.com',
+  smtp_port: 587,
+  smtp_encryption: 'TLS',
+  imap_host: 'imap.gmail.com',
+  imap_port: 993,
+  gmail_address: '',
+  app_password: '',
+  accept_self_signed: false,
+}
+
 function EmailTab() {
   const { user, isAdmin } = useAuth()
   const { refreshSettings, profile, emailFetchLimit: currentFetchLimit } = useAppSettings()
@@ -1479,12 +1503,54 @@ function EmailTab() {
     }
   }
 
-  // Check email connection
+  // Email connection settings — lifted to EmailTab so they survive sub-tab switches
+  const [emailSettings, setEmailSettings] = useState<EmailSettings>(DEFAULT_EMAIL_SETTINGS)
   const [emailConnected, setEmailConnected] = useState(false)
+
   const checkEmailStatus = useCallback(() => {
-    const localSettings = getLocalEmailSettings()
-    setEmailConnected(!!localSettings?.gmail_address)
+    setEmailConnected(!!emailSettings.gmail_address && !!emailSettings.app_password)
+  }, [emailSettings])
+
+  // Load email settings from Supabase (or sessionStorage cache) on mount
+  useEffect(() => {
+    async function loadEmailSettings() {
+      // 1. Try sessionStorage cache first (fast)
+      try {
+        const cached = sessionStorage.getItem('forgedesk_email_settings')
+        if (cached) {
+          const parsed = JSON.parse(cached)
+          if (parsed.gmail_address && parsed.app_password) {
+            setEmailSettings(prev => ({ ...prev, ...parsed }))
+            setEmailConnected(true)
+          }
+        }
+      } catch { /* ignore */ }
+
+      // 2. Try Supabase direct (source of truth)
+      if (isSupabaseConfigured()) {
+        try {
+          const { loadEmailSettingsFromDb } = await import('@/services/gmailService')
+          const dbSettings = await loadEmailSettingsFromDb()
+          if (dbSettings?.gmail_address) {
+            const merged = {
+              ...DEFAULT_EMAIL_SETTINGS,
+              ...dbSettings,
+              smtp_encryption: 'TLS' as const,
+              accept_self_signed: false,
+            }
+            setEmailSettings(merged)
+            setEmailConnected(true)
+            // Update cache
+            sessionStorage.setItem('forgedesk_email_settings', JSON.stringify(merged))
+          }
+        } catch (err) {
+          console.error('Email settings laden mislukt:', err)
+        }
+      }
+    }
+    loadEmailSettings()
   }, [])
+
   useEffect(() => { checkEmailStatus() }, [checkEmailStatus])
 
   if (isLoading) {
@@ -1699,7 +1765,12 @@ function EmailTab() {
               )}
             </CardContent>
           </Card>
-          <EmailSettingsInline onSaved={checkEmailStatus} />
+          <EmailSettingsInline
+            onSaved={checkEmailStatus}
+            settings={emailSettings}
+            setSettings={setEmailSettings}
+            isConnected={emailConnected}
+          />
         </div>
       )}
 
@@ -1761,77 +1832,24 @@ function EmailTab() {
 
 // ============ INTEGRATIES TAB ============
 
-// Local storage key for email settings in demo mode
-const EMAIL_SETTINGS_KEY = 'forgedesk_email_settings'
-
-interface EmailSettings {
-  smtp_host: string
-  smtp_port: number
-  smtp_encryption: 'TLS' | 'SSL' | 'Geen'
-  imap_host: string
-  imap_port: number
-  gmail_address: string
-  app_password: string
-  accept_self_signed: boolean
-}
-
-const DEFAULT_EMAIL_SETTINGS: EmailSettings = {
-  smtp_host: 'smtp.gmail.com',
-  smtp_port: 587,
-  smtp_encryption: 'TLS',
-  imap_host: 'imap.gmail.com',
-  imap_port: 993,
-  gmail_address: '',
-  app_password: '',
-  accept_self_signed: false,
-}
-
-function getLocalEmailSettings(): EmailSettings | null {
-  try {
-    const stored = localStorage.getItem(EMAIL_SETTINGS_KEY)
-    if (stored) return JSON.parse(stored)
-  } catch { /* ignore */ }
-  return null
-}
-
-function saveLocalEmailSettings(settings: EmailSettings): void {
-  // Sla alleen niet-gevoelige instellingen op in localStorage (geen wachtwoord)
-  const { app_password: _pw, ...safeSettings } = settings
-  localStorage.setItem(EMAIL_SETTINGS_KEY, JSON.stringify(safeSettings))
-}
-
-function removeLocalEmailSettings(): void {
-  localStorage.removeItem(EMAIL_SETTINGS_KEY)
-}
+// ============ EMAIL SETTINGS INLINE ============
 
 function EmailSettingsInline({
   onSaved,
+  settings,
+  setSettings,
+  isConnected,
 }: {
   onSaved: () => void
+  settings: EmailSettings
+  setSettings: (s: EmailSettings) => void
+  isConnected: boolean
 }) {
-  const [settings, setSettings] = useState<EmailSettings>(DEFAULT_EMAIL_SETTINGS)
   const [isSaving, setIsSaving] = useState(false)
   const [isTesting, setIsTesting] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-
-  // Load existing settings on mount — try localStorage first, then Supabase
-  useEffect(() => {
-    const existing = getLocalEmailSettings()
-    if (existing && existing.gmail_address && existing.app_password) {
-      setSettings(existing)
-    } else {
-      // Probeer vanuit server te laden als localStorage leeg is
-      import('@/services/gmailService').then(async ({ syncEmailSettingsFromServer }) => {
-        const synced = await syncEmailSettingsFromServer()
-        if (synced) {
-          const loaded = getLocalEmailSettings()
-          if (loaded) setSettings(loaded)
-        }
-      }).catch(() => {})
-    }
-  }, [])
 
   const handleSave = async () => {
     setError('')
@@ -1852,13 +1870,10 @@ function EmailSettingsInline({
 
     setIsSaving(true)
     try {
-      // Save locally (works in demo mode and as cache)
-      saveLocalEmailSettings(settings)
-
-      // Also try to save to Supabase if configured
+      // Save direct to Supabase (no API endpoint needed)
       if (isSupabaseConfigured()) {
-        const { saveEmailSettings } = await import('@/services/gmailService')
-        await saveEmailSettings({
+        const { saveEmailSettingsToDb } = await import('@/services/gmailService')
+        await saveEmailSettingsToDb({
           gmail_address: settings.gmail_address,
           app_password: settings.app_password,
           smtp_host: settings.smtp_host,
@@ -1868,16 +1883,13 @@ function EmailSettingsInline({
         })
       }
 
+      // Cache in sessionStorage for quick loads
+      sessionStorage.setItem('forgedesk_email_settings', JSON.stringify(settings))
+
       setSuccess('E-mailinstellingen opgeslagen!')
       onSaved()
     } catch (err: unknown) {
-      // If Supabase save fails, local save already succeeded
-      if (isSupabaseConfigured()) {
-        setError(`Server fout: ${err instanceof Error ? err.message : 'Onbekende fout'}. Instellingen zijn lokaal opgeslagen.`)
-      } else {
-        setSuccess('E-mailinstellingen lokaal opgeslagen (demo modus)')
-        onSaved()
-      }
+      setError(`Opslaan mislukt: ${err instanceof Error ? err.message : 'Onbekende fout'}`)
     } finally {
       setIsSaving(false)
     }
@@ -1911,16 +1923,10 @@ function EmailSettingsInline({
         setSuccess('Verbinding gelukt! IMAP en SMTP werken beide correct.')
       } else {
         const parts: string[] = []
-        if (result.imap_ok) parts.push('IMAP: OK')
-        else parts.push('IMAP: Mislukt')
-        if (result.smtp_ok) parts.push('SMTP: OK')
-        else parts.push('SMTP: Mislukt')
+        parts.push(result.imap_ok ? 'IMAP: OK' : 'IMAP: Mislukt')
+        parts.push(result.smtp_ok ? 'SMTP: OK' : 'SMTP: Mislukt')
         const msg = parts.join(' | ')
-        if (result.error) {
-          setError(`${msg}. ${result.error}`)
-        } else {
-          setError(msg)
-        }
+        setError(result.error ? `${msg}. ${result.error}` : msg)
       }
     } catch (err: unknown) {
       setError(`Test mislukt: ${err instanceof Error ? err.message : 'Onbekende fout'}`)
@@ -1929,15 +1935,20 @@ function EmailSettingsInline({
     }
   }
 
-  const handleDisconnect = () => {
-    removeLocalEmailSettings()
+  const handleDisconnect = async () => {
+    try {
+      if (isSupabaseConfigured()) {
+        const { deleteEmailSettingsFromDb } = await import('@/services/gmailService')
+        await deleteEmailSettingsFromDb()
+      }
+    } catch { /* ignore */ }
+    sessionStorage.removeItem('forgedesk_email_settings')
+    localStorage.removeItem('forgedesk_email_settings')
     setSettings(DEFAULT_EMAIL_SETTINGS)
     setSuccess('')
     setError('')
     onSaved()
   }
-
-  const isConnected = !!getLocalEmailSettings()
 
   return (
     <Card className="mt-6">

@@ -45,6 +45,12 @@ export interface EmailCredentials {
 }
 
 function decryptPassword(encrypted: string): string {
+  // New format: base64-encoded (saved directly from frontend)
+  if (encrypted.startsWith('b64:')) {
+    return Buffer.from(encrypted.slice(4), 'base64').toString('utf8')
+  }
+
+  // Legacy format: AES-256-CBC encrypted (via API endpoint)
   const ENCRYPTION_KEY = process.env.EMAIL_ENCRYPTION_KEY
   if (!ENCRYPTION_KEY) throw new Error('EMAIL_ENCRYPTION_KEY niet geconfigureerd')
   const key = crypto.scryptSync(ENCRYPTION_KEY, 'salt', 32)
