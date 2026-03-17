@@ -405,32 +405,45 @@ export function EmailLayout() {
     toast.success('Email verwijderd')
   }, [])
 
-  // ─── Refresh: trigger IMAP sync, then re-read from Supabase ───
-  const handleRefresh = useCallback(async (folder: EmailFolder) => {
-    setIsRefreshing(true)
-    try {
-      const imapFolder = IMAP_FOLDER_MAP[folder] || 'INBOX'
-      await triggerImapSync(imapFolder).catch(() => {})
-      const emailData = await readFromSupabase()
-      setEmails(emailData)
-      toast.success('Inbox vernieuwd')
-    } catch {
-      toast.error('Kon emails niet vernieuwen')
-    } finally {
-      setIsRefreshing(false)
-    }
+  // ─── Refresh: IMAP sync in background, re-read from Supabase ───
+  const handleRefresh = useCallback(async (folder: EmailFolder, silent = false) => {
+    if (!silent) setIsRefreshing(true)
+    const imapFolder = IMAP_FOLDER_MAP[folder] || 'INBOX'
+    triggerImapSync(imapFolder)
+      .then(async ({ total }) => {
+        setImapTotal(total)
+        const fresh = await readFromSupabase()
+        if (fresh.length > 0) setEmails(fresh)
+        if (!silent) toast.success('Inbox vernieuwd')
+      })
+      .catch(() => {
+        if (!silent) toast.error('Kon emails niet vernieuwen')
+      })
+      .finally(() => {
+        if (!silent) setIsRefreshing(false)
+      })
   }, [])
 
   const handleFolderLoad = useCallback(async (folder: EmailFolder) => {
-    setIsLoading(true)
+    // Step 1: Show cached Supabase data instantly
     try {
-      // Trigger sync for this folder, then read all from Supabase
-      const imapFolder = IMAP_FOLDER_MAP[folder] || 'INBOX'
-      await triggerImapSync(imapFolder).catch(() => {})
-      const emailData = await readFromSupabase()
-      setEmails(emailData)
-    } catch { /* keep existing */ }
-    finally { setIsLoading(false) }
+      const cached = await readFromSupabase()
+      if (cached.length > 0) {
+        setEmails(cached)
+        setIsLoading(false)
+      }
+    } catch { /* ignore */ }
+
+    // Step 2: Background IMAP sync, then refresh from Supabase
+    const imapFolder = IMAP_FOLDER_MAP[folder] || 'INBOX'
+    triggerImapSync(imapFolder)
+      .then(async ({ total }) => {
+        setImapTotal(total)
+        const fresh = await readFromSupabase()
+        if (fresh.length > 0) setEmails(fresh)
+      })
+      .catch(() => {})
+      .finally(() => setIsLoading(false))
   }, [])
 
   // ─── Load more (infinite scroll) ───
@@ -484,12 +497,12 @@ export function EmailLayout() {
     }
   }, [])
 
-  // ─── Polling: refresh every 60s or on window focus ───
+  // ─── Polling: silent background sync every 2min + on window focus ───
   useEffect(() => {
     pollingRef.current = setInterval(() => {
-      handleRefresh(selectedFolder)
-    }, 60000)
-    const handleFocus = () => handleRefresh(selectedFolder)
+      handleRefresh(selectedFolder, true)
+    }, 120000)
+    const handleFocus = () => handleRefresh(selectedFolder, true)
     window.addEventListener('focus', handleFocus)
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current)
