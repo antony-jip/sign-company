@@ -122,7 +122,7 @@ export function ProjectCreate() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#F4F3F0] to-[#EBE9E4] dark:from-background dark:to-background">
+    <div className="min-h-screen bg-gradient-to-br from-[#ecfdf5] via-[#eff6ff] to-[#fdf4ff] dark:from-background dark:via-background dark:to-background">
       <div className="max-w-2xl mx-auto px-4 py-8 md:py-12 animate-fade-in-up">
       {/* Header */}
       <div className="flex items-center gap-3 mb-8">
@@ -140,7 +140,7 @@ export function ProjectCreate() {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Project info */}
-        <div className="rounded-xl border border-border-primary/50 bg-white/80 dark:bg-card backdrop-blur-sm p-6">
+        <div className="rounded-xl border border-border-primary/50 bg-gradient-to-br from-white/90 to-teal-50/60 dark:bg-card dark:from-card dark:to-card backdrop-blur-sm p-6">
           <div className="space-y-4">
             <div>
               <Label htmlFor="naam" className="text-xs font-medium text-muted-foreground mb-1.5 block">
@@ -173,7 +173,7 @@ export function ProjectCreate() {
         </div>
 
         {/* Klant + Contactpersoon */}
-        <div className="rounded-xl border border-border-primary/50 bg-white/80 dark:bg-card backdrop-blur-sm p-6">
+        <div className="rounded-xl border border-border-primary/50 bg-gradient-to-br from-white/90 to-blue-50/60 dark:bg-card dark:from-card dark:to-card backdrop-blur-sm p-6">
           <div className="flex items-center gap-2 mb-4">
             <User className="h-3.5 w-3.5 text-muted-foreground" />
             <span className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">Klant & Contact</span>
@@ -255,7 +255,7 @@ export function ProjectCreate() {
         </div>
 
         {/* Status + Datums */}
-        <div className="rounded-xl border border-border-primary/50 bg-white/80 dark:bg-card backdrop-blur-sm p-6">
+        <div className="rounded-xl border border-border-primary/50 bg-gradient-to-br from-white/90 to-amber-50/60 dark:bg-card dark:from-card dark:to-card backdrop-blur-sm p-6">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Status</Label>

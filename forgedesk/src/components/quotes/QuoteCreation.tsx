@@ -2024,10 +2024,10 @@ export function QuoteCreation() {
   // MAIN LAYOUT: Two columns — Left: scrollable content, Right: sticky sidebar (380px)
   // ────────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#F4F3F0] to-[#EBE9E4] dark:from-background dark:to-background">
+    <div className="min-h-screen bg-gradient-to-br from-[#fdf2f8] via-[#faf5ff] to-[#eff6ff] dark:from-background dark:via-background dark:to-background">
     <div className="pb-6 px-4 py-8 md:py-12 mod-strip mod-strip-offertes">
       {/* ──── HEADER BAR ──── */}
-      <div className="rounded-xl bg-white/80 dark:bg-card backdrop-blur-sm border border-border-primary/50 px-4 py-3 mb-6">
+      <div className="rounded-xl bg-gradient-to-r from-white/90 to-rose-50/60 dark:bg-card dark:from-card dark:to-card backdrop-blur-sm border border-border-primary/50 px-4 py-3 mb-6">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           {/* Left: Back + Title + Badges */}
           <div className="flex items-center gap-3 min-w-0">
@@ -2135,7 +2135,7 @@ export function QuoteCreation() {
         {/* ════════════════════════════════════════════════════════════════ */}
         <div className="space-y-4 min-w-0">
           {/* ── Introductietekst ── */}
-          <Card className="bg-white/80 dark:bg-card backdrop-blur-sm border-border-primary/50">
+          <Card className="bg-gradient-to-br from-white/90 to-emerald-50/50 dark:bg-card dark:from-card dark:to-card backdrop-blur-sm border-border-primary/50">
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center"><Mail className="h-3.5 w-3.5 text-white" /></div>
@@ -2158,7 +2158,7 @@ export function QuoteCreation() {
           </Card>
 
           {/* ── Items ── */}
-          <Card className="bg-white/80 dark:bg-card backdrop-blur-sm border-border-primary/50">
+          <Card className="bg-gradient-to-br from-white/90 to-blue-50/50 dark:bg-card dark:from-card dark:to-card backdrop-blur-sm border-border-primary/50">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base flex items-center gap-2">
@@ -2192,7 +2192,7 @@ export function QuoteCreation() {
           </Card>
 
           {/* ── Afsluittekst ── */}
-          <Card className="bg-white/80 dark:bg-card backdrop-blur-sm border-border-primary/50">
+          <Card className="bg-gradient-to-br from-white/90 to-violet-50/50 dark:bg-card dark:from-card dark:to-card backdrop-blur-sm border-border-primary/50">
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center"><FileText className="h-3.5 w-3.5 text-white" /></div>
@@ -2215,7 +2215,7 @@ export function QuoteCreation() {
           </Card>
 
           {/* ── Notities & Voorwaarden ── */}
-          <Card className="bg-white/80 dark:bg-card backdrop-blur-sm border-border-primary/50">
+          <Card className="bg-gradient-to-br from-white/90 to-amber-50/50 dark:bg-card dark:from-card dark:to-card backdrop-blur-sm border-border-primary/50">
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-muted-foreground to-foreground/60 flex items-center justify-center"><FileText className="h-3.5 w-3.5 text-white" /></div>
