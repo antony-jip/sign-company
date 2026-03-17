@@ -1632,7 +1632,13 @@ export interface AppNotificatie {
   created_at: string;
 }
 
+export interface PortaalEmailTemplate {
+  onderwerp: string;
+  inhoud: string;
+}
+
 export interface PortaalInstellingen {
+  portaal_module_actief: boolean;
   portaal_standaard_actief: boolean;
   link_geldigheid_dagen: number;
   instructie_tekst: string;
@@ -1647,6 +1653,9 @@ export interface PortaalInstellingen {
   bedrijfslogo_op_portaal: boolean;
   bedrijfskleuren_gebruiken: boolean;
   contactgegevens_tonen: boolean;
+  template_portaallink: PortaalEmailTemplate;
+  template_nieuw_item: PortaalEmailTemplate;
+  template_herinnering: PortaalEmailTemplate;
 }
 
 // ============ AUDIT LOG (Quick Win 3) ============
