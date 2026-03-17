@@ -228,7 +228,7 @@ export function LeveringsbonnenLayout() {
                 {gefilterd.map((lb) => {
                   const cfg = STATUS_CONFIG[lb.status]
                   return (
-                    <tr key={lb.id} className={`group hover:bg-bg-subtle/60 transition-colors cursor-pointer border-l-2 ${getRowAccentClass(lb.status)}`} onClick={() => navigateWithTab({ path: `/leveringsbonnen/${lb.id}`, label: lb.leveringsbon_nummer || 'Leveringsbon', id: `/leveringsbonnen/${lb.id}` })}>
+                    <tr key={lb.id} className={`group hover:bg-bg-hover transition-colors duration-150 cursor-pointer border-l-2 ${getRowAccentClass(lb.status)}`} onClick={() => navigateWithTab({ path: `/leveringsbonnen/${lb.id}`, label: lb.leveringsbon_nummer || 'Leveringsbon', id: `/leveringsbonnen/${lb.id}` })}>
                       <td className="px-4 py-3">
                         <span className="text-sm font-mono font-semibold text-teal-600 dark:text-teal-400">{lb.leveringsbon_nummer}</span>
                       </td>

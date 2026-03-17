@@ -126,7 +126,7 @@ export function RecenteActiviteitWidget() {
               <div
                 key={item.id}
                 onClick={() => navigate(item.link)}
-                className={`flex items-start gap-3 py-3 cursor-pointer hover:bg-muted/30 hover:translate-x-0.5 -mx-2 px-2 rounded-lg transition-all ${
+                className={`flex items-start gap-3 py-3 cursor-pointer hover:bg-bg-hover hover:translate-x-0.5 -mx-2 px-2 rounded-lg transition-all duration-150 ${
                   idx > 0 ? 'border-t border-border/50' : ''
                 }`}
               >

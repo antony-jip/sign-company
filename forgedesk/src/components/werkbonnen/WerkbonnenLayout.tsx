@@ -262,7 +262,7 @@ export function WerkbonnenLayout() {
                   const projectRef = getProjectNaam(wb.project_id)
                   const ref = offerteRef !== '-' ? offerteRef : projectRef
                   return (
-                    <tr key={wb.id} className="group hover:bg-muted/30 transition-colors cursor-pointer"
+                    <tr key={wb.id} className="group hover:bg-bg-hover transition-colors duration-150 cursor-pointer"
                       onClick={() => navigateWithTab({ path: `/werkbonnen/${wb.id}`, label: wb.werkbon_nummer || 'Werkbon', id: `/werkbonnen/${wb.id}` })}>
                       <td className="px-4 py-3">
                         <div>

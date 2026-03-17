@@ -1453,7 +1453,7 @@ export function QuotesPipeline() {
                       <tr
                         key={offerte.id}
                         className={cn(
-                          'border-b border-border/50 last:border-0 hover:bg-bg-subtle/60 cursor-pointer transition-colors group border-l-2',
+                          'border-b border-border/50 last:border-0 hover:bg-bg-hover cursor-pointer transition-colors duration-150 group border-l-2',
                           getOfferteStatusBorderColor(offerte.status),
                           selectedIds.has(offerte.id) && 'bg-primary/5'
                         )}

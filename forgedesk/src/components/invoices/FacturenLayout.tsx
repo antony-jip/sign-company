@@ -1595,7 +1595,7 @@ export function FacturenLayout() {
                   <tr
                     key={factuur.id}
                     className={cn(
-                      'group hover:bg-bg-subtle/60 transition-colors',
+                      'group hover:bg-bg-hover transition-colors duration-150',
                       'border-l-2',
                       isOverdue ? 'border-l-[var(--color-coral-border)]' : config.border,
                       factuur.status === 'betaald' && 'factuur-row-betaald',

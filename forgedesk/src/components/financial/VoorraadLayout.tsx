@@ -532,7 +532,7 @@ export function VoorraadLayout() {
                 {gefilterd.map((art) => {
                   const isLaag = art.actief && art.huidige_voorraad < art.minimum_voorraad
                   return (
-                    <tr key={art.id} className="group hover:bg-muted/30 transition-colors cursor-pointer" onClick={() => openDetailView(art)}>
+                    <tr key={art.id} className="group hover:bg-bg-hover transition-colors duration-150 cursor-pointer" onClick={() => openDetailView(art)}>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-semibold text-foreground">{art.naam}</span>

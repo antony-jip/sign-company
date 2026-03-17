@@ -247,7 +247,7 @@ export function BestelbonnenLayout() {
                 {gefilterd.map((bst) => {
                   const cfg = STATUS_CONFIG[bst.status]
                   return (
-                    <tr key={bst.id} className={`group hover:bg-bg-subtle/60 transition-colors cursor-pointer border-l-2 ${getRowAccentClass(bst.status)}`} onClick={() => navigateWithTab({ path: `/bestelbonnen/${bst.id}`, label: bst.bestelbon_nummer || 'Bestelbon', id: `/bestelbonnen/${bst.id}` })}>
+                    <tr key={bst.id} className={`group hover:bg-bg-hover transition-colors duration-150 cursor-pointer border-l-2 ${getRowAccentClass(bst.status)}`} onClick={() => navigateWithTab({ path: `/bestelbonnen/${bst.id}`, label: bst.bestelbon_nummer || 'Bestelbon', id: `/bestelbonnen/${bst.id}` })}>
                       <td className="px-4 py-3">
                         <span className="text-sm font-mono font-semibold text-orange-600 dark:text-orange-400">{bst.bestelbon_nummer}</span>
                       </td>

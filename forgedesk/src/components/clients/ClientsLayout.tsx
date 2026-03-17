@@ -666,7 +666,7 @@ export function ClientsLayout() {
                   <tr
                     key={klant.id}
                     className={cn(
-                      "hover:bg-bg-subtle/60 cursor-pointer transition-colors group border-l-2",
+                      "hover:bg-bg-hover cursor-pointer transition-colors duration-150 group border-l-2",
                       selectedIds.has(klant.id) && "bg-primary/5",
                       getRowAccentClass(klant.status)
                     )}

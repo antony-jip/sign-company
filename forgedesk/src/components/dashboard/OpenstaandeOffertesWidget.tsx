@@ -71,7 +71,7 @@ export function OpenstaandeOffertesWidget() {
                 <div
                   key={offerte.id}
                   onClick={() => navigate(`/offertes/${offerte.id}`)}
-                  className={`flex items-center gap-3 py-3 cursor-pointer hover:bg-muted/30 -mx-2 px-2 rounded-lg transition-all ${
+                  className={`flex items-center gap-3 py-3 cursor-pointer hover:bg-bg-hover -mx-2 px-2 rounded-lg transition-all duration-150 ${
                     idx > 0 ? 'border-t border-border/50' : ''
                   }`}
                 >
