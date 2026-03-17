@@ -20,6 +20,9 @@ ALTER TABLE emails ADD COLUMN IF NOT EXISTS body_text TEXT;
 -- Bijlage metadata (JSON, geen binaire data)
 ALTER TABLE emails ADD COLUMN IF NOT EXISTS attachment_meta JSONB;
 
+-- Boolean flag voor bijlagen (gebruikt door fetch-emails API)
+ALTER TABLE emails ADD COLUMN IF NOT EXISTS has_attachments BOOLEAN DEFAULT false;
+
 -- Cache timestamp
 ALTER TABLE emails ADD COLUMN IF NOT EXISTS cached_at TIMESTAMPTZ DEFAULT now();
 
