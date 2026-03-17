@@ -168,14 +168,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const newEmails: Array<Record<string, unknown>> = []
     let count = 0
 
-    const fetchOptions = highestCachedUid === 0
-      ? { seq: fetchRange }
-      : fetchRange
+    const isIncremental = highestCachedUid > 0
+    const fetchOptions = isIncremental ? fetchRange : { seq: fetchRange }
 
-    for await (const message of client.fetch(
-      fetchOptions,
-      { envelope: true, flags: true, bodyStructure: true, source: true }
-    )) {
+    // Incremental sync: skip source (full body) download for speed
+    // Bodies are fetched on-demand via read-email API
+    const fetchFields = isIncremental
+      ? { envelope: true, flags: true, bodyStructure: true }
+      : { envelope: true, flags: true, bodyStructure: true, source: true }
+
+    for await (const message of client.fetch(fetchOptions, fetchFields)) {
       if (!message.envelope) continue
       if (count >= fetchLimit) break
       count++

@@ -152,7 +152,9 @@ export function EmailLayout() {
               const fresh = await readFromSupabase()
               if (fresh.length > 0) setEmails(fresh)
             })
-            .catch(() => {}) // IMAP failed, keep Supabase data
+            .catch((err) => {
+              console.warn('[Email] Achtergrond IMAP sync mislukt:', err?.message || err)
+            })
           return
         }
 
