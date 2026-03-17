@@ -101,8 +101,14 @@ export function EmailLayout() {
 
   const fetchLimit = emailFetchLimit || 200
 
+  // Refs for values used in loadEmails — prevents effect re-runs on auth/settings changes
+  const userIdRef = useRef(user?.id)
+  userIdRef.current = user?.id
+  const fetchLimitRef = useRef(fetchLimit)
+  fetchLimitRef.current = fetchLimit
+
   // ─── SessionStorage cache for instant display ───
-  const getCachedEmails = useCallback((folder: string): Email[] | null => {
+  function getCachedEmailsFromStorage(folder: string): Email[] | null {
     try {
       const cached = sessionStorage.getItem(`forgedesk_emails_${folder}`)
       if (!cached) return null
@@ -110,45 +116,47 @@ export function EmailLayout() {
       if (Date.now() - timestamp > 5 * 60 * 1000) return null
       return cachedEmails
     } catch { return null }
-  }, [])
+  }
 
-  const setCachedEmails = useCallback((folder: string, emailData: Email[]) => {
+  function setCachedEmailsInStorage(folder: string, emailData: Email[]) {
     try {
       sessionStorage.setItem(`forgedesk_emails_${folder}`, JSON.stringify({
         emails: emailData,
         timestamp: Date.now(),
       }))
     } catch { /* storage full */ }
-  }, [])
+  }
 
   // ─── Load emails from IMAP (with Supabase fallback) ───
   const loadEmails = useCallback(async (folder?: string) => {
     const imapFolder = folder || 'INBOX'
+    const limit = fetchLimitRef.current
+    const userId = userIdRef.current
     try {
-      const result = await fetchEmailsFromIMAP(imapFolder, fetchLimit, 0)
+      const result = await fetchEmailsFromIMAP(imapFolder, limit, 0)
       setImapTotal(result.total || 0)
       setUseIMAP(true)
 
       // API returns { emails } (legacy) or { synced, total } (sync-first)
       if (result.emails && Array.isArray(result.emails) && result.emails.length > 0) {
-        const emailData = result.emails.map((msg) => imapToEmail(msg, imapFolder, user?.id || ''))
-        setCachedEmails(imapFolder, emailData)
-        if (user?.id) {
-          cacheEmailsToSupabase(user.id, result.emails, imapFolder).catch(() => {})
+        const emailData = result.emails.map((msg) => imapToEmail(msg, imapFolder, userId || ''))
+        setCachedEmailsInStorage(imapFolder, emailData)
+        if (userId) {
+          cacheEmailsToSupabase(userId, result.emails, imapFolder).catch(() => {})
         }
         return emailData
       }
 
       // Sync-first: API synced to Supabase, read from there
-      const dbEmails = await getEmails(fetchLimit).catch(() => [])
+      const dbEmails = await getEmails(limit).catch(() => [])
       if (dbEmails.length > 0) {
-        setCachedEmails(imapFolder, dbEmails)
+        setCachedEmailsInStorage(imapFolder, dbEmails)
         return dbEmails
       }
       return []
     } catch {
       // IMAP failed — try reading from Supabase
-      const dbEmails = await getEmails(fetchLimit).catch(() => [])
+      const dbEmails = await getEmails(limit).catch(() => [])
       if (dbEmails.length > 0) {
         setUseIMAP(false)
         return dbEmails
@@ -156,12 +164,12 @@ export function EmailLayout() {
       setUseIMAP(false)
       return []
     }
-  }, [fetchLimit, user?.id, setCachedEmails])
+  }, []) // stable — uses refs for changing values
 
   // ─── Initial load ───
   useEffect(() => {
     let cancelled = false
-    const cached = getCachedEmails('INBOX')
+    const cached = getCachedEmailsFromStorage('INBOX')
     if (cached && cached.length > 0) {
       setEmails(cached)
       setIsLoading(false)
@@ -175,7 +183,7 @@ export function EmailLayout() {
         .finally(() => { if (!cancelled) setIsLoading(false) })
     }
     return () => { cancelled = true }
-  }, [loadEmails, getCachedEmails])
+  }, [loadEmails])
 
   // ─── Unsnooze timer ───
   useEffect(() => {
@@ -435,9 +443,9 @@ export function EmailLayout() {
     if (imapTotal > 0 && currentCount >= imapTotal) return
     setIsLoadingMore(true)
     try {
-      const result = await fetchEmailsFromIMAP(imapFolder, fetchLimit, currentCount)
+      const result = await fetchEmailsFromIMAP(imapFolder, fetchLimitRef.current, currentCount)
       if (result.emails && Array.isArray(result.emails) && result.emails.length > 0) {
-        const moreEmails = result.emails.map((msg) => imapToEmail(msg, imapFolder, user?.id || ''))
+        const moreEmails = result.emails.map((msg) => imapToEmail(msg, imapFolder, userIdRef.current || ''))
         setEmails((prev) => [...prev, ...moreEmails])
       }
       setImapTotal(result.total || 0)
@@ -446,7 +454,7 @@ export function EmailLayout() {
     } finally {
       setIsLoadingMore(false)
     }
-  }, [useIMAP, isLoadingMore, emails.length, imapTotal, fetchLimit, user?.id])
+  }, [isLoadingMore, emails.length, imapTotal])
 
   // ─── Load email body ───
   const loadEmailBody = useCallback(async (email: Email, folder: EmailFolder): Promise<Email> => {
