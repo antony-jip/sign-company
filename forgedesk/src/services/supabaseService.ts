@@ -923,13 +923,14 @@ export async function deleteDocument(id: string): Promise<void> {
 
 export async function getEmails(limit = 200): Promise<Email[]> {
   if (isSupabaseConfigured() && supabase) {
+    // Only fetch list-view columns — skip body_html, body_text, inhoud (large)
     const { data, error } = await supabase
       .from('emails')
-      .select('*')
+      .select('id,user_id,gmail_id,uid,message_id,van,aan,onderwerp,datum,gelezen,starred,labels,bijlagen,map,from_name,from_address,imap_folder,pinned,snoozed_until,thread_id,attachment_meta,has_attachments,created_at,updated_at,cached_at')
       .order('datum', { ascending: false })
       .limit(limit)
     if (error) throw error
-    return data || []
+    return (data || []).map(e => ({ ...e, inhoud: '', body_html: null, body_text: null }))
   }
   return getLocalData<Email>('emails')
 }
