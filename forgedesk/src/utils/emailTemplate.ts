@@ -69,6 +69,12 @@ export function buildPortalEmailHtml(params: PortalEmailParams): string {
       </td></tr>`
     : ''
 
+  const groetBlock = bedrijfsnaam
+    ? `<tr><td style="padding: 16px 0 0 0; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: ${textMuted}; line-height: 1.8;">
+        Met vriendelijke groet,<br/><strong style="color: ${textDark};">${escapeHtml(bedrijfsnaam)}</strong>
+      </td></tr>`
+    : ''
+
   const ctaBlock = ctaUrl
     ? `<tr><td style="padding: 8px 0 0 0;" align="center">
         <a href="${escapeHtml(ctaUrl)}" target="_blank" style="display: inline-block; background-color: ${sage}; color: #FFFFFF; font-family: 'DM Sans', Arial, sans-serif; font-size: 15px; font-weight: 600; text-decoration: none; padding: 14px 32px; border-radius: 8px; line-height: 1;">
@@ -108,6 +114,7 @@ export function buildPortalEmailHtml(params: PortalEmailParams): string {
           </td></tr>
           ${itemBlock}
           ${quoteBlock}
+          ${groetBlock}
           ${ctaBlock}
         </table>
       </td></tr>
