@@ -734,6 +734,14 @@ const CRMSidebar = memo(function CRMSidebar({
     } catch { return null }
   }, [email.datum])
 
+  // ── Module accent colors (from design system) ──
+  const moduleColors = {
+    klant: '#8BAFD4',    // mist blue (klanten module)
+    offerte: '#9B8EC4',  // lavender (offertes module)
+    project: '#7EB5A6',  // sage (projecten module)
+    taak: '#C4A882',     // cream/gold (taken module)
+  }
+
   // ── Inline form panel ──
   function renderInlinePanel() {
     if (activePanel === 'none') return null
@@ -741,7 +749,7 @@ const CRMSidebar = memo(function CRMSidebar({
     const panelConfig = {
       klant: {
         title: 'Contact toevoegen',
-        color: 'bg-emerald-500',
+        accent: moduleColors.klant,
         onSave: handleSaveKlant,
         fields: (
           <>
@@ -754,7 +762,7 @@ const CRMSidebar = memo(function CRMSidebar({
               <div key={key} className="relative">
                 <Icon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-foreground/20" />
                 <input value={klantForm[key]} onChange={e => setKlantForm(f => ({ ...f, [key]: e.target.value }))}
-                  className="w-full pl-8 pr-2.5 py-2 text-[13px] bg-foreground/[0.02] border border-foreground/[0.06] rounded-lg outline-none focus:border-primary/30 focus:bg-card transition-colors placeholder:text-foreground/25"
+                  className="w-full pl-8 pr-2.5 py-2 text-[13px] bg-background border border-border/60 rounded-[8px] outline-none focus:border-accent/40 focus:bg-card transition-colors placeholder:text-foreground/20"
                   placeholder={placeholder} />
               </div>
             ))}
@@ -763,63 +771,63 @@ const CRMSidebar = memo(function CRMSidebar({
       },
       offerte: {
         title: 'Offerte aanmaken',
-        color: 'bg-blue-500',
+        accent: moduleColors.offerte,
         onSave: handleSaveOfferte,
         fields: (
           <>
             {linkedKlant && (
-              <div className="flex items-center gap-2 px-2.5 py-1.5 bg-blue-50/50 rounded-lg text-[11px] text-blue-600">
+              <div className="flex items-center gap-2 px-2.5 py-1.5 bg-lavender/30 rounded-[8px] text-[11px]" style={{ color: moduleColors.offerte }}>
                 <Building2 className="h-3 w-3" />
                 <span className="truncate">{klantDisplayName}</span>
               </div>
             )}
             <input value={offerteForm.titel} onChange={e => setOfferteForm(f => ({ ...f, titel: e.target.value }))}
-              className="w-full px-2.5 py-2 text-[13px] bg-foreground/[0.02] border border-foreground/[0.06] rounded-lg outline-none focus:border-primary/30 focus:bg-card transition-colors placeholder:text-foreground/25"
+              className="w-full px-2.5 py-2 text-[13px] bg-background border border-border/60 rounded-[8px] outline-none focus:border-accent/40 focus:bg-card transition-colors placeholder:text-foreground/20"
               placeholder="Titel *" />
             <textarea value={offerteForm.notities} onChange={e => setOfferteForm(f => ({ ...f, notities: e.target.value }))}
-              className="w-full px-2.5 py-2 text-[13px] bg-foreground/[0.02] border border-foreground/[0.06] rounded-lg outline-none focus:border-primary/30 focus:bg-card transition-colors placeholder:text-foreground/25 resize-none h-16"
+              className="w-full px-2.5 py-2 text-[13px] bg-background border border-border/60 rounded-[8px] outline-none focus:border-accent/40 focus:bg-card transition-colors placeholder:text-foreground/20 resize-none h-16"
               placeholder="Notities" />
           </>
         ),
       },
       project: {
         title: 'Project aanmaken',
-        color: 'bg-violet-500',
+        accent: moduleColors.project,
         onSave: handleSaveProject,
         fields: (
           <>
             {linkedKlant && (
-              <div className="flex items-center gap-2 px-2.5 py-1.5 bg-violet-50/50 rounded-lg text-[11px] text-violet-600">
+              <div className="flex items-center gap-2 px-2.5 py-1.5 bg-sage/30 rounded-[8px] text-[11px]" style={{ color: moduleColors.project }}>
                 <Building2 className="h-3 w-3" />
                 <span className="truncate">{klantDisplayName}</span>
               </div>
             )}
             <input value={projectForm.naam} onChange={e => setProjectForm(f => ({ ...f, naam: e.target.value }))}
-              className="w-full px-2.5 py-2 text-[13px] bg-foreground/[0.02] border border-foreground/[0.06] rounded-lg outline-none focus:border-primary/30 focus:bg-card transition-colors placeholder:text-foreground/25"
+              className="w-full px-2.5 py-2 text-[13px] bg-background border border-border/60 rounded-[8px] outline-none focus:border-accent/40 focus:bg-card transition-colors placeholder:text-foreground/20"
               placeholder="Projectnaam *" />
             <textarea value={projectForm.beschrijving} onChange={e => setProjectForm(f => ({ ...f, beschrijving: e.target.value }))}
-              className="w-full px-2.5 py-2 text-[13px] bg-foreground/[0.02] border border-foreground/[0.06] rounded-lg outline-none focus:border-primary/30 focus:bg-card transition-colors placeholder:text-foreground/25 resize-none h-16"
+              className="w-full px-2.5 py-2 text-[13px] bg-background border border-border/60 rounded-[8px] outline-none focus:border-accent/40 focus:bg-card transition-colors placeholder:text-foreground/20 resize-none h-16"
               placeholder="Beschrijving" />
           </>
         ),
       },
       taak: {
         title: 'Taak toevoegen',
-        color: 'bg-amber-500',
+        accent: moduleColors.taak,
         onSave: handleSaveTaak,
         fields: (
           <>
             {linkedKlant && (
-              <div className="flex items-center gap-2 px-2.5 py-1.5 bg-amber-50/50 rounded-lg text-[11px] text-amber-600">
+              <div className="flex items-center gap-2 px-2.5 py-1.5 bg-cream/30 rounded-[8px] text-[11px]" style={{ color: moduleColors.taak }}>
                 <Building2 className="h-3 w-3" />
                 <span className="truncate">{klantDisplayName}</span>
               </div>
             )}
             <input value={taakForm.titel} onChange={e => setTaakForm(f => ({ ...f, titel: e.target.value }))}
-              className="w-full px-2.5 py-2 text-[13px] bg-foreground/[0.02] border border-foreground/[0.06] rounded-lg outline-none focus:border-primary/30 focus:bg-card transition-colors placeholder:text-foreground/25"
+              className="w-full px-2.5 py-2 text-[13px] bg-background border border-border/60 rounded-[8px] outline-none focus:border-accent/40 focus:bg-card transition-colors placeholder:text-foreground/20"
               placeholder="Taak titel *" />
             <textarea value={taakForm.beschrijving} onChange={e => setTaakForm(f => ({ ...f, beschrijving: e.target.value }))}
-              className="w-full px-2.5 py-2 text-[13px] bg-foreground/[0.02] border border-foreground/[0.06] rounded-lg outline-none focus:border-primary/30 focus:bg-card transition-colors placeholder:text-foreground/25 resize-none h-16"
+              className="w-full px-2.5 py-2 text-[13px] bg-background border border-border/60 rounded-[8px] outline-none focus:border-accent/40 focus:bg-card transition-colors placeholder:text-foreground/20 resize-none h-16"
               placeholder="Beschrijving" />
           </>
         ),
@@ -828,17 +836,21 @@ const CRMSidebar = memo(function CRMSidebar({
 
     const cfg = panelConfig[activePanel]
     return (
-      <div className="bg-card rounded-xl border border-foreground/[0.06] shadow-sm overflow-hidden">
-        <div className={cn('flex items-center justify-between px-3.5 py-2.5', cfg.color)}>
-          <h4 className="text-[12px] font-semibold text-white">{cfg.title}</h4>
-          <button onClick={() => setActivePanel('none')} className="text-white/60 hover:text-white transition-colors">
+      <div className="bg-card rounded-[10px] border border-border/50 overflow-hidden" style={{ boxShadow: `0 2px 12px -2px ${cfg.accent}15` }}>
+        <div className="flex items-center justify-between px-3.5 py-2.5" style={{ background: `${cfg.accent}0C`, borderBottom: `1px solid ${cfg.accent}15` }}>
+          <div className="flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full" style={{ background: cfg.accent }} />
+            <h4 className="text-[12px] font-semibold text-foreground/70">{cfg.title}</h4>
+          </div>
+          <button onClick={() => setActivePanel('none')} className="text-foreground/25 hover:text-foreground/50 transition-colors">
             <X className="h-3.5 w-3.5" />
           </button>
         </div>
-        <div className="p-3 space-y-2.5">
+        <div className="p-3 space-y-2">
           {cfg.fields}
           <button onClick={cfg.onSave} disabled={saving}
-            className={cn('w-full flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-white text-xs font-semibold disabled:opacity-50 transition-colors', cfg.color, 'hover:opacity-90')}>
+            className="w-full flex items-center justify-center gap-1.5 py-2 rounded-[8px] text-white text-[12px] font-medium disabled:opacity-50 transition-all hover:opacity-90"
+            style={{ background: cfg.accent, boxShadow: `0 1px 4px ${cfg.accent}30` }}>
             {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
             {saving ? 'Opslaan...' : 'Opslaan'}
           </button>
@@ -848,12 +860,12 @@ const CRMSidebar = memo(function CRMSidebar({
   }
 
   return (
-    <div className="w-[280px] border-l border-foreground/[0.06] bg-gradient-to-b from-[#FAFAF8] to-[#F5F4F0] flex-shrink-0 overflow-y-auto hidden xl:flex flex-col">
+    <div className="w-[280px] border-l border-border/40 wm-sidebar flex-shrink-0 overflow-y-auto hidden xl:flex flex-col">
       <div className="p-4 space-y-3 flex-1">
         {/* ── Contact header ── */}
-        <div className="bg-card rounded-xl p-4 shadow-sm border border-foreground/[0.04]">
+        <div className="bg-card rounded-[10px] p-3.5 border border-border/40" style={{ boxShadow: '0 1px 3px rgba(120,90,50,0.05)' }}>
           <div className="flex items-start gap-3">
-            <div className={cn('w-10 h-10 rounded-full flex items-center justify-center ring-2 ring-white shadow flex-shrink-0', avatarColor)}>
+            <div className={cn('w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0', avatarColor)} style={{ boxShadow: '0 2px 8px rgba(120,90,50,0.12)' }}>
               <span className="text-sm font-bold text-white">{senderName[0]?.toUpperCase()}</span>
             </div>
             <div className="min-w-0 flex-1">
@@ -861,26 +873,25 @@ const CRMSidebar = memo(function CRMSidebar({
               {companyGuess && (
                 <p className="text-[11px] text-foreground/40 truncate mt-0.5">{companyGuess}</p>
               )}
-              <p className="text-[11px] text-foreground/30 truncate mt-0.5">{senderEmail}</p>
+              <p className="text-[11px] text-muted-foreground truncate mt-0.5">{senderEmail}</p>
             </div>
           </div>
-          {/* Mini contact details */}
-          <div className="mt-3 pt-2.5 border-t border-foreground/[0.05] space-y-1.5">
+          <div className="mt-3 pt-2.5 border-t border-border/30 space-y-1.5">
             {email.aan && (
-              <div className="flex items-center gap-2 text-[11px] text-foreground/40">
-                <Send className="h-3 w-3 text-foreground/20 flex-shrink-0" />
+              <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                <Send className="h-3 w-3 flex-shrink-0 opacity-40" />
                 <span className="truncate">Aan: {email.aan}</span>
               </div>
             )}
             {emailDate && (
-              <div className="flex items-center gap-2 text-[11px] text-foreground/40">
-                <Calendar className="h-3 w-3 text-foreground/20 flex-shrink-0" />
+              <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                <Calendar className="h-3 w-3 flex-shrink-0 opacity-40" />
                 <span>{emailDate.date}, {emailDate.time}</span>
               </div>
             )}
             {email.bijlagen > 0 && (
-              <div className="flex items-center gap-2 text-[11px] text-foreground/40">
-                <Paperclip className="h-3 w-3 text-foreground/20 flex-shrink-0" />
+              <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                <Paperclip className="h-3 w-3 flex-shrink-0 opacity-40" />
                 <span>{email.bijlagen} bijlage{email.bijlagen > 1 ? 'n' : ''}</span>
               </div>
             )}
@@ -889,42 +900,43 @@ const CRMSidebar = memo(function CRMSidebar({
 
         {/* ── Linked klant ── */}
         {klantLoading ? (
-          <div className="flex items-center gap-2 text-[11px] text-foreground/25 px-1 py-1">
+          <div className="flex items-center gap-2 text-[11px] text-muted-foreground px-1 py-1">
             <Loader2 className="h-3 w-3 animate-spin" />
             <span>Klant zoeken...</span>
           </div>
         ) : linkedKlant ? (
           <button
             onClick={() => navigate(`/klanten/${linkedKlant.id}`)}
-            className="w-full bg-card rounded-xl p-3 shadow-sm border border-foreground/[0.04] hover:shadow-md hover:border-primary/10 transition-all duration-200 text-left group"
+            className="w-full bg-card rounded-[10px] p-3 border border-border/40 hover:border-accent/20 transition-all duration-200 text-left group"
+            style={{ boxShadow: '0 1px 3px rgba(120,90,50,0.05)' }}
           >
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0">
-                <Building2 className="h-4 w-4 text-emerald-500/70" />
+              <div className="w-8 h-8 rounded-[8px] flex items-center justify-center flex-shrink-0" style={{ background: `${moduleColors.klant}15` }}>
+                <Building2 className="h-4 w-4" style={{ color: moduleColors.klant }} />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-[12px] font-medium text-foreground truncate">{linkedKlant.bedrijfsnaam || linkedKlant.contactpersoon}</p>
-                <p className="text-[10px] text-foreground/35 truncate">{linkedKlant.bedrijfsnaam ? linkedKlant.contactpersoon : linkedKlant.email}</p>
+                <p className="text-[10px] text-muted-foreground truncate">{linkedKlant.bedrijfsnaam ? linkedKlant.contactpersoon : linkedKlant.email}</p>
               </div>
               <div className="flex items-center gap-1.5 flex-shrink-0">
                 <span className={cn(
-                  'px-1.5 py-0.5 rounded text-[9px] font-medium',
-                  linkedKlant.status === 'actief' ? 'bg-emerald-50 text-emerald-600' :
-                  linkedKlant.status === 'prospect' ? 'bg-amber-50 text-amber-600' : 'bg-gray-100 text-gray-500'
+                  'px-1.5 py-0.5 rounded-[4px] text-[9px] font-medium',
+                  linkedKlant.status === 'actief' ? 'bg-sage/40 text-sage-deep' :
+                  linkedKlant.status === 'prospect' ? 'bg-cream/40 text-cream-deep' : 'bg-muted text-muted-foreground'
                 )}>{linkedKlant.status || 'actief'}</span>
-                <ChevronRight className="h-3 w-3 text-foreground/15 group-hover:text-primary/40 transition-colors" />
+                <ChevronRight className="h-3 w-3 text-foreground/15 group-hover:text-accent/50 transition-colors" />
               </div>
             </div>
             {linkedKlant.telefoon && (
-              <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-foreground/[0.04]">
+              <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-border/30">
                 <Phone className="h-3 w-3 text-foreground/20" />
-                <span className="text-[10px] text-foreground/35">{linkedKlant.telefoon}</span>
+                <span className="text-[10px] text-muted-foreground">{linkedKlant.telefoon}</span>
               </div>
             )}
           </button>
         ) : activePanel !== 'klant' ? (
           <button onClick={() => openPanel('klant')}
-            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-dashed border-foreground/[0.10] text-[12px] text-foreground/40 hover:border-primary/25 hover:text-primary hover:bg-primary/[0.02] transition-all duration-200">
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] border border-dashed border-border text-[12px] text-muted-foreground hover:border-accent/30 hover:text-accent transition-all duration-200">
             <Plus className="h-3.5 w-3.5" />
             Contact koppelen
           </button>
@@ -934,7 +946,7 @@ const CRMSidebar = memo(function CRMSidebar({
         {email.labels && email.labels.length > 0 && (
           <div className="flex flex-wrap gap-1 px-0.5">
             {email.labels.map(label => (
-              <span key={label} className="px-2 py-0.5 bg-primary/6 text-primary rounded-full text-[10px] font-medium">{label}</span>
+              <span key={label} className="px-2 py-0.5 bg-cream/40 text-cream-deep rounded-full text-[10px] font-medium">{label}</span>
             ))}
           </div>
         )}
@@ -944,23 +956,24 @@ const CRMSidebar = memo(function CRMSidebar({
 
         {/* ── Quick action buttons ── */}
         {activePanel === 'none' && (
-          <div className="space-y-1">
-            <h3 className="text-[10px] font-semibold text-foreground/25 uppercase tracking-wider px-0.5 mb-1.5">Snel aanmaken</h3>
+          <div className="space-y-0.5">
+            <h3 className="text-[10px] font-semibold text-foreground/25 uppercase tracking-wider px-0.5 mb-1.5 wm-sidebar-section">Snel aanmaken</h3>
             {([
-              { panel: 'offerte' as const, icon: FileText, label: 'Offerte', desc: linkedKlant ? `voor ${klantDisplayName}` : 'offerte opmaken', color: 'text-blue-500', bg: 'bg-blue-50' },
-              { panel: 'project' as const, icon: FolderPlus, label: 'Project', desc: linkedKlant ? `voor ${klantDisplayName}` : 'project starten', color: 'text-violet-500', bg: 'bg-violet-50' },
-              { panel: 'taak' as const, icon: CheckCircle2, label: 'Taak', desc: 'opvolging plannen', color: 'text-amber-500', bg: 'bg-amber-50' },
-            ]).map(({ panel, icon: Icon, label, desc, color, bg }) => (
+              { panel: 'offerte' as const, icon: FileText, label: 'Offerte', desc: linkedKlant ? `voor ${klantDisplayName}` : 'offerte opmaken', accent: moduleColors.offerte },
+              { panel: 'project' as const, icon: FolderPlus, label: 'Project', desc: linkedKlant ? `voor ${klantDisplayName}` : 'project starten', accent: moduleColors.project },
+              { panel: 'taak' as const, icon: CheckCircle2, label: 'Taak', desc: 'opvolging plannen', accent: moduleColors.taak },
+            ]).map(({ panel, icon: Icon, label, desc, accent }) => (
               <button key={panel} onClick={() => openPanel(panel)}
-                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-card hover:shadow-sm transition-all duration-150 group text-left">
-                <div className={cn('w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0', bg)}>
-                  <Icon className={cn('h-3.5 w-3.5', color)} />
+                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-[8px] hover:bg-card transition-all duration-150 group text-left"
+                style={{ ['--hover-shadow' as string]: `0 1px 4px ${accent}10` }}>
+                <div className="w-7 h-7 rounded-[7px] flex items-center justify-center flex-shrink-0" style={{ background: `${accent}12` }}>
+                  <Icon className="h-3.5 w-3.5" style={{ color: accent }} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[12px] font-medium text-foreground/70 group-hover:text-foreground transition-colors">{label}</p>
-                  <p className="text-[10px] text-foreground/30 truncate">{desc}</p>
+                  <p className="text-[12px] font-medium text-foreground/65 group-hover:text-foreground transition-colors">{label}</p>
+                  <p className="text-[10px] text-muted-foreground truncate">{desc}</p>
                 </div>
-                <Plus className="h-3 w-3 text-foreground/15 group-hover:text-foreground/30 transition-colors flex-shrink-0" />
+                <Plus className="h-3 w-3 text-foreground/10 group-hover:text-foreground/25 transition-colors flex-shrink-0" />
               </button>
             ))}
           </div>
