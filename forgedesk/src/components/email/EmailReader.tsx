@@ -1103,39 +1103,41 @@ const CRMSidebar = memo(function CRMSidebar({
   }
 
   return (
-    <div className="w-[300px] border-l border-border/30 flex-shrink-0 overflow-y-auto hidden xl:flex flex-col" style={{ background: 'hsl(36 20% 96%)' }}>
+    <div className="w-[300px] border-l border-amber-900/[0.06] flex-shrink-0 overflow-y-auto hidden xl:flex flex-col" style={{ background: 'linear-gradient(180deg, hsl(30 35% 93%) 0%, hsl(28 30% 91%) 100%)' }}>
       <div className="p-5 space-y-4 flex-1">
 
         {/* ── Contact header ── */}
-        <div className="bg-card rounded-xl p-4 border border-border/30" style={{ boxShadow: '0 1px 4px rgba(120,90,50,0.06)' }}>
-          <div className="flex items-start gap-3.5">
-            <div className={cn('w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0', avatarColor)} style={{ boxShadow: '0 2px 10px rgba(120,90,50,0.15)' }}>
+        <div className="rounded-xl p-4 border border-white/60 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, hsl(30 40% 97%) 0%, hsl(28 35% 94%) 100%)', boxShadow: '0 2px 12px rgba(140,100,50,0.08), 0 0 0 1px rgba(140,100,50,0.04)' }}>
+          {/* Subtle decorative accent */}
+          <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-[0.04]" style={{ background: 'radial-gradient(circle, hsl(30 60% 50%), transparent)', transform: 'translate(30%, -30%)' }} />
+          <div className="flex items-start gap-3.5 relative">
+            <div className={cn('w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ring-2 ring-white/70', avatarColor)} style={{ boxShadow: '0 3px 12px rgba(120,90,50,0.2)' }}>
               <span className="text-base font-bold text-white">{senderName[0]?.toUpperCase()}</span>
             </div>
             <div className="min-w-0 flex-1 pt-0.5">
               <p className="text-[14px] font-semibold text-foreground leading-tight truncate">{personName}</p>
               {companyGuess && (
-                <p className="text-[12px] text-foreground/45 truncate mt-0.5">{companyGuess}</p>
+                <p className="text-[12px] text-amber-800/50 truncate mt-0.5 font-medium">{companyGuess}</p>
               )}
-              <p className="text-[11px] text-muted-foreground truncate mt-1">{senderEmail}</p>
+              <p className="text-[11px] text-foreground/40 truncate mt-1">{senderEmail}</p>
             </div>
           </div>
-          <div className="mt-3.5 pt-3 border-t border-border/20 space-y-2">
+          <div className="mt-3.5 pt-3 border-t border-amber-900/[0.06] space-y-2 relative">
             {email.aan && (
-              <div className="flex items-center gap-2.5 text-[11px] text-muted-foreground">
-                <Send className="h-3 w-3 flex-shrink-0 text-foreground/20" />
+              <div className="flex items-center gap-2.5 text-[11px] text-foreground/45">
+                <Send className="h-3 w-3 flex-shrink-0 text-amber-700/30" />
                 <span className="truncate">Aan: {email.aan}</span>
               </div>
             )}
             {emailDate && (
-              <div className="flex items-center gap-2.5 text-[11px] text-muted-foreground">
-                <Calendar className="h-3 w-3 flex-shrink-0 text-foreground/20" />
+              <div className="flex items-center gap-2.5 text-[11px] text-foreground/45">
+                <Calendar className="h-3 w-3 flex-shrink-0 text-amber-700/30" />
                 <span>{emailDate.date}, {emailDate.time}</span>
               </div>
             )}
             {email.bijlagen > 0 && (
-              <div className="flex items-center gap-2.5 text-[11px] text-muted-foreground">
-                <Paperclip className="h-3 w-3 flex-shrink-0 text-foreground/20" />
+              <div className="flex items-center gap-2.5 text-[11px] text-foreground/45">
+                <Paperclip className="h-3 w-3 flex-shrink-0 text-amber-700/30" />
                 <span>{email.bijlagen} bijlage{email.bijlagen > 1 ? 'n' : ''}</span>
               </div>
             )}
@@ -1144,44 +1146,44 @@ const CRMSidebar = memo(function CRMSidebar({
 
         {/* ── Linked klant ── */}
         {klantLoading ? (
-          <div className="flex items-center gap-2 text-[11px] text-muted-foreground px-1 py-1">
+          <div className="flex items-center gap-2 text-[11px] text-foreground/40 px-1 py-1">
             <Loader2 className="h-3 w-3 animate-spin" />
             <span>Klant zoeken...</span>
           </div>
         ) : linkedKlant ? (
           <button
             onClick={() => navigate(`/klanten/${linkedKlant.id}`)}
-            className="w-full bg-card rounded-xl p-3.5 border border-border/30 hover:border-foreground/[0.12] transition-all duration-200 text-left group"
-            style={{ boxShadow: '0 1px 4px rgba(120,90,50,0.06)' }}
+            className="w-full rounded-xl p-3.5 border border-white/60 hover:border-white/80 transition-all duration-200 text-left group"
+            style={{ background: 'linear-gradient(135deg, hsl(30 40% 97%) 0%, hsl(28 35% 94%) 100%)', boxShadow: '0 2px 12px rgba(140,100,50,0.08), 0 0 0 1px rgba(140,100,50,0.04)' }}
           >
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${moduleColors.klant}15` }}>
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${moduleColors.klant}18`, boxShadow: `0 1px 4px ${moduleColors.klant}15` }}>
                 <Building2 className="h-4 w-4" style={{ color: moduleColors.klant }} />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[13px] font-medium text-foreground truncate">{linkedKlant.bedrijfsnaam || linkedKlant.contactpersoon}</p>
-                <p className="text-[11px] text-muted-foreground truncate">{linkedKlant.bedrijfsnaam ? linkedKlant.contactpersoon : linkedKlant.email}</p>
+                <p className="text-[13px] font-semibold text-foreground truncate">{linkedKlant.bedrijfsnaam || linkedKlant.contactpersoon}</p>
+                <p className="text-[11px] text-foreground/40 truncate">{linkedKlant.bedrijfsnaam ? linkedKlant.contactpersoon : linkedKlant.email}</p>
               </div>
               <div className="flex items-center gap-1.5 flex-shrink-0">
                 <span className={cn(
-                  'px-1.5 py-0.5 rounded-[4px] text-[9px] font-medium',
+                  'px-2 py-0.5 rounded-full text-[9px] font-semibold',
                   linkedKlant.status === 'actief' ? 'bg-sage/40 text-sage-deep' :
                   linkedKlant.status === 'prospect' ? 'bg-cream/40 text-cream-deep' : 'bg-muted text-muted-foreground'
                 )}>{linkedKlant.status || 'actief'}</span>
-                <ChevronRight className="h-3 w-3 text-foreground/15 group-hover:text-foreground/30 transition-colors" />
+                <ChevronRight className="h-3 w-3 text-foreground/15 group-hover:text-amber-700/40 transition-colors" />
               </div>
             </div>
             {linkedKlant.telefoon && (
-              <div className="flex items-center gap-2 mt-2.5 pt-2.5 border-t border-border/20">
-                <Phone className="h-3 w-3 text-foreground/20" />
-                <span className="text-[11px] text-muted-foreground">{linkedKlant.telefoon}</span>
+              <div className="flex items-center gap-2 mt-2.5 pt-2.5 border-t border-amber-900/[0.06]">
+                <Phone className="h-3 w-3 text-amber-700/25" />
+                <span className="text-[11px] text-foreground/40">{linkedKlant.telefoon}</span>
               </div>
             )}
           </button>
         ) : activePanel !== 'klant' ? (
           <button onClick={() => openPanel('klant')}
-            className="w-full flex items-center gap-2.5 px-3.5 py-3 rounded-xl border border-dashed border-border/50 text-[12px] text-muted-foreground hover:border-foreground/20 hover:text-foreground/60 transition-all duration-200">
-            <Plus className="h-3.5 w-3.5" />
+            className="w-full flex items-center gap-2.5 px-3.5 py-3 rounded-xl border-2 border-dashed border-amber-800/[0.1] text-[12px] font-medium text-amber-800/40 hover:border-amber-800/20 hover:text-amber-800/60 hover:bg-white/30 transition-all duration-200">
+            <UserPlus className="h-3.5 w-3.5" />
             Contact koppelen
           </button>
         ) : null}
@@ -1190,36 +1192,36 @@ const CRMSidebar = memo(function CRMSidebar({
         {email.labels && email.labels.length > 0 && (
           <div className="flex flex-wrap gap-1.5 px-0.5">
             {email.labels.map(label => (
-              <span key={label} className="px-2.5 py-0.5 bg-cream/40 text-cream-deep rounded-full text-[10px] font-medium">{label}</span>
+              <span key={label} className="px-2.5 py-0.5 bg-amber-100/60 text-amber-800/60 rounded-full text-[10px] font-semibold border border-amber-200/40">{label}</span>
             ))}
           </div>
         )}
 
         {/* ── Eerdere emails ── */}
-        <div className="bg-card rounded-xl border border-border/30 overflow-hidden" style={{ boxShadow: '0 1px 4px rgba(120,90,50,0.06)' }}>
-          <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/20">
-            <Mail className="h-3.5 w-3.5 text-foreground/25" />
-            <h4 className="text-[12px] font-semibold text-foreground/65">Eerdere emails</h4>
+        <div className="rounded-xl border border-white/60 overflow-hidden" style={{ background: 'linear-gradient(135deg, hsl(30 40% 97%) 0%, hsl(28 35% 94%) 100%)', boxShadow: '0 2px 12px rgba(140,100,50,0.08), 0 0 0 1px rgba(140,100,50,0.04)' }}>
+          <div className="flex items-center gap-2.5 px-4 py-3 border-b border-amber-900/[0.06]">
+            <Mail className="h-3.5 w-3.5 text-amber-700/30" />
+            <h4 className="text-[12px] font-semibold text-foreground/60">Eerdere emails</h4>
             {previousEmails.length > 0 && (
-              <span className="ml-auto text-[10px] text-muted-foreground tabular-nums bg-foreground/[0.04] px-1.5 py-0.5 rounded-full">{previousEmails.length}</span>
+              <span className="ml-auto text-[10px] font-semibold text-amber-800/40 tabular-nums bg-amber-100/50 px-2 py-0.5 rounded-full border border-amber-200/30">{previousEmails.length}</span>
             )}
           </div>
           <div className="p-2">
             {previousEmails.length === 0 ? (
-              <p className="text-[11px] text-muted-foreground px-2 py-3 text-center">Geen eerdere emails gevonden</p>
+              <p className="text-[11px] text-foreground/35 px-2 py-3 text-center italic">Geen eerdere emails gevonden</p>
             ) : (
               <div className="space-y-0.5">
                 {previousEmails.map(e => (
                   <button
                     key={e.id}
                     onClick={() => onSelectEmail?.(e)}
-                    className="w-full px-3 py-2 rounded-lg hover:bg-foreground/[0.03] transition-colors text-left group"
+                    className="w-full px-3 py-2.5 rounded-lg hover:bg-white/50 transition-all duration-150 text-left group"
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <p className="text-[11px] font-medium text-foreground/55 group-hover:text-foreground/80 truncate flex-1 transition-colors">{e.onderwerp || '(geen onderwerp)'}</p>
-                      <span className="text-[9px] text-muted-foreground tabular-nums flex-shrink-0">{formatShortDate(e.datum)}</span>
+                      <p className="text-[11px] font-medium text-foreground/50 group-hover:text-foreground/80 truncate flex-1 transition-colors">{e.onderwerp || '(geen onderwerp)'}</p>
+                      <span className="text-[9px] text-foreground/25 tabular-nums flex-shrink-0">{formatShortDate(e.datum)}</span>
                     </div>
-                    <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+                    <p className="text-[10px] text-foreground/30 truncate mt-0.5">
                       {e.inhoud?.replace(/<[^>]*>/g, '').slice(0, 60) || '...'}
                     </p>
                   </button>
@@ -1230,29 +1232,29 @@ const CRMSidebar = memo(function CRMSidebar({
         </div>
 
         {/* ── Opvolg-herinnering ── */}
-        <div className="bg-card rounded-xl border border-border/30 overflow-hidden" style={{ boxShadow: '0 1px 4px rgba(120,90,50,0.06)' }}>
-          <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/20">
-            <Bell className="h-3.5 w-3.5 text-foreground/25" />
-            <h4 className="text-[12px] font-semibold text-foreground/65">Herinnering</h4>
+        <div className="rounded-xl border border-white/60 overflow-hidden" style={{ background: 'linear-gradient(135deg, hsl(30 40% 97%) 0%, hsl(28 35% 94%) 100%)', boxShadow: '0 2px 12px rgba(140,100,50,0.08), 0 0 0 1px rgba(140,100,50,0.04)' }}>
+          <div className="flex items-center gap-2.5 px-4 py-3 border-b border-amber-900/[0.06]">
+            <Bell className="h-3.5 w-3.5 text-amber-700/30" />
+            <h4 className="text-[12px] font-semibold text-foreground/60">Herinnering</h4>
             {reminder && (
               <button onClick={() => { setReminder(null); toast('Herinnering verwijderd') }} className="ml-auto text-foreground/25 hover:text-foreground/50 transition-colors" title="Verwijder herinnering">
                 <BellOff className="h-3 w-3" />
               </button>
             )}
           </div>
-          <div className="p-2">
+          <div className="p-2.5">
             {reminder ? (
-              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-cream/30 text-cream-deep text-[12px]">
+              <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[12px] font-medium" style={{ background: 'hsl(30 40% 92%)', color: 'hsl(30 50% 35%)' }}>
                 <Clock className="h-3.5 w-3.5 flex-shrink-0" />
                 <span>{reminderOptions.find(r => r.value === reminder)?.label}</span>
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-1">
+              <div className="grid grid-cols-2 gap-1.5">
                 {reminderOptions.map(opt => (
                   <button
                     key={opt.value}
                     onClick={() => setFollowUpReminder(opt.value)}
-                    className="px-2 py-1.5 rounded-lg text-[11px] text-foreground/45 hover:text-foreground/75 hover:bg-foreground/[0.03] transition-colors text-center"
+                    className="px-2.5 py-2 rounded-lg text-[11px] font-medium text-foreground/40 hover:text-foreground/70 hover:bg-white/50 transition-all duration-150 text-center"
                   >
                     {opt.label}
                   </button>
@@ -1267,21 +1269,21 @@ const CRMSidebar = memo(function CRMSidebar({
 
         {/* ── Quick action buttons ── */}
         {activePanel === 'none' && (
-          <div className="space-y-1">
-            <h3 className="text-[10px] font-semibold text-foreground/20 uppercase tracking-wider px-1 mb-2">Snel aanmaken</h3>
+          <div className="space-y-1.5">
+            <h3 className="text-[10px] font-bold text-amber-800/25 uppercase tracking-[0.08em] px-1 mb-2">Snel aanmaken</h3>
             {([
               { panel: 'offerte' as const, icon: FileText, label: 'Offerte', desc: linkedKlant ? `voor ${klantDisplayName}` : 'offerte opmaken', accent: moduleColors.offerte },
               { panel: 'project' as const, icon: FolderPlus, label: 'Project', desc: linkedKlant ? `voor ${klantDisplayName}` : 'project starten', accent: moduleColors.project },
               { panel: 'taak' as const, icon: CheckCircle2, label: 'Taak', desc: 'opvolging plannen', accent: moduleColors.taak },
             ]).map(({ panel, icon: Icon, label, desc, accent }) => (
               <button key={panel} onClick={() => openPanel(panel)}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-card transition-all duration-150 group text-left">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${accent}15` }}>
+                className="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl hover:bg-white/40 transition-all duration-150 group text-left">
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${accent}18`, boxShadow: `0 1px 4px ${accent}15` }}>
                   <Icon className="h-4 w-4" style={{ color: accent }} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[12px] font-medium text-foreground/60 group-hover:text-foreground transition-colors">{label}</p>
-                  <p className="text-[10px] text-muted-foreground truncate">{desc}</p>
+                  <p className="text-[12px] font-semibold text-foreground/55 group-hover:text-foreground/85 transition-colors">{label}</p>
+                  <p className="text-[10px] text-foreground/30 truncate">{desc}</p>
                 </div>
                 <Plus className="h-3.5 w-3.5 text-foreground/10 group-hover:text-foreground/30 transition-colors flex-shrink-0" />
               </button>
