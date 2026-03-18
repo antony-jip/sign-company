@@ -685,6 +685,7 @@ export function EmailLayout() {
           defaultSubject={composeDefaults.subject}
           defaultBody={composeDefaults.body}
           onSend={handleSendEmail}
+          allEmails={emails}
         />
       </div>
     )
