@@ -1,4 +1,3 @@
-import { cn } from '@/lib/utils'
 import type { Project, Offerte, MontageAfspraak, Factuur } from '@/types'
 
 const PIPELINE_STEPS = [
@@ -50,7 +49,7 @@ export function PipelineBar({ project, offertes, montageAfspraken, facturen }: P
   const currentStep = getPipelineStep(project, offertes, montageAfspraken, facturen)
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-3">
       <div className="flex items-center gap-1 flex-1">
         {PIPELINE_STEPS.map((step, i) => {
           const stepNum = i + 1
@@ -61,21 +60,33 @@ export function PipelineBar({ project, offertes, montageAfspraken, facturen }: P
           return (
             <div
               key={step.key}
-              className="flex-1 h-[6px] rounded-full transition-colors duration-300"
-              style={{
-                backgroundColor: isCompleted
-                  ? '#9B8EC4'
-                  : isCurrent
-                    ? '#C9A96E'
-                    : 'hsl(33, 15%, 87%)',
-              }}
-              title={`${step.label}${isCurrent ? ' (huidig)' : isCompleted ? ' (voltooid)' : ''}`}
-            />
+              className="flex-1 relative group"
+            >
+              <div
+                className="h-[5px] rounded-full transition-all duration-500"
+                style={{
+                  backgroundColor: isCompleted
+                    ? color
+                    : isCurrent
+                      ? color
+                      : 'hsl(35, 15%, 90%)',
+                  opacity: isCompleted ? 0.7 : isCurrent ? 1 : 1,
+                }}
+              />
+              {/* Tooltip on hover */}
+              <div className="absolute -top-7 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                <span className={`text-[9px] font-medium whitespace-nowrap px-1.5 py-0.5 rounded ${
+                  isCompleted || isCurrent ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground'
+                }`}>
+                  {step.label}
+                </span>
+              </div>
+            </div>
           )
         })}
       </div>
-      <span className="text-xs text-muted-foreground whitespace-nowrap">
-        Stap {currentStep}/{PIPELINE_STEPS.length} · {PIPELINE_STEPS[Math.max(0, currentStep - 1)]?.label ?? 'Concept'}
+      <span className="text-[11px] text-muted-foreground/60 whitespace-nowrap font-mono">
+        {currentStep}/{PIPELINE_STEPS.length} · {PIPELINE_STEPS[Math.max(0, currentStep - 1)]?.label ?? 'Start'}
       </span>
     </div>
   )
