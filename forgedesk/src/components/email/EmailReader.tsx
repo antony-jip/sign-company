@@ -29,6 +29,7 @@ import { callForgie } from '@/services/forgieService'
 import { toast } from 'sonner'
 import { useNavigate } from 'react-router-dom'
 import { createKlant, getKlanten, createOfferte, createProject, createTaak } from '@/services/supabaseService'
+import { EmailReaderAIToolbar } from './EmailReaderAIToolbar'
 
 interface EmailReaderProps {
   email: Email | null
@@ -70,6 +71,7 @@ export function EmailReader({
   const [isSending, setIsSending] = useState(false)
   const [forgieLoading, setForgieLoading] = useState(false)
   const editorRef = useRef<HTMLDivElement>(null)
+  const emailBodyRef = useRef<HTMLDivElement>(null)
 
   // Summary state
   const [summary, setSummary] = useState<string | null>(null)
@@ -610,10 +612,13 @@ export function EmailReader({
                 <div className="h-4 bg-foreground/[0.04] rounded w-[85%] animate-pulse" />
               </div>
             ) : (
-              <div
-                className="text-[14px] leading-[1.7] text-foreground/80 [&_img]:max-w-full [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2 [&_table]:w-full [&_blockquote]:border-l-2 [&_blockquote]:border-foreground/15 [&_blockquote]:pl-4 [&_blockquote]:text-foreground/50 [&_p]:mb-2 [&_h1]:text-lg [&_h1]:font-semibold [&_h1]:mb-2 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mb-2 [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:mb-1.5 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-2 [&_li]:mb-0.5"
-                dangerouslySetInnerHTML={{ __html: sanitizedBody }}
-              />
+              <div ref={emailBodyRef}>
+                <div
+                  className="text-[14px] leading-[1.7] text-foreground/80 [&_img]:max-w-full [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2 [&_table]:w-full [&_blockquote]:border-l-2 [&_blockquote]:border-foreground/15 [&_blockquote]:pl-4 [&_blockquote]:text-foreground/50 [&_p]:mb-2 [&_h1]:text-lg [&_h1]:font-semibold [&_h1]:mb-2 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mb-2 [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:mb-1.5 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-2 [&_li]:mb-0.5"
+                  dangerouslySetInnerHTML={{ __html: sanitizedBody }}
+                />
+                <EmailReaderAIToolbar containerRef={emailBodyRef} />
+              </div>
             )}
 
             {/* Attachments — inline chips */}

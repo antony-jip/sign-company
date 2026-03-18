@@ -15,6 +15,7 @@ import type { Klant, Email } from '@/types'
 import { callForgie } from '@/services/forgieService'
 import { extractSenderEmail, formatShortDate } from './emailHelpers'
 import { logger } from '../../utils/logger'
+import { AIContentEditableToolbar } from '@/components/ui/AIContentEditableToolbar'
 
 interface EmailComposeProps {
   open: boolean
@@ -518,6 +519,9 @@ export function EmailCompose({
                 }
               }}
             />
+
+            {/* AI Text Selection Toolbar */}
+            <AIContentEditableToolbar editorRef={editorRef} />
 
             {/* Attachments */}
             {attachments.length > 0 && (
