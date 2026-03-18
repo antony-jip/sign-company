@@ -35,7 +35,7 @@ export function BriefingCard({ beschrijving, onSave }: BriefingCardProps) {
           <button
             disabled={isSaving}
             onClick={handleSave}
-            className="flex items-center gap-1 text-[11px] font-medium text-emerald-600 hover:text-emerald-700 disabled:opacity-50 transition-colors"
+            className="flex items-center gap-1 text-[11px] font-medium text-sage-deep hover:text-sage-deep/80 disabled:opacity-50 transition-colors"
           >
             {isSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
             Opslaan
@@ -57,7 +57,7 @@ export function BriefingCard({ beschrijving, onSave }: BriefingCardProps) {
           onChange={(e) => setText(e.target.value)}
           placeholder="Beschrijf het project: wat moet er gemaakt worden, waar, welke materialen..."
           rows={5}
-          className="resize-y text-[13px] border-[hsl(35,15%,87%)] focus:ring-1 focus:ring-emerald-400/30 focus:border-emerald-400 bg-[hsl(35,10%,99%)]"
+          className="resize-y text-[13px] border-[hsl(35,15%,87%)] focus:ring-1 focus:ring-sage/50 focus:border-sage bg-[hsl(35,10%,99%)]"
           autoFocus
         />
       ) : beschrijving ? (

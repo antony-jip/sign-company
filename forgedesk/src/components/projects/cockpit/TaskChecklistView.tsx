@@ -10,23 +10,21 @@ interface TaskChecklistViewProps {
 }
 
 const statusBadge: Record<string, { label: string; cls: string }> = {
-  todo:   { label: 'Todo',   cls: 'text-muted-foreground/70 bg-[hsl(35,15%,93%)]' },
-  bezig:  { label: 'Bezig',  cls: 'text-blue-700 bg-blue-50' },
-  review: { label: 'Review', cls: 'text-amber-700 bg-amber-50' },
-  klaar:  { label: 'Klaar',  cls: 'text-emerald-700 bg-emerald-50' },
+  todo:   { label: 'Todo',   cls: 'badge-cream' },
+  bezig:  { label: 'Bezig',  cls: 'badge-mist' },
+  review: { label: 'Review', cls: 'badge-lavender' },
+  klaar:  { label: 'Klaar',  cls: 'badge-sage' },
 }
 
 // Deterministic color from name
 function avatarGradient(name: string): string {
   const colors = [
-    'from-blue-500 to-blue-600',
-    'from-violet-500 to-violet-600',
-    'from-amber-500 to-amber-600',
-    'from-emerald-500 to-emerald-600',
-    'from-rose-500 to-rose-600',
-    'from-teal-500 to-teal-600',
-    'from-orange-500 to-orange-600',
-    'from-indigo-500 to-indigo-600',
+    'from-[#7EB5A6] to-[#5E9586]',
+    'from-[#9B8EC4] to-[#7B6EA4]',
+    'from-[#C4A882] to-[#A48862]',
+    'from-[#8BAFD4] to-[#6B8FB4]',
+    'from-[#E8866A] to-[#C8664A]',
+    'from-[#D4836A] to-[#B4634A]',
   ]
   let hash = 0
   for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)
@@ -71,8 +69,8 @@ export function TaskChecklistView({ taken, medewerkers, onStatusChange, onTaskCl
               className={cn(
                 'flex-shrink-0 rounded-md border-[1.5px] transition-all flex items-center justify-center',
                 isDone
-                  ? 'bg-emerald-500 border-emerald-500 text-white'
-                  : 'border-[hsl(35,15%,78%)] hover:border-emerald-400 hover:bg-emerald-50'
+                  ? 'bg-sage-deep border-sage-deep text-white'
+                  : 'border-[hsl(35,15%,78%)] hover:border-sage hover:bg-sage/20'
               )}
               style={{ width: 18, height: 18 }}
             >

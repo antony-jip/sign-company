@@ -16,14 +16,14 @@ interface ActivityEvent {
 }
 
 const typeConfig: Record<ActivityEvent['type'], { icon: typeof Send; color: string; bg: string }> = {
-  project:  { icon: FolderPlus,    color: 'text-teal-600',    bg: 'bg-teal-50' },
-  offerte:  { icon: Receipt,       color: 'text-violet-600',  bg: 'bg-violet-50' },
-  montage:  { icon: Wrench,        color: 'text-orange-600',  bg: 'bg-orange-50' },
-  werkbon:  { icon: ClipboardCheck, color: 'text-amber-700',  bg: 'bg-amber-50' },
-  factuur:  { icon: CreditCard,    color: 'text-emerald-600', bg: 'bg-emerald-50' },
-  taak:     { icon: CheckCircle2,  color: 'text-blue-600',    bg: 'bg-blue-50' },
-  foto:     { icon: Camera,        color: 'text-pink-600',    bg: 'bg-pink-50' },
-  portaal:  { icon: Send,          color: 'text-emerald-600', bg: 'bg-emerald-50' },
+  project:  { icon: FolderPlus,    color: 'text-[#7EB5A6]',  bg: 'bg-sage/30' },
+  offerte:  { icon: Receipt,       color: 'text-lavender-deep', bg: 'bg-[var(--color-lavender-bg)]' },
+  montage:  { icon: Wrench,        color: 'text-peach-deep',  bg: 'bg-[var(--color-coral-bg)]' },
+  werkbon:  { icon: ClipboardCheck, color: 'text-cream-deep', bg: 'bg-[var(--color-cream-bg)]' },
+  factuur:  { icon: CreditCard,    color: 'text-[#C0451A]',   bg: 'bg-[var(--color-coral-bg)]' },
+  taak:     { icon: CheckCircle2,  color: 'text-mist-deep',   bg: 'bg-[var(--color-mist-bg)]' },
+  foto:     { icon: Camera,        color: 'text-blush-deep',  bg: 'bg-[var(--color-blush-bg)]' },
+  portaal:  { icon: Send,          color: 'text-[#7EB5A6]',   bg: 'bg-sage/30' },
 }
 
 const filterLabels: Record<string, string> = {
@@ -53,14 +53,12 @@ function formatTime(dateStr: string) {
 // Deterministic color from name string
 function avatarColor(name: string): string {
   const colors = [
-    'from-blue-500 to-blue-600',
-    'from-violet-500 to-violet-600',
-    'from-amber-500 to-amber-600',
-    'from-emerald-500 to-emerald-600',
-    'from-rose-500 to-rose-600',
-    'from-teal-500 to-teal-600',
-    'from-orange-500 to-orange-600',
-    'from-indigo-500 to-indigo-600',
+    'from-[#7EB5A6] to-[#5E9586]',   // sage/projecten
+    'from-[#9B8EC4] to-[#7B6EA4]',   // lavender/offertes
+    'from-[#C4A882] to-[#A48862]',   // gold/taken
+    'from-[#8BAFD4] to-[#6B8FB4]',   // mist/email
+    'from-[#E8866A] to-[#C8664A]',   // coral/facturen
+    'from-[#D4836A] to-[#B4634A]',   // rust/werkbonnen
   ]
   let hash = 0
   for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)

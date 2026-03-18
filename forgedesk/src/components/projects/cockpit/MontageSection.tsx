@@ -4,22 +4,22 @@ import { getInitials } from '@/lib/utils'
 import type { MontageAfspraak } from '@/types'
 
 const montageStatusConfig: Record<string, { label: string; cls: string; icon: typeof Clock }> = {
-  gepland:    { label: 'Gepland',    cls: 'text-blue-600 bg-blue-50',      icon: CalendarDays },
-  onderweg:   { label: 'Onderweg',   cls: 'text-amber-600 bg-amber-50',    icon: Truck },
-  bezig:      { label: 'Bezig',      cls: 'text-orange-600 bg-orange-50',  icon: Wrench },
-  afgerond:   { label: 'Afgerond',   cls: 'text-emerald-600 bg-emerald-50', icon: CheckCircle2 },
-  uitgesteld: { label: 'Uitgesteld', cls: 'text-red-600 bg-red-50',        icon: PauseCircle },
+  gepland:    { label: 'Gepland',    cls: 'badge-mist',      icon: CalendarDays },
+  onderweg:   { label: 'Onderweg',   cls: 'badge-cream',     icon: Truck },
+  bezig:      { label: 'Bezig',      cls: 'badge-lavender',  icon: Wrench },
+  afgerond:   { label: 'Afgerond',   cls: 'badge-sage',      icon: CheckCircle2 },
+  uitgesteld: { label: 'Uitgesteld', cls: 'badge-blush',     icon: PauseCircle },
 }
 
 // Deterministic color from name
 function monteurColor(name: string): string {
   const colors = [
-    'from-blue-500 to-blue-600',
-    'from-violet-500 to-violet-600',
-    'from-amber-500 to-amber-600',
-    'from-emerald-500 to-emerald-600',
-    'from-rose-500 to-rose-600',
-    'from-teal-500 to-teal-600',
+    'from-[#7EB5A6] to-[#5E9586]',
+    'from-[#9B8EC4] to-[#7B6EA4]',
+    'from-[#C4A882] to-[#A48862]',
+    'from-[#8BAFD4] to-[#6B8FB4]',
+    'from-[#E8866A] to-[#C8664A]',
+    'from-[#D4836A] to-[#B4634A]',
   ]
   let hash = 0
   for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)
@@ -52,8 +52,8 @@ export function MontageSection({ montageAfspraken, onInplannen }: MontageSection
 
       {montageAfspraken.length === 0 ? (
         <div className="text-center py-6 border border-dashed border-[hsl(35,15%,87%)] rounded-lg">
-          <div className="h-10 w-10 rounded-xl bg-orange-50 flex items-center justify-center mx-auto mb-2">
-            <Wrench className="h-5 w-5 text-orange-400" />
+          <div className="h-10 w-10 rounded-xl bg-peach/30 flex items-center justify-center mx-auto mb-2">
+            <Wrench className="h-5 w-5 text-peach-deep" />
           </div>
           <p className="text-[11px] text-muted-foreground mb-2">Nog niet gepland</p>
           <button
