@@ -5,53 +5,32 @@ import { toast } from 'sonner'
 import {
   ArrowLeft,
   Plus,
-  LayoutGrid,
-  List,
   Upload,
   FileText,
   FileSpreadsheet,
   FileArchive,
   FileImage,
   File,
-  CalendarDays,
-  Users,
-  TrendingUp,
-  Target,
-  Briefcase,
-  Eye,
   Send,
   Mail,
   Receipt,
   CheckCircle2,
-  RotateCcw,
-  Clock,
-  Link2,
   Copy,
   Pencil,
   Paperclip,
-  ExternalLink,
   Trash2,
-  RefreshCw,
   CheckCheck,
   Sparkles,
   Loader2,
-  FileEdit,
   CreditCard,
   Save,
-  ChevronDown,
-  ChevronUp,
   AlertTriangle,
-  Shield,
-  UserPlus,
   ClipboardCheck,
   Check,
   GripVertical,
   Camera,
   Wrench,
-  MapPin,
-  X,
   Wallet,
-  ArrowRight,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -62,7 +41,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogTrigger,
   DialogFooter,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
@@ -120,20 +98,22 @@ import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { analyzeProject } from '@/services/aiService'
 import { sendEmail } from '@/services/gmailService'
 import { tekeningGoedkeuringTemplate } from '@/services/emailTemplateService'
-import { ProjectTasksTable } from './ProjectTasksTable'
+// ProjectTasksTable removed — using TaskChecklistView in TakenOfferteGrid
 import { ProjectPhotoGallery } from './ProjectPhotoGallery'
 import { VisualisatieGallery } from '@/components/visualizer/VisualisatieGallery'
 import { WerkbonVanProjectDialog } from '@/components/werkbonnen/WerkbonVanProjectDialog'
-import { CockpitTopBar } from './cockpit/CockpitTopBar'
-import { PulseBar } from './cockpit/PulseBar'
-import { PortaalPanel } from './cockpit/PortaalPanel'
+import { ProjectKaart } from './cockpit/ProjectKaart'
+import { PortaalCompactCard } from './cockpit/PortaalSidebarCard'
 import { TaskChecklistView } from './cockpit/TaskChecklistView'
+import { BriefingCard } from './cockpit/BriefingCard'
+import { TakenOfferteGrid } from './cockpit/TakenOfferteGrid'
+import { MontageSection } from './cockpit/MontageSection'
+import { BestandenSection } from './cockpit/BestandenSection'
+import { ActiviteitFeed } from './cockpit/ActiviteitFeed'
 import { useProjectSidebarConfig } from '@/hooks/useProjectSidebarConfig'
 import type { Taak, Project, Document, Offerte, TekeningGoedkeuring, Klant, Tijdregistratie, Medewerker, ProjectToewijzing, Werkbon, Factuur, Uitgave, MontageAfspraak, ProjectFoto } from '@/types'
 import { berekenBudgetStatus } from '@/utils/budgetUtils'
-import { getStatusBadgeClass } from '@/utils/statusColors'
 import { logger } from '../../utils/logger'
-import { KlantStatusBadgeInline } from '@/components/shared/KlantStatusWarning'
 import { logWijziging } from '@/utils/auditLogger'
 
 const statusLabels: Record<string, string> = {
@@ -146,21 +126,9 @@ const statusLabels: Record<string, string> = {
   gefactureerd: 'Gefactureerd',
 }
 
-type ProjectTab = 'overzicht' | 'financieel' | 'werkbon'
+type ProjectTab = 'overzicht' | 'werkbon' | 'financieel' | 'notities'
 
-const goedkeuringStatusLabels: Record<string, string> = {
-  verzonden: 'Verzonden',
-  bekeken: 'Bekeken',
-  goedgekeurd: 'Goedgekeurd',
-  revisie: 'Revisie gevraagd',
-}
 
-const taakStatusKolommen: Array<{ key: string; label: string; kleur: string; bgKleur: string }> = [
-  { key: 'todo', label: 'Todo', kleur: 'border-t-muted-foreground/40', bgKleur: 'from-muted-foreground/40 to-muted-foreground' },
-  { key: 'bezig', label: 'Bezig', kleur: 'border-t-blue-500', bgKleur: 'from-blue-400 to-blue-600' },
-  { key: 'review', label: 'Review', kleur: 'border-t-yellow-500', bgKleur: 'from-yellow-400 to-orange-500' },
-  { key: 'klaar', label: 'Klaar', kleur: 'border-t-green-500', bgKleur: 'from-emerald-400 to-green-600' },
-]
 
 function getFileIcon(type: string, size: string = 'h-8 w-8') {
   if (type.includes('pdf')) return <FileText className={`${size} text-red-500`} />
@@ -182,23 +150,6 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`
 }
 
-function getGoedkeuringStatusIcon(status: string) {
-  switch (status) {
-    case 'goedgekeurd': return <CheckCircle2 className="h-4 w-4 text-green-600" />
-    case 'revisie': return <RotateCcw className="h-4 w-4 text-amber-600" />
-    case 'bekeken': return <Eye className="h-4 w-4 text-accent" />
-    default: return <Clock className="h-4 w-4 text-blue-600" />
-  }
-}
-
-function getGoedkeuringStatusColor(status: string) {
-  switch (status) {
-    case 'goedgekeurd': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-    case 'revisie': return 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300'
-    case 'bekeken': return 'bg-wm-pale/30 text-[#3D3522] dark:bg-accent/30 dark:text-wm-pale'
-    default: return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
-  }
-}
 
 export function ProjectDetail() {
   const { id } = useParams<{ id: string }>()
@@ -211,7 +162,7 @@ export function ProjectDetail() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [activeTab, setActiveTab] = useState<ProjectTab>(() => {
     const tabParam = new URLSearchParams(window.location.search).get('tab')
-    return (['overzicht', 'financieel', 'werkbon'].includes(tabParam || '') ? tabParam : 'overzicht') as ProjectTab
+    return (['overzicht', 'werkbon', 'financieel', 'notities'].includes(tabParam || '') ? tabParam : 'overzicht') as ProjectTab
   })
   const handleTabChange = (tab: ProjectTab) => {
     setActiveTab(tab)
@@ -219,7 +170,7 @@ export function ProjectDetail() {
     params.set('tab', tab)
     window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`)
   }
-  const [takenWeergave, setTakenWeergave] = useState<'checklist' | 'board' | 'tabel'>('checklist')
+  // takenWeergave removed — using TaskChecklistView only
   const [nieuweTaakOpen, setNieuweTaakOpen] = useState(false)
   const [nieuweTaakTitel, setNieuweTaakTitel] = useState('')
   const [nieuweTaakBeschrijving, setNieuweTaakBeschrijving] = useState('')
@@ -854,42 +805,54 @@ export function ProjectDetail() {
         </label>
       </div>
 
-      {/* Cockpit TopBar */}
-      <CockpitTopBar
-        project={project}
-        klant={klant}
-        onStatusChange={handleCockpitStatusChange}
-        onNewOfferte={openNieuweOfferte}
-        onNewWerkbon={() => setShowWerkbonDialog(true)}
-        onNewMontage={handleOpenMontageDialog}
-        onCopy={openKopieDialog}
-      />
+      {/* ══════════ PROJECT KAART (always visible) ══════════ */}
+      <div className="p-5 pb-0">
+        <ProjectKaart
+          project={project}
+          klant={klant}
+          offertes={projectOffertes}
+          taken={projectTaken}
+          montageAfspraken={projectMontages}
+          werkbonnen={projectWerkbonnen}
+          facturen={projectFacturen}
+          onCreateOfferte={openNieuweOfferte}
+          onCreateWerkbon={() => setShowWerkbonDialog(true)}
+          onCreateMontage={handleOpenMontageDialog}
+          onCopyProject={openKopieDialog}
+          onCreateFactuur={() => {
+            const params = new URLSearchParams({
+              klant_id: project.klant_id || '',
+              project_id: id || '',
+              titel: project.naam || '',
+            })
+            navigate(`/facturen/nieuw?${params.toString()}`)
+          }}
+          onArchive={async () => {
+            try {
+              const updated = await updateProject(id!, { status: 'afgerond' })
+              setProject(updated)
+              toast.success('Project gearchiveerd')
+            } catch { toast.error('Kon project niet archiveren') }
+          }}
+        />
+      </div>
 
-      {/* Pulse Bar */}
-      <PulseBar
-        project={project}
-        offertes={projectOffertes}
-        facturen={projectFacturen}
-        taken={projectTaken}
-        tijdregistraties={projectTijdregistraties}
-        werkbonnen={projectWerkbonnen}
-      />
-
-      {/* ── Tab Bar ── */}
-      <div className="flex items-center gap-0.5 border-b border-[hsl(35,15%,87%)] bg-[#FFFFFE] px-2">
+      {/* ══════════ TAB BAR ══════════ */}
+      <div className="flex items-center gap-0.5 border-b border-[hsl(35,15%,87%)] bg-transparent px-7 mt-4">
         {([
-          { key: 'overzicht' as ProjectTab, label: 'Overzicht', count: projectTaken.length },
+          { key: 'overzicht' as ProjectTab, label: 'Overzicht' },
           { key: 'werkbon' as ProjectTab, label: 'Werkbon', count: projectWerkbonnen.length },
-          { key: 'financieel' as ProjectTab, label: 'Financieel', count: projectOffertes.length + projectFacturen.length },
+          { key: 'financieel' as ProjectTab, label: 'Financieel' },
+          { key: 'notities' as ProjectTab, label: 'Notities' },
         ]).map((tab) => (
           <button
             key={tab.key}
             onClick={() => handleTabChange(tab.key)}
             className={cn(
-              'px-4 py-2.5 text-sm font-medium transition-all duration-200 relative rounded-t-md',
+              'px-4 py-2.5 text-sm transition-all duration-200 relative',
               activeTab === tab.key
-                ? 'text-foreground'
-                : 'text-muted-foreground/70 hover:text-foreground hover:bg-[hsl(35,15%,97%)]'
+                ? 'text-foreground font-medium'
+                : 'text-muted-foreground hover:text-foreground'
             )}
           >
             {tab.label}
@@ -904,809 +867,85 @@ export function ProjectDetail() {
               </span>
             )}
             {activeTab === tab.key && (
-              <div className="absolute bottom-0 left-1 right-1 h-[2px] bg-primary rounded-t-full" />
+              <div className="absolute bottom-0 left-1 right-1 h-[2px] bg-foreground rounded-t-full" />
             )}
           </button>
         ))}
       </div>
 
-      {/* ══════════ FINANCIEEL TAB ══════════ */}
-      {activeTab === 'financieel' && <>
-
-      {/* Budget waarschuwing */}
-      {(() => {
-        const bs = berekenBudgetStatus(project, projectTijdregistraties)
-        if (bs.budget <= 0 || bs.niveau === 'normaal') return null
-        return (
-          <div className={`flex items-center gap-3 rounded-lg px-4 py-2 ${
-            bs.niveau === 'overschreden'
-              ? 'bg-red-50 border border-red-200'
-              : 'bg-amber-50 border border-amber-200'
-          }`}>
-            <AlertTriangle className={`h-4 w-4 flex-shrink-0 ${
-              bs.niveau === 'overschreden' ? 'text-red-500' : 'text-amber-500'
-            }`} />
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-foreground">
-                {bs.niveau === 'overschreden'
-                  ? `Budget overschreden: ${bs.percentage.toFixed(0)}%`
-                  : `Budget waarschuwing: ${bs.percentage.toFixed(0)}% verbruikt`}
-              </p>
-              <p className="text-2xs text-muted-foreground font-mono">
-                {formatCurrency(bs.verbruikt)} van {formatCurrency(bs.budget)}
-              </p>
-            </div>
-          </div>
-        )
-      })()}
-
-      {/* Te factureren banner */}
-      {project.status === 'te-factureren' && (
-        <Card className="border-indigo-300 dark:border-indigo-700 bg-indigo-50/50 dark:bg-indigo-950/20">
-          <CardContent className="p-4">
-            <div className="flex items-start gap-3">
-              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center flex-shrink-0">
-                <Receipt className="h-5 w-5 text-white" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-indigo-900 dark:text-indigo-200">Project gereed voor facturatie</h3>
-                <p className="text-sm text-indigo-700 dark:text-indigo-400 mt-0.5">
-                  Maak een factuur aan vanuit een offerte of ga direct naar facturen.
-                </p>
-                {projectOffertes.length > 0 ? (
-                  <div className="mt-3 space-y-2">
-                    {projectOffertes.filter(o => o.status !== 'gefactureerd').map((offerte) => (
-                      <div key={offerte.id} className="flex items-center justify-between bg-card rounded-lg px-3 py-2 border border-indigo-200 dark:border-indigo-800">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="text-sm font-medium truncate">{offerte.titel}</span>
-                          <span className="text-xs text-muted-foreground font-mono">{offerte.nummer}</span>
-                          <Badge className={`${getStatusColor(offerte.status)} text-2xs px-1.5 py-0`}>
-                            {offerte.status}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          <span className="text-sm font-bold font-mono">{formatCurrency(offerte.totaal)}</span>
-                          <Button
-                            size="sm"
-                            className="h-7 px-3 text-xs bg-indigo-600 hover:bg-indigo-700 text-white"
-                            onClick={() => handleCreateFactuurFromOfferte(offerte)}
-                          >
-                            <CreditCard className="h-3 w-3 mr-1" />
-                            Factuur aanmaken
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                    {projectOffertes.every(o => o.status === 'gefactureerd') && (
-                      <p className="text-sm text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-                        <CheckCircle2 className="h-4 w-4" />
-                        Alle offertes zijn gefactureerd
-                      </p>
-                    )}
-                  </div>
-                ) : (
-                  <div className="mt-3">
-                    <Button
-                      size="sm"
-                      className="bg-indigo-600 hover:bg-indigo-700 text-white"
-                      onClick={() => {
-                        const params = new URLSearchParams({
-                          klant_id: project.klant_id || '',
-                          project_id: id || '',
-                          titel: project.naam || '',
-                        })
-                        navigate(`/facturen/nieuw?${params.toString()}`)
-                      }}
-                    >
-                      <CreditCard className="h-3.5 w-3.5 mr-1.5" />
-                      Nieuwe factuur aanmaken
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      </>}
-
       {/* ══════════ OVERZICHT TAB ══════════ */}
-      {activeTab === 'overzicht' && <>
-      <div className="flex-1 overflow-y-auto min-w-0">
-      <div className="flex flex-col lg:flex-row gap-6 p-5">
-        {/* ── Linkerkolom: hoofd-content ── */}
-        <div className="flex-1 min-w-0 space-y-6">
+      {activeTab === 'overzicht' && (
+      <div className="flex-1 overflow-y-auto">
+      <div className="flex flex-col lg:flex-row gap-5 p-5">
+        {/* ── Main Content ── */}
+        <div className="flex-1 min-w-0 space-y-4">
 
-      {/* ── Project Info Strip ── */}
-      <div className="flex flex-wrap items-center gap-4 bg-[#FFFFFE] border border-[hsl(35,15%,87%)] rounded-[10px] p-4 shadow-[0_1px_3px_rgba(130,100,60,0.04)] transition-shadow duration-300 hover:shadow-[0_2px_8px_rgba(130,100,60,0.08)]">
-        {/* Contact & adres */}
-        {klant && (
-          <div className="flex items-center gap-3 flex-1 min-w-[200px]">
-            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center flex-shrink-0 shadow-sm">
-              <span className="text-white text-sm font-bold">{getInitials(klant.contactpersoon || klant.bedrijfsnaam || '')}</span>
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-foreground truncate">{klant.contactpersoon || klant.bedrijfsnaam}</p>
-              <p className="text-xs text-muted-foreground truncate">
-                {[klant.adres, klant.postcode, klant.stad].filter(Boolean).join(', ')}
-              </p>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground/70">
-                {klant.email && <span className="truncate">{klant.email}</span>}
-                {klant.telefoon && <span className="font-mono">{klant.telefoon}</span>}
-              </div>
-            </div>
-          </div>
-        )}
+          {/* Briefing */}
+          <BriefingCard
+            beschrijving={project.beschrijving || ''}
+            onSave={async (text) => {
+              const updated = await updateProject(id!, { beschrijving: text })
+              setProject(updated)
+              toast.success('Briefing opgeslagen')
+            }}
+          />
 
-        {/* Start datum */}
-        <div className="flex items-center gap-2.5 bg-[hsl(35,15%,97%)] rounded-lg px-3 py-2">
-          <CalendarDays className="h-3.5 w-3.5 text-muted-foreground/60" />
-          <div>
-            <p className="text-[10px] text-muted-foreground/60 uppercase tracking-wider font-medium">Start</p>
-            <input
-              type="date"
-              value={project.start_datum || ''}
-              onChange={async (e) => {
-                try {
-                  const updated = await updateProject(id!, { start_datum: e.target.value || undefined })
-                  setProject(updated)
-                  toast.success('Startdatum bijgewerkt')
-                } catch { toast.error('Kon startdatum niet opslaan') }
-              }}
-              className="text-sm font-mono bg-transparent border-none p-0 text-foreground cursor-pointer focus:outline-none focus:ring-0 w-[120px]"
-            />
-          </div>
-        </div>
-
-        {/* Eind datum */}
-        <div className="flex items-center gap-2.5 bg-[hsl(35,15%,97%)] rounded-lg px-3 py-2">
-          <Target className="h-3.5 w-3.5 text-muted-foreground/60" />
-          <div>
-            <p className="text-[10px] text-muted-foreground/60 uppercase tracking-wider font-medium">Deadline</p>
-            <input
-              type="date"
-              value={project.eind_datum || ''}
-              onChange={async (e) => {
-                try {
-                  const updated = await updateProject(id!, { eind_datum: e.target.value || undefined })
-                  setProject(updated)
-                  toast.success('Deadline bijgewerkt')
-                } catch { toast.error('Kon deadline niet opslaan') }
-              }}
-              className="text-sm font-mono bg-transparent border-none p-0 text-foreground cursor-pointer focus:outline-none focus:ring-0 w-[120px]"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* ── Briefing Sectie ── */}
-      <Card className="border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px] transition-shadow duration-300 hover:shadow-[0_2px_8px_rgba(130,100,60,0.08)] overflow-hidden">
-        <CardHeader className="pb-2 cursor-pointer" onClick={() => !briefingOpen && setBriefingOpen(true)}>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-sm">
-                <FileEdit className="h-3.5 w-3.5 text-white" />
-              </div>
-              Briefing
-            </CardTitle>
-            <div className="flex items-center gap-1.5">
-              {briefingOpen && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 px-3 text-xs text-primary hover:text-primary/80"
-                  disabled={briefingSaving}
-                  onClick={(e) => { e.stopPropagation(); handleSaveBriefing() }}
-                >
-                  {briefingSaving ? (
-                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                  ) : (
-                    <Save className="h-3 w-3 mr-1" />
-                  )}
-                  Opslaan
-                </Button>
-              )}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground rounded-full"
-                onClick={(e) => { e.stopPropagation(); setBriefingOpen(!briefingOpen) }}
-              >
-                {briefingOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        {briefingOpen ? (
-          <CardContent className="pt-2 animate-in fade-in slide-in-from-top-1 duration-200">
-            <Textarea
-              value={briefingText}
-              onChange={(e) => setBriefingText(e.target.value)}
-              placeholder="Voeg hier de projectbriefing toe... Beschrijf het project, de wensen van de klant, bijzonderheden, etc."
-              rows={6}
-              className="resize-y border-[hsl(35,15%,87%)] focus:border-primary/40 transition-colors"
-            />
-          </CardContent>
-        ) : (
-          <CardContent className="pt-0 pb-3">
-            {briefingText ? (
-              <p
-                className="text-sm text-muted-foreground line-clamp-2 cursor-pointer hover:text-foreground transition-colors duration-200"
-                onClick={() => setBriefingOpen(true)}
-              >
-                {briefingText}
-              </p>
-            ) : (
-              <p
-                className="text-sm text-muted-foreground/50 italic cursor-pointer hover:text-muted-foreground transition-colors duration-200"
-                onClick={() => setBriefingOpen(true)}
-              >
-                Klik om een briefing toe te voegen...
-              </p>
-            )}
-          </CardContent>
-        )}
-      </Card>
-
-      {/* ── Taken ── */}
-        <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="flex items-center gap-1">
-              <Button
-                variant={takenWeergave === 'checklist' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setTakenWeergave('checklist')}
-                className="h-7 text-xs"
-              >
-                <CheckCheck className="mr-1 h-3.5 w-3.5" />
-                Checklist
-              </Button>
-              <Button
-                variant={takenWeergave === 'board' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setTakenWeergave('board')}
-                className="h-7 text-xs"
-              >
-                <LayoutGrid className="mr-1 h-3.5 w-3.5" />
-                Board
-              </Button>
-              <Button
-                variant={takenWeergave === 'tabel' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setTakenWeergave('tabel')}
-                className="h-7 text-xs"
-              >
-                <List className="mr-1 h-3.5 w-3.5" />
-                Tabel
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 text-xs text-muted-foreground hover:text-foreground"
-                onClick={() => navigate('/taken')}
-              >
-                <ExternalLink className="mr-1 h-3 w-3" />
-                Overzicht
-              </Button>
-            </div>
-            <Dialog open={nieuweTaakOpen} onOpenChange={(open) => {
-              setNieuweTaakOpen(open)
-              if (!open) {
-                setNieuweTaakTitel('')
-                setNieuweTaakBeschrijving('')
-                setNieuweTaakToegewezen('')
-                setNieuweTaakDeadline('')
-                setNieuweTaakStatus('todo')
-                setNieuweTaakPrioriteit('medium')
+          {/* Taken + Offerte grid */}
+          <TakenOfferteGrid
+            taken={projectTaken}
+            offertes={projectOffertes}
+            medewerkers={alleMedewerkers}
+            projectId={id!}
+            onNewTaak={() => setNieuweTaakOpen(true)}
+            onNewOfferte={openNieuweOfferte}
+            onTaakStatusChange={async (taakId, newStatus) => {
+              try {
+                await updateTaak(taakId, { status: newStatus })
+                await fetchTaken()
+                if (newStatus === 'klaar') {
+                  const taak = projectTaken.find(t => t.id === taakId)
+                  if (taak) toast.success(`"${taak.titel}" afgerond`)
+                }
+              } catch {
+                toast.error('Kon status niet wijzigen')
               }
-            }}>
-              <DialogTrigger asChild>
-                <Button size="sm" className="">
-                  <Plus className="mr-1.5 h-4 w-4" />
-                  Nieuwe Taak
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Nieuwe taak toevoegen</DialogTitle>
-                  <DialogDescription>
-                    Voeg een nieuwe taak toe aan dit project.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="taak-titel">Titel</Label>
-                    <Input
-                      id="taak-titel"
-                      placeholder="Titel van de taak..."
-                      value={nieuweTaakTitel}
-                      onChange={(e) => setNieuweTaakTitel(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="taak-beschrijving">Beschrijving</Label>
-                    <Input
-                      id="taak-beschrijving"
-                      placeholder="Beschrijving..."
-                      value={nieuweTaakBeschrijving}
-                      onChange={(e) => setNieuweTaakBeschrijving(e.target.value)}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Status</Label>
-                      <Select value={nieuweTaakStatus} onValueChange={(v) => setNieuweTaakStatus(v as Taak['status'])}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="todo">Todo</SelectItem>
-                          <SelectItem value="bezig">Bezig</SelectItem>
-                          <SelectItem value="review">Review</SelectItem>
-                          <SelectItem value="klaar">Klaar</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Prioriteit</Label>
-                      <Select value={nieuweTaakPrioriteit} onValueChange={(v) => setNieuweTaakPrioriteit(v as Taak['prioriteit'])}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="laag">Laag</SelectItem>
-                          <SelectItem value="medium">Medium</SelectItem>
-                          <SelectItem value="hoog">Hoog</SelectItem>
-                          <SelectItem value="kritiek">Kritiek</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="taak-toegewezen">Toegewezen aan</Label>
-                      <Select value={nieuweTaakToegewezen} onValueChange={setNieuweTaakToegewezen}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecteer teamlid..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {alleMedewerkers.map((m) => (
-                            <SelectItem key={m.id} value={m.naam}>
-                              {m.naam}
-                            </SelectItem>
-                          ))}
-                          {projectToewijzingen.length > 0 && alleMedewerkers.length === 0 && (
-                            <SelectItem value="_empty" disabled>Geen medewerkers gevonden</SelectItem>
-                          )}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="taak-deadline">Deadline</Label>
-                      <Input
-                        id="taak-deadline"
-                        type="date"
-                        value={nieuweTaakDeadline}
-                        onChange={(e) => setNieuweTaakDeadline(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setNieuweTaakOpen(false)}>
-                    Annuleren
-                  </Button>
-                  <Button
-                    disabled={!nieuweTaakTitel.trim()}
-                    className=""
-                    onClick={async () => {
-                      try {
-                        await createTaak({
-                          user_id: user?.id || '',
-                          project_id: id!,
-                          titel: nieuweTaakTitel.trim(),
-                          beschrijving: nieuweTaakBeschrijving.trim(),
-                          status: nieuweTaakStatus,
-                          prioriteit: nieuweTaakPrioriteit,
-                          toegewezen_aan: nieuweTaakToegewezen.trim(),
-                          deadline: nieuweTaakDeadline || new Date().toISOString().split('T')[0],
-                          geschatte_tijd: 0,
-                          bestede_tijd: 0,
-                        })
-                        toast.success(`Taak "${nieuweTaakTitel}" toegevoegd`)
-                        setNieuweTaakOpen(false)
-                        setNieuweTaakTitel('')
-                        setNieuweTaakBeschrijving('')
-                        setNieuweTaakToegewezen('')
-                        setNieuweTaakDeadline('')
-                        setNieuweTaakStatus('todo')
-                        setNieuweTaakPrioriteit('medium')
-                        await fetchTaken()
-                      } catch (err) {
-                        logger.error('Fout bij aanmaken taak:', err)
-                        toast.error('Kon taak niet aanmaken')
-                      }
-                    }}
-                  >
-                    Taak toevoegen
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+            }}
+          />
+
+          {/* Portaal (conditioneel — toont alleen bij actief portaal) */}
+          <PortaalCompactCard projectId={id!} />
+
+        </div>{/* einde main content */}
+
+        {/* ── Sidebar ── */}
+        <div className="w-full lg:w-[260px] xl:w-[280px] flex-shrink-0 space-y-5 lg:self-start lg:sticky lg:top-4">
+
+          {/* Montage */}
+          <div className="bg-card border border-border rounded-xl p-4">
+            <MontageSection
+              montageAfspraken={projectMontages}
+              onInplannen={handleOpenMontageDialog}
+            />
           </div>
 
-          {/* Board View */}
-          {takenWeergave === 'board' && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-              {taakStatusKolommen.map((kolom) => {
-                const kolomTaken = projectTaken.filter((t) => t.status === kolom.key)
-
-                return (
-                  <div key={kolom.key} className="flex flex-col">
-                    <div className="flex items-center justify-between px-3 py-2 bg-muted/50 rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <div className={`h-2 w-2 rounded-full bg-gradient-to-r ${kolom.bgKleur}`} />
-                        <h3 className="text-xs font-semibold text-foreground">{kolom.label}</h3>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <span className="text-2xs text-muted-foreground bg-muted rounded-full px-1.5 py-0.5 font-medium">
-                          {kolomTaken.length}
-                        </span>
-                        <button
-                          onClick={() => {
-                            setNieuweTaakStatus(kolom.key as Taak['status'])
-                            setNieuweTaakOpen(true)
-                          }}
-                          className="h-5 w-5 rounded flex items-center justify-center text-muted-foreground/40 hover:text-foreground hover:bg-muted transition-colors"
-                          title={`Taak toevoegen in ${kolom.label}`}
-                        >
-                          <Plus className="h-3 w-3" />
-                        </button>
-                      </div>
-                    </div>
-
-                    <div
-                      className="flex-1 min-h-[80px] flex flex-col gap-1.5 rounded-lg mt-2 p-1 transition-colors"
-                      onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('bg-primary/5', 'ring-1', 'ring-primary/20') }}
-                      onDragLeave={(e) => { e.currentTarget.classList.remove('bg-primary/5', 'ring-1', 'ring-primary/20') }}
-                      onDrop={async (e) => {
-                        e.preventDefault()
-                        e.currentTarget.classList.remove('bg-primary/5', 'ring-1', 'ring-primary/20')
-                        const taakId = e.dataTransfer.getData('text/plain')
-                        if (!taakId) return
-                        try {
-                          await updateTaak(taakId, { status: kolom.key as Taak['status'] })
-                          await fetchTaken()
-                        } catch {
-                          toast.error('Kon status niet wijzigen')
-                        }
-                      }}
-                    >
-                      {kolomTaken.length === 0 ? (
-                        <div className="text-center py-6 text-muted-foreground/40 text-xs border border-dashed border-border/50 rounded-lg">
-                          Sleep taken hierheen
-                        </div>
-                      ) : (
-                        kolomTaken.map((taak) => (
-                          <TaakCard
-                            key={taak.id}
-                            taak={taak}
-                            onStatusChange={async (newStatus) => {
-                              try {
-                                await updateTaak(taak.id, { status: newStatus })
-                                await fetchTaken()
-                                if (newStatus === 'klaar') toast.success(`"${taak.titel}" afgerond`)
-                              } catch {
-                                toast.error('Kon status niet wijzigen')
-                              }
-                            }}
-                          />
-                        ))
-                      )}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-
-          {/* Table View */}
-          {takenWeergave === 'tabel' && (
-            <Card className="border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px]">
-              <CardContent className="p-0">
-                <ProjectTasksTable taken={projectTaken} />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Checklist View */}
-          {takenWeergave === 'checklist' && (
-            <Card className="border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px]">
-              <CardContent className="p-2">
-                <TaskChecklistView
-                  taken={projectTaken}
-                  medewerkers={alleMedewerkers}
-                  onStatusChange={async (taakId, newStatus) => {
-                    try {
-                      await updateTaak(taakId, { status: newStatus })
-                      await fetchTaken()
-                      if (newStatus === 'klaar') {
-                        const taak = projectTaken.find(t => t.id === taakId)
-                        if (taak) toast.success(`"${taak.titel}" afgerond`)
-                      }
-                    } catch {
-                      toast.error('Kon status niet wijzigen')
-                    }
-                  }}
-                />
-              </CardContent>
-            </Card>
-          )}
-        </div>{/* einde taken views */}
-
-          {/* ── Goedkeuringen Sectie ── */}
-          {goedkeuringen.length > 0 && (
-            <Card className="border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px]">
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center">
-                      <CheckCircle2 className="h-3.5 w-3.5 text-white" />
-                    </div>
-                    Klant Goedkeuringen
-                    <span className="text-xs text-muted-foreground font-normal">{goedkeuringen.length}</span>
-                  </CardTitle>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 w-7 p-0"
-                    onClick={() => setGoedkeuringenOpen(!goedkeuringenOpen)}
-                  >
-                    {goedkeuringenOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                  </Button>
-                </div>
-                {!goedkeuringenOpen && (
-                  <p className="text-xs text-muted-foreground mt-1 ml-9">
-                    {goedkeuringen.filter(g => g.status === 'goedgekeurd').length} goedgekeurd
-                    {goedkeuringen.filter(g => g.status === 'revisie').length > 0 && `, ${goedkeuringen.filter(g => g.status === 'revisie').length} revisie`}
-                    {goedkeuringen.filter(g => g.status === 'verzonden' || g.status === 'bekeken').length > 0 && `, ${goedkeuringen.filter(g => g.status === 'verzonden' || g.status === 'bekeken').length} in afwachting`}
-                  </p>
-                )}
-              </CardHeader>
-              {goedkeuringenOpen && (
-              <CardContent className="space-y-3">
-                {goedkeuringen.map((gk) => (
-                  <div
-                    key={gk.id}
-                    className="bg-background dark:bg-muted/50 rounded-xl p-4 space-y-2"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        {getGoedkeuringStatusIcon(gk.status)}
-                        <span className="text-sm font-medium text-foreground">
-                          {gk.document_ids.length} bestand(en)
-                          {gk.offerte_id && ' + offerte'}
-                        </span>
-                      </div>
-                      <Badge className={`${getGoedkeuringStatusColor(gk.status)} text-2xs px-2`}>
-                        {goedkeuringStatusLabels[gk.status] || gk.status}
-                      </Badge>
-                    </div>
-
-                    <div className="text-xs text-muted-foreground">
-                      Verstuurd naar {gk.email_aan} op <span className="font-mono">{formatDate(gk.created_at)}</span>
-                      {gk.revisie_nummer > 1 && ` (revisie ${gk.revisie_nummer})`}
-                    </div>
-
-                    {gk.status === 'goedgekeurd' && gk.goedgekeurd_door && (
-                      <div className="bg-green-50 dark:bg-green-950/30 rounded-lg px-3 py-2 text-xs text-green-700 dark:text-green-400">
-                        Goedgekeurd door <strong>{gk.goedgekeurd_door}</strong>
-                        {gk.goedgekeurd_op && <> op <span className="font-mono">{formatDate(gk.goedgekeurd_op)}</span></>}
-                      </div>
-                    )}
-
-                    {gk.status === 'revisie' && gk.revisie_opmerkingen && (
-                      <div className="bg-amber-50 dark:bg-amber-950/30 rounded-lg px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
-                        <strong>Revisie opmerkingen:</strong> {gk.revisie_opmerkingen}
-                      </div>
-                    )}
-
-                    <div className="flex items-center gap-2 pt-1 flex-wrap">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 px-2 text-xs"
-                        onClick={() => copyApprovalLink(gk.token)}
-                      >
-                        <Copy className="h-3 w-3 mr-1" />
-                        Link kopiëren
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 px-2 text-xs"
-                        onClick={() => window.open(`/goedkeuring/${gk.token}`, '_blank')}
-                      >
-                        <ExternalLink className="h-3 w-3 mr-1" />
-                        Openen
-                      </Button>
-                      {gk.status === 'revisie' && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 px-2 text-xs text-amber-700 dark:text-amber-400 hover:text-amber-900"
-                          onClick={() => {
-                            // Pre-fill verstuur dialog for re-sending revised drawings
-                            setSelectedDocIds(gk.document_ids)
-                            setSelectedOfferteId(gk.offerte_id || '')
-                            setVerstuurOnderwerp(`Revisie - ${project.naam}`)
-                            setVerstuurBericht(
-                              `Beste ${klant?.contactpersoon || project.klant_naam || 'klant'},\n\nHierbij ontvangt u de aangepaste tekening(en) voor het project "${project.naam}".\n\nWij hebben de volgende aanpassingen verwerkt:\n- ${gk.revisie_opmerkingen}\n\nGraag ontvangen wij opnieuw uw goedkeuring.\n\nMet vriendelijke groet`
-                            )
-                            setVerstuurOpen(true)
-                          }}
-                        >
-                          <RefreshCw className="h-3 w-3 mr-1" />
-                          Opnieuw versturen
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-              )}
-            </Card>
-          )}
-
-          {/* ── Klantportaal (inline, collapsible) ── */}
-          {project && (
-            <PortaalPanel
-              projectId={project.id}
-              projectNaam={project.naam}
-              klant={klant}
-              inline
+          {/* Bestanden */}
+          <div className="bg-card border border-border rounded-xl p-4">
+            <BestandenSection
+              documenten={projectDocumenten}
+              onUpload={() => fileInputRef.current?.click()}
+              onDelete={async (docId, naam) => {
+                try {
+                  await deleteDocument(docId)
+                  toast.success(`"${naam}" verwijderd`)
+                  await fetchDocumenten()
+                } catch {
+                  toast.error('Kon bestand niet verwijderen')
+                }
+              }}
             />
-          )}
+          </div>
 
-          {/* ── Montage Planning ── */}
-          {projectMontages.length > 0 && (
-          <Card className="border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px]">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <div className="p-1 rounded-md bg-blue-500/10">
-                    <Wrench className="h-3.5 w-3.5 text-blue-600" />
-                  </div>
-                  Montage
-                  <span className="text-xs text-muted-foreground font-normal">{projectMontages.length}</span>
-                </CardTitle>
-                <Button
-                  variant="ghost" size="icon" className="h-7 w-7"
-                  onClick={handleOpenMontageDialog}
-                  title="Montage inplannen"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {(
-                <div className="space-y-2">
-                  {projectMontages.map((m) => (
-                    <div
-                      key={m.id}
-                      className="flex items-center justify-between p-2 rounded-lg hover:bg-background dark:hover:bg-muted/50 cursor-pointer transition-colors"
-                      onClick={() => navigate('/montage')}
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium truncate">{m.titel}</p>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <CalendarDays className="h-3 w-3 flex-shrink-0" />
-                          <span className="font-mono">{new Date(m.datum).toLocaleDateString('nl-NL')} {m.start_tijd}–{m.eind_tijd}</span>
-                        </div>
-                        {m.locatie && (
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <MapPin className="h-3 w-3 flex-shrink-0" />
-                            <span className="truncate">{m.locatie}</span>
-                          </div>
-                        )}
-                      </div>
-                      <span className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${
-                        m.status === 'gepland' ? 'bg-blue-100 text-blue-700' :
-                        m.status === 'onderweg' ? 'bg-amber-100 text-amber-700' :
-                        m.status === 'bezig' ? 'bg-green-100 text-green-700' :
-                        m.status === 'afgerond' ? 'bg-emerald-100 text-emerald-700' :
-                        'bg-red-100 text-red-700'
-                      }`}>
-                        {m.status}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-          )}
-
-        </div>{/* einde linkerkolom */}
-
-        {/* ── Rechterkolom: sidebar ── */}
-        <div className="w-full lg:w-80 xl:w-96 flex-shrink-0 space-y-4 lg:self-start lg:sticky lg:top-4">
-
-          {/* ── Team ── */}
-          <Card className="border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px] transition-shadow duration-300 hover:shadow-[0_2px_8px_rgba(130,100,60,0.08)]">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <div className="h-6 w-6 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
-                    <Users className="h-3 w-3 text-white" />
-                  </div>
-                  Team
-                  <span className="text-xs text-muted-foreground font-normal">{project.team_leden.length}</span>
-                </CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-0">
-              {project.team_leden.length > 0 && (
-                <div className="space-y-1.5 mb-2">
-                  {project.team_leden.map((lid) => (
-                    <div key={lid} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-muted/50 group">
-                      <div className="h-6 w-6 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0">
-                        {getInitials(lid)}
-                      </div>
-                      <span className="text-xs font-medium text-foreground truncate flex-1">{lid}</span>
-                      <button
-                        onClick={async () => {
-                          try {
-                            const nieuwTeam = project.team_leden.filter(l => l !== lid)
-                            const updated = await updateProject(id!, { team_leden: nieuwTeam })
-                            setProject(updated)
-                            toast.success(`${lid} verwijderd uit team`)
-                          } catch { toast.error('Kon teamlid niet verwijderen') }
-                        }}
-                        className="text-muted-foreground hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                        title="Verwijderen"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {alleMedewerkers.length > 0 ? (
-                <select
-                  className="w-full text-xs border border-border rounded-lg px-2.5 py-1.5 bg-card text-foreground"
-                  value=""
-                  onChange={async (e) => {
-                    const mw = alleMedewerkers.find(m => m.id === e.target.value)
-                    if (!mw || project.team_leden.includes(mw.naam)) return
-                    try {
-                      const nieuwTeam = [...project.team_leden, mw.naam]
-                      const updated = await updateProject(id!, { team_leden: nieuwTeam })
-                      setProject(updated)
-                      toast.success(`${mw.naam} toegevoegd aan team`)
-                    } catch { toast.error('Kon teamlid niet toevoegen') }
-                  }}
-                >
-                  <option value="">Medewerker toevoegen...</option>
-                  {alleMedewerkers
-                    .filter(m => !project.team_leden.includes(m.naam))
-                    .map(m => <option key={m.id} value={m.id}>{m.naam}{m.functie ? ` — ${m.functie}` : ''}</option>)
-                  }
-                </select>
-              ) : project.team_leden.length === 0 ? (
-                <p className="text-xs text-muted-foreground">Voeg medewerkers toe via Instellingen</p>
-              ) : null}
-            </CardContent>
-          </Card>
-
-          {/* Visualisaties — alleen tonen als er visualisaties bestaan */}
-          {hasVisualisaties && (
-          <Card className="border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px]">
-            <CardContent className="pt-5">
-              <VisualisatieGallery project_id={project.id} klant_id={project.klant_id} compact />
-            </CardContent>
-          </Card>
-          )}
-
-          {/* Foto's */}
+          {/* Situatiefoto's */}
           <ProjectPhotoGallery
             projectId={id!}
             userId={user?.id || ''}
@@ -1714,134 +953,33 @@ export function ProjectDetail() {
             onPhotosChanged={fetchProjectFotos}
           />
 
-          {/* Bestanden upload + lijst */}
-          <Card className="border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px] transition-shadow duration-300 hover:shadow-[0_2px_8px_rgba(130,100,60,0.08)]">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-accent to-primary flex items-center justify-center">
-                    <FileText className="h-3.5 w-3.5 text-white" />
-                  </div>
-                  Bestanden
-                  <span className="text-xs text-muted-foreground font-normal">{projectDocumenten.length}</span>
-                </CardTitle>
-                <div className="flex items-center gap-1">
-                  {projectDocumenten.length > 0 && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 px-2 text-xs"
-                      onClick={openVerstuurDialog}
-                      title="Verstuur naar klant"
-                    >
-                      <Send className="h-3.5 w-3.5 mr-1" />
-                      Verstuur
-                    </Button>
-                  )}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 w-7 p-0"
-                    onClick={() => fileInputRef.current?.click()}
-                    title="Bestand uploaden"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {/* Drag & drop zone */}
-              <div
-                className={`border-2 border-dashed rounded-xl p-4 text-center transition-all duration-200 cursor-pointer ${
-                  isDragging
-                    ? 'border-primary bg-primary/10 dark:bg-primary/20'
-                    : 'border-border dark:border-border hover:border-primary'
-                }`}
-                onClick={() => fileInputRef.current?.click()}
-                onDragOver={(e) => {
-                  e.preventDefault()
-                  setIsDragging(true)
-                }}
-                onDragLeave={() => setIsDragging(false)}
-                onDrop={(e) => {
-                  e.preventDefault()
-                  setIsDragging(false)
-                  const files = Array.from(e.dataTransfer.files)
-                  if (files.length > 0) {
-                    handleFileUpload(files)
-                  }
-                }}
-              >
-                <div className="flex flex-col items-center gap-2">
-                  <Upload className={`h-5 w-5 transition-colors ${
-                    isDragging
-                      ? 'text-accent dark:text-primary'
-                      : 'text-muted-foreground opacity-60'
-                  }`} />
-                  <p className={`text-xs font-medium ${isDragging ? 'text-accent dark:text-primary' : 'text-muted-foreground'}`}>
-                    {isDragging ? 'Laat los om te uploaden' : 'Sleep bestanden of klik om te uploaden'}
-                  </p>
-                </div>
-              </div>
+          {/* Visualisaties (conditioneel) */}
+          {hasVisualisaties && (
+            <div className="bg-card border border-border rounded-xl p-4">
+              <h3 className="text-[13px] font-medium text-foreground mb-3">Visualizer</h3>
+              <VisualisatieGallery project_id={project.id} klant_id={project.klant_id} compact />
+            </div>
+          )}
 
-              {/* Bestandenlijst */}
-              {projectDocumenten.length > 0 && (
-                <div className="space-y-2">
-                  {projectDocumenten.map((doc) => (
-                    <div
-                      key={doc.id}
-                      className="flex items-center gap-2.5 bg-background dark:bg-muted/50 rounded-lg px-3 py-2 group hover:bg-muted dark:hover:bg-muted transition-colors cursor-pointer"
-                    >
-                      <div className="flex-shrink-0 group-hover:scale-110 transition-transform duration-200">
-                        {getFileIcon(doc.type)}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-foreground truncate group-hover:text-accent dark:group-hover:text-primary transition-colors">
-                          {doc.naam}
-                        </p>
-                        <div className="flex items-center gap-2">
-                          <span className="text-2xs text-muted-foreground">{formatFileSize(doc.grootte)}</span>
-                          <Badge className={`${getStatusColor(doc.status)} text-2xs px-1 py-0`}>
-                            {doc.status}
-                          </Badge>
-                        </div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-red-400 hover:text-red-600"
-                        onClick={async (e) => {
-                          e.stopPropagation()
-                          try {
-                            await deleteDocument(doc.id)
-                            toast.success(`"${doc.naam}" verwijderd`)
-                            await fetchDocumenten()
-                          } catch (err) {
-                            logger.error('Fout bij verwijderen:', err)
-                            toast.error('Kon bestand niet verwijderen')
-                          }
-                        }}
-                        title="Verwijderen"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>{/* einde rechterkolom/sidebar */}
-      </div>{/* einde flex row */}
-      </div>{/* einde scroll container */}
-      </>}
+          {/* Activiteit */}
+          <div className="bg-card border border-border rounded-xl p-4">
+            <ActiviteitFeed
+              project={project}
+              offertes={projectOffertes}
+              montageAfspraken={projectMontages}
+              werkbonnen={projectWerkbonnen}
+              facturen={projectFacturen}
+            />
+          </div>
+
+        </div>
+      </div>
+      </div>
+      )}
 
       {/* ══════════ WERKBON TAB ══════════ */}
-      {activeTab === 'werkbon' && <>
+      {activeTab === 'werkbon' && (
       <div className="flex-1 overflow-y-auto p-5 space-y-5">
-
-        {/* Werkbonnen lijst */}
         <Card className="border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px]">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
@@ -1927,207 +1065,58 @@ export function ProjectDetail() {
             )}
           </CardContent>
         </Card>
-
-        {/* Offerte items als referentie */}
-        {projectOffertes.filter(o => o.status === 'goedgekeurd' || o.status === 'gefactureerd').length > 0 && (
-          <Card className="border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px]">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2 text-muted-foreground">
-                <Receipt className="h-3.5 w-3.5" />
-                Goedgekeurde offerte-items
-              </CardTitle>
-              <p className="text-xs text-muted-foreground ml-5">Deze items kun je overnemen in een werkbon via "+ Nieuwe werkbon"</p>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-1.5">
-                {projectOffertes
-                  .filter(o => o.status === 'goedgekeurd' || o.status === 'gefactureerd')
-                  .map(o => (
-                    <div key={o.id} className="p-2.5 rounded-lg bg-[hsl(35,15%,97%)] border border-[hsl(35,15%,90%)]">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-semibold font-mono text-amber-700">{o.nummer}</span>
-                        <span className="text-xs font-mono text-muted-foreground">{formatCurrency(o.totaal)}</span>
-                      </div>
-                      <p className="text-xs text-muted-foreground">{o.titel}</p>
-                    </div>
-                  ))
-                }
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
       </div>
-      </>}
+      )}
 
-          {/* ── Werkbonnen (financieel tab) ── */}
-          {activeTab === 'financieel' && projectWerkbonnen.length > 0 && (
-          <Card className="border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px]">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <div className="p-1 rounded-md bg-amber-500/10">
-                    <ClipboardCheck className="h-3.5 w-3.5 text-amber-600" />
-                  </div>
-                  Werkbonnen
-                  <span className="text-xs text-muted-foreground font-normal">{projectWerkbonnen.length}</span>
-                </CardTitle>
-                <Button
-                  variant="ghost" size="icon" className="h-7 w-7"
-                  onClick={() => setShowWerkbonDialog(true)}
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                </Button>
+      {/* ══════════ FINANCIEEL TAB ══════════ */}
+      {activeTab === 'financieel' && (
+      <div className="flex-1 overflow-y-auto p-5 space-y-5">
+        {/* Totalen overzicht */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {[
+            { label: 'Geoffreerd', bedrag: projectOffertes.reduce((s, o) => s + o.totaal, 0), kleur: 'text-foreground' },
+            { label: 'Gefactureerd', bedrag: projectFacturen.reduce((s, f) => s + f.totaal, 0), kleur: 'text-blue-600' },
+            { label: 'Betaald', bedrag: projectFacturen.reduce((s, f) => s + (f.betaald_bedrag || 0), 0), kleur: 'text-emerald-600' },
+            { label: 'Openstaand', bedrag: projectFacturen.reduce((s, f) => s + f.totaal - (f.betaald_bedrag || 0), 0), kleur: 'text-amber-600' },
+          ].map((item) => (
+            <div key={item.label} className="bg-card border border-border rounded-xl p-4">
+              <p className="text-xs text-muted-foreground mb-1">{item.label}</p>
+              <p className={cn('text-lg font-semibold font-mono', item.kleur)}>
+                {formatCurrency(item.bedrag)}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* Budget waarschuwing */}
+        {(() => {
+          const bs = berekenBudgetStatus(project, projectTijdregistraties)
+          if (bs.budget <= 0 || bs.niveau === 'normaal') return null
+          return (
+            <div className={`flex items-center gap-3 rounded-lg px-4 py-2 ${
+              bs.niveau === 'overschreden'
+                ? 'bg-red-50 border border-red-200'
+                : 'bg-amber-50 border border-amber-200'
+            }`}>
+              <AlertTriangle className={`h-4 w-4 flex-shrink-0 ${
+                bs.niveau === 'overschreden' ? 'text-red-500' : 'text-amber-500'
+              }`} />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-foreground">
+                  {bs.niveau === 'overschreden'
+                    ? `Budget overschreden: ${bs.percentage.toFixed(0)}%`
+                    : `Budget waarschuwing: ${bs.percentage.toFixed(0)}% verbruikt`}
+                </p>
+                <p className="text-2xs text-muted-foreground font-mono">
+                  {formatCurrency(bs.verbruikt)} van {formatCurrency(bs.budget)}
+                </p>
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                  {projectWerkbonnen.map((wb) => (
-                    <div
-                      key={wb.id}
-                      className="group flex items-center justify-between p-2 rounded-lg hover:bg-background dark:hover:bg-muted/50 cursor-pointer transition-colors"
-                      onClick={() => navigate(`/werkbonnen/${wb.id}`)}
-                    >
-                      <div>
-                        <p className="text-sm font-medium font-mono">{wb.werkbon_nummer}</p>
-                        <p className="text-xs text-muted-foreground font-mono">{new Date(wb.datum).toLocaleDateString('nl-NL')}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${
-                          wb.status === 'concept' ? 'bg-muted text-foreground/70' :
-                          wb.status === 'definitief' ? 'bg-blue-100 text-blue-700' :
-                          wb.status === 'afgerond' ? 'bg-green-100 text-green-700' :
-                          'bg-muted text-foreground/70'
-                        }`}>
-                          {wb.status === 'concept' ? 'Concept' : wb.status === 'definitief' ? 'Definitief' : wb.status === 'afgerond' ? 'Afgerond' : wb.status}
-                        </span>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            if (window.confirm(`Werkbon ${wb.werkbon_nummer} verwijderen?`)) {
-                              deleteWerkbon(wb.id)
-                                .then(() => {
-                                  setProjectWerkbonnen(prev => prev.filter(w => w.id !== wb.id))
-                                  toast.success('Werkbon verwijderd')
-                                })
-                                .catch(() => toast.error('Kon werkbon niet verwijderen'))
-                            }
-                          }}
-                          className="p-1 rounded-md text-muted-foreground/30 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors opacity-0 group-hover:opacity-100"
-                          title="Verwijderen"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-            </CardContent>
-          </Card>
-          )}
+            </div>
+          )
+        })()}
 
-          {/* Werkbon aanmaken dialog */}
-          {project && (
-            <WerkbonVanProjectDialog
-              open={showWerkbonDialog}
-              onOpenChange={setShowWerkbonDialog}
-              projectId={project.id}
-              klantId={project.klant_id}
-              klant={klant}
-              offertes={projectOffertes}
-            />
-          )}
-
-          {/* ── Facturen ── */}
-          {activeTab === 'financieel' && projectFacturen.length > 0 && (
-            <Card className="border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px]">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                    <div className="p-1 rounded-md bg-emerald-500/10">
-                      <CreditCard className="h-3.5 w-3.5 text-emerald-600" />
-                    </div>
-                    Facturen
-                    <span className="text-xs text-muted-foreground font-normal">{projectFacturen.length}</span>
-                  </CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {projectFacturen.map((factuur) => (
-                    <div
-                      key={factuur.id}
-                      className="flex items-center justify-between p-2 rounded-lg hover:bg-background dark:hover:bg-muted/50 cursor-pointer transition-colors"
-                      onClick={() => navigate(`/facturen/${factuur.id}`)}
-                    >
-                      <div>
-                        <p className="text-sm font-medium font-mono">{factuur.nummer}</p>
-                        <p className="text-xs text-muted-foreground font-mono">{new Date(factuur.factuurdatum).toLocaleDateString('nl-NL')}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-bold font-mono">{formatCurrency(factuur.totaal)}</span>
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${
-                          factuur.status === 'betaald' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
-                          factuur.status === 'vervallen' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
-                          factuur.status === 'verzonden' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
-                          'bg-muted text-foreground/70'
-                        }`}>
-                          {factuur.status === 'betaald' ? 'Betaald' : factuur.status === 'verzonden' ? 'Verzonden' : factuur.status === 'vervallen' ? 'Verlopen' : factuur.status}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* ── Uitgaven ── */}
-          {activeTab === 'financieel' && projectUitgaven.length > 0 && (
-            <Card className="border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px]">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                    <div className="p-1 rounded-md bg-orange-500/10">
-                      <Wallet className="h-3.5 w-3.5 text-orange-600" />
-                    </div>
-                    Uitgaven
-                    <span className="text-xs text-muted-foreground font-normal">{projectUitgaven.length}</span>
-                  </CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {projectUitgaven.map((uitgave) => (
-                    <div
-                      key={uitgave.id}
-                      className="flex items-center justify-between p-2 rounded-lg hover:bg-background dark:hover:bg-muted/50 cursor-pointer transition-colors"
-                      onClick={() => navigate('/uitgaven')}
-                    >
-                      <div>
-                        <p className="text-sm font-medium font-mono">{uitgave.uitgave_nummer}</p>
-                        <p className="text-xs text-muted-foreground font-mono">{new Date(uitgave.datum).toLocaleDateString('nl-NL')}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-bold font-mono">{formatCurrency(uitgave.bedrag_incl_btw)}</span>
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${
-                          uitgave.status === 'betaald' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
-                          uitgave.status === 'verlopen' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
-                          'bg-muted text-foreground/70'
-                        }`}>
-                          {uitgave.status === 'betaald' ? 'Betaald' : uitgave.status === 'verlopen' ? 'Verlopen' : 'Open'}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-
-          {/* ── Offertes ── */}
-          {activeTab === 'financieel' && projectOffertes.length > 0 && (
+        {/* Offertes */}
+        {projectOffertes.length > 0 && (
           <Card className="border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px]">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
@@ -2138,142 +1127,370 @@ export function ProjectDetail() {
                   Offertes
                   <span className="text-xs text-muted-foreground font-normal">{projectOffertes.length}</span>
                 </CardTitle>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 w-7 p-0"
-                  onClick={openNieuweOfferte}
-                  title="Nieuwe offerte"
-                >
+                <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={openNieuweOfferte}>
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
             </CardHeader>
             <CardContent>
-              {(
-                <div className="space-y-2">
-                  {projectOffertes.map((offerte) => {
-                    const linkedFactuur = offerteFactuurMap[offerte.id]
-                    return (
-                      <div
-                        key={offerte.id}
-                        className="bg-background dark:bg-muted/50 rounded-lg px-3 py-2.5 space-y-1.5"
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="text-sm font-medium text-foreground truncate">{offerte.titel}</p>
-                          {/* Quick status change */}
-                          {offerte.status !== 'gefactureerd' ? (
-                            <select
-                              value={offerte.status}
-                              onChange={(e) => handleOfferteStatusChange(offerte.id, e.target.value as Offerte['status'])}
-                              className={`${getStatusColor(offerte.status)} text-2xs px-1.5 py-0.5 rounded-full border-0 cursor-pointer appearance-none font-medium focus:ring-1 focus:ring-primary/30 focus:outline-none`}
-                            >
-                              <option value="concept">Concept</option>
-                              <option value="verzonden">Verzonden</option>
-                              <option value="bekeken">Bekeken</option>
-                              <option value="goedgekeurd">Goedgekeurd</option>
-                              <option value="afgewezen">Afgewezen</option>
-                              <option value="verlopen">Verlopen</option>
-                            </select>
-                          ) : (
-                            <Badge className={`${getStatusColor(offerte.status)} text-2xs px-1.5 py-0 flex-shrink-0`}>
-                              {offerte.status}
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-muted-foreground font-mono">{offerte.nummer}</span>
-                          <span className="text-sm font-bold text-foreground font-mono">{formatCurrency(offerte.totaal)}</span>
-                        </div>
-                        <div className="flex items-center gap-1 pt-0.5 flex-wrap">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 px-2 text-xs"
-                            onClick={() => navigate(`/offertes/${offerte.id}/bewerken`, { state: { from: location.pathname } })}
+              <div className="space-y-2">
+                {projectOffertes.map((offerte) => {
+                  const linkedFactuur = offerteFactuurMap[offerte.id]
+                  return (
+                    <div key={offerte.id} className="bg-background rounded-lg px-3 py-2.5 space-y-1.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm font-medium text-foreground truncate">{offerte.titel}</p>
+                        {offerte.status !== 'gefactureerd' ? (
+                          <select
+                            value={offerte.status}
+                            onChange={(e) => handleOfferteStatusChange(offerte.id, e.target.value as Offerte['status'])}
+                            className={`${getStatusColor(offerte.status)} text-2xs px-1.5 py-0.5 rounded-full border-0 cursor-pointer appearance-none font-medium focus:ring-1 focus:ring-primary/30 focus:outline-none`}
                           >
-                            <Pencil className="h-3 w-3 mr-1" />
-                            Bewerken
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 px-2 text-xs"
-                            onClick={() => {
-                              setEmailOfferteId(offerte.id)
-                              setEmailOnderwerp(`Offerte ${offerte.nummer} - ${offerte.titel}`)
-                              setEmailBericht(
-                                `Beste ${project.klant_naam || 'klant'},\n\nHierbij ontvangt u onze offerte "${offerte.titel}" (${offerte.nummer}) ter waarde van ${formatCurrency(offerte.totaal)}.\n\nDeze offerte is geldig tot ${formatDate(offerte.geldig_tot)}.\n\nMocht u vragen hebben, neem dan gerust contact met ons op.\n\nMet vriendelijke groet`
-                              )
-                              setEmailOfferteOpen(true)
-                            }}
-                          >
-                            <Mail className="h-3 w-3 mr-1" />
-                            Mail
-                          </Button>
-                        </div>
-                        {/* Factureren row */}
-                        {!offerte.geconverteerd_naar_factuur_id && (
-                          <div className="flex items-center justify-between bg-emerald-50 dark:bg-emerald-900/20 rounded-md px-2.5 py-1.5 border border-emerald-200 dark:border-emerald-800 mt-1">
-                            <div className="flex items-center gap-1.5">
-                              <CreditCard className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-                              <span className="text-xs text-emerald-700 dark:text-emerald-300">Factureren</span>
-                            </div>
-                            <Button
-                              size="sm"
-                              className="h-6 px-2.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
-                              onClick={() => handleCreateFactuurFromOfferte(offerte)}
-                            >
-                              Factureren &rarr;
-                            </Button>
-                          </div>
-                        )}
-                        {offerte.geconverteerd_naar_factuur_id && (
-                          <div className="flex items-center justify-between bg-blue-50 dark:bg-blue-900/20 rounded-md px-2.5 py-1.5 border border-blue-200 dark:border-blue-800 mt-1">
-                            <div className="flex items-center gap-1.5">
-                              <CheckCircle2 className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-                              <span className="text-xs text-blue-700 dark:text-blue-300">
-                                {linkedFactuur ? (
-                                  <>
-                                    {linkedFactuur.nummer}
-                                    <span className="mx-1">&middot;</span>
-                                    <span className={
-                                      linkedFactuur.status === 'betaald' ? 'text-emerald-600 dark:text-emerald-400 font-medium' :
-                                      linkedFactuur.status === 'vervallen' ? 'text-red-600 dark:text-red-400 font-medium' :
-                                      ''
-                                    }>
-                                      {linkedFactuur.status === 'betaald' ? 'Betaald' :
-                                       linkedFactuur.status === 'verzonden' ? 'Verzonden' :
-                                       linkedFactuur.status === 'concept' ? 'Concept' :
-                                       linkedFactuur.status === 'vervallen' ? 'Vervallen' :
-                                       linkedFactuur.status === 'gecrediteerd' ? 'Gecrediteerd' :
-                                       linkedFactuur.status}
-                                    </span>
-                                    <span className="mx-1">&middot;</span>
-                                    <span className="font-mono">{formatCurrency(linkedFactuur.totaal)}</span>
-                                  </>
-                                ) : 'Gefactureerd'}
-                              </span>
-                            </div>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-6 px-2.5 text-xs text-blue-700 border-blue-200 hover:bg-blue-100 dark:text-blue-400 dark:border-blue-800 dark:hover:bg-blue-900/30"
-                              onClick={() => navigate(`/facturen/${offerte.geconverteerd_naar_factuur_id}`)}
-                            >
-                              Bekijk factuur
-                            </Button>
-                          </div>
+                            <option value="concept">Concept</option>
+                            <option value="verzonden">Verzonden</option>
+                            <option value="bekeken">Bekeken</option>
+                            <option value="goedgekeurd">Goedgekeurd</option>
+                            <option value="afgewezen">Afgewezen</option>
+                            <option value="verlopen">Verlopen</option>
+                          </select>
+                        ) : (
+                          <Badge className={`${getStatusColor(offerte.status)} text-2xs px-1.5 py-0 flex-shrink-0`}>
+                            {offerte.status}
+                          </Badge>
                         )}
                       </div>
-                    )
-                  })}
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground font-mono">{offerte.nummer}</span>
+                        <span className="text-sm font-bold text-foreground font-mono">{formatCurrency(offerte.totaal)}</span>
+                      </div>
+                      <div className="flex items-center gap-1 pt-0.5 flex-wrap">
+                        <Button variant="ghost" size="sm" className="h-6 px-2 text-xs"
+                          onClick={() => navigate(`/offertes/${offerte.id}/bewerken`, { state: { from: location.pathname } })}
+                        >
+                          <Pencil className="h-3 w-3 mr-1" />
+                          Bewerken
+                        </Button>
+                        <Button variant="ghost" size="sm" className="h-6 px-2 text-xs"
+                          onClick={() => {
+                            setEmailOfferteId(offerte.id)
+                            setEmailOnderwerp(`Offerte ${offerte.nummer} - ${offerte.titel}`)
+                            setEmailBericht(
+                              `Beste ${project.klant_naam || 'klant'},\n\nHierbij ontvangt u onze offerte "${offerte.titel}" (${offerte.nummer}) ter waarde van ${formatCurrency(offerte.totaal)}.\n\nDeze offerte is geldig tot ${formatDate(offerte.geldig_tot)}.\n\nMocht u vragen hebben, neem dan gerust contact met ons op.\n\nMet vriendelijke groet`
+                            )
+                            setEmailOfferteOpen(true)
+                          }}
+                        >
+                          <Mail className="h-3 w-3 mr-1" />
+                          Mail
+                        </Button>
+                      </div>
+                      {!offerte.geconverteerd_naar_factuur_id && (
+                        <div className="flex items-center justify-between bg-emerald-50 rounded-md px-2.5 py-1.5 border border-emerald-200 mt-1">
+                          <div className="flex items-center gap-1.5">
+                            <CreditCard className="h-3.5 w-3.5 text-emerald-600" />
+                            <span className="text-xs text-emerald-700">Factureren</span>
+                          </div>
+                          <Button size="sm" className="h-6 px-2.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+                            onClick={() => handleCreateFactuurFromOfferte(offerte)}
+                          >
+                            Factureren &rarr;
+                          </Button>
+                        </div>
+                      )}
+                      {offerte.geconverteerd_naar_factuur_id && (
+                        <div className="flex items-center justify-between bg-blue-50 rounded-md px-2.5 py-1.5 border border-blue-200 mt-1">
+                          <div className="flex items-center gap-1.5">
+                            <CheckCircle2 className="h-3.5 w-3.5 text-blue-600" />
+                            <span className="text-xs text-blue-700">
+                              {linkedFactuur ? (
+                                <>{linkedFactuur.nummer} · <span className={linkedFactuur.status === 'betaald' ? 'text-emerald-600 font-medium' : ''}>{linkedFactuur.status}</span> · <span className="font-mono">{formatCurrency(linkedFactuur.totaal)}</span></>
+                              ) : 'Gefactureerd'}
+                            </span>
+                          </div>
+                          <Button variant="outline" size="sm" className="h-6 px-2.5 text-xs"
+                            onClick={() => navigate(`/facturen/${offerte.geconverteerd_naar_factuur_id}`)}
+                          >
+                            Bekijk factuur
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Facturen */}
+        {projectFacturen.length > 0 && (
+          <Card className="border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px]">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <div className="p-1 rounded-md bg-emerald-500/10">
+                  <CreditCard className="h-3.5 w-3.5 text-emerald-600" />
                 </div>
+                Facturen
+                <span className="text-xs text-muted-foreground font-normal">{projectFacturen.length}</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {projectFacturen.map((factuur) => (
+                  <div key={factuur.id}
+                    className="flex items-center justify-between p-2 rounded-lg hover:bg-background cursor-pointer transition-colors"
+                    onClick={() => navigate(`/facturen/${factuur.id}`)}
+                  >
+                    <div>
+                      <p className="text-sm font-medium font-mono">{factuur.nummer}</p>
+                      <p className="text-xs text-muted-foreground font-mono">{new Date(factuur.factuurdatum).toLocaleDateString('nl-NL')}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold font-mono">{formatCurrency(factuur.totaal)}</span>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${
+                        factuur.status === 'betaald' ? 'bg-emerald-100 text-emerald-700' :
+                        factuur.status === 'vervallen' ? 'bg-red-100 text-red-700' :
+                        factuur.status === 'verzonden' ? 'bg-blue-100 text-blue-700' :
+                        'bg-muted text-foreground/70'
+                      }`}>
+                        {factuur.status === 'betaald' ? 'Betaald' : factuur.status === 'verzonden' ? 'Verzonden' : factuur.status === 'vervallen' ? 'Verlopen' : factuur.status}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Uitgaven */}
+        {projectUitgaven.length > 0 && (
+          <Card className="border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px]">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <div className="p-1 rounded-md bg-orange-500/10">
+                  <Wallet className="h-3.5 w-3.5 text-orange-600" />
+                </div>
+                Uitgaven
+                <span className="text-xs text-muted-foreground font-normal">{projectUitgaven.length}</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {projectUitgaven.map((uitgave) => (
+                  <div key={uitgave.id}
+                    className="flex items-center justify-between p-2 rounded-lg hover:bg-background cursor-pointer transition-colors"
+                    onClick={() => navigate('/uitgaven')}
+                  >
+                    <div>
+                      <p className="text-sm font-medium font-mono">{uitgave.uitgave_nummer}</p>
+                      <p className="text-xs text-muted-foreground font-mono">{new Date(uitgave.datum).toLocaleDateString('nl-NL')}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold font-mono">{formatCurrency(uitgave.bedrag_incl_btw)}</span>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${
+                        uitgave.status === 'betaald' ? 'bg-emerald-100 text-emerald-700' :
+                        uitgave.status === 'verlopen' ? 'bg-red-100 text-red-700' :
+                        'bg-muted text-foreground/70'
+                      }`}>
+                        {uitgave.status === 'betaald' ? 'Betaald' : uitgave.status === 'verlopen' ? 'Verlopen' : 'Open'}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+      )}
+
+      {/* ══════════ NOTITIES TAB ══════════ */}
+      {activeTab === 'notities' && (
+      <div className="flex-1 overflow-y-auto p-5">
+        <div className="max-w-2xl mx-auto">
+          <Card className="border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px]">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base font-semibold">Notities & Briefing</CardTitle>
+                <Button
+                  size="sm"
+                  className="h-7 px-3 text-xs"
+                  disabled={briefingSaving}
+                  onClick={handleSaveBriefing}
+                >
+                  {briefingSaving ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Save className="h-3 w-3 mr-1" />}
+                  Opslaan
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Textarea
+                value={briefingText}
+                onChange={(e) => setBriefingText(e.target.value)}
+                placeholder="Voeg hier de projectbriefing en notities toe..."
+                rows={16}
+                className="resize-y border-[hsl(35,15%,87%)] focus:border-primary/40 transition-colors text-sm leading-relaxed"
+              />
+              {project.updated_at && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  Laatst gewijzigd: {formatDate(project.updated_at)}
+                </p>
               )}
             </CardContent>
           </Card>
-          )}
+        </div>
+      </div>
+      )}
 
+      {/* ══════════ DIALOGS (shared across all tabs) ══════════ */}
+
+      {/* Werkbon aanmaken dialog */}
+      {project && (
+        <WerkbonVanProjectDialog
+          open={showWerkbonDialog}
+          onOpenChange={setShowWerkbonDialog}
+          projectId={project.id}
+          klantId={project.klant_id}
+          klant={klant}
+          offertes={projectOffertes}
+        />
+      )}
+
+      {/* Nieuwe taak dialog */}
+      <Dialog open={nieuweTaakOpen} onOpenChange={(open) => {
+        setNieuweTaakOpen(open)
+        if (!open) {
+          setNieuweTaakTitel('')
+          setNieuweTaakBeschrijving('')
+          setNieuweTaakToegewezen('')
+          setNieuweTaakDeadline('')
+          setNieuweTaakStatus('todo')
+          setNieuweTaakPrioriteit('medium')
+        }
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nieuwe taak toevoegen</DialogTitle>
+            <DialogDescription>
+              Voeg een nieuwe taak toe aan dit project.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="taak-titel">Titel</Label>
+              <Input
+                id="taak-titel"
+                placeholder="Titel van de taak..."
+                value={nieuweTaakTitel}
+                onChange={(e) => setNieuweTaakTitel(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="taak-beschrijving">Beschrijving</Label>
+              <Input
+                id="taak-beschrijving"
+                placeholder="Beschrijving..."
+                value={nieuweTaakBeschrijving}
+                onChange={(e) => setNieuweTaakBeschrijving(e.target.value)}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <Select value={nieuweTaakStatus} onValueChange={(v) => setNieuweTaakStatus(v as Taak['status'])}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todo">Todo</SelectItem>
+                    <SelectItem value="bezig">Bezig</SelectItem>
+                    <SelectItem value="review">Review</SelectItem>
+                    <SelectItem value="klaar">Klaar</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Prioriteit</Label>
+                <Select value={nieuweTaakPrioriteit} onValueChange={(v) => setNieuweTaakPrioriteit(v as Taak['prioriteit'])}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="laag">Laag</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="hoog">Hoog</SelectItem>
+                    <SelectItem value="kritiek">Kritiek</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="taak-toegewezen">Toegewezen aan</Label>
+                <Select value={nieuweTaakToegewezen} onValueChange={setNieuweTaakToegewezen}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecteer teamlid..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {alleMedewerkers.map((m) => (
+                      <SelectItem key={m.id} value={m.naam}>
+                        {m.naam}
+                      </SelectItem>
+                    ))}
+                    {projectToewijzingen.length > 0 && alleMedewerkers.length === 0 && (
+                      <SelectItem value="_empty" disabled>Geen medewerkers gevonden</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="taak-deadline">Deadline</Label>
+                <Input
+                  id="taak-deadline"
+                  type="date"
+                  value={nieuweTaakDeadline}
+                  onChange={(e) => setNieuweTaakDeadline(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNieuweTaakOpen(false)}>
+              Annuleren
+            </Button>
+            <Button
+              disabled={!nieuweTaakTitel.trim()}
+              onClick={async () => {
+                try {
+                  await createTaak({
+                    user_id: user?.id || '',
+                    project_id: id!,
+                    titel: nieuweTaakTitel.trim(),
+                    beschrijving: nieuweTaakBeschrijving.trim(),
+                    status: nieuweTaakStatus,
+                    prioriteit: nieuweTaakPrioriteit,
+                    toegewezen_aan: nieuweTaakToegewezen.trim(),
+                    deadline: nieuweTaakDeadline || new Date().toISOString().split('T')[0],
+                    geschatte_tijd: 0,
+                    bestede_tijd: 0,
+                  })
+                  toast.success(`Taak "${nieuweTaakTitel}" toegevoegd`)
+                  setNieuweTaakOpen(false)
+                  setNieuweTaakTitel('')
+                  setNieuweTaakBeschrijving('')
+                  setNieuweTaakToegewezen('')
+                  setNieuweTaakDeadline('')
+                  setNieuweTaakStatus('todo')
+                  setNieuweTaakPrioriteit('medium')
+                  await fetchTaken()
+                } catch (err) {
+                  logger.error('Fout bij aanmaken taak:', err)
+                  toast.error('Kon taak niet aanmaken')
+                }
+              }}
+            >
+              Taak toevoegen
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
           {/* Email offerte dialog */}
           <Dialog open={emailOfferteOpen} onOpenChange={(open) => {
