@@ -83,8 +83,8 @@ export function PulseBar({ project, offertes, facturen, taken, tijdregistraties,
         colorClass="text-cream-deep"
       />
 
-      {/* Progress indicator — compact inline version */}
-      <div className="flex items-center gap-0 py-2 px-4 ml-auto">
+      {/* Progress indicator — refined inline version */}
+      <div className="flex items-center gap-0 py-2.5 px-5 ml-auto">
         {STEPS.map((step, i) => {
           const Icon = step.icon
           const isCompleted = i < activeStep
@@ -93,30 +93,30 @@ export function PulseBar({ project, offertes, facturen, taken, tijdregistraties,
 
           return (
             <div key={step.key} className="flex items-center">
-              <div className="flex flex-col items-center gap-0.5">
+              <div className="flex flex-col items-center gap-1 group cursor-default">
                 <div
                   className={cn(
-                    'h-6 w-6 rounded-full flex items-center justify-center transition-all flex-shrink-0',
-                    isCompleted && 'bg-emerald-500 text-white',
-                    isCurrent && 'bg-primary text-primary-foreground ring-2 ring-primary/30',
-                    !isCompleted && !isCurrent && 'bg-muted text-muted-foreground/50',
+                    'h-7 w-7 rounded-full flex items-center justify-center transition-all duration-300 flex-shrink-0',
+                    isCompleted && 'bg-emerald-500 text-white shadow-sm',
+                    isCurrent && 'bg-primary text-primary-foreground ring-2 ring-primary/20 shadow-sm',
+                    !isCompleted && !isCurrent && 'bg-[hsl(35,15%,92%)] text-muted-foreground/40',
                   )}
                 >
                   <Icon className="h-3 w-3" />
                 </div>
                 <span className={cn(
-                  'text-[9px] font-medium leading-none text-center whitespace-nowrap',
-                  isCompleted && 'text-emerald-600 dark:text-emerald-400',
+                  'text-[9px] font-medium leading-none text-center whitespace-nowrap transition-colors duration-200',
+                  isCompleted && 'text-emerald-600',
                   isCurrent && 'text-primary font-bold',
-                  !isCompleted && !isCurrent && 'text-muted-foreground/50',
+                  !isCompleted && !isCurrent && 'text-muted-foreground/40',
                 )}>
                   {step.label}
                 </span>
               </div>
               {!isLast && (
                 <div className={cn(
-                  'h-0.5 w-3 mx-0.5 rounded-full mt-[-10px]',
-                  isCompleted ? 'bg-emerald-500' : 'bg-muted',
+                  'h-[2px] w-4 mx-0.5 rounded-full mt-[-12px] transition-colors duration-500',
+                  i < activeStep ? 'bg-emerald-400' : 'bg-[hsl(35,15%,90%)]',
                 )} />
               )}
             </div>

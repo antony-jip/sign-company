@@ -876,7 +876,7 @@ export function ProjectDetail() {
       />
 
       {/* ── Tab Bar ── */}
-      <div className="flex items-center gap-1 border-b border-border">
+      <div className="flex items-center gap-0.5 border-b border-[hsl(35,15%,87%)] bg-[#FFFFFE] px-2">
         {([
           { key: 'overzicht' as ProjectTab, label: 'Overzicht', count: projectTaken.length },
           { key: 'werkbon' as ProjectTab, label: 'Werkbon', count: projectWerkbonnen.length },
@@ -886,20 +886,25 @@ export function ProjectDetail() {
             key={tab.key}
             onClick={() => handleTabChange(tab.key)}
             className={cn(
-              'px-4 py-2.5 text-sm font-medium transition-colors relative',
+              'px-4 py-2.5 text-sm font-medium transition-all duration-200 relative rounded-t-md',
               activeTab === tab.key
                 ? 'text-foreground'
-                : 'text-muted-foreground hover:text-foreground'
+                : 'text-muted-foreground/70 hover:text-foreground hover:bg-[hsl(35,15%,97%)]'
             )}
           >
             {tab.label}
             {tab.count !== undefined && tab.count > 0 && (
-              <span className="ml-1.5 text-2xs bg-muted text-muted-foreground rounded-full px-1.5 py-0.5 font-mono">
+              <span className={cn(
+                'ml-1.5 text-2xs rounded-full px-1.5 py-0.5 font-mono transition-colors',
+                activeTab === tab.key
+                  ? 'bg-primary/10 text-primary'
+                  : 'bg-muted text-muted-foreground/60'
+              )}>
                 {tab.count}
               </span>
             )}
             {activeTab === tab.key && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-full" />
+              <div className="absolute bottom-0 left-1 right-1 h-[2px] bg-primary rounded-t-full" />
             )}
           </button>
         ))}
@@ -1014,11 +1019,11 @@ export function ProjectDetail() {
         <div className="flex-1 min-w-0 space-y-6">
 
       {/* ── Project Info Strip ── */}
-      <div className="flex flex-wrap items-center gap-4 bg-[#FFFFFE] border border-[hsl(35,15%,87%)] rounded-[10px] p-4 shadow-[0_1px_3px_rgba(130,100,60,0.04)]">
+      <div className="flex flex-wrap items-center gap-4 bg-[#FFFFFE] border border-[hsl(35,15%,87%)] rounded-[10px] p-4 shadow-[0_1px_3px_rgba(130,100,60,0.04)] transition-shadow duration-300 hover:shadow-[0_2px_8px_rgba(130,100,60,0.08)]">
         {/* Contact & adres */}
         {klant && (
           <div className="flex items-center gap-3 flex-1 min-w-[200px]">
-            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center flex-shrink-0">
+            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center flex-shrink-0 shadow-sm">
               <span className="text-white text-sm font-bold">{getInitials(klant.contactpersoon || klant.bedrijfsnaam || '')}</span>
             </div>
             <div className="min-w-0">
@@ -1026,7 +1031,7 @@ export function ProjectDetail() {
               <p className="text-xs text-muted-foreground truncate">
                 {[klant.adres, klant.postcode, klant.stad].filter(Boolean).join(', ')}
               </p>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground/70">
                 {klant.email && <span className="truncate">{klant.email}</span>}
                 {klant.telefoon && <span className="font-mono">{klant.telefoon}</span>}
               </div>
@@ -1035,10 +1040,10 @@ export function ProjectDetail() {
         )}
 
         {/* Start datum */}
-        <div className="flex items-center gap-2">
-          <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
+        <div className="flex items-center gap-2.5 bg-[hsl(35,15%,97%)] rounded-lg px-3 py-2">
+          <CalendarDays className="h-3.5 w-3.5 text-muted-foreground/60" />
           <div>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Start</p>
+            <p className="text-[10px] text-muted-foreground/60 uppercase tracking-wider font-medium">Start</p>
             <input
               type="date"
               value={project.start_datum || ''}
@@ -1055,10 +1060,10 @@ export function ProjectDetail() {
         </div>
 
         {/* Eind datum */}
-        <div className="flex items-center gap-2">
-          <Target className="h-3.5 w-3.5 text-muted-foreground" />
+        <div className="flex items-center gap-2.5 bg-[hsl(35,15%,97%)] rounded-lg px-3 py-2">
+          <Target className="h-3.5 w-3.5 text-muted-foreground/60" />
           <div>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Deadline</p>
+            <p className="text-[10px] text-muted-foreground/60 uppercase tracking-wider font-medium">Deadline</p>
             <input
               type="date"
               value={project.eind_datum || ''}
@@ -1076,23 +1081,23 @@ export function ProjectDetail() {
       </div>
 
       {/* ── Briefing Sectie ── */}
-      <Card className="border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px] border-l-[3px] border-l-amber-300">
-        <CardHeader className="pb-2">
+      <Card className="border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px] transition-shadow duration-300 hover:shadow-[0_2px_8px_rgba(130,100,60,0.08)] overflow-hidden">
+        <CardHeader className="pb-2 cursor-pointer" onClick={() => !briefingOpen && setBriefingOpen(true)}>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base flex items-center gap-2">
-              <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-sm">
                 <FileEdit className="h-3.5 w-3.5 text-white" />
               </div>
               Briefing
             </CardTitle>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               {briefingOpen && (
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-7 px-3 text-xs"
+                  className="h-7 px-3 text-xs text-primary hover:text-primary/80"
                   disabled={briefingSaving}
-                  onClick={handleSaveBriefing}
+                  onClick={(e) => { e.stopPropagation(); handleSaveBriefing() }}
                 >
                   {briefingSaving ? (
                     <Loader2 className="h-3 w-3 mr-1 animate-spin" />
@@ -1105,8 +1110,8 @@ export function ProjectDetail() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-7 w-7 p-0"
-                onClick={() => setBriefingOpen(!briefingOpen)}
+                className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground rounded-full"
+                onClick={(e) => { e.stopPropagation(); setBriefingOpen(!briefingOpen) }}
               >
                 {briefingOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
               </Button>
@@ -1114,27 +1119,27 @@ export function ProjectDetail() {
           </div>
         </CardHeader>
         {briefingOpen ? (
-          <CardContent className="pt-2">
+          <CardContent className="pt-2 animate-in fade-in slide-in-from-top-1 duration-200">
             <Textarea
               value={briefingText}
               onChange={(e) => setBriefingText(e.target.value)}
               placeholder="Voeg hier de projectbriefing toe... Beschrijf het project, de wensen van de klant, bijzonderheden, etc."
               rows={6}
-              className="resize-y"
+              className="resize-y border-[hsl(35,15%,87%)] focus:border-primary/40 transition-colors"
             />
           </CardContent>
         ) : (
           <CardContent className="pt-0 pb-3">
             {briefingText ? (
               <p
-                className="text-sm text-muted-foreground line-clamp-2 cursor-pointer hover:text-foreground transition-colors"
+                className="text-sm text-muted-foreground line-clamp-2 cursor-pointer hover:text-foreground transition-colors duration-200"
                 onClick={() => setBriefingOpen(true)}
               >
                 {briefingText}
               </p>
             ) : (
               <p
-                className="text-sm text-muted-foreground/60 italic cursor-pointer hover:text-muted-foreground transition-colors"
+                className="text-sm text-muted-foreground/50 italic cursor-pointer hover:text-muted-foreground transition-colors duration-200"
                 onClick={() => setBriefingOpen(true)}
               >
                 Klik om een briefing toe te voegen...
@@ -1550,35 +1555,14 @@ export function ProjectDetail() {
             </Card>
           )}
 
-          {/* ── Klantportaal (inline) ── */}
+          {/* ── Klantportaal (inline, collapsible) ── */}
           {project && (
-            <Card className="border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px] overflow-hidden">
-              <CardHeader className="pb-2 bg-gradient-to-r from-emerald-50/40 to-transparent">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center">
-                      <Send className="h-3.5 w-3.5 text-white" />
-                    </div>
-                    <span>Klantportaal</span>
-                    <div className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.4)]" />
-                  </CardTitle>
-                </div>
-                {klant && (
-                  <div className="flex items-center gap-2 ml-9 mt-1">
-                    <span className="text-xs text-muted-foreground">{klant.contactpersoon || klant.bedrijfsnaam}</span>
-                    {klant.email && <span className="text-xs text-muted-foreground/60">· {klant.email}</span>}
-                  </div>
-                )}
-              </CardHeader>
-              <CardContent className="p-0">
-                <PortaalPanel
-                  projectId={project.id}
-                  projectNaam={project.naam}
-                  klant={klant}
-                  inline
-                />
-              </CardContent>
-            </Card>
+            <PortaalPanel
+              projectId={project.id}
+              projectNaam={project.naam}
+              klant={klant}
+              inline
+            />
           )}
 
           {/* ── Montage Planning ── */}
@@ -1644,10 +1628,10 @@ export function ProjectDetail() {
         </div>{/* einde linkerkolom */}
 
         {/* ── Rechterkolom: sidebar ── */}
-        <div className="w-full lg:w-80 xl:w-96 flex-shrink-0 space-y-4 lg:self-start">
+        <div className="w-full lg:w-80 xl:w-96 flex-shrink-0 space-y-4 lg:self-start lg:sticky lg:top-4">
 
           {/* ── Team ── */}
-          <Card className="border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px]">
+          <Card className="border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px] transition-shadow duration-300 hover:shadow-[0_2px_8px_rgba(130,100,60,0.08)]">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-semibold flex items-center gap-2">
@@ -1731,7 +1715,7 @@ export function ProjectDetail() {
           />
 
           {/* Bestanden upload + lijst */}
-          <Card className="border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px]">
+          <Card className="border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px] transition-shadow duration-300 hover:shadow-[0_2px_8px_rgba(130,100,60,0.08)]">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base flex items-center gap-2">

@@ -65,7 +65,7 @@ export function CockpitTopBar({
   return (
     <div className="bg-[#FFFFFE] border-b border-[hsl(35,15%,87%)]">
       {/* Status color bar */}
-      <div className={`h-1 w-full ${getStatusBadgeClass(project.status)}`} style={{ border: 'none' }} />
+      <div className={`h-[3px] w-full ${getStatusBadgeClass(project.status)} transition-colors duration-500`} style={{ border: 'none' }} />
 
       {/* Top row: breadcrumbs */}
       <div className="flex items-center gap-2 px-5 pt-2.5 pb-0">
@@ -184,15 +184,15 @@ export function CockpitTopBar({
             <span className="hidden lg:inline">Kopiëren</span>
           </Button>
           <div className="w-px h-5 bg-[hsl(35,15%,87%)] mx-0.5 hidden sm:block" />
-          <Button size="sm" className="h-7 px-3 text-xs bg-primary hover:bg-primary/90 text-white font-medium" onClick={onNewOfferte}>
+          <Button size="sm" className="h-7 px-3 text-xs bg-primary hover:bg-primary/90 text-white font-medium shadow-sm transition-all duration-200 hover:shadow-md" onClick={onNewOfferte}>
             <Receipt className="h-3.5 w-3.5 mr-1.5" />
             <span className="hidden sm:inline">Offerte</span>
           </Button>
-          <Button variant="outline" size="sm" className="h-7 px-2.5 text-xs" onClick={onNewWerkbon}>
+          <Button variant="outline" size="sm" className="h-7 px-2.5 text-xs transition-all duration-200 hover:border-primary/30" onClick={onNewWerkbon}>
             <Plus className="h-3 w-3 mr-1" />
             <span className="hidden md:inline">Werkbon</span>
           </Button>
-          <Button variant="outline" size="sm" className="h-7 px-2.5 text-xs" onClick={onNewMontage}>
+          <Button variant="outline" size="sm" className="h-7 px-2.5 text-xs transition-all duration-200 hover:border-primary/30" onClick={onNewMontage}>
             <Plus className="h-3 w-3 mr-1" />
             <span className="hidden md:inline">Montage</span>
           </Button>
