@@ -863,14 +863,14 @@ export function EmailLayout() {
 
         {/* Search bar */}
         {showSearch && (
-          <div className="flex items-center px-4 h-11 border-b border-foreground/[0.05] bg-foreground/[0.015]">
+          <div className="flex items-center px-4 h-11 mx-3 my-2 rounded-xl bg-muted/50 border border-border/30">
             <Search className="h-4 w-4 text-foreground/25 mr-3 flex-shrink-0" />
             <input
               type="text"
               value={searchInput}
               onChange={(e) => handleSearchChange(e.target.value)}
-              placeholder="Zoeken in emails... (from: to: has: label:)"
-              className="flex-1 bg-transparent text-sm outline-none placeholder:text-foreground/25"
+              placeholder="Zoek in emails..."
+              className="flex-1 bg-transparent text-sm outline-none placeholder:text-foreground/30"
               autoFocus
             />
             {searchInput && (
@@ -884,7 +884,7 @@ export function EmailLayout() {
         {/* Email list */}
         <div
           ref={emailListRef}
-          className="flex-1 overflow-y-auto"
+          className="flex-1 overflow-y-auto scroll-smooth"
           onScroll={handleScroll}
         >
           {isLoading ? (
@@ -910,7 +910,7 @@ export function EmailLayout() {
               </p>
             </div>
           ) : (
-            <>
+            <div className="divide-y divide-border/40">
               {threadedEmails.map((email, index) => (
                 <EmailListItem
                   key={email.id}
@@ -938,7 +938,7 @@ export function EmailLayout() {
                   Meer laden ({threadedEmails.length} van {imapTotal})
                 </button>
               )}
-            </>
+            </div>
           )}
         </div>
       </div>

@@ -23,7 +23,8 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Email, Klant } from '@/types'
-import { extractSenderName, extractSenderEmail, formatShortDate, getAvatarColor } from './emailHelpers'
+import { extractSenderName, extractSenderEmail, formatShortDate, getAvatarColor, getAvatarRingColor } from './emailHelpers'
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { callForgie } from '@/services/forgieService'
 import { toast } from 'sonner'
@@ -234,6 +235,7 @@ export function EmailReader({
   const senderName = useMemo(() => email ? extractSenderName(email.van) : '', [email?.van])
   const senderEmail = useMemo(() => email ? extractSenderEmail(email.van) : '', [email?.van])
   const avatarColor = useMemo(() => getAvatarColor(senderName), [senderName])
+  const avatarRingColor = useMemo(() => getAvatarRingColor(senderName), [senderName])
 
   // Async DOMPurify sanitization — avoids TDZ with CJS module
   const [sanitizedBody, setSanitizedBody] = useState('')
@@ -242,10 +244,26 @@ export function EmailReader({
     let cancelled = false
     getDOMPurify().then(purify => {
       if (!cancelled) {
-        setSanitizedBody(purify.sanitize(email.inhoud, {
+        let processed = purify.sanitize(email.inhoud, {
           ADD_TAGS: ['style'],
           ADD_ATTR: ['target', 'style'],
-        }))
+        })
+        // Dim email signatures (after "Met vriendelijke groet", "--", etc.)
+        const sigMarkers = ['Met vriendelijke groet', 'Kind regards', 'Best regards', 'Regards,', 'Groeten,', 'Mvg,', 'Met hartelijke groet']
+        for (const marker of sigMarkers) {
+          const idx = processed.indexOf(marker)
+          if (idx > processed.length * 0.3) {
+            processed = processed.slice(0, idx) + '<div class="email-sig-dim">' + processed.slice(idx) + '</div>'
+            break
+          }
+        }
+        if (!processed.includes('email-sig-dim')) {
+          const dashIdx = processed.indexOf('<br>--<br>')
+          if (dashIdx > processed.length * 0.3) {
+            processed = processed.slice(0, dashIdx) + '<div class="email-sig-dim">' + processed.slice(dashIdx) + '</div>'
+          }
+        }
+        setSanitizedBody(processed)
       }
     })
     return () => { cancelled = true }
@@ -274,8 +292,8 @@ export function EmailReader({
       <div className="flex h-full">
         {/* ─── MAIN: full-screen compose ─── */}
         <div className="flex-1 flex flex-col min-w-0">
-          {/* Top action bar — same as reading view */}
-          <div className="flex items-center justify-between px-5 h-12 border-b border-foreground/[0.06] flex-shrink-0 bg-card">
+          {/* Top action bar — sticky */}
+          <div className="flex items-center justify-between px-5 h-12 border-b border-border/50 flex-shrink-0 bg-card sticky top-0 z-10">
             <div className="flex items-center gap-1">
               <Button
                 variant="ghost"
@@ -477,7 +495,7 @@ export function EmailReader({
         </div>
 
         {/* ─── CRM SIDEBAR (right, same as reading view) ─── */}
-        <CRMSidebar email={email} senderName={senderName} senderEmail={senderEmail} avatarColor={avatarColor} allEmails={allEmails} onSelectEmail={onSelectEmail} />
+        <CRMSidebar email={email} senderName={senderName} senderEmail={senderEmail} avatarColor={avatarColor} avatarRingColor={avatarRingColor} allEmails={allEmails} onSelectEmail={onSelectEmail} />
       </div>
     )
   }
@@ -489,8 +507,10 @@ export function EmailReader({
     <div className="flex h-full">
       {/* ─── MAIN: email content ─── */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Top action bar */}
-        <div className="flex items-center justify-between px-5 h-12 border-b border-foreground/[0.06] flex-shrink-0 bg-card">
+        {/* Top action bar — sticky, grouped */}
+        <TooltipProvider delayDuration={300}>
+        <div className="flex items-center justify-between px-5 h-12 border-b border-border/50 flex-shrink-0 bg-card sticky top-0 z-10">
+          {/* Left: Back */}
           <div className="flex items-center gap-1">
             <Button
               variant="ghost"
@@ -501,32 +521,43 @@ export function EmailReader({
               <ArrowLeft className="h-4 w-4" />
               <span className="text-sm">Terug</span>
             </Button>
-            <div className="w-px h-5 bg-foreground/[0.08] mx-1.5" />
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/40 hover:text-foreground hover:bg-foreground/[0.04]" onClick={() => email && onArchive?.(email)} title="Archiveren">
-              <Archive className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/40 hover:text-red-500 hover:bg-red-500/[0.06]" onClick={() => email && onDelete?.(email)} title="Verwijderen">
-              <Trash2 className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/40 hover:text-foreground hover:bg-foreground/[0.04]" onClick={() => email && onToggleRead?.(email)} title="Markeer als ongelezen">
-              <MailOpen className="h-4 w-4" />
-            </Button>
-            <div className="w-px h-5 bg-foreground/[0.08] mx-1.5" />
+          </div>
+
+          {/* Center: Action buttons with tooltips */}
+          <div className="flex items-center gap-0.5">
+            <Tooltip><TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/35 hover:text-foreground/70 hover:bg-foreground/[0.04] transition-colors duration-150" onClick={() => email && onArchive?.(email)}>
+                <Archive className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger><TooltipContent side="bottom" className="text-xs">Archiveren</TooltipContent></Tooltip>
+            <Tooltip><TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/35 hover:text-red-500 hover:bg-red-500/[0.06] transition-colors duration-150" onClick={() => email && onDelete?.(email)}>
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger><TooltipContent side="bottom" className="text-xs">Verwijderen</TooltipContent></Tooltip>
+            <Tooltip><TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/35 hover:text-foreground/70 hover:bg-foreground/[0.04] transition-colors duration-150" onClick={() => email && onToggleRead?.(email)}>
+                <MailOpen className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger><TooltipContent side="bottom" className="text-xs">Markeer als ongelezen</TooltipContent></Tooltip>
+          </div>
+
+          {/* Right: AI + Reply + Navigation */}
+          <div className="flex items-center gap-1.5">
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 gap-1.5 text-[13px] text-foreground/50 hover:text-foreground/80 hover:bg-foreground/[0.04]"
+              className="h-8 gap-1.5 text-[13px] rounded-lg bg-[#9B8EC4]/10 text-[#9B8EC4] hover:bg-[#9B8EC4]/18 hover:text-[#9B8EC4] transition-colors duration-150"
               onClick={handleSummarize}
               disabled={summaryLoading}
               title="Samenvatten (⌘⇧S)"
             >
-              {summaryLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />}
+              {summaryLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
               <span>Samenvatten</span>
             </Button>
             <Button
-              variant="ghost"
               size="sm"
-              className="h-8 gap-1.5 text-[13px] text-foreground/50 hover:text-foreground/80 hover:bg-foreground/[0.04]"
+              className="h-8 gap-1.5 text-[13px] rounded-lg shadow-sm"
               onClick={handleGenerateReplyFromReader}
               disabled={forgieLoading}
               title="Antwoord genereren (⌘⇧R)"
@@ -534,150 +565,161 @@ export function EmailReader({
               {forgieLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Reply className="h-3.5 w-3.5" />}
               <span>Beantwoorden</span>
             </Button>
+            {emailIndex !== undefined && emailTotal !== undefined && (
+              <>
+                <div className="w-px h-5 bg-border/50 mx-1" />
+                <span className="text-xs text-foreground/30 tabular-nums">{emailIndex + 1}/{emailTotal}</span>
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-foreground/30 hover:text-foreground/60" onClick={() => onNavigate?.('prev')} disabled={emailIndex <= 0}>
+                  <ChevronUp className="h-3.5 w-3.5" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-foreground/30 hover:text-foreground/60" onClick={() => onNavigate?.('next')} disabled={emailIndex >= emailTotal - 1}>
+                  <ChevronDown className="h-3.5 w-3.5" />
+                </Button>
+              </>
+            )}
           </div>
-          {emailIndex !== undefined && emailTotal !== undefined && (
-            <div className="flex items-center gap-1 text-sm text-foreground/35">
-              <span className="tabular-nums">{emailIndex + 1}/{emailTotal}</span>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/35 hover:text-foreground" onClick={() => onNavigate?.('prev')} disabled={emailIndex <= 0}>
-                <ChevronUp className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/35 hover:text-foreground" onClick={() => onNavigate?.('next')} disabled={emailIndex >= emailTotal - 1}>
-                <ChevronDown className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
         </div>
+        </TooltipProvider>
 
         {/* Scrollable email content */}
         <div className="flex-1 overflow-y-auto bg-card">
-          <div className="max-w-[880px] mx-auto px-8 py-5">
-            {/* Subject + sender row — compact like Gmail */}
-            <div className="flex items-start justify-between gap-4 mb-1">
-              <h1 className="text-lg font-semibold text-foreground leading-snug tracking-tight">
-                {email.onderwerp || '(geen onderwerp)'}
-              </h1>
-              <div className="flex items-center gap-1.5 flex-shrink-0 pt-0.5">
-                <span className="text-[11px] text-foreground/30 tabular-nums whitespace-nowrap">{formatShortDate(email.datum)}</span>
-                <button
-                  onClick={() => onToggleStar?.(email)}
-                  className={cn(
-                    'p-1 rounded-md transition-all',
-                    email.starred
-                      ? 'text-amber-400 hover:bg-amber-50'
-                      : 'text-foreground/15 hover:text-foreground/40 hover:bg-foreground/[0.04]',
-                  )}
-                >
-                  <Star className={cn('h-3.5 w-3.5', email.starred && 'fill-amber-400')} />
-                </button>
-              </div>
-            </div>
-
-            {/* Sender info */}
-            <div className="flex items-center gap-2.5 mb-3">
-              <div className={cn('w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0', avatarColor)}>
-                <span className="text-xs font-bold text-white">{senderName[0]?.toUpperCase()}</span>
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-baseline gap-1.5">
-                  <span className="text-[13px] font-semibold text-foreground">{senderName}</span>
-                  <span className="text-[11px] text-foreground/25 truncate">&lt;{senderEmail}&gt;</span>
-                </div>
-                <div className="text-[11px] text-foreground/30">aan {email.aan}</div>
-              </div>
-            </div>
-
-            {/* Reply/Forward action buttons — prominent row */}
-            <div className="flex items-center gap-2 mb-5 pb-4 border-b border-foreground/[0.05]">
-              <button onClick={() => handleReply('reply')}
-                className="flex items-center gap-1.5 h-9 px-4 rounded-lg border border-foreground/[0.08] bg-foreground/[0.025] text-[13px] font-medium text-foreground/60 hover:text-foreground hover:bg-foreground/[0.05] hover:border-foreground/[0.12] transition-all"
-                title="Beantwoorden">
-                <Reply className="h-3.5 w-3.5" />
-                <span>Beantwoorden</span>
-              </button>
-              <button onClick={() => handleReply('reply-all')}
-                className="flex items-center gap-1.5 h-9 px-3 rounded-lg border border-foreground/[0.08] bg-foreground/[0.025] text-[13px] text-foreground/50 hover:text-foreground hover:bg-foreground/[0.05] hover:border-foreground/[0.12] transition-all"
-                title="Allen beantwoorden">
-                <ReplyAll className="h-3.5 w-3.5" />
-                <span>Allen</span>
-              </button>
-              <button onClick={() => handleReply('forward')}
-                className="flex items-center gap-1.5 h-9 px-3 rounded-lg border border-foreground/[0.08] bg-foreground/[0.025] text-[13px] text-foreground/50 hover:text-foreground hover:bg-foreground/[0.05] hover:border-foreground/[0.12] transition-all"
-                title="Doorsturen">
-                <Forward className="h-3.5 w-3.5" />
-                <span>Doorsturen</span>
-              </button>
-            </div>
-
-            {/* ── Summary block ── */}
-            {(summary || summaryLoading) && (
-              <div className="mb-5 rounded-xl border border-foreground/[0.06] overflow-hidden bg-foreground/[0.015]">
-                <button
-                  onClick={() => setSummaryExpanded(e => !e)}
-                  className="w-full flex items-center justify-between px-4 py-2.5 text-left"
-                >
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-3.5 w-3.5 text-foreground/35" />
-                    <span className="text-[12px] font-semibold text-foreground/55">Samenvatting</span>
-                  </div>
-                  <ChevronDown className={cn('h-3.5 w-3.5 text-foreground/25 transition-transform', summaryExpanded ? '' : '-rotate-90')} />
-                </button>
-                {summaryExpanded && (
-                  <div className="px-4 pb-3">
-                    {summaryLoading ? (
-                      <div className="flex items-center gap-2 text-[12px] text-foreground/40">
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        <span>Samenvatten...</span>
-                      </div>
-                    ) : (
-                      <p className="text-[13px] leading-relaxed text-foreground/70">{summary}</p>
+          <div className="max-w-[880px] mx-auto">
+            {/* Header: subject + sender + reply actions */}
+            <div className="px-8 py-5 border-b border-border/40">
+              {/* Subject row */}
+              <div className="flex items-start justify-between gap-4 mb-4">
+                <h1 className="text-lg font-semibold text-foreground leading-snug tracking-tight">
+                  {email.onderwerp || '(geen onderwerp)'}
+                </h1>
+                <div className="flex items-center gap-1.5 flex-shrink-0 pt-0.5">
+                  <span className="text-[11px] text-foreground/30 tabular-nums whitespace-nowrap">{formatShortDate(email.datum)}</span>
+                  <button
+                    onClick={() => onToggleStar?.(email)}
+                    className={cn(
+                      'p-1 rounded-md transition-all',
+                      email.starred
+                        ? 'text-amber-400 hover:bg-amber-50'
+                        : 'text-foreground/15 hover:text-foreground/40 hover:bg-foreground/[0.04]',
                     )}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Email body — direct, no extra spacing */}
-            {isLoadingBody ? (
-              <div className="space-y-3 py-2">
-                <div className="h-4 bg-foreground/[0.04] rounded w-full animate-pulse" />
-                <div className="h-4 bg-foreground/[0.04] rounded w-[90%] animate-pulse" />
-                <div className="h-4 bg-foreground/[0.04] rounded w-3/4 animate-pulse" />
-                <div className="h-4 bg-foreground/[0.04] rounded w-[85%] animate-pulse" />
-              </div>
-            ) : (
-              <div ref={emailBodyRef}>
-                <div
-                  className="text-[14px] leading-[1.7] text-foreground/80 [&_img]:max-w-full [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2 [&_table]:w-full [&_blockquote]:border-l-2 [&_blockquote]:border-foreground/15 [&_blockquote]:pl-4 [&_blockquote]:text-foreground/50 [&_p]:mb-2 [&_h1]:text-lg [&_h1]:font-semibold [&_h1]:mb-2 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mb-2 [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:mb-1.5 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-2 [&_li]:mb-0.5"
-                  dangerouslySetInnerHTML={{ __html: sanitizedBody }}
-                />
-                <EmailReaderAIToolbar containerRef={emailBodyRef} />
-              </div>
-            )}
-
-            {/* Attachments — inline chips */}
-            {email.bijlagen > 0 && (
-              <div className="mt-6 pt-4 border-t border-foreground/[0.05]">
-                <div className="flex flex-wrap gap-2">
-                  {Array.from({ length: email.bijlagen }).map((_, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center gap-2.5 px-3 py-2 rounded-lg border border-foreground/[0.06] bg-foreground/[0.015] hover:bg-foreground/[0.03] hover:border-foreground/[0.1] transition-all duration-150 cursor-pointer group/att"
-                    >
-                      <div className="w-7 h-7 rounded bg-red-500/90 text-white text-[9px] font-bold flex items-center justify-center">PDF</div>
-                      <span className="text-[13px] text-foreground/55 group-hover/att:text-foreground/80">bijlage-{i + 1}.pdf</span>
-                      <Download className="h-3 w-3 text-foreground/20 group-hover/att:text-foreground/45" />
-                    </div>
-                  ))}
+                  >
+                    <Star className={cn('h-3.5 w-3.5', email.starred && 'fill-amber-400')} />
+                  </button>
                 </div>
               </div>
-            )}
+
+              {/* Sender info — larger avatar with accent ring */}
+              <div className="flex items-center gap-3 mb-4">
+                <div className={cn('w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ring-2 shadow-sm', avatarColor, avatarRingColor)}>
+                  <span className="text-sm font-bold text-white">{senderName[0]?.toUpperCase()}</span>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-[14px] font-semibold text-foreground">{senderName}</span>
+                    <span className="text-xs text-muted-foreground truncate">&lt;{senderEmail}&gt;</span>
+                  </div>
+                  <div className="text-[11px] text-muted-foreground mt-0.5">aan {email.aan}</div>
+                </div>
+              </div>
+
+              {/* Reply/Forward — ghost style, subtle */}
+              <div className="flex items-center gap-1.5">
+                <button onClick={() => handleReply('reply')}
+                  className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-[13px] text-foreground/40 hover:text-foreground/70 hover:bg-foreground/[0.04] transition-colors duration-150"
+                  title="Beantwoorden">
+                  <Reply className="h-3.5 w-3.5" />
+                  <span>Beantwoorden</span>
+                </button>
+                <button onClick={() => handleReply('reply-all')}
+                  className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-[13px] text-foreground/40 hover:text-foreground/70 hover:bg-foreground/[0.04] transition-colors duration-150"
+                  title="Allen beantwoorden">
+                  <ReplyAll className="h-3.5 w-3.5" />
+                  <span>Allen</span>
+                </button>
+                <button onClick={() => handleReply('forward')}
+                  className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-[13px] text-foreground/40 hover:text-foreground/70 hover:bg-foreground/[0.04] transition-colors duration-150"
+                  title="Doorsturen">
+                  <Forward className="h-3.5 w-3.5" />
+                  <span>Doorsturen</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Email body content area */}
+            <div className="px-8 py-6">
+              {/* ── Summary block ── */}
+              {(summary || summaryLoading) && (
+                <div className="mb-6 rounded-xl border border-[#9B8EC4]/15 overflow-hidden bg-[#9B8EC4]/[0.04]">
+                  <button
+                    onClick={() => setSummaryExpanded(e => !e)}
+                    className="w-full flex items-center justify-between px-4 py-2.5 text-left"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="h-3.5 w-3.5 text-[#9B8EC4]" />
+                      <span className="text-[12px] font-semibold text-foreground/55">Samenvatting</span>
+                    </div>
+                    <ChevronDown className={cn('h-3.5 w-3.5 text-foreground/25 transition-transform', summaryExpanded ? '' : '-rotate-90')} />
+                  </button>
+                  {summaryExpanded && (
+                    <div className="px-4 pb-3">
+                      {summaryLoading ? (
+                        <div className="flex items-center gap-2 text-[12px] text-foreground/40">
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          <span>Samenvatten...</span>
+                        </div>
+                      ) : (
+                        <p className="text-[13px] leading-relaxed text-foreground/70">{summary}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Email body — readable, clean hierarchy */}
+              {isLoadingBody ? (
+                <div className="space-y-3 py-2">
+                  <div className="h-4 bg-foreground/[0.04] rounded w-full animate-pulse" />
+                  <div className="h-4 bg-foreground/[0.04] rounded w-[90%] animate-pulse" />
+                  <div className="h-4 bg-foreground/[0.04] rounded w-3/4 animate-pulse" />
+                  <div className="h-4 bg-foreground/[0.04] rounded w-[85%] animate-pulse" />
+                </div>
+              ) : (
+                <div ref={emailBodyRef}>
+                  <div
+                    className="text-[14px] leading-[1.75] text-foreground/80 [&_img]:max-w-full [&_img]:rounded-lg [&_img]:shadow-sm [&_img]:my-3 [&_a]:text-primary [&_a]:no-underline [&_a]:hover:underline [&_a]:underline-offset-2 [&_a]:transition-colors [&_table]:w-full [&_blockquote]:border-l-2 [&_blockquote]:border-muted [&_blockquote]:pl-4 [&_blockquote]:text-sm [&_blockquote]:text-foreground/40 [&_blockquote]:my-3 [&_p]:mb-2 [&_h1]:text-lg [&_h1]:font-semibold [&_h1]:mb-2 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mb-2 [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:mb-1.5 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-2 [&_li]:mb-0.5 [&_.email-sig-dim]:text-muted-foreground [&_.email-sig-dim]:text-[13px]"
+                    dangerouslySetInnerHTML={{ __html: sanitizedBody }}
+                  />
+                  <EmailReaderAIToolbar containerRef={emailBodyRef} />
+                </div>
+              )}
+
+              {/* Attachments — file cards */}
+              {email.bijlagen > 0 && (
+                <div className="mt-6 pt-5 border-t border-border/40">
+                  <div className="flex flex-wrap gap-2.5">
+                    {Array.from({ length: email.bijlagen }).map((_, i) => (
+                      <div
+                        key={i}
+                        className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl border border-border/50 bg-card shadow-sm hover:shadow-elevation-sm hover:border-border/70 transition-all duration-200 cursor-pointer group/att"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-red-500/90 text-white text-[9px] font-bold flex items-center justify-center">PDF</div>
+                        <div className="min-w-0">
+                          <span className="text-[13px] text-foreground/60 group-hover/att:text-foreground/80 transition-colors block">bijlage-{i + 1}.pdf</span>
+                          <span className="text-[11px] text-muted-foreground">128 KB</span>
+                        </div>
+                        <Download className="h-3.5 w-3.5 text-foreground/15 group-hover/att:text-foreground/45 transition-colors ml-1" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
 
           </div>
         </div>
       </div>
 
       {/* ─── CRM SIDEBAR ─── */}
-      <CRMSidebar email={email} senderName={senderName} senderEmail={senderEmail} avatarColor={avatarColor} allEmails={allEmails} onSelectEmail={onSelectEmail} />
+      <CRMSidebar email={email} senderName={senderName} senderEmail={senderEmail} avatarColor={avatarColor} avatarRingColor={avatarRingColor} allEmails={allEmails} onSelectEmail={onSelectEmail} />
     </div>
   )
 }
@@ -706,10 +748,10 @@ function extractCompanyName(senderName: string, email: string): string {
 type InlinePanel = 'none' | 'klant' | 'offerte' | 'project' | 'taak'
 
 const reminderOptions = [
-  { value: '1h', label: 'Over 1 uur' },
-  { value: '1d', label: 'Morgen 9:00' },
-  { value: '2d', label: 'Over 2 dagen' },
-  { value: '1w', label: 'Over 1 week' },
+  { value: '1h', label: 'Over 1 uur', pastel: 'bg-blush/30 hover:bg-blush/50' },
+  { value: '1d', label: 'Morgen 9:00', pastel: 'bg-cream/30 hover:bg-cream/50' },
+  { value: '2d', label: 'Over 2 dagen', pastel: 'bg-sage/30 hover:bg-sage/50' },
+  { value: '1w', label: 'Over 1 week', pastel: 'bg-lavender/30 hover:bg-lavender/50' },
 ]
 
 const CRMSidebar = memo(function CRMSidebar({
@@ -717,6 +759,7 @@ const CRMSidebar = memo(function CRMSidebar({
   senderName,
   senderEmail,
   avatarColor,
+  avatarRingColor,
   allEmails,
   onSelectEmail,
 }: {
@@ -724,6 +767,7 @@ const CRMSidebar = memo(function CRMSidebar({
   senderName: string
   senderEmail: string
   avatarColor: string
+  avatarRingColor?: string
   allEmails?: Email[]
   onSelectEmail?: (email: Email) => void
 }) {
@@ -1111,7 +1155,7 @@ const CRMSidebar = memo(function CRMSidebar({
           {/* Subtle decorative accent */}
           <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-[0.04]" style={{ background: 'radial-gradient(circle, hsl(30 60% 50%), transparent)', transform: 'translate(30%, -30%)' }} />
           <div className="flex items-start gap-3.5 relative">
-            <div className={cn('w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ring-2 ring-white/70', avatarColor)} style={{ boxShadow: '0 3px 12px rgba(120,90,50,0.2)' }}>
+            <div className={cn('w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ring-2', avatarColor, avatarRingColor || 'ring-white/70')} style={{ boxShadow: '0 3px 12px rgba(120,90,50,0.2)' }}>
               <span className="text-base font-bold text-white">{senderName[0]?.toUpperCase()}</span>
             </div>
             <div className="min-w-0 flex-1 pt-0.5">
@@ -1215,7 +1259,7 @@ const CRMSidebar = memo(function CRMSidebar({
                   <button
                     key={e.id}
                     onClick={() => onSelectEmail?.(e)}
-                    className="w-full px-3 py-2.5 rounded-lg hover:bg-white/50 transition-all duration-150 text-left group"
+                    className="w-full px-3 py-2.5 rounded-lg hover:bg-white/60 transition-all duration-150 text-left group"
                   >
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-[11px] font-medium text-foreground/50 group-hover:text-foreground/80 truncate flex-1 transition-colors">{e.onderwerp || '(geen onderwerp)'}</p>
@@ -1254,7 +1298,7 @@ const CRMSidebar = memo(function CRMSidebar({
                   <button
                     key={opt.value}
                     onClick={() => setFollowUpReminder(opt.value)}
-                    className="px-2.5 py-2 rounded-lg text-[11px] font-medium text-foreground/40 hover:text-foreground/70 hover:bg-white/50 transition-all duration-150 text-center"
+                    className={cn('px-2.5 py-2 rounded-lg text-[11px] font-medium text-foreground/45 hover:text-foreground/70 transition-all duration-150 text-center', opt.pastel)}
                   >
                     {opt.label}
                   </button>

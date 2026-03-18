@@ -57,21 +57,19 @@ export const EmailListItem = memo(function EmailListItem({
     <div
       onClick={handleClick}
       className={cn(
-        'group flex items-center gap-3 px-4 py-3 cursor-pointer transition-all duration-150 select-none',
-        'border-b border-foreground/[0.04]',
+        'group flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors duration-150 select-none',
         isActive
           ? 'bg-primary/[0.07] border-l-[3px] border-l-primary'
-          : 'border-l-[3px] border-l-transparent hover:bg-foreground/[0.025]',
+          : 'border-l-[3px] border-l-transparent hover:bg-muted/50',
         isFocused && !isActive && 'bg-foreground/[0.02]',
-        isUnread && 'bg-foreground/[0.015]',
-        isActive && isUnread && 'bg-primary/[0.07]',
+        isUnread && !isActive && 'bg-card/80',
       )}
     >
       {/* Checkbox — overlays the avatar on hover */}
       <div className="relative flex-shrink-0">
         {/* Avatar */}
         <div className={cn(
-          'w-9 h-9 rounded-full flex items-center justify-center transition-opacity',
+          'w-9 h-9 rounded-full flex items-center justify-center transition-opacity ring-1 ring-white/50 shadow-sm',
           avatarColor,
           'group-hover:opacity-0',
           isChecked && 'opacity-0',
@@ -104,7 +102,7 @@ export const EmailListItem = memo(function EmailListItem({
             <span className={cn(
               'truncate leading-snug',
               sizes.name,
-              isUnread ? 'font-semibold text-foreground' : 'text-foreground/65',
+              isUnread ? 'font-semibold text-foreground' : 'text-muted-foreground',
             )}>
               {senderName}
             </span>
@@ -119,7 +117,7 @@ export const EmailListItem = memo(function EmailListItem({
               <Paperclip className="h-3.5 w-3.5 text-foreground/25" />
             )}
             <span className={cn(
-              'text-foreground/40 tabular-nums',
+              'text-muted-foreground tabular-nums',
               sizes.date,
               isUnread && 'text-foreground/55 font-medium',
             )}>
@@ -134,14 +132,14 @@ export const EmailListItem = memo(function EmailListItem({
             'truncate leading-snug',
             compact ? 'max-w-full' : 'max-w-[55%] flex-shrink-0',
             sizes.subject,
-            isUnread ? 'font-medium text-foreground/90' : 'text-foreground/50',
+            isUnread ? 'font-medium text-foreground/90' : 'text-muted-foreground',
           )}>
             {email.onderwerp || '(geen onderwerp)'}
           </span>
           {!compact && preview && (
             <>
-              <span className="text-foreground/20 flex-shrink-0">&mdash;</span>
-              <span className={cn('text-foreground/35 truncate', sizes.preview)}>{preview}</span>
+              <span className="text-foreground/15 flex-shrink-0">&mdash;</span>
+              <span className={cn('text-foreground/30 truncate', sizes.preview)}>{preview}</span>
             </>
           )}
         </div>

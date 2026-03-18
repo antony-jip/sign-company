@@ -421,13 +421,13 @@ export function EmailCompose({
               </>
             )}
 
-            {/* Subject */}
-            <div className="flex items-center border-b border-border/30 py-2">
+            {/* Subject — larger, prominent */}
+            <div className="flex items-center border-b border-border/30 py-2.5">
               <label className="text-sm text-foreground/40 w-12 flex-shrink-0">Onderwerp</label>
               <Input
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
-                className="border-none shadow-none h-8 text-sm focus-visible:ring-0 px-0"
+                className="border-none shadow-none h-9 text-base font-medium focus-visible:ring-0 px-0"
                 placeholder="Onderwerp..."
               />
             </div>
@@ -506,7 +506,7 @@ export function EmailCompose({
               contentEditable
               suppressContentEditableWarning
               className={cn(
-                'min-h-[300px] py-4 text-base leading-relaxed text-foreground outline-none [&_img]:max-w-[200px]',
+                'min-h-[300px] py-5 text-[15px] leading-[1.7] text-foreground outline-none [&_img]:max-w-[200px] transition-shadow duration-200 focus:shadow-sm',
                 isDragging && 'ring-2 ring-primary/30 ring-inset rounded-lg bg-primary/5',
               )}
               onDragOver={(e) => { e.preventDefault(); setIsDragging(true) }}
@@ -578,23 +578,28 @@ export function EmailCompose({
             >
               Annuleren
             </Button>
-            <Button size="sm" className="h-8 gap-1.5" onClick={handleSend} disabled={isSending}>
-              <Send className="h-3.5 w-3.5" />
-              {isSending ? 'Verzenden...' : 'Verzenden'}
-            </Button>
+            <div className="flex items-center">
+              <Button size="sm" className="h-9 gap-1.5 rounded-r-none px-5 shadow-sm" onClick={handleSend} disabled={isSending}>
+                <Send className="h-3.5 w-3.5" />
+                {isSending ? 'Verzenden...' : 'Versturen'}
+              </Button>
+              <Button size="sm" className="h-9 rounded-l-none border-l border-primary-foreground/20 px-1.5 shadow-sm" disabled={isSending}>
+                <ChevronDown className="h-3.5 w-3.5" />
+              </Button>
+            </div>
           </div>
         </div>
       </div>
 
       {/* ─── SIDEBAR ─── */}
-      <div className="w-[280px] border-l border-border/40 flex-shrink-0 overflow-y-auto hidden xl:flex flex-col" style={{ background: 'hsl(36 18% 94%)' }}>
+      <div className="w-[280px] border-l border-amber-900/[0.06] flex-shrink-0 overflow-y-auto hidden xl:flex flex-col" style={{ background: 'linear-gradient(180deg, hsl(30 35% 93%) 0%, hsl(28 30% 91%) 100%)' }}>
         <div className="p-4 space-y-3 flex-1">
 
           {/* ── Forgie AI Tools ── */}
-          <div className="bg-card rounded-[10px] border border-border/40 overflow-hidden" style={{ boxShadow: '0 1px 3px rgba(120,90,50,0.05)' }}>
-            <div className="flex items-center gap-2 px-3.5 py-2.5" style={{ background: `${aiAccent}0C`, borderBottom: `1px solid ${aiAccent}15` }}>
+          <div className="rounded-xl border border-white/60 overflow-hidden" style={{ background: 'linear-gradient(135deg, hsl(30 40% 97%) 0%, hsl(28 35% 94%) 100%)', boxShadow: '0 2px 12px rgba(140,100,50,0.08), 0 0 0 1px rgba(140,100,50,0.04)' }}>
+            <div className="flex items-center gap-2.5 px-3.5 py-2.5" style={{ background: `${aiAccent}0C`, borderBottom: `1px solid ${aiAccent}15` }}>
               <div className="w-1.5 h-1.5 rounded-full" style={{ background: aiAccent }} />
-              <h4 className="text-[12px] font-semibold text-foreground/70">Forgie AI</h4>
+              <h4 className="text-[12px] font-semibold text-foreground/60">Forgie AI</h4>
               {forgieLoading && <Loader2 className="h-3 w-3 animate-spin text-foreground/30 ml-auto" />}
             </div>
             <div className="p-2 space-y-0.5">
@@ -654,10 +659,10 @@ export function EmailCompose({
           </div>
 
           {/* ── Opvolg-herinnering ── */}
-          <div className="bg-card rounded-[10px] border border-border/40 overflow-hidden" style={{ boxShadow: '0 1px 3px rgba(120,90,50,0.05)' }}>
-            <div className="flex items-center gap-2 px-3.5 py-2.5 border-b border-border/30">
-              <Bell className="h-3 w-3 text-foreground/30" />
-              <h4 className="text-[12px] font-semibold text-foreground/70">Opvolg-herinnering</h4>
+          <div className="rounded-xl border border-white/60 overflow-hidden" style={{ background: 'linear-gradient(135deg, hsl(30 40% 97%) 0%, hsl(28 35% 94%) 100%)', boxShadow: '0 2px 12px rgba(140,100,50,0.08), 0 0 0 1px rgba(140,100,50,0.04)' }}>
+            <div className="flex items-center gap-2.5 px-4 py-3 border-b border-amber-900/[0.06]">
+              <Bell className="h-3.5 w-3.5 text-amber-700/30" />
+              <h4 className="text-[12px] font-semibold text-foreground/60">Opvolg-herinnering</h4>
               {reminder && (
                 <button onClick={() => { setReminder(null); toast('Herinnering verwijderd') }} className="ml-auto text-foreground/25 hover:text-foreground/50 transition-colors" title="Verwijder herinnering">
                   <BellOff className="h-3 w-3" />
@@ -687,10 +692,10 @@ export function EmailCompose({
           </div>
 
           {/* ── Eerdere emails ── */}
-          <div className="bg-card rounded-[10px] border border-border/40 overflow-hidden" style={{ boxShadow: '0 1px 3px rgba(120,90,50,0.05)' }}>
-            <div className="flex items-center gap-2 px-3.5 py-2.5 border-b border-border/30">
-              <Mail className="h-3 w-3 text-foreground/30" />
-              <h4 className="text-[12px] font-semibold text-foreground/70">Eerdere emails</h4>
+          <div className="rounded-xl border border-white/60 overflow-hidden" style={{ background: 'linear-gradient(135deg, hsl(30 40% 97%) 0%, hsl(28 35% 94%) 100%)', boxShadow: '0 2px 12px rgba(140,100,50,0.08), 0 0 0 1px rgba(140,100,50,0.04)' }}>
+            <div className="flex items-center gap-2.5 px-4 py-3 border-b border-amber-900/[0.06]">
+              <Mail className="h-3.5 w-3.5 text-amber-700/30" />
+              <h4 className="text-[12px] font-semibold text-foreground/60">Eerdere emails</h4>
               {previousEmails.length > 0 && (
                 <span className="ml-auto text-[10px] text-muted-foreground tabular-nums">{previousEmails.length}</span>
               )}
