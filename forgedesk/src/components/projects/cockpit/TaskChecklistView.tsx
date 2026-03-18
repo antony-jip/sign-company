@@ -99,7 +99,7 @@ export function TaskChecklistView({ taken, medewerkers, onStatusChange, onTaskCl
             {taak.deadline && (
               <span className={cn(
                 'text-[10px] font-mono flex-shrink-0',
-                isOverdue ? 'text-red-500 font-semibold' : 'text-muted-foreground/40'
+                isOverdue ? 'text-destructive font-semibold' : 'text-muted-foreground/40'
               )}>
                 {formatDeadline(taak.deadline)}
               </span>

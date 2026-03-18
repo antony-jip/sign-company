@@ -11,11 +11,11 @@ const PIPELINE_STEPS = [
 
 const STEP_COLORS: Record<string, string> = {
   offerte: '#9B8EC4',
-  akkoord: '#C9A96E',
-  uitvoering: '#8BA88B',
-  montage: '#E8946A',
-  factuur: '#9B8EC4',
-  betaald: '#4CAF50',
+  akkoord: '#C4A882',
+  uitvoering: '#7EB5A6',
+  montage: '#D4836A',
+  factuur: '#E8866A',
+  betaald: '#4E7A58',
 }
 
 export function getPipelineStep(

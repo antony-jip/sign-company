@@ -101,7 +101,7 @@ export function BestandenSection({ documenten, onUpload, onDelete }: BestandenSe
                 </p>
               </div>
               <button
-                className="opacity-0 group-hover:opacity-100 text-muted-foreground/40 hover:text-red-500 transition-all p-1 rounded"
+                className="opacity-0 group-hover:opacity-100 text-muted-foreground/40 hover:text-destructive transition-all p-1 rounded"
                 onClick={() => onDelete(doc.id, doc.naam)}
               >
                 <Trash2 className="h-3 w-3" />

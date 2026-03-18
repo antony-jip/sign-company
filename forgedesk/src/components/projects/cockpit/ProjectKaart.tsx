@@ -108,7 +108,7 @@ export function ProjectKaart({
   const si = statusIcons[project.status] || statusIcons.gepland
 
   return (
-    <div className="border border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[12px] overflow-hidden">
+    <div className="border border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px] overflow-hidden">
       {/* Row 1: Breadcrumb + Quick Actions */}
       <div className="flex items-center justify-between px-5 pt-3.5 pb-2">
         <div className="flex items-center gap-1.5 text-[12px]">
@@ -219,7 +219,7 @@ export function ProjectKaart({
                   <span className="text-muted-foreground/30">·</span>
                   <span className={cn(
                     'font-medium',
-                    daysLeft < 0 ? 'text-red-500' : daysLeft < 7 ? 'text-amber-600' : 'text-muted-foreground'
+                    daysLeft < 0 ? 'text-destructive' : daysLeft < 7 ? 'text-peach-deep' : 'text-muted-foreground'
                   )}>
                     {daysLeft < 0 ? `${Math.abs(daysLeft)}d over` : `${daysLeft}d`}
                   </span>
@@ -233,7 +233,7 @@ export function ProjectKaart({
       {/* Row 3: Klant Strip */}
       {klant && (
         <div className="px-5 pb-3 flex items-center gap-3 flex-wrap">
-          <div className="h-7 w-7 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center flex-shrink-0 shadow-sm">
+          <div className="h-7 w-7 rounded-full bg-gradient-to-br from-[#8BAFD4] to-[#6B8FB4] flex items-center justify-center flex-shrink-0 shadow-sm">
             <span className="text-white text-[10px] font-bold">{getInitials(klant.contactpersoon || klant.bedrijfsnaam)}</span>
           </div>
           <div className="flex items-center gap-1.5 text-[13px] min-w-0 flex-wrap">
