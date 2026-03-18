@@ -53,7 +53,7 @@ export function Header() {
   const toggleLanguage = () => setLanguage(language === 'nl' ? 'en' : 'nl')
 
   return (
-    <header className="h-12 border-b border-border/40 bg-card/60 backdrop-blur-sm flex items-center justify-between px-3 md:px-5 flex-shrink-0 z-10">
+    <header className="h-14 border-b border-border/40 bg-card/60 backdrop-blur-sm flex items-center justify-between px-3 md:px-5 flex-shrink-0 z-10">
       {/* Mobile search overlay */}
       {mobileSearchOpen && (
         <div className="absolute inset-x-0 top-0 h-12 z-20 bg-background border-b border-border/50 flex items-center gap-2 px-3 md:hidden">
@@ -67,16 +67,17 @@ export function Header() {
       {/* Left: Quick-add button */}
       <div className="flex items-center gap-2">
         <div className="w-9 md:hidden flex-shrink-0" /> {/* Spacer for mobile hamburger */}
-        <div ref={quickAddRef} className="relative">
+        <div ref={quickAddRef} className="relative" style={{ zIndex: 50 }}>
           <button
             onClick={() => setQuickAddOpen(!quickAddOpen)}
             className={cn(
-              'h-8 w-8 rounded-[10px] flex items-center justify-center transition-all duration-200',
+              'h-9 px-3 rounded-[10px] flex items-center gap-2 transition-all duration-200 text-[13px] font-medium',
               'bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm hover:shadow-md',
               quickAddOpen && 'ring-2 ring-primary/20'
             )}
           >
             <Plus className={cn('w-4 h-4 transition-transform duration-200', quickAddOpen && 'rotate-45')} />
+            <span className="hidden sm:inline">Nieuw</span>
           </button>
 
           {/* Quick-add dropdown */}
@@ -111,7 +112,7 @@ export function Header() {
       </div>
 
       {/* Center: Search bar (desktop) */}
-      <GlobalSearch className="hidden md:flex flex-1 max-w-md mx-6" />
+      <GlobalSearch className="hidden md:flex flex-1 max-w-xl mx-6" />
 
       {/* Right: Actions */}
       <div className="flex items-center gap-0.5 md:gap-1">
