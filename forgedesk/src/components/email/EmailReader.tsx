@@ -592,6 +592,9 @@ const CRMSidebar = memo(function CRMSidebar({
 
   // Klant form
   const [klantForm, setKlantForm] = useState({ bedrijfsnaam: '', contactpersoon: '', email: '', telefoon: '' })
+  // Klant search/autocomplete
+  const [allKlanten, setAllKlanten] = useState<Klant[]>([])
+  const [klantSearchMode, setKlantSearchMode] = useState(true) // true = zoeken, false = nieuw aanmaken
   // Offerte form
   const [offerteForm, setOfferteForm] = useState({ titel: '', notities: '' })
   // Project form
@@ -635,6 +638,9 @@ const CRMSidebar = memo(function CRMSidebar({
   function openPanel(panel: InlinePanel) {
     if (panel === 'klant') {
       setKlantForm({ bedrijfsnaam: companyGuess, contactpersoon: personName, email: senderEmail, telefoon: '' })
+      setKlantSearchMode(true)
+      // Load all klanten for autocomplete
+      getKlanten(500).then(k => setAllKlanten(k)).catch(() => {})
     } else if (panel === 'offerte') {
       setOfferteForm({ titel: `Offerte - ${klantDisplayName}`, notities: `n.a.v. email: ${email.onderwerp}` })
     } else if (panel === 'project') {
@@ -737,6 +743,23 @@ const CRMSidebar = memo(function CRMSidebar({
     } catch { return null }
   }, [email.datum])
 
+  // ── Klant search suggestions ──
+  const klantSearchQuery = klantForm.bedrijfsnaam.toLowerCase().trim()
+  const klantSuggestions = useMemo(() => {
+    if (!klantSearchQuery || klantSearchQuery.length < 1) return allKlanten.slice(0, 5)
+    return allKlanten.filter(k =>
+      k.bedrijfsnaam?.toLowerCase().includes(klantSearchQuery) ||
+      k.contactpersoon?.toLowerCase().includes(klantSearchQuery) ||
+      k.email?.toLowerCase().includes(klantSearchQuery)
+    ).slice(0, 5)
+  }, [klantSearchQuery, allKlanten])
+
+  function handleSelectKlant(klant: Klant) {
+    setLinkedKlant(klant)
+    setActivePanel('none')
+    toast.success(`Gekoppeld aan ${klant.bedrijfsnaam || klant.contactpersoon}`)
+  }
+
   // ── Module accent colors (from design system) ──
   const moduleColors = {
     klant: '#8BAFD4',    // mist blue (klanten module)
@@ -751,11 +774,62 @@ const CRMSidebar = memo(function CRMSidebar({
 
     const panelConfig = {
       klant: {
-        title: 'Contact toevoegen',
+        title: klantSearchMode ? 'Contact koppelen' : 'Nieuw contact',
         accent: moduleColors.klant,
-        onSave: handleSaveKlant,
-        fields: (
+        onSave: klantSearchMode ? undefined : handleSaveKlant,
+        fields: klantSearchMode ? (
           <>
+            {/* Search input */}
+            <div className="relative">
+              <Building2 className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-foreground/20" />
+              <input
+                value={klantForm.bedrijfsnaam}
+                onChange={e => setKlantForm(f => ({ ...f, bedrijfsnaam: e.target.value }))}
+                className="w-full pl-8 pr-2.5 py-2 text-[13px] bg-background border border-border/60 rounded-[8px] outline-none focus:border-accent/40 focus:bg-card transition-colors placeholder:text-foreground/20"
+                placeholder="Zoek klant op naam of email..."
+                autoFocus
+              />
+            </div>
+            {/* Results */}
+            <div className="space-y-0.5 max-h-[200px] overflow-y-auto">
+              {klantSuggestions.length > 0 ? klantSuggestions.map(k => (
+                <button
+                  key={k.id}
+                  onClick={() => handleSelectKlant(k)}
+                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded-[6px] text-left hover:bg-background transition-colors group"
+                >
+                  <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-white" style={{ background: moduleColors.klant }}>
+                    {(k.bedrijfsnaam || k.contactpersoon)?.[0]?.toUpperCase()}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[12px] font-medium text-foreground/70 truncate">{k.bedrijfsnaam || k.contactpersoon}</p>
+                    <p className="text-[10px] text-muted-foreground truncate">{k.bedrijfsnaam ? k.contactpersoon : k.email}</p>
+                  </div>
+                  <ChevronRight className="h-3 w-3 text-foreground/10 group-hover:text-foreground/30 flex-shrink-0" />
+                </button>
+              )) : (
+                <p className="text-[11px] text-muted-foreground px-2 py-2">Geen klanten gevonden</p>
+              )}
+            </div>
+            {/* Switch to create mode */}
+            <button
+              onClick={() => setKlantSearchMode(false)}
+              className="w-full flex items-center justify-center gap-1.5 py-2 rounded-[8px] border border-dashed border-border text-[12px] text-muted-foreground hover:border-accent/30 hover:text-accent transition-colors"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Nieuw contact aanmaken
+            </button>
+          </>
+        ) : (
+          <>
+            {/* Back to search */}
+            <button
+              onClick={() => setKlantSearchMode(true)}
+              className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors mb-1"
+            >
+              <ArrowLeft className="h-3 w-3" />
+              Terug naar zoeken
+            </button>
             {[
               { key: 'bedrijfsnaam' as const, placeholder: 'Bedrijfsnaam', icon: Building2 },
               { key: 'contactpersoon' as const, placeholder: 'Contactpersoon *', icon: UserPlus },
@@ -851,12 +925,14 @@ const CRMSidebar = memo(function CRMSidebar({
         </div>
         <div className="p-3 space-y-2">
           {cfg.fields}
-          <button onClick={cfg.onSave} disabled={saving}
-            className="w-full flex items-center justify-center gap-1.5 py-2 rounded-[8px] text-white text-[12px] font-medium disabled:opacity-50 transition-all hover:opacity-90"
-            style={{ background: cfg.accent, boxShadow: `0 1px 4px ${cfg.accent}30` }}>
-            {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-            {saving ? 'Opslaan...' : 'Opslaan'}
-          </button>
+          {cfg.onSave && (
+            <button onClick={cfg.onSave} disabled={saving}
+              className="w-full flex items-center justify-center gap-1.5 py-2 rounded-[8px] text-white text-[12px] font-medium disabled:opacity-50 transition-all hover:opacity-90"
+              style={{ background: cfg.accent, boxShadow: `0 1px 4px ${cfg.accent}30` }}>
+              {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+              {saving ? 'Opslaan...' : 'Opslaan'}
+            </button>
+          )}
         </div>
       </div>
     )
