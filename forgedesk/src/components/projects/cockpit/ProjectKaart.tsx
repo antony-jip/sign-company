@@ -26,7 +26,7 @@ import { cn, formatCurrency, formatDate, getInitials } from '@/lib/utils'
 import { getStatusBadgeClass } from '@/utils/statusColors'
 import { toast } from 'sonner'
 import { WatNuBanner } from './WatNuBanner'
-import { PipelineBar } from './PipelineBar'
+import { PipelineBar, getPipelineStep, getPipelineStepColor } from './PipelineBar'
 import type { Project, Klant, Offerte, Taak, MontageAfspraak, Werkbon, Factuur } from '@/types'
 
 const statusLabels: Record<string, string> = {
@@ -106,9 +106,22 @@ export function ProjectKaart({
   }
 
   const si = statusIcons[project.status] || statusIcons.gepland
+  const pipelineStep = getPipelineStep(project, offertes, montageAfspraken, facturen)
+  const stepColor = getPipelineStepColor(pipelineStep)
 
   return (
-    <div className="border border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px] overflow-hidden">
+    <div
+      className="border border-[hsl(35,15%,87%)] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px] overflow-hidden"
+      style={{
+        background: `linear-gradient(175deg, ${stepColor}12 0%, ${stepColor}08 40%, #FFFFFE 75%)`,
+      }}
+    >
+      {/* Colored accent line at top */}
+      <div
+        className="h-[3px] w-full transition-colors duration-700"
+        style={{ background: `linear-gradient(90deg, ${stepColor}, ${stepColor}60)` }}
+      />
+
       {/* Row 1: Breadcrumb + Quick Actions */}
       <div className="flex items-center justify-between px-5 pt-3.5 pb-2">
         <div className="flex items-center gap-1.5 text-[12px]">
@@ -143,21 +156,21 @@ export function ProjectKaart({
           </button>
           <button
             onClick={onCreateWerkbon}
-            className="inline-flex items-center gap-1.5 h-8 px-3 text-[12px] font-medium rounded-lg border border-[hsl(35,15%,83%)] text-foreground hover:bg-[hsl(35,15%,96%)] hover:border-[hsl(35,15%,75%)] transition-all"
+            className="inline-flex items-center gap-1.5 h-8 px-3 text-[12px] font-medium rounded-lg border border-black/[0.06] bg-white/70 backdrop-blur-sm text-foreground hover:bg-white hover:border-black/[0.1] transition-all"
           >
             <ClipboardCheck className="h-3.5 w-3.5 text-muted-foreground/70" />
             Werkbon
           </button>
           <button
             onClick={onCreateMontage}
-            className="inline-flex items-center gap-1.5 h-8 px-3 text-[12px] font-medium rounded-lg border border-[hsl(35,15%,83%)] text-foreground hover:bg-[hsl(35,15%,96%)] hover:border-[hsl(35,15%,75%)] transition-all"
+            className="inline-flex items-center gap-1.5 h-8 px-3 text-[12px] font-medium rounded-lg border border-black/[0.06] bg-white/70 backdrop-blur-sm text-foreground hover:bg-white hover:border-black/[0.1] transition-all"
           >
             <Calendar className="h-3.5 w-3.5 text-muted-foreground/70" />
             Montage
           </button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="h-8 w-8 rounded-lg border border-[hsl(35,15%,83%)] flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-[hsl(35,15%,96%)] transition-all">
+              <button className="h-8 w-8 rounded-lg border border-black/[0.06] bg-white/70 backdrop-blur-sm flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-white transition-all">
                 <MoreHorizontal className="h-4 w-4" />
               </button>
             </DropdownMenuTrigger>
@@ -255,7 +268,7 @@ export function ProjectKaart({
             {klant.telefoon && (
               <button
                 onClick={handleCopyPhone}
-                className="rounded-md px-2.5 py-1 text-[11px] font-mono text-muted-foreground/70 hover:text-foreground bg-[hsl(35,15%,96%)] hover:bg-[hsl(35,15%,93%)] transition-colors"
+                className="rounded-md px-2.5 py-1 text-[11px] font-mono text-muted-foreground/70 hover:text-foreground bg-white/60 hover:bg-white/90 transition-colors"
                 title="Klik om te kopieren"
               >
                 {klant.telefoon}
