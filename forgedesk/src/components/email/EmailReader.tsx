@@ -475,7 +475,7 @@ export function EmailReader({
               </div>
             </div>
 
-            {/* Sender — compact inline */}
+            {/* Sender — compact inline with reply actions */}
             <div className="flex items-center gap-2.5 mb-5 pb-4 border-b border-foreground/[0.05]">
               <div className={cn('w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0', avatarColor)}>
                 <span className="text-xs font-bold text-white">{senderName[0]?.toUpperCase()}</span>
@@ -486,6 +486,24 @@ export function EmailReader({
                   <span className="text-[11px] text-foreground/25 truncate">&lt;{senderEmail}&gt;</span>
                 </div>
                 <div className="text-[11px] text-foreground/30">aan {email.aan}</div>
+              </div>
+              {/* Reply actions — top right, Gmail-style */}
+              <div className="flex items-center gap-0.5 flex-shrink-0">
+                <button onClick={() => handleReply('reply')}
+                  className="h-8 w-8 flex items-center justify-center rounded-[7px] text-foreground/30 hover:text-foreground/70 hover:bg-foreground/[0.04] transition-colors"
+                  title="Beantwoorden">
+                  <Reply className="h-4 w-4" />
+                </button>
+                <button onClick={() => handleReply('reply-all')}
+                  className="h-8 w-8 flex items-center justify-center rounded-[7px] text-foreground/30 hover:text-foreground/70 hover:bg-foreground/[0.04] transition-colors"
+                  title="Allen beantwoorden">
+                  <ReplyAll className="h-4 w-4" />
+                </button>
+                <button onClick={() => handleReply('forward')}
+                  className="h-8 w-8 flex items-center justify-center rounded-[7px] text-foreground/30 hover:text-foreground/70 hover:bg-foreground/[0.04] transition-colors"
+                  title="Doorsturen">
+                  <Forward className="h-4 w-4" />
+                </button>
               </div>
             </div>
 
@@ -522,21 +540,6 @@ export function EmailReader({
               </div>
             )}
 
-            {/* Reply buttons — compact */}
-            <div className="mt-6 pt-4 border-t border-foreground/[0.05] flex items-center gap-1.5">
-              <button onClick={() => handleReply('reply')}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-foreground/[0.08] text-[13px] text-foreground/45 hover:text-foreground hover:border-foreground/15 hover:bg-foreground/[0.02] transition-all">
-                <Reply className="h-3.5 w-3.5" /> Beantwoorden
-              </button>
-              <button onClick={() => handleReply('reply-all')}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-foreground/[0.08] text-[13px] text-foreground/45 hover:text-foreground hover:border-foreground/15 hover:bg-foreground/[0.02] transition-all">
-                <ReplyAll className="h-3.5 w-3.5" /> Allen
-              </button>
-              <button onClick={() => handleReply('forward')}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-foreground/[0.08] text-[13px] text-foreground/45 hover:text-foreground hover:border-foreground/15 hover:bg-foreground/[0.02] transition-all">
-                <Forward className="h-3.5 w-3.5" /> Doorsturen
-              </button>
-            </div>
           </div>
         </div>
       </div>
@@ -860,7 +863,7 @@ const CRMSidebar = memo(function CRMSidebar({
   }
 
   return (
-    <div className="w-[280px] border-l border-border/40 wm-sidebar flex-shrink-0 overflow-y-auto hidden xl:flex flex-col">
+    <div className="w-[280px] border-l border-border/40 flex-shrink-0 overflow-y-auto hidden xl:flex flex-col" style={{ background: 'hsl(36 18% 94%)' }}>
       <div className="p-4 space-y-3 flex-1">
         {/* ── Contact header ── */}
         <div className="bg-card rounded-[10px] p-3.5 border border-border/40" style={{ boxShadow: '0 1px 3px rgba(120,90,50,0.05)' }}>
