@@ -87,7 +87,7 @@ export function TopNav() {
     : user?.email?.split('@')[0] || 'Gebruiker'
 
   return (
-    <header className="flex-shrink-0 z-30">
+    <header className="flex-shrink-0" style={{ position: 'relative', zIndex: 30 }}>
       {/* ── Row 1: Utility bar ── */}
       <div className="flex items-center h-14 px-4 md:px-6 bg-card/80 backdrop-blur-sm border-b border-border/30">
         {/* Logo */}
@@ -102,7 +102,7 @@ export function TopNav() {
         <div className="hidden md:block w-px h-6 bg-border/40 mr-4" />
 
         {/* Quick-add button */}
-        <div ref={quickAddRef} className="relative">
+        <div ref={quickAddRef} className="relative" style={{ zIndex: 40 }}>
           <button
             onClick={() => setQuickAddOpen(!quickAddOpen)}
             className={cn(
@@ -137,16 +137,15 @@ export function TopNav() {
           )}
         </div>
 
-        {/* Spacer */}
-        <div className="flex-1" />
-
-        {/* Search — desktop */}
-        <GlobalSearch className="hidden md:flex w-52 lg:w-64 mx-4" compact />
+        {/* Search — desktop (prominent, centered) */}
+        <div className="hidden md:flex flex-1 justify-center mx-6">
+          <GlobalSearch className="w-full max-w-lg" />
+        </div>
 
         {/* Mobile search */}
         {mobileSearchOpen && (
           <div className="absolute inset-x-0 top-0 h-14 z-40 bg-background border-b border-border/50 flex items-center gap-2 px-4 md:hidden">
-            <GlobalSearch className="flex flex-1" compact />
+            <GlobalSearch className="flex flex-1" />
             <Button variant="ghost" size="icon" className="w-8 h-8 rounded-lg" onClick={() => setMobileSearchOpen(false)}>
               <X className="w-4 h-4" />
             </Button>
@@ -162,11 +161,6 @@ export function TopNav() {
           >
             <Search className="w-4 h-4" />
           </button>
-
-          {/* ⌘K hint */}
-          <div className="hidden lg:flex items-center text-[10px] text-muted-foreground/30 mr-1">
-            <kbd className="px-1.5 py-0.5 rounded border border-border/40 bg-muted/20 font-mono">⌘K</kbd>
-          </div>
 
           {/* Dark mode */}
           <button
