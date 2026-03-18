@@ -2057,6 +2057,10 @@ html {
   background: linear-gradient(145deg, #CCC0A0 0%, #DED4BC 35%, #EDE8DA 70%, #F9F6EE 100%);
   box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.65), inset 0 -1px 0 rgba(0,0,0,0.02);
 }
+.stat-card-gradient-lavender {
+  background: linear-gradient(145deg, #B8A8D8 0%, #CEC0E8 35%, #E2D8F2 70%, #F4F0FA 100%);
+  box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.65), inset 0 -1px 0 rgba(0,0,0,0.02);
+}
 
 /* Dark mode stat cards — ambient glow */
 .dark .stat-card-gradient-blush {
@@ -2074,6 +2078,10 @@ html {
 .dark .stat-card-gradient-cream {
   background: linear-gradient(145deg, rgba(196,168,130,0.20) 0%, rgba(196,168,130,0.08) 100%);
   box-shadow: 0 2px 16px rgba(196,168,130,0.10), inset 0 1px 0 rgba(196,168,130,0.06);
+}
+.dark .stat-card-gradient-lavender {
+  background: linear-gradient(145deg, rgba(160,140,200,0.20) 0%, rgba(160,140,200,0.08) 100%);
+  box-shadow: 0 2px 16px rgba(160,140,200,0.10), inset 0 1px 0 rgba(160,140,200,0.06);
 }
 
 /* Stat card inner glow on hover — premium depth */
