@@ -5,11 +5,13 @@ import {
   Mail, Calendar, Settings, ChevronLeft,
   ChevronRight, LogOut, Menu, X, CheckSquare,
   Receipt, ClipboardCheck, Sparkles,
+  Moon, Sun, Monitor, CreditCard,
   type LucideIcon
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useSidebar, RAIL_WIDTH, EXPANDED_WIDTH } from '@/contexts/SidebarContext'
 import { useAuth } from '@/contexts/AuthContext'
+import { useTheme } from '@/contexts/ThemeContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { Button } from '@/components/ui/button'
 
@@ -89,8 +91,9 @@ const NAV_SECTIONS: NavSection[] = [
 const SETTINGS_ITEM: NavItem = { label: 'Instellingen', icon: Settings, path: '/instellingen' }
 
 export function Sidebar() {
-  const { isCollapsed, toggleSidebar } = useSidebar()
+  const { isCollapsed, toggleSidebar, setLayoutMode } = useSidebar()
   const { user, logout } = useAuth()
+  const { theme, toggleTheme } = useTheme()
   const { settings } = useAppSettings()
   const location = useLocation()
   const navigate = useNavigate()
@@ -306,22 +309,49 @@ export function Sidebar() {
           {/* Instellingen */}
           {collapsed ? renderRailItem(SETTINGS_ITEM) : renderExpandedItem(SETTINGS_ITEM)}
 
-          {/* Toggle button (desktop only) */}
-          {!forMobile && (
-            <button
-              onClick={toggleSidebar}
-              className={cn(
-                'flex items-center justify-center transition-all duration-200 text-muted-foreground/40 hover:text-muted-foreground hover:bg-muted/40 rounded-[10px]',
-                collapsed ? 'w-10 h-8 mx-auto' : 'h-8 px-3 w-full gap-2',
-              )}
-            >
-              {collapsed ? <ChevronRight className="w-4 h-4" /> : (
-                <>
+          {/* Quick toggles */}
+          {collapsed ? (
+            // Rail mode: small icon buttons
+            !forMobile && (
+              <div className="flex flex-col items-center gap-0.5">
+                <button
+                  onClick={toggleTheme}
+                  className="w-9 h-8 flex items-center justify-center rounded-[8px] text-muted-foreground/40 hover:text-muted-foreground hover:bg-muted/40 transition-all duration-200 group relative"
+                  title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+                >
+                  {theme === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
+                  <div className="absolute left-full top-1/2 -translate-y-1/2 ml-3 px-3 py-1.5 bg-foreground text-background text-xs font-medium rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 whitespace-nowrap z-50 pointer-events-none">
+                    {theme === 'dark' ? 'Light mode' : 'Dark mode'}
+                  </div>
+                </button>
+                <button
+                  onClick={toggleSidebar}
+                  className="w-9 h-8 flex items-center justify-center rounded-[8px] text-muted-foreground/40 hover:text-muted-foreground hover:bg-muted/40 transition-all duration-200"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            )
+          ) : (
+            // Expanded mode: full buttons
+            !forMobile && (
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={toggleTheme}
+                  className="flex items-center justify-center h-8 w-8 rounded-[8px] text-muted-foreground/40 hover:text-muted-foreground hover:bg-muted/40 transition-all duration-200"
+                  title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+                >
+                  {theme === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
+                </button>
+                <button
+                  onClick={toggleSidebar}
+                  className="flex-1 flex items-center justify-center h-8 px-2 gap-1.5 rounded-[8px] text-muted-foreground/40 hover:text-muted-foreground hover:bg-muted/40 transition-all duration-200"
+                >
                   <ChevronLeft className="w-3.5 h-3.5" />
                   <span className="text-[11px]">Inklappen</span>
-                </>
-              )}
-            </button>
+                </button>
+              </div>
+            )
           )}
 
           {/* User avatar */}
@@ -348,26 +378,63 @@ export function Sidebar() {
               {/* User popover */}
               {userPopoverOpen && (
                 <div className={cn(
-                  'absolute z-50 w-52 bg-card border border-border/60 rounded-2xl shadow-2xl shadow-black/10 overflow-hidden animate-scale-in',
+                  'absolute z-50 w-56 bg-card border border-border/60 rounded-2xl shadow-2xl shadow-black/10 overflow-hidden animate-scale-in',
                   collapsed ? 'left-full bottom-0 ml-3' : 'left-0 bottom-full mb-2',
                 )}>
+                  {/* User info */}
                   <div className="px-4 py-3 border-b border-border/40">
-                    <p className="text-sm font-medium text-foreground truncate">{userName}</p>
+                    <p className="text-sm font-semibold text-foreground truncate">{userName}</p>
                     <p className="text-[11px] text-muted-foreground truncate mt-0.5">{user.email}</p>
                   </div>
-                  <div className="py-1">
+
+                  {/* Quick actions */}
+                  <div className="py-1.5">
                     <button
                       onClick={() => { setUserPopoverOpen(false); navigate('/instellingen') }}
-                      className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-foreground/80 hover:bg-muted/50 transition-colors"
+                      className="flex items-center gap-2.5 w-full px-4 py-2 text-[13px] text-foreground/80 hover:bg-muted/50 transition-colors"
                     >
                       <Settings className="w-3.5 h-3.5 text-muted-foreground" />
                       Profiel
                     </button>
+                    <button
+                      onClick={() => { setUserPopoverOpen(false); navigate('/instellingen?tab=abonnement') }}
+                      className="flex items-center gap-2.5 w-full px-4 py-2 text-[13px] text-foreground/80 hover:bg-muted/50 transition-colors"
+                    >
+                      <CreditCard className="w-3.5 h-3.5 text-muted-foreground" />
+                      Abonnement
+                    </button>
                   </div>
-                  <div className="border-t border-border/40 py-1">
+
+                  {/* Appearance & layout */}
+                  <div className="border-t border-border/40 py-1.5">
+                    {/* Dark mode toggle */}
+                    <button
+                      onClick={toggleTheme}
+                      className="flex items-center gap-2.5 w-full px-4 py-2 text-[13px] text-foreground/80 hover:bg-muted/50 transition-colors"
+                    >
+                      {theme === 'dark' ? (
+                        <Sun className="w-3.5 h-3.5 text-muted-foreground" />
+                      ) : (
+                        <Moon className="w-3.5 h-3.5 text-muted-foreground" />
+                      )}
+                      {theme === 'dark' ? 'Light mode' : 'Dark mode'}
+                    </button>
+
+                    {/* Switch to top nav */}
+                    <button
+                      onClick={() => { setUserPopoverOpen(false); setLayoutMode('topnav') }}
+                      className="flex items-center gap-2.5 w-full px-4 py-2 text-[13px] text-foreground/80 hover:bg-muted/50 transition-colors"
+                    >
+                      <Monitor className="w-3.5 h-3.5 text-muted-foreground" />
+                      Top navigatie
+                    </button>
+                  </div>
+
+                  {/* Logout */}
+                  <div className="border-t border-border/40 py-1.5">
                     <button
                       onClick={() => { setUserPopoverOpen(false); logout() }}
-                      className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-destructive hover:bg-destructive/5 transition-colors"
+                      className="flex items-center gap-2.5 w-full px-4 py-2 text-[13px] text-destructive hover:bg-destructive/5 transition-colors"
                     >
                       <LogOut className="w-3.5 h-3.5" />
                       Uitloggen
