@@ -1018,7 +1018,7 @@ export function ProjectDetail() {
         <div className="flex-1 min-w-0 space-y-6">
 
       {/* ── Briefing Sectie ── */}
-      <Card className="border-border/80 dark:border-border/80">
+      <Card className="border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px] border-l-[3px] border-l-amber-300">
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base flex items-center gap-2">
@@ -1347,7 +1347,7 @@ export function ProjectDetail() {
 
           {/* Table View */}
           {takenWeergave === 'tabel' && (
-            <Card className="border-border/80 dark:border-border/80">
+            <Card className="border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px]">
               <CardContent className="p-0">
                 <ProjectTasksTable taken={projectTaken} />
               </CardContent>
@@ -1356,7 +1356,7 @@ export function ProjectDetail() {
 
           {/* Checklist View */}
           {takenWeergave === 'checklist' && (
-            <Card className="border-border/80 dark:border-border/80">
+            <Card className="border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px]">
               <CardContent className="p-2">
                 <TaskChecklistView
                   taken={projectTaken}
@@ -1380,7 +1380,7 @@ export function ProjectDetail() {
 
           {/* ── Goedkeuringen Sectie ── */}
           {goedkeuringen.length > 0 && (
-            <Card className="border-border/80 dark:border-border/80">
+            <Card className="border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px]">
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base flex items-center gap-2">
@@ -1501,7 +1501,7 @@ export function ProjectDetail() {
         {/* Voortgang + Team + Montage (in overzicht tab) */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* ── Projectvoortgang ── */}
-          <Card className="border-border/80 dark:border-border/80">
+          <Card className="border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px]">
             <CardContent className="pt-5 pb-4">
               <ProjectProgressIndicator
                 projectStatus={project.status}
@@ -1584,7 +1584,7 @@ export function ProjectDetail() {
 
           {/* ── Montage Planning ── */}
           {projectMontages.length > 0 && (
-          <Card className="border-border/80 dark:border-border/80">
+          <Card className="border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px]">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-semibold flex items-center gap-2">
@@ -1654,7 +1654,7 @@ export function ProjectDetail() {
         {/* ── Rechterkolom: Bestanden sidebar ── */}
         <div className="w-full lg:w-80 xl:w-96 flex-shrink-0 space-y-4 lg:self-start">
           {/* Visualisaties */}
-          <Card className="border-border/80 dark:border-border/80">
+          <Card className="border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px]">
             <CardContent className="pt-5">
               <VisualisatieGallery project_id={project.id} klant_id={project.klant_id} compact />
             </CardContent>
@@ -1669,7 +1669,7 @@ export function ProjectDetail() {
           />
 
           {/* Bestanden upload + lijst */}
-          <Card className="border-border/80 dark:border-border/80">
+          <Card className="border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px]">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base flex items-center gap-2">
@@ -1794,7 +1794,7 @@ export function ProjectDetail() {
 
           {/* ── Werkbonnen ── */}
           {activeTab === 'financieel' && projectWerkbonnen.length > 0 && (
-          <Card className="border-border/80 dark:border-border/80">
+          <Card className="border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px]">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-semibold flex items-center gap-2">
@@ -1872,7 +1872,7 @@ export function ProjectDetail() {
 
           {/* ── Facturen ── */}
           {activeTab === 'financieel' && projectFacturen.length > 0 && (
-            <Card className="border-border/80 dark:border-border/80">
+            <Card className="border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px]">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm font-semibold flex items-center gap-2">
@@ -1916,7 +1916,7 @@ export function ProjectDetail() {
 
           {/* ── Uitgaven ── */}
           {activeTab === 'financieel' && projectUitgaven.length > 0 && (
-            <Card className="border-border/80 dark:border-border/80">
+            <Card className="border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px]">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm font-semibold flex items-center gap-2">
@@ -1960,7 +1960,7 @@ export function ProjectDetail() {
 
           {/* ── Offertes ── */}
           {activeTab === 'financieel' && projectOffertes.length > 0 && (
-          <Card className="border-border/80 dark:border-border/80">
+          <Card className="border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px]">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base flex items-center gap-2">
