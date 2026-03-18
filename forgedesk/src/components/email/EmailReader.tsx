@@ -211,6 +211,25 @@ export function EmailReader({
     editorRef.current?.focus()
   }, [])
 
+  // Keyboard shortcuts for reader mode
+  useEffect(() => {
+    if (!email || replyMode) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Cmd+Shift+S → summarize
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'S') {
+        e.preventDefault()
+        handleSummarize()
+      }
+      // Cmd+Shift+R → generate reply
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'R') {
+        e.preventDefault()
+        handleGenerateReplyFromReader()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [email, replyMode, handleSummarize, handleGenerateReplyFromReader])
+
   // Memoize sender data — avoid recalculating on every render
   const senderName = useMemo(() => email ? extractSenderName(email.van) : '', [email?.van])
   const senderEmail = useMemo(() => email ? extractSenderEmail(email.van) : '', [email?.van])
