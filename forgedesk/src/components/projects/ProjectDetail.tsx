@@ -146,7 +146,7 @@ const statusLabels: Record<string, string> = {
   gefactureerd: 'Gefactureerd',
 }
 
-type ProjectTab = 'overzicht' | 'financieel'
+type ProjectTab = 'overzicht' | 'financieel' | 'werkbon'
 
 const goedkeuringStatusLabels: Record<string, string> = {
   verzonden: 'Verzonden',
@@ -211,7 +211,7 @@ export function ProjectDetail() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [activeTab, setActiveTab] = useState<ProjectTab>(() => {
     const tabParam = new URLSearchParams(window.location.search).get('tab')
-    return (['overzicht', 'financieel'].includes(tabParam || '') ? tabParam : 'overzicht') as ProjectTab
+    return (['overzicht', 'financieel', 'werkbon'].includes(tabParam || '') ? tabParam : 'overzicht') as ProjectTab
   })
   const handleTabChange = (tab: ProjectTab) => {
     setActiveTab(tab)
@@ -879,6 +879,7 @@ export function ProjectDetail() {
       <div className="flex items-center gap-1 border-b border-border">
         {([
           { key: 'overzicht' as ProjectTab, label: 'Overzicht', count: projectTaken.length },
+          { key: 'werkbon' as ProjectTab, label: 'Werkbon', count: projectWerkbonnen.length },
           { key: 'financieel' as ProjectTab, label: 'Financieel', count: projectOffertes.length + projectFacturen.length },
         ]).map((tab) => (
           <button
@@ -1007,19 +1008,72 @@ export function ProjectDetail() {
 
       {/* ══════════ OVERZICHT TAB ══════════ */}
       {activeTab === 'overzicht' && <>
-      <div className="flex flex-1 overflow-hidden">
-        {/* Portaal Panel (left, collapsible) */}
-        <PortaalPanel
-          projectId={project.id}
-          projectNaam={project.naam}
-          klant={klant}
-        />
-
-        {/* Werkzone (right) */}
-        <div className="flex-1 overflow-y-auto min-w-0">
+      <div className="flex-1 overflow-y-auto min-w-0">
       <div className="flex flex-col lg:flex-row gap-6 p-5">
         {/* ── Linkerkolom: hoofd-content ── */}
         <div className="flex-1 min-w-0 space-y-6">
+
+      {/* ── Project Info Strip ── */}
+      <div className="flex flex-wrap items-center gap-4 bg-[#FFFFFE] border border-[hsl(35,15%,87%)] rounded-[10px] p-4 shadow-[0_1px_3px_rgba(130,100,60,0.04)]">
+        {/* Contact & adres */}
+        {klant && (
+          <div className="flex items-center gap-3 flex-1 min-w-[200px]">
+            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center flex-shrink-0">
+              <span className="text-white text-sm font-bold">{getInitials(klant.contactpersoon || klant.bedrijfsnaam || '')}</span>
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-foreground truncate">{klant.contactpersoon || klant.bedrijfsnaam}</p>
+              <p className="text-xs text-muted-foreground truncate">
+                {[klant.adres, klant.postcode, klant.stad].filter(Boolean).join(', ')}
+              </p>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                {klant.email && <span className="truncate">{klant.email}</span>}
+                {klant.telefoon && <span className="font-mono">{klant.telefoon}</span>}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Start datum */}
+        <div className="flex items-center gap-2">
+          <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
+          <div>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Start</p>
+            <input
+              type="date"
+              value={project.start_datum || ''}
+              onChange={async (e) => {
+                try {
+                  const updated = await updateProject(id!, { start_datum: e.target.value || undefined })
+                  setProject(updated)
+                  toast.success('Startdatum bijgewerkt')
+                } catch { toast.error('Kon startdatum niet opslaan') }
+              }}
+              className="text-sm font-mono bg-transparent border-none p-0 text-foreground cursor-pointer focus:outline-none focus:ring-0 w-[120px]"
+            />
+          </div>
+        </div>
+
+        {/* Eind datum */}
+        <div className="flex items-center gap-2">
+          <Target className="h-3.5 w-3.5 text-muted-foreground" />
+          <div>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Deadline</p>
+            <input
+              type="date"
+              value={project.eind_datum || ''}
+              onChange={async (e) => {
+                try {
+                  const updated = await updateProject(id!, { eind_datum: e.target.value || undefined })
+                  setProject(updated)
+                  toast.success('Deadline bijgewerkt')
+                } catch { toast.error('Kon deadline niet opslaan') }
+              }}
+              className="text-sm font-mono bg-transparent border-none p-0 text-foreground cursor-pointer focus:outline-none focus:ring-0 w-[120px]"
+            />
+          </div>
+        </div>
+      </div>
 
       {/* ── Briefing Sectie ── */}
       <Card className="border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px] border-l-[3px] border-l-amber-300">
@@ -1090,8 +1144,7 @@ export function ProjectDetail() {
         )}
       </Card>
 
-      {/* ── Taken + Team + Montage + Audit ── */}
-      <div className="space-y-6">
+      {/* ── Taken ── */}
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-1">
@@ -1381,6 +1434,7 @@ export function ProjectDetail() {
               </CardContent>
             </Card>
           )}
+        </div>{/* einde taken views */}
 
           {/* ── Goedkeuringen Sectie ── */}
           {goedkeuringen.length > 0 && (
@@ -1496,79 +1550,36 @@ export function ProjectDetail() {
             </Card>
           )}
 
-        </div>
-
-        {/* Team + Montage (in overzicht tab) */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* ── Team ── */}
-          <Card className="border-sage/40 bg-sage/5">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
-                    <Users className="h-3.5 w-3.5 text-white" />
-                  </div>
-                  Team
-                  <span className="text-xs text-muted-foreground font-normal">{project.team_leden.length} leden</span>
-                </CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {project.team_leden.length > 0 && (
-                <div className="space-y-2 mb-3">
-                  {project.team_leden.map((lid) => (
-                    <div
-                      key={lid}
-                      className="flex items-center gap-2.5 bg-background rounded-lg px-3 py-2 border border-border/40 group"
-                    >
-                      <div className="h-7 w-7 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white text-2xs font-bold flex-shrink-0">
-                        {getInitials(lid)}
-                      </div>
-                      <span className="text-sm font-medium text-foreground truncate flex-1">{lid}</span>
-                      <button
-                        onClick={async () => {
-                          try {
-                            const nieuwTeam = project.team_leden.filter(l => l !== lid)
-                            const updated = await updateProject(id!, { team_leden: nieuwTeam })
-                            setProject(updated)
-                            toast.success(`${lid} verwijderd uit team`)
-                          } catch { toast.error('Kon teamlid niet verwijderen') }
-                        }}
-                        className="text-muted-foreground hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                        title="Verwijderen"
-                      >
-                        <X className="h-3.5 w-3.5" />
-                      </button>
+          {/* ── Klantportaal (inline) ── */}
+          {project && (
+            <Card className="border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px] overflow-hidden">
+              <CardHeader className="pb-2 bg-gradient-to-r from-emerald-50/40 to-transparent">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center">
+                      <Send className="h-3.5 w-3.5 text-white" />
                     </div>
-                  ))}
+                    <span>Klantportaal</span>
+                    <div className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.4)]" />
+                  </CardTitle>
                 </div>
-              )}
-              {alleMedewerkers.length > 0 ? (
-                <select
-                  className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-card text-foreground"
-                  value=""
-                  onChange={async (e) => {
-                    const mw = alleMedewerkers.find(m => m.id === e.target.value)
-                    if (!mw || project.team_leden.includes(mw.naam)) return
-                    try {
-                      const nieuwTeam = [...project.team_leden, mw.naam]
-                      const updated = await updateProject(id!, { team_leden: nieuwTeam })
-                      setProject(updated)
-                      toast.success(`${mw.naam} toegevoegd aan team`)
-                    } catch { toast.error('Kon teamlid niet toevoegen') }
-                  }}
-                >
-                  <option value="">Medewerker toevoegen...</option>
-                  {alleMedewerkers
-                    .filter(m => !project.team_leden.includes(m.naam))
-                    .map(m => <option key={m.id} value={m.id}>{m.naam}{m.functie ? ` — ${m.functie}` : ''}</option>)
-                  }
-                </select>
-              ) : project.team_leden.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Voeg medewerkers toe via Instellingen → Team</p>
-              ) : null}
-            </CardContent>
-          </Card>
+                {klant && (
+                  <div className="flex items-center gap-2 ml-9 mt-1">
+                    <span className="text-xs text-muted-foreground">{klant.contactpersoon || klant.bedrijfsnaam}</span>
+                    {klant.email && <span className="text-xs text-muted-foreground/60">· {klant.email}</span>}
+                  </div>
+                )}
+              </CardHeader>
+              <CardContent className="p-0">
+                <PortaalPanel
+                  projectId={project.id}
+                  projectNaam={project.naam}
+                  klant={klant}
+                  inline
+                />
+              </CardContent>
+            </Card>
+          )}
 
           {/* ── Montage Planning ── */}
           {projectMontages.length > 0 && (
@@ -1629,13 +1640,79 @@ export function ProjectDetail() {
             </CardContent>
           </Card>
           )}
-        </div>
-      </div>
 
         </div>{/* einde linkerkolom */}
 
-        {/* ── Rechterkolom: Bestanden sidebar ── */}
+        {/* ── Rechterkolom: sidebar ── */}
         <div className="w-full lg:w-80 xl:w-96 flex-shrink-0 space-y-4 lg:self-start">
+
+          {/* ── Team ── */}
+          <Card className="border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px]">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <div className="h-6 w-6 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
+                    <Users className="h-3 w-3 text-white" />
+                  </div>
+                  Team
+                  <span className="text-xs text-muted-foreground font-normal">{project.team_leden.length}</span>
+                </CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              {project.team_leden.length > 0 && (
+                <div className="space-y-1.5 mb-2">
+                  {project.team_leden.map((lid) => (
+                    <div key={lid} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-muted/50 group">
+                      <div className="h-6 w-6 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0">
+                        {getInitials(lid)}
+                      </div>
+                      <span className="text-xs font-medium text-foreground truncate flex-1">{lid}</span>
+                      <button
+                        onClick={async () => {
+                          try {
+                            const nieuwTeam = project.team_leden.filter(l => l !== lid)
+                            const updated = await updateProject(id!, { team_leden: nieuwTeam })
+                            setProject(updated)
+                            toast.success(`${lid} verwijderd uit team`)
+                          } catch { toast.error('Kon teamlid niet verwijderen') }
+                        }}
+                        className="text-muted-foreground hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="Verwijderen"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {alleMedewerkers.length > 0 ? (
+                <select
+                  className="w-full text-xs border border-border rounded-lg px-2.5 py-1.5 bg-card text-foreground"
+                  value=""
+                  onChange={async (e) => {
+                    const mw = alleMedewerkers.find(m => m.id === e.target.value)
+                    if (!mw || project.team_leden.includes(mw.naam)) return
+                    try {
+                      const nieuwTeam = [...project.team_leden, mw.naam]
+                      const updated = await updateProject(id!, { team_leden: nieuwTeam })
+                      setProject(updated)
+                      toast.success(`${mw.naam} toegevoegd aan team`)
+                    } catch { toast.error('Kon teamlid niet toevoegen') }
+                  }}
+                >
+                  <option value="">Medewerker toevoegen...</option>
+                  {alleMedewerkers
+                    .filter(m => !project.team_leden.includes(m.naam))
+                    .map(m => <option key={m.id} value={m.id}>{m.naam}{m.functie ? ` — ${m.functie}` : ''}</option>)
+                  }
+                </select>
+              ) : project.team_leden.length === 0 ? (
+                <p className="text-xs text-muted-foreground">Voeg medewerkers toe via Instellingen</p>
+              ) : null}
+            </CardContent>
+          </Card>
+
           {/* Visualisaties — alleen tonen als er visualisaties bestaan */}
           {hasVisualisaties && (
           <Card className="border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px]">
@@ -1773,11 +1850,133 @@ export function ProjectDetail() {
           </Card>
         </div>{/* einde rechterkolom/sidebar */}
       </div>{/* einde flex row */}
-      </div>{/* einde werkzone */}
-      </div>{/* einde split view */}
+      </div>{/* einde scroll container */}
       </>}
 
-          {/* ── Werkbonnen ── */}
+      {/* ══════════ WERKBON TAB ══════════ */}
+      {activeTab === 'werkbon' && <>
+      <div className="flex-1 overflow-y-auto p-5 space-y-5">
+
+        {/* Werkbonnen lijst */}
+        <Card className="border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px]">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center">
+                  <ClipboardCheck className="h-3.5 w-3.5 text-white" />
+                </div>
+                Werkbonnen
+                <span className="text-xs text-muted-foreground font-normal">{projectWerkbonnen.length}</span>
+              </CardTitle>
+              <Button
+                size="sm"
+                className="h-7 px-3 text-xs"
+                onClick={() => setShowWerkbonDialog(true)}
+              >
+                <Plus className="h-3 w-3 mr-1" />
+                Nieuwe werkbon
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {projectWerkbonnen.length === 0 ? (
+              <div className="text-center py-8">
+                <ClipboardCheck className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+                <p className="text-sm text-muted-foreground mb-3">Nog geen werkbonnen aangemaakt</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowWerkbonDialog(true)}
+                >
+                  <Plus className="h-3.5 w-3.5 mr-1.5" />
+                  Werkbon aanmaken
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {projectWerkbonnen.map((wb) => (
+                  <div
+                    key={wb.id}
+                    className="group flex items-center justify-between p-3 rounded-lg border border-[hsl(35,15%,90%)] hover:border-[hsl(35,15%,80%)] hover:bg-[hsl(35,15%,98%)] cursor-pointer transition-all"
+                    onClick={() => navigate(`/werkbonnen/${wb.id}`)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0">
+                        <ClipboardCheck className="h-4 w-4 text-amber-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold font-mono">{wb.werkbon_nummer}</p>
+                        {wb.titel && <p className="text-xs text-muted-foreground">{wb.titel}</p>}
+                        <p className="text-xs text-muted-foreground font-mono">{new Date(wb.datum).toLocaleDateString('nl-NL')}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
+                        wb.status === 'concept' ? 'bg-muted text-foreground/70' :
+                        wb.status === 'definitief' ? 'bg-blue-100 text-blue-700' :
+                        wb.status === 'afgerond' ? 'bg-green-100 text-green-700' :
+                        'bg-muted text-foreground/70'
+                      }`}>
+                        {wb.status === 'concept' ? 'Concept' : wb.status === 'definitief' ? 'Definitief' : wb.status === 'afgerond' ? 'Afgerond' : wb.status}
+                      </span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          if (window.confirm(`Werkbon ${wb.werkbon_nummer} verwijderen?`)) {
+                            deleteWerkbon(wb.id)
+                              .then(() => {
+                                setProjectWerkbonnen(prev => prev.filter(w => w.id !== wb.id))
+                                toast.success('Werkbon verwijderd')
+                              })
+                              .catch(() => toast.error('Kon werkbon niet verwijderen'))
+                          }
+                        }}
+                        className="p-1.5 rounded-md text-muted-foreground/30 hover:text-red-500 hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
+                        title="Verwijderen"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Offerte items als referentie */}
+        {projectOffertes.filter(o => o.status === 'goedgekeurd' || o.status === 'gefactureerd').length > 0 && (
+          <Card className="border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px]">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2 text-muted-foreground">
+                <Receipt className="h-3.5 w-3.5" />
+                Goedgekeurde offerte-items
+              </CardTitle>
+              <p className="text-xs text-muted-foreground ml-5">Deze items kun je overnemen in een werkbon via "+ Nieuwe werkbon"</p>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-1.5">
+                {projectOffertes
+                  .filter(o => o.status === 'goedgekeurd' || o.status === 'gefactureerd')
+                  .map(o => (
+                    <div key={o.id} className="p-2.5 rounded-lg bg-[hsl(35,15%,97%)] border border-[hsl(35,15%,90%)]">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-semibold font-mono text-amber-700">{o.nummer}</span>
+                        <span className="text-xs font-mono text-muted-foreground">{formatCurrency(o.totaal)}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{o.titel}</p>
+                    </div>
+                  ))
+                }
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+      </div>
+      </>}
+
+          {/* ── Werkbonnen (financieel tab) ── */}
           {activeTab === 'financieel' && projectWerkbonnen.length > 0 && (
           <Card className="border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px]">
             <CardHeader className="pb-3">

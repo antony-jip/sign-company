@@ -10,13 +10,16 @@ interface PortaalPanelProps {
   projectNaam: string
   klant: Klant | null
   defaultOpen?: boolean
+  /** Inline mode: renders content directly without sidebar wrapper */
+  inline?: boolean
 }
 
-export function PortaalPanel({ projectId, projectNaam, klant, defaultOpen = false }: PortaalPanelProps) {
+export function PortaalPanel({ projectId, projectNaam, klant, defaultOpen = false, inline = false }: PortaalPanelProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen)
 
-  // Auto-collapse on small screens
+  // Auto-collapse on small screens (sidebar mode only)
   useEffect(() => {
+    if (inline) return
     const mq = window.matchMedia('(max-width: 1024px)')
     const handler = (e: MediaQueryListEvent | MediaQueryList) => {
       if (e.matches) setIsOpen(false)
@@ -24,8 +27,18 @@ export function PortaalPanel({ projectId, projectNaam, klant, defaultOpen = fals
     handler(mq)
     mq.addEventListener('change', handler)
     return () => mq.removeEventListener('change', handler)
-  }, [])
+  }, [inline])
 
+  // Inline mode — just render the portaal content directly
+  if (inline) {
+    return (
+      <div className="max-h-[500px] overflow-y-auto bg-[hsl(35,10%,98%)]">
+        <ProjectPortaalTab projectId={projectId} projectNaam={projectNaam} />
+      </div>
+    )
+  }
+
+  // Sidebar mode (original)
   return (
     <>
       {/* Collapsed tab */}
