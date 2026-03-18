@@ -2,17 +2,14 @@ import React from 'react'
 import { Outlet } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
 import { Header } from './Header'
-import { HeaderNav } from './HeaderNav'
 import { TopNav } from './TopNav'
 import { MobileBottomNav } from './MobileBottomNav'
 import { ForgieChatWidget } from '@/components/forgie/ForgieChatWidget'
 import { TabBar } from '@/components/layouts/TabBar'
-import { TrialBanner } from '@/components/shared/TrialBanner'
 import { useSidebar } from '@/contexts/SidebarContext'
 import { useTabShortcuts } from '@/hooks/useTabShortcuts'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import { WifiOff } from 'lucide-react'
-import { cn } from '@/lib/utils'
 
 function OfflineBanner() {
   const isOnline = useOnlineStatus()
@@ -26,7 +23,7 @@ function OfflineBanner() {
 }
 
 export function AppLayout() {
-  const { isCollapsed, layoutMode } = useSidebar()
+  const { layoutMode } = useSidebar()
   useTabShortcuts()
 
   if (layoutMode === 'topnav') {
@@ -49,14 +46,9 @@ export function AppLayout() {
   return (
     <div className="flex h-[100dvh] overflow-hidden wm-mesh-gradient">
       <Sidebar />
-      <div
-        className={cn(
-          'flex-1 flex flex-col min-w-0 overflow-hidden transition-all duration-300 ease-in-out'
-        )}
-      >
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <OfflineBanner />
         <Header />
-        <HeaderNav />
         <TabBar />
         <main className="flex-1 overflow-y-auto overflow-x-hidden">
           <div className="p-3 sm:p-4 md:p-6 pb-20 md:pb-6 w-full animate-fade-in-up">
