@@ -921,7 +921,7 @@ export function ProjectDetail() {
         <div className="w-full lg:w-[260px] xl:w-[280px] flex-shrink-0 space-y-5 lg:self-start lg:sticky lg:top-4">
 
           {/* Montage */}
-          <div className="bg-card border border-border rounded-xl p-4">
+          <div className="border border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px] p-4">
             <MontageSection
               montageAfspraken={projectMontages}
               onInplannen={handleOpenMontageDialog}
@@ -929,7 +929,7 @@ export function ProjectDetail() {
           </div>
 
           {/* Bestanden */}
-          <div className="bg-card border border-border rounded-xl p-4">
+          <div className="border border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px] p-4">
             <BestandenSection
               documenten={projectDocumenten}
               onUpload={() => fileInputRef.current?.click()}
@@ -955,20 +955,23 @@ export function ProjectDetail() {
 
           {/* Visualisaties (conditioneel) */}
           {hasVisualisaties && (
-            <div className="bg-card border border-border rounded-xl p-4">
+            <div className="border border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px] p-4">
               <h3 className="text-[13px] font-medium text-foreground mb-3">Visualizer</h3>
               <VisualisatieGallery project_id={project.id} klant_id={project.klant_id} compact />
             </div>
           )}
 
           {/* Activiteit */}
-          <div className="bg-card border border-border rounded-xl p-4">
+          <div className="border border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px] p-4">
             <ActiviteitFeed
               project={project}
               offertes={projectOffertes}
               montageAfspraken={projectMontages}
               werkbonnen={projectWerkbonnen}
               facturen={projectFacturen}
+              taken={projectTaken}
+              fotos={projectFotos}
+              medewerkers={alleMedewerkers}
             />
           </div>
 
