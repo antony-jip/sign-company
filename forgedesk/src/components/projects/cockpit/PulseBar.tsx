@@ -75,7 +75,7 @@ export function PulseBar({ project, offertes, facturen, taken, tijdregistraties,
       <PulseItem
         value={metrics.dagenTotDeadline !== null ? `${metrics.dagenTotDeadline}d` : '—'}
         label="deadline"
-        colorClass={metrics.dagenTotDeadline !== null && metrics.dagenTotDeadline < 0 ? 'text-red-500' : 'text-blush-deep'}
+        colorClass={metrics.dagenTotDeadline !== null && metrics.dagenTotDeadline < 0 ? 'text-destructive' : 'text-blush-deep'}
       />
       <PulseItem
         value={metrics.openstaand > 0 ? formatCurrency(metrics.openstaand) : '—'}
@@ -97,7 +97,7 @@ export function PulseBar({ project, offertes, facturen, taken, tijdregistraties,
                 <div
                   className={cn(
                     'h-7 w-7 rounded-full flex items-center justify-center transition-all duration-300 flex-shrink-0',
-                    isCompleted && 'bg-emerald-500 text-white shadow-sm',
+                    isCompleted && 'bg-sage-deep text-white shadow-sm',
                     isCurrent && 'bg-primary text-primary-foreground ring-2 ring-primary/20 shadow-sm',
                     !isCompleted && !isCurrent && 'bg-[hsl(35,15%,92%)] text-muted-foreground/40',
                   )}
@@ -106,7 +106,7 @@ export function PulseBar({ project, offertes, facturen, taken, tijdregistraties,
                 </div>
                 <span className={cn(
                   'text-[9px] font-medium leading-none text-center whitespace-nowrap transition-colors duration-200',
-                  isCompleted && 'text-emerald-600',
+                  isCompleted && 'text-sage-deep',
                   isCurrent && 'text-primary font-bold',
                   !isCompleted && !isCurrent && 'text-muted-foreground/40',
                 )}>
@@ -116,7 +116,7 @@ export function PulseBar({ project, offertes, facturen, taken, tijdregistraties,
               {!isLast && (
                 <div className={cn(
                   'h-[2px] w-4 mx-0.5 rounded-full mt-[-12px] transition-colors duration-500',
-                  i < activeStep ? 'bg-emerald-400' : 'bg-[hsl(35,15%,90%)]',
+                  i < activeStep ? 'bg-sage' : 'bg-[hsl(35,15%,90%)]',
                 )} />
               )}
             </div>

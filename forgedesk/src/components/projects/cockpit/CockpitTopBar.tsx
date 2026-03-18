@@ -122,7 +122,7 @@ export function CockpitTopBar({
 
         {/* Customer link */}
         {klant && (
-          <Link to={`/klanten/${klant.id}`} className="text-xs text-amber-700 font-medium hover:underline hidden sm:inline">
+          <Link to={`/klanten/${klant.id}`} className="text-xs text-accent font-medium hover:underline hidden sm:inline">
             {klant.bedrijfsnaam || project.klant_naam}
           </Link>
         )}
