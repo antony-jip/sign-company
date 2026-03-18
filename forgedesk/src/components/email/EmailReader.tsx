@@ -244,10 +244,26 @@ export function EmailReader({
     let cancelled = false
     getDOMPurify().then(purify => {
       if (!cancelled) {
-        setSanitizedBody(purify.sanitize(email.inhoud, {
+        let processed = purify.sanitize(email.inhoud, {
           ADD_TAGS: ['style'],
           ADD_ATTR: ['target', 'style'],
-        }))
+        })
+        // Dim email signatures (after "Met vriendelijke groet", "--", etc.)
+        const sigMarkers = ['Met vriendelijke groet', 'Kind regards', 'Best regards', 'Regards,', 'Groeten,', 'Mvg,', 'Met hartelijke groet']
+        for (const marker of sigMarkers) {
+          const idx = processed.indexOf(marker)
+          if (idx > processed.length * 0.3) {
+            processed = processed.slice(0, idx) + '<div class="email-sig-dim">' + processed.slice(idx) + '</div>'
+            break
+          }
+        }
+        if (!processed.includes('email-sig-dim')) {
+          const dashIdx = processed.indexOf('<br>--<br>')
+          if (dashIdx > processed.length * 0.3) {
+            processed = processed.slice(0, dashIdx) + '<div class="email-sig-dim">' + processed.slice(dashIdx) + '</div>'
+          }
+        }
+        setSanitizedBody(processed)
       }
     })
     return () => { cancelled = true }
@@ -276,8 +292,8 @@ export function EmailReader({
       <div className="flex h-full">
         {/* ─── MAIN: full-screen compose ─── */}
         <div className="flex-1 flex flex-col min-w-0">
-          {/* Top action bar — same as reading view */}
-          <div className="flex items-center justify-between px-5 h-12 border-b border-foreground/[0.06] flex-shrink-0 bg-card">
+          {/* Top action bar — sticky */}
+          <div className="flex items-center justify-between px-5 h-12 border-b border-border/50 flex-shrink-0 bg-card sticky top-0 z-10">
             <div className="flex items-center gap-1">
               <Button
                 variant="ghost"
@@ -669,7 +685,7 @@ export function EmailReader({
               ) : (
                 <div ref={emailBodyRef}>
                   <div
-                    className="text-[14px] leading-[1.75] text-foreground/80 [&_img]:max-w-full [&_img]:rounded-lg [&_img]:shadow-sm [&_img]:my-3 [&_a]:text-primary [&_a]:no-underline [&_a]:hover:underline [&_a]:underline-offset-2 [&_a]:transition-colors [&_table]:w-full [&_blockquote]:border-l-2 [&_blockquote]:border-muted [&_blockquote]:pl-4 [&_blockquote]:text-sm [&_blockquote]:text-foreground/40 [&_blockquote]:my-3 [&_p]:mb-2 [&_h1]:text-lg [&_h1]:font-semibold [&_h1]:mb-2 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mb-2 [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:mb-1.5 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-2 [&_li]:mb-0.5"
+                    className="text-[14px] leading-[1.75] text-foreground/80 [&_img]:max-w-full [&_img]:rounded-lg [&_img]:shadow-sm [&_img]:my-3 [&_a]:text-primary [&_a]:no-underline [&_a]:hover:underline [&_a]:underline-offset-2 [&_a]:transition-colors [&_table]:w-full [&_blockquote]:border-l-2 [&_blockquote]:border-muted [&_blockquote]:pl-4 [&_blockquote]:text-sm [&_blockquote]:text-foreground/40 [&_blockquote]:my-3 [&_p]:mb-2 [&_h1]:text-lg [&_h1]:font-semibold [&_h1]:mb-2 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mb-2 [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:mb-1.5 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-2 [&_li]:mb-0.5 [&_.email-sig-dim]:text-muted-foreground [&_.email-sig-dim]:text-[13px]"
                     dangerouslySetInnerHTML={{ __html: sanitizedBody }}
                   />
                   <EmailReaderAIToolbar containerRef={emailBodyRef} />
