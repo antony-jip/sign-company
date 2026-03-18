@@ -17,16 +17,17 @@ import {
   Paperclip, Send, Bold, Italic, Underline,
   List, ListOrdered, Link2, Sparkles, Loader2, Download,
   UserPlus, FolderPlus, FileText, ListPlus, Check,
-  Building2, Mail, Undo2, Redo2,
+  Building2, Mail, Undo2, Redo2, ExternalLink,
+  Tag, Calendar, Phone,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { Email } from '@/types'
+import type { Email, Klant } from '@/types'
 import { extractSenderName, extractSenderEmail, formatShortDate, getAvatarColor } from './emailHelpers'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { callForgie } from '@/services/forgieService'
 import { toast } from 'sonner'
 import { useNavigate } from 'react-router-dom'
-import { createKlant } from '@/services/supabaseService'
+import { createKlant, getKlanten } from '@/services/supabaseService'
 
 interface EmailReaderProps {
   email: Email | null
@@ -579,7 +580,7 @@ function extractCompanyName(senderName: string, email: string): string {
   return ''
 }
 
-// ─── CRM Sidebar component with inline klant creation ───
+// ─── CRM Sidebar component with inline klant creation + duplicate detection ───
 const CRMSidebar = memo(function CRMSidebar({
   email,
   senderName,
@@ -594,7 +595,8 @@ const CRMSidebar = memo(function CRMSidebar({
   const navigate = useNavigate()
   const [showAddKlant, setShowAddKlant] = useState(false)
   const [klantSaving, setKlantSaving] = useState(false)
-  const [klantSaved, setKlantSaved] = useState(false)
+  const [linkedKlant, setLinkedKlant] = useState<Klant | null>(null)
+  const [klantLoading, setKlantLoading] = useState(true)
   const [klantForm, setKlantForm] = useState({
     bedrijfsnaam: '',
     contactpersoon: '',
@@ -602,11 +604,49 @@ const CRMSidebar = memo(function CRMSidebar({
     telefoon: '',
   })
 
+  // Extract person name (before | or -)
+  const personName = useMemo(() => senderName.replace(/\s*[|–—-]\s*.+$/, '').trim(), [senderName])
+  const companyGuess = useMemo(() => extractCompanyName(senderName, senderEmail), [senderName, senderEmail])
+
+  // Look up existing klant by email domain or exact email match
+  useEffect(() => {
+    let cancelled = false
+    setKlantLoading(true)
+    setLinkedKlant(null)
+
+    async function findKlant() {
+      try {
+        const klanten = await getKlanten(500)
+        const emailDomain = senderEmail.match(/@(.+)/)?.[1]?.toLowerCase()
+
+        // Priority 1: exact email match
+        let match = klanten.find(k =>
+          k.email?.toLowerCase() === senderEmail.toLowerCase() ||
+          k.contactpersonen?.some(c => c.email?.toLowerCase() === senderEmail.toLowerCase())
+        )
+
+        // Priority 2: same email domain (company match)
+        if (!match && emailDomain) {
+          const genericDomains = ['gmail.com', 'hotmail.com', 'outlook.com', 'yahoo.com', 'live.nl', 'ziggo.nl', 'kpnmail.nl', 'xs4all.nl', 'planet.nl', 'hetnet.nl', 'home.nl', 'upcmail.nl']
+          if (!genericDomains.includes(emailDomain)) {
+            match = klanten.find(k => k.email?.toLowerCase().endsWith('@' + emailDomain))
+          }
+        }
+
+        if (!cancelled) setLinkedKlant(match || null)
+      } catch {
+        // silent
+      } finally {
+        if (!cancelled) setKlantLoading(false)
+      }
+    }
+
+    findKlant()
+    return () => { cancelled = true }
+  }, [senderEmail])
+
   // Pre-fill form when opening
   const handleOpenAddKlant = useCallback(() => {
-    const companyGuess = extractCompanyName(senderName, senderEmail)
-    // Extract just the person name (before | or -)
-    const personName = senderName.replace(/\s*[|–—-]\s*.+$/, '').trim()
     setKlantForm({
       bedrijfsnaam: companyGuess,
       contactpersoon: personName,
@@ -614,8 +654,7 @@ const CRMSidebar = memo(function CRMSidebar({
       telefoon: '',
     })
     setShowAddKlant(true)
-    setKlantSaved(false)
-  }, [senderName, senderEmail])
+  }, [companyGuess, personName, senderEmail])
 
   const handleSaveKlant = useCallback(async () => {
     if (!klantForm.contactpersoon.trim() || !klantForm.email.trim()) {
@@ -624,7 +663,21 @@ const CRMSidebar = memo(function CRMSidebar({
     }
     setKlantSaving(true)
     try {
-      await createKlant({
+      // Check for duplicates before creating
+      const existing = await getKlanten(500)
+      const emailDomain = klantForm.email.match(/@(.+)/)?.[1]?.toLowerCase()
+      const dupe = existing.find(k =>
+        k.email?.toLowerCase() === klantForm.email.toLowerCase() ||
+        (klantForm.bedrijfsnaam && k.bedrijfsnaam?.toLowerCase() === klantForm.bedrijfsnaam.toLowerCase())
+      )
+      if (dupe) {
+        toast.error(`Klant "${dupe.bedrijfsnaam || dupe.contactpersoon}" bestaat al`)
+        setLinkedKlant(dupe)
+        setShowAddKlant(false)
+        return
+      }
+
+      const newKlant = await createKlant({
         bedrijfsnaam: klantForm.bedrijfsnaam,
         contactpersoon: klantForm.contactpersoon,
         email: klantForm.email,
@@ -633,19 +686,24 @@ const CRMSidebar = memo(function CRMSidebar({
         postcode: '',
         stad: '',
         land: 'Nederland',
-        website: '',
+        website: emailDomain ? `www.${emailDomain}` : '',
         kvk_nummer: '',
         btw_nummer: '',
         status: 'actief',
         tags: [],
         notities: '',
-        contactpersonen: [],
+        contactpersonen: [{
+          id: crypto.randomUUID(),
+          naam: klantForm.contactpersoon,
+          functie: '',
+          email: klantForm.email,
+          telefoon: klantForm.telefoon,
+          is_primair: true,
+        }],
       })
-      setKlantSaved(true)
+      setLinkedKlant(newKlant)
+      setShowAddKlant(false)
       toast.success('Klant aangemaakt')
-      setTimeout(() => {
-        setShowAddKlant(false)
-      }, 1500)
     } catch {
       toast.error('Klant aanmaken mislukt')
     } finally {
@@ -653,135 +711,157 @@ const CRMSidebar = memo(function CRMSidebar({
     }
   }, [klantForm])
 
+  // Format the email date nicely
+  const emailDate = useMemo(() => {
+    if (!email.datum) return null
+    try {
+      const d = new Date(email.datum)
+      return {
+        date: d.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' }),
+        time: d.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' }),
+      }
+    } catch { return null }
+  }, [email.datum])
+
   return (
-    <div className="w-[280px] border-l border-foreground/[0.06] bg-[#FAFAF8] flex-shrink-0 overflow-y-auto hidden xl:flex flex-col">
-      <div className="p-5 space-y-5 flex-1">
-        {/* Contact card */}
-        <div className="text-center">
-          <div className={cn('w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3 ring-3 ring-white shadow-md', avatarColor)}>
-            <span className="text-lg font-bold text-white">{senderName[0]?.toUpperCase()}</span>
+    <div className="w-[280px] border-l border-foreground/[0.06] bg-gradient-to-b from-[#FAFAF8] to-[#F5F5F2] flex-shrink-0 overflow-y-auto hidden xl:flex flex-col">
+      <div className="p-5 space-y-4 flex-1">
+        {/* ── Contact card ── */}
+        <div className="text-center pb-4 border-b border-foreground/[0.06]">
+          <div className={cn('w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2.5 ring-2 ring-white shadow-md', avatarColor)}>
+            <span className="text-base font-bold text-white">{senderName[0]?.toUpperCase()}</span>
           </div>
-          <p className="text-sm font-semibold text-foreground">{senderName}</p>
-          <p className="text-xs text-foreground/35 mt-0.5">{senderEmail}</p>
+          <p className="text-[13px] font-semibold text-foreground leading-tight">{personName}</p>
+          {companyGuess && (
+            <p className="text-xs text-foreground/45 mt-0.5">{companyGuess}</p>
+          )}
+          <div className="flex items-center justify-center gap-1 mt-1.5">
+            <Mail className="h-3 w-3 text-foreground/25" />
+            <span className="text-[11px] text-foreground/40">{senderEmail}</span>
+          </div>
         </div>
 
-        {/* Contact details */}
-        <div className="bg-card rounded-lg p-3 space-y-2 shadow-sm border border-foreground/[0.04]">
-          <div className="flex items-center gap-2.5 text-xs text-foreground/55">
-            <Mail className="h-3.5 w-3.5 flex-shrink-0 text-foreground/30" />
-            <span className="truncate">{senderEmail}</span>
+        {/* ── Linked company card ── */}
+        {klantLoading ? (
+          <div className="flex items-center gap-2 text-xs text-foreground/30 py-2">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            <span>Klant zoeken...</span>
           </div>
-          {email.aan && (
-            <div className="flex items-center gap-2.5 text-xs text-foreground/55">
-              <Building2 className="h-3.5 w-3.5 flex-shrink-0 text-foreground/30" />
-              <span className="truncate">{email.aan}</span>
+        ) : linkedKlant ? (
+          <button
+            onClick={() => navigate(`/klanten/${linkedKlant.id}`)}
+            className="w-full bg-white rounded-xl p-3.5 shadow-sm border border-foreground/[0.05] hover:shadow-md hover:border-foreground/[0.1] transition-all duration-200 text-left group"
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-lg bg-primary/8 flex items-center justify-center flex-shrink-0">
+                  <Building2 className="h-4 w-4 text-primary/60" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[13px] font-medium text-foreground truncate">
+                    {linkedKlant.bedrijfsnaam || linkedKlant.contactpersoon}
+                  </p>
+                  <p className="text-[11px] text-foreground/40 truncate">
+                    {linkedKlant.bedrijfsnaam ? linkedKlant.contactpersoon : linkedKlant.email}
+                  </p>
+                </div>
+              </div>
+              <ExternalLink className="h-3.5 w-3.5 text-foreground/20 group-hover:text-primary/50 flex-shrink-0 mt-0.5 transition-colors" />
             </div>
-          )}
-        </div>
+            {linkedKlant.telefoon && (
+              <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-foreground/[0.04]">
+                <Phone className="h-3 w-3 text-foreground/25" />
+                <span className="text-[11px] text-foreground/40">{linkedKlant.telefoon}</span>
+              </div>
+            )}
+            <div className="mt-2 pt-2 border-t border-foreground/[0.04]">
+              <span className={cn(
+                'inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium',
+                linkedKlant.status === 'actief' ? 'bg-emerald-50 text-emerald-600' :
+                linkedKlant.status === 'prospect' ? 'bg-amber-50 text-amber-600' :
+                'bg-gray-100 text-gray-500'
+              )}>
+                {linkedKlant.status || 'actief'}
+              </span>
+            </div>
+          </button>
+        ) : (
+          /* No linked klant — show add button */
+          !showAddKlant && (
+            <button
+              onClick={handleOpenAddKlant}
+              className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-dashed border-foreground/[0.12] text-[13px] text-foreground/45 hover:border-primary/30 hover:text-primary hover:bg-primary/[0.03] transition-all duration-200"
+            >
+              <UserPlus className="h-4 w-4" />
+              Contact toevoegen
+            </button>
+          )
+        )}
+
+        {/* ── Inline add klant form ── */}
+        {showAddKlant && (
+          <div className="bg-white rounded-xl border border-foreground/[0.06] p-3.5 shadow-sm space-y-2.5">
+            <div className="flex items-center justify-between mb-1">
+              <h4 className="text-[11px] font-semibold text-foreground/50 uppercase tracking-wider">Nieuw contact</h4>
+              <button onClick={() => setShowAddKlant(false)} className="text-foreground/25 hover:text-foreground/50 transition-colors">
+                <ArrowLeft className="h-3.5 w-3.5" />
+              </button>
+            </div>
+            {[
+              { key: 'bedrijfsnaam' as const, label: 'Bedrijf', placeholder: 'Bedrijf B.V.', icon: Building2 },
+              { key: 'contactpersoon' as const, label: 'Naam *', placeholder: 'Volledige naam', icon: UserPlus },
+              { key: 'email' as const, label: 'Email *', placeholder: 'email@bedrijf.nl', icon: Mail, type: 'email' },
+              { key: 'telefoon' as const, label: 'Telefoon', placeholder: '06-12345678', icon: Phone, type: 'tel' },
+            ].map(({ key, placeholder, icon: Icon, type }) => (
+              <div key={key} className="relative">
+                <Icon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-foreground/20" />
+                <input
+                  type={type || 'text'}
+                  value={klantForm[key]}
+                  onChange={(e) => setKlantForm(f => ({ ...f, [key]: e.target.value }))}
+                  className="w-full pl-8 pr-2.5 py-2 text-[13px] bg-foreground/[0.02] border border-foreground/[0.08] rounded-lg outline-none focus:border-primary/30 focus:bg-white transition-colors placeholder:text-foreground/20"
+                  placeholder={placeholder}
+                />
+              </div>
+            ))}
+            <button
+              onClick={handleSaveKlant}
+              disabled={klantSaving}
+              className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg bg-primary text-white text-xs font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors mt-1"
+            >
+              {klantSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
+              {klantSaving ? 'Opslaan...' : 'Contact opslaan'}
+            </button>
+          </div>
+        )}
 
         <div className="border-t border-foreground/[0.06]" />
 
-        {/* Quick actions */}
+        {/* ── Quick actions ── */}
         <div>
-          <h3 className="text-[11px] font-semibold text-foreground/30 uppercase tracking-wider mb-2.5">Snelkoppelingen</h3>
-          <div className="space-y-0.5">
-            {/* Klant toevoegen — inline */}
-            <button
-              onClick={handleOpenAddKlant}
-              className={cn(
-                'w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all duration-150',
-                showAddKlant
-                  ? 'bg-primary/[0.06] text-primary font-medium'
-                  : 'text-foreground/55 hover:bg-card hover:text-foreground hover:shadow-sm',
-              )}
-            >
-              <UserPlus className="h-4 w-4" />
-              Klant toevoegen
-            </button>
-
-            {/* Inline add klant form */}
-            {showAddKlant && (
-              <div className="bg-card rounded-lg border border-foreground/[0.06] p-3 mt-1.5 mb-1.5 shadow-sm space-y-2.5">
-                {klantSaved ? (
-                  <div className="flex items-center gap-2 py-3 justify-center text-emerald-600">
-                    <Check className="h-4 w-4" />
-                    <span className="text-sm font-medium">Klant aangemaakt!</span>
-                  </div>
-                ) : (
-                  <>
-                    <div>
-                      <label className="text-[10px] text-foreground/35 uppercase tracking-wider font-medium">Bedrijfsnaam</label>
-                      <input
-                        type="text"
-                        value={klantForm.bedrijfsnaam}
-                        onChange={(e) => setKlantForm(f => ({ ...f, bedrijfsnaam: e.target.value }))}
-                        className="w-full mt-0.5 px-2.5 py-1.5 text-sm bg-foreground/[0.02] border border-foreground/[0.08] rounded-md outline-none focus:border-primary/30 focus:bg-card transition-colors"
-                        placeholder="Bedrijf B.V."
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[10px] text-foreground/35 uppercase tracking-wider font-medium">Contactpersoon *</label>
-                      <input
-                        type="text"
-                        value={klantForm.contactpersoon}
-                        onChange={(e) => setKlantForm(f => ({ ...f, contactpersoon: e.target.value }))}
-                        className="w-full mt-0.5 px-2.5 py-1.5 text-sm bg-foreground/[0.02] border border-foreground/[0.08] rounded-md outline-none focus:border-primary/30 focus:bg-card transition-colors"
-                        placeholder="Naam"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[10px] text-foreground/35 uppercase tracking-wider font-medium">Email *</label>
-                      <input
-                        type="email"
-                        value={klantForm.email}
-                        onChange={(e) => setKlantForm(f => ({ ...f, email: e.target.value }))}
-                        className="w-full mt-0.5 px-2.5 py-1.5 text-sm bg-foreground/[0.02] border border-foreground/[0.08] rounded-md outline-none focus:border-primary/30 focus:bg-card transition-colors"
-                        placeholder="email@bedrijf.nl"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[10px] text-foreground/35 uppercase tracking-wider font-medium">Telefoon</label>
-                      <input
-                        type="tel"
-                        value={klantForm.telefoon}
-                        onChange={(e) => setKlantForm(f => ({ ...f, telefoon: e.target.value }))}
-                        className="w-full mt-0.5 px-2.5 py-1.5 text-sm bg-foreground/[0.02] border border-foreground/[0.08] rounded-md outline-none focus:border-primary/30 focus:bg-card transition-colors"
-                        placeholder="06-12345678"
-                      />
-                    </div>
-                    <div className="flex items-center gap-2 pt-1">
-                      <button
-                        onClick={handleSaveKlant}
-                        disabled={klantSaving}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md bg-primary text-white text-xs font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors"
-                      >
-                        {klantSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
-                        {klantSaving ? 'Opslaan...' : 'Opslaan'}
-                      </button>
-                      <button
-                        onClick={() => setShowAddKlant(false)}
-                        className="px-3 py-2 rounded-md text-xs text-foreground/40 hover:text-foreground/60 hover:bg-foreground/[0.04] transition-colors"
-                      >
-                        Annuleer
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-
+          <h3 className="text-[11px] font-semibold text-foreground/30 uppercase tracking-wider mb-2">Acties</h3>
+          <div className="grid grid-cols-2 gap-1.5">
             {[
-              { icon: FileText, label: 'Offerte aanmaken', path: '/offertes/nieuw' },
-              { icon: FolderPlus, label: 'Project aanmaken', path: '/projecten/nieuw' },
-              { icon: ListPlus, label: 'Taak toevoegen', path: '/taken' },
-            ].map(({ icon: Icon, label, path }) => (
+              { icon: FileText, label: 'Offerte', path: '/offertes/nieuw', color: 'text-blue-500/70 bg-blue-50' },
+              { icon: FolderPlus, label: 'Project', path: '/projecten/nieuw', color: 'text-violet-500/70 bg-violet-50' },
+              { icon: ListPlus, label: 'Taak', path: '/taken', color: 'text-amber-500/70 bg-amber-50' },
+              { icon: UserPlus, label: 'Klant', path: linkedKlant ? `/klanten/${linkedKlant.id}` : '', color: 'text-emerald-500/70 bg-emerald-50', onClick: linkedKlant ? undefined : handleOpenAddKlant },
+            ].map(({ icon: Icon, label, path, color, onClick }) => (
               <button
-                key={path}
-                onClick={() => navigate(path)}
-                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] text-foreground/55 hover:bg-card hover:text-foreground hover:shadow-sm transition-all duration-150"
+                key={label}
+                onClick={onClick || (() => {
+                  const params = new URLSearchParams()
+                  if (linkedKlant) params.set('klant_id', linkedKlant.id)
+                  else if (senderName) params.set('klant_naam', personName)
+                  const query = params.toString()
+                  navigate(path + (query ? `?${query}` : ''))
+                })}
+                className="flex flex-col items-center gap-1.5 p-2.5 rounded-xl hover:bg-card hover:shadow-sm border border-transparent hover:border-foreground/[0.05] transition-all duration-200"
               >
-                <Icon className="h-4 w-4 text-foreground/30" />
-                {label}
+                <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center', color)}>
+                  <Icon className="h-4 w-4" />
+                </div>
+                <span className="text-[11px] text-foreground/50 font-medium">{label}</span>
               </button>
             ))}
           </div>
@@ -789,34 +869,43 @@ const CRMSidebar = memo(function CRMSidebar({
 
         <div className="border-t border-foreground/[0.06]" />
 
-        {/* Email metadata */}
+        {/* ── Email details ── */}
         <div>
           <h3 className="text-[11px] font-semibold text-foreground/30 uppercase tracking-wider mb-2.5">Details</h3>
-          <div className="space-y-3 text-xs">
-            <div className="flex justify-between">
-              <span className="text-foreground/35">Datum</span>
-              <span className="text-foreground/60">{formatShortDate(email.datum)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-foreground/35">Map</span>
-              <span className="text-foreground/60 capitalize">{email.map}</span>
+          <div className="space-y-2.5">
+            {emailDate && (
+              <div className="flex items-center gap-2.5 text-xs">
+                <Calendar className="h-3.5 w-3.5 text-foreground/20 flex-shrink-0" />
+                <span className="text-foreground/50">{emailDate.date}</span>
+                <span className="text-foreground/30 ml-auto">{emailDate.time}</span>
+              </div>
+            )}
+            <div className="flex items-center gap-2.5 text-xs">
+              <Mail className="h-3.5 w-3.5 text-foreground/20 flex-shrink-0" />
+              <span className="text-foreground/50 capitalize">{email.map || 'inbox'}</span>
             </div>
             {email.bijlagen > 0 && (
-              <div className="flex justify-between">
-                <span className="text-foreground/35">Bijlagen</span>
-                <span className="text-foreground/60">{email.bijlagen}</span>
+              <div className="flex items-center gap-2.5 text-xs">
+                <Paperclip className="h-3.5 w-3.5 text-foreground/20 flex-shrink-0" />
+                <span className="text-foreground/50">{email.bijlagen} bijlage{email.bijlagen > 1 ? 'n' : ''}</span>
               </div>
             )}
             {email.labels && email.labels.length > 0 && (
-              <div className="flex justify-between items-start">
-                <span className="text-foreground/35">Labels</span>
-                <div className="flex flex-wrap gap-1 justify-end">
+              <div className="flex items-start gap-2.5 text-xs">
+                <Tag className="h-3.5 w-3.5 text-foreground/20 flex-shrink-0 mt-0.5" />
+                <div className="flex flex-wrap gap-1">
                   {email.labels.map(label => (
                     <span key={label} className="px-1.5 py-0.5 bg-primary/8 text-primary rounded text-[10px] font-medium">
                       {label}
                     </span>
                   ))}
                 </div>
+              </div>
+            )}
+            {email.aan && (
+              <div className="flex items-center gap-2.5 text-xs">
+                <Send className="h-3.5 w-3.5 text-foreground/20 flex-shrink-0" />
+                <span className="text-foreground/50 truncate">{email.aan}</span>
               </div>
             )}
           </div>
