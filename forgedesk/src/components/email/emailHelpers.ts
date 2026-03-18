@@ -31,6 +31,18 @@ export function getAvatarColor(name: string): string {
   return color
 }
 
+const AVATAR_RING_COLORS = [
+  'ring-primary/30', 'ring-emerald-300/40', 'ring-amber-300/40', 'ring-amber-400/30',
+  'ring-rose-300/40', 'ring-cyan-300/40', 'ring-accent/30', 'ring-pink-300/40',
+  'ring-teal-300/40', 'ring-orange-300/40',
+]
+
+export function getAvatarRingColor(name: string): string {
+  let hash = 0
+  for (let i = 0; i < name.length; i++) hash += name.charCodeAt(i)
+  return AVATAR_RING_COLORS[hash % AVATAR_RING_COLORS.length]
+}
+
 export function formatShortDate(dateStr: string): string {
   const date = new Date(dateStr)
   const now = new Date()
