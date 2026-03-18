@@ -626,40 +626,40 @@ export function PortaalCompactCard({ projectId }: PortaalCompactCardProps) {
           {/* ── Input bar (always visible when expanded & actief) ── */}
           {isActief && (
             <div className="border-t border-[hsl(35,15%,90%)] bg-white">
-              {/* Quick action bar */}
+              {/* Quick action bar with labels */}
               <div className="relative" ref={popoverRef}>
-                <div className="flex items-center gap-1 px-4 py-2 border-b border-[hsl(35,15%,94%)]">
+                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-[hsl(35,15%,92%)]">
                   <button
                     onClick={() => fotoInputRef.current?.click()}
                     disabled={isSending}
-                    title="Afbeelding"
-                    className="h-7 w-7 rounded-lg flex items-center justify-center text-muted-foreground/60 hover:text-violet-600 hover:bg-violet-50 transition-all"
+                    className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1.5 rounded-lg border border-violet-200 text-violet-700 bg-violet-50 hover:bg-violet-100 hover:border-violet-300 transition-all disabled:opacity-40"
                   >
-                    <ImageIcon className="h-4 w-4" />
+                    <ImageIcon className="h-3.5 w-3.5" />
+                    Afbeelding
                   </button>
                   <button
                     onClick={handleOpenOffertePopover}
                     disabled={isSending}
-                    title="Offerte delen"
-                    className={`h-7 w-7 rounded-lg flex items-center justify-center transition-all ${
+                    className={`inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1.5 rounded-lg border transition-all disabled:opacity-40 ${
                       activePopover === 'offerte'
-                        ? 'text-amber-600 bg-amber-50'
-                        : 'text-muted-foreground/60 hover:text-amber-600 hover:bg-amber-50'
+                        ? 'border-amber-400 text-amber-800 bg-amber-100'
+                        : 'border-amber-200 text-amber-700 bg-amber-50 hover:bg-amber-100 hover:border-amber-300'
                     }`}
                   >
-                    <Receipt className="h-4 w-4" />
+                    <Receipt className="h-3.5 w-3.5" />
+                    Offerte
                   </button>
                   <button
                     onClick={handleOpenFactuurPopover}
                     disabled={isSending}
-                    title="Factuur delen"
-                    className={`h-7 w-7 rounded-lg flex items-center justify-center transition-all ${
+                    className={`inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1.5 rounded-lg border transition-all disabled:opacity-40 ${
                       activePopover === 'factuur'
-                        ? 'text-emerald-600 bg-emerald-50'
-                        : 'text-muted-foreground/60 hover:text-emerald-600 hover:bg-emerald-50'
+                        ? 'border-emerald-400 text-emerald-800 bg-emerald-100'
+                        : 'border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 hover:border-emerald-300'
                     }`}
                   >
-                    <CreditCard className="h-4 w-4" />
+                    <CreditCard className="h-3.5 w-3.5" />
+                    Factuur
                   </button>
                 </div>
 
