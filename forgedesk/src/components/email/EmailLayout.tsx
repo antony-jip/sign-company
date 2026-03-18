@@ -483,9 +483,9 @@ export function EmailLayout() {
       const uid = Number(email.gmail_id || email.id)
       if (isNaN(uid)) return email
       const detail = await readEmailFromIMAP(uid, IMAP_FOLDER_MAP[folder] || 'INBOX')
-      const body = detail.bodyHtml || detail.bodyText || ''
-      bodyCacheRef.current.set(email.id, body)
-      return { ...email, gelezen: true, inhoud: body, aan: detail.to || email.aan }
+      const imapBody = detail.bodyHtml || detail.bodyText || ''
+      bodyCacheRef.current.set(email.id, imapBody)
+      return { ...email, gelezen: true, inhoud: imapBody, aan: detail.to || email.aan }
     } catch (err: unknown) {
       logger.error('Email body ophalen mislukt:', err)
       toast.error('Kon email inhoud niet laden')
