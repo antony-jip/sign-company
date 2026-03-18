@@ -19,7 +19,7 @@ import {
   UserPlus, FolderPlus, FileText, ListPlus, Check, X,
   Building2, Mail, Undo2, Redo2, ExternalLink, ChevronRight,
   Tag, Calendar, Phone, Plus, CheckCircle2,
-  Wand2, Globe, Bell, BellOff, Clock, Minimize2,
+  Bell, BellOff, Clock, Minimize2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Email, Klant } from '@/types'
@@ -477,7 +477,7 @@ export function EmailReader({
         </div>
 
         {/* ─── CRM SIDEBAR (right, same as reading view) ─── */}
-        <CRMSidebar email={email} senderName={senderName} senderEmail={senderEmail} avatarColor={avatarColor} allEmails={allEmails} onSummarize={handleSummarize} onGenerateReply={handleForgieWrite} onSelectEmail={onSelectEmail} />
+        <CRMSidebar email={email} senderName={senderName} senderEmail={senderEmail} avatarColor={avatarColor} allEmails={allEmails} onSelectEmail={onSelectEmail} />
       </div>
     )
   }
@@ -515,14 +515,24 @@ export function EmailReader({
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 gap-1.5 text-[13px] hover:bg-[hsl(263_30%_96%)]"
-              style={{ color: '#9B8EC4' }}
+              className="h-8 gap-1.5 text-[13px] text-foreground/50 hover:text-foreground/80 hover:bg-foreground/[0.04]"
               onClick={handleSummarize}
               disabled={summaryLoading}
-              title="Samenvatten met AI"
+              title="Samenvatten (⌘⇧S)"
             >
-              {summaryLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+              {summaryLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />}
               <span>Samenvatten</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 gap-1.5 text-[13px] text-foreground/50 hover:text-foreground/80 hover:bg-foreground/[0.04]"
+              onClick={handleGenerateReplyFromReader}
+              disabled={forgieLoading}
+              title="Antwoord genereren (⌘⇧R)"
+            >
+              {forgieLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Reply className="h-3.5 w-3.5" />}
+              <span>Beantwoorden</span>
             </Button>
           </div>
           {emailIndex !== undefined && emailTotal !== undefined && (
@@ -562,8 +572,8 @@ export function EmailReader({
               </div>
             </div>
 
-            {/* Sender — compact inline with reply actions */}
-            <div className="flex items-center gap-2.5 mb-5 pb-4 border-b border-foreground/[0.05]">
+            {/* Sender info */}
+            <div className="flex items-center gap-2.5 mb-3">
               <div className={cn('w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0', avatarColor)}>
                 <span className="text-xs font-bold text-white">{senderName[0]?.toUpperCase()}</span>
               </div>
@@ -574,45 +584,49 @@ export function EmailReader({
                 </div>
                 <div className="text-[11px] text-foreground/30">aan {email.aan}</div>
               </div>
-              {/* Reply actions — top right, Gmail-style */}
-              <div className="flex items-center gap-0.5 flex-shrink-0">
-                <button onClick={() => handleReply('reply')}
-                  className="h-8 w-8 flex items-center justify-center rounded-[7px] text-foreground/30 hover:text-foreground/70 hover:bg-foreground/[0.04] transition-colors"
-                  title="Beantwoorden">
-                  <Reply className="h-4 w-4" />
-                </button>
-                <button onClick={() => handleReply('reply-all')}
-                  className="h-8 w-8 flex items-center justify-center rounded-[7px] text-foreground/30 hover:text-foreground/70 hover:bg-foreground/[0.04] transition-colors"
-                  title="Allen beantwoorden">
-                  <ReplyAll className="h-4 w-4" />
-                </button>
-                <button onClick={() => handleReply('forward')}
-                  className="h-8 w-8 flex items-center justify-center rounded-[7px] text-foreground/30 hover:text-foreground/70 hover:bg-foreground/[0.04] transition-colors"
-                  title="Doorsturen">
-                  <Forward className="h-4 w-4" />
-                </button>
-              </div>
             </div>
 
-            {/* ── AI Summary block ── */}
+            {/* Reply/Forward action buttons — prominent row */}
+            <div className="flex items-center gap-2 mb-5 pb-4 border-b border-foreground/[0.05]">
+              <button onClick={() => handleReply('reply')}
+                className="flex items-center gap-1.5 h-9 px-4 rounded-lg border border-foreground/[0.08] bg-foreground/[0.025] text-[13px] font-medium text-foreground/60 hover:text-foreground hover:bg-foreground/[0.05] hover:border-foreground/[0.12] transition-all"
+                title="Beantwoorden">
+                <Reply className="h-3.5 w-3.5" />
+                <span>Beantwoorden</span>
+              </button>
+              <button onClick={() => handleReply('reply-all')}
+                className="flex items-center gap-1.5 h-9 px-3 rounded-lg border border-foreground/[0.08] bg-foreground/[0.025] text-[13px] text-foreground/50 hover:text-foreground hover:bg-foreground/[0.05] hover:border-foreground/[0.12] transition-all"
+                title="Allen beantwoorden">
+                <ReplyAll className="h-3.5 w-3.5" />
+                <span>Allen</span>
+              </button>
+              <button onClick={() => handleReply('forward')}
+                className="flex items-center gap-1.5 h-9 px-3 rounded-lg border border-foreground/[0.08] bg-foreground/[0.025] text-[13px] text-foreground/50 hover:text-foreground hover:bg-foreground/[0.05] hover:border-foreground/[0.12] transition-all"
+                title="Doorsturen">
+                <Forward className="h-3.5 w-3.5" />
+                <span>Doorsturen</span>
+              </button>
+            </div>
+
+            {/* ── Summary block ── */}
             {(summary || summaryLoading) && (
-              <div className="mb-5 rounded-xl border overflow-hidden" style={{ background: 'hsl(263 30% 96%)', borderColor: 'hsl(263 30% 66% / 0.3)' }}>
+              <div className="mb-5 rounded-xl border border-foreground/[0.06] overflow-hidden bg-foreground/[0.015]">
                 <button
                   onClick={() => setSummaryExpanded(e => !e)}
                   className="w-full flex items-center justify-between px-4 py-2.5 text-left"
                 >
                   <div className="flex items-center gap-2">
-                    <Sparkles className="h-3.5 w-3.5" style={{ color: '#9B8EC4' }} />
-                    <span className="text-[12px] font-semibold" style={{ color: '#6B5B8A' }}>Samenvatting</span>
+                    <FileText className="h-3.5 w-3.5 text-foreground/35" />
+                    <span className="text-[12px] font-semibold text-foreground/55">Samenvatting</span>
                   </div>
-                  <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', summaryExpanded ? '' : '-rotate-90')} style={{ color: '#9B8EC4' }} />
+                  <ChevronDown className={cn('h-3.5 w-3.5 text-foreground/25 transition-transform', summaryExpanded ? '' : '-rotate-90')} />
                 </button>
                 {summaryExpanded && (
                   <div className="px-4 pb-3">
                     {summaryLoading ? (
-                      <div className="flex items-center gap-2 text-[12px]" style={{ color: '#9B8EC4' }}>
+                      <div className="flex items-center gap-2 text-[12px] text-foreground/40">
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        <span>Forgie vat samen...</span>
+                        <span>Samenvatten...</span>
                       </div>
                     ) : (
                       <p className="text-[13px] leading-relaxed text-foreground/70">{summary}</p>
@@ -663,7 +677,7 @@ export function EmailReader({
       </div>
 
       {/* ─── CRM SIDEBAR ─── */}
-      <CRMSidebar email={email} senderName={senderName} senderEmail={senderEmail} avatarColor={avatarColor} allEmails={allEmails} onSummarize={handleSummarize} onGenerateReply={handleGenerateReplyFromReader} onSelectEmail={onSelectEmail} />
+      <CRMSidebar email={email} senderName={senderName} senderEmail={senderEmail} avatarColor={avatarColor} allEmails={allEmails} onSelectEmail={onSelectEmail} />
     </div>
   )
 }
@@ -691,8 +705,6 @@ function extractCompanyName(senderName: string, email: string): string {
 // ─── CRM Sidebar with inline actions ───
 type InlinePanel = 'none' | 'klant' | 'offerte' | 'project' | 'taak'
 
-const aiAccent = '#9B8EC4'
-
 const reminderOptions = [
   { value: '1h', label: 'Over 1 uur' },
   { value: '1d', label: 'Morgen 9:00' },
@@ -706,8 +718,6 @@ const CRMSidebar = memo(function CRMSidebar({
   senderEmail,
   avatarColor,
   allEmails,
-  onSummarize,
-  onGenerateReply,
   onSelectEmail,
 }: {
   email: Email
@@ -715,8 +725,6 @@ const CRMSidebar = memo(function CRMSidebar({
   senderEmail: string
   avatarColor: string
   allEmails?: Email[]
-  onSummarize?: () => void
-  onGenerateReply?: () => void
   onSelectEmail?: (email: Email) => void
 }) {
   const navigate = useNavigate()
@@ -724,11 +732,6 @@ const CRMSidebar = memo(function CRMSidebar({
   const [saving, setSaving] = useState(false)
   const [linkedKlant, setLinkedKlant] = useState<Klant | null>(null)
   const [klantLoading, setKlantLoading] = useState(true)
-
-  // Forgie AI state
-  const [sidebarForgieLoading, setSidebarForgieLoading] = useState(false)
-  const [sidebarForgieAction, setSidebarForgieAction] = useState<string | null>(null)
-  const [forgieResult, setForgieResult] = useState<string | null>(null)
 
   // Opvolg-herinnering state
   const [reminder, setReminder] = useState<string | null>(null)
@@ -901,27 +904,6 @@ const CRMSidebar = memo(function CRMSidebar({
     setLinkedKlant(klant)
     setActivePanel('none')
     toast.success(`Gekoppeld aan ${klant.bedrijfsnaam || klant.contactpersoon}`)
-  }
-
-  // Forgie AI handler for sidebar actions
-  async function handleSidebarForgie(action: 'summarize' | 'rewrite-professional' | 'translate-en' | 'generate-reply') {
-    if (sidebarForgieLoading) return
-    // Summarize and generate-reply delegate to parent
-    if (action === 'summarize') { onSummarize?.(); return }
-    if (action === 'generate-reply') { onGenerateReply?.(); return }
-    setSidebarForgieLoading(true)
-    setSidebarForgieAction(action)
-    setForgieResult(null)
-    try {
-      const text = email.inhoud?.replace(/<[^>]*>/g, '').slice(0, 2000) || ''
-      const response = await callForgie(action, text)
-      if (response?.result) setForgieResult(response.result)
-    } catch {
-      toast.error('Forgie kon dit niet verwerken. Probeer het opnieuw.')
-    } finally {
-      setSidebarForgieLoading(false)
-      setSidebarForgieAction(null)
-    }
   }
 
   function setFollowUpReminder(value: string) {
@@ -1121,147 +1103,39 @@ const CRMSidebar = memo(function CRMSidebar({
   }
 
   return (
-    <div className="w-[280px] border-l border-border/40 flex-shrink-0 overflow-y-auto hidden xl:flex flex-col" style={{ background: 'hsl(36 18% 94%)' }}>
-      <div className="p-4 space-y-3 flex-1">
-
-        {/* ── Forgie AI Tools ── */}
-        <div className="bg-card rounded-[10px] border border-border/40 overflow-hidden" style={{ boxShadow: '0 1px 3px rgba(120,90,50,0.05)' }}>
-          <div className="flex items-center gap-2 px-3.5 py-2.5" style={{ background: `${aiAccent}0C`, borderBottom: `1px solid ${aiAccent}15` }}>
-            <div className="w-1.5 h-1.5 rounded-full" style={{ background: aiAccent }} />
-            <h4 className="text-[12px] font-semibold text-foreground/70">Forgie AI</h4>
-            {sidebarForgieLoading && <Loader2 className="h-3 w-3 animate-spin text-foreground/30 ml-auto" />}
-          </div>
-          <div className="p-2 space-y-0.5">
-            <button
-              onClick={() => handleSidebarForgie('summarize')}
-              disabled={sidebarForgieLoading}
-              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-[8px] hover:bg-background transition-colors text-left group disabled:opacity-50"
-            >
-              <div className="w-7 h-7 rounded-[7px] flex items-center justify-center flex-shrink-0" style={{ background: `${aiAccent}12` }}>
-                <Sparkles className="h-3.5 w-3.5" style={{ color: aiAccent }} />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[12px] font-medium text-foreground/65 group-hover:text-foreground transition-colors">Vat samen</p>
-                <p className="text-[10px] text-muted-foreground">2-3 zinnen samenvatting</p>
-              </div>
-            </button>
-            <button
-              onClick={() => handleSidebarForgie('generate-reply')}
-              disabled={sidebarForgieLoading}
-              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-[8px] hover:bg-background transition-colors text-left group disabled:opacity-50"
-            >
-              <div className="w-7 h-7 rounded-[7px] flex items-center justify-center flex-shrink-0" style={{ background: `${aiAccent}12` }}>
-                <Reply className="h-3.5 w-3.5" style={{ color: aiAccent }} />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[12px] font-medium text-foreground/65 group-hover:text-foreground transition-colors">Schrijf antwoord</p>
-                <p className="text-[10px] text-muted-foreground">Genereer een reply</p>
-              </div>
-            </button>
-            <button
-              onClick={() => handleSidebarForgie('rewrite-professional')}
-              disabled={sidebarForgieLoading}
-              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-[8px] hover:bg-background transition-colors text-left group disabled:opacity-50"
-            >
-              <div className="w-7 h-7 rounded-[7px] flex items-center justify-center flex-shrink-0" style={{ background: `${aiAccent}12` }}>
-                <Wand2 className="h-3.5 w-3.5" style={{ color: aiAccent }} />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[12px] font-medium text-foreground/65 group-hover:text-foreground transition-colors">Professioneler</p>
-                <p className="text-[10px] text-muted-foreground">Herschrijf in formele toon</p>
-              </div>
-            </button>
-            <button
-              onClick={() => handleSidebarForgie('translate-en')}
-              disabled={sidebarForgieLoading}
-              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-[8px] hover:bg-background transition-colors text-left group disabled:opacity-50"
-            >
-              <div className="w-7 h-7 rounded-[7px] flex items-center justify-center flex-shrink-0" style={{ background: `${aiAccent}12` }}>
-                <Globe className="h-3.5 w-3.5" style={{ color: aiAccent }} />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[12px] font-medium text-foreground/65 group-hover:text-foreground transition-colors">Vertaal Engels</p>
-                <p className="text-[10px] text-muted-foreground">Translate to English</p>
-              </div>
-            </button>
-          </div>
-          {/* Forgie AI result popover */}
-          {forgieResult && (
-            <div className="mx-2 mb-2 p-3 rounded-[8px] border text-[12px] leading-relaxed text-foreground/70 relative" style={{ background: 'hsl(263 30% 96%)', borderColor: 'hsl(263 30% 66% / 0.2)' }}>
-              <button
-                onClick={() => setForgieResult(null)}
-                className="absolute top-1.5 right-1.5 text-foreground/25 hover:text-foreground/50 transition-colors"
-              >
-                <X className="h-3 w-3" />
-              </button>
-              <p className="pr-4 whitespace-pre-wrap">{forgieResult}</p>
-            </div>
-          )}
-        </div>
-
-        {/* ── Opvolg-herinnering ── */}
-        <div className="bg-card rounded-[10px] border border-border/40 overflow-hidden" style={{ boxShadow: '0 1px 3px rgba(120,90,50,0.05)' }}>
-          <div className="flex items-center gap-2 px-3.5 py-2.5 border-b border-border/30">
-            <Bell className="h-3 w-3 text-foreground/30" />
-            <h4 className="text-[12px] font-semibold text-foreground/70">Opvolg-herinnering</h4>
-            {reminder && (
-              <button onClick={() => { setReminder(null); toast('Herinnering verwijderd') }} className="ml-auto text-foreground/25 hover:text-foreground/50 transition-colors" title="Verwijder herinnering">
-                <BellOff className="h-3 w-3" />
-              </button>
-            )}
-          </div>
-          <div className="p-2">
-            {reminder ? (
-              <div className="flex items-center gap-2 px-2.5 py-2 rounded-[8px] bg-cream/30 text-cream-deep text-[12px]">
-                <Clock className="h-3.5 w-3.5 flex-shrink-0" />
-                <span>Herinnering: {reminderOptions.find(r => r.value === reminder)?.label}</span>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-1">
-                {reminderOptions.map(opt => (
-                  <button
-                    key={opt.value}
-                    onClick={() => setFollowUpReminder(opt.value)}
-                    className="px-2 py-1.5 rounded-[6px] text-[11px] text-foreground/50 hover:text-foreground/80 hover:bg-background transition-colors text-center"
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+    <div className="w-[300px] border-l border-border/30 flex-shrink-0 overflow-y-auto hidden xl:flex flex-col" style={{ background: 'hsl(36 20% 96%)' }}>
+      <div className="p-5 space-y-4 flex-1">
 
         {/* ── Contact header ── */}
-        <div className="bg-card rounded-[10px] p-3.5 border border-border/40" style={{ boxShadow: '0 1px 3px rgba(120,90,50,0.05)' }}>
-          <div className="flex items-start gap-3">
-            <div className={cn('w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0', avatarColor)} style={{ boxShadow: '0 2px 8px rgba(120,90,50,0.12)' }}>
-              <span className="text-sm font-bold text-white">{senderName[0]?.toUpperCase()}</span>
+        <div className="bg-card rounded-xl p-4 border border-border/30" style={{ boxShadow: '0 1px 4px rgba(120,90,50,0.06)' }}>
+          <div className="flex items-start gap-3.5">
+            <div className={cn('w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0', avatarColor)} style={{ boxShadow: '0 2px 10px rgba(120,90,50,0.15)' }}>
+              <span className="text-base font-bold text-white">{senderName[0]?.toUpperCase()}</span>
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-[13px] font-semibold text-foreground leading-tight truncate">{personName}</p>
+            <div className="min-w-0 flex-1 pt-0.5">
+              <p className="text-[14px] font-semibold text-foreground leading-tight truncate">{personName}</p>
               {companyGuess && (
-                <p className="text-[11px] text-foreground/40 truncate mt-0.5">{companyGuess}</p>
+                <p className="text-[12px] text-foreground/45 truncate mt-0.5">{companyGuess}</p>
               )}
-              <p className="text-[11px] text-muted-foreground truncate mt-0.5">{senderEmail}</p>
+              <p className="text-[11px] text-muted-foreground truncate mt-1">{senderEmail}</p>
             </div>
           </div>
-          <div className="mt-3 pt-2.5 border-t border-border/30 space-y-1.5">
+          <div className="mt-3.5 pt-3 border-t border-border/20 space-y-2">
             {email.aan && (
-              <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-                <Send className="h-3 w-3 flex-shrink-0 opacity-40" />
+              <div className="flex items-center gap-2.5 text-[11px] text-muted-foreground">
+                <Send className="h-3 w-3 flex-shrink-0 text-foreground/20" />
                 <span className="truncate">Aan: {email.aan}</span>
               </div>
             )}
             {emailDate && (
-              <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-                <Calendar className="h-3 w-3 flex-shrink-0 opacity-40" />
+              <div className="flex items-center gap-2.5 text-[11px] text-muted-foreground">
+                <Calendar className="h-3 w-3 flex-shrink-0 text-foreground/20" />
                 <span>{emailDate.date}, {emailDate.time}</span>
               </div>
             )}
             {email.bijlagen > 0 && (
-              <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-                <Paperclip className="h-3 w-3 flex-shrink-0 opacity-40" />
+              <div className="flex items-center gap-2.5 text-[11px] text-muted-foreground">
+                <Paperclip className="h-3 w-3 flex-shrink-0 text-foreground/20" />
                 <span>{email.bijlagen} bijlage{email.bijlagen > 1 ? 'n' : ''}</span>
               </div>
             )}
@@ -1277,16 +1151,16 @@ const CRMSidebar = memo(function CRMSidebar({
         ) : linkedKlant ? (
           <button
             onClick={() => navigate(`/klanten/${linkedKlant.id}`)}
-            className="w-full bg-card rounded-[10px] p-3 border border-border/40 hover:border-accent/20 transition-all duration-200 text-left group"
-            style={{ boxShadow: '0 1px 3px rgba(120,90,50,0.05)' }}
+            className="w-full bg-card rounded-xl p-3.5 border border-border/30 hover:border-foreground/[0.12] transition-all duration-200 text-left group"
+            style={{ boxShadow: '0 1px 4px rgba(120,90,50,0.06)' }}
           >
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-[8px] flex items-center justify-center flex-shrink-0" style={{ background: `${moduleColors.klant}15` }}>
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${moduleColors.klant}15` }}>
                 <Building2 className="h-4 w-4" style={{ color: moduleColors.klant }} />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[12px] font-medium text-foreground truncate">{linkedKlant.bedrijfsnaam || linkedKlant.contactpersoon}</p>
-                <p className="text-[10px] text-muted-foreground truncate">{linkedKlant.bedrijfsnaam ? linkedKlant.contactpersoon : linkedKlant.email}</p>
+                <p className="text-[13px] font-medium text-foreground truncate">{linkedKlant.bedrijfsnaam || linkedKlant.contactpersoon}</p>
+                <p className="text-[11px] text-muted-foreground truncate">{linkedKlant.bedrijfsnaam ? linkedKlant.contactpersoon : linkedKlant.email}</p>
               </div>
               <div className="flex items-center gap-1.5 flex-shrink-0">
                 <span className={cn(
@@ -1294,19 +1168,19 @@ const CRMSidebar = memo(function CRMSidebar({
                   linkedKlant.status === 'actief' ? 'bg-sage/40 text-sage-deep' :
                   linkedKlant.status === 'prospect' ? 'bg-cream/40 text-cream-deep' : 'bg-muted text-muted-foreground'
                 )}>{linkedKlant.status || 'actief'}</span>
-                <ChevronRight className="h-3 w-3 text-foreground/15 group-hover:text-accent/50 transition-colors" />
+                <ChevronRight className="h-3 w-3 text-foreground/15 group-hover:text-foreground/30 transition-colors" />
               </div>
             </div>
             {linkedKlant.telefoon && (
-              <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-border/30">
+              <div className="flex items-center gap-2 mt-2.5 pt-2.5 border-t border-border/20">
                 <Phone className="h-3 w-3 text-foreground/20" />
-                <span className="text-[10px] text-muted-foreground">{linkedKlant.telefoon}</span>
+                <span className="text-[11px] text-muted-foreground">{linkedKlant.telefoon}</span>
               </div>
             )}
           </button>
         ) : activePanel !== 'klant' ? (
           <button onClick={() => openPanel('klant')}
-            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] border border-dashed border-border text-[12px] text-muted-foreground hover:border-accent/30 hover:text-accent transition-all duration-200">
+            className="w-full flex items-center gap-2.5 px-3.5 py-3 rounded-xl border border-dashed border-border/50 text-[12px] text-muted-foreground hover:border-foreground/20 hover:text-foreground/60 transition-all duration-200">
             <Plus className="h-3.5 w-3.5" />
             Contact koppelen
           </button>
@@ -1314,35 +1188,35 @@ const CRMSidebar = memo(function CRMSidebar({
 
         {/* ── Labels ── */}
         {email.labels && email.labels.length > 0 && (
-          <div className="flex flex-wrap gap-1 px-0.5">
+          <div className="flex flex-wrap gap-1.5 px-0.5">
             {email.labels.map(label => (
-              <span key={label} className="px-2 py-0.5 bg-cream/40 text-cream-deep rounded-full text-[10px] font-medium">{label}</span>
+              <span key={label} className="px-2.5 py-0.5 bg-cream/40 text-cream-deep rounded-full text-[10px] font-medium">{label}</span>
             ))}
           </div>
         )}
 
         {/* ── Eerdere emails ── */}
-        <div className="bg-card rounded-[10px] border border-border/40 overflow-hidden" style={{ boxShadow: '0 1px 3px rgba(120,90,50,0.05)' }}>
-          <div className="flex items-center gap-2 px-3.5 py-2.5 border-b border-border/30">
-            <Mail className="h-3 w-3 text-foreground/30" />
-            <h4 className="text-[12px] font-semibold text-foreground/70">Eerdere emails</h4>
+        <div className="bg-card rounded-xl border border-border/30 overflow-hidden" style={{ boxShadow: '0 1px 4px rgba(120,90,50,0.06)' }}>
+          <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/20">
+            <Mail className="h-3.5 w-3.5 text-foreground/25" />
+            <h4 className="text-[12px] font-semibold text-foreground/65">Eerdere emails</h4>
             {previousEmails.length > 0 && (
-              <span className="ml-auto text-[10px] text-muted-foreground tabular-nums">{previousEmails.length}</span>
+              <span className="ml-auto text-[10px] text-muted-foreground tabular-nums bg-foreground/[0.04] px-1.5 py-0.5 rounded-full">{previousEmails.length}</span>
             )}
           </div>
           <div className="p-2">
             {previousEmails.length === 0 ? (
-              <p className="text-[11px] text-muted-foreground px-2 py-2">Geen eerdere emails gevonden</p>
+              <p className="text-[11px] text-muted-foreground px-2 py-3 text-center">Geen eerdere emails gevonden</p>
             ) : (
               <div className="space-y-0.5">
                 {previousEmails.map(e => (
                   <button
                     key={e.id}
                     onClick={() => onSelectEmail?.(e)}
-                    className="w-full px-2.5 py-1.5 rounded-[6px] hover:bg-background transition-colors text-left"
+                    className="w-full px-3 py-2 rounded-lg hover:bg-foreground/[0.03] transition-colors text-left group"
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <p className="text-[11px] font-medium text-foreground/60 truncate flex-1">{e.onderwerp || '(geen onderwerp)'}</p>
+                      <p className="text-[11px] font-medium text-foreground/55 group-hover:text-foreground/80 truncate flex-1 transition-colors">{e.onderwerp || '(geen onderwerp)'}</p>
                       <span className="text-[9px] text-muted-foreground tabular-nums flex-shrink-0">{formatShortDate(e.datum)}</span>
                     </div>
                     <p className="text-[10px] text-muted-foreground truncate mt-0.5">
@@ -1355,29 +1229,61 @@ const CRMSidebar = memo(function CRMSidebar({
           </div>
         </div>
 
+        {/* ── Opvolg-herinnering ── */}
+        <div className="bg-card rounded-xl border border-border/30 overflow-hidden" style={{ boxShadow: '0 1px 4px rgba(120,90,50,0.06)' }}>
+          <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/20">
+            <Bell className="h-3.5 w-3.5 text-foreground/25" />
+            <h4 className="text-[12px] font-semibold text-foreground/65">Herinnering</h4>
+            {reminder && (
+              <button onClick={() => { setReminder(null); toast('Herinnering verwijderd') }} className="ml-auto text-foreground/25 hover:text-foreground/50 transition-colors" title="Verwijder herinnering">
+                <BellOff className="h-3 w-3" />
+              </button>
+            )}
+          </div>
+          <div className="p-2">
+            {reminder ? (
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-cream/30 text-cream-deep text-[12px]">
+                <Clock className="h-3.5 w-3.5 flex-shrink-0" />
+                <span>{reminderOptions.find(r => r.value === reminder)?.label}</span>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-1">
+                {reminderOptions.map(opt => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setFollowUpReminder(opt.value)}
+                    className="px-2 py-1.5 rounded-lg text-[11px] text-foreground/45 hover:text-foreground/75 hover:bg-foreground/[0.03] transition-colors text-center"
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* ── Inline panel ── */}
         {renderInlinePanel()}
 
         {/* ── Quick action buttons ── */}
         {activePanel === 'none' && (
-          <div className="space-y-0.5">
-            <h3 className="text-[10px] font-semibold text-foreground/25 uppercase tracking-wider px-0.5 mb-1.5 wm-sidebar-section">Snel aanmaken</h3>
+          <div className="space-y-1">
+            <h3 className="text-[10px] font-semibold text-foreground/20 uppercase tracking-wider px-1 mb-2">Snel aanmaken</h3>
             {([
               { panel: 'offerte' as const, icon: FileText, label: 'Offerte', desc: linkedKlant ? `voor ${klantDisplayName}` : 'offerte opmaken', accent: moduleColors.offerte },
               { panel: 'project' as const, icon: FolderPlus, label: 'Project', desc: linkedKlant ? `voor ${klantDisplayName}` : 'project starten', accent: moduleColors.project },
               { panel: 'taak' as const, icon: CheckCircle2, label: 'Taak', desc: 'opvolging plannen', accent: moduleColors.taak },
             ]).map(({ panel, icon: Icon, label, desc, accent }) => (
               <button key={panel} onClick={() => openPanel(panel)}
-                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-[8px] hover:bg-card transition-all duration-150 group text-left"
-                style={{ ['--hover-shadow' as string]: `0 1px 4px ${accent}10` }}>
-                <div className="w-7 h-7 rounded-[7px] flex items-center justify-center flex-shrink-0" style={{ background: `${accent}12` }}>
-                  <Icon className="h-3.5 w-3.5" style={{ color: accent }} />
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-card transition-all duration-150 group text-left">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${accent}15` }}>
+                  <Icon className="h-4 w-4" style={{ color: accent }} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[12px] font-medium text-foreground/65 group-hover:text-foreground transition-colors">{label}</p>
+                  <p className="text-[12px] font-medium text-foreground/60 group-hover:text-foreground transition-colors">{label}</p>
                   <p className="text-[10px] text-muted-foreground truncate">{desc}</p>
                 </div>
-                <Plus className="h-3 w-3 text-foreground/10 group-hover:text-foreground/25 transition-colors flex-shrink-0" />
+                <Plus className="h-3.5 w-3.5 text-foreground/10 group-hover:text-foreground/30 transition-colors flex-shrink-0" />
               </button>
             ))}
           </div>
