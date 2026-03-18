@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { PulseItem } from './PulseItem'
-import { formatCurrency } from '@/lib/utils'
+import { cn, formatCurrency } from '@/lib/utils'
+import { FileText, ThumbsUp, Hammer, ClipboardCheck, Receipt, Banknote } from 'lucide-react'
 import type { Offerte, Factuur, Taak, Tijdregistratie, Project, Werkbon } from '@/types'
 
 interface PulseBarProps {
@@ -12,6 +13,15 @@ interface PulseBarProps {
   werkbonnen: Werkbon[]
 }
 
+const STEPS = [
+  { key: 'offerte', label: 'Offerte', icon: FileText },
+  { key: 'goedgekeurd', label: 'Akkoord', icon: ThumbsUp },
+  { key: 'uitvoering', label: 'Uitvoering', icon: Hammer },
+  { key: 'werkbon', label: 'Werkbon', icon: ClipboardCheck },
+  { key: 'gefactureerd', label: 'Factuur', icon: Receipt },
+  { key: 'betaald', label: 'Betaald', icon: Banknote },
+] as const
+
 function getActiveStep(offertes: Offerte[], werkbonnen: Werkbon[], facturen: Factuur[], projectStatus: string): number {
   if (facturen.some(f => f.status === 'betaald')) return 6
   if (facturen.length > 0) return 5
@@ -21,8 +31,6 @@ function getActiveStep(offertes: Offerte[], werkbonnen: Werkbon[], facturen: Fac
   if (offertes.length > 0) return 1
   return 0
 }
-
-const faseLabels = ['Start', 'Offerte', 'Akkoord', 'Uitvoering', 'Werkbon', 'Factuur', 'Betaald']
 
 export function PulseBar({ project, offertes, facturen, taken, tijdregistraties, werkbonnen }: PulseBarProps) {
   const activeStep = getActiveStep(offertes, werkbonnen, facturen, project.status)
@@ -74,25 +82,46 @@ export function PulseBar({ project, offertes, facturen, taken, tijdregistraties,
         label="openstaand"
         colorClass="text-cream-deep"
       />
-      {/* Phase dots */}
-      <div className="flex flex-col py-2.5 px-5">
-        <div className="flex items-center gap-1">
-          {[1, 2, 3, 4, 5, 6].map((step) => (
-            <div
-              key={step}
-              className={`h-2 w-2 rounded-full transition-colors ${
-                step <= activeStep
-                  ? 'bg-emerald-500'
-                  : step === activeStep + 1
-                    ? 'bg-amber-400'
-                    : 'bg-[hsl(35,15%,87%)]'
-              }`}
-            />
-          ))}
-        </div>
-        <span className="text-[10px] text-muted-foreground font-medium mt-1">
-          {faseLabels[activeStep] || 'Start'}
-        </span>
+
+      {/* Progress indicator — compact inline version */}
+      <div className="flex items-center gap-0 py-2 px-4 ml-auto">
+        {STEPS.map((step, i) => {
+          const Icon = step.icon
+          const isCompleted = i < activeStep
+          const isCurrent = i === activeStep
+          const isLast = i === STEPS.length - 1
+
+          return (
+            <div key={step.key} className="flex items-center">
+              <div className="flex flex-col items-center gap-0.5">
+                <div
+                  className={cn(
+                    'h-6 w-6 rounded-full flex items-center justify-center transition-all flex-shrink-0',
+                    isCompleted && 'bg-emerald-500 text-white',
+                    isCurrent && 'bg-primary text-primary-foreground ring-2 ring-primary/30',
+                    !isCompleted && !isCurrent && 'bg-muted text-muted-foreground/50',
+                  )}
+                >
+                  <Icon className="h-3 w-3" />
+                </div>
+                <span className={cn(
+                  'text-[9px] font-medium leading-none text-center whitespace-nowrap',
+                  isCompleted && 'text-emerald-600 dark:text-emerald-400',
+                  isCurrent && 'text-primary font-bold',
+                  !isCompleted && !isCurrent && 'text-muted-foreground/50',
+                )}>
+                  {step.label}
+                </span>
+              </div>
+              {!isLast && (
+                <div className={cn(
+                  'h-0.5 w-3 mx-0.5 rounded-full mt-[-10px]',
+                  isCompleted ? 'bg-emerald-500' : 'bg-muted',
+                )} />
+              )}
+            </div>
+          )
+        })}
       </div>
     </div>
   )

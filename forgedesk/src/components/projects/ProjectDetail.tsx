@@ -113,6 +113,7 @@ import {
   getUitgavenByProject,
   getMontageAfsprakenByProject,
   createMontageAfspraak,
+  getSigningVisualisatiesByProject,
 } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -123,8 +124,6 @@ import { ProjectTasksTable } from './ProjectTasksTable'
 import { ProjectPhotoGallery } from './ProjectPhotoGallery'
 import { VisualisatieGallery } from '@/components/visualizer/VisualisatieGallery'
 import { WerkbonVanProjectDialog } from '@/components/werkbonnen/WerkbonVanProjectDialog'
-import { ProjectPortaalTab } from './ProjectPortaalTab'
-import { ProjectProgressIndicator } from './ProjectProgressIndicator'
 import { CockpitTopBar } from './cockpit/CockpitTopBar'
 import { PulseBar } from './cockpit/PulseBar'
 import { PortaalPanel } from './cockpit/PortaalPanel'
@@ -135,7 +134,6 @@ import { berekenBudgetStatus } from '@/utils/budgetUtils'
 import { getStatusBadgeClass } from '@/utils/statusColors'
 import { logger } from '../../utils/logger'
 import { KlantStatusBadgeInline } from '@/components/shared/KlantStatusWarning'
-import { AuditLogPanel } from '@/components/shared/AuditLogPanel'
 import { logWijziging } from '@/utils/auditLogger'
 
 const statusLabels: Record<string, string> = {
@@ -283,6 +281,7 @@ export function ProjectDetail() {
   const [projectMontages, setProjectMontages] = useState<MontageAfspraak[]>([])
   const [projectFacturen, setProjectFacturen] = useState<Factuur[]>([])
   const [projectUitgaven, setProjectUitgaven] = useState<Uitgave[]>([])
+  const [hasVisualisaties, setHasVisualisaties] = useState(false)
   const [montageDialogOpen, setMontageDialogOpen] = useState(false)
   const [montageTitel, setMontageTitel] = useState('')
   const [montageDatum, setMontageDatum] = useState('')
@@ -591,6 +590,11 @@ export function ProjectDetail() {
           setProjectFotos(fotosData || [])
           setProjectFacturen(facturenData || [])
           setProjectUitgaven(uitgavenData || [])
+
+          // Check if visualisaties exist for conditional rendering
+          getSigningVisualisatiesByProject(id).then(viz => {
+            if (!cancelled) setHasVisualisaties(viz.length > 0)
+          }).catch(() => {})
         }
 
         // Fetch linked facturen for gefactureerde offertes
@@ -1492,26 +1496,10 @@ export function ProjectDetail() {
             </Card>
           )}
 
-          {/* Audit Log */}
-          {project && (
-            <AuditLogPanel entityType="project" entityId={project.id} />
-          )}
         </div>
 
-        {/* Voortgang + Team + Montage (in overzicht tab) */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* ── Projectvoortgang ── */}
-          <Card className="border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px]">
-            <CardContent className="pt-5 pb-4">
-              <ProjectProgressIndicator
-                projectStatus={project.status}
-                offertes={projectOffertes}
-                werkbonnen={projectWerkbonnen}
-                facturen={projectFacturen}
-              />
-            </CardContent>
-          </Card>
-
+        {/* Team + Montage (in overzicht tab) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* ── Team ── */}
           <Card className="border-sage/40 bg-sage/5">
             <CardHeader className="pb-3">
@@ -1644,21 +1632,18 @@ export function ProjectDetail() {
         </div>
       </div>
 
-          {/* ── Portaal (altijd zichtbaar in overzicht) ── */}
-          {project && (
-            <ProjectPortaalTab projectId={project.id} projectNaam={project.naam} />
-          )}
-
         </div>{/* einde linkerkolom */}
 
         {/* ── Rechterkolom: Bestanden sidebar ── */}
         <div className="w-full lg:w-80 xl:w-96 flex-shrink-0 space-y-4 lg:self-start">
-          {/* Visualisaties */}
+          {/* Visualisaties — alleen tonen als er visualisaties bestaan */}
+          {hasVisualisaties && (
           <Card className="border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px]">
             <CardContent className="pt-5">
               <VisualisatieGallery project_id={project.id} klant_id={project.klant_id} compact />
             </CardContent>
           </Card>
+          )}
 
           {/* Foto's */}
           <ProjectPhotoGallery

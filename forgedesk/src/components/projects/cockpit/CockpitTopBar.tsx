@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import {
   ArrowLeft,
@@ -7,12 +8,14 @@ import {
   Users,
   MapPin,
   Briefcase,
+  Clock,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { getStatusColor, getPriorityColor } from '@/lib/utils'
 import { getStatusBadgeClass } from '@/utils/statusColors'
 import { KlantStatusBadgeInline } from '@/components/shared/KlantStatusWarning'
+import { AuditLogPanel } from '@/components/shared/AuditLogPanel'
 import type { Project, Klant } from '@/types'
 
 interface CockpitTopBarProps {
@@ -44,6 +47,21 @@ export function CockpitTopBar({
   onNewMontage,
   onCopy,
 }: CockpitTopBarProps) {
+  const [geschiedenisOpen, setGeschiedenisOpen] = useState(false)
+  const geschiedenisRef = useRef<HTMLDivElement>(null)
+
+  // Close on outside click
+  useEffect(() => {
+    if (!geschiedenisOpen) return
+    function handleClick(e: MouseEvent) {
+      if (geschiedenisRef.current && !geschiedenisRef.current.contains(e.target as Node)) {
+        setGeschiedenisOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [geschiedenisOpen])
+
   return (
     <div className="bg-[#FFFFFE] border-b border-[hsl(35,15%,87%)]">
       {/* Status color bar */}
@@ -130,6 +148,32 @@ export function CockpitTopBar({
 
         {/* Action buttons */}
         <div className="ml-auto flex items-center gap-1.5 flex-shrink-0">
+          {/* Geschiedenis dropdown */}
+          <div className="relative" ref={geschiedenisRef}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setGeschiedenisOpen(!geschiedenisOpen)}
+              className={`h-7 w-7 p-0 text-muted-foreground hover:text-foreground ${geschiedenisOpen ? 'bg-accent text-foreground' : ''}`}
+              title="Geschiedenis"
+            >
+              <Clock className="h-3.5 w-3.5" />
+            </Button>
+            {geschiedenisOpen && (
+              <div className="absolute right-0 top-full mt-1.5 w-80 bg-[#FFFFFE] border border-[hsl(35,15%,87%)] rounded-xl shadow-lg z-50 overflow-hidden">
+                <div className="px-4 py-2.5 border-b border-[hsl(35,15%,87%)] bg-[hsl(35,15%,97%)]">
+                  <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                    <Clock className="h-3 w-3" />
+                    Geschiedenis
+                  </span>
+                </div>
+                <div className="max-h-96 overflow-y-auto p-1">
+                  <AuditLogPanel entityType="project" entityId={project.id} />
+                </div>
+              </div>
+            )}
+          </div>
+
           <Button
             variant="ghost"
             size="sm"
