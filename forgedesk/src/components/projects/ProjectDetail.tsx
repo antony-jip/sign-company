@@ -125,6 +125,10 @@ import { VisualisatieGallery } from '@/components/visualizer/VisualisatieGallery
 import { WerkbonVanProjectDialog } from '@/components/werkbonnen/WerkbonVanProjectDialog'
 import { ProjectPortaalTab } from './ProjectPortaalTab'
 import { ProjectProgressIndicator } from './ProjectProgressIndicator'
+import { CockpitTopBar } from './cockpit/CockpitTopBar'
+import { PulseBar } from './cockpit/PulseBar'
+import { PortaalPanel } from './cockpit/PortaalPanel'
+import { TaskChecklistView } from './cockpit/TaskChecklistView'
 import { useProjectSidebarConfig } from '@/hooks/useProjectSidebarConfig'
 import type { Taak, Project, Document, Offerte, TekeningGoedkeuring, Klant, Tijdregistratie, Medewerker, ProjectToewijzing, Werkbon, Factuur, Uitgave, MontageAfspraak, ProjectFoto } from '@/types'
 import { berekenBudgetStatus } from '@/utils/budgetUtils'
@@ -217,7 +221,7 @@ export function ProjectDetail() {
     params.set('tab', tab)
     window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`)
   }
-  const [takenWeergave, setTakenWeergave] = useState<'board' | 'tabel'>('board')
+  const [takenWeergave, setTakenWeergave] = useState<'checklist' | 'board' | 'tabel'>('checklist')
   const [nieuweTaakOpen, setNieuweTaakOpen] = useState(false)
   const [nieuweTaakTitel, setNieuweTaakTitel] = useState('')
   const [nieuweTaakBeschrijving, setNieuweTaakBeschrijving] = useState('')
@@ -782,8 +786,23 @@ export function ProjectDetail() {
   const takenTotaal = projectTaken.length
   // projectFotos loaded from state via getProjectFotos
 
+  const handleCockpitStatusChange = async (newStatus: Project['status']) => {
+    try {
+      const oudeStatus = project.status
+      const updated = await updateProject(id!, { status: newStatus })
+      setProject(updated)
+      if (user?.id) {
+        const naam = user.voornaam ? `${user.voornaam} ${user.achternaam || ''}`.trim() : user.email || ''
+        logWijziging({ userId: user.id, entityType: 'project', entityId: id!, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: oudeStatus, nieuweWaarde: newStatus })
+      }
+      toast.success(`Status gewijzigd naar ${statusLabels[newStatus] || newStatus}`)
+    } catch {
+      toast.error('Kon status niet wijzigen')
+    }
+  }
+
   return (
-    <div className="space-y-6 animate-fade-in-up">
+    <div className="h-[calc(100vh-56px)] flex flex-col bg-[#F4F3F0]">
       {/* ── Hidden file inputs ── */}
       <input
         ref={fileInputRef}
@@ -831,127 +850,26 @@ export function ProjectDetail() {
         </label>
       </div>
 
-      {/* ── Back + Header ── */}
-      <div>
-        <div className="flex items-center gap-3 mb-4">
-          <Button variant="ghost" size="sm" asChild className="text-muted-foreground hover:text-foreground">
-            <Link to="/projecten">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Projecten
-            </Link>
-          </Button>
-          {klant && (
-            <>
-              <span className="text-muted-foreground text-xs">/</span>
-              <Button variant="ghost" size="sm" asChild className="text-muted-foreground hover:text-foreground">
-                <Link to={`/klanten/${klant.id}`}>
-                  {klant.bedrijfsnaam}<KlantStatusBadgeInline klant={klant} />
-                </Link>
-              </Button>
-            </>
-          )}
-        </div>
+      {/* Cockpit TopBar */}
+      <CockpitTopBar
+        project={project}
+        klant={klant}
+        onStatusChange={handleCockpitStatusChange}
+        onNewOfferte={openNieuweOfferte}
+        onNewWerkbon={() => setShowWerkbonDialog(true)}
+        onNewMontage={handleOpenMontageDialog}
+        onCopy={openKopieDialog}
+      />
 
-        {/* Project Header — compact */}
-        <div className={`h-1 w-full rounded-t-lg ${getStatusBadgeClass(project.status)}`} style={{ border: 'none' }} />
-        <div className="rounded-2xl border border-border bg-card p-5">
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-            <div className="flex items-start gap-3.5">
-              <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-blush to-sage flex items-center justify-center flex-shrink-0">
-                <Briefcase className="h-5 w-5 text-white" />
-              </div>
-              <div>
-                <div>
-                  <h1 className="text-xl font-medium text-foreground leading-tight">{project.naam}</h1>
-                  {project.project_nummer && (
-                    <span className="text-xs text-muted-foreground/60 font-mono">{project.project_nummer}</span>
-                  )}
-                </div>
-                <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1.5">
-                  <Users className="h-3 w-3" />
-                  {project.klant_naam || 'Onbekende klant'}
-                  {project.vestiging_naam && (
-                    <span className="text-muted-foreground/60">· {project.vestiging_naam}</span>
-                  )}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <select
-                value={project.status}
-                onChange={async (e) => {
-                  const newStatus = e.target.value as Project['status']
-                  try {
-                    const oudeStatus = project.status
-                    const updated = await updateProject(id!, { status: newStatus })
-                    setProject(updated)
-                    if (user?.id) {
-                      const naam = user.voornaam ? `${user.voornaam} ${user.achternaam || ''}`.trim() : user.email || ''
-                      logWijziging({ userId: user.id, entityType: 'project', entityId: id!, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: oudeStatus, nieuweWaarde: newStatus })
-                    }
-                    toast.success(`Status gewijzigd naar ${statusLabels[newStatus] || newStatus}`)
-                  } catch {
-                    toast.error('Kon status niet wijzigen')
-                  }
-                }}
-                className={`${getStatusColor(project.status)} text-xs px-2.5 py-0.5 rounded-full border-0 cursor-pointer appearance-none font-medium focus:ring-1 focus:ring-primary/30 focus:outline-none pr-6 bg-no-repeat bg-[right_4px_center] bg-[length:12px]`}
-                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")` }}
-              >
-                <option value="gepland">Gepland</option>
-                <option value="actief">Actief</option>
-                <option value="in-review">In review</option>
-                <option value="te-factureren">Te factureren</option>
-                <option value="gefactureerd">Gefactureerd</option>
-                <option value="on-hold">On-hold</option>
-                <option value="afgerond">Afgerond</option>
-              </select>
-              <Badge className={`${getPriorityColor(project.prioriteit)} text-xs px-2.5 py-0.5`}>
-                {project.prioriteit.charAt(0).toUpperCase() + project.prioriteit.slice(1)}
-              </Badge>
-              <div className="w-px h-5 bg-border mx-1 hidden sm:block" />
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={openKopieDialog}
-                className="h-7 px-2.5 text-xs text-muted-foreground hover:text-foreground"
-              >
-                <Copy className="h-3.5 w-3.5 mr-1" />
-                Kopiëren
-              </Button>
-              <div className="w-px h-5 bg-border mx-1 hidden sm:block" />
-              {/* Snelkoppelingen */}
-              <Button size="sm" className="h-7 px-3 text-xs bg-primary hover:bg-primary/90 text-white font-medium" onClick={openNieuweOfferte}>
-                <Receipt className="h-3.5 w-3.5 mr-1.5" />Offerte maken
-              </Button>
-              <Button variant="outline" size="sm" className="h-7 px-2.5 text-xs" onClick={() => setShowWerkbonDialog(true)}>
-                <Plus className="h-3 w-3 mr-1" />Werkbon
-              </Button>
-              <Button variant="outline" size="sm" className="h-7 px-2.5 text-xs" onClick={handleOpenMontageDialog}>
-                <Plus className="h-3 w-3 mr-1" />Montage
-              </Button>
-            </div>
-          </div>
-
-          {/* Contactpersoon + adres compact */}
-          {klant && (
-            <div className="mt-3 flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
-              {klant.contactpersoon && (
-                <span className="flex items-center gap-1.5">
-                  <Users className="h-3.5 w-3.5" />
-                  {klant.contactpersoon}
-                  {klant.telefoon && <span className="font-mono text-xs">· {klant.telefoon}</span>}
-                </span>
-              )}
-              {klant.adres && (
-                <span className="flex items-center gap-1.5">
-                  <MapPin className="h-3.5 w-3.5" />
-                  <span className="text-xs">{klant.adres}{klant.stad ? `, ${klant.stad}` : ''}</span>
-                </span>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
+      {/* Pulse Bar */}
+      <PulseBar
+        project={project}
+        offertes={projectOffertes}
+        facturen={projectFacturen}
+        taken={projectTaken}
+        tijdregistraties={projectTijdregistraties}
+        werkbonnen={projectWerkbonnen}
+      />
 
       {/* ── Tab Bar ── */}
       <div className="flex items-center gap-1 border-b border-border">
@@ -1085,7 +1003,17 @@ export function ProjectDetail() {
 
       {/* ══════════ OVERZICHT TAB ══════════ */}
       {activeTab === 'overzicht' && <>
-      <div className="flex flex-col lg:flex-row gap-6">
+      <div className="flex flex-1 overflow-hidden">
+        {/* Portaal Panel (left, collapsible) */}
+        <PortaalPanel
+          projectId={project.id}
+          projectNaam={project.naam}
+          klant={klant}
+        />
+
+        {/* Werkzone (right) */}
+        <div className="flex-1 overflow-y-auto min-w-0">
+      <div className="flex flex-col lg:flex-row gap-6 p-5">
         {/* ── Linkerkolom: hoofd-content ── */}
         <div className="flex-1 min-w-0 space-y-6">
 
@@ -1162,33 +1090,42 @@ export function ProjectDetail() {
       <div className="space-y-6">
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
+              <Button
+                variant={takenWeergave === 'checklist' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setTakenWeergave('checklist')}
+                className="h-7 text-xs"
+              >
+                <CheckCheck className="mr-1 h-3.5 w-3.5" />
+                Checklist
+              </Button>
               <Button
                 variant={takenWeergave === 'board' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setTakenWeergave('board')}
-                className=""
+                className="h-7 text-xs"
               >
-                <LayoutGrid className="mr-1.5 h-4 w-4" />
+                <LayoutGrid className="mr-1 h-3.5 w-3.5" />
                 Board
               </Button>
               <Button
                 variant={takenWeergave === 'tabel' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setTakenWeergave('tabel')}
-                className=""
+                className="h-7 text-xs"
               >
-                <List className="mr-1.5 h-4 w-4" />
+                <List className="mr-1 h-3.5 w-3.5" />
                 Tabel
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-xs text-muted-foreground hover:text-foreground"
+                className="h-7 text-xs text-muted-foreground hover:text-foreground"
                 onClick={() => navigate('/taken')}
               >
                 <ExternalLink className="mr-1 h-3 w-3" />
-                Taken overzicht
+                Overzicht
               </Button>
             </div>
             <Dialog open={nieuweTaakOpen} onOpenChange={(open) => {
@@ -1413,6 +1350,30 @@ export function ProjectDetail() {
             <Card className="border-border/80 dark:border-border/80">
               <CardContent className="p-0">
                 <ProjectTasksTable taken={projectTaken} />
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Checklist View */}
+          {takenWeergave === 'checklist' && (
+            <Card className="border-border/80 dark:border-border/80">
+              <CardContent className="p-2">
+                <TaskChecklistView
+                  taken={projectTaken}
+                  medewerkers={alleMedewerkers}
+                  onStatusChange={async (taakId, newStatus) => {
+                    try {
+                      await updateTaak(taakId, { status: newStatus })
+                      await fetchTaken()
+                      if (newStatus === 'klaar') {
+                        const taak = projectTaken.find(t => t.id === taakId)
+                        if (taak) toast.success(`"${taak.titel}" afgerond`)
+                      }
+                    } catch {
+                      toast.error('Kon status niet wijzigen')
+                    }
+                  }}
+                />
               </CardContent>
             </Card>
           )}
@@ -1826,7 +1787,9 @@ export function ProjectDetail() {
             </CardContent>
           </Card>
         </div>{/* einde rechterkolom/sidebar */}
-      </div>{/* einde flex container */}
+      </div>{/* einde flex row */}
+      </div>{/* einde werkzone */}
+      </div>{/* einde split view */}
       </>}
 
           {/* ── Werkbonnen ── */}
