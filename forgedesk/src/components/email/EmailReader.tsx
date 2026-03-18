@@ -19,6 +19,7 @@ import {
   UserPlus, FolderPlus, FileText, ListPlus, Check, X,
   Building2, Mail, Undo2, Redo2, ExternalLink, ChevronRight,
   Tag, Calendar, Phone, Plus, CheckCircle2,
+  Wand2, Globe, Bell, BellOff, Clock, Minimize2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Email, Klant } from '@/types'
@@ -28,12 +29,14 @@ import { callForgie } from '@/services/forgieService'
 import { toast } from 'sonner'
 import { useNavigate } from 'react-router-dom'
 import { createKlant, getKlanten, createOfferte, createProject, createTaak } from '@/services/supabaseService'
+import { EmailReaderAIToolbar } from './EmailReaderAIToolbar'
 
 interface EmailReaderProps {
   email: Email | null
   isLoadingBody?: boolean
   emailIndex?: number
   emailTotal?: number
+  allEmails?: Email[]
   onToggleStar?: (email: Email) => void
   onToggleRead?: (email: Email) => void
   onDelete?: (email: Email) => void
@@ -41,6 +44,7 @@ interface EmailReaderProps {
   onBack?: () => void
   onNavigate?: (direction: 'prev' | 'next') => void
   onSendReply?: (data: { to: string; subject: string; body: string; html?: string }) => void
+  onSelectEmail?: (email: Email) => void
 }
 
 export function EmailReader({
@@ -48,6 +52,7 @@ export function EmailReader({
   isLoadingBody,
   emailIndex,
   emailTotal,
+  allEmails,
   onToggleStar,
   onToggleRead,
   onDelete,
@@ -55,6 +60,7 @@ export function EmailReader({
   onBack,
   onNavigate,
   onSendReply,
+  onSelectEmail,
 }: EmailReaderProps) {
   const navigate = useNavigate()
   const { emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte } = useAppSettings()
@@ -65,6 +71,12 @@ export function EmailReader({
   const [isSending, setIsSending] = useState(false)
   const [forgieLoading, setForgieLoading] = useState(false)
   const editorRef = useRef<HTMLDivElement>(null)
+  const emailBodyRef = useRef<HTMLDivElement>(null)
+
+  // Summary state
+  const [summary, setSummary] = useState<string | null>(null)
+  const [summaryLoading, setSummaryLoading] = useState(false)
+  const [summaryExpanded, setSummaryExpanded] = useState(true)
 
   // Build signature HTML
   const signatureHtml = useMemo(() => {
@@ -80,11 +92,29 @@ export function EmailReader({
     return parts.length ? `<br><br>--<br>${parts.join('<br>')}` : ''
   }, [emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte])
 
-  // Reset reply state when email changes
+  // Reset reply state and summary when email changes
   useEffect(() => {
     setReplyMode(null)
     setShowQuotedText(false)
+    setSummary(null)
+    setSummaryLoading(false)
+    setSummaryExpanded(true)
   }, [email?.id])
+
+  const handleSummarize = useCallback(async () => {
+    if (!email || summaryLoading) return
+    setSummaryLoading(true)
+    setSummaryExpanded(true)
+    try {
+      const text = email.inhoud?.replace(/<[^>]*>/g, '').slice(0, 2000) || ''
+      const response = await callForgie('summarize', text)
+      if (response?.result) setSummary(response.result)
+    } catch {
+      toast.error('Forgie kon dit niet verwerken. Probeer het opnieuw.')
+    } finally {
+      setSummaryLoading(false)
+    }
+  }, [email, summaryLoading])
 
   const handleReply = useCallback((mode: 'reply' | 'reply-all' | 'forward') => {
     if (!email) return
@@ -151,10 +181,54 @@ export function EmailReader({
     }
   }, [email, signatureHtml])
 
+  // Generate reply from reader: opens reply mode first, then generates
+  const handleGenerateReplyFromReader = useCallback(async () => {
+    if (!email) return
+    // First open reply mode
+    handleReply('reply')
+    // Wait for editor to mount, then generate
+    setForgieLoading(true)
+    try {
+      const context = `Oorspronkelijk bericht van ${extractSenderName(email.van)}: ${email.onderwerp}\n\n${email.inhoud?.replace(/<[^>]*>/g, '').slice(0, 500)}`
+      const response = await callForgie('generate-reply', context)
+      if (response?.result) {
+        // Editor should be mounted by now
+        setTimeout(() => {
+          if (editorRef.current) {
+            editorRef.current.innerHTML = `${response.result.replace(/\n/g, '<br>')}${signatureHtml}`
+          }
+        }, 100)
+      }
+    } catch {
+      toast.error('Forgie kon geen antwoord genereren')
+    } finally {
+      setForgieLoading(false)
+    }
+  }, [email, handleReply, signatureHtml])
+
   const execCommand = useCallback((command: string, value?: string) => {
     document.execCommand(command, false, value)
     editorRef.current?.focus()
   }, [])
+
+  // Keyboard shortcuts for reader mode
+  useEffect(() => {
+    if (!email || replyMode) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Cmd+Shift+S → summarize
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'S') {
+        e.preventDefault()
+        handleSummarize()
+      }
+      // Cmd+Shift+R → generate reply
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'R') {
+        e.preventDefault()
+        handleGenerateReplyFromReader()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [email, replyMode, handleSummarize, handleGenerateReplyFromReader])
 
   // Memoize sender data — avoid recalculating on every render
   const senderName = useMemo(() => email ? extractSenderName(email.van) : '', [email?.van])
@@ -403,7 +477,7 @@ export function EmailReader({
         </div>
 
         {/* ─── CRM SIDEBAR (right, same as reading view) ─── */}
-        <CRMSidebar email={email} senderName={senderName} senderEmail={senderEmail} avatarColor={avatarColor} />
+        <CRMSidebar email={email} senderName={senderName} senderEmail={senderEmail} avatarColor={avatarColor} allEmails={allEmails} onSummarize={handleSummarize} onGenerateReply={handleForgieWrite} onSelectEmail={onSelectEmail} />
       </div>
     )
   }
@@ -436,6 +510,19 @@ export function EmailReader({
             </Button>
             <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/40 hover:text-foreground hover:bg-foreground/[0.04]" onClick={() => email && onToggleRead?.(email)} title="Markeer als ongelezen">
               <MailOpen className="h-4 w-4" />
+            </Button>
+            <div className="w-px h-5 bg-foreground/[0.08] mx-1.5" />
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 gap-1.5 text-[13px] hover:bg-[hsl(263_30%_96%)]"
+              style={{ color: '#9B8EC4' }}
+              onClick={handleSummarize}
+              disabled={summaryLoading}
+              title="Samenvatten met AI"
+            >
+              {summaryLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+              <span>Samenvatten</span>
             </Button>
           </div>
           {emailIndex !== undefined && emailTotal !== undefined && (
@@ -507,6 +594,34 @@ export function EmailReader({
               </div>
             </div>
 
+            {/* ── AI Summary block ── */}
+            {(summary || summaryLoading) && (
+              <div className="mb-5 rounded-xl border overflow-hidden" style={{ background: 'hsl(263 30% 96%)', borderColor: 'hsl(263 30% 66% / 0.3)' }}>
+                <button
+                  onClick={() => setSummaryExpanded(e => !e)}
+                  className="w-full flex items-center justify-between px-4 py-2.5 text-left"
+                >
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-3.5 w-3.5" style={{ color: '#9B8EC4' }} />
+                    <span className="text-[12px] font-semibold" style={{ color: '#6B5B8A' }}>Samenvatting</span>
+                  </div>
+                  <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', summaryExpanded ? '' : '-rotate-90')} style={{ color: '#9B8EC4' }} />
+                </button>
+                {summaryExpanded && (
+                  <div className="px-4 pb-3">
+                    {summaryLoading ? (
+                      <div className="flex items-center gap-2 text-[12px]" style={{ color: '#9B8EC4' }}>
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        <span>Forgie vat samen...</span>
+                      </div>
+                    ) : (
+                      <p className="text-[13px] leading-relaxed text-foreground/70">{summary}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Email body — direct, no extra spacing */}
             {isLoadingBody ? (
               <div className="space-y-3 py-2">
@@ -516,10 +631,13 @@ export function EmailReader({
                 <div className="h-4 bg-foreground/[0.04] rounded w-[85%] animate-pulse" />
               </div>
             ) : (
-              <div
-                className="text-[14px] leading-[1.7] text-foreground/80 [&_img]:max-w-full [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2 [&_table]:w-full [&_blockquote]:border-l-2 [&_blockquote]:border-foreground/15 [&_blockquote]:pl-4 [&_blockquote]:text-foreground/50 [&_p]:mb-2 [&_h1]:text-lg [&_h1]:font-semibold [&_h1]:mb-2 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mb-2 [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:mb-1.5 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-2 [&_li]:mb-0.5"
-                dangerouslySetInnerHTML={{ __html: sanitizedBody }}
-              />
+              <div ref={emailBodyRef}>
+                <div
+                  className="text-[14px] leading-[1.7] text-foreground/80 [&_img]:max-w-full [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2 [&_table]:w-full [&_blockquote]:border-l-2 [&_blockquote]:border-foreground/15 [&_blockquote]:pl-4 [&_blockquote]:text-foreground/50 [&_p]:mb-2 [&_h1]:text-lg [&_h1]:font-semibold [&_h1]:mb-2 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mb-2 [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:mb-1.5 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-2 [&_li]:mb-0.5"
+                  dangerouslySetInnerHTML={{ __html: sanitizedBody }}
+                />
+                <EmailReaderAIToolbar containerRef={emailBodyRef} />
+              </div>
             )}
 
             {/* Attachments — inline chips */}
@@ -545,7 +663,7 @@ export function EmailReader({
       </div>
 
       {/* ─── CRM SIDEBAR ─── */}
-      <CRMSidebar email={email} senderName={senderName} senderEmail={senderEmail} avatarColor={avatarColor} />
+      <CRMSidebar email={email} senderName={senderName} senderEmail={senderEmail} avatarColor={avatarColor} allEmails={allEmails} onSummarize={handleSummarize} onGenerateReply={handleGenerateReplyFromReader} onSelectEmail={onSelectEmail} />
     </div>
   )
 }
@@ -573,22 +691,47 @@ function extractCompanyName(senderName: string, email: string): string {
 // ─── CRM Sidebar with inline actions ───
 type InlinePanel = 'none' | 'klant' | 'offerte' | 'project' | 'taak'
 
+const aiAccent = '#9B8EC4'
+
+const reminderOptions = [
+  { value: '1h', label: 'Over 1 uur' },
+  { value: '1d', label: 'Morgen 9:00' },
+  { value: '2d', label: 'Over 2 dagen' },
+  { value: '1w', label: 'Over 1 week' },
+]
+
 const CRMSidebar = memo(function CRMSidebar({
   email,
   senderName,
   senderEmail,
   avatarColor,
+  allEmails,
+  onSummarize,
+  onGenerateReply,
+  onSelectEmail,
 }: {
   email: Email
   senderName: string
   senderEmail: string
   avatarColor: string
+  allEmails?: Email[]
+  onSummarize?: () => void
+  onGenerateReply?: () => void
+  onSelectEmail?: (email: Email) => void
 }) {
   const navigate = useNavigate()
   const [activePanel, setActivePanel] = useState<InlinePanel>('none')
   const [saving, setSaving] = useState(false)
   const [linkedKlant, setLinkedKlant] = useState<Klant | null>(null)
   const [klantLoading, setKlantLoading] = useState(true)
+
+  // Forgie AI state
+  const [sidebarForgieLoading, setSidebarForgieLoading] = useState(false)
+  const [sidebarForgieAction, setSidebarForgieAction] = useState<string | null>(null)
+  const [forgieResult, setForgieResult] = useState<string | null>(null)
+
+  // Opvolg-herinnering state
+  const [reminder, setReminder] = useState<string | null>(null)
 
   // Klant form
   const [klantForm, setKlantForm] = useState({ bedrijfsnaam: '', contactpersoon: '', email: '', telefoon: '' })
@@ -759,6 +902,45 @@ const CRMSidebar = memo(function CRMSidebar({
     setActivePanel('none')
     toast.success(`Gekoppeld aan ${klant.bedrijfsnaam || klant.contactpersoon}`)
   }
+
+  // Forgie AI handler for sidebar actions
+  async function handleSidebarForgie(action: 'summarize' | 'rewrite-professional' | 'translate-en' | 'generate-reply') {
+    if (sidebarForgieLoading) return
+    // Summarize and generate-reply delegate to parent
+    if (action === 'summarize') { onSummarize?.(); return }
+    if (action === 'generate-reply') { onGenerateReply?.(); return }
+    setSidebarForgieLoading(true)
+    setSidebarForgieAction(action)
+    setForgieResult(null)
+    try {
+      const text = email.inhoud?.replace(/<[^>]*>/g, '').slice(0, 2000) || ''
+      const response = await callForgie(action, text)
+      if (response?.result) setForgieResult(response.result)
+    } catch {
+      toast.error('Forgie kon dit niet verwerken. Probeer het opnieuw.')
+    } finally {
+      setSidebarForgieLoading(false)
+      setSidebarForgieAction(null)
+    }
+  }
+
+  function setFollowUpReminder(value: string) {
+    setReminder(value)
+    const label = reminderOptions.find(r => r.value === value)?.label || value
+    toast.success(`Herinnering ingesteld: ${label}`)
+  }
+
+  // Eerdere emails from same sender
+  const previousEmails = useMemo(() => {
+    if (!allEmails || !senderEmail) return []
+    return allEmails
+      .filter(e => e.id !== email.id && (
+        extractSenderEmail(e.van).toLowerCase() === senderEmail.toLowerCase() ||
+        e.aan?.toLowerCase().includes(senderEmail.toLowerCase())
+      ))
+      .sort((a, b) => new Date(b.datum).getTime() - new Date(a.datum).getTime())
+      .slice(0, 5)
+  }, [allEmails, senderEmail, email.id])
 
   // ── Module accent colors (from design system) ──
   const moduleColors = {
@@ -941,6 +1123,115 @@ const CRMSidebar = memo(function CRMSidebar({
   return (
     <div className="w-[280px] border-l border-border/40 flex-shrink-0 overflow-y-auto hidden xl:flex flex-col" style={{ background: 'hsl(36 18% 94%)' }}>
       <div className="p-4 space-y-3 flex-1">
+
+        {/* ── Forgie AI Tools ── */}
+        <div className="bg-card rounded-[10px] border border-border/40 overflow-hidden" style={{ boxShadow: '0 1px 3px rgba(120,90,50,0.05)' }}>
+          <div className="flex items-center gap-2 px-3.5 py-2.5" style={{ background: `${aiAccent}0C`, borderBottom: `1px solid ${aiAccent}15` }}>
+            <div className="w-1.5 h-1.5 rounded-full" style={{ background: aiAccent }} />
+            <h4 className="text-[12px] font-semibold text-foreground/70">Forgie AI</h4>
+            {sidebarForgieLoading && <Loader2 className="h-3 w-3 animate-spin text-foreground/30 ml-auto" />}
+          </div>
+          <div className="p-2 space-y-0.5">
+            <button
+              onClick={() => handleSidebarForgie('summarize')}
+              disabled={sidebarForgieLoading}
+              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-[8px] hover:bg-background transition-colors text-left group disabled:opacity-50"
+            >
+              <div className="w-7 h-7 rounded-[7px] flex items-center justify-center flex-shrink-0" style={{ background: `${aiAccent}12` }}>
+                <Sparkles className="h-3.5 w-3.5" style={{ color: aiAccent }} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[12px] font-medium text-foreground/65 group-hover:text-foreground transition-colors">Vat samen</p>
+                <p className="text-[10px] text-muted-foreground">2-3 zinnen samenvatting</p>
+              </div>
+            </button>
+            <button
+              onClick={() => handleSidebarForgie('generate-reply')}
+              disabled={sidebarForgieLoading}
+              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-[8px] hover:bg-background transition-colors text-left group disabled:opacity-50"
+            >
+              <div className="w-7 h-7 rounded-[7px] flex items-center justify-center flex-shrink-0" style={{ background: `${aiAccent}12` }}>
+                <Reply className="h-3.5 w-3.5" style={{ color: aiAccent }} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[12px] font-medium text-foreground/65 group-hover:text-foreground transition-colors">Schrijf antwoord</p>
+                <p className="text-[10px] text-muted-foreground">Genereer een reply</p>
+              </div>
+            </button>
+            <button
+              onClick={() => handleSidebarForgie('rewrite-professional')}
+              disabled={sidebarForgieLoading}
+              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-[8px] hover:bg-background transition-colors text-left group disabled:opacity-50"
+            >
+              <div className="w-7 h-7 rounded-[7px] flex items-center justify-center flex-shrink-0" style={{ background: `${aiAccent}12` }}>
+                <Wand2 className="h-3.5 w-3.5" style={{ color: aiAccent }} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[12px] font-medium text-foreground/65 group-hover:text-foreground transition-colors">Professioneler</p>
+                <p className="text-[10px] text-muted-foreground">Herschrijf in formele toon</p>
+              </div>
+            </button>
+            <button
+              onClick={() => handleSidebarForgie('translate-en')}
+              disabled={sidebarForgieLoading}
+              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-[8px] hover:bg-background transition-colors text-left group disabled:opacity-50"
+            >
+              <div className="w-7 h-7 rounded-[7px] flex items-center justify-center flex-shrink-0" style={{ background: `${aiAccent}12` }}>
+                <Globe className="h-3.5 w-3.5" style={{ color: aiAccent }} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[12px] font-medium text-foreground/65 group-hover:text-foreground transition-colors">Vertaal Engels</p>
+                <p className="text-[10px] text-muted-foreground">Translate to English</p>
+              </div>
+            </button>
+          </div>
+          {/* Forgie AI result popover */}
+          {forgieResult && (
+            <div className="mx-2 mb-2 p-3 rounded-[8px] border text-[12px] leading-relaxed text-foreground/70 relative" style={{ background: 'hsl(263 30% 96%)', borderColor: 'hsl(263 30% 66% / 0.2)' }}>
+              <button
+                onClick={() => setForgieResult(null)}
+                className="absolute top-1.5 right-1.5 text-foreground/25 hover:text-foreground/50 transition-colors"
+              >
+                <X className="h-3 w-3" />
+              </button>
+              <p className="pr-4 whitespace-pre-wrap">{forgieResult}</p>
+            </div>
+          )}
+        </div>
+
+        {/* ── Opvolg-herinnering ── */}
+        <div className="bg-card rounded-[10px] border border-border/40 overflow-hidden" style={{ boxShadow: '0 1px 3px rgba(120,90,50,0.05)' }}>
+          <div className="flex items-center gap-2 px-3.5 py-2.5 border-b border-border/30">
+            <Bell className="h-3 w-3 text-foreground/30" />
+            <h4 className="text-[12px] font-semibold text-foreground/70">Opvolg-herinnering</h4>
+            {reminder && (
+              <button onClick={() => { setReminder(null); toast('Herinnering verwijderd') }} className="ml-auto text-foreground/25 hover:text-foreground/50 transition-colors" title="Verwijder herinnering">
+                <BellOff className="h-3 w-3" />
+              </button>
+            )}
+          </div>
+          <div className="p-2">
+            {reminder ? (
+              <div className="flex items-center gap-2 px-2.5 py-2 rounded-[8px] bg-cream/30 text-cream-deep text-[12px]">
+                <Clock className="h-3.5 w-3.5 flex-shrink-0" />
+                <span>Herinnering: {reminderOptions.find(r => r.value === reminder)?.label}</span>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-1">
+                {reminderOptions.map(opt => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setFollowUpReminder(opt.value)}
+                    className="px-2 py-1.5 rounded-[6px] text-[11px] text-foreground/50 hover:text-foreground/80 hover:bg-background transition-colors text-center"
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* ── Contact header ── */}
         <div className="bg-card rounded-[10px] p-3.5 border border-border/40" style={{ boxShadow: '0 1px 3px rgba(120,90,50,0.05)' }}>
           <div className="flex items-start gap-3">
@@ -1029,6 +1320,40 @@ const CRMSidebar = memo(function CRMSidebar({
             ))}
           </div>
         )}
+
+        {/* ── Eerdere emails ── */}
+        <div className="bg-card rounded-[10px] border border-border/40 overflow-hidden" style={{ boxShadow: '0 1px 3px rgba(120,90,50,0.05)' }}>
+          <div className="flex items-center gap-2 px-3.5 py-2.5 border-b border-border/30">
+            <Mail className="h-3 w-3 text-foreground/30" />
+            <h4 className="text-[12px] font-semibold text-foreground/70">Eerdere emails</h4>
+            {previousEmails.length > 0 && (
+              <span className="ml-auto text-[10px] text-muted-foreground tabular-nums">{previousEmails.length}</span>
+            )}
+          </div>
+          <div className="p-2">
+            {previousEmails.length === 0 ? (
+              <p className="text-[11px] text-muted-foreground px-2 py-2">Geen eerdere emails gevonden</p>
+            ) : (
+              <div className="space-y-0.5">
+                {previousEmails.map(e => (
+                  <button
+                    key={e.id}
+                    onClick={() => onSelectEmail?.(e)}
+                    className="w-full px-2.5 py-1.5 rounded-[6px] hover:bg-background transition-colors text-left"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[11px] font-medium text-foreground/60 truncate flex-1">{e.onderwerp || '(geen onderwerp)'}</p>
+                      <span className="text-[9px] text-muted-foreground tabular-nums flex-shrink-0">{formatShortDate(e.datum)}</span>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+                      {e.inhoud?.replace(/<[^>]*>/g, '').slice(0, 60) || '...'}
+                    </p>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* ── Inline panel ── */}
         {renderInlinePanel()}

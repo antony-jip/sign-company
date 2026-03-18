@@ -662,6 +662,7 @@ export function EmailLayout() {
           isLoadingBody={isLoadingBody}
           emailIndex={emailIndex}
           emailTotal={threadedEmails.length}
+          allEmails={emails}
           onToggleStar={handleToggleStar}
           onToggleRead={handleToggleRead}
           onDelete={handleDeleteAndNavigate}
@@ -669,6 +670,7 @@ export function EmailLayout() {
           onBack={handleBack}
           onNavigate={handleNavigate}
           onSendReply={handleSendReply}
+          onSelectEmail={handleSelectEmail}
         />
       </div>
     )
