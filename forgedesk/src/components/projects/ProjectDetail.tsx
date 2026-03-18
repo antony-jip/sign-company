@@ -237,6 +237,7 @@ export function ProjectDetail() {
   const [goedkeuringen, setGoedkeuringen] = useState<TekeningGoedkeuring[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isDragging, setIsDragging] = useState(false)
+  const [sidebarTab, setSidebarTab] = useState<'info' | 'offertes'>('info')
 
   // AI analysis state
   const [aiAnalysisOpen, setAiAnalysisOpen] = useState(false)
@@ -1628,7 +1629,48 @@ export function ProjectDetail() {
         </div>{/* einde linkerkolom */}
 
         {/* ── Rechterkolom: sidebar ── */}
-        <div className="w-full lg:w-80 xl:w-96 flex-shrink-0 space-y-4 lg:self-start lg:sticky lg:top-4">
+        <div className="w-full lg:w-80 xl:w-96 flex-shrink-0 lg:self-start lg:sticky lg:top-4">
+
+          {/* ── Sidebar Tab Bar ── */}
+          <div className="flex gap-1 p-1 bg-[#FFFFFE] border border-[hsl(35,15%,87%)] rounded-[10px] shadow-[0_1px_3px_rgba(130,100,60,0.04)] mb-4">
+            <button
+              onClick={() => setSidebarTab('info')}
+              className={cn(
+                'flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200',
+                sidebarTab === 'info'
+                  ? 'bg-gradient-to-br from-amber-50 to-orange-50 text-amber-800 shadow-sm border border-amber-200/60'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+              )}
+            >
+              <Users className="h-3.5 w-3.5" />
+              Info
+            </button>
+            <button
+              onClick={() => setSidebarTab('offertes')}
+              className={cn(
+                'flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200',
+                sidebarTab === 'offertes'
+                  ? 'bg-gradient-to-br from-amber-50 to-orange-50 text-amber-800 shadow-sm border border-amber-200/60'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+              )}
+            >
+              <Receipt className="h-3.5 w-3.5" />
+              Offertes
+              {projectOffertes.length > 0 && (
+                <span className={cn(
+                  'min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-[10px] font-bold',
+                  sidebarTab === 'offertes'
+                    ? 'bg-amber-500 text-white'
+                    : 'bg-muted text-muted-foreground'
+                )}>
+                  {projectOffertes.length}
+                </span>
+              )}
+            </button>
+          </div>
+
+          {sidebarTab === 'info' && (
+          <div className="space-y-4">
 
           {/* ── Team ── */}
           <Card className="border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px] transition-shadow duration-300 hover:shadow-[0_2px_8px_rgba(130,100,60,0.08)]">
@@ -1832,6 +1874,143 @@ export function ProjectDetail() {
               )}
             </CardContent>
           </Card>
+          </div>
+          )}
+
+          {/* ── Offertes Tab ── */}
+          {sidebarTab === 'offertes' && (
+          <Card className="border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px] transition-shadow duration-300 hover:shadow-[0_2px_8px_rgba(130,100,60,0.08)]">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <div className="h-6 w-6 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
+                    <Receipt className="h-3 w-3 text-white" />
+                  </div>
+                  Offertes
+                </CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 w-7 p-0"
+                  onClick={openNieuweOfferte}
+                  title="Nieuwe offerte"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              {projectOffertes.length === 0 ? (
+                <div className="text-center py-8">
+                  <div className="h-10 w-10 rounded-xl bg-muted/50 flex items-center justify-center mx-auto mb-3">
+                    <Receipt className="h-5 w-5 text-muted-foreground/40" />
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-3">Nog geen offertes voor dit project</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={openNieuweOfferte}
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Nieuwe offerte
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {projectOffertes.map((offerte) => {
+                    const linkedFactuur = offerteFactuurMap[offerte.id]
+                    return (
+                      <div
+                        key={offerte.id}
+                        className="bg-background dark:bg-muted/50 rounded-lg px-3 py-2.5 space-y-1.5 hover:bg-muted/30 transition-colors"
+                      >
+                        {/* Titel + status */}
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-sm font-medium text-foreground truncate">{offerte.titel}</p>
+                          {offerte.status !== 'gefactureerd' ? (
+                            <select
+                              value={offerte.status}
+                              onChange={(e) => handleOfferteStatusChange(offerte.id, e.target.value as Offerte['status'])}
+                              className={`${getStatusColor(offerte.status)} text-2xs px-1.5 py-0.5 rounded-full border-0 cursor-pointer appearance-none font-medium focus:ring-1 focus:ring-primary/30 focus:outline-none flex-shrink-0`}
+                            >
+                              <option value="concept">Concept</option>
+                              <option value="verzonden">Verzonden</option>
+                              <option value="bekeken">Bekeken</option>
+                              <option value="goedgekeurd">Goedgekeurd</option>
+                              <option value="afgewezen">Afgewezen</option>
+                              <option value="verlopen">Verlopen</option>
+                            </select>
+                          ) : (
+                            <Badge className={`${getStatusColor(offerte.status)} text-2xs px-1.5 py-0 flex-shrink-0`}>
+                              {offerte.status}
+                            </Badge>
+                          )}
+                        </div>
+                        {/* Nummer + totaal */}
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground font-mono">{offerte.nummer}</span>
+                          <span className="text-sm font-bold text-foreground font-mono">{formatCurrency(offerte.totaal)}</span>
+                        </div>
+                        {/* Acties */}
+                        <div className="flex items-center gap-1 pt-0.5">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2 text-xs"
+                            onClick={() => navigate(`/offertes/${offerte.id}/bewerken`, { state: { from: location.pathname } })}
+                          >
+                            <Pencil className="h-3 w-3 mr-1" />
+                            Bewerken
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2 text-xs"
+                            onClick={() => {
+                              setEmailOfferteId(offerte.id)
+                              setEmailOnderwerp(`Offerte ${offerte.nummer} - ${offerte.titel}`)
+                              setEmailBericht(
+                                `Beste ${project?.klant_naam || 'klant'},\n\nHierbij ontvangt u onze offerte "${offerte.titel}" (${offerte.nummer}) ter waarde van ${formatCurrency(offerte.totaal)}.\n\nDeze offerte is geldig tot ${formatDate(offerte.geldig_tot)}.\n\nMocht u vragen hebben, neem dan gerust contact met ons op.\n\nMet vriendelijke groet`
+                              )
+                              setEmailOfferteOpen(true)
+                            }}
+                          >
+                            <Mail className="h-3 w-3 mr-1" />
+                            Mail
+                          </Button>
+                        </div>
+                        {/* Factuur indicator */}
+                        {offerte.geconverteerd_naar_factuur_id && linkedFactuur && (
+                          <div className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 rounded-md px-2 py-1 border border-blue-200 dark:border-blue-800">
+                            <CheckCircle2 className="h-3 w-3 flex-shrink-0" />
+                            <span className="font-mono truncate">{linkedFactuur.nummer}</span>
+                            <span>&middot;</span>
+                            <span className={cn(
+                              'font-medium',
+                              linkedFactuur.status === 'betaald' && 'text-emerald-600 dark:text-emerald-400',
+                              linkedFactuur.status === 'vervallen' && 'text-red-600 dark:text-red-400'
+                            )}>
+                              {linkedFactuur.status === 'betaald' ? 'Betaald' :
+                               linkedFactuur.status === 'verzonden' ? 'Verzonden' :
+                               linkedFactuur.status === 'concept' ? 'Concept' :
+                               linkedFactuur.status === 'vervallen' ? 'Vervallen' :
+                               linkedFactuur.status === 'gecrediteerd' ? 'Gecrediteerd' :
+                               linkedFactuur.status}
+                            </span>
+                            <span>&middot;</span>
+                            <span className="font-mono">{formatCurrency(linkedFactuur.totaal)}</span>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          )}
+
         </div>{/* einde rechterkolom/sidebar */}
       </div>{/* einde flex row */}
       </div>{/* einde scroll container */}
