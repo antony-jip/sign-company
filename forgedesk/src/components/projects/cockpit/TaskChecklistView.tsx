@@ -35,8 +35,8 @@ export function TaskChecklistView({ taken, medewerkers, onStatusChange, onTaskCl
           <div
             key={taak.id}
             className={cn(
-              'flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[hsl(35,15%,97%)] transition-colors group cursor-pointer',
-              isDone && 'opacity-40'
+              'flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[hsl(35,15%,97%)] transition-all duration-200 group cursor-pointer',
+              isDone && 'opacity-35'
             )}
             onClick={() => onTaskClick?.(taak)}
           >
@@ -47,10 +47,10 @@ export function TaskChecklistView({ taken, medewerkers, onStatusChange, onTaskCl
                 onStatusChange(taak.id, isDone ? 'todo' : 'klaar')
               }}
               className={cn(
-                'flex-shrink-0 h-4.5 w-4.5 rounded border-2 transition-all flex items-center justify-center',
+                'flex-shrink-0 rounded border-2 transition-all duration-200 flex items-center justify-center',
                 isDone
-                  ? 'bg-emerald-500 border-emerald-500 text-white'
-                  : 'border-[hsl(35,15%,80%)] hover:border-amber-400'
+                  ? 'bg-emerald-500 border-emerald-500 text-white scale-100'
+                  : 'border-[hsl(35,15%,80%)] hover:border-emerald-400 hover:bg-emerald-50'
               )}
               style={{ width: 18, height: 18 }}
             >
@@ -59,7 +59,7 @@ export function TaskChecklistView({ taken, medewerkers, onStatusChange, onTaskCl
 
             {/* Task name */}
             <span className={cn(
-              'flex-1 text-sm font-medium truncate min-w-0',
+              'flex-1 text-sm font-medium truncate min-w-0 transition-colors duration-200',
               isDone && 'line-through text-muted-foreground'
             )}>
               {taak.titel}
@@ -67,7 +67,7 @@ export function TaskChecklistView({ taken, medewerkers, onStatusChange, onTaskCl
 
             {/* Status badge */}
             <span className={cn(
-              'rounded-full px-2 py-0.5 text-[11px] font-semibold flex-shrink-0',
+              'rounded-full px-2 py-0.5 text-[11px] font-semibold flex-shrink-0 transition-opacity',
               badge.cls
             )}>
               {badge.label}
@@ -76,7 +76,7 @@ export function TaskChecklistView({ taken, medewerkers, onStatusChange, onTaskCl
             {/* Deadline */}
             <span className={cn(
               'text-xs font-mono flex-shrink-0 w-16 text-right',
-              isOverdue ? 'text-red-500 font-medium' : 'text-muted-foreground/60'
+              isOverdue ? 'text-red-500 font-medium' : 'text-muted-foreground/50'
             )}>
               {taak.deadline ? formatDate(taak.deadline) : '—'}
             </span>
@@ -84,16 +84,16 @@ export function TaskChecklistView({ taken, medewerkers, onStatusChange, onTaskCl
             {/* Assigned avatar */}
             <div className="flex-shrink-0 w-6">
               {taak.toegewezen_aan ? (
-                <div className="h-6 w-6 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center" title={taak.toegewezen_aan}>
+                <div className="h-6 w-6 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-sm" title={taak.toegewezen_aan}>
                   <span className="text-white text-[8px] font-bold">{getInitials(taak.toegewezen_aan)}</span>
                 </div>
               ) : (
-                <span className="text-xs text-muted-foreground/30">—</span>
+                <span className="text-xs text-muted-foreground/25">—</span>
               )}
             </div>
 
             {/* Hours */}
-            <span className="text-xs font-mono text-muted-foreground/60 flex-shrink-0 w-14 text-right">
+            <span className="text-xs font-mono text-muted-foreground/50 flex-shrink-0 w-14 text-right">
               {(taak.bestede_tijd || 0) > 0 || (taak.geschatte_tijd || 0) > 0
                 ? `${taak.bestede_tijd || 0}/${taak.geschatte_tijd || 0}u`
                 : '—'
@@ -103,7 +103,7 @@ export function TaskChecklistView({ taken, medewerkers, onStatusChange, onTaskCl
         )
       })}
       {taken.length === 0 && (
-        <div className="text-center py-8 text-muted-foreground/40 text-sm">
+        <div className="text-center py-10 text-muted-foreground/35 text-sm">
           Nog geen taken
         </div>
       )}

@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { MessageCircle, X } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { MessageCircle, X, ChevronDown, ChevronUp, Send } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn, getInitials } from '@/lib/utils'
 import { ProjectPortaalTab } from '../ProjectPortaalTab'
@@ -16,6 +16,9 @@ interface PortaalPanelProps {
 
 export function PortaalPanel({ projectId, projectNaam, klant, defaultOpen = false, inline = false }: PortaalPanelProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen)
+  const [isCollapsed, setIsCollapsed] = useState(false)
+  const contentRef = useRef<HTMLDivElement>(null)
+  const [contentHeight, setContentHeight] = useState<number | undefined>(undefined)
 
   // Auto-collapse on small screens (sidebar mode only)
   useEffect(() => {
@@ -29,11 +32,80 @@ export function PortaalPanel({ projectId, projectNaam, klant, defaultOpen = fals
     return () => mq.removeEventListener('change', handler)
   }, [inline])
 
-  // Inline mode — just render the portaal content directly
+  // Measure content height for smooth animation
+  useEffect(() => {
+    if (!contentRef.current) return
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setContentHeight(entry.contentRect.height)
+      }
+    })
+    observer.observe(contentRef.current)
+    return () => observer.disconnect()
+  }, [])
+
+  // Inline mode — collapsible card
   if (inline) {
     return (
-      <div className="max-h-[500px] overflow-y-auto bg-[hsl(35,10%,98%)]">
-        <ProjectPortaalTab projectId={projectId} projectNaam={projectNaam} />
+      <div className="border border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px] overflow-hidden transition-shadow duration-300 hover:shadow-[0_2px_8px_rgba(130,100,60,0.08)]">
+        {/* Header — always visible, clickable to toggle */}
+        <button
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-r from-emerald-50/40 to-transparent hover:from-emerald-50/60 transition-all duration-200 cursor-pointer group"
+        >
+          <div className="flex items-center gap-2.5">
+            <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-sm">
+              <Send className="h-3.5 w-3.5 text-white" />
+            </div>
+            <span className="text-sm font-semibold text-foreground tracking-tight">Klantportaal</span>
+            <div className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.4)] animate-pulse" />
+          </div>
+          <div className="flex items-center gap-2">
+            {klant && !isCollapsed && (
+              <span className="text-xs text-muted-foreground hidden sm:inline">
+                {klant.contactpersoon || klant.bedrijfsnaam}
+                {klant.email && <span className="text-muted-foreground/50 ml-1">· {klant.email}</span>}
+              </span>
+            )}
+            <div className="h-6 w-6 rounded-full flex items-center justify-center text-muted-foreground group-hover:text-foreground group-hover:bg-muted/60 transition-all">
+              {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+            </div>
+          </div>
+        </button>
+
+        {/* Contact strip — visible when expanded */}
+        {!isCollapsed && klant && (
+          <div className="px-3 py-2 border-t border-[hsl(35,15%,90%)]">
+            <div className="flex items-center gap-2.5 bg-[hsl(35,15%,97%)] rounded-lg px-3 py-2">
+              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center flex-shrink-0 shadow-sm">
+                <span className="text-white text-[10px] font-bold">{getInitials(klant.contactpersoon || klant.bedrijfsnaam || '')}</span>
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold text-foreground truncate leading-tight">{klant.contactpersoon || klant.bedrijfsnaam}</p>
+                <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                  {klant.email && <span className="truncate">{klant.email}</span>}
+                  {klant.email && klant.telefoon && <span className="text-muted-foreground/40">·</span>}
+                  {klant.telefoon && <span className="font-mono text-[10px]">{klant.telefoon}</span>}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Collapsible content */}
+        <div
+          className="overflow-hidden transition-all duration-300 ease-out"
+          style={{
+            maxHeight: isCollapsed ? 0 : (contentHeight ? contentHeight + 8 : 500),
+            opacity: isCollapsed ? 0 : 1,
+          }}
+        >
+          <div ref={contentRef}>
+            <div className="max-h-[500px] overflow-y-auto bg-[hsl(35,10%,98%)]">
+              <ProjectPortaalTab projectId={projectId} projectNaam={projectNaam} />
+            </div>
+          </div>
+        </div>
       </div>
     )
   }
