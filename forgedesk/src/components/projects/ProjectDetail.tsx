@@ -103,7 +103,7 @@ import { ProjectPhotoGallery } from './ProjectPhotoGallery'
 import { VisualisatieGallery } from '@/components/visualizer/VisualisatieGallery'
 import { WerkbonVanProjectDialog } from '@/components/werkbonnen/WerkbonVanProjectDialog'
 import { ProjectKaart } from './cockpit/ProjectKaart'
-import { PortaalSidebarCard } from './cockpit/PortaalSidebarCard'
+import { PortaalCompactCard } from './cockpit/PortaalSidebarCard'
 import { TaskChecklistView } from './cockpit/TaskChecklistView'
 import { BriefingCard } from './cockpit/BriefingCard'
 import { TakenOfferteGrid } from './cockpit/TakenOfferteGrid'
@@ -912,6 +912,9 @@ export function ProjectDetail() {
             }}
           />
 
+          {/* Portaal (conditioneel — toont alleen bij actief portaal) */}
+          <PortaalCompactCard projectId={id!} />
+
         </div>{/* einde main content */}
 
         {/* ── Sidebar ── */}
@@ -924,9 +927,6 @@ export function ProjectDetail() {
               onInplannen={handleOpenMontageDialog}
             />
           </div>
-
-          {/* Portaal (conditioneel — toont alleen bij actief portaal) */}
-          <PortaalSidebarCard projectId={id!} />
 
           {/* Bestanden */}
           <div className="bg-card border border-border rounded-xl p-4">

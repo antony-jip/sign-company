@@ -1,18 +1,19 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ExternalLink } from 'lucide-react'
+import { ExternalLink, Send } from 'lucide-react'
 import { getPortaalByProject, getPortaalItems } from '@/services/supabaseService'
 import type { ProjectPortaal, PortaalItem } from '@/types'
 
-interface PortaalSidebarCardProps {
+interface PortaalCompactCardProps {
   projectId: string
 }
 
-export function PortaalSidebarCard({ projectId }: PortaalSidebarCardProps) {
+export function PortaalCompactCard({ projectId }: PortaalCompactCardProps) {
   const navigate = useNavigate()
   const [portaal, setPortaal] = useState<ProjectPortaal | null>(null)
   const [laatsteBericht, setLaatsteBericht] = useState<PortaalItem | null>(null)
   const [voortgang, setVoortgang] = useState({ goedgekeurd: 0, totaal: 0 })
+  const [itemCount, setItemCount] = useState(0)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -26,8 +27,9 @@ export function PortaalSidebarCard({ projectId }: PortaalSidebarCardProps) {
         const items = await getPortaalItems(p.id)
         if (cancelled) return
 
-        // Find last visible message/item
         const zichtbaar = items.filter((i: PortaalItem) => i.zichtbaar_voor_klant)
+        setItemCount(zichtbaar.length)
+
         if (zichtbaar.length > 0) {
           const sorted = [...zichtbaar].sort(
             (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -35,7 +37,6 @@ export function PortaalSidebarCard({ projectId }: PortaalSidebarCardProps) {
           setLaatsteBericht(sorted[0])
         }
 
-        // Count progress: goedgekeurde items / totaal goedkeurbare items
         const goedkeurbaar = zichtbaar.filter(
           (i: PortaalItem) => i.type === 'offerte' || i.type === 'tekening'
         )
@@ -68,57 +69,86 @@ export function PortaalSidebarCard({ projectId }: PortaalSidebarCardProps) {
     : ''
 
   return (
-    <div className="bg-card border border-border rounded-xl p-4">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <div className={`h-1.5 w-1.5 rounded-full ${isActief ? 'bg-emerald-500' : 'bg-gray-400'}`} />
-          <span className="text-[13px] font-medium text-foreground">Portaal</span>
-          <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${
+    <div className="border border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px] overflow-hidden">
+      <div className="flex items-stretch">
+        {/* Left accent bar */}
+        <div className={`w-1 flex-shrink-0 ${isActief ? 'bg-emerald-500' : 'bg-gray-300'}`} />
+
+        {/* Content */}
+        <div className="flex-1 flex items-center gap-4 px-4 py-3 min-w-0">
+          {/* Icon */}
+          <div className={`h-9 w-9 rounded-xl flex items-center justify-center flex-shrink-0 ${
             isActief
-              ? 'bg-green-50 text-green-700'
-              : 'bg-gray-100 text-gray-500'
+              ? 'bg-gradient-to-br from-emerald-500 to-emerald-600 shadow-sm'
+              : 'bg-gray-200'
           }`}>
-            {isActief ? 'Actief' : 'Verlopen'}
-          </span>
-        </div>
-        {voortgang.totaal > 0 && (
-          <span className="text-xs text-muted-foreground font-mono">
-            {voortgang.goedgekeurd}/{voortgang.totaal}
-          </span>
-        )}
-      </div>
+            <Send className={`h-4 w-4 ${isActief ? 'text-white' : 'text-gray-500'}`} />
+          </div>
 
-      {/* Laatste bericht preview */}
-      <div className="mb-3">
-        {berichtTekst ? (
-          <>
-            <div className={`flex ${isVanBedrijf ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[180px] rounded-xl p-2 text-[11px] leading-snug ${
-                isVanBedrijf
-                  ? 'bg-green-50 rounded-br-sm text-foreground'
-                  : 'bg-muted rounded-bl-sm text-foreground'
+          {/* Title + status */}
+          <div className="flex-shrink-0">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold text-foreground">Portaal</span>
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                isActief
+                  ? 'bg-emerald-50 text-emerald-700'
+                  : 'bg-gray-100 text-gray-500'
               }`}>
-                {berichtTekst.length > 80 ? `${berichtTekst.slice(0, 80)}…` : berichtTekst}
-              </div>
+                {isActief ? 'Actief' : 'Verlopen'}
+              </span>
             </div>
-            <p className={`text-[10px] text-muted-foreground mt-1 ${isVanBedrijf ? 'text-right' : 'text-left'}`}>
-              {afzenderLabel} · {berichtTijd}
-            </p>
-          </>
-        ) : (
-          <p className="text-xs text-muted-foreground">Nog geen berichten</p>
-        )}
-      </div>
+            <div className="flex items-center gap-2 mt-0.5">
+              {voortgang.totaal > 0 && (
+                <span className="text-[11px] text-muted-foreground font-mono">
+                  {voortgang.goedgekeurd}/{voortgang.totaal} goedgekeurd
+                </span>
+              )}
+              {voortgang.totaal === 0 && itemCount > 0 && (
+                <span className="text-[11px] text-muted-foreground">
+                  {itemCount} item{itemCount !== 1 ? 's' : ''}
+                </span>
+              )}
+              {voortgang.totaal === 0 && itemCount === 0 && (
+                <span className="text-[11px] text-muted-foreground">Geen items</span>
+              )}
+            </div>
+          </div>
 
-      {/* Portaal openen knop */}
-      <button
-        onClick={() => navigate('/portalen')}
-        className="w-full flex items-center justify-center gap-1.5 text-[11px] border border-border rounded-lg py-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-      >
-        Portaal openen
-        <ExternalLink className="h-3 w-3" />
-      </button>
+          {/* Divider */}
+          <div className="h-8 w-px bg-[hsl(35,15%,90%)] flex-shrink-0 hidden sm:block" />
+
+          {/* Last message preview */}
+          <div className="flex-1 min-w-0 hidden sm:block">
+            {berichtTekst ? (
+              <div className="flex items-start gap-2">
+                <div className={`flex-1 min-w-0 rounded-lg px-3 py-1.5 text-[11px] leading-snug ${
+                  isVanBedrijf
+                    ? 'bg-emerald-50/80 rounded-br-sm'
+                    : 'bg-[hsl(35,15%,96%)] rounded-bl-sm'
+                }`}>
+                  <p className="text-foreground/80 truncate">
+                    {berichtTekst.length > 100 ? `${berichtTekst.slice(0, 100)}…` : berichtTekst}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground/60 mt-0.5">
+                    {afzenderLabel} · {berichtTijd}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <p className="text-[11px] text-muted-foreground/60 italic">Nog geen berichten</p>
+            )}
+          </div>
+
+          {/* Action button */}
+          <button
+            onClick={() => navigate('/portalen')}
+            className="flex items-center gap-1.5 text-[11px] font-medium border border-[hsl(35,15%,85%)] rounded-lg px-3 py-1.5 text-muted-foreground hover:text-foreground hover:border-[hsl(35,15%,75%)] hover:bg-[hsl(35,15%,97%)] transition-all flex-shrink-0"
+          >
+            Openen
+            <ExternalLink className="h-3 w-3" />
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
