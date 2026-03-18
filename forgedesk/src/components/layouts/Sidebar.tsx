@@ -4,7 +4,7 @@ import {
   LayoutDashboard, FolderKanban, Users, FileText,
   Mail, Calendar, Settings, ChevronLeft,
   ChevronRight, LogOut, Menu, X, CheckSquare,
-  Receipt, ClipboardCheck,
+  Receipt, ClipboardCheck, Sparkles,
   type LucideIcon
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -19,6 +19,11 @@ interface NavItem {
   path: string
 }
 
+interface NavSection {
+  section: string
+  items: NavItem[]
+}
+
 const MODULE_COLORS: Record<string, string> = {
   '/': '#CC8A3F',
   '/klanten': '#8BAFD4',
@@ -29,9 +34,11 @@ const MODULE_COLORS: Record<string, string> = {
   '/werkbonnen': '#D4836A',
   '/planning': '#7EB5A6',
   '/email': '#8BAFD4',
+  '/forgie': '#9B8EC4',
   '/instellingen': '#8A8680',
 }
 
+// Flat list for rail mode
 const RAIL_ITEMS: NavItem[] = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/' },
   { label: 'Projecten', icon: FolderKanban, path: '/projecten' },
@@ -42,6 +49,41 @@ const RAIL_ITEMS: NavItem[] = [
   { label: 'Werkbonnen', icon: ClipboardCheck, path: '/werkbonnen' },
   { label: 'Planning', icon: Calendar, path: '/planning' },
   { label: 'Email', icon: Mail, path: '/email' },
+]
+
+// Grouped sections for expanded mode
+const NAV_SECTIONS: NavSection[] = [
+  {
+    section: 'Overzicht',
+    items: [{ label: 'Dashboard', icon: LayoutDashboard, path: '/' }],
+  },
+  {
+    section: 'Verkoop',
+    items: [
+      { label: 'Klanten', icon: Users, path: '/klanten' },
+      { label: 'Offertes', icon: FileText, path: '/offertes' },
+      { label: 'Facturen', icon: Receipt, path: '/facturen' },
+    ],
+  },
+  {
+    section: 'Productie',
+    items: [
+      { label: 'Projecten', icon: FolderKanban, path: '/projecten' },
+      { label: 'Taken', icon: CheckSquare, path: '/taken' },
+      { label: 'Werkbonnen', icon: ClipboardCheck, path: '/werkbonnen' },
+    ],
+  },
+  {
+    section: 'Planning',
+    items: [{ label: 'Planning', icon: Calendar, path: '/planning' }],
+  },
+  {
+    section: 'Communicatie',
+    items: [
+      { label: 'Email', icon: Mail, path: '/email' },
+      { label: 'Forgie', icon: Sparkles, path: '/forgie' },
+    ],
+  },
 ]
 
 const SETTINGS_ITEM: NavItem = { label: 'Instellingen', icon: Settings, path: '/instellingen' }
@@ -57,38 +99,41 @@ export function Sidebar() {
   const sidebarRef = useRef<HTMLDivElement>(null)
   const userPopoverRef = useRef<HTMLDivElement>(null)
 
-  // Filter nav items op basis van instellingen
-  const filteredItems = useMemo(() => {
+  // Filter helpers
+  const isItemVisible = useMemo(() => {
     const sidebarItems = settings?.sidebar_items
-    if (!Array.isArray(sidebarItems) || sidebarItems.length === 0) return RAIL_ITEMS
+    if (!Array.isArray(sidebarItems) || sidebarItems.length === 0) return () => true
     const normalized = sidebarItems.map((s: string) => s === 'Kalender' ? 'Planning' : s)
-    return RAIL_ITEMS.filter(item => normalized.includes(item.label) || item.label === 'Dashboard')
+    return (label: string) => normalized.includes(label) || label === 'Dashboard' || label === 'Instellingen'
   }, [settings?.sidebar_items])
+
+  const filteredRailItems = useMemo(() => RAIL_ITEMS.filter(i => isItemVisible(i.label)), [isItemVisible])
+
+  const filteredSections = useMemo(() => {
+    return NAV_SECTIONS
+      .map(s => ({ ...s, items: s.items.filter(i => isItemVisible(i.label)) }))
+      .filter(s => s.items.length > 0)
+  }, [isItemVisible])
 
   // Close mobile on navigate
   useEffect(() => { setMobileOpen(false) }, [location.pathname])
 
-  // Close mobile on outside click
+  // Close mobile on outside click / escape
   useEffect(() => {
     if (!mobileOpen) return
-    function handleClick(e: MouseEvent) {
+    const handleClick = (e: MouseEvent) => {
       if (sidebarRef.current && !sidebarRef.current.contains(e.target as Node)) setMobileOpen(false)
     }
-    function handleEscape(e: KeyboardEvent) {
-      if (e.key === 'Escape') setMobileOpen(false)
-    }
+    const handleEscape = (e: KeyboardEvent) => { if (e.key === 'Escape') setMobileOpen(false) }
     document.addEventListener('mousedown', handleClick)
     document.addEventListener('keydown', handleEscape)
-    return () => {
-      document.removeEventListener('mousedown', handleClick)
-      document.removeEventListener('keydown', handleEscape)
-    }
+    return () => { document.removeEventListener('mousedown', handleClick); document.removeEventListener('keydown', handleEscape) }
   }, [mobileOpen])
 
   // Close user popover on outside click
   useEffect(() => {
     if (!userPopoverOpen) return
-    function handleClick(e: MouseEvent) {
+    const handleClick = (e: MouseEvent) => {
       if (userPopoverRef.current && !userPopoverRef.current.contains(e.target as Node)) setUserPopoverOpen(false)
     }
     document.addEventListener('mousedown', handleClick)
@@ -100,7 +145,8 @@ export function Sidebar() {
     ? `${user.user_metadata.voornaam}${user.user_metadata.achternaam ? ' ' + user.user_metadata.achternaam : ''}`
     : user?.email?.split('@')[0] || 'Gebruiker'
 
-  const renderNavItem = (item: NavItem) => {
+  // ── Rail item (collapsed) ──
+  const renderRailItem = (item: NavItem) => {
     const isActive = item.path === '/' ? location.pathname === '/' : location.pathname.startsWith(item.path)
     const Icon = item.icon
     const modColor = MODULE_COLORS[item.path] || '#8A8680'
@@ -110,75 +156,104 @@ export function Sidebar() {
         key={item.path}
         to={item.path}
         className={cn(
-          'relative group transition-all duration-200',
-          isCollapsed
-            ? 'flex flex-col items-center justify-center w-[60px] h-[52px] rounded-[12px] gap-0.5 mx-auto'
-            : 'flex items-center gap-2.5 h-10 px-3 rounded-[10px] mx-2',
+          'relative group flex flex-col items-center justify-center w-[62px] py-2 rounded-[14px] gap-1 mx-auto transition-all duration-200',
           isActive
             ? 'font-semibold'
-            : 'text-muted-foreground/60 hover:text-foreground hover:bg-muted/40',
+            : 'text-muted-foreground/50 hover:text-foreground/80 hover:bg-muted/40',
         )}
         style={isActive ? {
-          background: `${modColor}12`,
-          boxShadow: `0 0 20px ${modColor}10`,
+          background: `${modColor}14`,
+          boxShadow: `0 0 24px ${modColor}0C`,
         } : undefined}
       >
-        {/* Active indicator bar */}
+        {/* Active bar */}
         {isActive && (
           <div
-            className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-[3px] transition-all duration-300"
-            style={{
-              height: isCollapsed ? 20 : 18,
-              background: modColor,
-              boxShadow: `0 0 12px ${modColor}50`,
-            }}
+            className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-[22px] rounded-r-[3px]"
+            style={{ background: modColor, boxShadow: `0 0 12px ${modColor}50` }}
           />
         )}
 
         {/* Icon */}
         <div
-          className={cn(
-            'flex items-center justify-center flex-shrink-0 transition-all duration-200',
-            isCollapsed ? 'w-8 h-8 rounded-[10px]' : 'w-7 h-7 rounded-[8px]',
-          )}
+          className="w-9 h-9 rounded-[11px] flex items-center justify-center transition-all duration-200"
           style={{
-            background: isActive ? `${modColor}18` : 'transparent',
-            boxShadow: isActive ? `0 0 16px ${modColor}15` : 'none',
+            background: isActive ? `${modColor}1A` : 'transparent',
+            boxShadow: isActive ? `0 0 20px ${modColor}12` : 'none',
           }}
         >
-          <Icon
-            className={cn(isCollapsed ? 'w-[18px] h-[18px]' : 'w-[16px] h-[16px]')}
-            style={isActive ? { color: modColor } : undefined}
-          />
+          <Icon className="w-[20px] h-[20px]" style={isActive ? { color: modColor } : undefined} />
         </div>
 
         {/* Label */}
-        {isCollapsed ? (
-          <span className={cn(
-            'text-[10px] font-medium leading-tight text-center',
-            isActive ? 'font-semibold' : '',
-          )} style={isActive ? { color: modColor } : undefined}>
-            {item.label}
-          </span>
-        ) : (
-          <span className={cn(
-            'text-[13px] font-medium truncate',
-            isActive ? 'font-semibold' : '',
-          )} style={isActive ? { color: modColor } : undefined}>
-            {item.label}
-          </span>
+        <span
+          className={cn('text-[10px] leading-tight text-center', isActive ? 'font-semibold' : 'font-medium')}
+          style={isActive ? { color: modColor } : undefined}
+        >
+          {item.label}
+        </span>
+
+        {/* Tooltip */}
+        <div className="absolute left-full top-1/2 -translate-y-1/2 ml-3 px-3 py-1.5 bg-foreground text-background text-xs font-medium rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 whitespace-nowrap z-50 pointer-events-none">
+          {item.label}
+        </div>
+      </NavLink>
+    )
+  }
+
+  // ── Expanded item ──
+  const renderExpandedItem = (item: NavItem) => {
+    const isActive = item.path === '/' ? location.pathname === '/' : location.pathname.startsWith(item.path)
+    const Icon = item.icon
+    const modColor = MODULE_COLORS[item.path] || '#8A8680'
+    const isForgie = item.path === '/forgie'
+
+    return (
+      <NavLink
+        key={item.path}
+        to={item.path}
+        className={cn(
+          'relative flex items-center gap-2.5 py-[7px] px-[10px] rounded-[10px] text-sm font-medium transition-all duration-200 group',
+          isActive
+            ? 'font-semibold text-foreground'
+            : 'text-muted-foreground hover:bg-background/80 hover:text-foreground',
+          isForgie && !isActive && 'sidebar-forgie mx-1 my-0.5',
+        )}
+        style={isActive ? {
+          background: `${modColor}0C`,
+          boxShadow: `inset 0 0 0 1px ${modColor}15`,
+        } : undefined}
+      >
+        {/* Active bar */}
+        {isActive && (
+          <div
+            className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-[18px] rounded-r-[3px]"
+            style={{ background: modColor, boxShadow: `0 0 12px ${modColor}50` }}
+          />
         )}
 
-        {/* Tooltip (collapsed only, for items) */}
-        {isCollapsed && (
-          <div className="absolute left-full top-1/2 -translate-y-1/2 ml-3 px-3 py-1.5 bg-foreground text-background text-xs font-medium rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 whitespace-nowrap z-50 pointer-events-none">
-            {item.label}
-          </div>
+        {/* Icon */}
+        <div
+          className="w-[28px] h-[28px] rounded-[8px] flex items-center justify-center flex-shrink-0 transition-all duration-200"
+          style={{
+            background: isActive ? `${modColor}20` : 'transparent',
+            boxShadow: isActive ? `0 0 16px ${modColor}18` : 'none',
+            opacity: isActive ? 1 : 0.5,
+          }}
+        >
+          <Icon className="w-[15px] h-[15px]" style={isActive ? { color: modColor } : undefined} />
+        </div>
+
+        <span className="truncate">{item.label}</span>
+
+        {isForgie && (
+          <span className="ml-auto text-2xs font-bold uppercase tracking-[0.06em] text-[#9B8EC4] bg-[#9B8EC4]/12 px-1.5 py-0.5 rounded-full">AI</span>
         )}
       </NavLink>
     )
   }
 
+  // ── Sidebar content ──
   const sidebarContent = (forMobile = false) => {
     const collapsed = forMobile ? false : isCollapsed
 
@@ -189,67 +264,47 @@ export function Sidebar() {
           onClick={forMobile ? undefined : toggleSidebar}
           className={cn(
             'flex items-center h-14 flex-shrink-0 transition-all duration-200',
-            collapsed ? 'justify-center px-0' : 'gap-2.5 px-4',
-            !forMobile && 'cursor-pointer hover:bg-muted/30'
+            collapsed ? 'justify-center px-0' : 'gap-[10px] px-4',
+            !forMobile && 'cursor-pointer hover:bg-muted/20',
           )}
         >
           <div className="sidebar-logo-mark flex-shrink-0">F</div>
           {!collapsed && (
-            <span className="text-[15px] font-extrabold tracking-[-0.04em]">
+            <span className="text-[16px] font-extrabold tracking-[-0.04em]">
               FORGE<span className="font-medium text-muted-foreground">desk</span>
             </span>
           )}
         </button>
 
         {/* Navigation */}
-        <nav className={cn(
-          'flex-1 py-2 overflow-y-auto scrollbar-none',
-          collapsed ? 'px-1' : 'px-0',
-        )}>
-          <div className={cn('space-y-0.5', collapsed && 'flex flex-col items-center')}>
-            {forMobile ? (
-              // Mobile: always expanded style
-              RAIL_ITEMS.filter(item => {
-                const sidebarItems = settings?.sidebar_items
-                if (!Array.isArray(sidebarItems) || sidebarItems.length === 0) return true
-                return sidebarItems.includes(item.label) || item.label === 'Dashboard'
-              }).map(item => {
-                const isActive = item.path === '/' ? location.pathname === '/' : location.pathname.startsWith(item.path)
-                const Icon = item.icon
-                const modColor = MODULE_COLORS[item.path] || '#8A8680'
-                return (
-                  <NavLink
-                    key={item.path}
-                    to={item.path}
-                    className={cn(
-                      'flex items-center gap-2.5 h-10 px-3 mx-2 rounded-[10px] transition-all duration-200',
-                      isActive ? 'font-semibold' : 'text-muted-foreground/60 hover:text-foreground hover:bg-muted/40',
-                    )}
-                    style={isActive ? { background: `${modColor}12` } : undefined}
-                  >
-                    <div className="w-7 h-7 rounded-[8px] flex items-center justify-center"
-                      style={{ background: isActive ? `${modColor}18` : 'transparent' }}>
-                      <Icon className="w-4 h-4" style={isActive ? { color: modColor } : undefined} />
-                    </div>
-                    <span className="text-[13px] font-medium" style={isActive ? { color: modColor } : undefined}>
-                      {item.label}
-                    </span>
-                  </NavLink>
-                )
-              })
-            ) : (
-              filteredItems.map(renderNavItem)
-            )}
-          </div>
+        <nav className="flex-1 overflow-y-auto scrollbar-thin py-1">
+          {collapsed ? (
+            // ── Rail mode: flat list, big icons ──
+            <div className="flex flex-col items-center gap-0.5 px-[7px]">
+              {filteredRailItems.map(renderRailItem)}
+            </div>
+          ) : (
+            // ── Expanded mode: grouped sections ──
+            <div className="px-2">
+              {filteredSections.map((section, sectionIdx) => (
+                <div key={section.section}>
+                  <div className="wm-sidebar-section">{section.section}</div>
+                  <div className="space-y-0.5">
+                    {section.items.map(renderExpandedItem)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </nav>
 
         {/* Bottom section */}
         <div className={cn(
           'border-t border-border/40 flex-shrink-0',
-          collapsed ? 'py-2 px-1 flex flex-col items-center gap-1' : 'py-2 px-0 space-y-0.5',
+          collapsed ? 'py-3 flex flex-col items-center gap-1.5' : 'py-2 px-2 space-y-0.5',
         )}>
           {/* Instellingen */}
-          {renderNavItem(SETTINGS_ITEM)}
+          {collapsed ? renderRailItem(SETTINGS_ITEM) : renderExpandedItem(SETTINGS_ITEM)}
 
           {/* Toggle button (desktop only) */}
           {!forMobile && (
@@ -257,7 +312,7 @@ export function Sidebar() {
               onClick={toggleSidebar}
               className={cn(
                 'flex items-center justify-center transition-all duration-200 text-muted-foreground/40 hover:text-muted-foreground hover:bg-muted/40 rounded-[10px]',
-                collapsed ? 'w-10 h-8 mx-auto' : 'h-8 px-3 mx-2 gap-2',
+                collapsed ? 'w-10 h-8 mx-auto' : 'h-8 px-3 w-full gap-2',
               )}
             >
               {collapsed ? <ChevronRight className="w-4 h-4" /> : (
@@ -271,7 +326,7 @@ export function Sidebar() {
 
           {/* User avatar */}
           {user && (
-            <div ref={userPopoverRef} className={cn('relative', collapsed ? 'flex justify-center' : 'mx-2')}>
+            <div ref={userPopoverRef} className={cn('relative', collapsed ? 'flex justify-center' : '')}>
               <button
                 onClick={() => setUserPopoverOpen(!userPopoverOpen)}
                 className={cn(
@@ -279,18 +334,21 @@ export function Sidebar() {
                   collapsed ? 'w-10 h-10 justify-center' : 'gap-2.5 h-10 px-3 w-full',
                 )}
               >
-                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#8BAFD4] to-[#6B8FB4] flex items-center justify-center flex-shrink-0 ring-2 ring-border/30">
-                  <span className="text-white text-[10px] font-bold">{userInitial}</span>
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#8BAFD4] to-[#6B8FB4] flex items-center justify-center flex-shrink-0 ring-2 ring-border/20">
+                  <span className="text-white text-[11px] font-bold">{userInitial}</span>
                 </div>
                 {!collapsed && (
-                  <span className="text-[12px] font-medium text-muted-foreground truncate">{userName}</span>
+                  <div className="flex-1 min-w-0 text-left">
+                    <p className="text-[12px] font-medium text-foreground truncate leading-tight">{userName}</p>
+                    <p className="text-[10px] text-muted-foreground/50 truncate">{user.email}</p>
+                  </div>
                 )}
               </button>
 
               {/* User popover */}
               {userPopoverOpen && (
                 <div className={cn(
-                  'absolute z-50 w-52 bg-card border border-border/60 rounded-2xl shadow-2xl shadow-black/10 overflow-hidden',
+                  'absolute z-50 w-52 bg-card border border-border/60 rounded-2xl shadow-2xl shadow-black/10 overflow-hidden animate-scale-in',
                   collapsed ? 'left-full bottom-0 ml-3' : 'left-0 bottom-full mb-2',
                 )}>
                   <div className="px-4 py-3 border-b border-border/40">
@@ -355,7 +413,7 @@ export function Sidebar() {
 
       {/* Desktop sidebar */}
       <aside
-        className="hidden md:flex flex-col flex-shrink-0 h-screen wm-sidebar transition-[width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
+        className="hidden md:flex flex-col flex-shrink-0 h-screen wm-sidebar transition-[width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden"
         style={{ width: isCollapsed ? RAIL_WIDTH : EXPANDED_WIDTH }}
       >
         {sidebarContent(false)}
