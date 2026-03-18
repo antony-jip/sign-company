@@ -7,9 +7,8 @@ import {
   FileImage,
   File,
   Trash2,
+  Upload,
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { formatDate } from '@/lib/utils'
 
 function getFileIcon(type: string) {
   const size = 'h-4 w-4'
@@ -17,16 +16,31 @@ function getFileIcon(type: string) {
   if (type.includes('spreadsheet') || type.includes('xlsx') || type.includes('csv'))
     return <FileSpreadsheet className={`${size} text-green-600`} />
   if (type.includes('zip') || type.includes('archive'))
-    return <FileArchive className={`${size} text-yellow-600`} />
+    return <FileArchive className={`${size} text-amber-600`} />
   if (type.includes('image') || type.includes('jpeg') || type.includes('png'))
-    return <FileImage className={`${size} text-primary`} />
-  return <File className={`${size} text-muted-foreground/60`} />
+    return <FileImage className={`${size} text-violet-500`} />
+  if (type.includes('illustrator') || type.includes('acad'))
+    return <File className={`${size} text-orange-500`} />
+  return <File className={`${size} text-muted-foreground/50`} />
+}
+
+function getFileIconBg(type: string): string {
+  if (type.includes('pdf')) return 'bg-red-50'
+  if (type.includes('spreadsheet') || type.includes('xlsx') || type.includes('csv')) return 'bg-green-50'
+  if (type.includes('zip') || type.includes('archive')) return 'bg-amber-50'
+  if (type.includes('image') || type.includes('jpeg') || type.includes('png')) return 'bg-violet-50'
+  if (type.includes('illustrator') || type.includes('acad')) return 'bg-orange-50'
+  return 'bg-gray-50'
 }
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+function formatDate(dateStr: string) {
+  return new Date(dateStr).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })
 }
 
 interface BestandenSectionProps {
@@ -42,42 +56,52 @@ export function BestandenSection({ documenten, onUpload, onDelete }: BestandenSe
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-[13px] font-medium text-foreground">
+        <h3 className="text-[13px] font-semibold text-foreground flex items-center gap-2">
           Bestanden
           {documenten.length > 0 && (
-            <span className="text-muted-foreground font-normal ml-1.5">{documenten.length}</span>
+            <span className="text-[10px] text-muted-foreground/50 font-mono font-normal">{documenten.length}</span>
           )}
         </h3>
-        <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={onUpload}>
-          <Plus className="h-3 w-3 mr-1" />
+        <button
+          onClick={onUpload}
+          className="text-[11px] text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+        >
+          <Plus className="h-3 w-3" />
           Upload
-        </Button>
+        </button>
       </div>
 
       {documenten.length === 0 ? (
-        <div className="text-center py-4 border border-dashed border-border rounded-lg">
-          <p className="text-xs text-muted-foreground mb-2">Nog geen bestanden</p>
-          <Button variant="outline" size="sm" className="h-6 px-2 text-xs" onClick={onUpload}>
-            <Plus className="h-3 w-3 mr-1" />
-            Upload
-          </Button>
+        <div className="text-center py-6 border border-dashed border-[hsl(35,15%,87%)] rounded-lg">
+          <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center mx-auto mb-2">
+            <Upload className="h-5 w-5 text-blue-400" />
+          </div>
+          <p className="text-[11px] text-muted-foreground mb-2">Nog geen bestanden</p>
+          <button
+            onClick={onUpload}
+            className="text-[11px] text-foreground font-medium hover:text-foreground/80 transition-colors"
+          >
+            + Upload
+          </button>
         </div>
       ) : (
-        <div className="space-y-1">
+        <div className="space-y-0.5">
           {displayDocs.map((doc) => (
             <div
               key={doc.id}
-              className="group flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-muted/50 transition-colors"
+              className="group flex items-center gap-2.5 rounded-lg px-2 py-2 hover:bg-[hsl(35,15%,97%)] transition-colors"
             >
-              <div className="flex-shrink-0">{getFileIcon(doc.type)}</div>
+              <div className={`h-8 w-8 rounded-lg ${getFileIconBg(doc.type)} flex items-center justify-center flex-shrink-0`}>
+                {getFileIcon(doc.type)}
+              </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-medium text-foreground truncate">{doc.naam}</p>
-                <p className="text-[10px] text-muted-foreground">
+                <p className="text-[12px] font-medium text-foreground truncate">{doc.naam}</p>
+                <p className="text-[10px] text-muted-foreground/50">
                   {formatFileSize(doc.grootte)} · {formatDate(doc.created_at)}
                 </p>
               </div>
               <button
-                className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
+                className="opacity-0 group-hover:opacity-100 text-muted-foreground/40 hover:text-red-500 transition-all p-1 rounded"
                 onClick={() => onDelete(doc.id, doc.naam)}
               >
                 <Trash2 className="h-3 w-3" />
@@ -87,9 +111,9 @@ export function BestandenSection({ documenten, onUpload, onDelete }: BestandenSe
           {documenten.length > 5 && !showAll && (
             <button
               onClick={() => setShowAll(true)}
-              className="text-xs text-primary hover:text-primary/80 mt-1 transition-colors px-2"
+              className="w-full text-[11px] text-muted-foreground hover:text-foreground mt-1 py-2 rounded-lg hover:bg-[hsl(35,15%,96%)] transition-colors"
             >
-              Alle bestanden bekijken →
+              Alle {documenten.length} bestanden tonen
             </button>
           )}
         </div>

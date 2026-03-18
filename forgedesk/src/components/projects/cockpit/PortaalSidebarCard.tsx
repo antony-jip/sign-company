@@ -228,6 +228,18 @@ export function PortaalCompactCard({ projectId }: PortaalCompactCardProps) {
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState(false)
 
+  // Count unread klant messages (messages from klant that are newer than the last bedrijf message)
+  const hasKlantReactie = (() => {
+    if (items.length === 0) return false
+    const lastBedrijfIdx = [...items].reverse().findIndex(i => i.afzender === 'bedrijf')
+    if (lastBedrijfIdx === -1) return items.some(i => i.afzender === 'klant')
+    const lastBedrijfItem = items[items.length - 1 - lastBedrijfIdx]
+    return items.some(i =>
+      i.afzender === 'klant' &&
+      new Date(i.created_at).getTime() > new Date(lastBedrijfItem.created_at).getTime()
+    )
+  })()
+
   // Quick-add state
   const [activePopover, setActivePopover] = useState<'offerte' | 'factuur' | null>(null)
   const [offertes, setOffertes] = useState<Offerte[]>([])
@@ -493,6 +505,12 @@ export function PortaalCompactCard({ projectId }: PortaalCompactCardProps) {
         <div className="flex-shrink-0 min-w-0">
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold text-foreground">Portaal</span>
+            {hasKlantReactie && (
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
+              </span>
+            )}
             <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
               isActief
                 ? 'bg-emerald-50 text-emerald-700'
@@ -508,10 +526,13 @@ export function PortaalCompactCard({ projectId }: PortaalCompactCardProps) {
           </div>
           {/* Preview of last message when collapsed */}
           {!expanded && previewText && (
-            <p className="text-[11px] text-muted-foreground/70 truncate max-w-[300px] mt-0.5">
-              <span className="font-medium">{previewAfzender}</span>
+            <p className={`text-[11px] truncate max-w-[300px] mt-0.5 ${hasKlantReactie ? 'text-foreground font-medium' : 'text-muted-foreground/70'}`}>
+              {hasKlantReactie && (
+                <span className="text-rose-500 font-semibold">Klant heeft gereageerd — </span>
+              )}
+              <span className={hasKlantReactie ? '' : 'font-medium'}>{previewAfzender}</span>
               {': '}
-              {previewText.length > 60 ? `${previewText.slice(0, 60)}…` : previewText}
+              {previewText.length > 50 ? `${previewText.slice(0, 50)}…` : previewText}
               <span className="text-muted-foreground/40 ml-1.5">{previewTijd}</span>
             </p>
           )}

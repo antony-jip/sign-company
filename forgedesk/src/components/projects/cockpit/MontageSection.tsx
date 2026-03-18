@@ -1,14 +1,29 @@
-import { Plus, CalendarDays, MapPin } from 'lucide-react'
+import { Plus, CalendarDays, MapPin, Wrench, Truck, Clock, CheckCircle2, PauseCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { getInitials } from '@/lib/utils'
 import type { MontageAfspraak } from '@/types'
 
-const montageStatusColors: Record<string, string> = {
-  gepland: 'bg-blue-100 text-blue-700',
-  onderweg: 'bg-amber-100 text-amber-700',
-  bezig: 'bg-green-100 text-green-700',
-  afgerond: 'bg-emerald-100 text-emerald-700',
-  uitgesteld: 'bg-red-100 text-red-700',
+const montageStatusConfig: Record<string, { label: string; cls: string; icon: typeof Clock }> = {
+  gepland:    { label: 'Gepland',    cls: 'text-blue-600 bg-blue-50',      icon: CalendarDays },
+  onderweg:   { label: 'Onderweg',   cls: 'text-amber-600 bg-amber-50',    icon: Truck },
+  bezig:      { label: 'Bezig',      cls: 'text-orange-600 bg-orange-50',  icon: Wrench },
+  afgerond:   { label: 'Afgerond',   cls: 'text-emerald-600 bg-emerald-50', icon: CheckCircle2 },
+  uitgesteld: { label: 'Uitgesteld', cls: 'text-red-600 bg-red-50',        icon: PauseCircle },
+}
+
+// Deterministic color from name
+function monteurColor(name: string): string {
+  const colors = [
+    'from-blue-500 to-blue-600',
+    'from-violet-500 to-violet-600',
+    'from-amber-500 to-amber-600',
+    'from-emerald-500 to-emerald-600',
+    'from-rose-500 to-rose-600',
+    'from-teal-500 to-teal-600',
+  ]
+  let hash = 0
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)
+  return colors[Math.abs(hash) % colors.length]
 }
 
 interface MontageSectionProps {
@@ -20,59 +35,87 @@ export function MontageSection({ montageAfspraken, onInplannen }: MontageSection
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-[13px] font-medium text-foreground">Montage</h3>
-        <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={onInplannen}>
-          <Plus className="h-3 w-3 mr-1" />
+        <h3 className="text-[13px] font-semibold text-foreground flex items-center gap-2">
+          Montage
+          {montageAfspraken.length > 0 && (
+            <span className="text-[10px] text-muted-foreground/50 font-mono font-normal">{montageAfspraken.length}</span>
+          )}
+        </h3>
+        <button
+          onClick={onInplannen}
+          className="text-[11px] text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+        >
+          <Plus className="h-3 w-3" />
           Inplannen
-        </Button>
+        </button>
       </div>
 
       {montageAfspraken.length === 0 ? (
-        <div className="text-center py-4 border border-dashed border-border rounded-lg">
-          <p className="text-xs text-muted-foreground mb-2">Nog niet gepland</p>
-          <Button variant="outline" size="sm" className="h-6 px-2 text-xs" onClick={onInplannen}>
-            <Plus className="h-3 w-3 mr-1" />
-            Inplannen
-          </Button>
+        <div className="text-center py-6 border border-dashed border-[hsl(35,15%,87%)] rounded-lg">
+          <div className="h-10 w-10 rounded-xl bg-orange-50 flex items-center justify-center mx-auto mb-2">
+            <Wrench className="h-5 w-5 text-orange-400" />
+          </div>
+          <p className="text-[11px] text-muted-foreground mb-2">Nog niet gepland</p>
+          <button
+            onClick={onInplannen}
+            className="text-[11px] text-foreground font-medium hover:text-foreground/80 transition-colors"
+          >
+            + Inplannen
+          </button>
         </div>
       ) : (
         <div className="space-y-2">
-          {montageAfspraken.map((m) => (
-            <div key={m.id} className="rounded-lg border border-border p-2.5 space-y-1.5">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-medium text-foreground truncate">{m.titel}</p>
-                <span className={`text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0 ${montageStatusColors[m.status] || 'bg-muted text-foreground'}`}>
-                  {m.status}
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <CalendarDays className="h-3 w-3 flex-shrink-0" />
-                <span className="font-mono">
-                  {new Date(m.datum).toLocaleDateString('nl-NL')} {m.start_tijd}–{m.eind_tijd}
-                </span>
-              </div>
-              {m.locatie && (
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <MapPin className="h-3 w-3 flex-shrink-0" />
-                  <span className="truncate">{m.locatie}</span>
+          {montageAfspraken.map((m) => {
+            const st = montageStatusConfig[m.status] || montageStatusConfig.gepland
+            const StatusIcon = st.icon
+
+            return (
+              <div key={m.id} className="rounded-lg border border-[hsl(35,15%,90%)] p-3 space-y-2 hover:border-[hsl(35,15%,82%)] transition-colors">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[12px] font-medium text-foreground truncate">{m.titel}</p>
+                  <span className={`inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full flex-shrink-0 ${st.cls}`}>
+                    <StatusIcon className="h-3 w-3" />
+                    {st.label}
+                  </span>
                 </div>
-              )}
-              {m.monteurs && m.monteurs.length > 0 && (
-                <div className="flex items-center gap-1">
-                  {m.monteurs.map((monteur) => (
-                    <div
-                      key={monteur}
-                      className="h-5 w-5 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center"
-                      title={monteur}
-                    >
-                      <span className="text-white text-[8px] font-bold">{getInitials(monteur)}</span>
+
+                <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                  <CalendarDays className="h-3 w-3 flex-shrink-0 text-muted-foreground/50" />
+                  <span className="font-mono">
+                    {new Date(m.datum).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}
+                    {' '}
+                    {m.start_tijd}–{m.eind_tijd}
+                  </span>
+                </div>
+
+                {m.locatie && (
+                  <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                    <MapPin className="h-3 w-3 flex-shrink-0 text-muted-foreground/50" />
+                    <span className="truncate">{m.locatie}</span>
+                  </div>
+                )}
+
+                {m.monteurs && m.monteurs.length > 0 && (
+                  <div className="flex items-center gap-1.5 pt-0.5">
+                    <div className="flex -space-x-1.5">
+                      {m.monteurs.map((monteur) => (
+                        <div
+                          key={monteur}
+                          className={`h-6 w-6 rounded-full bg-gradient-to-br ${monteurColor(monteur)} flex items-center justify-center ring-2 ring-white`}
+                          title={monteur}
+                        >
+                          <span className="text-white text-[8px] font-bold">{getInitials(monteur)}</span>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                  <span className="text-xs text-muted-foreground ml-1">{m.monteurs.join(', ')}</span>
-                </div>
-              )}
-            </div>
-          ))}
+                    <span className="text-[11px] text-muted-foreground/70 truncate">
+                      {m.monteurs.join(', ')}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )
+          })}
         </div>
       )}
     </div>
