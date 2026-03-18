@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ExternalLink, Send, Plus, Image, Receipt, CreditCard, MessageCircle } from 'lucide-react'
+import { ExternalLink, Send, Image, Receipt, CreditCard, MessageCircle } from 'lucide-react'
 import { toast } from 'sonner'
-import { getPortaalByProject, getPortaalItems, createPortaalItem, createPortaalBestand, getOffertesByProject, getFacturenByProject } from '@/services/supabaseService'
+import { getPortaalByProject, getPortaalItems, createPortaalItem, getOffertesByProject, getFacturenByProject } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import { uploadFile } from '@/services/storageService'
 import type { ProjectPortaal, PortaalItem, Offerte, Factuur } from '@/types'
@@ -21,27 +21,25 @@ export function PortaalCompactCard({ projectId }: PortaalCompactCardProps) {
   const [loading, setLoading] = useState(true)
 
   // Quick-add state
-  const [menuOpen, setMenuOpen] = useState(false)
-  const [subMenu, setSubMenu] = useState<'offerte' | 'factuur' | 'bericht' | null>(null)
+  const [activePopover, setActivePopover] = useState<'offerte' | 'factuur' | 'bericht' | null>(null)
   const [offertes, setOffertes] = useState<Offerte[]>([])
   const [facturen, setFacturen] = useState<Factuur[]>([])
   const [berichtTekstInput, setBerichtTekstInput] = useState('')
   const [isSending, setIsSending] = useState(false)
-  const menuRef = useRef<HTMLDivElement>(null)
+  const popoverRef = useRef<HTMLDivElement>(null)
   const fotoInputRef = useRef<HTMLInputElement>(null)
 
-  // Close menu on outside click
+  // Close popover on outside click
   useEffect(() => {
-    if (!menuOpen) return
+    if (!activePopover) return
     function handleClick(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false)
-        setSubMenu(null)
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+        setActivePopover(null)
       }
     }
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
-  }, [menuOpen])
+  }, [activePopover])
 
   async function fetchItems() {
     if (!portaal) return
@@ -111,20 +109,22 @@ export function PortaalCompactCard({ projectId }: PortaalCompactCardProps) {
 
   // ── Quick-add handlers ──
 
-  async function handleOpenOfferteMenu() {
+  async function handleOpenOffertePopover() {
+    if (activePopover === 'offerte') { setActivePopover(null); return }
     try {
       const offs = await getOffertesByProject(projectId)
       setOffertes(offs)
     } catch { setOffertes([]) }
-    setSubMenu('offerte')
+    setActivePopover('offerte')
   }
 
-  async function handleOpenFactuurMenu() {
+  async function handleOpenFactuurPopover() {
+    if (activePopover === 'factuur') { setActivePopover(null); return }
     try {
       const facts = await getFacturenByProject(projectId)
       setFacturen(facts)
     } catch { setFacturen([]) }
-    setSubMenu('factuur')
+    setActivePopover('factuur')
   }
 
   async function handleSendOfferte(offerte: Offerte) {
@@ -148,9 +148,8 @@ export function PortaalCompactCard({ projectId }: PortaalCompactCardProps) {
         zichtbaar_voor_klant: true,
         volgorde: 0,
       })
-      toast.success(`Offerte ${offerte.nummer} gedeeld via portaal`)
-      setMenuOpen(false)
-      setSubMenu(null)
+      toast.success(`Offerte ${offerte.nummer} gedeeld`)
+      setActivePopover(null)
       await fetchItems()
     } catch {
       toast.error('Kon offerte niet delen')
@@ -176,9 +175,8 @@ export function PortaalCompactCard({ projectId }: PortaalCompactCardProps) {
         zichtbaar_voor_klant: true,
         volgorde: 0,
       })
-      toast.success(`Factuur ${factuur.nummer} gedeeld via portaal`)
-      setMenuOpen(false)
-      setSubMenu(null)
+      toast.success(`Factuur ${factuur.nummer} gedeeld`)
+      setActivePopover(null)
       await fetchItems()
     } catch {
       toast.error('Kon factuur niet delen')
@@ -206,8 +204,7 @@ export function PortaalCompactCard({ projectId }: PortaalCompactCardProps) {
       })
       toast.success('Bericht verstuurd')
       setBerichtTekstInput('')
-      setMenuOpen(false)
-      setSubMenu(null)
+      setActivePopover(null)
       await fetchItems()
     } catch {
       toast.error('Kon bericht niet versturen')
@@ -235,9 +232,7 @@ export function PortaalCompactCard({ projectId }: PortaalCompactCardProps) {
         zichtbaar_voor_klant: true,
         volgorde: 0,
       })
-      toast.success('Afbeelding gedeeld via portaal')
-      setMenuOpen(false)
-      setSubMenu(null)
+      toast.success('Afbeelding gedeeld')
       await fetchItems()
     } catch {
       toast.error('Kon afbeelding niet uploaden')
@@ -246,17 +241,10 @@ export function PortaalCompactCard({ projectId }: PortaalCompactCardProps) {
     }
   }
 
-  const quickActions = [
-    { key: 'afbeelding', label: 'Afbeelding', icon: Image, color: 'text-violet-600 bg-violet-50', action: () => fotoInputRef.current?.click() },
-    { key: 'offerte', label: 'Offerte', icon: Receipt, color: 'text-amber-600 bg-amber-50', action: handleOpenOfferteMenu },
-    { key: 'factuur', label: 'Factuur', icon: CreditCard, color: 'text-emerald-600 bg-emerald-50', action: handleOpenFactuurMenu },
-    { key: 'bericht', label: 'Bericht', icon: MessageCircle, color: 'text-blue-600 bg-blue-50', action: () => setSubMenu('bericht') },
-  ]
-
   const currencyFmt = new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' })
 
   return (
-    <div className="border border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px] overflow-hidden">
+    <div className="border border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px] overflow-visible">
       {/* Hidden file input for photo upload */}
       <input
         ref={fotoInputRef}
@@ -272,7 +260,7 @@ export function PortaalCompactCard({ projectId }: PortaalCompactCardProps) {
 
       <div className="flex items-stretch">
         {/* Left accent bar */}
-        <div className={`w-1 flex-shrink-0 ${isActief ? 'bg-emerald-500' : 'bg-gray-300'}`} />
+        <div className={`w-1 rounded-l-[10px] flex-shrink-0 ${isActief ? 'bg-emerald-500' : 'bg-gray-300'}`} />
 
         {/* Content */}
         <div className="flex-1 flex items-center gap-4 px-4 py-3 min-w-0">
@@ -298,147 +286,138 @@ export function PortaalCompactCard({ projectId }: PortaalCompactCardProps) {
               </span>
             </div>
             <div className="flex items-center gap-2 mt-0.5">
-              {voortgang.totaal > 0 && (
+              {voortgang.totaal > 0 ? (
                 <span className="text-[11px] text-muted-foreground font-mono">
                   {voortgang.goedgekeurd}/{voortgang.totaal} goedgekeurd
                 </span>
-              )}
-              {voortgang.totaal === 0 && itemCount > 0 && (
+              ) : (
                 <span className="text-[11px] text-muted-foreground">
                   {itemCount} item{itemCount !== 1 ? 's' : ''}
                 </span>
-              )}
-              {voortgang.totaal === 0 && itemCount === 0 && (
-                <span className="text-[11px] text-muted-foreground">Geen items</span>
               )}
             </div>
           </div>
 
           {/* Divider */}
-          <div className="h-8 w-px bg-[hsl(35,15%,90%)] flex-shrink-0 hidden sm:block" />
+          <div className="h-8 w-px bg-[hsl(35,15%,90%)] flex-shrink-0 hidden md:block" />
 
-          {/* Last message preview */}
-          <div className="flex-1 min-w-0 hidden sm:block">
+          {/* Last message preview — constrained width */}
+          <div className="flex-1 min-w-0 max-w-[320px] hidden md:block">
             {berichtTekst ? (
-              <div className={`rounded-lg px-3 py-1.5 text-[11px] leading-snug ${
+              <div className={`inline-block max-w-full rounded-xl px-3 py-1.5 text-[11px] leading-snug ${
                 isVanBedrijf
-                  ? 'bg-emerald-50/80 rounded-br-sm'
+                  ? 'bg-emerald-50/70 rounded-br-sm'
                   : 'bg-[hsl(35,15%,96%)] rounded-bl-sm'
               }`}>
                 <p className="text-foreground/80 truncate">
-                  {berichtTekst.length > 100 ? `${berichtTekst.slice(0, 100)}…` : berichtTekst}
+                  {berichtTekst.length > 80 ? `${berichtTekst.slice(0, 80)}…` : berichtTekst}
                 </p>
                 <p className="text-[10px] text-muted-foreground/60 mt-0.5">
                   {afzenderLabel} · {berichtTijd}
                 </p>
               </div>
             ) : (
-              <p className="text-[11px] text-muted-foreground/60 italic">Nog geen berichten</p>
+              <p className="text-[11px] text-muted-foreground/50 italic">Nog geen berichten</p>
             )}
           </div>
 
-          {/* Quick-add button with dropdown */}
+          {/* Spacer */}
+          <div className="flex-1 hidden md:block" />
+
+          {/* ── Inline action toolbar ── */}
           {isActief && (
-            <div className="relative" ref={menuRef}>
-              <button
-                onClick={() => { setMenuOpen(!menuOpen); setSubMenu(null) }}
-                className="h-8 w-8 rounded-lg border border-[hsl(35,15%,85%)] flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-[hsl(35,15%,75%)] hover:bg-[hsl(35,15%,97%)] transition-all flex-shrink-0"
-              >
-                <Plus className={`h-4 w-4 transition-transform ${menuOpen ? 'rotate-45' : ''}`} />
-              </button>
+            <div className="relative flex items-center" ref={popoverRef}>
+              <div className="flex items-center gap-0.5 bg-[hsl(35,15%,96%)] rounded-lg p-0.5">
+                {([
+                  { key: 'afbeelding', icon: Image, title: 'Afbeelding', onClick: () => fotoInputRef.current?.click() },
+                  { key: 'offerte', icon: Receipt, title: 'Offerte', onClick: handleOpenOffertePopover },
+                  { key: 'factuur', icon: CreditCard, title: 'Factuur', onClick: handleOpenFactuurPopover },
+                  { key: 'bericht', icon: MessageCircle, title: 'Bericht', onClick: () => setActivePopover(activePopover === 'bericht' ? null : 'bericht') },
+                ] as const).map((a) => (
+                  <button
+                    key={a.key}
+                    onClick={a.onClick}
+                    disabled={isSending}
+                    title={a.title}
+                    className={`h-7 w-7 rounded-md flex items-center justify-center transition-all ${
+                      activePopover === a.key
+                        ? 'bg-white shadow-sm text-foreground'
+                        : 'text-muted-foreground/70 hover:text-foreground hover:bg-white/60'
+                    }`}
+                  >
+                    <a.icon className="h-3.5 w-3.5" />
+                  </button>
+                ))}
+              </div>
 
-              {menuOpen && !subMenu && (
-                <div className="absolute right-0 top-full mt-1.5 w-48 bg-[#FFFFFE] border border-[hsl(35,15%,87%)] rounded-xl shadow-lg shadow-black/8 z-50 overflow-hidden py-1">
-                  {quickActions.map((a) => (
-                    <button
-                      key={a.key}
-                      onClick={a.action}
-                      disabled={isSending}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 text-[12px] text-foreground hover:bg-[hsl(35,15%,96%)] transition-colors text-left"
-                    >
-                      <div className={`h-6 w-6 rounded-lg ${a.color} flex items-center justify-center flex-shrink-0`}>
-                        <a.icon className="h-3.5 w-3.5" />
-                      </div>
-                      {a.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {/* Sub-menu: Offerte picker */}
-              {menuOpen && subMenu === 'offerte' && (
-                <div className="absolute right-0 top-full mt-1.5 w-64 bg-[#FFFFFE] border border-[hsl(35,15%,87%)] rounded-xl shadow-lg shadow-black/8 z-50 overflow-hidden">
-                  <div className="px-3 py-2 border-b border-[hsl(35,15%,90%)]">
+              {/* Popover: Offerte picker */}
+              {activePopover === 'offerte' && (
+                <div className="absolute right-0 top-full mt-2 w-64 bg-[#FFFFFE] border border-[hsl(35,15%,87%)] rounded-xl shadow-lg shadow-black/8 z-50 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150">
+                  <div className="px-3 py-2.5 border-b border-[hsl(35,15%,90%)] bg-[hsl(35,15%,98%)]">
                     <p className="text-[11px] font-semibold text-foreground">Offerte delen via portaal</p>
                   </div>
-                  <div className="max-h-48 overflow-y-auto py-1">
+                  <div className="max-h-52 overflow-y-auto py-1">
                     {offertes.length === 0 ? (
-                      <p className="text-[11px] text-muted-foreground text-center py-4">Geen offertes gevonden</p>
+                      <p className="text-[11px] text-muted-foreground text-center py-6">Geen offertes</p>
                     ) : offertes.map((o) => (
                       <button
                         key={o.id}
                         onClick={() => handleSendOfferte(o)}
                         disabled={isSending}
-                        className="w-full flex items-center justify-between px-3 py-2 hover:bg-[hsl(35,15%,96%)] transition-colors text-left"
+                        className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-[hsl(35,15%,96%)] transition-colors text-left group"
                       >
                         <div className="min-w-0">
                           <p className="text-[12px] font-medium text-foreground truncate">{o.titel}</p>
                           <p className="text-[10px] text-muted-foreground font-mono">{o.nummer}</p>
                         </div>
-                        <span className="text-[12px] font-semibold font-mono text-foreground flex-shrink-0 ml-2">
-                          {currencyFmt.format(o.totaal)}
-                        </span>
+                        <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                          <span className="text-[12px] font-semibold font-mono text-foreground">
+                            {currencyFmt.format(o.totaal)}
+                          </span>
+                          <Send className="h-3 w-3 text-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </div>
                       </button>
                     ))}
                   </div>
-                  <button
-                    onClick={() => setSubMenu(null)}
-                    className="w-full text-[11px] text-muted-foreground py-1.5 border-t border-[hsl(35,15%,90%)] hover:bg-[hsl(35,15%,96%)] transition-colors"
-                  >
-                    ← Terug
-                  </button>
                 </div>
               )}
 
-              {/* Sub-menu: Factuur picker */}
-              {menuOpen && subMenu === 'factuur' && (
-                <div className="absolute right-0 top-full mt-1.5 w-64 bg-[#FFFFFE] border border-[hsl(35,15%,87%)] rounded-xl shadow-lg shadow-black/8 z-50 overflow-hidden">
-                  <div className="px-3 py-2 border-b border-[hsl(35,15%,90%)]">
+              {/* Popover: Factuur picker */}
+              {activePopover === 'factuur' && (
+                <div className="absolute right-0 top-full mt-2 w-64 bg-[#FFFFFE] border border-[hsl(35,15%,87%)] rounded-xl shadow-lg shadow-black/8 z-50 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150">
+                  <div className="px-3 py-2.5 border-b border-[hsl(35,15%,90%)] bg-[hsl(35,15%,98%)]">
                     <p className="text-[11px] font-semibold text-foreground">Factuur delen via portaal</p>
                   </div>
-                  <div className="max-h-48 overflow-y-auto py-1">
+                  <div className="max-h-52 overflow-y-auto py-1">
                     {facturen.length === 0 ? (
-                      <p className="text-[11px] text-muted-foreground text-center py-4">Geen facturen gevonden</p>
+                      <p className="text-[11px] text-muted-foreground text-center py-6">Geen facturen</p>
                     ) : facturen.map((f) => (
                       <button
                         key={f.id}
                         onClick={() => handleSendFactuur(f)}
                         disabled={isSending}
-                        className="w-full flex items-center justify-between px-3 py-2 hover:bg-[hsl(35,15%,96%)] transition-colors text-left"
+                        className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-[hsl(35,15%,96%)] transition-colors text-left group"
                       >
                         <div className="min-w-0">
                           <p className="text-[12px] font-medium font-mono text-foreground">{f.nummer}</p>
                           <p className="text-[10px] text-muted-foreground">{new Date(f.factuurdatum).toLocaleDateString('nl-NL')}</p>
                         </div>
-                        <span className="text-[12px] font-semibold font-mono text-foreground flex-shrink-0 ml-2">
-                          {currencyFmt.format(f.totaal)}
-                        </span>
+                        <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                          <span className="text-[12px] font-semibold font-mono text-foreground">
+                            {currencyFmt.format(f.totaal)}
+                          </span>
+                          <Send className="h-3 w-3 text-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </div>
                       </button>
                     ))}
                   </div>
-                  <button
-                    onClick={() => setSubMenu(null)}
-                    className="w-full text-[11px] text-muted-foreground py-1.5 border-t border-[hsl(35,15%,90%)] hover:bg-[hsl(35,15%,96%)] transition-colors"
-                  >
-                    ← Terug
-                  </button>
                 </div>
               )}
 
-              {/* Sub-menu: Quick bericht */}
-              {menuOpen && subMenu === 'bericht' && (
-                <div className="absolute right-0 top-full mt-1.5 w-72 bg-[#FFFFFE] border border-[hsl(35,15%,87%)] rounded-xl shadow-lg shadow-black/8 z-50 overflow-hidden">
-                  <div className="px-3 py-2 border-b border-[hsl(35,15%,90%)]">
+              {/* Popover: Bericht input */}
+              {activePopover === 'bericht' && (
+                <div className="absolute right-0 top-full mt-2 w-72 bg-[#FFFFFE] border border-[hsl(35,15%,87%)] rounded-xl shadow-lg shadow-black/8 z-50 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150">
+                  <div className="px-3 py-2.5 border-b border-[hsl(35,15%,90%)] bg-[hsl(35,15%,98%)]">
                     <p className="text-[11px] font-semibold text-foreground">Bericht naar klant</p>
                   </div>
                   <div className="p-3">
@@ -454,20 +433,16 @@ export function PortaalCompactCard({ projectId }: PortaalCompactCardProps) {
                       }}
                       placeholder="Typ een bericht..."
                       rows={3}
-                      className="w-full text-[12px] border border-[hsl(35,15%,87%)] rounded-lg px-3 py-2 resize-none focus:outline-none focus:border-emerald-400 transition-colors"
+                      className="w-full text-[12px] border border-[hsl(35,15%,87%)] rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-1 focus:ring-emerald-400/50 focus:border-emerald-400 transition-all bg-white"
                     />
                     <div className="flex items-center justify-between mt-2">
-                      <button
-                        onClick={() => { setSubMenu(null); setBerichtTekstInput('') }}
-                        className="text-[11px] text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        ← Terug
-                      </button>
+                      <span className="text-[10px] text-muted-foreground/50">Enter om te versturen</span>
                       <button
                         onClick={handleSendBericht}
                         disabled={isSending || !berichtTekstInput.trim()}
-                        className="text-[11px] font-medium bg-emerald-600 text-white px-3 py-1 rounded-lg hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                        className="flex items-center gap-1.5 text-[11px] font-medium bg-emerald-600 text-white px-3 py-1.5 rounded-lg hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                       >
+                        <Send className="h-3 w-3" />
                         Verstuur
                       </button>
                     </div>
@@ -477,10 +452,13 @@ export function PortaalCompactCard({ projectId }: PortaalCompactCardProps) {
             </div>
           )}
 
+          {/* Divider before open button */}
+          <div className="h-8 w-px bg-[hsl(35,15%,90%)] flex-shrink-0" />
+
           {/* Open portaal button */}
           <button
             onClick={() => navigate('/portalen')}
-            className="flex items-center gap-1.5 text-[11px] font-medium border border-[hsl(35,15%,85%)] rounded-lg px-3 py-1.5 text-muted-foreground hover:text-foreground hover:border-[hsl(35,15%,75%)] hover:bg-[hsl(35,15%,97%)] transition-all flex-shrink-0"
+            className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-all flex-shrink-0"
           >
             Openen
             <ExternalLink className="h-3 w-3" />
