@@ -18,7 +18,7 @@ import {
   List, ListOrdered, Link2, Sparkles, Loader2, Download,
   UserPlus, FolderPlus, FileText, ListPlus, Check, X,
   Building2, Mail, Undo2, Redo2, ExternalLink, ChevronRight,
-  Tag, Calendar, Phone, Plus, CircleCheck,
+  Tag, Calendar, Phone, Plus, CheckCircle2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Email, Klant } from '@/types'
@@ -949,7 +949,7 @@ const CRMSidebar = memo(function CRMSidebar({
             {([
               { panel: 'offerte' as const, icon: FileText, label: 'Offerte', desc: linkedKlant ? `voor ${klantDisplayName}` : 'offerte opmaken', color: 'text-blue-500', bg: 'bg-blue-50' },
               { panel: 'project' as const, icon: FolderPlus, label: 'Project', desc: linkedKlant ? `voor ${klantDisplayName}` : 'project starten', color: 'text-violet-500', bg: 'bg-violet-50' },
-              { panel: 'taak' as const, icon: CircleCheck, label: 'Taak', desc: 'opvolging plannen', color: 'text-amber-500', bg: 'bg-amber-50' },
+              { panel: 'taak' as const, icon: CheckCircle2, label: 'Taak', desc: 'opvolging plannen', color: 'text-amber-500', bg: 'bg-amber-50' },
             ]).map(({ panel, icon: Icon, label, desc, color, bg }) => (
               <button key={panel} onClick={() => openPanel(panel)}
                 className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-card hover:shadow-sm transition-all duration-150 group text-left">
