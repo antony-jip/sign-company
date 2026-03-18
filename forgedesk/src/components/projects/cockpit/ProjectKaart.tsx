@@ -40,13 +40,13 @@ const statusLabels: Record<string, string> = {
 }
 
 const statusIcons: Record<string, { color: string; bg: string }> = {
-  gepland:         { color: 'text-blue-600',    bg: 'bg-blue-50 border-blue-200' },
-  actief:          { color: 'text-emerald-600',  bg: 'bg-emerald-50 border-emerald-200' },
-  'in-review':     { color: 'text-amber-600',   bg: 'bg-amber-50 border-amber-200' },
-  afgerond:        { color: 'text-emerald-600',  bg: 'bg-emerald-50 border-emerald-200' },
-  'on-hold':       { color: 'text-orange-600',  bg: 'bg-orange-50 border-orange-200' },
-  'te-factureren': { color: 'text-violet-600',  bg: 'bg-violet-50 border-violet-200' },
-  gefactureerd:    { color: 'text-teal-600',    bg: 'bg-teal-50 border-teal-200' },
+  gepland:         { color: 'text-mist-deep',     bg: 'bg-[var(--color-mist-bg)] border-[var(--color-mist-border)]' },
+  actief:          { color: 'text-sage-deep',      bg: 'bg-[var(--color-sage-bg)] border-[var(--color-sage-border)]' },
+  'in-review':     { color: 'text-cream-deep',    bg: 'bg-[var(--color-cream-bg)] border-[var(--color-cream-border)]' },
+  afgerond:        { color: 'text-sage-deep',      bg: 'bg-[var(--color-sage-bg)] border-[var(--color-sage-border)]' },
+  'on-hold':       { color: 'text-blush-deep',    bg: 'bg-[var(--color-blush-bg)] border-[var(--color-blush-border)]' },
+  'te-factureren': { color: 'text-lavender-deep',  bg: 'bg-[var(--color-lavender-bg)] border-[var(--color-lavender-border)]' },
+  gefactureerd:    { color: 'text-sage-deep',      bg: 'bg-[var(--color-sage-bg)] border-[var(--color-sage-border)]' },
 }
 
 interface ProjectKaartProps {
@@ -136,7 +136,7 @@ export function ProjectKaart({
         <div className="flex items-center gap-2">
           <button
             onClick={onCreateOfferte}
-            className="inline-flex items-center gap-1.5 h-8 px-3.5 text-[12px] font-semibold rounded-lg bg-violet-600 text-white hover:bg-violet-700 shadow-sm transition-all"
+            className="inline-flex items-center gap-1.5 h-8 px-3.5 text-[12px] font-semibold rounded-lg bg-[#9B8EC4] text-white hover:bg-[#8A7DB3] shadow-sm transition-all"
           >
             <Receipt className="h-3.5 w-3.5" />
             Offerte

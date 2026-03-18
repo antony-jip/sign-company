@@ -12,25 +12,25 @@ import {
 
 function getFileIcon(type: string) {
   const size = 'h-4 w-4'
-  if (type.includes('pdf')) return <FileText className={`${size} text-red-500`} />
+  if (type.includes('pdf')) return <FileText className={`${size} text-[#C0451A]`} />
   if (type.includes('spreadsheet') || type.includes('xlsx') || type.includes('csv'))
-    return <FileSpreadsheet className={`${size} text-green-600`} />
+    return <FileSpreadsheet className={`${size} text-sage-deep`} />
   if (type.includes('zip') || type.includes('archive'))
-    return <FileArchive className={`${size} text-amber-600`} />
+    return <FileArchive className={`${size} text-cream-deep`} />
   if (type.includes('image') || type.includes('jpeg') || type.includes('png'))
-    return <FileImage className={`${size} text-violet-500`} />
+    return <FileImage className={`${size} text-lavender-deep`} />
   if (type.includes('illustrator') || type.includes('acad'))
-    return <File className={`${size} text-orange-500`} />
+    return <File className={`${size} text-peach-deep`} />
   return <File className={`${size} text-muted-foreground/50`} />
 }
 
 function getFileIconBg(type: string): string {
-  if (type.includes('pdf')) return 'bg-red-50'
-  if (type.includes('spreadsheet') || type.includes('xlsx') || type.includes('csv')) return 'bg-green-50'
-  if (type.includes('zip') || type.includes('archive')) return 'bg-amber-50'
-  if (type.includes('image') || type.includes('jpeg') || type.includes('png')) return 'bg-violet-50'
-  if (type.includes('illustrator') || type.includes('acad')) return 'bg-orange-50'
-  return 'bg-gray-50'
+  if (type.includes('pdf')) return 'bg-[var(--color-coral-bg)]'
+  if (type.includes('spreadsheet') || type.includes('xlsx') || type.includes('csv')) return 'bg-[var(--color-sage-bg)]'
+  if (type.includes('zip') || type.includes('archive')) return 'bg-[var(--color-cream-bg)]'
+  if (type.includes('image') || type.includes('jpeg') || type.includes('png')) return 'bg-[var(--color-lavender-bg)]'
+  if (type.includes('illustrator') || type.includes('acad')) return 'bg-peach/30'
+  return 'bg-muted'
 }
 
 function formatFileSize(bytes: number): string {
@@ -73,8 +73,8 @@ export function BestandenSection({ documenten, onUpload, onDelete }: BestandenSe
 
       {documenten.length === 0 ? (
         <div className="text-center py-6 border border-dashed border-[hsl(35,15%,87%)] rounded-lg">
-          <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center mx-auto mb-2">
-            <Upload className="h-5 w-5 text-blue-400" />
+          <div className="h-10 w-10 rounded-xl bg-mist/30 flex items-center justify-center mx-auto mb-2">
+            <Upload className="h-5 w-5 text-mist-deep" />
           </div>
           <p className="text-[11px] text-muted-foreground mb-2">Nog geen bestanden</p>
           <button
