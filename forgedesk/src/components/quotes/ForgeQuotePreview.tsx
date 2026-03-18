@@ -319,7 +319,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
   const totaal = subtotaal + totaalBtw
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div>
       {/* Action bar - only shown when accessed via route (service data available) */}
       {fetchedOfferte && (
         <div className="mb-6 space-y-3">

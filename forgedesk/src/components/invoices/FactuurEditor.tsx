@@ -959,7 +959,7 @@ export function FactuurEditor() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b px-6 py-3">
-        <div className="flex items-center justify-between max-w-7xl mx-auto">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" asChild>
               <Link to="/facturen">
@@ -1105,7 +1105,7 @@ export function FactuurEditor() {
 
       {/* Status bar for existing invoices */}
       {isEditMode && existingFactuur && (
-        <div className="max-w-7xl mx-auto px-6 pt-4">
+        <div className="px-6 pt-4">
           <div className={cn(
             'flex items-center gap-3 rounded-lg border px-4 py-2.5 text-sm',
             currentStatus === 'betaald' && 'bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-900/20 dark:border-emerald-800 dark:text-emerald-300',
@@ -1136,7 +1136,7 @@ export function FactuurEditor() {
       )}
 
       {/* Content: Two-column layout */}
-      <div className="max-w-7xl mx-auto px-6 py-6 grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-6">
+      <div className="px-6 py-6 grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-6">
         {/* LEFT PANEL: Klant & Meta */}
         <div className="space-y-4">
           {/* Klant selectie */}
