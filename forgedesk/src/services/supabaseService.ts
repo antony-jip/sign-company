@@ -950,6 +950,23 @@ export async function getEmail(id: string): Promise<Email | null> {
   return emails.find((e) => e.id === id) || null
 }
 
+/** Fetch only the body columns for a single email (fast, lightweight) */
+export async function getEmailBody(id: string): Promise<{ body_html: string | null; body_text: string | null; inhoud: string } | null> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('emails')
+      .select('body_html, body_text, inhoud')
+      .eq('id', id)
+      .maybeSingle()
+    if (error) throw error
+    return data
+  }
+  const emails = getLocalData<Email>('emails')
+  const found = emails.find((e) => e.id === id)
+  return found ? { body_html: (found as any).body_html || null, body_text: (found as any).body_text || null, inhoud: found.inhoud || '' } : null
+}
+
 export async function createEmail(email: Omit<Email, 'id' | 'created_at'>): Promise<Email> {
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase

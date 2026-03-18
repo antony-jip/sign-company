@@ -121,7 +121,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       const { data: cached } = await supabaseAdmin
         .from('emails')
-        .select('*')
+        .select('id, van, aan, onderwerp, datum, gelezen, body_html, body_text, attachment_meta, message_id')
         .eq('user_id', user_id)
         .eq('uid', Number(uid))
         .eq('imap_folder', imapFolder)

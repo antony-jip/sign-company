@@ -16,9 +16,9 @@ import {
   ChevronUp, ChevronDown, Reply, ReplyAll, Forward,
   Paperclip, Send, Bold, Italic, Underline,
   List, ListOrdered, Link2, Sparkles, Loader2, Download,
-  UserPlus, FolderPlus, FileText, ListPlus, Check,
-  Building2, Mail, Undo2, Redo2, ExternalLink,
-  Tag, Calendar, Phone,
+  UserPlus, FolderPlus, FileText, ListPlus, Check, X,
+  Building2, Mail, Undo2, Redo2, ExternalLink, ChevronRight,
+  Tag, Calendar, Phone, Plus, CircleCheck,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Email, Klant } from '@/types'
@@ -27,7 +27,7 @@ import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { callForgie } from '@/services/forgieService'
 import { toast } from 'sonner'
 import { useNavigate } from 'react-router-dom'
-import { createKlant, getKlanten } from '@/services/supabaseService'
+import { createKlant, getKlanten, createOfferte, createProject, createTaak } from '@/services/supabaseService'
 
 interface EmailReaderProps {
   email: Email | null
@@ -453,101 +453,88 @@ export function EmailReader({
 
         {/* Scrollable email content */}
         <div className="flex-1 overflow-y-auto bg-card">
-          <div className="max-w-[880px] mx-auto px-8 py-8">
-            {/* Subject */}
-            <h1 className="text-[22px] font-semibold text-foreground mb-8 leading-snug tracking-tight">
-              {email.onderwerp || '(geen onderwerp)'}
-            </h1>
-
-            {/* Sender info row */}
-            <div className="flex items-start justify-between mb-8">
-              <div className="flex items-start gap-3.5">
-                <div className={cn('w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 ring-2 ring-white shadow-sm', avatarColor)}>
-                  <span className="text-sm font-bold text-white">{senderName[0]?.toUpperCase()}</span>
-                </div>
-                <div className="pt-0.5">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[15px] font-semibold text-foreground">{senderName}</span>
-                    <span className="text-xs text-foreground/35">&lt;{senderEmail}&gt;</span>
-                  </div>
-                  <div className="text-xs text-foreground/35 mt-1">
-                    Aan: {email.aan}
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 flex-shrink-0 pt-1">
-                <span className="text-xs text-foreground/35 tabular-nums">{formatShortDate(email.datum)}</span>
+          <div className="max-w-[880px] mx-auto px-8 py-5">
+            {/* Subject + sender row — compact like Gmail */}
+            <div className="flex items-start justify-between gap-4 mb-1">
+              <h1 className="text-lg font-semibold text-foreground leading-snug tracking-tight">
+                {email.onderwerp || '(geen onderwerp)'}
+              </h1>
+              <div className="flex items-center gap-1.5 flex-shrink-0 pt-0.5">
+                <span className="text-[11px] text-foreground/30 tabular-nums whitespace-nowrap">{formatShortDate(email.datum)}</span>
                 <button
                   onClick={() => onToggleStar?.(email)}
                   className={cn(
-                    'p-1.5 rounded-md transition-all',
+                    'p-1 rounded-md transition-all',
                     email.starred
                       ? 'text-amber-400 hover:bg-amber-50'
-                      : 'text-foreground/20 hover:text-foreground/40 hover:bg-foreground/[0.04]',
+                      : 'text-foreground/15 hover:text-foreground/40 hover:bg-foreground/[0.04]',
                   )}
                 >
-                  <Star className={cn('h-4 w-4', email.starred && 'fill-amber-400')} />
+                  <Star className={cn('h-3.5 w-3.5', email.starred && 'fill-amber-400')} />
                 </button>
               </div>
             </div>
 
-            {/* Email body */}
+            {/* Sender — compact inline */}
+            <div className="flex items-center gap-2.5 mb-5 pb-4 border-b border-foreground/[0.05]">
+              <div className={cn('w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0', avatarColor)}>
+                <span className="text-xs font-bold text-white">{senderName[0]?.toUpperCase()}</span>
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-[13px] font-semibold text-foreground">{senderName}</span>
+                  <span className="text-[11px] text-foreground/25 truncate">&lt;{senderEmail}&gt;</span>
+                </div>
+                <div className="text-[11px] text-foreground/30">aan {email.aan}</div>
+              </div>
+            </div>
+
+            {/* Email body — direct, no extra spacing */}
             {isLoadingBody ? (
-              <div className="space-y-4 py-6">
-                <div className="h-4 bg-foreground/[0.04] rounded-full w-full animate-pulse" />
-                <div className="h-4 bg-foreground/[0.04] rounded-full w-4/5 animate-pulse" />
-                <div className="h-4 bg-foreground/[0.04] rounded-full w-3/4 animate-pulse" />
-                <div className="h-4 bg-foreground/[0.04] rounded-full w-5/6 animate-pulse" />
-                <div className="h-4 bg-foreground/[0.04] rounded-full w-2/3 animate-pulse" />
+              <div className="space-y-3 py-2">
+                <div className="h-4 bg-foreground/[0.04] rounded w-full animate-pulse" />
+                <div className="h-4 bg-foreground/[0.04] rounded w-[90%] animate-pulse" />
+                <div className="h-4 bg-foreground/[0.04] rounded w-3/4 animate-pulse" />
+                <div className="h-4 bg-foreground/[0.04] rounded w-[85%] animate-pulse" />
               </div>
             ) : (
               <div
-                className="text-[15px] leading-[1.7] text-foreground/80 [&_img]:max-w-full [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2 [&_table]:w-full [&_blockquote]:border-l-2 [&_blockquote]:border-foreground/15 [&_blockquote]:pl-4 [&_blockquote]:text-foreground/50 [&_p]:mb-3 [&_h1]:text-lg [&_h1]:font-semibold [&_h1]:mb-3 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mb-2 [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-3 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-3 [&_li]:mb-1"
+                className="text-[14px] leading-[1.7] text-foreground/80 [&_img]:max-w-full [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2 [&_table]:w-full [&_blockquote]:border-l-2 [&_blockquote]:border-foreground/15 [&_blockquote]:pl-4 [&_blockquote]:text-foreground/50 [&_p]:mb-2 [&_h1]:text-lg [&_h1]:font-semibold [&_h1]:mb-2 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mb-2 [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:mb-1.5 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-2 [&_li]:mb-0.5"
                 dangerouslySetInnerHTML={{ __html: sanitizedBody }}
               />
             )}
 
-            {/* Attachments */}
+            {/* Attachments — inline chips */}
             {email.bijlagen > 0 && (
-              <div className="mt-10 pt-6 border-t border-foreground/[0.06]">
-                <div className="flex items-center gap-2 text-xs text-foreground/35 mb-3 font-medium uppercase tracking-wider">
-                  <Paperclip className="h-3.5 w-3.5" />
-                  <span>{email.bijlagen} bijlage{email.bijlagen > 1 ? 'n' : ''}</span>
-                </div>
+              <div className="mt-6 pt-4 border-t border-foreground/[0.05]">
                 <div className="flex flex-wrap gap-2">
                   {Array.from({ length: email.bijlagen }).map((_, i) => (
                     <div
                       key={i}
-                      className="flex items-center gap-3 px-3.5 py-2.5 rounded-lg border border-foreground/[0.06] bg-foreground/[0.015] hover:bg-foreground/[0.03] hover:border-foreground/[0.1] transition-all duration-150 cursor-pointer group/att"
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-lg border border-foreground/[0.06] bg-foreground/[0.015] hover:bg-foreground/[0.03] hover:border-foreground/[0.1] transition-all duration-150 cursor-pointer group/att"
                     >
-                      <div className="w-8 h-8 rounded-md bg-red-500/90 text-white text-[10px] font-bold flex items-center justify-center">PDF</div>
-                      <span className="text-sm text-foreground/60 group-hover/att:text-foreground/80">bijlage-{i + 1}.pdf</span>
-                      <Download className="h-3.5 w-3.5 text-foreground/20 group-hover/att:text-foreground/45 ml-1" />
+                      <div className="w-7 h-7 rounded bg-red-500/90 text-white text-[9px] font-bold flex items-center justify-center">PDF</div>
+                      <span className="text-[13px] text-foreground/55 group-hover/att:text-foreground/80">bijlage-{i + 1}.pdf</span>
+                      <Download className="h-3 w-3 text-foreground/20 group-hover/att:text-foreground/45" />
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Reply prompt at bottom */}
-            <div className="mt-10 pt-6 border-t border-foreground/[0.06] flex items-center gap-2">
-              <button
-                onClick={() => handleReply('reply')}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-foreground/[0.08] text-sm text-foreground/50 hover:text-foreground hover:border-foreground/15 hover:bg-foreground/[0.02] transition-all duration-150"
-              >
-                <Reply className="h-4 w-4" /> Beantwoorden
+            {/* Reply buttons — compact */}
+            <div className="mt-6 pt-4 border-t border-foreground/[0.05] flex items-center gap-1.5">
+              <button onClick={() => handleReply('reply')}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-foreground/[0.08] text-[13px] text-foreground/45 hover:text-foreground hover:border-foreground/15 hover:bg-foreground/[0.02] transition-all">
+                <Reply className="h-3.5 w-3.5" /> Beantwoorden
               </button>
-              <button
-                onClick={() => handleReply('reply-all')}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-foreground/[0.08] text-sm text-foreground/50 hover:text-foreground hover:border-foreground/15 hover:bg-foreground/[0.02] transition-all duration-150"
-              >
-                <ReplyAll className="h-4 w-4" /> Allen
+              <button onClick={() => handleReply('reply-all')}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-foreground/[0.08] text-[13px] text-foreground/45 hover:text-foreground hover:border-foreground/15 hover:bg-foreground/[0.02] transition-all">
+                <ReplyAll className="h-3.5 w-3.5" /> Allen
               </button>
-              <button
-                onClick={() => handleReply('forward')}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-foreground/[0.08] text-sm text-foreground/50 hover:text-foreground hover:border-foreground/15 hover:bg-foreground/[0.02] transition-all duration-150"
-              >
-                <Forward className="h-4 w-4" /> Doorsturen
+              <button onClick={() => handleReply('forward')}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-foreground/[0.08] text-[13px] text-foreground/45 hover:text-foreground hover:border-foreground/15 hover:bg-foreground/[0.02] transition-all">
+                <Forward className="h-3.5 w-3.5" /> Doorsturen
               </button>
             </div>
           </div>
@@ -580,7 +567,9 @@ function extractCompanyName(senderName: string, email: string): string {
   return ''
 }
 
-// ─── CRM Sidebar component with inline klant creation + duplicate detection ───
+// ─── CRM Sidebar with inline actions ───
+type InlinePanel = 'none' | 'klant' | 'offerte' | 'project' | 'taak'
+
 const CRMSidebar = memo(function CRMSidebar({
   email,
   senderName,
@@ -593,125 +582,147 @@ const CRMSidebar = memo(function CRMSidebar({
   avatarColor: string
 }) {
   const navigate = useNavigate()
-  const [showAddKlant, setShowAddKlant] = useState(false)
-  const [klantSaving, setKlantSaving] = useState(false)
+  const [activePanel, setActivePanel] = useState<InlinePanel>('none')
+  const [saving, setSaving] = useState(false)
   const [linkedKlant, setLinkedKlant] = useState<Klant | null>(null)
   const [klantLoading, setKlantLoading] = useState(true)
-  const [klantForm, setKlantForm] = useState({
-    bedrijfsnaam: '',
-    contactpersoon: '',
-    email: '',
-    telefoon: '',
-  })
 
-  // Extract person name (before | or -)
+  // Klant form
+  const [klantForm, setKlantForm] = useState({ bedrijfsnaam: '', contactpersoon: '', email: '', telefoon: '' })
+  // Offerte form
+  const [offerteForm, setOfferteForm] = useState({ titel: '', notities: '' })
+  // Project form
+  const [projectForm, setProjectForm] = useState({ naam: '', beschrijving: '' })
+  // Taak form
+  const [taakForm, setTaakForm] = useState({ titel: '', beschrijving: '' })
+
   const personName = useMemo(() => senderName.replace(/\s*[|–—-]\s*.+$/, '').trim(), [senderName])
   const companyGuess = useMemo(() => extractCompanyName(senderName, senderEmail), [senderName, senderEmail])
 
-  // Look up existing klant by email domain or exact email match
+  // Look up existing klant
   useEffect(() => {
     let cancelled = false
     setKlantLoading(true)
     setLinkedKlant(null)
-
     async function findKlant() {
       try {
         const klanten = await getKlanten(500)
         const emailDomain = senderEmail.match(/@(.+)/)?.[1]?.toLowerCase()
-
-        // Priority 1: exact email match
         let match = klanten.find(k =>
           k.email?.toLowerCase() === senderEmail.toLowerCase() ||
           k.contactpersonen?.some(c => c.email?.toLowerCase() === senderEmail.toLowerCase())
         )
-
-        // Priority 2: same email domain (company match)
         if (!match && emailDomain) {
-          const genericDomains = ['gmail.com', 'hotmail.com', 'outlook.com', 'yahoo.com', 'live.nl', 'ziggo.nl', 'kpnmail.nl', 'xs4all.nl', 'planet.nl', 'hetnet.nl', 'home.nl', 'upcmail.nl']
-          if (!genericDomains.includes(emailDomain)) {
+          const generic = ['gmail.com', 'hotmail.com', 'outlook.com', 'yahoo.com', 'live.nl', 'ziggo.nl', 'kpnmail.nl', 'xs4all.nl', 'planet.nl', 'hetnet.nl', 'home.nl', 'upcmail.nl']
+          if (!generic.includes(emailDomain)) {
             match = klanten.find(k => k.email?.toLowerCase().endsWith('@' + emailDomain))
           }
         }
-
         if (!cancelled) setLinkedKlant(match || null)
-      } catch {
-        // silent
-      } finally {
-        if (!cancelled) setKlantLoading(false)
-      }
+      } catch { /* silent */ }
+      finally { if (!cancelled) setKlantLoading(false) }
     }
-
     findKlant()
     return () => { cancelled = true }
   }, [senderEmail])
 
-  // Pre-fill form when opening
-  const handleOpenAddKlant = useCallback(() => {
-    setKlantForm({
-      bedrijfsnaam: companyGuess,
-      contactpersoon: personName,
-      email: senderEmail,
-      telefoon: '',
-    })
-    setShowAddKlant(true)
-  }, [companyGuess, personName, senderEmail])
+  const klantDisplayName = linkedKlant?.bedrijfsnaam || linkedKlant?.contactpersoon || companyGuess || personName
 
-  const handleSaveKlant = useCallback(async () => {
-    if (!klantForm.contactpersoon.trim() || !klantForm.email.trim()) {
-      toast.error('Naam en email zijn verplicht')
-      return
+  // Open panels with pre-filled data
+  function openPanel(panel: InlinePanel) {
+    if (panel === 'klant') {
+      setKlantForm({ bedrijfsnaam: companyGuess, contactpersoon: personName, email: senderEmail, telefoon: '' })
+    } else if (panel === 'offerte') {
+      setOfferteForm({ titel: `Offerte - ${klantDisplayName}`, notities: `n.a.v. email: ${email.onderwerp}` })
+    } else if (panel === 'project') {
+      setProjectForm({ naam: `${klantDisplayName} - ${email.onderwerp?.slice(0, 40) || 'Nieuw project'}`, beschrijving: `n.a.v. email: ${email.onderwerp}` })
+    } else if (panel === 'taak') {
+      setTaakForm({ titel: email.onderwerp || 'Opvolging email', beschrijving: `Van: ${senderName} <${senderEmail}>\nOnderwerp: ${email.onderwerp}` })
     }
-    setKlantSaving(true)
+    setActivePanel(panel)
+  }
+
+  // ── Save handlers ──
+  async function handleSaveKlant() {
+    if (!klantForm.contactpersoon.trim() || !klantForm.email.trim()) { toast.error('Naam en email zijn verplicht'); return }
+    setSaving(true)
     try {
-      // Check for duplicates before creating
       const existing = await getKlanten(500)
-      const emailDomain = klantForm.email.match(/@(.+)/)?.[1]?.toLowerCase()
       const dupe = existing.find(k =>
         k.email?.toLowerCase() === klantForm.email.toLowerCase() ||
         (klantForm.bedrijfsnaam && k.bedrijfsnaam?.toLowerCase() === klantForm.bedrijfsnaam.toLowerCase())
       )
-      if (dupe) {
-        toast.error(`Klant "${dupe.bedrijfsnaam || dupe.contactpersoon}" bestaat al`)
-        setLinkedKlant(dupe)
-        setShowAddKlant(false)
-        return
-      }
-
+      if (dupe) { toast('Klant bestaat al — gekoppeld', { icon: '🔗' }); setLinkedKlant(dupe); setActivePanel('none'); return }
+      const emailDomain = klantForm.email.match(/@(.+)/)?.[1]?.toLowerCase()
       const newKlant = await createKlant({
-        bedrijfsnaam: klantForm.bedrijfsnaam,
-        contactpersoon: klantForm.contactpersoon,
-        email: klantForm.email,
-        telefoon: klantForm.telefoon,
-        adres: '',
-        postcode: '',
-        stad: '',
-        land: 'Nederland',
+        bedrijfsnaam: klantForm.bedrijfsnaam, contactpersoon: klantForm.contactpersoon,
+        email: klantForm.email, telefoon: klantForm.telefoon,
+        adres: '', postcode: '', stad: '', land: 'Nederland',
         website: emailDomain ? `www.${emailDomain}` : '',
-        kvk_nummer: '',
-        btw_nummer: '',
-        status: 'actief',
-        tags: [],
-        notities: '',
-        contactpersonen: [{
-          id: crypto.randomUUID(),
-          naam: klantForm.contactpersoon,
-          functie: '',
-          email: klantForm.email,
-          telefoon: klantForm.telefoon,
-          is_primair: true,
-        }],
+        kvk_nummer: '', btw_nummer: '', status: 'actief', tags: [], notities: '',
+        contactpersonen: [{ id: crypto.randomUUID(), naam: klantForm.contactpersoon, functie: '', email: klantForm.email, telefoon: klantForm.telefoon, is_primair: true }],
       })
       setLinkedKlant(newKlant)
-      setShowAddKlant(false)
+      setActivePanel('none')
       toast.success('Klant aangemaakt')
-    } catch {
-      toast.error('Klant aanmaken mislukt')
-    } finally {
-      setKlantSaving(false)
-    }
-  }, [klantForm])
+    } catch { toast.error('Klant aanmaken mislukt') }
+    finally { setSaving(false) }
+  }
 
-  // Format the email date nicely
+  async function handleSaveOfferte() {
+    if (!offerteForm.titel.trim()) { toast.error('Titel is verplicht'); return }
+    if (!linkedKlant) { toast.error('Eerst een klant koppelen'); openPanel('klant'); return }
+    setSaving(true)
+    try {
+      const nr = `OFF-${Date.now().toString(36).toUpperCase()}`
+      const offerte = await createOfferte({
+        klant_id: linkedKlant.id, klant_naam: klantDisplayName,
+        nummer: nr, titel: offerteForm.titel, status: 'concept',
+        subtotaal: 0, btw_bedrag: 0, totaal: 0,
+        geldig_tot: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
+        notities: offerteForm.notities, voorwaarden: '',
+      })
+      setActivePanel('none')
+      toast.success('Offerte aangemaakt', {
+        action: { label: 'Openen', onClick: () => navigate(`/offertes/${offerte.id}`) },
+      })
+    } catch { toast.error('Offerte aanmaken mislukt') }
+    finally { setSaving(false) }
+  }
+
+  async function handleSaveProject() {
+    if (!projectForm.naam.trim()) { toast.error('Naam is verplicht'); return }
+    if (!linkedKlant) { toast.error('Eerst een klant koppelen'); openPanel('klant'); return }
+    setSaving(true)
+    try {
+      const project = await createProject({
+        klant_id: linkedKlant.id, naam: projectForm.naam,
+        beschrijving: projectForm.beschrijving, status: 'gepland',
+        prioriteit: 'medium', budget: 0, besteed: 0, voortgang: 0, team_leden: [],
+      })
+      setActivePanel('none')
+      toast.success('Project aangemaakt', {
+        action: { label: 'Openen', onClick: () => navigate(`/projecten/${project.id}`) },
+      })
+    } catch { toast.error('Project aanmaken mislukt') }
+    finally { setSaving(false) }
+  }
+
+  async function handleSaveTaak() {
+    if (!taakForm.titel.trim()) { toast.error('Titel is verplicht'); return }
+    setSaving(true)
+    try {
+      await createTaak({
+        titel: taakForm.titel, beschrijving: taakForm.beschrijving,
+        status: 'todo', prioriteit: 'medium', toegewezen_aan: '', geschatte_tijd: 0, bestede_tijd: 0,
+        klant_id: linkedKlant?.id || '',
+      })
+      setActivePanel('none')
+      toast.success('Taak aangemaakt')
+    } catch { toast.error('Taak aanmaken mislukt') }
+    finally { setSaving(false) }
+  }
+
   const emailDate = useMemo(() => {
     if (!email.datum) return null
     try {
@@ -723,193 +734,237 @@ const CRMSidebar = memo(function CRMSidebar({
     } catch { return null }
   }, [email.datum])
 
+  // ── Inline form panel ──
+  function renderInlinePanel() {
+    if (activePanel === 'none') return null
+
+    const panelConfig = {
+      klant: {
+        title: 'Contact toevoegen',
+        color: 'bg-emerald-500',
+        onSave: handleSaveKlant,
+        fields: (
+          <>
+            {[
+              { key: 'bedrijfsnaam' as const, placeholder: 'Bedrijfsnaam', icon: Building2 },
+              { key: 'contactpersoon' as const, placeholder: 'Contactpersoon *', icon: UserPlus },
+              { key: 'email' as const, placeholder: 'Email *', icon: Mail },
+              { key: 'telefoon' as const, placeholder: 'Telefoon', icon: Phone },
+            ].map(({ key, placeholder, icon: Icon }) => (
+              <div key={key} className="relative">
+                <Icon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-foreground/20" />
+                <input value={klantForm[key]} onChange={e => setKlantForm(f => ({ ...f, [key]: e.target.value }))}
+                  className="w-full pl-8 pr-2.5 py-2 text-[13px] bg-foreground/[0.02] border border-foreground/[0.06] rounded-lg outline-none focus:border-primary/30 focus:bg-card transition-colors placeholder:text-foreground/25"
+                  placeholder={placeholder} />
+              </div>
+            ))}
+          </>
+        ),
+      },
+      offerte: {
+        title: 'Offerte aanmaken',
+        color: 'bg-blue-500',
+        onSave: handleSaveOfferte,
+        fields: (
+          <>
+            {linkedKlant && (
+              <div className="flex items-center gap-2 px-2.5 py-1.5 bg-blue-50/50 rounded-lg text-[11px] text-blue-600">
+                <Building2 className="h-3 w-3" />
+                <span className="truncate">{klantDisplayName}</span>
+              </div>
+            )}
+            <input value={offerteForm.titel} onChange={e => setOfferteForm(f => ({ ...f, titel: e.target.value }))}
+              className="w-full px-2.5 py-2 text-[13px] bg-foreground/[0.02] border border-foreground/[0.06] rounded-lg outline-none focus:border-primary/30 focus:bg-card transition-colors placeholder:text-foreground/25"
+              placeholder="Titel *" />
+            <textarea value={offerteForm.notities} onChange={e => setOfferteForm(f => ({ ...f, notities: e.target.value }))}
+              className="w-full px-2.5 py-2 text-[13px] bg-foreground/[0.02] border border-foreground/[0.06] rounded-lg outline-none focus:border-primary/30 focus:bg-card transition-colors placeholder:text-foreground/25 resize-none h-16"
+              placeholder="Notities" />
+          </>
+        ),
+      },
+      project: {
+        title: 'Project aanmaken',
+        color: 'bg-violet-500',
+        onSave: handleSaveProject,
+        fields: (
+          <>
+            {linkedKlant && (
+              <div className="flex items-center gap-2 px-2.5 py-1.5 bg-violet-50/50 rounded-lg text-[11px] text-violet-600">
+                <Building2 className="h-3 w-3" />
+                <span className="truncate">{klantDisplayName}</span>
+              </div>
+            )}
+            <input value={projectForm.naam} onChange={e => setProjectForm(f => ({ ...f, naam: e.target.value }))}
+              className="w-full px-2.5 py-2 text-[13px] bg-foreground/[0.02] border border-foreground/[0.06] rounded-lg outline-none focus:border-primary/30 focus:bg-card transition-colors placeholder:text-foreground/25"
+              placeholder="Projectnaam *" />
+            <textarea value={projectForm.beschrijving} onChange={e => setProjectForm(f => ({ ...f, beschrijving: e.target.value }))}
+              className="w-full px-2.5 py-2 text-[13px] bg-foreground/[0.02] border border-foreground/[0.06] rounded-lg outline-none focus:border-primary/30 focus:bg-card transition-colors placeholder:text-foreground/25 resize-none h-16"
+              placeholder="Beschrijving" />
+          </>
+        ),
+      },
+      taak: {
+        title: 'Taak toevoegen',
+        color: 'bg-amber-500',
+        onSave: handleSaveTaak,
+        fields: (
+          <>
+            {linkedKlant && (
+              <div className="flex items-center gap-2 px-2.5 py-1.5 bg-amber-50/50 rounded-lg text-[11px] text-amber-600">
+                <Building2 className="h-3 w-3" />
+                <span className="truncate">{klantDisplayName}</span>
+              </div>
+            )}
+            <input value={taakForm.titel} onChange={e => setTaakForm(f => ({ ...f, titel: e.target.value }))}
+              className="w-full px-2.5 py-2 text-[13px] bg-foreground/[0.02] border border-foreground/[0.06] rounded-lg outline-none focus:border-primary/30 focus:bg-card transition-colors placeholder:text-foreground/25"
+              placeholder="Taak titel *" />
+            <textarea value={taakForm.beschrijving} onChange={e => setTaakForm(f => ({ ...f, beschrijving: e.target.value }))}
+              className="w-full px-2.5 py-2 text-[13px] bg-foreground/[0.02] border border-foreground/[0.06] rounded-lg outline-none focus:border-primary/30 focus:bg-card transition-colors placeholder:text-foreground/25 resize-none h-16"
+              placeholder="Beschrijving" />
+          </>
+        ),
+      },
+    }
+
+    const cfg = panelConfig[activePanel]
+    return (
+      <div className="bg-card rounded-xl border border-foreground/[0.06] shadow-sm overflow-hidden">
+        <div className={cn('flex items-center justify-between px-3.5 py-2.5', cfg.color)}>
+          <h4 className="text-[12px] font-semibold text-white">{cfg.title}</h4>
+          <button onClick={() => setActivePanel('none')} className="text-white/60 hover:text-white transition-colors">
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+        <div className="p-3 space-y-2.5">
+          {cfg.fields}
+          <button onClick={cfg.onSave} disabled={saving}
+            className={cn('w-full flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-white text-xs font-semibold disabled:opacity-50 transition-colors', cfg.color, 'hover:opacity-90')}>
+            {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+            {saving ? 'Opslaan...' : 'Opslaan'}
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="w-[280px] border-l border-foreground/[0.06] bg-gradient-to-b from-[#FAFAF8] to-[#F5F5F2] flex-shrink-0 overflow-y-auto hidden xl:flex flex-col">
-      <div className="p-5 space-y-4 flex-1">
-        {/* ── Contact card ── */}
-        <div className="text-center pb-4 border-b border-foreground/[0.06]">
-          <div className={cn('w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2.5 ring-2 ring-white shadow-md', avatarColor)}>
-            <span className="text-base font-bold text-white">{senderName[0]?.toUpperCase()}</span>
+    <div className="w-[280px] border-l border-foreground/[0.06] bg-gradient-to-b from-[#FAFAF8] to-[#F5F4F0] flex-shrink-0 overflow-y-auto hidden xl:flex flex-col">
+      <div className="p-4 space-y-3 flex-1">
+        {/* ── Contact header ── */}
+        <div className="bg-card rounded-xl p-4 shadow-sm border border-foreground/[0.04]">
+          <div className="flex items-start gap-3">
+            <div className={cn('w-10 h-10 rounded-full flex items-center justify-center ring-2 ring-white shadow flex-shrink-0', avatarColor)}>
+              <span className="text-sm font-bold text-white">{senderName[0]?.toUpperCase()}</span>
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[13px] font-semibold text-foreground leading-tight truncate">{personName}</p>
+              {companyGuess && (
+                <p className="text-[11px] text-foreground/40 truncate mt-0.5">{companyGuess}</p>
+              )}
+              <p className="text-[11px] text-foreground/30 truncate mt-0.5">{senderEmail}</p>
+            </div>
           </div>
-          <p className="text-[13px] font-semibold text-foreground leading-tight">{personName}</p>
-          {companyGuess && (
-            <p className="text-xs text-foreground/45 mt-0.5">{companyGuess}</p>
-          )}
-          <div className="flex items-center justify-center gap-1 mt-1.5">
-            <Mail className="h-3 w-3 text-foreground/25" />
-            <span className="text-[11px] text-foreground/40">{senderEmail}</span>
+          {/* Mini contact details */}
+          <div className="mt-3 pt-2.5 border-t border-foreground/[0.05] space-y-1.5">
+            {email.aan && (
+              <div className="flex items-center gap-2 text-[11px] text-foreground/40">
+                <Send className="h-3 w-3 text-foreground/20 flex-shrink-0" />
+                <span className="truncate">Aan: {email.aan}</span>
+              </div>
+            )}
+            {emailDate && (
+              <div className="flex items-center gap-2 text-[11px] text-foreground/40">
+                <Calendar className="h-3 w-3 text-foreground/20 flex-shrink-0" />
+                <span>{emailDate.date}, {emailDate.time}</span>
+              </div>
+            )}
+            {email.bijlagen > 0 && (
+              <div className="flex items-center gap-2 text-[11px] text-foreground/40">
+                <Paperclip className="h-3 w-3 text-foreground/20 flex-shrink-0" />
+                <span>{email.bijlagen} bijlage{email.bijlagen > 1 ? 'n' : ''}</span>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* ── Linked company card ── */}
+        {/* ── Linked klant ── */}
         {klantLoading ? (
-          <div className="flex items-center gap-2 text-xs text-foreground/30 py-2">
+          <div className="flex items-center gap-2 text-[11px] text-foreground/25 px-1 py-1">
             <Loader2 className="h-3 w-3 animate-spin" />
             <span>Klant zoeken...</span>
           </div>
         ) : linkedKlant ? (
           <button
             onClick={() => navigate(`/klanten/${linkedKlant.id}`)}
-            className="w-full bg-white rounded-xl p-3.5 shadow-sm border border-foreground/[0.05] hover:shadow-md hover:border-foreground/[0.1] transition-all duration-200 text-left group"
+            className="w-full bg-card rounded-xl p-3 shadow-sm border border-foreground/[0.04] hover:shadow-md hover:border-primary/10 transition-all duration-200 text-left group"
           >
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-8 h-8 rounded-lg bg-primary/8 flex items-center justify-center flex-shrink-0">
-                  <Building2 className="h-4 w-4 text-primary/60" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[13px] font-medium text-foreground truncate">
-                    {linkedKlant.bedrijfsnaam || linkedKlant.contactpersoon}
-                  </p>
-                  <p className="text-[11px] text-foreground/40 truncate">
-                    {linkedKlant.bedrijfsnaam ? linkedKlant.contactpersoon : linkedKlant.email}
-                  </p>
-                </div>
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                <Building2 className="h-4 w-4 text-emerald-500/70" />
               </div>
-              <ExternalLink className="h-3.5 w-3.5 text-foreground/20 group-hover:text-primary/50 flex-shrink-0 mt-0.5 transition-colors" />
+              <div className="min-w-0 flex-1">
+                <p className="text-[12px] font-medium text-foreground truncate">{linkedKlant.bedrijfsnaam || linkedKlant.contactpersoon}</p>
+                <p className="text-[10px] text-foreground/35 truncate">{linkedKlant.bedrijfsnaam ? linkedKlant.contactpersoon : linkedKlant.email}</p>
+              </div>
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                <span className={cn(
+                  'px-1.5 py-0.5 rounded text-[9px] font-medium',
+                  linkedKlant.status === 'actief' ? 'bg-emerald-50 text-emerald-600' :
+                  linkedKlant.status === 'prospect' ? 'bg-amber-50 text-amber-600' : 'bg-gray-100 text-gray-500'
+                )}>{linkedKlant.status || 'actief'}</span>
+                <ChevronRight className="h-3 w-3 text-foreground/15 group-hover:text-primary/40 transition-colors" />
+              </div>
             </div>
             {linkedKlant.telefoon && (
               <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-foreground/[0.04]">
-                <Phone className="h-3 w-3 text-foreground/25" />
-                <span className="text-[11px] text-foreground/40">{linkedKlant.telefoon}</span>
+                <Phone className="h-3 w-3 text-foreground/20" />
+                <span className="text-[10px] text-foreground/35">{linkedKlant.telefoon}</span>
               </div>
             )}
-            <div className="mt-2 pt-2 border-t border-foreground/[0.04]">
-              <span className={cn(
-                'inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium',
-                linkedKlant.status === 'actief' ? 'bg-emerald-50 text-emerald-600' :
-                linkedKlant.status === 'prospect' ? 'bg-amber-50 text-amber-600' :
-                'bg-gray-100 text-gray-500'
-              )}>
-                {linkedKlant.status || 'actief'}
-              </span>
-            </div>
           </button>
-        ) : (
-          /* No linked klant — show add button */
-          !showAddKlant && (
-            <button
-              onClick={handleOpenAddKlant}
-              className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-dashed border-foreground/[0.12] text-[13px] text-foreground/45 hover:border-primary/30 hover:text-primary hover:bg-primary/[0.03] transition-all duration-200"
-            >
-              <UserPlus className="h-4 w-4" />
-              Contact toevoegen
-            </button>
-          )
-        )}
+        ) : activePanel !== 'klant' ? (
+          <button onClick={() => openPanel('klant')}
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-dashed border-foreground/[0.10] text-[12px] text-foreground/40 hover:border-primary/25 hover:text-primary hover:bg-primary/[0.02] transition-all duration-200">
+            <Plus className="h-3.5 w-3.5" />
+            Contact koppelen
+          </button>
+        ) : null}
 
-        {/* ── Inline add klant form ── */}
-        {showAddKlant && (
-          <div className="bg-white rounded-xl border border-foreground/[0.06] p-3.5 shadow-sm space-y-2.5">
-            <div className="flex items-center justify-between mb-1">
-              <h4 className="text-[11px] font-semibold text-foreground/50 uppercase tracking-wider">Nieuw contact</h4>
-              <button onClick={() => setShowAddKlant(false)} className="text-foreground/25 hover:text-foreground/50 transition-colors">
-                <ArrowLeft className="h-3.5 w-3.5" />
-              </button>
-            </div>
-            {[
-              { key: 'bedrijfsnaam' as const, label: 'Bedrijf', placeholder: 'Bedrijf B.V.', icon: Building2 },
-              { key: 'contactpersoon' as const, label: 'Naam *', placeholder: 'Volledige naam', icon: UserPlus },
-              { key: 'email' as const, label: 'Email *', placeholder: 'email@bedrijf.nl', icon: Mail, type: 'email' },
-              { key: 'telefoon' as const, label: 'Telefoon', placeholder: '06-12345678', icon: Phone, type: 'tel' },
-            ].map(({ key, placeholder, icon: Icon, type }) => (
-              <div key={key} className="relative">
-                <Icon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-foreground/20" />
-                <input
-                  type={type || 'text'}
-                  value={klantForm[key]}
-                  onChange={(e) => setKlantForm(f => ({ ...f, [key]: e.target.value }))}
-                  className="w-full pl-8 pr-2.5 py-2 text-[13px] bg-foreground/[0.02] border border-foreground/[0.08] rounded-lg outline-none focus:border-primary/30 focus:bg-white transition-colors placeholder:text-foreground/20"
-                  placeholder={placeholder}
-                />
-              </div>
+        {/* ── Labels ── */}
+        {email.labels && email.labels.length > 0 && (
+          <div className="flex flex-wrap gap-1 px-0.5">
+            {email.labels.map(label => (
+              <span key={label} className="px-2 py-0.5 bg-primary/6 text-primary rounded-full text-[10px] font-medium">{label}</span>
             ))}
-            <button
-              onClick={handleSaveKlant}
-              disabled={klantSaving}
-              className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg bg-primary text-white text-xs font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors mt-1"
-            >
-              {klantSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
-              {klantSaving ? 'Opslaan...' : 'Contact opslaan'}
-            </button>
           </div>
         )}
 
-        <div className="border-t border-foreground/[0.06]" />
+        {/* ── Inline panel ── */}
+        {renderInlinePanel()}
 
-        {/* ── Quick actions ── */}
-        <div>
-          <h3 className="text-[11px] font-semibold text-foreground/30 uppercase tracking-wider mb-2">Acties</h3>
-          <div className="grid grid-cols-2 gap-1.5">
-            {[
-              { icon: FileText, label: 'Offerte', path: '/offertes/nieuw', color: 'text-blue-500/70 bg-blue-50' },
-              { icon: FolderPlus, label: 'Project', path: '/projecten/nieuw', color: 'text-violet-500/70 bg-violet-50' },
-              { icon: ListPlus, label: 'Taak', path: '/taken', color: 'text-amber-500/70 bg-amber-50' },
-              { icon: UserPlus, label: 'Klant', path: linkedKlant ? `/klanten/${linkedKlant.id}` : '', color: 'text-emerald-500/70 bg-emerald-50', onClick: linkedKlant ? undefined : handleOpenAddKlant },
-            ].map(({ icon: Icon, label, path, color, onClick }) => (
-              <button
-                key={label}
-                onClick={onClick || (() => {
-                  const params = new URLSearchParams()
-                  if (linkedKlant) params.set('klant_id', linkedKlant.id)
-                  else if (senderName) params.set('klant_naam', personName)
-                  const query = params.toString()
-                  navigate(path + (query ? `?${query}` : ''))
-                })}
-                className="flex flex-col items-center gap-1.5 p-2.5 rounded-xl hover:bg-card hover:shadow-sm border border-transparent hover:border-foreground/[0.05] transition-all duration-200"
-              >
-                <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center', color)}>
-                  <Icon className="h-4 w-4" />
+        {/* ── Quick action buttons ── */}
+        {activePanel === 'none' && (
+          <div className="space-y-1">
+            <h3 className="text-[10px] font-semibold text-foreground/25 uppercase tracking-wider px-0.5 mb-1.5">Snel aanmaken</h3>
+            {([
+              { panel: 'offerte' as const, icon: FileText, label: 'Offerte', desc: linkedKlant ? `voor ${klantDisplayName}` : 'offerte opmaken', color: 'text-blue-500', bg: 'bg-blue-50' },
+              { panel: 'project' as const, icon: FolderPlus, label: 'Project', desc: linkedKlant ? `voor ${klantDisplayName}` : 'project starten', color: 'text-violet-500', bg: 'bg-violet-50' },
+              { panel: 'taak' as const, icon: CircleCheck, label: 'Taak', desc: 'opvolging plannen', color: 'text-amber-500', bg: 'bg-amber-50' },
+            ]).map(({ panel, icon: Icon, label, desc, color, bg }) => (
+              <button key={panel} onClick={() => openPanel(panel)}
+                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-card hover:shadow-sm transition-all duration-150 group text-left">
+                <div className={cn('w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0', bg)}>
+                  <Icon className={cn('h-3.5 w-3.5', color)} />
                 </div>
-                <span className="text-[11px] text-foreground/50 font-medium">{label}</span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[12px] font-medium text-foreground/70 group-hover:text-foreground transition-colors">{label}</p>
+                  <p className="text-[10px] text-foreground/30 truncate">{desc}</p>
+                </div>
+                <Plus className="h-3 w-3 text-foreground/15 group-hover:text-foreground/30 transition-colors flex-shrink-0" />
               </button>
             ))}
           </div>
-        </div>
-
-        <div className="border-t border-foreground/[0.06]" />
-
-        {/* ── Email details ── */}
-        <div>
-          <h3 className="text-[11px] font-semibold text-foreground/30 uppercase tracking-wider mb-2.5">Details</h3>
-          <div className="space-y-2.5">
-            {emailDate && (
-              <div className="flex items-center gap-2.5 text-xs">
-                <Calendar className="h-3.5 w-3.5 text-foreground/20 flex-shrink-0" />
-                <span className="text-foreground/50">{emailDate.date}</span>
-                <span className="text-foreground/30 ml-auto">{emailDate.time}</span>
-              </div>
-            )}
-            <div className="flex items-center gap-2.5 text-xs">
-              <Mail className="h-3.5 w-3.5 text-foreground/20 flex-shrink-0" />
-              <span className="text-foreground/50 capitalize">{email.map || 'inbox'}</span>
-            </div>
-            {email.bijlagen > 0 && (
-              <div className="flex items-center gap-2.5 text-xs">
-                <Paperclip className="h-3.5 w-3.5 text-foreground/20 flex-shrink-0" />
-                <span className="text-foreground/50">{email.bijlagen} bijlage{email.bijlagen > 1 ? 'n' : ''}</span>
-              </div>
-            )}
-            {email.labels && email.labels.length > 0 && (
-              <div className="flex items-start gap-2.5 text-xs">
-                <Tag className="h-3.5 w-3.5 text-foreground/20 flex-shrink-0 mt-0.5" />
-                <div className="flex flex-wrap gap-1">
-                  {email.labels.map(label => (
-                    <span key={label} className="px-1.5 py-0.5 bg-primary/8 text-primary rounded text-[10px] font-medium">
-                      {label}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-            {email.aan && (
-              <div className="flex items-center gap-2.5 text-xs">
-                <Send className="h-3.5 w-3.5 text-foreground/20 flex-shrink-0" />
-                <span className="text-foreground/50 truncate">{email.aan}</span>
-              </div>
-            )}
-          </div>
-        </div>
+        )}
       </div>
     </div>
   )
