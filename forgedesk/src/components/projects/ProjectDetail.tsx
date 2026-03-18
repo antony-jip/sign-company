@@ -41,7 +41,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogTrigger,
   DialogFooter,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
@@ -104,7 +103,7 @@ import { ProjectPhotoGallery } from './ProjectPhotoGallery'
 import { VisualisatieGallery } from '@/components/visualizer/VisualisatieGallery'
 import { WerkbonVanProjectDialog } from '@/components/werkbonnen/WerkbonVanProjectDialog'
 import { ProjectKaart } from './cockpit/ProjectKaart'
-import { PortaalPanel } from './cockpit/PortaalPanel'
+import { PortaalSidebarCard } from './cockpit/PortaalSidebarCard'
 import { TaskChecklistView } from './cockpit/TaskChecklistView'
 import { BriefingCard } from './cockpit/BriefingCard'
 import { TakenOfferteGrid } from './cockpit/TakenOfferteGrid'
@@ -913,16 +912,6 @@ export function ProjectDetail() {
             }}
           />
 
-          {/* Portaal (conditioneel) */}
-          {project && (
-            <PortaalPanel
-              projectId={project.id}
-              projectNaam={project.naam}
-              klant={klant}
-              inline
-            />
-          )}
-
         </div>{/* einde main content */}
 
         {/* ── Sidebar ── */}
@@ -935,6 +924,9 @@ export function ProjectDetail() {
               onInplannen={handleOpenMontageDialog}
             />
           </div>
+
+          {/* Portaal (conditioneel — toont alleen bij actief portaal) */}
+          <PortaalSidebarCard projectId={id!} />
 
           {/* Bestanden */}
           <div className="bg-card border border-border rounded-xl p-4">
@@ -1499,146 +1491,6 @@ export function ProjectDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-            <Dialog open={nieuweTaakOpen} onOpenChange={(open) => {
-              setNieuweTaakOpen(open)
-              if (!open) {
-                setNieuweTaakTitel('')
-                setNieuweTaakBeschrijving('')
-                setNieuweTaakToegewezen('')
-                setNieuweTaakDeadline('')
-                setNieuweTaakStatus('todo')
-                setNieuweTaakPrioriteit('medium')
-              }
-            }}>
-              <DialogTrigger asChild>
-                <Button size="sm" className="">
-                  <Plus className="mr-1.5 h-4 w-4" />
-                  Nieuwe Taak
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Nieuwe taak toevoegen</DialogTitle>
-                  <DialogDescription>
-                    Voeg een nieuwe taak toe aan dit project.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="taak-titel">Titel</Label>
-                    <Input
-                      id="taak-titel"
-                      placeholder="Titel van de taak..."
-                      value={nieuweTaakTitel}
-                      onChange={(e) => setNieuweTaakTitel(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="taak-beschrijving">Beschrijving</Label>
-                    <Input
-                      id="taak-beschrijving"
-                      placeholder="Beschrijving..."
-                      value={nieuweTaakBeschrijving}
-                      onChange={(e) => setNieuweTaakBeschrijving(e.target.value)}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Status</Label>
-                      <Select value={nieuweTaakStatus} onValueChange={(v) => setNieuweTaakStatus(v as Taak['status'])}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="todo">Todo</SelectItem>
-                          <SelectItem value="bezig">Bezig</SelectItem>
-                          <SelectItem value="review">Review</SelectItem>
-                          <SelectItem value="klaar">Klaar</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Prioriteit</Label>
-                      <Select value={nieuweTaakPrioriteit} onValueChange={(v) => setNieuweTaakPrioriteit(v as Taak['prioriteit'])}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="laag">Laag</SelectItem>
-                          <SelectItem value="medium">Medium</SelectItem>
-                          <SelectItem value="hoog">Hoog</SelectItem>
-                          <SelectItem value="kritiek">Kritiek</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="taak-toegewezen">Toegewezen aan</Label>
-                      <Select value={nieuweTaakToegewezen} onValueChange={setNieuweTaakToegewezen}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecteer teamlid..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {alleMedewerkers.map((m) => (
-                            <SelectItem key={m.id} value={m.naam}>
-                              {m.naam}
-                            </SelectItem>
-                          ))}
-                          {projectToewijzingen.length > 0 && alleMedewerkers.length === 0 && (
-                            <SelectItem value="_empty" disabled>Geen medewerkers gevonden</SelectItem>
-                          )}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="taak-deadline">Deadline</Label>
-                      <Input
-                        id="taak-deadline"
-                        type="date"
-                        value={nieuweTaakDeadline}
-                        onChange={(e) => setNieuweTaakDeadline(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setNieuweTaakOpen(false)}>
-                    Annuleren
-                  </Button>
-                  <Button
-                    disabled={!nieuweTaakTitel.trim()}
-                    className=""
-                    onClick={async () => {
-                      try {
-                        await createTaak({
-                          user_id: user?.id || '',
-                          project_id: id!,
-                          titel: nieuweTaakTitel.trim(),
-                          beschrijving: nieuweTaakBeschrijving.trim(),
-                          status: nieuweTaakStatus,
-                          prioriteit: nieuweTaakPrioriteit,
-                          toegewezen_aan: nieuweTaakToegewezen.trim(),
-                          deadline: nieuweTaakDeadline || new Date().toISOString().split('T')[0],
-                          geschatte_tijd: 0,
-                          bestede_tijd: 0,
-                        })
-                        toast.success(`Taak "${nieuweTaakTitel}" toegevoegd`)
-                        setNieuweTaakOpen(false)
-                        setNieuweTaakTitel('')
-                        setNieuweTaakBeschrijving('')
-                        setNieuweTaakToegewezen('')
-                        setNieuweTaakDeadline('')
-                        setNieuweTaakStatus('todo')
-                        setNieuweTaakPrioriteit('medium')
-                        await fetchTaken()
-                      } catch (err) {
-                        logger.error('Fout bij aanmaken taak:', err)
-                        toast.error('Kon taak niet aanmaken')
-                      }
-                    }}
-                  >
-                    Taak toevoegen
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
 
           {/* Email offerte dialog */}
           <Dialog open={emailOfferteOpen} onOpenChange={(open) => {
