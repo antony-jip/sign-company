@@ -1,11 +1,11 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { toast } from 'sonner'
-import { X, RefreshCw, Send, Loader2 } from 'lucide-react'
+import { X, RefreshCw, Send, Loader2, Paperclip } from 'lucide-react'
 import { generateFollowUpEmail, sendFollowUpEmail } from '@/services/followUpService'
-import type { FollowUpContext } from '@/services/followUpService'
+import type { FollowUpContext, FollowUpEmailResult } from '@/services/followUpService'
 import { updateOfferte, getPortaalByProject } from '@/services/supabaseService'
 import { logWijziging } from '@/utils/auditLogger'
 import { cn } from '@/lib/utils'
@@ -38,6 +38,15 @@ export function FollowUpMailPanel({
   const [portaalLink, setPortaalLink] = useState(true)
   const [portaalUrl, setPortaalUrl] = useState<string | null>(null)
   const [bijlage, setBijlage] = useState(false)
+  const [bijlagen, setBijlagen] = useState<File[]>([])
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setBijlagen((prev) => [...prev, ...Array.from(e.target.files!)])
+      e.target.value = '' // reset zodat hetzelfde bestand opnieuw gekozen kan worden
+    }
+  }
 
   // Calculate days
   const dagenOpen = offerte.verstuurd_op
@@ -73,6 +82,74 @@ export function FollowUpMailPanel({
     checkPortaal()
   }, [offerte.project_id])
 
+  // Slimme fallback template die de offerte-context begrijpt
+  const buildFallbackEmail = useCallback((): FollowUpEmailResult => {
+    const contactpersoon = klant?.contactpersonen?.find((c) => c.is_primair)?.naam || klant?.contactpersoon || ''
+    const voornaam = contactpersoon.split(' ')[0] || contactpersoon
+    const afzender = profile?.voornaam || ''
+    const bedrijf = profile?.bedrijfsnaam || ''
+    const bedrag = new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(offerte.totaal || 0)
+    const pogingen = offerte.contact_pogingen || 0
+
+    let aanhef = voornaam ? `Beste ${voornaam}` : 'Beste'
+    let body: string
+
+    if (dagenOpen <= 7) {
+      // Vriendelijke check-in
+      body = `${aanhef},
+
+Graag wilde ik even informeren of u de offerte ${offerte.nummer} voor "${offerte.titel}" (${bedrag}) heeft kunnen bekijken.
+
+${offerte.geldig_tot ? `De offerte is geldig tot ${new Intl.DateTimeFormat('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(offerte.geldig_tot))}.` : ''}
+
+Mocht u nog vragen hebben of iets willen bespreken, dan hoor ik het graag. U kunt de offerte ook direct online bekijken en goedkeuren via deze link: [PORTAAL_LINK]
+
+${afzender}
+${bedrijf}`
+    } else if (dagenOpen <= 14) {
+      // Iets directer
+      body = `${aanhef},
+
+${pogingen > 0 ? 'Ik kom nog even terug op ' : 'Ik wilde graag even opvolgen over '}onze offerte ${offerte.nummer} voor "${offerte.titel}" ter waarde van ${bedrag}.
+
+Heeft u de offerte kunnen bekijken? Ik help u graag als er nog vragen zijn over de specificaties of mogelijkheden. We kunnen ook telefonisch even doornemen wat de beste aanpak is.
+
+Bekijk de offerte direct online: [PORTAAL_LINK]
+
+${afzender}
+${bedrijf}`
+    } else if (dagenOpen <= 21) {
+      // Urgenter
+      body = `${aanhef},
+
+Onze offerte ${offerte.nummer} voor "${offerte.titel}" (${bedrag}) staat nu ${dagenOpen} dagen open.${offerte.geldig_tot && dagenTotVerlopen <= 7 ? ` Let op: de offerte verloopt over ${dagenTotVerlopen} dagen.` : ''}
+
+Zijn er nog punten die u tegengehouden hebben? Ik denk graag met u mee over eventuele aanpassingen of alternatieven.
+
+U kunt de offerte hier direct bekijken en goedkeuren: [PORTAAL_LINK]
+
+${afzender}
+${bedrijf}`
+    } else {
+      // Laatste poging
+      body = `${aanhef},
+
+${pogingen > 1 ? `Ik heb u eerder ${pogingen}x benaderd` : 'Ik heb u eerder benaderd'} over offerte ${offerte.nummer} — "${offerte.titel}" (${bedrag}).
+
+Ik begrijp dat prioriteiten kunnen verschuiven. Laat me weten of dit project nog actueel is, dan kijken we samen naar de volgende stap. Als de huidige offerte niet meer aansluit, maak ik graag een aangepast voorstel.
+
+${afzender}
+${bedrijf}`
+    }
+
+    return {
+      onderwerp: pogingen > 0
+        ? `Re: Offerte ${offerte.nummer} — ${offerte.titel}`
+        : `Opvolging offerte ${offerte.nummer} — ${offerte.titel}`,
+      body,
+    }
+  }, [offerte, klant, profile, dagenOpen, dagenTotVerlopen])
+
   const generate = useCallback(async () => {
     setIsGenerating(true)
     try {
@@ -98,12 +175,15 @@ export function FollowUpMailPanel({
       const result = await generateFollowUpEmail(context)
       setOnderwerp(result.onderwerp)
       setBody(result.body)
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'AI email generatie mislukt')
+    } catch {
+      // Fallback: genereer contextbewuste template zonder AI
+      const fallback = buildFallbackEmail()
+      setOnderwerp(fallback.onderwerp)
+      setBody(fallback.body)
     } finally {
       setIsGenerating(false)
     }
-  }, [offerte, klant, project, profile, dagenOpen, dagenTotVerlopen])
+  }, [offerte, klant, project, profile, dagenOpen, dagenTotVerlopen, buildFallbackEmail])
 
   // Generate on mount
   useEffect(() => { generate() }, [generate])
@@ -125,33 +205,40 @@ export function FollowUpMailPanel({
         finalBody = finalBody.replace(/[^\n]*\[PORTAAL_LINK\][^\n]*/g, '').replace(/\n{3,}/g, '\n\n')
       }
 
-      // Send email
-      await sendFollowUpEmail({
-        to,
-        subject: onderwerp,
-        body: finalBody,
-      })
+      const isDemo = offerte.id.startsWith('demo-')
 
-      // Update offerte
-      await updateOfferte(offerte.id, {
-        contact_pogingen: (offerte.contact_pogingen || 0) + 1,
-        laatste_contact: new Date().toISOString(),
-        follow_up_datum: new Date().toISOString().split('T')[0],
-        follow_up_status: 'afgerond',
-      })
-
-      // Audit log
-      try {
-        await logWijziging({
-          userId,
-          entityType: 'offerte',
-          entityId: offerte.id,
-          actie: 'verstuurd',
-          medewerkerNaam: profile ? `${profile.voornaam} ${profile.achternaam}` : '',
-          omschrijving: `Follow-up email verstuurd naar ${to}`,
+      if (isDemo) {
+        // Demo modus: simuleer verzending
+        await new Promise((r) => setTimeout(r, 800))
+      } else {
+        // Send email
+        await sendFollowUpEmail({
+          to,
+          subject: onderwerp,
+          body: finalBody,
         })
-      } catch {
-        // Non-critical
+
+        // Update offerte
+        await updateOfferte(offerte.id, {
+          contact_pogingen: (offerte.contact_pogingen || 0) + 1,
+          laatste_contact: new Date().toISOString(),
+          follow_up_datum: new Date().toISOString().split('T')[0],
+          follow_up_status: 'afgerond',
+        })
+
+        // Audit log
+        try {
+          await logWijziging({
+            userId,
+            entityType: 'offerte',
+            entityId: offerte.id,
+            actie: 'verstuurd',
+            medewerkerNaam: profile ? `${profile.voornaam} ${profile.achternaam}` : '',
+            omschrijving: `Follow-up email verstuurd naar ${to}`,
+          })
+        } catch {
+          // Non-critical
+        }
       }
 
       toast.success(`Follow-up verstuurd naar ${klant?.bedrijfsnaam || to}`)
@@ -246,6 +333,46 @@ export function FollowUpMailPanel({
                   <label className="text-sm">Offerte PDF als bijlage</label>
                   <Switch checked={bijlage} onCheckedChange={setBijlage} />
                 </div>
+              </div>
+
+              {/* Bijlagen uploaden */}
+              <div className="space-y-2 pt-1">
+                <label className="text-sm font-medium">Bijlagen</label>
+                <div
+                  className="border-2 border-dashed rounded-xl px-4 py-3 text-center cursor-pointer hover:border-[var(--color-lavender-border)] hover:bg-[var(--color-lavender)]/10 transition-colors"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Paperclip className="w-4 h-4 mx-auto text-muted-foreground mb-1" />
+                  <p className="text-xs text-muted-foreground">Klik om bestanden toe te voegen</p>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    className="hidden"
+                    onChange={handleFileSelect}
+                  />
+                </div>
+                {bijlagen.length > 0 && (
+                  <div className="space-y-1.5">
+                    {bijlagen.map((file, i) => (
+                      <div key={i} className="flex items-center gap-2 text-sm bg-muted/40 rounded-lg px-3 py-1.5">
+                        <Paperclip className="w-3 h-3 text-muted-foreground shrink-0" />
+                        <span className="truncate flex-1">{file.name}</span>
+                        <span className="text-xs text-muted-foreground shrink-0">
+                          {file.size < 1024 * 1024
+                            ? `${Math.round(file.size / 1024)} KB`
+                            : `${(file.size / (1024 * 1024)).toFixed(1)} MB`}
+                        </span>
+                        <button
+                          onClick={() => setBijlagen((prev) => prev.filter((_, idx) => idx !== i))}
+                          className="p-0.5 rounded hover:bg-muted transition-colors shrink-0"
+                        >
+                          <X className="w-3 h-3 text-muted-foreground" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </>
           )}
