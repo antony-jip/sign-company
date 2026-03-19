@@ -67,8 +67,9 @@ import { exportCSV, exportExcel } from '@/lib/export'
 import { round2 } from '@/utils/budgetUtils'
 import { logger } from '../../utils/logger'
 import { SkeletonTable } from '@/components/ui/skeleton'
+import { QuotesFollowUp } from './QuotesFollowUp'
 
-type ViewMode = 'pipeline' | 'lijst'
+type ViewMode = 'pipeline' | 'lijst' | 'follow-up'
 type SortOption = 'newest' | 'oldest' | 'highest' | 'expiring'
 type PriorityFilter = 'alle' | 'laag' | 'medium' | 'hoog' | 'urgent'
 type StatusFilter = 'alle' | 'concept' | 'verzonden' | 'bekeken' | 'goedgekeurd' | 'afgewezen' | 'verlopen' | 'gefactureerd' | 'wacht_op_reactie'
@@ -732,7 +733,7 @@ export function QuotesPipeline() {
       </div>
 
       {/* ── Search + Filters ── */}
-      <div className="flex flex-col gap-3">
+      {viewMode !== 'follow-up' && <div className="flex flex-col gap-3">
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -766,6 +767,43 @@ export function QuotesPipeline() {
                 title="Kanban"
               >
                 <LayoutGrid className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => setViewMode('follow-up')}
+                className={cn(
+                  'p-1.5 rounded transition-colors relative',
+                  viewMode === 'follow-up' ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                )}
+                title="Follow-up"
+              >
+                <BellRing className="w-3.5 h-3.5" />
+                {(() => {
+                  const now = Date.now()
+                  const drieD = 3 * 86400000
+                  const vijfD = 5 * 86400000
+                  const fuCount = offertes.filter((o) => {
+                    if (o.status !== 'verzonden' && o.status !== 'bekeken') return false
+                    if (o.verstuurd_op && (now - new Date(o.verstuurd_op).getTime()) > drieD) return true
+                    if (o.follow_up_datum && new Date(o.follow_up_datum).getTime() <= now) return true
+                    if (o.geldig_tot) {
+                      const vt = new Date(o.geldig_tot).getTime()
+                      if (vt - now <= vijfD && vt > now) return true
+                    }
+                    return false
+                  })
+                  const hasOld = fuCount.some((o) => {
+                    const d = o.verstuurd_op || o.created_at
+                    return d ? (now - new Date(d).getTime()) > 7 * 86400000 : false
+                  })
+                  return fuCount.length > 0 ? (
+                    <span className={cn(
+                      'absolute -top-1 -right-1 min-w-[16px] h-4 rounded-full text-[10px] font-bold flex items-center justify-center text-white px-1',
+                      hasOld ? 'bg-orange-500' : 'bg-[var(--color-lavender-text)]'
+                    )}>
+                      {fuCount.length}
+                    </span>
+                  ) : null
+                })()}
               </button>
             </div>
             <button
@@ -856,7 +894,7 @@ export function QuotesPipeline() {
           onChange={setDagenOpenFilter}
           items={offertes.filter((o) => OPEN_STATUSES.includes(o.status)).map((o) => ({ dateField: o.created_at }))}
         />
-      </div>
+      </div>}
 
       {/* Pipeline Settings Panel */}
       {showPipelineSettings && (
@@ -1655,6 +1693,11 @@ export function QuotesPipeline() {
             </div>
           )}
         </>
+      )}
+
+      {/* ── Follow-up View ── */}
+      {viewMode === 'follow-up' && (
+        <QuotesFollowUp offertes={offertes} onRefresh={loadOffertes} />
       )}
       </div>
       </div>
