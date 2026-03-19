@@ -104,6 +104,202 @@ function sorteerOpUrgentie(a: Offerte, b: Offerte): number {
   return bPogingen - aPogingen
 }
 
+// ── Demo data voor testen ──
+const DEMO_KLANT_ID = 'demo-klant-001'
+const DEMO_KLANT_ID_2 = 'demo-klant-002'
+const DEMO_KLANT_ID_3 = 'demo-klant-003'
+
+function daysAgo(n: number): string {
+  const d = new Date()
+  d.setDate(d.getDate() - n)
+  return d.toISOString()
+}
+
+function daysFromNow(n: number): string {
+  const d = new Date()
+  d.setDate(d.getDate() + n)
+  return d.toISOString().split('T')[0]
+}
+
+const DEMO_OFFERTES: Offerte[] = [
+  {
+    id: 'demo-off-001',
+    klant_id: DEMO_KLANT_ID,
+    klant_naam: 'Bakkerij De Gouden Krakeling',
+    nummer: 'OFF-2026-0042',
+    titel: 'Gevelletters met LED verlichting',
+    status: 'verzonden',
+    subtotaal: 3450,
+    btw_bedrag: 724.50,
+    totaal: 4174.50,
+    geldig_tot: daysFromNow(4),
+    notities: '',
+    voorwaarden: '',
+    verstuurd_op: daysAgo(10),
+    contact_pogingen: 1,
+    laatste_contact: daysAgo(5),
+    follow_up_status: 'gepland',
+    prioriteit: 'hoog',
+    created_at: daysAgo(12),
+    updated_at: daysAgo(5),
+  },
+  {
+    id: 'demo-off-002',
+    klant_id: DEMO_KLANT_ID_2,
+    klant_naam: 'Autobedrijf Van Dijk & Zonen',
+    nummer: 'OFF-2026-0039',
+    titel: 'Autobelettering wagenpark (8 voertuigen)',
+    status: 'bekeken',
+    subtotaal: 6800,
+    btw_bedrag: 1428,
+    totaal: 8228,
+    geldig_tot: daysFromNow(12),
+    notities: '',
+    voorwaarden: '',
+    verstuurd_op: daysAgo(7),
+    bekeken_door_klant: true,
+    eerste_bekeken_op: daysAgo(5),
+    laatst_bekeken_op: daysAgo(2),
+    aantal_keer_bekeken: 3,
+    contact_pogingen: 0,
+    created_at: daysAgo(8),
+    updated_at: daysAgo(2),
+  },
+  {
+    id: 'demo-off-003',
+    klant_id: DEMO_KLANT_ID_3,
+    klant_naam: 'Tandartspraktijk Smile Care',
+    nummer: 'OFF-2026-0035',
+    titel: 'Raambelettering + zuil signing',
+    status: 'verzonden',
+    subtotaal: 1850,
+    btw_bedrag: 388.50,
+    totaal: 2238.50,
+    geldig_tot: daysFromNow(18),
+    notities: '',
+    voorwaarden: '',
+    verstuurd_op: daysAgo(15),
+    contact_pogingen: 2,
+    laatste_contact: daysAgo(3),
+    follow_up_status: 'achterstallig',
+    created_at: daysAgo(16),
+    updated_at: daysAgo(3),
+  },
+  {
+    id: 'demo-off-004',
+    klant_id: DEMO_KLANT_ID,
+    klant_naam: 'Bakkerij De Gouden Krakeling',
+    nummer: 'OFF-2026-0044',
+    titel: 'Lichtreclame uithangbord',
+    status: 'verzonden',
+    subtotaal: 2200,
+    btw_bedrag: 462,
+    totaal: 2662,
+    geldig_tot: daysFromNow(2),
+    notities: '',
+    voorwaarden: '',
+    verstuurd_op: daysAgo(20),
+    contact_pogingen: 0,
+    prioriteit: 'urgent',
+    created_at: daysAgo(21),
+    updated_at: daysAgo(20),
+  },
+  {
+    id: 'demo-off-005',
+    klant_id: DEMO_KLANT_ID_2,
+    klant_naam: 'Autobedrijf Van Dijk & Zonen',
+    nummer: 'OFF-2026-0041',
+    titel: 'Showroom wanddecoratie',
+    status: 'bekeken',
+    subtotaal: 4500,
+    btw_bedrag: 945,
+    totaal: 5445,
+    geldig_tot: daysFromNow(25),
+    notities: '',
+    voorwaarden: '',
+    verstuurd_op: daysAgo(5),
+    bekeken_door_klant: true,
+    eerste_bekeken_op: daysAgo(3),
+    laatst_bekeken_op: daysAgo(1),
+    aantal_keer_bekeken: 5,
+    contact_pogingen: 0,
+    created_at: daysAgo(6),
+    updated_at: daysAgo(1),
+  },
+]
+
+const DEMO_KLANTEN: Klant[] = [
+  {
+    id: DEMO_KLANT_ID,
+    bedrijfsnaam: 'Bakkerij De Gouden Krakeling',
+    contactpersoon: 'Jan de Bakker',
+    email: 'jan@goudenkrakeling.nl',
+    telefoon: '06-12345678',
+    adres: 'Broodstraat 12',
+    postcode: '1234 AB',
+    stad: 'Amsterdam',
+    land: 'Nederland',
+    website: '',
+    kvk_nummer: '',
+    btw_nummer: '',
+    status: 'actief',
+    tags: [],
+    notities: '',
+    contactpersonen: [
+      { id: 'cp-1', naam: 'Jan de Bakker', functie: 'Eigenaar', email: 'jan@goudenkrakeling.nl', telefoon: '06-12345678', is_primair: true },
+    ],
+    vestigingen: [],
+    created_at: daysAgo(90),
+    updated_at: daysAgo(10),
+  },
+  {
+    id: DEMO_KLANT_ID_2,
+    bedrijfsnaam: 'Autobedrijf Van Dijk & Zonen',
+    contactpersoon: 'Peter van Dijk',
+    email: 'peter@vandijkenzonen.nl',
+    telefoon: '06-98765432',
+    adres: 'Autoweg 45',
+    postcode: '5678 CD',
+    stad: 'Rotterdam',
+    land: 'Nederland',
+    website: '',
+    kvk_nummer: '',
+    btw_nummer: '',
+    status: 'actief',
+    tags: [],
+    notities: '',
+    contactpersonen: [
+      { id: 'cp-2', naam: 'Peter van Dijk', functie: 'Directeur', email: 'peter@vandijkenzonen.nl', telefoon: '06-98765432', is_primair: true },
+    ],
+    vestigingen: [],
+    created_at: daysAgo(120),
+    updated_at: daysAgo(7),
+  },
+  {
+    id: DEMO_KLANT_ID_3,
+    bedrijfsnaam: 'Tandartspraktijk Smile Care',
+    contactpersoon: 'Dr. Lisa Molenaar',
+    email: 'info@smilecare.nl',
+    telefoon: '06-55512345',
+    adres: 'Gezondheidslaan 8',
+    postcode: '9012 EF',
+    stad: 'Utrecht',
+    land: 'Nederland',
+    website: '',
+    kvk_nummer: '',
+    btw_nummer: '',
+    status: 'actief',
+    tags: [],
+    notities: '',
+    contactpersonen: [
+      { id: 'cp-3', naam: 'Dr. Lisa Molenaar', functie: 'Praktijkhouder', email: 'info@smilecare.nl', telefoon: '06-55512345', is_primair: true },
+    ],
+    vestigingen: [],
+    created_at: daysAgo(60),
+    updated_at: daysAgo(15),
+  },
+]
+
 export function QuotesFollowUp({ offertes, onRefresh }: QuotesFollowUpProps) {
   const { user } = useAuth()
   const { profile } = useAppSettings()
@@ -128,7 +324,10 @@ export function QuotesFollowUp({ offertes, onRefresh }: QuotesFollowUpProps) {
           getKlanten(),
           getProjecten(),
         ])
-        setKlanten(new Map(klantenData.map((k) => [k.id, k])))
+        // Merge demo klanten met echte klanten
+        const klantenMap = new Map(klantenData.map((k) => [k.id, k]))
+        DEMO_KLANTEN.forEach((k) => klantenMap.set(k.id, k))
+        setKlanten(klantenMap)
         setProjecten(new Map(projectenData.map((p) => [p.id, p])))
       } catch (err) {
         console.error('Fout bij laden klanten/projecten:', err)
@@ -139,9 +338,10 @@ export function QuotesFollowUp({ offertes, onRefresh }: QuotesFollowUpProps) {
     load()
   }, [])
 
-  // Filter offertes die follow-up nodig hebben
+  // Merge demo offertes met echte offertes en filter op follow-up nodig
   const followUpOffertes = useMemo(() => {
-    return offertes.filter(isFollowUpNodig).sort(sorteerOpUrgentie)
+    const alleOffertes = [...offertes, ...DEMO_OFFERTES]
+    return alleOffertes.filter(isFollowUpNodig).sort(sorteerOpUrgentie)
   }, [offertes])
 
   // Apply sub-filter
