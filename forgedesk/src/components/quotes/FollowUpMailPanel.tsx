@@ -315,6 +315,34 @@ ${bedrijf}`
                 />
               </div>
 
+              {/* Acties direct onder bericht */}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={generate}
+                  disabled={isGenerating || isSending}
+                  className="gap-1.5"
+                >
+                  <RefreshCw className={cn('w-3.5 h-3.5', isGenerating && 'animate-spin')} />
+                  Herschrijven
+                </Button>
+                <div className="flex-1" />
+                <Button
+                  size="sm"
+                  onClick={handleSend}
+                  disabled={isGenerating || isSending || !to}
+                  className="gap-1.5 bg-[var(--color-lavender-text)] hover:bg-[var(--color-lavender-text)]/90 text-white"
+                >
+                  {isSending ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Send className="w-3.5 h-3.5" />
+                  )}
+                  Verstuur follow-up
+                </Button>
+              </div>
+
               {/* Toggles */}
               <div className="space-y-3 pt-2">
                 <div className="flex items-center justify-between">
@@ -378,41 +406,6 @@ ${bedrijf}`
           )}
         </div>
 
-        {/* Footer */}
-        <div className="px-6 py-4 border-t flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={generate}
-            disabled={isGenerating || isSending}
-            className="gap-1.5"
-          >
-            <RefreshCw className={cn('w-3.5 h-3.5', isGenerating && 'animate-spin')} />
-            Opnieuw genereren
-          </Button>
-          <div className="flex-1" />
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClose}
-            disabled={isSending}
-          >
-            Annuleren
-          </Button>
-          <Button
-            size="sm"
-            onClick={handleSend}
-            disabled={isGenerating || isSending || !to}
-            className="gap-1.5 bg-[var(--color-lavender-text)] hover:bg-[var(--color-lavender-text)]/90 text-white"
-          >
-            {isSending ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <Send className="w-3.5 h-3.5" />
-            )}
-            Verstuur follow-up
-          </Button>
-        </div>
       </div>
     </>
   )
