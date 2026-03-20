@@ -741,63 +741,45 @@ tbody tr:hover {
 }
 
 /* ================================================================
-   SIDEBAR — Deep dark, refined
+   SIDEBAR — Doen. vertical navigation
    ================================================================ */
-.wm-sidebar {
-  background: hsl(var(--wm-sidebar-bg));
-  border-right: 1px solid hsl(var(--border) / 0.7);
+.doen-sidebar {
+  background: #FAFAF8;
+  border-right: 0.5px solid #E6E4E0;
   position: relative;
 }
 
-.wm-sidebar > * {
+.dark .doen-sidebar {
+  background: hsl(var(--wm-sidebar-bg));
+  border-right-color: hsl(var(--border) / 0.7);
+}
+
+/* Keep old class for backward compat (mobile bottom nav etc.) */
+.wm-sidebar {
+  background: #FAFAF8;
+  border-right: 0.5px solid #E6E4E0;
+  position: relative;
+}
+
+.dark .wm-sidebar {
+  background: hsl(var(--wm-sidebar-bg));
+  border-right-color: hsl(var(--border) / 0.7);
+}
+
+.wm-sidebar > *,
+.doen-sidebar > * {
   position: relative;
   z-index: 1;
 }
 
-.wm-sidebar-item {
-  position: relative;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.wm-sidebar-item::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 3px;
-  height: 0;
-  border-radius: 0 4px 4px 0;
-  background: linear-gradient(180deg, var(--wm-gradient-start), var(--wm-gradient-end));
-  transition: height 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.wm-sidebar-item.active::before {
-  height: 60%;
-}
-
-.wm-sidebar-item.active {
-  background: hsl(var(--primary) / 0.08);
-}
-
-/* Section label in sidebar */
-.wm-sidebar-section {
+/* Section label in sidebar (expanded mode) */
+.doen-sidebar-section {
   font-size: 9px;
-  font-weight: 800;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: #a09788;
-  padding: 20px 16px 8px;
-  position: relative;
-}
-.wm-sidebar-section::before {
-  content: '';
-  position: absolute;
-  left: 16px;
-  right: 16px;
-  top: 10px;
-  height: 1px;
-  background: linear-gradient(90deg, hsl(var(--border) / 0.5), transparent);
+  letter-spacing: 1.5px;
+  color: #A0A098;
+  padding: 20px 12px 6px;
 }
 
 /* ================================================================
@@ -2381,20 +2363,19 @@ html {
 .sidebar-logo-mark {
   width: 34px;
   height: 34px;
-  border-radius: 10px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 900;
   font-size: 15px;
   color: white;
-  background: linear-gradient(135deg, hsl(var(--accent)) 0%, hsl(28, 50%, 42%) 100%);
-  box-shadow: 0 2px 10px rgba(204, 138, 63, 0.3), inset 0 1px 0 rgba(255,255,255,0.15);
-  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  background: #1A535C;
+  transition: transform 0.2s ease;
   flex-shrink: 0;
 }
 .sidebar-logo-mark:hover {
-  transform: scale(1.08) rotate(-3deg);
+  transform: scale(1.05);
 }
 
 /* Premium page header with accent strip */
