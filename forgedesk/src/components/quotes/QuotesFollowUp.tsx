@@ -773,7 +773,7 @@ export function QuotesFollowUp({ offertes, onRefresh }: QuotesFollowUpProps) {
                     <div className="flex items-center gap-3 mt-2 text-sm flex-wrap">
                       <Badge className={cn(
                         'text-xs',
-                        offerte.status === 'verzonden' ? 'badge-mist' : 'badge-cream'
+                        offerte.status === 'verzonden' ? 'badge-blauw' : 'badge-grijs'
                       )}>
                         {offerte.status === 'verzonden' ? (
                           <><EyeOff className="w-3 h-3 mr-1" />Verstuurd (niet bekeken)</>

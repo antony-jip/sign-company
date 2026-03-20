@@ -98,10 +98,10 @@ const KLEUR_TO_STYLE: Record<string, { color: string; accent: string; headerBg: 
 }
 
 const PRIORITY_COLORS: Record<string, string> = {
-  laag: 'badge-sage',
-  medium: 'badge-cream',
-  hoog: 'badge-blush',
-  urgent: 'badge-coral',
+  laag: 'badge-petrol',
+  medium: 'badge-grijs',
+  hoog: 'badge-flame',
+  urgent: 'badge-flame',
 }
 
 const STATUS_BADGE_COLORS: Record<string, string> = {

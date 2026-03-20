@@ -159,9 +159,9 @@ const STATUS_CONFIG: Record<FactuurStatus, { label: string; color: string; borde
 
 const TYPE_CONFIG: Record<FactuurType, { label: string; prefix: string; color: string }> = {
   standaard: { label: 'Factuur', prefix: 'FAC', color: '' },
-  voorschot: { label: 'Voorschot', prefix: 'VS', color: 'badge-lavender' },
-  creditnota: { label: 'Creditnota', prefix: 'CN', color: 'badge-coral' },
-  eindafrekening: { label: 'Eindafrekening', prefix: 'EA', color: 'badge-sage' },
+  voorschot: { label: 'Voorschot', prefix: 'VS', color: 'badge-paars' },
+  creditnota: { label: 'Creditnota', prefix: 'CN', color: 'badge-flame' },
+  eindafrekening: { label: 'Eindafrekening', prefix: 'EA', color: 'badge-petrol' },
 }
 
 const FILTER_OPTIONS: { value: FilterStatus; label: string }[] = [

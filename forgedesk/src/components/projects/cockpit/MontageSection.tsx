@@ -4,11 +4,11 @@ import { getInitials } from '@/lib/utils'
 import type { MontageAfspraak } from '@/types'
 
 const montageStatusConfig: Record<string, { label: string; cls: string; icon: typeof Clock }> = {
-  gepland:    { label: 'Gepland',    cls: 'badge-mist',      icon: CalendarDays },
-  onderweg:   { label: 'Onderweg',   cls: 'badge-cream',     icon: Truck },
-  bezig:      { label: 'Bezig',      cls: 'badge-lavender',  icon: Wrench },
-  afgerond:   { label: 'Afgerond',   cls: 'badge-sage',      icon: CheckCircle2 },
-  uitgesteld: { label: 'Uitgesteld', cls: 'badge-blush',     icon: PauseCircle },
+  gepland:    { label: 'Gepland',    cls: 'badge-blauw',     icon: CalendarDays },
+  onderweg:   { label: 'Onderweg',   cls: 'badge-grijs',     icon: Truck },
+  bezig:      { label: 'Bezig',      cls: 'badge-paars',     icon: Wrench },
+  afgerond:   { label: 'Afgerond',   cls: 'badge-petrol',    icon: CheckCircle2 },
+  uitgesteld: { label: 'Uitgesteld', cls: 'badge-flame',     icon: PauseCircle },
 }
 
 // Deterministic color from name
@@ -51,9 +51,9 @@ export function MontageSection({ montageAfspraken, onInplannen }: MontageSection
       </div>
 
       {montageAfspraken.length === 0 ? (
-        <div className="text-center py-6 border border-dashed border-[hsl(35,15%,87%)] rounded-lg">
-          <div className="h-10 w-10 rounded-xl bg-peach/30 flex items-center justify-center mx-auto mb-2">
-            <Wrench className="h-5 w-5 text-peach-deep" />
+        <div className="text-center py-6 border border-dashed border-sand rounded-lg">
+          <div className="h-10 w-10 rounded-xl bg-mod-planning-light flex items-center justify-center mx-auto mb-2">
+            <Wrench className="h-5 w-5 text-mod-planning-text" />
           </div>
           <p className="text-[11px] text-muted-foreground mb-2">Nog niet gepland</p>
           <button
@@ -70,7 +70,7 @@ export function MontageSection({ montageAfspraken, onInplannen }: MontageSection
             const StatusIcon = st.icon
 
             return (
-              <div key={m.id} className="rounded-lg border border-[hsl(35,15%,90%)] p-3 space-y-2 hover:border-[hsl(35,15%,82%)] transition-colors">
+              <div key={m.id} className="rounded-lg border border-sand p-3 space-y-2 hover:border-sand transition-colors">
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-[12px] font-medium text-foreground truncate">{m.titel}</p>
                   <span className={`inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full flex-shrink-0 ${st.cls}`}>

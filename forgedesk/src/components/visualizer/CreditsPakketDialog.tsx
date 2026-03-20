@@ -32,22 +32,22 @@ const PAKKET_ICONS: Record<string, React.ElementType> = {
 
 const PAKKET_KLEUREN: Record<string, { bg: string; border: string; icon: string; badge: string }> = {
   starter: {
-    bg: 'bg-mist/10',
-    border: 'border-mist/60 hover:border-mist',
-    icon: 'text-mist-deep',
-    badge: 'bg-mist/20 text-mist-deep',
+    bg: 'bg-mod-klanten-light',
+    border: 'border-mod-klanten-border hover:border-mod-klanten-border',
+    icon: 'text-mod-klanten-text',
+    badge: 'bg-mod-klanten-light text-mod-klanten-text',
   },
   professional: {
-    bg: 'bg-blush/10',
-    border: 'border-blush/60 hover:border-blush',
-    icon: 'text-blush-deep',
-    badge: 'bg-blush text-white',
+    bg: 'bg-petrol-light',
+    border: 'border-petrol-border hover:border-petrol',
+    icon: 'text-petrol',
+    badge: 'bg-petrol text-white',
   },
   enterprise: {
-    bg: 'bg-sage/10',
-    border: 'border-sage/60 hover:border-sage',
-    icon: 'text-sage-deep',
-    badge: 'bg-sage/20 text-sage-deep',
+    bg: 'bg-petrol-light',
+    border: 'border-petrol-border hover:border-petrol',
+    icon: 'text-petrol',
+    badge: 'bg-petrol-light text-petrol',
   },
 }
 
@@ -121,8 +121,8 @@ export function CreditsPakketDialog({
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-lg">
-            <div className="p-2 rounded-lg bg-blush/20">
-              <Coins className="h-5 w-5 text-blush-deep" />
+            <div className="p-2 rounded-lg bg-petrol-light">
+              <Coins className="h-5 w-5 text-petrol" />
             </div>
             Credits aanschaffen
           </DialogTitle>
@@ -183,7 +183,7 @@ export function CreditsPakketDialog({
         {geselecteerdPakket && (
           <div className="mt-4 space-y-3">
             <Button
-              className="w-full gap-2 bg-sage-deep hover:bg-sage-deep/90 text-white h-12 text-base font-medium"
+              className="w-full gap-2 bg-petrol hover:bg-petrol/90 text-white h-12 text-base font-medium"
               onClick={() => handleStripeCheckout(geselecteerdPakket)}
               disabled={isLoading}
             >

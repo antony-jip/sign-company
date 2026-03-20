@@ -12,24 +12,24 @@ import {
 
 function getFileIcon(type: string) {
   const size = 'h-4 w-4'
-  if (type.includes('pdf')) return <FileText className={`${size} text-[#C0451A]`} />
+  if (type.includes('pdf')) return <FileText className={`${size} text-mod-werkbonnen-text`} />
   if (type.includes('spreadsheet') || type.includes('xlsx') || type.includes('csv'))
-    return <FileSpreadsheet className={`${size} text-sage-deep`} />
+    return <FileSpreadsheet className={`${size} text-mod-projecten-text`} />
   if (type.includes('zip') || type.includes('archive'))
-    return <FileArchive className={`${size} text-cream-deep`} />
+    return <FileArchive className={`${size} text-mod-taken-text`} />
   if (type.includes('image') || type.includes('jpeg') || type.includes('png'))
-    return <FileImage className={`${size} text-lavender-deep`} />
+    return <FileImage className={`${size} text-mod-email-text`} />
   if (type.includes('illustrator') || type.includes('acad'))
-    return <File className={`${size} text-peach-deep`} />
+    return <File className={`${size} text-mod-planning-text`} />
   return <File className={`${size} text-muted-foreground/50`} />
 }
 
 function getFileIconBg(type: string): string {
-  if (type.includes('pdf')) return 'bg-[var(--color-coral-bg)]'
-  if (type.includes('spreadsheet') || type.includes('xlsx') || type.includes('csv')) return 'bg-[var(--color-sage-bg)]'
-  if (type.includes('zip') || type.includes('archive')) return 'bg-[var(--color-cream-bg)]'
-  if (type.includes('image') || type.includes('jpeg') || type.includes('png')) return 'bg-[var(--color-lavender-bg)]'
-  if (type.includes('illustrator') || type.includes('acad')) return 'bg-peach/30'
+  if (type.includes('pdf')) return 'bg-mod-werkbonnen-light'
+  if (type.includes('spreadsheet') || type.includes('xlsx') || type.includes('csv')) return 'bg-mod-projecten-light'
+  if (type.includes('zip') || type.includes('archive')) return 'bg-mod-taken-light'
+  if (type.includes('image') || type.includes('jpeg') || type.includes('png')) return 'bg-mod-email-light'
+  if (type.includes('illustrator') || type.includes('acad')) return 'bg-mod-planning-light'
   return 'bg-muted'
 }
 
@@ -72,9 +72,9 @@ export function BestandenSection({ documenten, onUpload, onDelete }: BestandenSe
       </div>
 
       {documenten.length === 0 ? (
-        <div className="text-center py-6 border border-dashed border-[hsl(35,15%,87%)] rounded-lg">
-          <div className="h-10 w-10 rounded-xl bg-mist/30 flex items-center justify-center mx-auto mb-2">
-            <Upload className="h-5 w-5 text-mist-deep" />
+        <div className="text-center py-6 border border-dashed border-sand rounded-lg">
+          <div className="h-10 w-10 rounded-xl bg-mod-klanten-light flex items-center justify-center mx-auto mb-2">
+            <Upload className="h-5 w-5 text-mod-klanten-text" />
           </div>
           <p className="text-[11px] text-muted-foreground mb-2">Nog geen bestanden</p>
           <button

@@ -18,11 +18,11 @@ interface PortaalCompactCardProps {
 const currencyFmt = new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' })
 
 const statusConfig: Record<string, { label: string; color: string; icon: typeof Check }> = {
-  verstuurd:   { label: 'Verstuurd',   color: 'badge-mist',    icon: Send },
-  bekeken:     { label: 'Bekeken',     color: 'badge-cream',   icon: Eye },
-  goedgekeurd: { label: 'Goedgekeurd', color: 'badge-sage',    icon: Check },
-  revisie:     { label: 'Revisie',     color: 'badge-blush',   icon: RotateCcw },
-  betaald:     { label: 'Betaald',     color: 'badge-sage',    icon: Check },
+  verstuurd:   { label: 'Verstuurd',   color: 'badge-blauw',   icon: Send },
+  bekeken:     { label: 'Bekeken',     color: 'badge-grijs',   icon: Eye },
+  goedgekeurd: { label: 'Goedgekeurd', color: 'badge-petrol',  icon: Check },
+  revisie:     { label: 'Revisie',     color: 'badge-flame',   icon: RotateCcw },
+  betaald:     { label: 'Betaald',     color: 'badge-petrol',  icon: Check },
   vervangen:   { label: 'Vervangen',   color: 'text-muted-foreground bg-muted', icon: Clock },
 }
 
@@ -93,10 +93,10 @@ function OfferteCard({ item }: { item: PortaalItem }) {
   return (
     <div className="flex justify-end">
       <div className="max-w-[80%] flex flex-col items-end">
-        <div className="bg-white border border-[var(--color-lavender-border)] rounded-2xl rounded-br-md overflow-hidden shadow-sm w-full">
-          <div className="flex items-center gap-2 px-3.5 py-2 bg-[var(--color-lavender-bg)] border-b border-[var(--color-lavender-border)]">
-            <Receipt className="h-3.5 w-3.5 text-lavender-deep" />
-            <span className="text-[11px] font-semibold text-lavender-deep">Offerte</span>
+        <div className="bg-white border border-mod-email-border rounded-2xl rounded-br-md overflow-hidden shadow-sm w-full">
+          <div className="flex items-center gap-2 px-3.5 py-2 bg-mod-email-light border-b border-mod-email-border">
+            <Receipt className="h-3.5 w-3.5 text-mod-email-text" />
+            <span className="text-[11px] font-semibold text-mod-email-text">Offerte</span>
           </div>
           <div className="px-3.5 py-2.5">
             <p className="text-[13px] font-medium text-foreground">{item.titel}</p>
@@ -128,10 +128,10 @@ function FactuurCard({ item }: { item: PortaalItem }) {
   return (
     <div className="flex justify-end">
       <div className="max-w-[80%] flex flex-col items-end">
-        <div className="bg-white border border-[var(--color-coral-border)] rounded-2xl rounded-br-md overflow-hidden shadow-sm w-full">
-          <div className="flex items-center gap-2 px-3.5 py-2 bg-[var(--color-coral-bg)] border-b border-[var(--color-coral-border)]">
-            <CreditCard className="h-3.5 w-3.5 text-[#C0451A]" />
-            <span className="text-[11px] font-semibold text-[#C0451A]">Factuur</span>
+        <div className="bg-white border border-mod-werkbonnen-border rounded-2xl rounded-br-md overflow-hidden shadow-sm w-full">
+          <div className="flex items-center gap-2 px-3.5 py-2 bg-mod-werkbonnen-light border-b border-mod-werkbonnen-border">
+            <CreditCard className="h-3.5 w-3.5 text-mod-werkbonnen-text" />
+            <span className="text-[11px] font-semibold text-mod-werkbonnen-text">Factuur</span>
           </div>
           <div className="px-3.5 py-2.5">
             <p className="text-[13px] font-medium text-foreground">{item.titel}</p>
@@ -164,10 +164,10 @@ function TekeningCard({ item }: { item: PortaalItem }) {
   return (
     <div className="flex justify-end">
       <div className="max-w-[80%] flex flex-col items-end">
-        <div className="bg-white border border-[var(--color-mist-border)] rounded-2xl rounded-br-md overflow-hidden shadow-sm w-full">
-          <div className="flex items-center gap-2 px-3.5 py-2 bg-[var(--color-mist-bg)] border-b border-[var(--color-mist-border)]">
-            <FileText className="h-3.5 w-3.5 text-mist-deep" />
-            <span className="text-[11px] font-semibold text-mist-deep">Tekening</span>
+        <div className="bg-white border border-mod-klanten-border rounded-2xl rounded-br-md overflow-hidden shadow-sm w-full">
+          <div className="flex items-center gap-2 px-3.5 py-2 bg-mod-klanten-light border-b border-mod-klanten-border">
+            <FileText className="h-3.5 w-3.5 text-mod-klanten-text" />
+            <span className="text-[11px] font-semibold text-mod-klanten-text">Tekening</span>
           </div>
           <div className="px-3.5 py-2.5">
             <p className="text-[13px] font-medium text-foreground">{item.titel}</p>
@@ -175,7 +175,7 @@ function TekeningCard({ item }: { item: PortaalItem }) {
               <p className="text-[11px] text-muted-foreground mt-0.5">{item.omschrijving}</p>
             )}
             {hasFiles && (
-              <div className="flex items-center gap-1 mt-2 text-[10px] text-mist-deep">
+              <div className="flex items-center gap-1 mt-2 text-[10px] text-mod-klanten-text">
                 <Paperclip className="h-3 w-3" />
                 {item.bestanden.length} bestand{item.bestanden.length !== 1 ? 'en' : ''}
               </div>
@@ -189,10 +189,10 @@ function TekeningCard({ item }: { item: PortaalItem }) {
           </div>
           {/* Reacties (klant feedback) */}
           {item.reacties && item.reacties.length > 0 && (
-            <div className="border-t border-[var(--color-mist-border)] px-3.5 py-2 bg-[var(--color-mist-bg)]/30">
+            <div className="border-t border-mod-klanten-border px-3.5 py-2 bg-mod-klanten-light/30">
               {item.reacties.map((r) => (
                 <div key={r.id} className="flex items-start gap-1.5 text-[11px]">
-                  <span className={`font-medium ${r.type === 'goedkeuring' ? 'text-sage-deep' : r.type === 'revisie' ? 'text-peach-deep' : 'text-foreground'}`}>
+                  <span className={`font-medium ${r.type === 'goedkeuring' ? 'text-mod-projecten-text' : r.type === 'revisie' ? 'text-mod-planning-text' : 'text-foreground'}`}>
                     {r.klant_naam || 'Klant'}:
                   </span>
                   <span className="text-foreground/80">{r.bericht || (r.type === 'goedkeuring' ? 'Goedgekeurd' : 'Revisie gevraagd')}</span>
@@ -513,7 +513,7 @@ export function PortaalCompactCard({ projectId }: PortaalCompactCardProps) {
             )}
             <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
               isActief
-                ? 'bg-sage/60 text-sage-deep'
+                ? 'bg-mod-projecten-light text-mod-projecten-text'
                 : 'bg-gray-100 text-gray-500'
             }`}>
               {isActief ? 'Actief' : 'Verlopen'}
@@ -540,7 +540,7 @@ export function PortaalCompactCard({ projectId }: PortaalCompactCardProps) {
             <div className="flex items-center gap-1.5 mt-0.5">
               <div className="flex items-center gap-1 h-1.5 w-16 bg-gray-100 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-sage-deep rounded-full transition-all"
+                  className="h-full bg-mod-projecten rounded-full transition-all"
                   style={{ width: `${(voortgang.goedgekeurd / voortgang.totaal) * 100}%` }}
                 />
               </div>
@@ -577,7 +577,7 @@ export function PortaalCompactCard({ projectId }: PortaalCompactCardProps) {
                 <span className="text-[11px] text-muted-foreground">Voortgang</span>
                 <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden max-w-[200px]">
                   <div
-                    className="h-full bg-sage-deep rounded-full transition-all duration-500"
+                    className="h-full bg-mod-projecten rounded-full transition-all duration-500"
                     style={{ width: `${(voortgang.goedgekeurd / voortgang.totaal) * 100}%` }}
                   />
                 </div>
@@ -592,8 +592,8 @@ export function PortaalCompactCard({ projectId }: PortaalCompactCardProps) {
           <div className="max-h-[400px] overflow-y-auto px-4 py-3 space-y-1 bg-[hsl(35,10%,98.5%)]">
             {items.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-10 text-center">
-                <div className="h-12 w-12 rounded-2xl bg-sage/30 flex items-center justify-center mb-3">
-                  <MessageCircle className="h-6 w-6 text-sage" />
+                <div className="h-12 w-12 rounded-2xl bg-mod-projecten-light flex items-center justify-center mb-3">
+                  <MessageCircle className="h-6 w-6 text-mod-projecten-text" />
                 </div>
                 <p className="text-sm font-medium text-foreground/70">Nog geen berichten</p>
                 <p className="text-[12px] text-muted-foreground/50 mt-1 max-w-[240px]">
@@ -632,7 +632,7 @@ export function PortaalCompactCard({ projectId }: PortaalCompactCardProps) {
                   <button
                     onClick={() => fotoInputRef.current?.click()}
                     disabled={isSending}
-                    className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1.5 rounded-lg border border-[var(--color-mist-border)] text-mist-deep bg-[var(--color-mist-bg)] hover:bg-mist/40 transition-all disabled:opacity-40"
+                    className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1.5 rounded-lg border border-mod-klanten-border text-mod-klanten-text bg-mod-klanten-light hover:bg-mod-klanten-light/40 transition-all disabled:opacity-40"
                   >
                     <ImageIcon className="h-3.5 w-3.5" />
                     Afbeelding
@@ -642,8 +642,8 @@ export function PortaalCompactCard({ projectId }: PortaalCompactCardProps) {
                     disabled={isSending}
                     className={`inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1.5 rounded-lg border transition-all disabled:opacity-40 ${
                       activePopover === 'offerte'
-                        ? 'border-lavender text-lavender-deep bg-lavender/40'
-                        : 'border-[var(--color-lavender-border)] text-lavender-deep bg-[var(--color-lavender-bg)] hover:bg-lavender/40'
+                        ? 'border-mod-email-border text-mod-email-text bg-mod-email-light/40'
+                        : 'border-mod-email-border text-mod-email-text bg-mod-email-light hover:bg-mod-email-light/40'
                     }`}
                   >
                     <Receipt className="h-3.5 w-3.5" />
@@ -654,8 +654,8 @@ export function PortaalCompactCard({ projectId }: PortaalCompactCardProps) {
                     disabled={isSending}
                     className={`inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1.5 rounded-lg border transition-all disabled:opacity-40 ${
                       activePopover === 'factuur'
-                        ? 'border-peach text-peach-deep bg-peach/40'
-                        : 'border-[var(--color-coral-border)] text-[#C0451A] bg-[var(--color-coral-bg)] hover:bg-peach/40'
+                        ? 'border-mod-planning-border text-mod-planning-text bg-mod-planning-light/40'
+                        : 'border-mod-werkbonnen-border text-mod-werkbonnen-text bg-mod-werkbonnen-light hover:bg-mod-planning-light/40'
                     }`}
                   >
                     <CreditCard className="h-3.5 w-3.5" />
@@ -690,7 +690,7 @@ export function PortaalCompactCard({ projectId }: PortaalCompactCardProps) {
                             <span className="text-[12px] font-semibold font-mono text-foreground">
                               {currencyFmt.format(o.totaal)}
                             </span>
-                            <Send className="h-3 w-3 text-sage-deep opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <Send className="h-3 w-3 text-mod-projecten-text opacity-0 group-hover:opacity-100 transition-opacity" />
                           </div>
                         </button>
                       ))}
@@ -725,7 +725,7 @@ export function PortaalCompactCard({ projectId }: PortaalCompactCardProps) {
                             <span className="text-[12px] font-semibold font-mono text-foreground">
                               {currencyFmt.format(f.totaal)}
                             </span>
-                            <Send className="h-3 w-3 text-sage-deep opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <Send className="h-3 w-3 text-mod-projecten-text opacity-0 group-hover:opacity-100 transition-opacity" />
                           </div>
                         </button>
                       ))}
@@ -747,7 +747,7 @@ export function PortaalCompactCard({ projectId }: PortaalCompactCardProps) {
                   }}
                   placeholder="Typ een bericht naar je klant..."
                   rows={1}
-                  className="flex-1 text-[13px] border border-[hsl(35,15%,87%)] rounded-xl px-3.5 py-2.5 resize-none focus:outline-none focus:ring-2 focus:ring-sage/50 focus:border-sage transition-all bg-[hsl(35,10%,99%)] min-h-[40px] max-h-[120px]"
+                  className="flex-1 text-[13px] border border-[hsl(35,15%,87%)] rounded-xl px-3.5 py-2.5 resize-none focus:outline-none focus:ring-2 focus:ring-petrol/50 focus:border-petrol transition-all bg-[#FAFAF8] min-h-[40px] max-h-[120px]"
                   style={{ height: 'auto' }}
                   onInput={(e) => {
                     const target = e.target as HTMLTextAreaElement

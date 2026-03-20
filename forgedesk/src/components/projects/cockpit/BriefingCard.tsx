@@ -28,14 +28,14 @@ export function BriefingCard({ beschrijving, onSave }: BriefingCardProps) {
   }
 
   return (
-    <div className="border border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px] p-4">
+    <div className="border border-sand bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px] p-4">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-[13px] font-semibold text-foreground">Briefing</h3>
         {isEditing ? (
           <button
             disabled={isSaving}
             onClick={handleSave}
-            className="flex items-center gap-1 text-[11px] font-medium text-sage-deep hover:text-sage-deep/80 disabled:opacity-50 transition-colors"
+            className="flex items-center gap-1 text-[11px] font-medium text-mod-projecten-text hover:text-mod-projecten-text/80 disabled:opacity-50 transition-colors"
           >
             {isSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
             Opslaan
@@ -57,7 +57,7 @@ export function BriefingCard({ beschrijving, onSave }: BriefingCardProps) {
           onChange={(e) => setText(e.target.value)}
           placeholder="Beschrijf het project: wat moet er gemaakt worden, waar, welke materialen..."
           rows={5}
-          className="resize-y text-[13px] border-[hsl(35,15%,87%)] focus:ring-1 focus:ring-sage/50 focus:border-sage bg-[hsl(35,10%,99%)]"
+          className="resize-y text-[13px] border-[hsl(35,15%,87%)] focus:ring-1 focus:ring-petrol/50 focus:border-petrol bg-[#FAFAF8]"
           autoFocus
         />
       ) : beschrijving ? (

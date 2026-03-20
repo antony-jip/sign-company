@@ -68,31 +68,7 @@ export default {
         "text-tertiary": "hsl(var(--text-tertiary))",
         "bg-hover": "hsl(var(--bg-hover))",
         "bg-subtle": "hsl(var(--bg-subtle))",
-        // Pastel palette — FORGEdesk signature
-        blush: {
-          DEFAULT: '#EDCFC4',
-          deep: '#B8806A',
-        },
-        sage: {
-          DEFAULT: '#B8CCBE',
-          deep: '#4E7A58',
-        },
-        mist: {
-          DEFAULT: '#BCCAD6',
-          deep: '#4A6E8A',
-        },
-        cream: {
-          DEFAULT: '#E2DCCB',
-          deep: '#8A7E60',
-        },
-        lavender: {
-          DEFAULT: '#D5CCE6',
-          deep: '#6B5B8A',
-        },
-        peach: {
-          DEFAULT: '#F5D5C8',
-          deep: '#C4735A',
-        },
+        // (oude pastel palette verwijderd — vervangen door mod-* kleuren)
         // DOEN rebrand — nieuwe kleuren
         flame: {
           DEFAULT: '#F15025',
@@ -262,8 +238,8 @@ export default {
           "100%": { transform: "translateY(0)", opacity: "1" },
         },
         "glow-pulse": {
-          "0%, 100%": { boxShadow: "0 0 0 0 rgba(204,138,63,0.0)" },
-          "50%": { boxShadow: "0 0 24px 4px rgba(204,138,63,0.08)" },
+          "0%, 100%": { boxShadow: "0 0 0 0 rgba(26,83,92,0.0)" },
+          "50%": { boxShadow: "0 0 24px 4px rgba(26,83,92,0.08)" },
         },
         "shimmer-premium": {
           "0%": { backgroundPosition: "-200% 0" },

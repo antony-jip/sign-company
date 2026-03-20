@@ -25,7 +25,7 @@ export function VisualizerDashboardWidget() {
 
   return (
     <div
-      className="bg-mist dark:bg-mist/15 rounded-xl p-[22px] cursor-pointer group stat-card-hover relative overflow-hidden"
+      className="bg-mod-klanten-light dark:bg-mod-klanten-light/15 rounded-xl p-[22px] cursor-pointer group stat-card-hover relative overflow-hidden"
       onClick={() => navigate('/visualizer')}
     >
       <div className="flex items-center gap-2 mb-1.5">
@@ -38,7 +38,7 @@ export function VisualizerDashboardWidget() {
         {stats.gegenereerd_deze_maand}
         <span className="text-sm font-medium text-muted-foreground ml-1">deze maand</span>
       </p>
-      <p className="text-xs font-semibold mt-2 text-[#CC8A3F] dark:text-[#D4A86A]">
+      <p className="text-xs font-semibold mt-2 text-petrol dark:text-petrol">
         <span className="font-mono">€{round2(stats.kosten_deze_maand_eur)}</span> kosten
       </p>
     </div>

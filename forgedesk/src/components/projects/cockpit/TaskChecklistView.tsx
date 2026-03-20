@@ -10,10 +10,10 @@ interface TaskChecklistViewProps {
 }
 
 const statusBadge: Record<string, { label: string; cls: string }> = {
-  todo:   { label: 'Todo',   cls: 'badge-cream' },
-  bezig:  { label: 'Bezig',  cls: 'badge-mist' },
-  review: { label: 'Review', cls: 'badge-lavender' },
-  klaar:  { label: 'Klaar',  cls: 'badge-sage' },
+  todo:   { label: 'Todo',   cls: 'badge-grijs' },
+  bezig:  { label: 'Bezig',  cls: 'badge-blauw' },
+  review: { label: 'Review', cls: 'badge-paars' },
+  klaar:  { label: 'Klaar',  cls: 'badge-petrol' },
 }
 
 // Deterministic color from name
@@ -69,8 +69,8 @@ export function TaskChecklistView({ taken, medewerkers, onStatusChange, onTaskCl
               className={cn(
                 'flex-shrink-0 rounded-md border-[1.5px] transition-all flex items-center justify-center',
                 isDone
-                  ? 'bg-sage-deep border-sage-deep text-white'
-                  : 'border-[hsl(35,15%,78%)] hover:border-sage hover:bg-sage/20'
+                  ? 'bg-mod-projecten border-mod-projecten text-white'
+                  : 'border-sand hover:border-petrol hover:bg-mod-projecten-light'
               )}
               style={{ width: 18, height: 18 }}
             >

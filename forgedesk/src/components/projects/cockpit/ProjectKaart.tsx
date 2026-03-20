@@ -40,13 +40,13 @@ const statusLabels: Record<string, string> = {
 }
 
 const statusIcons: Record<string, { color: string; bg: string }> = {
-  gepland:         { color: 'text-mist-deep',     bg: 'bg-[var(--color-mist-bg)] border-[var(--color-mist-border)]' },
-  actief:          { color: 'text-sage-deep',      bg: 'bg-[var(--color-sage-bg)] border-[var(--color-sage-border)]' },
-  'in-review':     { color: 'text-cream-deep',    bg: 'bg-[var(--color-cream-bg)] border-[var(--color-cream-border)]' },
-  afgerond:        { color: 'text-sage-deep',      bg: 'bg-[var(--color-sage-bg)] border-[var(--color-sage-border)]' },
-  'on-hold':       { color: 'text-blush-deep',    bg: 'bg-[var(--color-blush-bg)] border-[var(--color-blush-border)]' },
-  'te-factureren': { color: 'text-lavender-deep',  bg: 'bg-[var(--color-lavender-bg)] border-[var(--color-lavender-border)]' },
-  gefactureerd:    { color: 'text-sage-deep',      bg: 'bg-[var(--color-sage-bg)] border-[var(--color-sage-border)]' },
+  gepland:         { color: 'text-mod-klanten-text',     bg: 'bg-mod-klanten-light border-mod-klanten-border' },
+  actief:          { color: 'text-mod-projecten-text',      bg: 'bg-mod-projecten-light border-mod-projecten-border' },
+  'in-review':     { color: 'text-mod-taken-text',    bg: 'bg-mod-taken-light border-mod-taken-border' },
+  afgerond:        { color: 'text-mod-projecten-text',      bg: 'bg-mod-projecten-light border-mod-projecten-border' },
+  'on-hold':       { color: 'text-flame-text',    bg: 'bg-flame-light border-flame-border' },
+  'te-factureren': { color: 'text-mod-email-text',  bg: 'bg-mod-email-light border-mod-email-border' },
+  gefactureerd:    { color: 'text-mod-projecten-text',      bg: 'bg-mod-projecten-light border-mod-projecten-border' },
 }
 
 interface ProjectKaartProps {
@@ -111,7 +111,7 @@ export function ProjectKaart({
 
   return (
     <div
-      className="border border-[hsl(35,15%,87%)] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px] overflow-hidden"
+      className="border border-sand shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px] overflow-hidden"
       style={{
         background: `linear-gradient(175deg, ${stepColor}12 0%, ${stepColor}08 40%, #FFFFFE 75%)`,
       }}
@@ -232,7 +232,7 @@ export function ProjectKaart({
                   <span className="text-muted-foreground/30">·</span>
                   <span className={cn(
                     'font-medium',
-                    daysLeft < 0 ? 'text-destructive' : daysLeft < 7 ? 'text-peach-deep' : 'text-muted-foreground'
+                    daysLeft < 0 ? 'text-destructive' : daysLeft < 7 ? 'text-mod-planning-text' : 'text-muted-foreground'
                   )}>
                     {daysLeft < 0 ? `${Math.abs(daysLeft)}d over` : `${daysLeft}d`}
                   </span>

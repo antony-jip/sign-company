@@ -748,10 +748,10 @@ function extractCompanyName(senderName: string, email: string): string {
 type InlinePanel = 'none' | 'klant' | 'offerte' | 'project' | 'taak'
 
 const reminderOptions = [
-  { value: '1h', label: 'Over 1 uur', pastel: 'bg-blush/30 hover:bg-blush/50' },
-  { value: '1d', label: 'Morgen 9:00', pastel: 'bg-cream/30 hover:bg-cream/50' },
-  { value: '2d', label: 'Over 2 dagen', pastel: 'bg-sage/30 hover:bg-sage/50' },
-  { value: '1w', label: 'Over 1 week', pastel: 'bg-lavender/30 hover:bg-lavender/50' },
+  { value: '1h', label: 'Over 1 uur', pastel: 'bg-flame-light hover:bg-flame-light/80' },
+  { value: '1d', label: 'Morgen 9:00', pastel: 'bg-mod-taken-light hover:bg-mod-taken-light/80' },
+  { value: '2d', label: 'Over 2 dagen', pastel: 'bg-mod-facturen-light hover:bg-mod-facturen-light/80' },
+  { value: '1w', label: 'Over 1 week', pastel: 'bg-mod-email-light hover:bg-mod-email-light/80' },
 ]
 
 const CRMSidebar = memo(function CRMSidebar({
@@ -1061,7 +1061,7 @@ const CRMSidebar = memo(function CRMSidebar({
         fields: (
           <>
             {linkedKlant && (
-              <div className="flex items-center gap-2 px-2.5 py-1.5 bg-lavender/30 rounded-[8px] text-[11px]" style={{ color: moduleColors.offerte }}>
+              <div className="flex items-center gap-2 px-2.5 py-1.5 bg-mod-offertes-light rounded-[8px] text-[11px]" style={{ color: moduleColors.offerte }}>
                 <Building2 className="h-3 w-3" />
                 <span className="truncate">{klantDisplayName}</span>
               </div>
@@ -1082,7 +1082,7 @@ const CRMSidebar = memo(function CRMSidebar({
         fields: (
           <>
             {linkedKlant && (
-              <div className="flex items-center gap-2 px-2.5 py-1.5 bg-sage/30 rounded-[8px] text-[11px]" style={{ color: moduleColors.project }}>
+              <div className="flex items-center gap-2 px-2.5 py-1.5 bg-mod-projecten-light rounded-[8px] text-[11px]" style={{ color: moduleColors.project }}>
                 <Building2 className="h-3 w-3" />
                 <span className="truncate">{klantDisplayName}</span>
               </div>
@@ -1103,7 +1103,7 @@ const CRMSidebar = memo(function CRMSidebar({
         fields: (
           <>
             {linkedKlant && (
-              <div className="flex items-center gap-2 px-2.5 py-1.5 bg-cream/30 rounded-[8px] text-[11px]" style={{ color: moduleColors.taak }}>
+              <div className="flex items-center gap-2 px-2.5 py-1.5 bg-mod-taken-light rounded-[8px] text-[11px]" style={{ color: moduleColors.taak }}>
                 <Building2 className="h-3 w-3" />
                 <span className="truncate">{klantDisplayName}</span>
               </div>
@@ -1211,8 +1211,8 @@ const CRMSidebar = memo(function CRMSidebar({
               <div className="flex items-center gap-1.5 flex-shrink-0">
                 <span className={cn(
                   'px-2 py-0.5 rounded-full text-[9px] font-semibold',
-                  linkedKlant.status === 'actief' ? 'bg-sage/40 text-sage-deep' :
-                  linkedKlant.status === 'prospect' ? 'bg-cream/40 text-cream-deep' : 'bg-muted text-muted-foreground'
+                  linkedKlant.status === 'actief' ? 'bg-mod-facturen-light text-mod-facturen-text' :
+                  linkedKlant.status === 'prospect' ? 'bg-mod-taken-light text-mod-taken-text' : 'bg-muted text-muted-foreground'
                 )}>{linkedKlant.status || 'actief'}</span>
                 <ChevronRight className="h-3 w-3 text-foreground/15 group-hover:text-amber-700/40 transition-colors" />
               </div>

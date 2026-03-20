@@ -16,14 +16,14 @@ interface ActivityEvent {
 }
 
 const typeConfig: Record<ActivityEvent['type'], { icon: typeof Send; color: string; bg: string }> = {
-  project:  { icon: FolderPlus,    color: 'text-[#7EB5A6]',  bg: 'bg-sage/30' },
-  offerte:  { icon: Receipt,       color: 'text-lavender-deep', bg: 'bg-[var(--color-lavender-bg)]' },
-  montage:  { icon: Wrench,        color: 'text-peach-deep',  bg: 'bg-[var(--color-coral-bg)]' },
-  werkbon:  { icon: ClipboardCheck, color: 'text-cream-deep', bg: 'bg-[var(--color-cream-bg)]' },
-  factuur:  { icon: CreditCard,    color: 'text-[#C0451A]',   bg: 'bg-[var(--color-coral-bg)]' },
-  taak:     { icon: CheckCircle2,  color: 'text-mist-deep',   bg: 'bg-[var(--color-mist-bg)]' },
-  foto:     { icon: Camera,        color: 'text-blush-deep',  bg: 'bg-[var(--color-blush-bg)]' },
-  portaal:  { icon: Send,          color: 'text-[#7EB5A6]',   bg: 'bg-sage/30' },
+  project:  { icon: FolderPlus,    color: 'text-mod-projecten-text',  bg: 'bg-mod-projecten-light' },
+  offerte:  { icon: Receipt,       color: 'text-mod-email-text', bg: 'bg-mod-email-light' },
+  montage:  { icon: Wrench,        color: 'text-mod-planning-text',  bg: 'bg-mod-werkbonnen-light' },
+  werkbon:  { icon: ClipboardCheck, color: 'text-mod-taken-text', bg: 'bg-mod-taken-light' },
+  factuur:  { icon: CreditCard,    color: 'text-mod-werkbonnen-text',   bg: 'bg-mod-werkbonnen-light' },
+  taak:     { icon: CheckCircle2,  color: 'text-mod-klanten-text',   bg: 'bg-mod-klanten-light' },
+  foto:     { icon: Camera,        color: 'text-flame-text',  bg: 'bg-flame-light' },
+  portaal:  { icon: Send,          color: 'text-mod-projecten-text',   bg: 'bg-mod-projecten-light' },
 }
 
 const filterLabels: Record<string, string> = {

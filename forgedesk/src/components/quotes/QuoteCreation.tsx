@@ -2632,7 +2632,7 @@ export function QuoteCreation() {
                     {/* ── SAMENVATTING ── */}
                     {sectionId === 'samenvatting' && (
                       <div className="rounded-xl border border-border dark:border-border bg-card overflow-hidden shadow-sm">
-                        <div className="bg-mist dark:bg-mist/15 p-4">
+                        <div className="bg-mod-klanten-light dark:bg-mod-klanten-light/15 p-4">
                           <p className="text-2xs uppercase tracking-label text-foreground/70 font-medium">Totaal incl BTW</p>
                           {isEditingTotaal ? (
                             <div className="mt-1">

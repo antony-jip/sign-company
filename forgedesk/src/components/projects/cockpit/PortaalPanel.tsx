@@ -51,7 +51,7 @@ export function PortaalPanel({ projectId, projectNaam, klant, defaultOpen = fals
         {/* Header — always visible, clickable to toggle */}
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-r from-sage/10 to-transparent hover:from-sage/15 transition-all duration-200 cursor-pointer group"
+          className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-r from-mod-projecten-light/10 to-transparent hover:from-mod-projecten-light/15 transition-all duration-200 cursor-pointer group"
         >
           <div className="flex items-center gap-2.5">
             <div className="h-7 w-7 rounded-lg bg-[#7EB5A6] flex items-center justify-center shadow-sm">
@@ -117,15 +117,15 @@ export function PortaalPanel({ projectId, projectNaam, klant, defaultOpen = fals
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="relative flex-shrink-0 w-11 bg-gradient-to-b from-[#FFFFFE] to-[hsl(35,15%,97%)] border-r border-[hsl(35,15%,87%)] flex flex-col items-center justify-center gap-2.5 hover:from-sage/5 hover:to-transparent transition-all cursor-pointer group"
+          className="relative flex-shrink-0 w-11 bg-gradient-to-b from-[#FFFFFE] to-[hsl(35,15%,97%)] border-r border-[hsl(35,15%,87%)] flex flex-col items-center justify-center gap-2.5 hover:from-mod-projecten-light/5 hover:to-transparent transition-all cursor-pointer group"
           title="Portaal openen"
         >
           <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-[#7EB5A6]/60" />
           <div className="relative">
-            <MessageCircle className="h-4 w-4 text-muted-foreground group-hover:text-[#7EB5A6] transition-colors" />
+            <MessageCircle className="h-4 w-4 text-muted-foreground group-hover:text-mod-projecten-text transition-colors" />
           </div>
           <span
-            className="text-[10px] font-semibold text-muted-foreground group-hover:text-sage-deep tracking-wider transition-colors"
+            className="text-[10px] font-semibold text-muted-foreground group-hover:text-mod-projecten-text tracking-wider transition-colors"
             style={{ writingMode: 'vertical-lr', textOrientation: 'mixed' }}
           >
             Portaal
@@ -142,7 +142,7 @@ export function PortaalPanel({ projectId, projectNaam, klant, defaultOpen = fals
         style={{ transitionProperty: 'width, opacity' }}
       >
         {/* Panel header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[hsl(35,15%,87%)] bg-gradient-to-r from-sage/10 to-transparent flex-shrink-0">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[hsl(35,15%,87%)] bg-gradient-to-r from-mod-projecten-light/10 to-transparent flex-shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="h-2.5 w-2.5 rounded-full bg-[#7EB5A6] shadow-[0_0_6px_rgba(126,181,166,0.4)]" />
             <span className="text-sm font-semibold text-foreground tracking-tight">Klantportaal</span>

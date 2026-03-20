@@ -671,7 +671,7 @@ export function EmailCompose({
             </div>
             <div className="p-2">
               {reminder ? (
-                <div className="flex items-center gap-2 px-2.5 py-2 rounded-[8px] bg-cream/30 text-cream-deep text-[12px]">
+                <div className="flex items-center gap-2 px-2.5 py-2 rounded-[8px] bg-mod-taken-light text-mod-taken-text text-[12px]">
                   <Clock className="h-3.5 w-3.5 flex-shrink-0" />
                   <span>Herinnering: {reminderOptions.find(r => r.value === reminder)?.label}</span>
                 </div>

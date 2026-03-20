@@ -36,7 +36,7 @@ export function ResetPasswordPage() {
           <Lock className="w-6 h-6 text-neutral-700" />
         </div>
 
-        <h1 className="text-2xl font-bold text-black mb-2" style={{ fontFamily: 'Manrope, sans-serif' }}>Nieuw wachtwoord</h1>
+        <h1 className="text-2xl font-bold text-black mb-2" style={{ fontFamily: '"Bricolage Grotesque", sans-serif' }}>Nieuw wachtwoord</h1>
         <p className="text-[15px] text-neutral-600 mb-8">Kies een nieuw wachtwoord voor je account.</p>
 
         <form onSubmit={handleSubmit} className="space-y-4 text-left">

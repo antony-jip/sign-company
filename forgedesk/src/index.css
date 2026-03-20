@@ -5,7 +5,7 @@
 /* ================================================================
    DOEN DESIGN SYSTEM v4 — PREMIUM
    $200/mo SaaS energy — warm, deep, liquid
-   #CC8A3F #E0C9A8 #F4F3F0 #1A1A1A
+   #1A535C #F15025 #FAFAF8 #191919
    Fonts: IBM Plex Sans (body) + Bricolage Grotesque (headings)
    ================================================================ */
 
@@ -91,13 +91,13 @@
     --radius-2xl: 18px;
 
     /* Doen design tokens */
-    --wm-gradient-start: #CC8A3F;
-    --wm-gradient-mid: #E0C9A8;
-    --wm-gradient-end: #F0D9D0;
+    --wm-gradient-start: #1A535C;
+    --wm-gradient-mid: #B8D8DA;
+    --wm-gradient-end: #E2F0F0;
     --wm-sidebar-bg: 38 22% 97%;
     --wm-sidebar-hover: 35 20% 94%;
-    --wm-sidebar-active: 28 60% 52%;
-    --wm-hover: 28 60% 52%;
+    --wm-sidebar-active: 186 52% 23%;
+    --wm-hover: 186 52% 23%;
     --wm-light: 28 55% 65%;
     --wm-pale: 28 50% 88%;
     --wm-glass: rgba(255, 255, 255, 0.72);
@@ -113,7 +113,7 @@
     --shadow-md: 0 4px 16px -2px rgba(120,90,50,0.10), 0 2px 4px -1px rgba(120,90,50,0.05);
     --shadow-lg: 0 12px 40px -8px rgba(120,90,50,0.14), 0 4px 12px -4px rgba(120,90,50,0.06);
     --shadow-xl: 0 20px 60px -12px rgba(120,90,50,0.20), 0 8px 24px -8px rgba(120,90,50,0.10);
-    --shadow-glow: 0 0 0 1px rgba(204,138,63,0.06), 0 4px 24px -4px rgba(204,138,63,0.12);
+    --shadow-glow: 0 0 0 1px rgba(26,83,92,0.06), 0 4px 24px -4px rgba(26,83,92,0.12);
     --shadow-inner-light: inset 0 1px 0 rgba(255,255,255,0.08);
 
     /* Surface layers — for premium depth */
@@ -125,30 +125,30 @@
     --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
     --ease-smooth: cubic-bezier(0.25, 0.46, 0.45, 0.94);
 
-    /* Doen Pastel Status Palette */
-    --color-blush: #F9E8E8;
-    --color-blush-text: #C0514A;
-    --color-blush-border: #F0C8C8;
+    /* DOEN Module Status Palette — aliassen voor backward compat */
+    --color-blush: #FDE8E2;
+    --color-blush-text: #C03A18;
+    --color-blush-border: #F5C4B4;
 
-    --color-sage: #E8F2EC;
-    --color-sage-text: #3A7D52;
-    --color-sage-border: #C2DFCC;
+    --color-sage: #E4F0EA;
+    --color-sage-text: #2D6B48;
+    --color-sage-border: #C0DBCC;
 
-    --color-mist: #E8EEF9;
-    --color-mist-text: #3A5A9A;
-    --color-mist-border: #C2D0EE;
+    --color-mist: #E5ECF6;
+    --color-mist-text: #2A5580;
+    --color-mist-border: #C0D0EA;
 
-    --color-cream: #F5F2E8;
-    --color-cream-text: #8A7A4A;
-    --color-cream-border: #E0D8C0;
+    --color-cream: #EEEEED;
+    --color-cream-text: #4A4A45;
+    --color-cream-border: #D8D8D5;
 
-    --color-coral: #FDE8E4;
-    --color-coral-text: #C0451A;
-    --color-coral-border: #F5C4B8;
+    --color-coral: #FAE5E0;
+    --color-coral-text: #943520;
+    --color-coral-border: #EDD0C5;
 
-    --color-lavender: #EEE8F9;
-    --color-lavender-text: #6A4A9A;
-    --color-lavender-border: #D8C8EE;
+    --color-lavender: #EEE8F5;
+    --color-lavender-text: #5A4A78;
+    --color-lavender-border: #D8CCE8;
   }
 
   .dark {
@@ -199,36 +199,36 @@
     --shadow-md: 0 4px 16px -2px rgba(0,0,0,0.4), 0 2px 4px -1px rgba(0,0,0,0.2);
     --shadow-lg: 0 12px 40px -8px rgba(0,0,0,0.5), 0 4px 12px -4px rgba(0,0,0,0.3);
     --shadow-xl: 0 20px 60px -12px rgba(0,0,0,0.6), 0 8px 24px -8px rgba(0,0,0,0.35);
-    --shadow-glow: 0 0 0 1px rgba(204,138,63,0.10), 0 4px 24px -4px rgba(204,138,63,0.18);
+    --shadow-glow: 0 0 0 1px rgba(26,83,92,0.10), 0 4px 24px -4px rgba(26,83,92,0.18);
     --shadow-inner-light: inset 0 1px 0 rgba(255,255,255,0.03);
     --surface-raised: 30 12% 11%;
     --surface-overlay: 30 12% 13%;
     --surface-sunken: 30 12% 6%;
 
-    /* Pastel palette — dark mode */
-    --color-blush: rgba(192, 81, 74, 0.15);
-    --color-blush-text: #DA8B85;
-    --color-blush-border: rgba(192, 81, 74, 0.25);
+    /* DOEN Module Status Palette — dark mode aliassen */
+    --color-blush: rgba(241, 80, 37, 0.15);
+    --color-blush-text: #F08060;
+    --color-blush-border: rgba(241, 80, 37, 0.25);
 
-    --color-sage: rgba(58, 125, 82, 0.15);
-    --color-sage-text: #7AAF85;
-    --color-sage-border: rgba(58, 125, 82, 0.25);
+    --color-sage: rgba(45, 107, 72, 0.15);
+    --color-sage-text: #6AAF78;
+    --color-sage-border: rgba(45, 107, 72, 0.25);
 
-    --color-mist: rgba(58, 90, 154, 0.15);
-    --color-mist-text: #7AA4CC;
-    --color-mist-border: rgba(58, 90, 154, 0.25);
+    --color-mist: rgba(58, 107, 140, 0.15);
+    --color-mist-text: #7AAFC4;
+    --color-mist-border: rgba(58, 107, 140, 0.25);
 
-    --color-cream: rgba(138, 122, 74, 0.15);
-    --color-cream-text: #B8A86A;
-    --color-cream-border: rgba(138, 122, 74, 0.25);
+    --color-cream: rgba(90, 90, 85, 0.15);
+    --color-cream-text: #A0A098;
+    --color-cream-border: rgba(90, 90, 85, 0.25);
 
-    --color-coral: rgba(192, 69, 26, 0.15);
+    --color-coral: rgba(196, 72, 48, 0.15);
     --color-coral-text: #DA7B50;
-    --color-coral-border: rgba(192, 69, 26, 0.25);
+    --color-coral-border: rgba(196, 72, 48, 0.25);
 
-    --color-lavender: rgba(106, 74, 154, 0.15);
+    --color-lavender: rgba(106, 90, 138, 0.15);
     --color-lavender-text: #A07ACC;
-    --color-lavender-border: rgba(106, 74, 154, 0.25);
+    --color-lavender-border: rgba(106, 90, 138, 0.25);
   }
 }
 
@@ -487,22 +487,22 @@ table tbody tr:hover td:first-child::before {
 
 }
 
-/* Input pastel focus style */
+/* Input focus style — DOEN petrol */
 .input-pastel:focus {
   outline: none;
-  border-color: var(--color-mist-border);
-  box-shadow: 0 0 0 3px var(--color-mist);
+  border-color: #B8D8DA;
+  box-shadow: 0 0 0 3px #E2F0F0;
 }
 
-/* Section header with pastel background */
+/* Section header with module background */
 .section-header-pastel {
   padding: 0.5rem 1rem;
   border-radius: 0.5rem;
   margin-bottom: 0.75rem;
-  background: var(--color-cream);
+  background: #EEEEED;
 }
 .section-header-pastel h3 {
-  color: var(--color-cream-text);
+  color: #4A4A45;
 }
 
 /* ================================================================
@@ -1054,9 +1054,9 @@ tbody tr:hover {
    ================================================================ */
 .wm-welcome-banner {
   background: linear-gradient(135deg,
-    hsl(28 60% 52% / 0.05),
+    hsl(186 52% 23% / 0.05),
     hsl(155 27% 50% / 0.04),
-    hsl(28 60% 52% / 0.03)
+    hsl(186 52% 23% / 0.03)
   );
   border: 1px solid hsl(var(--accent) / 0.10);
   box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.15);
@@ -1066,9 +1066,9 @@ tbody tr:hover {
 
 .dark .wm-welcome-banner {
   background: linear-gradient(135deg,
-    hsl(28 60% 52% / 0.06),
+    hsl(186 52% 23% / 0.06),
     hsl(155 27% 50% / 0.03),
-    hsl(28 60% 52% / 0.02)
+    hsl(186 52% 23% / 0.02)
   );
   border-color: hsl(var(--accent) / 0.08);
   box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.02);
@@ -1968,13 +1968,13 @@ html {
 
 /* Serif italic accent */
 .lf-serif-accent {
-  font-family: 'DM Serif Display', Georgia, serif;
+  font-family: 'Bricolage Grotesque', Georgia, serif;
   font-style: italic;
 }
 
 /* Price number styling */
 .lf-price-number {
-  font-family: 'Outfit', sans-serif;
+  font-family: 'DM Mono', monospace;
   font-weight: 800;
 }
 
@@ -2299,16 +2299,8 @@ html {
 }
 
 /* ================================================================
-   PASTEL STATUS BADGES — Outside @layer for highest CSS precedence
-   These override Tailwind utilities to ensure consistent status colors
+   DOEN MODULE STATUS BADGES
    ================================================================ */
-/* Legacy badge classes — kept for backward compat */
-.badge-blush   { background: var(--color-blush) !important; color: var(--color-blush-text) !important; border: 1px solid var(--color-blush-border) !important; }
-.badge-sage    { background: var(--color-sage) !important; color: var(--color-sage-text) !important; border: 1px solid var(--color-sage-border) !important; }
-.badge-mist    { background: var(--color-mist) !important; color: var(--color-mist-text) !important; border: 1px solid var(--color-mist-border) !important; }
-.badge-cream   { background: var(--color-cream) !important; color: var(--color-cream-text) !important; border: 1px solid var(--color-cream-border) !important; }
-.badge-coral   { background: var(--color-coral) !important; color: var(--color-coral-text) !important; border: 1px solid var(--color-coral-border) !important; }
-.badge-lavender{ background: var(--color-lavender) !important; color: var(--color-lavender-text) !important; border: 1px solid var(--color-lavender-border) !important; }
 
 /* Doen. toast styling */
 [data-sonner-toast] [data-icon] svg { color: #1A535C; }

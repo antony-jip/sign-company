@@ -777,7 +777,7 @@ export function OfferteDetail() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Klant info */}
         <div className="rounded-xl border border-border bg-card p-3.5 space-y-2.5">
-          <div className="section-header-pastel">
+          <div className="bg-mod-taken-light rounded-lg px-4 py-2 mb-3">
             <h3 className="text-xs font-bold uppercase tracking-label text-text-tertiary flex items-center gap-2">
               <Building2 className="h-3.5 w-3.5" />
               Klant
@@ -817,7 +817,7 @@ export function OfferteDetail() {
 
         {/* Details */}
         <div className="rounded-xl border border-border bg-card p-3.5 space-y-2.5">
-          <div className="section-header-pastel">
+          <div className="bg-mod-taken-light rounded-lg px-4 py-2 mb-3">
             <h3 className="text-xs font-bold uppercase tracking-label text-text-tertiary flex items-center gap-2">
               <Calendar className="h-3.5 w-3.5" />
               Details
@@ -874,7 +874,7 @@ export function OfferteDetail() {
         {/* Klant activiteit */}
         {(offerte.eerste_bekeken_op || offerte.geaccepteerd_door || offerte.wijziging_opmerking) && (
           <div className="rounded-xl border border-border bg-card p-3.5 space-y-2.5">
-            <div className="section-header-pastel">
+            <div className="bg-mod-taken-light rounded-lg px-4 py-2 mb-3">
               <h3 className="text-xs font-bold uppercase tracking-label text-text-tertiary flex items-center gap-2">
                 <Eye className="h-3.5 w-3.5" />
                 Klant activiteit
@@ -941,7 +941,7 @@ export function OfferteDetail() {
       {/* Intro tekst */}
       {(isEditing || offerte.intro_tekst) && (
         <div className="rounded-xl border border-border bg-card p-3.5 space-y-2">
-          <div className="section-header-pastel">
+          <div className="bg-mod-taken-light rounded-lg px-4 py-2 mb-3">
             <h3 className="text-xs font-bold uppercase tracking-label text-text-tertiary">
               Intro tekst
             </h3>
@@ -1047,7 +1047,7 @@ export function OfferteDetail() {
       {/* Outro tekst */}
       {(isEditing || offerte.outro_tekst) && (
         <div className="rounded-xl border border-border bg-card p-3.5 space-y-2">
-          <div className="section-header-pastel">
+          <div className="bg-mod-taken-light rounded-lg px-4 py-2 mb-3">
             <h3 className="text-xs font-bold uppercase tracking-label text-text-tertiary">
               Outro tekst
             </h3>
@@ -1068,7 +1068,7 @@ export function OfferteDetail() {
       {/* Notities (edit mode) */}
       {isEditing && (
         <div className="rounded-xl border border-border bg-card p-3.5 space-y-2">
-          <div className="section-header-pastel">
+          <div className="bg-mod-taken-light rounded-lg px-4 py-2 mb-3">
             <h3 className="text-xs font-bold uppercase tracking-label text-text-tertiary">
               Notities
             </h3>
@@ -1085,7 +1085,7 @@ export function OfferteDetail() {
       {/* Notities (view mode) */}
       {!isEditing && offerte.notities && (
         <div className="rounded-xl border border-border bg-card p-3.5 space-y-2">
-          <div className="section-header-pastel">
+          <div className="bg-mod-taken-light rounded-lg px-4 py-2 mb-3">
             <h3 className="text-xs font-bold uppercase tracking-label text-text-tertiary">
               Notities
             </h3>
@@ -1096,7 +1096,7 @@ export function OfferteDetail() {
 
       {/* Activiteit log */}
       <div className="rounded-xl border border-border bg-card p-3.5 space-y-2.5">
-        <div className="section-header-pastel">
+        <div className="bg-mod-taken-light rounded-lg px-4 py-2 mb-3">
           <h3 className="text-xs font-bold uppercase tracking-label text-text-tertiary">
             Activiteit
           </h3>

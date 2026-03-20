@@ -97,8 +97,8 @@ export function ForgieChatPage() {
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-4 flex-shrink-0">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-blush/20 rounded-lg">
-            <Sparkles className="w-5 h-5 text-blush-deep" />
+          <div className="p-2 bg-petrol-light rounded-lg">
+            <Sparkles className="w-5 h-5 text-petrol" />
           </div>
           <div>
             <h1 className="text-lg font-bold text-foreground">Daan</h1>
@@ -126,7 +126,7 @@ export function ForgieChatPage() {
             {/* Forgie intro */}
             <div className="flex gap-3 max-w-[85%]">
               <div className="flex-shrink-0 mt-1">
-                <Sparkles className="w-4 h-4 text-blush-deep" />
+                <Sparkles className="w-4 h-4 text-petrol" />
               </div>
               <div className="bg-card border rounded-2xl p-4 text-sm text-foreground">
                 Hoi! Ik ben Daan, je bedrijfsgeheugen. Stel me een vraag over je klanten, projecten, offertes of facturen.
@@ -139,7 +139,7 @@ export function ForgieChatPage() {
                 <button
                   key={chip}
                   onClick={() => handleSend(chip)}
-                  className="rounded-full px-4 py-2 border text-sm bg-mist/10 hover:bg-mist/30 text-foreground transition-colors"
+                  className="rounded-full px-4 py-2 border text-sm bg-mod-klanten-light hover:bg-mod-klanten-light text-foreground transition-colors"
                 >
                   {chip}
                 </button>
@@ -159,14 +159,14 @@ export function ForgieChatPage() {
           >
             {msg.role === 'forgie' && (
               <div className="flex-shrink-0 mt-1">
-                <Sparkles className="w-4 h-4 text-blush-deep" />
+                <Sparkles className="w-4 h-4 text-petrol" />
               </div>
             )}
             <div
               className={cn(
                 'max-w-[85%] rounded-2xl p-4 text-sm whitespace-pre-wrap',
                 msg.role === 'user'
-                  ? 'bg-mist/20 text-foreground'
+                  ? 'bg-mod-klanten-light text-foreground'
                   : 'bg-card border text-foreground'
               )}
             >
@@ -179,7 +179,7 @@ export function ForgieChatPage() {
         {loading && (
           <div className="flex gap-3 justify-start">
             <div className="flex-shrink-0 mt-1">
-              <Sparkles className="w-4 h-4 text-blush-deep" />
+              <Sparkles className="w-4 h-4 text-petrol" />
             </div>
             <div className="bg-card border rounded-2xl p-4 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
@@ -208,13 +208,13 @@ export function ForgieChatPage() {
             onKeyDown={handleKeyDown}
             placeholder="Vraag het aan Daan..."
             disabled={loading}
-            className="flex-1 rounded-xl border bg-background px-4 py-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-blush/50 disabled:opacity-50"
+            className="flex-1 rounded-xl border bg-background px-4 py-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-petrol/50 disabled:opacity-50"
           />
           <Button
             size="icon"
             onClick={() => handleSend()}
             disabled={!input.trim() || loading}
-            className="rounded-xl h-11 w-11 bg-blush-deep hover:bg-blush-deep/90"
+            className="rounded-xl h-11 w-11 bg-petrol hover:bg-petrol/90"
           >
             {loading ? (
               <Loader2 className="w-4 h-4 animate-spin" />

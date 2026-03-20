@@ -113,8 +113,8 @@ export function TakenOfferteGrid({
             className="text-center py-8 border border-dashed border-[hsl(35,15%,87%)] rounded-lg cursor-pointer hover:border-[hsl(35,15%,75%)] transition-colors"
             onClick={onNewOfferte}
           >
-            <div className="h-10 w-10 rounded-xl bg-[var(--color-lavender-bg)] flex items-center justify-center mx-auto mb-2">
-              <FileText className="h-5 w-5 text-lavender-deep" />
+            <div className="h-10 w-10 rounded-xl bg-mod-email-light flex items-center justify-center mx-auto mb-2">
+              <FileText className="h-5 w-5 text-mod-email-text" />
             </div>
             <p className="text-[11px] text-muted-foreground">+ Offerte maken</p>
           </div>

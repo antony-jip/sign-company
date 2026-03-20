@@ -25,7 +25,7 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { label: 'Dashboard', icon: LayoutDashboard, path: '/', color: '#CC8A3F' },
+  { label: 'Dashboard', icon: LayoutDashboard, path: '/', color: '#1A535C' },
   { label: 'Projecten', icon: FolderKanban, path: '/projecten', color: '#7EB5A6' },
   { label: 'Klanten', icon: Users, path: '/klanten', color: '#8BAFD4' },
   { label: 'Offertes', icon: FileText, path: '/offertes', color: '#9B8EC4' },
