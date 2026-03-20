@@ -127,7 +127,7 @@ export function ForgieChatWidget() {
             maxHeight: '60vh',
             borderRadius: 12,
             border: '0.5px solid #E6E4E0',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
+            boxShadow: '0 8px 32px rgba(120, 90, 50, 0.12)',
             overflow: 'hidden',
           }}
         >

@@ -348,7 +348,7 @@ export function Sidebar() {
               {/* User popover */}
               {userPopoverOpen && (
                 <div className={cn(
-                  'absolute z-50 w-56 bg-card border border-border/60 rounded-xl shadow-2xl shadow-black/10 overflow-hidden animate-scale-in',
+                  'absolute z-50 w-56 bg-card border border-border/60 rounded-xl shadow-2xl shadow-[rgba(120,90,50,0.10)] overflow-hidden animate-scale-in',
                   collapsed ? 'left-full bottom-0 ml-3' : 'left-0 bottom-full mb-2',
                 )}>
                   {/* User info */}

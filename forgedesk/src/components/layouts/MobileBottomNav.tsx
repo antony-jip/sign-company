@@ -51,7 +51,7 @@ export function MobileBottomNav() {
           className="fixed inset-0 z-40 md:hidden"
           onClick={() => setMoreOpen(false)}
         >
-          <div className="absolute bottom-16 left-3 right-3 bg-card/95 backdrop-blur-lg border border-border/60 rounded-2xl shadow-2xl shadow-black/15 overflow-hidden animate-scale-in">
+          <div className="absolute bottom-16 left-3 right-3 bg-card/95 backdrop-blur-lg border border-border/60 rounded-2xl shadow-2xl shadow-[rgba(120,90,50,0.14)] overflow-hidden animate-scale-in">
             {MORE_ITEMS.map((item) => {
               const Icon = item.icon
               const isActive = location.pathname.startsWith(item.path)

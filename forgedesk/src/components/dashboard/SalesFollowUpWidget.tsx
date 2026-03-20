@@ -367,7 +367,7 @@ export function SalesFollowUpWidget() {
   }, [overdueItems.length, todayItems.length, upcomingItems.length])
 
   return (
-    <Card className="rounded-2xl border border-border/60 dark:border-border/40 shadow-sm backdrop-blur-sm bg-card/80">
+    <Card className="rounded-2xl border border-border bg-card">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">

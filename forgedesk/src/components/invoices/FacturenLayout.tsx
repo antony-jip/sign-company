@@ -1333,7 +1333,7 @@ export function FacturenLayout() {
 
       {/* ── Content ── */}
       <div className="flex-1 min-h-0 overflow-y-auto">
-      <div className="space-y-6 p-4 sm:p-6">
+      <div className="space-y-6 p-5">
 
       {/* ── Statistics ────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 stat-cards-stagger">
@@ -1548,7 +1548,7 @@ export function FacturenLayout() {
       </div>
 
       {/* ── Desktop Table ─────────────────────────────────────────────────── */}
-      <div className="hidden md:block rounded-xl border border-black/[0.06] bg-card/80 dark:bg-card/80 backdrop-blur-sm overflow-hidden -mx-3 sm:mx-0">
+      <div className="hidden md:block rounded-xl border border-border bg-card overflow-hidden -mx-3 sm:mx-0">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -1625,14 +1625,14 @@ export function FacturenLayout() {
                     )}
                     style={{ borderLeftColor: agingBorderColor }}
                   >
-                    <td className="w-10 px-3 py-3">
+                    <td className="w-10 px-3 py-3.5">
                       <Checkbox
                         checked={selectedIds.has(factuur.id)}
                         onCheckedChange={() => toggleSelect(factuur.id)}
                         aria-label={`Selecteer ${factuur.nummer}`}
                       />
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3.5">
                       <div className="flex items-center gap-1.5">
                         <button
                           onClick={() => setViewingFactuur(factuur)}
@@ -1647,7 +1647,7 @@ export function FacturenLayout() {
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3.5">
                       <a
                         href={`/klanten/${factuur.klant_id}`}
                         className="text-sm text-foreground/80 hover:text-primary dark:hover:text-wm-light hover:underline transition-colors"
@@ -1656,17 +1656,17 @@ export function FacturenLayout() {
                         {factuur.klant_naam || 'Onbekende klant'}
                       </a>
                     </td>
-                    <td className="px-4 py-3 max-w-[220px] hidden md:table-cell">
+                    <td className="px-4 py-3.5 max-w-[220px] hidden md:table-cell">
                       <span className="text-sm text-foreground/80 truncate block">
                         {factuur.titel}
                       </span>
                     </td>
-                    <td className="px-4 py-3 hidden sm:table-cell">
-                      <span className="text-sm font-mono text-muted-foreground">
+                    <td className="px-4 py-3.5 hidden sm:table-cell">
+                      <span className="text-sm font-mono tabular-nums text-muted-foreground">
                         {formatDate(factuur.factuurdatum)}
                       </span>
                     </td>
-                    <td className="px-4 py-3 hidden xl:table-cell">
+                    <td className="px-4 py-3.5 hidden xl:table-cell">
                       {factuur.status !== 'betaald' && factuur.status !== 'gecrediteerd' && (() => {
                         const days = getDaysOpen(factuur.factuurdatum)
                         return (
@@ -1676,11 +1676,11 @@ export function FacturenLayout() {
                         )
                       })()}
                     </td>
-                    <td className="px-4 py-3 hidden lg:table-cell">
+                    <td className="px-4 py-3.5 hidden lg:table-cell">
                       <div className="flex items-center gap-1.5">
                         <span
                           className={cn(
-                            'text-sm font-mono',
+                            'text-sm font-mono tabular-nums',
                             isOverdue
                               ? 'text-red-600 dark:text-red-400 font-medium'
                               : 'text-muted-foreground'
@@ -1693,12 +1693,12 @@ export function FacturenLayout() {
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-3 font-mono font-medium text-right">
+                    <td className="px-4 py-3.5 font-mono font-medium text-right">
                       <span className="text-sm font-mono font-semibold text-foreground">
                         {formatCurrency(factuur.totaal)}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3.5">
                       {(factuur.status === 'verzonden' || factuur.status === 'vervallen') ? (
                         <Badge
                           variant="secondary"
@@ -1724,7 +1724,7 @@ export function FacturenLayout() {
                         </Badge>
                       )}
                     </td>
-                    <td className="px-4 py-3 hidden lg:table-cell">
+                    <td className="px-4 py-3.5 hidden lg:table-cell">
                       {isOverdue && (
                         <div className="flex items-center gap-1">
                           <span className="text-xs font-medium text-red-600">{getDagenVerlopen(factuur)}d</span>
@@ -1737,7 +1737,7 @@ export function FacturenLayout() {
                         </div>
                       )}
                     </td>
-                    <td className="px-4 py-3 hidden lg:table-cell">
+                    <td className="px-4 py-3.5 hidden lg:table-cell">
                       {factuur.online_bekeken ? (
                         <div className="flex items-center gap-1.5" title={factuur.online_bekeken_op ? `Bekeken op ${new Date(factuur.online_bekeken_op).toLocaleString('nl-NL')}` : 'Online bekeken'}>
                           <Globe className="h-3.5 w-3.5 text-primary" />
@@ -1747,7 +1747,7 @@ export function FacturenLayout() {
                         <span className="text-xs text-muted-foreground/60">—</span>
                       ) : null}
                     </td>
-                    <td className="px-4 py-3 hidden md:table-cell">
+                    <td className="px-4 py-3.5 hidden md:table-cell">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button

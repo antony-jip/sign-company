@@ -115,7 +115,7 @@ export function TopNav() {
             <span className="hidden sm:inline">Nieuw</span>
           </button>
           {quickAddOpen && (
-            <div className="absolute left-0 top-full mt-2 w-56 bg-card border border-border/60 rounded-2xl shadow-2xl shadow-black/10 z-50 overflow-hidden animate-scale-in">
+            <div className="absolute left-0 top-full mt-2 w-56 bg-card border border-border/60 rounded-2xl shadow-2xl shadow-[rgba(120,90,50,0.10)] z-50 overflow-hidden animate-scale-in">
               <div className="px-3 py-2.5 border-b border-border/40">
                 <span className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider">Snel aanmaken</span>
               </div>
@@ -197,7 +197,7 @@ export function TopNav() {
             </button>
 
             {userMenuOpen && (
-              <div className="absolute right-0 top-full mt-2 w-56 bg-card border border-border/60 rounded-2xl shadow-2xl shadow-black/10 z-50 overflow-hidden animate-scale-in">
+              <div className="absolute right-0 top-full mt-2 w-56 bg-card border border-border/60 rounded-2xl shadow-2xl shadow-[rgba(120,90,50,0.10)] z-50 overflow-hidden animate-scale-in">
                 <div className="px-4 py-3.5 border-b border-border/40">
                   <p className="text-[14px] font-semibold text-foreground truncate">{userName}</p>
                   <p className="text-[12px] text-muted-foreground truncate mt-0.5">{user?.email}</p>

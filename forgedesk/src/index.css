@@ -431,7 +431,7 @@ table tbody tr:hover td:first-child::before {
   /* Badge base — pill with dot */
   .badge-success, .badge-warning, .badge-danger,
   .badge-info, .badge-neutral, .badge-purple {
-    @apply inline-flex items-center gap-[5px] px-[10px] py-[3px] rounded-[20px] text-[12px] font-semibold;
+    @apply inline-flex items-center gap-[5px] px-[10px] py-[3px] rounded-[20px] text-[10px] font-semibold;
     border: none;
     transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
@@ -2124,6 +2124,7 @@ html {
 
 /* ── Enhanced Page Title Typography ── */
 .page-title {
+  font-family: 'Bricolage Grotesque', system-ui, sans-serif;
   font-size: 26px;
   font-weight: 800;
   letter-spacing: -0.035em;
@@ -2133,11 +2134,13 @@ html {
   .page-title { font-size: 30px; }
 }
 .section-title {
+  font-family: 'Bricolage Grotesque', system-ui, sans-serif;
   font-size: 20px;
   font-weight: 700;
   letter-spacing: -0.025em;
 }
 .card-title-lg {
+  font-family: 'Bricolage Grotesque', system-ui, sans-serif;
   font-size: 17px;
   font-weight: 700;
   letter-spacing: -0.01em;

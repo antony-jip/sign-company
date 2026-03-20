@@ -269,7 +269,7 @@ function NotificatieToast({
           background: '#FFFFFF',
           border: '0.5px solid #E6E4E0',
           borderRadius: '10px',
-          boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+          boxShadow: '0 4px 16px rgba(120,90,50,0.10)',
         }}
       >
         <div
@@ -500,7 +500,7 @@ export function NotificatieCenter() {
             background: '#FFFFFF',
             border: '0.5px solid #E6E4E0',
             borderRadius: '10px',
-            boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+            boxShadow: '0 4px 16px rgba(120,90,50,0.10)',
           }}
         >
           <div className="flex items-center justify-between px-4 py-3">

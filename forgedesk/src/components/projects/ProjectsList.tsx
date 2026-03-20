@@ -61,6 +61,7 @@ import type { Project, Klant, Offerte } from '@/types'
 import { toast } from 'sonner'
 import { logger } from '../../utils/logger'
 import { ModuleHeader } from '@/components/shared/ModuleHeader'
+import { SkeletonTable } from '@/components/ui/skeleton'
 import { DagenOpenFilterBar, getDaysOpen, getDaysColor, matchDagenFilter } from '@/components/shared/DagenOpenFilter'
 import type { DagenOpenFilter } from '@/components/shared/DagenOpenFilter'
 
@@ -354,9 +355,7 @@ export function ProjectsList() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-16">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
+      <SkeletonTable rows={6} cols={4} />
     )
   }
 
@@ -396,7 +395,7 @@ export function ProjectsList() {
 
       {/* ── Content ── */}
       <div className="flex-1 min-h-0 overflow-y-auto">
-      <div className="space-y-5 p-4 sm:p-6">
+      <div className="space-y-5 p-5">
 
       {/* ── Quick stats ── */}
       <div className="flex items-center gap-2 flex-wrap">
@@ -496,10 +495,10 @@ export function ProjectsList() {
                 key={optie.value}
                 onClick={() => setStatusFilter(optie.value)}
                 className={cn(
-                  'px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-150',
+                  'px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all duration-150',
                   statusFilter === optie.value
-                    ? 'bg-foreground text-background shadow-sm'
-                    : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground'
+                    ? 'bg-foreground text-background'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
                 )}
               >
                 {optie.label}
@@ -695,7 +694,7 @@ export function ProjectsList() {
         </div>
 
         {/* Desktop table */}
-        <div className="hidden md:block rounded-xl border border-black/[0.06] bg-card/80 backdrop-blur-sm overflow-hidden -mx-3 sm:mx-0 shadow-sm">
+        <div className="hidden md:block rounded-xl border border-border bg-card overflow-hidden -mx-3 sm:mx-0">
           <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -782,7 +781,7 @@ export function ProjectsList() {
                     onClick={() => navigateWithTab({ path: `/projecten/${project.id}`, label: project.naam || 'Project', id: `/projecten/${project.id}` })}
                   >
                     {/* Checkbox */}
-                    <td className="py-3 px-3" onClick={(e) => e.stopPropagation()}>
+                    <td className="py-3.5 px-3" onClick={(e) => e.stopPropagation()}>
                       <Checkbox
                         checked={selectedIds.has(project.id)}
                         onCheckedChange={() => toggleProjectSelection(project.id)}
@@ -796,7 +795,7 @@ export function ProjectsList() {
                           <button
                             onClick={(e) => e.stopPropagation()}
                             className={cn(
-                              'w-full h-full py-3 px-4 flex items-center gap-1.5 transition-colors border-l-[3px]',
+                              'w-full h-full py-3.5 px-4 flex items-center gap-1.5 transition-colors border-l-[3px]',
                               getStatusBorderColor(project.status),
                               getStatusCellBg(project.status),
                               'hover:brightness-95 dark:hover:brightness-110'
@@ -834,7 +833,7 @@ export function ProjectsList() {
                     </td>
 
                     {/* Project naam + prioriteit */}
-                    <td className="py-3 px-4">
+                    <td className="py-3.5 px-4">
                       <div className="flex items-center gap-2">
                         <div className="min-w-0">
                           <div>
@@ -875,7 +874,7 @@ export function ProjectsList() {
                     </td>
 
                     {/* Klant */}
-                    <td className="py-3 px-4 hidden lg:table-cell">
+                    <td className="py-3.5 px-4 hidden lg:table-cell">
                       <span className="text-sm text-foreground">{klantNaam}</span>
                       {project.vestiging_naam && (
                         <p className="text-xs text-muted-foreground mt-0.5">{project.vestiging_naam}</p>
@@ -886,7 +885,7 @@ export function ProjectsList() {
                     </td>
 
                     {/* Team */}
-                    <td className="py-3 px-4 hidden md:table-cell">
+                    <td className="py-3.5 px-4 hidden md:table-cell">
                       {project.team_leden.length > 0 ? (
                         <div className="flex items-center -space-x-1">
                           {project.team_leden.slice(0, 3).map((lid, i) => (
@@ -910,7 +909,7 @@ export function ProjectsList() {
                     </td>
 
                     {/* Bedrag */}
-                    <td className="py-3 px-4 text-right hidden xl:table-cell">
+                    <td className="py-3.5 px-4 text-right hidden xl:table-cell">
                       {(() => {
                         const bedrag = getProjectBedrag(project.id)
                         return bedrag > 0 ? (
@@ -924,7 +923,7 @@ export function ProjectsList() {
                     </td>
 
                     {/* Dagen open */}
-                    <td className="py-3 px-4 text-right hidden xl:table-cell">
+                    <td className="py-3.5 px-4 text-right hidden xl:table-cell">
                       {project.status !== 'afgerond' && (() => {
                         const days = getDaysOpen(project.start_datum || project.created_at)
                         return (
@@ -936,14 +935,14 @@ export function ProjectsList() {
                     </td>
 
                     {/* Datum */}
-                    <td className="py-3 px-4 text-right hidden lg:table-cell">
+                    <td className="py-3.5 px-4 text-right hidden lg:table-cell">
                       <span className="text-xs text-muted-foreground font-mono tabular-nums">
                         {formatDate(project.created_at)}
                       </span>
                     </td>
 
                     {/* Quick actions + Menu */}
-                    <td className="py-3 px-2">
+                    <td className="py-3.5 px-2">
                       <div className="flex items-center gap-0.5 justify-end">
                         {/* Quick photo upload button */}
                         <button

@@ -706,7 +706,7 @@ export function QuotesPipeline() {
 
       {/* ── Content ── */}
       <div className="flex-1 min-h-0 overflow-y-auto">
-      <div className="space-y-5 p-4 sm:p-6">
+      <div className="space-y-5 p-5">
 
       {/* ── Quick stats ── */}
       <div className="flex items-center gap-2 flex-wrap">
@@ -875,10 +875,10 @@ export function QuotesPipeline() {
                 key={optie.value}
                 onClick={() => setStatusFilter(optie.value as StatusFilter)}
                 className={cn(
-                  'px-2.5 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition-colors flex-shrink-0',
+                  'px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors flex-shrink-0',
                   statusFilter === optie.value
                     ? 'bg-foreground text-background'
-                    : 'bg-muted/60 text-muted-foreground hover:bg-muted'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
                 )}
               >
                 {optie.label}
@@ -1264,7 +1264,7 @@ export function QuotesPipeline() {
         </div>
 
         {/* Pipeline Overview Summary */}
-        <Card className="rounded-xl border-black/[0.06] shadow-[0_1px_3px_rgba(0,0,0,0.04)] bg-card/80 backdrop-blur-sm">
+        <Card className="rounded-xl border-border bg-card">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg font-bold tracking-[-0.02em] text-foreground flex items-center gap-2">
               <Users className="h-5 w-5 text-muted-foreground" />

@@ -181,7 +181,7 @@ export function WerkbonnenLayout() {
 
       {/* Content */}
       <div className="flex-1 min-h-0 overflow-y-auto">
-      <div className="space-y-6 p-4 sm:p-6">
+      <div className="space-y-6 p-5">
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">

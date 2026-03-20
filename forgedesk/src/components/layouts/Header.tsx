@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { Search, X } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
@@ -33,6 +33,15 @@ export function Header() {
   const { user } = useAuth()
   const { profile } = useAppSettings()
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+
+  useEffect(() => {
+    const main = document.querySelector('main')
+    if (!main) return
+    const onScroll = () => setScrolled(main.scrollTop > 8)
+    main.addEventListener('scroll', onScroll, { passive: true })
+    return () => main.removeEventListener('scroll', onScroll)
+  }, [])
 
   // Breadcrumb
   const segments = location.pathname.split('/').filter(Boolean)
@@ -51,8 +60,8 @@ export function Header() {
 
   return (
     <header
-      className="h-12 flex items-center justify-between px-3 md:px-5 flex-shrink-0 z-10 bg-white"
-      style={{ borderBottom: '0.5px solid #E6E4E0' }}
+      className="h-12 flex items-center justify-between px-3 md:px-5 flex-shrink-0 z-10 bg-white transition-shadow duration-200"
+      style={{ borderBottom: '0.5px solid #E6E4E0', boxShadow: scrolled ? '0 1px 3px rgba(120,90,50,0.07)' : 'none' }}
     >
       {/* Mobile search overlay */}
       {mobileSearchOpen && (

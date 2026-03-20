@@ -319,7 +319,7 @@ export function ClientsLayout() {
 
       {/* Content */}
       <div className="flex-1 min-h-0 overflow-y-auto">
-      <div className="space-y-6 p-4 sm:p-6">
+      <div className="space-y-6 p-5">
 
       {/* Toolbar: Search + Export + View toggle */}
       <div className="flex flex-col sm:flex-row gap-3">
@@ -422,8 +422,8 @@ export function ClientsLayout() {
                 className={cn(
                   'px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all duration-200',
                   statusFilter === f
-                    ? 'bg-primary/12 text-accent dark:bg-primary/20 dark:text-wm-light ring-1 ring-primary/25 shadow-sm'
-                    : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'
+                    ? 'bg-foreground text-background'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
                 )}
               >
                 {labels[f]}
@@ -451,10 +451,10 @@ export function ClientsLayout() {
               key={opt.value}
               onClick={() => setLabelFilter(opt.value)}
               className={cn(
-                'px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors',
+                'px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors',
                 labelFilter === opt.value
-                  ? 'bg-primary/10 text-primary border border-primary/30'
-                  : 'bg-muted/50 text-muted-foreground hover:bg-muted border border-transparent'
+                  ? 'bg-foreground text-background'
+                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
               )}
             >
               {opt.label}
@@ -474,10 +474,10 @@ export function ClientsLayout() {
               key={opt.value}
               onClick={() => setKlantStatusFilter(opt.value)}
               className={cn(
-                'px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1.5',
+                'px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1.5',
                 klantStatusFilter === opt.value
-                  ? 'bg-primary/10 text-primary border border-primary/30'
-                  : 'bg-muted/50 text-muted-foreground hover:bg-muted border border-transparent'
+                  ? 'bg-foreground text-background'
+                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
               )}
             >
               {opt.color && (
@@ -588,7 +588,7 @@ export function ClientsLayout() {
         </>
       ) : (
         /* ==================== LIST VIEW ==================== */
-        <Card className="rounded-xl border-black/[0.06]">
+        <Card className="rounded-xl border-border">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -673,7 +673,7 @@ export function ClientsLayout() {
                     style={{ borderBottom: '0.5px solid #E6E4E0' }}
                     onClick={() => navigateWithTab({ path: `/klanten/${klant.id}`, label: klant.bedrijfsnaam || klant.voornaam || 'Klant', id: `/klanten/${klant.id}` })}
                   >
-                    <td className="w-10 px-3 py-3">
+                    <td className="w-10 px-3 py-3.5">
                       <Checkbox
                         checked={selectedIds.has(klant.id)}
                         onCheckedChange={() => toggleSelect(klant.id)}
@@ -681,7 +681,7 @@ export function ClientsLayout() {
                         aria-label={`Selecteer ${klant.bedrijfsnaam}`}
                       />
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3.5">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-lg bg-[#8BAFD4]/15 dark:bg-[#8BAFD4]/20 flex items-center justify-center flex-shrink-0">
                           <span className="text-xs font-semibold text-[#8BAFD4]">
@@ -714,32 +714,32 @@ export function ClientsLayout() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 hidden md:table-cell">
+                    <td className="px-4 py-3.5 hidden md:table-cell">
                       <span className="text-sm text-muted-foreground">
                         {klant.contactpersoon}
                       </span>
                     </td>
-                    <td className="px-4 py-3 hidden lg:table-cell">
+                    <td className="px-4 py-3.5 hidden lg:table-cell">
                       <span className="text-sm text-muted-foreground">
                         {klant.email}
                       </span>
                     </td>
-                    <td className="px-4 py-3 hidden xl:table-cell">
+                    <td className="px-4 py-3.5 hidden xl:table-cell">
                       <span className="text-sm text-muted-foreground">
                         {klant.telefoon}
                       </span>
                     </td>
-                    <td className="px-4 py-3 hidden lg:table-cell">
+                    <td className="px-4 py-3.5 hidden lg:table-cell">
                       <span className="text-sm text-muted-foreground">
                         {klant.stad}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3.5">
                       <Badge className={cn('capitalize text-xs', getStatusColor(klant.status))}>
                         {klant.status}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3 hidden xl:table-cell">
+                    <td className="px-4 py-3.5 hidden xl:table-cell">
                       {klant.klant_status && klant.klant_status !== 'normaal' ? (() => {
                         const cfg = klantStatusConfig[klant.klant_status]
                         if (!cfg) return null
@@ -755,12 +755,12 @@ export function ClientsLayout() {
                         <span className="text-xs text-muted-foreground/40">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-center">
+                    <td className="px-4 py-3.5 text-center">
                       <Badge variant="secondary" className="text-xs font-mono">
                         {projectCounts[klant.id] || 0}
                       </Badge>
                     </td>
-                    <td className="px-2 py-3 text-right">
+                    <td className="px-2 py-3.5 text-right">
                       {renderRowActions(klant)}
                     </td>
                   </tr>

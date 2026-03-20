@@ -228,7 +228,7 @@ export function FORGEdeskDashboard() {
               <Card className="h-full overflow-hidden rounded-[10px] bg-white" style={{ border: '0.5px solid #E6E4E0' }}>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center gap-2 text-[12px] font-semibold">
+                    <CardTitle className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.06em]">
                       <def.icon className="h-4 w-4 text-muted-foreground" />
                       <span>{def.label}</span>
                     </CardTitle>
