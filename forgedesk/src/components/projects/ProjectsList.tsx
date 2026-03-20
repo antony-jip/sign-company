@@ -85,40 +85,49 @@ const statusLabels: Record<string, string> = {
 
 function getStatusDotColor(status: string): string {
   switch (status) {
-    case 'actief': return 'bg-[var(--color-sage-text)]'
-    case 'gepland': return 'bg-[var(--color-mist-text)]'
-    case 'in-review': return 'bg-[var(--color-cream-text)]'
-    case 'afgerond': return 'bg-[var(--color-sage-text)]'
-    case 'on-hold': return 'bg-[var(--color-blush-text)]'
-    case 'te-factureren': return 'bg-[var(--color-lavender-text)]'
-    case 'gefactureerd': return 'bg-[var(--color-lavender-text)]'
-    default: return 'bg-[var(--color-cream-text)]'
+    case 'actief': return 'bg-[#2D6B48]'
+    case 'gepland': return 'bg-[#2A5580]'
+    case 'in-review': return 'bg-[#5A5A55]'
+    case 'afgerond': return 'bg-[#1A535C]'
+    case 'on-hold': return 'bg-[#5A5A55]'
+    case 'te-factureren': return 'bg-[#2D6B48]'
+    case 'gefactureerd': return 'bg-[#2D6B48]'
+    case 'montage': return 'bg-[#2A5580]'
+    case 'productie': return 'bg-[#5A4A78]'
+    case 'opgeleverd': return 'bg-[#2D6B48]'
+    default: return 'bg-[#5A5A55]'
   }
 }
 
 function getStatusBorderColor(status: string): string {
   switch (status) {
-    case 'actief': return 'border-l-[var(--color-sage-border)]'
-    case 'gepland': return 'border-l-[var(--color-mist-border)]'
-    case 'in-review': return 'border-l-[var(--color-cream-border)]'
-    case 'afgerond': return 'border-l-[var(--color-sage-border)]'
-    case 'on-hold': return 'border-l-[var(--color-blush-border)]'
-    case 'te-factureren': return 'border-l-[var(--color-lavender-border)]'
-    case 'gefactureerd': return 'border-l-[var(--color-lavender-border)]'
-    default: return 'border-l-[var(--color-cream-border)]'
+    case 'actief': return 'border-l-[#2D6B48]'
+    case 'gepland': return 'border-l-[#2A5580]'
+    case 'in-review': return 'border-l-[#A0A098]'
+    case 'afgerond': return 'border-l-[#1A535C]'
+    case 'on-hold': return 'border-l-[#A0A098]'
+    case 'te-factureren': return 'border-l-[#2D6B48]'
+    case 'gefactureerd': return 'border-l-[#2D6B48]'
+    case 'montage': return 'border-l-[#2A5580]'
+    case 'productie': return 'border-l-[#5A4A78]'
+    case 'opgeleverd': return 'border-l-[#2D6B48]'
+    default: return 'border-l-[#A0A098]'
   }
 }
 
 function getStatusCellBg(status: string): string {
   switch (status) {
-    case 'actief': return 'bg-[var(--color-sage)]/50'
-    case 'gepland': return 'bg-[var(--color-mist)]/50'
-    case 'in-review': return 'bg-[var(--color-cream)]/50'
-    case 'afgerond': return 'bg-[var(--color-sage)]/50'
-    case 'on-hold': return 'bg-[var(--color-blush)]/50'
-    case 'te-factureren': return 'bg-[var(--color-lavender)]/50'
-    case 'gefactureerd': return 'bg-[var(--color-lavender)]/50'
-    default: return 'bg-muted/30 dark:bg-muted/20'
+    case 'actief': return 'bg-[#E4F0EA]/50'
+    case 'gepland': return 'bg-[#E5ECF6]/50'
+    case 'in-review': return 'bg-[#EEEEED]/50'
+    case 'afgerond': return 'bg-[#E2F0F0]/50'
+    case 'on-hold': return 'bg-[#EEEEED]/50'
+    case 'te-factureren': return 'bg-[#E4F0EA]/50'
+    case 'gefactureerd': return 'bg-[#E4F0EA]/50'
+    case 'montage': return 'bg-[#E5ECF6]/50'
+    case 'productie': return 'bg-[#EEE8F5]/50'
+    case 'opgeleverd': return 'bg-[#E4F0EA]/50'
+    default: return 'bg-[#EEEEED]/30'
   }
 }
 
@@ -687,7 +696,7 @@ export function ProjectsList() {
           <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-border/60 bg-muted/30">
+              <tr style={{ borderBottom: '0.5px solid #E6E4E0', backgroundColor: '#F4F2EE' }}>
                 <th className="py-3 px-3 w-10">
                   <Checkbox
                     checked={selectedIds.size > 0 && selectedIds.size === gefilterdeProjecten.length}
@@ -696,12 +705,13 @@ export function ProjectsList() {
                   />
                 </th>
                 <th className="text-left py-3 px-4 w-[110px]">
-                  <span className="text-xs font-bold text-text-tertiary uppercase tracking-label">Status</span>
+                  <span className="text-[10px] font-medium uppercase text-[#A0A098]" style={{ letterSpacing: '0.8px' }}>Status</span>
                 </th>
                 <th className="text-left py-3 px-4">
                   <button
                     onClick={() => handleSort('naam')}
-                    className="flex items-center gap-1 text-xs font-bold text-text-tertiary uppercase tracking-label hover:text-foreground transition-colors"
+                    className="flex items-center gap-1 text-[10px] font-medium uppercase text-[#A0A098] hover:text-foreground transition-colors"
+                    style={{ letterSpacing: '0.8px' }}
                   >
                     Project
                     {sortField === 'naam' ? (
@@ -712,15 +722,16 @@ export function ProjectsList() {
                   </button>
                 </th>
                 <th className="text-left py-3 px-4 hidden lg:table-cell">
-                  <span className="text-xs font-bold text-text-tertiary uppercase tracking-label">Klant</span>
+                  <span className="text-[10px] font-medium uppercase text-[#A0A098]" style={{ letterSpacing: '0.8px' }}>Klant</span>
                 </th>
                 <th className="text-left py-3 px-4 hidden md:table-cell">
-                  <span className="text-xs font-bold text-text-tertiary uppercase tracking-label">Team</span>
+                  <span className="text-[10px] font-medium uppercase text-[#A0A098]" style={{ letterSpacing: '0.8px' }}>Team</span>
                 </th>
                 <th className="text-right py-3 px-4 hidden xl:table-cell">
                   <button
                     onClick={() => handleSort('bedrag')}
-                    className="flex items-center gap-1 text-xs font-bold text-text-tertiary uppercase tracking-label hover:text-foreground transition-colors ml-auto"
+                    className="flex items-center gap-1 text-[10px] font-medium uppercase text-[#A0A098] hover:text-foreground transition-colors ml-auto"
+                    style={{ letterSpacing: '0.8px' }}
                   >
                     Bedrag
                     {sortField === 'bedrag' ? (
@@ -731,12 +742,13 @@ export function ProjectsList() {
                   </button>
                 </th>
                 <th className="text-right py-3 px-4 hidden xl:table-cell">
-                  <span className="text-xs font-bold text-text-tertiary uppercase tracking-label">Open</span>
+                  <span className="text-[10px] font-medium uppercase text-[#A0A098]" style={{ letterSpacing: '0.8px' }}>Open</span>
                 </th>
                 <th className="text-right py-3 px-4 hidden lg:table-cell">
                   <button
                     onClick={() => handleSort('start_datum')}
-                    className="flex items-center gap-1 text-xs font-bold text-text-tertiary uppercase tracking-label hover:text-foreground transition-colors ml-auto"
+                    className="flex items-center gap-1 text-[10px] font-medium uppercase text-[#A0A098] hover:text-foreground transition-colors ml-auto"
+                    style={{ letterSpacing: '0.8px' }}
                   >
                     Datum
                     {sortField === 'start_datum' ? (
@@ -759,13 +771,11 @@ export function ProjectsList() {
                   <tr
                     key={project.id}
                     className={cn(
-                      'border-b border-border/30 last:border-0 hover:bg-bg-subtle/50 dark:hover:bg-muted/20 cursor-pointer transition-all duration-150 group border-l-2',
+                      'last:border-0 hover:bg-[#F4F2EE] cursor-pointer transition-colors duration-150 group border-l-[3px]',
                       getStatusBorderColor(project.status),
-
-
                       selectedIds.has(project.id) && 'bg-[#7EB5A6]/5'
-
                     )}
+                    style={{ borderBottom: '0.5px solid #E6E4E0' }}
                     onClick={() => navigateWithTab({ path: `/projecten/${project.id}`, label: project.naam || 'Project', id: `/projecten/${project.id}` })}
                   >
                     {/* Checkbox */}
@@ -896,11 +906,11 @@ export function ProjectsList() {
                     </td>
 
                     {/* Bedrag */}
-                    <td className="py-3 px-4 hidden xl:table-cell">
+                    <td className="py-3 px-4 text-right hidden xl:table-cell">
                       {(() => {
                         const bedrag = getProjectBedrag(project.id)
                         return bedrag > 0 ? (
-                          <span className="text-sm font-semibold text-foreground tabular-nums font-mono">
+                          <span className="text-sm font-medium text-foreground tabular-nums font-mono">
                             {formatCurrency(bedrag)}
                           </span>
                         ) : (

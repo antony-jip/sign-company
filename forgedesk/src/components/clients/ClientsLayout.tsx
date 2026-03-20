@@ -592,7 +592,7 @@ export function ClientsLayout() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className={cn("border-b border-border", selectedIds.size > 0 ? "bg-primary/5" : "bg-muted/50")}>
+                <tr className={cn(selectedIds.size > 0 ? "bg-primary/5" : "")} style={{ borderBottom: '0.5px solid #E6E4E0', backgroundColor: selectedIds.size > 0 ? undefined : '#F4F2EE' }}>
                   <th className="w-10 px-3 py-3">
                     <Checkbox
                       checked={filteredKlanten.length > 0 && selectedIds.size === filteredKlanten.length}
@@ -634,42 +634,43 @@ export function ClientsLayout() {
                     </th>
                   ) : (
                     <>
-                      <th className="text-left text-xs font-bold text-text-tertiary uppercase tracking-label px-4 py-3">
+                      <th className="text-left text-[10px] font-medium uppercase text-[#A0A098] px-4 py-3" style={{ letterSpacing: '0.8px' }}>
                         Bedrijfsnaam
                       </th>
-                      <th className="text-left text-xs font-bold text-text-tertiary uppercase tracking-label px-4 py-3 hidden md:table-cell">
+                      <th className="text-left text-[10px] font-medium uppercase text-[#A0A098] px-4 py-3 hidden md:table-cell" style={{ letterSpacing: '0.8px' }}>
                         Contactpersoon
                       </th>
-                      <th className="text-left text-xs font-bold text-text-tertiary uppercase tracking-label px-4 py-3 hidden lg:table-cell">
+                      <th className="text-left text-[10px] font-medium uppercase text-[#A0A098] px-4 py-3 hidden lg:table-cell" style={{ letterSpacing: '0.8px' }}>
                         Email
                       </th>
-                      <th className="text-left text-xs font-bold text-text-tertiary uppercase tracking-label px-4 py-3 hidden xl:table-cell">
+                      <th className="text-left text-[10px] font-medium uppercase text-[#A0A098] px-4 py-3 hidden xl:table-cell" style={{ letterSpacing: '0.8px' }}>
                         Telefoon
                       </th>
-                      <th className="text-left text-xs font-bold text-text-tertiary uppercase tracking-label px-4 py-3 hidden lg:table-cell">
+                      <th className="text-left text-[10px] font-medium uppercase text-[#A0A098] px-4 py-3 hidden lg:table-cell" style={{ letterSpacing: '0.8px' }}>
                         Stad
                       </th>
-                      <th className="text-left text-xs font-bold text-text-tertiary uppercase tracking-label px-4 py-3">
+                      <th className="text-left text-[10px] font-medium uppercase text-[#A0A098] px-4 py-3" style={{ letterSpacing: '0.8px' }}>
                         Status
                       </th>
-                      <th className="text-center text-xs font-bold text-text-tertiary uppercase tracking-label px-4 py-3">
+                      <th className="text-center text-[10px] font-medium uppercase text-[#A0A098] px-4 py-3" style={{ letterSpacing: '0.8px' }}>
                         Projecten
                       </th>
-                      <th className="text-right text-xs font-bold text-text-tertiary uppercase tracking-label px-2 py-3 w-12">
+                      <th className="text-right text-[10px] font-medium uppercase text-[#A0A098] px-2 py-3 w-12" style={{ letterSpacing: '0.8px' }}>
                       </th>
                     </>
                   )}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border/50 row-stagger">
+              <tbody className="row-stagger">
                 {filteredKlanten.map((klant) => (
                   <tr
                     key={klant.id}
                     className={cn(
-                      "hover:bg-bg-hover cursor-pointer transition-colors duration-150 group border-l-2",
+                      "hover:bg-[#F4F2EE] cursor-pointer transition-colors duration-150 group border-l-[3px]",
                       selectedIds.has(klant.id) && "bg-primary/5",
                       getRowAccentClass(klant.status)
                     )}
+                    style={{ borderBottom: '0.5px solid #E6E4E0' }}
                     onClick={() => navigateWithTab({ path: `/klanten/${klant.id}`, label: klant.bedrijfsnaam || klant.voornaam || 'Klant', id: `/klanten/${klant.id}` })}
                   >
                     <td className="w-10 px-3 py-3">

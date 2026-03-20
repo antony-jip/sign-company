@@ -23,9 +23,9 @@ import {
 type FilterStatus = 'alle' | 'concept' | 'definitief' | 'afgerond'
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  concept: { label: 'Concept', color: 'text-[var(--color-cream-text)]', bg: 'bg-[var(--color-cream)]' },
-  definitief: { label: 'Definitief', color: 'text-[var(--color-mist-text)]', bg: 'bg-[var(--color-mist)]' },
-  afgerond: { label: 'Afgerond', color: 'text-[var(--color-sage-text)]', bg: 'bg-[var(--color-sage)]' },
+  concept: { label: 'Concept', color: 'text-[#5A5A55]', bg: 'bg-[#EEEEED]' },
+  definitief: { label: 'Definitief', color: 'text-[#2A5580]', bg: 'bg-[#E5ECF6]' },
+  afgerond: { label: 'Afgerond', color: 'text-[#1A535C]', bg: 'bg-[#E2F0F0]' },
 }
 
 export function WerkbonnenLayout() {
@@ -245,14 +245,14 @@ export function WerkbonnenLayout() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-border bg-muted/50">
-                  <th className="px-4 py-3 text-left text-xs font-bold text-text-tertiary uppercase tracking-label">Nummer</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-text-tertiary uppercase tracking-label">Klant</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-text-tertiary uppercase tracking-label hidden md:table-cell">Offerte / Project</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-text-tertiary uppercase tracking-label hidden sm:table-cell">Datum</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-text-tertiary uppercase tracking-label">Status</th>
-                  <th className="px-4 py-3 text-right text-xs font-bold text-text-tertiary uppercase tracking-label hidden sm:table-cell">Items</th>
-                  <th className="px-4 py-3 text-right text-xs font-bold text-text-tertiary uppercase tracking-label hidden md:table-cell">Acties</th>
+                <tr style={{ borderBottom: '0.5px solid #E6E4E0', backgroundColor: '#F4F2EE' }}>
+                  <th className="px-4 py-3 text-left text-[10px] font-medium uppercase text-[#A0A098]" style={{ letterSpacing: '0.8px' }}>Nummer</th>
+                  <th className="px-4 py-3 text-left text-[10px] font-medium uppercase text-[#A0A098]" style={{ letterSpacing: '0.8px' }}>Klant</th>
+                  <th className="px-4 py-3 text-left text-[10px] font-medium uppercase text-[#A0A098] hidden md:table-cell" style={{ letterSpacing: '0.8px' }}>Offerte / Project</th>
+                  <th className="px-4 py-3 text-left text-[10px] font-medium uppercase text-[#A0A098] hidden sm:table-cell" style={{ letterSpacing: '0.8px' }}>Datum</th>
+                  <th className="px-4 py-3 text-left text-[10px] font-medium uppercase text-[#A0A098]" style={{ letterSpacing: '0.8px' }}>Status</th>
+                  <th className="px-4 py-3 text-right text-[10px] font-medium uppercase text-[#A0A098] hidden sm:table-cell" style={{ letterSpacing: '0.8px' }}>Items</th>
+                  <th className="px-4 py-3 text-right text-[10px] font-medium uppercase text-[#A0A098] hidden md:table-cell" style={{ letterSpacing: '0.8px' }}>Acties</th>
                 </tr>
               </thead>
               <tbody className="divide-y row-stagger">
@@ -262,7 +262,7 @@ export function WerkbonnenLayout() {
                   const projectRef = getProjectNaam(wb.project_id)
                   const ref = offerteRef !== '-' ? offerteRef : projectRef
                   return (
-                    <tr key={wb.id} className="group hover:bg-bg-hover transition-colors duration-150 cursor-pointer"
+                    <tr key={wb.id} className="group border-l-[3px] border-l-[#F15025] cursor-pointer hover:bg-[#F4F2EE] transition-colors duration-150"
                       onClick={() => navigateWithTab({ path: `/werkbonnen/${wb.id}`, label: wb.werkbon_nummer || 'Werkbon', id: `/werkbonnen/${wb.id}` })}>
                       <td className="px-4 py-3">
                         <div>

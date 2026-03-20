@@ -126,33 +126,33 @@ interface FactuurFormData {
 const STATUS_CONFIG: Record<FactuurStatus, { label: string; color: string; border: string; dot: string }> = {
   concept: {
     label: 'Concept',
-    color: 'badge-cream',
-    border: 'border-l-[var(--color-cream-border)]',
-    dot: 'bg-[var(--color-cream-text)]',
+    color: 'badge-grijs',
+    border: 'border-l-[#A0A098]',
+    dot: 'bg-[#5A5A55]',
   },
   verzonden: {
     label: 'Verzonden',
-    color: 'badge-mist',
-    border: 'border-l-[var(--color-mist-border)]',
-    dot: 'bg-[var(--color-mist-text)]',
+    color: 'badge-flame',
+    border: 'border-l-[#F15025]',
+    dot: 'bg-[#C03A18]',
   },
   betaald: {
     label: 'Betaald',
-    color: 'badge-sage',
-    border: 'border-l-[var(--color-sage-border)]',
-    dot: 'bg-[var(--color-sage-text)]',
+    color: 'badge-groen',
+    border: 'border-l-[#2D6B48]',
+    dot: 'bg-[#2D6B48]',
   },
   vervallen: {
     label: 'Vervallen',
-    color: 'badge-coral',
-    border: 'border-l-[var(--color-coral-border)]',
-    dot: 'bg-[var(--color-coral-text)]',
+    color: 'badge-flame',
+    border: 'border-l-[#C03A18]',
+    dot: 'bg-[#C03A18]',
   },
   gecrediteerd: {
     label: 'Gecrediteerd',
-    color: 'badge-lavender',
-    border: 'border-l-[var(--color-lavender-border)]',
-    dot: 'bg-[var(--color-lavender-text)]',
+    color: 'badge-paars',
+    border: 'border-l-[#5A4A78]',
+    dot: 'bg-[#5A4A78]',
   },
 }
 
@@ -1551,7 +1551,7 @@ export function FacturenLayout() {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-border bg-muted/50">
+              <tr className="" style={{ borderBottom: '0.5px solid #E6E4E0', backgroundColor: '#F4F2EE' }}>
                 <th className="w-10 px-3 py-3">
                   <Checkbox
                     checked={filteredFacturen.length > 0 && selectedIds.size === filteredFacturen.length}
@@ -1574,7 +1574,8 @@ export function FacturenLayout() {
                 ].map((col) => (
                   <th
                     key={col.key}
-                    className={`px-4 py-3 text-left text-xs font-bold uppercase tracking-label text-text-tertiary ${col.hide}`}
+                    className={`px-4 py-3 text-left text-[10px] font-medium uppercase text-[#A0A098] ${col.hide}`}
+                    style={{ letterSpacing: '0.8px' }}
                   >
                     {col.label}
                   </th>
@@ -1605,8 +1606,8 @@ export function FacturenLayout() {
                   <tr
                     key={factuur.id}
                     className={cn(
-                      'group hover:bg-bg-hover transition-colors duration-150',
-                      'border-l-2',
+                      'group cursor-pointer hover:bg-[#F4F2EE] transition-colors duration-150',
+                      'border-l-[3px]',
                       isOverdue ? 'border-l-[var(--color-coral-border)]' : config.border,
                       factuur.status === 'betaald' && 'factuur-row-betaald',
                       isOverdue && 'factuur-row-verlopen',
@@ -1681,7 +1682,7 @@ export function FacturenLayout() {
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 font-mono font-medium text-right">
                       <span className="text-sm font-mono font-semibold text-foreground">
                         {formatCurrency(factuur.totaal)}
                       </span>

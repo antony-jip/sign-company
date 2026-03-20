@@ -14,10 +14,10 @@ const FilterPill = React.forwardRef<HTMLButtonElement, FilterPillProps>(
       <button
         ref={ref}
         className={cn(
-          "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-fast ease-out-expo whitespace-nowrap",
+          "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-medium transition-all duration-150 whitespace-nowrap",
           active
-            ? "bg-primary/10 text-primary border border-primary/20 shadow-sm"
-            : "bg-bg-subtle text-text-tertiary border border-transparent hover:bg-bg-hover hover:text-foreground",
+            ? "bg-[#F4F2EE] text-[#191919] font-semibold border border-[#D1CEC7]"
+            : "text-[#5A5A55] border border-[#E6E4E0] hover:bg-[#F4F2EE] hover:text-[#191919]",
           className
         )}
         {...props}
@@ -32,10 +32,10 @@ const FilterPill = React.forwardRef<HTMLButtonElement, FilterPillProps>(
         {count !== undefined && (
           <span
             className={cn(
-              "ml-0.5 inline-flex items-center justify-center rounded-full px-1.5 min-w-[18px] h-[18px] text-2xs font-bold",
+              "ml-0.5 inline-flex items-center justify-center rounded-full px-1.5 min-w-[18px] h-[18px] text-[10px] font-mono font-semibold",
               active
-                ? "bg-primary/15 text-primary"
-                : "bg-black/[0.06] text-text-tertiary"
+                ? "bg-[#191919]/10 text-[#191919]"
+                : "bg-black/[0.06] text-[#5A5A55]"
             )}
           >
             {count}
