@@ -2310,6 +2310,11 @@ html {
 .badge-coral   { background: var(--color-coral) !important; color: var(--color-coral-text) !important; border: 1px solid var(--color-coral-border) !important; }
 .badge-lavender{ background: var(--color-lavender) !important; color: var(--color-lavender-text) !important; border: 1px solid var(--color-lavender-border) !important; }
 
+/* Doen. toast styling */
+[data-sonner-toast] [data-icon] svg { color: #1A535C; }
+[data-sonner-toast][data-type="error"] [data-icon] svg { color: #F15025; }
+[data-sonner-toast][data-type="success"] [data-icon] svg { color: #1A535C; }
+
 /* Doen. module-based badge classes */
 .badge-grijs       { background: #EEEEED !important; color: #5A5A55 !important; border: none !important; }
 .badge-flame       { background: #FDE8E2 !important; color: #C03A18 !important; border: none !important; }

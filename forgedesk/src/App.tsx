@@ -269,7 +269,25 @@ function App() {
                 <SidebarProvider>
                   <TabsProvider>
                     <ErrorBoundary>
-                      <Toaster position="top-right" richColors />
+                      <Toaster
+                        position="top-right"
+                        visibleToasts={2}
+                        duration={4000}
+                        toastOptions={{
+                          style: {
+                            background: '#FFFFFF',
+                            border: '0.5px solid #E6E4E0',
+                            borderRadius: '10px',
+                            boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+                            color: '#191919',
+                            fontSize: '12px',
+                          },
+                          classNames: {
+                            success: 'toast-success',
+                            error: 'toast-error',
+                          },
+                        }}
+                      />
                       <AppContent />
                     </ErrorBoundary>
                   </TabsProvider>
