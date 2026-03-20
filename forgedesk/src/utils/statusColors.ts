@@ -105,7 +105,7 @@ export function getStatusLabel(status: string): string {
     'gepauzeerd':    'Gepauzeerd',
     'on-hold':       'On-hold',
     'geannuleerd':   'Geannuleerd',
-    'todo':          'Te doen',
+    'todo':          'Open',
     'bezig':         'Bezig',
     'klaar':         'Klaar',
     'geblokkeerd':   'Geblokkeerd',
