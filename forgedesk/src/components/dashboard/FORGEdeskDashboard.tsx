@@ -49,29 +49,13 @@ import { formatCurrency, cn } from '@/lib/utils'
 import { logger } from '../../utils/logger'
 import { useDashboardLayout, type DashboardWidgetId, type WidgetSize } from '@/hooks/useDashboardLayout'
 
-// ============ GREETINGS ============
+// ============ GREETING ============
 
-const GREETINGS: { greeting: string; timeOfDay: 'morning' | 'afternoon' | 'evening' }[] = [
-  { greeting: 'Goedemorgen', timeOfDay: 'morning' },
-  { greeting: 'Bonjour', timeOfDay: 'morning' },
-  { greeting: 'Buenos días', timeOfDay: 'morning' },
-  { greeting: 'Buongiorno', timeOfDay: 'morning' },
-  { greeting: 'Goedemiddag', timeOfDay: 'afternoon' },
-  { greeting: 'Bon après-midi', timeOfDay: 'afternoon' },
-  { greeting: 'Buenas tardes', timeOfDay: 'afternoon' },
-  { greeting: 'Buon pomeriggio', timeOfDay: 'afternoon' },
-  { greeting: 'Goedenavond', timeOfDay: 'evening' },
-  { greeting: 'Bonsoir', timeOfDay: 'evening' },
-  { greeting: 'Buenas noches', timeOfDay: 'evening' },
-  { greeting: 'Buonasera', timeOfDay: 'evening' },
-]
-
-function getPlayfulGreeting(): string {
+function getGreeting(): string {
   const hour = new Date().getHours()
-  const timeOfDay = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening'
-  const options = GREETINGS.filter(g => g.timeOfDay === timeOfDay)
-  const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000)
-  return options[dayOfYear % options.length].greeting
+  if (hour < 12) return 'Goeiemorgen'
+  if (hour < 18) return 'Goedemiddag'
+  return 'Goeienavond'
 }
 
 // ============ WIDGET REGISTRY ============
@@ -140,10 +124,10 @@ export function FORGEdeskDashboard() {
     return () => { cancelled = true }
   }, [])
 
-  const greeting = useMemo(() => getPlayfulGreeting(), [])
+  const greeting = useMemo(() => getGreeting(), [])
 
   const today = new Date()
-  const dateStr = today.toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  const dateStr = today.toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long' })
   const formattedDate = dateStr.charAt(0).toUpperCase() + dateStr.slice(1)
 
   const [showAddMenu, setShowAddMenu] = useState(false)
@@ -152,22 +136,16 @@ export function FORGEdeskDashboard() {
   return (
     <div className="space-y-6">
       {/* Welcome header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.1em] text-muted-foreground/70 mb-1.5 font-mono">{formattedDate}</p>
-          <h1 className="text-[32px] sm:text-[38px] font-extrabold tracking-[-0.04em] leading-[1.1] text-foreground">
-            {greeting}{userName ? ', ' : ''}
-            {userName && <span className="wm-gradient-text">{userName}</span>}
-          </h1>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => navigate('/offertes/nieuw')}
-            className="inline-flex items-center gap-1.5 text-sm font-bold px-5 py-2.5 rounded-[12px] bg-foreground text-background shadow-elevation-sm hover:shadow-elevation-md hover:-translate-y-0.5 transition-all duration-300 ease-spring active:scale-[0.96]"
-          >
-            + Nieuwe offerte
-          </button>
-        </div>
+      <div>
+        <h1
+          className="font-heading text-[20px] font-bold leading-tight"
+          style={{ letterSpacing: '-0.8px', color: '#191919' }}
+        >
+          {greeting}{userName ? `, ${userName}.` : '.'}
+        </h1>
+        <p className="text-[13px] font-normal mt-1" style={{ color: '#5A5A55' }}>
+          {formattedDate}
+        </p>
       </div>
 
       {/* Verlopen facturen alert */}
@@ -247,13 +225,11 @@ export function FORGEdeskDashboard() {
               {isDragOver && !isDragging && (
                 <div className="h-1 bg-primary/50 rounded-full mb-2 animate-pulse" />
               )}
-              <Card className="h-full overflow-hidden">
+              <Card className="h-full overflow-hidden rounded-[10px] bg-white" style={{ border: '0.5px solid #E6E4E0' }}>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-accent to-primary shadow-sm">
-                        <def.icon className="h-4 w-4 text-white" />
-                      </div>
+                    <CardTitle className="flex items-center gap-2 text-[12px] font-semibold">
+                      <def.icon className="h-4 w-4 text-muted-foreground" />
                       <span>{def.label}</span>
                     </CardTitle>
                     <div className="flex items-center gap-1 opacity-0 group-hover/widget:opacity-100 transition-opacity">

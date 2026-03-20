@@ -5,21 +5,6 @@ import { formatCurrency } from '@/lib/utils'
 import { useCountUp } from '@/hooks/useCountUp'
 import { logger } from '../../utils/logger'
 
-function Sparkline({ color }: { color?: string }) {
-  return (
-    <svg className="absolute bottom-0 right-0 w-28 h-14 opacity-[0.07]" viewBox="0 0 100 28" preserveAspectRatio="none">
-      <defs>
-        <linearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="currentColor" stopOpacity="0.3" />
-          <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <path fill="url(#sparkFill)" d="M0,24 L0,20 15,16 30,18 45,10 60,14 75,6 90,8 100,4 100,24 Z" />
-      <polyline fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" points="0,20 15,16 30,18 45,10 60,14 75,6 90,8 100,4" />
-    </svg>
-  )
-}
-
 export function StatisticsCards() {
   const [projecten, setProjecten] = useState<Project[]>([])
   const [offertes, setOffertes] = useState<Offerte[]>([])
@@ -54,7 +39,7 @@ export function StatisticsCards() {
     return (
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="rounded-xl p-5 h-[120px] bg-muted/30 animate-pulse" />
+          <div key={i} className="rounded-[10px] p-5 h-[120px] bg-muted/30 animate-pulse" />
         ))}
       </div>
     )
@@ -68,44 +53,58 @@ export function StatisticsCards() {
       value: formatCurrency(openstaandeFacturen),
       change: vervallenCount > 0 ? `${vervallenCount} vervallen` : undefined,
       changeDown: vervallenCount > 0,
-      gradient: 'stat-card-gradient-blush',
+      bg: '#FDE8E2',
+      textColor: '#C03A18',
     },
     {
       title: 'Actieve projecten',
       value: animProjecten.toString(),
       change: `${projecten.length} totaal`,
-      gradient: 'stat-card-gradient-sage',
+      bg: '#E4F0EA',
+      textColor: '#2D6B48',
     },
     {
       title: 'Offertes verstuurd',
       value: animOffertes.toString(),
       change: `${offertes.length} totaal`,
-      gradient: 'stat-card-gradient-mist',
+      bg: '#E5ECF6',
+      textColor: '#2A5580',
     },
     {
       title: 'Hit rate',
       value: `${animHitRate}%`,
       change: `${goedgekeurd} goedgekeurd`,
-      gradient: 'stat-card-gradient-cream',
+      bg: '#E2F0F0',
+      textColor: '#1A535C',
     },
   ]
 
   return (
-    <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 wm-stagger">
-      {stats.map((stat, i) => (
-        <div key={stat.title} className={`${stat.gradient} rounded-2xl p-6 cursor-default group stat-card-hover stat-card-glow relative overflow-hidden border border-black/[0.04] dark:border-white/[0.06]`}>
-          <Sparkline />
-          <p className="text-2xs font-extrabold uppercase tracking-[0.1em] text-text-tertiary dark:text-text-tertiary mb-3 relative z-[1]">
+    <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+      {stats.map((stat) => (
+        <div
+          key={stat.title}
+          className="rounded-[10px] p-6 cursor-default relative overflow-hidden"
+          style={{ backgroundColor: stat.bg }}
+        >
+          <p
+            className="text-[10px] font-semibold uppercase mb-3"
+            style={{ letterSpacing: '1px', color: stat.textColor }}
+          >
             {stat.title}
           </p>
-          <p className="text-2xl font-bold tracking-tight text-foreground relative z-[1] font-mono wm-kpi-value">
+          <p
+            className="font-mono text-[22px] font-bold tracking-tight"
+            style={{ color: stat.textColor }}
+          >
             {stat.value}
           </p>
           {stat.change && (
-            <p className={`text-xs font-bold mt-4 relative z-[1] flex items-center gap-1 ${stat.changeDown ? 'text-destructive' : 'text-[#3A7D52] dark:text-[#7AAF85]'}`}>
-              <span className="inline-block transition-transform duration-300 group-hover:translate-y-[-1px]">
-                {stat.changeDown ? '↓' : '↑'}
-              </span>
+            <p
+              className="text-xs font-medium mt-4 flex items-center gap-1"
+              style={{ color: stat.textColor, opacity: 0.7 }}
+            >
+              <span>{stat.changeDown ? '↓' : '↑'}</span>
               {stat.change}
             </p>
           )}
