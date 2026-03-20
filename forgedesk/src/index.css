@@ -16,55 +16,55 @@
 @layer base {
   :root {
     /* Font customization */
-    --font-family: 'Plus Jakarta Sans';
+    --font-family: 'IBM Plex Sans';
     --font-size: 14px;
 
     /* Achtergrond */
-    --background: 38 25% 96%;          /* warm crème, niet koud grijs */
-    --foreground: 25 15% 12%;          /* warm near-black */
+    --background: 40 14% 98%;          /* #FAFAF8 */
+    --foreground: 0 0% 10%;            /* #191919 */
 
     /* Cards */
-    --card: 40 20% 99%;                /* subtiel warm wit — cards tillen op */
-    --card-foreground: 25 15% 12%;
+    --card: 0 0% 100%;                 /* #FFFFFF */
+    --card-foreground: 0 0% 10%;
 
     /* Sidebar */
-    --sidebar-background: 38 22% 97%;  /* warm off-white */
-    --sidebar-foreground: 25 8% 42%;   /* warm grey */
-    --sidebar-primary: 28 60% 52%;     /* #CC8A3F warm amber */
-    --sidebar-primary-foreground: 25 15% 12%;
-    --sidebar-accent: 38 25% 95%;
-    --sidebar-accent-foreground: 25 15% 12%;
-    --sidebar-border: 33 15% 88%;      /* warm zandkleurig */
-    --sidebar-ring: 28 60% 52%;
+    --sidebar-background: 40 14% 98%;  /* #FAFAF8 */
+    --sidebar-foreground: 0 0% 10%;
+    --sidebar-primary: 186 53% 23%;    /* #1A535C petrol */
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 40 10% 95%;
+    --sidebar-accent-foreground: 0 0% 10%;
+    --sidebar-border: 36 8% 89%;       /* #E6E4E0 */
+    --sidebar-ring: 186 53% 23%;
 
-    /* Primary: warm near-black — voor hoofdknoppen */
-    --primary: 25 20% 18%;             /* zacht warm donkerbruin */
-    --primary-foreground: 40 20% 99%;
+    /* Primary: petrol — voor hoofdknoppen */
+    --primary: 186 53% 23%;            /* #1A535C petrol */
+    --primary-foreground: 0 0% 100%;
 
     /* Secondary */
-    --secondary: 35 18% 93%;           /* warm zand */
-    --secondary-foreground: 25 12% 28%;
+    --secondary: 40 10% 95%;           /* #F4F2EE warm */
+    --secondary-foreground: 40 3% 34%;
 
     /* Muted */
-    --muted: 35 18% 93%;              /* warm crème, niet koud grijs */
-    --muted-foreground: 25 10% 45%;    /* warm middengrijs */
+    --muted: 40 10% 95%;
+    --muted-foreground: 40 3% 59%;
 
     /* Accent */
-    --accent: 28 60% 52%;               /* #CC8A3F warm amber — zichtbaar als tekst */
+    --accent: 12 87% 57%;              /* #F15025 flame */
     --accent-foreground: 0 0% 100%;
 
     /* Borders */
-    --border: 33 15% 87%;              /* warm zandkleurige border */
-    --input: 33 15% 87%;
-    --ring: 28 60% 52%;                /* amber focus ring */
+    --border: 36 8% 89%;               /* #E6E4E0 */
+    --input: 36 8% 89%;
+    --ring: 186 53% 23%;               /* petrol als focus ring */
 
     /* Destructive */
-    --destructive: 5 52% 54%;          /* #C45B4F */
-    --destructive-foreground: 40 20% 99%;
+    --destructive: 12 87% 57%;         /* flame als error */
+    --destructive-foreground: 0 0% 100%;
 
     /* Popover */
-    --popover: 40 20% 99%;            /* warm wit */
-    --popover-foreground: 25 15% 12%;
+    --popover: 0 0% 100%;             /* wit */
+    --popover-foreground: 0 0% 10%;
 
     /* Radius */
     --radius: 0.625rem;                /* 10px voor buttons/inputs */
@@ -152,43 +152,43 @@
   }
 
   .dark {
-    --background: 30 12% 8%;           /* warm donker, niet koud zwart */
-    --foreground: 35 10% 90%;          /* warm light text */
-    --card: 30 12% 10%;                /* warm dark surface */
-    --card-foreground: 35 10% 90%;
-    --sidebar-background: 30 10% 9%;   /* iets donkerder dan content */
-    --sidebar-foreground: 30 8% 55%;
-    --sidebar-border: 30 10% 18%;
-    --primary: 35 10% 90%;
-    --primary-foreground: 30 12% 8%;
-    --secondary: 30 10% 16%;
-    --secondary-foreground: 35 8% 70%;
-    --muted: 30 10% 16%;
-    --muted-foreground: 30 8% 50%;
-    --accent: 28 55% 58%;               /* amber-light — zichtbaar als tekst */
-    --accent-foreground: 30 12% 8%;
-    --border: 30 10% 18%;
-    --input: 30 10% 18%;
-    --destructive: 5 58% 65%;
-    --destructive-foreground: 35 10% 95%;
-    --popover: 30 12% 10%;
-    --popover-foreground: 35 10% 90%;
-    --ring: 28 60% 55%;
+    --background: 40 5% 10%;           /* #1A1A18 */
+    --foreground: 36 8% 89%;           /* #E8E6E0 */
+    --card: 40 5% 13%;                 /* #232320 */
+    --card-foreground: 36 8% 89%;
+    --sidebar-background: 40 5% 10%;
+    --sidebar-foreground: 36 8% 89%;
+    --sidebar-border: 40 5% 22%;
+    --primary: 186 42% 34%;            /* #2A7A86 petrol lichter */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 40 5% 16%;            /* #2A2A26 */
+    --secondary-foreground: 36 8% 70%;
+    --muted: 40 5% 16%;
+    --muted-foreground: 40 5% 50%;
+    --accent: 12 87% 57%;              /* flame blijft gelijk */
+    --accent-foreground: 0 0% 100%;
+    --border: 40 5% 22%;               /* #3A3A36 */
+    --input: 40 5% 22%;
+    --destructive: 12 87% 57%;
+    --destructive-foreground: 0 0% 100%;
+    --popover: 40 5% 13%;
+    --popover-foreground: 36 8% 89%;
+    --ring: 186 42% 34%;
 
-    /* Semantic UI tokens — dark, warm */
-    --border-subtle: 30 10% 20%;
-    --text-placeholder: 30 8% 42%;
-    --text-tertiary: 30 8% 52%;
-    --bg-hover: 30 10% 14%;
-    --bg-subtle: 30 10% 10%;
+    /* Semantic UI tokens — dark */
+    --border-subtle: 40 5% 24%;
+    --text-placeholder: 40 5% 42%;
+    --text-tertiary: 40 5% 52%;
+    --bg-hover: 40 5% 14%;
+    --bg-subtle: 40 5% 10%;
 
-    --sidebar-primary: 28 55% 58%;
-    --wm-sidebar-bg: 30 10% 9%;
-    --wm-sidebar-hover: 30 10% 14%;
-    --wm-sidebar-active: 28 55% 58%;
-    --wm-hover: 28 55% 55%;
-    --wm-light: 28 55% 65%;
-    --wm-pale: 28 50% 20%;
+    --sidebar-primary: 186 42% 34%;
+    --wm-sidebar-bg: 40 5% 9%;
+    --wm-sidebar-hover: 40 5% 14%;
+    --wm-sidebar-active: 186 42% 34%;
+    --wm-hover: 186 42% 30%;
+    --wm-light: 186 42% 40%;
+    --wm-pale: 186 30% 20%;
     --wm-glass: rgba(20, 20, 18, 0.85);
     --wm-glass-border: rgba(255, 255, 255, 0.06);
     --wm-glow: 0 0 40px rgba(204, 138, 63, 0.08);
@@ -242,31 +242,48 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: var(--font-family), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    font-weight: 400;
     font-size: 14px;
-    line-height: 1.5;
+    line-height: 1.6;
+    color: #191919;
+    background-color: #FAFAF8;
   }
 
   /* Heading typography */
-  h1, h2, h3, h4 {
-    font-family: var(--font-family), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  h1, h2, h3, .font-heading {
+    font-family: 'Bricolage Grotesque', system-ui, sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.5px;
   }
-  h1 { @apply text-[28px] font-extrabold tracking-[-0.04em] leading-tight; }
-  h2 { @apply text-xl font-bold tracking-[-0.02em]; }
+  h4 {
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  }
+  h1 { @apply text-[28px] font-extrabold leading-tight; }
+  h2 { @apply text-xl font-bold; }
   h3 { @apply text-lg font-semibold; }
   h4 { @apply text-base font-medium; }
+
+  /* Alle getallen in DM Mono */
+  .font-mono, [data-mono],
+  input[type="number"],
+  input[inputmode="numeric"],
+  input[inputmode="decimal"],
+  input[inputmode="tel"] {
+    font-family: 'DM Mono', monospace;
+  }
 
   /* Tabular numbers in tables — digits align neatly */
   table td, table th {
     font-variant-numeric: tabular-nums;
   }
 
-  /* Selection color — warm amber tint */
+  /* Selection color — petrol tint */
   ::selection {
-    background: hsl(28 60% 52% / 0.18);
+    background: hsl(186 53% 23% / 0.18);
     color: hsl(var(--foreground));
   }
 }

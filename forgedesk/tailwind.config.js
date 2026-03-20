@@ -15,11 +15,9 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['"Plus Jakarta Sans"', 'Outfit', 'system-ui', 'sans-serif'],
-        display: ['"Plus Jakarta Sans"', 'Outfit', 'system-ui', 'sans-serif'],
-        mono: ['"DM Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
-        outfit: ['"Outfit"', 'sans-serif'],
-        serif: ['"DM Serif Display"', 'Georgia', 'serif'],
+        sans: ['"IBM Plex Sans"', 'system-ui', 'sans-serif'],
+        heading: ['"Bricolage Grotesque"', 'system-ui', 'sans-serif'],
+        mono: ['"DM Mono"', 'monospace'],
       },
       fontSize: {
         "2xs": ["10px", { lineHeight: "14px" }],
@@ -95,15 +93,73 @@ export default {
           DEFAULT: '#F5D5C8',
           deep: '#C4735A',
         },
-        // Module accent kleuren (per-module identity)
-        'mod-projecten': '#7EB5A6',
-        'mod-klanten': '#8BAFD4',
-        'mod-offertes': '#9B8EC4',
-        'mod-facturen': '#E8866A',
-        'mod-werkbonnen': '#D4836A',
-        'mod-taken': '#C4A882',
-        'mod-planning': '#7EB5A6',
-        'mod-email': '#8BAFD4',
+        // DOEN rebrand — nieuwe kleuren
+        flame: {
+          DEFAULT: '#F15025',
+          light: '#FDE8E2',
+          border: '#F5C4B4',
+          text: '#C03A18',
+        },
+        petrol: {
+          DEFAULT: '#1A535C',
+          light: '#E2F0F0',
+          border: '#B8D8DA',
+        },
+        ink: '#191919',
+        'bg-page': '#FAFAF8',
+        warm: '#F4F2EE',
+        sand: '#E6E4E0',
+        'text-sec': '#5A5A55',
+        'muted-hex': '#A0A098',
+        // Module kleuren — DOEN
+        'mod-projecten': {
+          DEFAULT: '#1A535C',
+          light: '#E2F0F0',
+          border: '#B8D8DA',
+          text: '#1A535C',
+        },
+        'mod-offertes': {
+          DEFAULT: '#F15025',
+          light: '#FDE8E2',
+          border: '#F5C4B4',
+          text: '#C03A18',
+        },
+        'mod-facturen': {
+          DEFAULT: '#2D6B48',
+          light: '#E4F0EA',
+          border: '#C0DBCC',
+          text: '#2D6B48',
+        },
+        'mod-klanten': {
+          DEFAULT: '#3A6B8C',
+          light: '#E5ECF6',
+          border: '#C0D0EA',
+          text: '#2A5580',
+        },
+        'mod-planning': {
+          DEFAULT: '#9A5A48',
+          light: '#F2E8E5',
+          border: '#E0CFC8',
+          text: '#7A4538',
+        },
+        'mod-werkbonnen': {
+          DEFAULT: '#C44830',
+          light: '#FAE5E0',
+          border: '#EDD0C5',
+          text: '#943520',
+        },
+        'mod-taken': {
+          DEFAULT: '#5A5A55',
+          light: '#EEEEED',
+          border: '#D8D8D5',
+          text: '#4A4A45',
+        },
+        'mod-email': {
+          DEFAULT: '#6A5A8A',
+          light: '#EEE8F5',
+          border: '#D8CCE8',
+          text: '#5A4A78',
+        },
         // Liftoff-inspired landing page palette
         'lf-bg': '#FAFAF8',
         'lf-fg': '#1a1a1a',
