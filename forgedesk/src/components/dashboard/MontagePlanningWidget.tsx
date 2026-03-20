@@ -20,11 +20,11 @@ import { cn } from '@/lib/utils'
 import { logger } from '../../utils/logger'
 
 const STATUS_BADGE: Record<MontageAfspraak['status'], string> = {
-  gepland: 'bg-[var(--color-mist)] text-[var(--color-mist-text)]',
-  onderweg: 'bg-[var(--color-cream)] text-[var(--color-cream-text)]',
-  bezig: 'bg-[var(--color-sage)] text-[var(--color-sage-text)]',
-  afgerond: 'bg-[var(--color-sage)] text-[var(--color-sage-text)]',
-  uitgesteld: 'bg-[var(--color-coral)] text-[var(--color-coral-text)]',
+  gepland: 'bg-[#E5ECF6] text-[#2A5580]',
+  onderweg: 'bg-[#FDE8E2] text-[#C03A18]',
+  bezig: 'bg-[#E4F0EA] text-[#2D6B48]',
+  afgerond: 'bg-[#E2F0F0] text-[#1A535C]',
+  uitgesteld: 'bg-[#FDE8E2] text-[#C03A18]',
 }
 
 const STATUS_LABEL: Record<MontageAfspraak['status'], string> = {

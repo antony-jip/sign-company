@@ -43,10 +43,10 @@ export { getStatusBadgeClass as getStatusColor, getStatusLabel, getRowAccentClas
 
 export function getPriorityColor(priority: string): string {
   const colors: Record<string, string> = {
-    laag: 'badge-sage',
-    medium: 'badge-cream',
-    hoog: 'badge-blush',
-    kritiek: 'badge-coral',
+    laag: 'badge-groen',
+    medium: 'badge-blauw',
+    hoog: 'badge-flame',
+    kritiek: 'badge-flame',
   }
-  return colors[priority] || 'badge-cream'
+  return colors[priority] || 'badge-grijs'
 }

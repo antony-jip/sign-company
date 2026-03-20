@@ -25,9 +25,9 @@ import { getRowAccentClass } from '@/utils/statusColors'
 type FilterStatus = 'alle' | Leveringsbon['status']
 
 const STATUS_CONFIG: Record<Leveringsbon['status'], { label: string; color: string; dot: string }> = {
-  concept: { label: 'Concept', color: 'badge-cream', dot: 'bg-[var(--color-cream-text)]' },
-  geleverd: { label: 'Geleverd', color: 'badge-mist', dot: 'bg-[var(--color-mist-text)]' },
-  getekend: { label: 'Getekend', color: 'badge-sage', dot: 'bg-[var(--color-sage-text)]' },
+  concept: { label: 'Concept', color: 'badge-grijs', dot: 'bg-[#5A5A55]' },
+  geleverd: { label: 'Geleverd', color: 'badge-blauw', dot: 'bg-[#2A5580]' },
+  getekend: { label: 'Getekend', color: 'badge-petrol', dot: 'bg-[#1A535C]' },
 }
 
 const FILTER_OPTIONS: { value: FilterStatus; label: string }[] = [

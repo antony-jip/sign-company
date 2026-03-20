@@ -105,14 +105,14 @@ const PRIORITY_COLORS: Record<string, string> = {
 }
 
 const STATUS_BADGE_COLORS: Record<string, string> = {
-  concept: 'badge-cream',
-  verzonden: 'badge-mist',
-  bekeken: 'badge-cream',
-  goedgekeurd: 'badge-sage',
-  afgewezen: 'badge-coral',
-  verlopen: 'badge-blush',
-  gefactureerd: 'badge-lavender',
-  wijziging_gevraagd: 'badge-blush',
+  concept: 'badge-grijs',
+  verzonden: 'badge-flame',
+  bekeken: 'badge-paars',
+  goedgekeurd: 'badge-petrol',
+  afgewezen: 'badge-flame',
+  verlopen: 'badge-grijs',
+  gefactureerd: 'badge-groen',
+  wijziging_gevraagd: 'badge-flame',
 }
 
 const STATUS_LABELS: Record<string, string> = {

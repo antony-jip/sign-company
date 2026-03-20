@@ -4,71 +4,75 @@
 export function getStatusBadgeClass(status: string): string {
   const map: Record<string, string> = {
     // Offertes
-    'concept':      'badge-cream',
-    'verstuurd':    'badge-mist',
-    'verzonden':    'badge-mist',
-    'bekeken':      'badge-cream',
-    'goedgekeurd':  'badge-sage',
-    'afgewezen':    'badge-coral',
-    'verlopen':     'badge-blush',
-    'wijziging_gevraagd': 'badge-blush',
+    'concept':      'badge-grijs',
+    'verstuurd':    'badge-flame',
+    'verzonden':    'badge-flame',
+    'bekeken':      'badge-paars',
+    'goedgekeurd':  'badge-petrol',
+    'afgewezen':    'badge-flame',
+    'verlopen':     'badge-grijs',
+    'wijziging_gevraagd': 'badge-flame',
+    'gefactureerd': 'badge-groen',
 
     // Facturen
-    'open':         'badge-mist',
-    'betaald':      'badge-sage',
-    'te-laat':      'badge-coral',
-    'vervallen':    'badge-coral',
-    'gecrediteerd': 'badge-lavender',
+    'open':         'badge-flame',
+    'betaald':      'badge-groen',
+    'te-laat':      'badge-flame',
+    'vervallen':    'badge-flame',
+    'gecrediteerd': 'badge-paars',
 
     // Projecten
-    'actief':       'badge-sage',
-    'in-uitvoering':'badge-mist',
-    'gepland':      'badge-mist',
-    'in-review':    'badge-cream',
-    'te-factureren':'badge-lavender',
-    'opgeleverd':   'badge-cream',
-    'afgerond':     'badge-sage',
-    'gepauzeerd':   'badge-blush',
-    'on-hold':      'badge-blush',
-    'geannuleerd':  'badge-coral',
+    'offerte':      'badge-flame',
+    'actief':       'badge-groen',
+    'in-uitvoering':'badge-paars',
+    'gepland':      'badge-grijs',
+    'in-review':    'badge-grijs',
+    'te-factureren':'badge-groen',
+    'voorbereiding':'badge-warm-paars',
+    'productie':    'badge-paars',
+    'montage':      'badge-blauw',
+    'opgeleverd':   'badge-groen',
+    'afgerond':     'badge-petrol',
+    'gepauzeerd':   'badge-grijs',
+    'on-hold':      'badge-grijs',
+    'geannuleerd':  'badge-flame',
 
     // Taken
-    'todo':         'badge-cream',
-    'bezig':        'badge-mist',
-    'klaar':        'badge-sage',
-    'geblokkeerd':  'badge-coral',
+    'todo':         'badge-grijs',
+    'bezig':        'badge-blauw',
+    'klaar':        'badge-petrol',
+    'geblokkeerd':  'badge-flame',
 
     // Werkbonnen
-    'ingediend':    'badge-mist',
-    'gefactureerd': 'badge-lavender',
+    'ingediend':    'badge-grijs',
+    'definitief':   'badge-blauw',
 
     // Bestelbonnen
-    'besteld':         'badge-mist',
-    'deels_ontvangen': 'badge-cream',
-    'ontvangen':       'badge-sage',
+    'besteld':         'badge-blauw',
+    'deels_ontvangen': 'badge-grijs',
+    'ontvangen':       'badge-groen',
 
     // Leveringsbonnen
-    'geleverd':     'badge-mist',
-    'getekend':     'badge-sage',
+    'geleverd':     'badge-blauw',
+    'getekend':     'badge-petrol',
 
     // Klanten
-    'inactief':     'badge-cream',
-    'prospect':     'badge-cream',
-    'gearchiveerd': 'badge-cream',
+    'inactief':     'badge-grijs',
+    'prospect':     'badge-grijs',
+    'gearchiveerd': 'badge-grijs',
 
     // Klant status (Quick Win 1)
-    'normaal':         'badge-cream',
-    'vooruit_betalen': 'badge-blush',
-    'niet_helpen':     'badge-coral',
-    'voorrang':        'badge-sage',
+    'normaal':         'badge-grijs',
+    'vooruit_betalen': 'badge-flame',
+    'niet_helpen':     'badge-flame',
+    'voorrang':        'badge-groen',
 
     // Overig
-    'review':       'badge-cream',
-    'definitief':   'badge-sage',
-    'geweigerd':    'badge-coral',
+    'review':       'badge-grijs',
+    'geweigerd':    'badge-flame',
   }
 
-  return map[status.toLowerCase()] ?? 'badge-cream'
+  return map[status.toLowerCase()] ?? 'badge-grijs'
 }
 
 export function getStatusLabel(status: string): string {
@@ -81,16 +85,21 @@ export function getStatusLabel(status: string): string {
     'afgewezen':     'Afgewezen',
     'verlopen':      'Verlopen',
     'wijziging_gevraagd': 'Wijziging gevraagd',
+    'gefactureerd':  'Gefactureerd',
     'open':          'Open',
     'betaald':       'Betaald',
     'te-laat':       'Te laat',
     'vervallen':     'Vervallen',
     'gecrediteerd':  'Gecrediteerd',
+    'offerte':       'Offerte',
     'actief':        'Actief',
     'in-uitvoering': 'In uitvoering',
     'gepland':       'Gepland',
     'in-review':     'In review',
     'te-factureren': 'Te factureren',
+    'voorbereiding': 'Voorbereiding',
+    'productie':     'Productie',
+    'montage':       'Montage',
     'opgeleverd':    'Opgeleverd',
     'afgerond':      'Afgerond',
     'gepauzeerd':    'Gepauzeerd',
@@ -101,7 +110,7 @@ export function getStatusLabel(status: string): string {
     'klaar':         'Klaar',
     'geblokkeerd':   'Geblokkeerd',
     'ingediend':     'Ingediend',
-    'gefactureerd':  'Gefactureerd',
+    'definitief':    'Definitief',
     'besteld':       'Besteld',
     'deels_ontvangen':'Deels ontvangen',
     'ontvangen':     'Ontvangen',
@@ -115,7 +124,6 @@ export function getStatusLabel(status: string): string {
     'niet_helpen':   'Niet helpen',
     'voorrang':      'Voorrang',
     'review':        'Review',
-    'definitief':    'Definitief',
     'geweigerd':     'Geweigerd',
   }
 
@@ -124,36 +132,54 @@ export function getStatusLabel(status: string): string {
 
 export function getRowAccentClass(status: string): string {
   const map: Record<string, string> = {
-    'goedgekeurd': 'border-l-[var(--color-sage-border)]',
-    'betaald':     'border-l-[var(--color-sage-border)]',
-    'actief':      'border-l-[var(--color-sage-border)]',
-    'afgerond':    'border-l-[var(--color-sage-border)]',
-    'klaar':       'border-l-[var(--color-sage-border)]',
-    'getekend':    'border-l-[var(--color-sage-border)]',
-    'ontvangen':   'border-l-[var(--color-sage-border)]',
-    'verstuurd':   'border-l-[var(--color-mist-border)]',
-    'verzonden':   'border-l-[var(--color-mist-border)]',
-    'open':        'border-l-[var(--color-mist-border)]',
-    'ingediend':   'border-l-[var(--color-mist-border)]',
-    'besteld':     'border-l-[var(--color-mist-border)]',
-    'bezig':       'border-l-[var(--color-mist-border)]',
-    'gepland':     'border-l-[var(--color-mist-border)]',
-    'geleverd':    'border-l-[var(--color-mist-border)]',
-    'concept':     'border-l-[var(--color-cream-border)]',
-    'todo':        'border-l-[var(--color-cream-border)]',
-    'bekeken':     'border-l-[var(--color-cream-border)]',
-    'in-review':   'border-l-[var(--color-cream-border)]',
-    'verlopen':    'border-l-[var(--color-coral-border)]',
-    'vervallen':   'border-l-[var(--color-coral-border)]',
-    'te-laat':     'border-l-[var(--color-coral-border)]',
-    'afgewezen':   'border-l-[var(--color-coral-border)]',
-    'geannuleerd': 'border-l-[var(--color-coral-border)]',
-    'on-hold':     'border-l-[var(--color-blush-border)]',
-    'gepauzeerd':  'border-l-[var(--color-blush-border)]',
-    'wijziging_gevraagd': 'border-l-[var(--color-blush-border)]',
-    'gefactureerd':'border-l-[var(--color-lavender-border)]',
-    'gecrediteerd':'border-l-[var(--color-lavender-border)]',
-    'te-factureren':'border-l-[var(--color-lavender-border)]',
+    // Groen
+    'goedgekeurd': 'border-l-[#2D6B48]',
+    'betaald':     'border-l-[#2D6B48]',
+    'actief':      'border-l-[#2D6B48]',
+    'afgerond':    'border-l-[#1A535C]',
+    'klaar':       'border-l-[#1A535C]',
+    'getekend':    'border-l-[#1A535C]',
+    'ontvangen':   'border-l-[#2D6B48]',
+    'opgeleverd':  'border-l-[#2D6B48]',
+    'te-factureren':'border-l-[#2D6B48]',
+    'gefactureerd':'border-l-[#2D6B48]',
+
+    // Flame
+    'verstuurd':   'border-l-[#F15025]',
+    'verzonden':   'border-l-[#F15025]',
+    'open':        'border-l-[#F15025]',
+    'afgewezen':   'border-l-[#F15025]',
+    'verlopen':    'border-l-[#C03A18]',
+    'vervallen':   'border-l-[#C03A18]',
+    'te-laat':     'border-l-[#C03A18]',
+    'geannuleerd': 'border-l-[#C03A18]',
+    'wijziging_gevraagd': 'border-l-[#F15025]',
+
+    // Blauw
+    'bezig':       'border-l-[#2A5580]',
+    'ingediend':   'border-l-[#2A5580]',
+    'besteld':     'border-l-[#2A5580]',
+    'gepland':     'border-l-[#2A5580]',
+    'geleverd':    'border-l-[#2A5580]',
+    'montage':     'border-l-[#2A5580]',
+    'definitief':  'border-l-[#2A5580]',
+
+    // Petrol
+    'petrol':      'border-l-[#1A535C]',
+
+    // Paars
+    'bekeken':     'border-l-[#5A4A78]',
+    'in-uitvoering':'border-l-[#5A4A78]',
+    'productie':   'border-l-[#5A4A78]',
+    'gecrediteerd':'border-l-[#5A4A78]',
+
+    // Grijs
+    'concept':     'border-l-[#A0A098]',
+    'todo':        'border-l-[#A0A098]',
+    'in-review':   'border-l-[#A0A098]',
+    'on-hold':     'border-l-[#A0A098]',
+    'gepauzeerd':  'border-l-[#A0A098]',
+    'geblokkeerd': 'border-l-[#C03A18]',
   }
   return map[status.toLowerCase()] ?? 'border-l-transparent'
 }

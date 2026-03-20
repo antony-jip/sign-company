@@ -27,11 +27,11 @@ import { getRowAccentClass } from '@/utils/statusColors'
 type FilterStatus = 'alle' | Bestelbon['status']
 
 const STATUS_CONFIG: Record<Bestelbon['status'], { label: string; color: string; dot: string }> = {
-  concept: { label: 'Concept', color: 'badge-cream', dot: 'bg-[var(--color-cream-text)]' },
-  besteld: { label: 'Besteld', color: 'badge-mist', dot: 'bg-[var(--color-mist-text)]' },
-  deels_ontvangen: { label: 'Deels ontvangen', color: 'badge-cream', dot: 'bg-[var(--color-cream-text)]' },
-  ontvangen: { label: 'Ontvangen', color: 'badge-sage', dot: 'bg-[var(--color-sage-text)]' },
-  geannuleerd: { label: 'Geannuleerd', color: 'badge-coral', dot: 'bg-[var(--color-coral-text)]' },
+  concept: { label: 'Concept', color: 'badge-grijs', dot: 'bg-[#5A5A55]' },
+  besteld: { label: 'Besteld', color: 'badge-blauw', dot: 'bg-[#2A5580]' },
+  deels_ontvangen: { label: 'Deels ontvangen', color: 'badge-grijs', dot: 'bg-[#5A5A55]' },
+  ontvangen: { label: 'Ontvangen', color: 'badge-groen', dot: 'bg-[#2D6B48]' },
+  geannuleerd: { label: 'Geannuleerd', color: 'badge-flame', dot: 'bg-[#C03A18]' },
 }
 
 const FILTER_OPTIONS: { value: FilterStatus; label: string }[] = [
