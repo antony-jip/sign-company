@@ -33,6 +33,8 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Card, CardContent } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/empty-state'
+import { SpectrumBar } from '@/components/ui/SpectrumBar'
+import { getSpectrumPercentage } from '@/utils/spectrumUtils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -686,6 +688,7 @@ export function ProjectsList() {
                     <span className="font-mono font-semibold text-foreground">{formatCurrency(bedrag)}</span>
                   )}
                 </div>
+                <SpectrumBar percentage={getSpectrumPercentage(project.status)} height={3} className="mt-2" />
               </div>
             )
           })}
@@ -851,6 +854,7 @@ export function ProjectsList() {
                               {project.beschrijving}
                             </p>
                           )}
+                          <SpectrumBar percentage={getSpectrumPercentage(project.status)} height={3} className="mt-1.5 max-w-[200px]" />
                         </div>
                         <span className={cn(
                           'text-2xs font-medium px-1.5 py-0.5 rounded flex-shrink-0 uppercase tracking-wide',
