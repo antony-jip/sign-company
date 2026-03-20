@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   Clock,
 } from 'lucide-react'
+import { SpectrumBar } from '@/components/ui/SpectrumBar'
 import { PortaalVerlopen } from './PortaalVerlopen'
 import { PortaalGesloten } from './PortaalGesloten'
 import { PortaalOfferteSection } from './PortaalOfferteSection'
@@ -141,12 +142,41 @@ function useBekekenTracker(token: string | undefined) {
   return { markBekeken }
 }
 
+// ── Phase Labels ─────────────────────────────────────────────────────────
+
+const FASE_LABELS = ['Offerte', 'Akkoord', 'Productie', 'Montage', 'Klaar']
+
+function PortaalVoortgang({ percentage }: { percentage: number }) {
+  return (
+    <div className="space-y-2">
+      <SpectrumBar percentage={percentage} height={8} />
+      <div className="flex justify-between">
+        {FASE_LABELS.map((label, i) => {
+          const labelPct = (i / (FASE_LABELS.length - 1)) * 100
+          const isActive = percentage >= labelPct
+          return (
+            <span
+              key={label}
+              style={{
+                fontSize: 10,
+                fontWeight: isActive ? 600 : 400,
+                color: isActive ? '#191919' : '#A0A098',
+              }}
+            >
+              {label}
+            </span>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 // ── Action Summary Component ─────────────────────────────────────────────
 
-function PortaalActionSummary({ offertes, drukproeven, primaire_kleur }: {
+function PortaalActionSummary({ offertes, drukproeven }: {
   offertes: PortaalItemData[]
   drukproeven: PortaalItemData[]
-  primaire_kleur: string
 }) {
   const pendingOffertes = offertes.filter(i => i.status !== 'goedgekeurd' && i.status !== 'betaald')
   const pendingDrukproeven = drukproeven.filter(i => i.status !== 'goedgekeurd')
@@ -157,37 +187,30 @@ function PortaalActionSummary({ offertes, drukproeven, primaire_kleur }: {
   if (totalItems === 0) return null
 
   const allDone = totalPending === 0
-  const progressPercent = totalItems > 0 ? Math.round((completed / totalItems) * 100) : 0
 
   return (
-    <div className={`rounded-xl border px-5 py-4 ${allDone ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'}`}>
+    <div
+      className="rounded-xl px-5 py-4"
+      style={{
+        backgroundColor: allDone ? '#E4F0EA' : '#FFFFFF',
+        border: `0.5px solid ${allDone ? '#2D6B48' : '#E6E4E0'}`,
+      }}
+    >
       <div className="flex items-center gap-3">
         {allDone ? (
-          <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
+          <CheckCircle2 className="w-5 h-5 flex-shrink-0" style={{ color: '#2D6B48' }} />
         ) : (
-          <Clock className="w-5 h-5 text-gray-400 flex-shrink-0" />
+          <Clock className="w-5 h-5 flex-shrink-0" style={{ color: '#A0A098' }} />
         )}
         <div className="flex-1 min-w-0">
-          <p className={`text-sm font-medium ${allDone ? 'text-green-700' : 'text-gray-900'}`}>
+          <p className="text-sm font-medium" style={{ color: allDone ? '#2D6B48' : '#191919' }}>
             {allDone
               ? 'Alles is afgehandeld!'
               : `${totalPending} ${totalPending === 1 ? 'item wacht' : 'items wachten'} op uw goedkeuring`}
           </p>
-          {/* Progress bar */}
-          <div className="mt-2 flex items-center gap-3">
-            <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-              <div
-                className="h-full rounded-full transition-all duration-500"
-                style={{
-                  width: `${progressPercent}%`,
-                  backgroundColor: allDone ? '#16a34a' : primaire_kleur,
-                }}
-              />
-            </div>
-            <span className="text-xs text-gray-500 flex-shrink-0 tabular-nums">
-              {completed} van {totalItems}
-            </span>
-          </div>
+          <p className="font-mono mt-0.5" style={{ fontSize: 10, color: '#A0A098' }}>
+            {completed} van {totalItems} afgerond
+          </p>
         </div>
       </div>
     </div>
@@ -332,10 +355,20 @@ export function PortaalPagina() {
   const tekeningItems = rawItems.filter(i => i.type === 'tekening' && (!i.bericht_type || i.bericht_type === 'item'))
   const berichtItems = rawItems.filter(i => i.bericht_type === 'tekst' || i.type === 'bericht')
 
+  // Calculate progress from portal items
+  const allApprovalItems = [...offerteItems, ...tekeningItems]
+  const completedItems = allApprovalItems.filter(i => i.status === 'goedgekeurd' || i.status === 'betaald').length
+  const portaalProgress = allApprovalItems.length > 0
+    ? Math.round((completedItems / allApprovalItems.length) * 100)
+    : 0
+
   return (
     <div className="min-h-screen bg-[#FAFAF8] flex flex-col">
+      {/* Spectrum strip */}
+      <SpectrumBar percentage={portaalProgress} height={5} />
+
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 flex-shrink-0">
+      <header className="flex-shrink-0" style={{ backgroundColor: '#FFFFFF', borderBottom: '0.5px solid #E6E4E0' }}>
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             {toonLogo && bedrijf.logo_url ? (
@@ -353,15 +386,15 @@ export function PortaalPagina() {
               </div>
             )}
             <div>
-              <span className="font-semibold text-gray-900">{bedrijf.naam}</span>
+              <span className="font-semibold" style={{ fontSize: 14, color: '#191919' }}>{bedrijf.naam}</span>
               {project && (
-                <p className="text-xs text-gray-500">{project.naam}</p>
+                <p style={{ fontSize: 12, color: '#5A5A55' }}>{project.naam}</p>
               )}
             </div>
           </div>
-          <div className="flex items-center gap-2 text-xs text-gray-500">
+          <div className="flex items-center gap-2" style={{ fontSize: 11, color: '#A0A098' }}>
             <Calendar className="w-3.5 h-3.5" />
-            <span>Geldig tot {formatDate(portaal.verloopt_op)}</span>
+            <span className="font-mono">Geldig tot {formatDate(portaal.verloopt_op)}</span>
           </div>
         </div>
       </header>
@@ -370,16 +403,19 @@ export function PortaalPagina() {
       <main className="flex-1 max-w-2xl mx-auto w-full px-4 py-6 space-y-6">
         {/* Instruction text */}
         {portaal.instructie_tekst && (
-          <div className="bg-white rounded-xl border border-gray-200 px-5 py-4">
-            <p className="text-sm text-gray-700 whitespace-pre-wrap">{portaal.instructie_tekst}</p>
+          <div className="rounded-[10px] px-5 py-4" style={{ backgroundColor: '#FFFFFF', border: '0.5px solid #E6E4E0' }}>
+            <p className="whitespace-pre-wrap" style={{ fontSize: 13, color: '#5A5A55', lineHeight: 1.6 }}>{portaal.instructie_tekst}</p>
           </div>
         )}
+
+        {/* Action summary */}
+        {/* Progress bar with phase labels */}
+        <PortaalVoortgang percentage={portaalProgress} />
 
         {/* Action summary */}
         <PortaalActionSummary
           offertes={offerteItems}
           drukproeven={tekeningItems}
-          primaire_kleur={primaire_kleur}
         />
 
         {/* Offertes section */}
@@ -422,12 +458,12 @@ export function PortaalPagina() {
       {/* Contact section */}
       {toonContact && (bedrijf.telefoon || bedrijf.email || bedrijf.website) && (
         <div className="max-w-2xl mx-auto w-full px-4 pb-4">
-          <div className="bg-white rounded-xl border border-gray-200 px-5 py-4 space-y-2">
-            <div className="flex items-center gap-2 text-gray-700 font-medium text-sm">
+          <div className="rounded-[10px] px-5 py-4 space-y-2" style={{ backgroundColor: '#FFFFFF', border: '0.5px solid #E6E4E0' }}>
+            <div className="flex items-center gap-2 font-medium" style={{ fontSize: 12, color: '#5A5A55' }}>
               <Building2 className="w-4 h-4" />
               <span>Contact</span>
             </div>
-            <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+            <div className="flex flex-wrap gap-4" style={{ fontSize: 13, color: '#5A5A55' }}>
               {bedrijf.telefoon && (
                 <a href={`tel:${bedrijf.telefoon}`} className="inline-flex items-center gap-1.5 hover:text-gray-900">
                   <Phone className="w-3.5 h-3.5" />
