@@ -226,10 +226,10 @@ export function BestelbonnenLayout() {
       <Card>
         <div className="overflow-x-auto">
           {gefilterd.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 py-16 text-muted-foreground">
-              <ShoppingCart className="h-10 w-10 opacity-30" />
-              <p className="text-sm font-medium">Geen bestelbonnen gevonden</p>
-              <p className="text-xs text-muted-foreground/60">Maak een bestelbon aan voor je leveranciers.</p>
+            <div className="flex flex-col items-center gap-3 py-16">
+              <div className="rounded-full" style={{ width: '40px', height: '4px', backgroundColor: '#F15025' }} />
+              <p className="font-semibold" style={{ fontSize: '14px', color: '#191919' }}>Geen bestelbonnen gevonden</p>
+              <p style={{ fontSize: '12px', color: '#5A5A55' }}>Maak een bestelbon aan voor je leveranciers.</p>
               <Button variant="outline" size="sm" onClick={() => navigate('/bestelbonnen/nieuw')}>
                 <Plus className="h-4 w-4 mr-2" /> Eerste bestelbon aanmaken
               </Button>

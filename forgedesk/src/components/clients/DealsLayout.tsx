@@ -430,9 +430,9 @@ export function DealsLayout() {
         <Card>
           <div className="overflow-x-auto">
             {gefilterd.length === 0 ? (
-              <div className="flex flex-col items-center gap-3 py-16 text-muted-foreground">
-                <Briefcase className="h-10 w-10 opacity-30" />
-                <p className="text-sm font-medium">Geen deals gevonden</p>
+              <div className="flex flex-col items-center gap-3 py-16">
+                <div className="rounded-full" style={{ width: '40px', height: '4px', backgroundColor: '#2A5580' }} />
+                <p className="font-semibold" style={{ fontSize: '14px', color: '#191919' }}>Geen deals gevonden</p>
               </div>
             ) : (
               <table className="w-full">
