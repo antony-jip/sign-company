@@ -714,7 +714,7 @@ function ForgieSection() {
               <div className="px-6 py-4 border-b border-[#E8E5DE] bg-[#FAFAF8] flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-full bg-[#9B8EC4]/15 flex items-center justify-center">
-                    <span className="text-base">🦊</span>
+                    <span className="text-base font-bold text-[#9B8EC4]">D</span>
                   </div>
                   <div>
                     <div className="text-sm font-bold text-[#1a1a1a]">Daan</div>

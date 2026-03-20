@@ -1604,7 +1604,7 @@ export function QuoteItemsTable({
       {/* ========= LEGE STAAT ========= */}
       {items.length === 0 && (
         <div className="rounded-xl border-2 border-dashed border-border dark:border-border p-10 text-center">
-          <div className="text-3xl mb-2">📋</div>
+          <div className="text-3xl mb-2"><Clipboard className="w-8 h-8 mx-auto text-muted-foreground" /></div>
           <p className="text-sm font-medium text-foreground">Nog geen items</p>
           <p className="text-xs text-muted-foreground mt-1">
             Voeg een item toe om je offerte op te bouwen

@@ -19,8 +19,8 @@ export function WelkomPagina() {
     <div className="min-h-screen flex items-center justify-center p-5" style={{ backgroundColor: '#F4F3F0' }}>
       <div className="w-full max-w-2xl text-center">
         {/* Celebration */}
-        <div className="text-5xl mb-6 animate-bounce" style={{ animationDuration: '2s', animationIterationCount: '3' }}>
-          🎉
+        <div className="text-5xl mb-6">
+          <Sparkles className="w-12 h-12 mx-auto text-petrol" />
         </div>
 
         <h1 className="text-3xl font-extrabold text-black mb-3" style={{ fontFamily: '"Bricolage Grotesque", sans-serif' }}>

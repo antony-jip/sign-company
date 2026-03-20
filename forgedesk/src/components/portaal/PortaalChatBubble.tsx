@@ -32,7 +32,7 @@ export function PortaalChatBubble({ message, isOwnMessage, onImageClick }: Porta
           </div>
           <div className="rounded-2xl rounded-br-md border-l-[3px] border-amber-400 bg-amber-50/80 px-4 py-2.5 shadow-sm">
             <div className="mb-1 flex items-center gap-1 text-xs font-medium text-amber-700">
-              🔒 Intern
+              Intern
             </div>
             <p className="text-sm italic whitespace-pre-wrap text-foreground">{message.text}</p>
           </div>

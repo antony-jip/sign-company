@@ -87,14 +87,14 @@ const STATUS_OPTIONS: Array<{ key: Offerte['status']; label: string }> = [
 ]
 
 const ACTIVITEIT_ICONS: Record<string, string> = {
-  aangemaakt: '✏️',
-  bewerkt: '📝',
-  verstuurd: '📧',
-  bekeken: '👁️',
-  akkoord: '✅',
-  afgewezen: '❌',
-  gefactureerd: '💰',
-  wijziging_gevraagd: '💬',
+  aangemaakt: '·',
+  bewerkt: '·',
+  verstuurd: '·',
+  bekeken: '·',
+  akkoord: '·',
+  afgewezen: '·',
+  gefactureerd: '·',
+  wijziging_gevraagd: '·',
 }
 
 function calculateLineTotaal(item: { aantal: number; eenheidsprijs: number; korting_percentage: number }) {
@@ -1111,7 +1111,7 @@ export function OfferteDetail() {
                 className="flex items-start gap-3 py-2 border-b border-border/30 last:border-0"
               >
                 <span className="text-base flex-shrink-0 mt-0.5">
-                  {ACTIVITEIT_ICONS[act.type] || '📌'}
+                  {ACTIVITEIT_ICONS[act.type] || '·'}
                 </span>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-foreground">{act.beschrijving}</p>
