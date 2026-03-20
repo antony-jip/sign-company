@@ -101,7 +101,7 @@ export function ForgieChatPage() {
             <Sparkles className="w-5 h-5 text-blush-deep" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-foreground">Forgie</h1>
+            <h1 className="text-lg font-bold text-foreground">Daan</h1>
             <p className="text-xs text-muted-foreground">Je bedrijfsgeheugen</p>
           </div>
         </div>
@@ -129,7 +129,7 @@ export function ForgieChatPage() {
                 <Sparkles className="w-4 h-4 text-blush-deep" />
               </div>
               <div className="bg-card border rounded-2xl p-4 text-sm text-foreground">
-                Hoi! Ik ben Forgie, je bedrijfsgeheugen. Stel me een vraag over je klanten, projecten, offertes of facturen.
+                Hoi! Ik ben Daan, je bedrijfsgeheugen. Stel me een vraag over je klanten, projecten, offertes of facturen.
               </div>
             </div>
 
@@ -188,7 +188,7 @@ export function ForgieChatPage() {
                   <span className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
                   <span className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                 </span>
-                <span className="text-xs">Forgie is aan het denken...</span>
+                <span className="text-xs">Daan is aan het denken...</span>
               </div>
             </div>
           </div>
@@ -206,7 +206,7 @@ export function ForgieChatPage() {
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Vraag het aan Forgie..."
+            placeholder="Vraag het aan Daan..."
             disabled={loading}
             className="flex-1 rounded-xl border bg-background px-4 py-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-blush/50 disabled:opacity-50"
           />

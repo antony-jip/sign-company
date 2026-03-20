@@ -9,7 +9,7 @@ const features = [
   { icon: Users, title: 'Klanten en projecten beheren', description: 'Overzichtelijk klantenbeheer' },
   { icon: ClipboardList, title: 'Werkbonnen voor je team', description: 'Digitale werkbonnen met foto\'s en handtekeningen' },
   { icon: Calendar, title: 'Planning en montage-afspraken', description: 'Plan montages en afspraken visueel' },
-  { icon: Sparkles, title: 'AI-assistent Forgie helpt je met teksten', description: 'Schrijf offerteteksten in een handomdraai' },
+  { icon: Sparkles, title: 'AI-assistent Daan helpt je met teksten', description: 'Schrijf offerteteksten in een handomdraai' },
 ]
 
 export function WelkomPagina() {
@@ -28,7 +28,7 @@ export function WelkomPagina() {
         </div>
 
         <h1 className="text-3xl font-extrabold text-black mb-3" style={{ fontFamily: 'Manrope, sans-serif' }}>
-          Welkom bij FORGEdesk!
+          Welkom bij Doen.!
         </h1>
 
         <p className="text-[15px] text-neutral-600 mb-10 max-w-lg mx-auto leading-relaxed" style={{ fontFamily: 'Inter, sans-serif' }}>

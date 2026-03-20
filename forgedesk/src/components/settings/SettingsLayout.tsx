@@ -176,7 +176,7 @@ const settingsTabs = [
   { id: 'weergave', label: 'Weergave', icon: Sliders, description: 'Thema, taal en lay-out' },
   { id: 'sidebar', label: 'Sidebar', icon: PanelLeft, description: 'Project sidebar secties' },
   { id: 'portaal', label: 'Portaal', icon: Link2, description: 'Klantportaal instellingen' },
-  { id: 'forgie', label: 'Forgie AI', icon: Sparkles, description: 'AI assistent, visualizer en data import' },
+  { id: 'forgie', label: 'Daan AI', icon: Sparkles, description: 'AI assistent, visualizer en data import' },
   { id: 'teamleden', label: 'Teamleden', icon: Users, description: 'Leden, rollen en uitnodigingen' },
   { id: 'abonnement', label: 'Abonnement', icon: CreditCard, description: 'Plan, trial en betaling' },
 ] as const
@@ -1751,7 +1751,7 @@ function EmailTab() {
               <CardDescription>
                 {emailConnected
                   ? 'E-mail is verbonden en geconfigureerd'
-                  : 'Configureer SMTP en IMAP om e-mails te verzenden en ontvangen vanuit FORGE'}
+                  : 'Configureer SMTP en IMAP om e-mails te verzenden en ontvangen vanuit Doen.'}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -1956,7 +1956,7 @@ function EmailSettingsInline({
           E-mail Instellingen
         </CardTitle>
         <CardDescription>
-          Configureer SMTP (verzenden) en IMAP (ontvangen) om e-mails te beheren vanuit FORGE.
+          Configureer SMTP (verzenden) en IMAP (ontvangen) om e-mails te beheren vanuit Doen.
         </CardDescription>
       </CardHeader>
       <CardContent>

@@ -175,7 +175,7 @@ export function SigningVisualizerDialog({
   const handleGenereer = useCallback(async () => {
     if (!user?.id || !foto || !beschrijving.trim()) return
     if (creditSaldo <= 0) {
-      toast.error('Geen credits meer — koop credits via Instellingen > Forgie AI')
+      toast.error('Geen credits meer — koop credits via Instellingen > Daan AI')
       return
     }
 
@@ -242,7 +242,7 @@ export function SigningVisualizerDialog({
   const handleChatVerfijning = useCallback(async () => {
     if (!user?.id || !chatInput.trim() || !foto) return
     if (creditSaldo <= 0) {
-      toast.error('Geen credits meer — koop credits via Instellingen > Forgie AI')
+      toast.error('Geen credits meer — koop credits via Instellingen > Daan AI')
       return
     }
 

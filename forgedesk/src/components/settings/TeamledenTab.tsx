@@ -240,7 +240,7 @@ export function TeamledenTab() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold tracking-tight text-foreground">Teamleden</h2>
-          <p className="text-sm text-muted-foreground">Beheer wie toegang heeft tot FORGEdesk</p>
+          <p className="text-sm text-muted-foreground">Beheer wie toegang heeft tot Doen.</p>
         </div>
         <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
           <DialogTrigger asChild>
@@ -332,7 +332,7 @@ export function TeamledenTab() {
                 actieveleden.length === 0 ? (
                   <EmptyState
                     title="Nog geen teamleden"
-                    description="Nodig teamleden uit om samen te werken in FORGEdesk."
+                    description="Nodig teamleden uit om samen te werken in Doen."
                     action={
                       <Button size="sm" onClick={() => setInviteOpen(true)} className="gap-1.5">
                         <UserPlus className="w-4 h-4" />

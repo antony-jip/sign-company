@@ -17,7 +17,7 @@ const FEATURES = [
   'Onbeperkt klanten en projecten',
   'Offertes en facturen',
   'Werkbonnen en planning',
-  'AI-assistent Forgie',
+  'AI-assistent Daan',
   'Geen verborgen kosten',
   'Maandelijks opzegbaar',
 ]
@@ -32,7 +32,7 @@ export function AbonnementTab() {
   useEffect(() => {
     const result = searchParams.get('abonnement')
     if (result === 'success') {
-      toast.success('Abonnement geactiveerd! Welkom bij FORGEdesk Pro.')
+      toast.success('Abonnement geactiveerd! Welkom bij Doen. Pro.')
       searchParams.delete('abonnement')
       setSearchParams(searchParams, { replace: true })
     } else if (result === 'canceled') {
@@ -102,7 +102,7 @@ export function AbonnementTab() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Sparkles className="w-5 h-5" />
-              FORGEdesk Pro — €49/maand
+              Doen. Pro — €49/maand
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -158,7 +158,7 @@ export function AbonnementTab() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Sparkles className="w-5 h-5" />
-              FORGEdesk Pro — €49/maand
+              Doen. Pro — €49/maand
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">

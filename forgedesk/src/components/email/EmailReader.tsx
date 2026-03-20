@@ -111,7 +111,7 @@ export function EmailReader({
       const response = await callForgie('summarize', text)
       if (response?.result) setSummary(response.result)
     } catch {
-      toast.error('Forgie kon dit niet verwerken. Probeer het opnieuw.')
+      toast.error('Daan kon dit niet verwerken. Probeer het opnieuw.')
     } finally {
       setSummaryLoading(false)
     }
@@ -176,7 +176,7 @@ export function EmailReader({
         editorRef.current.innerHTML = `${response.result.replace(/\n/g, '<br>')}${signatureHtml}`
       }
     } catch {
-      toast.error('Forgie kon geen antwoord genereren')
+      toast.error('Daan kon geen antwoord genereren')
     } finally {
       setForgieLoading(false)
     }
@@ -201,7 +201,7 @@ export function EmailReader({
         }, 100)
       }
     } catch {
-      toast.error('Forgie kon geen antwoord genereren')
+      toast.error('Daan kon geen antwoord genereren')
     } finally {
       setForgieLoading(false)
     }

@@ -64,7 +64,7 @@ export function LoginPage() {
                 <path d="M12 16v4" />
               </svg>
             </div>
-            <span className="text-lg font-bold text-white tracking-tight" style={{ fontFamily: 'Manrope, sans-serif' }}>FORGEdesk</span>
+            <span className="text-lg font-bold text-white tracking-tight" style={{ fontFamily: 'Manrope, sans-serif' }}>Doen.</span>
           </Link>
         </div>
 
@@ -142,7 +142,7 @@ export function LoginPage() {
         </div>
 
         <p className="relative z-10 text-xs text-white/25" style={{ fontFamily: 'Inter, sans-serif' }}>
-          © {new Date().getFullYear()} FORGEdesk. Alle rechten voorbehouden.
+          © {new Date().getFullYear()} Doen. Alle rechten voorbehouden.
         </p>
       </div>
 
@@ -158,7 +158,7 @@ export function LoginPage() {
                   <path d="M12 16v4" />
                 </svg>
               </div>
-              <span className="text-lg font-bold text-foreground" style={{ fontFamily: 'Manrope, sans-serif' }}>FORGEdesk</span>
+              <span className="text-lg font-bold text-foreground" style={{ fontFamily: 'Manrope, sans-serif' }}>Doen.</span>
             </Link>
           </div>
 
@@ -166,7 +166,7 @@ export function LoginPage() {
             Welkom terug
           </h1>
           <p className="text-[14.5px] text-muted-foreground mb-8" style={{ fontFamily: 'Inter, sans-serif' }}>
-            Log in op je FORGEdesk account
+            Log in op je Doen. account
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-5">

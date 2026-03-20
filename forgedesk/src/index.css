@@ -3,14 +3,14 @@
 @tailwind utilities;
 
 /* ================================================================
-   FORGEDESK DESIGN SYSTEM v4 — PREMIUM
+   DOEN DESIGN SYSTEM v4 — PREMIUM
    $200/mo SaaS energy — warm, deep, liquid
    #CC8A3F #E0C9A8 #F4F3F0 #1A1A1A
-   Fonts: Plus Jakarta Sans (headings + body)
+   Fonts: IBM Plex Sans (body) + Bricolage Grotesque (headings)
    ================================================================ */
 
 /* ================================================================
-   FONTS — Plus Jakarta Sans via Google Fonts
+   FONTS — IBM Plex Sans + Bricolage Grotesque via Google Fonts
    ================================================================ */
 
 @layer base {
@@ -90,7 +90,7 @@
     --radius-xl: 14px;
     --radius-2xl: 18px;
 
-    /* FORGEdesk design tokens */
+    /* Doen design tokens */
     --wm-gradient-start: #CC8A3F;
     --wm-gradient-mid: #E0C9A8;
     --wm-gradient-end: #F0D9D0;
@@ -125,7 +125,7 @@
     --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
     --ease-smooth: cubic-bezier(0.25, 0.46, 0.45, 0.94);
 
-    /* FORGEdesk Pastel Status Palette */
+    /* Doen Pastel Status Palette */
     --color-blush: #F9E8E8;
     --color-blush-text: #C0514A;
     --color-blush-border: #F0C8C8;
@@ -2017,7 +2017,7 @@ html {
 }
 
 /* ================================================================
-   FORGEDESK VISUAL IDENTITY — Premium feel, module personality
+   DOEN VISUAL IDENTITY — Premium feel, module personality
    ================================================================ */
 
 /* ── Module Color Strips — top accent bar per page ── */

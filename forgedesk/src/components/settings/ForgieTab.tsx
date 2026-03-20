@@ -226,7 +226,7 @@ export function ForgieTab() {
   }, [user?.id, handmatigAantal, handmatigReden])
 
   const handleToggleForgie = useCallback(async (enabled: boolean) => {
-    try { await updateSettings({ forgie_enabled: enabled }); toast.success(enabled ? 'Forgie ingeschakeld' : 'Forgie uitgeschakeld') }
+    try { await updateSettings({ forgie_enabled: enabled }); toast.success(enabled ? 'Daan ingeschakeld' : 'Daan uitgeschakeld') }
     catch { toast.error('Instelling opslaan mislukt') }
   }, [updateSettings])
 
@@ -287,7 +287,7 @@ export function ForgieTab() {
             Jouw tegoed
           </CardTitle>
           <CardDescription>
-            Credits worden gedeeld tussen Visualizer en Forgie AI.
+            Credits worden gedeeld tussen Visualizer en Daan AI.
             Nieuwe accounts starten met 10 gratis credits.
           </CardDescription>
         </CardHeader>
@@ -319,7 +319,7 @@ export function ForgieTab() {
               {/* Forgie usage */}
               <div className="flex items-center justify-between text-sm">
                 <span className="flex items-center gap-1.5 text-muted-foreground">
-                  <Bot className="w-3.5 h-3.5" /> Forgie AI
+                  <Bot className="w-3.5 h-3.5" /> Daan AI
                 </span>
                 <span className="font-medium">
                   {round2(forgieGebruik.geschatte_kosten)} / {round2(forgieGebruik.limiet)} ({forgieGebruik.aantal_calls} vragen)
@@ -544,33 +544,33 @@ export function ForgieTab() {
           <div className="text-lg font-bold mt-1">2 credits</div>
         </div>
         <div className="bg-muted/50 rounded-lg p-3 text-center">
-          <div className="text-xs text-muted-foreground">Forgie AI chat</div>
+          <div className="text-xs text-muted-foreground">Daan AI chat</div>
           <div className="text-lg font-bold mt-1">Inclusief</div>
           <div className="text-2xs text-muted-foreground">max 5 EUR/mnd</div>
         </div>
       </div>
 
       {/* ═══════════════════════════════════════════ */}
-      {/* FORGIE AI INSTELLINGEN                     */}
+      {/* DAAN AI INSTELLINGEN                        */}
       {/* ═══════════════════════════════════════════ */}
       <div className="pt-2">
         <h3 className="text-xs font-bold text-text-tertiary uppercase tracking-label flex items-center gap-2 mb-4">
           <Bot className="w-4 h-4" />
-          Forgie AI-assistent
+          Daan AI-assistent
         </h3>
       </div>
 
-      {/* Forgie aan/uit */}
+      {/* Daan aan/uit */}
       <Card>
         <CardContent className="pt-6">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label htmlFor="forgie-toggle" className="flex items-center gap-2 cursor-pointer">
                 <Bot className="w-4 h-4 text-muted-foreground" />
-                <span className="font-medium">Forgie tonen</span>
+                <span className="font-medium">Daan tonen</span>
               </Label>
               <p className="text-xs text-muted-foreground ml-6">
-                Schakel het vosje in of uit. Wanneer uitgeschakeld verdwijnt de chat-assistent.
+                Schakel Daan in of uit. Wanneer uitgeschakeld verdwijnt de chat-assistent.
               </p>
             </div>
             <Switch
@@ -587,7 +587,7 @@ export function ForgieTab() {
         <CardHeader>
           <CardTitle className="text-base">Bedrijfscontext</CardTitle>
           <CardDescription>
-            Vertel Forgie over je bedrijf. Deze informatie wordt meegegeven bij elke vraag.
+            Vertel Daan over je bedrijf. Deze informatie wordt meegegeven bij elke vraag.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -643,7 +643,7 @@ export function ForgieTab() {
         <CardHeader>
           <CardTitle className="text-base">Bedrijfshistorie importeren</CardTitle>
           <CardDescription>
-            Upload een CSV bestand met je oude bedrijfsdata. Forgie kan dan vragen beantwoorden over je hele historie — ook van voor FORGEdesk.
+            Upload een CSV bestand met je oude bedrijfsdata. Daan kan dan vragen beantwoorden over je hele historie — ook van voor Doen.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -828,7 +828,7 @@ export function ForgieTab() {
               Claude Sonnet 4.6
             </Badge>
             <span className="text-sm text-muted-foreground">
-              Forgie, email-tools en visualizer draaien allemaal op Claude Sonnet 4.6
+              Daan, email-tools en visualizer draaien allemaal op Claude Sonnet 4.6
             </span>
           </div>
         </CardContent>

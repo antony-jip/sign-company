@@ -1,4 +1,4 @@
-// Email template service for FORGEdesk
+// Email template service for Doen.
 // All templates are in Dutch and return { subject, html, text } objects
 
 // ---------------------------------------------------------------------------

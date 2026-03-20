@@ -102,7 +102,7 @@ export function RegisterPage() {
                 <path d="M12 16v4" />
               </svg>
             </div>
-            <span className="text-lg font-bold text-black tracking-tight" style={{ fontFamily: 'Manrope, sans-serif' }}>FORGEdesk</span>
+            <span className="text-lg font-bold text-black tracking-tight" style={{ fontFamily: 'Manrope, sans-serif' }}>Doen.</span>
           </div>
 
           <h1 className="text-2xl font-bold text-black mb-1.5" style={{ fontFamily: 'Manrope, sans-serif' }}>

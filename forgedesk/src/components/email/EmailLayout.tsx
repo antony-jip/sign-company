@@ -756,7 +756,7 @@ export function EmailLayout() {
         <div className="px-4 py-3 border-t border-foreground/[0.05]">
           <div className="flex items-center gap-2 text-[11px] text-foreground/25">
             <Mail className="h-3 w-3" />
-            <span>FORGEdesk Mail</span>
+            <span>Doen. Mail</span>
           </div>
         </div>
       </div>

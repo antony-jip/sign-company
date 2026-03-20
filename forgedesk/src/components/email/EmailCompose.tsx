@@ -228,7 +228,7 @@ export function EmailCompose({
         editorRef.current.innerHTML = `${response.result.replace(/\n/g, '<br>')}${signatureHtml}`
       }
     } catch {
-      toast.error('Forgie kon geen email genereren')
+      toast.error('Daan kon geen email genereren')
     } finally {
       setForgieLoading(false)
     }
@@ -599,7 +599,7 @@ export function EmailCompose({
           <div className="rounded-xl border border-white/60 overflow-hidden" style={{ background: 'linear-gradient(135deg, hsl(30 40% 97%) 0%, hsl(28 35% 94%) 100%)', boxShadow: '0 2px 12px rgba(140,100,50,0.08), 0 0 0 1px rgba(140,100,50,0.04)' }}>
             <div className="flex items-center gap-2.5 px-3.5 py-2.5" style={{ background: `${aiAccent}0C`, borderBottom: `1px solid ${aiAccent}15` }}>
               <div className="w-1.5 h-1.5 rounded-full" style={{ background: aiAccent }} />
-              <h4 className="text-[12px] font-semibold text-foreground/60">Forgie AI</h4>
+              <h4 className="text-[12px] font-semibold text-foreground/60">Daan AI</h4>
               {forgieLoading && <Loader2 className="h-3 w-3 animate-spin text-foreground/30 ml-auto" />}
             </div>
             <div className="p-2 space-y-0.5">

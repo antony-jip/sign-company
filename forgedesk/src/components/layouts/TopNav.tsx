@@ -92,9 +92,9 @@ export function TopNav() {
       <div className="flex items-center h-14 px-4 md:px-6 bg-card/80 backdrop-blur-sm border-b border-border/30">
         {/* Logo */}
         <NavLink to="/" className="flex items-center gap-2.5 mr-4 flex-shrink-0">
-          <div className="sidebar-logo-mark flex-shrink-0" style={{ width: 34, height: 34, fontSize: 15 }}>F</div>
+          <div className="sidebar-logo-mark flex-shrink-0" style={{ width: 34, height: 34, fontSize: 15 }}>D</div>
           <span className="hidden sm:block text-[16px] font-extrabold tracking-[-0.04em]">
-            FORGE<span className="font-medium text-muted-foreground">desk</span>
+            Doen.
           </span>
         </NavLink>
 

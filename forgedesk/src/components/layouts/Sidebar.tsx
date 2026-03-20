@@ -83,7 +83,7 @@ const NAV_SECTIONS: NavSection[] = [
     section: 'Communicatie',
     items: [
       { label: 'Email', icon: Mail, path: '/email' },
-      { label: 'Forgie', icon: Sparkles, path: '/forgie' },
+      { label: 'Daan', icon: Sparkles, path: '/forgie' },
     ],
   },
 ]
@@ -271,10 +271,10 @@ export function Sidebar() {
             !forMobile && 'cursor-pointer hover:bg-muted/20',
           )}
         >
-          <div className="sidebar-logo-mark flex-shrink-0">F</div>
+          <div className="sidebar-logo-mark flex-shrink-0">D</div>
           {!collapsed && (
             <span className="text-[16px] font-extrabold tracking-[-0.04em]">
-              FORGE<span className="font-medium text-muted-foreground">desk</span>
+              Doen.
             </span>
           )}
         </button>

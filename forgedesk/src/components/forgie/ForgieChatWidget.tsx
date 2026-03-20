@@ -19,7 +19,7 @@ const SUGGESTIE_CHIPS = [
   'Projecten in uitvoering',
 ]
 
-/** Cute fox mascot SVG for Forgie */
+/** Cute fox mascot SVG for Daan */
 function ForgieMascot({ size = 40, className }: { size?: number; className?: string }) {
   return (
     <svg
@@ -159,7 +159,7 @@ export function ForgieChatWidget() {
             <div className="flex items-center gap-2.5">
               <ForgieAvatar size={28} />
               <div>
-                <h2 className="text-sm font-bold text-foreground">Forgie</h2>
+                <h2 className="text-sm font-bold text-foreground">Daan</h2>
                 <p className="text-2xs text-muted-foreground">Je bedrijfsgeheugen</p>
               </div>
             </div>
@@ -194,7 +194,7 @@ export function ForgieChatWidget() {
                 <div className="flex gap-2.5 items-start">
                   <ForgieAvatar size={32} className="flex-shrink-0" />
                   <p className="text-sm text-foreground mt-1">
-                    Hoi! Ik ben <strong>Forgie</strong> 🦊 Stel me een vraag over je klanten, projecten, offertes of facturen.
+                    Hoi! Ik ben <strong>Daan</strong>, stel me een vraag over je klanten, projecten, offertes of facturen.
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-1.5 pl-6">
@@ -247,7 +247,7 @@ export function ForgieChatWidget() {
                       <span className="w-1.5 h-1.5 bg-muted-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
                       <span className="w-1.5 h-1.5 bg-muted-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                     </span>
-                    <span className="text-xs">Forgie denkt na...</span>
+                    <span className="text-xs">Daan denkt na...</span>
                   </div>
                 </div>
               </div>
@@ -265,7 +265,7 @@ export function ForgieChatWidget() {
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Vraag het aan Forgie..."
+                placeholder="Vraag het aan Daan..."
                 disabled={loading}
                 className="flex-1 rounded-xl border bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-blush/50 disabled:opacity-50"
               />
@@ -321,13 +321,13 @@ export function ForgieChatWidget() {
             {/* One-time intro speech bubble for new users */}
             {showIntroBubble && !isOpen && (
               <span className="absolute -top-14 -left-28 bg-white dark:bg-card backdrop-blur-sm text-xs text-foreground font-medium px-3 py-2 rounded-xl shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-300 whitespace-nowrap pointer-events-none border border-[#9B8EC4]/30 dark:border-[#9B8EC4]/20">
-                Hoi! Ik ben <strong>Forgie</strong>, je AI-assistent 🦊
+                Hoi! Ik ben <strong>Daan</strong>, je AI-assistent
                 <span className="absolute -bottom-1.5 right-8 w-3 h-3 bg-white dark:bg-card border-b border-r border-[#9B8EC4]/30 dark:border-[#9B8EC4]/20 rotate-45" />
               </span>
             )}
             {/* Hover hint */}
             <span className="absolute -top-8 right-0 bg-white/90 dark:bg-card/90 backdrop-blur-sm text-2xs text-foreground font-medium px-2 py-1 rounded-lg shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none border border-white/30">
-              Vraag het Forgie! 🦊
+              Vraag het Daan!
             </span>
           </span>
         )}

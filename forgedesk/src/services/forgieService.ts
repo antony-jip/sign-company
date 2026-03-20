@@ -29,7 +29,7 @@ async function getAuthToken(): Promise<string> {
   if (!supabase) throw new Error('Supabase niet geconfigureerd')
   const { data: { session } } = await supabase.auth.getSession()
   if (!session?.access_token) {
-    throw new Error('Niet ingelogd. Log opnieuw in om Forgie te gebruiken.')
+    throw new Error('Niet ingelogd. Log opnieuw in om Daan te gebruiken.')
   }
   return session.access_token
 }
@@ -52,7 +52,7 @@ export async function callForgie(
 
   if (!response.ok) {
     const error: { error?: string; message?: string } = await response.json().catch(() => ({}))
-    throw new Error(error?.message || error?.error || `Forgie fout: ${response.status}`)
+    throw new Error(error?.message || error?.error || `Daan fout: ${response.status}`)
   }
 
   return response.json()

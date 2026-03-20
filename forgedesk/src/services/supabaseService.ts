@@ -1881,7 +1881,7 @@ export function getDefaultAppSettings(userId: string): AppSettings {
       'Klanten', 'Deals', 'Offertes', 'Facturen',
       'Projecten', 'Taken', 'Montage', 'Werkbonnen', 'Nacalculatie',
       'Planning', 'Tijdregistratie', 'Booking',
-      'Email', 'Forgie', 'Nieuwsbrieven', 'Lead Capture',
+      'Email', 'Daan', 'Nieuwsbrieven', 'Lead Capture',
       'Financieel', 'Uitgaven', 'Leveranciers', 'Forecast',
       'Documenten', 'Voorraad', 'Bestelbonnen', 'Leveringsbonnen',
       'Rapportages', 'Team', 'Importeren', 'AI Assistent', 'Instellingen',
@@ -4812,7 +4812,7 @@ export async function getVisualizerCredits(user_id: string): Promise<VisualizerC
           type: 'handmatig_toegevoegd',
           aantal: DEMO_CREDITS,
           saldo_na: DEMO_CREDITS,
-          beschrijving: 'Welkomstcredits — probeer de Visualizer en Forgie gratis uit',
+          beschrijving: 'Welkomstcredits — probeer de Visualizer en Daan gratis uit',
         })
 
         return {

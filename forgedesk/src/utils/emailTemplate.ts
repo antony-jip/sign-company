@@ -1,5 +1,5 @@
 /**
- * Professional HTML email template for FORGEdesk portal notifications.
+ * Professional HTML email template for Doen. portal notifications.
  * Uses inline CSS only (no <style> blocks, no external CSS) for maximum email client compatibility.
  */
 
@@ -84,8 +84,8 @@ export function buildPortalEmailHtml(params: PortalEmailParams): string {
     : ''
 
   const footerText = bedrijfsnaam
-    ? `Verzonden via FORGEdesk namens ${escapeHtml(bedrijfsnaam)}`
-    : 'Verzonden via FORGEdesk'
+    ? `Verzonden via Doen. namens ${escapeHtml(bedrijfsnaam)}`
+    : 'Verzonden via Doen.'
 
   return `<!DOCTYPE html>
 <html lang="nl">
@@ -99,7 +99,7 @@ export function buildPortalEmailHtml(params: PortalEmailParams): string {
         ${logoUrl
           ? `<img src="${escapeHtml(logoUrl)}" alt="${escapeHtml(bedrijfsnaam || '')}" style="max-height: 48px; max-width: 200px; object-fit: contain;" />`
           : `<span style="font-family: 'DM Sans', Arial, sans-serif; font-size: 22px; color: ${textDark}; letter-spacing: -0.5px;">
-              <strong>FORGE</strong><span style="font-weight: 300;">desk</span>
+              <strong>Doen.</strong>
             </span>`
         }
       </td></tr>

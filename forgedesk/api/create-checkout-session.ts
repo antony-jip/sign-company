@@ -80,7 +80,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             currency: 'eur',
             product_data: {
               name: pakket.naam,
-              description: `${pakket.credits} AI Visualizer credits voor FORGEdesk`,
+              description: `${pakket.credits} AI Visualizer credits voor Doen.`,
             },
             unit_amount: pakket.amount,
           },

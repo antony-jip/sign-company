@@ -115,17 +115,17 @@ const PRICING_FEATURES = [
   'Email integratie',
   'Voorraad & bestelbonnen',
   'AI Signing Visualizer',
-  'Forgie AI-assistent',
+  'Daan AI-assistent',
 ]
 
 const FAQ_ITEMS = [
   {
-    q: 'Is FORGEdesk geschikt voor mijn branche?',
-    a: 'FORGEdesk is gebouwd voor de creatieve maakbranche — signbedrijven, interieurbouwers, reclamemakers, standbouwers, schilders, installateurs en meer. Als je iets maakt met je handen en offertes, werkbonnen en facturen nodig hebt, past FORGEdesk perfect.',
+    q: 'Is Doen. geschikt voor mijn branche?',
+    a: 'Doen. is gebouwd voor de creatieve maakbranche — signbedrijven, interieurbouwers, reclamemakers, standbouwers, schilders, installateurs en meer. Als je iets maakt met je handen en offertes, werkbonnen en facturen nodig hebt, past Doen. perfect.',
   },
   {
-    q: 'Wat kost FORGEdesk na de proefperiode?',
-    a: 'FORGEdesk kost €49 per maand per bedrijf. Geen kosten per gebruiker — je kunt onbeperkt medewerkers toevoegen. Alle features zijn inbegrepen, inclusief AI-tools.',
+    q: 'Wat kost Doen. na de proefperiode?',
+    a: 'Doen. kost €49 per maand per bedrijf. Geen kosten per gebruiker — je kunt onbeperkt medewerkers toevoegen. Alle features zijn inbegrepen, inclusief AI-tools.',
   },
   {
     q: 'Kan ik mijn data importeren?',
@@ -137,11 +137,11 @@ const FAQ_ITEMS = [
   },
   {
     q: 'Is mijn data veilig?',
-    a: 'Absoluut. FORGEdesk draait op Supabase met enterprise-grade beveiliging. Je data wordt versleuteld opgeslagen en er worden dagelijks backups gemaakt. We delen nooit data met derden.',
+    a: 'Absoluut. Doen. draait op Supabase met enterprise-grade beveiliging. Je data wordt versleuteld opgeslagen en er worden dagelijks backups gemaakt. We delen nooit data met derden.',
   },
   {
-    q: 'Kan ik FORGEdesk op mijn telefoon gebruiken?',
-    a: 'Ja. FORGEdesk werkt volledig in de browser en is geoptimaliseerd voor mobiel. Je monteurs kunnen werkbonnen invullen, foto\'s toevoegen en klanten laten tekenen — allemaal op hun telefoon.',
+    q: 'Kan ik Doen. op mijn telefoon gebruiken?',
+    a: 'Ja. Doen. werkt volledig in de browser en is geoptimaliseerd voor mobiel. Je monteurs kunnen werkbonnen invullen, foto\'s toevoegen en klanten laten tekenen — allemaal op hun telefoon.',
   },
 ]
 
@@ -178,10 +178,10 @@ function Navbar() {
                 background: `linear-gradient(135deg, ${COLORS.coral}, ${COLORS.sage})`,
               }}
             >
-              F
+              D
             </div>
             <span className="font-black text-[#1a1a1a] text-lg tracking-tight">
-              FORGEdesk
+              Doen.
             </span>
           </div>
 
@@ -451,7 +451,7 @@ function ThreeIcons() {
       icon: <Brain className="w-7 h-7" />,
       color: COLORS.purple,
       title: 'AI-tools ingebouwd',
-      desc: 'Signing Visualizer voor mockups. Forgie AI als je persoonlijke assistent.',
+      desc: 'Signing Visualizer voor mockups. Daan AI als je persoonlijke assistent.',
     },
   ]
 
@@ -469,7 +469,7 @@ function ThreeIcons() {
             </span>
           </h2>
           <p className="lf-fade-up lf-delay-2 text-[17px] text-[#777] max-w-xl mx-auto mt-5">
-            Signbedrijven, interieurbouwers, reclamemakers — FORGEdesk begrijpt jouw werkproces.
+            Signbedrijven, interieurbouwers, reclamemakers — Doen. begrijpt jouw werkproces.
           </p>
         </div>
 
@@ -682,15 +682,15 @@ function ForgieSection() {
             <h2 className="lf-fade-up lf-delay-1 text-[32px] md:text-[48px] font-extrabold text-[#1a1a1a] tracking-tight leading-tight">
               Maak kennis met{' '}
               <span className="lf-serif-accent font-normal" style={{ color: COLORS.purple }}>
-                Forgie
+                Daan
               </span>
             </h2>
             <p className="lf-fade-up lf-delay-2 text-[17px] text-[#777] mt-6 leading-relaxed">
-              Forgie is je persoonlijke AI-assistent die alles weet over jouw bedrijf.
+              Daan is je persoonlijke AI-assistent die alles weet over jouw bedrijf.
               Stel een vraag over klanten, offertes, facturen of omzet — en krijg direct antwoord.
             </p>
             <p className="lf-fade-up lf-delay-3 text-[15px] text-[#999] mt-4 leading-relaxed">
-              Forgie kan ook e-mails opstellen, vertalen en samenvatten. Geen technische kennis nodig.
+              Daan kan ook e-mails opstellen, vertalen en samenvatten. Geen technische kennis nodig.
             </p>
 
             <div className="lf-fade-up lf-delay-4 mt-8 flex flex-wrap gap-3">
@@ -717,7 +717,7 @@ function ForgieSection() {
                     <span className="text-base">🦊</span>
                   </div>
                   <div>
-                    <div className="text-sm font-bold text-[#1a1a1a]">Forgie</div>
+                    <div className="text-sm font-bold text-[#1a1a1a]">Daan</div>
                     <div className="text-xs text-[#7EB5A6]">Online</div>
                   </div>
                 </div>
@@ -887,7 +887,7 @@ function PricingSection() {
         {/* AI badge */}
         <div className="lf-fade-up lf-delay-3 mt-6 inline-flex items-center gap-2 text-sm text-[#9B8EC4] font-medium">
           <Sparkles className="w-4 h-4" />
-          Inclusief AI Signing Visualizer & Forgie AI
+          Inclusief AI Signing Visualizer & Daan AI
         </div>
       </div>
     </section>
@@ -1003,7 +1003,7 @@ function CTAFooter() {
             </a>
           </div>
           <div className="lf-fade-up lf-delay-3 flex flex-wrap justify-center gap-3 mt-10">
-            {['Offertes', 'Planning', 'Werkbonnen', 'Facturen', 'AI Visualizer', 'Forgie AI'].map((tag) => (
+            {['Offertes', 'Planning', 'Werkbonnen', 'Facturen', 'AI Visualizer', 'Daan AI'].map((tag) => (
               <span key={tag} className="bg-white/5 border border-white/10 rounded-full px-4 py-1.5 text-xs text-white/40 font-medium">
                 {tag}
               </span>
@@ -1025,9 +1025,9 @@ function CTAFooter() {
                     background: `linear-gradient(135deg, ${COLORS.coral}, ${COLORS.sage})`,
                   }}
                 >
-                  F
+                  D
                 </div>
-                <span className="font-black text-white text-lg">FORGEdesk</span>
+                <span className="font-black text-white text-lg">Doen.</span>
               </div>
               <p className="text-sm text-white/40 leading-relaxed">
                 Door vakmensen, voor vakmensen.
@@ -1074,7 +1074,7 @@ function CTAFooter() {
 
           <div className="border-t border-white/10 mt-12 pt-6">
             <p className="text-xs text-white/25 text-center">
-              © 2026 FORGEdesk. Alle rechten voorbehouden.
+              © 2026 Doen. Alle rechten voorbehouden.
             </p>
           </div>
         </div>
