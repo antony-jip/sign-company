@@ -91,6 +91,7 @@ import { PaginationControls } from '@/components/ui/pagination-controls'
 import { ModuleHeader } from '@/components/shared/ModuleHeader'
 import { DagenOpenFilterBar, getDaysOpen, getDaysColor, matchDagenFilter } from '@/components/shared/DagenOpenFilter'
 import type { DagenOpenFilter } from '@/components/shared/DagenOpenFilter'
+import { berekenDagenOpen, getAgingColor, getAgingBgColor } from '@/utils/spectrumUtils'
 
 // ============ TYPES ============
 
@@ -1601,6 +1602,16 @@ export function FacturenLayout() {
                 const isOverdue =
                   factuur.status === 'verzonden' &&
                   new Date(factuur.vervaldatum) < new Date()
+                const dagenOpen = (factuur.status === 'verzonden' || isOverdue)
+                  ? berekenDagenOpen(factuur.factuurdatum)
+                  : 0
+                const agingBorderColor =
+                  factuur.status === 'betaald' ? '#1A535C'
+                  : factuur.status === 'concept' ? '#A0A098'
+                  : factuur.status === 'gecrediteerd' ? '#5A4A78'
+                  : (factuur.status === 'verzonden' || factuur.status === 'vervallen')
+                    ? getAgingColor(dagenOpen)
+                    : config.border.replace('border-l-[', '').replace(']', '')
 
                 return (
                   <tr
@@ -1608,11 +1619,11 @@ export function FacturenLayout() {
                     className={cn(
                       'group cursor-pointer hover:bg-[#F4F2EE] transition-colors duration-150',
                       'border-l-[3px]',
-                      isOverdue ? 'border-l-[var(--color-coral-border)]' : config.border,
                       factuur.status === 'betaald' && 'factuur-row-betaald',
                       isOverdue && 'factuur-row-verlopen',
                       selectedIds.has(factuur.id) && 'bg-primary/5'
                     )}
+                    style={{ borderLeftColor: agingBorderColor }}
                   >
                     <td className="w-10 px-3 py-3">
                       <Checkbox
@@ -1688,14 +1699,30 @@ export function FacturenLayout() {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <Badge
-                        variant="secondary"
-                        className={cn('text-xs font-semibold px-2 py-0.5 rounded-lg', config.color)}
-                      >
-                        <span className={cn('w-1.5 h-1.5 rounded-full mr-1.5 inline-block', config.dot)} />
-                        {config.label}
-                        {isOverdue && ' (vervallen)'}
-                      </Badge>
+                      {(factuur.status === 'verzonden' || factuur.status === 'vervallen') ? (
+                        <Badge
+                          variant="secondary"
+                          className="text-xs font-semibold px-2 py-0.5 rounded-lg font-mono"
+                          style={{
+                            backgroundColor: getAgingBgColor(dagenOpen),
+                            color: getAgingColor(dagenOpen),
+                          }}
+                        >
+                          <span
+                            className="w-1.5 h-1.5 rounded-full mr-1.5 inline-block"
+                            style={{ backgroundColor: getAgingColor(dagenOpen) }}
+                          />
+                          {dagenOpen} dgn
+                        </Badge>
+                      ) : (
+                        <Badge
+                          variant="secondary"
+                          className={cn('text-xs font-semibold px-2 py-0.5 rounded-lg', config.color)}
+                        >
+                          <span className={cn('w-1.5 h-1.5 rounded-full mr-1.5 inline-block', config.dot)} />
+                          {config.label}
+                        </Badge>
+                      )}
                     </td>
                     <td className="px-4 py-3 hidden lg:table-cell">
                       {isOverdue && (
