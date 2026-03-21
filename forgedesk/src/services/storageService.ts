@@ -45,30 +45,35 @@ function compressImageForStorage(file: File, maxWidth = 1200, quality = 0.7): Pr
 
 export async function uploadFile(file: File, path: string): Promise<string> {
   if (!isSupabaseConfigured() || !supabase) {
-    if (file.size > MAX_LOCAL_FILE_SIZE) {
-      throw new Error(
-        `Bestand te groot voor lokale opslag (max ${Math.round(MAX_LOCAL_FILE_SIZE / (1024 * 1024))}MB). Configureer Supabase voor grotere bestanden.`
-      )
-    }
-    // Fallback: compress images and store in localStorage
-    try {
-      const dataUrl = await compressImageForStorage(file)
-      const stored = JSON.parse(localStorage.getItem('forgedesk_files') || '{}')
-      stored[path] = { name: file.name, size: file.size, type: file.type, dataUrl }
-      if (!safeSetItem('forgedesk_files', JSON.stringify(stored))) {
-        throw new Error('Onvoldoende opslagruimte. Verwijder oude bestanden of configureer Supabase.')
-      }
-      return path
-    } catch (err) {
-      throw err instanceof Error ? err : new Error('Kon bestand niet opslaan')
-    }
+    return uploadFileToLocalStorage(file, path)
   }
-  const { data, error } = await supabase.storage.from(BUCKET).upload(path, file, {
-    cacheControl: '3600',
-    upsert: false
-  })
-  if (error) throw error
-  return data.path
+  try {
+    const { data, error } = await supabase.storage.from(BUCKET).upload(path, file, {
+      cacheControl: '3600',
+      upsert: false
+    })
+    if (error) throw error
+    return data.path
+  } catch (err) {
+    // Supabase Storage failed (bucket missing, RLS, network) — fall back to localStorage
+    console.warn('Supabase Storage upload failed, falling back to localStorage:', err)
+    return uploadFileToLocalStorage(file, path)
+  }
+}
+
+async function uploadFileToLocalStorage(file: File, path: string): Promise<string> {
+  if (file.size > MAX_LOCAL_FILE_SIZE) {
+    throw new Error(
+      `Bestand te groot voor lokale opslag (max ${Math.round(MAX_LOCAL_FILE_SIZE / (1024 * 1024))}MB). Configureer Supabase Storage.`
+    )
+  }
+  const dataUrl = await compressImageForStorage(file)
+  const stored = JSON.parse(localStorage.getItem('forgedesk_files') || '{}')
+  stored[path] = { name: file.name, size: file.size, type: file.type, dataUrl }
+  if (!safeSetItem('forgedesk_files', JSON.stringify(stored))) {
+    throw new Error('Onvoldoende opslagruimte. Verwijder oude bestanden of configureer Supabase.')
+  }
+  return path
 }
 
 export async function downloadFile(path: string): Promise<string> {
