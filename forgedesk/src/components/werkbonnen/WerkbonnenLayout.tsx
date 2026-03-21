@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react'
+import React, { useState, useEffect, useMemo, useCallback, useDeferredValue } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useNavigateWithTab } from '@/hooks/useNavigateWithTab'
 import { toast } from 'sonner'
@@ -22,6 +22,10 @@ import {
 
 type FilterStatus = 'alle' | 'concept' | 'definitief' | 'afgerond'
 
+const TABLE_HEADER_STYLE = { borderBottom: '0.5px solid #E6E4E0', backgroundColor: '#F4F2EE' } as const
+const TABLE_ROW_STYLE = { borderBottom: '0.5px solid #E6E4E0' } as const
+const TH_CLASS = 'px-4 py-3 text-left text-[10px] font-medium uppercase text-[#A0A098] tracking-label'
+
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
   concept: { label: 'Open', color: 'text-[#5A5A55]', bg: 'bg-[#EEEEED]' },
   definitief: { label: 'In uitvoering', color: 'text-[#943520]', bg: 'bg-[#FAE5E0]' },
@@ -38,6 +42,7 @@ export function WerkbonnenLayout() {
   const [itemCounts, setItemCounts] = useState<Record<string, number>>({})
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
+  const deferredSearch = useDeferredValue(searchQuery)
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('alle')
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<Werkbon | null>(null)
@@ -97,8 +102,8 @@ export function WerkbonnenLayout() {
 
   const gefilterd = useMemo(() => {
     let result = [...werkbonnen]
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase()
+    if (deferredSearch.trim()) {
+      const q = deferredSearch.toLowerCase()
       result = result.filter((wb) =>
         wb.werkbon_nummer.toLowerCase().includes(q) ||
         getKlantNaam(wb.klant_id).toLowerCase().includes(q) ||
@@ -111,7 +116,7 @@ export function WerkbonnenLayout() {
     }
     result.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''))
     return result
-  }, [werkbonnen, searchQuery, filterStatus, getKlantNaam, getProjectNaam])
+  }, [werkbonnen, deferredSearch, filterStatus, getKlantNaam, getProjectNaam])
 
   const statusCounts = useMemo(() => {
     const counts: Record<string, number> = { alle: werkbonnen.length }
@@ -250,14 +255,14 @@ export function WerkbonnenLayout() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr style={{ borderBottom: '0.5px solid #E6E4E0', backgroundColor: '#F4F2EE' }}>
-                  <th className="px-4 py-3 text-left text-[10px] font-medium uppercase text-[#A0A098]" style={{ letterSpacing: '0.8px' }}>Nummer</th>
-                  <th className="px-4 py-3 text-left text-[10px] font-medium uppercase text-[#A0A098]" style={{ letterSpacing: '0.8px' }}>Klant</th>
-                  <th className="px-4 py-3 text-left text-[10px] font-medium uppercase text-[#A0A098] hidden md:table-cell" style={{ letterSpacing: '0.8px' }}>Offerte / Project</th>
-                  <th className="px-4 py-3 text-left text-[10px] font-medium uppercase text-[#A0A098] hidden sm:table-cell" style={{ letterSpacing: '0.8px' }}>Datum</th>
-                  <th className="px-4 py-3 text-left text-[10px] font-medium uppercase text-[#A0A098]" style={{ letterSpacing: '0.8px' }}>Status</th>
-                  <th className="px-4 py-3 text-right text-[10px] font-medium uppercase text-[#A0A098] hidden sm:table-cell" style={{ letterSpacing: '0.8px' }}>Items</th>
-                  <th className="px-4 py-3 text-right text-[10px] font-medium uppercase text-[#A0A098] hidden md:table-cell" style={{ letterSpacing: '0.8px' }}>Acties</th>
+                <tr style={TABLE_HEADER_STYLE}>
+                  <th className={TH_CLASS}>Nummer</th>
+                  <th className={TH_CLASS}>Klant</th>
+                  <th className={`${TH_CLASS} hidden md:table-cell`}>Offerte / Project</th>
+                  <th className={`${TH_CLASS} hidden sm:table-cell`}>Datum</th>
+                  <th className={TH_CLASS}>Status</th>
+                  <th className={`${TH_CLASS} text-right hidden sm:table-cell`}>Items</th>
+                  <th className={`${TH_CLASS} text-right hidden md:table-cell`}>Acties</th>
                 </tr>
               </thead>
               <tbody className="divide-y row-stagger">
@@ -268,7 +273,7 @@ export function WerkbonnenLayout() {
                   const ref = offerteRef !== '-' ? offerteRef : projectRef
                   return (
                     <tr key={wb.id} className="group border-l-[3px] border-l-[#C44830] cursor-pointer hover:bg-[#F4F2EE] transition-colors duration-150"
-                      style={{ borderBottom: '0.5px solid #E6E4E0' }}
+                      style={TABLE_ROW_STYLE}
                       onClick={() => navigateWithTab({ path: `/werkbonnen/${wb.id}`, label: wb.werkbon_nummer || 'Werkbon', id: `/werkbonnen/${wb.id}` })}>
                       <td className="px-4 py-3">
                         <div>

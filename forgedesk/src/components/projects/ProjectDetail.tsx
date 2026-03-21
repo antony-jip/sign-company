@@ -33,6 +33,7 @@ import {
   Wrench,
   Wallet,
   Clock,
+  X,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -87,6 +88,7 @@ import {
   createProjectToewijzing,
   deleteProjectToewijzing,
   getWerkbonnenByProject,
+  createWerkbon,
   deleteWerkbon,
   getFactuur,
   getFacturenByProject,
@@ -310,6 +312,7 @@ export function ProjectDetail() {
         materialen: [],
         notities: montageNotities,
         werkbon_id: montageWerkbonId || undefined,
+        werkbon_nummer: montageWerkbonId ? projectWerkbonnen.find(w => w.id === montageWerkbonId)?.werkbon_nummer : undefined,
         bijlagen: montageBijlagen.length > 0 ? montageBijlagen : undefined,
         status: 'gepland',
       })
@@ -1901,7 +1904,7 @@ export function ProjectDetail() {
 
       {/* Montage inplannen dialog */}
       <Dialog open={montageDialogOpen} onOpenChange={setMontageDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-[560px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Wrench className="h-5 w-5 text-blue-500" />
@@ -1914,139 +1917,169 @@ export function ProjectDetail() {
           <div className="space-y-3 py-2">
             <div>
               <Label className="text-sm">Titel</Label>
-              <Input value={montageTitel} onChange={(e) => setMontageTitel(e.target.value)} placeholder="Bijv. Montage gevelreclame" className="mt-1" />
+              <Input value={montageTitel} onChange={(e) => setMontageTitel(e.target.value)} placeholder="Bijv. Montage gevelreclame" className="mt-1 h-9" />
             </div>
-            <div>
-              <Label className="text-sm">Datum</Label>
-              <Input type="date" value={montageDatum} onChange={(e) => setMontageDatum(e.target.value)} className="mt-1" />
-            </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <Label className="text-sm">Datum</Label>
+                <Input type="date" value={montageDatum} onChange={(e) => setMontageDatum(e.target.value)} className="mt-1 h-9" />
+              </div>
               <div>
                 <Label className="text-sm">Start</Label>
-                <Input type="time" value={montageStartTijd} onChange={(e) => setMontageStartTijd(e.target.value)} className="mt-1" />
+                <Input type="time" value={montageStartTijd} onChange={(e) => setMontageStartTijd(e.target.value)} className="mt-1 h-9" />
               </div>
               <div>
                 <Label className="text-sm">Eind</Label>
-                <Input type="time" value={montageEindTijd} onChange={(e) => setMontageEindTijd(e.target.value)} className="mt-1" />
+                <Input type="time" value={montageEindTijd} onChange={(e) => setMontageEindTijd(e.target.value)} className="mt-1 h-9" />
               </div>
             </div>
             <div>
               <Label className="text-sm">Locatie</Label>
-              <Input value={montageLocatie} onChange={(e) => setMontageLocatie(e.target.value)} placeholder="Adres / locatie" className="mt-1" />
+              <Input value={montageLocatie} onChange={(e) => setMontageLocatie(e.target.value)} placeholder="Adres / locatie" className="mt-1 h-9" />
             </div>
             {alleMedewerkers.length > 0 && (
               <div>
                 <Label className="text-sm">Monteurs</Label>
-                <div className="flex flex-wrap gap-1.5 mt-1">
+                <div className="flex flex-wrap gap-1 mt-1">
                   {alleMedewerkers.map((m) => (
                     <button
                       key={m.id}
                       onClick={() => setMontageMonteurs(prev => prev.includes(m.id) ? prev.filter(x => x !== m.id) : [...prev, m.id])}
                       className={cn(
-                        'px-2 py-1 rounded-md text-xs border transition-colors',
+                        'h-7 w-7 rounded-full text-[9px] font-bold transition-colors flex items-center justify-center',
                         montageMonteurs.includes(m.id)
-                          ? 'bg-blue-100 border-blue-300 text-blue-700 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300'
-                          : 'bg-background border-border text-muted-foreground hover:bg-muted dark:bg-muted dark:border-border'
+                          ? 'bg-primary text-white ring-2 ring-primary/30'
+                          : 'bg-muted text-muted-foreground hover:bg-muted/80'
                       )}
+                      title={m.naam}
                     >
-                      {m.naam}
+                      {m.naam.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}
                     </button>
                   ))}
                 </div>
               </div>
             )}
             {/* Werkbon koppelen */}
-            {projectWerkbonnen.length > 0 && (
-              <div>
-                <Label className="text-sm flex items-center gap-1.5">
-                  <ClipboardCheck className="h-3.5 w-3.5" />
-                  Werkbon koppelen
-                </Label>
-                <Select value={montageWerkbonId} onValueChange={setMontageWerkbonId}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Selecteer werkbon (optioneel)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {projectWerkbonnen.map((wb) => (
+            <div>
+              <Label className="text-sm flex items-center gap-1.5">
+                <ClipboardCheck className="h-3.5 w-3.5" />
+                Werkbon koppelen
+              </Label>
+              <Select value={montageWerkbonId} onValueChange={async (v) => {
+                if (v === '__new__') {
+                  try {
+                    const wb = await createWerkbon({
+                      user_id: user?.id || '',
+                      klant_id: project?.klant_id || '',
+                      project_id: id || '',
+                      titel: project?.naam || '',
+                      datum: new Date().toISOString().split('T')[0],
+                      status: 'concept',
+                    })
+                    setProjectWerkbonnen(prev => [...prev, wb])
+                    setMontageWerkbonId(wb.id)
+                    toast.success(`Werkbon ${wb.werkbon_nummer} aangemaakt`)
+                  } catch {
+                    toast.error('Kon werkbon niet aanmaken')
+                  }
+                } else {
+                  setMontageWerkbonId(v === '__none__' ? '' : v)
+                }
+              }}>
+                <SelectTrigger className="mt-1 h-9">
+                  <SelectValue placeholder="Geen werkbon" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Geen werkbon</SelectItem>
+                  {projectWerkbonnen.map((wb) => {
+                    const st = wb.status === 'concept' ? 'Open' : wb.status === 'definitief' ? 'In uitvoering' : 'Afgetekend'
+                    return (
                       <SelectItem key={wb.id} value={wb.id}>
-                        <span className="font-mono text-xs">{wb.werkbon_nummer}</span>
-                        <span className="ml-2 text-muted-foreground">{wb.titel}</span>
+                        <span className="flex items-center gap-2">
+                          <span className="font-mono text-xs">{wb.werkbon_nummer}</span>
+                          <span className="text-muted-foreground text-xs truncate">{wb.titel}</span>
+                          <span className="text-[10px] text-muted-foreground/60">{st}</span>
+                        </span>
                       </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+                    )
+                  })}
+                  <SelectItem value="__new__">
+                    <span className="flex items-center gap-1 text-primary font-medium">
+                      <Plus className="h-3 w-3" /> Nieuwe werkbon
+                    </span>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
             <div>
               <Label className="text-sm">Notities</Label>
-              <Textarea value={montageNotities} onChange={(e) => setMontageNotities(e.target.value)} placeholder="Optioneel..." rows={2} className="mt-1" />
+              <Textarea value={montageNotities} onChange={(e) => setMontageNotities(e.target.value)} placeholder="Optioneel..." rows={2} className="mt-1 min-h-[50px]" />
             </div>
 
-            {/* Bijlagen */}
+            {/* Bijlagen — compact */}
             <div>
-              <Label className="text-sm flex items-center gap-1.5">
-                <Paperclip className="h-3.5 w-3.5" />
-                Bijlagen
-              </Label>
-
+              <div className="flex items-center justify-between">
+                <Label className="text-sm flex items-center gap-1.5">
+                  <Paperclip className="h-3.5 w-3.5" />
+                  Bijlagen
+                </Label>
+                <label className="cursor-pointer">
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept=".pdf,.png,.jpg,.jpeg,.webp"
+                    multiple
+                    onChange={(e) => {
+                      const files = e.target.files
+                      if (!files) return
+                      const newBijlagen: MontageBijlage[] = Array.from(files).map((file) => {
+                        const ext = file.name.split('.').pop()?.toLowerCase() || ''
+                        let type: MontageBijlage['type'] = 'overig'
+                        if (ext === 'pdf') type = 'pdf'
+                        else if (['png', 'jpg', 'jpeg', 'webp'].includes(ext)) type = 'foto'
+                        return {
+                          id: `bijlage-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                          naam: file.name,
+                          type,
+                          url: URL.createObjectURL(file),
+                          grootte: file.size,
+                          uploaded_at: new Date().toISOString(),
+                        }
+                      })
+                      setMontageBijlagen(prev => [...prev, ...newBijlagen])
+                      e.target.value = ''
+                    }}
+                  />
+                  <span className="text-xs text-primary hover:underline cursor-pointer flex items-center gap-1">
+                    <Upload className="h-3 w-3" /> Bestand
+                  </span>
+                </label>
+              </div>
               {montageBijlagen.length > 0 && (
-                <div className="space-y-1.5 mt-1.5">
+                <div className="flex flex-wrap gap-1.5 mt-1.5">
                   {montageBijlagen.map((bijlage) => (
-                    <div
+                    <span
                       key={bijlage.id}
-                      className="flex items-center gap-2 p-2 rounded-lg border border-[#E6E4E0] bg-[#FAFAF8]"
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs border border-[#E6E4E0] bg-[#FAFAF8]"
                     >
                       {bijlage.type === 'pdf' ? (
-                        <FileText className="h-4 w-4 text-[#C03A18] flex-shrink-0" />
+                        <FileText className="h-3 w-3 text-[#C03A18]" />
                       ) : (
-                        <Paperclip className="h-4 w-4 text-[#5A5A55] flex-shrink-0" />
+                        <Paperclip className="h-3 w-3 text-[#5A5A55]" />
                       )}
-                      <span className="text-[13px] text-foreground truncate flex-1">{bijlage.naam}</span>
-                      <span className="text-[10px] text-[#A0A098] uppercase font-medium flex-shrink-0">{bijlage.type}</span>
+                      <span className="truncate max-w-[120px]">{bijlage.naam}</span>
                       <button
                         type="button"
                         onClick={() => setMontageBijlagen(prev => prev.filter(b => b.id !== bijlage.id))}
-                        className="text-[#A0A098] hover:text-[#C03A18] transition-colors flex-shrink-0"
+                        className="text-[#A0A098] hover:text-[#C03A18] ml-0.5"
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
+                        <X className="h-3 w-3" />
                       </button>
-                    </div>
+                    </span>
                   ))}
                 </div>
               )}
-
-              <label className="flex flex-col items-center gap-1.5 p-4 mt-1.5 rounded-lg border-2 border-dashed border-[#E6E4E0] hover:border-[#1A535C] hover:bg-[#F4F2EE] transition-colors cursor-pointer">
-                <Upload className="h-5 w-5 text-[#A0A098]" />
-                <span className="text-[12px] text-[#5A5A55]">PDF, tekening of foto uploaden</span>
-                <span className="text-[10px] text-[#A0A098]">PDF, PNG, JPG, WEBP (max 10MB)</span>
-                <input
-                  type="file"
-                  className="hidden"
-                  accept=".pdf,.png,.jpg,.jpeg,.webp"
-                  multiple
-                  onChange={(e) => {
-                    const files = e.target.files
-                    if (!files) return
-                    const newBijlagen: MontageBijlage[] = Array.from(files).map((file) => {
-                      const ext = file.name.split('.').pop()?.toLowerCase() || ''
-                      let type: MontageBijlage['type'] = 'overig'
-                      if (ext === 'pdf') type = 'pdf'
-                      else if (['png', 'jpg', 'jpeg', 'webp'].includes(ext)) type = 'foto'
-                      return {
-                        id: `bijlage-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-                        naam: file.name,
-                        type,
-                        url: URL.createObjectURL(file),
-                        grootte: file.size,
-                        uploaded_at: new Date().toISOString(),
-                      }
-                    })
-                    setMontageBijlagen(prev => [...prev, ...newBijlagen])
-                    e.target.value = ''
-                  }}
-                />
-              </label>
             </div>
           </div>
           <DialogFooter>
