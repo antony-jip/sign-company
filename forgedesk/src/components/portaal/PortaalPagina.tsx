@@ -149,7 +149,7 @@ const FASE_LABELS = ['Offerte', 'Akkoord', 'Productie', 'Montage', 'Klaar']
 function PortaalVoortgang({ percentage }: { percentage: number }) {
   return (
     <div className="space-y-2">
-      <SpectrumBar percentage={percentage} height={8} />
+      <SpectrumBar percentage={percentage} height={8} className="rounded-full" />
       <div className="flex justify-between">
         {FASE_LABELS.map((label, i) => {
           const labelPct = (i / (FASE_LABELS.length - 1)) * 100
@@ -158,7 +158,7 @@ function PortaalVoortgang({ percentage }: { percentage: number }) {
             <span
               key={label}
               style={{
-                fontSize: 10,
+                fontSize: 11,
                 fontWeight: isActive ? 600 : 400,
                 color: isActive ? '#191919' : '#A0A098',
               }}
@@ -365,7 +365,7 @@ export function PortaalPagina() {
   return (
     <div className="min-h-screen bg-[#FAFAF8] flex flex-col">
       {/* Spectrum strip */}
-      <SpectrumBar percentage={portaalProgress} height={5} />
+      <SpectrumBar percentage={portaalProgress} height={5} className="rounded-none" />
 
       {/* Header */}
       <header className="flex-shrink-0" style={{ backgroundColor: '#FFFFFF', borderBottom: '0.5px solid #E6E4E0' }}>

@@ -540,7 +540,7 @@ export function TasksLayout() {
   return (
     <>
       <div className="flex flex-col h-[calc(100vh-120px)] mod-strip mod-strip-taken">
-        <ModuleHeader module="taken" icon={CheckSquare} title="Taken" subtitle="Productie & oplevering" />
+        <ModuleHeader module="taken" icon={Clock} title="Taken" subtitle="Productie & oplevering" />
 
         {/* === WEEK NAV + FILTERS === */}
         <div className="flex items-center justify-between flex-wrap gap-2 px-3 sm:px-5 py-2.5 border-b border-border/60 bg-card/50 flex-shrink-0">
@@ -572,8 +572,8 @@ export function TasksLayout() {
                   className={cn(
                     'text-xs px-2.5 py-1 rounded-lg transition-all duration-200 whitespace-nowrap',
                     taskFilter === key
-                      ? 'bg-background text-foreground shadow-sm font-medium'
-                      : 'text-muted-foreground hover:text-foreground'
+                      ? 'bg-[#191919] text-white shadow-sm font-medium'
+                      : 'text-[#5A5A55] hover:text-foreground'
                   )}
                 >
                   {label}
@@ -585,8 +585,8 @@ export function TasksLayout() {
               className={cn(
                 'text-xs px-3 py-1.5 rounded-full border transition-all duration-200 whitespace-nowrap flex-shrink-0',
                 showCompleted
-                  ? 'bg-primary/10 border-primary/30 text-accent dark:text-wm-light shadow-sm'
-                  : 'border-border/60 text-muted-foreground hover:text-foreground hover:border-border'
+                  ? 'bg-[#191919] border-transparent text-white shadow-sm'
+                  : 'border-border/60 text-[#5A5A55] hover:text-foreground hover:border-border'
               )}
             >
               {showCompleted ? 'Afgerond zichtbaar' : 'Toon afgerond'}
@@ -596,8 +596,8 @@ export function TasksLayout() {
               className={cn(
                 'text-xs px-3 py-1.5 rounded-full border transition-all duration-200 whitespace-nowrap flex-shrink-0 flex items-center gap-1.5',
                 showMontage
-                  ? 'bg-orange-500/10 border-orange-500/30 text-orange-600 dark:text-orange-400 shadow-sm'
-                  : 'border-border/60 text-muted-foreground hover:text-foreground hover:border-border'
+                  ? 'bg-[#191919] border-transparent text-white shadow-sm'
+                  : 'border-border/60 text-[#5A5A55] hover:text-foreground hover:border-border'
               )}
             >
               <Wrench className="w-3 h-3" />
@@ -781,7 +781,7 @@ export function TasksLayout() {
           onClick={() => setFabOpen(!fabOpen)}
           className={cn(
             'flex items-center justify-center w-14 h-14 rounded-full shadow-sm transition-all duration-200',
-            'bg-foreground text-background hover:opacity-90 hover:shadow-md hover:scale-105',
+            'bg-[#5A5A55] text-white hover:opacity-90 hover:shadow-md hover:scale-105',
             fabOpen && 'rotate-45'
           )}
         >
@@ -1277,12 +1277,12 @@ function TaskCard({
       onDragStart={handleDragStart}
       onDragEnd={onDragEnd}
       className={cn(
-        'group relative rounded-lg border-l-[3px] px-2.5 py-2 transition-all duration-200',
+        'group relative rounded-lg border-l-[3px] border-l-[#5A5A55] px-2.5 py-2 transition-all duration-200',
         !isResizing && 'cursor-grab active:cursor-grabbing',
         'hover:shadow-lg hover:shadow-black/5 hover:z-10 hover:-translate-y-[1px]',
         isDone
-          ? 'opacity-40 border-l-border bg-muted/40 dark:bg-muted/20 hover:opacity-60'
-          : `${colors.border} ${colors.bg}`,
+          ? 'opacity-40 bg-muted/40 dark:bg-muted/20 hover:opacity-60'
+          : colors.bg,
         isPast && !isDone && 'opacity-60',
         justCompleted && 'scale-95 opacity-50',
         scheduled && 'shadow-sm',
@@ -1300,6 +1300,9 @@ function TaskCard({
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-start gap-1">
+            {(taak.prioriteit === 'kritiek' || taak.prioriteit === 'hoog') && !isDone && (
+              <span className={cn('inline-block w-2 h-2 rounded-full flex-shrink-0 mt-1', taak.prioriteit === 'kritiek' ? 'bg-[#C44830]' : 'bg-[#E8854A]')} title={taak.prioriteit === 'kritiek' ? 'Urgent' : 'Hoog'} />
+            )}
             <p className={cn(
               'text-xs font-medium leading-tight text-foreground flex-1',
               isDone && 'line-through text-muted-foreground'

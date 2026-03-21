@@ -34,8 +34,7 @@ import {
   CheckSquare,
   X,
 } from 'lucide-react'
-import { cn, getStatusColor } from '@/lib/utils'
-import { getRowAccentClass } from '@/utils/statusColors'
+import { cn } from '@/lib/utils'
 import { exportCSV, exportExcel } from '@/lib/export'
 import { getKlanten, getProjecten, deleteKlant } from '@/services/supabaseService'
 import type { Klant, Project } from '@/types'
@@ -310,9 +309,9 @@ export function ClientsLayout() {
         title="Klanten"
         subtitle={`${filteredKlanten.length} van ${klanten.length} klanten`}
         actions={
-          <Button onClick={() => { setEditingKlant(undefined); setAddDialogOpen(true) }} className="flex-shrink-0 shadow-sm" size="sm">
+          <Button onClick={() => { setEditingKlant(undefined); setAddDialogOpen(true) }} className="flex-shrink-0 shadow-sm bg-[#3A6B8C] hover:bg-[#3A6B8C]/90 text-white rounded-lg" size="sm">
             <UserPlus className="w-4 h-4 sm:mr-2" />
-            <span className="hidden sm:inline">Nieuwe Klant</span>
+            <span className="hidden sm:inline">+ Nieuwe klant</span>
           </Button>
         }
       />
@@ -422,13 +421,13 @@ export function ClientsLayout() {
                 className={cn(
                   'px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all duration-200',
                   statusFilter === f
-                    ? 'bg-foreground text-background'
-                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                    ? 'bg-[#191919] text-white'
+                    : 'text-[#5A5A55] hover:bg-[#F4F2EE]'
                 )}
               >
                 {labels[f]}
                 {counts[f] > 0 && (
-                  <span className="ml-1.5 text-2xs opacity-70 font-mono">{counts[f]}</span>
+                  <span className="ml-1.5 font-mono text-[11px] opacity-70">{counts[f]}</span>
                 )}
               </button>
             )
@@ -453,8 +452,8 @@ export function ClientsLayout() {
               className={cn(
                 'px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors',
                 labelFilter === opt.value
-                  ? 'bg-foreground text-background'
-                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  ? 'bg-[#191919] text-white'
+                  : 'text-[#5A5A55] hover:bg-[#F4F2EE]'
               )}
             >
               {opt.label}
@@ -476,8 +475,8 @@ export function ClientsLayout() {
               className={cn(
                 'px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1.5',
                 klantStatusFilter === opt.value
-                  ? 'bg-foreground text-background'
-                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  ? 'bg-[#191919] text-white'
+                  : 'text-[#5A5A55] hover:bg-[#F4F2EE]'
               )}
             >
               {opt.color && (
@@ -649,9 +648,6 @@ export function ClientsLayout() {
                       <th className="text-left text-[10px] font-medium uppercase text-[#A0A098] px-4 py-3 hidden lg:table-cell" style={{ letterSpacing: '0.8px' }}>
                         Stad
                       </th>
-                      <th className="text-left text-[10px] font-medium uppercase text-[#A0A098] px-4 py-3" style={{ letterSpacing: '0.8px' }}>
-                        Status
-                      </th>
                       <th className="text-center text-[10px] font-medium uppercase text-[#A0A098] px-4 py-3" style={{ letterSpacing: '0.8px' }}>
                         Projecten
                       </th>
@@ -666,9 +662,8 @@ export function ClientsLayout() {
                   <tr
                     key={klant.id}
                     className={cn(
-                      "hover:bg-[#F4F2EE] cursor-pointer transition-colors duration-150 group border-l-[3px]",
-                      selectedIds.has(klant.id) && "bg-primary/5",
-                      getRowAccentClass(klant.status)
+                      "hover:bg-[#F4F2EE] cursor-pointer transition-colors duration-150 group border-l-[3px] border-l-[#3A6B8C]",
+                      selectedIds.has(klant.id) && "bg-primary/5"
                     )}
                     style={{ borderBottom: '0.5px solid #E6E4E0' }}
                     onClick={() => navigateWithTab({ path: `/klanten/${klant.id}`, label: klant.bedrijfsnaam || klant.voornaam || 'Klant', id: `/klanten/${klant.id}` })}
@@ -733,27 +728,6 @@ export function ClientsLayout() {
                       <span className="text-sm text-muted-foreground">
                         {klant.stad}
                       </span>
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <Badge className={cn('capitalize text-[10px] font-semibold px-[10px] py-[3px] rounded-full', getStatusColor(klant.status))}>
-                        {klant.status}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3.5 hidden xl:table-cell">
-                      {klant.klant_status && klant.klant_status !== 'normaal' ? (() => {
-                        const cfg = klantStatusConfig[klant.klant_status]
-                        if (!cfg) return null
-                        return (
-                          <span
-                            className="inline-flex items-center text-[10px] font-semibold px-[10px] py-[3px] rounded-full"
-                            style={{ color: cfg.color, backgroundColor: cfg.bgColor }}
-                          >
-                            {cfg.label}
-                          </span>
-                        )
-                      })() : (
-                        <span className="text-xs text-muted-foreground/40">—</span>
-                      )}
                     </td>
                     <td className="px-4 py-3.5 text-center">
                       <Badge variant="secondary" className="text-xs font-mono">

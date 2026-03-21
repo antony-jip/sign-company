@@ -50,8 +50,8 @@ export function PortaalVerlopen({ token, bedrijfsnaam, telefoon, email, logoUrl 
         {logoUrl && (
           <img src={logoUrl} alt={bedrijfsnaam} className="h-10 w-auto mx-auto object-contain" />
         )}
-        <div className="w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center mx-auto">
-          <Clock className="w-8 h-8 text-amber-500" />
+        <div className="w-16 h-16 rounded-full bg-[#FDE8E2] flex items-center justify-center mx-auto">
+          <Clock className="w-8 h-8 text-[#C03A18]" />
         </div>
         <div>
           <h1 className="text-2xl font-semibold text-gray-900 mb-2">Deze link is verlopen</h1>
@@ -63,7 +63,7 @@ export function PortaalVerlopen({ token, bedrijfsnaam, telefoon, email, logoUrl 
         <div className="bg-white rounded-2xl border border-gray-200 p-6 text-left">
           {verzonden ? (
             <div className="text-center space-y-3">
-              <CheckCircle2 className="w-10 h-10 text-green-500 mx-auto" />
+              <CheckCircle2 className="w-10 h-10 text-[#2D6B48] mx-auto" />
               <p className="text-sm text-gray-700">
                 Als het e-mailadres bekend is, ontvangt u binnenkort een nieuwe link.
               </p>

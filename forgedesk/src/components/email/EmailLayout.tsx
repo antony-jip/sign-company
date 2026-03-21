@@ -18,6 +18,7 @@ import type { EmailFolder, FilterType, FontSize, ViewMode } from './emailTypes'
 import { extractSenderEmail, parseSearchQuery, IMAP_FOLDER_MAP, KEYBOARD_SHORTCUTS, calculateSnoozeDate } from './emailHelpers'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
+import { ModuleHeader } from '@/components/shared/ModuleHeader'
 
 // Folder config
 const folderTabs: { id: EmailFolder; label: string; icon: React.ElementType }[] = [
@@ -695,7 +696,9 @@ export function EmailLayout() {
 
   // ─── INBOX VIEW: sidebar + email list ───
   return (
-    <div className="flex h-[calc(100vh-56px)] bg-background overflow-hidden">
+    <div className="h-[calc(100vh-56px)] flex flex-col bg-background overflow-hidden mod-strip mod-strip-email">
+      <ModuleHeader module="email" icon={Mail} title="Email" subtitle="Inbox en berichten" />
+      <div className="flex flex-1 min-h-0 overflow-hidden">
       {/* ─── SIDEBAR ─── */}
       <div className="w-[240px] bg-card border-r border-foreground/[0.06] flex flex-col flex-shrink-0">
         <div className="p-3">
@@ -800,8 +803,8 @@ export function EmailLayout() {
                       className={cn(
                         'px-3 py-1.5 rounded-full text-xs transition-all duration-150',
                         isActiveFilter
-                          ? 'bg-card text-foreground font-medium shadow-sm'
-                          : 'text-foreground/45 hover:text-foreground/65',
+                          ? 'bg-[#191919] text-white font-medium shadow-sm'
+                          : 'text-[#5A5A55] hover:text-foreground/65',
                       )}
                     >
                       {f.label}
@@ -943,6 +946,7 @@ export function EmailLayout() {
         </div>
       </div>
 
+      </div>
       {/* Keyboard shortcuts overlay */}
       {showShortcuts && (
         <>

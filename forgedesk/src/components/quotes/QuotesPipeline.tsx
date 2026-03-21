@@ -10,6 +10,7 @@ import { toast } from 'sonner'
 import {
   Plus,
   FileText,
+  FilePlus,
   Loader2,
   Search,
   LayoutGrid,
@@ -105,15 +106,15 @@ const PRIORITY_COLORS: Record<string, string> = {
   urgent: 'badge-flame',
 }
 
-const STATUS_BADGE_COLORS: Record<string, string> = {
-  concept: 'badge-grijs',
-  verzonden: 'badge-flame',
-  bekeken: 'badge-paars',
-  goedgekeurd: 'badge-petrol',
-  afgewezen: 'badge-flame',
-  verlopen: 'badge-grijs',
-  gefactureerd: 'badge-groen',
-  wijziging_gevraagd: 'badge-flame',
+const STATUS_BADGE_STYLES: Record<string, { bg: string; text: string }> = {
+  concept: { bg: '#EEEEED', text: '#5A5A55' },
+  verzonden: { bg: '#FDE8E2', text: '#C03A18' },
+  bekeken: { bg: '#EEE8F5', text: '#5A4A78' },
+  goedgekeurd: { bg: '#E2F0F0', text: '#1A535C' },
+  afgewezen: { bg: '#FDE8E2', text: '#C03A18' },
+  verlopen: { bg: '#EEEEED', text: '#5A5A55' },
+  gefactureerd: { bg: '#E4F0EA', text: '#2D6B48' },
+  wijziging_gevraagd: { bg: '#FDE8E2', text: '#C03A18' },
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -182,6 +183,11 @@ function getOfferteStatusCellBg(status: string): string {
   }
 }
 
+
+/** Format amount with EUR prefix and font-mono style, e.g. "EUR 1.234,56" */
+function formatEur(amount: number): string {
+  return 'EUR ' + new Intl.NumberFormat('nl-NL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount)
+}
 
 const OPEN_STATUSES = ['concept', 'verzonden', 'bekeken', 'wijziging_gevraagd']
 
@@ -691,11 +697,11 @@ export function QuotesPipeline() {
       {/* ── Header bar ── */}
       <ModuleHeader
         module="offertes"
-        icon={FileText}
+        icon={FilePlus}
         title="Offertes"
         subtitle={`${filteredOffertes.length} van ${offertes.length} offertes`}
         actions={
-          <Button asChild size="sm" className="flex-shrink-0 shadow-sm">
+          <Button asChild size="sm" className="flex-shrink-0 shadow-sm bg-[#F15025] hover:bg-[#C03A18] text-white rounded-lg">
             <Link to="/offertes/nieuw">
               <Plus className="mr-1.5 h-3.5 w-3.5" />
               <span className="hidden sm:inline">Nieuwe offerte</span>
@@ -729,7 +735,7 @@ export function QuotesPipeline() {
         )}
         <div className="flex items-center gap-1.5 text-[10px] font-semibold px-[10px] py-[3px] rounded-full" style={{ color: MODULE_COLORS.facturen.text, background: MODULE_COLORS.facturen.light }}>
           <DollarSign className="w-3 h-3" />
-          Pipeline <span className="font-mono">{formatCurrency(financialSummary.pipelineTotaal)}</span>
+          Pipeline <span className="font-mono">{formatEur(financialSummary.pipelineTotaal)}</span>
         </div>
       </div>
 
@@ -878,12 +884,12 @@ export function QuotesPipeline() {
                 className={cn(
                   'px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors flex-shrink-0',
                   statusFilter === optie.value
-                    ? 'bg-foreground text-background'
-                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                    ? 'bg-[#191919] text-white'
+                    : 'text-[#5A5A55] hover:bg-[#F4F2EE]'
                 )}
               >
                 {optie.label}
-                {count > 0 && <span className="ml-1 opacity-60">{count}</span>}
+                {count > 0 && <span className="ml-1 font-mono text-[11px] opacity-60">{count}</span>}
               </button>
             )
           })}
@@ -1000,7 +1006,7 @@ export function QuotesPipeline() {
                   <div className={`w-2 h-2 rounded-full ${col.dotColor}`} />
                   <span className={`text-xs font-bold ${col.textColor} uppercase tracking-label`}>{col.label}</span>
                 </div>
-                <p className="text-lg font-bold font-mono text-foreground">{formatCurrency(data.totaal)}</p>
+                <p className="text-lg font-bold font-mono text-foreground">{formatEur(data.totaal)}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {data.count} {data.count === 1 ? 'offerte' : 'offertes'}
                 </p>
@@ -1014,17 +1020,17 @@ export function QuotesPipeline() {
           <div className="flex items-center gap-2">
             <DollarSign className="h-4 w-4 text-primary flex-shrink-0" />
             <span className="text-xs sm:text-sm font-medium text-muted-foreground whitespace-nowrap">Pipeline:</span>
-            <span className="text-xs sm:text-sm font-bold font-mono text-foreground whitespace-nowrap">{formatCurrency(salesSummary.pipelineValue)}</span>
+            <span className="text-xs sm:text-sm font-bold font-mono text-foreground whitespace-nowrap">{formatEur(salesSummary.pipelineValue)}</span>
           </div>
           <div className="hidden sm:block w-px h-5 bg-border" />
           <div className="flex items-center gap-2">
             <span className="text-xs sm:text-sm font-medium text-muted-foreground whitespace-nowrap">Verstuurd:</span>
-            <span className="text-xs sm:text-sm font-bold font-mono text-foreground whitespace-nowrap">{formatCurrency(salesSummary.verstuurdValue)}</span>
+            <span className="text-xs sm:text-sm font-bold font-mono text-foreground whitespace-nowrap">{formatEur(salesSummary.verstuurdValue)}</span>
           </div>
           <div className="hidden sm:block w-px h-5 bg-border" />
           <div className="flex items-center gap-2">
             <span className="text-xs sm:text-sm font-medium text-muted-foreground whitespace-nowrap">Akkoord:</span>
-            <span className="text-xs sm:text-sm font-bold font-mono text-emerald-600 dark:text-emerald-400 whitespace-nowrap">{formatCurrency(salesSummary.akkoordValue)}</span>
+            <span className="text-xs sm:text-sm font-bold font-mono text-emerald-600 dark:text-emerald-400 whitespace-nowrap">{formatEur(salesSummary.akkoordValue)}</span>
           </div>
         </div>
 
@@ -1059,7 +1065,7 @@ export function QuotesPipeline() {
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground font-medium font-mono pl-4">
-                    {formatCurrency(colTotal)}
+                    {formatEur(colTotal)}
                   </p>
                 </div>
 
@@ -1096,10 +1102,8 @@ export function QuotesPipeline() {
                               {offerte.nummer}
                             </span>
                             <div className="flex items-center gap-1">
-                              {offerte.prioriteit && offerte.prioriteit !== 'laag' && (
-                                <span className={`text-[10px] font-semibold px-[10px] py-[3px] rounded-full ${PRIORITY_COLORS[offerte.prioriteit] || ''}`}>
-                                  {offerte.prioriteit.charAt(0).toUpperCase() + offerte.prioriteit.slice(1)}
-                                </span>
+                              {(offerte.prioriteit === 'urgent' || offerte.prioriteit === 'hoog') && (
+                                <span className="w-2 h-2 rounded-full bg-[#F15025] flex-shrink-0" title={offerte.prioriteit} />
                               )}
                               {followUpState === 'overdue' && (
                                 <BellRing className="h-3.5 w-3.5 text-red-500 animate-pulse" />
@@ -1134,7 +1138,7 @@ export function QuotesPipeline() {
                           {/* Amount + relative date + days open */}
                           <div className="flex items-center justify-between pt-2 border-t border-border dark:border-border/50">
                             <span className="text-sm font-bold font-mono text-foreground">
-                              {formatCurrency(offerte.totaal)}
+                              {formatEur(offerte.totaal)}
                             </span>
                             <div className="flex items-center gap-1.5">
                               {OPEN_STATUSES.includes(offerte.status) && (
@@ -1287,7 +1291,7 @@ export function QuotesPipeline() {
                       <p className="text-sm font-medium text-muted-foreground">{col.label}</p>
                     </div>
                     <p className="text-xl font-bold font-mono text-foreground">{colOffertes.length}</p>
-                    <p className="text-sm font-mono text-muted-foreground mt-0.5">{formatCurrency(colTotal)}</p>
+                    <p className="text-sm font-mono text-muted-foreground mt-0.5">{formatEur(colTotal)}</p>
                   </div>
                 )
               })}
@@ -1299,7 +1303,7 @@ export function QuotesPipeline() {
                   {offertes.length} offertes
                 </Badge>
                 <span className="text-lg font-bold font-mono text-foreground">
-                  {formatCurrency(round2(offertes.reduce((s, o) => s + o.totaal, 0)))}
+                  {formatEur(round2(offertes.reduce((s, o) => s + o.totaal, 0)))}
                 </span>
               </div>
             </div>
@@ -1498,8 +1502,7 @@ export function QuotesPipeline() {
                       <tr
                         key={offerte.id}
                         className={cn(
-                          'last:border-0 hover:bg-[#F4F2EE] cursor-pointer transition-colors duration-150 group border-l-[3px]',
-                          getOfferteStatusBorderColor(offerte.status),
+                          'last:border-0 hover:bg-[#F4F2EE] cursor-pointer transition-colors duration-150 group border-l-[3px] border-l-[#F15025]',
                           selectedIds.has(offerte.id) && 'bg-primary/5'
                         )}
                         style={{ borderBottom: '0.5px solid #E6E4E0' }}
@@ -1521,14 +1524,20 @@ export function QuotesPipeline() {
                               <button
                                 onClick={(e) => e.stopPropagation()}
                                 className={cn(
-                                  'w-full h-full py-3 px-4 flex items-center gap-1.5 transition-colors border-l-[3px]',
-                                  getOfferteStatusBorderColor(offerte.status),
-                                  getOfferteStatusCellBg(offerte.status),
+                                  'w-full h-full py-3 px-4 flex items-center gap-1.5 transition-colors',
                                   'hover:brightness-95 dark:hover:brightness-110'
                                 )}
                               >
-                                <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0', getOfferteStatusDotColor(offerte.status))} />
-                                <span className="text-xs font-medium text-foreground">
+                                <span
+                                  className="text-[10px] font-semibold px-[10px] py-[3px] rounded-full inline-flex items-center gap-1"
+                                  style={{
+                                    backgroundColor: STATUS_BADGE_STYLES[offerte.status]?.bg ?? '#EEEEED',
+                                    color: STATUS_BADGE_STYLES[offerte.status]?.text ?? '#5A5A55',
+                                  }}
+                                >
+                                  {(offerte.prioriteit === 'urgent' || offerte.prioriteit === 'hoog') && (
+                                    <span className="w-2 h-2 rounded-full bg-[#F15025] flex-shrink-0" />
+                                  )}
                                   {STATUS_LABELS[offerte.status] || offerte.status}
                                 </span>
                                 <ChevronDown className="w-3 h-3 text-muted-foreground/40 ml-auto" />
@@ -1571,11 +1580,6 @@ export function QuotesPipeline() {
                                 {offerte.nummer} — {offerte.titel}
                               </Link>
                             </div>
-                            {offerte.prioriteit && offerte.prioriteit !== 'laag' && (
-                              <Badge className={cn(PRIORITY_COLORS[offerte.prioriteit] || '', 'text-[10px] font-semibold px-[10px] py-[3px] rounded-full flex-shrink-0')}>
-                                {offerte.prioriteit}
-                              </Badge>
-                            )}
                             {expiryStatus === 'expired' && (
                               <Badge className="bg-[#FDE8E2] text-[#C03A18] text-[10px] font-semibold px-[10px] py-[3px] rounded-full flex-shrink-0">
                                 Verlopen
@@ -1592,7 +1596,7 @@ export function QuotesPipeline() {
                         {/* Bedrag */}
                         <td className="py-3 px-4 text-right hidden xl:table-cell">
                           <span className="text-xs font-medium font-mono text-foreground tabular-nums">
-                            {formatCurrency(offerte.totaal)}
+                            {formatEur(offerte.totaal)}
                           </span>
                         </td>
 

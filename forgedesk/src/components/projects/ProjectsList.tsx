@@ -4,12 +4,11 @@ import { useNavigateWithTab } from '@/hooks/useNavigateWithTab'
 import {
   Plus,
   Search,
-  FolderKanban,
+  FolderOpen,
   TrendingUp,
   Clock,
   AlertTriangle,
   CheckCircle2,
-  BarChart3,
   ArrowUpDown,
   Download,
   FileText,
@@ -18,8 +17,6 @@ import {
   ChevronDown,
   MoreHorizontal,
   Receipt,
-  Users,
-  CalendarDays,
   Camera,
   Eye,
   CheckSquare,
@@ -34,8 +31,7 @@ import {
 import { Card, CardContent } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/empty-state'
 import { SpectrumBar } from '@/components/ui/SpectrumBar'
-import { getSpectrumPercentage } from '@/utils/spectrumUtils'
-import { Badge } from '@/components/ui/badge'
+import { getFase } from '@/utils/projectFases'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -50,8 +46,6 @@ import {
   cn,
   formatDate,
   formatCurrency,
-  getStatusColor,
-  getPriorityColor,
 } from '@/lib/utils'
 import { exportCSV, exportExcel } from '@/lib/export'
 import { PaginationControls } from '@/components/ui/pagination-controls'
@@ -62,8 +56,6 @@ import { toast } from 'sonner'
 import { logger } from '../../utils/logger'
 import { ModuleHeader } from '@/components/shared/ModuleHeader'
 import { SkeletonTable } from '@/components/ui/skeleton'
-import { DagenOpenFilterBar, getDaysOpen, getDaysColor, matchDagenFilter } from '@/components/shared/DagenOpenFilter'
-import type { DagenOpenFilter } from '@/components/shared/DagenOpenFilter'
 import { MODULE_COLORS } from '@/lib/moduleColors'
 
 const statusOpties = [
@@ -103,37 +95,7 @@ function getStatusDotColor(status: string): string {
   }
 }
 
-function getStatusBorderColor(status: string): string {
-  switch (status) {
-    case 'actief': return 'border-l-[#2D6B48]'
-    case 'gepland': return 'border-l-[#2A5580]'
-    case 'in-review': return 'border-l-[#A0A098]'
-    case 'afgerond': return 'border-l-[#1A535C]'
-    case 'on-hold': return 'border-l-[#A0A098]'
-    case 'te-factureren': return 'border-l-[#2D6B48]'
-    case 'gefactureerd': return 'border-l-[#2D6B48]'
-    case 'montage': return 'border-l-[#2A5580]'
-    case 'productie': return 'border-l-[#5A4A78]'
-    case 'opgeleverd': return 'border-l-[#2D6B48]'
-    default: return 'border-l-[#A0A098]'
-  }
-}
 
-function getStatusCellBg(status: string): string {
-  switch (status) {
-    case 'actief': return 'bg-[#E4F0EA]/50'
-    case 'gepland': return 'bg-[#E5ECF6]/50'
-    case 'in-review': return 'bg-[#EEEEED]/50'
-    case 'afgerond': return 'bg-[#E2F0F0]/50'
-    case 'on-hold': return 'bg-[#EEEEED]/50'
-    case 'te-factureren': return 'bg-[#E4F0EA]/50'
-    case 'gefactureerd': return 'bg-[#E4F0EA]/50'
-    case 'montage': return 'bg-[#E5ECF6]/50'
-    case 'productie': return 'bg-[#EEE8F5]/50'
-    case 'opgeleverd': return 'bg-[#E4F0EA]/50'
-    default: return 'bg-[#EEEEED]/30'
-  }
-}
 
 export function ProjectsList() {
   const { navigateWithTab } = useNavigateWithTab()
@@ -144,7 +106,6 @@ export function ProjectsList() {
   const [isLoading, setIsLoading] = useState(true)
   const [zoekterm, setZoekterm] = useState('')
   const [statusFilter, setStatusFilter] = useState('alle')
-  const [dagenOpenFilter, setDagenOpenFilter] = useState<DagenOpenFilter>('alle')
   const [sortField, setSortField] = useState<'naam' | 'bedrag' | 'start_datum'>('start_datum')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [currentPage, setCurrentPage] = useState(1)
@@ -250,14 +211,6 @@ export function ProjectsList() {
       result = result.filter((p) => p.status === statusFilter)
     }
 
-    if (dagenOpenFilter !== 'alle') {
-      const openStatuses = ['actief', 'gepland', 'in-review', 'on-hold', 'te-factureren']
-      result = result.filter((p) => {
-        if (!openStatuses.includes(p.status)) return false
-        return matchDagenFilter(getDaysOpen(p.start_datum || p.created_at), dagenOpenFilter)
-      })
-    }
-
     result.sort((a, b) => {
       let cmp = 0
       switch (sortField) {
@@ -275,10 +228,10 @@ export function ProjectsList() {
     })
 
     return result
-  }, [projecten, klanten, offertes, zoekterm, statusFilter, dagenOpenFilter, sortField, sortDir])
+  }, [projecten, klanten, offertes, zoekterm, statusFilter, sortField, sortDir])
 
   // Reset page when filters change
-  useEffect(() => { setCurrentPage(1) }, [zoekterm, statusFilter, dagenOpenFilter, sortField, sortDir])
+  useEffect(() => { setCurrentPage(1) }, [zoekterm, statusFilter, sortField, sortDir])
 
   const totalPages = Math.ceil(gefilterdeProjecten.length / PAGE_SIZE)
   const paginatedProjecten = useMemo(
@@ -380,11 +333,11 @@ export function ProjectsList() {
       {/* ── Header bar ── */}
       <ModuleHeader
         module="projecten"
-        icon={FolderKanban}
+        icon={FolderOpen}
         title="Projecten"
         subtitle={`${gefilterdeProjecten.length} van ${projecten.length} projecten`}
         actions={
-          <Button asChild size="sm" className="flex-shrink-0 shadow-sm">
+          <Button asChild size="sm" className="flex-shrink-0 rounded-lg text-white" style={{ backgroundColor: '#1A535C' }}>
             <Link to="/projecten/nieuw">
               <Plus className="mr-1.5 h-3.5 w-3.5" />
               <span className="hidden sm:inline">Nieuw project</span>
@@ -401,27 +354,27 @@ export function ProjectsList() {
       {/* ── Quick stats ── */}
       <div className="flex items-center gap-2 flex-wrap">
         {stats.actief > 0 && (
-          <div className="flex items-center gap-1.5 text-[10px] font-semibold px-[10px] py-[3px] rounded-full" style={{ color: MODULE_COLORS.facturen.text, background: MODULE_COLORS.facturen.light }}>
-            <TrendingUp className="w-3 h-3" />
-            <span className="font-mono">{stats.actief}</span> actief
+          <div className="flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full bg-white" style={{ color: '#1A535C', border: '1px solid #1A535C' }}>
+            <TrendingUp className="w-3.5 h-3.5" />
+            <span className="font-mono text-[11px]">{stats.actief}</span> actief
           </div>
         )}
         {stats.teFactureren > 0 && (
-          <div className="flex items-center gap-1.5 text-[10px] font-semibold px-[10px] py-[3px] rounded-full" style={{ color: MODULE_COLORS.email.text, background: MODULE_COLORS.email.light }}>
-            <Receipt className="w-3 h-3" />
-            <span className="font-mono">{stats.teFactureren}</span> te factureren
+          <div className="flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full bg-white" style={{ color: '#2D6B48', border: '1px solid #2D6B48' }}>
+            <Receipt className="w-3.5 h-3.5" />
+            <span className="font-mono text-[11px]">{stats.teFactureren}</span> te factureren
           </div>
         )}
         {stats.overdue > 0 && (
-          <div className="flex items-center gap-1.5 text-[10px] font-semibold px-[10px] py-[3px] rounded-full" style={{ color: MODULE_COLORS.werkbonnen.text, background: MODULE_COLORS.werkbonnen.light }}>
-            <AlertTriangle className="w-3 h-3" />
-            <span className="font-mono">{stats.overdue}</span> verlopen
+          <div className="flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full bg-white" style={{ color: '#F15025', border: '1px solid #F15025' }}>
+            <AlertTriangle className="w-3.5 h-3.5" />
+            <span className="font-mono text-[11px]">{stats.overdue}</span> verlopen
           </div>
         )}
         {stats.afgerond > 0 && (
-          <div className="flex items-center gap-1.5 text-[10px] font-semibold px-[10px] py-[3px] rounded-full" style={{ color: MODULE_COLORS.facturen.text, background: MODULE_COLORS.facturen.light }}>
-            <CheckCircle2 className="w-3 h-3" />
-            <span className="font-mono">{stats.afgerond}</span> afgerond
+          <div className="flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full bg-white" style={{ color: '#5A5A55', border: '1px solid #5A5A55' }}>
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            <span className="font-mono text-[11px]">{stats.afgerond}</span> afgerond
           </div>
         )}
       </div>
@@ -498,12 +451,12 @@ export function ProjectsList() {
                 className={cn(
                   'px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all duration-150',
                   statusFilter === optie.value
-                    ? 'bg-foreground text-background'
-                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                    ? 'bg-[#191919] text-white'
+                    : 'text-[#5A5A55] hover:bg-[#F4F2EE]'
                 )}
               >
                 {optie.label}
-                {count > 0 && <span className="ml-1 opacity-60">{count}</span>}
+                {count > 0 && <span className="ml-1 opacity-60 font-mono text-[11px]">{count}</span>}
               </button>
             )
           })}
@@ -553,15 +506,6 @@ export function ProjectsList() {
         </div>
       </div>
 
-      {/* ── Dagen open filter ── */}
-      <DagenOpenFilterBar
-        value={dagenOpenFilter}
-        onChange={setDagenOpenFilter}
-        items={projecten
-          .filter((p) => ['actief', 'gepland', 'in-review', 'on-hold', 'te-factureren'].includes(p.status))
-          .map((p) => ({ dateField: p.start_datum || p.created_at }))
-        }
-      />
 
       {/* ── Bulk action bar ── */}
       {selectedIds.size > 0 && (
@@ -660,35 +604,40 @@ export function ProjectsList() {
               <div
                 key={`mobile-${project.id}`}
                 onClick={() => navigateWithTab({ path: `/projecten/${project.id}`, label: project.naam || 'Project', id: `/projecten/${project.id}` })}
-                className={cn(
-                  'p-4 rounded-xl border bg-card cursor-pointer active:bg-muted/50 transition-colors border-l-3',
-                  getStatusBorderColor(project.status)
-                )}
+                className="p-4 rounded-xl border bg-card cursor-pointer active:bg-muted/50 transition-colors border-l-[3px] border-l-[#1A535C]"
               >
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-foreground truncate">{project.naam}</p>
-                    {klantNaam && <p className="text-xs text-muted-foreground truncate mt-0.5">{klantNaam}</p>}
+                    <p className="text-[13px] font-medium text-foreground truncate">{project.naam}</p>
+                    {klantNaam && <p className="text-[11px] truncate mt-0.5" style={{ color: '#5A5A55' }}>{klantNaam}</p>}
                   </div>
-                  <Badge className={cn('text-2xs capitalize flex-shrink-0', getStatusColor(project.status))}>
-                    {statusLabels[project.status] || project.status}
-                  </Badge>
+                  {(() => {
+                    const statusBadgeColors: Record<string, [string, string]> = {
+                      actief: ['#E2F0F0', '#1A535C'],
+                      gepland: ['#E2F0F0', '#1A535C'],
+                      'te-factureren': ['#E4F0EA', '#2D6B48'],
+                      afgerond: ['#EEEEED', '#5A5A55'],
+                    }
+                    const [bg, fg] = statusBadgeColors[project.status] || ['#EEEEED', '#5A5A55']
+                    return (
+                      <span
+                        className="text-[10px] font-semibold px-[10px] py-[3px] rounded-full flex-shrink-0"
+                        style={{ backgroundColor: bg, color: fg }}
+                      >
+                        {statusLabels[project.status] || project.status}
+                      </span>
+                    )
+                  })()}
                 </div>
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <div className="flex items-center gap-2">
-                    <span className={cn(
-                      'text-[10px] font-semibold px-[10px] py-[3px] rounded-full uppercase',
-                      getPriorityColor(project.prioriteit)
-                    )}>
-                      {project.prioriteit}
-                    </span>
-                    <span className="font-mono">{formatDate(project.created_at)}</span>
-                  </div>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-[11px] font-medium" style={{ color: getFase(project.status).color }}>
+                    {getFase(project.status).label}
+                  </span>
                   {bedrag > 0 && (
-                    <span className="font-mono font-semibold text-foreground">{formatCurrency(bedrag)}</span>
+                    <span className="font-mono font-medium text-foreground">EUR {formatCurrency(bedrag).replace('€', '').trim()}</span>
                   )}
                 </div>
-                <SpectrumBar percentage={getSpectrumPercentage(project.status)} height={3} className="mt-2" />
+                <SpectrumBar percentage={getFase(project.status).percentage} height={3} className="mt-2" />
               </div>
             )
           })}
@@ -724,13 +673,13 @@ export function ProjectsList() {
                     )}
                   </button>
                 </th>
-                <th className="text-left py-3 px-4 hidden lg:table-cell">
+                <th className="text-left py-3 px-4 w-[140px] hidden lg:table-cell">
                   <span className="text-[10px] font-medium uppercase text-[#A0A098]" style={{ letterSpacing: '0.8px' }}>Klant</span>
                 </th>
-                <th className="text-left py-3 px-4 hidden md:table-cell">
-                  <span className="text-[10px] font-medium uppercase text-[#A0A098]" style={{ letterSpacing: '0.8px' }}>Team</span>
+                <th className="text-left py-3 px-4 w-[90px] hidden md:table-cell">
+                  <span className="text-[10px] font-medium uppercase text-[#A0A098]" style={{ letterSpacing: '0.8px' }}>Fase</span>
                 </th>
-                <th className="text-right py-3 px-4 hidden xl:table-cell">
+                <th className="text-right py-3 px-4 w-[110px] hidden xl:table-cell">
                   <button
                     onClick={() => handleSort('bedrag')}
                     className="flex items-center gap-1 text-[10px] font-medium uppercase text-[#A0A098] hover:text-foreground transition-colors ml-auto"
@@ -744,10 +693,7 @@ export function ProjectsList() {
                     )}
                   </button>
                 </th>
-                <th className="text-right py-3 px-4 hidden xl:table-cell">
-                  <span className="text-[10px] font-medium uppercase text-[#A0A098]" style={{ letterSpacing: '0.8px' }}>Open</span>
-                </th>
-                <th className="text-right py-3 px-4 hidden lg:table-cell">
+                <th className="text-right py-3 px-4 w-[70px] hidden lg:table-cell">
                   <button
                     onClick={() => handleSort('start_datum')}
                     className="flex items-center gap-1 text-[10px] font-medium uppercase text-[#A0A098] hover:text-foreground transition-colors ml-auto"
@@ -774,9 +720,8 @@ export function ProjectsList() {
                   <tr
                     key={project.id}
                     className={cn(
-                      'last:border-0 hover:bg-[#F4F2EE] cursor-pointer transition-colors duration-150 group border-l-[3px]',
-                      getStatusBorderColor(project.status),
-                      selectedIds.has(project.id) && 'bg-[#7EB5A6]/5'
+                      'last:border-0 hover:bg-[#F4F2EE] cursor-pointer transition-colors duration-150 group border-l-[3px] border-l-[#1A535C]',
+                      selectedIds.has(project.id) && 'bg-[#E2F0F0]/30'
                     )}
                     style={{ borderBottom: '0.5px solid #E6E4E0' }}
                     onClick={() => navigateWithTab({ path: `/projecten/${project.id}`, label: project.naam || 'Project', id: `/projecten/${project.id}` })}
@@ -789,24 +734,41 @@ export function ProjectsList() {
                         aria-label={`Selecteer ${project.naam}`}
                       />
                     </td>
-                    {/* Status */}
-                    <td className="py-0 px-0">
+                    {/* Status badge */}
+                    <td className="py-3.5 px-4" onClick={(e) => e.stopPropagation()}>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <button
-                            onClick={(e) => e.stopPropagation()}
-                            className={cn(
-                              'w-full h-full py-3.5 px-4 flex items-center gap-1.5 transition-colors border-l-[3px]',
-                              getStatusBorderColor(project.status),
-                              getStatusCellBg(project.status),
-                              'hover:brightness-95 dark:hover:brightness-110'
+                          <button className="flex items-center gap-1.5">
+                            {(() => {
+                              const statusBadgeColors: Record<string, [string, string]> = {
+                                actief: ['#E2F0F0', '#1A535C'],
+                                gepland: ['#E2F0F0', '#1A535C'],
+                                'te-factureren': ['#E4F0EA', '#2D6B48'],
+                                afgerond: ['#EEEEED', '#5A5A55'],
+                                'on-hold': ['#EEEEED', '#5A5A55'],
+                                'in-review': ['#EEEEED', '#5A5A55'],
+                                gefactureerd: ['#E4F0EA', '#2D6B48'],
+                              }
+                              const [bg, fg] = statusBadgeColors[project.status] || ['#EEEEED', '#5A5A55']
+                              const isUrgent = project.prioriteit === 'urgent' || project.prioriteit === 'hoog'
+                              return (
+                                <span
+                                  className="text-[10px] font-semibold px-[10px] py-[3px] rounded-full inline-flex items-center gap-1.5"
+                                  style={{ backgroundColor: bg, color: fg }}
+                                >
+                                  {isUrgent && <span className="w-2 h-2 rounded-full bg-[#F15025] flex-shrink-0" />}
+                                  {statusLabels[project.status] || project.status}
+                                </span>
+                              )
+                            })()}
+                            {isOverdue && (
+                              <span
+                                className="text-[10px] font-semibold px-[10px] py-[3px] rounded-full"
+                                style={{ backgroundColor: '#FDE8E2', color: '#C03A18' }}
+                              >
+                                Verlopen
+                              </span>
                             )}
-                          >
-                            <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0', getStatusDotColor(project.status))} />
-                            <span className="text-xs font-medium text-foreground">
-                              {statusLabels[project.status] || project.status}
-                            </span>
-                            <ChevronDown className="w-3 h-3 text-muted-foreground/40 ml-auto" />
                           </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="start" className="w-40">
@@ -833,80 +795,48 @@ export function ProjectsList() {
                       </DropdownMenu>
                     </td>
 
-                    {/* Project naam + prioriteit */}
+                    {/* Project naam + ref + spectrum bar */}
                     <td className="py-3.5 px-4">
-                      <div className="flex items-center gap-2">
-                        <div className="min-w-0">
-                          <div>
-                            <Link
-                              to={`/projecten/${project.id}`}
-                              className="text-sm font-medium text-foreground hover:text-accent dark:hover:text-primary transition-colors block truncate"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              {project.naam}
-                            </Link>
-                            {project.project_nummer && (
-                              <span className="text-xs text-muted-foreground font-mono">{project.project_nummer}</span>
-                            )}
-                          </div>
-                          {project.beschrijving && (
-                            <p className="text-xs text-muted-foreground truncate max-w-[300px] mt-0.5">
-                              {project.beschrijving}
-                            </p>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <Link
+                            to={`/projecten/${project.id}`}
+                            className="text-[13px] font-medium text-foreground hover:text-[#1A535C] transition-colors truncate"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {project.naam}
+                          </Link>
+                          {project.project_nummer && (
+                            <span className="text-[11px] text-[#A0A098] font-mono flex-shrink-0">{project.project_nummer}</span>
                           )}
-                          <SpectrumBar percentage={getSpectrumPercentage(project.status)} height={3} className="mt-1.5 max-w-[200px]" />
                         </div>
-                        <span className={cn(
-                          'text-[10px] font-semibold px-[10px] py-[3px] rounded-full flex-shrink-0 uppercase tracking-wide',
-                          project.prioriteit === 'hoog' || project.prioriteit === 'urgent'
-                            ? 'text-[#C03A18] bg-[#FDE8E2]'
-                            : project.prioriteit === 'laag'
-                            ? 'text-[#5A5A55] bg-[#EEEEED]'
-                            : 'text-[#4A4A45] bg-[#EEEEED]'
-                        )}>
-                          {project.prioriteit}
-                        </span>
-                        {isOverdue && (
-                          <Badge className="bg-[#FDE8E2] text-[#C03A18] text-[10px] font-semibold px-[10px] py-[3px] rounded-full flex-shrink-0">
-                            Verlopen
-                          </Badge>
+                        {project.beschrijving && (
+                          <p className="text-xs text-[#5A5A55] truncate max-w-[300px] mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                            {project.beschrijving}
+                          </p>
                         )}
+                        <SpectrumBar percentage={getFase(project.status).percentage} height={3} className="mt-1.5 w-20" />
                       </div>
                     </td>
 
                     {/* Klant */}
                     <td className="py-3.5 px-4 hidden lg:table-cell">
-                      <span className="text-sm text-foreground">{klantNaam}</span>
-                      {project.vestiging_naam && (
-                        <p className="text-xs text-muted-foreground mt-0.5">{project.vestiging_naam}</p>
-                      )}
-                      {!project.vestiging_naam && contactpersoon && (
-                        <p className="text-xs text-muted-foreground mt-0.5">{contactpersoon}</p>
+                      <span className="text-[13px] text-foreground">{klantNaam}</span>
+                      {(project.vestiging_naam || contactpersoon) && (
+                        <p className="text-[11px] mt-0.5" style={{ color: '#5A5A55' }}>
+                          {project.vestiging_naam || contactpersoon}
+                        </p>
                       )}
                     </td>
 
-                    {/* Team */}
+                    {/* Fase */}
                     <td className="py-3.5 px-4 hidden md:table-cell">
-                      {project.team_leden.length > 0 ? (
-                        <div className="flex items-center -space-x-1">
-                          {project.team_leden.slice(0, 3).map((lid, i) => (
-                            <div
-                              key={i}
-                              className="w-6 h-6 rounded-full bg-primary/10 dark:bg-primary/20 flex items-center justify-center border-2 border-white dark:border-card text-2xs font-semibold text-accent dark:text-primary"
-                              title={lid}
-                            >
-                              {lid.charAt(0).toUpperCase()}
-                            </div>
-                          ))}
-                          {project.team_leden.length > 3 && (
-                            <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center border-2 border-white dark:border-card text-2xs font-medium text-muted-foreground">
-                              +{project.team_leden.length - 3}
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">-</span>
-                      )}
+                      <span
+                        className="text-[11px] font-medium"
+                        style={{ color: getFase(project.status).color }}
+                      >
+                        {getFase(project.status).label}
+                      </span>
                     </td>
 
                     {/* Bedrag */}
@@ -915,30 +845,18 @@ export function ProjectsList() {
                         const bedrag = getProjectBedrag(project.id)
                         return bedrag > 0 ? (
                           <span className="text-sm font-medium text-foreground tabular-nums font-mono">
-                            {formatCurrency(bedrag)}
+                            EUR {formatCurrency(bedrag).replace('€', '').trim()}
                           </span>
                         ) : (
-                          <span className="text-xs text-muted-foreground/50">—</span>
-                        )
-                      })()}
-                    </td>
-
-                    {/* Dagen open */}
-                    <td className="py-3.5 px-4 text-right hidden xl:table-cell">
-                      {project.status !== 'afgerond' && (() => {
-                        const days = getDaysOpen(project.start_datum || project.created_at)
-                        return (
-                          <span className={cn('text-xs font-medium px-2 py-0.5 rounded-md tabular-nums', getDaysColor(days))}>
-                            {days}d
-                          </span>
+                          <span className="text-xs text-[#A0A098]">—</span>
                         )
                       })()}
                     </td>
 
                     {/* Datum */}
                     <td className="py-3.5 px-4 text-right hidden lg:table-cell">
-                      <span className="text-xs text-muted-foreground font-mono tabular-nums">
-                        {formatDate(project.created_at)}
+                      <span className="text-xs font-mono tabular-nums" style={{ color: '#A0A098' }}>
+                        {new Date(project.created_at).toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit' }).replace('/', '-')}
                       </span>
                     </td>
 

@@ -192,12 +192,12 @@ function OfferteCard({ item, token, klantNaam, onKlantNaamChange, onReactie, pri
 
       {/* Getekend status */}
       {isGetekend && (
-        <div className="mx-5 mb-4 px-4 py-3 rounded-lg bg-green-50 border border-green-200">
-          <div className="flex items-center gap-2 text-green-700">
+        <div className="mx-5 mb-4 px-4 py-3 rounded-lg" style={{ backgroundColor: '#E4F0EA', border: '0.5px solid #C0DBCC' }}>
+          <div className="flex items-center gap-2" style={{ color: '#2D6B48' }}>
             <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
             <div>
               <p className="text-sm font-medium">Akkoord gegeven</p>
-              <p className="text-xs text-green-600">
+              <p className="text-xs" style={{ color: '#2D6B48', opacity: 0.8 }}>
                 door {goedkeuring?.klant_naam || 'Klant'}
                 {goedkeuring && ` op ${formatDate(goedkeuring.created_at)}`}
               </p>
@@ -208,8 +208,8 @@ function OfferteCard({ item, token, klantNaam, onKlantNaamChange, onReactie, pri
 
       {/* Success animatie */}
       {success && !isGetekend && (
-        <div className="mx-5 mb-4 px-4 py-3 rounded-lg bg-green-50 border border-green-200 animate-in fade-in">
-          <div className="flex items-center gap-2 text-green-700">
+        <div className="mx-5 mb-4 px-4 py-3 rounded-lg animate-in fade-in" style={{ backgroundColor: '#E4F0EA', border: '0.5px solid #C0DBCC' }}>
+          <div className="flex items-center gap-2" style={{ color: '#2D6B48' }}>
             <CheckCircle2 className="w-5 h-5" />
             <p className="text-sm font-medium">Offerte ondertekend!</p>
           </div>
@@ -239,7 +239,7 @@ function OfferteCard({ item, token, klantNaam, onKlantNaamChange, onReactie, pri
             onClick={handleAkkoord}
             disabled={loading}
             className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium transition-all disabled:opacity-50 hover:opacity-90 active:scale-[0.98]"
-            style={{ backgroundColor: '#E4F0EA', color: '#2D6B48', borderRadius: 6 }}
+            style={{ backgroundColor: '#E4F0EA', color: '#2D6B48', borderRadius: 8 }}
           >
             {loading ? (
               <Loader2 className="w-4 h-4 animate-spin" />

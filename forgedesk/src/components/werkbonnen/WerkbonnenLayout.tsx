@@ -23,9 +23,9 @@ import {
 type FilterStatus = 'alle' | 'concept' | 'definitief' | 'afgerond'
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  concept: { label: 'Concept', color: 'text-[#5A5A55]', bg: 'bg-[#EEEEED]' },
-  definitief: { label: 'Definitief', color: 'text-[#2A5580]', bg: 'bg-[#E5ECF6]' },
-  afgerond: { label: 'Afgerond', color: 'text-[#1A535C]', bg: 'bg-[#E2F0F0]' },
+  concept: { label: 'Open', color: 'text-[#5A5A55]', bg: 'bg-[#EEEEED]' },
+  definitief: { label: 'In uitvoering', color: 'text-[#943520]', bg: 'bg-[#FAE5E0]' },
+  afgerond: { label: 'Afgetekend', color: 'text-[#1A535C]', bg: 'bg-[#E2F0F0]' },
 }
 
 export function WerkbonnenLayout() {
@@ -170,7 +170,7 @@ export function WerkbonnenLayout() {
             <Button variant="outline" size="sm" onClick={handleExportCSV} className="hidden sm:flex">
               <Download className="h-4 w-4 mr-1" /> CSV
             </Button>
-            <Button onClick={() => navigate('/werkbonnen/nieuw')} size="sm">
+            <Button onClick={() => navigate('/werkbonnen/nieuw')} size="sm" className="bg-[#C44830] hover:bg-[#A33B28] text-white rounded-lg">
               <Plus className="h-4 w-4 mr-1" />
               <span className="hidden sm:inline">Nieuwe werkbon</span>
               <span className="sm:hidden">Nieuw</span>
@@ -216,7 +216,12 @@ export function WerkbonnenLayout() {
               key={status}
               variant={filterStatus === status ? 'default' : 'outline'}
               size="sm"
-              className="whitespace-nowrap rounded-full"
+              className={cn(
+                'whitespace-nowrap rounded-full',
+                filterStatus === status
+                  ? 'bg-[#191919] text-white hover:bg-[#191919]/90 border-transparent'
+                  : 'text-[#5A5A55]'
+              )}
               onClick={() => setFilterStatus(status)}
             >
               {status === 'alle' ? 'Alle' : STATUS_CONFIG[status].label}
@@ -262,7 +267,7 @@ export function WerkbonnenLayout() {
                   const projectRef = getProjectNaam(wb.project_id)
                   const ref = offerteRef !== '-' ? offerteRef : projectRef
                   return (
-                    <tr key={wb.id} className="group border-l-[3px] border-l-[#F15025] cursor-pointer hover:bg-[#F4F2EE] transition-colors duration-150"
+                    <tr key={wb.id} className="group border-l-[3px] border-l-[#C44830] cursor-pointer hover:bg-[#F4F2EE] transition-colors duration-150"
                       style={{ borderBottom: '0.5px solid #E6E4E0' }}
                       onClick={() => navigateWithTab({ path: `/werkbonnen/${wb.id}`, label: wb.werkbon_nummer || 'Werkbon', id: `/werkbonnen/${wb.id}` })}>
                       <td className="px-4 py-3">
