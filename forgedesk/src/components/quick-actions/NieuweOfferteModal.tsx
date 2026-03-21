@@ -220,7 +220,6 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
         geldig_tot: deadline || new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
         notities: notitie.trim(),
         voorwaarden: '',
-        toegewezen_aan: toegewezenAan || undefined,
       })
 
       // 2. Create ONE offerte item with all regels as calculatie_regels
@@ -465,34 +464,16 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
           {/* Extended section */}
           {showExtra && (
             <div className="space-y-3 pt-1">
-              {/* Notitie + Medewerker row */}
-              <div className="flex gap-3">
-                <div className="flex-[3] min-w-0">
-                  <label className="text-[10px] text-muted-foreground mb-1 block">Notitie</label>
-                  <input
-                    type="text"
-                    value={notitie}
-                    onChange={e => setNotitie(e.target.value)}
-                    placeholder="Interne notitie of opmerking..."
-                    className={inputClass}
-                  />
-                </div>
-                <div className="flex-[2] min-w-0">
-                  <label className="text-[10px] text-muted-foreground mb-1 block">Medewerker</label>
-                  <div className="relative">
-                    <UserCircle className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-                    <select
-                      value={toegewezenAan}
-                      onChange={e => setToegewezenAan(e.target.value)}
-                      className={`${inputClass} pl-8 appearance-none cursor-pointer`}
-                    >
-                      <option value="">Niet toegewezen</option>
-                      {medewerkers.map(m => (
-                        <option key={m.id} value={m.naam}>{m.naam}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
+              {/* Notitie */}
+              <div>
+                <label className="text-[10px] text-muted-foreground mb-1 block">Notitie</label>
+                <input
+                  type="text"
+                  value={notitie}
+                  onChange={e => setNotitie(e.target.value)}
+                  placeholder="Interne notitie of opmerking..."
+                  className={inputClass}
+                />
               </div>
 
               {/* Quick calculatie regels */}
@@ -694,20 +675,37 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
                 )}
               </div>
 
-              {/* Taak checkbox + Buttons */}
+              {/* Taak checkbox + medewerker + Buttons */}
               <div className="space-y-2 pt-1">
-                <label className="flex items-center gap-2 cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  <input
-                    type="checkbox"
-                    checked={maakTaak}
-                    onChange={e => setMaakTaak(e.target.checked)}
-                    className="h-3.5 w-3.5 rounded border-border accent-petrol"
-                  />
-                  <ListTodo className="h-3.5 w-3.5" />
-                  <span className="text-[11px]">
-                    Taak aanmaken{titel.trim() ? `: "Offerte afmaken: ${titel.trim()}"` : ''}
-                  </span>
-                </label>
+                <div className="space-y-1.5">
+                  <label className="flex items-center gap-2 cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={maakTaak}
+                      onChange={e => setMaakTaak(e.target.checked)}
+                      className="h-3.5 w-3.5 rounded border-border accent-petrol"
+                    />
+                    <ListTodo className="h-3.5 w-3.5" />
+                    <span className="text-[11px]">
+                      Taak aanmaken{titel.trim() ? `: "Offerte afmaken: ${titel.trim()}"` : ''}
+                    </span>
+                  </label>
+                  {maakTaak && (
+                    <div className="ml-6 flex items-center gap-2">
+                      <UserCircle className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      <select
+                        value={toegewezenAan}
+                        onChange={e => setToegewezenAan(e.target.value)}
+                        className="h-8 px-2 py-1 text-[11px] border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-petrol/20 focus:border-petrol appearance-none cursor-pointer"
+                      >
+                        <option value="">Niet toegewezen</option>
+                        {medewerkers.map(m => (
+                          <option key={m.id} value={m.naam}>{m.naam}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
 
                 <div className="flex justify-end gap-2">
                   <button
