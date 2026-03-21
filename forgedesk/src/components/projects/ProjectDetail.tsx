@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
-import { BackButton } from '@/components/shared/BackButton'
+// BackButton removed — breadcrumb in ProjectKaart is sufficient
 import { useTabDirtyState } from '@/hooks/useTabDirtyState'
 import { toast } from 'sonner'
 import {
@@ -763,9 +763,7 @@ export function ProjectDetail() {
 
   return (
     <div className="h-[calc(100vh-56px)] flex flex-col bg-[#F4F3F0]">
-      <div className="px-4 pt-3">
-        <BackButton fallbackPath="/projecten" />
-      </div>
+      {/* BackButton removed — breadcrumb in ProjectKaart is sufficient */}
       {/* Deadline warning */}
       {isOverdue && (
         <div className="mx-4 mt-2 rounded-lg px-3 py-2 flex items-center gap-2" style={{ backgroundColor: '#FDE8E2', border: '0.5px solid #F5C4B4' }}>
@@ -784,7 +782,7 @@ export function ProjectDetail() {
         </div>
       )}
       {/* Spectrum voortgangsstrip */}
-      <SpectrumBar percentage={getFase(project.status).percentage} height={5} className="flex-shrink-0" />
+      <SpectrumBar percentage={getFase(project.status).percentage} height={6} className="flex-shrink-0" />
 
       {/* ── Hidden file inputs ── */}
       <input

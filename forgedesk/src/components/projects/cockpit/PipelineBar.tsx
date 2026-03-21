@@ -66,7 +66,7 @@ export function PipelineBar({ project, offertes, montageAfspraken, facturen }: P
           })}
         </div>
         <span className="text-[12px] font-semibold" style={{ color: fase.color }}>
-          {fase.label}
+          {PHASE_LABELS[currentStep - 1] || fase.label}
         </span>
       </div>
     </div>
