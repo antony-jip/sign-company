@@ -470,7 +470,7 @@ export function TasksLayout() {
         project_id: formData.project_id || undefined,
         klant_id: formData.klant_id || undefined,
         locatie: formData.locatie.trim() || undefined,
-        bijlagen: formData.bijlagen.length > 0 ? formData.bijlagen : undefined,
+        bijlagen: formData.bijlagen,
       })
       setTaken((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
       // Audit log
@@ -1554,33 +1554,49 @@ function EditTaskDialog({
           {/* Bijlagen */}
           <div className="grid gap-2">
             <Label className="flex items-center gap-1.5"><Paperclip className="h-3.5 w-3.5" />Bijlagen</Label>
-            <div className="flex items-center gap-2 flex-wrap">
-              {formData.bijlagen.map((url, i) => (
-                <div key={i} className="relative group">
-                  {url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                    <a href={url} target="_blank" rel="noopener noreferrer">
-                      <img src={url} alt="" className="h-12 w-12 rounded-lg object-cover border border-border hover:ring-2 hover:ring-primary/20 transition-all" />
-                    </a>
-                  ) : (
-                    <a href={url} target="_blank" rel="noopener noreferrer" className="h-12 w-12 rounded-lg border border-border bg-muted/50 flex items-center justify-center hover:ring-2 hover:ring-primary/20 transition-all">
-                      <Paperclip className="h-4 w-4 text-muted-foreground" />
-                    </a>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => updateField('bijlagen', formData.bijlagen.filter((_, j) => j !== i) as string[])}
-                    className="absolute -top-1.5 -right-1.5 h-4 w-4 rounded-full bg-foreground/80 text-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-[10px]"
-                  >
-                    <X className="h-2.5 w-2.5" />
-                  </button>
-                </div>
-              ))}
-              <label className="h-12 w-12 rounded-lg border border-dashed border-border bg-muted/30 flex items-center justify-center cursor-pointer hover:border-primary/30 hover:bg-primary/5 transition-colors">
-                <Plus className="h-4 w-4 text-muted-foreground" />
+            <div className="flex flex-col gap-2">
+              {formData.bijlagen.map((url, i) => {
+                const isImage = url.startsWith('data:image/') || /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(url)
+                return (
+                  <div key={i} className="flex items-center gap-3 p-2 rounded-lg border border-border bg-muted/20 group hover:bg-muted/40 transition-colors">
+                    {/* Thumbnail / icon */}
+                    {isImage ? (
+                      <a href={url} target="_blank" rel="noopener noreferrer" className="shrink-0">
+                        <img src={url} alt="" className="h-14 w-14 rounded-md object-cover border border-border hover:ring-2 hover:ring-primary/20 transition-all" />
+                      </a>
+                    ) : (
+                      <a href={url} target="_blank" rel="noopener noreferrer" className="shrink-0 h-14 w-14 rounded-md border border-border bg-muted/50 flex items-center justify-center hover:ring-2 hover:ring-primary/20 transition-all">
+                        <Paperclip className="h-5 w-5 text-muted-foreground" />
+                      </a>
+                    )}
+                    {/* Bestandsinfo */}
+                    <div className="flex-1 min-w-0">
+                      <a href={url} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-foreground hover:underline truncate block">
+                        {url.startsWith('data:') ? `Bestand ${i + 1}` : decodeURIComponent(url.split('/').pop()?.split('?')[0] || `Bestand ${i + 1}`).replace(/^\d+_/, '')}
+                      </a>
+                      <span className="text-[10px] text-muted-foreground">
+                        {isImage ? 'Afbeelding' : 'Document'} · Klik om te openen
+                      </span>
+                    </div>
+                    {/* Verwijder knop */}
+                    <button
+                      type="button"
+                      onClick={() => updateField('bijlagen', formData.bijlagen.filter((_, j) => j !== i) as string[])}
+                      className="shrink-0 h-7 w-7 rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                )
+              })}
+              {/* Upload knop */}
+              <label className="flex items-center justify-center gap-2 h-10 rounded-lg border border-dashed border-border bg-muted/20 cursor-pointer hover:border-primary/30 hover:bg-primary/5 transition-colors text-sm text-muted-foreground hover:text-foreground">
+                <Plus className="h-4 w-4" />
+                <span>Bestand toevoegen</span>
                 <input
                   type="file"
                   multiple
-                  accept="image/*,.pdf"
+                  accept="image/*,.pdf,.doc,.docx"
                   className="hidden"
                   onChange={async (e) => {
                     const files = Array.from(e.target.files || [])
@@ -1590,7 +1606,7 @@ function EditTaskDialog({
                         const url = await uploadTaakBijlage(editingTaakId, file)
                         setFormData(prev => ({ ...prev, bijlagen: [...prev.bijlagen, url] }))
                       } catch {
-                        // upload failed silently
+                        toast.error(`Kon "${file.name}" niet uploaden`)
                       }
                     }
                     e.target.value = ''
