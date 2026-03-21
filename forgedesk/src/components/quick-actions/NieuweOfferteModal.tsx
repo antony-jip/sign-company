@@ -75,6 +75,7 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
   const [medewerkers, setMedewerkers] = useState<Medewerker[]>([])
   const [toegewezenAan, setToegewezenAan] = useState('')
   const [maakTaak, setMaakTaak] = useState(false)
+  const [taakNotitie, setTaakNotitie] = useState('')
   const klantInputRef = useRef<HTMLInputElement>(null)
 
   // Snelkoppeling template IDs from settings
@@ -99,6 +100,7 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
       setShowTemplates(false)
       setToegewezenAan('')
       setMaakTaak(false)
+      setTaakNotitie('')
     }
   }, [open])
 
@@ -261,7 +263,7 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
       if (maakTaak) {
         await createTaak({
           titel: `Offerte afmaken: ${titel.trim()}`,
-          beschrijving: `Offerte voor ${selectedKlant.bedrijfsnaam}${notitie.trim() ? `\n${notitie.trim()}` : ''}`,
+          beschrijving: taakNotitie.trim() || `Offerte voor ${selectedKlant.bedrijfsnaam}`,
           status: 'todo',
           prioriteit: 'medium',
           toegewezen_aan: toegewezenAan || '',
@@ -438,13 +440,52 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
             </div>
             {!showExtra && (
               <button
-                type="submit"
+                type="button"
+                onClick={e => handleSubmit(e as unknown as React.FormEvent, 'save')}
                 disabled={!canSubmit}
                 className="h-9 px-4 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-50 whitespace-nowrap shrink-0"
                 style={{ backgroundColor: '#F15025' }}
               >
-                {saving ? 'Aanmaken...' : 'Offerte maken'}
+                {saving ? 'Opslaan...' : 'Opslaan'}
               </button>
+            )}
+          </div>
+
+          {/* Taak aanmaken — altijd zichtbaar */}
+          <div className="space-y-1.5">
+            <label className="flex items-center gap-2 cursor-pointer text-muted-foreground hover:text-foreground transition-colors">
+              <input
+                type="checkbox"
+                checked={maakTaak}
+                onChange={e => setMaakTaak(e.target.checked)}
+                className="h-3.5 w-3.5 rounded border-border accent-petrol"
+              />
+              <ListTodo className="h-3.5 w-3.5" />
+              <span className="text-[11px]">
+                Taak aanmaken{titel.trim() ? `: "Offerte afmaken: ${titel.trim()}"` : ''}
+              </span>
+            </label>
+            {maakTaak && (
+              <div className="ml-6 flex items-center gap-2">
+                <UserCircle className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                <select
+                  value={toegewezenAan}
+                  onChange={e => setToegewezenAan(e.target.value)}
+                  className="h-8 px-2 py-1 text-[11px] border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-petrol/20 focus:border-petrol appearance-none cursor-pointer"
+                >
+                  <option value="">Niet toegewezen</option>
+                  {medewerkers.map(m => (
+                    <option key={m.id} value={m.naam}>{m.naam}</option>
+                  ))}
+                </select>
+                <input
+                  type="text"
+                  value={taakNotitie}
+                  onChange={e => setTaakNotitie(e.target.value)}
+                  placeholder="Notitie voor medewerker..."
+                  className="h-8 flex-1 px-2 py-1 text-[11px] border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-petrol/20 focus:border-petrol"
+                />
+              </div>
             )}
           </div>
 
@@ -675,38 +716,8 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
                 )}
               </div>
 
-              {/* Taak checkbox + medewerker + Buttons */}
+              {/* Buttons */}
               <div className="space-y-2 pt-1">
-                <div className="space-y-1.5">
-                  <label className="flex items-center gap-2 cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors">
-                    <input
-                      type="checkbox"
-                      checked={maakTaak}
-                      onChange={e => setMaakTaak(e.target.checked)}
-                      className="h-3.5 w-3.5 rounded border-border accent-petrol"
-                    />
-                    <ListTodo className="h-3.5 w-3.5" />
-                    <span className="text-[11px]">
-                      Taak aanmaken{titel.trim() ? `: "Offerte afmaken: ${titel.trim()}"` : ''}
-                    </span>
-                  </label>
-                  {maakTaak && (
-                    <div className="ml-6 flex items-center gap-2">
-                      <UserCircle className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                      <select
-                        value={toegewezenAan}
-                        onChange={e => setToegewezenAan(e.target.value)}
-                        className="h-8 px-2 py-1 text-[11px] border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-petrol/20 focus:border-petrol appearance-none cursor-pointer"
-                      >
-                        <option value="">Niet toegewezen</option>
-                        {medewerkers.map(m => (
-                          <option key={m.id} value={m.naam}>{m.naam}</option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-                </div>
-
                 <div className="flex justify-end gap-2">
                   <button
                     type="button"
