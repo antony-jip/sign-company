@@ -56,7 +56,6 @@ import {
   Image,
   Upload,
   Eye,
-  Printer,
 } from "lucide-react";
 import {
   getMontageAfspraken,
