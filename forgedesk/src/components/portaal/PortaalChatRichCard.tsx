@@ -41,8 +41,8 @@ const TYPE_ICONS: Record<string, typeof FileText> = {
 }
 
 const REACTION_COLORS: Record<string, string> = {
-  goedkeuring: 'bg-green-50 text-green-700 border-green-200',
-  revisie: 'bg-amber-50 text-amber-700 border-amber-200',
+  goedkeuring: 'bg-[#E4F0EA] text-[#2D6B48] border-[#C0DBCC]',
+  revisie: 'bg-[#FDE8E2] text-[#C03A18] border-[#F5C4B4]',
   bericht: 'bg-gray-50 text-gray-700 border-gray-200',
 }
 
@@ -219,7 +219,7 @@ export function PortaalChatRichCard({
 
         {/* Approval indicator */}
         {approval && (
-          <div className={`mt-3 flex items-center gap-1.5 text-xs ${approval.type === 'goedgekeurd' ? 'text-green-700' : 'text-amber-700'}`}>
+          <div className={`mt-3 flex items-center gap-1.5 text-xs ${approval.type === 'goedgekeurd' ? 'text-[#2D6B48]' : 'text-[#C03A18]'}`}>
             {approval.type === 'goedgekeurd' ? (
               <><CheckCircle2 className="h-3.5 w-3.5" /> Goedgekeurd door {approval.naam}</>
             ) : (
@@ -236,7 +236,7 @@ export function PortaalChatRichCard({
               <button
                 type="button"
                 onClick={() => onApprove?.(item.id)}
-                className="flex items-center gap-1 text-xs font-medium text-green-700 hover:text-green-800"
+                className="flex items-center gap-1 text-xs font-medium text-[#2D6B48] hover:text-[#2D6B48]"
               >
                 <CheckCircle2 className="h-3.5 w-3.5" />
                 Goedkeuren
@@ -244,7 +244,7 @@ export function PortaalChatRichCard({
               <button
                 type="button"
                 onClick={() => onRevisie?.(item.id)}
-                className="flex items-center gap-1 text-xs font-medium text-amber-700 hover:text-amber-800"
+                className="flex items-center gap-1 text-xs font-medium text-[#C03A18] hover:text-[#C03A18]"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
                 Revisie vragen
@@ -258,7 +258,7 @@ export function PortaalChatRichCard({
               <button
                 type="button"
                 onClick={() => onApprove?.(item.id)}
-                className="flex items-center gap-1 text-xs font-medium text-green-700 hover:text-green-800"
+                className="flex items-center gap-1 text-xs font-medium text-[#2D6B48] hover:text-[#2D6B48]"
               >
                 <CheckCircle2 className="h-3.5 w-3.5" />
                 Goedkeuren
@@ -266,7 +266,7 @@ export function PortaalChatRichCard({
               <button
                 type="button"
                 onClick={() => onRevisie?.(item.id)}
-                className="flex items-center gap-1 text-xs font-medium text-amber-700 hover:text-amber-800"
+                className="flex items-center gap-1 text-xs font-medium text-[#C03A18] hover:text-[#C03A18]"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
                 Revisie vragen
@@ -280,7 +280,7 @@ export function PortaalChatRichCard({
               href={item.mollie_payment_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1 text-xs font-medium text-green-700 hover:text-green-800"
+              className="flex items-center gap-1 text-xs font-medium text-[#2D6B48] hover:text-[#2D6B48]"
             >
               <CreditCard className="h-3.5 w-3.5" />
               Betalen

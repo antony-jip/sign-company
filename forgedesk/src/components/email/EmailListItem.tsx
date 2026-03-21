@@ -58,9 +58,10 @@ export const EmailListItem = memo(function EmailListItem({
       onClick={handleClick}
       className={cn(
         'group flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors duration-150 select-none',
+        'border-l-[3px] border-l-[#6A5A8A]',
         isActive
-          ? 'bg-primary/[0.07] border-l-[3px] border-l-primary'
-          : 'border-l-[3px] border-l-transparent hover:bg-muted/50',
+          ? 'bg-primary/[0.07]'
+          : 'hover:bg-muted/50',
         isFocused && !isActive && 'bg-foreground/[0.02]',
         isUnread && !isActive && 'bg-card/80',
       )}

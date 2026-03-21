@@ -104,6 +104,7 @@ import { VisualisatieGallery } from '@/components/visualizer/VisualisatieGallery
 import { WerkbonVanProjectDialog } from '@/components/werkbonnen/WerkbonVanProjectDialog'
 import { SpectrumBar } from '@/components/ui/SpectrumBar'
 import { getSpectrumPercentage } from '@/utils/spectrumUtils'
+import { getFase } from '@/utils/projectFases'
 import { ProjectKaart } from './cockpit/ProjectKaart'
 import { PortaalCompactCard } from './cockpit/PortaalSidebarCard'
 import { TaskChecklistView } from './cockpit/TaskChecklistView'
@@ -761,7 +762,7 @@ export function ProjectDetail() {
   return (
     <div className="h-[calc(100vh-56px)] flex flex-col bg-[#F4F3F0]">
       {/* Spectrum voortgangsstrip */}
-      <SpectrumBar percentage={getSpectrumPercentage(project.status)} height={4} />
+      <SpectrumBar percentage={getFase(project.status).percentage} height={5} className="flex-shrink-0" />
 
       {/* ── Hidden file inputs ── */}
       <input

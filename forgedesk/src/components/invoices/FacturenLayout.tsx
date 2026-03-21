@@ -125,36 +125,36 @@ interface FactuurFormData {
 
 // ============ CONSTANTS ============
 
-const STATUS_CONFIG: Record<FactuurStatus, { label: string; color: string; border: string; dot: string }> = {
+const STATUS_CONFIG: Record<FactuurStatus, { label: string; bg: string; text: string; dot: string }> = {
   concept: {
     label: 'Concept',
-    color: 'badge-grijs',
-    border: 'border-l-[#A0A098]',
-    dot: 'bg-[#5A5A55]',
+    bg: '#EEEEED',
+    text: '#5A5A55',
+    dot: '#5A5A55',
   },
   verzonden: {
     label: 'Verzonden',
-    color: 'badge-flame',
-    border: 'border-l-[#F15025]',
-    dot: 'bg-[#C03A18]',
+    bg: '#FDE8E2',
+    text: '#C03A18',
+    dot: '#C03A18',
   },
   betaald: {
     label: 'Betaald',
-    color: 'badge-groen',
-    border: 'border-l-[#2D6B48]',
-    dot: 'bg-[#2D6B48]',
+    bg: '#E4F0EA',
+    text: '#2D6B48',
+    dot: '#2D6B48',
   },
   vervallen: {
     label: 'Vervallen',
-    color: 'badge-flame',
-    border: 'border-l-[#C03A18]',
-    dot: 'bg-[#C03A18]',
+    bg: '#FDE8E2',
+    text: '#C03A18',
+    dot: '#C03A18',
   },
   gecrediteerd: {
     label: 'Gecrediteerd',
-    color: 'badge-paars',
-    border: 'border-l-[#5A4A78]',
-    dot: 'bg-[#5A4A78]',
+    bg: '#EEE8F5',
+    text: '#5A4A78',
+    dot: '#5A4A78',
   },
 }
 
@@ -1321,8 +1321,9 @@ export function FacturenLayout() {
             </Button>
             <Button
               onClick={() => navigate('/facturen/nieuw')}
-              className="gap-2"
+              className="gap-2 rounded-lg text-white"
               size="sm"
+              style={{ backgroundColor: '#2D6B48' }}
             >
               <Plus className="h-4 w-4" />
               <span className="hidden sm:inline">Nieuwe factuur</span>
@@ -1339,42 +1340,42 @@ export function FacturenLayout() {
       {/* ── Statistics ────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 stat-cards-stagger">
         <div className="stat-card-gradient-offertes stat-card-hover stat-card-glow relative overflow-hidden rounded-2xl p-5">
-          <p className="text-2xs font-extrabold uppercase tracking-[0.1em] text-text-tertiary mb-3">
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-text-tertiary mb-3">
             Totaal openstaand
           </p>
           <p className="display-number display-number-lg text-foreground font-mono">
             {formatCurrency(statistics.totaalOpenstaand)}
           </p>
-          <p className="text-xs font-semibold text-[#3A7D52] mt-3">
+          <p className="text-[10px] font-semibold text-[#3A7D52] mt-3">
             nog te ontvangen
           </p>
         </div>
 
         <div className="stat-card-gradient-facturen stat-card-hover stat-card-glow relative overflow-hidden rounded-2xl p-5">
-          <p className="text-2xs font-extrabold uppercase tracking-[0.1em] text-text-tertiary mb-3">
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-text-tertiary mb-3">
             Betaald deze maand
           </p>
           <p className="display-number display-number-lg text-foreground font-mono">
             {formatCurrency(statistics.betaaldDezeMaand)}
           </p>
-          <p className="text-xs font-semibold text-[#3A7D52] mt-3">
+          <p className="text-[10px] font-semibold text-[#3A7D52] mt-3">
             ontvangen
           </p>
         </div>
 
-        <div className="stat-card-hover relative overflow-hidden rounded-2xl p-5" style={{ background: `linear-gradient(135deg, ${MODULE_COLORS.werkbonnen.light}, color-mix(in srgb, ${MODULE_COLORS.werkbonnen.light} 70%, white))`, border: `1px solid ${MODULE_COLORS.werkbonnen.border}` }}>
-          <p className="text-2xs font-extrabold uppercase tracking-[0.1em] mb-3" style={{ color: MODULE_COLORS.werkbonnen.text }}>
+        <div className="stat-card-hover relative overflow-hidden rounded-2xl p-5" style={{ background: `linear-gradient(135deg, ${MODULE_COLORS.werkbonnen.light}, color-mix(in srgb, ${MODULE_COLORS.werkbonnen.light} 70%, white))` }}>
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] mb-3" style={{ color: MODULE_COLORS.werkbonnen.text }}>
             Vervallen facturen
           </p>
           <p className="display-number display-number-lg text-foreground">
-            {verlopenCount}
+            <span className="font-mono">{verlopenCount}</span>
           </p>
-          <p className="text-xs font-semibold mt-3" style={{ color: MODULE_COLORS.werkbonnen.text }}>
-            {verlopenTotaal > 0 ? formatCurrency(verlopenTotaal) : 'actie vereist'}
+          <p className="text-[10px] font-semibold mt-3" style={{ color: MODULE_COLORS.werkbonnen.text }}>
+            {verlopenTotaal > 0 ? <span className="font-mono">{formatCurrency(verlopenTotaal)}</span> : 'actie vereist'}
           </p>
           {verlopenCount > 0 && (
             <button
-              className="text-xs font-bold hover:underline mt-1"
+              className="text-[10px] font-bold hover:underline mt-1"
               style={{ color: MODULE_COLORS.werkbonnen.text }}
               onClick={() => setFilterStatus('verlopen')}
             >
@@ -1383,14 +1384,14 @@ export function FacturenLayout() {
           )}
         </div>
 
-        <div className="stat-card-hover relative overflow-hidden rounded-2xl p-5" style={{ background: `linear-gradient(135deg, ${MODULE_COLORS.taken.light}, color-mix(in srgb, ${MODULE_COLORS.taken.light} 70%, white))`, border: `1px solid ${MODULE_COLORS.taken.border}` }}>
-          <p className="text-2xs font-extrabold uppercase tracking-[0.1em] mb-3" style={{ color: MODULE_COLORS.taken.text }}>
+        <div className="stat-card-hover relative overflow-hidden rounded-2xl p-5" style={{ background: `linear-gradient(135deg, ${MODULE_COLORS.taken.light}, color-mix(in srgb, ${MODULE_COLORS.taken.light} 70%, white))` }}>
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] mb-3" style={{ color: MODULE_COLORS.taken.text }}>
             Gem. betaaltermijn
           </p>
           <p className="display-number display-number-lg text-foreground">
-            {statistics.gemiddeldeBetaaltermijn} <span className="text-[18px]">dagen</span>
+            <span className="font-mono">{statistics.gemiddeldeBetaaltermijn}</span> <span className="text-[18px]">dagen</span>
           </p>
-          <p className="text-xs font-semibold mt-3" style={{ color: MODULE_COLORS.taken.text }}>
+          <p className="text-[10px] font-semibold mt-3" style={{ color: MODULE_COLORS.taken.text }}>
             gemiddeld
           </p>
         </div>
@@ -1426,22 +1427,20 @@ export function FacturenLayout() {
               key={option.value}
               onClick={() => setFilterStatus(option.value)}
               className={cn(
-                'px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all duration-200 flex items-center gap-1.5',
+                'px-3 py-1.5 rounded-full text-[10px] font-medium whitespace-nowrap transition-all duration-200 flex items-center gap-1.5',
                 filterStatus === option.value
-                  ? 'bg-primary/12 text-accent dark:bg-primary/20 dark:text-wm-light ring-1 ring-primary/25 shadow-sm'
-                  : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'
+                  ? 'bg-[#191919] text-white'
+                  : 'text-[#5A5A55] hover:bg-muted/80'
               )}
             >
               {option.value !== 'alle' && (
                 <span
-                  className={cn(
-                    'w-2 h-2 rounded-full',
-                    STATUS_CONFIG[option.value as FactuurStatus]?.dot
-                  )}
+                  className="w-2 h-2 rounded-full"
+                  style={{ backgroundColor: STATUS_CONFIG[option.value as FactuurStatus]?.dot }}
                 />
               )}
               {option.label}
-              <span className="text-2xs opacity-70">({count})</span>
+              <span className="text-[10px] opacity-70">({count})</span>
             </button>
           )
         })}
@@ -1498,21 +1497,29 @@ export function FacturenLayout() {
           const config = STATUS_CONFIG[factuur.status]
           const isOverdue = factuur.status === 'verzonden' && new Date(factuur.vervaldatum) < new Date()
           const openstaand = factuur.totaal - factuur.betaald_bedrag
+          const mobileDagenOpen = (factuur.status === 'verzonden' || factuur.status === 'vervallen')
+            ? berekenDagenOpen(factuur.factuurdatum)
+            : 0
+          const mobileBorderColor =
+            factuur.status === 'betaald' ? '#1A535C'
+            : factuur.status === 'concept' ? '#A0A098'
+            : factuur.status === 'gecrediteerd' ? '#5A4A78'
+            : (factuur.status === 'verzonden' || factuur.status === 'vervallen')
+              ? getAgingColor(mobileDagenOpen)
+              : config.text
           return (
             <div
               key={`mobile-${factuur.id}`}
               onClick={() => setViewingFactuur(factuur)}
-              className={cn(
-                'p-4 rounded-xl border bg-card cursor-pointer active:bg-muted/50 transition-colors border-l-3',
-                isOverdue ? 'border-l-mod-werkbonnen-border' : config.border
-              )}
+              className="p-4 rounded-xl border bg-card cursor-pointer active:bg-muted/50 transition-colors border-l-[3px]"
+              style={{ borderLeftColor: mobileBorderColor }}
             >
               <div className="flex items-start justify-between gap-2 mb-2">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
                     <span className="text-sm font-mono font-semibold text-foreground">{factuur.nummer}</span>
                     {factuur.factuur_type && factuur.factuur_type !== 'standaard' && (
-                      <Badge variant="secondary" className={cn('text-2xs px-1 py-0 h-4', TYPE_CONFIG[factuur.factuur_type].color)}>
+                      <Badge variant="secondary" className={cn('text-[10px] font-semibold px-[10px] py-[3px] rounded-full', TYPE_CONFIG[factuur.factuur_type].color)}>
                         {TYPE_CONFIG[factuur.factuur_type].label}
                       </Badge>
                     )}
@@ -1521,24 +1528,31 @@ export function FacturenLayout() {
                     {factuur.klant_naam || 'Onbekende klant'}
                   </p>
                 </div>
-                <Badge variant="secondary" className={cn('text-2xs font-semibold px-2 py-0.5 rounded-lg flex-shrink-0', config.color)}>
-                  <span className={cn('w-1.5 h-1.5 rounded-full mr-1 inline-block', config.dot)} />
+                <Badge
+                  variant="secondary"
+                  className="text-[10px] font-semibold px-[10px] py-[3px] rounded-full flex-shrink-0"
+                  style={{ backgroundColor: config.bg, color: config.text }}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full mr-1 inline-block" style={{ backgroundColor: config.dot }} />
                   {config.label}
                 </Badge>
               </div>
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <span className="font-mono">{formatDate(factuur.factuurdatum)}</span>
-                  {isOverdue && (
-                    <span className="text-red-600 dark:text-red-400 font-medium flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                      Verlopen
+                  {(factuur.status === 'verzonden' || factuur.status === 'vervallen') && mobileDagenOpen > 0 && (
+                    <span
+                      className="font-mono font-semibold flex items-center gap-1 rounded-full px-[10px] py-[3px] text-[10px]"
+                      style={{ backgroundColor: getAgingBgColor(mobileDagenOpen), color: getAgingColor(mobileDagenOpen) }}
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: getAgingColor(mobileDagenOpen) }} />
+                      {mobileDagenOpen} dgn
                     </span>
                   )}
                 </div>
                 <div className="flex items-center gap-2">
                   {openstaand > 0 && openstaand < factuur.totaal && (
-                    <span className="text-2xs text-muted-foreground">open: <span className="font-mono">{formatCurrency(openstaand)}</span></span>
+                    <span className="text-[10px] text-muted-foreground">open: <span className="font-mono">{formatCurrency(openstaand)}</span></span>
                   )}
                   <span className="font-mono font-semibold text-foreground">{formatCurrency(factuur.totaal)}</span>
                 </div>
@@ -1584,7 +1598,7 @@ export function FacturenLayout() {
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-border/50 row-stagger">
+            <tbody className="row-stagger">
               {filteredFacturen.length === 0 && (
                 <tr>
                   <td colSpan={12}>
@@ -1612,7 +1626,7 @@ export function FacturenLayout() {
                   : factuur.status === 'gecrediteerd' ? '#5A4A78'
                   : (factuur.status === 'verzonden' || factuur.status === 'vervallen')
                     ? getAgingColor(dagenOpen)
-                    : config.border.replace('border-l-[', '').replace(']', '')
+                    : config.text
 
                 return (
                   <tr
@@ -1624,7 +1638,7 @@ export function FacturenLayout() {
                       isOverdue && 'factuur-row-verlopen',
                       selectedIds.has(factuur.id) && 'bg-primary/5'
                     )}
-                    style={{ borderLeftColor: agingBorderColor }}
+                    style={{ borderLeftColor: agingBorderColor, borderBottom: '0.5px solid #E6E4E0' }}
                   >
                     <td className="w-10 px-3 py-3.5">
                       <Checkbox
@@ -1642,7 +1656,7 @@ export function FacturenLayout() {
                           {factuur.nummer}
                         </button>
                         {factuur.factuur_type && factuur.factuur_type !== 'standaard' && (
-                          <Badge variant="secondary" className={cn('text-2xs px-1 py-0 h-4', TYPE_CONFIG[factuur.factuur_type].color)}>
+                          <Badge variant="secondary" className={cn('text-[10px] font-semibold px-[10px] py-[3px] rounded-full', TYPE_CONFIG[factuur.factuur_type].color)}>
                             {TYPE_CONFIG[factuur.factuur_type].label}
                           </Badge>
                         )}
@@ -1671,8 +1685,11 @@ export function FacturenLayout() {
                       {factuur.status !== 'betaald' && factuur.status !== 'gecrediteerd' && (() => {
                         const days = getDaysOpen(factuur.factuurdatum)
                         return (
-                          <span className={cn('text-xs font-medium px-2 py-0.5 rounded-md tabular-nums', getDaysColor(days))}>
-                            {days}d
+                          <span
+                            className="text-[10px] font-semibold px-[10px] py-[3px] rounded-full font-mono tabular-nums"
+                            style={{ backgroundColor: getAgingBgColor(days), color: getAgingColor(days) }}
+                          >
+                            {days} dgn
                           </span>
                         )
                       })()}
@@ -1683,14 +1700,14 @@ export function FacturenLayout() {
                           className={cn(
                             'text-sm font-mono tabular-nums',
                             isOverdue
-                              ? 'text-red-600 dark:text-red-400 font-medium'
+                              ? 'text-[#C03A18] font-medium'
                               : 'text-muted-foreground'
                           )}
                         >
                           {formatDate(factuur.vervaldatum)}
                         </span>
                         {isOverdue && (
-                          <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" title="Vervallen" />
+                          <span className="w-2 h-2 rounded-full bg-[#C03A18] animate-pulse" title="Vervallen" />
                         )}
                       </div>
                     </td>
@@ -1703,7 +1720,7 @@ export function FacturenLayout() {
                       {(factuur.status === 'verzonden' || factuur.status === 'vervallen') ? (
                         <Badge
                           variant="secondary"
-                          className="text-xs font-semibold px-2 py-0.5 rounded-lg font-mono"
+                          className="text-[10px] font-semibold px-[10px] py-[3px] rounded-full font-mono"
                           style={{
                             backgroundColor: getAgingBgColor(dagenOpen),
                             color: getAgingColor(dagenOpen),
@@ -1718,9 +1735,10 @@ export function FacturenLayout() {
                       ) : (
                         <Badge
                           variant="secondary"
-                          className={cn('text-xs font-semibold px-2 py-0.5 rounded-lg', config.color)}
+                          className="text-[10px] font-semibold px-[10px] py-[3px] rounded-full"
+                          style={{ backgroundColor: config.bg, color: config.text }}
                         >
-                          <span className={cn('w-1.5 h-1.5 rounded-full mr-1.5 inline-block', config.dot)} />
+                          <span className="w-1.5 h-1.5 rounded-full mr-1.5 inline-block" style={{ backgroundColor: config.dot }} />
                           {config.label}
                         </Badge>
                       )}
@@ -1728,7 +1746,7 @@ export function FacturenLayout() {
                     <td className="px-4 py-3.5 hidden lg:table-cell">
                       {isOverdue && (
                         <div className="flex items-center gap-1">
-                          <span className="text-xs font-medium text-red-600">{getDagenVerlopen(factuur)}d</span>
+                          <span className="text-xs font-medium font-mono text-[#C03A18]">{getDagenVerlopen(factuur)}d</span>
                           <div className="flex gap-0.5">
                             {factuur.herinnering_1_verstuurd && <span className="w-1.5 h-1.5 rounded-full bg-orange-400" title="Herinnering 1" />}
                             {factuur.herinnering_2_verstuurd && <span className="w-1.5 h-1.5 rounded-full bg-orange-500" title="Herinnering 2" />}
@@ -1867,7 +1885,7 @@ export function FacturenLayout() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-xs font-bold text-text-tertiary uppercase tracking-label mb-1">Klant</p>
+                  <p className="text-[10px] font-medium uppercase text-[#A0A098] mb-1">Klant</p>
                   <a
                     href={`/klanten/${viewingFactuur.klant_id}`}
                     className="text-sm font-medium text-accent dark:text-wm-light hover:underline"
@@ -1876,11 +1894,11 @@ export function FacturenLayout() {
                   </a>
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-text-tertiary uppercase tracking-label mb-1">Status</p>
+                  <p className="text-[10px] font-medium uppercase text-[#A0A098] mb-1">Status</p>
                   <Badge
                     variant="secondary"
                     className={cn(
-                      'text-xs font-semibold px-2 py-0.5 rounded-lg',
+                      'text-[10px] font-semibold px-[10px] py-[3px] rounded-full',
                       STATUS_CONFIG[viewingFactuur.status].color
                     )}
                   >
@@ -1888,20 +1906,20 @@ export function FacturenLayout() {
                   </Badge>
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-text-tertiary uppercase tracking-label mb-1">Titel</p>
+                  <p className="text-[10px] font-medium uppercase text-[#A0A098] mb-1">Titel</p>
                   <p className="text-sm">{viewingFactuur.titel}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-text-tertiary uppercase tracking-label mb-1">Factuurdatum</p>
+                  <p className="text-[10px] font-medium uppercase text-[#A0A098] mb-1">Factuurdatum</p>
                   <p className="text-sm font-mono">{formatDate(viewingFactuur.factuurdatum)}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-text-tertiary uppercase tracking-label mb-1">Vervaldatum</p>
+                  <p className="text-[10px] font-medium uppercase text-[#A0A098] mb-1">Vervaldatum</p>
                   <p className="text-sm font-mono">{formatDate(viewingFactuur.vervaldatum)}</p>
                 </div>
                 {viewingFactuur.betaaldatum && (
                   <div>
-                    <p className="text-xs font-bold text-text-tertiary uppercase tracking-label mb-1">Betaaldatum</p>
+                    <p className="text-[10px] font-medium uppercase text-[#A0A098] mb-1">Betaaldatum</p>
                     <p className="text-sm font-mono">{formatDate(viewingFactuur.betaaldatum)}</p>
                   </div>
                 )}
@@ -1959,7 +1977,7 @@ export function FacturenLayout() {
                 <>
                   <Separator />
                   <div>
-                    <p className="text-xs font-bold text-text-tertiary uppercase tracking-label mb-1">Notities</p>
+                    <p className="text-[10px] font-medium uppercase text-[#A0A098] mb-1">Notities</p>
                     <p className="text-sm text-foreground/80">{viewingFactuur.notities}</p>
                   </div>
                 </>
@@ -1967,7 +1985,7 @@ export function FacturenLayout() {
 
               {viewingFactuur.voorwaarden && (
                 <div>
-                  <p className="text-xs font-bold text-text-tertiary uppercase tracking-label mb-1">Betalingsvoorwaarden</p>
+                  <p className="text-[10px] font-medium uppercase text-[#A0A098] mb-1">Betalingsvoorwaarden</p>
                   <p className="text-sm text-foreground/80">{viewingFactuur.voorwaarden}</p>
                 </div>
               )}
@@ -2176,13 +2194,13 @@ export function FacturenLayout() {
                 <div className="rounded-xl border border-border overflow-hidden">
                   <table className="w-full">
                     <thead>
-                      <tr className="bg-muted/50 border-b border-border">
-                        <th className="px-3 py-2 text-left text-xs font-bold uppercase tracking-label text-text-tertiary">Beschrijving</th>
-                        <th className="px-3 py-2 text-right text-xs font-bold uppercase tracking-label text-text-tertiary w-20">Aantal</th>
-                        <th className="px-3 py-2 text-right text-xs font-bold uppercase tracking-label text-text-tertiary w-28">Prijs</th>
-                        <th className="px-3 py-2 text-right text-xs font-bold uppercase tracking-label text-text-tertiary w-20">BTW %</th>
-                        <th className="px-3 py-2 text-right text-xs font-bold uppercase tracking-label text-text-tertiary w-24">Korting %</th>
-                        <th className="px-3 py-2 text-right text-xs font-bold uppercase tracking-label text-text-tertiary w-28">Totaal</th>
+                      <tr className="" style={{ borderBottom: '0.5px solid #E6E4E0', backgroundColor: '#F4F2EE' }}>
+                        <th className="px-3 py-2 text-left text-[10px] font-medium uppercase text-[#A0A098]" style={{ letterSpacing: '0.8px' }}>Beschrijving</th>
+                        <th className="px-3 py-2 text-right text-[10px] font-medium uppercase text-[#A0A098] w-20" style={{ letterSpacing: '0.8px' }}>Aantal</th>
+                        <th className="px-3 py-2 text-right text-[10px] font-medium uppercase text-[#A0A098] w-28" style={{ letterSpacing: '0.8px' }}>Prijs</th>
+                        <th className="px-3 py-2 text-right text-[10px] font-medium uppercase text-[#A0A098] w-20" style={{ letterSpacing: '0.8px' }}>BTW %</th>
+                        <th className="px-3 py-2 text-right text-[10px] font-medium uppercase text-[#A0A098] w-24" style={{ letterSpacing: '0.8px' }}>Korting %</th>
+                        <th className="px-3 py-2 text-right text-[10px] font-medium uppercase text-[#A0A098] w-28" style={{ letterSpacing: '0.8px' }}>Totaal</th>
                         <th className="px-3 py-2 w-10" />
                       </tr>
                     </thead>
@@ -2343,7 +2361,7 @@ export function FacturenLayout() {
                           </span>
                           <Badge
                             variant="secondary"
-                            className="text-2xs px-1.5 py-0 h-4 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
+                            className="text-[10px] font-semibold px-[10px] py-[3px] rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
                           >
                             Goedgekeurd
                           </Badge>

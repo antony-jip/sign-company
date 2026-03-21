@@ -540,7 +540,7 @@ export function TasksLayout() {
   return (
     <>
       <div className="flex flex-col h-[calc(100vh-120px)] mod-strip mod-strip-taken">
-        <ModuleHeader module="taken" icon={CheckSquare} title="Taken" subtitle="Productie & oplevering" />
+        <ModuleHeader module="taken" icon={Clock} title="Taken" subtitle="Productie & oplevering" />
 
         {/* === WEEK NAV + FILTERS === */}
         <div className="flex items-center justify-between flex-wrap gap-2 px-3 sm:px-5 py-2.5 border-b border-border/60 bg-card/50 flex-shrink-0">
@@ -572,8 +572,8 @@ export function TasksLayout() {
                   className={cn(
                     'text-xs px-2.5 py-1 rounded-lg transition-all duration-200 whitespace-nowrap',
                     taskFilter === key
-                      ? 'bg-background text-foreground shadow-sm font-medium'
-                      : 'text-muted-foreground hover:text-foreground'
+                      ? 'bg-[#191919] text-white shadow-sm font-medium'
+                      : 'text-[#5A5A55] hover:text-foreground'
                   )}
                 >
                   {label}
@@ -583,10 +583,10 @@ export function TasksLayout() {
             <button
               onClick={() => setShowCompleted(!showCompleted)}
               className={cn(
-                'text-xs px-3 py-1.5 rounded-lg border transition-all duration-200 whitespace-nowrap flex-shrink-0',
+                'text-xs px-3 py-1.5 rounded-full border transition-all duration-200 whitespace-nowrap flex-shrink-0',
                 showCompleted
-                  ? 'bg-primary/10 border-primary/30 text-accent dark:text-wm-light shadow-sm'
-                  : 'border-border/60 text-muted-foreground hover:text-foreground hover:border-border'
+                  ? 'bg-[#191919] border-transparent text-white shadow-sm'
+                  : 'border-border/60 text-[#5A5A55] hover:text-foreground hover:border-border'
               )}
             >
               {showCompleted ? 'Afgerond zichtbaar' : 'Toon afgerond'}
@@ -594,10 +594,10 @@ export function TasksLayout() {
             <button
               onClick={() => setShowMontage(!showMontage)}
               className={cn(
-                'text-xs px-3 py-1.5 rounded-lg border transition-all duration-200 whitespace-nowrap flex-shrink-0 flex items-center gap-1.5',
+                'text-xs px-3 py-1.5 rounded-full border transition-all duration-200 whitespace-nowrap flex-shrink-0 flex items-center gap-1.5',
                 showMontage
-                  ? 'bg-orange-500/10 border-orange-500/30 text-orange-600 dark:text-orange-400 shadow-sm'
-                  : 'border-border/60 text-muted-foreground hover:text-foreground hover:border-border'
+                  ? 'bg-[#191919] border-transparent text-white shadow-sm'
+                  : 'border-border/60 text-[#5A5A55] hover:text-foreground hover:border-border'
               )}
             >
               <Wrench className="w-3 h-3" />
@@ -637,7 +637,7 @@ export function TasksLayout() {
                 </div>
                 <div className="flex items-center justify-center gap-1.5 mt-0.5">
                   <span className={cn(
-                    'inline-flex items-center justify-center text-sm font-bold transition-all',
+                    'inline-flex items-center justify-center text-sm font-bold font-mono transition-all',
                     isToday
                       ? 'w-8 h-8 rounded-full bg-primary text-white shadow-sm shadow-primary/30'
                       : isPast ? 'text-muted-foreground/30' : 'text-foreground'
@@ -646,7 +646,7 @@ export function TasksLayout() {
                   </span>
                   {dayTasks.length > 0 && (
                     <span className={cn(
-                      'text-2xs font-medium font-mono tabular-nums px-1.5 py-0.5 rounded-full',
+                      'text-[10px] font-semibold font-mono tabular-nums px-[10px] py-[3px] rounded-full',
                       isToday
                         ? 'bg-primary/15 text-primary'
                         : 'bg-muted/60 text-muted-foreground/50'
@@ -781,7 +781,7 @@ export function TasksLayout() {
           onClick={() => setFabOpen(!fabOpen)}
           className={cn(
             'flex items-center justify-center w-14 h-14 rounded-full shadow-sm transition-all duration-200',
-            'bg-foreground text-background hover:opacity-90 hover:shadow-md hover:scale-105',
+            'bg-[#5A5A55] text-white hover:opacity-90 hover:shadow-md hover:scale-105',
             fabOpen && 'rotate-45'
           )}
         >
@@ -1015,9 +1015,9 @@ function DayColumn({
             {/* Drop indicator */}
             {isDropHere && (
               <div className="h-full flex items-start pt-1 px-1 pointer-events-none">
-                <div className="w-full rounded-md border-2 border-dashed border-primary/40 h-10 flex items-center justify-center">
+                <div className="w-full rounded-lg border-2 border-dashed border-primary/40 h-10 flex items-center justify-center">
                   <Clock className="w-3 h-3 text-primary/60 mr-1" />
-                  <span className="text-2xs text-primary/60 font-medium">{String(hour).padStart(2, '0')}:00</span>
+                  <span className="text-[10px] text-primary/60 font-semibold font-mono">{String(hour).padStart(2, '0')}:00</span>
                 </div>
               </div>
             )}
@@ -1048,7 +1048,7 @@ function DayColumn({
             {!isDropHere && !isAddingHere && (
               <button
                 onClick={() => { setAddingAtHour(hour); setHourAddTitle(''); setTimeout(() => hourInputRef.current?.focus(), 50) }}
-                className="absolute top-1 right-1 z-20 opacity-0 group-hover/hour:opacity-100 p-1 rounded-md text-muted-foreground/25 hover:text-primary hover:bg-primary/10 transition-all duration-200"
+                className="absolute top-1 right-1 z-20 opacity-0 group-hover/hour:opacity-100 p-1 rounded-lg text-muted-foreground/25 hover:text-primary hover:bg-primary/10 transition-all duration-200"
               >
                 <Plus className="w-3.5 h-3.5" />
               </button>
@@ -1277,12 +1277,12 @@ function TaskCard({
       onDragStart={handleDragStart}
       onDragEnd={onDragEnd}
       className={cn(
-        'group relative rounded-lg border-l-[3px] px-2.5 py-2 transition-all duration-200',
+        'group relative rounded-lg border-l-[3px] border-l-[#5A5A55] px-2.5 py-2 transition-all duration-200',
         !isResizing && 'cursor-grab active:cursor-grabbing',
         'hover:shadow-lg hover:shadow-black/5 hover:z-10 hover:-translate-y-[1px]',
         isDone
-          ? 'opacity-40 border-l-border bg-muted/40 dark:bg-muted/20 hover:opacity-60'
-          : `${colors.border} ${colors.bg}`,
+          ? 'opacity-40 bg-muted/40 dark:bg-muted/20 hover:opacity-60'
+          : colors.bg,
         isPast && !isDone && 'opacity-60',
         justCompleted && 'scale-95 opacity-50',
         scheduled && 'shadow-sm',
@@ -1300,6 +1300,9 @@ function TaskCard({
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-start gap-1">
+            {(taak.prioriteit === 'kritiek' || taak.prioriteit === 'hoog') && !isDone && (
+              <span className={cn('inline-block w-2 h-2 rounded-full flex-shrink-0 mt-1', taak.prioriteit === 'kritiek' ? 'bg-[#C44830]' : 'bg-[#E8854A]')} title={taak.prioriteit === 'kritiek' ? 'Urgent' : 'Hoog'} />
+            )}
             <p className={cn(
               'text-xs font-medium leading-tight text-foreground flex-1',
               isDone && 'line-through text-muted-foreground'
@@ -1324,12 +1327,12 @@ function TaskCard({
               </span>
             )}
             {scheduled && hour !== null && (
-              <span className="text-2xs text-muted-foreground/40 flex items-center gap-0.5">
+              <span className="text-2xs text-muted-foreground/40 font-mono flex items-center gap-0.5">
                 <Clock className="w-2 h-2" />{String(hour).padStart(2, '0')}:00
               </span>
             )}
             {durationLabel && (
-              <span className="text-2xs text-muted-foreground/40 font-medium">
+              <span className="text-2xs text-muted-foreground/40 font-medium font-mono">
                 {durationLabel}
               </span>
             )}
@@ -1341,7 +1344,7 @@ function TaskCard({
           {/* Delete button - visible on hover */}
           <button
             onClick={handleDeleteClick}
-            className="flex-shrink-0 p-0.5 rounded-md opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-red-100 dark:hover:bg-red-900/30"
+            className="flex-shrink-0 p-0.5 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-red-100 dark:hover:bg-red-900/30"
             title="Verwijderen"
           >
             <Trash2 className="w-3.5 h-3.5 text-muted-foreground/40 hover:text-red-500 transition-colors" />
@@ -1351,7 +1354,7 @@ function TaskCard({
           <button
             onClick={handleToggle}
             className={cn(
-              'flex-shrink-0 p-0.5 rounded-md transition-all duration-200',
+              'flex-shrink-0 p-0.5 rounded-lg transition-all duration-200',
               !isDone && 'hover:bg-primary/10'
             )}
             title={isDone ? 'Markeer als ongedaan' : 'Markeer als klaar'}
@@ -1447,7 +1450,7 @@ function EditTaskDialog({
               <button
                 type="button"
                 onClick={() => { updateField('project_id', ''); updateField('klant_id', '') }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
                   !formData.project_id && !formData.klant_id
                     ? 'bg-primary/10 text-primary border-primary/30'
                     : 'bg-muted text-muted-foreground border-transparent'
@@ -1458,7 +1461,7 @@ function EditTaskDialog({
               <button
                 type="button"
                 onClick={() => updateField('klant_id', '')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
                   formData.project_id
                     ? 'bg-primary/10 text-primary border-primary/30'
                     : 'bg-muted text-muted-foreground border-transparent'
@@ -1469,7 +1472,7 @@ function EditTaskDialog({
               <button
                 type="button"
                 onClick={() => { updateField('project_id', ''); updateField('klant_id', formData.klant_id || '') }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
                   !formData.project_id && formData.klant_id
                     ? 'bg-primary/10 text-primary border-primary/30'
                     : 'bg-muted text-muted-foreground border-transparent'

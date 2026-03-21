@@ -47,15 +47,15 @@ function truncateText(text: string, maxLength: number): string {
 function getPriorityIndicator(prioriteit?: string): { dot: string; label: string } {
   switch (prioriteit) {
     case 'urgent':
-      return { dot: 'bg-red-500', label: 'Urgent' }
+      return { dot: 'bg-[#F15025]', label: 'Urgent' }
     case 'hoog':
-      return { dot: 'bg-orange-500', label: 'Hoog' }
+      return { dot: 'bg-[#F15025]', label: 'Hoog' }
     case 'medium':
-      return { dot: 'bg-yellow-500', label: 'Medium' }
+      return { dot: 'bg-[#A0A098]', label: '' }
     case 'laag':
-      return { dot: 'bg-green-500', label: 'Laag' }
+      return { dot: 'bg-[#A0A098]', label: '' }
     default:
-      return { dot: 'bg-muted-foreground/40', label: '' }
+      return { dot: 'bg-[#A0A098]', label: '' }
   }
 }
 

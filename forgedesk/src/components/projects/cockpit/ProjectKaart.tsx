@@ -24,6 +24,8 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { cn, formatCurrency, formatDate, getInitials } from '@/lib/utils'
 import { getStatusBadgeClass } from '@/utils/statusColors'
+import { getFase } from '@/utils/projectFases'
+import { SpectrumBar } from '@/components/ui/SpectrumBar'
 import { toast } from 'sonner'
 import { WatNuBanner } from './WatNuBanner'
 import { PipelineBar, getPipelineStep, getPipelineStepColor } from './PipelineBar'
@@ -210,6 +212,10 @@ export function ProjectKaart({
               <Badge className={cn(getStatusBadgeClass(project.status), 'rounded-full text-[11px] px-2.5 py-0.5 font-medium')}>
                 {statusLabels[project.status] || project.status}
               </Badge>
+              <span className="font-semibold" style={{ fontSize: 13, color: getFase(project.status).color }}>
+                {getFase(project.status).label}
+              </span>
+              <SpectrumBar percentage={getFase(project.status).percentage} height={3} className="w-[40px] flex-shrink-0" />
             </div>
             <div className="flex items-center gap-2 text-[13px] text-muted-foreground mt-0.5">
               {project.project_nummer && (

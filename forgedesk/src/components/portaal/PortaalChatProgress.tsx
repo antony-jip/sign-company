@@ -38,10 +38,10 @@ export function PortaalChatProgress({
 
   const statusLabel = isActief ? 'Actief' : isVerlopen ? 'Verlopen' : 'Gedeactiveerd'
   const statusClass = isActief
-    ? 'bg-green-50 text-green-700'
+    ? 'bg-[#E2F0F0] text-[#1A535C]'
     : isVerlopen
-      ? 'bg-amber-50 text-amber-700'
-      : 'bg-red-50 text-red-700'
+      ? 'bg-[#FDE8E2] text-[#C03A18]'
+      : 'bg-[#EEEEED] text-[#5A5A55]'
 
   const formattedDate = new Intl.DateTimeFormat('nl-NL', {
     day: 'numeric',
@@ -55,10 +55,14 @@ export function PortaalChatProgress({
         <span className="whitespace-nowrap text-muted-foreground">
           Voortgang: {approved}/{total} goedgekeurd
         </span>
-        <div className="h-2 w-24 overflow-hidden rounded-full bg-gray-100">
+        <div className="h-2 w-24 overflow-hidden rounded-full bg-[#E6E4E0]">
           <div
-            className="h-full rounded-full bg-emerald-500 transition-all"
-            style={{ width: `${pct}%` }}
+            className="h-full rounded-full transition-all"
+            style={{
+              width: `${pct}%`,
+              backgroundImage: 'linear-gradient(90deg, #F15025 0%, #D4453A 18%, #9A4070 38%, #6A5A8A 50%, #3A6B8C 65%, #2D6B48 80%, #1A535C 100%)',
+              backgroundSize: pct > 0 ? `${(100 / pct) * 100}% 100%` : '100% 100%',
+            }}
           />
         </div>
       </div>

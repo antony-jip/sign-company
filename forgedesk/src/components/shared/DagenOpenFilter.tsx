@@ -69,8 +69,8 @@ export function DagenOpenFilterBar({ value, onChange, items }: DagenOpenFilterBa
             className={cn(
               'px-2.5 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition-all duration-150 flex-shrink-0 tabular-nums',
               value === optie.value
-                ? 'bg-foreground text-background shadow-sm'
-                : 'text-muted-foreground/70 hover:bg-muted/80 hover:text-foreground'
+                ? 'bg-[#191919] text-white shadow-sm'
+                : 'text-[#5A5A55] hover:bg-muted/80'
             )}
           >
             {optie.label}

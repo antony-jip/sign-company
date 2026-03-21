@@ -15,6 +15,8 @@ import { getOffertes, getFacturen, getProjecten } from '@/services/supabaseServi
 import { formatCurrency } from '@/lib/utils'
 import type { Offerte, Factuur, Project } from '@/types'
 import { logger } from '../../utils/logger'
+import { getFase } from '@/utils/projectFases'
+import { SpectrumBar } from '@/components/ui/SpectrumBar'
 
 interface WorkflowItem {
   type: 'factureer' | 'vervallen' | 'geen_offerte' | 'verloopt_binnenkort'
@@ -22,6 +24,7 @@ interface WorkflowItem {
   subtitle: string
   link: string
   urgency: 'high' | 'medium' | 'low'
+  projectStatus?: string
 }
 
 export function WorkflowWidget() {
@@ -126,6 +129,7 @@ export function WorkflowWidget() {
             subtitle: `${project.klant_naam || 'Klant'} \u2022 Nog geen offerte`,
             link: `/offertes/nieuw?project_id=${project.id}&klant_id=${project.klant_id}&titel=${encodeURIComponent(project.naam)}`,
             urgency: 'low',
+            projectStatus: project.status,
           })
         }
 
@@ -216,6 +220,13 @@ export function WorkflowWidget() {
                 <p className="text-xs text-muted-foreground truncate">
                   {item.subtitle}
                 </p>
+                {item.projectStatus && (
+                  <SpectrumBar
+                    percentage={getFase(item.projectStatus).percentage}
+                    height={4}
+                    className="mt-1.5 w-full"
+                  />
+                )}
               </div>
               <Badge
                 variant="secondary"

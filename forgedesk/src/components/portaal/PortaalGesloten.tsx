@@ -14,7 +14,7 @@ export function PortaalGesloten({ bedrijfsnaam, telefoon, email, logoUrl }: Port
         {logoUrl && (
           <img src={logoUrl} alt={bedrijfsnaam} className="h-10 w-auto mx-auto object-contain" />
         )}
-        <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mx-auto">
+        <div className="w-16 h-16 rounded-full bg-[#FDE8E2] flex items-center justify-center mx-auto">
           <XCircle className="w-8 h-8 text-red-500" />
         </div>
         <div>
