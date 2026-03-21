@@ -212,6 +212,12 @@
     font-family: 'Bricolage Grotesque', system-ui, sans-serif;
     font-weight: 700;
     letter-spacing: -0.5px;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  .dark h1, .dark h2, .dark h3, .dark .font-heading {
+    text-shadow: none;
   }
   h4 {
     font-family: 'IBM Plex Sans', system-ui, sans-serif;
@@ -229,6 +235,8 @@
   input[inputmode="tel"] {
     font-family: 'Space Grotesk', system-ui, sans-serif;
     font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1;
+    letter-spacing: -0.3px;
   }
 
   /* Tabular numbers in tables — digits align neatly */
@@ -283,7 +291,14 @@ button:active:not(:disabled), [role="button"]:active:not(:disabled) {
   transition-duration: 0.1s;
 }
 
-/* Table row: accent indicator with spring entrance */
+/* Table row: hover lift + accent indicator with spring entrance */
+table tbody tr {
+  transition: all 150ms ease;
+}
+table tbody tr:hover {
+  background: rgba(244, 242, 238, 0.8);
+  transform: translateX(2px);
+}
 table tbody tr td:first-child {
   position: relative;
 }
@@ -305,11 +320,17 @@ table tbody tr:hover td:first-child::before {
   transform: scaleY(1);
 }
 
-/* Focus visible: amber accent ring with background gap */
+/* Focus visible: petrol glow ring */
 *:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--accent) / 0.5);
-  border-radius: 6px;
+  box-shadow: 0 0 0 2px rgba(26, 83, 92, 0.15), 0 0 0 4px rgba(26, 83, 92, 0.05);
+  transition: box-shadow 150ms ease;
+}
+
+/* Inputs: petrol double ring */
+input:focus, textarea:focus, select:focus {
+  border-color: #1A535C;
+  box-shadow: 0 0 0 3px rgba(26, 83, 92, 0.1), inset 0 1px 2px rgba(0, 0, 0, 0.02);
 }
 
 /* Page load animations */
@@ -326,14 +347,14 @@ table tbody tr:hover td:first-child::before {
 /* ================================================================
    SCROLLBAR — Ultra-thin, elegant
    ================================================================ */
-::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--primary) / 0.15);
-  border-radius: 10px;
+  background: rgba(160, 160, 152, 0.3);
+  border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--primary) / 0.3);
+  background: rgba(160, 160, 152, 0.5);
 }
 
 /* ================================================================
@@ -699,13 +720,17 @@ tbody tr:hover {
    SIDEBAR — Doen. vertical navigation
    ================================================================ */
 .doen-sidebar {
-  background: #FAFAF8;
-  border-right: 0.5px solid #E6E4E0;
+  background: rgba(250, 250, 248, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-right: 0.5px solid rgba(230, 228, 224, 0.6);
   position: relative;
 }
 
 .dark .doen-sidebar {
-  background: hsl(var(--wm-sidebar-bg));
+  background: rgba(26, 26, 24, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border-right-color: hsl(var(--border) / 0.7);
 }
 
@@ -2335,12 +2360,14 @@ html {
   font-weight: 900;
   font-size: 15px;
   color: white;
-  background: #1A535C;
-  transition: transform 0.2s ease;
+  background: linear-gradient(135deg, #1A535C 0%, #2A7A86 100%);
+  box-shadow: 0 2px 8px rgba(26, 83, 92, 0.25);
+  transition: transform 200ms ease, box-shadow 200ms ease;
   flex-shrink: 0;
 }
 .sidebar-logo-mark:hover {
   transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(26, 83, 92, 0.35);
 }
 
 /* Premium page header with accent strip */
@@ -2357,4 +2384,95 @@ html {
   border-radius: 2px;
   background: currentColor;
   opacity: 0.6;
+}
+
+/* ================================================================
+   PREMIUM POLISH — Micro-interactions, glass, gradients
+   ================================================================ */
+
+/* Skeleton loading: warm shimmer */
+@keyframes skeleton-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton-warm {
+  background: linear-gradient(90deg, #F4F2EE 25%, #EAE8E2 37%, #F4F2EE 63%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+/* Spectrum loading bar */
+@keyframes spectrum-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.spectrum-loading {
+  background: linear-gradient(90deg, #F15025 0%, #9A4070 25%, #3A6B8C 50%, #1A535C 75%, #F15025 100%);
+  background-size: 200% 100%;
+  animation: spectrum-shimmer 2s ease-in-out infinite;
+  height: 3px;
+  border-radius: 2px;
+}
+
+/* Spectrum bar grow animation */
+@keyframes spectrum-grow {
+  from { width: 0%; }
+  to { width: var(--target-width); }
+}
+.spectrum-fill-animate {
+  animation: spectrum-grow 800ms ease-out;
+}
+
+/* Filter pill pop animation */
+@keyframes pill-pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+.pill-pop-active {
+  animation: pill-pop 200ms ease;
+}
+
+/* Toast slide-in from right with bounce */
+@keyframes toast-in {
+  0% { transform: translateX(100%); opacity: 0; }
+  70% { transform: translateX(-8px); }
+  100% { transform: translateX(0); opacity: 1; }
+}
+
+/* FAB breathing animation for suggestions */
+@keyframes fab-breathe {
+  0%, 100% { box-shadow: 0 2px 12px rgba(26, 83, 92, 0.3); }
+  50% { box-shadow: 0 4px 20px rgba(26, 83, 92, 0.5); }
+}
+.fab-has-suggestion {
+  animation: fab-breathe 3s ease-in-out infinite;
+}
+
+/* Page content enter animation */
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.page-content-enter {
+  animation: page-enter 200ms ease-out;
+}
+
+/* Cursor helpers */
+.drag-handle { cursor: grab; }
+.drag-handle:active { cursor: grabbing; }
+
+/* EUR amount styling */
+.amount-eur {
+  color: #A0A098;
+  font-size: 0.85em;
+  margin-right: 2px;
+}
+.amount-value {
+  color: #191919;
+  font-weight: 500;
+}
+.dark .amount-value {
+  color: #E8E6E0;
 }

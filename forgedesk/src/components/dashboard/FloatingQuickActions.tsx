@@ -77,7 +77,7 @@ export function FloatingQuickActions() {
                       border: '0.5px solid #E6E4E0',
                       borderRadius: 6,
                       padding: '4px 10px',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                      boxShadow: '0 2px 8px rgba(100, 80, 40, 0.08)',
                     }}
                   >
                     {action.label}
@@ -91,7 +91,7 @@ export function FloatingQuickActions() {
                       height: 36,
                       borderRadius: 10,
                       backgroundColor: action.color,
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+                      boxShadow: '0 2px 8px rgba(100, 80, 40, 0.15)',
                     }}
                   >
                     <Icon className="w-[18px] h-[18px] text-white" />
@@ -110,7 +110,7 @@ export function FloatingQuickActions() {
             width: 40,
             height: 40,
             borderRadius: 12,
-            backgroundColor: '#F15025',
+            background: 'linear-gradient(135deg, #F15025 0%, #D4453A 100%)',
             boxShadow: '0 2px 12px rgba(241, 80, 37, 0.3)',
           }}
           onMouseEnter={e => {

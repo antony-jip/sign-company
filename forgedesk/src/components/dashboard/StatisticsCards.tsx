@@ -53,28 +53,28 @@ export function StatisticsCards() {
       value: formatCurrency(openstaandeFacturen),
       change: vervallenCount > 0 ? `${vervallenCount} vervallen` : undefined,
       changeDown: vervallenCount > 0,
-      bg: '#FDE8E2',
+      bg: 'linear-gradient(160deg, #FDE8E2 0%, #F8D4C8 100%)',
       textColor: '#C03A18',
     },
     {
       title: 'Actieve projecten',
       value: animProjecten.toString(),
       change: `${projecten.length} totaal`,
-      bg: '#E4F0EA',
+      bg: 'linear-gradient(160deg, #E4F0EA 0%, #C8DDD2 100%)',
       textColor: '#2D6B48',
     },
     {
       title: 'Offertes verstuurd',
       value: animOffertes.toString(),
       change: `${offertes.length} totaal`,
-      bg: '#E5ECF6',
+      bg: 'linear-gradient(160deg, #E5ECF6 0%, #C0D0EA 100%)',
       textColor: '#2A5580',
     },
     {
       title: 'Hit rate',
       value: `${animHitRate}%`,
       change: `${goedgekeurd} goedgekeurd`,
-      bg: '#E2F0F0',
+      bg: 'linear-gradient(160deg, #E2F0F0 0%, #C8E4E6 100%)',
       textColor: '#1A535C',
     },
   ]
@@ -84,8 +84,8 @@ export function StatisticsCards() {
       {stats.map((stat) => (
         <div
           key={stat.title}
-          className="rounded-[10px] p-6 cursor-default relative overflow-hidden"
-          style={{ backgroundColor: stat.bg }}
+          className="rounded-[10px] p-6 cursor-default relative overflow-hidden transition-all duration-200 hover:-translate-y-[2px]"
+          style={{ background: stat.bg, boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.5)' }}
         >
           <p
             className="text-[10px] font-semibold uppercase mb-3"

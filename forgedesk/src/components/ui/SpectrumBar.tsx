@@ -24,13 +24,13 @@ export function SpectrumBar({ percentage, height = 4, className }: SpectrumBarPr
     >
       {clamped > 0 && (
         <div
-          className="h-full rounded-sm"
+          className="h-full rounded-sm spectrum-fill-animate"
           style={{
             width: `${clamped}%`,
             backgroundImage: SPECTRUM_GRADIENT,
             backgroundSize: bgSize,
-            transition: 'width 300ms ease',
-          }}
+            '--target-width': `${clamped}%`,
+          } as React.CSSProperties}
         />
       )}
     </div>

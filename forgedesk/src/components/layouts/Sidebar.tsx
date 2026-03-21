@@ -147,17 +147,27 @@ export function Sidebar() {
         key={item.path}
         to={item.path}
         className={cn(
-          'relative flex flex-col items-center justify-center w-full py-2.5 gap-0.5 transition-all duration-150',
+          'relative flex flex-col items-center justify-center w-full py-2.5 gap-0.5 transition-all duration-200',
           active ? 'bg-opacity-100' : 'opacity-60 hover:opacity-100',
         )}
-        style={active ? { backgroundColor: MODULE_LIGHT[item.color] || `${item.color}18` } : undefined}
+        style={active ? { backgroundColor: `rgba(26, 83, 92, 0.08)` } : undefined}
+        onMouseEnter={e => {
+          if (!active) {
+            (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(244, 242, 238, 0.6)';
+          }
+        }}
+        onMouseLeave={e => {
+          if (!active) {
+            (e.currentTarget as HTMLElement).style.backgroundColor = '';
+          }
+        }}
       >
-        {/* Active indicator — 3px left bar */}
+        {/* Active indicator — 3px left bar with gradient */}
         {active && (
           <div
             className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-[20px]"
             style={{
-              background: item.color,
+              background: `linear-gradient(180deg, ${item.color} 0%, transparent 100%)`,
               borderRadius: '0 2px 2px 0',
             }}
           />
@@ -199,19 +209,34 @@ export function Sidebar() {
         key={item.path}
         to={item.path}
         className={cn(
-          'relative flex items-center gap-2.5 py-[7px] px-3 rounded-lg text-[13px] transition-all duration-150',
+          'relative flex items-center gap-2.5 py-[7px] px-3 rounded-lg text-[13px] transition-all duration-200',
           active
             ? 'font-semibold text-foreground'
-            : 'font-medium text-muted-foreground hover:bg-muted/40 hover:text-foreground',
+            : 'font-medium text-muted-foreground hover:text-foreground',
         )}
-        style={active ? { backgroundColor: MODULE_LIGHT[item.color] || `${item.color}18` } : undefined}
+        style={active
+          ? { backgroundColor: `rgba(26, 83, 92, 0.08)` }
+          : undefined
+        }
+        onMouseEnter={e => {
+          if (!active) {
+            (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(244, 242, 238, 0.6)';
+            (e.currentTarget as HTMLElement).style.transform = 'translateX(2px)';
+          }
+        }}
+        onMouseLeave={e => {
+          if (!active) {
+            (e.currentTarget as HTMLElement).style.backgroundColor = '';
+            (e.currentTarget as HTMLElement).style.transform = '';
+          }
+        }}
       >
-        {/* Active indicator */}
+        {/* Active indicator — gradient from module color to transparent */}
         {active && (
           <div
             className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-[18px]"
             style={{
-              background: item.color,
+              background: `linear-gradient(180deg, ${item.color} 0%, transparent 100%)`,
               borderRadius: '0 2px 2px 0',
             }}
           />

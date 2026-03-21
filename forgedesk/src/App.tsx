@@ -278,9 +278,10 @@ function App() {
                             background: '#FFFFFF',
                             border: '0.5px solid #E6E4E0',
                             borderRadius: '10px',
-                            boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+                            boxShadow: '0 8px 32px rgba(100, 80, 40, 0.1)',
                             color: '#191919',
                             fontSize: '12px',
+                            animation: 'toast-in 300ms ease-out',
                           },
                           classNames: {
                             success: 'toast-success',

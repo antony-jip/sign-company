@@ -16,7 +16,7 @@ const FilterPill = React.forwardRef<HTMLButtonElement, FilterPillProps>(
         className={cn(
           "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-medium transition-all duration-150 whitespace-nowrap",
           active
-            ? "bg-[#F4F2EE] text-[#191919] font-semibold border border-[#D1CEC7]"
+            ? "bg-[#F4F2EE] text-[#191919] font-semibold border border-[#D1CEC7] pill-pop-active"
             : "text-[#5A5A55] border border-[#E6E4E0] hover:bg-[#F4F2EE] hover:text-[#191919]",
           className
         )}
