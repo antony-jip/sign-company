@@ -13,6 +13,7 @@ import {
   CalendarDays,
   User,
   Paperclip,
+  ClipboardCheck,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { getMontageAfspraken, getMedewerkers } from '@/services/supabaseService'
@@ -287,6 +288,9 @@ export function MontagePlanningWidget() {
                           <Badge className={cn('text-2xs capitalize flex-shrink-0', STATUS_BADGE[montage.status])}>
                             {STATUS_LABEL[montage.status]}
                           </Badge>
+                          {montage.werkbon_id && (
+                            <ClipboardCheck className="h-3 w-3 text-[#C44830] flex-shrink-0" title={montage.werkbon_nummer || 'Werkbon'} />
+                          )}
                           {montage.bijlagen && montage.bijlagen.length > 0 && (
                             <Paperclip className="h-3 w-3 text-[#5A5A55] flex-shrink-0" title={`${montage.bijlagen.length} bijlage${montage.bijlagen.length !== 1 ? 'n' : ''}`} />
                           )}

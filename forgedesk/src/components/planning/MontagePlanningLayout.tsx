@@ -65,8 +65,11 @@ import {
   getMedewerkers,
   getKlanten,
   getOffertes,
+  getWerkbonnenByProject,
+  createWerkbon,
 } from "@/services/supabaseService";
-import type { MontageAfspraak, MontageBijlage, Project, Medewerker, Klant, Offerte } from "@/types";
+import type { MontageAfspraak, MontageBijlage, Project, Medewerker, Klant, Offerte, Werkbon } from "@/types";
+import { ClipboardCheck } from "lucide-react";
 import { WerkbonVanProjectDialog } from "@/components/werkbonnen/WerkbonVanProjectDialog";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -198,6 +201,7 @@ interface MontageFormData {
   materialen: string;
   notities: string;
   bijlagen: MontageBijlage[];
+  werkbon_id: string;
 }
 
 const EMPTY_FORM: MontageFormData = {
@@ -214,6 +218,7 @@ const EMPTY_FORM: MontageFormData = {
   materialen: "",
   notities: "",
   bijlagen: [],
+  werkbon_id: "",
 };
 
 export function MontagePlanningLayout() {
@@ -239,6 +244,7 @@ export function MontagePlanningLayout() {
   const [offertes, setOffertes] = useState<Offerte[]>([]);
   const [werkbonDialogOpen, setWerkbonDialogOpen] = useState(false);
   const [werkbonMontage, setWerkbonMontage] = useState<MontageAfspraak | null>(null);
+  const [projectWerkbonnen, setProjectWerkbonnen] = useState<Werkbon[]>([]);
 
   const weekDates = useMemo(() => getWeekDates(currentMonday), [currentMonday]);
   const weekNumber = useMemo(
@@ -502,6 +508,7 @@ export function MontagePlanningLayout() {
       materialen: afspraak.materialen.join(", "),
       notities: afspraak.notities,
       bijlagen: afspraak.bijlagen ? [...afspraak.bijlagen] : [],
+      werkbon_id: afspraak.werkbon_id || "",
     });
     setDialogOpen(true);
   }
@@ -513,7 +520,14 @@ export function MontagePlanningLayout() {
       project_id: projectId,
       klant_id: project?.klant_id || "",
       klant_naam: project?.klant_naam || "",
+      werkbon_id: "",
     }));
+    // Fetch werkbonnen for this project
+    if (projectId) {
+      getWerkbonnenByProject(projectId).then(setProjectWerkbonnen).catch(() => setProjectWerkbonnen([]));
+    } else {
+      setProjectWerkbonnen([]);
+    }
   }
 
   function toggleMonteur(monteurId: string) {
@@ -565,6 +579,7 @@ export function MontagePlanningLayout() {
       materialen: materialenArr,
       notities: formData.notities,
       bijlagen: formData.bijlagen.length > 0 ? formData.bijlagen : undefined,
+      werkbon_id: formData.werkbon_id || undefined,
       status: "gepland" as const,
     };
 
@@ -814,6 +829,14 @@ export function MontagePlanningLayout() {
             <MapPin className="h-3 w-3 shrink-0" />
             <span className="truncate">{afspraak.locatie}</span>
           </a>
+        )}
+
+        {/* Werkbon nummer */}
+        {afspraak.werkbon_nummer && (
+          <div className="flex items-center gap-1 mb-1">
+            <ClipboardCheck className="h-3 w-3 text-[#C44830]" />
+            <span className="text-[10px] font-mono text-[#943520]">{afspraak.werkbon_nummer}</span>
+          </div>
         )}
 
         {/* Bijlagen indicator */}
@@ -1246,7 +1269,13 @@ export function MontagePlanningLayout() {
                               {afspraak.locatie}
                             </div>
                           )}
-                          {afspraak.werkbon_id && (
+                          {afspraak.werkbon_nummer && (
+                            <div className="flex items-center gap-0.5 text-2xs text-[#943520] mt-0.5">
+                              <ClipboardCheck className="h-2.5 w-2.5 shrink-0" />
+                              <span className="font-mono">{afspraak.werkbon_nummer}</span>
+                            </div>
+                          )}
+                          {afspraak.werkbon_id && !afspraak.werkbon_nummer && (
                             <div className="flex items-center gap-0.5 text-2xs text-primary mt-0.5">
                               <ClipboardList className="h-2.5 w-2.5 shrink-0" />
                               Werkbon
@@ -1288,7 +1317,7 @@ export function MontagePlanningLayout() {
   function renderDialog() {
     return (
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-[560px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingAfspraak
@@ -1404,54 +1433,95 @@ export function MontagePlanningLayout() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="locatie">Locatie</Label>
-              <Input
-                id="locatie"
-                value={formData.locatie}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, locatie: e.target.value }))
-                }
-                placeholder="Adres van de montage locatie"
-              />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="locatie">Locatie</Label>
+                <Input
+                  id="locatie"
+                  className="h-9"
+                  value={formData.locatie}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, locatie: e.target.value }))
+                  }
+                  placeholder="Adres montage"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1">
+                  <ClipboardCheck className="h-3.5 w-3.5" />
+                  Werkbon
+                </Label>
+                <Select
+                  value={formData.werkbon_id || "__none__"}
+                  onValueChange={async (v) => {
+                    if (v === "__new__") {
+                      if (!formData.project_id) {
+                        toast.error("Selecteer eerst een project");
+                        return;
+                      }
+                      try {
+                        const wb = await createWerkbon({
+                          user_id: "u1",
+                          klant_id: formData.klant_id,
+                          project_id: formData.project_id,
+                          titel: formData.titel || "",
+                          datum: new Date().toISOString().split("T")[0],
+                          status: "concept",
+                        });
+                        setProjectWerkbonnen((prev) => [...prev, wb]);
+                        setFormData((prev) => ({ ...prev, werkbon_id: wb.id }));
+                        toast.success(`Werkbon ${wb.werkbon_nummer} aangemaakt`);
+                      } catch {
+                        toast.error("Kon werkbon niet aanmaken");
+                      }
+                    } else {
+                      setFormData((prev) => ({ ...prev, werkbon_id: v === "__none__" ? "" : v }));
+                    }
+                  }}
+                >
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="Geen werkbon" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Geen werkbon</SelectItem>
+                    {projectWerkbonnen.map((wb) => (
+                      <SelectItem key={wb.id} value={wb.id}>
+                        <span className="font-mono text-xs">{wb.werkbon_nummer}</span>
+                        <span className="ml-1 text-xs text-muted-foreground truncate">{wb.titel}</span>
+                      </SelectItem>
+                    ))}
+                    {formData.project_id && (
+                      <SelectItem value="__new__">
+                        <span className="flex items-center gap-1 text-primary font-medium">
+                          <Plus className="h-3 w-3" /> Nieuwe werkbon
+                        </span>
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <Separator />
 
             <div className="space-y-2">
               <Label>Medewerkers</Label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="flex flex-wrap gap-1.5">
                 {monteurs.map((monteur, idx) => (
-                  <label
+                  <button
                     key={monteur.id}
+                    type="button"
+                    onClick={() => toggleMonteur(monteur.id)}
                     className={cn(
-                      "flex items-center gap-3 p-2 rounded-xl border cursor-pointer transition-colors",
+                      "h-7 w-7 rounded-full flex items-center justify-center text-[9px] font-bold transition-colors",
                       formData.monteurs.includes(monteur.id)
-                        ? "bg-blue-50 border-blue-300"
-                        : "hover:bg-background"
+                        ? "text-white ring-2 ring-primary/30 " + getAvatarColor(idx)
+                        : "bg-muted text-muted-foreground hover:bg-muted/80"
                     )}
+                    title={monteur.naam}
                   >
-                    <input
-                      type="checkbox"
-                      checked={formData.monteurs.includes(monteur.id)}
-                      onChange={() => toggleMonteur(monteur.id)}
-                      className="rounded border-border text-blue-600 focus:ring-blue-500"
-                    />
-                    <div
-                      className={cn(
-                        "h-8 w-8 rounded-full flex items-center justify-center text-white text-xs font-medium",
-                        getAvatarColor(idx)
-                      )}
-                    >
-                      {getInitials(monteur.naam)}
-                    </div>
-                    <div>
-                      <div className="text-sm font-medium">{monteur.naam}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {monteur.functie}
-                      </div>
-                    </div>
-                  </label>
+                    {getInitials(monteur.naam)}
+                  </button>
                 ))}
               </div>
 

@@ -976,6 +976,7 @@ export interface MontageAfspraak {
   materialen: string[];
   notities: string;
   werkbon_id?: string;             // link naar gekoppelde werkbon
+  werkbon_nummer?: string;         // gecacht werkbon nummer voor weergave
   bijlagen?: MontageBijlage[];     // gekoppelde bestanden (PDF, tekening, foto)
   created_at: string;
   updated_at: string;

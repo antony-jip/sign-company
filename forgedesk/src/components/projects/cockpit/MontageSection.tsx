@@ -1,4 +1,5 @@
-import { Plus, CalendarDays, MapPin, Wrench, Truck, Clock, CheckCircle2, PauseCircle, Paperclip } from 'lucide-react'
+import { Plus, CalendarDays, MapPin, Wrench, Truck, Clock, CheckCircle2, PauseCircle, Paperclip, ClipboardCheck } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { getInitials } from '@/lib/utils'
 import type { MontageAfspraak } from '@/types'
@@ -111,6 +112,19 @@ export function MontageSection({ montageAfspraken, onInplannen }: MontageSection
                     <span className="text-[11px] text-muted-foreground/70 truncate">
                       {m.monteurs.join(', ')}
                     </span>
+                  </div>
+                )}
+
+                {m.werkbon_id && (
+                  <div className="flex items-center gap-1.5 text-[11px]">
+                    <ClipboardCheck className="h-3 w-3 flex-shrink-0 text-[#C44830]" />
+                    <Link
+                      to={`/werkbonnen/${m.werkbon_id}`}
+                      className="font-mono text-[#943520] hover:underline"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {m.werkbon_nummer || 'Werkbon'}
+                    </Link>
                   </div>
                 )}
 
