@@ -46,9 +46,9 @@ const ROL_LABELS: Record<TeamRol, string> = {
 }
 
 const ROL_COLORS: Record<TeamRol, string> = {
-  admin: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800',
-  medewerker: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800',
-  monteur: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800',
+  admin: 'bg-[#1A535C]/10 text-[#1A535C] border-[#1A535C]/20 dark:bg-[#2A7A86]/20 dark:text-[#2A7A86] dark:border-[#2A7A86]/30',
+  medewerker: 'bg-[#6A5A8A]/10 text-[#6A5A8A] border-[#6A5A8A]/20 dark:bg-[#6A5A8A]/20 dark:text-[#9A8AB8] dark:border-[#6A5A8A]/30',
+  monteur: 'bg-[#9A5A48]/10 text-[#9A5A48] border-[#9A5A48]/20 dark:bg-[#9A5A48]/20 dark:text-[#C4886E] dark:border-[#9A5A48]/30',
 }
 
 function getInitials(profile: Profile): string {
@@ -239,14 +239,14 @@ export function TeamledenTab() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold tracking-tight text-foreground">Teamleden</h2>
-          <p className="text-sm text-muted-foreground">Beheer wie toegang heeft tot Doen.</p>
+          <h2 className="text-[20px] font-bold tracking-[-0.03em] text-foreground font-display">Teamleden</h2>
+          <p className="text-[13px] text-muted-foreground">Beheer wie toegang heeft tot Doen.</p>
         </div>
         <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
           <DialogTrigger asChild>
-            <Button size="sm" className="gap-1.5">
+            <Button size="sm" className="gap-1.5 bg-[#1A535C] hover:bg-[#1A535C]/90 text-white">
               <UserPlus className="w-4 h-4" />
-              Uitnodigen
+              Teamlid uitnodigen
             </Button>
           </DialogTrigger>
           <DialogContent>
@@ -331,8 +331,8 @@ export function TeamledenTab() {
               {activeTab === 'actief' && (
                 actieveleden.length === 0 ? (
                   <EmptyState
-                    title="Nog geen teamleden"
-                    description="Nodig teamleden uit om samen te werken in Doen."
+                    title="Nog alleen?"
+                    description="Nodig iemand uit."
                     action={
                       <Button size="sm" onClick={() => setInviteOpen(true)} className="gap-1.5">
                         <UserPlus className="w-4 h-4" />
@@ -441,9 +441,9 @@ function TeamlidRow({ profile, isCurrentUser, isDeactivated, onChangeRol, onDeac
   return (
     <div className="flex items-center gap-4 px-5 py-4">
       <div className="relative flex-shrink-0">
-        <Avatar className="h-10 w-10">
+        <Avatar className="h-9 w-9">
           {profile.avatar_url && <AvatarImage src={profile.avatar_url} alt={name} />}
-          <AvatarFallback className="bg-primary/10 text-primary text-sm font-bold">
+          <AvatarFallback className="bg-[#1A535C]/10 text-[#1A535C] dark:bg-[#2A7A86]/20 dark:text-[#2A7A86] text-sm font-bold">
             {initials}
           </AvatarFallback>
         </Avatar>
@@ -512,7 +512,7 @@ function TeamlidRow({ profile, isCurrentUser, isDeactivated, onChangeRol, onDeac
                 Heractiveren
               </DropdownMenuItem>
             ) : onDeactiveer ? (
-              <DropdownMenuItem onClick={onDeactiveer} className="text-red-600 focus:text-red-600">
+              <DropdownMenuItem onClick={onDeactiveer} className="text-[#F15025] focus:text-[#F15025] focus:bg-[#F15025]/5">
                 <UserX className="w-3.5 h-3.5 mr-2" />
                 Deactiveren
               </DropdownMenuItem>
@@ -540,7 +540,7 @@ function UitnodigingRow({ uitnodiging, onCancel }: UitnodigingRowProps) {
   return (
     <div className="flex items-center gap-4 px-5 py-4">
       <Avatar className="h-10 w-10 flex-shrink-0">
-        <AvatarFallback className="bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-300 text-sm font-bold">
+        <AvatarFallback className="bg-[#F4F2EE] text-[#A0A098] dark:bg-muted dark:text-muted-foreground text-sm font-bold">
           {emailInitials}
         </AvatarFallback>
       </Avatar>
@@ -572,7 +572,7 @@ function UitnodigingRow({ uitnodiging, onCancel }: UitnodigingRowProps) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
-          <DropdownMenuItem onClick={onCancel} className="text-red-600 focus:text-red-600">
+          <DropdownMenuItem onClick={onCancel} className="text-[#F15025] focus:text-[#F15025] focus:bg-[#F15025]/5">
             <UserX className="w-3.5 h-3.5 mr-2" />
             Uitnodiging intrekken
           </DropdownMenuItem>

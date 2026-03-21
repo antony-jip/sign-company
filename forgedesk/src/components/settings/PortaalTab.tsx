@@ -120,7 +120,7 @@ export function PortaalTab() {
       </Card>
 
       {!settings.portaal_module_actief && (
-        <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-200">
+        <div className="flex items-center gap-2 rounded-md border border-[#E6E4E0] bg-[#F4F2EE] px-4 py-3 text-sm text-foreground dark:border-border dark:bg-muted dark:text-muted-foreground">
           <AlertTriangle className="h-4 w-4 shrink-0" />
           Het klantportaal is uitgeschakeld. Schakel het in om de onderstaande instellingen te gebruiken.
         </div>
@@ -265,13 +265,13 @@ export function PortaalTab() {
             </p>
 
             {emailGekoppeld === false && (
-              <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-200">
-                <AlertTriangle className="h-4 w-4 shrink-0" />
+              <div className="flex items-center gap-2 rounded-md border border-[#E6E4E0] bg-[#F4F2EE] px-3 py-2.5 text-sm text-foreground dark:border-border dark:bg-muted dark:text-muted-foreground">
+                <AlertTriangle className="h-4 w-4 shrink-0 text-[#F15025]" />
                 <span>
                   Geen email account gekoppeld.{' '}
                   <button
                     type="button"
-                    className="underline font-medium inline-flex items-center gap-1 hover:text-amber-900 dark:hover:text-amber-100"
+                    className="underline font-medium inline-flex items-center gap-1 hover:text-foreground dark:hover:text-white"
                     onClick={() => {
                       // Navigate to email tab
                       const emailTab = document.querySelector('[data-tab="email"]') as HTMLElement | null
