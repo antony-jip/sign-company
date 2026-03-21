@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { createProject, getKlanten } from '@/services/supabaseService'
 import type { Klant } from '@/types'
 import { toast } from 'sonner'
+import { Building2 } from 'lucide-react'
 
 interface Props {
   open: boolean
@@ -15,16 +16,40 @@ const inputClass = 'w-full h-9 px-3 py-1.5 text-sm border border-border rounded-
 export function NieuwProjectModal({ open, onOpenChange }: Props) {
   const navigate = useNavigate()
   const [klanten, setKlanten] = useState<Klant[]>([])
-  const [klantId, setKlantId] = useState('')
+  const [klantQuery, setKlantQuery] = useState('')
+  const [selectedKlant, setSelectedKlant] = useState<Klant | null>(null)
+  const [showSuggestions, setShowSuggestions] = useState(false)
   const [naam, setNaam] = useState('')
   const [deadline, setDeadline] = useState('')
   const [saving, setSaving] = useState(false)
+  const klantInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (open) {
       getKlanten().then(setKlanten).catch(() => {})
+    } else {
+      setKlantQuery('')
+      setSelectedKlant(null)
+      setNaam('')
+      setDeadline('')
     }
   }, [open])
+
+  const filtered = klantQuery.trim().length > 0
+    ? klanten.filter(k => k.bedrijfsnaam.toLowerCase().includes(klantQuery.toLowerCase()))
+    : []
+
+  function selectKlant(klant: Klant) {
+    setSelectedKlant(klant)
+    setKlantQuery(klant.bedrijfsnaam)
+    setShowSuggestions(false)
+  }
+
+  function clearKlant() {
+    setSelectedKlant(null)
+    setKlantQuery('')
+    klantInputRef.current?.focus()
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -33,7 +58,7 @@ export function NieuwProjectModal({ open, onOpenChange }: Props) {
     setSaving(true)
     try {
       const project = await createProject({
-        klant_id: klantId || '',
+        klant_id: selectedKlant?.id || '',
         naam: naam.trim(),
         beschrijving: '',
         status: 'actief',
@@ -46,9 +71,6 @@ export function NieuwProjectModal({ open, onOpenChange }: Props) {
       })
       toast.success('Project aangemaakt')
       onOpenChange(false)
-      setKlantId('')
-      setNaam('')
-      setDeadline('')
       navigate(`/projecten/${project.id}`)
     } catch {
       toast.error('Kon project niet aanmaken')
@@ -65,18 +87,52 @@ export function NieuwProjectModal({ open, onOpenChange }: Props) {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-2">
           <div className="flex gap-3">
-            <div className="flex-[2] min-w-0">
+            <div className="flex-[2] min-w-0 relative">
               <label className="text-[10px] text-muted-foreground mb-1 block">Klant</label>
-              <select
-                value={klantId}
-                onChange={e => setKlantId(e.target.value)}
-                className={inputClass}
-              >
-                <option value="">Selecteer klant (optioneel)...</option>
-                {klanten.map(k => (
-                  <option key={k.id} value={k.id}>{k.bedrijfsnaam}</option>
-                ))}
-              </select>
+              {selectedKlant ? (
+                <div className="flex items-center h-9 px-3 py-1.5 text-sm border border-petrol/30 rounded-lg bg-petrol/5">
+                  <Building2 className="h-3.5 w-3.5 text-petrol mr-2 shrink-0" />
+                  <span className="truncate text-sm">{selectedKlant.bedrijfsnaam}</span>
+                  <button
+                    type="button"
+                    onClick={clearKlant}
+                    className="ml-auto text-muted-foreground hover:text-foreground text-xs shrink-0"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <input
+                    ref={klantInputRef}
+                    type="text"
+                    value={klantQuery}
+                    onChange={e => {
+                      setKlantQuery(e.target.value)
+                      setShowSuggestions(true)
+                    }}
+                    onFocus={() => setShowSuggestions(true)}
+                    onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                    placeholder="Zoek klant (optioneel)..."
+                    className={inputClass}
+                  />
+                  {showSuggestions && filtered.length > 0 && (
+                    <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                      {filtered.slice(0, 6).map(k => (
+                        <button
+                          key={k.id}
+                          type="button"
+                          onMouseDown={() => selectKlant(k)}
+                          className="w-full text-left px-3 py-2 text-sm hover:bg-muted/50 flex items-center gap-2"
+                        >
+                          <Building2 className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                          <span className="truncate">{k.bedrijfsnaam}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
             </div>
             <div className="flex-[3] min-w-0">
               <label className="text-[10px] text-muted-foreground mb-1 block">Projectnaam</label>
