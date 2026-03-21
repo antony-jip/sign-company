@@ -510,6 +510,12 @@ export function MontagePlanningLayout() {
       bijlagen: afspraak.bijlagen ? [...afspraak.bijlagen] : [],
       werkbon_id: afspraak.werkbon_id || "",
     });
+    // Fetch werkbonnen for this project so dropdown is populated
+    if (afspraak.project_id) {
+      getWerkbonnenByProject(afspraak.project_id).then(setProjectWerkbonnen).catch(() => setProjectWerkbonnen([]));
+    } else {
+      setProjectWerkbonnen([]);
+    }
     setDialogOpen(true);
   }
 
@@ -580,6 +586,7 @@ export function MontagePlanningLayout() {
       notities: formData.notities,
       bijlagen: formData.bijlagen.length > 0 ? formData.bijlagen : undefined,
       werkbon_id: formData.werkbon_id || undefined,
+      werkbon_nummer: formData.werkbon_id ? projectWerkbonnen.find(w => w.id === formData.werkbon_id)?.werkbon_nummer : undefined,
       status: "gepland" as const,
     };
 

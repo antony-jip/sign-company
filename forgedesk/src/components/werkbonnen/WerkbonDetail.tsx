@@ -262,18 +262,51 @@ export function WerkbonDetail() {
     handtekeningData, klantNaamGetekend, isNew, werkbonId, navigate, setDirty,
   ])
 
-  // Item toevoegen
+  // Item toevoegen — auto-save werkbon als die nog niet bestaat
   const handleItemToevoegen = useCallback(async () => {
-    if (!werkbonId) { toast.error('Sla de werkbon eerst op'); return }
-    const newItem = await createWerkbonItem({
-      user_id: userId,
-      werkbon_id: werkbonId,
-      volgorde: werkbonItems.length + 1,
-      omschrijving: 'Nieuw item',
-    })
-    setWerkbonItems((prev) => [...prev, newItem])
-    setDirty(true)
-  }, [werkbonId, userId, werkbonItems.length, setDirty])
+    let currentWerkbonId = werkbonId
+    if (!currentWerkbonId) {
+      // Auto-save de werkbon eerst
+      if (!klantId) { toast.error('Selecteer eerst een klant'); return }
+      try {
+        const created = await createWerkbon({
+          user_id: userId,
+          klant_id: klantId,
+          project_id: projectId || undefined,
+          offerte_id: offerteId || undefined,
+          titel: titel || undefined,
+          locatie_adres: locatieAdres || undefined,
+          locatie_stad: locatieStad || undefined,
+          locatie_postcode: locatiePostcode || undefined,
+          datum,
+          status,
+          toon_briefpapier: toonBriefpapier,
+        } as Parameters<typeof createWerkbon>[0])
+        currentWerkbonId = created.id
+        setWerkbonId(created.id)
+        setWerkbonNummer(created.werkbon_nummer)
+        toast.success(`Werkbon ${created.werkbon_nummer} aangemaakt`)
+        navigate(`/werkbonnen/${created.id}`, { replace: true })
+      } catch {
+        toast.error('Kon werkbon niet opslaan')
+        return
+      }
+    }
+    try {
+      const newItem = await createWerkbonItem({
+        user_id: userId,
+        werkbon_id: currentWerkbonId,
+        volgorde: werkbonItems.length + 1,
+        omschrijving: 'Nieuw item',
+      })
+      setWerkbonItems((prev) => [...prev, newItem])
+      setDirty(true)
+    } catch {
+      toast.error('Kon item niet toevoegen')
+    }
+  }, [werkbonId, userId, klantId, projectId, offerteId, titel, datum, status,
+    locatieAdres, locatieStad, locatiePostcode, toonBriefpapier,
+    werkbonItems.length, setDirty, navigate])
 
   // Item bijwerken — debounced Supabase call
   const debouncedUpdateItem = useDebouncedCallback(
@@ -520,7 +553,7 @@ export function WerkbonDetail() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold tracking-[-0.02em]">Items ({werkbonItems.length})</h2>
-              <Button size="sm" onClick={handleItemToevoegen} disabled={isNew}>
+              <Button size="sm" onClick={handleItemToevoegen}>
                 <Plus className="h-4 w-4 mr-1" /> Item toevoegen
               </Button>
             </div>
@@ -530,7 +563,7 @@ export function WerkbonDetail() {
                 <CardContent className="flex flex-col items-center justify-center py-12">
                   <ClipboardCheck className="h-8 w-8 text-[#C44830] opacity-30 mb-3" />
                   <p className="text-sm text-muted-foreground">
-                    {isNew ? 'Sla de werkbon eerst op om items toe te voegen' : 'Nog geen items. Voeg een item toe.'}
+                    Nog geen items. Voeg een item toe.
                   </p>
                 </CardContent>
               </Card>
