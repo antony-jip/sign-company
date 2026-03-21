@@ -47,6 +47,7 @@ import {
   User2,
   Wrench,
   Users,
+  CalendarDays,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useWeekWeather, getWeatherForDate } from './WeatherDayStrip'
@@ -155,7 +156,9 @@ export function TasksLayout() {
   const [taskFilter, setTaskFilter] = useState<'alle' | 'project' | 'los'>('alle')
   const [medewerkerFilter, setMedewerkerFilter] = useState<string>('alle')
 
+  const [viewMode, setViewMode] = useState<'week' | 'maand'>('week')
   const [weekOffset, setWeekOffset] = useState(0)
+  const [monthOffset, setMonthOffset] = useState(0)
   const [showCompleted, setShowCompleted] = useState(false)
 
   // FAB state
@@ -370,6 +373,62 @@ export function TasksLayout() {
 
   const isCurrentWeek = weekOffset === 0
 
+  // === MONTH VIEW DATA ===
+
+  const monthDate = useMemo(() => {
+    const d = new Date(today)
+    d.setMonth(d.getMonth() + monthOffset)
+    d.setDate(1)
+    return d
+  }, [today, monthOffset])
+
+  const monthLabel = useMemo(() => {
+    const fullMonths = ['januari', 'februari', 'maart', 'april', 'mei', 'juni', 'juli', 'augustus', 'september', 'oktober', 'november', 'december']
+    return `${fullMonths[monthDate.getMonth()]} ${monthDate.getFullYear()}`
+  }, [monthDate])
+
+  // Grid of weeks for the month (6 weeks max, each 7 days)
+  const monthGrid = useMemo(() => {
+    const year = monthDate.getFullYear()
+    const month = monthDate.getMonth()
+    const firstDay = new Date(year, month, 1)
+    const startDay = getMonday(firstDay) // start from monday
+    const weeks: Date[][] = []
+    const current = new Date(startDay)
+    for (let w = 0; w < 6; w++) {
+      const week: Date[] = []
+      for (let d = 0; d < 7; d++) {
+        week.push(new Date(current))
+        current.setDate(current.getDate() + 1)
+      }
+      // Stop if the whole week is in the next month
+      if (w >= 4 && week[0].getMonth() !== month) break
+      weeks.push(week)
+    }
+    return weeks
+  }, [monthDate])
+
+  // Tasks grouped by date string for month view
+  const tasksByDateStr = useMemo(() => {
+    const map = new Map<string, Taak[]>()
+    let activeTaken = showCompleted ? taken : taken.filter((t) => t.status !== 'klaar')
+    if (taskFilter === 'project') activeTaken = activeTaken.filter((t) => !!t.project_id)
+    else if (taskFilter === 'los') activeTaken = activeTaken.filter((t) => !t.project_id)
+    if (medewerkerFilter !== 'alle') {
+      if (medewerkerFilter === 'niet-toegewezen') activeTaken = activeTaken.filter((t) => !t.toegewezen_aan)
+      else activeTaken = activeTaken.filter((t) => t.toegewezen_aan === medewerkerFilter)
+    }
+    activeTaken.forEach((t) => {
+      if (!t.deadline) return
+      const key = t.deadline.split('T')[0]
+      if (!map.has(key)) map.set(key, [])
+      map.get(key)!.push(t)
+    })
+    return map
+  }, [taken, showCompleted, taskFilter, medewerkerFilter])
+
+  const isCurrentMonth = monthOffset === 0
+
   // === HANDLERS ===
 
   async function handleQuickAdd(title: string, priority: TaakPrioriteit, deadline: string, projectId: string, assignee?: string) {
@@ -565,25 +624,49 @@ export function TasksLayout() {
       <div className="flex flex-col h-[calc(100vh-120px)] mod-strip mod-strip-taken">
         <ModuleHeader module="taken" icon={Clock} title="Taken" subtitle="Productie & oplevering" />
 
-        {/* === WEEK NAV + FILTERS === */}
+        {/* === NAV + FILTERS === */}
         <div className="flex items-center justify-between flex-wrap gap-2 px-3 sm:px-5 py-2.5 border-b border-border/60 bg-card/50 flex-shrink-0">
           <div className="flex items-center gap-3 min-w-0">
-            <span className="text-sm font-semibold text-foreground tracking-tight whitespace-nowrap">{weekLabel}</span>
+            <span className="text-sm font-semibold text-foreground tracking-tight whitespace-nowrap capitalize">
+              {viewMode === 'week' ? weekLabel : monthLabel}
+            </span>
             <div className="flex items-center gap-0.5 bg-muted/50 rounded-lg p-0.5">
-              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg" onClick={() => setWeekOffset((w) => w - 1)}>
+              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg" onClick={() => viewMode === 'week' ? setWeekOffset((w) => w - 1) : setMonthOffset((m) => m - 1)}>
                 <ChevronLeft className="w-4 h-4" />
               </Button>
               <Button
-                variant={isCurrentWeek ? 'default' : 'ghost'}
+                variant={(viewMode === 'week' ? isCurrentWeek : isCurrentMonth) ? 'default' : 'ghost'}
                 size="sm"
-                className={cn('h-7 text-xs px-3 rounded-lg', isCurrentWeek && 'bg-primary hover:bg-wm-hover shadow-sm')}
-                onClick={() => setWeekOffset(0)}
+                className={cn('h-7 text-xs px-3 rounded-lg', (viewMode === 'week' ? isCurrentWeek : isCurrentMonth) && 'bg-primary hover:bg-wm-hover shadow-sm')}
+                onClick={() => viewMode === 'week' ? setWeekOffset(0) : setMonthOffset(0)}
               >
                 Vandaag
               </Button>
-              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg" onClick={() => setWeekOffset((w) => w + 1)}>
+              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg" onClick={() => viewMode === 'week' ? setWeekOffset((w) => w + 1) : setMonthOffset((m) => m + 1)}>
                 <ChevronRight className="w-4 h-4" />
               </Button>
+            </div>
+            {/* View toggle */}
+            <div className="inline-flex items-center rounded-lg border border-black/[0.06] bg-muted p-0.5 flex-shrink-0">
+              <button
+                onClick={() => setViewMode('week')}
+                className={cn(
+                  'text-xs px-2 py-1 rounded-md transition-all duration-200 whitespace-nowrap',
+                  viewMode === 'week' ? 'bg-[#191919] text-white shadow-sm font-medium' : 'text-[#5A5A55] hover:text-foreground'
+                )}
+              >
+                Week
+              </button>
+              <button
+                onClick={() => setViewMode('maand')}
+                className={cn(
+                  'text-xs px-2 py-1 rounded-md transition-all duration-200 whitespace-nowrap flex items-center gap-1',
+                  viewMode === 'maand' ? 'bg-[#191919] text-white shadow-sm font-medium' : 'text-[#5A5A55] hover:text-foreground'
+                )}
+              >
+                <CalendarDays className="w-3 h-3" />
+                Maand
+              </button>
             </div>
           </div>
           <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
@@ -665,6 +748,7 @@ export function TasksLayout() {
           </div>
         </div>
 
+        {viewMode === 'week' && (<>
         {/* === DAY HEADERS (met weer geïntegreerd) === */}
         <div className="flex border-b border-border/60 bg-card/80 backdrop-blur-sm flex-shrink-0">
           {/* Time gutter spacer */}
@@ -773,6 +857,85 @@ export function TasksLayout() {
             })}
           </div>
         </div>
+        </>)}
+
+        {/* === MONTH VIEW === */}
+        {viewMode === 'maand' && (
+          <div className="flex-1 overflow-y-auto bg-background">
+            {/* Day-of-week headers */}
+            <div className="grid grid-cols-7 border-b border-border/60 bg-card/80 backdrop-blur-sm sticky top-0 z-10">
+              {DAY_LABELS.map((label, i) => (
+                <div key={i} className="py-2 text-center text-xs uppercase tracking-label font-bold text-muted-foreground/70">
+                  {label}
+                </div>
+              ))}
+            </div>
+            {/* Week rows */}
+            <div className="grid grid-cols-7 flex-1">
+              {monthGrid.flat().map((day, i) => {
+                const isToday = isSameDay(day, today)
+                const isCurrentMonth = day.getMonth() === monthDate.getMonth()
+                const dateStr = toDateStr(day)
+                const dayTasks = tasksByDateStr.get(dateStr) || []
+                const dayWeather = getWeatherForDate(weekWeather, day)
+
+                return (
+                  <div
+                    key={i}
+                    className={cn(
+                      'border-b border-r border-border/30 min-h-[90px] p-1.5 transition-colors',
+                      !isCurrentMonth && 'bg-muted/20',
+                      isToday && 'bg-primary/[0.04]',
+                    )}
+                  >
+                    {/* Day number + weather */}
+                    <div className="flex items-center justify-between mb-1">
+                      <span className={cn(
+                        'text-xs font-bold font-mono tabular-nums',
+                        isToday
+                          ? 'w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-[11px]'
+                          : !isCurrentMonth ? 'text-muted-foreground/25' : 'text-foreground',
+                      )}>
+                        {day.getDate()}
+                      </span>
+                      {dayWeather && isCurrentMonth && (
+                        <span className="text-[10px] text-muted-foreground/50">{dayWeather.emoji}{dayWeather.maxTemp}°</span>
+                      )}
+                    </div>
+                    {/* Task indicators */}
+                    <div className="space-y-0.5">
+                      {dayTasks.slice(0, 4).map((taak) => {
+                        const colors = PRIORITEIT_COLORS[taak.prioriteit]
+                        const isDone = taak.status === 'klaar'
+                        return (
+                          <button
+                            key={taak.id}
+                            onClick={() => openEditDialog(taak)}
+                            className={cn(
+                              'w-full text-left px-1.5 py-0.5 rounded text-[10px] leading-tight truncate border-l-2 transition-all hover:shadow-sm',
+                              isDone ? 'opacity-40 line-through bg-muted/30 border-muted-foreground/20' : `${colors.bg} ${colors.border}`,
+                            )}
+                            title={`${taak.titel}${taak.toegewezen_aan ? ` — ${taak.toegewezen_aan}` : ''}`}
+                          >
+                            <span className={cn('font-medium', isDone ? 'text-muted-foreground' : 'text-foreground')}>
+                              {taak.titel}
+                            </span>
+                            {taak.toegewezen_aan && (
+                              <span className="text-muted-foreground/50 ml-1">• {taak.toegewezen_aan.split(' ')[0]}</span>
+                            )}
+                          </button>
+                        )
+                      })}
+                      {dayTasks.length > 4 && (
+                        <span className="text-[9px] text-muted-foreground/40 font-semibold px-1">+{dayTasks.length - 4} meer</span>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* === FLOATING ACTION BUTTON === */}
