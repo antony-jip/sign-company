@@ -212,6 +212,17 @@ function getFollowUpState(offerte: Offerte): 'overdue' | 'today' | 'upcoming' | 
   return 'upcoming'
 }
 
+function getDagenOpenHint(offerte: Offerte): { text: string; className: string } | null {
+  if (offerte.status !== 'verzonden' && offerte.status !== 'bekeken') return null
+  const sentDate = offerte.verstuurd_op || offerte.created_at
+  if (!sentDate) return null
+  const dagen = Math.floor((Date.now() - new Date(sentDate).getTime()) / 86400000)
+  if (dagen < 5) return null
+  if (dagen <= 7) return { text: `${dagen} dagen open. Klanten beslissen gemiddeld binnen 4 dagen.`, className: 'text-[11px] text-[#5A5A55]' }
+  if (dagen <= 14) return { text: `${dagen} dagen open. Overweeg om op te volgen.`, className: 'text-[11px] text-[#C03A18]' }
+  return { text: `${dagen} dagen open. Grote kans dat deze verloren gaat.`, className: 'text-[11px] text-[#C03A18] font-medium' }
+}
+
 function isThisMonth(dateStr: string): boolean {
   const d = new Date(dateStr)
   const now = new Date()
@@ -1135,6 +1146,12 @@ export function QuotesPipeline() {
                             {offerte.klant_naam || 'Onbekende klant'}
                           </p>
 
+                          {/* Concurrentiebewustzijn hint (on hover) */}
+                          {(() => {
+                            const hint = getDagenOpenHint(offerte)
+                            return hint ? <p className={cn(hint.className, 'opacity-0 group-hover:opacity-100 transition-opacity truncate')}>{hint.text}</p> : null
+                          })()}
+
                           {/* Amount + relative date + days open */}
                           <div className="flex items-center justify-between pt-2 border-t border-border dark:border-border/50">
                             <span className="text-sm font-bold font-mono text-foreground">
@@ -1579,6 +1596,10 @@ export function QuotesPipeline() {
                               >
                                 {offerte.nummer} — {offerte.titel}
                               </Link>
+                              {(() => {
+                                const hint = getDagenOpenHint(offerte)
+                                return hint ? <p className={cn(hint.className, 'opacity-0 group-hover:opacity-100 transition-opacity')}>{hint.text}</p> : null
+                              })()}
                             </div>
                             {expiryStatus === 'expired' && (
                               <Badge className="bg-[#FDE8E2] text-[#C03A18] text-[10px] font-semibold px-[10px] py-[3px] rounded-full flex-shrink-0">
