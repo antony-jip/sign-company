@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { createOfferte, createOfferteItem, updateOfferte, getKlanten, getCalculatieTemplates, getMedewerkers, createTaak } from '@/services/supabaseService'
+import { createOfferte, createOfferteItem, updateOfferte, getKlanten, getCalculatieTemplates, getMedewerkers, createTaak, createProject } from '@/services/supabaseService'
 import { sendEmail } from '@/services/gmailService'
 import { offerteVerzendTemplate } from '@/services/emailTemplateService'
 import { generateOffertePDF } from '@/services/pdfService'
@@ -10,7 +10,7 @@ import { useDocumentStyle } from '@/hooks/useDocumentStyle'
 import type { Klant, OfferteItem, CalculatieTemplate, CalculatieRegel, Medewerker } from '@/types'
 import { toast } from 'sonner'
 import { round2 } from '@/utils/budgetUtils'
-import { Building2, ChevronDown, Plus, X, Send, BookTemplate, Settings, Save, UserCircle, ListTodo } from 'lucide-react'
+import { Building2, ChevronDown, Plus, X, Send, BookTemplate, Settings, Save, UserCircle, ListTodo, FolderPlus } from 'lucide-react'
 
 interface Props {
   open: boolean
@@ -76,6 +76,7 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
   const [toegewezenAan, setToegewezenAan] = useState('')
   const [maakTaak, setMaakTaak] = useState(false)
   const [taakNotitie, setTaakNotitie] = useState('')
+  const [maakProject, setMaakProject] = useState(false)
   const klantInputRef = useRef<HTMLInputElement>(null)
 
   // Snelkoppeling template IDs from settings
@@ -101,6 +102,7 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
       setToegewezenAan('')
       setMaakTaak(false)
       setTaakNotitie('')
+      setMaakProject(false)
     }
   }, [open])
 
@@ -259,7 +261,29 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
         })
       }
 
-      // 3. Optionally create a task
+      // 3. Optionally create a project and link to offerte
+      if (maakProject) {
+        try {
+          const project = await createProject({
+            klant_id: selectedKlant.id,
+            naam: titel.trim(),
+            beschrijving: '',
+            budget: 0,
+            status: 'gepland',
+            prioriteit: 'medium',
+            besteed: 0,
+            voortgang: 0,
+            team_leden: [],
+            bron_offerte_id: offerte.id,
+            eind_datum: deadline || undefined,
+          })
+          await updateOfferte(offerte.id, { project_id: project.id } as Parameters<typeof updateOfferte>[1])
+        } catch {
+          // Project creation failed, offerte is still created
+        }
+      }
+
+      // 4. Optionally create a task
       if (maakTaak) {
         await createTaak({
           titel: `Offerte afmaken: ${titel.trim()}`,
@@ -487,6 +511,16 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
                 />
               </div>
             )}
+            <label className="flex items-center gap-2 cursor-pointer text-muted-foreground hover:text-foreground transition-colors">
+              <input
+                type="checkbox"
+                checked={maakProject}
+                onChange={e => setMaakProject(e.target.checked)}
+                className="h-3.5 w-3.5 rounded border-border accent-[#1A535C]"
+              />
+              <FolderPlus className="h-3.5 w-3.5" />
+              <span className="text-[11px]">Project erbij aanmaken</span>
+            </label>
           </div>
 
           {/* Toggle meer opties */}

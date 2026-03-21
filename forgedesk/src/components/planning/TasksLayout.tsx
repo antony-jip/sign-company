@@ -46,13 +46,15 @@ import {
   MapPin,
   User2,
   Wrench,
+  FilePlus,
 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { WeatherDayStrip } from './WeatherDayStrip'
 import { ModuleHeader } from '@/components/shared/ModuleHeader'
 import { useAuth } from '@/contexts/AuthContext'
-import { getTaken, createTaak, updateTaak, deleteTaak, getProjecten, getKlanten, getMontageAfspraken } from '@/services/supabaseService'
-import type { Taak, Project, Klant, MontageAfspraak } from '@/types'
+import { getTaken, createTaak, updateTaak, deleteTaak, getProjecten, getKlanten, getMontageAfspraken, getOffertes } from '@/services/supabaseService'
+import type { Taak, Project, Klant, MontageAfspraak, Offerte } from '@/types'
 import { logger } from '../../utils/logger'
 import { AuditLogPanel } from '@/components/shared/AuditLogPanel'
 import { logWijziging } from '@/utils/auditLogger'
@@ -147,6 +149,7 @@ export function TasksLayout() {
   const [taken, setTaken] = useState<Taak[]>([])
   const [projecten, setProjecten] = useState<Project[]>([])
   const [klanten, setKlanten] = useState<Klant[]>([])
+  const [offertes, setOffertes] = useState<Offerte[]>([])
   const [montageAfspraken, setMontageAfspraken] = useState<MontageAfspraak[]>([])
   const [showMontage, setShowMontage] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
@@ -195,12 +198,13 @@ export function TasksLayout() {
     async function loadData() {
       setIsLoading(true)
       try {
-        const [takenData, projectenData, klantenData, montageData] = await Promise.all([getTaken(), getProjecten(), getKlanten(), getMontageAfspraken()])
+        const [takenData, projectenData, klantenData, montageData, offertesData] = await Promise.all([getTaken(), getProjecten(), getKlanten(), getMontageAfspraken(), getOffertes()])
         if (!cancelled) {
           setTaken(takenData)
           setProjecten(projectenData)
           setKlanten(klantenData)
           setMontageAfspraken(montageData)
+          setOffertes(offertesData)
         }
       } catch (error) {
         logger.error('Fout bij laden:', error)
@@ -247,6 +251,12 @@ export function TasksLayout() {
     klanten.forEach((k) => { map[k.id] = k.bedrijfsnaam })
     return map
   }, [klanten])
+
+  const offerteMap = useMemo(() => {
+    const map: Record<string, Offerte> = {}
+    offertes.forEach((o) => { map[o.id] = o })
+    return map
+  }, [offertes])
 
   const today = useMemo(() => {
     const d = new Date()
@@ -690,6 +700,7 @@ export function TasksLayout() {
                   tasks={dayTasks}
                   projectMap={projectMap}
                   klantMap={klantMap}
+                  offerteMap={offerteMap}
                   nowLineTop={isCurrentWeek && isToday ? nowLineTop : null}
                   draggingTaakId={draggingTaakId}
                   dropTarget={dropTarget}
@@ -835,7 +846,7 @@ export function TasksLayout() {
 // === DAY COLUMN ===
 
 function DayColumn({
-  day, dayIndex, isToday, isPast, tasks, projectMap, klantMap, nowLineTop,
+  day, dayIndex, isToday, isPast, tasks, projectMap, klantMap, offerteMap, nowLineTop,
   draggingTaakId, dropTarget,
   onDragStart, onDragEnd, onDropTargetChange, onDrop,
   onToggle, onEdit, onDelete, onQuickAdd, onQuickAddAtTime, onResize,
@@ -848,6 +859,7 @@ function DayColumn({
   tasks: Taak[]
   projectMap: Record<string, string>
   klantMap: Record<string, string>
+  offerteMap: Record<string, Offerte>
   nowLineTop: number | null
   draggingTaakId: string | null
   dropTarget: { dayIndex: number; hour: number } | null
@@ -1102,6 +1114,7 @@ function DayColumn({
               taak={taak}
               projectNaam={taak.project_id ? projectMap[taak.project_id] : undefined}
               klantNaam={taak.klant_id ? klantMap[taak.klant_id] : undefined}
+              offerteInfo={taak.offerte_id && offerteMap[taak.offerte_id] ? { nummer: offerteMap[taak.offerte_id].nummer, totaal: offerteMap[taak.offerte_id].totaal, status: offerteMap[taak.offerte_id].status } : undefined}
               isPast={isPast}
               scheduled
               heightPx={heightPx !== null ? heightPx - 6 : undefined}
@@ -1176,6 +1189,7 @@ function DayColumn({
               taak={taak}
               projectNaam={taak.project_id ? projectMap[taak.project_id] : undefined}
               klantNaam={taak.klant_id ? klantMap[taak.klant_id] : undefined}
+              offerteInfo={taak.offerte_id && offerteMap[taak.offerte_id] ? { nummer: offerteMap[taak.offerte_id].nummer, totaal: offerteMap[taak.offerte_id].totaal, status: offerteMap[taak.offerte_id].status } : undefined}
               isPast={isPast}
               onDragStart={() => onDragStart(taak.id)}
               onDragEnd={onDragEnd}
@@ -1223,11 +1237,12 @@ function DayColumn({
 // === TASK CARD ===
 
 function TaskCard({
-  taak, projectNaam, klantNaam, isPast, scheduled, heightPx, isResizing, onDragStart, onDragEnd, onToggle, onEdit, onDelete, onResizeStart,
+  taak, projectNaam, klantNaam, offerteInfo, isPast, scheduled, heightPx, isResizing, onDragStart, onDragEnd, onToggle, onEdit, onDelete, onResizeStart,
 }: {
   taak: Taak
   projectNaam?: string
   klantNaam?: string
+  offerteInfo?: { nummer: string; totaal: number; status: string }
   isPast: boolean
   scheduled?: boolean
   heightPx?: number
@@ -1324,6 +1339,19 @@ function TaskCard({
             {taak.locatie && (
               <span className="text-2xs text-muted-foreground/40 flex items-center gap-0.5">
                 <MapPin className="w-2 h-2" />{taak.locatie}
+              </span>
+            )}
+            {offerteInfo && (
+              <span
+                className="text-2xs flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#FDE8E2] text-[#F15025] cursor-pointer hover:bg-[#FCDDD5] transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  window.location.href = `/offertes/${taak.offerte_id}`
+                }}
+                title={`Offerte ${offerteInfo.nummer}`}
+              >
+                <FilePlus className="w-2.5 h-2.5" />
+                <span className="font-mono">{offerteInfo.nummer || '–'}</span>
               </span>
             )}
             {scheduled && hour !== null && (

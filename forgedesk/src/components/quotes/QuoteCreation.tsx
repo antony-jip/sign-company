@@ -58,8 +58,10 @@ import {
   Upload,
   GripVertical,
   Pin,
+  FolderPlus,
+  FolderOpen,
 } from 'lucide-react'
-import { getKlanten, getKlant, getProjecten, getOffertes, createOfferte, createOfferteItem, updateKlant, getOfferte, getOfferteItems, updateOfferte, deleteOfferteItem, getOfferteVersies, createOfferteVersie, getFactuur, createPortaal, createPortaalItem, getPortaalItems, getKlantOfferteContext } from '@/services/supabaseService'
+import { getKlanten, getProjecten, getOffertes, createOfferte, createOfferteItem, updateKlant, getOfferte, getOfferteItems, updateOfferte, deleteOfferteItem, getOfferteVersies, createOfferteVersie, getFactuur, createPortaal, createPortaalItem, getPortaalItems, createProject } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import type { Klant, Project, Contactpersoon, Factuur } from '@/types'
@@ -132,6 +134,9 @@ export function QuoteCreation() {
   // ── Step 0: Klant + Project + Details ──
   const [selectedKlantId, setSelectedKlantId] = useState(paramKlantId)
   const [selectedProjectId, setSelectedProjectId] = useState(paramProjectId)
+  const [showProjectForm, setShowProjectForm] = useState(false)
+  const [projectNaam, setProjectNaam] = useState('')
+  const [isCreatingProject, setIsCreatingProject] = useState(false)
   const [klantSearch, setKlantSearch] = useState('')
   const [offerteTitel, setOfferteTitel] = useState(paramTitel)
   const [itemCount, setItemCount] = useState(1)
@@ -156,9 +161,6 @@ export function QuoteCreation() {
 
   // ── FIX 7: Client details panel ──
   const [klantPanelOpen, setKlantPanelOpen] = useState(true)
-
-  // ── Klant context (Feature 5) ──
-  const [klantContext, setKlantContext] = useState<{ count: number; laatsteOfferte: string | null; totaal: number } | null>(null)
 
   // ── Sidebar collapsed on mobile ──
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
@@ -287,20 +289,6 @@ export function QuoteCreation() {
   const winstExBtw = round2(subtotaal - totaalInkoop)
   const margePercentage = subtotaal > 0 ? Math.round(((winstExBtw / subtotaal) * 100) * 10) / 10 : 0
 
-  // ── Offerte gezondheid checks ──
-  const offerteChecks = useMemo(() => {
-    const totaalInclBtw = round2(subtotaal + btwBedrag)
-    return [
-      { label: 'Klant geselecteerd', ok: !!selectedKlantId },
-      { label: 'Minimaal 1 item', ok: verplichtePrijsItems.length > 0 },
-      { label: 'Alle items hebben prijs', ok: verplichtePrijsItems.length > 0 && verplichtePrijsItems.every(i => getActivePriceData(i).eenheidsprijs > 0) },
-      { label: 'BTW is ingesteld', ok: verplichtePrijsItems.length > 0 && verplichtePrijsItems.every(i => getActivePriceData(i).btw_percentage > 0) },
-      { label: 'Bedrag is realistisch', ok: totaalInclBtw > 0 && totaalInclBtw < 500000 },
-    ]
-  }, [selectedKlantId, verplichtePrijsItems, subtotaal, btwBedrag])
-  const passedChecks = offerteChecks.filter(c => c.ok).length
-  const [verstuurWarning, setVerstuurWarning] = useState('')
-
   // ── Uren overzicht per configureerbaar veld + materiaalkosten ──
   // Haalt uren uit twee bronnen:
   //   1. Calculatieregels — matcht productnaam/categorie tegen geconfigureerde uren-velden
@@ -397,29 +385,6 @@ export function QuoteCreation() {
     }
     return round2(bedrag)
   }, [urenCorrectie, tariefPerVeld])
-
-  // ── Slim afronden suggesties ──
-  const afrondSuggesties = useMemo(() => {
-    const gemBtw = subtotaal > 0 ? btwBedrag / subtotaal : 0.21
-    const totaalInclBtw = round2(subtotaal + btwBedrag + ((afrondingskorting + urenCorrectieBedrag) * (1 + gemBtw)))
-    if (totaalInclBtw <= 0) return null
-    const lager = Math.floor(totaalInclBtw / 50) * 50
-    const hoger = Math.ceil(totaalInclBtw / 50) * 50
-    if (lager === hoger) return null
-    const verschilLager = totaalInclBtw - lager
-    const verschilHoger = hoger - totaalInclBtw
-    const opties: number[] = []
-    if (verschilLager >= 5 && verschilLager <= 100 && lager > 0) opties.push(lager)
-    if (verschilHoger >= 5 && verschilHoger <= 100) opties.push(hoger)
-    return opties.length > 0 ? opties : null
-  }, [subtotaal, btwBedrag, afrondingskorting, urenCorrectieBedrag])
-
-  const handleAfronden = (gewenst: number) => {
-    const gemBtw = subtotaal > 0 ? btwBedrag / subtotaal : 0.21
-    const kortingExcl = round2((gewenst / (1 + gemBtw)) - subtotaal)
-    setAfrondingskorting(kortingExcl)
-    toast.success(`Afgerond naar ${formatCurrency(gewenst)}`)
-  }
 
   // Effectieve uren = basis + correctie
   const effectieveUrenPerVeld = useMemo(() => {
@@ -631,24 +596,6 @@ export function QuoteCreation() {
       }
     }
   }, [selectedKlantId])
-
-  // Fetch klant offerte context (Feature 5)
-  useEffect(() => {
-    if (!selectedKlantId) { setKlantContext(null); return }
-    getKlantOfferteContext(selectedKlantId).then(setKlantContext).catch(() => setKlantContext(null))
-  }, [selectedKlantId])
-
-  // ── Ensure selected klant is in the klanten list (e.g. edit mode, or > 500 klanten) ──
-  useEffect(() => {
-    if (!selectedKlantId || klanten.find(k => k.id === selectedKlantId)) return
-    let cancelled = false
-    getKlant(selectedKlantId).then(klant => {
-      if (!cancelled && klant) {
-        setKlanten(prev => prev.find(k => k.id === klant.id) ? prev : [...prev, klant])
-      }
-    }).catch(() => {})
-    return () => { cancelled = true }
-  }, [selectedKlantId, klanten])
 
   // ── Helper: maak een leeg calculatie-item met default beschrijving-regels ──
   const createEmptyItem = (label?: string): QuoteLineItem => {
@@ -1664,16 +1611,6 @@ export function QuoteCreation() {
   const emailSectionRef = useRef<HTMLDivElement>(null)
 
   const handleVerstuurOfferte = async () => {
-    // Gezondheid waarschuwing (niet-blokkerend)
-    if (passedChecks < 5) {
-      const eersteNietOk = offerteChecks.find(c => !c.ok)
-      if (eersteNietOk) {
-        setVerstuurWarning(`Let op: ${eersteNietOk.label.toLowerCase()}`)
-        setTimeout(() => setVerstuurWarning(''), 5000)
-      }
-    } else {
-      setVerstuurWarning('')
-    }
     if (!user?.id || !selectedKlant) {
       toast.error('Selecteer eerst een klant')
       return
@@ -1857,11 +1794,11 @@ export function QuoteCreation() {
   // ── Actions dropdown state ──
   const [showActionsMenu, setShowActionsMenu] = useState(false)
 
-  // ── Helper: marge color for sidebar (≥50% petrol, 30-49% green, <30% flame) ──
+  // ── Helper: marge color for sidebar (unified: ≥65% green, 50-64% orange, <50% red) ──
   const getMargeColorSidebar = (pct: number) => {
-    if (pct >= 50) return { text: 'text-[#1A535C] dark:text-[#3A8B8C]', bg: 'bg-[#1A535C]/10 dark:bg-[#1A535C]/20', bar: 'bg-[#1A535C]' }
-    if (pct >= 30) return { text: 'text-[#2D6B48] dark:text-[#4A9B6A]', bg: 'bg-[#2D6B48]/10 dark:bg-[#2D6B48]/20', bar: 'bg-[#2D6B48]' }
-    return { text: 'text-[#F15025] dark:text-[#F15025]', bg: 'bg-[#F15025]/10 dark:bg-[#F15025]/20', bar: 'bg-[#F15025]' }
+    if (pct >= 65) return { text: 'text-green-600 dark:text-green-400', bg: 'bg-green-50 dark:bg-green-900/20', bar: 'bg-green-500' }
+    if (pct >= 50) return { text: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/20', bar: 'bg-amber-500' }
+    return { text: 'text-red-600 dark:text-red-400', bg: 'bg-red-50 dark:bg-red-900/20', bar: 'bg-red-500' }
   }
 
   const margeColor = getMargeColorSidebar(margePercentage)
@@ -2205,6 +2142,89 @@ export function QuoteCreation() {
           </div>
         </div>
       </div>
+
+      {/* ──── PROJECT KOPPELING ──── */}
+      {!selectedProjectId && selectedKlantId && isEditMode && (
+        <div className="mb-4">
+          {!showProjectForm ? (
+            <button
+              type="button"
+              onClick={() => { setShowProjectForm(true); setProjectNaam(offerteTitel || '') }}
+              className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg border border-[#1A535C]/30 text-[#1A535C] hover:bg-[#1A535C]/5 transition-colors"
+            >
+              <FolderPlus className="h-3.5 w-3.5" />
+              Project erbij aanmaken
+            </button>
+          ) : (
+            <div className="flex items-center gap-2 rounded-lg border border-[#1A535C]/30 bg-[#1A535C]/5 px-3 py-2">
+              <FolderPlus className="h-3.5 w-3.5 text-[#1A535C] shrink-0" />
+              <input
+                type="text"
+                value={projectNaam}
+                onChange={(e) => setProjectNaam(e.target.value)}
+                placeholder="Projectnaam"
+                className="flex-1 h-8 px-2 py-1 text-sm border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-[#1A535C]/20 focus:border-[#1A535C]"
+                autoFocus
+              />
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!projectNaam.trim() || !selectedKlantId) return
+                  setIsCreatingProject(true)
+                  try {
+                    const project = await createProject({
+                      klant_id: selectedKlantId,
+                      naam: projectNaam.trim(),
+                      beschrijving: '',
+                      budget: 0,
+                      status: 'gepland',
+                      prioriteit: 'medium',
+                      besteed: 0,
+                      voortgang: 0,
+                      team_leden: [],
+                      bron_offerte_id: editOfferteId || undefined,
+                      eind_datum: geldigTot || undefined,
+                    })
+                    setSelectedProjectId(project.id)
+                    if (editOfferteId) {
+                      await updateOfferte(editOfferteId, { project_id: project.id })
+                    }
+                    setShowProjectForm(false)
+                    toast.success(`Project "${projectNaam.trim()}" aangemaakt en gekoppeld`)
+                  } catch {
+                    toast.error('Kon project niet aanmaken')
+                  } finally {
+                    setIsCreatingProject(false)
+                  }
+                }}
+                disabled={!projectNaam.trim() || isCreatingProject}
+                className="h-8 px-3 text-sm font-medium text-white rounded-md transition-colors disabled:opacity-50"
+                style={{ backgroundColor: '#1A535C' }}
+              >
+                {isCreatingProject ? 'Aanmaken...' : 'Aanmaken'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowProjectForm(false)}
+                className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-md"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+      {selectedProjectId && selectedProject && isEditMode && (
+        <div className="mb-4">
+          <Link
+            to={`/projecten/${selectedProjectId}`}
+            className="inline-flex items-center gap-1.5 text-xs text-[#1A535C] hover:text-[#1A535C]/80 transition-colors"
+          >
+            <FolderOpen className="h-3.5 w-3.5" />
+            Project: {selectedProject.naam}
+          </Link>
+        </div>
+      )}
 
       {/* ──── VERSIE HISTORIE ──── */}
       {showVersieHistorie && versieHistorie.length > 0 && (
@@ -2555,23 +2575,6 @@ export function QuoteCreation() {
                               {klantPanelOpen ? <ChevronUp className="h-3.5 w-3.5 flex-shrink-0" style={{ color: '#A0A098' }} /> : <ChevronDown className="h-3.5 w-3.5 flex-shrink-0" style={{ color: '#A0A098' }} />}
                             </button>
 
-                            {/* Klant context (Feature 5) */}
-                            {klantContext && klantContext.count > 0 && (
-                              <div className="px-4 py-1.5" style={{ borderBottom: '0.5px solid #E6E4E0' }}>
-                                <p className="text-[11px]" style={{ color: '#5A5A55' }}>
-                                  {klantContext.count === 1 ? (
-                                    <>Laatste offerte: <span className="font-mono">{formatCurrency(klantContext.totaal)}</span> — {(() => {
-                                      if (!klantContext.laatsteOfferte) return ''
-                                      const maanden = Math.floor((Date.now() - new Date(klantContext.laatsteOfferte).getTime()) / (30.44 * 86400000))
-                                      return maanden < 1 ? 'minder dan een maand geleden' : `${maanden} maand${maanden !== 1 ? 'en' : ''} geleden`
-                                    })()}</>
-                                  ) : (
-                                    <>{klantContext.count} eerdere offertes, totaal <span className="font-mono">{formatCurrency(klantContext.totaal)}</span></>
-                                  )}
-                                </p>
-                              </div>
-                            )}
-
                             {klantPanelOpen && (
                               <div className="px-4 py-3 space-y-2.5">
                                 <div className="text-[11px] space-y-0.5" style={{ color: '#5A5A55' }}>
@@ -2778,20 +2781,6 @@ export function QuoteCreation() {
                           {optionelSubtotaal > 0 && (
                             <p className="text-2xs text-white/60 mt-1">+ {formatCurrency(round2(optionelSubtotaal + optionelBtw))} aan opties</p>
                           )}
-                          {afrondSuggesties && afrondingskorting === 0 && (
-                            <div className="flex items-center gap-2 mt-1.5">
-                              <span className="text-2xs text-foreground/50">Afronden?</span>
-                              {afrondSuggesties.map((bedrag) => (
-                                <button
-                                  key={bedrag}
-                                  onClick={() => handleAfronden(bedrag)}
-                                  className="text-xs font-mono text-[#1A535C] hover:underline underline-offset-2 cursor-pointer"
-                                >
-                                  {formatCurrency(bedrag)}
-                                </button>
-                              ))}
-                            </div>
-                          )}
                         </div>
 
                         <div className="p-4 space-y-4">
@@ -2843,9 +2832,6 @@ export function QuoteCreation() {
                                 <div className="mt-2 h-1.5 rounded-full bg-secondary dark:bg-muted">
                                   <div className={cn('h-full rounded-full transition-all', margeColor.bar)} style={{ width: `${Math.min(100, Math.max(0, margePercentage))}%` }} />
                                 </div>
-                              )}
-                              {margePercentage < 30 && totaalInkoop > 0 && (
-                                <p className="text-[11px] text-[#C03A18] mt-1">Marge is lager dan gemiddeld.</p>
                               )}
                             </div>
                           </div>
@@ -2942,25 +2928,6 @@ export function QuoteCreation() {
                           )}
 
                           <Separator className="opacity-50" />
-
-                          {/* ── Offerte gezondheid indicator ── */}
-                          <div className="space-y-1.5">
-                            <div
-                              className="h-1 rounded-sm bg-secondary dark:bg-muted overflow-hidden"
-                            >
-                              <div
-                                className="h-full rounded-sm transition-all duration-300"
-                                style={{
-                                  width: `${(passedChecks / 5) * 100}%`,
-                                  backgroundColor: passedChecks <= 2 ? '#F15025' : passedChecks <= 4 ? '#9A4070' : '#1A535C',
-                                }}
-                              />
-                            </div>
-                            <p className="text-[11px] font-mono text-muted-foreground">
-                              {passedChecks} van 5 checks — {passedChecks <= 2 ? 'Nog niet compleet' : passedChecks <= 4 ? 'Bijna klaar' : 'Klaar om te versturen'}
-                            </p>
-                          </div>
-
                           <div className="flex flex-wrap gap-1.5">
                             <Button variant="outline" size="sm" className="text-xs h-7 gap-1" onClick={handleVerstuurOfferte}>
                               <Send className="h-3 w-3" />Verstuur
@@ -2972,9 +2939,6 @@ export function QuoteCreation() {
                               <Save className="h-3 w-3" />{isSaving ? '...' : 'Opslaan'}
                             </Button>
                           </div>
-                          {verstuurWarning && (
-                            <p className="text-[11px] text-[#C03A18]">{verstuurWarning}</p>
-                          )}
                         </div>
                       </div>
                     )}
