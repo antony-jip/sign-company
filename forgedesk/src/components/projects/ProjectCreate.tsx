@@ -4,8 +4,7 @@ import { createProject, getKlanten, generateProjectNummer, getAppSettings } from
 import { useAuth } from '@/contexts/AuthContext'
 import type { Klant } from '@/types'
 import { toast } from 'sonner'
-import { ArrowLeft, Save, FolderKanban, User, CalendarDays, FileText } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { ArrowLeft, Save, FolderKanban } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
@@ -122,37 +121,40 @@ export function ProjectCreate() {
   }
 
   return (
-    <div className="relative -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 min-h-full">
-      <div className="fixed inset-0 bg-gradient-to-br from-[#E8F0EC] via-[#F2EDE6] to-[#EDE8E0] dark:from-background dark:via-background dark:to-background pointer-events-none" />
+    <div className="relative -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 min-h-full" style={{ backgroundColor: '#F4F3F0' }}>
       <div className="relative max-w-2xl mx-auto px-4 py-8 md:py-12 animate-fade-in-up">
       {/* Header */}
       <div className="flex items-center gap-4 mb-8">
-        <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-card/60 hover:bg-card/80 backdrop-blur-sm border border-border/40 shadow-elevation-xs" onClick={() => navigate('/projecten')}>
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-[#7EB5A6] to-[#5A9E8F] flex items-center justify-center shadow-lg shadow-[#7EB5A6]/25 ring-4 ring-[#7EB5A6]/15">
-          <FolderKanban className="h-5.5 w-5.5 text-white" />
+        <button
+          onClick={() => navigate('/projecten')}
+          className="h-10 w-10 rounded-xl flex items-center justify-center transition-colors"
+          style={{ backgroundColor: '#FFFFFE', border: '0.5px solid #E6E4E0' }}
+        >
+          <ArrowLeft className="h-4 w-4" style={{ color: '#5A5A55' }} />
+        </button>
+        <div className="h-12 w-12 rounded-2xl flex items-center justify-center shadow-sm" style={{ backgroundColor: '#1A535C' }}>
+          <FolderKanban className="h-5 w-5 text-white" />
         </div>
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Nieuw project</h1>
-          <p className="text-sm text-muted-foreground">Vul de gegevens in om te starten</p>
+          <h1 className="text-2xl font-bold tracking-tight" style={{ color: '#191919' }}>Nieuw project</h1>
+          <p className="text-sm" style={{ color: '#5A5A55' }}>Vul de gegevens in om te starten</p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Project info */}
-        <div className="group rounded-2xl bg-card/80 dark:bg-card backdrop-blur-xl border border-border/60 dark:border-border shadow-elevation-sm hover:shadow-elevation-md transition-all duration-300 overflow-hidden">
-          <div className="h-1 bg-gradient-to-r from-[#7EB5A6] via-[#98C8BB] to-[#B4D8CF]" />
-          <div className="flex items-center gap-3 px-6 pt-5 pb-1">
-            <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-[#7EB5A6] to-[#5A9E8F] text-white text-xs font-bold shadow-md shadow-[#7EB5A6]/20">1</div>
+        {/* Section 1: Projectgegevens */}
+        <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#FFFFFE', border: '0.5px solid #E6E4E0' }}>
+          <div className="h-[3px]" style={{ background: 'linear-gradient(90deg, #F15025, #F1502560)' }} />
+          <div className="flex items-center gap-3 px-5 pt-4 pb-1">
+            <div className="flex items-center justify-center h-7 w-7 rounded-lg text-white text-[11px] font-bold" style={{ backgroundColor: '#F15025' }}>1</div>
             <div>
-              <span className="text-sm font-bold text-foreground">Projectgegevens</span>
-              <p className="text-xs text-muted-foreground">Naam en omschrijving</p>
+              <span className="text-[13px] font-semibold" style={{ color: '#191919' }}>Projectgegevens</span>
+              <p className="text-[11px]" style={{ color: '#A0A098' }}>Naam en omschrijving</p>
             </div>
           </div>
-          <div className="px-6 pb-6 pt-3 space-y-4">
+          <div className="px-5 pb-5 pt-3 space-y-3">
             <div>
-              <Label htmlFor="naam" className="text-xs font-semibold text-muted-foreground mb-2 block uppercase tracking-wider">
+              <Label htmlFor="naam" className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider" style={{ color: '#A0A098' }}>
                 Projectnaam *
               </Label>
               <Input
@@ -160,13 +162,14 @@ export function ProjectCreate() {
                 value={naam}
                 onChange={(e) => setNaam(e.target.value)}
                 placeholder="Bijv. Gevelbelettering Bakkerij Jansen"
-                className="h-11 bg-card/60 dark:bg-background border-border focus:border-primary/40 focus:ring-2 focus:ring-primary/10 rounded-xl text-base"
+                className="h-10 rounded-lg text-[14px]"
+                style={{ backgroundColor: '#FAFAF8', border: '0.5px solid #E6E4E0' }}
                 required
               />
             </div>
 
             <div>
-              <Label htmlFor="beschrijving" className="text-xs font-semibold text-muted-foreground mb-2 block uppercase tracking-wider">
+              <Label htmlFor="beschrijving" className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider" style={{ color: '#A0A098' }}>
                 Beschrijving
               </Label>
               <Textarea
@@ -175,29 +178,30 @@ export function ProjectCreate() {
                 onChange={(e) => setBeschrijving(e.target.value)}
                 placeholder="Korte omschrijving van het project..."
                 rows={3}
-                className="resize-none bg-card/60 dark:bg-background border-border focus:border-primary/40 focus:ring-2 focus:ring-primary/10 rounded-xl"
+                className="resize-none rounded-lg text-[14px]"
+                style={{ backgroundColor: '#FAFAF8', border: '0.5px solid #E6E4E0' }}
               />
             </div>
           </div>
         </div>
 
-        {/* Klant + Contactpersoon */}
-        <div className="group rounded-2xl bg-card/80 dark:bg-card backdrop-blur-xl border border-border/60 dark:border-border shadow-elevation-sm hover:shadow-elevation-md transition-all duration-300 overflow-hidden">
-          <div className="h-1 bg-gradient-to-r from-[#8BAFD4] via-[#A3C2DE] to-[#BDD5E8]" />
-          <div className="flex items-center gap-3 px-6 pt-5 pb-1">
-            <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-[#8BAFD4] to-[#6E9AC4] text-white text-xs font-bold shadow-md shadow-[#8BAFD4]/20">2</div>
+        {/* Section 2: Klant & Contact — compact */}
+        <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#FFFFFE', border: '0.5px solid #E6E4E0' }}>
+          <div className="h-[3px]" style={{ background: 'linear-gradient(90deg, #9A4070, #9A407060)' }} />
+          <div className="flex items-center gap-3 px-5 pt-4 pb-1">
+            <div className="flex items-center justify-center h-7 w-7 rounded-lg text-white text-[11px] font-bold" style={{ backgroundColor: '#9A4070' }}>2</div>
             <div>
-              <span className="text-sm font-bold text-foreground">Klant & Contact</span>
-              <p className="text-xs text-muted-foreground">Koppel aan een klant</p>
+              <span className="text-[13px] font-semibold" style={{ color: '#191919' }}>Klant & Contact</span>
+              <p className="text-[11px]" style={{ color: '#A0A098' }}>Koppel aan een klant</p>
             </div>
           </div>
-          <div className="px-6 pb-6 pt-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="px-5 pb-5 pt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <Label htmlFor="klant" className="text-xs font-semibold text-muted-foreground mb-2 block uppercase tracking-wider">
+              <Label htmlFor="klant" className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider" style={{ color: '#A0A098' }}>
                 Klant
               </Label>
               <Select value={klantId} onValueChange={setKlantId}>
-                <SelectTrigger className="h-11 bg-card/60 dark:bg-background border-border rounded-xl">
+                <SelectTrigger className="h-10 rounded-lg text-[13px]" style={{ backgroundColor: '#FAFAF8', border: '0.5px solid #E6E4E0' }}>
                   <SelectValue placeholder={klanten.length === 0 ? 'Geen klanten' : 'Selecteer klant'} />
                 </SelectTrigger>
                 <SelectContent>
@@ -213,7 +217,7 @@ export function ProjectCreate() {
             </div>
 
             <div>
-              <Label htmlFor="contactpersoon" className="text-xs font-semibold text-muted-foreground mb-2 block uppercase tracking-wider">
+              <Label htmlFor="contactpersoon" className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider" style={{ color: '#A0A098' }}>
                 Contactpersoon
               </Label>
               <Select
@@ -221,14 +225,14 @@ export function ProjectCreate() {
                 onValueChange={setContactpersoonId}
                 disabled={!klantId || contactpersonen.length === 0}
               >
-                <SelectTrigger className="h-11 bg-card/60 dark:bg-background border-border rounded-xl">
+                <SelectTrigger className="h-10 rounded-lg text-[13px]" style={{ backgroundColor: '#FAFAF8', border: '0.5px solid #E6E4E0' }}>
                   <SelectValue
                     placeholder={
                       !klantId
-                        ? 'Selecteer eerst een klant'
+                        ? 'Selecteer eerst klant'
                         : contactpersonen.length === 0
                           ? 'Geen contactpersonen'
-                          : 'Selecteer contactpersoon'
+                          : 'Selecteer'
                     }
                   />
                 </SelectTrigger>
@@ -236,28 +240,28 @@ export function ProjectCreate() {
                   {contactpersonen.map((cp) => (
                     <SelectItem key={cp.id} value={cp.id}>
                       <span>{cp.naam}</span>
-                      {cp.functie && <span className="text-muted-foreground ml-1.5">({cp.functie})</span>}
+                      {cp.functie && <span className="ml-1.5" style={{ color: '#A0A098' }}>({cp.functie})</span>}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Vestiging - alleen tonen als klant meerdere vestigingen heeft */}
+            {/* Vestiging — alleen tonen als klant meerdere vestigingen heeft */}
             {vestigingen.length > 0 && (
               <div className="sm:col-span-2">
-                <Label htmlFor="vestiging" className="text-xs font-semibold text-muted-foreground mb-2 block uppercase tracking-wider">
+                <Label htmlFor="vestiging" className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider" style={{ color: '#A0A098' }}>
                   Vestiging
                 </Label>
                 <Select value={vestigingId} onValueChange={setVestigingId}>
-                  <SelectTrigger className="h-11 bg-card/60 dark:bg-background border-border rounded-xl">
+                  <SelectTrigger className="h-10 rounded-lg text-[13px]" style={{ backgroundColor: '#FAFAF8', border: '0.5px solid #E6E4E0' }}>
                     <SelectValue placeholder="Selecteer vestiging (optioneel)" />
                   </SelectTrigger>
                   <SelectContent>
                     {vestigingen.map((v) => (
                       <SelectItem key={v.id} value={v.id}>
                         <span>{v.naam}</span>
-                        {v.stad && <span className="text-muted-foreground ml-1.5">({v.stad})</span>}
+                        {v.stad && <span className="ml-1.5" style={{ color: '#A0A098' }}>({v.stad})</span>}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -267,21 +271,21 @@ export function ProjectCreate() {
           </div>
         </div>
 
-        {/* Status + Datums */}
-        <div className="group rounded-2xl bg-card/80 dark:bg-card backdrop-blur-xl border border-border/60 dark:border-border shadow-elevation-sm hover:shadow-elevation-md transition-all duration-300 overflow-hidden">
-          <div className="h-1 bg-gradient-to-r from-[#C4A882] via-[#D4BC9C] to-[#E2D0B8]" />
-          <div className="flex items-center gap-3 px-6 pt-5 pb-1">
-            <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-[#C4A882] to-[#B09670] text-white text-xs font-bold shadow-md shadow-[#C4A882]/20">3</div>
+        {/* Section 3: Planning */}
+        <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#FFFFFE', border: '0.5px solid #E6E4E0' }}>
+          <div className="h-[3px]" style={{ background: 'linear-gradient(90deg, #3A6B8C, #3A6B8C60)' }} />
+          <div className="flex items-center gap-3 px-5 pt-4 pb-1">
+            <div className="flex items-center justify-center h-7 w-7 rounded-lg text-white text-[11px] font-bold" style={{ backgroundColor: '#3A6B8C' }}>3</div>
             <div>
-              <span className="text-sm font-bold text-foreground">Planning</span>
-              <p className="text-xs text-muted-foreground">Status en tijdlijn</p>
+              <span className="text-[13px] font-semibold" style={{ color: '#191919' }}>Planning</span>
+              <p className="text-[11px]" style={{ color: '#A0A098' }}>Status en tijdlijn</p>
             </div>
           </div>
-          <div className="px-6 pb-6 pt-3 grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="px-5 pb-5 pt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <Label className="text-xs font-semibold text-muted-foreground mb-2 block uppercase tracking-wider">Status</Label>
+              <Label className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider" style={{ color: '#A0A098' }}>Status</Label>
               <Select value={status} onValueChange={(value: typeof status) => setStatus(value)}>
-                <SelectTrigger className="h-11 bg-card/60 dark:bg-background border-border rounded-xl">
+                <SelectTrigger className="h-10 rounded-lg text-[13px]" style={{ backgroundColor: '#FAFAF8', border: '0.5px solid #E6E4E0' }}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -296,22 +300,24 @@ export function ProjectCreate() {
             </div>
 
             <div>
-              <Label className="text-xs font-semibold text-muted-foreground mb-2 block uppercase tracking-wider">Startdatum</Label>
+              <Label className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider" style={{ color: '#A0A098' }}>Startdatum</Label>
               <Input
                 type="date"
                 value={startDatum}
                 onChange={(e) => setStartDatum(e.target.value)}
-                className="h-11 bg-card/60 dark:bg-background border-border rounded-xl"
+                className="h-10 rounded-lg font-mono text-[13px]"
+                style={{ backgroundColor: '#FAFAF8', border: '0.5px solid #E6E4E0' }}
               />
             </div>
 
             <div>
-              <Label className="text-xs font-semibold text-muted-foreground mb-2 block uppercase tracking-wider">Einddatum</Label>
+              <Label className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider" style={{ color: '#A0A098' }}>Einddatum</Label>
               <Input
                 type="date"
                 value={eindDatum}
                 onChange={(e) => setEindDatum(e.target.value)}
-                className="h-11 bg-card/60 dark:bg-background border-border rounded-xl"
+                className="h-10 rounded-lg font-mono text-[13px]"
+                style={{ backgroundColor: '#FAFAF8', border: '0.5px solid #E6E4E0' }}
               />
             </div>
           </div>
@@ -319,19 +325,23 @@ export function ProjectCreate() {
 
         {/* Actions */}
         <div className="flex items-center justify-end gap-3 pt-4">
-          <Button
+          <button
             type="button"
-            variant="ghost"
-            size="sm"
             onClick={() => navigate('/projecten')}
-            className="text-muted-foreground hover:bg-card/60 rounded-xl px-5"
+            className="h-9 px-5 text-[13px] font-medium rounded-lg transition-colors"
+            style={{ color: '#5A5A55', border: '0.5px solid #E6E4E0' }}
           >
             Annuleren
-          </Button>
-          <Button type="submit" size="lg" disabled={loading} className="shadow-lg shadow-[#7EB5A6]/20 bg-gradient-to-r from-[#7EB5A6] to-[#5A9E8F] hover:from-[#6EA99A] hover:to-[#4E9183] rounded-xl px-8 font-semibold">
-            <Save className="h-4 w-4 mr-2" />
+          </button>
+          <button
+            type="submit"
+            disabled={loading}
+            className="h-10 px-6 text-[14px] font-bold text-white rounded-lg shadow-sm hover:opacity-90 transition-all flex items-center gap-2 disabled:opacity-50"
+            style={{ backgroundColor: '#1A535C' }}
+          >
+            <Save className="h-4 w-4" />
             {loading ? 'Opslaan...' : 'Project aanmaken'}
-          </Button>
+          </button>
         </div>
       </form>
       </div>

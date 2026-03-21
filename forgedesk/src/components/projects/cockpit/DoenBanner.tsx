@@ -1,4 +1,5 @@
-import { FileText, Wrench, Calendar, Receipt } from 'lucide-react'
+import { FileText, Calendar, Receipt, Pencil } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { getPipelineStep } from './PipelineBar'
 import type { Project, Offerte, MontageAfspraak, Factuur } from '@/types'
 
@@ -9,83 +10,11 @@ interface DoenConfig {
   iconBg: string
   iconColor: string
   icon: React.ReactNode
-  doenLabel: string
-  doenAction: () => void
-}
-
-function getDoenConfig(
-  project: Project,
-  offertes: Offerte[],
-  montageAfspraken: MontageAfspraak[],
-  facturen: Factuur[],
-  callbacks: {
-    onCreateOfferte: () => void
-    onCreateWerkbon: () => void
-    onCreateMontage: () => void
-    onCreateFactuur: () => void
-    onArchive: () => void
-  },
-): DoenConfig | null {
-  const step = getPipelineStep(project, offertes, montageAfspraken, facturen)
-
-  // Step 0: no offerte yet — no banner (the empty state in offerte card handles this)
-  if (step === 0) return null
-
-  // Step 1: concept offerte — tell user to send it
-  if (step === 1) {
-    const isConcept = offertes.some(o => o.status === 'concept')
-    if (!isConcept) return null
-    return {
-      tekst: 'Offerte is nog concept. Verstuur naar de klant zodat je verder kunt.',
-      bg: '#FDE8E2',
-      border: '#F5C4B4',
-      iconBg: '#F15025',
-      iconColor: '#FFFFFF',
-      icon: <FileText className="h-4.5 w-4.5" />,
-      doenLabel: 'Doen',
-      doenAction: callbacks.onCreateOfferte,
-    }
-  }
-
-  // Step 2: offerte sent/viewed, waiting for approval — no banner
-  if (step === 2) {
-    return null
-  }
-
-  // Step 3: in production — no banner (work is happening)
-  if (step === 3) return null
-
-  // Step 4: ready for montage
-  if (step === 4) {
-    return {
-      tekst: 'Alles klaar voor montage.',
-      bg: '#F2E8E5',
-      border: '#E0D0C8',
-      iconBg: '#3A6B8C',
-      iconColor: '#FFFFFF',
-      icon: <Calendar className="h-4.5 w-4.5" />,
-      doenLabel: 'Doen',
-      doenAction: callbacks.onCreateMontage,
-    }
-  }
-
-  // Step 5: ready to invoice
-  if (step === 5) {
-    const hasFactuur = facturen.length > 0
-    if (hasFactuur) return null
-    return {
-      tekst: 'Klaar om te factureren.',
-      bg: '#E4F0EA',
-      border: '#C4DCC8',
-      iconBg: '#2D6B48',
-      iconColor: '#FFFFFF',
-      icon: <Receipt className="h-4.5 w-4.5" />,
-      doenLabel: 'Doen',
-      doenAction: callbacks.onCreateFactuur,
-    }
-  }
-
-  return null
+  /** Button label */
+  btnLabel: string
+  btnAction: () => void
+  /** true = flame (#F15025), false = petrol (#1A535C) */
+  btnFlame: boolean
 }
 
 interface DoenBannerProps {
@@ -107,7 +36,10 @@ export function DoenBanner({
   facturen,
   ...callbacks
 }: DoenBannerProps) {
-  const config = getDoenConfig(project, offertes, montageAfspraken, facturen, callbacks)
+  const navigate = useNavigate()
+  const step = getPipelineStep(project, offertes, montageAfspraken, facturen)
+
+  const config = getDoenConfig(step, offertes, facturen, callbacks, navigate)
   if (!config) return null
 
   return (
@@ -131,17 +63,95 @@ export function DoenBanner({
         {config.tekst}
       </span>
 
-      {/* Doen button */}
+      {/* Action button */}
       <button
-        onClick={config.doenAction}
+        onClick={config.btnAction}
         className="flex-shrink-0 text-[14px] font-bold text-white rounded-lg hover:opacity-90 transition-all shadow-sm"
         style={{
-          backgroundColor: '#F15025',
+          backgroundColor: config.btnFlame ? '#F15025' : '#1A535C',
           padding: '10px 24px',
         }}
       >
-        Doen
+        {config.btnLabel}
       </button>
     </div>
   )
+}
+
+function getDoenConfig(
+  step: number,
+  offertes: Offerte[],
+  facturen: Factuur[],
+  callbacks: {
+    onCreateOfferte: () => void
+    onCreateWerkbon: () => void
+    onCreateMontage: () => void
+    onCreateFactuur: () => void
+    onArchive: () => void
+  },
+  navigate: ReturnType<typeof useNavigate>,
+): DoenConfig | null {
+  // Step 0: no offerte — no banner (flame CTA in header + empty card handle this)
+  if (step === 0) return null
+
+  // Step 1: has offerte(s) in early stage
+  if (step === 1) {
+    const conceptOfferte = offertes.find(o => o.status === 'concept')
+    if (conceptOfferte) {
+      // Concept offerte — user needs to finish editing. NOT an irreversible action.
+      return {
+        tekst: 'Je offerte is nog niet af.',
+        bg: '#FDE8E2',
+        border: '#F5C4B4',
+        iconBg: '#F15025',
+        iconColor: '#FFFFFF',
+        icon: <Pencil className="h-4 w-4" />,
+        btnLabel: 'Offerte bewerken',
+        btnAction: () => navigate(`/offertes/${conceptOfferte.id}/bewerken`),
+        btnFlame: false, // petrol — not irreversible
+      }
+    }
+    // Offerte exists but not concept (e.g. verzonden/bekeken waiting for approval) — no banner
+    return null
+  }
+
+  // Step 2: approved / waiting — no banner
+  if (step === 2) return null
+
+  // Step 3: in production — no banner (work is happening)
+  if (step === 3) return null
+
+  // Step 4: ready for montage — irreversible scheduling moment
+  if (step === 4) {
+    return {
+      tekst: 'Alles klaar voor montage.',
+      bg: '#F2E8E5',
+      border: '#E0D0C8',
+      iconBg: '#3A6B8C',
+      iconColor: '#FFFFFF',
+      icon: <Calendar className="h-4 w-4" />,
+      btnLabel: 'Doen',
+      btnAction: callbacks.onCreateMontage,
+      btnFlame: true,
+    }
+  }
+
+  // Step 5: ready to invoice — irreversible billing moment
+  if (step === 5) {
+    const hasFactuur = facturen.length > 0
+    if (hasFactuur) return null
+    return {
+      tekst: 'Klaar om te factureren.',
+      bg: '#E4F0EA',
+      border: '#C4DCC8',
+      iconBg: '#2D6B48',
+      iconColor: '#FFFFFF',
+      icon: <Receipt className="h-4 w-4" />,
+      btnLabel: 'Doen',
+      btnAction: callbacks.onCreateFactuur,
+      btnFlame: true,
+    }
+  }
+
+  return null
 }
