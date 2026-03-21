@@ -633,6 +633,8 @@ export interface AppSettings {
   exact_btw_hoog?: string;
   exact_btw_laag?: string;
   exact_btw_nul?: string;
+  // Snelofferte: welke calculatie-templates als snelkoppeling tonen in het Nieuwe Offerte formulier
+  snelofferte_templates?: string[];
   created_at: string;
   updated_at: string;
 }

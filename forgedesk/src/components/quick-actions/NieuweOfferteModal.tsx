@@ -1,15 +1,16 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { createOfferte, createOfferteItem, updateOfferte, getKlanten } from '@/services/supabaseService'
+import { createOfferte, createOfferteItem, updateOfferte, getKlanten, getCalculatieTemplates } from '@/services/supabaseService'
 import { sendEmail } from '@/services/gmailService'
 import { offerteVerzendTemplate } from '@/services/emailTemplateService'
 import { generateOffertePDF } from '@/services/pdfService'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useDocumentStyle } from '@/hooks/useDocumentStyle'
-import type { Klant, OfferteItem } from '@/types'
+import type { Klant, OfferteItem, CalculatieTemplate, CalculatieRegel } from '@/types'
 import { toast } from 'sonner'
-import { Building2, ChevronDown, Plus, X, Send } from 'lucide-react'
+import { round2 } from '@/utils/budgetUtils'
+import { Building2, ChevronDown, Plus, X, Send, BookTemplate, Settings } from 'lucide-react'
 
 interface Props {
   open: boolean
@@ -20,7 +21,9 @@ interface QuickRegel {
   id: string
   omschrijving: string
   aantal: number
-  prijs: string
+  inkoop: string
+  verkoop: string
+  marge: number
 }
 
 const inputClass = 'w-full h-9 px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-petrol/20 focus:border-petrol'
@@ -34,10 +37,24 @@ function formatEuro(n: number): string {
   return n.toLocaleString('nl-NL', { style: 'currency', currency: 'EUR' })
 }
 
+function berekenVerkoopVanInkoop(inkoop: number, margePerc: number): number {
+  return round2(inkoop * (1 + margePerc / 100))
+}
+
+function berekenMarge(inkoop: number, verkoop: number): number {
+  if (inkoop === 0) return 0
+  return Math.round(((verkoop - inkoop) / inkoop) * 1000) / 10
+}
+
+function makeId(): string {
+  return `qr-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+}
+
 export function NieuweOfferteModal({ open, onOpenChange }: Props) {
   const navigate = useNavigate()
-  const { bedrijfsnaam, primaireKleur, emailHandtekening, profile } = useAppSettings()
+  const { settings, bedrijfsnaam, primaireKleur, emailHandtekening, profile } = useAppSettings()
   const documentStyle = useDocumentStyle()
+  const standaardMarge = settings.calculatie_standaard_marge ?? 35
 
   const [klanten, setKlanten] = useState<Klant[]>([])
   const [klantQuery, setKlantQuery] = useState('')
@@ -50,13 +67,20 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
   const [showExtra, setShowExtra] = useState(false)
   const [regels, setRegels] = useState<QuickRegel[]>([])
   const [verzendEmail, setVerzendEmail] = useState('')
+  const [emailTekst, setEmailTekst] = useState('')
   const [saving, setSaving] = useState(false)
   const [savingMode, setSavingMode] = useState<'create' | 'send'>('create')
+  const [templates, setTemplates] = useState<CalculatieTemplate[]>([])
+  const [showTemplates, setShowTemplates] = useState(false)
   const klantInputRef = useRef<HTMLInputElement>(null)
+
+  // Snelkoppeling template IDs from settings
+  const snelkoppelingIds = settings.snelofferte_templates || []
 
   useEffect(() => {
     if (open) {
       getKlanten().then(setKlanten).catch(() => {})
+      getCalculatieTemplates().then(setTemplates).catch(() => {})
     } else {
       setKlantQuery('')
       setSelectedKlant(null)
@@ -67,6 +91,8 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
       setShowExtra(false)
       setRegels([])
       setVerzendEmail('')
+      setEmailTekst('')
+      setShowTemplates(false)
     }
   }, [open])
 
@@ -74,10 +100,32 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
     ? klanten.filter(k => k.bedrijfsnaam.toLowerCase().includes(klantQuery.toLowerCase()))
     : []
 
-  // Calculate subtotal from regels
-  const subtotaal = regels.reduce((sum, r) => sum + r.aantal * parseNum(r.prijs), 0)
+  // Active templates, prioritize snelkoppelingen
+  const activeTemplates = useMemo(() => templates.filter(t => t.actief), [templates])
+  const snelkoppelingen = useMemo(
+    () => snelkoppelingIds.map(id => activeTemplates.find(t => t.id === id)).filter(Boolean) as CalculatieTemplate[],
+    [snelkoppelingIds, activeTemplates]
+  )
+  const overigeTemplates = useMemo(
+    () => activeTemplates.filter(t => !snelkoppelingIds.includes(t.id)),
+    [activeTemplates, snelkoppelingIds]
+  )
+
+  // Calculate totals from regels
+  const totalen = useMemo(() => {
+    let totaalInkoop = 0
+    let totaalVerkoop = 0
+    regels.forEach(r => {
+      totaalInkoop += round2(r.aantal * parseNum(r.inkoop))
+      totaalVerkoop += round2(r.aantal * parseNum(r.verkoop))
+    })
+    const margeBedrag = round2(totaalVerkoop - totaalInkoop)
+    const margePerc = totaalInkoop > 0 ? Math.round((margeBedrag / totaalInkoop) * 1000) / 10 : 0
+    return { totaalInkoop, totaalVerkoop, margeBedrag, margePerc }
+  }, [regels])
+
   const hasRegels = regels.length > 0
-  const effectiefBedrag = hasRegels ? subtotaal : parseNum(bedrag)
+  const effectiefBedrag = hasRegels ? totalen.totaalVerkoop : parseNum(bedrag)
 
   function selectKlant(klant: Klant) {
     setSelectedKlant(klant)
@@ -94,16 +142,64 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
   }
 
   function addRegel() {
-    setRegels(prev => [...prev, { id: crypto.randomUUID(), omschrijving: '', aantal: 1, prijs: '' }])
+    setRegels(prev => [...prev, {
+      id: makeId(),
+      omschrijving: '',
+      aantal: 1,
+      inkoop: '',
+      verkoop: '',
+      marge: standaardMarge,
+    }])
   }
 
-  function updateRegel(id: string, field: keyof QuickRegel, value: string | number) {
-    setRegels(prev => prev.map(r => r.id === id ? { ...r, [field]: value } : r))
-  }
+  const updateRegel = useCallback((id: string, field: keyof QuickRegel, value: string | number) => {
+    setRegels(prev => prev.map(r => {
+      if (r.id !== id) return r
+      const updated = { ...r, [field]: value }
+
+      // Smart auto-calculation (like CalculatieModal)
+      if (field === 'inkoop') {
+        // Inkoop changed → recalculate verkoop from marge
+        const inkoop = parseNum(String(value))
+        updated.verkoop = berekenVerkoopVanInkoop(inkoop, updated.marge).toFixed(2).replace('.', ',')
+      } else if (field === 'marge') {
+        // Marge changed → recalculate verkoop from inkoop
+        const inkoop = parseNum(updated.inkoop)
+        updated.verkoop = berekenVerkoopVanInkoop(inkoop, Number(value)).toFixed(2).replace('.', ',')
+      } else if (field === 'verkoop') {
+        // Verkoop manually changed → recalculate marge
+        const inkoop = parseNum(updated.inkoop)
+        const verkoop = parseNum(String(value))
+        updated.marge = berekenMarge(inkoop, verkoop)
+      }
+
+      return updated
+    }))
+  }, [])
 
   function removeRegel(id: string) {
     setRegels(prev => prev.filter(r => r.id !== id))
   }
+
+  const laadTemplate = useCallback((template: CalculatieTemplate) => {
+    if (regels.length > 0 && regels.some(r => r.omschrijving.trim())) {
+      if (!window.confirm('Dit vervangt alle huidige regels. Doorgaan?')) return
+    }
+    const nieuweRegels: QuickRegel[] = template.regels.map((r: CalculatieRegel) => ({
+      id: makeId(),
+      omschrijving: r.product_naam,
+      aantal: r.aantal,
+      inkoop: r.inkoop_prijs.toFixed(2).replace('.', ','),
+      verkoop: r.verkoop_prijs.toFixed(2).replace('.', ','),
+      marge: r.marge_percentage,
+    }))
+    setRegels(nieuweRegels)
+    if (template.beschrijving && !titel.trim()) {
+      setTitel(template.naam)
+    }
+    setShowTemplates(false)
+    if (!showExtra) setShowExtra(true)
+  }, [regels, titel, showExtra])
 
   async function handleSubmit(e: React.FormEvent, mode: 'create' | 'send' = 'create') {
     e.preventDefault()
@@ -133,16 +229,32 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
       for (let i = 0; i < regels.length; i++) {
         const r = regels[i]
         if (!r.omschrijving.trim()) continue
+        const verkoopPrijs = parseNum(r.verkoop)
         const item = await createOfferteItem({
           offerte_id: offerte.id,
           beschrijving: r.omschrijving.trim(),
           aantal: r.aantal,
-          eenheidsprijs: parseNum(r.prijs),
+          eenheidsprijs: verkoopPrijs,
           btw_percentage: 21,
           korting_percentage: 0,
-          totaal: r.aantal * parseNum(r.prijs),
+          totaal: r.aantal * verkoopPrijs,
           volgorde: i,
           soort: 'prijs',
+          heeft_calculatie: true,
+          calculatie_regels: [{
+            id: makeId(),
+            product_naam: r.omschrijving.trim(),
+            categorie: '',
+            eenheid: 'stuks',
+            aantal: r.aantal,
+            inkoop_prijs: parseNum(r.inkoop),
+            verkoop_prijs: verkoopPrijs,
+            marge_percentage: r.marge,
+            korting_percentage: 0,
+            nacalculatie: false,
+            btw_percentage: 21,
+            notitie: '',
+          }],
         })
         createdItems.push(item)
       }
@@ -176,9 +288,14 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
           // PDF generation failed, send without attachment
         }
 
+        // Use custom email text if provided, otherwise template text
+        const bodyText = emailTekst.trim() || emailData.text
+
         try {
-          await sendEmail(verzendEmail.trim(), emailData.subject, emailData.text, {
-            html: emailData.html,
+          await sendEmail(verzendEmail.trim(), emailData.subject, bodyText, {
+            html: emailTekst.trim()
+              ? `<div style="font-family:sans-serif;font-size:14px;line-height:1.6;white-space:pre-wrap">${emailTekst.trim().replace(/\n/g, '<br>')}</div>`
+              : emailData.html,
             attachments,
           })
         } catch {
@@ -207,7 +324,7 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={`${showExtra ? 'sm:max-w-[640px]' : 'sm:max-w-[560px]'} p-4 gap-2 transition-all`}>
+      <DialogContent className={`${showExtra ? 'sm:max-w-[720px]' : 'sm:max-w-[560px]'} p-4 gap-2 transition-all`}>
         <DialogHeader className="pb-1">
           <DialogTitle className="text-base">Nieuwe offerte</DialogTitle>
         </DialogHeader>
@@ -281,7 +398,7 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
               <input
                 type="text"
                 inputMode="decimal"
-                value={hasRegels ? subtotaal.toFixed(2).replace('.', ',') : bedrag}
+                value={hasRegels ? totalen.totaalVerkoop.toFixed(2).replace('.', ',') : bedrag}
                 onChange={e => !hasRegels && setBedrag(e.target.value)}
                 readOnly={hasRegels}
                 placeholder="0,00"
@@ -339,19 +456,86 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
 
               {/* Quick calculatie regels */}
               <div className="border border-border rounded-lg overflow-hidden">
-                {/* Header */}
-                <div className="flex items-center gap-1 px-2 py-1.5 bg-muted/30 text-[10px] text-muted-foreground font-medium">
+                {/* Template bar */}
+                <div className="flex items-center gap-1 px-2 py-1.5 bg-muted/40 border-b border-border/50 relative">
+                  <button
+                    type="button"
+                    onClick={() => setShowTemplates(!showTemplates)}
+                    className="flex items-center gap-1.5 px-2 py-1 text-[11px] font-medium border border-border rounded-md bg-background hover:bg-muted/50 transition-colors"
+                  >
+                    <BookTemplate className="h-3.5 w-3.5" />
+                    Template laden
+                  </button>
+
+                  {/* Snelkoppeling chips */}
+                  {snelkoppelingen.length > 0 && (
+                    <div className="flex items-center gap-1 ml-1">
+                      {snelkoppelingen.map(t => (
+                        <button
+                          key={t.id}
+                          type="button"
+                          onClick={() => laadTemplate(t)}
+                          className="px-2 py-0.5 text-[10px] font-medium border border-petrol/30 text-petrol rounded-full bg-petrol/5 hover:bg-petrol/10 transition-colors whitespace-nowrap"
+                        >
+                          {t.naam}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Template dropdown */}
+                  {showTemplates && (
+                    <div className="absolute z-50 top-full left-2 mt-1 w-64 bg-card border border-border rounded-lg shadow-lg max-h-56 overflow-y-auto">
+                      {activeTemplates.length === 0 && (
+                        <div className="px-3 py-4 text-center text-xs text-muted-foreground">
+                          Geen templates beschikbaar
+                        </div>
+                      )}
+                      {activeTemplates.map(t => (
+                        <button
+                          key={t.id}
+                          type="button"
+                          onMouseDown={() => laadTemplate(t)}
+                          className="w-full text-left px-3 py-2 hover:bg-muted/50 border-b border-border/30 last:border-0"
+                        >
+                          <span className="text-sm font-medium block">{t.naam}</span>
+                          {t.beschrijving && (
+                            <span className="text-[10px] text-muted-foreground">{t.beschrijving}</span>
+                          )}
+                        </button>
+                      ))}
+                      <div className="border-t border-border">
+                        <button
+                          type="button"
+                          onMouseDown={() => {
+                            onOpenChange(false)
+                            navigate('/instellingen?tab=calculatie')
+                          }}
+                          className="w-full text-left px-3 py-2 text-[11px] text-muted-foreground hover:text-foreground flex items-center gap-1.5"
+                        >
+                          <Settings className="h-3 w-3" />
+                          Templates beheren
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Column headers */}
+                <div className="flex items-center gap-1 px-2 py-1.5 bg-muted/20 text-[10px] text-muted-foreground font-medium border-b border-border/30">
                   <span className="flex-[3] px-2">Omschrijving</span>
-                  <span className="flex-[0.8] px-2 text-right">Aantal</span>
-                  <span className="flex-[1] px-2 text-right">Prijs</span>
-                  <span className="flex-[1] px-2 text-right">Totaal</span>
+                  <span className="flex-[0.7] px-1 text-right">Aantal</span>
+                  <span className="flex-[1] px-1 text-right">Inkoop</span>
+                  <span className="flex-[1] px-1 text-right">Verkoop</span>
+                  <span className="flex-[0.7] px-1 text-right">Marge%</span>
+                  <span className="flex-[1] px-2 text-right">Regeltotaal</span>
                   <span className="w-7" />
                 </div>
 
                 {/* Rows */}
                 <div className="max-h-48 overflow-y-auto">
                   {regels.map(r => {
-                    const regelTotal = r.aantal * parseNum(r.prijs)
+                    const regelTotal = r.aantal * parseNum(r.verkoop)
                     return (
                       <div key={r.id} className="flex items-center gap-1 px-1 border-t border-border/50">
                         <div className="flex-[3]">
@@ -363,7 +547,7 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
                             className={inlineInputClass}
                           />
                         </div>
-                        <div className="flex-[0.8]">
+                        <div className="flex-[0.7]">
                           <input
                             type="number"
                             min={0}
@@ -376,10 +560,28 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
                           <input
                             type="text"
                             inputMode="decimal"
-                            value={r.prijs}
-                            onChange={e => updateRegel(r.id, 'prijs', e.target.value)}
+                            value={r.inkoop}
+                            onChange={e => updateRegel(r.id, 'inkoop', e.target.value)}
                             placeholder="0,00"
                             className={`${inlineInputClass} font-mono text-right`}
+                          />
+                        </div>
+                        <div className="flex-[1]">
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            value={r.verkoop}
+                            onChange={e => updateRegel(r.id, 'verkoop', e.target.value)}
+                            placeholder="0,00"
+                            className={`${inlineInputClass} font-mono text-right`}
+                          />
+                        </div>
+                        <div className="flex-[0.7]">
+                          <input
+                            type="number"
+                            value={Math.round(r.marge)}
+                            onChange={e => updateRegel(r.id, 'marge', parseInt(e.target.value) || 0)}
+                            className={`${inlineInputClass} font-mono text-right ${r.marge >= 30 ? 'text-green-600' : r.marge >= 0 ? 'text-amber-600' : 'text-red-500'}`}
                           />
                         </div>
                         <div className="flex-[1] px-2 text-right text-sm font-mono text-muted-foreground">
@@ -397,28 +599,38 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
                   })}
                 </div>
 
-                {/* Add row + Subtotal */}
-                <div className="flex items-center justify-between px-2 py-1.5 border-t border-border/50 bg-muted/20">
-                  <button
-                    type="button"
-                    onClick={addRegel}
-                    className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <Plus className="h-3 w-3" />
-                    Regel toevoegen
-                  </button>
-                  {hasRegels && (
-                    <span className="text-sm font-medium font-mono">
-                      Subtotaal {formatEuro(subtotaal)}
-                    </span>
-                  )}
+                {/* Footer: Add row + Totals */}
+                <div className="border-t border-border/50 bg-muted/20">
+                  <div className="flex items-center justify-between px-2 py-1.5">
+                    <button
+                      type="button"
+                      onClick={addRegel}
+                      className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <Plus className="h-3 w-3" />
+                      Regel toevoegen
+                    </button>
+                    {hasRegels && (
+                      <div className="text-right text-[11px] space-y-0.5">
+                        <div className="text-muted-foreground">
+                          Inkoop {formatEuro(totalen.totaalInkoop)} &middot; Marge{' '}
+                          <span className={totalen.margeBedrag >= 0 ? 'text-green-600 font-medium' : 'text-red-500 font-medium'}>
+                            {formatEuro(totalen.margeBedrag)} ({totalen.margePerc}%)
+                          </span>
+                        </div>
+                        <div className="text-sm font-medium">
+                          Verkooptotaal {formatEuro(totalen.totaalVerkoop)}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
-              {/* Verzenden naar */}
-              <div>
-                <label className="text-[10px] text-muted-foreground mb-1 block">Verzenden naar</label>
-                <div className="flex gap-2">
+              {/* Verzenden naar + email tekst */}
+              <div className="space-y-2">
+                <div>
+                  <label className="text-[10px] text-muted-foreground mb-1 block">Verzenden naar</label>
                   <input
                     type="email"
                     value={verzendEmail}
@@ -427,6 +639,18 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
                     className={`${inputClass} flex-1`}
                   />
                 </div>
+                {verzendEmail.trim() && (
+                  <div>
+                    <label className="text-[10px] text-muted-foreground mb-1 block">Berichttekst (optioneel)</label>
+                    <textarea
+                      value={emailTekst}
+                      onChange={e => setEmailTekst(e.target.value)}
+                      placeholder="Bijv. Hierbij onze offerte voor de besproken werkzaamheden..."
+                      rows={2}
+                      className={`${inputClass} resize-none`}
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Buttons */}

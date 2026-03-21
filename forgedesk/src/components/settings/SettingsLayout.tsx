@@ -60,17 +60,19 @@ import {
   Link2,
   LayoutGrid,
   GripVertical,
+  Zap,
+  BookTemplate,
 } from 'lucide-react'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { usePalette, APP_THEMES, ACCENT_PALETTES } from '@/contexts/PaletteContext'
 import { useSidebar } from '@/contexts/SidebarContext'
-import { getProfile, updateProfile, getAppSettings, updateAppSettings, getMedewerkers, updateMedewerker } from '@/services/supabaseService'
+import { getProfile, updateProfile, getAppSettings, updateAppSettings, getMedewerkers, updateMedewerker, getCalculatieTemplates } from '@/services/supabaseService'
 import { isSupabaseConfigured } from '@/services/supabaseClient'
 import supabase from '@/services/supabaseClient'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import type { AppSettings, Medewerker } from '@/types'
+import type { AppSettings, Medewerker, CalculatieTemplate } from '@/types'
 import { uploadFile, downloadFile } from '@/services/storageService'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -2739,6 +2741,7 @@ const WEERGAVE_TABS: SubTab[] = [
   { id: 'voorkeuren', label: 'Voorkeuren', icon: Sliders },
   { id: 'navigatie', label: 'Navigatie', icon: Settings },
   { id: 'dashboard', label: 'Dashboard', icon: LayoutGrid },
+  { id: 'snelkoppelingen', label: 'Snelkoppelingen', icon: Zap },
 ]
 
 function WeergaveTab() {
@@ -3314,6 +3317,8 @@ function WeergaveTab() {
     )}
 
     {subTab === 'dashboard' && <DashboardSettingsTab />}
+
+    {subTab === 'snelkoppelingen' && <SnelkoppelingenTab />}
     </>
   )
 }
@@ -3422,6 +3427,147 @@ function DashboardSettingsTab() {
             Standaard herstellen
           </Button>
         </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+// ============ SNELKOPPELINGEN TAB ============
+
+function SnelkoppelingenTab() {
+  const { settings, updateSettings } = useAppSettings()
+  const [templates, setTemplates] = useState<CalculatieTemplate[]>([])
+  const [selected, setSelected] = useState<string[]>(settings.snelofferte_templates || [])
+  const [isSaving, setIsSaving] = useState(false)
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    getCalculatieTemplates().then(setTemplates).catch(logger.error)
+  }, [])
+
+  useEffect(() => {
+    setSelected(settings.snelofferte_templates || [])
+  }, [settings.snelofferte_templates])
+
+  const activeTemplates = templates.filter(t => t.actief)
+
+  const toggleTemplate = (id: string) => {
+    setSelected(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    )
+  }
+
+  const handleSave = async () => {
+    try {
+      setIsSaving(true)
+      await updateSettings({ snelofferte_templates: selected })
+      toast.success('Snelkoppelingen opgeslagen')
+    } catch {
+      toast.error('Kon snelkoppelingen niet opslaan')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Zap className="w-5 h-5" />
+          Snelkoppelingen
+        </CardTitle>
+        <CardDescription>
+          Kies welke calculatie-templates als snelkoppeling verschijnen in het &ldquo;Nieuwe offerte&rdquo; formulier.
+          Geselecteerde templates worden als chips getoond voor snel laden.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {activeTemplates.length === 0 ? (
+          <div className="text-center py-8 space-y-3">
+            <BookTemplate className="h-10 w-10 mx-auto text-muted-foreground/40" />
+            <p className="text-sm text-muted-foreground">
+              Je hebt nog geen calculatie-templates.
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/instellingen?tab=calculatie')}
+            >
+              Templates aanmaken
+            </Button>
+          </div>
+        ) : (
+          <>
+            <div className="space-y-1.5">
+              {activeTemplates.map(t => {
+                const isSelected = selected.includes(t.id)
+                return (
+                  <div
+                    key={t.id}
+                    className={cn(
+                      'flex items-center gap-3 py-2.5 px-3 rounded-lg transition-colors cursor-pointer',
+                      isSelected
+                        ? 'bg-petrol/5 border border-petrol/20'
+                        : 'hover:bg-muted/50 border border-transparent'
+                    )}
+                    onClick={() => toggleTemplate(t.id)}
+                  >
+                    <Switch
+                      checked={isSelected}
+                      onCheckedChange={() => toggleTemplate(t.id)}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium">{t.naam}</p>
+                      {t.beschrijving && (
+                        <p className="text-xs text-muted-foreground truncate">{t.beschrijving}</p>
+                      )}
+                    </div>
+                    <Badge variant="secondary" className="text-[10px]">
+                      {t.regels.length} regels
+                    </Badge>
+                  </div>
+                )
+              })}
+            </div>
+
+            {selected.length > 0 && (
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-2">
+                  Voorbeeld snelkoppelingen
+                </p>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {selected.map(id => {
+                    const t = activeTemplates.find(x => x.id === id)
+                    if (!t) return null
+                    return (
+                      <span
+                        key={id}
+                        className="px-2.5 py-1 text-[11px] font-medium border border-petrol/30 text-petrol rounded-full bg-petrol/5"
+                      >
+                        {t.naam}
+                      </span>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/instellingen?tab=calculatie')}
+              >
+                <BookTemplate className="h-4 w-4 mr-1.5" />
+                Templates beheren
+              </Button>
+              <Button size="sm" onClick={handleSave} disabled={isSaving}>
+                <Save className="h-4 w-4 mr-1.5" />
+                {isSaving ? 'Opslaan...' : 'Opslaan'}
+              </Button>
+            </div>
+          </>
+        )}
       </CardContent>
     </Card>
   )
