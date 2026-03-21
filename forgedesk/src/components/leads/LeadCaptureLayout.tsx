@@ -102,7 +102,7 @@ export function LeadCaptureLayout() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-foreground font-display">Lead Capture</h1>
-            <p className="text-sm text-muted-foreground">{formulieren.length} formulieren — {nieuweLeads} nieuwe leads</p>
+            <p className="text-sm text-muted-foreground"><span className="font-mono">{formulieren.length}</span> formulieren — <span className="font-mono">{nieuweLeads}</span> nieuwe leads</p>
           </div>
         </div>
         <div className="flex gap-2">

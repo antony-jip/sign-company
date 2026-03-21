@@ -246,8 +246,12 @@ export function PortaalCompactCard({ projectId }: PortaalCompactCardProps) {
   const [facturen, setFacturen] = useState<Factuur[]>([])
   const [berichtTekstInput, setBerichtTekstInput] = useState('')
   const [isSending, setIsSending] = useState(false)
+  const [tekeningFile, setTekeningFile] = useState<File | null>(null)
+  const [tekeningTitel, setTekeningTitel] = useState('')
+  const [tekeningPopoverOpen, setTekeningPopoverOpen] = useState(false)
   const popoverRef = useRef<HTMLDivElement>(null)
   const fotoInputRef = useRef<HTMLInputElement>(null)
+  const tekeningInputRef = useRef<HTMLInputElement>(null)
   const timelineEndRef = useRef<HTMLDivElement>(null)
 
   // Close popover on outside click
@@ -472,6 +476,35 @@ export function PortaalCompactCard({ projectId }: PortaalCompactCardProps) {
     }
   }
 
+  async function handleSendTekening() {
+    if (!portaal || !user?.id || !tekeningFile) return
+    setIsSending(true)
+    try {
+      const path = `${user.id}/portaal/${portaal.id}/${Date.now()}_${tekeningFile.name}`
+      const url = await uploadFile(tekeningFile, path)
+      await createPortaalItem({
+        user_id: user.id,
+        project_id: projectId,
+        portaal_id: portaal.id,
+        type: 'tekening',
+        titel: tekeningTitel || tekeningFile.name,
+        bestanden: [url],
+        status: 'verstuurd',
+        zichtbaar_voor_klant: true,
+        volgorde: 0,
+      })
+      toast.success('Tekening gedeeld')
+      setTekeningFile(null)
+      setTekeningTitel('')
+      setTekeningPopoverOpen(false)
+      await fetchItems()
+    } catch {
+      toast.error('Kon tekening niet delen')
+    } finally {
+      setIsSending(false)
+    }
+  }
+
   return (
     <div className="border border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px] overflow-hidden">
       {/* Hidden file input */}
@@ -483,6 +516,22 @@ export function PortaalCompactCard({ projectId }: PortaalCompactCardProps) {
         onChange={(e) => {
           const file = e.target.files?.[0]
           if (file) handleSendFoto(file)
+          e.target.value = ''
+        }}
+      />
+      {/* Hidden tekening file input */}
+      <input
+        ref={tekeningInputRef}
+        type="file"
+        accept=".pdf,.jpg,.jpeg,.png"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0]
+          if (file) {
+            setTekeningFile(file)
+            setTekeningTitel(file.name.replace(/\.[^/.]+$/, ''))
+            setTekeningPopoverOpen(true)
+          }
           e.target.value = ''
         }}
       />
@@ -638,6 +687,18 @@ export function PortaalCompactCard({ projectId }: PortaalCompactCardProps) {
                     Afbeelding
                   </button>
                   <button
+                    onClick={() => tekeningInputRef.current?.click()}
+                    disabled={isSending}
+                    className={`inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1.5 rounded-lg border transition-all disabled:opacity-40 ${
+                      tekeningPopoverOpen
+                        ? 'border-mod-klanten-border text-mod-klanten-text bg-mod-klanten-light/40'
+                        : 'border-mod-klanten-border text-mod-klanten-text bg-mod-klanten-light hover:bg-mod-klanten-light/40'
+                    }`}
+                  >
+                    <FileText className="h-3.5 w-3.5" />
+                    Tekening
+                  </button>
+                  <button
                     onClick={handleOpenOffertePopover}
                     disabled={isSending}
                     className={`inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1.5 rounded-lg border transition-all disabled:opacity-40 ${
@@ -662,6 +723,42 @@ export function PortaalCompactCard({ projectId }: PortaalCompactCardProps) {
                     Factuur
                   </button>
                 </div>
+
+                {/* Tekening popover */}
+                {tekeningPopoverOpen && tekeningFile && (
+                  <div className="absolute left-4 bottom-full mb-2 w-72 bg-[#FFFFFE] border border-[hsl(35,15%,87%)] rounded-xl shadow-lg shadow-black/8 z-50 overflow-hidden">
+                    <div className="flex items-center justify-between px-3 py-2.5 border-b border-[hsl(35,15%,90%)] bg-[hsl(35,15%,98%)]">
+                      <p className="text-[11px] font-semibold text-foreground">Tekening delen</p>
+                      <button
+                        onClick={() => {
+                          setTekeningPopoverOpen(false)
+                          setTekeningFile(null)
+                          setTekeningTitel('')
+                        }}
+                        className="text-muted-foreground/50 hover:text-foreground"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                    <div className="px-3 py-3 space-y-3">
+                      <p className="text-[11px] text-muted-foreground truncate">{tekeningFile.name}</p>
+                      <input
+                        type="text"
+                        value={tekeningTitel}
+                        onChange={(e) => setTekeningTitel(e.target.value)}
+                        placeholder="Titel"
+                        className="w-full text-[12px] px-2.5 py-1.5 border border-[hsl(35,15%,87%)] rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-mod-klanten-border"
+                      />
+                      <button
+                        onClick={handleSendTekening}
+                        disabled={isSending}
+                        className="w-full text-[11px] font-medium px-3 py-1.5 rounded-lg bg-mod-klanten-text text-white hover:opacity-90 transition-opacity disabled:opacity-40"
+                      >
+                        Delen
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {/* Offerte picker popover */}
                 {activePopover === 'offerte' && (

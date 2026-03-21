@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { BackButton } from '@/components/shared/BackButton'
 import { toast } from 'sonner'
 import {
   getOfferte,
@@ -525,6 +526,7 @@ export function OfferteDetail() {
 
   return (
     <div className="space-y-4 mod-strip mod-strip-offertes">
+      <BackButton fallbackPath="/offertes" />
       {/* Top bar */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">

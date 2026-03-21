@@ -465,7 +465,7 @@ export function VoorraadLayout() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-foreground font-display">Voorraadbeheer</h1>
-            <p className="text-sm text-muted-foreground">{artikelen.length} artikelen — Totale waarde: {formatCurrency(totaleWaarde)}</p>
+            <p className="text-sm text-muted-foreground"><span className="font-mono">{artikelen.length}</span> artikelen — Totale waarde: <span className="font-mono">{formatCurrency(totaleWaarde)}</span></p>
           </div>
         </div>
         <Button

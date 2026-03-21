@@ -276,7 +276,7 @@ export function BetaalPagina() {
             <p className="text-sm font-medium text-muted-foreground">{companyProfile.bedrijfsnaam}</p>
           )}
           <h1 className="text-2xl font-bold text-foreground">Factuur betalen</h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground font-mono">
             {factuur.nummer}
           </p>
         </div>

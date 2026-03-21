@@ -89,7 +89,7 @@ export function CockpitTopBar({
 
       {/* Main bar */}
       <div className="flex items-center gap-2.5 px-5 py-2.5 flex-wrap">
-        <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-mod-offertes-light to-mod-facturen-light flex items-center justify-center flex-shrink-0">
+        <div className="h-9 w-9 rounded-xl bg-[#1A535C] flex items-center justify-center flex-shrink-0">
           <Briefcase className="h-4 w-4 text-white" />
         </div>
         <h1 className="text-lg font-bold tracking-tight text-foreground leading-tight">{project.naam}</h1>
@@ -184,15 +184,15 @@ export function CockpitTopBar({
             <span className="hidden lg:inline">Kopiëren</span>
           </Button>
           <div className="w-px h-5 bg-[hsl(35,15%,87%)] mx-0.5 hidden sm:block" />
-          <Button size="sm" className="h-7 px-3 text-xs bg-primary hover:bg-primary/90 text-white font-medium shadow-sm transition-all duration-200 hover:shadow-md" onClick={onNewOfferte}>
+          <Button variant="ghost" size="sm" className="h-7 px-3 text-xs font-medium rounded-lg transition-all duration-200" style={{ border: '0.5px solid #E6E4E0' }} onClick={onNewOfferte}>
             <Receipt className="h-3.5 w-3.5 mr-1.5" />
             <span className="hidden sm:inline">Offerte</span>
           </Button>
-          <Button variant="outline" size="sm" className="h-7 px-2.5 text-xs transition-all duration-200 hover:border-primary/30" onClick={onNewWerkbon}>
+          <Button variant="ghost" size="sm" className="h-7 px-2.5 text-xs rounded-lg transition-all duration-200" style={{ border: '0.5px solid #E6E4E0' }} onClick={onNewWerkbon}>
             <Plus className="h-3 w-3 mr-1" />
             <span className="hidden md:inline">Werkbon</span>
           </Button>
-          <Button variant="outline" size="sm" className="h-7 px-2.5 text-xs transition-all duration-200 hover:border-primary/30" onClick={onNewMontage}>
+          <Button variant="ghost" size="sm" className="h-7 px-2.5 text-xs rounded-lg transition-all duration-200" style={{ border: '0.5px solid #E6E4E0' }} onClick={onNewMontage}>
             <Plus className="h-3 w-3 mr-1" />
             <span className="hidden md:inline">Montage</span>
           </Button>

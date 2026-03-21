@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { BackButton } from '@/components/shared/BackButton'
 import { toast } from 'sonner'
 import {
   PackageCheck, Plus, Trash2, Save, ArrowLeft, Loader2,
@@ -360,6 +361,7 @@ export function LeveringsbonDetail() {
 
   return (
     <div className="space-y-6">
+      <BackButton fallbackPath="/leveringsbonnen" />
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">

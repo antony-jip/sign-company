@@ -697,7 +697,7 @@ export function EmailCompose({
               <Mail className="h-3.5 w-3.5 text-amber-700/30" />
               <h4 className="text-[12px] font-semibold text-foreground/60">Eerdere emails</h4>
               {previousEmails.length > 0 && (
-                <span className="ml-auto text-[10px] text-muted-foreground tabular-nums">{previousEmails.length}</span>
+                <span className="ml-auto text-[10px] text-muted-foreground font-mono tabular-nums">{previousEmails.length}</span>
               )}
             </div>
             <div className="p-2">

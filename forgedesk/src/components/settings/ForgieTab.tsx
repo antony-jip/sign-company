@@ -599,7 +599,7 @@ export function ForgieTab() {
             className="resize-none"
           />
           <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">{bedrijfscontext.length}/500 tekens</span>
+            <span className="text-xs text-muted-foreground"><span className="font-mono">{bedrijfscontext.length}/500</span> tekens</span>
             <Button size="sm" onClick={handleSaveContext} disabled={saving} className="gap-1.5">
               {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
               Opslaan
@@ -629,7 +629,7 @@ export function ForgieTab() {
             enableAI={false}
           />
           <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">{toneOfVoice.length}/1000 tekens</span>
+            <span className="text-xs text-muted-foreground"><span className="font-mono">{toneOfVoice.length}/1000</span> tekens</span>
             <Button size="sm" onClick={handleSaveTone} disabled={savingTone} className="gap-1.5">
               {savingTone ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
               Opslaan

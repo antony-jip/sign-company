@@ -8,6 +8,7 @@ import { generateOffertePDF } from '@/services/pdfService'
 import { useDocumentStyle } from '@/hooks/useDocumentStyle'
 import { formatCurrency, formatDate, getStatusColor } from '@/lib/utils'
 import { Receipt, ArrowLeft, ExternalLink, FolderPlus, ArrowRight, Pencil, Download, ChevronRight, Image as ImageIcon, Paperclip } from 'lucide-react'
+import { BackButton } from '@/components/shared/BackButton'
 import { downloadFile } from '@/services/storageService'
 import type { Offerte, OfferteItem, Klant } from '@/types'
 import type { PrijsVariant } from './QuoteItemsTable'
@@ -323,6 +324,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
       {/* Action bar - only shown when accessed via route (service data available) */}
       {fetchedOfferte && (
         <div className="mb-6 space-y-3">
+          <BackButton fallbackPath="/offertes" />
           {/* Row 1: Breadcrumb */}
           <div className="flex items-center gap-1.5 text-sm text-muted-foreground dark:text-muted-foreground/60 px-1">
             <button

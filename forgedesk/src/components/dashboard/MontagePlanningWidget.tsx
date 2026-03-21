@@ -338,8 +338,8 @@ export function MontagePlanningWidget() {
                         {montage.start_tijd && (
                           <span className="text-xs font-medium text-muted-foreground flex items-center gap-1">
                             <Clock className="h-3 w-3" />
-                            {montage.start_tijd}
-                            {montage.eind_tijd && `–${montage.eind_tijd}`}
+                            <span className="font-mono">{montage.start_tijd}
+                            {montage.eind_tijd && `–${montage.eind_tijd}`}</span>
                           </span>
                         )}
                         <ArrowRight className="h-3 w-3 text-muted-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity" />

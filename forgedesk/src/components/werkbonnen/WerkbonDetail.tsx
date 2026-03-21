@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { BackButton } from '@/components/shared/BackButton'
 import { useTabDirtyState } from '@/hooks/useTabDirtyState'
 import { toast } from 'sonner'
 import {
@@ -469,6 +470,7 @@ export function WerkbonDetail() {
 
   return (
     <div className="space-y-6 p-6 pb-32">
+      <BackButton fallbackPath="/werkbonnen" />
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
