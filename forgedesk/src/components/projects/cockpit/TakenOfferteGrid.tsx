@@ -94,7 +94,8 @@ export function TakenOfferteGrid({
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => navigate(`/offertes/${offerte.id}/bewerken`)}
-                    className="flex-1 h-8 text-[11px] font-medium bg-foreground text-background rounded-lg hover:bg-foreground/90 transition-colors"
+                    className="flex-1 h-8 text-[11px] font-medium text-white rounded-lg hover:opacity-90 transition-colors"
+                    style={{ backgroundColor: '#1A535C' }}
                   >
                     Bewerken
                   </button>

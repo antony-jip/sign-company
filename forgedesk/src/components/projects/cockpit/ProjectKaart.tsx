@@ -24,10 +24,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { cn, formatCurrency, formatDate, getInitials } from '@/lib/utils'
 import { getStatusBadgeClass } from '@/utils/statusColors'
-import { getFase } from '@/utils/projectFases'
-import { SpectrumBar } from '@/components/ui/SpectrumBar'
 import { toast } from 'sonner'
-import { WatNuBanner } from './WatNuBanner'
 import { PipelineBar, getPipelineStep, getPipelineStepColor } from './PipelineBar'
 import type { Project, Klant, Offerte, Taak, MontageAfspraak, Werkbon, Factuur } from '@/types'
 
@@ -149,30 +146,70 @@ export function ProjectKaart({
 
         {/* Action buttons */}
         <div className="flex items-center gap-2">
-          <button
-            onClick={onCreateOfferte}
-            className="inline-flex items-center gap-1.5 h-8 px-3.5 text-[12px] font-medium rounded-lg text-foreground hover:bg-white/80 transition-all"
-            style={{ border: '0.5px solid #E6E4E0' }}
-          >
-            <Receipt className="h-3.5 w-3.5" />
-            Offerte
-          </button>
-          <button
-            onClick={onCreateWerkbon}
-            className="inline-flex items-center gap-1.5 h-8 px-3 text-[12px] font-medium rounded-lg text-foreground hover:bg-white/80 transition-all"
-            style={{ border: '0.5px solid #E6E4E0' }}
-          >
-            <ClipboardCheck className="h-3.5 w-3.5 text-muted-foreground/70" />
-            Werkbon
-          </button>
-          <button
-            onClick={onCreateMontage}
-            className="inline-flex items-center gap-1.5 h-8 px-3 text-[12px] font-medium rounded-lg text-foreground hover:bg-white/80 transition-all"
-            style={{ border: '0.5px solid #E6E4E0' }}
-          >
-            <Calendar className="h-3.5 w-3.5 text-muted-foreground/70" />
-            Montage
-          </button>
+          {(() => {
+            const hasOfferte = offertes.length > 0
+            const hasGoedgekeurdOfVerzonden = offertes.some(o => ['goedgekeurd', 'verzonden', 'bekeken'].includes(o.status))
+            if (!hasOfferte) {
+              // No offerte yet — Offerte is primary (flame)
+              return (
+                <>
+                  <button
+                    onClick={onCreateOfferte}
+                    className="inline-flex items-center gap-1.5 h-9 px-5 text-[12px] font-semibold rounded-lg text-white hover:opacity-90 transition-all shadow-sm"
+                    style={{ backgroundColor: '#F15025' }}
+                  >
+                    <Receipt className="h-3.5 w-3.5" />
+                    Offerte
+                  </button>
+                  <button
+                    onClick={onCreateWerkbon}
+                    className="inline-flex items-center gap-1.5 h-8 px-4 text-[12px] font-medium rounded-lg text-foreground hover:bg-white/80 transition-all"
+                    style={{ border: '0.5px solid #E6E4E0' }}
+                  >
+                    <ClipboardCheck className="h-3.5 w-3.5 text-muted-foreground/70" />
+                    Werkbon
+                  </button>
+                  <button
+                    onClick={onCreateMontage}
+                    className="inline-flex items-center gap-1.5 h-8 px-4 text-[12px] font-medium rounded-lg text-foreground hover:bg-white/80 transition-all"
+                    style={{ border: '0.5px solid #E6E4E0' }}
+                  >
+                    <Calendar className="h-3.5 w-3.5 text-muted-foreground/70" />
+                    Montage
+                  </button>
+                </>
+              )
+            }
+            // Has offerte — Offerte becomes ghost, Werkbon becomes primary
+            return (
+              <>
+                <button
+                  onClick={onCreateOfferte}
+                  className="inline-flex items-center gap-1.5 h-8 px-4 text-[12px] font-medium rounded-lg text-foreground hover:bg-white/80 transition-all"
+                  style={{ border: '0.5px solid #E6E4E0' }}
+                >
+                  <Receipt className="h-3.5 w-3.5 text-muted-foreground/70" />
+                  Offerte
+                </button>
+                <button
+                  onClick={onCreateWerkbon}
+                  className="inline-flex items-center gap-1.5 h-9 px-5 text-[12px] font-semibold rounded-lg text-white hover:opacity-90 transition-all shadow-sm"
+                  style={{ backgroundColor: '#C44830' }}
+                >
+                  <ClipboardCheck className="h-3.5 w-3.5" />
+                  Werkbon
+                </button>
+                <button
+                  onClick={onCreateMontage}
+                  className="inline-flex items-center gap-1.5 h-8 px-4 text-[12px] font-medium rounded-lg text-foreground hover:bg-white/80 transition-all"
+                  style={{ border: '0.5px solid #E6E4E0' }}
+                >
+                  <Calendar className="h-3.5 w-3.5 text-muted-foreground/70" />
+                  Montage
+                </button>
+              </>
+            )
+          })()}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="h-8 w-8 rounded-lg border border-black/[0.06] bg-white/70 backdrop-blur-sm flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-white transition-all">
@@ -213,15 +250,11 @@ export function ProjectKaart({
                 {project.naam}
               </h1>
               <Badge className="rounded-full text-[10px] font-semibold px-[10px] py-[3px]" style={{
-                backgroundColor: project.status === 'actief' ? '#E2F0F0' : project.status === 'gepland' || project.status === 'in-review' ? '#EEEEED' : project.status === 'on-hold' ? '#FDE8E1' : project.status === 'te-factureren' || project.status === 'gefactureerd' ? '#E2F0E8' : project.status === 'afgerond' ? '#E2F0F0' : '#EEEEED',
-                color: project.status === 'actief' ? '#1A535C' : project.status === 'gepland' || project.status === 'in-review' ? '#5A5A55' : project.status === 'on-hold' ? '#D4453A' : project.status === 'te-factureren' || project.status === 'gefactureerd' ? '#2D6B48' : project.status === 'afgerond' ? '#1A535C' : '#5A5A55',
+                backgroundColor: '#E2F0F0',
+                color: '#1A535C',
               }}>
-                {statusLabels[project.status] || project.status}
+                {(statusLabels[project.status] || project.status).toUpperCase()}
               </Badge>
-              <span className="font-semibold" style={{ fontSize: 13, color: getFase(project.status).color }}>
-                {getFase(project.status).label}
-              </span>
-              <SpectrumBar percentage={getFase(project.status).percentage} height={3} className="w-[40px] flex-shrink-0" />
             </div>
             <div className="flex items-center gap-2 text-[13px] text-muted-foreground mt-0.5">
               {project.project_nummer && (
@@ -304,22 +337,7 @@ export function ProjectKaart({
         </div>
       )}
 
-      {/* Row 4: Wat Nu Banner */}
-      <div className="px-5 pb-3">
-        <WatNuBanner
-          project={project}
-          offertes={offertes}
-          montageAfspraken={montageAfspraken}
-          facturen={facturen}
-          onCreateOfferte={onCreateOfferte}
-          onCreateWerkbon={onCreateWerkbon}
-          onCreateMontage={onCreateMontage}
-          onViewPortaal={() => {/* handled by portaal panel */}}
-          onViewPlanning={() => navigate('/planning')}
-          onCreateFactuur={onCreateFactuur}
-          onArchive={onArchive}
-        />
-      </div>
+      {/* WatNuBanner removed — voortgang info is already shown in PipelineBar */}
 
       {/* Row 5: Pipeline Bar */}
       <div className="px-5 pb-4">
