@@ -438,12 +438,13 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
             </div>
             {!showExtra && (
               <button
-                type="submit"
+                type="button"
+                onClick={e => handleSubmit(e as unknown as React.FormEvent, 'save')}
                 disabled={!canSubmit}
                 className="h-9 px-4 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-50 whitespace-nowrap shrink-0"
                 style={{ backgroundColor: '#F15025' }}
               >
-                {saving ? 'Aanmaken...' : 'Offerte maken'}
+                {saving ? 'Opslaan...' : 'Opslaan'}
               </button>
             )}
           </div>
