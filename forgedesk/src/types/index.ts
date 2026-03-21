@@ -976,8 +976,18 @@ export interface MontageAfspraak {
   materialen: string[];
   notities: string;
   werkbon_id?: string;             // link naar gekoppelde werkbon
+  bijlagen?: MontageBijlage[];     // gekoppelde bestanden (PDF, tekening, foto)
   created_at: string;
   updated_at: string;
+}
+
+export interface MontageBijlage {
+  id: string;
+  naam: string;
+  type: 'pdf' | 'tekening' | 'foto' | 'overig';
+  url: string;
+  grootte?: number;                // bestandsgrootte in bytes
+  uploaded_at: string;
 }
 
 // ============ PROJECT FOTO'S ============

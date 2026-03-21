@@ -51,6 +51,10 @@ import {
   Printer,
   Filter,
   User,
+  Paperclip,
+  FileText,
+  Image,
+  Upload,
 } from "lucide-react";
 import {
   getMontageAfspraken,
@@ -62,7 +66,7 @@ import {
   getKlanten,
   getOffertes,
 } from "@/services/supabaseService";
-import type { MontageAfspraak, Project, Medewerker, Klant, Offerte } from "@/types";
+import type { MontageAfspraak, MontageBijlage, Project, Medewerker, Klant, Offerte } from "@/types";
 import { WerkbonVanProjectDialog } from "@/components/werkbonnen/WerkbonVanProjectDialog";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -193,6 +197,7 @@ interface MontageFormData {
   monteurs: string[];
   materialen: string;
   notities: string;
+  bijlagen: MontageBijlage[];
 }
 
 const EMPTY_FORM: MontageFormData = {
@@ -208,6 +213,7 @@ const EMPTY_FORM: MontageFormData = {
   monteurs: [],
   materialen: "",
   notities: "",
+  bijlagen: [],
 };
 
 export function MontagePlanningLayout() {
@@ -495,6 +501,7 @@ export function MontagePlanningLayout() {
       monteurs: [...afspraak.monteurs],
       materialen: afspraak.materialen.join(", "),
       notities: afspraak.notities,
+      bijlagen: afspraak.bijlagen ? [...afspraak.bijlagen] : [],
     });
     setDialogOpen(true);
   }
@@ -557,6 +564,7 @@ export function MontagePlanningLayout() {
       monteurs: formData.monteurs,
       materialen: materialenArr,
       notities: formData.notities,
+      bijlagen: formData.bijlagen.length > 0 ? formData.bijlagen : undefined,
       status: "gepland" as const,
     };
 
@@ -806,6 +814,14 @@ export function MontagePlanningLayout() {
             <MapPin className="h-3 w-3 shrink-0" />
             <span className="truncate">{afspraak.locatie}</span>
           </a>
+        )}
+
+        {/* Bijlagen indicator */}
+        {afspraak.bijlagen && afspraak.bijlagen.length > 0 && (
+          <div className="flex items-center gap-1 mb-1">
+            <Paperclip className="h-3 w-3 text-[#5A5A55]" />
+            <span className="text-[10px] text-[#5A5A55] font-medium">{afspraak.bijlagen.length} bijlage{afspraak.bijlagen.length !== 1 ? 'n' : ''}</span>
+          </div>
         )}
 
         <div className="flex items-center justify-between">
@@ -1064,6 +1080,12 @@ export function MontagePlanningLayout() {
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-1">
+                        {afspraak.bijlagen && afspraak.bijlagen.length > 0 && (
+                          <span className="flex items-center gap-0.5 text-[10px] text-[#5A5A55] mr-1" title={`${afspraak.bijlagen.length} bijlage${afspraak.bijlagen.length !== 1 ? 'n' : ''}`}>
+                            <Paperclip className="h-3 w-3" />
+                            {afspraak.bijlagen.length}
+                          </span>
+                        )}
                         {nextActions.map((action) => (
                           <Button
                             key={action.status}
@@ -1507,6 +1529,90 @@ export function MontagePlanningLayout() {
                 placeholder="Aanvullende opmerkingen..."
                 rows={3}
               />
+            </div>
+
+            <Separator />
+
+            {/* Bijlagen */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1.5">
+                <Paperclip className="h-3.5 w-3.5" />
+                Bijlagen
+              </Label>
+
+              {/* Bestaande bijlagen */}
+              {formData.bijlagen.length > 0 && (
+                <div className="space-y-1.5">
+                  {formData.bijlagen.map((bijlage) => (
+                    <div
+                      key={bijlage.id}
+                      className="flex items-center gap-2 p-2 rounded-lg border border-[#E6E4E0] bg-[#FAFAF8]"
+                    >
+                      {bijlage.type === 'pdf' ? (
+                        <FileText className="h-4 w-4 text-[#C03A18] flex-shrink-0" />
+                      ) : bijlage.type === 'tekening' || bijlage.type === 'foto' ? (
+                        <Image className="h-4 w-4 text-[#3A6B8C] flex-shrink-0" />
+                      ) : (
+                        <Paperclip className="h-4 w-4 text-[#5A5A55] flex-shrink-0" />
+                      )}
+                      <span className="text-[13px] text-foreground truncate flex-1">{bijlage.naam}</span>
+                      <span className="text-[10px] text-[#A0A098] uppercase font-medium flex-shrink-0">{bijlage.type}</span>
+                      <button
+                        type="button"
+                        onClick={() => setFormData((prev) => ({
+                          ...prev,
+                          bijlagen: prev.bijlagen.filter((b) => b.id !== bijlage.id),
+                        }))}
+                        className="text-[#A0A098] hover:text-[#C03A18] transition-colors flex-shrink-0"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Upload zone */}
+              <label
+                className="flex flex-col items-center gap-1.5 p-4 rounded-lg border-2 border-dashed border-[#E6E4E0] hover:border-[#1A535C] hover:bg-[#F4F2EE] transition-colors cursor-pointer"
+              >
+                <Upload className="h-5 w-5 text-[#A0A098]" />
+                <span className="text-[12px] text-[#5A5A55]">
+                  PDF, tekening of foto uploaden
+                </span>
+                <span className="text-[10px] text-[#A0A098]">
+                  PDF, PNG, JPG, WEBP (max 10MB)
+                </span>
+                <input
+                  type="file"
+                  className="hidden"
+                  accept=".pdf,.png,.jpg,.jpeg,.webp"
+                  multiple
+                  onChange={(e) => {
+                    const files = e.target.files
+                    if (!files) return
+                    const newBijlagen: MontageBijlage[] = Array.from(files).map((file) => {
+                      const ext = file.name.split('.').pop()?.toLowerCase() || ''
+                      let type: MontageBijlage['type'] = 'overig'
+                      if (ext === 'pdf') type = 'pdf'
+                      else if (['png', 'jpg', 'jpeg', 'webp'].includes(ext)) type = 'foto'
+                      return {
+                        id: `bijlage-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                        naam: file.name,
+                        type,
+                        url: URL.createObjectURL(file),
+                        grootte: file.size,
+                        uploaded_at: new Date().toISOString(),
+                      }
+                    })
+                    setFormData((prev) => ({
+                      ...prev,
+                      bijlagen: [...prev.bijlagen, ...newBijlagen],
+                    }))
+                    e.target.value = ''
+                  }}
+                />
+              </label>
             </div>
           </div>
 
