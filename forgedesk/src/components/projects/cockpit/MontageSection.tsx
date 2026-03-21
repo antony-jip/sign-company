@@ -1,4 +1,4 @@
-import { Plus, CalendarDays, MapPin, Wrench, Truck, Clock, CheckCircle2, PauseCircle } from 'lucide-react'
+import { Plus, CalendarDays, MapPin, Wrench, Truck, Clock, CheckCircle2, PauseCircle, Paperclip } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { getInitials } from '@/lib/utils'
 import type { MontageAfspraak } from '@/types'
@@ -111,6 +111,27 @@ export function MontageSection({ montageAfspraken, onInplannen }: MontageSection
                     <span className="text-[11px] text-muted-foreground/70 truncate">
                       {m.monteurs.join(', ')}
                     </span>
+                  </div>
+                )}
+
+                {m.bijlagen && m.bijlagen.length > 0 && (
+                  <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                    <Paperclip className="h-3 w-3 flex-shrink-0 text-muted-foreground/50" />
+                    <span>{m.bijlagen.length} bijlage{m.bijlagen.length !== 1 ? 'n' : ''}</span>
+                    <div className="flex gap-1">
+                      {m.bijlagen.slice(0, 3).map((b) => (
+                        <a
+                          key={b.id}
+                          href={b.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[10px] text-[#1A535C] hover:underline truncate max-w-[80px]"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {b.naam}
+                        </a>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>

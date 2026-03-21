@@ -125,6 +125,7 @@ export function ProjectsList() {
   const [photoUploadProjectId, setPhotoUploadProjectId] = useState<string | null>(null)
   const [photoUploadKlantId, setPhotoUploadKlantId] = useState<string | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [dagenOpenFilter, setDagenOpenFilter] = useState<string>('alle')
 
   const handleQuickPhotoUpload = async (files: FileList) => {
     if (!photoUploadProjectId || !user) return
@@ -206,6 +207,12 @@ export function ProjectsList() {
     return projOffertes.reduce((sum, o) => sum + (o.totaal || 0), 0)
   }
 
+  function getDagenOpen(project: Project): number | null {
+    if (project.status === 'afgerond' || project.status === 'gefactureerd') return null
+    const created = new Date(project.created_at)
+    return Math.floor((Date.now() - created.getTime()) / (1000 * 60 * 60 * 24))
+  }
+
   const gefilterdeProjecten = useMemo(() => {
     let result = [...projecten]
 
@@ -220,6 +227,21 @@ export function ProjectsList() {
 
     if (statusFilter !== 'alle') {
       result = result.filter((p) => p.status === statusFilter)
+    }
+
+    if (dagenOpenFilter !== 'alle') {
+      result = result.filter((p) => {
+        const dagen = getDagenOpen(p)
+        if (dagen === null) return false
+        switch (dagenOpenFilter) {
+          case '<7': return dagen < 7
+          case '7-14': return dagen >= 7 && dagen <= 14
+          case '14-30': return dagen >= 14 && dagen <= 30
+          case '30-90': return dagen >= 30 && dagen <= 90
+          case '>90': return dagen > 90
+          default: return true
+        }
+      })
     }
 
     result.sort((a, b) => {
@@ -239,10 +261,10 @@ export function ProjectsList() {
     })
 
     return result
-  }, [projecten, klanten, offertes, zoekterm, statusFilter, sortField, sortDir])
+  }, [projecten, klanten, offertes, zoekterm, statusFilter, dagenOpenFilter, sortField, sortDir])
 
   // Reset page when filters change
-  useEffect(() => { setCurrentPage(1) }, [zoekterm, statusFilter, sortField, sortDir])
+  useEffect(() => { setCurrentPage(1) }, [zoekterm, statusFilter, dagenOpenFilter, sortField, sortDir])
 
   const totalPages = Math.ceil(gefilterdeProjecten.length / PAGE_SIZE)
   const paginatedProjecten = useMemo(
@@ -473,7 +495,7 @@ export function ProjectsList() {
           })}
         </div>
 
-        <div className="hidden sm:flex items-center gap-1 ml-auto">
+        <div className="hidden sm:flex items-center gap-1 ml-auto flex-shrink-0">
           <Button
             variant="ghost"
             size="sm"
@@ -517,6 +539,36 @@ export function ProjectsList() {
         </div>
       </div>
 
+      {/* ── Dagen open filter ── */}
+      <div className="flex items-center gap-2">
+        <span className="text-[11px] font-medium uppercase tracking-wider flex-shrink-0" style={{ color: '#A0A098', letterSpacing: '0.6px' }}>
+          Dagen open
+        </span>
+        <div className="flex items-center gap-1 flex-wrap">
+          {([
+            { value: 'alle', label: 'Alle' },
+            { value: '<7', label: '< 7d' },
+            { value: '7-14', label: '7–14d' },
+            { value: '14-30', label: '14–30d' },
+            { value: '30-90', label: '30–90d' },
+            { value: '>90', label: '> 90d' },
+          ] as const).map((optie) => (
+            <button
+              key={optie.value}
+              onClick={() => setDagenOpenFilter(optie.value)}
+              className={cn(
+                'px-2.5 py-1 rounded-md text-[11px] font-medium whitespace-nowrap transition-all duration-150',
+                dagenOpenFilter === optie.value
+                  ? 'text-white'
+                  : 'text-[#5A5A55] hover:bg-[#F4F2EE]'
+              )}
+              style={dagenOpenFilter === optie.value ? { backgroundColor: '#1A535C' } : undefined}
+            >
+              {optie.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* ── Bulk action bar ── */}
       {selectedIds.size > 0 && (
@@ -644,9 +696,17 @@ export function ProjectsList() {
                   <span className="text-[11px] font-medium" style={{ color: getSpectrumFase(project.status).color }}>
                     {getSpectrumFase(project.status).label}
                   </span>
-                  {bedrag > 0 && (
-                    <span className="font-mono font-medium text-foreground whitespace-nowrap">EUR {formatCurrency(bedrag).replace('€', '').trim()}</span>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {(() => {
+                      const dagen = getDagenOpen(project)
+                      if (dagen === null) return null
+                      const color = dagen > 90 ? '#C03A18' : dagen > 30 ? '#F15025' : dagen > 14 ? '#5A4A78' : '#5A5A55'
+                      return <span className="font-mono text-[11px] font-medium" style={{ color }}>{dagen}d</span>
+                    })()}
+                    {bedrag > 0 && (
+                      <span className="font-mono font-medium text-foreground whitespace-nowrap">EUR {formatCurrency(bedrag).replace('€', '').trim()}</span>
+                    )}
+                  </div>
                 </div>
                 <SpectrumBar percentage={getSpectrumFase(project.status).percentage} height={3} className="mt-2" />
               </div>
@@ -717,6 +777,9 @@ export function ProjectsList() {
                       <ArrowUpDown className="w-3 h-3 opacity-30" />
                     )}
                   </button>
+                </th>
+                <th className="text-right py-3 px-4 w-[80px] hidden xl:table-cell">
+                  <span className="text-[10px] font-medium uppercase text-[#A0A098]" style={{ letterSpacing: '0.8px' }}>Open</span>
                 </th>
                 <th className="w-10 py-3 px-2" />
               </tr>
@@ -870,6 +933,20 @@ export function ProjectsList() {
                       <span className="text-xs font-mono tabular-nums" style={{ color: '#A0A098' }}>
                         {new Date(project.created_at).toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit' }).replace('/', '-')}
                       </span>
+                    </td>
+
+                    {/* Dagen open */}
+                    <td className="py-3.5 px-4 text-right hidden xl:table-cell">
+                      {(() => {
+                        const dagen = getDagenOpen(project)
+                        if (dagen === null) return <span className="text-xs text-[#A0A098]">—</span>
+                        const color = dagen > 90 ? '#C03A18' : dagen > 30 ? '#F15025' : dagen > 14 ? '#5A4A78' : '#5A5A55'
+                        return (
+                          <span className="text-[11px] font-mono font-medium tabular-nums" style={{ color }}>
+                            {dagen}d
+                          </span>
+                        )
+                      })()}
                     </td>
 
                     {/* Quick actions + Menu */}
