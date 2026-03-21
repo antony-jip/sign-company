@@ -89,6 +89,7 @@ import { SkeletonTable } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/ui/empty-state'
 import { PaginationControls } from '@/components/ui/pagination-controls'
 import { ModuleHeader } from '@/components/shared/ModuleHeader'
+import { MODULE_COLORS } from '@/lib/moduleColors'
 import { DagenOpenFilterBar, getDaysOpen, getDaysColor, matchDagenFilter } from '@/components/shared/DagenOpenFilter'
 import type { DagenOpenFilter } from '@/components/shared/DagenOpenFilter'
 import { berekenDagenOpen, getAgingColor, getAgingBgColor } from '@/utils/spectrumUtils'
@@ -1337,7 +1338,7 @@ export function FacturenLayout() {
 
       {/* ── Statistics ────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 stat-cards-stagger">
-        <div className="stat-card-gradient-blush stat-card-hover stat-card-glow relative overflow-hidden rounded-2xl p-5">
+        <div className="stat-card-gradient-offertes stat-card-hover stat-card-glow relative overflow-hidden rounded-2xl p-5">
           <p className="text-2xs font-extrabold uppercase tracking-[0.1em] text-text-tertiary mb-3">
             Totaal openstaand
           </p>
@@ -1349,7 +1350,7 @@ export function FacturenLayout() {
           </p>
         </div>
 
-        <div className="stat-card-gradient-sage stat-card-hover stat-card-glow relative overflow-hidden rounded-2xl p-5">
+        <div className="stat-card-gradient-facturen stat-card-hover stat-card-glow relative overflow-hidden rounded-2xl p-5">
           <p className="text-2xs font-extrabold uppercase tracking-[0.1em] text-text-tertiary mb-3">
             Betaald deze maand
           </p>
@@ -1361,20 +1362,20 @@ export function FacturenLayout() {
           </p>
         </div>
 
-        <div className="stat-card-hover relative overflow-hidden rounded-2xl p-5" style={{ background: 'linear-gradient(135deg, var(--color-coral), color-mix(in srgb, var(--color-coral) 70%, white))', border: '1px solid var(--color-coral-border)' }}>
-          <p className="text-2xs font-extrabold uppercase tracking-[0.1em] mb-3" style={{ color: 'var(--color-coral-text)' }}>
+        <div className="stat-card-hover relative overflow-hidden rounded-2xl p-5" style={{ background: `linear-gradient(135deg, ${MODULE_COLORS.werkbonnen.light}, color-mix(in srgb, ${MODULE_COLORS.werkbonnen.light} 70%, white))`, border: `1px solid ${MODULE_COLORS.werkbonnen.border}` }}>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.1em] mb-3" style={{ color: MODULE_COLORS.werkbonnen.text }}>
             Vervallen facturen
           </p>
           <p className="display-number display-number-lg text-foreground">
             {verlopenCount}
           </p>
-          <p className="text-xs font-semibold mt-3" style={{ color: 'var(--color-coral-text)' }}>
+          <p className="text-xs font-semibold mt-3" style={{ color: MODULE_COLORS.werkbonnen.text }}>
             {verlopenTotaal > 0 ? formatCurrency(verlopenTotaal) : 'actie vereist'}
           </p>
           {verlopenCount > 0 && (
             <button
               className="text-xs font-bold hover:underline mt-1"
-              style={{ color: 'var(--color-coral-text)' }}
+              style={{ color: MODULE_COLORS.werkbonnen.text }}
               onClick={() => setFilterStatus('verlopen')}
             >
               Toon verlopen →
@@ -1382,14 +1383,14 @@ export function FacturenLayout() {
           )}
         </div>
 
-        <div className="stat-card-hover relative overflow-hidden rounded-2xl p-5" style={{ background: 'linear-gradient(135deg, var(--color-cream), color-mix(in srgb, var(--color-cream) 70%, white))', border: '1px solid var(--color-cream-border)' }}>
-          <p className="text-2xs font-extrabold uppercase tracking-[0.1em] mb-3" style={{ color: 'var(--color-cream-text)' }}>
+        <div className="stat-card-hover relative overflow-hidden rounded-2xl p-5" style={{ background: `linear-gradient(135deg, ${MODULE_COLORS.taken.light}, color-mix(in srgb, ${MODULE_COLORS.taken.light} 70%, white))`, border: `1px solid ${MODULE_COLORS.taken.border}` }}>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.1em] mb-3" style={{ color: MODULE_COLORS.taken.text }}>
             Gem. betaaltermijn
           </p>
           <p className="display-number display-number-lg text-foreground">
             {statistics.gemiddeldeBetaaltermijn} <span className="text-[18px]">dagen</span>
           </p>
-          <p className="text-xs font-semibold mt-3" style={{ color: 'var(--color-cream-text)' }}>
+          <p className="text-xs font-semibold mt-3" style={{ color: MODULE_COLORS.taken.text }}>
             gemiddeld
           </p>
         </div>
@@ -1503,7 +1504,7 @@ export function FacturenLayout() {
               onClick={() => setViewingFactuur(factuur)}
               className={cn(
                 'p-4 rounded-xl border bg-card cursor-pointer active:bg-muted/50 transition-colors border-l-3',
-                isOverdue ? 'border-l-[var(--color-coral-border)]' : config.border
+                isOverdue ? 'border-l-mod-werkbonnen-border' : config.border
               )}
             >
               <div className="flex items-start justify-between gap-2 mb-2">

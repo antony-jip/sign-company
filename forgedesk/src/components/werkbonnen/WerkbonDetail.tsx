@@ -71,9 +71,9 @@ function resizeImage(file: File, maxWidth: number): Promise<Blob> {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  concept: { label: 'Concept', color: 'text-[var(--color-cream-text)]', bg: 'bg-[var(--color-cream)]' },
-  definitief: { label: 'Definitief', color: 'text-[var(--color-mist-text)]', bg: 'bg-[var(--color-mist)]' },
-  afgerond: { label: 'Afgerond', color: 'text-[var(--color-sage-text)]', bg: 'bg-[var(--color-sage)]' },
+  concept: { label: 'Concept', color: 'text-mod-taken-text', bg: 'bg-mod-taken-light' },
+  definitief: { label: 'Definitief', color: 'text-mod-klanten-text', bg: 'bg-mod-klanten-light' },
+  afgerond: { label: 'Afgerond', color: 'text-mod-facturen-text', bg: 'bg-mod-facturen-light' },
 }
 
 export function WerkbonDetail() {

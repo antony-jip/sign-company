@@ -279,7 +279,7 @@ ${bedrijf}`
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
           {isGenerating ? (
             <div className="flex flex-col items-center justify-center py-12 gap-3">
-              <Loader2 className="w-6 h-6 animate-spin text-[var(--color-lavender-text)]" />
+              <Loader2 className="w-6 h-6 animate-spin text-mod-email-text" />
               <p className="text-sm text-muted-foreground">AI genereert follow-up mail...</p>
             </div>
           ) : (
@@ -339,7 +339,7 @@ ${bedrijf}`
               <div className="space-y-2 pt-1">
                 <label className="text-sm font-medium">Bijlagen</label>
                 <div
-                  className="border-2 border-dashed rounded-xl px-4 py-3 text-center cursor-pointer hover:border-[var(--color-lavender-border)] hover:bg-[var(--color-lavender)]/10 transition-colors"
+                  className="border-2 border-dashed rounded-xl px-4 py-3 text-center cursor-pointer hover:border-mod-email-border hover:bg-mod-email-light/10 transition-colors"
                   onClick={() => fileInputRef.current?.click()}
                 >
                   <Paperclip className="w-4 h-4 mx-auto text-muted-foreground mb-1" />
@@ -403,7 +403,7 @@ ${bedrijf}`
             size="sm"
             onClick={handleSend}
             disabled={isGenerating || isSending || !to}
-            className="gap-1.5 bg-[var(--color-lavender-text)] hover:bg-[var(--color-lavender-text)]/90 text-white"
+            className="gap-1.5 bg-mod-email-text hover:bg-mod-email-text/90 text-white"
           >
             {isSending ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />

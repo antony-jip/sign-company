@@ -65,21 +65,21 @@ type TaakPrioriteit = Taak['prioriteit']
 const PRIORITEIT_ORDER: Record<string, number> = { kritiek: 4, hoog: 3, medium: 2, laag: 1 }
 
 const PRIORITEIT_COLORS: Record<TaakPrioriteit, { border: string; bg: string; accent: string }> = {
-  kritiek: { border: 'border-l-[var(--color-coral-border)]', bg: 'bg-[var(--color-coral)]/60', accent: 'text-[var(--color-coral-text)]' },
-  hoog: { border: 'border-l-[var(--color-blush-border)]', bg: 'bg-[var(--color-blush)]/60', accent: 'text-[var(--color-blush-text)]' },
-  medium: { border: 'border-l-[var(--color-mist-border)]', bg: 'bg-[var(--color-mist)]/60', accent: 'text-[var(--color-mist-text)]' },
-  laag: { border: 'border-l-[var(--color-cream-border)]', bg: 'bg-[var(--color-cream)]/60', accent: 'text-[var(--color-cream-text)]' },
+  kritiek: { border: 'border-l-mod-werkbonnen-border', bg: 'bg-mod-werkbonnen-light/60', accent: 'text-mod-werkbonnen-text' },
+  hoog: { border: 'border-l-mod-offertes-border', bg: 'bg-mod-offertes-light/60', accent: 'text-mod-offertes-text' },
+  medium: { border: 'border-l-mod-klanten-border', bg: 'bg-mod-klanten-light/60', accent: 'text-mod-klanten-text' },
+  laag: { border: 'border-l-mod-taken-border', bg: 'bg-mod-taken-light/60', accent: 'text-mod-taken-text' },
 }
 
 const PRIORITEIT_FLAG_COLORS: Record<TaakPrioriteit, string> = {
-  kritiek: 'text-[var(--color-coral-text)]', hoog: 'text-[var(--color-blush-text)]', medium: 'text-[var(--color-cream-text)]', laag: 'text-muted-foreground/30',
+  kritiek: 'text-mod-werkbonnen-text', hoog: 'text-mod-offertes-text', medium: 'text-mod-taken-text', laag: 'text-muted-foreground/30',
 }
 
 const PRIORITEIT_RING_COLORS: Record<TaakPrioriteit, string> = {
-  kritiek: 'border-[var(--color-coral-border)] hover:border-[var(--color-coral-text)]',
-  hoog: 'border-[var(--color-blush-border)] hover:border-[var(--color-blush-text)]',
-  medium: 'border-[var(--color-mist-border)] hover:border-[var(--color-mist-text)]',
-  laag: 'border-[var(--color-cream-border)] hover:border-[var(--color-cream-text)]',
+  kritiek: 'border-mod-werkbonnen-border hover:border-mod-werkbonnen-text',
+  hoog: 'border-mod-offertes-border hover:border-mod-offertes-text',
+  medium: 'border-mod-klanten-border hover:border-mod-klanten-text',
+  laag: 'border-mod-taken-border hover:border-mod-taken-text',
 }
 
 const DAY_LABELS = ['ma', 'di', 'wo', 'do', 'vr', 'za', 'zo']

@@ -596,32 +596,32 @@ export function QuotesFollowUp({ offertes, onRefresh }: QuotesFollowUpProps) {
     <div className="space-y-4">
       {/* Summary strip */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="stat-card-gradient-lavender rounded-2xl p-4 border border-black/[0.04] stat-card-hover relative overflow-hidden">
+        <div className="stat-card-gradient-email rounded-2xl p-4 border border-black/[0.04] stat-card-hover relative overflow-hidden">
           <div className="flex items-center gap-2 mb-1">
-            <BarChart3 className="w-3.5 h-3.5 text-[var(--color-lavender-text)] opacity-60" />
+            <BarChart3 className="w-3.5 h-3.5 text-mod-email-text opacity-60" />
             <p className="text-2xs font-extrabold uppercase tracking-[0.1em] text-text-tertiary">Opvolgen</p>
           </div>
           <p className="text-2xl font-bold font-mono">{stats.totaal}</p>
           <p className="text-xs text-muted-foreground mt-1">offertes</p>
         </div>
-        <div className="stat-card-gradient-lavender rounded-2xl p-4 border border-black/[0.04] stat-card-hover relative overflow-hidden">
+        <div className="stat-card-gradient-email rounded-2xl p-4 border border-black/[0.04] stat-card-hover relative overflow-hidden">
           <div className="flex items-center gap-2 mb-1">
-            <DollarSign className="w-3.5 h-3.5 text-[var(--color-lavender-text)] opacity-60" />
+            <DollarSign className="w-3.5 h-3.5 text-mod-email-text opacity-60" />
             <p className="text-2xs font-extrabold uppercase tracking-[0.1em] text-text-tertiary">Openstaand</p>
           </div>
           <p className="text-2xl font-bold font-mono">{formatCurrency(stats.openstaandBedrag)}</p>
         </div>
-        <div className="stat-card-gradient-mist rounded-2xl p-4 border border-black/[0.04] stat-card-hover relative overflow-hidden">
+        <div className="stat-card-gradient-klanten rounded-2xl p-4 border border-black/[0.04] stat-card-hover relative overflow-hidden">
           <div className="flex items-center gap-2 mb-1">
-            <AlertTriangle className="w-3.5 h-3.5 text-[var(--color-mist-text)] opacity-60" />
+            <AlertTriangle className="w-3.5 h-3.5 text-mod-klanten-text opacity-60" />
             <p className="text-2xs font-extrabold uppercase tracking-[0.1em] text-text-tertiary">Urgent</p>
           </div>
           <p className="text-2xl font-bold font-mono">{stats.urgent}</p>
           <p className="text-xs text-muted-foreground mt-1">verlopen binnenkort</p>
         </div>
-        <div className="stat-card-gradient-mist rounded-2xl p-4 border border-black/[0.04] stat-card-hover relative overflow-hidden">
+        <div className="stat-card-gradient-klanten rounded-2xl p-4 border border-black/[0.04] stat-card-hover relative overflow-hidden">
           <div className="flex items-center gap-2 mb-1">
-            <EyeOff className="w-3.5 h-3.5 text-[var(--color-mist-text)] opacity-60" />
+            <EyeOff className="w-3.5 h-3.5 text-mod-klanten-text opacity-60" />
             <p className="text-2xs font-extrabold uppercase tracking-[0.1em] text-text-tertiary">Niet bekeken</p>
           </div>
           <p className="text-2xl font-bold font-mono">{stats.nietBekeken}</p>
@@ -640,7 +640,7 @@ export function QuotesFollowUp({ offertes, onRefresh }: QuotesFollowUpProps) {
               className={cn(
                 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors border',
                 filter === pill.key
-                  ? 'bg-[var(--color-lavender)] text-[var(--color-lavender-text)] border-[var(--color-lavender-border)]'
+                  ? 'bg-mod-email-light text-mod-email-text border-mod-email-border'
                   : 'bg-muted/40 text-muted-foreground border-transparent hover:bg-muted'
               )}
             >
@@ -654,13 +654,13 @@ export function QuotesFollowUp({ offertes, onRefresh }: QuotesFollowUpProps) {
 
       {/* Bulk actions */}
       {selectedIds.size > 0 && (
-        <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-[var(--color-lavender)] border border-[var(--color-lavender-border)]">
-          <span className="text-sm font-medium text-[var(--color-lavender-text)]">
+        <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-mod-email-light border border-mod-email-border">
+          <span className="text-sm font-medium text-mod-email-text">
             {selectedIds.size} geselecteerd
           </span>
           <div className="flex-1" />
           {bulkSending ? (
-            <span className="text-sm text-[var(--color-lavender-text)] flex items-center gap-2">
+            <span className="text-sm text-mod-email-text flex items-center gap-2">
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
               Bezig... {bulkProgress.current}/{bulkProgress.total} verstuurd
             </span>
@@ -668,7 +668,7 @@ export function QuotesFollowUp({ offertes, onRefresh }: QuotesFollowUpProps) {
             <Button
               size="sm"
               onClick={handleBulkFollowUp}
-              className="gap-1.5 bg-[var(--color-lavender-text)] hover:bg-[var(--color-lavender-text)]/90 text-white"
+              className="gap-1.5 bg-mod-email-text hover:bg-mod-email-text/90 text-white"
             >
               <Send className="w-3.5 h-3.5" />
               Bulk follow-up versturen
@@ -709,7 +709,7 @@ export function QuotesFollowUp({ offertes, onRefresh }: QuotesFollowUpProps) {
                 className={cn(
                   'rounded-2xl border p-4 sm:p-5 transition-all',
                   isSelected
-                    ? 'border-[var(--color-lavender-border)] bg-[var(--color-lavender)]/30'
+                    ? 'border-mod-email-border bg-mod-email-light/30'
                     : 'border-border bg-card hover:shadow-md'
                 )}
               >
@@ -859,7 +859,7 @@ export function QuotesFollowUp({ offertes, onRefresh }: QuotesFollowUpProps) {
             <Button variant="outline" onClick={() => setPortaalDialog(null)}>Nee</Button>
             <Button
               onClick={handleCreatePortaalAndSend}
-              className="bg-[var(--color-lavender-text)] hover:bg-[var(--color-lavender-text)]/90 text-white"
+              className="bg-mod-email-text hover:bg-mod-email-text/90 text-white"
             >
               Ja, aanmaken en versturen
             </Button>

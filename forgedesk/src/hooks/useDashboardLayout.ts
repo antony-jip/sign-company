@@ -7,7 +7,8 @@ export type DashboardWidgetId =
   | 'kalender' | 'te_factureren'
   | 'klok' | 'notities' | 'inbox' | 'nieuws'
 
-export type WidgetSize = 'small' | 'medium' | 'large'
+/** Number of grid columns a widget spans (1–4) */
+export type WidgetSize = 1 | 2 | 3 | 4
 
 export interface DashboardLayoutState {
   order: DashboardWidgetId[]
@@ -37,8 +38,24 @@ const DEFAULT_STATE: DashboardLayoutState = {
   sizes: {},
 }
 
+/** Migrate old string-based sizes ('small'/'medium'/'large') to numeric (1/2/3) */
+function migrateSizes(sizes: Record<string, unknown>): Partial<Record<DashboardWidgetId, WidgetSize>> {
+  const migrated: Partial<Record<DashboardWidgetId, WidgetSize>> = {}
+  for (const [key, val] of Object.entries(sizes)) {
+    if (typeof val === 'number' && val >= 1 && val <= 4) {
+      migrated[key as DashboardWidgetId] = val as WidgetSize
+    } else if (typeof val === 'string') {
+      migrated[key as DashboardWidgetId] = val === 'large' ? 3 : val === 'medium' ? 2 : 1
+    }
+  }
+  return migrated
+}
+
 export function useDashboardLayout() {
   const [layout, setLayout] = useLocalStorage<DashboardLayoutState>('forgedesk-dashboard-layout', DEFAULT_STATE)
+
+  // Migrate old string sizes on read
+  const migratedSizes = layout.sizes ? migrateSizes(layout.sizes as Record<string, unknown>) : {}
 
   const [draggedWidget, setDraggedWidget] = useState<DashboardWidgetId | null>(null)
   const [dragOverWidget, setDragOverWidget] = useState<DashboardWidgetId | null>(null)
@@ -52,7 +69,6 @@ export function useDashboardLayout() {
   })()
 
   const hidden = new Set(layout.hidden)
-  const sizes = layout.sizes
 
   const toggleWidget = useCallback((id: DashboardWidgetId) => {
     setLayout(prev => {
@@ -147,7 +163,7 @@ export function useDashboardLayout() {
   return {
     order,
     hidden,
-    sizes,
+    sizes: migratedSizes,
     allWidgets: ALL_WIDGETS,
     draggedWidget,
     dragOverWidget,

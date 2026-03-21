@@ -12,7 +12,7 @@ const badgeVariants = cva(
         secondary:
           "border-transparent bg-bg-hover text-text-tertiary",
         destructive:
-          "bg-[var(--color-coral)] text-[var(--color-coral-text)] border-[var(--color-coral-border)]",
+          "bg-mod-werkbonnen-light text-mod-werkbonnen-text border-mod-werkbonnen-border",
         outline: "text-foreground border-black/[0.06]",
       },
     },

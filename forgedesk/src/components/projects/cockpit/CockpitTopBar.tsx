@@ -89,7 +89,7 @@ export function CockpitTopBar({
 
       {/* Main bar */}
       <div className="flex items-center gap-2.5 px-5 py-2.5 flex-wrap">
-        <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-blush to-sage flex items-center justify-center flex-shrink-0">
+        <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-mod-offertes-light to-mod-facturen-light flex items-center justify-center flex-shrink-0">
           <Briefcase className="h-4 w-4 text-white" />
         </div>
         <h1 className="text-lg font-bold tracking-tight text-foreground leading-tight">{project.naam}</h1>

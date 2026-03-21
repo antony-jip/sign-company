@@ -65,6 +65,7 @@ import { DagenOpenFilterBar, getDaysOpen, getDaysColor, matchDagenFilter } from 
 import type { DagenOpenFilter } from '@/components/shared/DagenOpenFilter'
 import { exportCSV, exportExcel } from '@/lib/export'
 import { round2 } from '@/utils/budgetUtils'
+import { MODULE_COLORS } from '@/lib/moduleColors'
 import { logger } from '../../utils/logger'
 import { SkeletonTable } from '@/components/ui/skeleton'
 import { QuotesFollowUp } from './QuotesFollowUp'
@@ -75,26 +76,26 @@ type PriorityFilter = 'alle' | 'laag' | 'medium' | 'hoog' | 'urgent'
 type StatusFilter = 'alle' | 'concept' | 'verzonden' | 'bekeken' | 'goedgekeurd' | 'afgewezen' | 'verlopen' | 'gefactureerd' | 'wacht_op_reactie'
 
 const DEFAULT_STATUS_COLUMNS = [
-  { key: 'concept', label: 'Concept', color: 'from-[var(--color-cream)]/30 to-[var(--color-cream)]/10', accent: 'bg-[var(--color-cream-text)]', headerBg: 'bg-[var(--color-cream)]/60' },
-  { key: 'verzonden', label: 'Verstuurd', color: 'from-[var(--color-mist)]/30 to-[var(--color-mist)]/10', accent: 'bg-[var(--color-mist-text)]', headerBg: 'bg-[var(--color-mist)]/60' },
-  { key: 'bekeken', label: 'Bekeken', color: 'from-[var(--color-cream)]/30 to-[var(--color-cream)]/10', accent: 'bg-[var(--color-cream-text)]', headerBg: 'bg-[var(--color-cream)]/60' },
-  { key: 'goedgekeurd', label: 'Akkoord', color: 'from-[var(--color-sage)]/30 to-[var(--color-sage)]/10', accent: 'bg-[var(--color-sage-text)]', headerBg: 'bg-[var(--color-sage)]/60' },
-  { key: 'gefactureerd', label: 'Gefactureerd', color: 'from-[var(--color-lavender)]/30 to-[var(--color-lavender)]/10', accent: 'bg-[var(--color-lavender-text)]', headerBg: 'bg-[var(--color-lavender)]/60' },
+  { key: 'concept', label: 'Concept', color: 'from-mod-taken-light/30 to-mod-taken-light/10', accent: 'bg-mod-taken-text', headerBg: 'bg-mod-taken-light/60' },
+  { key: 'verzonden', label: 'Verstuurd', color: 'from-mod-klanten-light/30 to-mod-klanten-light/10', accent: 'bg-mod-klanten-text', headerBg: 'bg-mod-klanten-light/60' },
+  { key: 'bekeken', label: 'Bekeken', color: 'from-mod-taken-light/30 to-mod-taken-light/10', accent: 'bg-mod-taken-text', headerBg: 'bg-mod-taken-light/60' },
+  { key: 'goedgekeurd', label: 'Akkoord', color: 'from-mod-facturen-light/30 to-mod-facturen-light/10', accent: 'bg-mod-facturen-text', headerBg: 'bg-mod-facturen-light/60' },
+  { key: 'gefactureerd', label: 'Gefactureerd', color: 'from-mod-email-light/30 to-mod-email-light/10', accent: 'bg-mod-email-text', headerBg: 'bg-mod-email-light/60' },
 ]
 
 const CLOSED_STATUS_COLUMNS = [
-  { key: 'afgewezen', label: 'Afgewezen', color: 'from-[var(--color-coral)]/30 to-[var(--color-coral)]/10', accent: 'bg-[var(--color-coral-text)]', headerBg: 'bg-[var(--color-coral)]/60' },
-  { key: 'verlopen', label: 'Verlopen', color: 'from-[var(--color-blush)]/30 to-[var(--color-blush)]/10', accent: 'bg-[var(--color-blush-text)]', headerBg: 'bg-[var(--color-blush)]/60' },
+  { key: 'afgewezen', label: 'Afgewezen', color: 'from-mod-werkbonnen-light/30 to-mod-werkbonnen-light/10', accent: 'bg-mod-werkbonnen-text', headerBg: 'bg-mod-werkbonnen-light/60' },
+  { key: 'verlopen', label: 'Verlopen', color: 'from-mod-offertes-light/30 to-mod-offertes-light/10', accent: 'bg-mod-offertes-text', headerBg: 'bg-mod-offertes-light/60' },
 ]
 
 const KLEUR_TO_STYLE: Record<string, { color: string; accent: string; headerBg: string }> = {
-  gray: { color: 'from-[var(--color-cream)]/30 to-[var(--color-cream)]/10', accent: 'bg-[var(--color-cream-text)]', headerBg: 'bg-[var(--color-cream)]/60' },
-  blue: { color: 'from-[var(--color-mist)]/30 to-[var(--color-mist)]/10', accent: 'bg-[var(--color-mist-text)]', headerBg: 'bg-[var(--color-mist)]/60' },
-  purple: { color: 'from-[var(--color-lavender)]/30 to-[var(--color-lavender)]/10', accent: 'bg-[var(--color-lavender-text)]', headerBg: 'bg-[var(--color-lavender)]/60' },
-  green: { color: 'from-[var(--color-sage)]/30 to-[var(--color-sage)]/10', accent: 'bg-[var(--color-sage-text)]', headerBg: 'bg-[var(--color-sage)]/60' },
-  red: { color: 'from-[var(--color-coral)]/30 to-[var(--color-coral)]/10', accent: 'bg-[var(--color-coral-text)]', headerBg: 'bg-[var(--color-coral)]/60' },
-  orange: { color: 'from-[var(--color-blush)]/30 to-[var(--color-blush)]/10', accent: 'bg-[var(--color-blush-text)]', headerBg: 'bg-[var(--color-blush)]/60' },
-  teal: { color: 'from-[var(--color-sage)]/30 to-[var(--color-sage)]/10', accent: 'bg-[var(--color-sage-text)]', headerBg: 'bg-[var(--color-sage)]/60' },
+  gray: { color: 'from-mod-taken-light/30 to-mod-taken-light/10', accent: 'bg-mod-taken-text', headerBg: 'bg-mod-taken-light/60' },
+  blue: { color: 'from-mod-klanten-light/30 to-mod-klanten-light/10', accent: 'bg-mod-klanten-text', headerBg: 'bg-mod-klanten-light/60' },
+  purple: { color: 'from-mod-email-light/30 to-mod-email-light/10', accent: 'bg-mod-email-text', headerBg: 'bg-mod-email-light/60' },
+  green: { color: 'from-mod-facturen-light/30 to-mod-facturen-light/10', accent: 'bg-mod-facturen-text', headerBg: 'bg-mod-facturen-light/60' },
+  red: { color: 'from-mod-werkbonnen-light/30 to-mod-werkbonnen-light/10', accent: 'bg-mod-werkbonnen-text', headerBg: 'bg-mod-werkbonnen-light/60' },
+  orange: { color: 'from-mod-offertes-light/30 to-mod-offertes-light/10', accent: 'bg-mod-offertes-text', headerBg: 'bg-mod-offertes-light/60' },
+  teal: { color: 'from-mod-facturen-light/30 to-mod-facturen-light/10', accent: 'bg-mod-facturen-text', headerBg: 'bg-mod-facturen-light/60' },
 }
 
 const PRIORITY_COLORS: Record<string, string> = {
@@ -141,42 +142,42 @@ const statusOpties = [
 
 function getOfferteStatusDotColor(status: string): string {
   switch (status) {
-    case 'concept': return 'bg-[var(--color-cream-text)]'
-    case 'verzonden': return 'bg-[var(--color-mist-text)]'
-    case 'bekeken': return 'bg-[var(--color-cream-text)]'
-    case 'goedgekeurd': return 'bg-[var(--color-sage-text)]'
-    case 'afgewezen': return 'bg-[var(--color-coral-text)]'
-    case 'verlopen': return 'bg-[var(--color-blush-text)]'
-    case 'gefactureerd': return 'bg-[var(--color-lavender-text)]'
-    case 'wijziging_gevraagd': return 'bg-[var(--color-blush-text)]'
-    default: return 'bg-[var(--color-cream-text)]'
+    case 'concept': return 'bg-mod-taken-text'
+    case 'verzonden': return 'bg-mod-klanten-text'
+    case 'bekeken': return 'bg-mod-taken-text'
+    case 'goedgekeurd': return 'bg-mod-facturen-text'
+    case 'afgewezen': return 'bg-mod-werkbonnen-text'
+    case 'verlopen': return 'bg-mod-offertes-text'
+    case 'gefactureerd': return 'bg-mod-email-text'
+    case 'wijziging_gevraagd': return 'bg-mod-offertes-text'
+    default: return 'bg-mod-taken-text'
   }
 }
 
 function getOfferteStatusBorderColor(status: string): string {
   switch (status) {
-    case 'concept': return 'border-l-[var(--color-cream-border)]'
-    case 'verzonden': return 'border-l-[var(--color-mist-border)]'
-    case 'bekeken': return 'border-l-[var(--color-cream-border)]'
-    case 'goedgekeurd': return 'border-l-[var(--color-sage-border)]'
-    case 'afgewezen': return 'border-l-[var(--color-coral-border)]'
-    case 'verlopen': return 'border-l-[var(--color-blush-border)]'
-    case 'gefactureerd': return 'border-l-[var(--color-lavender-border)]'
-    case 'wijziging_gevraagd': return 'border-l-[var(--color-blush-border)]'
-    default: return 'border-l-[var(--color-cream-border)]'
+    case 'concept': return 'border-l-mod-taken-border'
+    case 'verzonden': return 'border-l-mod-klanten-border'
+    case 'bekeken': return 'border-l-mod-taken-border'
+    case 'goedgekeurd': return 'border-l-mod-facturen-border'
+    case 'afgewezen': return 'border-l-mod-werkbonnen-border'
+    case 'verlopen': return 'border-l-mod-offertes-border'
+    case 'gefactureerd': return 'border-l-mod-email-border'
+    case 'wijziging_gevraagd': return 'border-l-mod-offertes-border'
+    default: return 'border-l-mod-taken-border'
   }
 }
 
 function getOfferteStatusCellBg(status: string): string {
   switch (status) {
-    case 'concept': return 'bg-[var(--color-cream)]/50'
-    case 'verzonden': return 'bg-[var(--color-mist)]/50'
-    case 'bekeken': return 'bg-[var(--color-cream)]/50'
-    case 'goedgekeurd': return 'bg-[var(--color-sage)]/50'
-    case 'afgewezen': return 'bg-[var(--color-coral)]/50'
-    case 'verlopen': return 'bg-[var(--color-blush)]/50'
-    case 'gefactureerd': return 'bg-[var(--color-lavender)]/50'
-    case 'wijziging_gevraagd': return 'bg-[var(--color-blush)]/50'
+    case 'concept': return 'bg-mod-taken-light/50'
+    case 'verzonden': return 'bg-mod-klanten-light/50'
+    case 'bekeken': return 'bg-mod-taken-light/50'
+    case 'goedgekeurd': return 'bg-mod-facturen-light/50'
+    case 'afgewezen': return 'bg-mod-werkbonnen-light/50'
+    case 'verlopen': return 'bg-mod-offertes-light/50'
+    case 'gefactureerd': return 'bg-mod-email-light/50'
+    case 'wijziging_gevraagd': return 'bg-mod-offertes-light/50'
     default: return 'bg-muted/30 dark:bg-muted/20'
   }
 }
@@ -711,22 +712,22 @@ export function QuotesPipeline() {
       {/* ── Quick stats ── */}
       <div className="flex items-center gap-2 flex-wrap">
         {kpis.openCount > 0 && (
-          <div className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: 'var(--color-lavender-text)', background: 'var(--color-lavender)', border: '1px solid var(--color-lavender-border)' }}>
+          <div className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: MODULE_COLORS.email.text, background: MODULE_COLORS.email.light, border: `1px solid ${MODULE_COLORS.email.border}` }}>
             <FileText className="w-3 h-3" />
             {kpis.openCount} open
           </div>
         )}
-        <div className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: 'var(--color-sage-text)', background: 'var(--color-sage)', border: '1px solid var(--color-sage-border)' }}>
+        <div className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: MODULE_COLORS.facturen.text, background: MODULE_COLORS.facturen.light, border: `1px solid ${MODULE_COLORS.facturen.border}` }}>
           <TrendingUp className="w-3 h-3" />
           <span className="tabular-nums">{kpis.conversionRate}%</span> conversie
         </div>
         {kpis.overdueFollowUps > 0 && (
-          <div className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: 'var(--color-coral-text)', background: 'var(--color-coral)', border: '1px solid var(--color-coral-border)' }}>
+          <div className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: MODULE_COLORS.werkbonnen.text, background: MODULE_COLORS.werkbonnen.light, border: `1px solid ${MODULE_COLORS.werkbonnen.border}` }}>
             <AlertTriangle className="w-3 h-3" />
             {kpis.overdueFollowUps} achterstallig
           </div>
         )}
-        <div className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: 'var(--color-sage-text)', background: 'var(--color-sage)', border: '1px solid var(--color-sage-border)' }}>
+        <div className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: MODULE_COLORS.facturen.text, background: MODULE_COLORS.facturen.light, border: `1px solid ${MODULE_COLORS.facturen.border}` }}>
           <DollarSign className="w-3 h-3" />
           Pipeline {formatCurrency(financialSummary.pipelineTotaal)}
         </div>
@@ -798,7 +799,7 @@ export function QuotesPipeline() {
                   return fuCount.length > 0 ? (
                     <span className={cn(
                       'absolute -top-1 -right-1 min-w-[16px] h-4 rounded-full text-[10px] font-bold flex items-center justify-center text-white px-1',
-                      hasOld ? 'bg-orange-500' : 'bg-[var(--color-lavender-text)]'
+                      hasOld ? 'bg-orange-500' : 'bg-mod-email-text'
                     )}>
                       {fuCount.length}
                     </span>
@@ -1309,18 +1310,18 @@ export function QuotesPipeline() {
 
       {/* ── Bulk action bar (list view) ── */}
       {viewMode === 'lijst' && selectedIds.size > 0 && (
-        <div className="relative overflow-hidden rounded-xl border shadow-sm" style={{ background: 'linear-gradient(135deg, var(--color-sage), #d4e8db)', borderColor: 'var(--color-sage-border)' }}>
+        <div className="relative overflow-hidden rounded-xl border shadow-sm" style={{ background: `linear-gradient(135deg, ${MODULE_COLORS.facturen.light}, #d4e8db)`, borderColor: MODULE_COLORS.facturen.border }}>
           <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'var(--wm-noise)' }} />
           <div className="relative flex items-center gap-3 px-4 py-2.5">
             <div className="flex items-center gap-2.5">
-              <div className="h-7 w-7 rounded-lg flex items-center justify-center shadow-sm" style={{ background: 'var(--color-sage-text)', color: 'white' }}>
+              <div className="h-7 w-7 rounded-lg flex items-center justify-center shadow-sm" style={{ background: MODULE_COLORS.facturen.text, color: 'white' }}>
                 <span className="text-xs font-bold">{selectedIds.size}</span>
               </div>
               <div className="flex flex-col">
-                <span className="text-sm font-semibold" style={{ color: 'var(--color-sage-text)' }}>
+                <span className="text-sm font-semibold" style={{ color: MODULE_COLORS.facturen.text }}>
                   {selectedIds.size} offerte{selectedIds.size === 1 ? '' : 's'} geselecteerd
                 </span>
-                <span className="text-2xs font-medium" style={{ color: 'var(--color-sage-text)', opacity: 0.6 }}>
+                <span className="text-2xs font-medium" style={{ color: MODULE_COLORS.facturen.text, opacity: 0.6 }}>
                   van {filteredOffertes.length} totaal
                 </span>
               </div>
@@ -1328,14 +1329,14 @@ export function QuotesPipeline() {
             <button
               onClick={toggleSelectAll}
               className="text-xs font-semibold px-2.5 py-1 rounded-md transition-all hover:bg-card/40"
-              style={{ color: 'var(--color-sage-text)' }}
+              style={{ color: MODULE_COLORS.facturen.text }}
             >
               {selectedIds.size === filteredOffertes.length ? 'Deselecteer alles' : 'Selecteer alles'}
             </button>
             <div className="flex-1" />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-1.5 h-8 px-3.5 rounded-lg text-xs font-semibold shadow-sm transition-all hover:shadow-md bg-card/90 backdrop-blur-sm border" style={{ color: 'var(--color-sage-text)', borderColor: 'var(--color-sage-border)' }}>
+                <button className="flex items-center gap-1.5 h-8 px-3.5 rounded-lg text-xs font-semibold shadow-sm transition-all hover:shadow-md bg-card/90 backdrop-blur-sm border" style={{ color: MODULE_COLORS.facturen.text, borderColor: MODULE_COLORS.facturen.border }}>
                   <ArrowUpDown className="w-3 h-3" />
                   Status wijzigen
                   <ChevronDown className="w-3 h-3 opacity-50" />
@@ -1357,7 +1358,7 @@ export function QuotesPipeline() {
             <button
               onClick={() => setSelectedIds(new Set())}
               className="h-7 w-7 rounded-lg flex items-center justify-center transition-all hover:bg-card/40"
-              style={{ color: 'var(--color-sage-text)' }}
+              style={{ color: MODULE_COLORS.facturen.text }}
             >
               <X className="w-3.5 h-3.5" />
             </button>

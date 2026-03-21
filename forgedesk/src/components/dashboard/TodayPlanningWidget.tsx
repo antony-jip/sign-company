@@ -17,6 +17,7 @@ import {
 import { getTaken, getProjecten, getEvents, getMontageAfspraken } from '@/services/supabaseService'
 import type { Taak, Project, CalendarEvent, MontageAfspraak } from '@/types'
 import { getPriorityColor } from '@/lib/utils'
+import { MODULE_COLORS } from '@/lib/moduleColors'
 import { format, isToday, isTomorrow, parseISO, isAfter, isBefore, addDays } from 'date-fns'
 import { nl } from 'date-fns/locale'
 import { logger } from '../../utils/logger'
@@ -178,7 +179,7 @@ export function TodayPlanningWidget() {
           </h3>
           <div className="flex items-center gap-2">
             {totalOverdue > 0 && (
-              <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ color: 'var(--color-coral-text)', background: 'var(--color-coral)' }}>
+              <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ color: MODULE_COLORS.werkbonnen.text, background: MODULE_COLORS.werkbonnen.light }}>
                 <span className="font-mono">{totalOverdue}</span> achterstallig
               </span>
             )}
@@ -192,8 +193,8 @@ export function TodayPlanningWidget() {
         {overdueTasks.length > 0 && (
           <div className="mb-4">
             <div className="flex items-center gap-2 mb-2">
-              <AlertCircle className="h-3.5 w-3.5" style={{ color: 'var(--color-coral-text)' }} />
-              <span className="text-xs font-bold uppercase tracking-label" style={{ color: 'var(--color-coral-text)' }}>
+              <AlertCircle className="h-3.5 w-3.5" style={{ color: MODULE_COLORS.werkbonnen.text }} />
+              <span className="text-xs font-bold uppercase tracking-label" style={{ color: MODULE_COLORS.werkbonnen.text }}>
                 Achterstallig
               </span>
             </div>
@@ -258,7 +259,7 @@ function TimelineRow({
     <div
       onClick={onClick}
       className={`flex items-center gap-3 px-2.5 py-2.5 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group min-h-[48px] ${
-        item.isOverdue ? 'bg-[var(--color-coral)]/50' : ''
+        item.isOverdue ? 'bg-mod-werkbonnen-light/50' : ''
       }`}
     >
       {/* Left indicator */}

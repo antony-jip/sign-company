@@ -64,6 +64,7 @@ import { ModuleHeader } from '@/components/shared/ModuleHeader'
 import { SkeletonTable } from '@/components/ui/skeleton'
 import { DagenOpenFilterBar, getDaysOpen, getDaysColor, matchDagenFilter } from '@/components/shared/DagenOpenFilter'
 import type { DagenOpenFilter } from '@/components/shared/DagenOpenFilter'
+import { MODULE_COLORS } from '@/lib/moduleColors'
 
 const statusOpties = [
   { value: 'alle', label: 'Alle' },
@@ -400,25 +401,25 @@ export function ProjectsList() {
       {/* ── Quick stats ── */}
       <div className="flex items-center gap-2 flex-wrap">
         {stats.actief > 0 && (
-          <div className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: 'var(--color-sage-text)', background: 'var(--color-sage)', border: '1px solid var(--color-sage-border)' }}>
+          <div className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: MODULE_COLORS.facturen.text, background: MODULE_COLORS.facturen.light, border: `1px solid ${MODULE_COLORS.facturen.border}` }}>
             <TrendingUp className="w-3 h-3" />
             {stats.actief} actief
           </div>
         )}
         {stats.teFactureren > 0 && (
-          <div className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: 'var(--color-lavender-text)', background: 'var(--color-lavender)', border: '1px solid var(--color-lavender-border)' }}>
+          <div className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: MODULE_COLORS.email.text, background: MODULE_COLORS.email.light, border: `1px solid ${MODULE_COLORS.email.border}` }}>
             <Receipt className="w-3 h-3" />
             {stats.teFactureren} te factureren
           </div>
         )}
         {stats.overdue > 0 && (
-          <div className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: 'var(--color-coral-text)', background: 'var(--color-coral)', border: '1px solid var(--color-coral-border)' }}>
+          <div className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: MODULE_COLORS.werkbonnen.text, background: MODULE_COLORS.werkbonnen.light, border: `1px solid ${MODULE_COLORS.werkbonnen.border}` }}>
             <AlertTriangle className="w-3 h-3" />
             {stats.overdue} verlopen
           </div>
         )}
         {stats.afgerond > 0 && (
-          <div className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: 'var(--color-sage-text)', background: 'var(--color-sage)', border: '1px solid var(--color-sage-border)' }}>
+          <div className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: MODULE_COLORS.facturen.text, background: MODULE_COLORS.facturen.light, border: `1px solid ${MODULE_COLORS.facturen.border}` }}>
             <CheckCircle2 className="w-3 h-3" />
             {stats.afgerond} afgerond
           </div>
@@ -564,20 +565,20 @@ export function ProjectsList() {
 
       {/* ── Bulk action bar ── */}
       {selectedIds.size > 0 && (
-        <div className="relative overflow-hidden rounded-xl border shadow-sm" style={{ background: 'linear-gradient(135deg, var(--color-sage), #d4e8db)', borderColor: 'var(--color-sage-border)' }}>
+        <div className="relative overflow-hidden rounded-xl border shadow-sm" style={{ background: `linear-gradient(135deg, ${MODULE_COLORS.facturen.light}, #d4e8db)`, borderColor: MODULE_COLORS.facturen.border }}>
           {/* Subtiele achtergrond accent */}
           <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'var(--wm-noise)' }} />
           <div className="relative flex items-center gap-3 px-4 py-2.5">
             {/* Selectie teller */}
             <div className="flex items-center gap-2.5">
-              <div className="h-7 w-7 rounded-lg flex items-center justify-center shadow-sm" style={{ background: 'var(--color-sage-text)', color: 'white' }}>
+              <div className="h-7 w-7 rounded-lg flex items-center justify-center shadow-sm" style={{ background: MODULE_COLORS.facturen.text, color: 'white' }}>
                 <span className="text-xs font-bold">{selectedIds.size}</span>
               </div>
               <div className="flex flex-col">
-                <span className="text-sm font-semibold" style={{ color: 'var(--color-sage-text)' }}>
+                <span className="text-sm font-semibold" style={{ color: MODULE_COLORS.facturen.text }}>
                   {selectedIds.size} {selectedIds.size === 1 ? 'project' : 'projecten'} geselecteerd
                 </span>
-                <span className="text-2xs font-medium" style={{ color: 'var(--color-sage-text)', opacity: 0.6 }}>
+                <span className="text-2xs font-medium" style={{ color: MODULE_COLORS.facturen.text, opacity: 0.6 }}>
                   van {gefilterdeProjecten.length} totaal
                 </span>
               </div>
@@ -587,7 +588,7 @@ export function ProjectsList() {
             <button
               onClick={toggleSelectAll}
               className="text-xs font-semibold px-2.5 py-1 rounded-md transition-all hover:bg-card/40"
-              style={{ color: 'var(--color-sage-text)' }}
+              style={{ color: MODULE_COLORS.facturen.text }}
             >
               {selectedIds.size === gefilterdeProjecten.length ? 'Deselecteer alles' : 'Selecteer alles'}
             </button>
@@ -597,7 +598,7 @@ export function ProjectsList() {
             {/* Status wijzigen knop */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-1.5 h-8 px-3.5 rounded-lg text-xs font-semibold shadow-sm transition-all hover:shadow-md bg-card/90 backdrop-blur-sm border" style={{ color: 'var(--color-sage-text)', borderColor: 'var(--color-sage-border)' }}>
+                <button className="flex items-center gap-1.5 h-8 px-3.5 rounded-lg text-xs font-semibold shadow-sm transition-all hover:shadow-md bg-card/90 backdrop-blur-sm border" style={{ color: MODULE_COLORS.facturen.text, borderColor: MODULE_COLORS.facturen.border }}>
                   <ArrowUpDown className="w-3 h-3" />
                   Status wijzigen
                   <ChevronDown className="w-3 h-3 opacity-50" />
@@ -621,7 +622,7 @@ export function ProjectsList() {
             <button
               onClick={() => setSelectedIds(new Set())}
               className="h-7 w-7 rounded-lg flex items-center justify-center transition-all hover:bg-card/40"
-              style={{ color: 'var(--color-sage-text)' }}
+              style={{ color: MODULE_COLORS.facturen.text }}
             >
               <X className="w-3.5 h-3.5" />
             </button>

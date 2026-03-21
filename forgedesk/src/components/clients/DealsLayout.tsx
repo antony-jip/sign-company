@@ -24,20 +24,21 @@ import {
   getKlanten, getMedewerkers,
 } from '@/services/supabaseService'
 import { round2 } from '@/utils/budgetUtils'
+import { MODULE_COLORS } from '@/lib/moduleColors'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 
 // ============ CONSTANTS ============
 
 const KLEUR_TO_STYLE: Record<string, { color: string; accent: string; headerBg: string }> = {
-  gray: { color: 'from-[var(--color-cream)]/30 to-[var(--color-cream)]/10', accent: 'bg-[var(--color-cream-text)]', headerBg: 'bg-[var(--color-cream)]/60' },
-  blue: { color: 'from-[var(--color-mist)]/30 to-[var(--color-mist)]/10', accent: 'bg-[var(--color-mist-text)]', headerBg: 'bg-[var(--color-mist)]/60' },
-  purple: { color: 'from-[var(--color-lavender)]/30 to-[var(--color-lavender)]/10', accent: 'bg-[var(--color-lavender-text)]', headerBg: 'bg-[var(--color-lavender)]/60' },
-  green: { color: 'from-[var(--color-sage)]/30 to-[var(--color-sage)]/10', accent: 'bg-[var(--color-sage-text)]', headerBg: 'bg-[var(--color-sage)]/60' },
-  orange: { color: 'from-[var(--color-blush)]/30 to-[var(--color-blush)]/10', accent: 'bg-[var(--color-blush-text)]', headerBg: 'bg-[var(--color-blush)]/60' },
-  red: { color: 'from-[var(--color-coral)]/30 to-[var(--color-coral)]/10', accent: 'bg-[var(--color-coral-text)]', headerBg: 'bg-[var(--color-coral)]/60' },
-  yellow: { color: 'from-[var(--color-cream)]/30 to-[var(--color-cream)]/10', accent: 'bg-[var(--color-cream-text)]', headerBg: 'bg-[var(--color-cream)]/60' },
-  teal: { color: 'from-[var(--color-sage)]/30 to-[var(--color-sage)]/10', accent: 'bg-[var(--color-sage-text)]', headerBg: 'bg-[var(--color-sage)]/60' },
-  indigo: { color: 'from-[var(--color-mist)]/30 to-[var(--color-mist)]/10', accent: 'bg-[var(--color-mist-text)]', headerBg: 'bg-[var(--color-mist)]/60' },
+  gray: { color: 'from-mod-taken-light/30 to-mod-taken-light/10', accent: 'bg-mod-taken-text', headerBg: 'bg-mod-taken-light/60' },
+  blue: { color: 'from-mod-klanten-light/30 to-mod-klanten-light/10', accent: 'bg-mod-klanten-text', headerBg: 'bg-mod-klanten-light/60' },
+  purple: { color: 'from-mod-email-light/30 to-mod-email-light/10', accent: 'bg-mod-email-text', headerBg: 'bg-mod-email-light/60' },
+  green: { color: 'from-mod-facturen-light/30 to-mod-facturen-light/10', accent: 'bg-mod-facturen-text', headerBg: 'bg-mod-facturen-light/60' },
+  orange: { color: 'from-mod-offertes-light/30 to-mod-offertes-light/10', accent: 'bg-mod-offertes-text', headerBg: 'bg-mod-offertes-light/60' },
+  red: { color: 'from-mod-werkbonnen-light/30 to-mod-werkbonnen-light/10', accent: 'bg-mod-werkbonnen-text', headerBg: 'bg-mod-werkbonnen-light/60' },
+  yellow: { color: 'from-mod-taken-light/30 to-mod-taken-light/10', accent: 'bg-mod-taken-text', headerBg: 'bg-mod-taken-light/60' },
+  teal: { color: 'from-mod-facturen-light/30 to-mod-facturen-light/10', accent: 'bg-mod-facturen-text', headerBg: 'bg-mod-facturen-light/60' },
+  indigo: { color: 'from-mod-klanten-light/30 to-mod-klanten-light/10', accent: 'bg-mod-klanten-text', headerBg: 'bg-mod-klanten-light/60' },
 }
 
 const BRON_LABELS: Record<string, string> = {
@@ -322,8 +323,8 @@ export function DealsLayout() {
           <p className="text-lg font-bold text-accent dark:text-wm-light mt-1">{formatCurrency(kpis.gewonnenMaand)}</p>
         </Card>
         <Card className="p-3">
-          <p className="text-2xs font-semibold uppercase tracking-wide" style={{ color: 'var(--color-coral-text)' }}>Verloren (maand)</p>
-          <p className="text-lg font-bold mt-1" style={{ color: 'var(--color-coral-text)' }}>{formatCurrency(kpis.verlorenMaand)}</p>
+          <p className="text-2xs font-semibold uppercase tracking-wide" style={{ color: MODULE_COLORS.werkbonnen.text }}>Verloren (maand)</p>
+          <p className="text-lg font-bold mt-1" style={{ color: MODULE_COLORS.werkbonnen.text }}>{formatCurrency(kpis.verlorenMaand)}</p>
         </Card>
       </div>
 
@@ -394,9 +395,9 @@ export function DealsLayout() {
                           {deal.kans_percentage !== undefined && (
                             <span className={cn(
                               'text-2xs font-bold px-1.5 py-0.5 rounded',
-                              (deal.kans_percentage || 0) >= 70 ? 'bg-[var(--color-sage)] text-[var(--color-sage-text)]' :
-                              (deal.kans_percentage || 0) >= 30 ? 'bg-[var(--color-cream)] text-[var(--color-cream-text)]' :
-                              'bg-[var(--color-coral)] text-[var(--color-coral-text)]'
+                              (deal.kans_percentage || 0) >= 70 ? 'bg-mod-facturen-light text-mod-facturen-text' :
+                              (deal.kans_percentage || 0) >= 30 ? 'bg-mod-taken-light text-mod-taken-text' :
+                              'bg-mod-werkbonnen-light text-mod-werkbonnen-text'
                             )}>{deal.kans_percentage}%</span>
                           )}
                         </div>
@@ -455,9 +456,9 @@ export function DealsLayout() {
                       <td className="px-4 py-3">
                         <span className={cn(
                           'text-xs font-bold px-1.5 py-0.5 rounded',
-                          (deal.kans_percentage || 0) >= 70 ? 'bg-[var(--color-sage)] text-[var(--color-sage-text)]' :
-                          (deal.kans_percentage || 0) >= 30 ? 'bg-[var(--color-cream)] text-[var(--color-cream-text)]' :
-                          'bg-[var(--color-coral)] text-[var(--color-coral-text)]'
+                          (deal.kans_percentage || 0) >= 70 ? 'bg-mod-facturen-light text-mod-facturen-text' :
+                          (deal.kans_percentage || 0) >= 30 ? 'bg-mod-taken-light text-mod-taken-text' :
+                          'bg-mod-werkbonnen-light text-mod-werkbonnen-text'
                         )}>{deal.kans_percentage || 0}%</span>
                       </td>
                       <td className="px-4 py-3 text-sm text-muted-foreground">{getMedewerkerNaam(deal.medewerker_id)}</td>
