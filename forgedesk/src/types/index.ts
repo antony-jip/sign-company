@@ -222,6 +222,7 @@ export interface Taak {
   bestede_tijd: number;
   locatie?: string;
   offerte_id?: string;
+  bijlagen?: string[];
   created_at: string;
   updated_at: string;
 }

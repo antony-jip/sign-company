@@ -47,13 +47,14 @@ import {
   User2,
   Wrench,
   FilePlus,
+  Paperclip,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { WeatherDayStrip } from './WeatherDayStrip'
 import { ModuleHeader } from '@/components/shared/ModuleHeader'
 import { useAuth } from '@/contexts/AuthContext'
-import { getTaken, createTaak, updateTaak, deleteTaak, getProjecten, getKlanten, getMontageAfspraken, getOffertes } from '@/services/supabaseService'
+import { getTaken, createTaak, updateTaak, deleteTaak, getProjecten, getKlanten, getMontageAfspraken, getOffertes, uploadTaakBijlage } from '@/services/supabaseService'
 import type { Taak, Project, Klant, MontageAfspraak, Offerte } from '@/types'
 import { logger } from '../../utils/logger'
 import { AuditLogPanel } from '@/components/shared/AuditLogPanel'
@@ -101,12 +102,13 @@ interface TaakFormData {
   project_id: string
   klant_id: string
   locatie: string
+  bijlagen: string[]
 }
 
 const EMPTY_FORM: TaakFormData = {
   titel: '', beschrijving: '', status: 'todo', prioriteit: 'medium',
   toegewezen_aan: '', deadline: '', geschatte_tijd: 0, bestede_tijd: 0, project_id: '',
-  klant_id: '', locatie: '',
+  klant_id: '', locatie: '', bijlagen: [],
 }
 
 // === HELPERS ===
@@ -443,6 +445,7 @@ export function TasksLayout() {
       project_id: taak.project_id || '',
       klant_id: taak.klant_id || '',
       locatie: taak.locatie || '',
+      bijlagen: taak.bijlagen || [],
     })
     setEditDialogOpen(true)
   }
@@ -467,6 +470,7 @@ export function TasksLayout() {
         project_id: formData.project_id || undefined,
         klant_id: formData.klant_id || undefined,
         locatie: formData.locatie.trim() || undefined,
+        bijlagen: formData.bijlagen.length > 0 ? formData.bijlagen : undefined,
       })
       setTaken((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
       // Audit log
@@ -1364,6 +1368,11 @@ function TaskCard({
                 {durationLabel}
               </span>
             )}
+            {taak.bijlagen && taak.bijlagen.length > 0 && (
+              <span className="text-2xs text-muted-foreground/40 flex items-center gap-0.5">
+                <Paperclip className="w-2 h-2" />{taak.bijlagen.length}
+              </span>
+            )}
           </div>
         </div>
 
@@ -1541,6 +1550,54 @@ function EditTaskDialog({
           <div className="grid gap-2">
             <Label htmlFor="edit-toegewezen">Toegewezen aan</Label>
             <Input id="edit-toegewezen" value={formData.toegewezen_aan} onChange={(e) => updateField('toegewezen_aan', e.target.value)} placeholder="Optioneel..." />
+          </div>
+          {/* Bijlagen */}
+          <div className="grid gap-2">
+            <Label className="flex items-center gap-1.5"><Paperclip className="h-3.5 w-3.5" />Bijlagen</Label>
+            <div className="flex items-center gap-2 flex-wrap">
+              {formData.bijlagen.map((url, i) => (
+                <div key={i} className="relative group">
+                  {url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                    <a href={url} target="_blank" rel="noopener noreferrer">
+                      <img src={url} alt="" className="h-12 w-12 rounded-lg object-cover border border-border hover:ring-2 hover:ring-primary/20 transition-all" />
+                    </a>
+                  ) : (
+                    <a href={url} target="_blank" rel="noopener noreferrer" className="h-12 w-12 rounded-lg border border-border bg-muted/50 flex items-center justify-center hover:ring-2 hover:ring-primary/20 transition-all">
+                      <Paperclip className="h-4 w-4 text-muted-foreground" />
+                    </a>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => updateField('bijlagen', formData.bijlagen.filter((_, j) => j !== i) as string[])}
+                    className="absolute -top-1.5 -right-1.5 h-4 w-4 rounded-full bg-foreground/80 text-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-[10px]"
+                  >
+                    <X className="h-2.5 w-2.5" />
+                  </button>
+                </div>
+              ))}
+              <label className="h-12 w-12 rounded-lg border border-dashed border-border bg-muted/30 flex items-center justify-center cursor-pointer hover:border-primary/30 hover:bg-primary/5 transition-colors">
+                <Plus className="h-4 w-4 text-muted-foreground" />
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*,.pdf"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const files = Array.from(e.target.files || [])
+                    if (!editingTaakId || files.length === 0) return
+                    for (const file of files) {
+                      try {
+                        const url = await uploadTaakBijlage(editingTaakId, file)
+                        setFormData(prev => ({ ...prev, bijlagen: [...prev.bijlagen, url] }))
+                      } catch {
+                        // upload failed silently
+                      }
+                    }
+                    e.target.value = ''
+                  }}
+                />
+              </label>
+            </div>
           </div>
         </div>
         {editingTaakId && (
