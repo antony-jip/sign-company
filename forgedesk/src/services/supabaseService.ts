@@ -561,6 +561,17 @@ export async function createTaak(taak: Omit<Taak, 'id' | 'created_at' | 'updated
   return newTaak
 }
 
+export async function uploadTaakBijlage(taakId: string, file: File): Promise<string> {
+  if (!isSupabaseConfigured() || !supabase) throw new Error('Supabase niet geconfigureerd')
+  const storagePath = `taken/${taakId}/${Date.now()}_${file.name}`
+  const { error } = await supabase.storage
+    .from('project-fotos')
+    .upload(storagePath, file, { cacheControl: '3600', upsert: false })
+  if (error) throw error
+  const { data } = supabase.storage.from('project-fotos').getPublicUrl(storagePath)
+  return data.publicUrl
+}
+
 export async function updateTaak(id: string, updates: Partial<Taak>): Promise<Taak> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {

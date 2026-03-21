@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { createOfferte, createOfferteItem, updateOfferte, getKlanten, getCalculatieTemplates, getMedewerkers, createTaak, createProject } from '@/services/supabaseService'
+import { createOfferte, createOfferteItem, updateOfferte, getKlanten, getCalculatieTemplates, getMedewerkers, createTaak, updateTaak, createProject, createKlant, uploadTaakBijlage } from '@/services/supabaseService'
 import { sendEmail } from '@/services/gmailService'
 import { offerteVerzendTemplate } from '@/services/emailTemplateService'
 import { generateOffertePDF } from '@/services/pdfService'
@@ -10,7 +10,7 @@ import { useDocumentStyle } from '@/hooks/useDocumentStyle'
 import type { Klant, OfferteItem, CalculatieTemplate, CalculatieRegel, Medewerker } from '@/types'
 import { toast } from 'sonner'
 import { round2 } from '@/utils/budgetUtils'
-import { Building2, ChevronDown, Plus, X, Send, BookTemplate, Settings, Save, UserCircle, ListTodo, FolderPlus, Calendar } from 'lucide-react'
+import { Building2, ChevronDown, Plus, X, Send, BookTemplate, Settings, Save, UserCircle, ListTodo, FolderPlus, Calendar, UserPlus, Paperclip, Image } from 'lucide-react'
 
 interface Props {
   open: boolean
@@ -78,6 +78,13 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
   const [taakNotitie, setTaakNotitie] = useState('')
   const [taakDatum, setTaakDatum] = useState('')
   const [maakProject, setMaakProject] = useState(false)
+  // Nieuwe klant inline
+  const [showNewKlant, setShowNewKlant] = useState<'none' | 'uitgebreid'>('none')
+  const [isCreatingKlant, setIsCreatingKlant] = useState(false)
+  const [newKlant, setNewKlant] = useState({ bedrijfsnaam: '', contactpersoon: '', email: '', telefoon: '', adres: '', postcode: '', stad: '' })
+  // Taak bijlagen
+  const [taakBestanden, setTaakBestanden] = useState<File[]>([])
+  const taakFileRef = useRef<HTMLInputElement>(null)
   const klantInputRef = useRef<HTMLInputElement>(null)
 
   // Snelkoppeling template IDs from settings
@@ -105,6 +112,10 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
       setTaakNotitie('')
       setTaakDatum('')
       setMaakProject(false)
+      setShowNewKlant('none')
+      setIsCreatingKlant(false)
+      setNewKlant({ bedrijfsnaam: '', contactpersoon: '', email: '', telefoon: '', adres: '', postcode: '', stad: '' })
+      setTaakBestanden([])
     }
   }, [open])
 
@@ -146,7 +157,43 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
     setSelectedKlant(null)
     setKlantQuery('')
     setVerzendEmail('')
+    setShowNewKlant('none')
     klantInputRef.current?.focus()
+  }
+
+  async function handleSnelKlant() {
+    if (!klantQuery.trim() || isCreatingKlant) return
+    setIsCreatingKlant(true)
+    try {
+      const klant = await createKlant({
+        bedrijfsnaam: klantQuery.trim(), contactpersoon: '', email: '', telefoon: '',
+        adres: '', postcode: '', stad: '', land: 'Nederland', website: '', kvk_nummer: '', btw_nummer: '',
+        status: 'prospect', tags: [], notities: '', contactpersonen: [],
+      })
+      setKlanten(prev => [klant, ...prev])
+      selectKlant(klant)
+      toast.success(`Klant "${klant.bedrijfsnaam}" aangemaakt`)
+    } catch { toast.error('Kon klant niet aanmaken') }
+    finally { setIsCreatingKlant(false) }
+  }
+
+  async function handleUitgebreidKlant() {
+    if (!newKlant.bedrijfsnaam.trim() || isCreatingKlant) return
+    setIsCreatingKlant(true)
+    try {
+      const klant = await createKlant({
+        bedrijfsnaam: newKlant.bedrijfsnaam.trim(), contactpersoon: newKlant.contactpersoon.trim(),
+        email: newKlant.email.trim(), telefoon: newKlant.telefoon.trim(),
+        adres: newKlant.adres.trim(), postcode: newKlant.postcode.trim(), stad: newKlant.stad.trim(),
+        land: 'Nederland', website: '', kvk_nummer: '', btw_nummer: '',
+        status: 'prospect', tags: [], notities: '', contactpersonen: [],
+      })
+      setKlanten(prev => [klant, ...prev])
+      selectKlant(klant)
+      setShowNewKlant('none')
+      toast.success(`Klant "${klant.bedrijfsnaam}" aangemaakt`)
+    } catch { toast.error('Kon klant niet aanmaken') }
+    finally { setIsCreatingKlant(false) }
   }
 
   function addRegel() {
@@ -289,7 +336,7 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
       if (maakTaak) {
         const taakDeadline = taakDatum || deadline || undefined
         try {
-          await createTaak({
+          const taak = await createTaak({
             titel: `Offerte afmaken: ${titel.trim()}`,
             beschrijving: taakNotitie.trim() || `Offerte voor ${selectedKlant.bedrijfsnaam}`,
             status: 'todo',
@@ -301,10 +348,17 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
             geschatte_tijd: 0,
             bestede_tijd: 0,
           })
+          // Upload bijlagen
+          if (taakBestanden.length > 0) {
+            try {
+              const urls = await Promise.all(taakBestanden.map(f => uploadTaakBijlage(taak.id, f)))
+              await updateTaak(taak.id, { bijlagen: urls })
+            } catch { /* bijlagen upload failed, taak is already created */ }
+          }
         } catch {
           // Fallback: try without offerte_id (column may not exist yet)
           try {
-            await createTaak({
+            const taak = await createTaak({
               titel: `Offerte afmaken: ${titel.trim()}`,
               beschrijving: taakNotitie.trim() || `Offerte voor ${selectedKlant.bedrijfsnaam}`,
               status: 'todo',
@@ -315,6 +369,12 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
               geschatte_tijd: 0,
               bestede_tijd: 0,
             })
+            if (taakBestanden.length > 0) {
+              try {
+                const urls = await Promise.all(taakBestanden.map(f => uploadTaakBijlage(taak.id, f)))
+                await updateTaak(taak.id, { bijlagen: urls })
+              } catch { /* bijlagen upload failed */ }
+            }
           } catch {
             toast.error('Kon taak niet aanmaken')
           }
@@ -431,8 +491,8 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
                     autoFocus
                     className={inputClass}
                   />
-                  {showSuggestions && filtered.length > 0 && (
-                    <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                  {showSuggestions && (filtered.length > 0 || klantQuery.trim().length > 1) && showNewKlant === 'none' && (
+                    <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-lg max-h-52 overflow-y-auto">
                       {filtered.slice(0, 6).map(k => (
                         <button
                           key={k.id}
@@ -444,9 +504,67 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
                           <span className="truncate">{k.bedrijfsnaam}</span>
                         </button>
                       ))}
+                      {klantQuery.trim().length > 1 && (
+                        <>
+                          {filtered.length > 0 && <div className="border-t border-border" />}
+                          <button
+                            type="button"
+                            onMouseDown={handleSnelKlant}
+                            className="w-full text-left px-3 py-2 text-sm hover:bg-[#1A535C]/5 flex items-center gap-2 text-[#1A535C]"
+                          >
+                            <UserPlus className="h-3.5 w-3.5 shrink-0" />
+                            <span className="truncate">Snel: &quot;{klantQuery.trim()}&quot;</span>
+                          </button>
+                          <button
+                            type="button"
+                            onMouseDown={() => {
+                              setShowNewKlant('uitgebreid')
+                              setNewKlant(prev => ({ ...prev, bedrijfsnaam: klantQuery.trim() }))
+                              setShowSuggestions(false)
+                            }}
+                            className="w-full text-left px-3 py-2 text-sm hover:bg-[#1A535C]/5 flex items-center gap-2 text-[#1A535C]"
+                          >
+                            <Plus className="h-3.5 w-3.5 shrink-0" />
+                            <span>Uitgebreid toevoegen...</span>
+                          </button>
+                        </>
+                      )}
                     </div>
                   )}
                 </>
+              )}
+              {/* Inline formulier nieuwe klant */}
+              {showNewKlant === 'uitgebreid' && !selectedKlant && (
+                <div className="mt-2 rounded-lg border border-[#1A535C]/20 bg-[#1A535C]/5 p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-[#1A535C]">Nieuwe klant</span>
+                    <button type="button" onClick={() => setShowNewKlant('none')} className="text-muted-foreground hover:text-foreground">
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <input type="text" value={newKlant.bedrijfsnaam} onChange={e => setNewKlant(p => ({ ...p, bedrijfsnaam: e.target.value }))} placeholder="Bedrijfsnaam *" autoFocus className={inputClass} />
+                    <input type="text" value={newKlant.contactpersoon} onChange={e => setNewKlant(p => ({ ...p, contactpersoon: e.target.value }))} placeholder="Contactpersoon" className={inputClass} />
+                    <input type="email" value={newKlant.email} onChange={e => setNewKlant(p => ({ ...p, email: e.target.value }))} placeholder="Email" className={inputClass} />
+                    <input type="tel" value={newKlant.telefoon} onChange={e => setNewKlant(p => ({ ...p, telefoon: e.target.value }))} placeholder="Telefoon" className={inputClass} />
+                    <input type="text" value={newKlant.adres} onChange={e => setNewKlant(p => ({ ...p, adres: e.target.value }))} placeholder="Adres" className={inputClass} />
+                    <div className="flex gap-2">
+                      <input type="text" value={newKlant.postcode} onChange={e => setNewKlant(p => ({ ...p, postcode: e.target.value }))} placeholder="Postcode" className={`${inputClass} w-24`} />
+                      <input type="text" value={newKlant.stad} onChange={e => setNewKlant(p => ({ ...p, stad: e.target.value }))} placeholder="Stad" className={inputClass} />
+                    </div>
+                  </div>
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={handleUitgebreidKlant}
+                      disabled={!newKlant.bedrijfsnaam.trim() || isCreatingKlant}
+                      className="h-8 px-3 text-xs font-medium text-white rounded-lg transition-colors disabled:opacity-50"
+                      style={{ backgroundColor: '#1A535C' }}
+                    >
+                      {isCreatingKlant ? 'Toevoegen...' : 'Toevoegen'}
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
             <div className="flex-[3] min-w-0">
@@ -541,6 +659,54 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
                     placeholder="Notitie voor medewerker..."
                     className="h-8 flex-1 px-2 py-1 text-[11px] border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-petrol/20 focus:border-petrol"
                   />
+                </div>
+                {/* Bijlagen uploaden */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <input
+                    ref={taakFileRef}
+                    type="file"
+                    multiple
+                    accept="image/*,.pdf"
+                    className="hidden"
+                    onChange={e => {
+                      const files = Array.from(e.target.files || [])
+                      setTaakBestanden(prev => [...prev, ...files].slice(0, 5))
+                      e.target.value = ''
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => taakFileRef.current?.click()}
+                    className="h-8 px-2.5 text-[11px] text-muted-foreground hover:text-foreground border border-dashed border-border rounded-md flex items-center gap-1.5 hover:border-[#1A535C]/30 hover:bg-[#1A535C]/5 transition-colors"
+                  >
+                    <Paperclip className="h-3 w-3" />
+                    Bestanden toevoegen
+                  </button>
+                  {taakBestanden.map((file, i) => (
+                    <div key={i} className="relative group">
+                      {file.type.startsWith('image/') ? (
+                        <img
+                          src={URL.createObjectURL(file)}
+                          alt={file.name}
+                          className="h-10 w-10 rounded-md object-cover border border-border"
+                        />
+                      ) : (
+                        <div className="h-10 w-10 rounded-md border border-border bg-muted/50 flex items-center justify-center">
+                          <Paperclip className="h-3.5 w-3.5 text-muted-foreground" />
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setTaakBestanden(prev => prev.filter((_, j) => j !== i))}
+                        className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-foreground/80 text-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="h-2.5 w-2.5" />
+                      </button>
+                    </div>
+                  ))}
+                  {taakBestanden.length > 0 && (
+                    <span className="text-[10px] text-muted-foreground">{taakBestanden.length}/5</span>
+                  )}
                 </div>
               </div>
             )}
