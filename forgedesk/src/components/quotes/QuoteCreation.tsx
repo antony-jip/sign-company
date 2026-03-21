@@ -58,8 +58,10 @@ import {
   Upload,
   GripVertical,
   Pin,
+  FolderPlus,
+  FolderOpen,
 } from 'lucide-react'
-import { getKlanten, getProjecten, getOffertes, createOfferte, createOfferteItem, updateKlant, getOfferte, getOfferteItems, updateOfferte, deleteOfferteItem, getOfferteVersies, createOfferteVersie, getFactuur, createPortaal, createPortaalItem, getPortaalItems } from '@/services/supabaseService'
+import { getKlanten, getProjecten, getOffertes, createOfferte, createOfferteItem, updateKlant, getOfferte, getOfferteItems, updateOfferte, deleteOfferteItem, getOfferteVersies, createOfferteVersie, getFactuur, createPortaal, createPortaalItem, getPortaalItems, createProject } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import type { Klant, Project, Contactpersoon, Factuur } from '@/types'
@@ -132,6 +134,9 @@ export function QuoteCreation() {
   // ── Step 0: Klant + Project + Details ──
   const [selectedKlantId, setSelectedKlantId] = useState(paramKlantId)
   const [selectedProjectId, setSelectedProjectId] = useState(paramProjectId)
+  const [showProjectForm, setShowProjectForm] = useState(false)
+  const [projectNaam, setProjectNaam] = useState('')
+  const [isCreatingProject, setIsCreatingProject] = useState(false)
   const [klantSearch, setKlantSearch] = useState('')
   const [offerteTitel, setOfferteTitel] = useState(paramTitel)
   const [itemCount, setItemCount] = useState(1)
@@ -2137,6 +2142,89 @@ export function QuoteCreation() {
           </div>
         </div>
       </div>
+
+      {/* ──── PROJECT KOPPELING ──── */}
+      {!selectedProjectId && selectedKlantId && isEditMode && (
+        <div className="mb-4">
+          {!showProjectForm ? (
+            <button
+              type="button"
+              onClick={() => { setShowProjectForm(true); setProjectNaam(offerteTitel || '') }}
+              className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg border border-[#1A535C]/30 text-[#1A535C] hover:bg-[#1A535C]/5 transition-colors"
+            >
+              <FolderPlus className="h-3.5 w-3.5" />
+              Project erbij aanmaken
+            </button>
+          ) : (
+            <div className="flex items-center gap-2 rounded-lg border border-[#1A535C]/30 bg-[#1A535C]/5 px-3 py-2">
+              <FolderPlus className="h-3.5 w-3.5 text-[#1A535C] shrink-0" />
+              <input
+                type="text"
+                value={projectNaam}
+                onChange={(e) => setProjectNaam(e.target.value)}
+                placeholder="Projectnaam"
+                className="flex-1 h-8 px-2 py-1 text-sm border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-[#1A535C]/20 focus:border-[#1A535C]"
+                autoFocus
+              />
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!projectNaam.trim() || !selectedKlantId) return
+                  setIsCreatingProject(true)
+                  try {
+                    const project = await createProject({
+                      klant_id: selectedKlantId,
+                      naam: projectNaam.trim(),
+                      beschrijving: '',
+                      budget: 0,
+                      status: 'gepland',
+                      prioriteit: 'medium',
+                      besteed: 0,
+                      voortgang: 0,
+                      team_leden: [],
+                      bron_offerte_id: editOfferteId || undefined,
+                      eind_datum: geldigTot || undefined,
+                    })
+                    setSelectedProjectId(project.id)
+                    if (editOfferteId) {
+                      await updateOfferte(editOfferteId, { project_id: project.id })
+                    }
+                    setShowProjectForm(false)
+                    toast.success(`Project "${projectNaam.trim()}" aangemaakt en gekoppeld`)
+                  } catch {
+                    toast.error('Kon project niet aanmaken')
+                  } finally {
+                    setIsCreatingProject(false)
+                  }
+                }}
+                disabled={!projectNaam.trim() || isCreatingProject}
+                className="h-8 px-3 text-sm font-medium text-white rounded-md transition-colors disabled:opacity-50"
+                style={{ backgroundColor: '#1A535C' }}
+              >
+                {isCreatingProject ? 'Aanmaken...' : 'Aanmaken'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowProjectForm(false)}
+                className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-md"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+      {selectedProjectId && selectedProject && isEditMode && (
+        <div className="mb-4">
+          <Link
+            to={`/projecten/${selectedProjectId}`}
+            className="inline-flex items-center gap-1.5 text-xs text-[#1A535C] hover:text-[#1A535C]/80 transition-colors"
+          >
+            <FolderOpen className="h-3.5 w-3.5" />
+            Project: {selectedProject.naam}
+          </Link>
+        </div>
+      )}
 
       {/* ──── VERSIE HISTORIE ──── */}
       {showVersieHistorie && versieHistorie.length > 0 && (
