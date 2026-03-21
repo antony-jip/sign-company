@@ -166,22 +166,40 @@ function applyFontSize(size: FontSize) {
   document.documentElement.style.setProperty('--font-size', config?.cssValue ?? '16px')
 }
 
-const settingsTabs = [
-  { id: 'profiel', label: 'Profiel', icon: User, description: 'Uw persoonlijke gegevens' },
-  { id: 'bedrijf', label: 'Bedrijf', icon: Building2, description: 'Bedrijfsinformatie en logo' },
-  { id: 'documenten', label: 'Documenten', icon: FileText, description: 'Offertes, facturen en nummering' },
-  { id: 'huisstijl', label: 'Huisstijl', icon: Palette, description: 'Document styling en briefpapier' },
-  { id: 'calculatie', label: 'Calculatie', icon: Calculator, description: 'Producten, marges en eenheden' },
-  { id: 'email', label: 'Email', icon: Mail, description: 'Handtekening, afzender en SMTP' },
-  { id: 'integraties', label: 'Integraties', icon: Puzzle, description: 'Koppelingen met externe diensten' },
-  { id: 'beveiliging', label: 'Beveiliging', icon: Shield, description: 'Wachtwoord en sessies' },
-  { id: 'weergave', label: 'Weergave', icon: Sliders, description: 'Thema, taal en lay-out' },
-  { id: 'sidebar', label: 'Sidebar', icon: PanelLeft, description: 'Project sidebar secties' },
-  { id: 'portaal', label: 'Portaal', icon: Link2, description: 'Klantportaal instellingen' },
-  { id: 'forgie', label: 'Daan AI', icon: Sparkles, description: 'AI assistent, visualizer en data import' },
-  { id: 'teamleden', label: 'Teamleden', icon: Users, description: 'Leden, rollen en uitnodigingen' },
-  { id: 'abonnement', label: 'Abonnement', icon: CreditCard, description: 'Plan, trial en betaling' },
+const settingsSections = [
+  {
+    label: 'PERSOONLIJK',
+    items: [
+      { id: 'profiel', label: 'Profiel', icon: User },
+      { id: 'weergave', label: 'Voorkeuren', icon: Sliders },
+    ],
+  },
+  {
+    label: 'BEDRIJF',
+    items: [
+      { id: 'bedrijf', label: 'Bedrijfsprofiel', icon: Building2 },
+      { id: 'teamleden', label: 'Teamleden', icon: Users },
+      { id: 'abonnement', label: 'Abonnement', icon: CreditCard },
+    ],
+  },
+  {
+    label: 'SYSTEEM',
+    items: [
+      { id: 'forgie', label: 'Daan AI', icon: Sparkles },
+      { id: 'integraties', label: 'Integraties', icon: Puzzle },
+      { id: 'huisstijl', label: 'Document stijl', icon: Palette },
+      { id: 'documenten', label: 'Documenten', icon: FileText },
+      { id: 'calculatie', label: 'Calculatie', icon: Calculator },
+      { id: 'email', label: 'Email', icon: Mail },
+      { id: 'beveiliging', label: 'Beveiliging', icon: Shield },
+      { id: 'sidebar', label: 'Sidebar', icon: PanelLeft },
+      { id: 'portaal', label: 'Portaal', icon: Link2 },
+    ],
+  },
 ] as const
+
+// Flat list for tab lookup
+const settingsTabs = settingsSections.flatMap(s => s.items)
 
 function renderTabContent(tabId: string) {
   switch (tabId) {
@@ -214,26 +232,22 @@ export function SettingsLayout() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex items-center gap-3">
-        <div className="p-2 bg-muted dark:bg-muted rounded-lg flex-shrink-0">
-          <Settings className="w-6 h-6 text-muted-foreground dark:text-muted-foreground/60" />
-        </div>
-        <div className="min-w-0">
-          <h1 className="text-2xl font-extrabold tracking-[-0.03em] text-foreground dark:text-white font-display truncate">
-            Instellingen
-          </h1>
-          <p className="text-sm text-muted-foreground dark:text-muted-foreground/60 truncate">
-            Beheer uw profiel, bedrijfsgegevens en voorkeuren
-          </p>
-        </div>
+      <div className="min-w-0">
+        <h1 className="text-[20px] font-bold tracking-[-0.03em] text-foreground dark:text-white font-display">
+          Instellingen
+        </h1>
+        <p className="text-[13px] text-muted-foreground dark:text-muted-foreground/60">
+          Beheer uw profiel, bedrijfsgegevens en voorkeuren
+        </p>
       </div>
 
       {/* Two-column layout: sidebar nav + content */}
       <div className="flex flex-col md:flex-row gap-6 min-h-[calc(100vh-12rem)]">
         {/* Left sidebar navigation */}
         <nav className="w-full md:w-56 flex-shrink-0">
-          <Card className="md:sticky md:top-6">
-            <div className="p-2 space-y-0.5 md:block flex overflow-x-auto scrollbar-hide md:overflow-visible gap-1 md:gap-0">
+          <div className="md:sticky md:top-6 space-y-1">
+            {/* Mobile: horizontal scroll */}
+            <div className="md:hidden flex overflow-x-auto scrollbar-hide gap-1 p-1 bg-card rounded-xl border border-border">
               {settingsTabs.map((tab) => {
                 const Icon = tab.icon
                 const isActive = activeTab === tab.id
@@ -241,44 +255,70 @@ export function SettingsLayout() {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`w-full flex-shrink-0 md:flex-shrink flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all duration-150 ${
+                    className={cn(
+                      'flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap',
                       isActive
-                        ? 'bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary shadow-sm'
-                        : 'text-muted-foreground hover:bg-bg-hover hover:text-foreground'
-                    }`}
+                        ? 'bg-[#1A535C]/10 text-[#1A535C] dark:bg-[#2A7A86]/20 dark:text-[#2A7A86]'
+                        : 'text-muted-foreground hover:text-foreground'
+                    )}
                   >
-                    <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-primary' : ''}`} />
-                    <div className="min-w-0">
-                      <span className={`text-sm block truncate ${isActive ? 'font-semibold' : 'font-medium'}`}>
-                        {tab.label}
-                      </span>
-                      <span className={`text-xs hidden md:block truncate ${isActive ? 'text-primary/70' : 'text-muted-foreground/60'}`}>
-                        {tab.description}
-                      </span>
-                    </div>
+                    <Icon className="w-4 h-4" />
+                    {tab.label}
                   </button>
                 )
               })}
-
-              {/* Separator + Team link */}
-              <div className="my-2 border-t border-border dark:border-border hidden md:block" />
-              <button
-                onClick={() => navigate('/team')}
-                className="w-full flex-shrink-0 md:flex-shrink flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all duration-150 text-muted-foreground hover:bg-bg-hover hover:text-foreground"
-              >
-                <Users className="w-4 h-4 flex-shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <span className="text-sm block truncate font-medium">Team HR</span>
-                  <span className="text-xs hidden md:block truncate text-muted-foreground/60 dark:text-muted-foreground">Medewerkers, uurtarieven en verlof</span>
-                </div>
-                <ArrowRight className="w-3 h-3 text-muted-foreground/60 flex-shrink-0" />
-              </button>
             </div>
-          </Card>
+
+            {/* Desktop: grouped sidebar */}
+            <div className="hidden md:block space-y-4">
+              {settingsSections.map((section) => (
+                <div key={section.label}>
+                  <div className="px-3 mb-1.5">
+                    <span className="text-[10px] font-semibold uppercase tracking-[1.5px] text-[#A0A098]">
+                      {section.label}
+                    </span>
+                  </div>
+                  <div className="space-y-0.5">
+                    {section.items.map((tab) => {
+                      const Icon = tab.icon
+                      const isActive = activeTab === tab.id
+                      return (
+                        <button
+                          key={tab.id}
+                          onClick={() => setActiveTab(tab.id)}
+                          className={cn(
+                            'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-all duration-150 text-[13px]',
+                            isActive
+                              ? 'text-[#1A535C] dark:text-[#2A7A86] font-semibold border-l-2 border-[#1A535C] dark:border-[#2A7A86] bg-[#1A535C]/5 dark:bg-[#2A7A86]/10'
+                              : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground font-medium border-l-2 border-transparent'
+                          )}
+                        >
+                          <Icon className={cn('w-4 h-4 flex-shrink-0', isActive ? 'text-[#1A535C] dark:text-[#2A7A86]' : 'text-[#A0A098]')} />
+                          <span className="truncate">{tab.label}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
+
+              {/* Team HR link */}
+              <div className="pt-2 border-t border-border/50">
+                <button
+                  onClick={() => navigate('/team')}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-all duration-150 text-[13px] text-muted-foreground hover:bg-muted/50 hover:text-foreground font-medium border-l-2 border-transparent"
+                >
+                  <Users className="w-4 h-4 flex-shrink-0 text-[#A0A098]" />
+                  <span className="truncate flex-1">Team HR</span>
+                  <ArrowRight className="w-3 h-3 text-[#A0A098] flex-shrink-0" />
+                </button>
+              </div>
+            </div>
+          </div>
         </nav>
 
         {/* Right content area */}
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 max-w-[640px]">
           {renderTabContent(activeTab)}
         </div>
       </div>
@@ -368,7 +408,7 @@ function ProfielTab() {
         telefoon,
       })
       await refreshProfile()
-      toast.success('Profiel succesvol opgeslagen')
+      toast.success('Opgeslagen.')
     } catch (err: any) {
       logger.error('Fout bij opslaan profiel:', err)
       const msg = err?.message || err?.details || 'Onbekende fout'
@@ -567,7 +607,7 @@ function BedrijfTab() {
         ...(logoPreview ? { logo_url: logoPreview } : {}),
       })
       await refreshProfile()
-      toast.success('Bedrijfsgegevens succesvol opgeslagen')
+      toast.success('Opgeslagen.')
     } catch (err: any) {
       logger.error('Fout bij opslaan bedrijfsgegevens:', err)
       const msg = err?.message || err?.details || 'Onbekende fout'
@@ -588,18 +628,25 @@ function BedrijfTab() {
       <SubTabNav tabs={BEDRIJF_TABS} active={subTab} onChange={setSubTab} />
 
       {subTab === 'algemeen' && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Bedrijfsgegevens</CardTitle>
-            <CardDescription>Naam, adres en logo van uw bedrijf</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
+        <Card className="border-border/50 rounded-xl">
+          <CardContent className="space-y-6 pt-6">
+            {/* Bedrijfsnaam prominent */}
+            {bedrijfsnaam && (
+              <h2 className="text-[18px] font-bold tracking-[-0.03em] font-display text-foreground">
+                {bedrijfsnaam}
+              </h2>
+            )}
+
+            {/* Logo upload */}
             <div className="flex items-center gap-6">
-              <div className="relative w-32 h-20 rounded-lg bg-muted dark:bg-muted border-2 border-dashed border-border dark:border-border flex items-center justify-center cursor-pointer group overflow-hidden hover:border-primary/50 transition-colors" onClick={handleLogoClick}>
+              <div
+                className="relative w-32 h-20 rounded-lg bg-[#F4F2EE] dark:bg-muted border-2 border-dashed border-[#E6E4E0] dark:border-border flex items-center justify-center cursor-pointer group overflow-hidden hover:border-[#1A535C]/50 transition-colors"
+                onClick={handleLogoClick}
+              >
                 {logoPreview ? (
                   <img src={logoPreview} alt="Logo" className="w-full h-full object-contain p-2" />
                 ) : (
-                  <div className="flex flex-col items-center text-muted-foreground/60">
+                  <div className="flex flex-col items-center text-[#A0A098]">
                     <Upload className="w-6 h-6" />
                     <span className="text-2xs mt-1">Logo</span>
                   </div>
@@ -608,29 +655,33 @@ function BedrijfTab() {
               </div>
               <div>
                 <p className="text-sm font-medium text-foreground dark:text-white">Bedrijfslogo</p>
-                <p className="text-xs text-muted-foreground dark:text-muted-foreground/60 mt-1">Upload uw bedrijfslogo. PNG of SVG aanbevolen.</p>
+                <p className="text-xs text-[#A0A098] mt-1">Upload uw bedrijfslogo. PNG of SVG aanbevolen.</p>
               </div>
             </div>
-            <Separator />
-            <div className="space-y-2">
-              <Label htmlFor="bedrijfsnaam">Bedrijfsnaam</Label>
-              <Input id="bedrijfsnaam" value={bedrijfsnaam} onChange={(e) => setBedrijfsnaam(e.target.value)} />
+
+            <div className="border-t border-[#E6E4E0] dark:border-border" style={{ margin: '24px 0', borderWidth: '0.5px' }} />
+
+            <div className="space-y-1.5">
+              <label htmlFor="bedrijfsnaam" className="text-[11px] text-[#A0A098] block">Bedrijfsnaam</label>
+              <Input id="bedrijfsnaam" value={bedrijfsnaam} onChange={(e) => setBedrijfsnaam(e.target.value)} className="bg-[#F4F2EE] dark:bg-muted border-[#E6E4E0] rounded-lg focus-visible:ring-[#1A535C]" />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="adres">Adres</Label>
-              <Input id="adres" value={adres} onChange={(e) => setAdres(e.target.value)} />
+            <div className="space-y-1.5">
+              <label htmlFor="adres" className="text-[11px] text-[#A0A098] block">Adres</label>
+              <Input id="adres" value={adres} onChange={(e) => setAdres(e.target.value)} className="bg-[#F4F2EE] dark:bg-muted border-[#E6E4E0] rounded-lg focus-visible:ring-[#1A535C]" />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="postcode">Postcode</Label>
-                <Input id="postcode" value={postcode} onChange={(e) => setPostcode(e.target.value)} />
+              <div className="space-y-1.5">
+                <label htmlFor="postcode" className="text-[11px] text-[#A0A098] block">Postcode</label>
+                <Input id="postcode" value={postcode} onChange={(e) => setPostcode(e.target.value)} className="bg-[#F4F2EE] dark:bg-muted border-[#E6E4E0] rounded-lg focus-visible:ring-[#1A535C] font-mono" />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="stad">Stad</Label>
-                <Input id="stad" value={stad} onChange={(e) => setStad(e.target.value)} />
+              <div className="space-y-1.5">
+                <label htmlFor="stad" className="text-[11px] text-[#A0A098] block">Stad</label>
+                <Input id="stad" value={stad} onChange={(e) => setStad(e.target.value)} className="bg-[#F4F2EE] dark:bg-muted border-[#E6E4E0] rounded-lg focus-visible:ring-[#1A535C]" />
               </div>
             </div>
-            {saveButton}
+            <div className="flex justify-end">
+              <Button onClick={handleSave} disabled={isSaving || isLoading} className="bg-[#1A535C] hover:bg-[#1A535C]/90 text-white">{isSaving ? 'Opslaan...' : 'Opslaan'}</Button>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -662,27 +713,29 @@ function BedrijfTab() {
       )}
 
       {subTab === 'financieel' && (
-        <Card>
+        <Card className="border-border/50 rounded-xl">
           <CardHeader>
-            <CardTitle>Juridisch &amp; Financieel</CardTitle>
-            <CardDescription>Deze gegevens worden weergegeven op facturen en offertes</CardDescription>
+            <CardTitle className="text-[20px] font-bold font-display tracking-[-0.03em]">Juridisch &amp; Financieel</CardTitle>
+            <CardDescription className="text-[13px]">Deze gegevens worden weergegeven op facturen en offertes</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="kvk">KvK Nummer</Label>
-                <Input id="kvk" value={kvkNummer} onChange={(e) => setKvkNummer(e.target.value)} placeholder="12345678" />
+              <div className="space-y-1.5">
+                <label htmlFor="kvk" className="text-[11px] text-[#A0A098] block">KvK Nummer</label>
+                <Input id="kvk" value={kvkNummer} onChange={(e) => setKvkNummer(e.target.value)} placeholder="12345678" className="font-mono bg-[#F4F2EE] dark:bg-muted border-[#E6E4E0] rounded-lg focus-visible:ring-[#1A535C]" />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="btw">BTW Nummer</Label>
-                <Input id="btw" value={btwNummer} onChange={(e) => setBtwNummer(e.target.value)} placeholder="NL123456789B01" />
+              <div className="space-y-1.5">
+                <label htmlFor="btw" className="text-[11px] text-[#A0A098] block">BTW Nummer</label>
+                <Input id="btw" value={btwNummer} onChange={(e) => setBtwNummer(e.target.value)} placeholder="NL123456789B01" className="font-mono bg-[#F4F2EE] dark:bg-muted border-[#E6E4E0] rounded-lg focus-visible:ring-[#1A535C]" />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="iban">IBAN</Label>
-                <Input id="iban" value={iban} onChange={(e) => setIban(e.target.value)} placeholder="NL00 BANK 0123 4567 89" />
+              <div className="space-y-1.5">
+                <label htmlFor="iban" className="text-[11px] text-[#A0A098] block">IBAN</label>
+                <Input id="iban" value={iban} onChange={(e) => setIban(e.target.value)} placeholder="NL00 BANK 0123 4567 89" className="font-mono bg-[#F4F2EE] dark:bg-muted border-[#E6E4E0] rounded-lg focus-visible:ring-[#1A535C]" />
               </div>
             </div>
-            {saveButton}
+            <div className="flex justify-end mt-6">
+              <Button onClick={handleSave} disabled={isSaving || isLoading} className="bg-[#1A535C] hover:bg-[#1A535C]/90 text-white">{isSaving ? 'Opslaan...' : 'Opslaan'}</Button>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -758,7 +811,7 @@ function DemoDataSection() {
   }
 
   return (
-    <Card className="border-orange-200 dark:border-orange-800 mt-6">
+    <Card className="border-[#F15025]/20 dark:border-[#F15025]/30 mt-6 rounded-xl">
       <CardContent className="pt-6">
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -772,7 +825,7 @@ function DemoDataSection() {
             size="sm"
             onClick={handleDelete}
             disabled={isDeleting}
-            className="border-orange-300 text-orange-700 hover:bg-orange-50 dark:border-orange-700 dark:text-orange-400 dark:hover:bg-orange-900/20 flex-shrink-0"
+            className="border-[#F15025]/30 text-[#F15025] hover:bg-[#F15025]/5 dark:border-[#F15025]/40 dark:text-[#F15025] dark:hover:bg-[#F15025]/10 flex-shrink-0"
           >
             {isDeleting ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Trash2 className="mr-2 h-3.5 w-3.5" />}
             Verwijderen
@@ -901,7 +954,7 @@ function DocumentenTab() {
         standaard_uurtarief: parseFloat(standaardUurtarief) || 75,
       })
       await refreshSettings()
-      toast.success('Documentinstellingen opgeslagen')
+      toast.success('Opgeslagen.')
     } catch (err) {
       logger.error('Fout bij opslaan documentinstellingen:', err)
       toast.error('Kon documentinstellingen niet opslaan')
@@ -1447,7 +1500,7 @@ function EmailTab() {
         handtekening_afbeelding_grootte: afbeeldingGrootte,
       })
       await refreshSettings()
-      toast.success('E-mailinstellingen opgeslagen')
+      toast.success('Opgeslagen.')
     } catch (err) {
       logger.error('Fout bij opslaan e-mailinstellingen:', err)
       toast.error('Kon e-mailinstellingen niet opslaan')
@@ -1810,7 +1863,7 @@ function EmailTab() {
                     setIsSaving(true)
                     await updateAppSettings(user.id, { email_fetch_limit: emailFetchLimit })
                     await refreshSettings()
-                    toast.success('E-mail voorkeuren opgeslagen')
+                    toast.success('Opgeslagen.')
                   } catch (err) {
                     console.error('[SettingsLayout] Email voorkeuren opslaan mislukt:', err)
                     toast.error('Kon voorkeuren niet opslaan')
@@ -1952,8 +2005,8 @@ function EmailSettingsInline({
     <Card className="mt-6">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg">
-          <div className="w-8 h-8 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center">
-            <Mail className="w-4 h-4 text-red-600 dark:text-red-400" />
+          <div className="w-8 h-8 bg-[#F15025]/10 dark:bg-[#F15025]/20 rounded-lg flex items-center justify-center">
+            <Mail className="w-4 h-4 text-[#F15025]" />
           </div>
           E-mail Instellingen
         </CardTitle>
@@ -2150,7 +2203,7 @@ function EmailSettingsInline({
               {isSaving ? 'Opslaan...' : 'Opslaan'}
             </Button>
             {isConnected && (
-              <Button variant="ghost" onClick={handleDisconnect} className="gap-2 text-red-600 hover:text-red-700">
+              <Button variant="ghost" onClick={handleDisconnect} className="gap-2 text-[#F15025] hover:text-[#F15025]/80 hover:bg-[#F15025]/5">
                 <Trash2 className="w-4 h-4" />
                 Verwijderen
               </Button>
@@ -2208,7 +2261,7 @@ function IntegratiesTab() {
     setMollieSaving(true)
     try {
       await updateAppSettings(user.id, { mollie_enabled: mollieEnabled, mollie_api_key: mollieApiKey })
-      toast.success('Mollie instellingen opgeslagen')
+      toast.success('Opgeslagen.')
     } catch (err) {
       logger.error('Fout bij opslaan Mollie instellingen:', err)
       toast.error('Kon Mollie instellingen niet opslaan')
@@ -2225,7 +2278,7 @@ function IntegratiesTab() {
         exact_online_client_id: exactClientId,
         exact_online_client_secret: exactClientSecret,
       })
-      toast.success('Exact Online instellingen opgeslagen')
+      toast.success('Opgeslagen.')
     } catch (err) {
       logger.error('Fout bij opslaan Exact Online instellingen:', err)
       toast.error('Kon Exact Online instellingen niet opslaan')
@@ -2242,8 +2295,8 @@ function IntegratiesTab() {
       <Card>
         <CardContent className="p-6 space-y-4">
           <div className="flex items-start gap-4">
-            <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
-              <CreditCard className="w-5 h-5 text-orange-700 dark:text-orange-400" />
+            <div className="w-10 h-10 bg-[#F15025]/10 dark:bg-[#F15025]/20 rounded-lg flex items-center justify-center flex-shrink-0">
+              <CreditCard className="w-5 h-5 text-[#F15025]" />
             </div>
             <div className="flex-1 space-y-4">
               <div>
@@ -2305,8 +2358,8 @@ function IntegratiesTab() {
       <Card>
         <CardContent className="p-6 space-y-4">
           <div className="flex items-start gap-4">
-            <div className="w-10 h-10 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
-              <Globe className="w-5 h-5 text-indigo-700 dark:text-indigo-400" />
+            <div className="w-10 h-10 bg-[#1A535C]/10 dark:bg-[#2A7A86]/20 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Globe className="w-5 h-5 text-[#1A535C] dark:text-[#2A7A86]" />
             </div>
             <div className="flex-1 space-y-4">
               <div className="flex items-center gap-3 mb-1">
@@ -2398,8 +2451,8 @@ function IntegratiesTab() {
       <Card>
         <CardContent className="p-6 space-y-4">
           <div className="flex items-start gap-4">
-            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
-              <span className="text-blue-700 dark:text-blue-400 font-bold text-sm">KvK</span>
+            <div className="w-10 h-10 bg-[#1A535C]/10 dark:bg-[#2A7A86]/20 rounded-lg flex items-center justify-center flex-shrink-0">
+              <span className="text-[#1A535C] dark:text-[#2A7A86] font-bold text-sm">KvK</span>
             </div>
             <div className="flex-1 space-y-4">
               <div>
@@ -2445,7 +2498,7 @@ function IntegratiesTab() {
                         kvk_api_key: kvkApiKey,
                         kvk_api_enabled: !!kvkApiKey,
                       })
-                      toast.success('KvK instellingen opgeslagen')
+                      toast.success('Opgeslagen.')
                     } catch (err) {
                       logger.error('Fout bij opslaan KvK instellingen:', err)
                       toast.error('Kon KvK instellingen niet opslaan')
@@ -2537,7 +2590,7 @@ function BeveiligingTab() {
           toast.error(`Kon wachtwoord niet wijzigen: ${updateError.message}`)
           return
         }
-        toast.success('Wachtwoord succesvol gewijzigd')
+        toast.success('Opgeslagen.')
       } else {
         // Demo mode - update password in localStorage
         const storedUser = localStorage.getItem('forgedesk_demo_user')
@@ -2549,7 +2602,7 @@ function BeveiligingTab() {
             return
           }
           localStorage.setItem('forgedesk_demo_password', newPassword)
-          toast.success('Wachtwoord succesvol gewijzigd (demo modus)')
+          toast.success('Opgeslagen.')
         }
       }
       setCurrentPassword('')
@@ -2699,7 +2752,7 @@ function BeveiligingTab() {
                   </p>
                 </div>
               </div>
-              <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+              <Button variant="ghost" size="sm" className="text-[#F15025] hover:text-[#F15025]/80 hover:bg-[#F15025]/5">
                 Beëindigen
               </Button>
             </div>
@@ -2767,7 +2820,7 @@ function WeergaveTab() {
     try {
       setIsSavingSidebar(true)
       await updateSettings({ sidebar_items: sidebarItems })
-      toast.success('Navigatie-instellingen opgeslagen')
+      toast.success('Opgeslagen.')
     } catch (err) {
       logger.error(err)
       toast.error('Kon navigatie niet opslaan')
