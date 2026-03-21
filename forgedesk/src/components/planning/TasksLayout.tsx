@@ -59,7 +59,6 @@ import { ModuleHeader } from '@/components/shared/ModuleHeader'
 import { useAuth } from '@/contexts/AuthContext'
 import { getTaken, createTaak, updateTaak, deleteTaak, getProjecten, getKlanten, getMontageAfspraken, getMedewerkers } from '@/services/supabaseService'
 import type { Taak, TaakBijlage, Project, Klant, MontageAfspraak, Medewerker } from '@/types'
-import { uploadFile, downloadFile, deleteFile } from '@/services/storageService'
 import { logger } from '../../utils/logger'
 import { AuditLogPanel } from '@/components/shared/AuditLogPanel'
 import { logWijziging } from '@/utils/auditLogger'
@@ -1041,7 +1040,10 @@ export function TasksLayout() {
         onSave={handleSave} isSaving={isSaving} projecten={projecten} klanten={klanten}
         medewerkers={medewerkers}
         editingTaak={editingTaak}
-        onUpdateTaak={(updated) => setTaken((prev) => prev.map((t) => t.id === updated.id ? updated : t))}
+        onUpdateTaak={(updated) => {
+          setTaken((prev) => prev.map((t) => t.id === updated.id ? updated : t))
+          setEditingTaak(updated)
+        }}
       />
 
       {/* Delete dialog */}
@@ -1673,6 +1675,16 @@ function EditTaskDialog({
 
   const bijlagen: TaakBijlage[] = editingTaak?.bijlagen || []
 
+  // Read file as data URL for immediate display + storage
+  function readFileAsDataUrl(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result as string)
+      reader.onerror = reject
+      reader.readAsDataURL(file)
+    })
+  }
+
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files
     if (!files || files.length === 0 || !editingTaak) return
@@ -1681,26 +1693,27 @@ function EditTaskDialog({
     try {
       const newBijlagen: TaakBijlage[] = [...bijlagen]
       for (let fi = 0; fi < files.length; fi++) {
-        const file = files[fi] as File
+        const file = files[fi]
+        if (!file) continue
         if (file.size > 10 * 1024 * 1024) {
           toast.error(`${file.name} is te groot (max 10MB)`)
           continue
         }
-        const path = `taken/${editingTaak.id}/${Date.now()}_${file.name}`
-        const uploadedPath = await uploadFile(file, path)
-        const url = await downloadFile(uploadedPath)
+        // Read as data URL so it's immediately viewable and downloadable
+        const dataUrl = await readFileAsDataUrl(file)
         newBijlagen.push({
           naam: file.name,
-          url,
+          url: dataUrl,
           type: file.type,
           grootte: file.size,
           uploaded_at: new Date().toISOString(),
         })
       }
-      const updated = await updateTaak(editingTaak.id, { bijlagen: newBijlagen } as any)
+      const updated = await updateTaak(editingTaak.id, { bijlagen: newBijlagen })
       onUpdateTaak(updated)
       toast.success(`${files.length === 1 ? 'Bestand' : `${files.length} bestanden`} geüpload`)
     } catch (error) {
+      logger.error('Upload fout:', error)
       toast.error('Kon bestand niet uploaden')
     } finally {
       setIsUploading(false)
@@ -1712,7 +1725,7 @@ function EditTaskDialog({
     if (!editingTaak) return
     const newBijlagen = bijlagen.filter((_, i) => i !== index)
     try {
-      const updated = await updateTaak(editingTaak.id, { bijlagen: newBijlagen } as any)
+      const updated = await updateTaak(editingTaak.id, { bijlagen: newBijlagen })
       onUpdateTaak(updated)
       toast.success('Bijlage verwijderd')
     } catch {
@@ -1721,6 +1734,7 @@ function EditTaskDialog({
   }
 
   function formatFileSize(bytes: number) {
+    if (!bytes || isNaN(bytes)) return ''
     if (bytes < 1024) return `${bytes} B`
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
@@ -1860,32 +1874,42 @@ function EditTaskDialog({
             {/* Existing files */}
             {bijlagen.length > 0 && (
               <div className="space-y-1.5">
-                {bijlagen.map((b, i) => (
-                  <div key={i} className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-muted/40 border border-border/40 group">
-                    <FileIcon className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-foreground truncate">{b.naam}</p>
-                      <p className="text-[10px] text-muted-foreground">{formatFileSize(b.grootte)}</p>
+                {bijlagen.map((b, i) => {
+                  const fileName = b.naam || `Bestand ${i + 1}`
+                  const fileSize = formatFileSize(b.grootte)
+                  const isImage = b.type?.startsWith('image/')
+                  return (
+                    <div key={i} className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-muted/40 border border-border/40 group">
+                      {isImage && b.url ? (
+                        <img src={b.url} alt={fileName} className="w-8 h-8 rounded object-cover flex-shrink-0" />
+                      ) : (
+                        <FileIcon className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-foreground truncate">{fileName}</p>
+                        {fileSize && <p className="text-[10px] text-muted-foreground">{fileSize}</p>}
+                      </div>
+                      {b.url && (
+                        <a
+                          href={b.url}
+                          download={fileName}
+                          className="p-1 rounded hover:bg-muted transition-colors flex-shrink-0"
+                          onClick={(e) => e.stopPropagation()}
+                          title="Downloaden"
+                        >
+                          <ExternalLink className="w-3 h-3 text-muted-foreground" />
+                        </a>
+                      )}
+                      <button
+                        onClick={() => handleRemoveBijlage(i)}
+                        className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors flex-shrink-0 opacity-0 group-hover:opacity-100"
+                        title="Verwijderen"
+                      >
+                        <Trash2 className="w-3 h-3 text-muted-foreground hover:text-red-500" />
+                      </button>
                     </div>
-                    <a
-                      href={b.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-1 rounded hover:bg-muted transition-colors flex-shrink-0"
-                      onClick={(e) => e.stopPropagation()}
-                      title="Openen"
-                    >
-                      <ExternalLink className="w-3 h-3 text-muted-foreground" />
-                    </a>
-                    <button
-                      onClick={() => handleRemoveBijlage(i)}
-                      className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors flex-shrink-0 opacity-0 group-hover:opacity-100"
-                      title="Verwijderen"
-                    >
-                      <Trash2 className="w-3 h-3 text-muted-foreground hover:text-red-500" />
-                    </button>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
             {/* Upload button */}
