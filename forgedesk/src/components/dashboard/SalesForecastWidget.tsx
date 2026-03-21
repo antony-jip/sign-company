@@ -85,11 +85,11 @@ export function SalesForecastWidget() {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <p className="text-xs text-muted-foreground">Pipeline</p>
-            <p className="text-sm font-bold">{formatCurrency(pipelineWaarde)}</p>
+            <p className="text-sm font-bold font-mono">{formatCurrency(pipelineWaarde)}</p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Gewogen</p>
-            <p className="text-sm font-bold text-emerald-600">{formatCurrency(gewogenWaarde)}</p>
+            <p className="text-sm font-bold text-emerald-600 font-mono">{formatCurrency(gewogenWaarde)}</p>
           </div>
         </div>
         {chartData.some((d) => d.waarde > 0) && (

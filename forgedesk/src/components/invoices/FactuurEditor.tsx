@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { Link, useNavigate, useSearchParams, useParams } from 'react-router-dom'
+import { BackButton } from '@/components/shared/BackButton'
 import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -957,6 +958,9 @@ export function FactuurEditor() {
 
   return (
     <div className="min-h-screen bg-background">
+      <div className="px-6 pt-3">
+        <BackButton fallbackPath="/facturen" />
+      </div>
       {/* Header */}
       <div className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b px-6 py-3">
         <div className="flex items-center justify-between">

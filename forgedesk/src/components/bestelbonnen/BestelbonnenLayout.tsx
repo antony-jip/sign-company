@@ -173,7 +173,7 @@ export function BestelbonnenLayout() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-foreground font-display">Bestelbonnen</h1>
-            <p className="text-sm text-muted-foreground">{gefilterd.length} van {bestelbonnen.length} bestelbonnen</p>
+            <p className="text-sm text-muted-foreground"><span className="font-mono">{gefilterd.length}</span> van <span className="font-mono">{bestelbonnen.length}</span> bestelbonnen</p>
           </div>
         </div>
         <div className="flex items-center gap-2">

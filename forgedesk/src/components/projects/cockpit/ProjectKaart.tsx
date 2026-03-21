@@ -115,7 +115,7 @@ export function ProjectKaart({
     <div
       className="border border-sand shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px] overflow-hidden"
       style={{
-        background: `linear-gradient(175deg, ${stepColor}12 0%, ${stepColor}08 40%, #FFFFFE 75%)`,
+        background: '#FFFFFE',
       }}
     >
       {/* Colored accent line at top */}
@@ -151,21 +151,24 @@ export function ProjectKaart({
         <div className="flex items-center gap-2">
           <button
             onClick={onCreateOfferte}
-            className="inline-flex items-center gap-1.5 h-8 px-3.5 text-[12px] font-semibold rounded-lg bg-[#9B8EC4] text-white hover:bg-[#8A7DB3] shadow-sm transition-all"
+            className="inline-flex items-center gap-1.5 h-8 px-3.5 text-[12px] font-medium rounded-lg text-foreground hover:bg-white/80 transition-all"
+            style={{ border: '0.5px solid #E6E4E0' }}
           >
             <Receipt className="h-3.5 w-3.5" />
             Offerte
           </button>
           <button
             onClick={onCreateWerkbon}
-            className="inline-flex items-center gap-1.5 h-8 px-3 text-[12px] font-medium rounded-lg border border-black/[0.06] bg-white/70 backdrop-blur-sm text-foreground hover:bg-white hover:border-black/[0.1] transition-all"
+            className="inline-flex items-center gap-1.5 h-8 px-3 text-[12px] font-medium rounded-lg text-foreground hover:bg-white/80 transition-all"
+            style={{ border: '0.5px solid #E6E4E0' }}
           >
             <ClipboardCheck className="h-3.5 w-3.5 text-muted-foreground/70" />
             Werkbon
           </button>
           <button
             onClick={onCreateMontage}
-            className="inline-flex items-center gap-1.5 h-8 px-3 text-[12px] font-medium rounded-lg border border-black/[0.06] bg-white/70 backdrop-blur-sm text-foreground hover:bg-white hover:border-black/[0.1] transition-all"
+            className="inline-flex items-center gap-1.5 h-8 px-3 text-[12px] font-medium rounded-lg text-foreground hover:bg-white/80 transition-all"
+            style={{ border: '0.5px solid #E6E4E0' }}
           >
             <Calendar className="h-3.5 w-3.5 text-muted-foreground/70" />
             Montage
@@ -209,7 +212,10 @@ export function ProjectKaart({
               <h1 className="text-[22px] font-semibold tracking-tight text-foreground truncate">
                 {project.naam}
               </h1>
-              <Badge className={cn(getStatusBadgeClass(project.status), 'rounded-full text-[11px] px-2.5 py-0.5 font-medium')}>
+              <Badge className="rounded-full text-[10px] font-semibold px-[10px] py-[3px]" style={{
+                backgroundColor: project.status === 'actief' ? '#E2F0F0' : project.status === 'gepland' || project.status === 'in-review' ? '#EEEEED' : project.status === 'on-hold' ? '#FDE8E1' : project.status === 'te-factureren' || project.status === 'gefactureerd' ? '#E2F0E8' : project.status === 'afgerond' ? '#E2F0F0' : '#EEEEED',
+                color: project.status === 'actief' ? '#1A535C' : project.status === 'gepland' || project.status === 'in-review' ? '#5A5A55' : project.status === 'on-hold' ? '#D4453A' : project.status === 'te-factureren' || project.status === 'gefactureerd' ? '#2D6B48' : project.status === 'afgerond' ? '#1A535C' : '#5A5A55',
+              }}>
                 {statusLabels[project.status] || project.status}
               </Badge>
               <span className="font-semibold" style={{ fontSize: 13, color: getFase(project.status).color }}>
@@ -230,7 +236,7 @@ export function ProjectKaart({
               {isValidDate && (
                 <>
                   <span className="text-muted-foreground/30">·</span>
-                  <span>Deadline {formatDate(project.eind_datum!)}</span>
+                  <span>Deadline <span className="font-mono">{formatDate(project.eind_datum!)}</span></span>
                 </>
               )}
               {daysLeft !== null && (
@@ -240,7 +246,7 @@ export function ProjectKaart({
                     'font-medium',
                     daysLeft < 0 ? 'text-destructive' : daysLeft < 7 ? 'text-mod-planning-text' : 'text-muted-foreground'
                   )}>
-                    {daysLeft < 0 ? `${Math.abs(daysLeft)}d over` : `${daysLeft}d`}
+                    <span className="font-mono">{daysLeft < 0 ? `${Math.abs(daysLeft)}d over` : `${daysLeft}d`}</span>
                   </span>
                 </>
               )}

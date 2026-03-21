@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { Link, useNavigate, useSearchParams, useParams, useLocation } from 'react-router-dom'
+import { BackButton } from '@/components/shared/BackButton'
 import { useTabDirtyState } from '@/hooks/useTabDirtyState'
 import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -2058,6 +2059,7 @@ export function QuoteCreation() {
     <div className="relative -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 min-h-full">
       <div className="fixed inset-0 bg-gradient-to-br from-[#EDE8F2] via-[#F2EDE6] to-[#EDE8E0] dark:from-background dark:via-background dark:to-background pointer-events-none" />
     <div className="relative pb-6 px-4 py-8 md:py-12 mod-strip mod-strip-offertes">
+      <BackButton fallbackPath="/offertes" />
       {/* ──── HEADER BAR ──── */}
       <div className="rounded-xl bg-gradient-to-r from-card/90 to-[#EDE8F2]/60 dark:bg-card dark:from-card dark:to-card backdrop-blur-sm border border-border/50 px-4 py-3 mb-6">
         <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -2196,7 +2198,7 @@ export function QuoteCreation() {
                 <CardTitle className="text-base flex items-center gap-2">
                   <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-accent to-primary flex items-center justify-center"><FileText className="h-3.5 w-3.5 text-white" /></div>
                   Offerte items
-                  <span className="text-xs text-muted-foreground font-normal ml-1">{items.length} {items.length === 1 ? 'item' : 'items'}</span>
+                  <span className="text-xs text-muted-foreground font-normal ml-1"><span className="font-mono">{items.length}</span> {items.length === 1 ? 'item' : 'items'}</span>
                 </CardTitle>
               </div>
             </CardHeader>
@@ -2601,10 +2603,10 @@ export function QuoteCreation() {
                                 <p className="text-2xs uppercase tracking-label text-white/80 font-medium">Klaar om te factureren</p>
                               </div>
                               <p className="text-2xs text-white/60">Offerte bedrag incl BTW</p>
-                              <p className="text-xl font-bold text-white">{formatCurrency(round2(subtotaal + btwBedrag))}</p>
+                              <p className="text-xl font-bold text-white font-mono">{formatCurrency(round2(subtotaal + btwBedrag))}</p>
                               <div className="flex items-center gap-3 mt-1">
-                                <p className="text-2xs text-white/60">{formatCurrency(subtotaal)} excl BTW</p>
-                                <p className="text-2xs text-white/60">+{formatCurrency(btwBedrag)} BTW</p>
+                                <p className="text-2xs text-white/60"><span className="font-mono">{formatCurrency(subtotaal)}</span> excl BTW</p>
+                                <p className="text-2xs text-white/60">+<span className="font-mono">{formatCurrency(btwBedrag)}</span> BTW</p>
                               </div>
                             </div>
                             <div className="p-3">

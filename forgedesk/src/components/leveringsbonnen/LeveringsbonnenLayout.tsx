@@ -154,7 +154,7 @@ export function LeveringsbonnenLayout() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-foreground font-display">Leveringsbonnen</h1>
-            <p className="text-sm text-muted-foreground">{gefilterd.length} van {leveringsbonnen.length} leveringsbonnen</p>
+            <p className="text-sm text-muted-foreground"><span className="font-mono">{gefilterd.length}</span> van <span className="font-mono">{leveringsbonnen.length}</span> leveringsbonnen</p>
           </div>
         </div>
         <div className="flex items-center gap-2">

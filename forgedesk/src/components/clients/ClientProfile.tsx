@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
+import { BackButton } from '@/components/shared/BackButton'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -510,6 +511,7 @@ export function ClientProfile() {
 
   return (
     <div className="space-y-6 animate-fade-in-up">
+      <BackButton fallbackPath="/klanten" />
       {/* ── Header ── */}
       <div className="flex items-start gap-4">
         <Button

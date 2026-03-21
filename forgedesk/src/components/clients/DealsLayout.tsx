@@ -398,7 +398,7 @@ export function DealsLayout() {
                               (deal.kans_percentage || 0) >= 70 ? 'bg-mod-facturen-light text-mod-facturen-text' :
                               (deal.kans_percentage || 0) >= 30 ? 'bg-mod-taken-light text-mod-taken-text' :
                               'bg-mod-werkbonnen-light text-mod-werkbonnen-text'
-                            )}>{deal.kans_percentage}%</span>
+                            )}><span className="font-mono">{deal.kans_percentage}%</span></span>
                           )}
                         </div>
                         <p className="text-sm font-medium text-foreground leading-snug line-clamp-2">{deal.titel}</p>
@@ -459,7 +459,7 @@ export function DealsLayout() {
                           (deal.kans_percentage || 0) >= 70 ? 'bg-mod-facturen-light text-mod-facturen-text' :
                           (deal.kans_percentage || 0) >= 30 ? 'bg-mod-taken-light text-mod-taken-text' :
                           'bg-mod-werkbonnen-light text-mod-werkbonnen-text'
-                        )}>{deal.kans_percentage || 0}%</span>
+                        )}><span className="font-mono">{deal.kans_percentage || 0}%</span></span>
                       </td>
                       <td className="px-4 py-3 text-sm text-muted-foreground">{getMedewerkerNaam(deal.medewerker_id)}</td>
                       <td className="px-4 py-3 text-sm text-muted-foreground max-w-[200px] truncate">{deal.volgende_actie || '-'}</td>

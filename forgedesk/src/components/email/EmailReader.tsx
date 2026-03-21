@@ -568,7 +568,7 @@ export function EmailReader({
             {emailIndex !== undefined && emailTotal !== undefined && (
               <>
                 <div className="w-px h-5 bg-border/50 mx-1" />
-                <span className="text-xs text-foreground/30 tabular-nums">{emailIndex + 1}/{emailTotal}</span>
+                <span className="text-xs text-foreground/30 font-mono tabular-nums">{emailIndex + 1}/{emailTotal}</span>
                 <Button variant="ghost" size="icon" className="h-7 w-7 text-foreground/30 hover:text-foreground/60" onClick={() => onNavigate?.('prev')} disabled={emailIndex <= 0}>
                   <ChevronUp className="h-3.5 w-3.5" />
                 </Button>
@@ -1247,7 +1247,7 @@ const CRMSidebar = memo(function CRMSidebar({
             <Mail className="h-3.5 w-3.5 text-amber-700/30" />
             <h4 className="text-[12px] font-semibold text-foreground/60">Eerdere emails</h4>
             {previousEmails.length > 0 && (
-              <span className="ml-auto text-[10px] font-semibold text-amber-800/40 tabular-nums bg-amber-100/50 px-2 py-0.5 rounded-full border border-amber-200/30">{previousEmails.length}</span>
+              <span className="ml-auto text-[10px] font-semibold text-amber-800/40 font-mono tabular-nums bg-amber-100/50 px-2 py-0.5 rounded-full border border-amber-200/30">{previousEmails.length}</span>
             )}
           </div>
           <div className="p-2">
