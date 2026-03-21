@@ -21,7 +21,8 @@ function wmoToEmoji(code: number): string {
   return '⛅'
 }
 
-export function WeatherDayStrip({ weekDays }: WeatherDayStripProps) {
+/** Hook to fetch weather data for a week — reusable by parent */
+export function useWeekWeather(weekDays: Date[]) {
   const [weather, setWeather] = useState<Map<string, DayWeather>>(new Map())
 
   useEffect(() => {
@@ -59,14 +60,25 @@ export function WeatherDayStrip({ weekDays }: WeatherDayStripProps) {
     return () => controller.abort()
   }, [weekDays])
 
+  return weather
+}
+
+/** Get weather for a specific date string (YYYY-MM-DD) */
+export function getWeatherForDate(weather: Map<string, DayWeather>, day: Date): DayWeather | undefined {
+  const dateStr = day.toISOString().split('T')[0]
+  return weather.get(dateStr)
+}
+
+/** Legacy component — kept for backward compat but no longer used in TasksLayout */
+export function WeatherDayStrip({ weekDays }: WeatherDayStripProps) {
+  const weather = useWeekWeather(weekDays)
+
   if (weather.size === 0) return null
 
   return (
     <div className="flex">
-      {/* Spacer for time gutter if needed — handled by parent */}
       {weekDays.map((day, i) => {
-        const dateStr = day.toISOString().split('T')[0]
-        const w = weather.get(dateStr)
+        const w = getWeatherForDate(weather, day)
         if (!w) return <div key={i} className="flex-1 min-w-0" />
         return (
           <div key={i} className="flex-1 min-w-0 flex items-center justify-center gap-1 py-1 text-muted-foreground">
