@@ -48,13 +48,18 @@ import {
   Wrench,
   Users,
   CalendarDays,
+  Paperclip,
+  FileIcon,
+  Upload,
+  ExternalLink,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useWeekWeather, getWeatherForDate } from './WeatherDayStrip'
 import { ModuleHeader } from '@/components/shared/ModuleHeader'
 import { useAuth } from '@/contexts/AuthContext'
 import { getTaken, createTaak, updateTaak, deleteTaak, getProjecten, getKlanten, getMontageAfspraken, getMedewerkers } from '@/services/supabaseService'
-import type { Taak, Project, Klant, MontageAfspraak, Medewerker } from '@/types'
+import type { Taak, TaakBijlage, Project, Klant, MontageAfspraak, Medewerker } from '@/types'
+import { uploadFile, downloadFile, deleteFile } from '@/services/storageService'
 import { logger } from '../../utils/logger'
 import { AuditLogPanel } from '@/components/shared/AuditLogPanel'
 import { logWijziging } from '@/utils/auditLogger'
@@ -159,7 +164,7 @@ export function TasksLayout() {
   const [viewMode, setViewMode] = useState<'week' | 'maand'>('week')
   const [weekOffset, setWeekOffset] = useState(0)
   const [monthOffset, setMonthOffset] = useState(0)
-  const [showCompleted, setShowCompleted] = useState(false)
+  const [showCompleted, setShowCompleted] = useState(true)
 
   // FAB state
   const [fabOpen, setFabOpen] = useState(false)
@@ -695,7 +700,7 @@ export function TasksLayout() {
                   : 'border-border/60 text-[#5A5A55] hover:text-foreground hover:border-border'
               )}
             >
-              {showCompleted ? 'Afgerond zichtbaar' : 'Toon afgerond'}
+              {showCompleted ? 'Verberg afgerond' : 'Toon afgerond'}
             </button>
             <button
               onClick={() => setShowMontage(!showMontage)}
@@ -913,7 +918,7 @@ export function TasksLayout() {
                             onClick={() => openEditDialog(taak)}
                             className={cn(
                               'w-full text-left px-1.5 py-0.5 rounded text-[10px] leading-tight truncate border-l-2 transition-all hover:shadow-sm',
-                              isDone ? 'opacity-40 line-through bg-muted/30 border-muted-foreground/20' : `${colors.bg} ${colors.border}`,
+                              isDone ? 'line-through bg-muted/30 border-muted-foreground/20 text-muted-foreground/60' : `${colors.bg} ${colors.border}`,
                             )}
                             title={`${taak.titel}${taak.toegewezen_aan ? ` — ${taak.toegewezen_aan}` : ''}`}
                           >
@@ -1035,7 +1040,8 @@ export function TasksLayout() {
         formData={formData} setFormData={setFormData}
         onSave={handleSave} isSaving={isSaving} projecten={projecten} klanten={klanten}
         medewerkers={medewerkers}
-        editingTaakId={editingTaak?.id}
+        editingTaak={editingTaak}
+        onUpdateTaak={(updated) => setTaken((prev) => prev.map((t) => t.id === updated.id ? updated : t))}
       />
 
       {/* Delete dialog */}
@@ -1522,7 +1528,7 @@ function TaskCard({
         !isResizing && 'cursor-grab active:cursor-grabbing',
         'hover:shadow-lg hover:shadow-black/5 hover:z-10 hover:-translate-y-[1px]',
         isDone
-          ? 'opacity-40 bg-muted/40 dark:bg-muted/20 hover:opacity-60'
+          ? 'bg-muted/30 dark:bg-muted/15 border-l-muted-foreground/30'
           : colors.bg,
         isPast && !isDone && 'opacity-60',
         justCompleted && 'scale-95 opacity-50',
@@ -1580,6 +1586,11 @@ function TaskCard({
             {durationLabel && (
               <span className="text-2xs text-muted-foreground/40 font-medium font-mono">
                 {durationLabel}
+              </span>
+            )}
+            {taak.bijlagen && taak.bijlagen.length > 0 && (
+              <span className="text-2xs text-muted-foreground/40 flex items-center gap-0.5">
+                <Paperclip className="w-2 h-2" />{taak.bijlagen.length}
               </span>
             )}
           </div>
@@ -1644,21 +1655,80 @@ function TaskCard({
 // === EDIT DIALOG ===
 
 function EditTaskDialog({
-  open, onOpenChange, formData, setFormData, onSave, isSaving, projecten, klanten, medewerkers, editingTaakId,
+  open, onOpenChange, formData, setFormData, onSave, isSaving, projecten, klanten, medewerkers, editingTaak, onUpdateTaak,
 }: {
   open: boolean; onOpenChange: (open: boolean) => void
   formData: TaakFormData; setFormData: React.Dispatch<React.SetStateAction<TaakFormData>>
   onSave: () => void; isSaving: boolean; projecten: Project[]; klanten: Klant[]
   medewerkers: Medewerker[]
-  editingTaakId?: string
+  editingTaak: Taak | null
+  onUpdateTaak: (taak: Taak) => void
 }) {
+  const [isUploading, setIsUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   function updateField<K extends keyof TaakFormData>(field: K, value: TaakFormData[K]) {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
+  const bijlagen: TaakBijlage[] = editingTaak?.bijlagen || []
+
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files
+    if (!files || files.length === 0 || !editingTaak) return
+
+    setIsUploading(true)
+    try {
+      const newBijlagen: TaakBijlage[] = [...bijlagen]
+      for (let fi = 0; fi < files.length; fi++) {
+        const file = files[fi] as File
+        if (file.size > 10 * 1024 * 1024) {
+          toast.error(`${file.name} is te groot (max 10MB)`)
+          continue
+        }
+        const path = `taken/${editingTaak.id}/${Date.now()}_${file.name}`
+        const uploadedPath = await uploadFile(file, path)
+        const url = await downloadFile(uploadedPath)
+        newBijlagen.push({
+          naam: file.name,
+          url,
+          type: file.type,
+          grootte: file.size,
+          uploaded_at: new Date().toISOString(),
+        })
+      }
+      const updated = await updateTaak(editingTaak.id, { bijlagen: newBijlagen } as any)
+      onUpdateTaak(updated)
+      toast.success(`${files.length === 1 ? 'Bestand' : `${files.length} bestanden`} geüpload`)
+    } catch (error) {
+      toast.error('Kon bestand niet uploaden')
+    } finally {
+      setIsUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  async function handleRemoveBijlage(index: number) {
+    if (!editingTaak) return
+    const newBijlagen = bijlagen.filter((_, i) => i !== index)
+    try {
+      const updated = await updateTaak(editingTaak.id, { bijlagen: newBijlagen } as any)
+      onUpdateTaak(updated)
+      toast.success('Bijlage verwijderd')
+    } catch {
+      toast.error('Kon bijlage niet verwijderen')
+    }
+  }
+
+  function formatFileSize(bytes: number) {
+    if (bytes < 1024) return `${bytes} B`
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>Taak bewerken</DialogTitle></DialogHeader>
         <div className="grid gap-4 py-2">
           <div className="grid gap-2">
@@ -1780,9 +1850,71 @@ function EditTaskDialog({
               <Input value={formData.toegewezen_aan} onChange={(e) => updateField('toegewezen_aan', e.target.value)} placeholder="Optioneel..." />
             )}
           </div>
+
+          {/* Bijlagen / file upload */}
+          <div className="grid gap-2">
+            <Label className="flex items-center gap-1.5">
+              <Paperclip className="w-3.5 h-3.5" />
+              Bijlagen
+            </Label>
+            {/* Existing files */}
+            {bijlagen.length > 0 && (
+              <div className="space-y-1.5">
+                {bijlagen.map((b, i) => (
+                  <div key={i} className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-muted/40 border border-border/40 group">
+                    <FileIcon className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-foreground truncate">{b.naam}</p>
+                      <p className="text-[10px] text-muted-foreground">{formatFileSize(b.grootte)}</p>
+                    </div>
+                    <a
+                      href={b.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-1 rounded hover:bg-muted transition-colors flex-shrink-0"
+                      onClick={(e) => e.stopPropagation()}
+                      title="Openen"
+                    >
+                      <ExternalLink className="w-3 h-3 text-muted-foreground" />
+                    </a>
+                    <button
+                      onClick={() => handleRemoveBijlage(i)}
+                      className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors flex-shrink-0 opacity-0 group-hover:opacity-100"
+                      title="Verwijderen"
+                    >
+                      <Trash2 className="w-3 h-3 text-muted-foreground hover:text-red-500" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {/* Upload button */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              className="hidden"
+              onChange={handleFileUpload}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 text-xs gap-1.5"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading || !editingTaak}
+            >
+              {isUploading ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Upload className="w-3.5 h-3.5" />
+              )}
+              {isUploading ? 'Uploaden...' : 'Bestand toevoegen'}
+            </Button>
+          </div>
         </div>
-        {editingTaakId && (
-          <AuditLogPanel entityType="taak" entityId={editingTaakId} />
+        {editingTaak?.id && (
+          <AuditLogPanel entityType="taak" entityId={editingTaak.id} />
         )}
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSaving}>Annuleren</Button>

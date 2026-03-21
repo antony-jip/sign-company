@@ -207,6 +207,14 @@ export interface Project {
   updated_at: string;
 }
 
+export interface TaakBijlage {
+  naam: string;
+  url: string;
+  type: string;
+  grootte: number;
+  uploaded_at: string;
+}
+
 export interface Taak {
   id: string;
   user_id?: string;
@@ -221,7 +229,7 @@ export interface Taak {
   geschatte_tijd: number;
   bestede_tijd: number;
   locatie?: string;
-  offerte_id?: string;
+  bijlagen?: TaakBijlage[];
   created_at: string;
   updated_at: string;
 }
@@ -295,7 +303,6 @@ export interface Offerte {
   // Klant opties-selectie bij acceptatie
   gekozen_items?: string[];
   gekozen_varianten?: Record<string, string>;
-  toegewezen_aan?: string;
   created_at: string;
   updated_at: string;
 }
@@ -635,8 +642,6 @@ export interface AppSettings {
   exact_btw_hoog?: string;
   exact_btw_laag?: string;
   exact_btw_nul?: string;
-  // Snelofferte: welke calculatie-templates als snelkoppeling tonen in het Nieuwe Offerte formulier
-  snelofferte_templates?: string[];
   created_at: string;
   updated_at: string;
 }
@@ -980,7 +985,6 @@ export interface MontageAfspraak {
   materialen: string[];
   notities: string;
   werkbon_id?: string;             // link naar gekoppelde werkbon
-  werkbon_nummer?: string;         // gecacht werkbon nummer voor weergave
   bijlagen?: MontageBijlage[];     // gekoppelde bestanden (PDF, tekening, foto)
   created_at: string;
   updated_at: string;
