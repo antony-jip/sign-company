@@ -1,16 +1,16 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { createOfferte, createOfferteItem, updateOfferte, getKlanten, getCalculatieTemplates } from '@/services/supabaseService'
+import { createOfferte, createOfferteItem, updateOfferte, getKlanten, getCalculatieTemplates, getMedewerkers, createTaak } from '@/services/supabaseService'
 import { sendEmail } from '@/services/gmailService'
 import { offerteVerzendTemplate } from '@/services/emailTemplateService'
 import { generateOffertePDF } from '@/services/pdfService'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useDocumentStyle } from '@/hooks/useDocumentStyle'
-import type { Klant, OfferteItem, CalculatieTemplate, CalculatieRegel } from '@/types'
+import type { Klant, OfferteItem, CalculatieTemplate, CalculatieRegel, Medewerker } from '@/types'
 import { toast } from 'sonner'
 import { round2 } from '@/utils/budgetUtils'
-import { Building2, ChevronDown, Plus, X, Send, BookTemplate, Settings } from 'lucide-react'
+import { Building2, ChevronDown, Plus, X, Send, BookTemplate, Settings, Save, UserCircle, ListTodo } from 'lucide-react'
 
 interface Props {
   open: boolean
@@ -69,9 +69,12 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
   const [verzendEmail, setVerzendEmail] = useState('')
   const [emailTekst, setEmailTekst] = useState('')
   const [saving, setSaving] = useState(false)
-  const [savingMode, setSavingMode] = useState<'create' | 'send'>('create')
+  const [savingMode, setSavingMode] = useState<'save' | 'create' | 'send'>('create')
   const [templates, setTemplates] = useState<CalculatieTemplate[]>([])
   const [showTemplates, setShowTemplates] = useState(false)
+  const [medewerkers, setMedewerkers] = useState<Medewerker[]>([])
+  const [toegewezenAan, setToegewezenAan] = useState('')
+  const [maakTaak, setMaakTaak] = useState(false)
   const klantInputRef = useRef<HTMLInputElement>(null)
 
   // Snelkoppeling template IDs from settings
@@ -81,6 +84,7 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
     if (open) {
       getKlanten().then(setKlanten).catch(() => {})
       getCalculatieTemplates().then(setTemplates).catch(() => {})
+      getMedewerkers().then(m => setMedewerkers(m.filter(x => x.status === 'actief'))).catch(() => {})
     } else {
       setKlantQuery('')
       setSelectedKlant(null)
@@ -93,6 +97,8 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
       setVerzendEmail('')
       setEmailTekst('')
       setShowTemplates(false)
+      setToegewezenAan('')
+      setMaakTaak(false)
     }
   }, [open])
 
@@ -105,10 +111,6 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
   const snelkoppelingen = useMemo(
     () => snelkoppelingIds.map(id => activeTemplates.find(t => t.id === id)).filter(Boolean) as CalculatieTemplate[],
     [snelkoppelingIds, activeTemplates]
-  )
-  const overigeTemplates = useMemo(
-    () => activeTemplates.filter(t => !snelkoppelingIds.includes(t.id)),
-    [activeTemplates, snelkoppelingIds]
   )
 
   // Calculate totals from regels
@@ -157,17 +159,13 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
       if (r.id !== id) return r
       const updated = { ...r, [field]: value }
 
-      // Smart auto-calculation (like CalculatieModal)
       if (field === 'inkoop') {
-        // Inkoop changed → recalculate verkoop from marge
         const inkoop = parseNum(String(value))
         updated.verkoop = berekenVerkoopVanInkoop(inkoop, updated.marge).toFixed(2).replace('.', ',')
       } else if (field === 'marge') {
-        // Marge changed → recalculate verkoop from inkoop
         const inkoop = parseNum(updated.inkoop)
         updated.verkoop = berekenVerkoopVanInkoop(inkoop, Number(value)).toFixed(2).replace('.', ',')
       } else if (field === 'verkoop') {
-        // Verkoop manually changed → recalculate marge
         const inkoop = parseNum(updated.inkoop)
         const verkoop = parseNum(String(value))
         updated.marge = berekenMarge(inkoop, verkoop)
@@ -201,7 +199,7 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
     if (!showExtra) setShowExtra(true)
   }, [regels, titel, showExtra])
 
-  async function handleSubmit(e: React.FormEvent, mode: 'create' | 'send' = 'create') {
+  async function handleSubmit(e: React.FormEvent, mode: 'save' | 'create' | 'send' = 'create') {
     e.preventDefault()
     if (!selectedKlant || !titel.trim()) return
     if (mode === 'send' && !verzendEmail.trim()) return
@@ -222,44 +220,61 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
         geldig_tot: deadline || new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
         notities: notitie.trim(),
         voorwaarden: '',
+        toegewezen_aan: toegewezenAan || undefined,
       })
 
-      // 2. Create offerte items from regels
-      const createdItems: OfferteItem[] = []
-      for (let i = 0; i < regels.length; i++) {
-        const r = regels[i]
-        if (!r.omschrijving.trim()) continue
-        const verkoopPrijs = parseNum(r.verkoop)
-        const item = await createOfferteItem({
-          offerte_id: offerte.id,
-          beschrijving: r.omschrijving.trim(),
+      // 2. Create ONE offerte item with all regels as calculatie_regels
+      let createdItem: OfferteItem | null = null
+      const validRegels = regels.filter(r => r.omschrijving.trim())
+
+      if (validRegels.length > 0) {
+        const calcRegels: CalculatieRegel[] = validRegels.map(r => ({
+          id: makeId(),
+          product_naam: r.omschrijving.trim(),
+          categorie: '',
+          eenheid: 'stuks',
           aantal: r.aantal,
-          eenheidsprijs: verkoopPrijs,
+          inkoop_prijs: parseNum(r.inkoop),
+          verkoop_prijs: parseNum(r.verkoop),
+          marge_percentage: r.marge,
+          korting_percentage: 0,
+          nacalculatie: false,
+          btw_percentage: 21,
+          notitie: '',
+        }))
+
+        createdItem = await createOfferteItem({
+          offerte_id: offerte.id,
+          beschrijving: titel.trim(),
+          aantal: 1,
+          eenheidsprijs: totalen.totaalVerkoop,
           btw_percentage: 21,
           korting_percentage: 0,
-          totaal: r.aantal * verkoopPrijs,
-          volgorde: i,
+          totaal: totalen.totaalVerkoop,
+          volgorde: 0,
           soort: 'prijs',
           heeft_calculatie: true,
-          calculatie_regels: [{
-            id: makeId(),
-            product_naam: r.omschrijving.trim(),
-            categorie: '',
-            eenheid: 'stuks',
-            aantal: r.aantal,
-            inkoop_prijs: parseNum(r.inkoop),
-            verkoop_prijs: verkoopPrijs,
-            marge_percentage: r.marge,
-            korting_percentage: 0,
-            nacalculatie: false,
-            btw_percentage: 21,
-            notitie: '',
-          }],
+          calculatie_regels: calcRegels,
         })
-        createdItems.push(item)
       }
 
-      // 3. If send mode → generate PDF, send email
+      // 3. Optionally create a task
+      if (maakTaak) {
+        await createTaak({
+          titel: `Offerte afmaken: ${titel.trim()}`,
+          beschrijving: `Offerte voor ${selectedKlant.bedrijfsnaam}${notitie.trim() ? `\n${notitie.trim()}` : ''}`,
+          status: 'todo',
+          prioriteit: 'medium',
+          toegewezen_aan: toegewezenAan || '',
+          klant_id: selectedKlant.id,
+          offerte_id: offerte.id,
+          deadline: deadline || undefined,
+          geschatte_tijd: 0,
+          bestede_tijd: 0,
+        })
+      }
+
+      // 4. If send mode → generate PDF, send email
       if (mode === 'send') {
         const emailData = offerteVerzendTemplate({
           klantNaam: selectedKlant.contactpersoon || selectedKlant.bedrijfsnaam,
@@ -273,11 +288,12 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
           primaireKleur: primaireKleur || '#F15025',
         })
 
+        const items: OfferteItem[] = createdItem ? [createdItem] : []
         let attachments: Array<{ filename: string; content: string; encoding: 'base64' }> = []
         try {
           const doc = generateOffertePDF(
             offerte,
-            createdItems,
+            items,
             selectedKlant,
             { ...profile, primaireKleur: primaireKleur || '#F15025' } as Parameters<typeof generateOffertePDF>[3],
             documentStyle,
@@ -288,7 +304,6 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
           // PDF generation failed, send without attachment
         }
 
-        // Use custom email text if provided, otherwise template text
         const bodyText = emailTekst.trim() || emailData.text
 
         try {
@@ -309,18 +324,26 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
         } as Parameters<typeof updateOfferte>[1])
 
         toast.success('Offerte aangemaakt en verzonden')
+        onOpenChange(false)
+        navigate(`/offertes/${offerte.id}`)
+      } else if (mode === 'save') {
+        // Save as concept, stay on current page
+        toast.success(`Offerte opgeslagen als concept${maakTaak ? ' + taak aangemaakt' : ''}`)
+        onOpenChange(false)
       } else {
+        // Create and navigate
         toast.success('Offerte aangemaakt')
+        onOpenChange(false)
+        navigate(`/offertes/${offerte.id}`)
       }
-
-      onOpenChange(false)
-      navigate(`/offertes/${offerte.id}`)
     } catch {
       toast.error('Kon offerte niet aanmaken')
     } finally {
       setSaving(false)
     }
   }
+
+  const canSubmit = !!selectedKlant && !!titel.trim() && !saving
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -417,7 +440,7 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
             {!showExtra && (
               <button
                 type="submit"
-                disabled={!selectedKlant || !titel.trim() || saving}
+                disabled={!canSubmit}
                 className="h-9 px-4 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-50 whitespace-nowrap shrink-0"
                 style={{ backgroundColor: '#F15025' }}
               >
@@ -442,16 +465,34 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
           {/* Extended section */}
           {showExtra && (
             <div className="space-y-3 pt-1">
-              {/* Notitie */}
-              <div>
-                <label className="text-[10px] text-muted-foreground mb-1 block">Notitie</label>
-                <input
-                  type="text"
-                  value={notitie}
-                  onChange={e => setNotitie(e.target.value)}
-                  placeholder="Interne notitie of opmerking..."
-                  className={inputClass}
-                />
+              {/* Notitie + Medewerker row */}
+              <div className="flex gap-3">
+                <div className="flex-[3] min-w-0">
+                  <label className="text-[10px] text-muted-foreground mb-1 block">Notitie</label>
+                  <input
+                    type="text"
+                    value={notitie}
+                    onChange={e => setNotitie(e.target.value)}
+                    placeholder="Interne notitie of opmerking..."
+                    className={inputClass}
+                  />
+                </div>
+                <div className="flex-[2] min-w-0">
+                  <label className="text-[10px] text-muted-foreground mb-1 block">Medewerker</label>
+                  <div className="relative">
+                    <UserCircle className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                    <select
+                      value={toegewezenAan}
+                      onChange={e => setToegewezenAan(e.target.value)}
+                      className={`${inputClass} pl-8 appearance-none cursor-pointer`}
+                    >
+                      <option value="">Niet toegewezen</option>
+                      {medewerkers.map(m => (
+                        <option key={m.id} value={m.naam}>{m.naam}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
               </div>
 
               {/* Quick calculatie regels */}
@@ -653,26 +694,50 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
                 )}
               </div>
 
-              {/* Buttons */}
-              <div className="flex justify-end gap-2 pt-1">
-                <button
-                  type="submit"
-                  disabled={!selectedKlant || !titel.trim() || saving}
-                  className="h-9 px-4 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-50 whitespace-nowrap"
-                  style={{ backgroundColor: '#F15025' }}
-                >
-                  {saving && savingMode === 'create' ? 'Aanmaken...' : 'Offerte maken'}
-                </button>
-                <button
-                  type="button"
-                  onClick={e => handleSubmit(e as unknown as React.FormEvent, 'send')}
-                  disabled={!selectedKlant || !titel.trim() || !verzendEmail.trim() || saving}
-                  className="h-9 px-4 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-50 whitespace-nowrap flex items-center gap-1.5"
-                  style={{ backgroundColor: '#1A535C' }}
-                >
-                  <Send className="h-3.5 w-3.5" />
-                  {saving && savingMode === 'send' ? 'Verzenden...' : 'Maak & verzend'}
-                </button>
+              {/* Taak checkbox + Buttons */}
+              <div className="space-y-2 pt-1">
+                <label className="flex items-center gap-2 cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={maakTaak}
+                    onChange={e => setMaakTaak(e.target.checked)}
+                    className="h-3.5 w-3.5 rounded border-border accent-petrol"
+                  />
+                  <ListTodo className="h-3.5 w-3.5" />
+                  <span className="text-[11px]">
+                    Taak aanmaken{titel.trim() ? `: "Offerte afmaken: ${titel.trim()}"` : ''}
+                  </span>
+                </label>
+
+                <div className="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={e => handleSubmit(e as unknown as React.FormEvent, 'save')}
+                    disabled={!canSubmit}
+                    className="h-9 px-3 text-sm font-medium border border-border rounded-lg transition-colors disabled:opacity-50 whitespace-nowrap flex items-center gap-1.5 hover:bg-muted/50"
+                  >
+                    <Save className="h-3.5 w-3.5" />
+                    {saving && savingMode === 'save' ? 'Opslaan...' : 'Opslaan'}
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!canSubmit}
+                    className="h-9 px-4 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-50 whitespace-nowrap"
+                    style={{ backgroundColor: '#F15025' }}
+                  >
+                    {saving && savingMode === 'create' ? 'Aanmaken...' : 'Offerte maken'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={e => handleSubmit(e as unknown as React.FormEvent, 'send')}
+                    disabled={!canSubmit || !verzendEmail.trim()}
+                    className="h-9 px-4 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-50 whitespace-nowrap flex items-center gap-1.5"
+                    style={{ backgroundColor: '#1A535C' }}
+                  >
+                    <Send className="h-3.5 w-3.5" />
+                    {saving && savingMode === 'send' ? 'Verzenden...' : 'Maak & verzend'}
+                  </button>
+                </div>
               </div>
             </div>
           )}

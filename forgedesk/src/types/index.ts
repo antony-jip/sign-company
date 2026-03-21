@@ -221,6 +221,7 @@ export interface Taak {
   geschatte_tijd: number;
   bestede_tijd: number;
   locatie?: string;
+  offerte_id?: string;
   created_at: string;
   updated_at: string;
 }
@@ -294,6 +295,7 @@ export interface Offerte {
   // Klant opties-selectie bij acceptatie
   gekozen_items?: string[];
   gekozen_varianten?: Record<string, string>;
+  toegewezen_aan?: string;
   created_at: string;
   updated_at: string;
 }
