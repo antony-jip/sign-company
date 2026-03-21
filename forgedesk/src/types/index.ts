@@ -207,6 +207,14 @@ export interface Project {
   updated_at: string;
 }
 
+export interface TaakBijlage {
+  naam: string;
+  url: string;
+  type: string;
+  grootte: number;
+  uploaded_at: string;
+}
+
 export interface Taak {
   id: string;
   user_id?: string;
@@ -221,6 +229,7 @@ export interface Taak {
   geschatte_tijd: number;
   bestede_tijd: number;
   locatie?: string;
+  bijlagen?: TaakBijlage[];
   created_at: string;
   updated_at: string;
 }
