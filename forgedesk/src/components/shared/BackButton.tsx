@@ -17,6 +17,9 @@ const PATH_LABELS: Record<string, string> = {
   '/email': 'Email',
   '/portalen': 'Portalen',
   '/instellingen': 'Instellingen',
+  '/bestelbonnen': 'Bestelbonnen',
+  '/leveringsbonnen': 'Leveringsbonnen',
+  '/leads': 'Leads',
 }
 
 export function BackButton({ fallbackPath, label }: BackButtonProps) {
