@@ -17,7 +17,7 @@ export default {
       fontFamily: {
         sans: ['"IBM Plex Sans"', 'system-ui', 'sans-serif'],
         heading: ['"Bricolage Grotesque"', 'system-ui', 'sans-serif'],
-        mono: ['"DM Mono"', 'monospace'],
+        mono: ['"Inter"', 'system-ui', 'sans-serif'],
       },
       fontSize: {
         "2xs": ["10px", { lineHeight: "14px" }],
