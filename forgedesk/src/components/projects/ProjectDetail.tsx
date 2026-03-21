@@ -247,6 +247,7 @@ export function ProjectDetail() {
   const [montageNotities, setMontageNotities] = useState('')
   const [montageMonteurs, setMontageMonteurs] = useState<string[]>([])
   const [montageBijlagen, setMontageBijlagen] = useState<MontageBijlage[]>([])
+  const [montageWerkbonId, setMontageWerkbonId] = useState('')
   const [isSavingMontage, setIsSavingMontage] = useState(false)
   const [toewijzingMedewerkerId, setToewijzingMedewerkerId] = useState('')
   const [toewijzingRol, setToewijzingRol] = useState<ProjectToewijzing['rol']>('medewerker')
@@ -282,6 +283,7 @@ export function ProjectDetail() {
     setMontageNotities('')
     setMontageMonteurs([])
     setMontageBijlagen([])
+    setMontageWerkbonId('')
     setMontageDialogOpen(true)
   }
 
@@ -307,6 +309,7 @@ export function ProjectDetail() {
         monteurs: montageMonteurs,
         materialen: [],
         notities: montageNotities,
+        werkbon_id: montageWerkbonId || undefined,
         bijlagen: montageBijlagen.length > 0 ? montageBijlagen : undefined,
         status: 'gepland',
       })
@@ -1952,6 +1955,29 @@ export function ProjectDetail() {
                 </div>
               </div>
             )}
+            {/* Werkbon koppelen */}
+            {projectWerkbonnen.length > 0 && (
+              <div>
+                <Label className="text-sm flex items-center gap-1.5">
+                  <ClipboardCheck className="h-3.5 w-3.5" />
+                  Werkbon koppelen
+                </Label>
+                <Select value={montageWerkbonId} onValueChange={setMontageWerkbonId}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Selecteer werkbon (optioneel)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {projectWerkbonnen.map((wb) => (
+                      <SelectItem key={wb.id} value={wb.id}>
+                        <span className="font-mono text-xs">{wb.werkbon_nummer}</span>
+                        <span className="ml-2 text-muted-foreground">{wb.titel}</span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             <div>
               <Label className="text-sm">Notities</Label>
               <Textarea value={montageNotities} onChange={(e) => setMontageNotities(e.target.value)} placeholder="Optioneel..." rows={2} className="mt-1" />
