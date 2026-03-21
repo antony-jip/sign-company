@@ -2,6 +2,12 @@ import React, { useState, useRef, useCallback, useEffect } from 'react'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { getAutofillSuggestions } from '@/utils/autofillUtils'
+import { getMateriaalSuggesties } from '@/services/supabaseService'
+
+export interface DbSuggestion {
+  text: string
+  meta: string // e.g. "12-02 — Bakkerij Jansen"
+}
 
 interface AutofillInputProps {
   field: string              // 'omschrijving' | 'materiaal' | 'layout' | 'montage'
@@ -43,10 +49,12 @@ export function AutofillInput({
   const [showDropdown, setShowDropdown] = useState(false)
   const [focusedIndex, setFocusedIndex] = useState(-1)
   const [suggestions, setSuggestions] = useState<string[]>([])
+  const [dbSuggestions, setDbSuggestions] = useState<DbSuggestion[]>([])
   const wrapperRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>()
 
-  // Update suggestions when value changes
+  // Update localStorage suggestions when value changes
   useEffect(() => {
     if (value && value.length >= 1) {
       const results = getAutofillSuggestions(field, value)
@@ -55,6 +63,39 @@ export function AutofillInput({
       setSuggestions([])
     }
   }, [field, value])
+
+  // Fetch database suggestions for materiaal field (debounced)
+  useEffect(() => {
+    if (field !== 'materiaal' || !value || value.length < 2) {
+      setDbSuggestions([])
+      return
+    }
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => {
+      getMateriaalSuggesties(value)
+        .then((results) => {
+          setDbSuggestions(
+            results.map((r) => ({
+              text: r.materiaal,
+              meta: `${new Date(r.laatst_gebruikt).toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit' })}${r.project_naam ? ` — ${r.project_naam}` : ''}`,
+            }))
+          )
+        })
+        .catch(() => setDbSuggestions([]))
+    }, 300)
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
+  }, [field, value])
+
+  // Merge: DB suggestions first, then localStorage (deduped)
+  const allSuggestions = (() => {
+    const dbTexts = new Set(dbSuggestions.map((s) => s.text.toLowerCase()))
+    const localFiltered = suggestions.filter((s) => !dbTexts.has(s.toLowerCase()))
+    const merged: Array<{ text: string; meta?: string }> = [
+      ...dbSuggestions.map((s) => ({ text: s.text, meta: s.meta })),
+      ...localFiltered.map((s) => ({ text: s })),
+    ]
+    return merged.slice(0, 5)
+  })()
 
   const selectSuggestion = useCallback(
     (suggestion: string) => {
@@ -67,25 +108,25 @@ export function AutofillInput({
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
-      if (!showDropdown || suggestions.length === 0) return
+      if (!showDropdown || allSuggestions.length === 0) return
 
       if (e.key === 'ArrowDown') {
         e.preventDefault()
-        setFocusedIndex((prev) => (prev + 1) % suggestions.length)
+        setFocusedIndex((prev) => (prev + 1) % allSuggestions.length)
       } else if (e.key === 'ArrowUp') {
         e.preventDefault()
         setFocusedIndex((prev) =>
-          (prev - 1 + suggestions.length) % suggestions.length
+          (prev - 1 + allSuggestions.length) % allSuggestions.length
         )
       } else if (e.key === 'Enter' && focusedIndex >= 0) {
         e.preventDefault()
-        selectSuggestion(suggestions[focusedIndex])
+        selectSuggestion(allSuggestions[focusedIndex].text)
       } else if (e.key === 'Escape') {
         setShowDropdown(false)
         setFocusedIndex(-1)
       }
     },
-    [showDropdown, suggestions, focusedIndex, selectSuggestion]
+    [showDropdown, allSuggestions, focusedIndex, selectSuggestion]
   )
 
   // Close dropdown on outside click
@@ -102,7 +143,7 @@ export function AutofillInput({
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  const shouldShowDropdown = showDropdown && suggestions.length > 0
+  const shouldShowDropdown = showDropdown && allSuggestions.length > 0
 
   return (
     <div ref={wrapperRef} className="relative flex-1">
@@ -115,7 +156,7 @@ export function AutofillInput({
           setFocusedIndex(-1)
         }}
         onFocus={() => {
-          if (value && value.length >= 1 && suggestions.length > 0) {
+          if (value && value.length >= 1 && allSuggestions.length > 0) {
             setShowDropdown(true)
           }
         }}
@@ -124,10 +165,10 @@ export function AutofillInput({
         className={className}
       />
       {shouldShowDropdown && (
-        <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-card border border-border dark:border-border rounded-lg shadow-lg max-h-48 overflow-auto">
-          {suggestions.map((suggestion, i) => (
+        <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-white dark:bg-card border border-[#E6E4E0] dark:border-border rounded-lg shadow-lg max-h-48 overflow-auto">
+          {allSuggestions.map((suggestion, i) => (
             <button
-              key={suggestion}
+              key={suggestion.text}
               type="button"
               className={cn(
                 'w-full text-left px-3 py-2 text-sm transition-colors',
@@ -137,10 +178,17 @@ export function AutofillInput({
               )}
               onMouseDown={(e) => {
                 e.preventDefault()
-                selectSuggestion(suggestion)
+                selectSuggestion(suggestion.text)
               }}
             >
-              <HighlightMatch text={suggestion} query={value} />
+              <div className="flex items-center justify-between gap-2">
+                <span className="truncate">
+                  <HighlightMatch text={suggestion.text} query={value} />
+                </span>
+                {suggestion.meta && (
+                  <span className="text-[11px] font-mono text-muted-foreground flex-shrink-0">{suggestion.meta}</span>
+                )}
+              </div>
             </button>
           ))}
         </div>
