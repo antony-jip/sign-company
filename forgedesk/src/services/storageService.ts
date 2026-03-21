@@ -90,6 +90,44 @@ export async function getSignedUrl(path: string): Promise<string> {
   return data.signedUrl
 }
 
+/**
+ * Upload een montage bijlage naar storage en geef een MontageBijlage object terug met een persistente URL.
+ */
+export async function uploadMontageBijlage(file: File): Promise<{
+  id: string
+  naam: string
+  type: 'pdf' | 'tekening' | 'foto' | 'overig'
+  url: string
+  grootte: number
+  uploaded_at: string
+}> {
+  const ext = file.name.split('.').pop()?.toLowerCase() || ''
+  let type: 'pdf' | 'tekening' | 'foto' | 'overig' = 'overig'
+  if (ext === 'pdf') type = 'pdf'
+  else if (['png', 'jpg', 'jpeg', 'webp'].includes(ext)) type = 'foto'
+
+  const id = `bijlage-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+  const storagePath = `montage-bijlagen/${id}.${ext}`
+  const url = await uploadFile(file, storagePath)
+
+  // Get a public/downloadable URL
+  let displayUrl = url
+  try {
+    displayUrl = await downloadFile(url)
+  } catch {
+    // fallback to path
+  }
+
+  return {
+    id,
+    naam: file.name,
+    type,
+    url: displayUrl,
+    grootte: file.size,
+    uploaded_at: new Date().toISOString(),
+  }
+}
+
 export async function deleteFile(path: string): Promise<void> {
   if (!isSupabaseConfigured() || !supabase) {
     const stored = JSON.parse(localStorage.getItem('forgedesk_files') || '{}')

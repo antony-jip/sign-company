@@ -55,6 +55,8 @@ import {
   FileText,
   Image,
   Upload,
+  Eye,
+  Printer,
 } from "lucide-react";
 import {
   getMontageAfspraken,
@@ -70,6 +72,7 @@ import {
 } from "@/services/supabaseService";
 import type { MontageAfspraak, MontageBijlage, Project, Medewerker, Klant, Offerte, Werkbon } from "@/types";
 import { ClipboardCheck } from "lucide-react";
+import { uploadMontageBijlage } from '@/services/storageService';
 import { WerkbonVanProjectDialog } from "@/components/werkbonnen/WerkbonVanProjectDialog";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -1636,6 +1639,25 @@ export function MontagePlanningLayout() {
                       <span className="text-[10px] text-[#A0A098] uppercase font-medium flex-shrink-0">{bijlage.type}</span>
                       <button
                         type="button"
+                        title="Bekijken"
+                        onClick={() => window.open(bijlage.url, '_blank')}
+                        className="text-[#A0A098] hover:text-[#1A535C] transition-colors flex-shrink-0"
+                      >
+                        <Eye className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        title="Printen"
+                        onClick={() => {
+                          const w = window.open(bijlage.url, '_blank')
+                          if (w) { w.addEventListener('load', () => w.print()) }
+                        }}
+                        className="text-[#A0A098] hover:text-[#1A535C] transition-colors flex-shrink-0"
+                      >
+                        <Printer className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => setFormData((prev) => ({
                           ...prev,
                           bijlagen: prev.bijlagen.filter((b) => b.id !== bijlage.id),
@@ -1665,27 +1687,20 @@ export function MontagePlanningLayout() {
                   className="hidden"
                   accept=".pdf,.png,.jpg,.jpeg,.webp"
                   multiple
-                  onChange={(e) => {
+                  onChange={async (e) => {
                     const files = e.target.files
                     if (!files) return
-                    const newBijlagen: MontageBijlage[] = Array.from(files).map((file) => {
-                      const ext = file.name.split('.').pop()?.toLowerCase() || ''
-                      let type: MontageBijlage['type'] = 'overig'
-                      if (ext === 'pdf') type = 'pdf'
-                      else if (['png', 'jpg', 'jpeg', 'webp'].includes(ext)) type = 'foto'
-                      return {
-                        id: `bijlage-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-                        naam: file.name,
-                        type,
-                        url: URL.createObjectURL(file),
-                        grootte: file.size,
-                        uploaded_at: new Date().toISOString(),
+                    for (const file of Array.from(files)) {
+                      try {
+                        const bijlage = await uploadMontageBijlage(file)
+                        setFormData((prev) => ({
+                          ...prev,
+                          bijlagen: [...prev.bijlagen, bijlage],
+                        }))
+                      } catch {
+                        toast.error(`Kon ${file.name} niet uploaden`)
                       }
-                    })
-                    setFormData((prev) => ({
-                      ...prev,
-                      bijlagen: [...prev.bijlagen, ...newBijlagen],
-                    }))
+                    }
                     e.target.value = ''
                   }}
                 />
