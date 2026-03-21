@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { createTaak, getProjecten } from '@/services/supabaseService'
 import type { Project } from '@/types'
 import { toast } from 'sonner'
@@ -9,11 +9,12 @@ interface Props {
   onOpenChange: (open: boolean) => void
 }
 
+const inputClass = 'w-full h-9 px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-petrol/20 focus:border-petrol'
+
 export function NieuweTaakModal({ open, onOpenChange }: Props) {
   const [projecten, setProjecten] = useState<Project[]>([])
   const [titel, setTitel] = useState('')
   const [projectId, setProjectId] = useState('')
-  const [deadline, setDeadline] = useState('')
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -35,7 +36,6 @@ export function NieuweTaakModal({ open, onOpenChange }: Props) {
         status: 'todo',
         prioriteit: 'medium',
         toegewezen_aan: '',
-        deadline: deadline || undefined,
         geschatte_tijd: 0,
         bestede_tijd: 0,
       })
@@ -43,8 +43,7 @@ export function NieuweTaakModal({ open, onOpenChange }: Props) {
       onOpenChange(false)
       setTitel('')
       setProjectId('')
-      setDeadline('')
-    } catch (err) {
+    } catch {
       toast.error('Kon taak niet toevoegen')
     } finally {
       setSaving(false)
@@ -53,63 +52,38 @@ export function NieuweTaakModal({ open, onOpenChange }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[480px]">
-        <DialogHeader>
-          <DialogTitle>Nieuwe taak</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1 block">Omschrijving *</label>
+      <DialogContent className="sm:max-w-[560px] p-3 gap-0">
+        <form onSubmit={handleSubmit} className="flex gap-2 items-center">
+          <div className="flex-[4] min-w-0">
             <input
               type="text"
               value={titel}
               onChange={e => setTitel(e.target.value)}
               placeholder="Wat moet er gedaan worden?"
               autoFocus
-              className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-petrol/20 focus:border-petrol"
+              className={inputClass}
             />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Project (optioneel)</label>
-              <select
-                value={projectId}
-                onChange={e => setProjectId(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-petrol/20 focus:border-petrol"
-              >
-                <option value="">Geen project</option>
-                {projecten.map(p => (
-                  <option key={p.id} value={p.id}>{p.naam}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Deadline (optioneel)</label>
-              <input
-                type="date"
-                value={deadline}
-                onChange={e => setDeadline(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-petrol/20 focus:border-petrol font-mono"
-              />
-            </div>
+          <div className="flex-[2] min-w-0">
+            <select
+              value={projectId}
+              onChange={e => setProjectId(e.target.value)}
+              className={inputClass}
+            >
+              <option value="">Geen project</option>
+              {projecten.map(p => (
+                <option key={p.id} value={p.id}>{p.naam}</option>
+              ))}
+            </select>
           </div>
-          <DialogFooter className="pt-2">
-            <button
-              type="button"
-              onClick={() => onOpenChange(false)}
-              className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Annuleren
-            </button>
-            <button
-              type="submit"
-              disabled={!titel.trim() || saving}
-              className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-50"
-              style={{ backgroundColor: '#1A535C' }}
-            >
-              {saving ? 'Toevoegen...' : 'Toevoegen'}
-            </button>
-          </DialogFooter>
+          <button
+            type="submit"
+            disabled={!titel.trim() || saving}
+            className="h-9 px-4 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-50 whitespace-nowrap shrink-0"
+            style={{ backgroundColor: '#1A535C' }}
+          >
+            {saving ? 'Toevoegen...' : 'Toevoegen'}
+          </button>
         </form>
       </DialogContent>
     </Dialog>
