@@ -95,6 +95,17 @@ function getStatusDotColor(status: string): string {
   }
 }
 
+/** Map database statuses to spectrum fases for correct colors */
+const STATUS_TO_FASE: Record<string, string> = {
+  gepland: 'goedgekeurd',
+  actief: 'productie',
+  'te-factureren': 'opgeleverd',
+}
+
+function getSpectrumFase(dbStatus: string) {
+  return getFase(STATUS_TO_FASE[dbStatus] || dbStatus)
+}
+
 
 
 export function ProjectsList() {
@@ -630,14 +641,14 @@ export function ProjectsList() {
                   })()}
                 </div>
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-[11px] font-medium" style={{ color: getFase(project.status).color }}>
-                    {getFase(project.status).label}
+                  <span className="text-[11px] font-medium" style={{ color: getSpectrumFase(project.status).color }}>
+                    {getSpectrumFase(project.status).label}
                   </span>
                   {bedrag > 0 && (
-                    <span className="font-mono font-medium text-foreground">EUR {formatCurrency(bedrag).replace('€', '').trim()}</span>
+                    <span className="font-mono font-medium text-foreground whitespace-nowrap">EUR {formatCurrency(bedrag).replace('€', '').trim()}</span>
                   )}
                 </div>
-                <SpectrumBar percentage={getFase(project.status).percentage} height={3} className="mt-2" />
+                <SpectrumBar percentage={getSpectrumFase(project.status).percentage} height={3} className="mt-2" />
               </div>
             )
           })}
@@ -720,14 +731,15 @@ export function ProjectsList() {
                   <tr
                     key={project.id}
                     className={cn(
-                      'last:border-0 hover:bg-[#F4F2EE] cursor-pointer transition-colors duration-150 group border-l-[3px] border-l-[#1A535C]',
+                      'last:border-0 hover:bg-[#F4F2EE] cursor-pointer transition-colors duration-150 group',
                       selectedIds.has(project.id) && 'bg-[#E2F0F0]/30'
                     )}
                     style={{ borderBottom: '0.5px solid #E6E4E0' }}
                     onClick={() => navigateWithTab({ path: `/projecten/${project.id}`, label: project.naam || 'Project', id: `/projecten/${project.id}` })}
                   >
                     {/* Checkbox */}
-                    <td className="py-3.5 px-3" onClick={(e) => e.stopPropagation()}>
+                    <td className="py-3.5 px-3 relative" onClick={(e) => e.stopPropagation()}>
+                      <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-[#1A535C]" />
                       <Checkbox
                         checked={selectedIds.has(project.id)}
                         onCheckedChange={() => toggleProjectSelection(project.id)}
@@ -815,7 +827,7 @@ export function ProjectsList() {
                             {project.beschrijving}
                           </p>
                         )}
-                        <SpectrumBar percentage={getFase(project.status).percentage} height={3} className="mt-1.5 w-20" />
+                        <SpectrumBar percentage={getSpectrumFase(project.status).percentage} height={3} className="mt-1.5 w-20" />
                       </div>
                     </td>
 
@@ -833,9 +845,9 @@ export function ProjectsList() {
                     <td className="py-3.5 px-4 hidden md:table-cell">
                       <span
                         className="text-[11px] font-medium"
-                        style={{ color: getFase(project.status).color }}
+                        style={{ color: getSpectrumFase(project.status).color }}
                       >
-                        {getFase(project.status).label}
+                        {getSpectrumFase(project.status).label}
                       </span>
                     </td>
 
@@ -844,7 +856,7 @@ export function ProjectsList() {
                       {(() => {
                         const bedrag = getProjectBedrag(project.id)
                         return bedrag > 0 ? (
-                          <span className="text-sm font-medium text-foreground tabular-nums font-mono">
+                          <span className="text-sm font-medium text-foreground tabular-nums font-mono whitespace-nowrap">
                             EUR {formatCurrency(bedrag).replace('€', '').trim()}
                           </span>
                         ) : (
