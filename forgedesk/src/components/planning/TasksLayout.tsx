@@ -46,13 +46,14 @@ import {
   MapPin,
   User2,
   Wrench,
+  Users,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { WeatherDayStrip } from './WeatherDayStrip'
+import { useWeekWeather, getWeatherForDate } from './WeatherDayStrip'
 import { ModuleHeader } from '@/components/shared/ModuleHeader'
 import { useAuth } from '@/contexts/AuthContext'
-import { getTaken, createTaak, updateTaak, deleteTaak, getProjecten, getKlanten, getMontageAfspraken } from '@/services/supabaseService'
-import type { Taak, Project, Klant, MontageAfspraak } from '@/types'
+import { getTaken, createTaak, updateTaak, deleteTaak, getProjecten, getKlanten, getMontageAfspraken, getMedewerkers } from '@/services/supabaseService'
+import type { Taak, Project, Klant, MontageAfspraak, Medewerker } from '@/types'
 import { logger } from '../../utils/logger'
 import { AuditLogPanel } from '@/components/shared/AuditLogPanel'
 import { logWijziging } from '@/utils/auditLogger'
@@ -147,10 +148,12 @@ export function TasksLayout() {
   const [taken, setTaken] = useState<Taak[]>([])
   const [projecten, setProjecten] = useState<Project[]>([])
   const [klanten, setKlanten] = useState<Klant[]>([])
+  const [medewerkers, setMedewerkers] = useState<Medewerker[]>([])
   const [montageAfspraken, setMontageAfspraken] = useState<MontageAfspraak[]>([])
   const [showMontage, setShowMontage] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [taskFilter, setTaskFilter] = useState<'alle' | 'project' | 'los'>('alle')
+  const [medewerkerFilter, setMedewerkerFilter] = useState<string>('alle')
 
   const [weekOffset, setWeekOffset] = useState(0)
   const [showCompleted, setShowCompleted] = useState(false)
@@ -161,6 +164,7 @@ export function TasksLayout() {
   const [fabPriority, setFabPriority] = useState<TaakPrioriteit>('medium')
   const [fabDeadline, setFabDeadline] = useState('')
   const [fabProjectId, setFabProjectId] = useState('')
+  const [fabAssignee, setFabAssignee] = useState('')
   const fabInputRef = useRef<HTMLInputElement>(null)
 
   // Edit
@@ -195,12 +199,13 @@ export function TasksLayout() {
     async function loadData() {
       setIsLoading(true)
       try {
-        const [takenData, projectenData, klantenData, montageData] = await Promise.all([getTaken(), getProjecten(), getKlanten(), getMontageAfspraken()])
+        const [takenData, projectenData, klantenData, montageData, medewerkerData] = await Promise.all([getTaken(), getProjecten(), getKlanten(), getMontageAfspraken(), getMedewerkers()])
         if (!cancelled) {
           setTaken(takenData)
           setProjecten(projectenData)
           setKlanten(klantenData)
           setMontageAfspraken(montageData)
+          setMedewerkers(medewerkerData)
         }
       } catch (error) {
         logger.error('Fout bij laden:', error)
@@ -248,6 +253,12 @@ export function TasksLayout() {
     return map
   }, [klanten])
 
+  const medewerkerMap = useMemo(() => {
+    const map: Record<string, Medewerker> = {}
+    medewerkers.forEach((m) => { map[m.naam] = m })
+    return map
+  }, [medewerkers])
+
   const today = useMemo(() => {
     const d = new Date()
     d.setHours(0, 0, 0, 0)
@@ -264,6 +275,8 @@ export function TasksLayout() {
     })
   }, [today, weekOffset])
 
+  const weekWeather = useWeekWeather(weekDays)
+
   // Tasks grouped by day key
   const tasksByDay = useMemo(() => {
     const map = new Map<string, Taak[]>()
@@ -276,6 +289,15 @@ export function TasksLayout() {
       activeTaken = activeTaken.filter((t) => !!t.project_id)
     } else if (taskFilter === 'los') {
       activeTaken = activeTaken.filter((t) => !t.project_id)
+    }
+
+    // Apply medewerker filter
+    if (medewerkerFilter !== 'alle') {
+      if (medewerkerFilter === 'niet-toegewezen') {
+        activeTaken = activeTaken.filter((t) => !t.toegewezen_aan)
+      } else {
+        activeTaken = activeTaken.filter((t) => t.toegewezen_aan === medewerkerFilter)
+      }
     }
 
     activeTaken.forEach((t) => {
@@ -303,7 +325,7 @@ export function TasksLayout() {
     })
 
     return map
-  }, [taken, weekDays, showCompleted, taskFilter])
+  }, [taken, weekDays, showCompleted, taskFilter, medewerkerFilter])
 
   // Montage afspraken grouped by day key
   const montageByDay = useMemo(() => {
@@ -350,7 +372,7 @@ export function TasksLayout() {
 
   // === HANDLERS ===
 
-  async function handleQuickAdd(title: string, priority: TaakPrioriteit, deadline: string, projectId: string) {
+  async function handleQuickAdd(title: string, priority: TaakPrioriteit, deadline: string, projectId: string, assignee?: string) {
     if (!title.trim()) return false
     try {
       const newTaak = await createTaak({
@@ -359,7 +381,7 @@ export function TasksLayout() {
         beschrijving: '',
         status: 'todo',
         prioriteit: priority,
-        toegewezen_aan: '',
+        toegewezen_aan: assignee || '',
         deadline: deadline || undefined,
         geschatte_tijd: 0,
         bestede_tijd: 0,
@@ -376,12 +398,13 @@ export function TasksLayout() {
   }
 
   async function handleFabAdd() {
-    const ok = await handleQuickAdd(fabTitle, fabPriority, fabDeadline, fabProjectId)
+    const ok = await handleQuickAdd(fabTitle, fabPriority, fabDeadline, fabProjectId, fabAssignee)
     if (ok) {
       setFabTitle('')
       setFabPriority('medium')
       setFabDeadline('')
       setFabProjectId('')
+      setFabAssignee('')
       fabInputRef.current?.focus()
     }
   }
@@ -603,16 +626,46 @@ export function TasksLayout() {
               <Wrench className="w-3 h-3" />
               {showMontage ? 'Montage zichtbaar' : 'Toon montage'}
             </button>
+            {/* Medewerker filter */}
+            {medewerkers.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className={cn(
+                      'text-xs px-3 py-1.5 rounded-full border transition-all duration-200 whitespace-nowrap flex-shrink-0 flex items-center gap-1.5',
+                      medewerkerFilter !== 'alle'
+                        ? 'bg-[#191919] border-transparent text-white shadow-sm'
+                        : 'border-border/60 text-[#5A5A55] hover:text-foreground hover:border-border'
+                    )}
+                  >
+                    <Users className="w-3 h-3" />
+                    {medewerkerFilter === 'alle' ? 'Medewerker' : medewerkerFilter === 'niet-toegewezen' ? 'Niet toegewezen' : medewerkerFilter}
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="min-w-[180px]">
+                  <DropdownMenuItem onClick={() => setMedewerkerFilter('alle')} className={cn(medewerkerFilter === 'alle' && 'font-semibold')}>
+                    Alle medewerkers
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  {medewerkers.filter(m => m.status === 'actief').map((m) => (
+                    <DropdownMenuItem key={m.id} onClick={() => setMedewerkerFilter(m.naam)} className={cn(medewerkerFilter === m.naam && 'font-semibold')}>
+                      <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center text-[10px] font-semibold text-muted-foreground mr-2 flex-shrink-0">
+                        {m.naam?.[0]?.toUpperCase() || '?'}
+                      </div>
+                      {m.naam}
+                    </DropdownMenuItem>
+                  ))}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setMedewerkerFilter('niet-toegewezen')} className={cn(medewerkerFilter === 'niet-toegewezen' && 'font-semibold')}>
+                    Niet toegewezen
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         </div>
 
-        {/* === WEATHER STRIP === */}
-        <div className="flex flex-shrink-0">
-          <div className="w-14 flex-shrink-0" />
-          <WeatherDayStrip weekDays={weekDays} />
-        </div>
-
-        {/* === DAY HEADERS === */}
+        {/* === DAY HEADERS (met weer geïntegreerd) === */}
         <div className="flex border-b border-border/60 bg-card/80 backdrop-blur-sm flex-shrink-0">
           {/* Time gutter spacer */}
           <div className="w-14 flex-shrink-0" />
@@ -621,6 +674,7 @@ export function TasksLayout() {
             const isToday = isSameDay(day, today)
             const dayTasks = tasksByDay.get(day.toDateString()) || []
             const isPast = day < today && !isToday
+            const dayWeather = getWeatherForDate(weekWeather, day)
             return (
               <div
                 key={i}
@@ -655,6 +709,16 @@ export function TasksLayout() {
                     </span>
                   )}
                 </div>
+                {/* Weer inline */}
+                {dayWeather && (
+                  <div className={cn(
+                    'flex items-center justify-center gap-1 mt-1',
+                    isPast ? 'opacity-30' : 'opacity-70'
+                  )}>
+                    <span className="text-xs leading-none">{dayWeather.emoji}</span>
+                    <span className="text-[10px] font-mono tabular-nums text-muted-foreground">{dayWeather.maxTemp}°</span>
+                  </div>
+                )}
               </div>
             )
           })}
@@ -766,6 +830,19 @@ export function TasksLayout() {
                   ))}
                 </SelectContent>
               </Select>
+              {medewerkers.length > 0 && (
+                <Select value={fabAssignee || 'niemand'} onValueChange={(v) => setFabAssignee(v === 'niemand' ? '' : v)}>
+                  <SelectTrigger className="w-auto h-7 text-xs min-w-0 max-w-[120px] rounded-lg">
+                    <SelectValue placeholder="Toewijzen" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="niemand">Niet toegewezen</SelectItem>
+                    {medewerkers.filter(m => m.status === 'actief').map((m) => (
+                      <SelectItem key={m.id} value={m.naam}>{m.naam}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
             <Button
               className="w-full h-9 text-sm bg-primary hover:bg-wm-hover rounded-lg shadow-sm"
@@ -794,6 +871,7 @@ export function TasksLayout() {
         open={editDialogOpen} onOpenChange={setEditDialogOpen}
         formData={formData} setFormData={setFormData}
         onSave={handleSave} isSaving={isSaving} projecten={projecten} klanten={klanten}
+        medewerkers={medewerkers}
         editingTaakId={editingTaak?.id}
       />
 
@@ -1321,6 +1399,11 @@ function TaskCard({
                 <User2 className="w-2 h-2" />{klantNaam}
               </span>
             )}
+            {taak.toegewezen_aan && (
+              <span className="text-2xs text-muted-foreground/50 flex items-center gap-0.5">
+                <User2 className="w-2 h-2" />{taak.toegewezen_aan}
+              </span>
+            )}
             {taak.locatie && (
               <span className="text-2xs text-muted-foreground/40 flex items-center gap-0.5">
                 <MapPin className="w-2 h-2" />{taak.locatie}
@@ -1398,11 +1481,12 @@ function TaskCard({
 // === EDIT DIALOG ===
 
 function EditTaskDialog({
-  open, onOpenChange, formData, setFormData, onSave, isSaving, projecten, klanten, editingTaakId,
+  open, onOpenChange, formData, setFormData, onSave, isSaving, projecten, klanten, medewerkers, editingTaakId,
 }: {
   open: boolean; onOpenChange: (open: boolean) => void
   formData: TaakFormData; setFormData: React.Dispatch<React.SetStateAction<TaakFormData>>
   onSave: () => void; isSaving: boolean; projecten: Project[]; klanten: Klant[]
+  medewerkers: Medewerker[]
   editingTaakId?: string
 }) {
   function updateField<K extends keyof TaakFormData>(field: K, value: TaakFormData[K]) {
@@ -1511,8 +1595,27 @@ function EditTaskDialog({
             <Input id="edit-locatie" value={formData.locatie} onChange={(e) => updateField('locatie', e.target.value)} placeholder="Bijv. Hoofdstraat 1, Amsterdam" />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="edit-toegewezen">Toegewezen aan</Label>
-            <Input id="edit-toegewezen" value={formData.toegewezen_aan} onChange={(e) => updateField('toegewezen_aan', e.target.value)} placeholder="Optioneel..." />
+            <Label>Toegewezen aan</Label>
+            {medewerkers.length > 0 ? (
+              <Select value={formData.toegewezen_aan || 'niemand'} onValueChange={(v) => updateField('toegewezen_aan', v === 'niemand' ? '' : v)}>
+                <SelectTrigger><SelectValue placeholder="Niet toegewezen" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="niemand">Niet toegewezen</SelectItem>
+                  {medewerkers.filter(m => m.status === 'actief').map((m) => (
+                    <SelectItem key={m.id} value={m.naam}>
+                      <div className="flex items-center gap-2">
+                        <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center text-[10px] font-semibold text-muted-foreground flex-shrink-0">
+                          {m.naam?.[0]?.toUpperCase() || '?'}
+                        </div>
+                        {m.naam}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <Input value={formData.toegewezen_aan} onChange={(e) => updateField('toegewezen_aan', e.target.value)} placeholder="Optioneel..." />
+            )}
           </div>
         </div>
         {editingTaakId && (
