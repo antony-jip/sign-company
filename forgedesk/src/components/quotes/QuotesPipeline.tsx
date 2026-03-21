@@ -712,24 +712,24 @@ export function QuotesPipeline() {
       {/* ── Quick stats ── */}
       <div className="flex items-center gap-2 flex-wrap">
         {kpis.openCount > 0 && (
-          <div className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: MODULE_COLORS.email.text, background: MODULE_COLORS.email.light, border: `1px solid ${MODULE_COLORS.email.border}` }}>
+          <div className="flex items-center gap-1.5 text-[10px] font-semibold px-[10px] py-[3px] rounded-full" style={{ color: MODULE_COLORS.email.text, background: MODULE_COLORS.email.light }}>
             <FileText className="w-3 h-3" />
-            {kpis.openCount} open
+            <span className="font-mono">{kpis.openCount}</span> open
           </div>
         )}
-        <div className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: MODULE_COLORS.facturen.text, background: MODULE_COLORS.facturen.light, border: `1px solid ${MODULE_COLORS.facturen.border}` }}>
+        <div className="flex items-center gap-1.5 text-[10px] font-semibold px-[10px] py-[3px] rounded-full" style={{ color: MODULE_COLORS.facturen.text, background: MODULE_COLORS.facturen.light }}>
           <TrendingUp className="w-3 h-3" />
-          <span className="tabular-nums">{kpis.conversionRate}%</span> conversie
+          <span className="font-mono tabular-nums">{kpis.conversionRate}%</span> conversie
         </div>
         {kpis.overdueFollowUps > 0 && (
-          <div className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: MODULE_COLORS.werkbonnen.text, background: MODULE_COLORS.werkbonnen.light, border: `1px solid ${MODULE_COLORS.werkbonnen.border}` }}>
+          <div className="flex items-center gap-1.5 text-[10px] font-semibold px-[10px] py-[3px] rounded-full" style={{ color: MODULE_COLORS.werkbonnen.text, background: MODULE_COLORS.werkbonnen.light }}>
             <AlertTriangle className="w-3 h-3" />
-            {kpis.overdueFollowUps} achterstallig
+            <span className="font-mono">{kpis.overdueFollowUps}</span> achterstallig
           </div>
         )}
-        <div className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: MODULE_COLORS.facturen.text, background: MODULE_COLORS.facturen.light, border: `1px solid ${MODULE_COLORS.facturen.border}` }}>
+        <div className="flex items-center gap-1.5 text-[10px] font-semibold px-[10px] py-[3px] rounded-full" style={{ color: MODULE_COLORS.facturen.text, background: MODULE_COLORS.facturen.light }}>
           <DollarSign className="w-3 h-3" />
-          Pipeline {formatCurrency(financialSummary.pipelineTotaal)}
+          Pipeline <span className="font-mono">{formatCurrency(financialSummary.pipelineTotaal)}</span>
         </div>
       </div>
 
@@ -983,12 +983,12 @@ export function QuotesPipeline() {
         {/* Financial Overview per Status */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {([
-            { key: 'concept' as const, label: 'Concept', borderColor: 'border-border/60 dark:border-stone-700/60', bgColor: 'from-muted/60 to-card dark:from-stone-900/30 dark:to-card', dotColor: 'bg-muted-foreground/40', textColor: 'text-muted-foreground dark:text-stone-400' },
-            { key: 'verzonden' as const, label: 'Verstuurd', borderColor: 'border-sky-200/60 dark:border-sky-800/60', bgColor: 'from-sky-50/80 to-card dark:from-sky-950/30 dark:to-card', dotColor: 'bg-sky-400', textColor: 'text-sky-600 dark:text-sky-400' },
-            { key: 'bekeken' as const, label: 'Bekeken', borderColor: 'border-amber-200/60 dark:border-amber-800/60', bgColor: 'from-amber-50/80 to-card dark:from-amber-950/30 dark:to-card', dotColor: 'bg-amber-400', textColor: 'text-amber-600 dark:text-amber-400' },
-            { key: 'goedgekeurd' as const, label: 'Akkoord', borderColor: 'border-primary/20 dark:border-primary/15', bgColor: 'from-wm-pale/20 to-card dark:from-primary/10 dark:to-card', dotColor: 'bg-primary', textColor: 'text-accent dark:text-wm-light' },
-            { key: 'verlopen' as const, label: 'Verlopen', borderColor: 'border-orange-200/60 dark:border-orange-800/60', bgColor: 'from-orange-50/80 to-card dark:from-orange-950/30 dark:to-card', dotColor: 'bg-orange-400', textColor: 'text-orange-600 dark:text-orange-400' },
-            { key: 'afgewezen' as const, label: 'Afgewezen', borderColor: 'border-red-200/60 dark:border-red-800/60', bgColor: 'from-red-50/80 to-card dark:from-red-950/30 dark:to-card', dotColor: 'bg-red-400', textColor: 'text-red-600 dark:text-red-400' },
+            { key: 'concept' as const, label: 'Concept', borderColor: 'border-[#D8D8D5]', bgColor: 'from-[#EEEEED]/60 to-card', dotColor: 'bg-[#5A5A55]', textColor: 'text-[#4A4A45]' },
+            { key: 'verzonden' as const, label: 'Verstuurd', borderColor: 'border-[#F5C4B4]', bgColor: 'from-[#FDE8E2]/60 to-card', dotColor: 'bg-[#F15025]', textColor: 'text-[#C03A18]' },
+            { key: 'bekeken' as const, label: 'Bekeken', borderColor: 'border-[#D8CCE8]', bgColor: 'from-[#EEE8F5]/60 to-card', dotColor: 'bg-[#6A5A8A]', textColor: 'text-[#5A4A78]' },
+            { key: 'goedgekeurd' as const, label: 'Akkoord', borderColor: 'border-[#B8D8DA]', bgColor: 'from-[#E2F0F0]/60 to-card', dotColor: 'bg-[#1A535C]', textColor: 'text-[#1A535C]' },
+            { key: 'verlopen' as const, label: 'Verlopen', borderColor: 'border-[#D8D8D5]', bgColor: 'from-[#EEEEED]/60 to-card', dotColor: 'bg-[#A0A098]', textColor: 'text-[#5A5A55]' },
+            { key: 'afgewezen' as const, label: 'Afgewezen', borderColor: 'border-[#F5C4B4]', bgColor: 'from-[#FDE8E2]/60 to-card', dotColor: 'bg-[#C03A18]', textColor: 'text-[#C03A18]' },
           ]).map((col) => {
             const data = financialSummary.statusTotals[col.key] || { count: 0, totaal: 0 }
             return (
@@ -1097,7 +1097,7 @@ export function QuotesPipeline() {
                             </span>
                             <div className="flex items-center gap-1">
                               {offerte.prioriteit && offerte.prioriteit !== 'laag' && (
-                                <span className={`text-2xs font-semibold px-1.5 py-0.5 rounded-md ${PRIORITY_COLORS[offerte.prioriteit] || ''}`}>
+                                <span className={`text-[10px] font-semibold px-[10px] py-[3px] rounded-full ${PRIORITY_COLORS[offerte.prioriteit] || ''}`}>
                                   {offerte.prioriteit.charAt(0).toUpperCase() + offerte.prioriteit.slice(1)}
                                 </span>
                               )}
@@ -1138,7 +1138,7 @@ export function QuotesPipeline() {
                             </span>
                             <div className="flex items-center gap-1.5">
                               {OPEN_STATUSES.includes(offerte.status) && (
-                                <span className={`text-2xs font-semibold px-1.5 py-0.5 rounded-md ${getDaysColor(daysOpen)}`}>
+                                <span className={`text-[10px] font-semibold px-[10px] py-[3px] rounded-full font-mono ${getDaysColor(daysOpen)}`}>
                                   {daysOpen}d
                                 </span>
                               )}
@@ -1150,12 +1150,12 @@ export function QuotesPipeline() {
 
                           {/* Expiry warning */}
                           {expiryStatus === 'expired' && (
-                            <span className="text-2xs font-semibold px-1.5 py-0.5 rounded-md bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300">
+                            <span className="text-[10px] font-semibold px-[10px] py-[3px] rounded-full bg-[#FDE8E2] text-[#C03A18]">
                               Verlopen
                             </span>
                           )}
                           {expiryStatus === 'soon' && (
-                            <span className="text-2xs font-semibold px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300">
+                            <span className="text-[10px] font-semibold px-[10px] py-[3px] rounded-full bg-[#FDE8E2] text-[#C03A18]">
                               Verloopt binnenkort
                             </span>
                           )}
@@ -1392,7 +1392,7 @@ export function QuotesPipeline() {
               <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-border bg-muted/50">
+                  <tr style={{ borderBottom: '0.5px solid #E6E4E0', backgroundColor: '#F4F2EE' }}>
                     <th className="w-10 px-3 py-3">
                       <Checkbox
                         checked={sortedListOffertes.length > 0 && selectedIds.size === sortedListOffertes.length}
@@ -1401,12 +1401,13 @@ export function QuotesPipeline() {
                       />
                     </th>
                     <th className="text-left py-3 px-4 w-[110px]">
-                      <span className="text-xs font-bold text-text-tertiary uppercase tracking-label">Status</span>
+                      <span className="text-[10px] font-medium uppercase text-[#A0A098]" style={{ letterSpacing: '0.8px' }}>Status</span>
                     </th>
                     <th className="text-left py-3 px-4">
                       <button
                         onClick={() => handleListSort('nummer')}
-                        className="flex items-center gap-1 text-xs font-bold text-text-tertiary uppercase tracking-label hover:text-foreground transition-colors"
+                        className="flex items-center gap-1 text-[10px] font-medium uppercase text-[#A0A098] hover:text-foreground transition-colors"
+                        style={{ letterSpacing: '0.8px' }}
                       >
                         Offerte
                         {listSortColumn === 'nummer' ? (
@@ -1419,7 +1420,8 @@ export function QuotesPipeline() {
                     <th className="text-left py-3 px-4 hidden lg:table-cell">
                       <button
                         onClick={() => handleListSort('klant_naam')}
-                        className="flex items-center gap-1 text-xs font-bold text-text-tertiary uppercase tracking-label hover:text-foreground transition-colors"
+                        className="flex items-center gap-1 text-[10px] font-medium uppercase text-[#A0A098] hover:text-foreground transition-colors"
+                        style={{ letterSpacing: '0.8px' }}
                       >
                         Klant
                         {listSortColumn === 'klant_naam' ? (
@@ -1432,7 +1434,8 @@ export function QuotesPipeline() {
                     <th className="text-right py-3 px-4 hidden xl:table-cell">
                       <button
                         onClick={() => handleListSort('totaal')}
-                        className="flex items-center gap-1 text-xs font-bold text-text-tertiary uppercase tracking-label hover:text-foreground transition-colors ml-auto"
+                        className="flex items-center gap-1 text-[10px] font-medium uppercase text-[#A0A098] hover:text-foreground transition-colors ml-auto"
+                        style={{ letterSpacing: '0.8px' }}
                       >
                         Bedrag
                         {listSortColumn === 'totaal' ? (
@@ -1445,7 +1448,8 @@ export function QuotesPipeline() {
                     <th className="text-right py-3 px-4 hidden md:table-cell">
                       <button
                         onClick={() => handleListSort('created_at')}
-                        className="flex items-center gap-1 text-xs font-bold text-text-tertiary uppercase tracking-label hover:text-foreground transition-colors ml-auto"
+                        className="flex items-center gap-1 text-[10px] font-medium uppercase text-[#A0A098] hover:text-foreground transition-colors ml-auto"
+                        style={{ letterSpacing: '0.8px' }}
                       >
                         Datum
                         {listSortColumn === 'created_at' ? (
@@ -1458,7 +1462,8 @@ export function QuotesPipeline() {
                     <th className="text-right py-3 px-4 hidden lg:table-cell">
                       <button
                         onClick={() => handleListSort('days_open')}
-                        className="flex items-center gap-1 text-xs font-bold text-text-tertiary uppercase tracking-label hover:text-foreground transition-colors ml-auto"
+                        className="flex items-center gap-1 text-[10px] font-medium uppercase text-[#A0A098] hover:text-foreground transition-colors ml-auto"
+                        style={{ letterSpacing: '0.8px' }}
                       >
                         Dagen open
                         {listSortColumn === 'days_open' ? (
@@ -1471,7 +1476,8 @@ export function QuotesPipeline() {
                     <th className="text-right py-3 px-4 hidden md:table-cell">
                       <button
                         onClick={() => handleListSort('geldig_tot')}
-                        className="flex items-center gap-1 text-xs font-bold text-text-tertiary uppercase tracking-label hover:text-foreground transition-colors ml-auto"
+                        className="flex items-center gap-1 text-[10px] font-medium uppercase text-[#A0A098] hover:text-foreground transition-colors ml-auto"
+                        style={{ letterSpacing: '0.8px' }}
                       >
                         Geldig tot
                         {listSortColumn === 'geldig_tot' ? (
@@ -1492,10 +1498,11 @@ export function QuotesPipeline() {
                       <tr
                         key={offerte.id}
                         className={cn(
-                          'border-b border-border/50 last:border-0 hover:bg-bg-hover cursor-pointer transition-colors duration-150 group border-l-2',
+                          'last:border-0 hover:bg-[#F4F2EE] cursor-pointer transition-colors duration-150 group border-l-[3px]',
                           getOfferteStatusBorderColor(offerte.status),
                           selectedIds.has(offerte.id) && 'bg-primary/5'
                         )}
+                        style={{ borderBottom: '0.5px solid #E6E4E0' }}
                         onClick={() => navigateWithTab({ path: `/offertes/${offerte.id}/bewerken`, label: offerte.nummer || offerte.titel || 'Offerte', id: `/offertes/${offerte.id}` })}
                       >
                         {/* Checkbox */}
@@ -1565,12 +1572,12 @@ export function QuotesPipeline() {
                               </Link>
                             </div>
                             {offerte.prioriteit && offerte.prioriteit !== 'laag' && (
-                              <Badge className={cn(PRIORITY_COLORS[offerte.prioriteit] || '', 'text-2xs px-1.5 py-0 flex-shrink-0')}>
+                              <Badge className={cn(PRIORITY_COLORS[offerte.prioriteit] || '', 'text-[10px] font-semibold px-[10px] py-[3px] rounded-full flex-shrink-0')}>
                                 {offerte.prioriteit}
                               </Badge>
                             )}
                             {expiryStatus === 'expired' && (
-                              <Badge className="bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 text-2xs px-1.5 py-0 flex-shrink-0">
+                              <Badge className="bg-[#FDE8E2] text-[#C03A18] text-[10px] font-semibold px-[10px] py-[3px] rounded-full flex-shrink-0">
                                 Verlopen
                               </Badge>
                             )}

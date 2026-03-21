@@ -401,27 +401,27 @@ export function ProjectsList() {
       {/* ── Quick stats ── */}
       <div className="flex items-center gap-2 flex-wrap">
         {stats.actief > 0 && (
-          <div className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: MODULE_COLORS.facturen.text, background: MODULE_COLORS.facturen.light, border: `1px solid ${MODULE_COLORS.facturen.border}` }}>
+          <div className="flex items-center gap-1.5 text-[10px] font-semibold px-[10px] py-[3px] rounded-full" style={{ color: MODULE_COLORS.facturen.text, background: MODULE_COLORS.facturen.light }}>
             <TrendingUp className="w-3 h-3" />
-            {stats.actief} actief
+            <span className="font-mono">{stats.actief}</span> actief
           </div>
         )}
         {stats.teFactureren > 0 && (
-          <div className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: MODULE_COLORS.email.text, background: MODULE_COLORS.email.light, border: `1px solid ${MODULE_COLORS.email.border}` }}>
+          <div className="flex items-center gap-1.5 text-[10px] font-semibold px-[10px] py-[3px] rounded-full" style={{ color: MODULE_COLORS.email.text, background: MODULE_COLORS.email.light }}>
             <Receipt className="w-3 h-3" />
-            {stats.teFactureren} te factureren
+            <span className="font-mono">{stats.teFactureren}</span> te factureren
           </div>
         )}
         {stats.overdue > 0 && (
-          <div className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: MODULE_COLORS.werkbonnen.text, background: MODULE_COLORS.werkbonnen.light, border: `1px solid ${MODULE_COLORS.werkbonnen.border}` }}>
+          <div className="flex items-center gap-1.5 text-[10px] font-semibold px-[10px] py-[3px] rounded-full" style={{ color: MODULE_COLORS.werkbonnen.text, background: MODULE_COLORS.werkbonnen.light }}>
             <AlertTriangle className="w-3 h-3" />
-            {stats.overdue} verlopen
+            <span className="font-mono">{stats.overdue}</span> verlopen
           </div>
         )}
         {stats.afgerond > 0 && (
-          <div className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: MODULE_COLORS.facturen.text, background: MODULE_COLORS.facturen.light, border: `1px solid ${MODULE_COLORS.facturen.border}` }}>
+          <div className="flex items-center gap-1.5 text-[10px] font-semibold px-[10px] py-[3px] rounded-full" style={{ color: MODULE_COLORS.facturen.text, background: MODULE_COLORS.facturen.light }}>
             <CheckCircle2 className="w-3 h-3" />
-            {stats.afgerond} afgerond
+            <span className="font-mono">{stats.afgerond}</span> afgerond
           </div>
         )}
       </div>
@@ -677,7 +677,7 @@ export function ProjectsList() {
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <div className="flex items-center gap-2">
                     <span className={cn(
-                      'text-2xs font-medium px-1.5 py-0.5 rounded uppercase',
+                      'text-[10px] font-semibold px-[10px] py-[3px] rounded-full uppercase',
                       getPriorityColor(project.prioriteit)
                     )}>
                       {project.prioriteit}
@@ -857,17 +857,17 @@ export function ProjectsList() {
                           <SpectrumBar percentage={getSpectrumPercentage(project.status)} height={3} className="mt-1.5 max-w-[200px]" />
                         </div>
                         <span className={cn(
-                          'text-2xs font-medium px-1.5 py-0.5 rounded flex-shrink-0 uppercase tracking-wide',
+                          'text-[10px] font-semibold px-[10px] py-[3px] rounded-full flex-shrink-0 uppercase tracking-wide',
                           project.prioriteit === 'hoog' || project.prioriteit === 'urgent'
-                            ? 'text-red-600/70 bg-red-50 dark:text-red-400/70 dark:bg-red-950/20'
+                            ? 'text-[#C03A18] bg-[#FDE8E2]'
                             : project.prioriteit === 'laag'
-                            ? 'text-muted-foreground/50 bg-muted/40'
-                            : 'text-muted-foreground/60 bg-muted/50'
+                            ? 'text-[#5A5A55] bg-[#EEEEED]'
+                            : 'text-[#4A4A45] bg-[#EEEEED]'
                         )}>
                           {project.prioriteit}
                         </span>
                         {isOverdue && (
-                          <Badge className="bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 text-2xs px-1.5 py-0 flex-shrink-0">
+                          <Badge className="bg-[#FDE8E2] text-[#C03A18] text-[10px] font-semibold px-[10px] py-[3px] rounded-full flex-shrink-0">
                             Verlopen
                           </Badge>
                         )}

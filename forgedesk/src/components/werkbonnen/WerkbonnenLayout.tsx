@@ -188,11 +188,11 @@ export function WerkbonnenLayout() {
         {(['concept', 'definitief', 'afgerond'] as const).map((status) => {
           const cfg = STATUS_CONFIG[status]
           return (
-            <Card key={status} className="cursor-pointer hover-lift"
+            <Card key={status} className="cursor-pointer hover-lift rounded-full"
               onClick={() => setFilterStatus(status === filterStatus ? 'alle' : status)}>
               <CardContent className="p-5">
-                <p className="text-xs font-bold text-text-tertiary uppercase tracking-label">{cfg.label}</p>
-                <p className="text-2xl font-bold mt-1">{statusCounts[status] || 0}</p>
+                <p className="text-[10px] font-bold text-text-tertiary uppercase tracking-label">{cfg.label}</p>
+                <p className="text-2xl font-bold mt-1"><span className="font-mono">{statusCounts[status] || 0}</span></p>
               </CardContent>
             </Card>
           )
@@ -216,11 +216,11 @@ export function WerkbonnenLayout() {
               key={status}
               variant={filterStatus === status ? 'default' : 'outline'}
               size="sm"
-              className="whitespace-nowrap"
+              className="whitespace-nowrap rounded-full"
               onClick={() => setFilterStatus(status)}
             >
               {status === 'alle' ? 'Alle' : STATUS_CONFIG[status].label}
-              {statusCounts[status] !== undefined && ` (${statusCounts[status] || 0})`}
+              {statusCounts[status] !== undefined && <>{' ('}<span className="font-mono">{statusCounts[status] || 0}</span>{')'}</>}
             </Button>
           ))}
         </div>
@@ -263,6 +263,7 @@ export function WerkbonnenLayout() {
                   const ref = offerteRef !== '-' ? offerteRef : projectRef
                   return (
                     <tr key={wb.id} className="group border-l-[3px] border-l-[#F15025] cursor-pointer hover:bg-[#F4F2EE] transition-colors duration-150"
+                      style={{ borderBottom: '0.5px solid #E6E4E0' }}
                       onClick={() => navigateWithTab({ path: `/werkbonnen/${wb.id}`, label: wb.werkbon_nummer || 'Werkbon', id: `/werkbonnen/${wb.id}` })}>
                       <td className="px-4 py-3">
                         <div>
@@ -274,12 +275,12 @@ export function WerkbonnenLayout() {
                       <td className="px-4 py-3 text-sm hidden md:table-cell">{ref}</td>
                       <td className="px-4 py-3 text-sm font-mono hidden sm:table-cell">{new Date(wb.datum).toLocaleDateString('nl-NL')}</td>
                       <td className="px-4 py-3">
-                        <span className={cn('inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium', cfg.bg, cfg.color)}>
+                        <span className={cn('inline-flex items-center px-[10px] py-[3px] rounded-full text-[10px] font-semibold', cfg.bg, cfg.color)}>
                           {cfg.label}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-sm text-right font-medium hidden sm:table-cell">
-                        {itemCounts[wb.id] || 0}
+                        <span className="font-mono">{itemCounts[wb.id] || 0}</span>
                       </td>
                       <td className="px-4 py-3 text-right hidden md:table-cell" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

@@ -428,7 +428,7 @@ export function ClientsLayout() {
               >
                 {labels[f]}
                 {counts[f] > 0 && (
-                  <span className="ml-1.5 text-2xs opacity-70">{counts[f]}</span>
+                  <span className="ml-1.5 text-2xs opacity-70 font-mono">{counts[f]}</span>
                 )}
               </button>
             )
@@ -735,7 +735,7 @@ export function ClientsLayout() {
                       </span>
                     </td>
                     <td className="px-4 py-3.5">
-                      <Badge className={cn('capitalize text-xs', getStatusColor(klant.status))}>
+                      <Badge className={cn('capitalize text-[10px] font-semibold px-[10px] py-[3px] rounded-full', getStatusColor(klant.status))}>
                         {klant.status}
                       </Badge>
                     </td>
@@ -745,7 +745,7 @@ export function ClientsLayout() {
                         if (!cfg) return null
                         return (
                           <span
-                            className="inline-flex items-center px-2 py-0.5 rounded-full text-2xs font-semibold"
+                            className="inline-flex items-center text-[10px] font-semibold px-[10px] py-[3px] rounded-full"
                             style={{ color: cfg.color, backgroundColor: cfg.bgColor }}
                           >
                             {cfg.label}
