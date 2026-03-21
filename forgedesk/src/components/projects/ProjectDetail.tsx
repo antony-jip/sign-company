@@ -860,6 +860,7 @@ export function ProjectDetail() {
               toast.success('Project gearchiveerd')
             } catch { toast.error('Kon project niet archiveren') }
           }}
+          onStatusChange={(newStatus) => handleCockpitStatusChange(newStatus as Project['status'])}
         />
       </div>
 
