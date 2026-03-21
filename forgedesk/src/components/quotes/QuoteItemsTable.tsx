@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Trash2, Plus, Calculator, ChevronDown, ChevronUp, Copy, Check, X, Ruler, ToggleLeft, ToggleRight, Lock, AlertTriangle, Paperclip, Clipboard, Upload, Image as ImageIcon } from 'lucide-react'
+import { Trash2, Plus, Calculator, ChevronDown, ChevronUp, Copy, Check, X, ToggleLeft, ToggleRight, Lock, AlertTriangle, Paperclip, Clipboard, Upload, Image as ImageIcon } from 'lucide-react'
 import { cn, formatCurrency } from '@/lib/utils'
 import { CalculatieModal } from './CalculatieModal'
 import { AutofillInput } from './AutofillInput'
@@ -961,86 +961,6 @@ export function QuoteItemsTable({
             {/* ──── BODY: afmetingen + foto + beschrijving-regels + prijsberekening ──── */}
             {!isCollapsed && (
               <>
-                {/* ── FIX 9: Afmetingen B×H ── */}
-                <div className="px-4 py-2.5 border-b border-border dark:border-border">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <Ruler className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="text-xs font-bold text-text-tertiary uppercase tracking-label">Afmetingen</span>
-                    <button
-                      onClick={() => onUpdateItem(item.id, 'afmeting_vrij', !item.afmeting_vrij)}
-                      className="ml-auto flex items-center gap-1 text-2xs text-muted-foreground hover:text-foreground transition-colors"
-                      title={item.afmeting_vrij ? 'Schakel naar B×H invoer' : 'Schakel naar vrije tekst'}
-                    >
-                      {item.afmeting_vrij ? <ToggleRight className="h-3.5 w-3.5 text-primary" /> : <ToggleLeft className="h-3.5 w-3.5" />}
-                      {item.afmeting_vrij ? 'Vrij tekst' : 'B × H'}
-                    </button>
-                  </div>
-
-                  {item.afmeting_vrij ? (
-                    // Free-text fallback: use the "Afmeting" detail regel if exists, or show an input
-                    <Input
-                      value={(() => {
-                        const afmetingRegel = detailRegels.find(r => r.label.toLowerCase() === 'afmeting')
-                        return afmetingRegel?.waarde || ''
-                      })()}
-                      onChange={(e) => {
-                        const afmetingRegel = detailRegels.find(r => r.label.toLowerCase() === 'afmeting')
-                        if (afmetingRegel) {
-                          updateDetailRegelField(item.id, afmetingRegel.id, 'waarde', e.target.value)
-                        }
-                      }}
-                      placeholder="Bijv. 3000 x 1500 mm, 2 m²"
-                      className="h-8 text-sm"
-                    />
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <div className="space-y-0.5 w-24">
-                        <label className="text-2xs text-muted-foreground">Breedte (mm)</label>
-                        <Input
-                          type="number"
-                          value={item.breedte_mm || ''}
-                          onChange={(e) => {
-                            const b = Math.max(0, parseFloat(e.target.value) || 0)
-                            onUpdateItem(item.id, 'breedte_mm', b)
-                            const h = item.hoogte_mm || 0
-                            if (b > 0 && h > 0) {
-                              onUpdateItem(item.id, 'oppervlakte_m2', Math.round((b / 1000) * (h / 1000) * 10000) / 10000)
-                            }
-                          }}
-                          min={0}
-                          className="h-8 text-sm"
-                        />
-                      </div>
-                      <span className="text-muted-foreground text-sm pt-4">×</span>
-                      <div className="space-y-0.5 w-24">
-                        <label className="text-2xs text-muted-foreground">Hoogte (mm)</label>
-                        <Input
-                          type="number"
-                          value={item.hoogte_mm || ''}
-                          onChange={(e) => {
-                            const h = Math.max(0, parseFloat(e.target.value) || 0)
-                            onUpdateItem(item.id, 'hoogte_mm', h)
-                            const b = item.breedte_mm || 0
-                            if (b > 0 && h > 0) {
-                              onUpdateItem(item.id, 'oppervlakte_m2', Math.round((b / 1000) * (h / 1000) * 10000) / 10000)
-                            }
-                          }}
-                          min={0}
-                          className="h-8 text-sm"
-                        />
-                      </div>
-                      {toonM2 && ((item.breedte_mm || 0) > 0 && (item.hoogte_mm || 0) > 0) && (
-                        <div className="pt-4 flex items-center gap-1.5">
-                          <span className="text-xs text-muted-foreground">=</span>
-                          <span className="text-sm font-medium font-mono text-foreground tabular-nums">
-                            {(item.oppervlakte_m2 || ((item.breedte_mm || 0) / 1000) * ((item.hoogte_mm || 0) / 1000)).toFixed(2)} m²
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-
                 {/* ── TEKENING / BIJLAGE per item ── */}
                 <BijlageDropZone
                   item={item}
