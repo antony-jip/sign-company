@@ -59,7 +59,7 @@ import {
   GripVertical,
   Pin,
 } from 'lucide-react'
-import { getKlanten, getProjecten, getOffertes, createOfferte, createOfferteItem, updateKlant, getOfferte, getOfferteItems, updateOfferte, deleteOfferteItem, getOfferteVersies, createOfferteVersie, getFactuur, createPortaal, createPortaalItem, getPortaalItems, getKlantOfferteContext } from '@/services/supabaseService'
+import { getKlanten, getKlant, getProjecten, getOffertes, createOfferte, createOfferteItem, updateKlant, getOfferte, getOfferteItems, updateOfferte, deleteOfferteItem, getOfferteVersies, createOfferteVersie, getFactuur, createPortaal, createPortaalItem, getPortaalItems, getKlantOfferteContext } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import type { Klant, Project, Contactpersoon, Factuur } from '@/types'
@@ -637,6 +637,18 @@ export function QuoteCreation() {
     if (!selectedKlantId) { setKlantContext(null); return }
     getKlantOfferteContext(selectedKlantId).then(setKlantContext).catch(() => setKlantContext(null))
   }, [selectedKlantId])
+
+  // ── Ensure selected klant is in the klanten list (e.g. edit mode, or > 500 klanten) ──
+  useEffect(() => {
+    if (!selectedKlantId || klanten.find(k => k.id === selectedKlantId)) return
+    let cancelled = false
+    getKlant(selectedKlantId).then(klant => {
+      if (!cancelled && klant) {
+        setKlanten(prev => prev.find(k => k.id === klant.id) ? prev : [...prev, klant])
+      }
+    }).catch(() => {})
+    return () => { cancelled = true }
+  }, [selectedKlantId, klanten])
 
   // ── Helper: maak een leeg calculatie-item met default beschrijving-regels ──
   const createEmptyItem = (label?: string): QuoteLineItem => {
