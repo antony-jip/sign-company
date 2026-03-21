@@ -116,7 +116,7 @@ import { MontageSection } from './cockpit/MontageSection'
 import { BestandenSection } from './cockpit/BestandenSection'
 import { ActiviteitFeed } from './cockpit/ActiviteitFeed'
 import { useProjectSidebarConfig } from '@/hooks/useProjectSidebarConfig'
-import type { Taak, Project, Document, Offerte, TekeningGoedkeuring, Klant, Tijdregistratie, Medewerker, ProjectToewijzing, Werkbon, Factuur, Uitgave, MontageAfspraak, ProjectFoto } from '@/types'
+import type { Taak, Project, Document, Offerte, TekeningGoedkeuring, Klant, Tijdregistratie, Medewerker, ProjectToewijzing, Werkbon, Factuur, Uitgave, MontageAfspraak, MontageBijlage, ProjectFoto } from '@/types'
 import { berekenBudgetStatus } from '@/utils/budgetUtils'
 import { logger } from '../../utils/logger'
 import { logWijziging } from '@/utils/auditLogger'
@@ -246,6 +246,7 @@ export function ProjectDetail() {
   const [montageLocatie, setMontageLocatie] = useState('')
   const [montageNotities, setMontageNotities] = useState('')
   const [montageMonteurs, setMontageMonteurs] = useState<string[]>([])
+  const [montageBijlagen, setMontageBijlagen] = useState<MontageBijlage[]>([])
   const [isSavingMontage, setIsSavingMontage] = useState(false)
   const [toewijzingMedewerkerId, setToewijzingMedewerkerId] = useState('')
   const [toewijzingRol, setToewijzingRol] = useState<ProjectToewijzing['rol']>('medewerker')
@@ -280,6 +281,7 @@ export function ProjectDetail() {
     setMontageEindTijd('17:00')
     setMontageNotities('')
     setMontageMonteurs([])
+    setMontageBijlagen([])
     setMontageDialogOpen(true)
   }
 
@@ -305,6 +307,7 @@ export function ProjectDetail() {
         monteurs: montageMonteurs,
         materialen: [],
         notities: montageNotities,
+        bijlagen: montageBijlagen.length > 0 ? montageBijlagen : undefined,
         status: 'gepland',
       })
       setProjectMontages(prev => [...prev, newMontage])
@@ -1952,6 +1955,72 @@ export function ProjectDetail() {
             <div>
               <Label className="text-sm">Notities</Label>
               <Textarea value={montageNotities} onChange={(e) => setMontageNotities(e.target.value)} placeholder="Optioneel..." rows={2} className="mt-1" />
+            </div>
+
+            {/* Bijlagen */}
+            <div>
+              <Label className="text-sm flex items-center gap-1.5">
+                <Paperclip className="h-3.5 w-3.5" />
+                Bijlagen
+              </Label>
+
+              {montageBijlagen.length > 0 && (
+                <div className="space-y-1.5 mt-1.5">
+                  {montageBijlagen.map((bijlage) => (
+                    <div
+                      key={bijlage.id}
+                      className="flex items-center gap-2 p-2 rounded-lg border border-[#E6E4E0] bg-[#FAFAF8]"
+                    >
+                      {bijlage.type === 'pdf' ? (
+                        <FileText className="h-4 w-4 text-[#C03A18] flex-shrink-0" />
+                      ) : (
+                        <Paperclip className="h-4 w-4 text-[#5A5A55] flex-shrink-0" />
+                      )}
+                      <span className="text-[13px] text-foreground truncate flex-1">{bijlage.naam}</span>
+                      <span className="text-[10px] text-[#A0A098] uppercase font-medium flex-shrink-0">{bijlage.type}</span>
+                      <button
+                        type="button"
+                        onClick={() => setMontageBijlagen(prev => prev.filter(b => b.id !== bijlage.id))}
+                        className="text-[#A0A098] hover:text-[#C03A18] transition-colors flex-shrink-0"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <label className="flex flex-col items-center gap-1.5 p-4 mt-1.5 rounded-lg border-2 border-dashed border-[#E6E4E0] hover:border-[#1A535C] hover:bg-[#F4F2EE] transition-colors cursor-pointer">
+                <Upload className="h-5 w-5 text-[#A0A098]" />
+                <span className="text-[12px] text-[#5A5A55]">PDF, tekening of foto uploaden</span>
+                <span className="text-[10px] text-[#A0A098]">PDF, PNG, JPG, WEBP (max 10MB)</span>
+                <input
+                  type="file"
+                  className="hidden"
+                  accept=".pdf,.png,.jpg,.jpeg,.webp"
+                  multiple
+                  onChange={(e) => {
+                    const files = e.target.files
+                    if (!files) return
+                    const newBijlagen: MontageBijlage[] = Array.from(files).map((file) => {
+                      const ext = file.name.split('.').pop()?.toLowerCase() || ''
+                      let type: MontageBijlage['type'] = 'overig'
+                      if (ext === 'pdf') type = 'pdf'
+                      else if (['png', 'jpg', 'jpeg', 'webp'].includes(ext)) type = 'foto'
+                      return {
+                        id: `bijlage-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                        naam: file.name,
+                        type,
+                        url: URL.createObjectURL(file),
+                        grootte: file.size,
+                        uploaded_at: new Date().toISOString(),
+                      }
+                    })
+                    setMontageBijlagen(prev => [...prev, ...newBijlagen])
+                    e.target.value = ''
+                  }}
+                />
+              </label>
             </div>
           </div>
           <DialogFooter>
