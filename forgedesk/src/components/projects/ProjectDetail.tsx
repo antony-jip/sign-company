@@ -34,6 +34,8 @@ import {
   Wallet,
   Clock,
   X,
+  Eye,
+  Printer,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -99,6 +101,7 @@ import {
 } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
+import { uploadMontageBijlage } from '@/services/storageService'
 import { analyzeProject } from '@/services/aiService'
 import { sendEmail } from '@/services/gmailService'
 import { tekeningGoedkeuringTemplate } from '@/services/emailTemplateService'
@@ -2030,24 +2033,17 @@ export function ProjectDetail() {
                     className="hidden"
                     accept=".pdf,.png,.jpg,.jpeg,.webp"
                     multiple
-                    onChange={(e) => {
+                    onChange={async (e) => {
                       const files = e.target.files
                       if (!files) return
-                      const newBijlagen: MontageBijlage[] = Array.from(files).map((file) => {
-                        const ext = file.name.split('.').pop()?.toLowerCase() || ''
-                        let type: MontageBijlage['type'] = 'overig'
-                        if (ext === 'pdf') type = 'pdf'
-                        else if (['png', 'jpg', 'jpeg', 'webp'].includes(ext)) type = 'foto'
-                        return {
-                          id: `bijlage-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-                          naam: file.name,
-                          type,
-                          url: URL.createObjectURL(file),
-                          grootte: file.size,
-                          uploaded_at: new Date().toISOString(),
+                      for (const file of Array.from(files)) {
+                        try {
+                          const bijlage = await uploadMontageBijlage(file)
+                          setMontageBijlagen(prev => [...prev, bijlage])
+                        } catch {
+                          toast.error(`Kon ${file.name} niet uploaden`)
                         }
-                      })
-                      setMontageBijlagen(prev => [...prev, ...newBijlagen])
+                      }
                       e.target.value = ''
                     }}
                   />
@@ -2069,6 +2065,25 @@ export function ProjectDetail() {
                         <Paperclip className="h-3 w-3 text-[#5A5A55]" />
                       )}
                       <span className="truncate max-w-[120px]">{bijlage.naam}</span>
+                      <button
+                        type="button"
+                        title="Bekijken"
+                        onClick={() => window.open(bijlage.url, '_blank')}
+                        className="text-[#A0A098] hover:text-[#1A535C] ml-0.5"
+                      >
+                        <Eye className="h-3 w-3" />
+                      </button>
+                      <button
+                        type="button"
+                        title="Printen"
+                        onClick={() => {
+                          const w = window.open(bijlage.url, '_blank')
+                          if (w) { w.addEventListener('load', () => w.print()) }
+                        }}
+                        className="text-[#A0A098] hover:text-[#1A535C]"
+                      >
+                        <Printer className="h-3 w-3" />
+                      </button>
                       <button
                         type="button"
                         onClick={() => setMontageBijlagen(prev => prev.filter(b => b.id !== bijlage.id))}

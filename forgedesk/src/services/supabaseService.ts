@@ -113,6 +113,7 @@ const DATE_FIELDS = [
 const UUID_FIELDS = [
   'project_id', 'klant_id', 'medewerker_id', 'factuur_id',
   'offerte_id', 'document_id', 'contact_id', 'leverancier_id',
+  'werkbon_id', 'contactpersoon_id',
 ] as const
 
 /**
