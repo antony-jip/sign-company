@@ -221,13 +221,13 @@
   h3 { @apply text-lg font-semibold; }
   h4 { @apply text-base font-medium; }
 
-  /* Alle getallen in Inter met tabular-nums */
+  /* Alle getallen in Space Grotesk met tabular-nums */
   .font-mono, [data-mono],
   input[type="number"],
   input[inputmode="numeric"],
   input[inputmode="decimal"],
   input[inputmode="tel"] {
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: 'Space Grotesk', system-ui, sans-serif;
     font-variant-numeric: tabular-nums;
   }
 
