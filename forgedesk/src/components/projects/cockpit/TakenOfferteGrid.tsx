@@ -111,13 +111,25 @@ export function TakenOfferteGrid({
           </div>
         ) : (
           <div
-            className="text-center py-8 border border-dashed border-[hsl(35,15%,87%)] rounded-lg cursor-pointer hover:border-[hsl(35,15%,75%)] transition-colors"
+            className="text-center py-8 rounded-lg cursor-pointer transition-colors hover:bg-[#FFF5F0]"
+            style={{
+              border: '1.5px dashed #F5C4B4',
+              backgroundColor: '#FFFAF8',
+            }}
             onClick={onNewOfferte}
           >
-            <div className="h-10 w-10 rounded-xl bg-mod-email-light flex items-center justify-center mx-auto mb-2">
-              <FileText className="h-5 w-5 text-mod-email-text" />
+            <div className="h-10 w-10 rounded-xl flex items-center justify-center mx-auto mb-2" style={{ backgroundColor: '#FDE8E2' }}>
+              <FileText className="h-5 w-5" style={{ color: '#F15025' }} />
             </div>
-            <p className="text-[11px] text-muted-foreground">+ Offerte maken</p>
+            <p className="text-[13px] font-medium text-foreground/70 mb-0.5">Nog geen offerte</p>
+            <p className="text-[11px] text-muted-foreground/50 mb-3">De eerste is altijd het spannendst.</p>
+            <button
+              className="inline-flex items-center gap-1.5 text-[13px] font-bold text-white rounded-lg hover:opacity-90 transition-all shadow-sm mx-auto"
+              style={{ backgroundColor: '#F15025', padding: '9px 20px' }}
+            >
+              <FileText className="h-3.5 w-3.5" />
+              Offerte maken
+            </button>
           </div>
         )}
       </div>
