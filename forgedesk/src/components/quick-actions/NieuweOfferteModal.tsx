@@ -10,7 +10,7 @@ import { useDocumentStyle } from '@/hooks/useDocumentStyle'
 import type { Klant, OfferteItem, CalculatieTemplate, CalculatieRegel, Medewerker } from '@/types'
 import { toast } from 'sonner'
 import { round2 } from '@/utils/budgetUtils'
-import { Building2, ChevronDown, Plus, X, Send, BookTemplate, Settings, Save, UserCircle, ListTodo, FolderPlus } from 'lucide-react'
+import { Building2, ChevronDown, Plus, X, Send, BookTemplate, Settings, Save, UserCircle, ListTodo, FolderPlus, Calendar } from 'lucide-react'
 
 interface Props {
   open: boolean
@@ -76,6 +76,7 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
   const [toegewezenAan, setToegewezenAan] = useState('')
   const [maakTaak, setMaakTaak] = useState(false)
   const [taakNotitie, setTaakNotitie] = useState('')
+  const [taakDatum, setTaakDatum] = useState('')
   const [maakProject, setMaakProject] = useState(false)
   const klantInputRef = useRef<HTMLInputElement>(null)
 
@@ -102,6 +103,7 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
       setToegewezenAan('')
       setMaakTaak(false)
       setTaakNotitie('')
+      setTaakDatum('')
       setMaakProject(false)
     }
   }, [open])
@@ -277,7 +279,7 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
             bron_offerte_id: offerte.id,
             eind_datum: deadline || undefined,
           })
-          await updateOfferte(offerte.id, { project_id: project.id } as Parameters<typeof updateOfferte>[1])
+          await updateOfferte(offerte.id, { project_id: project.id })
         } catch {
           // Project creation failed, offerte is still created
         }
@@ -285,18 +287,38 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
 
       // 4. Optionally create a task
       if (maakTaak) {
-        await createTaak({
-          titel: `Offerte afmaken: ${titel.trim()}`,
-          beschrijving: taakNotitie.trim() || `Offerte voor ${selectedKlant.bedrijfsnaam}`,
-          status: 'todo',
-          prioriteit: 'medium',
-          toegewezen_aan: toegewezenAan || '',
-          klant_id: selectedKlant.id,
-          offerte_id: offerte.id,
-          deadline: deadline || undefined,
-          geschatte_tijd: 0,
-          bestede_tijd: 0,
-        })
+        const taakDeadline = taakDatum || deadline || undefined
+        try {
+          await createTaak({
+            titel: `Offerte afmaken: ${titel.trim()}`,
+            beschrijving: taakNotitie.trim() || `Offerte voor ${selectedKlant.bedrijfsnaam}`,
+            status: 'todo',
+            prioriteit: 'medium',
+            toegewezen_aan: toegewezenAan || '',
+            klant_id: selectedKlant.id,
+            offerte_id: offerte.id,
+            deadline: taakDeadline,
+            geschatte_tijd: 0,
+            bestede_tijd: 0,
+          })
+        } catch {
+          // Fallback: try without offerte_id (column may not exist yet)
+          try {
+            await createTaak({
+              titel: `Offerte afmaken: ${titel.trim()}`,
+              beschrijving: taakNotitie.trim() || `Offerte voor ${selectedKlant.bedrijfsnaam}`,
+              status: 'todo',
+              prioriteit: 'medium',
+              toegewezen_aan: toegewezenAan || '',
+              klant_id: selectedKlant.id,
+              deadline: taakDeadline,
+              geschatte_tijd: 0,
+              bestede_tijd: 0,
+            })
+          } catch {
+            toast.error('Kon taak niet aanmaken')
+          }
+        }
       }
 
       // 4. If send mode → generate PDF, send email
@@ -490,25 +512,36 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
               </span>
             </label>
             {maakTaak && (
-              <div className="ml-6 flex items-center gap-2">
-                <UserCircle className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                <select
-                  value={toegewezenAan}
-                  onChange={e => setToegewezenAan(e.target.value)}
-                  className="h-8 px-2 py-1 text-[11px] border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-petrol/20 focus:border-petrol appearance-none cursor-pointer"
-                >
-                  <option value="">Niet toegewezen</option>
-                  {medewerkers.map(m => (
-                    <option key={m.id} value={m.naam}>{m.naam}</option>
-                  ))}
-                </select>
-                <input
-                  type="text"
-                  value={taakNotitie}
-                  onChange={e => setTaakNotitie(e.target.value)}
-                  placeholder="Notitie voor medewerker..."
-                  className="h-8 flex-1 px-2 py-1 text-[11px] border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-petrol/20 focus:border-petrol"
-                />
+              <div className="ml-6 space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <UserCircle className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <select
+                    value={toegewezenAan}
+                    onChange={e => setToegewezenAan(e.target.value)}
+                    className="h-8 px-2 py-1 text-[11px] border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-petrol/20 focus:border-petrol appearance-none cursor-pointer"
+                  >
+                    <option value="">Niet toegewezen</option>
+                    {medewerkers.map(m => (
+                      <option key={m.id} value={m.naam}>{m.naam}</option>
+                    ))}
+                  </select>
+                  <Calendar className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <input
+                    type="date"
+                    value={taakDatum}
+                    onChange={e => setTaakDatum(e.target.value)}
+                    className="h-8 px-2 py-1 text-[11px] font-mono border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-petrol/20 focus:border-petrol"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={taakNotitie}
+                    onChange={e => setTaakNotitie(e.target.value)}
+                    placeholder="Notitie voor medewerker..."
+                    className="h-8 flex-1 px-2 py-1 text-[11px] border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-petrol/20 focus:border-petrol"
+                  />
+                </div>
               </div>
             )}
             <label className="flex items-center gap-2 cursor-pointer text-muted-foreground hover:text-foreground transition-colors">
