@@ -60,27 +60,4 @@ CREATE TABLE IF NOT EXISTS import_logs (
 -- Kolom toevoegen aan klanten
 ALTER TABLE klanten ADD COLUMN IF NOT EXISTS import_bron TEXT DEFAULT '';
 
--- ============================================================
--- RLS Policies (zelfde patroon als klanten tabel: user_id = auth.uid())
--- ============================================================
-
--- Contactpersonen
-ALTER TABLE contactpersonen ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Users manage own contactpersonen"
-  ON contactpersonen FOR ALL
-  USING (user_id = auth.uid());
-
--- Klant historie
-ALTER TABLE klant_historie ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Users manage own klant_historie"
-  ON klant_historie FOR ALL
-  USING (user_id = auth.uid());
-
--- Import logs
-ALTER TABLE import_logs ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Users manage own import_logs"
-  ON import_logs FOR ALL
-  USING (user_id = auth.uid());
+-- RLS wordt later toegevoegd — tabellen zijn nu open voor snelle import
