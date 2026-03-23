@@ -71,18 +71,29 @@ export function KlantHistorieTab({ klantId, klantNaam }: KlantHistorieTabProps) 
     setLoading(true)
 
     Promise.all([
-      getKlantHistorie(klantId).catch(() => []),
+      getKlantHistorie(klantId).catch((err) => {
+        logger.error('KlantHistorie ophalen mislukt:', err)
+        return [] as Awaited<ReturnType<typeof getKlantHistorie>>
+      }),
       getProjectenByKlant(klantId).catch(() => [] as Project[]),
       getOffertesByKlant(klantId).catch(() => [] as Offerte[]),
     ])
       .then(([historie, projecten, offertes]) => {
         const results: TijdlijnItem[] = []
 
-        // Imported historie
+        // Imported historie — type 1:1 uit database overnemen
+        if (historie.length > 0) {
+          logger.info(`KlantHistorie: ${historie.length} items opgehaald, types:`,
+            historie.reduce((acc, h) => { acc[h.type] = (acc[h.type] || 0) + 1; return acc }, {} as Record<string, number>))
+        }
         for (const h of historie) {
+          const dbType = h.type as string
           results.push({
             datum: h.datum || h.created_at,
-            type: h.type as 'project' | 'offerte' | 'factuur',
+            type: dbType === 'factuur' ? 'factuur'
+              : dbType === 'offerte' ? 'offerte'
+              : dbType === 'project' ? 'project'
+              : dbType as TijdlijnItem['type'],
             omschrijving: h.naam,
             bedrag: h.bedrag ?? undefined,
             status: undefined,
@@ -90,7 +101,7 @@ export function KlantHistorieTab({ klantId, klantNaam }: KlantHistorieTabProps) 
           })
         }
 
-        // Live projects
+        // Live projects (alleen handmatige)
         for (const p of projecten) {
           results.push({
             datum: p.created_at,
@@ -114,6 +125,8 @@ export function KlantHistorieTab({ klantId, klantNaam }: KlantHistorieTabProps) 
             })
           }
         }
+
+        logger.info(`Tijdlijn totaal: ${results.length} items (${results.filter(r => r.bron === 'import').length} import, ${results.filter(r => r.bron === 'live').length} live)`)
 
         // Sort newest first
         results.sort((a, b) => (b.datum || '').localeCompare(a.datum || ''))
