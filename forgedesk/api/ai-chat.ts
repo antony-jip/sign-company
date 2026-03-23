@@ -346,8 +346,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const withinLimit = await checkUsageLimit(userId)
     if (!withinLimit) {
       return res.status(429).json({
-        error: 'Forgie limiet bereikt',
-        message: 'Je hebt het maximum van \u20AC5 aan Forgie-gebruik bereikt deze maand.',
+        error: 'Daan limiet bereikt',
+        message: 'Je hebt het maximum van \u20AC5 aan Daan-gebruik bereikt deze maand.',
       })
     }
 
@@ -364,7 +364,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const dataContext = await getRelevantContext(userId, question)
 
     // Build system prompt
-    const systemPrompt = `Je bent Forgie, de AI assistent van FORGEdesk. Je bent het bedrijfsgeheugen van de gebruiker. Je bent direct, behulpzaam en een beetje eigenwijs — net als de vakmensen die je helpt.
+    const systemPrompt = `Je bent Daan, de AI-assistent van Doen. Je bent het bedrijfsgeheugen van de gebruiker. Je bent direct, behulpzaam en een beetje eigenwijs — net als de vakmensen die je helpt.
 
 ${bedrijfscontext ? `Over het bedrijf: ${bedrijfscontext}` : ''}
 

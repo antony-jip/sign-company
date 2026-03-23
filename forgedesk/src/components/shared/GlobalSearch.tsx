@@ -294,12 +294,13 @@ const statusLabels: Record<string, string> = {
 function getStatusBadgeColor(status?: string): string {
   if (!status) return ''
   switch (status) {
-    case 'actief': case 'bezig': case 'onderweg': return 'bg-[#E8EFF8] text-[#4A7AB5] dark:bg-[#161E28] dark:text-[#6A9AD5]'
-    case 'goedgekeurd': case 'klaar': case 'betaald': case 'afgerond': return 'bg-[#E8F5EC] text-[#4A9960] dark:bg-[#162018] dark:text-[#6ACA80]'
-    case 'concept': case 'todo': case 'gepland': return 'bg-[#F0F0EE] text-[#8A8A8A] dark:bg-[#222220] dark:text-[#8A8A86]'
-    case 'verzonden': case 'review': case 'in-review': case 'bekeken': return 'bg-[#F8F0E0] text-[#B8883A] dark:bg-[#2A2418] dark:text-[#D4A85A]'
-    case 'afgewezen': case 'verlopen': return 'bg-[#FAE8E6] text-[#C45B4F] dark:bg-[#2A1A18] dark:text-[#DA7B70]'
-    default: return 'bg-[#F0F0EE] text-[#8A8A8A] dark:bg-[#222220] dark:text-[#8A8A86]'
+    case 'actief': case 'bezig': case 'onderweg': case 'definitief': return 'bg-[#E5ECF6] text-[#2A5580]'
+    case 'goedgekeurd': case 'klaar': case 'betaald': case 'opgeleverd': return 'bg-[#E2F0F0] text-[#1A535C]'
+    case 'afgerond': case 'gefactureerd': case 'te-factureren': return 'bg-[#E4F0EA] text-[#2D6B48]'
+    case 'concept': case 'todo': case 'gepland': case 'verlopen': return 'bg-[#EEEEED] text-[#5A5A55]'
+    case 'verzonden': case 'verstuurd': case 'afgewezen': case 'wijziging_gevraagd': return 'bg-[#FDE8E2] text-[#C03A18]'
+    case 'bekeken': case 'review': case 'in-review': case 'gecrediteerd': return 'bg-[#EEE8F5] text-[#5A4A78]'
+    default: return 'bg-[#EEEEED] text-[#5A5A55]'
   }
 }
 
@@ -442,10 +443,10 @@ export function GlobalSearch({ className, compact }: GlobalSearchProps) {
       <div
         className={cn(
           'flex items-center w-full border transition-all duration-300',
-          compact ? 'rounded-lg' : 'rounded-xl',
+          'rounded-md',
           focused
             ? 'border-primary/40 bg-background shadow-lg shadow-primary/5 ring-2 ring-primary/10'
-            : 'border-border/60 bg-muted/40 hover:bg-muted/60'
+            : 'border-[#E6E4E0] bg-[#F4F2EE] hover:bg-[#EDEAE5]'
         )}
       >
         <Search className={cn('text-muted-foreground flex-shrink-0', compact ? 'w-3.5 h-3.5 ml-2.5' : 'w-4 h-4 ml-3')} />

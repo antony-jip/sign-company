@@ -36,11 +36,6 @@ export function LoginPage() {
 
   return (
     <div className="min-h-screen flex bg-foreground">
-      {/* Google Fonts */}
-      <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-      <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-
       {/* Left: Branding panel */}
       <div className="hidden lg:flex flex-col justify-between flex-1 p-12 relative overflow-hidden">
         <div className="absolute inset-0">
@@ -64,7 +59,7 @@ export function LoginPage() {
                 <path d="M12 16v4" />
               </svg>
             </div>
-            <span className="text-lg font-bold text-white tracking-tight" style={{ fontFamily: 'Manrope, sans-serif' }}>FORGEdesk</span>
+            <span className="text-lg font-bold text-white tracking-tight" style={{ fontFamily: '"Bricolage Grotesque", sans-serif' }}>Doen.</span>
           </Link>
         </div>
 
@@ -117,7 +112,7 @@ export function LoginPage() {
         </div>
 
         <div className="relative z-10 max-w-md">
-          <h2 className="text-4xl font-extrabold text-white leading-tight mb-4" style={{ fontFamily: 'Manrope, sans-serif' }}>
+          <h2 className="text-4xl font-extrabold text-white leading-tight mb-4" style={{ fontFamily: '"Bricolage Grotesque", sans-serif' }}>
             Van offerte tot
             <br />
             <span className="text-primary-foreground" style={{ color: 'hsl(var(--primary))' }}>
@@ -142,7 +137,7 @@ export function LoginPage() {
         </div>
 
         <p className="relative z-10 text-xs text-white/25" style={{ fontFamily: 'Inter, sans-serif' }}>
-          © {new Date().getFullYear()} FORGEdesk. Alle rechten voorbehouden.
+          © {new Date().getFullYear()} Doen. Alle rechten voorbehouden.
         </p>
       </div>
 
@@ -158,15 +153,15 @@ export function LoginPage() {
                   <path d="M12 16v4" />
                 </svg>
               </div>
-              <span className="text-lg font-bold text-foreground" style={{ fontFamily: 'Manrope, sans-serif' }}>FORGEdesk</span>
+              <span className="text-lg font-bold text-foreground" style={{ fontFamily: '"Bricolage Grotesque", sans-serif' }}>Doen.</span>
             </Link>
           </div>
 
-          <h1 className="text-2xl font-bold text-foreground mb-1.5" style={{ fontFamily: 'Manrope, sans-serif' }}>
+          <h1 className="text-2xl font-bold text-foreground mb-1.5" style={{ fontFamily: '"Bricolage Grotesque", sans-serif' }}>
             Welkom terug
           </h1>
           <p className="text-[14.5px] text-muted-foreground mb-8" style={{ fontFamily: 'Inter, sans-serif' }}>
-            Log in op je FORGEdesk account
+            Log in op je Doen. account
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-5">

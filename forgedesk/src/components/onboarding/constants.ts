@@ -63,14 +63,14 @@ export const FEATURES: Feature[] = [
   {
     icon: Mail,
     title: 'Professionele email',
-    description: 'Verstuur en ontvang emails vanuit FORGEdesk. Gedeelde inbox, templates en automatische opvolging.',
+    description: 'Verstuur en ontvang emails vanuit Doen.. Gedeelde inbox, templates en automatische opvolging.',
     detail: 'Gedeelde inbox met slimme opvolging',
     color: '#7BABC7',
   },
   {
     icon: Sparkles,
-    title: 'AI-assistent Forgie',
-    description: 'Laat Forgie je helpen met offerteteksten, emails en projectbeschrijvingen. Schrijf in een handomdraai.',
+    title: 'AI-assistent Daan',
+    description: 'Laat Daan je helpen met offerteteksten, emails en projectbeschrijvingen. Schrijf in een handomdraai.',
     detail: 'Schrijf offerteteksten in seconden',
     color: '#D4836A',
   },

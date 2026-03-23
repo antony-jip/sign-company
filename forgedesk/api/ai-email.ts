@@ -124,8 +124,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const withinLimit = await checkUsageLimit(userId)
     if (!withinLimit) {
       return res.status(429).json({
-        error: 'Forgie limiet bereikt',
-        message: 'Je hebt het maximum van €5 aan Forgie-gebruik bereikt deze maand.',
+        error: 'Daan limiet bereikt',
+        message: 'Je hebt het maximum van €5 aan Daan-gebruik bereikt deze maand.',
       })
     }
 

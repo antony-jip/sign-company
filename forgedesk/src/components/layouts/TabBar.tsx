@@ -31,7 +31,7 @@ function TabItem({
       title={tab.label}
     >
       {tab.isDirty && (
-        <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-coral-text)] flex-shrink-0" />
+        <span className="w-1.5 h-1.5 rounded-full bg-mod-werkbonnen-text flex-shrink-0" />
       )}
       <span className="truncate flex-1 text-left">{tab.label}</span>
       <span

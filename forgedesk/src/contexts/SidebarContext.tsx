@@ -1,9 +1,7 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react'
 
-const DEFAULT_WIDTH = 220
-const MIN_WIDTH = 180
-const MAX_WIDTH = 360
-const COLLAPSED_WIDTH = 64
+export const RAIL_WIDTH = 88
+export const EXPANDED_WIDTH = 220
 
 export type LayoutMode = 'sidebar' | 'topnav'
 
@@ -11,11 +9,6 @@ interface SidebarContextType {
   isCollapsed: boolean
   toggleSidebar: () => void
   setCollapsed: (collapsed: boolean) => void
-  sidebarWidth: number
-  setSidebarWidth: (width: number) => void
-  minWidth: number
-  maxWidth: number
-  collapsedWidth: number
   layoutMode: LayoutMode
   setLayoutMode: (mode: LayoutMode) => void
 }
@@ -25,13 +18,7 @@ const SidebarContext = createContext<SidebarContextType | undefined>(undefined)
 export function SidebarProvider({ children }: { children: ReactNode }) {
   const [isCollapsed, setIsCollapsed] = useState(() => {
     const stored = localStorage.getItem('forgedesk_sidebar_collapsed')
-    return stored === 'true'
-  })
-
-  const [sidebarWidth, setSidebarWidthState] = useState(() => {
-    const stored = localStorage.getItem('forgedesk_sidebar_width')
-    const parsed = stored ? parseInt(stored, 10) : NaN
-    return !isNaN(parsed) && parsed >= MIN_WIDTH && parsed <= MAX_WIDTH ? parsed : DEFAULT_WIDTH
+    return stored !== 'false' // Default to collapsed (rail mode)
   })
 
   const [layoutMode, setLayoutModeState] = useState<LayoutMode>(() => {
@@ -51,12 +38,6 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('forgedesk_sidebar_collapsed', String(collapsed))
   }
 
-  const setSidebarWidth = (width: number) => {
-    const clamped = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, width))
-    setSidebarWidthState(clamped)
-    localStorage.setItem('forgedesk_sidebar_width', String(clamped))
-  }
-
   const setLayoutMode = (mode: LayoutMode) => {
     setLayoutModeState(mode)
     localStorage.setItem('forgedesk_layout_mode', mode)
@@ -67,11 +48,6 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
       isCollapsed,
       toggleSidebar,
       setCollapsed,
-      sidebarWidth,
-      setSidebarWidth,
-      minWidth: MIN_WIDTH,
-      maxWidth: MAX_WIDTH,
-      collapsedWidth: COLLAPSED_WIDTH,
       layoutMode,
       setLayoutMode,
     }}>

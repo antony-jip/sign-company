@@ -74,7 +74,7 @@ function getImageReactie(reacties: PortaalReactieData[], bestandId: string): Por
 export function PortaalDrukproevenSection({ items, token, klantNaam, onReactie, primaire_kleur, kanGoedkeuren = true }: Props) {
   return (
     <section className="space-y-3">
-      <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider px-1">Drukproeven</h2>
+      <h2 className="uppercase tracking-[0.1em] px-1" style={{ fontSize: 10, fontWeight: 600, color: '#A0A098' }}>Drukproeven</h2>
       {items.map(item => (
         <DrukproefCard
           key={item.id}
@@ -154,21 +154,21 @@ function DrukproefCard({ item, token, klantNaam, onReactie, primaire_kleur, kanG
   }
 
   return (
-    <div className={`bg-white rounded-xl border transition-all ${allApproved ? 'border-green-200 bg-green-50/30' : 'border-gray-200'}`}>
+    <div className="rounded-[10px] transition-all" style={{ backgroundColor: allApproved ? '#F0F8F3' : '#FFFFFF', border: `0.5px solid ${allApproved ? '#2D6B48' : '#E6E4E0'}` }}>
       <div className="px-5 py-4">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h3 className="font-medium text-gray-900">{item.titel}</h3>
-            <p className="text-xs text-gray-500 mt-0.5">Verstuurd op {formatDate(item.created_at)}</p>
+            <h3 className="font-medium" style={{ color: '#191919' }}>{item.titel}</h3>
+            <p className="font-mono mt-0.5" style={{ fontSize: 10, color: '#A0A098' }}>Verstuurd op {formatDate(item.created_at)}</p>
           </div>
           {allApproved && (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-[#E4F0EA] text-[#2D6B48]">
               <CheckCircle2 className="w-3.5 h-3.5" />
               {images.length > 0 ? 'Alles goedgekeurd' : 'Goedgekeurd'}
             </span>
           )}
           {isItemRevisie && (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-[#FDE8E2] text-[#C03A18]">
               <RotateCcw className="w-3.5 h-3.5" />
               Revisie gevraagd
             </span>
@@ -221,8 +221,8 @@ function DrukproefCard({ item, token, klantNaam, onReactie, primaire_kleur, kanG
             <button
               onClick={() => handleItemReactie('goedkeuring')}
               disabled={!!itemLoading}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-white transition-all disabled:opacity-50 hover:opacity-90 active:scale-[0.98]"
-              style={{ backgroundColor: primaire_kleur }}
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition-all disabled:opacity-50 hover:opacity-90 active:scale-[0.98]"
+              style={{ backgroundColor: '#E4F0EA', color: '#2D6B48', borderRadius: 8 }}
             >
               {itemLoading === 'goedkeuring' ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -234,7 +234,8 @@ function DrukproefCard({ item, token, klantNaam, onReactie, primaire_kleur, kanG
             <button
               onClick={() => setShowItemRevisie(true)}
               disabled={!!itemLoading}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-amber-700 bg-amber-50 hover:bg-amber-100 transition-colors disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 hover:opacity-90"
+              style={{ backgroundColor: '#FDE8E2', color: '#C03A18', borderRadius: 8 }}
             >
               <RotateCcw className="w-4 h-4" />
               Revisie vragen
@@ -254,12 +255,13 @@ function DrukproefCard({ item, token, klantNaam, onReactie, primaire_kleur, kanG
               style={{ '--tw-ring-color': primaire_kleur } as React.CSSProperties}
               autoFocus
             />
-            {itemError && <p className="text-xs text-red-600">{itemError}</p>}
+            {itemError && <p className="text-xs text-[#C03A18]">{itemError}</p>}
             <div className="flex gap-2">
               <button
                 onClick={() => handleItemReactie('revisie')}
                 disabled={!!itemLoading}
-                className="inline-flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium text-white bg-amber-500 hover:bg-amber-600 transition-colors disabled:opacity-50"
+                className="inline-flex items-center gap-1 px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 hover:opacity-90"
+                style={{ backgroundColor: '#FDE8E2', color: '#C03A18', borderRadius: 8 }}
               >
                 {itemLoading === 'revisie' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5" />}
                 Versturen
@@ -356,16 +358,16 @@ function ImageApprovalCard({ bestand, status, reactie, token, itemId, klantNaam,
 
         {/* Status overlay */}
         {status === 'goedgekeurd' && (
-          <div className="absolute inset-0 rounded-lg bg-green-500/20 flex items-center justify-center pointer-events-none">
+          <div className="absolute inset-0 rounded-lg bg-[#2D6B48]/20 flex items-center justify-center pointer-events-none">
             <div className="bg-white rounded-full p-1.5 shadow-sm">
-              <CheckCircle2 className="w-6 h-6 text-green-600" />
+              <CheckCircle2 className="w-6 h-6 text-[#2D6B48]" />
             </div>
           </div>
         )}
         {status === 'revisie' && (
-          <div className="absolute inset-0 rounded-lg bg-amber-500/20 flex items-center justify-center pointer-events-none">
+          <div className="absolute inset-0 rounded-lg bg-[#C03A18]/20 flex items-center justify-center pointer-events-none">
             <div className="bg-white rounded-full p-1.5 shadow-sm">
-              <RotateCcw className="w-6 h-6 text-amber-600" />
+              <RotateCcw className="w-6 h-6 text-[#C03A18]" />
             </div>
           </div>
         )}
@@ -376,19 +378,19 @@ function ImageApprovalCard({ bestand, status, reactie, token, itemId, klantNaam,
 
       {/* Status info */}
       {status === 'goedgekeurd' && reactie && (
-        <div className="px-2 py-1.5 rounded-md bg-green-50 border border-green-200">
-          <p className="text-xs text-green-700 font-medium">Goedgekeurd</p>
+        <div className="px-2 py-1.5 rounded-md bg-[#E4F0EA] border border-[#C0DBCC]">
+          <p className="text-xs text-[#2D6B48] font-medium">Goedgekeurd</p>
           {reactie.klant_naam && (
-            <p className="text-xs text-green-600">door {reactie.klant_naam}</p>
+            <p className="text-xs text-[#2D6B48]">door {reactie.klant_naam}</p>
           )}
         </div>
       )}
 
       {status === 'revisie' && reactie && (
-        <div className="px-2 py-1.5 rounded-md bg-amber-50 border border-amber-200">
-          <p className="text-xs text-amber-700 font-medium">Revisie gevraagd</p>
+        <div className="px-2 py-1.5 rounded-md bg-[#FDE8E2] border border-[#F5C4B4]">
+          <p className="text-xs text-[#C03A18] font-medium">Revisie gevraagd</p>
           {reactie.bericht && (
-            <p className="text-xs text-amber-600 mt-0.5 line-clamp-2">{reactie.bericht}</p>
+            <p className="text-xs text-[#C03A18] mt-0.5 line-clamp-2">{reactie.bericht}</p>
           )}
         </div>
       )}
@@ -399,8 +401,8 @@ function ImageApprovalCard({ bestand, status, reactie, token, itemId, klantNaam,
           <button
             onClick={() => handleReactie('goedkeuring')}
             disabled={!!loading}
-            className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium text-white transition-all disabled:opacity-50 hover:opacity-90 active:scale-[0.98]"
-            style={{ backgroundColor: primaire_kleur }}
+            className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1.5 text-xs font-medium transition-all disabled:opacity-50 hover:opacity-90 active:scale-[0.98]"
+            style={{ backgroundColor: '#E4F0EA', color: '#2D6B48', borderRadius: 8 }}
           >
             {loading === 'goedkeuring' ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -412,7 +414,8 @@ function ImageApprovalCard({ bestand, status, reactie, token, itemId, klantNaam,
           <button
             onClick={() => setShowRevisie(true)}
             disabled={!!loading}
-            className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium text-amber-700 bg-amber-50 hover:bg-amber-100 transition-colors disabled:opacity-50"
+            className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1.5 text-xs font-medium transition-colors disabled:opacity-50 hover:opacity-90"
+            style={{ backgroundColor: '#FDE8E2', color: '#C03A18', borderRadius: 8 }}
           >
             <RotateCcw className="w-3.5 h-3.5" />
             Revisie
@@ -432,12 +435,13 @@ function ImageApprovalCard({ bestand, status, reactie, token, itemId, klantNaam,
             style={{ '--tw-ring-color': primaire_kleur } as React.CSSProperties}
             autoFocus
           />
-          {error && <p className="text-xs text-red-600">{error}</p>}
+          {error && <p className="text-xs text-[#C03A18]">{error}</p>}
           <div className="flex gap-1.5">
             <button
               onClick={() => handleReactie('revisie')}
               disabled={!!loading}
-              className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium text-white bg-amber-500 hover:bg-amber-600 transition-colors disabled:opacity-50"
+              className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1.5 text-xs font-medium transition-colors disabled:opacity-50 hover:opacity-90"
+              style={{ backgroundColor: '#FDE8E2', color: '#C03A18', borderRadius: 8 }}
             >
               {loading === 'revisie' ? <Loader2 className="w-3 h-3 animate-spin" /> : <RotateCcw className="w-3 h-3" />}
               Versturen

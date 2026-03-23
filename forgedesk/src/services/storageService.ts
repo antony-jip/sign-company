@@ -45,30 +45,35 @@ function compressImageForStorage(file: File, maxWidth = 1200, quality = 0.7): Pr
 
 export async function uploadFile(file: File, path: string): Promise<string> {
   if (!isSupabaseConfigured() || !supabase) {
-    if (file.size > MAX_LOCAL_FILE_SIZE) {
-      throw new Error(
-        `Bestand te groot voor lokale opslag (max ${Math.round(MAX_LOCAL_FILE_SIZE / (1024 * 1024))}MB). Configureer Supabase voor grotere bestanden.`
-      )
-    }
-    // Fallback: compress images and store in localStorage
-    try {
-      const dataUrl = await compressImageForStorage(file)
-      const stored = JSON.parse(localStorage.getItem('forgedesk_files') || '{}')
-      stored[path] = { name: file.name, size: file.size, type: file.type, dataUrl }
-      if (!safeSetItem('forgedesk_files', JSON.stringify(stored))) {
-        throw new Error('Onvoldoende opslagruimte. Verwijder oude bestanden of configureer Supabase.')
-      }
-      return path
-    } catch (err) {
-      throw err instanceof Error ? err : new Error('Kon bestand niet opslaan')
-    }
+    return uploadFileToLocalStorage(file, path)
   }
-  const { data, error } = await supabase.storage.from(BUCKET).upload(path, file, {
-    cacheControl: '3600',
-    upsert: false
-  })
-  if (error) throw error
-  return data.path
+  try {
+    const { data, error } = await supabase.storage.from(BUCKET).upload(path, file, {
+      cacheControl: '3600',
+      upsert: false
+    })
+    if (error) throw error
+    return data.path
+  } catch (err) {
+    // Supabase Storage failed (bucket missing, RLS, network) — fall back to localStorage
+    console.warn('Supabase Storage upload failed, falling back to localStorage:', err)
+    return uploadFileToLocalStorage(file, path)
+  }
+}
+
+async function uploadFileToLocalStorage(file: File, path: string): Promise<string> {
+  if (file.size > MAX_LOCAL_FILE_SIZE) {
+    throw new Error(
+      `Bestand te groot voor lokale opslag (max ${Math.round(MAX_LOCAL_FILE_SIZE / (1024 * 1024))}MB). Configureer Supabase Storage.`
+    )
+  }
+  const dataUrl = await compressImageForStorage(file)
+  const stored = JSON.parse(localStorage.getItem('forgedesk_files') || '{}')
+  stored[path] = { name: file.name, size: file.size, type: file.type, dataUrl }
+  if (!safeSetItem('forgedesk_files', JSON.stringify(stored))) {
+    throw new Error('Onvoldoende opslagruimte. Verwijder oude bestanden of configureer Supabase.')
+  }
+  return path
 }
 
 export async function downloadFile(path: string): Promise<string> {
@@ -88,6 +93,44 @@ export async function getSignedUrl(path: string): Promise<string> {
   const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, 3600)
   if (error) throw error
   return data.signedUrl
+}
+
+/**
+ * Upload een montage bijlage naar storage en geef een MontageBijlage object terug met een persistente URL.
+ */
+export async function uploadMontageBijlage(file: File): Promise<{
+  id: string
+  naam: string
+  type: 'pdf' | 'tekening' | 'foto' | 'overig'
+  url: string
+  grootte: number
+  uploaded_at: string
+}> {
+  const ext = file.name.split('.').pop()?.toLowerCase() || ''
+  let type: 'pdf' | 'tekening' | 'foto' | 'overig' = 'overig'
+  if (ext === 'pdf') type = 'pdf'
+  else if (['png', 'jpg', 'jpeg', 'webp'].includes(ext)) type = 'foto'
+
+  const id = `bijlage-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+  const storagePath = `montage-bijlagen/${id}.${ext}`
+  const url = await uploadFile(file, storagePath)
+
+  // Get a public/downloadable URL
+  let displayUrl = url
+  try {
+    displayUrl = await downloadFile(url)
+  } catch {
+    // fallback to path
+  }
+
+  return {
+    id,
+    naam: file.name,
+    type,
+    url: displayUrl,
+    grootte: file.size,
+    uploaded_at: new Date().toISOString(),
+  }
 }
 
 export async function deleteFile(path: string): Promise<void> {

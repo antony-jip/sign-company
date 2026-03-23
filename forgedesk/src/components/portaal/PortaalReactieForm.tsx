@@ -359,7 +359,7 @@ export function PortaalReactieForm({ token, itemId, itemType, itemStatus, primai
           <button
             onClick={() => setModus('revisie')}
             disabled={loading}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-amber-700 bg-amber-50 hover:bg-amber-100 transition-colors"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-[#C03A18] bg-[#FDE8E2] hover:bg-[#F5C4B4] transition-colors"
           >
             <RotateCcw className="w-4 h-4" />
             Revisie vragen

@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { Pencil, Save, Loader2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 
 interface BriefingCardProps {
@@ -29,30 +28,26 @@ export function BriefingCard({ beschrijving, onSave }: BriefingCardProps) {
   }
 
   return (
-    <div className="bg-card border border-border rounded-xl p-4">
+    <div className="border border-sand bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px] p-4">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-medium text-foreground">Briefing</h3>
+        <h3 className="text-[13px] font-semibold text-foreground">Briefing</h3>
         {isEditing ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 px-3 text-xs"
+          <button
             disabled={isSaving}
             onClick={handleSave}
+            className="flex items-center gap-1 text-[11px] font-medium text-mod-projecten-text hover:text-mod-projecten-text/80 disabled:opacity-50 transition-colors"
           >
-            {isSaving ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Save className="h-3 w-3 mr-1" />}
+            {isSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
             Opslaan
-          </Button>
+          </button>
         ) : (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 px-2 text-xs text-muted-foreground"
+          <button
             onClick={() => setIsEditing(true)}
+            className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
           >
-            <Pencil className="h-3 w-3 mr-1" />
+            <Pencil className="h-3 w-3" />
             Bewerken
-          </Button>
+          </button>
         )}
       </div>
 
@@ -60,21 +55,21 @@ export function BriefingCard({ beschrijving, onSave }: BriefingCardProps) {
         <Textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="Voeg hier de projectbriefing toe..."
+          placeholder="Beschrijf het project: wat moet er gemaakt worden, waar, welke materialen..."
           rows={5}
-          className="resize-y text-sm"
+          className="resize-y text-[13px] border-[hsl(35,15%,87%)] focus:ring-1 focus:ring-petrol/50 focus:border-petrol bg-[#FAFAF8]"
           autoFocus
         />
       ) : beschrijving ? (
         <p
-          className="text-sm text-muted-foreground leading-relaxed cursor-pointer hover:text-foreground transition-colors"
+          className="text-[13px] text-foreground/75 leading-relaxed cursor-pointer hover:text-foreground transition-colors whitespace-pre-wrap"
           onClick={() => setIsEditing(true)}
         >
           {beschrijving}
         </p>
       ) : (
         <p
-          className="text-sm text-muted-foreground/50 italic cursor-pointer hover:text-muted-foreground transition-colors"
+          className="text-[13px] text-muted-foreground/40 cursor-pointer hover:text-muted-foreground transition-colors"
           onClick={() => setIsEditing(true)}
         >
           Klik om een briefing toe te voegen...

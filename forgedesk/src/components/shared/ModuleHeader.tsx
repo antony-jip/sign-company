@@ -1,48 +1,43 @@
 import React from 'react'
 import { type LucideIcon } from 'lucide-react'
+import { MODULE_COLORS } from '@/lib/moduleColors'
 
-/** Module gradient color pairs — primary + darker shade */
-const MODULE_GRADIENTS: Record<string, [string, string]> = {
-  projecten:   ['#7EB5A6', '#5A9A88'],
-  klanten:     ['#8BAFD4', '#6A8DB8'],
-  offertes:    ['#9B8EC4', '#7A6BAA'],
-  facturen:    ['#E8866A', '#C4604A'],
-  werkbonnen:  ['#D4836A', '#B8654E'],
-  taken:       ['#C4A882', '#A88E66'],
-  planning:    ['#7EB5A6', '#5A9A88'],
-  email:       ['#8BAFD4', '#6A8DB8'],
-  visualizer:  ['#7EB5A6', '#5A9A88'],
+const MODULE_ICON_COLORS: Record<string, [string, string]> = {
+  projecten:   [MODULE_COLORS.projecten.light, MODULE_COLORS.projecten.DEFAULT],
+  klanten:     [MODULE_COLORS.klanten.light, MODULE_COLORS.klanten.DEFAULT],
+  offertes:    [MODULE_COLORS.offertes.light, MODULE_COLORS.offertes.DEFAULT],
+  facturen:    [MODULE_COLORS.facturen.light, MODULE_COLORS.facturen.DEFAULT],
+  werkbonnen:  [MODULE_COLORS.werkbonnen.light, MODULE_COLORS.werkbonnen.DEFAULT],
+  taken:       [MODULE_COLORS.taken.light, MODULE_COLORS.taken.DEFAULT],
+  planning:    [MODULE_COLORS.planning.light, MODULE_COLORS.planning.DEFAULT],
+  email:       [MODULE_COLORS.email.light, MODULE_COLORS.email.DEFAULT],
+  visualizer:  [MODULE_COLORS.projecten.light, MODULE_COLORS.projecten.DEFAULT],
 }
 
 export interface ModuleHeaderProps {
-  /** Module key — determines gradient color */
-  module: keyof typeof MODULE_GRADIENTS | (string & {})
-  /** Lucide icon component */
+  module: keyof typeof MODULE_ICON_COLORS | (string & {})
   icon: LucideIcon
-  /** Module title */
   title: string
-  /** Subtitle / description */
   subtitle?: string
-  /** Right-side actions slot */
   actions?: React.ReactNode
 }
 
 export function ModuleHeader({ module, icon: Icon, title, subtitle, actions }: ModuleHeaderProps) {
-  const [from, to] = MODULE_GRADIENTS[module] ?? ['#8BAFD4', '#6A8DB8']
+  const [bg, iconColor] = MODULE_ICON_COLORS[module] ?? ['#E5ECF6', '#3A6B8C']
 
   return (
     <div className="flex items-center justify-between px-4 py-2 border-b bg-background flex-shrink-0 rounded-t-2xl">
       <div className="flex items-center gap-3.5 min-w-0">
         <div
-          className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm"
-          style={{ background: `linear-gradient(135deg, ${from}, ${to})` }}
+          className="h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0"
+          style={{ backgroundColor: bg }}
         >
-          <Icon className="h-5 w-5 text-white" />
+          <Icon className="h-5 w-5" style={{ color: iconColor }} />
         </div>
         <div className="min-w-0">
-          <h1 className="page-title text-foreground truncate">{title}</h1>
+          <h1 className="text-2xl font-bold truncate" style={{ color: '#191919' }}>{title}</h1>
           {subtitle && (
-            <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
+            <p className="text-[13px] mt-0.5" style={{ color: '#5A5A55' }}>{subtitle}</p>
           )}
         </div>
       </div>

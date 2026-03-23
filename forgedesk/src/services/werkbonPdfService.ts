@@ -63,6 +63,12 @@ export function generateWerkbonInstructiePDF(
 ): jsPDF {
   // Landscape A4
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
+
+  // Terracotta strip at top (werkbon = uitvoering)
+  const pgW0 = doc.internal.pageSize.getWidth()
+  doc.setFillColor(154, 90, 72) // #9A5A48
+  doc.rect(0, 0, pgW0, 1.5, 'F')
+
   const brand = getBrandColor(bedrijfsProfiel, docStyle)
   const textColor = getTextColor(docStyle)
   const headingFont = getHeadingFont(docStyle)
@@ -141,6 +147,9 @@ export function generateWerkbonInstructiePDF(
   function addNewPage(): number {
     doc.addPage('a4', 'landscape')
     currentPage++
+    // Terracotta strip on new pages too
+    doc.setFillColor(154, 90, 72) // #9A5A48
+    doc.rect(0, 0, doc.internal.pageSize.getWidth(), 1.5, 'F')
     return addPageHeader(marginTop)
   }
 

@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { Sparkles, Send, X, RotateCcw, Loader2, Minus } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { MessageSquare, Send, X, RotateCcw, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
   sendForgieChat,
@@ -10,7 +9,6 @@ import {
 } from '@/services/forgieChatService'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { renderForgieMarkdown } from '@/utils/forgieMarkdown'
-import { ForgieAvatar } from './ForgieAvatar'
 
 const SUGGESTIE_CHIPS = [
   'Wat staat er open?',
@@ -18,45 +16,6 @@ const SUGGESTIE_CHIPS = [
   'Openstaande facturen',
   'Projecten in uitvoering',
 ]
-
-/** Cute fox mascot SVG for Forgie */
-function ForgieMascot({ size = 40, className }: { size?: number; className?: string }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 100 100"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className={className}
-    >
-      {/* Ears */}
-      <path d="M22 38L30 12L42 32Z" fill="#E8825A" />
-      <path d="M78 38L70 12L58 32Z" fill="#E8825A" />
-      <path d="M26 36L32 18L40 33Z" fill="#FDDBC9" />
-      <path d="M74 36L68 18L60 33Z" fill="#FDDBC9" />
-      {/* Head */}
-      <ellipse cx="50" cy="56" rx="30" ry="28" fill="#E8825A" />
-      {/* Face / cheeks */}
-      <ellipse cx="50" cy="62" rx="22" ry="20" fill="#FDDBC9" />
-      {/* Eyes */}
-      <ellipse cx="40" cy="52" rx="4.5" ry="5" fill="#2D1B0E" />
-      <ellipse cx="60" cy="52" rx="4.5" ry="5" fill="#2D1B0E" />
-      {/* Eye shine */}
-      <circle cx="42" cy="50" r="1.8" fill="white" />
-      <circle cx="62" cy="50" r="1.8" fill="white" />
-      {/* Nose */}
-      <ellipse cx="50" cy="60" rx="3.5" ry="2.5" fill="#2D1B0E" />
-      {/* Mouth */}
-      <path d="M46 63Q50 67 54 63" stroke="#2D1B0E" strokeWidth="1.5" fill="none" strokeLinecap="round" />
-      {/* Blush spots */}
-      <ellipse cx="35" cy="60" rx="4" ry="2.5" fill="#F4A68F" opacity="0.5" />
-      <ellipse cx="65" cy="60" rx="4" ry="2.5" fill="#F4A68F" opacity="0.5" />
-    </svg>
-  )
-}
-
-const FORGIE_INTRO_SEEN_KEY = 'forgie-intro-seen'
 
 export function ForgieChatWidget() {
   const { forgieEnabled } = useAppSettings()
@@ -66,20 +25,9 @@ export function ForgieChatWidget() {
   const [loading, setLoading] = useState(false)
   const [historyLoaded, setHistoryLoaded] = useState(false)
   const [hasUnread, setHasUnread] = useState(false)
-  const [showIntroBubble, setShowIntroBubble] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-
-  // Show intro bubble once for new users
-  useEffect(() => {
-    if (localStorage.getItem(FORGIE_INTRO_SEEN_KEY)) return
-    const showTimer = setTimeout(() => setShowIntroBubble(true), 1500)
-    const hideTimer = setTimeout(() => {
-      setShowIntroBubble(false)
-      localStorage.setItem(FORGIE_INTRO_SEEN_KEY, '1')
-    }, 7000)
-    return () => { clearTimeout(showTimer); clearTimeout(hideTimer) }
-  }, [])
+  const panelRef = useRef<HTMLDivElement>(null)
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -103,8 +51,23 @@ export function ForgieChatWidget() {
   useEffect(() => {
     if (isOpen) {
       setHasUnread(false)
-      // Small delay to let the panel render
       setTimeout(() => inputRef.current?.focus(), 100)
+    }
+  }, [isOpen])
+
+  // Close on click outside
+  useEffect(() => {
+    if (!isOpen) return
+    function handleClick(e: MouseEvent) {
+      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+    // Delay to avoid closing on the same click that opened
+    const timer = setTimeout(() => document.addEventListener('mousedown', handleClick), 50)
+    return () => {
+      clearTimeout(timer)
+      document.removeEventListener('mousedown', handleClick)
     }
   }, [isOpen])
 
@@ -151,58 +114,117 @@ export function ForgieChatWidget() {
 
   return (
     <>
-      {/* Chat panel */}
+      {/* ── Chat Panel ── */}
       {isOpen && (
-        <div style={{ position: 'fixed' }} className="bottom-24 right-6 z-[9999] w-[360px] max-w-[calc(100vw-2rem)] h-[500px] max-h-[calc(100vh-8rem)] bg-card/80 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 fade-in duration-200">
-          {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-card/50 backdrop-blur-sm flex-shrink-0">
+        <div
+          ref={panelRef}
+          className="fixed z-[9999] flex flex-col animate-in slide-in-from-bottom-4 fade-in duration-200"
+          style={{
+            right: 16,
+            bottom: 80,
+            width: 340,
+            maxWidth: 'calc(100vw - 2rem)',
+            maxHeight: '60vh',
+            borderRadius: 12,
+            border: '0.5px solid #E6E4E0',
+            boxShadow: '0 8px 32px rgba(120, 90, 50, 0.12)',
+            overflow: 'hidden',
+          }}
+        >
+          {/* Header — petrol */}
+          <div
+            className="flex items-center justify-between px-4 py-3 flex-shrink-0"
+            style={{ backgroundColor: '#1A535C' }}
+          >
             <div className="flex items-center gap-2.5">
-              <ForgieAvatar size={28} />
+              {/* D avatar */}
+              <div
+                className="flex items-center justify-center"
+                style={{
+                  width: 30,
+                  height: 30,
+                  borderRadius: 10,
+                  backgroundColor: 'rgba(255,255,255,0.12)',
+                }}
+              >
+                <span style={{ color: '#FFFFFF', fontSize: 14, fontWeight: 800 }}>D</span>
+              </div>
               <div>
-                <h2 className="text-sm font-bold text-foreground">Forgie</h2>
-                <p className="text-2xs text-muted-foreground">Je bedrijfsgeheugen</p>
+                <h2 style={{ fontSize: 14, fontWeight: 700, color: '#FFFFFF', lineHeight: 1.2 }}>Daan</h2>
+                <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', lineHeight: 1.2 }}>Klaar om te helpen</p>
               </div>
             </div>
             <div className="flex items-center gap-1">
               {messages.length > 0 && (
-                <Button
-                  variant="ghost"
-                  size="icon"
+                <button
                   onClick={handleClear}
-                  className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                  className="flex items-center justify-center transition-opacity hover:opacity-80"
+                  style={{ width: 28, height: 28, color: 'rgba(255,255,255,0.4)' }}
                   title="Nieuw gesprek"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
-                </Button>
+                </button>
               )}
-              <Button
-                variant="ghost"
-                size="icon"
+              <button
                 onClick={() => setIsOpen(false)}
-                className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                className="flex items-center justify-center transition-opacity hover:opacity-80"
+                style={{ width: 28, height: 28, color: 'rgba(255,255,255,0.4)' }}
               >
-                <Minus className="w-4 h-4" />
-              </Button>
+                <X className="w-4 h-4" />
+              </button>
             </div>
           </div>
 
-          {/* Messages area */}
-          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 scrollbar-thin">
+          {/* Chat area */}
+          <div
+            className="flex-1 overflow-y-auto px-4 py-3 space-y-3"
+            style={{ backgroundColor: '#FFFFFF' }}
+          >
             {/* Welcome / suggestions */}
             {messages.length === 0 && !loading && (
-              <div className="space-y-4 pt-4">
+              <div className="space-y-4 pt-2">
                 <div className="flex gap-2.5 items-start">
-                  <ForgieAvatar size={32} className="flex-shrink-0" />
-                  <p className="text-sm text-foreground mt-1">
-                    Hoi! Ik ben <strong>Forgie</strong> 🦊 Stel me een vraag over je klanten, projecten, offertes of facturen.
-                  </p>
+                  {/* Daan avatar */}
+                  <div
+                    className="flex-shrink-0 flex items-center justify-center"
+                    style={{
+                      width: 24,
+                      height: 24,
+                      borderRadius: '50%',
+                      backgroundColor: '#E2F0F0',
+                    }}
+                  >
+                    <span style={{ fontSize: 10, fontWeight: 800, color: '#1A535C' }}>D</span>
+                  </div>
+                  <div
+                    className="px-3 py-2"
+                    style={{
+                      fontSize: 12,
+                      lineHeight: 1.6,
+                      color: '#191919',
+                      backgroundColor: '#F4F2EE',
+                      borderRadius: '10px 10px 10px 2px',
+                    }}
+                  >
+                    Hoi! Ik ben <strong>Daan</strong>, stel me een vraag over je klanten, projecten, offertes of facturen.
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-1.5 pl-6">
+                <div className="flex flex-wrap gap-1.5" style={{ paddingLeft: 32 }}>
                   {SUGGESTIE_CHIPS.map(chip => (
                     <button
                       key={chip}
                       onClick={() => handleSend(chip)}
-                      className="rounded-full px-3 py-1.5 border text-xs bg-mist/10 hover:bg-mist/30 text-foreground transition-colors"
+                      className="transition-colors"
+                      style={{
+                        padding: '4px 10px',
+                        fontSize: 10,
+                        color: '#5A5A55',
+                        border: '0.5px solid #E6E4E0',
+                        borderRadius: 999,
+                        backgroundColor: 'transparent',
+                      }}
+                      onMouseEnter={e => { (e.target as HTMLElement).style.backgroundColor = '#F4F2EE' }}
+                      onMouseLeave={e => { (e.target as HTMLElement).style.backgroundColor = 'transparent' }}
                     >
                       {chip}
                     </button>
@@ -215,40 +237,76 @@ export function ForgieChatWidget() {
             {messages.map((msg, i) => (
               <div
                 key={i}
-                className={cn(
-                  'flex gap-2.5',
-                  msg.role === 'user' ? 'justify-end' : 'justify-start'
-                )}
+                className={cn('flex gap-2.5', msg.role === 'user' ? 'justify-end' : 'justify-start')}
               >
                 {msg.role === 'forgie' && (
-                  <Sparkles className="w-3.5 h-3.5 text-blush-deep flex-shrink-0 mt-1" />
+                  <div
+                    className="flex-shrink-0 flex items-center justify-center mt-0.5"
+                    style={{
+                      width: 24,
+                      height: 24,
+                      borderRadius: '50%',
+                      backgroundColor: '#E2F0F0',
+                    }}
+                  >
+                    <span style={{ fontSize: 10, fontWeight: 800, color: '#1A535C' }}>D</span>
+                  </div>
                 )}
                 <div
-                  className={cn(
-                    'max-w-[85%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap',
-                    msg.role === 'user'
-                      ? 'bg-mist/20 text-foreground'
-                      : 'bg-background border text-foreground'
-                  )}
+                  className="max-w-[85%] px-3 py-2 whitespace-pre-wrap"
+                  style={msg.role === 'user'
+                    ? {
+                        fontSize: 12,
+                        lineHeight: 1.6,
+                        color: '#FFFFFF',
+                        backgroundColor: '#1A535C',
+                        borderRadius: '10px 10px 2px 10px',
+                      }
+                    : {
+                        fontSize: 12,
+                        lineHeight: 1.6,
+                        color: '#191919',
+                        backgroundColor: '#F4F2EE',
+                        borderRadius: '10px 10px 10px 2px',
+                      }
+                  }
                 >
                   {msg.role === 'forgie' ? renderForgieMarkdown(msg.content) : msg.content}
                 </div>
               </div>
             ))}
 
-            {/* Loading */}
+            {/* Loading indicator */}
             {loading && (
               <div className="flex gap-2.5 justify-start">
-                <Sparkles className="w-3.5 h-3.5 text-blush-deep flex-shrink-0 mt-1" />
-                <div className="bg-background border rounded-2xl px-3 py-2 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-2">
+                <div
+                  className="flex-shrink-0 flex items-center justify-center mt-0.5"
+                  style={{
+                    width: 24,
+                    height: 24,
+                    borderRadius: '50%',
+                    backgroundColor: '#E2F0F0',
+                  }}
+                >
+                  <span style={{ fontSize: 10, fontWeight: 800, color: '#1A535C' }}>D</span>
+                </div>
+                <div
+                  className="px-3 py-2"
+                  style={{
+                    fontSize: 12,
+                    color: '#5A5A55',
+                    backgroundColor: '#F4F2EE',
+                    borderRadius: '10px 10px 10px 2px',
+                  }}
+                >
+                  <span className="flex items-center gap-2">
                     <span className="flex gap-1">
-                      <span className="w-1.5 h-1.5 bg-muted-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                      <span className="w-1.5 h-1.5 bg-muted-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                      <span className="w-1.5 h-1.5 bg-muted-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                      <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: '#A0A098', animationDelay: '0ms' }} />
+                      <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: '#A0A098', animationDelay: '150ms' }} />
+                      <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: '#A0A098', animationDelay: '300ms' }} />
                     </span>
-                    <span className="text-xs">Forgie denkt na...</span>
-                  </div>
+                    <span style={{ fontSize: 11 }}>Daan denkt na...</span>
+                  </span>
                 </div>
               </div>
             )}
@@ -256,8 +314,8 @@ export function ForgieChatWidget() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input */}
-          <div className="flex-shrink-0 border-t p-3">
+          {/* Input area */}
+          <div className="flex-shrink-0 p-3" style={{ borderTop: '0.5px solid #E6E4E0', backgroundColor: '#FFFFFF' }}>
             <div className="flex items-center gap-2">
               <input
                 ref={inputRef}
@@ -265,71 +323,83 @@ export function ForgieChatWidget() {
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Vraag het aan Forgie..."
+                placeholder="Vraag het aan Daan..."
                 disabled={loading}
-                className="flex-1 rounded-xl border bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-blush/50 disabled:opacity-50"
+                style={{
+                  flex: 1,
+                  padding: '8px 12px',
+                  fontSize: 12,
+                  color: '#191919',
+                  backgroundColor: '#F4F2EE',
+                  border: '0.5px solid #E6E4E0',
+                  borderRadius: 8,
+                  outline: 'none',
+                }}
+                onFocus={e => { e.target.style.borderColor = '#1A535C' }}
+                onBlur={e => { e.target.style.borderColor = '#E6E4E0' }}
               />
-              <Button
-                size="icon"
+              <button
                 onClick={() => handleSend()}
                 disabled={!input.trim() || loading}
-                className="rounded-xl h-10 w-10 bg-blush-deep hover:bg-blush-deep/90"
+                className="flex items-center justify-center transition-opacity disabled:opacity-40"
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 8,
+                  backgroundColor: '#1A535C',
+                  color: '#FFFFFF',
+                  flexShrink: 0,
+                }}
               >
                 {loading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   <Send className="w-4 h-4" />
                 )}
-              </Button>
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Floating action button – Forgie mascot with glass effect */}
+      {/* ── FAB (Floating Action Button) ── */}
       <button
-        onClick={() => {
-          setIsOpen(prev => !prev)
-          if (showIntroBubble) {
-            setShowIntroBubble(false)
-            localStorage.setItem(FORGIE_INTRO_SEEN_KEY, '1')
-          }
+        onClick={() => setIsOpen(prev => !prev)}
+        className="fixed z-[9999] flex items-center justify-center transition-all duration-200"
+        style={{
+          right: 16,
+          bottom: 16,
+          width: 48,
+          height: 48,
+          borderRadius: 14,
+          backgroundColor: '#1A535C',
+          boxShadow: isOpen
+            ? '0 2px 8px rgba(26, 83, 92, 0.2)'
+            : '0 2px 12px rgba(26, 83, 92, 0.3)',
         }}
-        style={{ position: 'fixed', right: 24, bottom: 24, left: 'auto' }}
-        className={cn(
-          'z-[9999] rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 group',
-          'hover:scale-110 active:scale-95',
-          isOpen ? 'w-14 h-14' : 'w-[68px] h-[68px]'
-        )}
+        onMouseEnter={e => {
+          (e.currentTarget as HTMLElement).style.transform = 'scale(1.05)'
+          ;(e.currentTarget as HTMLElement).style.boxShadow = '0 4px 20px rgba(26, 83, 92, 0.4)'
+        }}
+        onMouseLeave={e => {
+          (e.currentTarget as HTMLElement).style.transform = 'scale(1)'
+          ;(e.currentTarget as HTMLElement).style.boxShadow = isOpen
+            ? '0 2px 8px rgba(26, 83, 92, 0.2)'
+            : '0 2px 12px rgba(26, 83, 92, 0.3)'
+        }}
       >
-        {/* Glass background */}
-        <span className={cn(
-          'absolute inset-0 rounded-full backdrop-blur-xl border transition-colors duration-200',
-          isOpen
-            ? 'bg-white/60 dark:bg-white/10 border-white/40'
-            : 'bg-white/70 dark:bg-white/15 border-white/50 shadow-[0_8px_32px_rgba(155,142,196,0.35)]'
-        )} />
-
         {isOpen ? (
-          <X className="w-5 h-5 text-foreground relative z-10" />
+          <X className="w-5 h-5 text-white" />
         ) : (
-          <span className="relative z-10 flex items-center justify-center">
-            <ForgieAvatar size={48} className="drop-shadow-sm transition-transform duration-200 group-hover:rotate-6" />
+          <>
+            <MessageSquare className="w-[22px] h-[22px] text-white" />
             {hasUnread && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white animate-pulse" />
+              <span
+                className="absolute -top-1 -right-1 rounded-full animate-pulse"
+                style={{ width: 10, height: 10, backgroundColor: '#F15025', border: '2px solid #FFFFFF' }}
+              />
             )}
-            {/* One-time intro speech bubble for new users */}
-            {showIntroBubble && !isOpen && (
-              <span className="absolute -top-14 -left-28 bg-white dark:bg-card backdrop-blur-sm text-xs text-foreground font-medium px-3 py-2 rounded-xl shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-300 whitespace-nowrap pointer-events-none border border-[#9B8EC4]/30 dark:border-[#9B8EC4]/20">
-                Hoi! Ik ben <strong>Forgie</strong>, je AI-assistent 🦊
-                <span className="absolute -bottom-1.5 right-8 w-3 h-3 bg-white dark:bg-card border-b border-r border-[#9B8EC4]/30 dark:border-[#9B8EC4]/20 rotate-45" />
-              </span>
-            )}
-            {/* Hover hint */}
-            <span className="absolute -top-8 right-0 bg-white/90 dark:bg-card/90 backdrop-blur-sm text-2xs text-foreground font-medium px-2 py-1 rounded-lg shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none border border-white/30">
-              Vraag het Forgie! 🦊
-            </span>
-          </span>
+          </>
         )}
       </button>
     </>

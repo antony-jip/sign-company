@@ -61,26 +61,26 @@ export function PulseBar({ project, offertes, facturen, taken, tijdregistraties,
   }, [project, offertes, facturen, taken, tijdregistraties])
 
   return (
-    <div className="flex items-center bg-[#FFFFFE] border-b border-[hsl(35,15%,87%)] overflow-x-auto">
+    <div className="flex items-center bg-[#FFFFFE] border-b border-sand overflow-x-auto">
       <PulseItem
         value={formatCurrency(metrics.waarde)}
         label="waarde"
-        colorClass="text-lavender-deep"
+        colorClass="text-mod-email-text"
       />
       <PulseItem
         value={`${metrics.urenGebruikt.toFixed(1)} / ${metrics.urenGepland > 0 ? metrics.urenGepland.toFixed(0) : '—'}`}
         label="uren"
-        colorClass="text-mist-deep"
+        colorClass="text-mod-klanten-text"
       />
       <PulseItem
         value={metrics.dagenTotDeadline !== null ? `${metrics.dagenTotDeadline}d` : '—'}
         label="deadline"
-        colorClass={metrics.dagenTotDeadline !== null && metrics.dagenTotDeadline < 0 ? 'text-red-500' : 'text-blush-deep'}
+        colorClass={metrics.dagenTotDeadline !== null && metrics.dagenTotDeadline < 0 ? 'text-destructive' : 'text-flame-text'}
       />
       <PulseItem
         value={metrics.openstaand > 0 ? formatCurrency(metrics.openstaand) : '—'}
         label="openstaand"
-        colorClass="text-cream-deep"
+        colorClass="text-mod-taken-text"
       />
 
       {/* Progress indicator — refined inline version */}
@@ -97,7 +97,7 @@ export function PulseBar({ project, offertes, facturen, taken, tijdregistraties,
                 <div
                   className={cn(
                     'h-7 w-7 rounded-full flex items-center justify-center transition-all duration-300 flex-shrink-0',
-                    isCompleted && 'bg-emerald-500 text-white shadow-sm',
+                    isCompleted && 'bg-mod-projecten text-white shadow-sm',
                     isCurrent && 'bg-primary text-primary-foreground ring-2 ring-primary/20 shadow-sm',
                     !isCompleted && !isCurrent && 'bg-[hsl(35,15%,92%)] text-muted-foreground/40',
                   )}
@@ -106,7 +106,7 @@ export function PulseBar({ project, offertes, facturen, taken, tijdregistraties,
                 </div>
                 <span className={cn(
                   'text-[9px] font-medium leading-none text-center whitespace-nowrap transition-colors duration-200',
-                  isCompleted && 'text-emerald-600',
+                  isCompleted && 'text-mod-projecten-text',
                   isCurrent && 'text-primary font-bold',
                   !isCompleted && !isCurrent && 'text-muted-foreground/40',
                 )}>
@@ -116,7 +116,7 @@ export function PulseBar({ project, offertes, facturen, taken, tijdregistraties,
               {!isLast && (
                 <div className={cn(
                   'h-[2px] w-4 mx-0.5 rounded-full mt-[-12px] transition-colors duration-500',
-                  i < activeStep ? 'bg-emerald-400' : 'bg-[hsl(35,15%,90%)]',
+                  i < activeStep ? 'bg-mod-projecten-light' : 'bg-sand',
                 )} />
               )}
             </div>

@@ -1,18 +1,18 @@
-import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft,
   FileText,
-  Plus,
-  Wrench,
+  FilePlus,
   MoreHorizontal,
   Copy,
   Trash2,
   Download,
   Mail,
   ArrowRight,
+  Receipt,
+  ClipboardCheck,
+  Calendar,
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
   DropdownMenu,
@@ -21,10 +21,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { cn, formatCurrency, formatDate, getInitials } from '@/lib/utils'
-import { getStatusBadgeClass } from '@/utils/statusColors'
 import { toast } from 'sonner'
-import { WatNuBanner } from './WatNuBanner'
-import { PipelineBar } from './PipelineBar'
+import { FaseNavigator } from './FaseNavigator'
+import { DoenBanner } from './DoenBanner'
+import { getPipelineStep, getPipelineStepColor } from './PipelineBar'
 import type { Project, Klant, Offerte, Taak, MontageAfspraak, Werkbon, Factuur } from '@/types'
 
 const statusLabels: Record<string, string> = {
@@ -37,14 +37,34 @@ const statusLabels: Record<string, string> = {
   gefactureerd: 'Gefactureerd',
 }
 
-const PROJECT_EMOJIS: Record<string, string> = {
-  gepland: '📋',
-  actief: '🔨',
-  'in-review': '👀',
-  afgerond: '✅',
-  'on-hold': '⏸️',
-  'te-factureren': '💰',
-  gefactureerd: '📄',
+const statusIcons: Record<string, { color: string; bg: string }> = {
+  gepland:         { color: 'text-mod-klanten-text',     bg: 'bg-mod-klanten-light border-mod-klanten-border' },
+  actief:          { color: 'text-mod-projecten-text',      bg: 'bg-mod-projecten-light border-mod-projecten-border' },
+  'in-review':     { color: 'text-mod-taken-text',    bg: 'bg-mod-taken-light border-mod-taken-border' },
+  afgerond:        { color: 'text-mod-projecten-text',      bg: 'bg-mod-projecten-light border-mod-projecten-border' },
+  'on-hold':       { color: 'text-flame-text',    bg: 'bg-flame-light border-flame-border' },
+  'te-factureren': { color: 'text-mod-email-text',  bg: 'bg-mod-email-light border-mod-email-border' },
+  gefactureerd:    { color: 'text-mod-projecten-text',      bg: 'bg-mod-projecten-light border-mod-projecten-border' },
+}
+
+/** Badge styling per status */
+function getStatusBadgeStyle(status: string): { bg: string; color: string } {
+  switch (status) {
+    case 'gepland':
+      return { bg: '#EEEEED', color: '#5A5A55' }
+    case 'actief':
+    case 'afgerond':
+      return { bg: '#E2F0F0', color: '#1A535C' }
+    case 'in-review':
+      return { bg: '#EEEEED', color: '#5A5A55' }
+    case 'on-hold':
+      return { bg: '#FDE8E1', color: '#D4453A' }
+    case 'te-factureren':
+    case 'gefactureerd':
+      return { bg: '#E2F0E8', color: '#2D6B48' }
+    default:
+      return { bg: '#EEEEED', color: '#5A5A55' }
+  }
 }
 
 interface ProjectKaartProps {
@@ -62,6 +82,7 @@ interface ProjectKaartProps {
   onDeleteProject?: () => void
   onCreateFactuur: () => void
   onArchive: () => void
+  onStatusChange?: (status: string) => void
 }
 
 export function ProjectKaart({
@@ -79,13 +100,12 @@ export function ProjectKaart({
   onDeleteProject,
   onCreateFactuur,
   onArchive,
+  onStatusChange,
 }: ProjectKaartProps) {
   const navigate = useNavigate()
 
-  // Calculate totals
   const totaalBedrag = offertes.reduce((sum, o) => sum + (o.totaal || 0), 0)
 
-  // Calculate deadline & days
   const eindDatum = project.eind_datum ? new Date(project.eind_datum) : null
   const isValidDate = eindDatum && !isNaN(eindDatum.getTime())
   const daysLeft = isValidDate
@@ -105,49 +125,117 @@ export function ProjectKaart({
     }
   }
 
+  const si = statusIcons[project.status] || statusIcons.gepland
+  const pipelineStep = getPipelineStep(project, offertes, montageAfspraken, facturen)
+  const stepColor = getPipelineStepColor(pipelineStep)
+  const hasOfferte = offertes.length > 0
+  const badgeStyle = getStatusBadgeStyle(project.status)
+
   return (
-    <div className="bg-card border border-border rounded-2xl overflow-hidden">
-      {/* Row 1: Breadcrumb + Actions */}
-      <div className="flex items-center justify-between px-5 pt-3 pb-2">
-        <div className="flex items-center gap-1.5 text-sm">
-          <Button variant="ghost" size="sm" asChild className="text-muted-foreground hover:text-foreground h-7 px-2 text-xs">
-            <Link to="/projecten">
-              <ArrowLeft className="mr-1 h-3 w-3" />
-              Projecten
-            </Link>
-          </Button>
+    <div
+      className="border border-sand shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px] overflow-hidden"
+      style={{
+        background: '#FFFFFE',
+      }}
+    >
+      {/* Colored accent line at top */}
+      <div
+        className="h-[3px] w-full transition-colors duration-700"
+        style={{ background: `linear-gradient(90deg, ${stepColor}, ${stepColor}60)` }}
+      />
+
+      {/* Row 1: Breadcrumb + Quick Actions */}
+      <div className="flex items-center justify-between px-5 pt-3.5 pb-2">
+        <div className="flex items-center gap-1.5 text-[12px]">
+          <Link
+            to="/projecten"
+            className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="h-3 w-3" />
+            Projecten
+          </Link>
           {klant && (
             <>
-              <span className="text-muted-foreground/50">/</span>
-              <Button variant="ghost" size="sm" asChild className="text-muted-foreground hover:text-foreground h-7 px-2 text-xs">
-                <Link to={`/klanten/${klant.id}`}>{klant.bedrijfsnaam || klant.contactpersoon}</Link>
-              </Button>
+              <span className="text-muted-foreground/30">/</span>
+              <Link
+                to={`/klanten/${klant.id}`}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {klant.bedrijfsnaam || klant.contactpersoon}
+              </Link>
             </>
           )}
         </div>
-        <div className="flex items-center gap-1.5">
-          <Button size="sm" className="h-7 px-3 text-xs" onClick={onCreateOfferte}>
-            <FileText className="mr-1.5 h-3 w-3" />
-            Offerte
-          </Button>
-          <Button variant="outline" size="sm" className="h-7 px-3 text-xs" onClick={onCreateWerkbon}>
-            <Plus className="mr-1 h-3 w-3" />
-            Werkbon
-          </Button>
-          <Button variant="outline" size="sm" className="h-7 px-3 text-xs" onClick={onCreateMontage}>
-            <Plus className="mr-1 h-3 w-3" />
-            Montage
-          </Button>
+
+        {/* Action buttons */}
+        <div className="flex items-center gap-2">
+          {!hasOfferte ? (
+            <>
+              {/* No offerte yet — Offerte is BIG flame primary */}
+              <button
+                onClick={onCreateOfferte}
+                className="inline-flex items-center gap-1.5 text-[14px] font-bold rounded-lg text-white hover:opacity-90 transition-all shadow-sm"
+                style={{ backgroundColor: '#F15025', padding: '11px 24px' }}
+              >
+                <FilePlus className="h-4 w-4" />
+                Offerte maken
+              </button>
+              <button
+                onClick={onCreateWerkbon}
+                className="inline-flex items-center gap-1.5 h-8 px-4 text-[12px] font-medium rounded-lg hover:bg-white/80 transition-all"
+                style={{ border: '0.5px solid #E6E4E0', color: '#5A5A55' }}
+              >
+                <ClipboardCheck className="h-3.5 w-3.5" />
+                Werkbon
+              </button>
+              <button
+                onClick={onCreateMontage}
+                className="inline-flex items-center gap-1.5 h-8 px-4 text-[12px] font-medium rounded-lg hover:bg-white/80 transition-all"
+                style={{ border: '0.5px solid #E6E4E0', color: '#5A5A55' }}
+              >
+                <Calendar className="h-3.5 w-3.5" />
+                Montage
+              </button>
+            </>
+          ) : (
+            <>
+              {/* Has offerte — Offerte becomes ghost */}
+              <button
+                onClick={onCreateOfferte}
+                className="inline-flex items-center gap-1.5 h-8 px-4 text-[12px] font-medium rounded-lg hover:bg-white/80 transition-all"
+                style={{ border: '0.5px solid #E6E4E0', color: '#5A5A55' }}
+              >
+                <Receipt className="h-3.5 w-3.5" />
+                Offerte
+              </button>
+              <button
+                onClick={onCreateWerkbon}
+                className="inline-flex items-center gap-1.5 h-8 px-4 text-[12px] font-medium rounded-lg hover:bg-white/80 transition-all"
+                style={{ border: '0.5px solid #E6E4E0', color: '#5A5A55' }}
+              >
+                <ClipboardCheck className="h-3.5 w-3.5" />
+                Werkbon
+              </button>
+              <button
+                onClick={onCreateMontage}
+                className="inline-flex items-center gap-1.5 h-8 px-4 text-[12px] font-medium rounded-lg hover:bg-white/80 transition-all"
+                style={{ border: '0.5px solid #E6E4E0', color: '#5A5A55' }}
+              >
+                <Calendar className="h-3.5 w-3.5" />
+                Montage
+              </button>
+            </>
+          )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+              <button className="h-8 w-8 rounded-lg border border-black/[0.06] bg-white/70 backdrop-blur-sm flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-white transition-all">
                 <MoreHorizontal className="h-4 w-4" />
-              </Button>
+              </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={onCopyProject}>
                 <Copy className="mr-2 h-3.5 w-3.5" />
-                Kopiëren
+                Kopieren
               </DropdownMenuItem>
               {onDeleteProject && (
                 <DropdownMenuItem onClick={onDeleteProject} className="text-destructive">
@@ -166,40 +254,48 @@ export function ProjectKaart({
 
       {/* Row 2: Project Identity */}
       <div className="px-5 pb-3">
-        <div className="flex items-start gap-3">
-          <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-[hsl(35,25%,92%)] to-[hsl(35,20%,85%)] flex items-center justify-center text-2xl flex-shrink-0">
-            {PROJECT_EMOJIS[project.status] || '📋'}
+        <div className="flex items-start gap-3.5">
+          {/* Status icon */}
+          <div className={`h-11 w-11 rounded-xl border flex items-center justify-center flex-shrink-0 ${si.bg}`}>
+            <FileText className={`h-5 w-5 ${si.color}`} />
           </div>
+
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2.5 flex-wrap">
               <h1 className="text-[22px] font-semibold tracking-tight text-foreground truncate">
                 {project.naam}
               </h1>
-              <Badge className={cn(getStatusBadgeClass(project.status), 'rounded-full text-xs px-2.5 py-0.5')}>
-                {statusLabels[project.status] || project.status}
+              <Badge className="rounded-full text-[10px] font-semibold px-[10px] py-[3px]" style={{
+                backgroundColor: badgeStyle.bg,
+                color: badgeStyle.color,
+              }}>
+                {(statusLabels[project.status] || project.status).toUpperCase()}
               </Badge>
             </div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mt-0.5">
+            <div className="flex items-center gap-2 text-[13px] text-muted-foreground mt-0.5">
               {project.project_nummer && (
-                <span className="font-mono">{project.project_nummer}</span>
+                <span className="font-mono text-muted-foreground/60">{project.project_nummer}</span>
               )}
               {totaalBedrag > 0 && (
                 <>
-                  <span>·</span>
-                  <span className="font-mono font-semibold">{formatCurrency(totaalBedrag)}</span>
+                  <span className="text-muted-foreground/30">·</span>
+                  <span className="font-mono font-semibold text-foreground">{formatCurrency(totaalBedrag)}</span>
                 </>
               )}
               {isValidDate && (
                 <>
-                  <span>·</span>
-                  <span>Deadline {formatDate(project.eind_datum!)}</span>
+                  <span className="text-muted-foreground/30">·</span>
+                  <span>Deadline <span className="font-mono">{formatDate(project.eind_datum!)}</span></span>
                 </>
               )}
               {daysLeft !== null && (
                 <>
-                  <span>·</span>
-                  <span className={cn(daysLeft < 0 ? 'text-destructive font-medium' : daysLeft < 7 ? 'text-amber-600' : '')}>
-                    {daysLeft < 0 ? `${Math.abs(daysLeft)}d over` : `${daysLeft}d`}
+                  <span className="text-muted-foreground/30">·</span>
+                  <span className={cn(
+                    'font-medium',
+                    daysLeft < 0 ? 'text-destructive' : daysLeft < 7 ? 'text-mod-planning-text' : 'text-muted-foreground'
+                  )}>
+                    <span className="font-mono">{daysLeft < 0 ? `${Math.abs(daysLeft)}d over` : `${daysLeft}d`}</span>
                   </span>
                 </>
               )}
@@ -211,20 +307,20 @@ export function ProjectKaart({
       {/* Row 3: Klant Strip */}
       {klant && (
         <div className="px-5 pb-3 flex items-center gap-3 flex-wrap">
-          <div className="h-7 w-7 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center flex-shrink-0">
+          <div className="h-7 w-7 rounded-full bg-gradient-to-br from-[#8BAFD4] to-[#6B8FB4] flex items-center justify-center flex-shrink-0 shadow-sm">
             <span className="text-white text-[10px] font-bold">{getInitials(klant.contactpersoon || klant.bedrijfsnaam)}</span>
           </div>
-          <div className="flex items-center gap-1.5 text-sm min-w-0 flex-wrap">
+          <div className="flex items-center gap-1.5 text-[13px] min-w-0 flex-wrap">
             <span className="font-medium text-foreground">{klant.contactpersoon || klant.bedrijfsnaam}</span>
             {klant.bedrijfsnaam && klant.contactpersoon && (
               <>
-                <span className="text-muted-foreground/40">·</span>
+                <span className="text-muted-foreground/30">·</span>
                 <span className="text-muted-foreground">{klant.bedrijfsnaam}</span>
               </>
             )}
             {klant.stad && (
               <>
-                <span className="text-muted-foreground/40">·</span>
+                <span className="text-muted-foreground/30">·</span>
                 <span className="text-muted-foreground">{klant.stad}</span>
               </>
             )}
@@ -233,33 +329,33 @@ export function ProjectKaart({
             {klant.telefoon && (
               <button
                 onClick={handleCopyPhone}
-                className="bg-muted rounded-md px-2.5 py-1 text-xs font-mono text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors cursor-pointer"
-                title="Klik om te kopiëren"
+                className="rounded-md px-2.5 py-1 text-[11px] font-mono text-muted-foreground/70 hover:text-foreground bg-white/60 hover:bg-white/90 transition-colors"
+                title="Klik om te kopieren"
               >
                 {klant.telefoon}
               </button>
             )}
-            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={handleMail} title="E-mail versturen">
-              <Mail className="h-3.5 w-3.5 mr-1" />
+            <button
+              onClick={handleMail}
+              className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors px-2 py-1"
+            >
+              <Mail className="h-3.5 w-3.5" />
               Mail
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 px-2 text-xs"
+            </button>
+            <button
               onClick={() => navigate(`/klanten/${klant.id}`)}
-              title="Klantprofiel openen"
+              className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors px-2 py-1"
             >
               Profiel
-              <ArrowRight className="h-3 w-3 ml-1" />
-            </Button>
+              <ArrowRight className="h-3 w-3" />
+            </button>
           </div>
         </div>
       )}
 
-      {/* Row 4: Wat Nu Banner */}
+      {/* Row 4: Doen Banner (contextual) */}
       <div className="px-5 pb-3">
-        <WatNuBanner
+        <DoenBanner
           project={project}
           offertes={offertes}
           montageAfspraken={montageAfspraken}
@@ -267,20 +363,19 @@ export function ProjectKaart({
           onCreateOfferte={onCreateOfferte}
           onCreateWerkbon={onCreateWerkbon}
           onCreateMontage={onCreateMontage}
-          onViewPortaal={() => {/* handled by portaal panel */}}
-          onViewPlanning={() => navigate('/planning')}
           onCreateFactuur={onCreateFactuur}
           onArchive={onArchive}
         />
       </div>
 
-      {/* Row 5: Pipeline Bar */}
+      {/* Row 5: Fase Navigator */}
       <div className="px-5 pb-4">
-        <PipelineBar
+        <FaseNavigator
           project={project}
           offertes={offertes}
           montageAfspraken={montageAfspraken}
           facturen={facturen}
+          onStatusChange={onStatusChange}
         />
       </div>
     </div>

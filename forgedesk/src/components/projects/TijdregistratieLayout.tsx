@@ -1085,7 +1085,7 @@ export function TijdregistratieLayout() {
                         </td>
                         <td className="py-3 pr-4 text-center">
                           {reg.gefactureerd ? (
-                            <Badge className="badge-lavender text-2xs">
+                            <Badge className="badge-paars text-2xs">
                               Gefact.
                             </Badge>
                           ) : reg.facturabel ? (

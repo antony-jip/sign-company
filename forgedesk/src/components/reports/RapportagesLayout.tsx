@@ -1153,7 +1153,7 @@ export function RapportagesLayout() {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <p className="text-sm font-medium">Conversieratio</p>
-              <p className="text-sm font-bold">{offerteStats.ratio}%</p>
+              <p className="text-sm font-bold font-mono">{offerteStats.ratio}%</p>
             </div>
             <div className="h-4 w-full rounded-full bg-muted overflow-hidden">
               <div

@@ -12,6 +12,8 @@ import {
   ChevronRight,
   CalendarDays,
   User,
+  Paperclip,
+  ClipboardCheck,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { getMontageAfspraken, getMedewerkers } from '@/services/supabaseService'
@@ -20,11 +22,11 @@ import { cn } from '@/lib/utils'
 import { logger } from '../../utils/logger'
 
 const STATUS_BADGE: Record<MontageAfspraak['status'], string> = {
-  gepland: 'bg-[var(--color-mist)] text-[var(--color-mist-text)]',
-  onderweg: 'bg-[var(--color-cream)] text-[var(--color-cream-text)]',
-  bezig: 'bg-[var(--color-sage)] text-[var(--color-sage-text)]',
-  afgerond: 'bg-[var(--color-sage)] text-[var(--color-sage-text)]',
-  uitgesteld: 'bg-[var(--color-coral)] text-[var(--color-coral-text)]',
+  gepland: 'bg-[#E5ECF6] text-[#2A5580]',
+  onderweg: 'bg-[#FDE8E2] text-[#C03A18]',
+  bezig: 'bg-[#E4F0EA] text-[#2D6B48]',
+  afgerond: 'bg-[#E2F0F0] text-[#1A535C]',
+  uitgesteld: 'bg-[#FDE8E2] text-[#C03A18]',
 }
 
 const STATUS_LABEL: Record<MontageAfspraak['status'], string> = {
@@ -286,6 +288,12 @@ export function MontagePlanningWidget() {
                           <Badge className={cn('text-2xs capitalize flex-shrink-0', STATUS_BADGE[montage.status])}>
                             {STATUS_LABEL[montage.status]}
                           </Badge>
+                          {montage.werkbon_id && (
+                            <ClipboardCheck className="h-3 w-3 text-[#C44830] flex-shrink-0" title={montage.werkbon_nummer || 'Werkbon'} />
+                          )}
+                          {montage.bijlagen && montage.bijlagen.length > 0 && (
+                            <Paperclip className="h-3 w-3 text-[#5A5A55] flex-shrink-0" title={`${montage.bijlagen.length} bijlage${montage.bijlagen.length !== 1 ? 'n' : ''}`} />
+                          )}
                         </div>
                         <div className="flex items-center gap-3 mt-0.5">
                           {montage.locatie && (
@@ -338,8 +346,8 @@ export function MontagePlanningWidget() {
                         {montage.start_tijd && (
                           <span className="text-xs font-medium text-muted-foreground flex items-center gap-1">
                             <Clock className="h-3 w-3" />
-                            {montage.start_tijd}
-                            {montage.eind_tijd && `–${montage.eind_tijd}`}
+                            <span className="font-mono">{montage.start_tijd}
+                            {montage.eind_tijd && `–${montage.eind_tijd}`}</span>
                           </span>
                         )}
                         <ArrowRight className="h-3 w-3 text-muted-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity" />

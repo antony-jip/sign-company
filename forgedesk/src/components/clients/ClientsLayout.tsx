@@ -34,8 +34,7 @@ import {
   CheckSquare,
   X,
 } from 'lucide-react'
-import { cn, getStatusColor } from '@/lib/utils'
-import { getRowAccentClass } from '@/utils/statusColors'
+import { cn } from '@/lib/utils'
 import { exportCSV, exportExcel } from '@/lib/export'
 import { getKlanten, getProjecten, deleteKlant } from '@/services/supabaseService'
 import type { Klant, Project } from '@/types'
@@ -310,16 +309,16 @@ export function ClientsLayout() {
         title="Klanten"
         subtitle={`${filteredKlanten.length} van ${klanten.length} klanten`}
         actions={
-          <Button onClick={() => { setEditingKlant(undefined); setAddDialogOpen(true) }} className="flex-shrink-0 shadow-sm" size="sm">
+          <Button onClick={() => { setEditingKlant(undefined); setAddDialogOpen(true) }} className="flex-shrink-0 shadow-sm bg-[#3A6B8C] hover:bg-[#3A6B8C]/90 text-white rounded-lg" size="sm">
             <UserPlus className="w-4 h-4 sm:mr-2" />
-            <span className="hidden sm:inline">Nieuwe Klant</span>
+            <span className="hidden sm:inline">+ Nieuwe klant</span>
           </Button>
         }
       />
 
       {/* Content */}
       <div className="flex-1 min-h-0 overflow-y-auto">
-      <div className="space-y-6 p-4 sm:p-6">
+      <div className="space-y-6 p-5">
 
       {/* Toolbar: Search + Export + View toggle */}
       <div className="flex flex-col sm:flex-row gap-3">
@@ -422,13 +421,13 @@ export function ClientsLayout() {
                 className={cn(
                   'px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all duration-200',
                   statusFilter === f
-                    ? 'bg-primary/12 text-accent dark:bg-primary/20 dark:text-wm-light ring-1 ring-primary/25 shadow-sm'
-                    : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'
+                    ? 'bg-[#191919] text-white'
+                    : 'text-[#5A5A55] hover:bg-[#F4F2EE]'
                 )}
               >
                 {labels[f]}
                 {counts[f] > 0 && (
-                  <span className="ml-1.5 text-2xs opacity-70">{counts[f]}</span>
+                  <span className="ml-1.5 font-mono text-[11px] opacity-70">{counts[f]}</span>
                 )}
               </button>
             )
@@ -451,10 +450,10 @@ export function ClientsLayout() {
               key={opt.value}
               onClick={() => setLabelFilter(opt.value)}
               className={cn(
-                'px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors',
+                'px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors',
                 labelFilter === opt.value
-                  ? 'bg-primary/10 text-primary border border-primary/30'
-                  : 'bg-muted/50 text-muted-foreground hover:bg-muted border border-transparent'
+                  ? 'bg-[#191919] text-white'
+                  : 'text-[#5A5A55] hover:bg-[#F4F2EE]'
               )}
             >
               {opt.label}
@@ -474,10 +473,10 @@ export function ClientsLayout() {
               key={opt.value}
               onClick={() => setKlantStatusFilter(opt.value)}
               className={cn(
-                'px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1.5',
+                'px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1.5',
                 klantStatusFilter === opt.value
-                  ? 'bg-primary/10 text-primary border border-primary/30'
-                  : 'bg-muted/50 text-muted-foreground hover:bg-muted border border-transparent'
+                  ? 'bg-[#191919] text-white'
+                  : 'text-[#5A5A55] hover:bg-[#F4F2EE]'
               )}
             >
               {opt.color && (
@@ -588,11 +587,11 @@ export function ClientsLayout() {
         </>
       ) : (
         /* ==================== LIST VIEW ==================== */
-        <Card className="rounded-xl border-black/[0.06]">
+        <Card className="rounded-xl border-border">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className={cn("border-b border-border", selectedIds.size > 0 ? "bg-primary/5" : "bg-muted/50")}>
+                <tr className={cn(selectedIds.size > 0 ? "bg-primary/5" : "")} style={{ borderBottom: '0.5px solid #E6E4E0', backgroundColor: selectedIds.size > 0 ? undefined : '#F4F2EE' }}>
                   <th className="w-10 px-3 py-3">
                     <Checkbox
                       checked={filteredKlanten.length > 0 && selectedIds.size === filteredKlanten.length}
@@ -634,45 +633,42 @@ export function ClientsLayout() {
                     </th>
                   ) : (
                     <>
-                      <th className="text-left text-xs font-bold text-text-tertiary uppercase tracking-label px-4 py-3">
+                      <th className="text-left text-[10px] font-medium uppercase text-[#A0A098] px-4 py-3" style={{ letterSpacing: '0.8px' }}>
                         Bedrijfsnaam
                       </th>
-                      <th className="text-left text-xs font-bold text-text-tertiary uppercase tracking-label px-4 py-3 hidden md:table-cell">
+                      <th className="text-left text-[10px] font-medium uppercase text-[#A0A098] px-4 py-3 hidden md:table-cell" style={{ letterSpacing: '0.8px' }}>
                         Contactpersoon
                       </th>
-                      <th className="text-left text-xs font-bold text-text-tertiary uppercase tracking-label px-4 py-3 hidden lg:table-cell">
+                      <th className="text-left text-[10px] font-medium uppercase text-[#A0A098] px-4 py-3 hidden lg:table-cell" style={{ letterSpacing: '0.8px' }}>
                         Email
                       </th>
-                      <th className="text-left text-xs font-bold text-text-tertiary uppercase tracking-label px-4 py-3 hidden xl:table-cell">
+                      <th className="text-left text-[10px] font-medium uppercase text-[#A0A098] px-4 py-3 hidden xl:table-cell" style={{ letterSpacing: '0.8px' }}>
                         Telefoon
                       </th>
-                      <th className="text-left text-xs font-bold text-text-tertiary uppercase tracking-label px-4 py-3 hidden lg:table-cell">
+                      <th className="text-left text-[10px] font-medium uppercase text-[#A0A098] px-4 py-3 hidden lg:table-cell" style={{ letterSpacing: '0.8px' }}>
                         Stad
                       </th>
-                      <th className="text-left text-xs font-bold text-text-tertiary uppercase tracking-label px-4 py-3">
-                        Status
-                      </th>
-                      <th className="text-center text-xs font-bold text-text-tertiary uppercase tracking-label px-4 py-3">
+                      <th className="text-center text-[10px] font-medium uppercase text-[#A0A098] px-4 py-3" style={{ letterSpacing: '0.8px' }}>
                         Projecten
                       </th>
-                      <th className="text-right text-xs font-bold text-text-tertiary uppercase tracking-label px-2 py-3 w-12">
+                      <th className="text-right text-[10px] font-medium uppercase text-[#A0A098] px-2 py-3 w-12" style={{ letterSpacing: '0.8px' }}>
                       </th>
                     </>
                   )}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border/50 row-stagger">
+              <tbody className="row-stagger">
                 {filteredKlanten.map((klant) => (
                   <tr
                     key={klant.id}
                     className={cn(
-                      "hover:bg-bg-hover cursor-pointer transition-colors duration-150 group border-l-2",
-                      selectedIds.has(klant.id) && "bg-primary/5",
-                      getRowAccentClass(klant.status)
+                      "hover:bg-[#F4F2EE] cursor-pointer transition-colors duration-150 group border-l-[3px] border-l-[#3A6B8C]",
+                      selectedIds.has(klant.id) && "bg-primary/5"
                     )}
+                    style={{ borderBottom: '0.5px solid #E6E4E0' }}
                     onClick={() => navigateWithTab({ path: `/klanten/${klant.id}`, label: klant.bedrijfsnaam || klant.voornaam || 'Klant', id: `/klanten/${klant.id}` })}
                   >
-                    <td className="w-10 px-3 py-3">
+                    <td className="w-10 px-3 py-3.5">
                       <Checkbox
                         checked={selectedIds.has(klant.id)}
                         onCheckedChange={() => toggleSelect(klant.id)}
@@ -680,7 +676,7 @@ export function ClientsLayout() {
                         aria-label={`Selecteer ${klant.bedrijfsnaam}`}
                       />
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3.5">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-lg bg-[#8BAFD4]/15 dark:bg-[#8BAFD4]/20 flex items-center justify-center flex-shrink-0">
                           <span className="text-xs font-semibold text-[#8BAFD4]">
@@ -713,53 +709,32 @@ export function ClientsLayout() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 hidden md:table-cell">
+                    <td className="px-4 py-3.5 hidden md:table-cell">
                       <span className="text-sm text-muted-foreground">
                         {klant.contactpersoon}
                       </span>
                     </td>
-                    <td className="px-4 py-3 hidden lg:table-cell">
+                    <td className="px-4 py-3.5 hidden lg:table-cell">
                       <span className="text-sm text-muted-foreground">
                         {klant.email}
                       </span>
                     </td>
-                    <td className="px-4 py-3 hidden xl:table-cell">
+                    <td className="px-4 py-3.5 hidden xl:table-cell">
                       <span className="text-sm text-muted-foreground">
                         {klant.telefoon}
                       </span>
                     </td>
-                    <td className="px-4 py-3 hidden lg:table-cell">
+                    <td className="px-4 py-3.5 hidden lg:table-cell">
                       <span className="text-sm text-muted-foreground">
                         {klant.stad}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
-                      <Badge className={cn('capitalize text-xs', getStatusColor(klant.status))}>
-                        {klant.status}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3 hidden xl:table-cell">
-                      {klant.klant_status && klant.klant_status !== 'normaal' ? (() => {
-                        const cfg = klantStatusConfig[klant.klant_status]
-                        if (!cfg) return null
-                        return (
-                          <span
-                            className="inline-flex items-center px-2 py-0.5 rounded-full text-2xs font-semibold"
-                            style={{ color: cfg.color, backgroundColor: cfg.bgColor }}
-                          >
-                            {cfg.label}
-                          </span>
-                        )
-                      })() : (
-                        <span className="text-xs text-muted-foreground/40">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-center">
+                    <td className="px-4 py-3.5 text-center">
                       <Badge variant="secondary" className="text-xs font-mono">
                         {projectCounts[klant.id] || 0}
                       </Badge>
                     </td>
-                    <td className="px-2 py-3 text-right">
+                    <td className="px-2 py-3.5 text-right">
                       {renderRowActions(klant)}
                     </td>
                   </tr>

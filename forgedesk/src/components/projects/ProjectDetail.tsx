@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
+// BackButton removed — breadcrumb in ProjectKaart is sufficient
 import { useTabDirtyState } from '@/hooks/useTabDirtyState'
 import { toast } from 'sonner'
 import {
@@ -31,6 +32,10 @@ import {
   Camera,
   Wrench,
   Wallet,
+  Clock,
+  X,
+  Eye,
+  Printer,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -85,6 +90,7 @@ import {
   createProjectToewijzing,
   deleteProjectToewijzing,
   getWerkbonnenByProject,
+  createWerkbon,
   deleteWerkbon,
   getFactuur,
   getFacturenByProject,
@@ -95,6 +101,7 @@ import {
 } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
+import { uploadMontageBijlage } from '@/services/storageService'
 import { analyzeProject } from '@/services/aiService'
 import { sendEmail } from '@/services/gmailService'
 import { tekeningGoedkeuringTemplate } from '@/services/emailTemplateService'
@@ -102,6 +109,9 @@ import { tekeningGoedkeuringTemplate } from '@/services/emailTemplateService'
 import { ProjectPhotoGallery } from './ProjectPhotoGallery'
 import { VisualisatieGallery } from '@/components/visualizer/VisualisatieGallery'
 import { WerkbonVanProjectDialog } from '@/components/werkbonnen/WerkbonVanProjectDialog'
+import { SpectrumBar } from '@/components/ui/SpectrumBar'
+import { getSpectrumPercentage } from '@/utils/spectrumUtils'
+import { getFase } from '@/utils/projectFases'
 import { ProjectKaart } from './cockpit/ProjectKaart'
 import { PortaalCompactCard } from './cockpit/PortaalSidebarCard'
 import { TaskChecklistView } from './cockpit/TaskChecklistView'
@@ -111,7 +121,7 @@ import { MontageSection } from './cockpit/MontageSection'
 import { BestandenSection } from './cockpit/BestandenSection'
 import { ActiviteitFeed } from './cockpit/ActiviteitFeed'
 import { useProjectSidebarConfig } from '@/hooks/useProjectSidebarConfig'
-import type { Taak, Project, Document, Offerte, TekeningGoedkeuring, Klant, Tijdregistratie, Medewerker, ProjectToewijzing, Werkbon, Factuur, Uitgave, MontageAfspraak, ProjectFoto } from '@/types'
+import type { Taak, Project, Document, Offerte, TekeningGoedkeuring, Klant, Tijdregistratie, Medewerker, ProjectToewijzing, Werkbon, Factuur, Uitgave, MontageAfspraak, MontageBijlage, ProjectFoto } from '@/types'
 import { berekenBudgetStatus } from '@/utils/budgetUtils'
 import { logger } from '../../utils/logger'
 import { logWijziging } from '@/utils/auditLogger'
@@ -131,15 +141,15 @@ type ProjectTab = 'overzicht' | 'werkbon' | 'financieel' | 'notities'
 
 
 function getFileIcon(type: string, size: string = 'h-8 w-8') {
-  if (type.includes('pdf')) return <FileText className={`${size} text-red-500`} />
+  if (type.includes('pdf')) return <FileText className={`${size} text-[#C03A18]`} />
   if (type.includes('spreadsheet') || type.includes('xlsx') || type.includes('csv'))
-    return <FileSpreadsheet className={`${size} text-green-600`} />
+    return <FileSpreadsheet className={`${size} text-[#2D6B48]`} />
   if (type.includes('zip') || type.includes('archive'))
-    return <FileArchive className={`${size} text-yellow-600`} />
+    return <FileArchive className={`${size} text-[#C44830]`} />
   if (type.includes('image') || type.includes('jpeg') || type.includes('png'))
     return <FileImage className={`${size} text-primary`} />
   if (type.includes('illustrator') || type.includes('acad'))
-    return <File className={`${size} text-orange-500`} />
+    return <File className={`${size} text-[#F15025]`} />
   return <File className={`${size} text-muted-foreground/60`} />
 }
 
@@ -241,6 +251,8 @@ export function ProjectDetail() {
   const [montageLocatie, setMontageLocatie] = useState('')
   const [montageNotities, setMontageNotities] = useState('')
   const [montageMonteurs, setMontageMonteurs] = useState<string[]>([])
+  const [montageBijlagen, setMontageBijlagen] = useState<MontageBijlage[]>([])
+  const [montageWerkbonId, setMontageWerkbonId] = useState('')
   const [isSavingMontage, setIsSavingMontage] = useState(false)
   const [toewijzingMedewerkerId, setToewijzingMedewerkerId] = useState('')
   const [toewijzingRol, setToewijzingRol] = useState<ProjectToewijzing['rol']>('medewerker')
@@ -275,6 +287,8 @@ export function ProjectDetail() {
     setMontageEindTijd('17:00')
     setMontageNotities('')
     setMontageMonteurs([])
+    setMontageBijlagen([])
+    setMontageWerkbonId('')
     setMontageDialogOpen(true)
   }
 
@@ -300,6 +314,9 @@ export function ProjectDetail() {
         monteurs: montageMonteurs,
         materialen: [],
         notities: montageNotities,
+        werkbon_id: montageWerkbonId || undefined,
+        werkbon_nummer: montageWerkbonId ? projectWerkbonnen.find(w => w.id === montageWerkbonId)?.werkbon_nummer : undefined,
+        bijlagen: montageBijlagen.length > 0 ? montageBijlagen : undefined,
         status: 'gepland',
       })
       setProjectMontages(prev => [...prev, newMontage])
@@ -758,6 +775,27 @@ export function ProjectDetail() {
 
   return (
     <div className="h-[calc(100vh-56px)] flex flex-col bg-[#F4F3F0]">
+      {/* BackButton removed — breadcrumb in ProjectKaart is sufficient */}
+      {/* Deadline warning */}
+      {isOverdue && (
+        <div className="mx-4 mt-2 rounded-lg px-3 py-2 flex items-center gap-2" style={{ backgroundColor: '#FDE8E2', border: '0.5px solid #F5C4B4' }}>
+          <AlertTriangle className="h-4 w-4 flex-shrink-0" style={{ color: '#C03A18' }} />
+          <span className="text-[13px] font-medium" style={{ color: '#C03A18' }}>
+            Deadline verstreken ({Math.abs(daysLeft)} dagen geleden)
+          </span>
+        </div>
+      )}
+      {!isOverdue && daysLeft > 0 && daysLeft <= 7 && (
+        <div className="mx-4 mt-2 rounded-lg px-3 py-2 flex items-center gap-2" style={{ backgroundColor: '#FDE8E215', border: '0.5px solid #F5C4B430' }}>
+          <Clock className="h-4 w-4 flex-shrink-0" style={{ color: '#C03A18' }} />
+          <span className="text-[13px] font-medium" style={{ color: '#C03A18' }}>
+            Nog {daysLeft} dag{daysLeft !== 1 ? 'en' : ''} tot deadline
+          </span>
+        </div>
+      )}
+      {/* Spectrum voortgangsstrip */}
+      <SpectrumBar percentage={getFase(project.status).percentage} height={6} className="flex-shrink-0" />
+
       {/* ── Hidden file inputs ── */}
       <input
         ref={fileInputRef}
@@ -775,7 +813,7 @@ export function ProjectDetail() {
       {/* Mobile floating camera button */}
       <div className="fixed bottom-6 right-6 z-40 md:hidden">
         <label
-          className="flex items-center justify-center h-14 w-14 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 text-white shadow-lg shadow-purple-500/25 active:scale-95 transition-transform cursor-pointer"
+          className="flex items-center justify-center h-14 w-14 rounded-full bg-[#1A535C] text-white shadow-lg shadow-[#1A535C]/25 active:scale-95 transition-transform cursor-pointer"
         >
           <Camera className="h-6 w-6" />
           <input
@@ -834,15 +872,16 @@ export function ProjectDetail() {
               toast.success('Project gearchiveerd')
             } catch { toast.error('Kon project niet archiveren') }
           }}
+          onStatusChange={(newStatus) => handleCockpitStatusChange(newStatus as Project['status'])}
         />
       </div>
 
       {/* ══════════ TAB BAR ══════════ */}
       <div className="flex items-center gap-0.5 border-b border-[hsl(35,15%,87%)] bg-transparent px-7 mt-4">
         {([
-          { key: 'overzicht' as ProjectTab, label: 'Overzicht' },
+          { key: 'overzicht' as ProjectTab, label: 'Overzicht', count: projectTaken.filter(t => t.status !== 'klaar').length },
           { key: 'werkbon' as ProjectTab, label: 'Werkbon', count: projectWerkbonnen.length },
-          { key: 'financieel' as ProjectTab, label: 'Financieel' },
+          { key: 'financieel' as ProjectTab, label: 'Financieel', count: projectFacturen.length },
           { key: 'notities' as ProjectTab, label: 'Notities' },
         ]).map((tab) => (
           <button
@@ -851,23 +890,23 @@ export function ProjectDetail() {
             className={cn(
               'px-4 py-2.5 text-sm transition-all duration-200 relative',
               activeTab === tab.key
-                ? 'text-foreground font-medium'
-                : 'text-muted-foreground hover:text-foreground'
+                ? 'font-semibold'
+                : 'font-normal hover:text-[#191919]'
             )}
+            style={{
+              color: activeTab === tab.key ? '#191919' : '#5A5A55',
+            }}
           >
             {tab.label}
             {tab.count !== undefined && tab.count > 0 && (
-              <span className={cn(
-                'ml-1.5 text-2xs rounded-full px-1.5 py-0.5 font-mono transition-colors',
-                activeTab === tab.key
-                  ? 'bg-primary/10 text-primary'
-                  : 'bg-muted text-muted-foreground/60'
-              )}>
+              <span className="ml-1.5 text-2xs font-mono" style={{
+                color: activeTab === tab.key ? '#191919' : '#5A5A55',
+              }}>
                 {tab.count}
               </span>
             )}
             {activeTab === tab.key && (
-              <div className="absolute bottom-0 left-1 right-1 h-[2px] bg-foreground rounded-t-full" />
+              <div className="absolute bottom-0 left-1 right-1 h-[2px] rounded-t-full" style={{ backgroundColor: '#1A535C' }} />
             )}
           </button>
         ))}
@@ -915,13 +954,45 @@ export function ProjectDetail() {
           {/* Portaal (conditioneel — toont alleen bij actief portaal) */}
           <PortaalCompactCard projectId={id!} />
 
+          {/* "Doen" suggestie */}
+          {(() => {
+            const fase = getFase(project.status)
+            const allTasksDone = projectTaken.length > 0 && projectTaken.every(t => t.status === 'klaar')
+
+            let suggestion: { text: string; action: () => void; nextColor: string } | null = null
+
+            if (project.status === 'actief' && allTasksDone) {
+              suggestion = {
+                text: 'Alle taken afgerond. Klaar voor montage?',
+                action: () => handleCockpitStatusChange('montage' as any),
+                nextColor: '#3A6B8C',
+              }
+            } else if (project.status === 'te-factureren') {
+              suggestion = {
+                text: 'Klaar om te factureren.',
+                action: () => { /* navigate to create invoice */ },
+                nextColor: '#2D6B48',
+              }
+            }
+
+            if (!suggestion) return null
+            return (
+              <div className="rounded-xl px-4 py-3 flex items-center justify-between" style={{ backgroundColor: suggestion.nextColor + '15', border: `0.5px solid ${suggestion.nextColor}30` }}>
+                <span className="text-[13px] font-medium" style={{ color: suggestion.nextColor }}>{suggestion.text}</span>
+                <button className="text-[13px] font-semibold px-4 py-1.5 rounded-lg text-white" style={{ backgroundColor: '#F15025' }} onClick={suggestion.action}>
+                  Doen
+                </button>
+              </div>
+            )
+          })()}
+
         </div>{/* einde main content */}
 
         {/* ── Sidebar ── */}
         <div className="w-full lg:w-[260px] xl:w-[280px] flex-shrink-0 space-y-5 lg:self-start lg:sticky lg:top-4">
 
           {/* Montage */}
-          <div className="bg-card border border-border rounded-xl p-4">
+          <div className="border border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px] p-4">
             <MontageSection
               montageAfspraken={projectMontages}
               onInplannen={handleOpenMontageDialog}
@@ -929,7 +1000,7 @@ export function ProjectDetail() {
           </div>
 
           {/* Bestanden */}
-          <div className="bg-card border border-border rounded-xl p-4">
+          <div className="border border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px] p-4">
             <BestandenSection
               documenten={projectDocumenten}
               onUpload={() => fileInputRef.current?.click()}
@@ -955,20 +1026,23 @@ export function ProjectDetail() {
 
           {/* Visualisaties (conditioneel) */}
           {hasVisualisaties && (
-            <div className="bg-card border border-border rounded-xl p-4">
+            <div className="border border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px] p-4">
               <h3 className="text-[13px] font-medium text-foreground mb-3">Visualizer</h3>
               <VisualisatieGallery project_id={project.id} klant_id={project.klant_id} compact />
             </div>
           )}
 
           {/* Activiteit */}
-          <div className="bg-card border border-border rounded-xl p-4">
+          <div className="border border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px] p-4">
             <ActiviteitFeed
               project={project}
               offertes={projectOffertes}
               montageAfspraken={projectMontages}
               werkbonnen={projectWerkbonnen}
               facturen={projectFacturen}
+              taken={projectTaken}
+              fotos={projectFotos}
+              medewerkers={alleMedewerkers}
             />
           </div>
 
@@ -984,11 +1058,11 @@ export function ProjectDetail() {
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base font-semibold flex items-center gap-2">
-                <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center">
+                <div className="h-7 w-7 rounded-lg bg-[#C44830] flex items-center justify-center">
                   <ClipboardCheck className="h-3.5 w-3.5 text-white" />
                 </div>
                 Werkbonnen
-                <span className="text-xs text-muted-foreground font-normal">{projectWerkbonnen.length}</span>
+                <span className="text-xs text-muted-foreground font-normal font-mono">{projectWerkbonnen.length}</span>
               </CardTitle>
               <Button
                 size="sm"
@@ -1002,17 +1076,12 @@ export function ProjectDetail() {
           </CardHeader>
           <CardContent>
             {projectWerkbonnen.length === 0 ? (
-              <div className="text-center py-8">
-                <ClipboardCheck className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-                <p className="text-sm text-muted-foreground mb-3">Nog geen werkbonnen aangemaakt</p>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowWerkbonDialog(true)}
-                >
-                  <Plus className="h-3.5 w-3.5 mr-1.5" />
-                  Werkbon aanmaken
-                </Button>
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="h-12 w-12 rounded-xl bg-[#C44830]/10 flex items-center justify-center mb-3">
+                  <ClipboardCheck className="h-6 w-6" style={{ color: '#C44830' }} />
+                </div>
+                <p className="text-sm font-medium text-foreground/70">Nog geen werkbonnen</p>
+                <p className="text-[12px] text-muted-foreground/50 mt-1">Maak een werkbon aan om te beginnen.</p>
               </div>
             ) : (
               <div className="space-y-2">
@@ -1023,8 +1092,8 @@ export function ProjectDetail() {
                     onClick={() => navigate(`/werkbonnen/${wb.id}`)}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0">
-                        <ClipboardCheck className="h-4 w-4 text-amber-600" />
+                      <div className="h-8 w-8 rounded-lg bg-[#C44830]/10 flex items-center justify-center flex-shrink-0">
+                        <ClipboardCheck className="h-4 w-4 text-[#C44830]" />
                       </div>
                       <div>
                         <p className="text-sm font-semibold font-mono">{wb.werkbon_nummer}</p>
@@ -1035,8 +1104,8 @@ export function ProjectDetail() {
                     <div className="flex items-center gap-2">
                       <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
                         wb.status === 'concept' ? 'bg-muted text-foreground/70' :
-                        wb.status === 'definitief' ? 'bg-blue-100 text-blue-700' :
-                        wb.status === 'afgerond' ? 'bg-green-100 text-green-700' :
+                        wb.status === 'definitief' ? 'bg-[#E5ECF6] text-[#2A5580]' :
+                        wb.status === 'afgerond' ? 'bg-[#E4F0EA] text-[#2D6B48]' :
                         'bg-muted text-foreground/70'
                       }`}>
                         {wb.status === 'concept' ? 'Concept' : wb.status === 'definitief' ? 'Definitief' : wb.status === 'afgerond' ? 'Afgerond' : wb.status}
@@ -1053,7 +1122,7 @@ export function ProjectDetail() {
                               .catch(() => toast.error('Kon werkbon niet verwijderen'))
                           }
                         }}
-                        className="p-1.5 rounded-md text-muted-foreground/30 hover:text-red-500 hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
+                        className="p-1.5 rounded-md text-muted-foreground/30 hover:text-[#C03A18] hover:bg-[#FDE8E2] transition-colors opacity-0 group-hover:opacity-100"
                         title="Verwijderen"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -1075,9 +1144,9 @@ export function ProjectDetail() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[
             { label: 'Geoffreerd', bedrag: projectOffertes.reduce((s, o) => s + o.totaal, 0), kleur: 'text-foreground' },
-            { label: 'Gefactureerd', bedrag: projectFacturen.reduce((s, f) => s + f.totaal, 0), kleur: 'text-blue-600' },
-            { label: 'Betaald', bedrag: projectFacturen.reduce((s, f) => s + (f.betaald_bedrag || 0), 0), kleur: 'text-emerald-600' },
-            { label: 'Openstaand', bedrag: projectFacturen.reduce((s, f) => s + f.totaal - (f.betaald_bedrag || 0), 0), kleur: 'text-amber-600' },
+            { label: 'Gefactureerd', bedrag: projectFacturen.reduce((s, f) => s + f.totaal, 0), kleur: 'text-[#2A5580]' },
+            { label: 'Betaald', bedrag: projectFacturen.reduce((s, f) => s + (f.betaald_bedrag || 0), 0), kleur: 'text-[#2D6B48]' },
+            { label: 'Openstaand', bedrag: projectFacturen.reduce((s, f) => s + f.totaal - (f.betaald_bedrag || 0), 0), kleur: 'text-[#C03A18]' },
           ].map((item) => (
             <div key={item.label} className="bg-card border border-border rounded-xl p-4">
               <p className="text-xs text-muted-foreground mb-1">{item.label}</p>
@@ -1095,11 +1164,11 @@ export function ProjectDetail() {
           return (
             <div className={`flex items-center gap-3 rounded-lg px-4 py-2 ${
               bs.niveau === 'overschreden'
-                ? 'bg-red-50 border border-red-200'
-                : 'bg-amber-50 border border-amber-200'
+                ? 'bg-[#FDE8E2] border border-[#F5C4B4]'
+                : 'bg-[#FDE8E2] border border-[#F5C4B4]'
             }`}>
               <AlertTriangle className={`h-4 w-4 flex-shrink-0 ${
-                bs.niveau === 'overschreden' ? 'text-red-500' : 'text-amber-500'
+                bs.niveau === 'overschreden' ? 'text-[#C03A18]' : 'text-[#C03A18]'
               }`} />
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-medium text-foreground">
@@ -1121,11 +1190,11 @@ export function ProjectDetail() {
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
+                  <div className="h-7 w-7 rounded-lg bg-[#3A6B8C] flex items-center justify-center">
                     <Receipt className="h-3.5 w-3.5 text-white" />
                   </div>
                   Offertes
-                  <span className="text-xs text-muted-foreground font-normal">{projectOffertes.length}</span>
+                  <span className="text-xs text-muted-foreground font-normal font-mono">{projectOffertes.length}</span>
                 </CardTitle>
                 <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={openNieuweOfferte}>
                   <Plus className="h-4 w-4" />
@@ -1185,12 +1254,12 @@ export function ProjectDetail() {
                         </Button>
                       </div>
                       {!offerte.geconverteerd_naar_factuur_id && (
-                        <div className="flex items-center justify-between bg-emerald-50 rounded-md px-2.5 py-1.5 border border-emerald-200 mt-1">
+                        <div className="flex items-center justify-between bg-[#E4F0EA] rounded-md px-2.5 py-1.5 border border-[#C0DBCC] mt-1">
                           <div className="flex items-center gap-1.5">
-                            <CreditCard className="h-3.5 w-3.5 text-emerald-600" />
-                            <span className="text-xs text-emerald-700">Factureren</span>
+                            <CreditCard className="h-3.5 w-3.5 text-[#2D6B48]" />
+                            <span className="text-xs text-[#2D6B48]">Factureren</span>
                           </div>
-                          <Button size="sm" className="h-6 px-2.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+                          <Button size="sm" className="h-6 px-2.5 text-xs bg-[#2D6B48] hover:bg-[#245A3D] text-white"
                             onClick={() => handleCreateFactuurFromOfferte(offerte)}
                           >
                             Factureren &rarr;
@@ -1198,12 +1267,12 @@ export function ProjectDetail() {
                         </div>
                       )}
                       {offerte.geconverteerd_naar_factuur_id && (
-                        <div className="flex items-center justify-between bg-blue-50 rounded-md px-2.5 py-1.5 border border-blue-200 mt-1">
+                        <div className="flex items-center justify-between bg-[#E5ECF6] rounded-md px-2.5 py-1.5 border border-[#C0D0EA] mt-1">
                           <div className="flex items-center gap-1.5">
-                            <CheckCircle2 className="h-3.5 w-3.5 text-blue-600" />
-                            <span className="text-xs text-blue-700">
+                            <CheckCircle2 className="h-3.5 w-3.5 text-[#2A5580]" />
+                            <span className="text-xs text-[#2A5580]">
                               {linkedFactuur ? (
-                                <>{linkedFactuur.nummer} · <span className={linkedFactuur.status === 'betaald' ? 'text-emerald-600 font-medium' : ''}>{linkedFactuur.status}</span> · <span className="font-mono">{formatCurrency(linkedFactuur.totaal)}</span></>
+                                <><span className="font-mono">{linkedFactuur.nummer}</span> · <span className={linkedFactuur.status === 'betaald' ? 'text-[#2D6B48] font-medium' : ''}>{linkedFactuur.status}</span> · <span className="font-mono">{formatCurrency(linkedFactuur.totaal)}</span></>
                               ) : 'Gefactureerd'}
                             </span>
                           </div>
@@ -1227,11 +1296,11 @@ export function ProjectDetail() {
           <Card className="border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px]">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <div className="p-1 rounded-md bg-emerald-500/10">
-                  <CreditCard className="h-3.5 w-3.5 text-emerald-600" />
+                <div className="p-1 rounded-md bg-[#2D6B48]/10">
+                  <CreditCard className="h-3.5 w-3.5 text-[#2D6B48]" />
                 </div>
                 Facturen
-                <span className="text-xs text-muted-foreground font-normal">{projectFacturen.length}</span>
+                <span className="text-xs text-muted-foreground font-normal font-mono">{projectFacturen.length}</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -1248,9 +1317,9 @@ export function ProjectDetail() {
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-bold font-mono">{formatCurrency(factuur.totaal)}</span>
                       <span className={`text-xs px-2 py-0.5 rounded-full ${
-                        factuur.status === 'betaald' ? 'bg-emerald-100 text-emerald-700' :
-                        factuur.status === 'vervallen' ? 'bg-red-100 text-red-700' :
-                        factuur.status === 'verzonden' ? 'bg-blue-100 text-blue-700' :
+                        factuur.status === 'betaald' ? 'bg-[#E4F0EA] text-[#2D6B48]' :
+                        factuur.status === 'vervallen' ? 'bg-[#FDE8E2] text-[#C03A18]' :
+                        factuur.status === 'verzonden' ? 'bg-[#E5ECF6] text-[#2A5580]' :
                         'bg-muted text-foreground/70'
                       }`}>
                         {factuur.status === 'betaald' ? 'Betaald' : factuur.status === 'verzonden' ? 'Verzonden' : factuur.status === 'vervallen' ? 'Verlopen' : factuur.status}
@@ -1272,7 +1341,7 @@ export function ProjectDetail() {
                   <Wallet className="h-3.5 w-3.5 text-orange-600" />
                 </div>
                 Uitgaven
-                <span className="text-xs text-muted-foreground font-normal">{projectUitgaven.length}</span>
+                <span className="text-xs text-muted-foreground font-normal font-mono">{projectUitgaven.length}</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -1334,7 +1403,7 @@ export function ProjectDetail() {
               />
               {project.updated_at && (
                 <p className="text-xs text-muted-foreground mt-2">
-                  Laatst gewijzigd: {formatDate(project.updated_at)}
+                  Laatst gewijzigd: <span className="font-mono">{formatDate(project.updated_at)}</span>
                 </p>
               )}
             </CardContent>
@@ -1818,7 +1887,7 @@ export function ProjectDetail() {
               <ul className="list-disc list-inside space-y-0.5">
                 <li>{projectTaken.length} taken (status wordt reset naar 'todo')</li>
                 <li>{project.team_leden.length} teamleden</li>
-                <li>Budget: {formatCurrency(project.budget)}</li>
+                <li>Budget: <span className="font-mono">{formatCurrency(project.budget)}</span></li>
               </ul>
             </div>
           </div>
@@ -1838,7 +1907,7 @@ export function ProjectDetail() {
 
       {/* Montage inplannen dialog */}
       <Dialog open={montageDialogOpen} onOpenChange={setMontageDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-[560px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Wrench className="h-5 w-5 text-blue-500" />
@@ -1851,50 +1920,181 @@ export function ProjectDetail() {
           <div className="space-y-3 py-2">
             <div>
               <Label className="text-sm">Titel</Label>
-              <Input value={montageTitel} onChange={(e) => setMontageTitel(e.target.value)} placeholder="Bijv. Montage gevelreclame" className="mt-1" />
+              <Input value={montageTitel} onChange={(e) => setMontageTitel(e.target.value)} placeholder="Bijv. Montage gevelreclame" className="mt-1 h-9" />
             </div>
-            <div>
-              <Label className="text-sm">Datum</Label>
-              <Input type="date" value={montageDatum} onChange={(e) => setMontageDatum(e.target.value)} className="mt-1" />
-            </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <Label className="text-sm">Datum</Label>
+                <Input type="date" value={montageDatum} onChange={(e) => setMontageDatum(e.target.value)} className="mt-1 h-9" />
+              </div>
               <div>
                 <Label className="text-sm">Start</Label>
-                <Input type="time" value={montageStartTijd} onChange={(e) => setMontageStartTijd(e.target.value)} className="mt-1" />
+                <Input type="time" value={montageStartTijd} onChange={(e) => setMontageStartTijd(e.target.value)} className="mt-1 h-9" />
               </div>
               <div>
                 <Label className="text-sm">Eind</Label>
-                <Input type="time" value={montageEindTijd} onChange={(e) => setMontageEindTijd(e.target.value)} className="mt-1" />
+                <Input type="time" value={montageEindTijd} onChange={(e) => setMontageEindTijd(e.target.value)} className="mt-1 h-9" />
               </div>
             </div>
             <div>
               <Label className="text-sm">Locatie</Label>
-              <Input value={montageLocatie} onChange={(e) => setMontageLocatie(e.target.value)} placeholder="Adres / locatie" className="mt-1" />
+              <Input value={montageLocatie} onChange={(e) => setMontageLocatie(e.target.value)} placeholder="Adres / locatie" className="mt-1 h-9" />
             </div>
             {alleMedewerkers.length > 0 && (
               <div>
                 <Label className="text-sm">Monteurs</Label>
-                <div className="flex flex-wrap gap-1.5 mt-1">
+                <div className="flex flex-wrap gap-1 mt-1">
                   {alleMedewerkers.map((m) => (
                     <button
                       key={m.id}
                       onClick={() => setMontageMonteurs(prev => prev.includes(m.id) ? prev.filter(x => x !== m.id) : [...prev, m.id])}
                       className={cn(
-                        'px-2 py-1 rounded-md text-xs border transition-colors',
+                        'h-7 w-7 rounded-full text-[9px] font-bold transition-colors flex items-center justify-center',
                         montageMonteurs.includes(m.id)
-                          ? 'bg-blue-100 border-blue-300 text-blue-700 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300'
-                          : 'bg-background border-border text-muted-foreground hover:bg-muted dark:bg-muted dark:border-border'
+                          ? 'bg-primary text-white ring-2 ring-primary/30'
+                          : 'bg-muted text-muted-foreground hover:bg-muted/80'
                       )}
+                      title={m.naam}
                     >
-                      {m.naam}
+                      {m.naam.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}
                     </button>
                   ))}
                 </div>
               </div>
             )}
+            {/* Werkbon koppelen */}
+            <div>
+              <Label className="text-sm flex items-center gap-1.5">
+                <ClipboardCheck className="h-3.5 w-3.5" />
+                Werkbon koppelen
+              </Label>
+              <Select value={montageWerkbonId} onValueChange={async (v) => {
+                if (v === '__new__') {
+                  try {
+                    const wb = await createWerkbon({
+                      user_id: user?.id || '',
+                      klant_id: project?.klant_id || '',
+                      project_id: id || '',
+                      titel: project?.naam || '',
+                      datum: new Date().toISOString().split('T')[0],
+                      status: 'concept',
+                    })
+                    setProjectWerkbonnen(prev => [...prev, wb])
+                    setMontageWerkbonId(wb.id)
+                    toast.success(`Werkbon ${wb.werkbon_nummer} aangemaakt`)
+                  } catch {
+                    toast.error('Kon werkbon niet aanmaken')
+                  }
+                } else {
+                  setMontageWerkbonId(v === '__none__' ? '' : v)
+                }
+              }}>
+                <SelectTrigger className="mt-1 h-9">
+                  <SelectValue placeholder="Geen werkbon" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Geen werkbon</SelectItem>
+                  {projectWerkbonnen.map((wb) => {
+                    const st = wb.status === 'concept' ? 'Open' : wb.status === 'definitief' ? 'In uitvoering' : 'Afgetekend'
+                    return (
+                      <SelectItem key={wb.id} value={wb.id}>
+                        <span className="flex items-center gap-2">
+                          <span className="font-mono text-xs">{wb.werkbon_nummer}</span>
+                          <span className="text-muted-foreground text-xs truncate">{wb.titel}</span>
+                          <span className="text-[10px] text-muted-foreground/60">{st}</span>
+                        </span>
+                      </SelectItem>
+                    )
+                  })}
+                  <SelectItem value="__new__">
+                    <span className="flex items-center gap-1 text-primary font-medium">
+                      <Plus className="h-3 w-3" /> Nieuwe werkbon
+                    </span>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             <div>
               <Label className="text-sm">Notities</Label>
-              <Textarea value={montageNotities} onChange={(e) => setMontageNotities(e.target.value)} placeholder="Optioneel..." rows={2} className="mt-1" />
+              <Textarea value={montageNotities} onChange={(e) => setMontageNotities(e.target.value)} placeholder="Optioneel..." rows={2} className="mt-1 min-h-[50px]" />
+            </div>
+
+            {/* Bijlagen — compact */}
+            <div>
+              <div className="flex items-center justify-between">
+                <Label className="text-sm flex items-center gap-1.5">
+                  <Paperclip className="h-3.5 w-3.5" />
+                  Bijlagen
+                </Label>
+                <label className="cursor-pointer">
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept=".pdf,.png,.jpg,.jpeg,.webp"
+                    multiple
+                    onChange={async (e) => {
+                      const files = e.target.files
+                      if (!files) return
+                      for (const file of Array.from(files)) {
+                        try {
+                          const bijlage = await uploadMontageBijlage(file)
+                          setMontageBijlagen(prev => [...prev, bijlage])
+                        } catch {
+                          toast.error(`Kon ${file.name} niet uploaden`)
+                        }
+                      }
+                      e.target.value = ''
+                    }}
+                  />
+                  <span className="text-xs text-primary hover:underline cursor-pointer flex items-center gap-1">
+                    <Upload className="h-3 w-3" /> Bestand
+                  </span>
+                </label>
+              </div>
+              {montageBijlagen.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-1.5">
+                  {montageBijlagen.map((bijlage) => (
+                    <span
+                      key={bijlage.id}
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs border border-[#E6E4E0] bg-[#FAFAF8]"
+                    >
+                      {bijlage.type === 'pdf' ? (
+                        <FileText className="h-3 w-3 text-[#C03A18]" />
+                      ) : (
+                        <Paperclip className="h-3 w-3 text-[#5A5A55]" />
+                      )}
+                      <span className="truncate max-w-[120px]">{bijlage.naam}</span>
+                      <button
+                        type="button"
+                        title="Bekijken"
+                        onClick={() => window.open(bijlage.url, '_blank')}
+                        className="text-[#A0A098] hover:text-[#1A535C] ml-0.5"
+                      >
+                        <Eye className="h-3 w-3" />
+                      </button>
+                      <button
+                        type="button"
+                        title="Printen"
+                        onClick={() => {
+                          const w = window.open(bijlage.url, '_blank')
+                          if (w) { w.addEventListener('load', () => w.print()) }
+                        }}
+                        className="text-[#A0A098] hover:text-[#1A535C]"
+                      >
+                        <Printer className="h-3 w-3" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setMontageBijlagen(prev => prev.filter(b => b.id !== bijlage.id))}
+                        className="text-[#A0A098] hover:text-[#C03A18] ml-0.5"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
           <DialogFooter>

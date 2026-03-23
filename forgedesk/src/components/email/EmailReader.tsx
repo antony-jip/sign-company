@@ -111,7 +111,7 @@ export function EmailReader({
       const response = await callForgie('summarize', text)
       if (response?.result) setSummary(response.result)
     } catch {
-      toast.error('Forgie kon dit niet verwerken. Probeer het opnieuw.')
+      toast.error('Daan kon dit niet verwerken. Probeer het opnieuw.')
     } finally {
       setSummaryLoading(false)
     }
@@ -176,7 +176,7 @@ export function EmailReader({
         editorRef.current.innerHTML = `${response.result.replace(/\n/g, '<br>')}${signatureHtml}`
       }
     } catch {
-      toast.error('Forgie kon geen antwoord genereren')
+      toast.error('Daan kon geen antwoord genereren')
     } finally {
       setForgieLoading(false)
     }
@@ -201,7 +201,7 @@ export function EmailReader({
         }, 100)
       }
     } catch {
-      toast.error('Forgie kon geen antwoord genereren')
+      toast.error('Daan kon geen antwoord genereren')
     } finally {
       setForgieLoading(false)
     }
@@ -568,7 +568,7 @@ export function EmailReader({
             {emailIndex !== undefined && emailTotal !== undefined && (
               <>
                 <div className="w-px h-5 bg-border/50 mx-1" />
-                <span className="text-xs text-foreground/30 tabular-nums">{emailIndex + 1}/{emailTotal}</span>
+                <span className="text-xs text-foreground/30 font-mono tabular-nums">{emailIndex + 1}/{emailTotal}</span>
                 <Button variant="ghost" size="icon" className="h-7 w-7 text-foreground/30 hover:text-foreground/60" onClick={() => onNavigate?.('prev')} disabled={emailIndex <= 0}>
                   <ChevronUp className="h-3.5 w-3.5" />
                 </Button>
@@ -748,10 +748,10 @@ function extractCompanyName(senderName: string, email: string): string {
 type InlinePanel = 'none' | 'klant' | 'offerte' | 'project' | 'taak'
 
 const reminderOptions = [
-  { value: '1h', label: 'Over 1 uur', pastel: 'bg-blush/30 hover:bg-blush/50' },
-  { value: '1d', label: 'Morgen 9:00', pastel: 'bg-cream/30 hover:bg-cream/50' },
-  { value: '2d', label: 'Over 2 dagen', pastel: 'bg-sage/30 hover:bg-sage/50' },
-  { value: '1w', label: 'Over 1 week', pastel: 'bg-lavender/30 hover:bg-lavender/50' },
+  { value: '1h', label: 'Over 1 uur', pastel: 'bg-flame-light hover:bg-flame-light/80' },
+  { value: '1d', label: 'Morgen 9:00', pastel: 'bg-mod-taken-light hover:bg-mod-taken-light/80' },
+  { value: '2d', label: 'Over 2 dagen', pastel: 'bg-mod-facturen-light hover:bg-mod-facturen-light/80' },
+  { value: '1w', label: 'Over 1 week', pastel: 'bg-mod-email-light hover:bg-mod-email-light/80' },
 ]
 
 const CRMSidebar = memo(function CRMSidebar({
@@ -1061,7 +1061,7 @@ const CRMSidebar = memo(function CRMSidebar({
         fields: (
           <>
             {linkedKlant && (
-              <div className="flex items-center gap-2 px-2.5 py-1.5 bg-lavender/30 rounded-[8px] text-[11px]" style={{ color: moduleColors.offerte }}>
+              <div className="flex items-center gap-2 px-2.5 py-1.5 bg-mod-offertes-light rounded-[8px] text-[11px]" style={{ color: moduleColors.offerte }}>
                 <Building2 className="h-3 w-3" />
                 <span className="truncate">{klantDisplayName}</span>
               </div>
@@ -1082,7 +1082,7 @@ const CRMSidebar = memo(function CRMSidebar({
         fields: (
           <>
             {linkedKlant && (
-              <div className="flex items-center gap-2 px-2.5 py-1.5 bg-sage/30 rounded-[8px] text-[11px]" style={{ color: moduleColors.project }}>
+              <div className="flex items-center gap-2 px-2.5 py-1.5 bg-mod-projecten-light rounded-[8px] text-[11px]" style={{ color: moduleColors.project }}>
                 <Building2 className="h-3 w-3" />
                 <span className="truncate">{klantDisplayName}</span>
               </div>
@@ -1103,7 +1103,7 @@ const CRMSidebar = memo(function CRMSidebar({
         fields: (
           <>
             {linkedKlant && (
-              <div className="flex items-center gap-2 px-2.5 py-1.5 bg-cream/30 rounded-[8px] text-[11px]" style={{ color: moduleColors.taak }}>
+              <div className="flex items-center gap-2 px-2.5 py-1.5 bg-mod-taken-light rounded-[8px] text-[11px]" style={{ color: moduleColors.taak }}>
                 <Building2 className="h-3 w-3" />
                 <span className="truncate">{klantDisplayName}</span>
               </div>
@@ -1211,8 +1211,8 @@ const CRMSidebar = memo(function CRMSidebar({
               <div className="flex items-center gap-1.5 flex-shrink-0">
                 <span className={cn(
                   'px-2 py-0.5 rounded-full text-[9px] font-semibold',
-                  linkedKlant.status === 'actief' ? 'bg-sage/40 text-sage-deep' :
-                  linkedKlant.status === 'prospect' ? 'bg-cream/40 text-cream-deep' : 'bg-muted text-muted-foreground'
+                  linkedKlant.status === 'actief' ? 'bg-mod-facturen-light text-mod-facturen-text' :
+                  linkedKlant.status === 'prospect' ? 'bg-mod-taken-light text-mod-taken-text' : 'bg-muted text-muted-foreground'
                 )}>{linkedKlant.status || 'actief'}</span>
                 <ChevronRight className="h-3 w-3 text-foreground/15 group-hover:text-amber-700/40 transition-colors" />
               </div>
@@ -1247,7 +1247,7 @@ const CRMSidebar = memo(function CRMSidebar({
             <Mail className="h-3.5 w-3.5 text-amber-700/30" />
             <h4 className="text-[12px] font-semibold text-foreground/60">Eerdere emails</h4>
             {previousEmails.length > 0 && (
-              <span className="ml-auto text-[10px] font-semibold text-amber-800/40 tabular-nums bg-amber-100/50 px-2 py-0.5 rounded-full border border-amber-200/30">{previousEmails.length}</span>
+              <span className="ml-auto text-[10px] font-semibold text-amber-800/40 font-mono tabular-nums bg-amber-100/50 px-2 py-0.5 rounded-full border border-amber-200/30">{previousEmails.length}</span>
             )}
           </div>
           <div className="p-2">

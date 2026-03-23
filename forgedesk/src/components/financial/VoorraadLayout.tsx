@@ -465,7 +465,7 @@ export function VoorraadLayout() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-foreground font-display">Voorraadbeheer</h1>
-            <p className="text-sm text-muted-foreground">{artikelen.length} artikelen — Totale waarde: {formatCurrency(totaleWaarde)}</p>
+            <p className="text-sm text-muted-foreground"><span className="font-mono">{artikelen.length}</span> artikelen — Totale waarde: <span className="font-mono">{formatCurrency(totaleWaarde)}</span></p>
           </div>
         </div>
         <Button
@@ -512,9 +512,9 @@ export function VoorraadLayout() {
       <Card>
         <div className="overflow-x-auto">
           {gefilterd.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 py-16 text-muted-foreground">
-              <Package className="h-10 w-10 opacity-30" />
-              <p className="text-sm font-medium">Geen artikelen gevonden</p>
+            <div className="flex flex-col items-center gap-3 py-16">
+              <div className="rounded-full" style={{ width: '40px', height: '4px', backgroundColor: '#1A535C' }} />
+              <p className="font-semibold" style={{ fontSize: '14px', color: '#191919' }}>Geen artikelen gevonden</p>
               <Button variant="outline" size="sm" onClick={openNewArtikel}>
                 <Plus className="h-4 w-4 mr-2" /> Eerste artikel aanmaken
               </Button>

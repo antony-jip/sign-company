@@ -224,7 +224,7 @@ export function ForgieActieKaart({
           <Icon className="w-4 h-4" style={{ color: config.color }} />
         )}
         <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: status === 'created' ? '#059669' : config.color }}>
-          {status === 'created' ? `✅ ${config.label} aangemaakt` : `${config.label} aanmaken`}
+          {status === 'created' ? `${config.label} aangemaakt` : `${config.label} aanmaken`}
         </span>
       </div>
 

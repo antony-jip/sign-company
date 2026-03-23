@@ -33,17 +33,13 @@ export function CheckInboxPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-5" style={{ backgroundColor: '#F4F3F0' }}>
-      <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-      <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-
       <div className="w-full max-w-md text-center">
         {/* Icon */}
         <div className="w-16 h-16 rounded-2xl bg-white border border-neutral-200 flex items-center justify-center mx-auto mb-6">
           <Mail className="w-7 h-7 text-neutral-700" />
         </div>
 
-        <h1 className="text-2xl font-bold text-black mb-2" style={{ fontFamily: 'Manrope, sans-serif' }}>
+        <h1 className="text-2xl font-bold text-black mb-2" style={{ fontFamily: '"Bricolage Grotesque", sans-serif' }}>
           Check je inbox!
         </h1>
 

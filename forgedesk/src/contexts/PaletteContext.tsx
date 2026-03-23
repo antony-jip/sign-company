@@ -20,7 +20,7 @@ export const APP_THEMES: AppTheme[] = [
     naam: 'Normaal',
     beschrijving: 'Warm & neutraal',
     isDark: false,
-    preview: { bg: '#F4F3F0', sidebar: '#FBFAF7', card: '#FFFFFF', accent: '#CC8A3F' },
+    preview: { bg: '#F4F3F0', sidebar: '#FBFAF7', card: '#FFFFFF', accent: '#1A535C' },
     vars: {},
   },
   {
@@ -44,13 +44,12 @@ export interface AccentPalette {
 }
 
 export const ACCENT_PALETTES: AccentPalette[] = [
-  { id: 'sage', naam: 'Sage', sidebarActive: '145 22% 45%', gradientStart: '#5A8264', gradientEnd: '#C8D5CC', ring: '145 22% 45%' },
-  { id: 'forge', naam: 'Forge', sidebarActive: '28 60% 52%', gradientStart: '#CC8A3F', gradientEnd: '#E0C9A8', ring: '28 60% 52%' },
-  { id: 'terracotta', naam: 'Terracotta', sidebarActive: '15 45% 50%', gradientStart: '#B8694E', gradientEnd: '#F0D9D0', ring: '15 45% 50%' },
-  { id: 'ocean', naam: 'Ocean', sidebarActive: '210 40% 45%', gradientStart: '#4A7AB5', gradientEnd: '#CDD5DE', ring: '210 40% 45%' },
-  { id: 'amber', naam: 'Amber', sidebarActive: '38 55% 48%', gradientStart: '#B8883A', gradientEnd: '#EDE8D8', ring: '38 55% 48%' },
-  { id: 'berry', naam: 'Berry', sidebarActive: '330 40% 45%', gradientStart: '#A35B7A', gradientEnd: '#E8C8D8', ring: '330 40% 45%' },
-  { id: 'slate', naam: 'Slate', sidebarActive: '220 15% 40%', gradientStart: '#5A6370', gradientEnd: '#CDD5DE', ring: '220 15% 40%' },
+  { id: 'petrol', naam: 'Petrol', sidebarActive: '186 52% 23%', gradientStart: '#1A535C', gradientEnd: '#E2F0F0', ring: '186 52% 23%' },
+  { id: 'flame', naam: 'Flame', sidebarActive: '12 87% 57%', gradientStart: '#F15025', gradientEnd: '#FDE8E2', ring: '12 87% 57%' },
+  { id: 'sage', naam: 'Sage', sidebarActive: '145 22% 45%', gradientStart: '#2D6B48', gradientEnd: '#E4F0EA', ring: '145 22% 45%' },
+  { id: 'ocean', naam: 'Ocean', sidebarActive: '210 40% 45%', gradientStart: '#3A6B8C', gradientEnd: '#E5ECF6', ring: '210 40% 45%' },
+  { id: 'terracotta', naam: 'Terracotta', sidebarActive: '15 45% 50%', gradientStart: '#9A5A48', gradientEnd: '#F2E8E5', ring: '15 45% 50%' },
+  { id: 'slate', naam: 'Slate', sidebarActive: '220 15% 40%', gradientStart: '#5A5A55', gradientEnd: '#EEEEED', ring: '220 15% 40%' },
 ]
 
 // Keep PALETTES export for backwards compatibility
@@ -127,7 +126,7 @@ export function PaletteProvider({ children }: { children: ReactNode }) {
   })
 
   const [accentId, setAccentIdState] = useState<string>(() => {
-    return localStorage.getItem(ACCENT_STORAGE_KEY) || 'sage'
+    return localStorage.getItem(ACCENT_STORAGE_KEY) || 'petrol'
   })
 
   const appTheme = APP_THEMES.find((t) => t.id === appThemeId) || APP_THEMES[0]

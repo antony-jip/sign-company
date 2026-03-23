@@ -140,10 +140,10 @@ export function LeadInzendingenLayout() {
       <Card>
         <div className="overflow-x-auto">
           {gefilterd.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 py-16 text-muted-foreground">
-              <UserPlus className="h-10 w-10 opacity-30" />
-              <p className="text-sm font-medium">Geen inzendingen gevonden</p>
-              <p className="text-xs text-muted-foreground/60">Inzendingen van lead-formulieren verschijnen hier.</p>
+            <div className="flex flex-col items-center gap-3 py-16">
+              <div className="rounded-full" style={{ width: '40px', height: '4px', backgroundColor: '#2A5580' }} />
+              <p className="font-semibold" style={{ fontSize: '14px', color: '#191919' }}>Geen inzendingen gevonden</p>
+              <p style={{ fontSize: '12px', color: '#5A5A55' }}>Inzendingen van lead-formulieren verschijnen hier.</p>
             </div>
           ) : (
             <table className="w-full">

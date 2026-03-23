@@ -85,11 +85,6 @@ export function RegisterPage() {
 
   return (
     <div className="min-h-screen flex" style={{ backgroundColor: '#F4F3F0' }}>
-      {/* Google Fonts */}
-      <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-      <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-
       {/* Left: Form */}
       <div className="flex items-center justify-center flex-1 p-5 sm:p-8">
         <div className="w-full max-w-[420px]">
@@ -102,10 +97,10 @@ export function RegisterPage() {
                 <path d="M12 16v4" />
               </svg>
             </div>
-            <span className="text-lg font-bold text-black tracking-tight" style={{ fontFamily: 'Manrope, sans-serif' }}>FORGEdesk</span>
+            <span className="text-lg font-bold text-black tracking-tight" style={{ fontFamily: '"Bricolage Grotesque", sans-serif' }}>Doen.</span>
           </div>
 
-          <h1 className="text-2xl font-bold text-black mb-1.5" style={{ fontFamily: 'Manrope, sans-serif' }}>
+          <h1 className="text-2xl font-bold text-black mb-1.5" style={{ fontFamily: '"Bricolage Grotesque", sans-serif' }}>
             Gratis uitproberen
           </h1>
           <p className="text-[14.5px] text-neutral-500 mb-7" style={{ fontFamily: 'Inter, sans-serif' }}>
@@ -223,7 +218,7 @@ export function RegisterPage() {
               30 dagen gratis uitproberen
             </div>
 
-            <h2 className="text-3xl font-extrabold text-black leading-tight mb-3" style={{ fontFamily: 'Manrope, sans-serif' }}>
+            <h2 className="text-3xl font-extrabold text-black leading-tight mb-3" style={{ fontFamily: '"Bricolage Grotesque", sans-serif' }}>
               Alles wat je nodig hebt voor je sign-bedrijf
             </h2>
 

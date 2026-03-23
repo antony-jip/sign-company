@@ -40,93 +40,93 @@ const typeConfig: Record<
 > = {
   offerte_bekeken: {
     icon: Eye,
-    colorClass: "text-blue-600",
-    bgClass: "bg-blue-100",
+    colorClass: "text-[#5A4A78]",
+    bgClass: "bg-[#EEE8F5]",
   },
   offerte_verlopen: {
     icon: AlertTriangle,
-    colorClass: "text-amber-600",
-    bgClass: "bg-amber-100",
+    colorClass: "text-[#C03A18]",
+    bgClass: "bg-[#FDE8E2]",
   },
   offerte_geaccepteerd: {
     icon: CheckCircle2,
-    colorClass: "text-green-600",
-    bgClass: "bg-green-100",
+    colorClass: "text-[#1A535C]",
+    bgClass: "bg-[#E2F0F0]",
   },
   offerte_wijziging: {
     icon: AlertCircle,
-    colorClass: "text-blue-600",
-    bgClass: "bg-blue-100",
+    colorClass: "text-[#C03A18]",
+    bgClass: "bg-[#FDE8E2]",
   },
   factuur_vervallen: {
     icon: AlertCircle,
-    colorClass: "text-red-600",
-    bgClass: "bg-red-100",
+    colorClass: "text-[#C03A18]",
+    bgClass: "bg-[#FDE8E2]",
   },
   deadline_nadert: {
     icon: Clock,
-    colorClass: "text-orange-600",
-    bgClass: "bg-orange-100",
+    colorClass: "text-[#C03A18]",
+    bgClass: "bg-[#FDE8E2]",
   },
   nieuwe_email: {
     icon: Mail,
-    colorClass: "text-blue-600",
-    bgClass: "bg-blue-100",
+    colorClass: "text-[#2A5580]",
+    bgClass: "bg-[#E5ECF6]",
   },
   taak_voltooid: {
     icon: CheckCircle2,
-    colorClass: "text-green-600",
-    bgClass: "bg-green-100",
+    colorClass: "text-[#1A535C]",
+    bgClass: "bg-[#E2F0F0]",
   },
   montage_gepland: {
     icon: Truck,
-    colorClass: "text-accent",
-    bgClass: "bg-wm-pale/30",
+    colorClass: "text-[#2A5580]",
+    bgClass: "bg-[#E5ECF6]",
   },
   betaling_ontvangen: {
     icon: Banknote,
-    colorClass: "text-emerald-600",
-    bgClass: "bg-emerald-100",
+    colorClass: "text-[#2D6B48]",
+    bgClass: "bg-[#E4F0EA]",
   },
   budget_waarschuwing: {
     icon: Wallet,
-    colorClass: "text-orange-600",
-    bgClass: "bg-orange-100",
+    colorClass: "text-[#C03A18]",
+    bgClass: "bg-[#FDE8E2]",
   },
   booking_nieuw: {
     icon: CalendarCheck,
-    colorClass: "text-purple-600",
-    bgClass: "bg-purple-100",
+    colorClass: "text-[#5A4A78]",
+    bgClass: "bg-[#EEE8F5]",
   },
   algemeen: {
     icon: Bell,
-    colorClass: "text-muted-foreground",
-    bgClass: "bg-muted",
+    colorClass: "text-[#5A5A55]",
+    bgClass: "bg-[#EEEEED]",
   },
   portaal_goedkeuring: {
     icon: CheckCircle2,
-    colorClass: "text-green-600",
-    bgClass: "bg-green-100",
+    colorClass: "text-[#1A535C]",
+    bgClass: "bg-[#E2F0F0]",
   },
   portaal_revisie: {
     icon: RotateCcw,
-    colorClass: "text-amber-600",
-    bgClass: "bg-amber-100",
+    colorClass: "text-[#C03A18]",
+    bgClass: "bg-[#FDE8E2]",
   },
   portaal_bericht: {
     icon: MessageSquare,
-    colorClass: "text-blue-600",
-    bgClass: "bg-blue-100",
+    colorClass: "text-[#2A5580]",
+    bgClass: "bg-[#E5ECF6]",
   },
   portaal_bekeken: {
     icon: Eye,
-    colorClass: "text-muted-foreground",
-    bgClass: "bg-muted",
+    colorClass: "text-[#5A5A55]",
+    bgClass: "bg-[#EEEEED]",
   },
   portaal_herinnering: {
     icon: BellRing,
-    colorClass: "text-orange-600",
-    bgClass: "bg-orange-100",
+    colorClass: "text-[#C03A18]",
+    bgClass: "bg-[#FDE8E2]",
   },
 };
 
@@ -256,7 +256,7 @@ function NotificatieToast({
   const Icon = config.icon;
 
   useEffect(() => {
-    const timer = setTimeout(onClose, 6000);
+    const timer = setTimeout(onClose, 4000);
     return () => clearTimeout(timer);
   }, [onClose]);
 
@@ -264,7 +264,13 @@ function NotificatieToast({
     <div className="fixed top-4 right-4 z-[100] animate-in slide-in-from-top-2 fade-in duration-300">
       <button
         onClick={onClick}
-        className="flex items-start gap-3 w-96 bg-card dark:bg-card border border-border rounded-lg shadow-lg p-4 hover:bg-accent/50 transition-colors text-left"
+        className="flex items-start gap-3 w-96 p-4 text-left transition-colors hover:bg-[#F4F2EE]"
+        style={{
+          background: '#FFFFFF',
+          border: '0.5px solid #E6E4E0',
+          borderRadius: '10px',
+          boxShadow: '0 4px 16px rgba(120,90,50,0.10)',
+        }}
       >
         <div
           className={cn(
@@ -275,10 +281,10 @@ function NotificatieToast({
           <Icon className={cn("h-4 w-4", config.colorClass)} />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-foreground truncate">
+          <p className="text-[12px] font-medium truncate" style={{ color: '#191919' }}>
             {notificatie.titel}
           </p>
-          <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
+          <p className="text-[12px] line-clamp-2 mt-0.5" style={{ color: '#5A5A55' }}>
             {notificatie.bericht}
           </p>
         </div>
@@ -287,7 +293,8 @@ function NotificatieToast({
             e.stopPropagation();
             onClose();
           }}
-          className="shrink-0 text-muted-foreground hover:text-foreground"
+          className="shrink-0 hover:opacity-70"
+          style={{ color: '#A0A098' }}
         >
           <X className="h-4 w-4" />
         </button>
@@ -477,29 +484,36 @@ export function NotificatieCenter() {
         onClick={() => setOpen((prev) => !prev)}
         aria-label="Notificaties openen"
       >
-        <Bell className={cn("h-5 w-5", aantalOngelezen > 0 && "animate-bounce")} />
+        <Bell className="h-[18px] w-[18px]" style={{ color: '#5A5A55' }} />
         {aantalOngelezen > 0 && (
-          <Badge
-            variant="destructive"
-            className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-xs font-bold"
-          >
-            {aantalOngelezen > 99 ? "99+" : aantalOngelezen}
-          </Badge>
+          <span
+            className="absolute -right-0.5 -top-0.5 rounded-full"
+            style={{ width: '7px', height: '7px', backgroundColor: '#F15025' }}
+          />
         )}
       </Button>
 
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-96 rounded-lg border border-border bg-popover shadow-lg">
+        <div
+          className="absolute right-0 top-full z-50 mt-2 w-96 overflow-hidden"
+          style={{
+            background: '#FFFFFF',
+            border: '0.5px solid #E6E4E0',
+            borderRadius: '10px',
+            boxShadow: '0 4px 16px rgba(120,90,50,0.10)',
+          }}
+        >
           <div className="flex items-center justify-between px-4 py-3">
-            <h3 className="text-sm font-semibold text-foreground">
+            <h3 className="font-semibold" style={{ fontSize: '13px', color: '#191919' }}>
               Notificaties
             </h3>
             {aantalOngelezen > 0 && (
               <button
                 onClick={handleAllesGelezenMarkeren}
-                className="text-xs text-muted-foreground hover:text-primary transition-colors"
+                className="transition-colors hover:opacity-70"
+                style={{ fontSize: '11px', color: '#1A535C' }}
               >
-                Alles als gelezen markeren
+                Alles gelezen
               </button>
             )}
           </div>
@@ -528,10 +542,11 @@ export function NotificatieCenter() {
                     <button
                       key={notificatie.id}
                       onClick={() => handleNotificatieKlik(notificatie)}
-                      className={cn(
-                        "flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-accent",
-                        !notificatie.gelezen && "bg-accent/50"
-                      )}
+                      className="flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-[#F4F2EE]"
+                      style={{
+                        backgroundColor: !notificatie.gelezen ? '#FAFAF8' : undefined,
+                        borderBottom: '0.5px solid #E6E4E0',
+                      }}
                     >
                       <div
                         className={cn(
@@ -544,19 +559,22 @@ export function NotificatieCenter() {
 
                       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="truncate text-sm font-medium text-foreground">
+                          <span className="truncate font-medium" style={{ fontSize: '12px', color: '#191919' }}>
                             {notificatie.titel}
                           </span>
                           <div className="flex shrink-0 items-center gap-2">
-                            <span className="text-xs text-muted-foreground whitespace-nowrap">
+                            <span className="font-mono whitespace-nowrap" style={{ fontSize: '10px', color: '#A0A098' }}>
                               {formatTijdGeleden(notificatie.created_at)}
                             </span>
                             {!notificatie.gelezen && (
-                              <span className="h-2 w-2 shrink-0 rounded-full bg-primary" />
+                              <span
+                                className="shrink-0 rounded-full"
+                                style={{ width: '7px', height: '7px', backgroundColor: '#F15025' }}
+                              />
                             )}
                           </div>
                         </div>
-                        <p className="line-clamp-2 text-xs text-muted-foreground">
+                        <p className="line-clamp-2" style={{ fontSize: '11px', color: '#5A5A55' }}>
                           {notificatie.bericht}
                         </p>
                       </div>
@@ -567,16 +585,18 @@ export function NotificatieCenter() {
             </ScrollArea>
           )}
 
-          <Separator />
-          <button
-            onClick={() => {
-              setOpen(false);
-              navigate("/meldingen");
-            }}
-            className="w-full px-4 py-2.5 text-xs font-medium text-center text-primary hover:bg-accent transition-colors"
-          >
-            Alle meldingen bekijken →
-          </button>
+          <div style={{ borderTop: '0.5px solid #E6E4E0' }}>
+            <button
+              onClick={() => {
+                setOpen(false);
+                navigate("/meldingen");
+              }}
+              className="w-full px-4 py-2.5 text-center font-medium transition-colors hover:bg-[#F4F2EE]"
+              style={{ fontSize: '11px', color: '#1A535C' }}
+            >
+              Alle meldingen bekijken
+            </button>
+          </div>
         </div>
       )}
     </div>

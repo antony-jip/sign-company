@@ -113,6 +113,7 @@ const DATE_FIELDS = [
 const UUID_FIELDS = [
   'project_id', 'klant_id', 'medewerker_id', 'factuur_id',
   'offerte_id', 'document_id', 'contact_id', 'leverancier_id',
+  'werkbon_id', 'contactpersoon_id',
 ] as const
 
 /**
@@ -560,6 +561,25 @@ export async function createTaak(taak: Omit<Taak, 'id' | 'created_at' | 'updated
   return newTaak
 }
 
+export async function uploadTaakBijlage(taakId: string, file: File): Promise<string> {
+  if (isSupabaseConfigured() && supabase) {
+    const storagePath = `taken/${taakId}/${Date.now()}_${file.name}`
+    const { error } = await supabase.storage
+      .from('project-fotos')
+      .upload(storagePath, file, { cacheControl: '3600', upsert: false })
+    if (error) throw error
+    const { data } = supabase.storage.from('project-fotos').getPublicUrl(storagePath)
+    return data.publicUrl
+  }
+  // localStorage fallback: read file as data URL
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = () => reject(new Error('Kon bestand niet lezen'))
+    reader.readAsDataURL(file)
+  })
+}
+
 export async function updateTaak(id: string, updates: Partial<Taak>): Promise<Taak> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
@@ -673,6 +693,58 @@ export async function getOffertesByKlant(klantId: string): Promise<Offerte[]> {
   }
   const offertes = getLocalData<Offerte>('offertes')
   return offertes.filter((o) => o.klant_id === klantId)
+}
+
+// ── Klant offerte context (Feature 5: klant context bij selectie) ──
+export async function getKlantOfferteContext(klantId: string): Promise<{ count: number; laatsteOfferte: string | null; totaal: number } | null> {
+  if (!isSupabaseConfigured() || !supabase) {
+    const offertes = getLocalData<Offerte>('offertes').filter((o) => o.klant_id === klantId)
+    if (offertes.length === 0) return null
+    const sorted = offertes.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    return { count: offertes.length, laatsteOfferte: sorted[0].created_at, totaal: offertes.reduce((s, o) => s + (o.totaal || 0), 0) }
+  }
+  const { data, error } = await supabase
+    .from('offertes')
+    .select('totaal, created_at')
+    .eq('klant_id', klantId)
+  if (error || !data || data.length === 0) return null
+  const sorted = data.sort((a: { created_at: string }, b: { created_at: string }) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  return { count: data.length, laatsteOfferte: sorted[0].created_at, totaal: data.reduce((s: number, o: { totaal: number }) => s + (o.totaal || 0), 0) }
+}
+
+// ── Materiaal suggesties (Feature 4: database autocomplete) ──
+export async function getMateriaalSuggesties(query: string): Promise<Array<{ materiaal: string; laatst_gebruikt: string; project_naam: string }>> {
+  if (!isSupabaseConfigured() || !supabase || !query || query.length < 2) return []
+  const { data, error } = await supabase
+    .from('offerte_items')
+    .select('detail_regels, created_at, offertes!inner(titel, klant_naam)')
+    .not('detail_regels', 'is', null)
+    .order('created_at', { ascending: false })
+    .limit(200)
+  if (error || !data) return []
+  const seen = new Set<string>()
+  const results: Array<{ materiaal: string; laatst_gebruikt: string; project_naam: string }> = []
+  const lowerQuery = query.toLowerCase()
+  for (const item of data) {
+    if (!Array.isArray(item.detail_regels)) continue
+    for (const regel of item.detail_regels as Array<{ label: string; waarde: string }>) {
+      if (!regel.label || !regel.waarde) continue
+      const isMateriaal = regel.label.toLowerCase() === 'materiaal'
+      if (!isMateriaal) continue
+      const val = regel.waarde.trim()
+      if (!val || seen.has(val.toLowerCase())) continue
+      if (!val.toLowerCase().includes(lowerQuery)) continue
+      seen.add(val.toLowerCase())
+      const offerteData = item.offertes as unknown as { titel?: string; klant_naam?: string }
+      results.push({
+        materiaal: val,
+        laatst_gebruikt: item.created_at,
+        project_naam: offerteData?.klant_naam || offerteData?.titel || '',
+      })
+      if (results.length >= 5) return results
+    }
+  }
+  return results
 }
 
 export async function createOfferte(offerte: Omit<Offerte, 'id' | 'created_at' | 'updated_at'>): Promise<Offerte> {
@@ -1881,7 +1953,7 @@ export function getDefaultAppSettings(userId: string): AppSettings {
       'Klanten', 'Deals', 'Offertes', 'Facturen',
       'Projecten', 'Taken', 'Montage', 'Werkbonnen', 'Nacalculatie',
       'Planning', 'Tijdregistratie', 'Booking',
-      'Email', 'Forgie', 'Nieuwsbrieven', 'Lead Capture',
+      'Email', 'Daan', 'Nieuwsbrieven', 'Lead Capture',
       'Financieel', 'Uitgaven', 'Leveranciers', 'Forecast',
       'Documenten', 'Voorraad', 'Bestelbonnen', 'Leveringsbonnen',
       'Rapportages', 'Team', 'Importeren', 'AI Assistent', 'Instellingen',
@@ -4812,7 +4884,7 @@ export async function getVisualizerCredits(user_id: string): Promise<VisualizerC
           type: 'handmatig_toegevoegd',
           aantal: DEMO_CREDITS,
           saldo_na: DEMO_CREDITS,
-          beschrijving: 'Welkomstcredits — probeer de Visualizer en Forgie gratis uit',
+          beschrijving: 'Welkomstcredits — probeer de Visualizer en Daan gratis uit',
         })
 
         return {

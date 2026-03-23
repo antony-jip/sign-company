@@ -70,7 +70,7 @@ export function QuickActions() {
             <Link key={action.label} to={action.href}>
               <Card className="wm-quick-action cursor-pointer group overflow-hidden border-black/[0.04] dark:border-white/[0.06]">
                 <CardContent className="p-4 flex flex-col items-center justify-center gap-3 text-center relative">
-                  <div className={`wm-action-icon flex items-center justify-center h-11 w-11 rounded-xl bg-gradient-to-br ${action.gradient} shadow-[0_4px_12px_-2px_rgba(0,0,0,0.2)]`}>
+                  <div className={`wm-action-icon flex items-center justify-center h-11 w-11 rounded-xl bg-gradient-to-br ${action.gradient} shadow-[0_4px_12px_-2px_rgba(120,90,50,0.18)]`}>
                     <Icon className="h-5 w-5 text-white drop-shadow-sm" />
                   </div>
                   <div>

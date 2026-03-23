@@ -25,9 +25,9 @@ import { getRowAccentClass } from '@/utils/statusColors'
 type FilterStatus = 'alle' | Leveringsbon['status']
 
 const STATUS_CONFIG: Record<Leveringsbon['status'], { label: string; color: string; dot: string }> = {
-  concept: { label: 'Concept', color: 'badge-cream', dot: 'bg-[var(--color-cream-text)]' },
-  geleverd: { label: 'Geleverd', color: 'badge-mist', dot: 'bg-[var(--color-mist-text)]' },
-  getekend: { label: 'Getekend', color: 'badge-sage', dot: 'bg-[var(--color-sage-text)]' },
+  concept: { label: 'Concept', color: 'badge-grijs', dot: 'bg-[#5A5A55]' },
+  geleverd: { label: 'Geleverd', color: 'badge-blauw', dot: 'bg-[#2A5580]' },
+  getekend: { label: 'Getekend', color: 'badge-petrol', dot: 'bg-[#1A535C]' },
 }
 
 const FILTER_OPTIONS: { value: FilterStatus; label: string }[] = [
@@ -154,7 +154,7 @@ export function LeveringsbonnenLayout() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-foreground font-display">Leveringsbonnen</h1>
-            <p className="text-sm text-muted-foreground">{gefilterd.length} van {leveringsbonnen.length} leveringsbonnen</p>
+            <p className="text-sm text-muted-foreground"><span className="font-mono">{gefilterd.length}</span> van <span className="font-mono">{leveringsbonnen.length}</span> leveringsbonnen</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -207,10 +207,10 @@ export function LeveringsbonnenLayout() {
       <Card>
         <div className="overflow-x-auto">
           {gefilterd.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 py-16 text-muted-foreground">
-              <PackageCheck className="h-10 w-10 opacity-30" />
-              <p className="text-sm font-medium">Geen leveringsbonnen gevonden</p>
-              <p className="text-xs text-muted-foreground/60">Registreer leveringen aan klanten of projectlocaties.</p>
+            <div className="flex flex-col items-center gap-3 py-16">
+              <div className="rounded-full" style={{ width: '40px', height: '4px', backgroundColor: '#1A535C' }} />
+              <p className="font-semibold" style={{ fontSize: '14px', color: '#191919' }}>Geen leveringsbonnen gevonden</p>
+              <p style={{ fontSize: '12px', color: '#5A5A55' }}>Registreer leveringen aan klanten of projectlocaties.</p>
               <Button variant="outline" size="sm" onClick={() => navigate('/leveringsbonnen/nieuw')}>
                 <Plus className="h-4 w-4 mr-2" /> Eerste leveringsbon aanmaken
               </Button>

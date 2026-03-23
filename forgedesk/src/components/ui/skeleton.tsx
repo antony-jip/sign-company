@@ -6,7 +6,7 @@ function Skeleton({
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn("animate-shimmer rounded-lg", className)}
+      className={cn("skeleton-warm rounded-lg", className)}
       {...props}
     />
   )
@@ -83,7 +83,7 @@ function SkeletonDashboard({ className }: { className?: string }) {
       {/* Stat cards row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="rounded-2xl border border-border/70 bg-[var(--color-cream)]/30 p-5 space-y-3">
+          <div key={i} className="rounded-2xl border border-border/70 bg-mod-taken-light/30 p-5 space-y-3">
             <div className="flex items-center justify-between">
               <Skeleton className="h-4 w-20" />
               <Skeleton className="h-8 w-8 rounded-lg" />

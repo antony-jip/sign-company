@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react'
+import React, { useState, useEffect, useMemo, useCallback, useDeferredValue } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useNavigateWithTab } from '@/hooks/useNavigateWithTab'
 import { toast } from 'sonner'
@@ -22,10 +22,14 @@ import {
 
 type FilterStatus = 'alle' | 'concept' | 'definitief' | 'afgerond'
 
+const TABLE_HEADER_STYLE = { borderBottom: '0.5px solid #E6E4E0', backgroundColor: '#F4F2EE' } as const
+const TABLE_ROW_STYLE = { borderBottom: '0.5px solid #E6E4E0' } as const
+const TH_CLASS = 'px-4 py-3 text-left text-[10px] font-medium uppercase text-[#A0A098] tracking-label'
+
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  concept: { label: 'Concept', color: 'text-[var(--color-cream-text)]', bg: 'bg-[var(--color-cream)]' },
-  definitief: { label: 'Definitief', color: 'text-[var(--color-mist-text)]', bg: 'bg-[var(--color-mist)]' },
-  afgerond: { label: 'Afgerond', color: 'text-[var(--color-sage-text)]', bg: 'bg-[var(--color-sage)]' },
+  concept: { label: 'Open', color: 'text-[#5A5A55]', bg: 'bg-[#EEEEED]' },
+  definitief: { label: 'In uitvoering', color: 'text-[#943520]', bg: 'bg-[#FAE5E0]' },
+  afgerond: { label: 'Afgetekend', color: 'text-[#1A535C]', bg: 'bg-[#E2F0F0]' },
 }
 
 export function WerkbonnenLayout() {
@@ -38,6 +42,7 @@ export function WerkbonnenLayout() {
   const [itemCounts, setItemCounts] = useState<Record<string, number>>({})
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
+  const deferredSearch = useDeferredValue(searchQuery)
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('alle')
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<Werkbon | null>(null)
@@ -97,8 +102,8 @@ export function WerkbonnenLayout() {
 
   const gefilterd = useMemo(() => {
     let result = [...werkbonnen]
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase()
+    if (deferredSearch.trim()) {
+      const q = deferredSearch.toLowerCase()
       result = result.filter((wb) =>
         wb.werkbon_nummer.toLowerCase().includes(q) ||
         getKlantNaam(wb.klant_id).toLowerCase().includes(q) ||
@@ -111,7 +116,7 @@ export function WerkbonnenLayout() {
     }
     result.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''))
     return result
-  }, [werkbonnen, searchQuery, filterStatus, getKlantNaam, getProjectNaam])
+  }, [werkbonnen, deferredSearch, filterStatus, getKlantNaam, getProjectNaam])
 
   const statusCounts = useMemo(() => {
     const counts: Record<string, number> = { alle: werkbonnen.length }
@@ -170,7 +175,7 @@ export function WerkbonnenLayout() {
             <Button variant="outline" size="sm" onClick={handleExportCSV} className="hidden sm:flex">
               <Download className="h-4 w-4 mr-1" /> CSV
             </Button>
-            <Button onClick={() => navigate('/werkbonnen/nieuw')} size="sm">
+            <Button onClick={() => navigate('/werkbonnen/nieuw')} size="sm" className="bg-[#C44830] hover:bg-[#A33B28] text-white rounded-lg">
               <Plus className="h-4 w-4 mr-1" />
               <span className="hidden sm:inline">Nieuwe werkbon</span>
               <span className="sm:hidden">Nieuw</span>
@@ -181,18 +186,18 @@ export function WerkbonnenLayout() {
 
       {/* Content */}
       <div className="flex-1 min-h-0 overflow-y-auto">
-      <div className="space-y-6 p-4 sm:p-6">
+      <div className="space-y-6 p-5">
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         {(['concept', 'definitief', 'afgerond'] as const).map((status) => {
           const cfg = STATUS_CONFIG[status]
           return (
-            <Card key={status} className="cursor-pointer hover-lift"
+            <Card key={status} className="cursor-pointer hover-lift rounded-full"
               onClick={() => setFilterStatus(status === filterStatus ? 'alle' : status)}>
               <CardContent className="p-5">
-                <p className="text-xs font-bold text-text-tertiary uppercase tracking-label">{cfg.label}</p>
-                <p className="text-2xl font-bold mt-1">{statusCounts[status] || 0}</p>
+                <p className="text-[10px] font-bold text-text-tertiary uppercase tracking-label">{cfg.label}</p>
+                <p className="text-2xl font-bold mt-1"><span className="font-mono">{statusCounts[status] || 0}</span></p>
               </CardContent>
             </Card>
           )
@@ -216,11 +221,16 @@ export function WerkbonnenLayout() {
               key={status}
               variant={filterStatus === status ? 'default' : 'outline'}
               size="sm"
-              className="whitespace-nowrap"
+              className={cn(
+                'whitespace-nowrap rounded-full',
+                filterStatus === status
+                  ? 'bg-[#191919] text-white hover:bg-[#191919]/90 border-transparent'
+                  : 'text-[#5A5A55]'
+              )}
               onClick={() => setFilterStatus(status)}
             >
               {status === 'alle' ? 'Alle' : STATUS_CONFIG[status].label}
-              {statusCounts[status] !== undefined && ` (${statusCounts[status] || 0})`}
+              {statusCounts[status] !== undefined && <>{' ('}<span className="font-mono">{statusCounts[status] || 0}</span>{')'}</>}
             </Button>
           ))}
         </div>
@@ -245,14 +255,14 @@ export function WerkbonnenLayout() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-border bg-muted/50">
-                  <th className="px-4 py-3 text-left text-xs font-bold text-text-tertiary uppercase tracking-label">Nummer</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-text-tertiary uppercase tracking-label">Klant</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-text-tertiary uppercase tracking-label hidden md:table-cell">Offerte / Project</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-text-tertiary uppercase tracking-label hidden sm:table-cell">Datum</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-text-tertiary uppercase tracking-label">Status</th>
-                  <th className="px-4 py-3 text-right text-xs font-bold text-text-tertiary uppercase tracking-label hidden sm:table-cell">Items</th>
-                  <th className="px-4 py-3 text-right text-xs font-bold text-text-tertiary uppercase tracking-label hidden md:table-cell">Acties</th>
+                <tr style={TABLE_HEADER_STYLE}>
+                  <th className={TH_CLASS}>Nummer</th>
+                  <th className={TH_CLASS}>Klant</th>
+                  <th className={`${TH_CLASS} hidden md:table-cell`}>Offerte / Project</th>
+                  <th className={`${TH_CLASS} hidden sm:table-cell`}>Datum</th>
+                  <th className={TH_CLASS}>Status</th>
+                  <th className={`${TH_CLASS} text-right hidden sm:table-cell`}>Items</th>
+                  <th className={`${TH_CLASS} text-right hidden md:table-cell`}>Acties</th>
                 </tr>
               </thead>
               <tbody className="divide-y row-stagger">
@@ -262,7 +272,8 @@ export function WerkbonnenLayout() {
                   const projectRef = getProjectNaam(wb.project_id)
                   const ref = offerteRef !== '-' ? offerteRef : projectRef
                   return (
-                    <tr key={wb.id} className="group hover:bg-bg-hover transition-colors duration-150 cursor-pointer"
+                    <tr key={wb.id} className="group border-l-[3px] border-l-[#C44830] cursor-pointer hover:bg-[#F4F2EE] transition-colors duration-150"
+                      style={TABLE_ROW_STYLE}
                       onClick={() => navigateWithTab({ path: `/werkbonnen/${wb.id}`, label: wb.werkbon_nummer || 'Werkbon', id: `/werkbonnen/${wb.id}` })}>
                       <td className="px-4 py-3">
                         <div>
@@ -274,12 +285,12 @@ export function WerkbonnenLayout() {
                       <td className="px-4 py-3 text-sm hidden md:table-cell">{ref}</td>
                       <td className="px-4 py-3 text-sm font-mono hidden sm:table-cell">{new Date(wb.datum).toLocaleDateString('nl-NL')}</td>
                       <td className="px-4 py-3">
-                        <span className={cn('inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium', cfg.bg, cfg.color)}>
+                        <span className={cn('inline-flex items-center px-[10px] py-[3px] rounded-full text-[10px] font-semibold', cfg.bg, cfg.color)}>
                           {cfg.label}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-sm text-right font-medium hidden sm:table-cell">
-                        {itemCounts[wb.id] || 0}
+                        <span className="font-mono">{itemCounts[wb.id] || 0}</span>
                       </td>
                       <td className="px-4 py-3 text-right hidden md:table-cell" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

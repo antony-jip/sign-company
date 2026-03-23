@@ -38,7 +38,7 @@ export function RecenteActiviteitWidget() {
             activities.push({
               id: `off-gk-${o.id}`,
               type: 'offerte',
-              color: 'bg-[#CC8A3F]',
+              color: 'bg-petrol',
               text: <>Offerte <strong>{o.nummer}</strong> goedgekeurd — {o.klant_naam || 'Onbekend'}</>,
               time: formatDistanceToNow(new Date(o.akkoord_op!), { addSuffix: true, locale: nl }),
               sortDate: new Date(o.akkoord_op!),
@@ -53,7 +53,7 @@ export function RecenteActiviteitWidget() {
             activities.push({
               id: `off-vz-${o.id}`,
               type: 'offerte',
-              color: 'bg-[#5D7A93]',
+              color: 'bg-mod-klanten',
               text: <>Offerte <strong>{o.nummer}</strong> verstuurd — {o.klant_naam || 'Onbekend'}</>,
               time: formatDistanceToNow(new Date(o.verstuurd_op!), { addSuffix: true, locale: nl }),
               sortDate: new Date(o.verstuurd_op!),
@@ -68,7 +68,7 @@ export function RecenteActiviteitWidget() {
             activities.push({
               id: `fac-bt-${f.id}`,
               type: 'factuur',
-              color: 'bg-[#9A8E6E]',
+              color: 'bg-mod-facturen',
               text: <>Factuur <strong>{f.nummer}</strong> betaald — {formatCurrency(f.totaal)}</>,
               time: formatDistanceToNow(new Date(f.betaaldatum!), { addSuffix: true, locale: nl }),
               sortDate: new Date(f.betaaldatum!),
@@ -85,7 +85,7 @@ export function RecenteActiviteitWidget() {
             activities.push({
               id: `fac-vv-${f.id}`,
               type: 'factuur',
-              color: 'bg-[#C49585]',
+              color: 'bg-mod-offertes',
               text: <>Factuur <strong>{f.nummer}</strong> — {dagen} dag{dagen !== 1 ? 'en' : ''} verlopen</>,
               time: formatDistanceToNow(new Date(f.vervaldatum), { addSuffix: true, locale: nl }),
               sortDate: new Date(f.vervaldatum),

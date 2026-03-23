@@ -96,7 +96,7 @@ export function MoneyBlock() {
         <div className="grid grid-cols-2 gap-4 mb-4">
           {/* Openstaand */}
           <div
-            className="stat-card-gradient-blush rounded-xl p-4 cursor-pointer hover:shadow-elevation-md transition-all duration-300 ease-smooth hover:-translate-y-[1px] border border-black/[0.03] dark:border-white/[0.04]"
+            className="stat-card-gradient-offertes rounded-xl p-4 cursor-pointer hover:shadow-elevation-md transition-all duration-300 ease-smooth hover:-translate-y-[1px] border border-black/[0.03] dark:border-white/[0.04]"
             onClick={() => navigate('/facturen')}
           >
             <p className="text-2xs font-extrabold uppercase tracking-[0.1em] text-text-tertiary dark:text-text-tertiary mb-1">
@@ -113,7 +113,7 @@ export function MoneyBlock() {
 
           {/* Omzet deze maand */}
           <div
-            className="stat-card-gradient-sage rounded-xl p-4 cursor-pointer hover:shadow-elevation-md transition-all duration-300 ease-smooth hover:-translate-y-[1px] border border-black/[0.03] dark:border-white/[0.04]"
+            className="stat-card-gradient-facturen rounded-xl p-4 cursor-pointer hover:shadow-elevation-md transition-all duration-300 ease-smooth hover:-translate-y-[1px] border border-black/[0.03] dark:border-white/[0.04]"
             onClick={() => navigate('/facturen')}
           >
             <p className="text-2xs font-extrabold uppercase tracking-[0.1em] text-text-tertiary dark:text-text-tertiary mb-1">

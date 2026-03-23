@@ -1,23 +1,8 @@
-import { cn } from '@/lib/utils'
+import { getFase } from '@/utils/projectFases'
+import { SpectrumBar } from '@/components/ui/SpectrumBar'
 import type { Project, Offerte, MontageAfspraak, Factuur } from '@/types'
 
-const PIPELINE_STEPS = [
-  { key: 'offerte', label: 'Offerte' },
-  { key: 'akkoord', label: 'Akkoord' },
-  { key: 'uitvoering', label: 'Uitvoering' },
-  { key: 'montage', label: 'Montage' },
-  { key: 'factuur', label: 'Factuur' },
-  { key: 'betaald', label: 'Betaald' },
-] as const
-
-const STEP_COLORS: Record<string, string> = {
-  offerte: '#9B8EC4',
-  akkoord: '#C9A96E',
-  uitvoering: '#8BA88B',
-  montage: '#E8946A',
-  factuur: '#9B8EC4',
-  betaald: '#4CAF50',
-}
+const PHASE_LABELS = ['Offerte', 'Akkoord', 'Productie', 'Montage', 'Klaar'] as const
 
 export function getPipelineStep(
   project: Project,
@@ -25,18 +10,25 @@ export function getPipelineStep(
   montageAfspraken: MontageAfspraak[],
   facturen: Factuur[],
 ): number {
-  if (facturen.some(f => f.status === 'betaald')) return 6
-  if (facturen.length > 0) return 5
-  if (montageAfspraken.some(m => m.status === 'afgerond')) return 5
-  if (montageAfspraken.some(m => ['gepland', 'onderweg', 'bezig'].includes(m.status))) return 4
-  if (['actief', 'in-review', 'te-factureren'].includes(project.status)) return 3
+  const fase = getFase(project.status)
+  if (fase.percentage >= 100) return 5
+  if (fase.percentage >= 70) return 4
+  if (fase.percentage >= 45) return 3
+  if (fase.percentage >= 20) return 2
   if (offertes.some(o => o.status === 'goedgekeurd')) return 2
   if (offertes.length > 0) return 1
   return 0
 }
 
 export function getPipelineStepColor(stepIndex: number): string {
-  return STEP_COLORS[PIPELINE_STEPS[stepIndex]?.key ?? 'offerte'] ?? '#9B8EC4'
+  const fase = getFase(
+    stepIndex >= 5 ? 'afgerond' :
+    stepIndex >= 4 ? 'montage' :
+    stepIndex >= 3 ? 'actief' :
+    stepIndex >= 2 ? 'goedgekeurd' :
+    'gepland'
+  )
+  return fase.color
 }
 
 interface PipelineBarProps {
@@ -48,35 +40,35 @@ interface PipelineBarProps {
 
 export function PipelineBar({ project, offertes, montageAfspraken, facturen }: PipelineBarProps) {
   const currentStep = getPipelineStep(project, offertes, montageAfspraken, facturen)
+  const fase = getFase(project.status)
 
   return (
-    <div className="flex items-center gap-2">
-      <div className="flex items-center gap-1 flex-1">
-        {PIPELINE_STEPS.map((step, i) => {
-          const stepNum = i + 1
-          const isCompleted = stepNum < currentStep
-          const isCurrent = stepNum === currentStep
-          const color = STEP_COLORS[step.key]
-
-          return (
-            <div
-              key={step.key}
-              className="flex-1 h-[6px] rounded-full transition-colors duration-300"
-              style={{
-                backgroundColor: isCompleted
-                  ? '#9B8EC4'
-                  : isCurrent
-                    ? '#C9A96E'
-                    : 'hsl(33, 15%, 87%)',
-              }}
-              title={`${step.label}${isCurrent ? ' (huidig)' : isCompleted ? ' (voltooid)' : ''}`}
-            />
-          )
-        })}
+    <div className="space-y-1.5">
+      <SpectrumBar percentage={fase.percentage} height={6} className="w-full" />
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-0">
+          {PHASE_LABELS.map((label, i) => {
+            const isActive = i + 1 === currentStep || (currentStep >= 5 && i === 4)
+            return (
+              <span key={label} className="flex items-center">
+                {i > 0 && <span className="text-[10px] mx-1" style={{ color: '#A0A098' }}>|</span>}
+                <span
+                  className="text-[11px]"
+                  style={{
+                    fontWeight: isActive ? 600 : 400,
+                    color: isActive ? '#191919' : '#A0A098',
+                  }}
+                >
+                  {label}
+                </span>
+              </span>
+            )
+          })}
+        </div>
+        <span className="text-[12px] font-semibold" style={{ color: fase.color }}>
+          {PHASE_LABELS[currentStep - 1] || fase.label}
+        </span>
       </div>
-      <span className="text-xs text-muted-foreground whitespace-nowrap">
-        Stap {currentStep}/{PIPELINE_STEPS.length} · {PIPELINE_STEPS[Math.max(0, currentStep - 1)]?.label ?? 'Concept'}
-      </span>
     </div>
   )
 }

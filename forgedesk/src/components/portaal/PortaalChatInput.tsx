@@ -307,7 +307,7 @@ export function PortaalChatInput({
 
       {/* Notitie mode indicator */}
       {notitieMode && (
-        <div className="mb-2 flex items-center gap-2 rounded-md bg-amber-50 px-3 py-1.5 text-xs text-amber-700">
+        <div className="mb-2 flex items-center gap-2 rounded-md bg-[#FDE8E2] px-3 py-1.5 text-xs text-[#C03A18]">
           <Lock className="h-3.5 w-3.5" />
           <span className="font-medium">Interne notitie</span>
           <button
@@ -325,7 +325,7 @@ export function PortaalChatInput({
 
       {/* Error message */}
       {error && (
-        <div className="mb-2 flex items-center gap-2 rounded-md bg-red-50 px-3 py-1.5 text-xs text-red-700">
+        <div className="mb-2 flex items-center gap-2 rounded-md bg-[#FDE8E2] px-3 py-1.5 text-xs text-[#C03A18]">
           <span>{error}</span>
           <button type="button" onClick={() => setError('')} className="ml-auto">
             <X className="h-3.5 w-3.5" />
@@ -493,7 +493,7 @@ export function PortaalChatInput({
           rows={1}
           className={cn(
             'flex-1 resize-none rounded-full border border-border px-4 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50',
-            notitieMode && 'border-amber-300 bg-amber-50/50',
+            notitieMode && 'border-[#F5C4B4] bg-[#FDE8E2]/50',
           )}
         />
 

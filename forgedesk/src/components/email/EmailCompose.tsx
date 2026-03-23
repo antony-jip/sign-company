@@ -228,7 +228,7 @@ export function EmailCompose({
         editorRef.current.innerHTML = `${response.result.replace(/\n/g, '<br>')}${signatureHtml}`
       }
     } catch {
-      toast.error('Forgie kon geen email genereren')
+      toast.error('Daan kon geen email genereren')
     } finally {
       setForgieLoading(false)
     }
@@ -599,7 +599,7 @@ export function EmailCompose({
           <div className="rounded-xl border border-white/60 overflow-hidden" style={{ background: 'linear-gradient(135deg, hsl(30 40% 97%) 0%, hsl(28 35% 94%) 100%)', boxShadow: '0 2px 12px rgba(140,100,50,0.08), 0 0 0 1px rgba(140,100,50,0.04)' }}>
             <div className="flex items-center gap-2.5 px-3.5 py-2.5" style={{ background: `${aiAccent}0C`, borderBottom: `1px solid ${aiAccent}15` }}>
               <div className="w-1.5 h-1.5 rounded-full" style={{ background: aiAccent }} />
-              <h4 className="text-[12px] font-semibold text-foreground/60">Forgie AI</h4>
+              <h4 className="text-[12px] font-semibold text-foreground/60">Daan AI</h4>
               {forgieLoading && <Loader2 className="h-3 w-3 animate-spin text-foreground/30 ml-auto" />}
             </div>
             <div className="p-2 space-y-0.5">
@@ -671,7 +671,7 @@ export function EmailCompose({
             </div>
             <div className="p-2">
               {reminder ? (
-                <div className="flex items-center gap-2 px-2.5 py-2 rounded-[8px] bg-cream/30 text-cream-deep text-[12px]">
+                <div className="flex items-center gap-2 px-2.5 py-2 rounded-[8px] bg-mod-taken-light text-mod-taken-text text-[12px]">
                   <Clock className="h-3.5 w-3.5 flex-shrink-0" />
                   <span>Herinnering: {reminderOptions.find(r => r.value === reminder)?.label}</span>
                 </div>
@@ -697,7 +697,7 @@ export function EmailCompose({
               <Mail className="h-3.5 w-3.5 text-amber-700/30" />
               <h4 className="text-[12px] font-semibold text-foreground/60">Eerdere emails</h4>
               {previousEmails.length > 0 && (
-                <span className="ml-auto text-[10px] text-muted-foreground tabular-nums">{previousEmails.length}</span>
+                <span className="ml-auto text-[10px] text-muted-foreground font-mono tabular-nums">{previousEmails.length}</span>
               )}
             </div>
             <div className="p-2">

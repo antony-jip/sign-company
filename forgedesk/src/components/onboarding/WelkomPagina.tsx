@@ -9,7 +9,7 @@ const features = [
   { icon: Users, title: 'Klanten en projecten beheren', description: 'Overzichtelijk klantenbeheer' },
   { icon: ClipboardList, title: 'Werkbonnen voor je team', description: 'Digitale werkbonnen met foto\'s en handtekeningen' },
   { icon: Calendar, title: 'Planning en montage-afspraken', description: 'Plan montages en afspraken visueel' },
-  { icon: Sparkles, title: 'AI-assistent Forgie helpt je met teksten', description: 'Schrijf offerteteksten in een handomdraai' },
+  { icon: Sparkles, title: 'AI-assistent Daan helpt je met teksten', description: 'Schrijf offerteteksten in een handomdraai' },
 ]
 
 export function WelkomPagina() {
@@ -17,18 +17,14 @@ export function WelkomPagina() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-5" style={{ backgroundColor: '#F4F3F0' }}>
-      <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-      <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-
       <div className="w-full max-w-2xl text-center">
         {/* Celebration */}
-        <div className="text-5xl mb-6 animate-bounce" style={{ animationDuration: '2s', animationIterationCount: '3' }}>
-          🎉
+        <div className="text-5xl mb-6">
+          <Sparkles className="w-12 h-12 mx-auto text-petrol" />
         </div>
 
-        <h1 className="text-3xl font-extrabold text-black mb-3" style={{ fontFamily: 'Manrope, sans-serif' }}>
-          Welkom bij FORGEdesk!
+        <h1 className="text-3xl font-extrabold text-black mb-3" style={{ fontFamily: '"Bricolage Grotesque", sans-serif' }}>
+          Welkom bij Doen.!
         </h1>
 
         <p className="text-[15px] text-neutral-600 mb-10 max-w-lg mx-auto leading-relaxed" style={{ fontFamily: 'Inter, sans-serif' }}>

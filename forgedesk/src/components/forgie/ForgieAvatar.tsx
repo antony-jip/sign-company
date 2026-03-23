@@ -7,8 +7,8 @@ interface ForgieAvatarProps {
 }
 
 /**
- * Forgie AI avatar — minimalistisch, geometrisch vos-icoon in FORGEdesk paars (#9B8EC4).
- * Wordt gebruikt als avatar in de Forgie chat widget en sidebar.
+ * Daan AI avatar — minimalistisch, geometrisch vos-icoon in Doen. petrol (#1A535C).
+ * Wordt gebruikt als avatar in de Daan chat widget en sidebar.
  */
 export function ForgieAvatar({ size = 40, className }: ForgieAvatarProps) {
   return (
@@ -21,20 +21,20 @@ export function ForgieAvatar({ size = 40, className }: ForgieAvatarProps) {
       className={cn('flex-shrink-0', className)}
     >
       {/* Background circle */}
-      <circle cx="50" cy="50" r="48" fill="#9B8EC4" opacity="0.1" />
+      <circle cx="50" cy="50" r="48" fill="#1A535C" opacity="0.1" />
 
       {/* Ears — geometric triangles */}
-      <path d="M24 42L34 14L46 36Z" fill="#9B8EC4" opacity="0.85" />
-      <path d="M76 42L66 14L54 36Z" fill="#9B8EC4" opacity="0.85" />
+      <path d="M24 42L34 14L46 36Z" fill="#1A535C" opacity="0.85" />
+      <path d="M76 42L66 14L54 36Z" fill="#1A535C" opacity="0.85" />
       {/* Inner ears */}
-      <path d="M28 40L35 20L43 36Z" fill="#B8A8D8" opacity="0.6" />
-      <path d="M72 40L65 20L57 36Z" fill="#B8A8D8" opacity="0.6" />
+      <path d="M28 40L35 20L43 36Z" fill="#2A7A86" opacity="0.6" />
+      <path d="M72 40L65 20L57 36Z" fill="#2A7A86" opacity="0.6" />
 
       {/* Head — rounded geometric shape */}
-      <ellipse cx="50" cy="56" rx="28" ry="26" fill="#9B8EC4" />
+      <ellipse cx="50" cy="56" rx="28" ry="26" fill="#1A535C" />
 
       {/* Face mask — lighter area */}
-      <ellipse cx="50" cy="62" rx="20" ry="18" fill="#C9BDE0" />
+      <ellipse cx="50" cy="62" rx="20" ry="18" fill="#B8D8DA" />
 
       {/* Snout — white triangle */}
       <path d="M42 58L50 70L58 58Z" fill="white" opacity="0.9" />
@@ -47,16 +47,16 @@ export function ForgieAvatar({ size = 40, className }: ForgieAvatarProps) {
       <circle cx="62" cy="50.5" r="1.5" fill="white" />
 
       {/* Nose — small triangle */}
-      <ellipse cx="50" cy="60" rx="3" ry="2" fill="#6B5B8A" />
+      <ellipse cx="50" cy="60" rx="3" ry="2" fill="#1A535C" />
 
       {/* Mouth — subtle smile */}
-      <path d="M46 63Q50 66 54 63" stroke="#6B5B8A" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+      <path d="M46 63Q50 66 54 63" stroke="#1A535C" strokeWidth="1.2" fill="none" strokeLinecap="round" />
 
       {/* Whisker dots */}
-      <circle cx="34" cy="58" r="1" fill="#9B8EC4" opacity="0.3" />
-      <circle cx="31" cy="62" r="1" fill="#9B8EC4" opacity="0.3" />
-      <circle cx="66" cy="58" r="1" fill="#9B8EC4" opacity="0.3" />
-      <circle cx="69" cy="62" r="1" fill="#9B8EC4" opacity="0.3" />
+      <circle cx="34" cy="58" r="1" fill="#1A535C" opacity="0.3" />
+      <circle cx="31" cy="62" r="1" fill="#1A535C" opacity="0.3" />
+      <circle cx="66" cy="58" r="1" fill="#1A535C" opacity="0.3" />
+      <circle cx="69" cy="62" r="1" fill="#1A535C" opacity="0.3" />
     </svg>
   )
 }

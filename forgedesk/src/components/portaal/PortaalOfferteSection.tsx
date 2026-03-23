@@ -71,7 +71,7 @@ function isFileViewable(mime: string | null): boolean {
 export function PortaalOfferteSection({ items, token, klantNaam, onKlantNaamChange, onReactie, primaire_kleur, kanGoedkeuren = true }: Props) {
   return (
     <section className="space-y-3">
-      <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider px-1">Offertes</h2>
+      <h2 className="uppercase tracking-[0.1em] px-1" style={{ fontSize: 10, fontWeight: 600, color: '#A0A098' }}>Offertes</h2>
       {items.map(item => (
         <OfferteCard
           key={item.id}
@@ -137,13 +137,13 @@ function OfferteCard({ item, token, klantNaam, onKlantNaamChange, onReactie, pri
   }
 
   return (
-    <div className={`bg-white rounded-xl border transition-all ${isGetekend ? 'border-green-200 bg-green-50/30' : 'border-gray-200'}`}>
+    <div className="rounded-[10px] transition-all" style={{ backgroundColor: isGetekend ? '#F0F8F3' : '#FFFFFF', border: `0.5px solid ${isGetekend ? '#2D6B48' : '#E6E4E0'}` }}>
       {/* Header */}
       <div className="px-5 py-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
-            <h3 className="font-medium text-gray-900 truncate">{item.titel}</h3>
-            <p className="text-xs text-gray-500 mt-0.5">Verstuurd op {formatDate(item.created_at)}</p>
+            <h3 className="font-medium truncate" style={{ color: '#191919' }}>{item.titel}</h3>
+            <p className="font-mono mt-0.5" style={{ fontSize: 10, color: '#A0A098' }}>Verstuurd op {formatDate(item.created_at)}</p>
           </div>
           {item.bedrag != null && (
             <span className="text-lg font-semibold text-gray-900 flex-shrink-0 tabular-nums">
@@ -192,12 +192,12 @@ function OfferteCard({ item, token, klantNaam, onKlantNaamChange, onReactie, pri
 
       {/* Getekend status */}
       {isGetekend && (
-        <div className="mx-5 mb-4 px-4 py-3 rounded-lg bg-green-50 border border-green-200">
-          <div className="flex items-center gap-2 text-green-700">
+        <div className="mx-5 mb-4 px-4 py-3 rounded-lg" style={{ backgroundColor: '#E4F0EA', border: '0.5px solid #C0DBCC' }}>
+          <div className="flex items-center gap-2" style={{ color: '#2D6B48' }}>
             <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
             <div>
               <p className="text-sm font-medium">Akkoord gegeven</p>
-              <p className="text-xs text-green-600">
+              <p className="text-xs" style={{ color: '#2D6B48', opacity: 0.8 }}>
                 door {goedkeuring?.klant_naam || 'Klant'}
                 {goedkeuring && ` op ${formatDate(goedkeuring.created_at)}`}
               </p>
@@ -208,8 +208,8 @@ function OfferteCard({ item, token, klantNaam, onKlantNaamChange, onReactie, pri
 
       {/* Success animatie */}
       {success && !isGetekend && (
-        <div className="mx-5 mb-4 px-4 py-3 rounded-lg bg-green-50 border border-green-200 animate-in fade-in">
-          <div className="flex items-center gap-2 text-green-700">
+        <div className="mx-5 mb-4 px-4 py-3 rounded-lg animate-in fade-in" style={{ backgroundColor: '#E4F0EA', border: '0.5px solid #C0DBCC' }}>
+          <div className="flex items-center gap-2" style={{ color: '#2D6B48' }}>
             <CheckCircle2 className="w-5 h-5" />
             <p className="text-sm font-medium">Offerte ondertekend!</p>
           </div>
@@ -238,8 +238,8 @@ function OfferteCard({ item, token, klantNaam, onKlantNaamChange, onReactie, pri
           <button
             onClick={handleAkkoord}
             disabled={loading}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium text-white transition-all disabled:opacity-50 hover:opacity-90 active:scale-[0.98]"
-            style={{ backgroundColor: primaire_kleur }}
+            className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium transition-all disabled:opacity-50 hover:opacity-90 active:scale-[0.98]"
+            style={{ backgroundColor: '#E4F0EA', color: '#2D6B48', borderRadius: 8 }}
           >
             {loading ? (
               <Loader2 className="w-4 h-4 animate-spin" />

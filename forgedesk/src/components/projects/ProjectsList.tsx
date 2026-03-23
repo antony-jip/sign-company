@@ -4,12 +4,11 @@ import { useNavigateWithTab } from '@/hooks/useNavigateWithTab'
 import {
   Plus,
   Search,
-  FolderKanban,
+  FolderOpen,
   TrendingUp,
   Clock,
   AlertTriangle,
   CheckCircle2,
-  BarChart3,
   ArrowUpDown,
   Download,
   FileText,
@@ -18,8 +17,6 @@ import {
   ChevronDown,
   MoreHorizontal,
   Receipt,
-  Users,
-  CalendarDays,
   Camera,
   Eye,
   CheckSquare,
@@ -33,7 +30,8 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Card, CardContent } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/empty-state'
-import { Badge } from '@/components/ui/badge'
+import { SpectrumBar } from '@/components/ui/SpectrumBar'
+import { getFase } from '@/utils/projectFases'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -48,8 +46,6 @@ import {
   cn,
   formatDate,
   formatCurrency,
-  getStatusColor,
-  getPriorityColor,
 } from '@/lib/utils'
 import { exportCSV, exportExcel } from '@/lib/export'
 import { PaginationControls } from '@/components/ui/pagination-controls'
@@ -59,8 +55,8 @@ import type { Project, Klant, Offerte } from '@/types'
 import { toast } from 'sonner'
 import { logger } from '../../utils/logger'
 import { ModuleHeader } from '@/components/shared/ModuleHeader'
-import { DagenOpenFilterBar, getDaysOpen, getDaysColor, matchDagenFilter } from '@/components/shared/DagenOpenFilter'
-import type { DagenOpenFilter } from '@/components/shared/DagenOpenFilter'
+import { SkeletonTable } from '@/components/ui/skeleton'
+import { MODULE_COLORS } from '@/lib/moduleColors'
 
 const statusOpties = [
   { value: 'alle', label: 'Alle' },
@@ -85,42 +81,32 @@ const statusLabels: Record<string, string> = {
 
 function getStatusDotColor(status: string): string {
   switch (status) {
-    case 'actief': return 'bg-[var(--color-sage-text)]'
-    case 'gepland': return 'bg-[var(--color-mist-text)]'
-    case 'in-review': return 'bg-[var(--color-cream-text)]'
-    case 'afgerond': return 'bg-[var(--color-sage-text)]'
-    case 'on-hold': return 'bg-[var(--color-blush-text)]'
-    case 'te-factureren': return 'bg-[var(--color-lavender-text)]'
-    case 'gefactureerd': return 'bg-[var(--color-lavender-text)]'
-    default: return 'bg-[var(--color-cream-text)]'
+    case 'actief': return 'bg-[#2D6B48]'
+    case 'gepland': return 'bg-[#2A5580]'
+    case 'in-review': return 'bg-[#5A5A55]'
+    case 'afgerond': return 'bg-[#1A535C]'
+    case 'on-hold': return 'bg-[#5A5A55]'
+    case 'te-factureren': return 'bg-[#2D6B48]'
+    case 'gefactureerd': return 'bg-[#2D6B48]'
+    case 'montage': return 'bg-[#2A5580]'
+    case 'productie': return 'bg-[#5A4A78]'
+    case 'opgeleverd': return 'bg-[#2D6B48]'
+    default: return 'bg-[#5A5A55]'
   }
 }
 
-function getStatusBorderColor(status: string): string {
-  switch (status) {
-    case 'actief': return 'border-l-[var(--color-sage-border)]'
-    case 'gepland': return 'border-l-[var(--color-mist-border)]'
-    case 'in-review': return 'border-l-[var(--color-cream-border)]'
-    case 'afgerond': return 'border-l-[var(--color-sage-border)]'
-    case 'on-hold': return 'border-l-[var(--color-blush-border)]'
-    case 'te-factureren': return 'border-l-[var(--color-lavender-border)]'
-    case 'gefactureerd': return 'border-l-[var(--color-lavender-border)]'
-    default: return 'border-l-[var(--color-cream-border)]'
-  }
+/** Map database statuses to spectrum fases for correct colors */
+const STATUS_TO_FASE: Record<string, string> = {
+  gepland: 'goedgekeurd',
+  actief: 'productie',
+  'te-factureren': 'opgeleverd',
 }
 
-function getStatusCellBg(status: string): string {
-  switch (status) {
-    case 'actief': return 'bg-[var(--color-sage)]/50'
-    case 'gepland': return 'bg-[var(--color-mist)]/50'
-    case 'in-review': return 'bg-[var(--color-cream)]/50'
-    case 'afgerond': return 'bg-[var(--color-sage)]/50'
-    case 'on-hold': return 'bg-[var(--color-blush)]/50'
-    case 'te-factureren': return 'bg-[var(--color-lavender)]/50'
-    case 'gefactureerd': return 'bg-[var(--color-lavender)]/50'
-    default: return 'bg-muted/30 dark:bg-muted/20'
-  }
+function getSpectrumFase(dbStatus: string) {
+  return getFase(STATUS_TO_FASE[dbStatus] || dbStatus)
 }
+
+
 
 export function ProjectsList() {
   const { navigateWithTab } = useNavigateWithTab()
@@ -131,7 +117,6 @@ export function ProjectsList() {
   const [isLoading, setIsLoading] = useState(true)
   const [zoekterm, setZoekterm] = useState('')
   const [statusFilter, setStatusFilter] = useState('alle')
-  const [dagenOpenFilter, setDagenOpenFilter] = useState<DagenOpenFilter>('alle')
   const [sortField, setSortField] = useState<'naam' | 'bedrag' | 'start_datum'>('start_datum')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [currentPage, setCurrentPage] = useState(1)
@@ -140,6 +125,7 @@ export function ProjectsList() {
   const [photoUploadProjectId, setPhotoUploadProjectId] = useState<string | null>(null)
   const [photoUploadKlantId, setPhotoUploadKlantId] = useState<string | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [dagenOpenFilter, setDagenOpenFilter] = useState<string>('alle')
 
   const handleQuickPhotoUpload = async (files: FileList) => {
     if (!photoUploadProjectId || !user) return
@@ -221,6 +207,12 @@ export function ProjectsList() {
     return projOffertes.reduce((sum, o) => sum + (o.totaal || 0), 0)
   }
 
+  function getDagenOpen(project: Project): number | null {
+    if (project.status === 'afgerond' || project.status === 'gefactureerd') return null
+    const created = new Date(project.created_at)
+    return Math.floor((Date.now() - created.getTime()) / (1000 * 60 * 60 * 24))
+  }
+
   const gefilterdeProjecten = useMemo(() => {
     let result = [...projecten]
 
@@ -238,10 +230,17 @@ export function ProjectsList() {
     }
 
     if (dagenOpenFilter !== 'alle') {
-      const openStatuses = ['actief', 'gepland', 'in-review', 'on-hold', 'te-factureren']
       result = result.filter((p) => {
-        if (!openStatuses.includes(p.status)) return false
-        return matchDagenFilter(getDaysOpen(p.start_datum || p.created_at), dagenOpenFilter)
+        const dagen = getDagenOpen(p)
+        if (dagen === null) return false
+        switch (dagenOpenFilter) {
+          case '<7': return dagen < 7
+          case '7-14': return dagen >= 7 && dagen <= 14
+          case '14-30': return dagen >= 14 && dagen <= 30
+          case '30-90': return dagen >= 30 && dagen <= 90
+          case '>90': return dagen > 90
+          default: return true
+        }
       })
     }
 
@@ -343,9 +342,7 @@ export function ProjectsList() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-16">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
+      <SkeletonTable rows={6} cols={4} />
     )
   }
 
@@ -369,11 +366,11 @@ export function ProjectsList() {
       {/* ── Header bar ── */}
       <ModuleHeader
         module="projecten"
-        icon={FolderKanban}
+        icon={FolderOpen}
         title="Projecten"
         subtitle={`${gefilterdeProjecten.length} van ${projecten.length} projecten`}
         actions={
-          <Button asChild size="sm" className="flex-shrink-0 shadow-sm">
+          <Button asChild size="sm" className="flex-shrink-0 rounded-lg text-white" style={{ backgroundColor: '#1A535C' }}>
             <Link to="/projecten/nieuw">
               <Plus className="mr-1.5 h-3.5 w-3.5" />
               <span className="hidden sm:inline">Nieuw project</span>
@@ -385,32 +382,32 @@ export function ProjectsList() {
 
       {/* ── Content ── */}
       <div className="flex-1 min-h-0 overflow-y-auto">
-      <div className="space-y-5 p-4 sm:p-6">
+      <div className="space-y-5 p-5">
 
       {/* ── Quick stats ── */}
       <div className="flex items-center gap-2 flex-wrap">
         {stats.actief > 0 && (
-          <div className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: 'var(--color-sage-text)', background: 'var(--color-sage)', border: '1px solid var(--color-sage-border)' }}>
-            <TrendingUp className="w-3 h-3" />
-            {stats.actief} actief
+          <div className="flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full bg-white" style={{ color: '#1A535C', border: '1px solid #1A535C' }}>
+            <TrendingUp className="w-3.5 h-3.5" />
+            <span className="font-mono text-[11px]">{stats.actief}</span> actief
           </div>
         )}
         {stats.teFactureren > 0 && (
-          <div className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: 'var(--color-lavender-text)', background: 'var(--color-lavender)', border: '1px solid var(--color-lavender-border)' }}>
-            <Receipt className="w-3 h-3" />
-            {stats.teFactureren} te factureren
+          <div className="flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full bg-white" style={{ color: '#2D6B48', border: '1px solid #2D6B48' }}>
+            <Receipt className="w-3.5 h-3.5" />
+            <span className="font-mono text-[11px]">{stats.teFactureren}</span> te factureren
           </div>
         )}
         {stats.overdue > 0 && (
-          <div className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: 'var(--color-coral-text)', background: 'var(--color-coral)', border: '1px solid var(--color-coral-border)' }}>
-            <AlertTriangle className="w-3 h-3" />
-            {stats.overdue} verlopen
+          <div className="flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full bg-white" style={{ color: '#F15025', border: '1px solid #F15025' }}>
+            <AlertTriangle className="w-3.5 h-3.5" />
+            <span className="font-mono text-[11px]">{stats.overdue}</span> verlopen
           </div>
         )}
         {stats.afgerond > 0 && (
-          <div className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm" style={{ color: 'var(--color-sage-text)', background: 'var(--color-sage)', border: '1px solid var(--color-sage-border)' }}>
-            <CheckCircle2 className="w-3 h-3" />
-            {stats.afgerond} afgerond
+          <div className="flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full bg-white" style={{ color: '#5A5A55', border: '1px solid #5A5A55' }}>
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            <span className="font-mono text-[11px]">{stats.afgerond}</span> afgerond
           </div>
         )}
       </div>
@@ -485,20 +482,20 @@ export function ProjectsList() {
                 key={optie.value}
                 onClick={() => setStatusFilter(optie.value)}
                 className={cn(
-                  'px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-150',
+                  'px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all duration-150',
                   statusFilter === optie.value
-                    ? 'bg-foreground text-background shadow-sm'
-                    : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground'
+                    ? 'bg-[#191919] text-white'
+                    : 'text-[#5A5A55] hover:bg-[#F4F2EE]'
                 )}
               >
                 {optie.label}
-                {count > 0 && <span className="ml-1 opacity-60">{count}</span>}
+                {count > 0 && <span className="ml-1 opacity-60 font-mono text-[11px]">{count}</span>}
               </button>
             )
           })}
         </div>
 
-        <div className="hidden sm:flex items-center gap-1 ml-auto">
+        <div className="hidden sm:flex items-center gap-1 ml-auto flex-shrink-0">
           <Button
             variant="ghost"
             size="sm"
@@ -543,31 +540,52 @@ export function ProjectsList() {
       </div>
 
       {/* ── Dagen open filter ── */}
-      <DagenOpenFilterBar
-        value={dagenOpenFilter}
-        onChange={setDagenOpenFilter}
-        items={projecten
-          .filter((p) => ['actief', 'gepland', 'in-review', 'on-hold', 'te-factureren'].includes(p.status))
-          .map((p) => ({ dateField: p.start_datum || p.created_at }))
-        }
-      />
+      <div className="flex items-center gap-2">
+        <span className="text-[11px] font-medium uppercase tracking-wider flex-shrink-0" style={{ color: '#A0A098', letterSpacing: '0.6px' }}>
+          Dagen open
+        </span>
+        <div className="flex items-center gap-1 flex-wrap">
+          {([
+            { value: 'alle', label: 'Alle' },
+            { value: '<7', label: '< 7d' },
+            { value: '7-14', label: '7–14d' },
+            { value: '14-30', label: '14–30d' },
+            { value: '30-90', label: '30–90d' },
+            { value: '>90', label: '> 90d' },
+          ] as const).map((optie) => (
+            <button
+              key={optie.value}
+              onClick={() => setDagenOpenFilter(optie.value)}
+              className={cn(
+                'px-2.5 py-1 rounded-md text-[11px] font-medium whitespace-nowrap transition-all duration-150',
+                dagenOpenFilter === optie.value
+                  ? 'text-white'
+                  : 'text-[#5A5A55] hover:bg-[#F4F2EE]'
+              )}
+              style={dagenOpenFilter === optie.value ? { backgroundColor: '#1A535C' } : undefined}
+            >
+              {optie.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* ── Bulk action bar ── */}
       {selectedIds.size > 0 && (
-        <div className="relative overflow-hidden rounded-xl border shadow-sm" style={{ background: 'linear-gradient(135deg, var(--color-sage), #d4e8db)', borderColor: 'var(--color-sage-border)' }}>
+        <div className="relative overflow-hidden rounded-xl border shadow-sm" style={{ background: `linear-gradient(135deg, ${MODULE_COLORS.facturen.light}, #d4e8db)`, borderColor: MODULE_COLORS.facturen.border }}>
           {/* Subtiele achtergrond accent */}
           <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'var(--wm-noise)' }} />
           <div className="relative flex items-center gap-3 px-4 py-2.5">
             {/* Selectie teller */}
             <div className="flex items-center gap-2.5">
-              <div className="h-7 w-7 rounded-lg flex items-center justify-center shadow-sm" style={{ background: 'var(--color-sage-text)', color: 'white' }}>
+              <div className="h-7 w-7 rounded-lg flex items-center justify-center shadow-sm" style={{ background: MODULE_COLORS.facturen.text, color: 'white' }}>
                 <span className="text-xs font-bold">{selectedIds.size}</span>
               </div>
               <div className="flex flex-col">
-                <span className="text-sm font-semibold" style={{ color: 'var(--color-sage-text)' }}>
+                <span className="text-sm font-semibold" style={{ color: MODULE_COLORS.facturen.text }}>
                   {selectedIds.size} {selectedIds.size === 1 ? 'project' : 'projecten'} geselecteerd
                 </span>
-                <span className="text-2xs font-medium" style={{ color: 'var(--color-sage-text)', opacity: 0.6 }}>
+                <span className="text-2xs font-medium" style={{ color: MODULE_COLORS.facturen.text, opacity: 0.6 }}>
                   van {gefilterdeProjecten.length} totaal
                 </span>
               </div>
@@ -577,7 +595,7 @@ export function ProjectsList() {
             <button
               onClick={toggleSelectAll}
               className="text-xs font-semibold px-2.5 py-1 rounded-md transition-all hover:bg-card/40"
-              style={{ color: 'var(--color-sage-text)' }}
+              style={{ color: MODULE_COLORS.facturen.text }}
             >
               {selectedIds.size === gefilterdeProjecten.length ? 'Deselecteer alles' : 'Selecteer alles'}
             </button>
@@ -587,7 +605,7 @@ export function ProjectsList() {
             {/* Status wijzigen knop */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-1.5 h-8 px-3.5 rounded-lg text-xs font-semibold shadow-sm transition-all hover:shadow-md bg-card/90 backdrop-blur-sm border" style={{ color: 'var(--color-sage-text)', borderColor: 'var(--color-sage-border)' }}>
+                <button className="flex items-center gap-1.5 h-8 px-3.5 rounded-lg text-xs font-semibold shadow-sm transition-all hover:shadow-md bg-card/90 backdrop-blur-sm border" style={{ color: MODULE_COLORS.facturen.text, borderColor: MODULE_COLORS.facturen.border }}>
                   <ArrowUpDown className="w-3 h-3" />
                   Status wijzigen
                   <ChevronDown className="w-3 h-3 opacity-50" />
@@ -611,7 +629,7 @@ export function ProjectsList() {
             <button
               onClick={() => setSelectedIds(new Set())}
               className="h-7 w-7 rounded-lg flex items-center justify-center transition-all hover:bg-card/40"
-              style={{ color: 'var(--color-sage-text)' }}
+              style={{ color: MODULE_COLORS.facturen.text }}
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -649,45 +667,59 @@ export function ProjectsList() {
               <div
                 key={`mobile-${project.id}`}
                 onClick={() => navigateWithTab({ path: `/projecten/${project.id}`, label: project.naam || 'Project', id: `/projecten/${project.id}` })}
-                className={cn(
-                  'p-4 rounded-xl border bg-card cursor-pointer active:bg-muted/50 transition-colors border-l-3',
-                  getStatusBorderColor(project.status)
-                )}
+                className="p-4 rounded-xl border bg-card cursor-pointer active:bg-muted/50 transition-colors border-l-[3px] border-l-[#1A535C]"
               >
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-foreground truncate">{project.naam}</p>
-                    {klantNaam && <p className="text-xs text-muted-foreground truncate mt-0.5">{klantNaam}</p>}
+                    <p className="text-[13px] font-medium text-foreground truncate">{project.naam}</p>
+                    {klantNaam && <p className="text-[11px] truncate mt-0.5" style={{ color: '#5A5A55' }}>{klantNaam}</p>}
                   </div>
-                  <Badge className={cn('text-2xs capitalize flex-shrink-0', getStatusColor(project.status))}>
-                    {statusLabels[project.status] || project.status}
-                  </Badge>
+                  {(() => {
+                    const statusBadgeColors: Record<string, [string, string]> = {
+                      actief: ['#E2F0F0', '#1A535C'],
+                      gepland: ['#E2F0F0', '#1A535C'],
+                      'te-factureren': ['#E4F0EA', '#2D6B48'],
+                      afgerond: ['#EEEEED', '#5A5A55'],
+                    }
+                    const [bg, fg] = statusBadgeColors[project.status] || ['#EEEEED', '#5A5A55']
+                    return (
+                      <span
+                        className="text-[10px] font-semibold px-[10px] py-[3px] rounded-full flex-shrink-0"
+                        style={{ backgroundColor: bg, color: fg }}
+                      >
+                        {statusLabels[project.status] || project.status}
+                      </span>
+                    )
+                  })()}
                 </div>
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-[11px] font-medium" style={{ color: getSpectrumFase(project.status).color }}>
+                    {getSpectrumFase(project.status).label}
+                  </span>
                   <div className="flex items-center gap-2">
-                    <span className={cn(
-                      'text-2xs font-medium px-1.5 py-0.5 rounded uppercase',
-                      getPriorityColor(project.prioriteit)
-                    )}>
-                      {project.prioriteit}
-                    </span>
-                    <span className="font-mono">{formatDate(project.created_at)}</span>
+                    {(() => {
+                      const dagen = getDagenOpen(project)
+                      if (dagen === null) return null
+                      const color = dagen > 90 ? '#C03A18' : dagen > 30 ? '#F15025' : dagen > 14 ? '#5A4A78' : '#5A5A55'
+                      return <span className="font-mono text-[11px] font-medium" style={{ color }}>{dagen}d</span>
+                    })()}
+                    {bedrag > 0 && (
+                      <span className="font-mono font-medium text-foreground whitespace-nowrap">EUR {formatCurrency(bedrag).replace('€', '').trim()}</span>
+                    )}
                   </div>
-                  {bedrag > 0 && (
-                    <span className="font-mono font-semibold text-foreground">{formatCurrency(bedrag)}</span>
-                  )}
                 </div>
+                <SpectrumBar percentage={getSpectrumFase(project.status).percentage} height={3} className="mt-2" />
               </div>
             )
           })}
         </div>
 
         {/* Desktop table */}
-        <div className="hidden md:block rounded-xl border border-black/[0.06] bg-card/80 backdrop-blur-sm overflow-hidden -mx-3 sm:mx-0 shadow-sm">
+        <div className="hidden md:block rounded-xl border border-border bg-card overflow-hidden -mx-3 sm:mx-0">
           <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-border/60 bg-muted/30">
+              <tr style={{ borderBottom: '0.5px solid #E6E4E0', backgroundColor: '#F4F2EE' }}>
                 <th className="py-3 px-3 w-10">
                   <Checkbox
                     checked={selectedIds.size > 0 && selectedIds.size === gefilterdeProjecten.length}
@@ -696,12 +728,13 @@ export function ProjectsList() {
                   />
                 </th>
                 <th className="text-left py-3 px-4 w-[110px]">
-                  <span className="text-xs font-bold text-text-tertiary uppercase tracking-label">Status</span>
+                  <span className="text-[10px] font-medium uppercase text-[#A0A098]" style={{ letterSpacing: '0.8px' }}>Status</span>
                 </th>
                 <th className="text-left py-3 px-4">
                   <button
                     onClick={() => handleSort('naam')}
-                    className="flex items-center gap-1 text-xs font-bold text-text-tertiary uppercase tracking-label hover:text-foreground transition-colors"
+                    className="flex items-center gap-1 text-[10px] font-medium uppercase text-[#A0A098] hover:text-foreground transition-colors"
+                    style={{ letterSpacing: '0.8px' }}
                   >
                     Project
                     {sortField === 'naam' ? (
@@ -711,16 +744,17 @@ export function ProjectsList() {
                     )}
                   </button>
                 </th>
-                <th className="text-left py-3 px-4 hidden lg:table-cell">
-                  <span className="text-xs font-bold text-text-tertiary uppercase tracking-label">Klant</span>
+                <th className="text-left py-3 px-4 w-[140px] hidden lg:table-cell">
+                  <span className="text-[10px] font-medium uppercase text-[#A0A098]" style={{ letterSpacing: '0.8px' }}>Klant</span>
                 </th>
-                <th className="text-left py-3 px-4 hidden md:table-cell">
-                  <span className="text-xs font-bold text-text-tertiary uppercase tracking-label">Team</span>
+                <th className="text-left py-3 px-4 w-[90px] hidden md:table-cell">
+                  <span className="text-[10px] font-medium uppercase text-[#A0A098]" style={{ letterSpacing: '0.8px' }}>Fase</span>
                 </th>
-                <th className="text-right py-3 px-4 hidden xl:table-cell">
+                <th className="text-right py-3 px-4 w-[110px] hidden xl:table-cell">
                   <button
                     onClick={() => handleSort('bedrag')}
-                    className="flex items-center gap-1 text-xs font-bold text-text-tertiary uppercase tracking-label hover:text-foreground transition-colors ml-auto"
+                    className="flex items-center gap-1 text-[10px] font-medium uppercase text-[#A0A098] hover:text-foreground transition-colors ml-auto"
+                    style={{ letterSpacing: '0.8px' }}
                   >
                     Bedrag
                     {sortField === 'bedrag' ? (
@@ -730,13 +764,11 @@ export function ProjectsList() {
                     )}
                   </button>
                 </th>
-                <th className="text-right py-3 px-4 hidden xl:table-cell">
-                  <span className="text-xs font-bold text-text-tertiary uppercase tracking-label">Open</span>
-                </th>
-                <th className="text-right py-3 px-4 hidden lg:table-cell">
+                <th className="text-right py-3 px-4 w-[70px] hidden lg:table-cell">
                   <button
                     onClick={() => handleSort('start_datum')}
-                    className="flex items-center gap-1 text-xs font-bold text-text-tertiary uppercase tracking-label hover:text-foreground transition-colors ml-auto"
+                    className="flex items-center gap-1 text-[10px] font-medium uppercase text-[#A0A098] hover:text-foreground transition-colors ml-auto"
+                    style={{ letterSpacing: '0.8px' }}
                   >
                     Datum
                     {sortField === 'start_datum' ? (
@@ -745,6 +777,9 @@ export function ProjectsList() {
                       <ArrowUpDown className="w-3 h-3 opacity-30" />
                     )}
                   </button>
+                </th>
+                <th className="text-right py-3 px-4 w-[80px] hidden xl:table-cell">
+                  <span className="text-[10px] font-medium uppercase text-[#A0A098]" style={{ letterSpacing: '0.8px' }}>Open</span>
                 </th>
                 <th className="w-10 py-3 px-2" />
               </tr>
@@ -759,41 +794,56 @@ export function ProjectsList() {
                   <tr
                     key={project.id}
                     className={cn(
-                      'border-b border-border/30 last:border-0 hover:bg-bg-subtle/50 dark:hover:bg-muted/20 cursor-pointer transition-all duration-150 group border-l-2',
-                      getStatusBorderColor(project.status),
-
-
-                      selectedIds.has(project.id) && 'bg-[#7EB5A6]/5'
-
+                      'last:border-0 hover:bg-[#F4F2EE] cursor-pointer transition-colors duration-150 group',
+                      selectedIds.has(project.id) && 'bg-[#E2F0F0]/30'
                     )}
+                    style={{ borderBottom: '0.5px solid #E6E4E0' }}
                     onClick={() => navigateWithTab({ path: `/projecten/${project.id}`, label: project.naam || 'Project', id: `/projecten/${project.id}` })}
                   >
                     {/* Checkbox */}
-                    <td className="py-3 px-3" onClick={(e) => e.stopPropagation()}>
+                    <td className="py-3.5 px-3 relative" onClick={(e) => e.stopPropagation()}>
+                      <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-[#1A535C]" />
                       <Checkbox
                         checked={selectedIds.has(project.id)}
                         onCheckedChange={() => toggleProjectSelection(project.id)}
                         aria-label={`Selecteer ${project.naam}`}
                       />
                     </td>
-                    {/* Status */}
-                    <td className="py-0 px-0">
+                    {/* Status badge */}
+                    <td className="py-3.5 px-4" onClick={(e) => e.stopPropagation()}>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <button
-                            onClick={(e) => e.stopPropagation()}
-                            className={cn(
-                              'w-full h-full py-3 px-4 flex items-center gap-1.5 transition-colors border-l-[3px]',
-                              getStatusBorderColor(project.status),
-                              getStatusCellBg(project.status),
-                              'hover:brightness-95 dark:hover:brightness-110'
+                          <button className="flex items-center gap-1.5">
+                            {(() => {
+                              const statusBadgeColors: Record<string, [string, string]> = {
+                                actief: ['#E2F0F0', '#1A535C'],
+                                gepland: ['#E2F0F0', '#1A535C'],
+                                'te-factureren': ['#E4F0EA', '#2D6B48'],
+                                afgerond: ['#EEEEED', '#5A5A55'],
+                                'on-hold': ['#EEEEED', '#5A5A55'],
+                                'in-review': ['#EEEEED', '#5A5A55'],
+                                gefactureerd: ['#E4F0EA', '#2D6B48'],
+                              }
+                              const [bg, fg] = statusBadgeColors[project.status] || ['#EEEEED', '#5A5A55']
+                              const isUrgent = project.prioriteit === 'urgent' || project.prioriteit === 'hoog'
+                              return (
+                                <span
+                                  className="text-[10px] font-semibold px-[10px] py-[3px] rounded-full inline-flex items-center gap-1.5"
+                                  style={{ backgroundColor: bg, color: fg }}
+                                >
+                                  {isUrgent && <span className="w-2 h-2 rounded-full bg-[#F15025] flex-shrink-0" />}
+                                  {statusLabels[project.status] || project.status}
+                                </span>
+                              )
+                            })()}
+                            {isOverdue && (
+                              <span
+                                className="text-[10px] font-semibold px-[10px] py-[3px] rounded-full"
+                                style={{ backgroundColor: '#FDE8E2', color: '#C03A18' }}
+                              >
+                                Verlopen
+                              </span>
                             )}
-                          >
-                            <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0', getStatusDotColor(project.status))} />
-                            <span className="text-xs font-medium text-foreground">
-                              {statusLabels[project.status] || project.status}
-                            </span>
-                            <ChevronDown className="w-3 h-3 text-muted-foreground/40 ml-auto" />
                           </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="start" className="w-40">
@@ -820,116 +870,87 @@ export function ProjectsList() {
                       </DropdownMenu>
                     </td>
 
-                    {/* Project naam + prioriteit */}
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-2">
-                        <div className="min-w-0">
-                          <div>
-                            <Link
-                              to={`/projecten/${project.id}`}
-                              className="text-sm font-medium text-foreground hover:text-accent dark:hover:text-primary transition-colors block truncate"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              {project.naam}
-                            </Link>
-                            {project.project_nummer && (
-                              <span className="text-xs text-muted-foreground font-mono">{project.project_nummer}</span>
-                            )}
-                          </div>
-                          {project.beschrijving && (
-                            <p className="text-xs text-muted-foreground truncate max-w-[300px] mt-0.5">
-                              {project.beschrijving}
-                            </p>
+                    {/* Project naam + ref + spectrum bar */}
+                    <td className="py-3.5 px-4">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <Link
+                            to={`/projecten/${project.id}`}
+                            className="text-[13px] font-medium text-foreground hover:text-[#1A535C] transition-colors truncate"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {project.naam}
+                          </Link>
+                          {project.project_nummer && (
+                            <span className="text-[11px] text-[#A0A098] font-mono flex-shrink-0">{project.project_nummer}</span>
                           )}
                         </div>
-                        <span className={cn(
-                          'text-2xs font-medium px-1.5 py-0.5 rounded flex-shrink-0 uppercase tracking-wide',
-                          project.prioriteit === 'hoog' || project.prioriteit === 'urgent'
-                            ? 'text-red-600/70 bg-red-50 dark:text-red-400/70 dark:bg-red-950/20'
-                            : project.prioriteit === 'laag'
-                            ? 'text-muted-foreground/50 bg-muted/40'
-                            : 'text-muted-foreground/60 bg-muted/50'
-                        )}>
-                          {project.prioriteit}
-                        </span>
-                        {isOverdue && (
-                          <Badge className="bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 text-2xs px-1.5 py-0 flex-shrink-0">
-                            Verlopen
-                          </Badge>
+                        {project.beschrijving && (
+                          <p className="text-xs text-[#5A5A55] truncate max-w-[300px] mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                            {project.beschrijving}
+                          </p>
                         )}
+                        <SpectrumBar percentage={getSpectrumFase(project.status).percentage} height={3} className="mt-1.5 w-20" />
                       </div>
                     </td>
 
                     {/* Klant */}
-                    <td className="py-3 px-4 hidden lg:table-cell">
-                      <span className="text-sm text-foreground">{klantNaam}</span>
-                      {project.vestiging_naam && (
-                        <p className="text-xs text-muted-foreground mt-0.5">{project.vestiging_naam}</p>
-                      )}
-                      {!project.vestiging_naam && contactpersoon && (
-                        <p className="text-xs text-muted-foreground mt-0.5">{contactpersoon}</p>
+                    <td className="py-3.5 px-4 hidden lg:table-cell">
+                      <span className="text-[13px] text-foreground">{klantNaam}</span>
+                      {(project.vestiging_naam || contactpersoon) && (
+                        <p className="text-[11px] mt-0.5" style={{ color: '#5A5A55' }}>
+                          {project.vestiging_naam || contactpersoon}
+                        </p>
                       )}
                     </td>
 
-                    {/* Team */}
-                    <td className="py-3 px-4 hidden md:table-cell">
-                      {project.team_leden.length > 0 ? (
-                        <div className="flex items-center -space-x-1">
-                          {project.team_leden.slice(0, 3).map((lid, i) => (
-                            <div
-                              key={i}
-                              className="w-6 h-6 rounded-full bg-primary/10 dark:bg-primary/20 flex items-center justify-center border-2 border-white dark:border-card text-2xs font-semibold text-accent dark:text-primary"
-                              title={lid}
-                            >
-                              {lid.charAt(0).toUpperCase()}
-                            </div>
-                          ))}
-                          {project.team_leden.length > 3 && (
-                            <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center border-2 border-white dark:border-card text-2xs font-medium text-muted-foreground">
-                              +{project.team_leden.length - 3}
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">-</span>
-                      )}
+                    {/* Fase */}
+                    <td className="py-3.5 px-4 hidden md:table-cell">
+                      <span
+                        className="text-[11px] font-medium"
+                        style={{ color: getSpectrumFase(project.status).color }}
+                      >
+                        {getSpectrumFase(project.status).label}
+                      </span>
                     </td>
 
                     {/* Bedrag */}
-                    <td className="py-3 px-4 hidden xl:table-cell">
+                    <td className="py-3.5 px-4 text-right hidden xl:table-cell">
                       {(() => {
                         const bedrag = getProjectBedrag(project.id)
                         return bedrag > 0 ? (
-                          <span className="text-sm font-semibold text-foreground tabular-nums font-mono">
-                            {formatCurrency(bedrag)}
+                          <span className="text-sm font-medium text-foreground tabular-nums font-mono whitespace-nowrap">
+                            EUR {formatCurrency(bedrag).replace('€', '').trim()}
                           </span>
                         ) : (
-                          <span className="text-xs text-muted-foreground/50">—</span>
-                        )
-                      })()}
-                    </td>
-
-                    {/* Dagen open */}
-                    <td className="py-3 px-4 text-right hidden xl:table-cell">
-                      {project.status !== 'afgerond' && (() => {
-                        const days = getDaysOpen(project.start_datum || project.created_at)
-                        return (
-                          <span className={cn('text-xs font-medium px-2 py-0.5 rounded-md tabular-nums', getDaysColor(days))}>
-                            {days}d
-                          </span>
+                          <span className="text-xs text-[#A0A098]">—</span>
                         )
                       })()}
                     </td>
 
                     {/* Datum */}
-                    <td className="py-3 px-4 text-right hidden lg:table-cell">
-                      <span className="text-xs text-muted-foreground font-mono tabular-nums">
-                        {formatDate(project.created_at)}
+                    <td className="py-3.5 px-4 text-right hidden lg:table-cell">
+                      <span className="text-xs font-mono tabular-nums" style={{ color: '#A0A098' }}>
+                        {new Date(project.created_at).toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit' }).replace('/', '-')}
                       </span>
                     </td>
 
+                    {/* Dagen open */}
+                    <td className="py-3.5 px-4 text-right hidden xl:table-cell">
+                      {(() => {
+                        const dagen = getDagenOpen(project)
+                        if (dagen === null) return <span className="text-xs text-[#A0A098]">—</span>
+                        const color = dagen > 90 ? '#C03A18' : dagen > 30 ? '#F15025' : dagen > 14 ? '#5A4A78' : '#5A5A55'
+                        return (
+                          <span className="text-[11px] font-mono font-medium tabular-nums" style={{ color }}>
+                            {dagen}d
+                          </span>
+                        )
+                      })()}
+                    </td>
+
                     {/* Quick actions + Menu */}
-                    <td className="py-3 px-2">
+                    <td className="py-3.5 px-2">
                       <div className="flex items-center gap-0.5 justify-end">
                         {/* Quick photo upload button */}
                         <button

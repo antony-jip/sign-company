@@ -489,8 +489,8 @@ export function VisualizerLayout() {
         {/* ── Header ── */}
         <div className="flex items-center justify-between px-4 py-4 flex-shrink-0">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-sage/20 rounded-lg">
-              <Palette className="w-5 h-5 text-sage-deep" />
+            <div className="p-2 bg-petrol-light rounded-lg">
+              <Palette className="w-5 h-5 text-petrol" />
             </div>
             <div>
               <h1 className="text-lg font-bold text-foreground">Visualizer</h1>
@@ -536,8 +536,8 @@ export function VisualizerLayout() {
 
         {/* ── Save panel (schuift open) ── */}
         {showSavePanel && resultaat && (
-          <div className="mx-4 mb-3 p-4 bg-sage/10 border border-sage/20 rounded-2xl space-y-3 animate-in slide-in-from-top-2">
-            <div className="flex items-center gap-2 text-sm font-medium text-sage-deep">
+          <div className="mx-4 mb-3 p-4 bg-petrol-light border border-petrol-border rounded-2xl space-y-3 animate-in slide-in-from-top-2">
+            <div className="flex items-center gap-2 text-sm font-medium text-petrol">
               <Link2 className="h-4 w-4" />
               Opslaan in bibliotheek
             </div>
@@ -545,7 +545,7 @@ export function VisualizerLayout() {
               <select
                 value={selectedProject}
                 onChange={(e) => { setSelectedProject(e.target.value); setSelectedOfferte('') }}
-                className="text-sm bg-background border rounded-xl px-3 py-2 flex-1 focus:outline-none focus:ring-2 focus:ring-sage/50"
+                className="text-sm bg-background border rounded-xl px-3 py-2 flex-1 focus:outline-none focus:ring-2 focus:ring-petrol/50"
               >
                 <option value="">Geen project koppelen</option>
                 {projecten.map(p => (
@@ -556,7 +556,7 @@ export function VisualizerLayout() {
                 <select
                   value={selectedOfferte}
                   onChange={(e) => setSelectedOfferte(e.target.value)}
-                  className="text-sm bg-background border rounded-xl px-3 py-2 flex-1 focus:outline-none focus:ring-2 focus:ring-sage/50"
+                  className="text-sm bg-background border rounded-xl px-3 py-2 flex-1 focus:outline-none focus:ring-2 focus:ring-petrol/50"
                 >
                   <option value="">Geen offerte</option>
                   {filteredOffertes.map(o => (
@@ -566,7 +566,7 @@ export function VisualizerLayout() {
               )}
               <Button
                 onClick={handleOpslaan}
-                className="rounded-xl bg-sage-deep hover:bg-sage-deep/90 gap-1.5"
+                className="rounded-xl bg-petrol hover:bg-petrol/90 gap-1.5"
               >
                 <Save className="h-4 w-4" /> Opslaan
               </Button>
@@ -588,7 +588,7 @@ export function VisualizerLayout() {
               {/* AI avatar */}
               {bericht.rol === 'assistant' && (
                 <div className="flex-shrink-0 mt-1">
-                  <Sparkles className="w-4 h-4 text-sage-deep" />
+                  <Sparkles className="w-4 h-4 text-petrol" />
                 </div>
               )}
 
@@ -608,7 +608,7 @@ export function VisualizerLayout() {
                   <div className={cn(
                     'rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap',
                     bericht.rol === 'user'
-                      ? 'bg-mist/20 text-foreground'
+                      ? 'bg-mod-klanten-light text-foreground'
                       : 'bg-card border text-foreground',
                   )}>
                     {bericht.tekst}
@@ -663,14 +663,14 @@ export function VisualizerLayout() {
           {isGenerating && (
             <div className="flex gap-3 justify-start">
               <div className="flex-shrink-0 mt-1">
-                <Sparkles className="w-4 h-4 text-sage-deep" />
+                <Sparkles className="w-4 h-4 text-petrol" />
               </div>
               <div className="bg-card border rounded-2xl p-4 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <span className="flex gap-1">
-                    <span className="w-2 h-2 bg-sage-deep/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <span className="w-2 h-2 bg-sage-deep/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <span className="w-2 h-2 bg-sage-deep/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                    <span className="w-2 h-2 bg-petrol/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <span className="w-2 h-2 bg-petrol/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <span className="w-2 h-2 bg-petrol/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                   </span>
                   <span className="text-xs">
                     {generatieStatus === 'claude' ? 'Analyseren...' : 'Genereren...'}
@@ -694,13 +694,13 @@ export function VisualizerLayout() {
               onKeyDown={handleChatKeyDown}
               placeholder="Beschrijf wat je wilt aanpassen..."
               disabled={isGenerating}
-              className="flex-1 rounded-xl border bg-background px-4 py-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-sage/50 disabled:opacity-50"
+              className="flex-1 rounded-xl border bg-background px-4 py-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-petrol/50 disabled:opacity-50"
             />
             <Button
               size="icon"
               onClick={handleChatVerfijning}
               disabled={!chatInput.trim() || isGenerating || creditSaldo <= 0}
-              className="rounded-xl h-11 w-11 bg-sage-deep hover:bg-sage-deep/90"
+              className="rounded-xl h-11 w-11 bg-petrol hover:bg-petrol/90"
             >
               {isGenerating ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -734,8 +734,8 @@ export function VisualizerLayout() {
             className={cn(
               'text-sm font-medium px-3 py-1.5 rounded-full transition-colors cursor-pointer flex-shrink-0',
               creditSaldo < 5
-                ? 'bg-blush/20 text-blush-deep hover:bg-blush/30'
-                : 'bg-sage/20 text-sage-deep hover:bg-sage/30',
+                ? 'bg-flame-light text-flame-text hover:bg-flame-light/80'
+                : 'bg-petrol-light text-petrol hover:bg-petrol-light/80',
             )}
           >
             {creditSaldo} credits {creditSaldo < 5 ? '— bijkopen' : ''}
@@ -769,14 +769,14 @@ export function VisualizerLayout() {
               </div>
             ) : (
               <div
-                className="border-2 border-dashed border-sage/30 rounded-xl aspect-[4/3] flex flex-col items-center justify-center cursor-pointer hover:border-sage/60 hover:bg-sage/5 transition-all"
+                className="border-2 border-dashed border-petrol-border rounded-xl aspect-[4/3] flex flex-col items-center justify-center cursor-pointer hover:border-petrol-border hover:bg-petrol-light transition-all"
                 onClick={() => fileInputRef.current?.click()}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => handleDrop(e, 'foto')}
               >
-                <Upload className="h-8 w-8 text-sage-deep/40 mb-2" />
+                <Upload className="h-8 w-8 text-petrol/40 mb-2" />
                 <p className="text-sm text-muted-foreground text-center px-4">
-                  Sleep hierheen of <span className="text-sage-deep font-medium">klik</span>
+                  Sleep hierheen of <span className="text-petrol font-medium">klik</span>
                 </p>
               </div>
             )}
@@ -802,12 +802,12 @@ export function VisualizerLayout() {
               </div>
             ) : (
               <div
-                className="border-2 border-dashed border-mist/30 rounded-xl aspect-[4/3] flex flex-col items-center justify-center cursor-pointer hover:border-mist/60 hover:bg-mist/5 transition-all"
+                className="border-2 border-dashed border-mod-klanten-border rounded-xl aspect-[4/3] flex flex-col items-center justify-center cursor-pointer hover:border-mod-klanten-border hover:bg-mod-klanten-light transition-all"
                 onClick={() => logoInputRef.current?.click()}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => handleDrop(e, 'logo')}
               >
-                <ImageIcon className="h-8 w-8 text-mist-deep/40 mb-2" />
+                <ImageIcon className="h-8 w-8 text-mod-klanten-text/40 mb-2" />
                 <p className="text-sm text-muted-foreground text-center px-4">
                   Logo of artwork toevoegen
                 </p>
@@ -824,7 +824,7 @@ export function VisualizerLayout() {
               value={beschrijving}
               onChange={(e) => setBeschrijving(e.target.value)}
               placeholder='bijv. "LED doosletters boven de deur, warmwit" of "Maak dit ontwerp fotorealistisch op een echte bus"'
-              className="text-sm flex-1 min-h-[100px] rounded-xl focus:ring-sage/50"
+              className="text-sm flex-1 min-h-[100px] rounded-xl focus:ring-petrol/50"
             />
 
             {/* Ratio + Resolutie */}
@@ -841,8 +841,8 @@ export function VisualizerLayout() {
                       className={cn(
                         'px-2.5 py-1 rounded-lg text-xs font-medium transition-all',
                         ratio === opt.value
-                          ? 'bg-sage-deep text-white shadow-sm'
-                          : 'bg-sage/10 text-sage-deep hover:bg-sage/20',
+                          ? 'bg-petrol text-white shadow-sm'
+                          : 'bg-petrol-light text-petrol hover:bg-petrol-light/80',
                       )}
                       title={opt.desc}
                     >
@@ -865,14 +865,14 @@ export function VisualizerLayout() {
                       className={cn(
                         'flex-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all text-center',
                         resolutie === opt.label
-                          ? 'bg-sage-deep text-white shadow-sm'
-                          : 'bg-sage/10 text-sage-deep hover:bg-sage/20',
+                          ? 'bg-petrol text-white shadow-sm'
+                          : 'bg-petrol-light text-petrol hover:bg-petrol-light/80',
                       )}
                     >
                       {opt.label}
                       <span className={cn(
                         'block text-2xs font-normal mt-0.5',
-                        resolutie === opt.label ? 'text-white/70' : 'text-sage-deep/50',
+                        resolutie === opt.label ? 'text-white/70' : 'text-petrol/50',
                       )}>
                         {opt.credit === 1 ? '1 credit' : '2 credits'}
                       </span>
@@ -885,7 +885,7 @@ export function VisualizerLayout() {
             <Button
               onClick={handleGenereer}
               disabled={!foto || !beschrijving.trim() || isGenerating || creditSaldo <= 0}
-              className="gap-2 w-full rounded-xl bg-sage-deep hover:bg-sage-deep/90"
+              className="gap-2 w-full rounded-xl bg-petrol hover:bg-petrol/90"
               size="lg"
             >
               {isGenerating ? (
@@ -917,7 +917,7 @@ export function VisualizerLayout() {
                 className={cn(
                   'rounded-full px-3 py-1.5 text-xs font-medium transition-colors',
                   filterKoppeling === val
-                    ? 'bg-sage/20 text-sage-deep'
+                    ? 'bg-petrol-light text-petrol'
                     : 'text-muted-foreground hover:bg-muted',
                 )}
               >
@@ -930,9 +930,9 @@ export function VisualizerLayout() {
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <div className="flex gap-1">
-              <span className="w-2 h-2 bg-sage-deep/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-              <span className="w-2 h-2 bg-sage-deep/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-              <span className="w-2 h-2 bg-sage-deep/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              <span className="w-2 h-2 bg-petrol/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+              <span className="w-2 h-2 bg-petrol/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+              <span className="w-2 h-2 bg-petrol/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
             </div>
           </div>
         ) : gefilterd.length === 0 ? (
@@ -962,10 +962,10 @@ export function VisualizerLayout() {
                   <div className="p-2.5">
                     <div className="flex items-center gap-1 flex-wrap mb-1">
                       {project && (
-                        <Badge className="badge-sage text-2xs">{project.naam}</Badge>
+                        <Badge className="badge-petrol text-2xs">{project.naam}</Badge>
                       )}
                       {offerte && (
-                        <Badge className="badge-mist text-2xs">{offerte.nummer || offerte.titel}</Badge>
+                        <Badge className="badge-blauw text-2xs">{offerte.nummer || offerte.titel}</Badge>
                       )}
                     </div>
                     <div className="flex items-center justify-between text-xs text-muted-foreground">

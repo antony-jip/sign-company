@@ -148,7 +148,7 @@ export function EmailReaderAIToolbar({ containerRef, disabled }: EmailReaderAITo
         setResult(response.result)
       }
     } catch {
-      toast.error('Forgie kon dit niet verwerken. Probeer het opnieuw.')
+      toast.error('Daan kon dit niet verwerken. Probeer het opnieuw.')
       setResult(null)
     } finally {
       setLoading(false)

@@ -1,0 +1,87 @@
+SESSIE 4F — ONBOARDING REDESIGN — OVERZICHT
+=============================================
+
+Bestand: forgedesk/src/components/onboarding/OnboardingWizard.tsx
+Branch:  claude/css-tokens-fonts-setup-e5qFn
+Commit:  feat: laag 4f — onboarding redesign met 3 stappen en spectrum
+
+
+1. SPECTRUM VOORTGANGS-STRIP
+-----------------------------
+[x] 3 segmenten bovenaan de onboarding pagina
+[x] Stap 1: flame (#F15025)
+[x] Stap 2: flame + warm midden (#D4453A, #9A4070, #6A5A8A)
+[x] Stap 3: hele spectrum tot petrol (#3A6B8C, #2D6B48, #1A535C)
+[x] Niet-bereikt: border-tertiary grijs (#E6E4E0)
+[x] Hoogte: 5px
+[x] Gap tussen segmenten: 4px
+[x] Border-radius per segment: 3px
+
+
+2. STAP 1 — BEDRIJFSGEGEVENS
+------------------------------
+[x] Stap indicator: "STAP 1 VAN 3" (10px, uppercase, letter-spacing 1.5px, muted)
+[x] Titel: "Je bedrijf." (Bricolage Grotesque 700, 20px, letter-spacing -0.8px)
+[x] Subtekst: "Vul je bedrijfsgegevens in. Dit komt op je offertes en facturen." (13px, text-sec #5A5A55)
+[x] Veld: Bedrijfsnaam
+[x] Veld: KVK-nummer (DM Mono via font-mono)
+[x] Veld: BTW-nummer (DM Mono via font-mono)
+[x] Veld: Adres (straat + postcode + plaats op een rij)
+[x] Veld: Email
+[x] Veld: Telefoon (DM Mono via font-mono)
+[x] Knop: "Volgende" (petrol #1A535C)
+
+
+3. STAP 2 — HOE WIL JE BEGINNEN?
+-----------------------------------
+[x] Stap indicator: "STAP 2 VAN 3"
+[x] Titel: "Hoe wil je beginnen?" (20px)
+[x] Subtekst: "Je kunt altijd later nog data importeren of verwijderen."
+[x] Kaart "Schone lei" — "Leeg beginnen, alles zelf invoeren"
+[x] Kaart "Demo data" — "Voorbeeldklanten en offertes om te verkennen"
+[x] Geselecteerde kaart: border petrol (#1A535C), achtergrond petrol-light (#E2F0F0)
+[x] Niet-geselecteerd: border sand (#E6E4E0), achtergrond card (#FFFFFF)
+[x] Link: "Ik heb een Excel bestand om te importeren" (11px, muted, underline)
+[x] Knop: "Terug" (ghost, sand border)
+[x] Knop: "Volgende" (petrol #1A535C)
+[x] Branche-keuze stap verwijderd (niet aanwezig, niet toegevoegd)
+
+
+4. STAP 3 — KLAAR
+-------------------
+[x] Stap indicator: "STAP 3 VAN 3"
+[x] Titel: "Klaar." (20px, met punt)
+[x] Subtekst: "Je account is ingericht. Begin met je eerste klant of offerte."
+[x] Knop: "Aan de slag" (petrol #1A535C)
+[x] Geen confetti
+[x] Geen emojis
+[x] Geen "Gefeliciteerd!"
+
+
+5. STYLING
+-----------
+[x] Max-width: 480px, gecentreerd
+[x] Card: achtergrond #FFFFFF, border 0.5px solid #E6E4E0, border-radius 12px
+[x] Padding: 28px 32px
+[x] Input achtergrond: #FAFAF8 (warm)
+[x] Input border: 0.5px solid #E6E4E0
+[x] Input border-radius: 6px
+[x] Input hoogte: 40px
+[x] DM Mono voor nummervelden (KVK, BTW, telefoon)
+[x] Pagina achtergrond: #FAFAF8
+
+
+VERWIJDERD
+-----------
+- Logo upload stap (was stap 2 in oude flow)
+- "Eerste klant toevoegen" formulier (was onderdeel van oude stap 4)
+- Manrope/Inter font link-tags in de component
+- Zwarte knoppen (vervangen door petrol)
+
+
+BEHOUDEN
+---------
+- Demo data logica (3 klanten, 1 project, 1 offerte, 3 taken)
+- Organisatie init-logica (aanmaken als niet bestaat)
+- Onboarding stap tracking in database (onboarding_stap)
+- finishOnboarding() zet onboarding_compleet: true

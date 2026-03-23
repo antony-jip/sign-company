@@ -8,10 +8,10 @@ import { formatCurrency } from '@/lib/utils'
 import { logger } from '../../utils/logger'
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  concept: { label: 'Concept', color: 'text-[var(--color-cream-text)]' },
-  verzonden: { label: 'Verstuurd', color: 'text-[var(--color-mist-text)]' },
-  bekeken: { label: 'Bekeken', color: 'text-[var(--color-cream-text)]' },
-  goedgekeurd: { label: 'Goedgekeurd', color: 'text-[var(--color-sage-text)]' },
+  concept: { label: 'Concept', color: 'text-mod-taken-text' },
+  verzonden: { label: 'Verstuurd', color: 'text-mod-klanten-text' },
+  bekeken: { label: 'Bekeken', color: 'text-mod-taken-text' },
+  goedgekeurd: { label: 'Goedgekeurd', color: 'text-mod-facturen-text' },
 }
 
 export function OpenstaandeOffertesWidget() {
@@ -62,10 +62,10 @@ export function OpenstaandeOffertesWidget() {
             {offertes.map((offerte, idx) => {
               const statusInfo = STATUS_LABELS[offerte.status] || { label: offerte.status, color: 'text-muted-foreground' }
               const barColors: Record<string, string> = {
-                concept: 'bg-[var(--color-cream)]',
-                verzonden: 'bg-[var(--color-mist)]',
-                bekeken: 'bg-[var(--color-cream)]',
-                goedgekeurd: 'bg-[var(--color-sage)]',
+                concept: 'bg-mod-taken-light',
+                verzonden: 'bg-mod-klanten-light',
+                bekeken: 'bg-mod-taken-light',
+                goedgekeurd: 'bg-mod-facturen-light',
               }
               return (
                 <div

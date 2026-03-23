@@ -1,5 +1,5 @@
 /**
- * Professional HTML email template for FORGEdesk portal notifications.
+ * Professional HTML email template for Doen. portal notifications.
  * Uses inline CSS only (no <style> blocks, no external CSS) for maximum email client compatibility.
  */
 
@@ -20,7 +20,7 @@ interface PortalEmailParams {
   quote?: string
   /** URL van bedrijfslogo (wordt bovenaan email getoond) */
   logoUrl?: string
-  /** Primaire merkkleur, bijv. '#CC8A3F'. Fallback: warm amber */
+  /** Primaire merkkleur, bijv. '#1A535C'. Fallback: petrol */
   primaireKleur?: string
 }
 
@@ -37,8 +37,8 @@ export function buildPortalEmailHtml(params: PortalEmailParams): string {
     primaireKleur,
   } = params
 
-  const sage = primaireKleur || '#CC8A3F'
-  const sageLight = primaireKleur ? `${primaireKleur}18` : '#F0E4D6'
+  const accent = primaireKleur || '#1A535C'
+  const accentLight = primaireKleur ? `${primaireKleur}18` : '#E2F0F0'
   const bgOuter = '#F4F3F0'
   const bgCard = '#FFFFFF'
   const textDark = '#1A1A1A'
@@ -61,7 +61,7 @@ export function buildPortalEmailHtml(params: PortalEmailParams): string {
 
   const quoteBlock = quote
     ? `<tr><td style="padding: 0 0 20px 0;">
-        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: ${primaireKleur ? sageLight : '#E4EBE6'}; border-radius: 8px; border-left: 4px solid ${sage};">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: ${primaireKleur ? accentLight : '#E2F0F0'}; border-radius: 8px; border-left: 4px solid ${accent};">
           <tr><td style="padding: 16px 20px; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: ${textDark}; font-style: italic; line-height: 1.6;">
             &ldquo;${escapeHtml(quote)}&rdquo;
           </td></tr>
@@ -77,15 +77,15 @@ export function buildPortalEmailHtml(params: PortalEmailParams): string {
 
   const ctaBlock = ctaUrl
     ? `<tr><td style="padding: 8px 0 0 0;" align="center">
-        <a href="${escapeHtml(ctaUrl)}" target="_blank" style="display: inline-block; background-color: ${sage}; color: #FFFFFF; font-family: 'DM Sans', Arial, sans-serif; font-size: 15px; font-weight: 600; text-decoration: none; padding: 14px 32px; border-radius: 8px; line-height: 1;">
+        <a href="${escapeHtml(ctaUrl)}" target="_blank" style="display: inline-block; background-color: ${accent}; color: #FFFFFF; font-family: 'DM Sans', Arial, sans-serif; font-size: 15px; font-weight: 600; text-decoration: none; padding: 14px 32px; border-radius: 8px; line-height: 1;">
           ${escapeHtml(ctaLabel)}
         </a>
       </td></tr>`
     : ''
 
   const footerText = bedrijfsnaam
-    ? `Verzonden via FORGEdesk namens ${escapeHtml(bedrijfsnaam)}`
-    : 'Verzonden via FORGEdesk'
+    ? `Verzonden via Doen. namens ${escapeHtml(bedrijfsnaam)}`
+    : 'Verzonden via Doen.'
 
   return `<!DOCTYPE html>
 <html lang="nl">
@@ -99,7 +99,7 @@ export function buildPortalEmailHtml(params: PortalEmailParams): string {
         ${logoUrl
           ? `<img src="${escapeHtml(logoUrl)}" alt="${escapeHtml(bedrijfsnaam || '')}" style="max-height: 48px; max-width: 200px; object-fit: contain;" />`
           : `<span style="font-family: 'DM Sans', Arial, sans-serif; font-size: 22px; color: ${textDark}; letter-spacing: -0.5px;">
-              <strong>FORGE</strong><span style="font-weight: 300;">desk</span>
+              <strong>Doen.</strong>
             </span>`
         }
       </td></tr>

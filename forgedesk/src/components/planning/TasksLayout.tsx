@@ -46,13 +46,16 @@ import {
   MapPin,
   User2,
   Wrench,
+  FilePlus,
+  Paperclip,
 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { WeatherDayStrip } from './WeatherDayStrip'
 import { ModuleHeader } from '@/components/shared/ModuleHeader'
 import { useAuth } from '@/contexts/AuthContext'
-import { getTaken, createTaak, updateTaak, deleteTaak, getProjecten, getKlanten, getMontageAfspraken } from '@/services/supabaseService'
-import type { Taak, Project, Klant, MontageAfspraak } from '@/types'
+import { getTaken, createTaak, updateTaak, deleteTaak, getProjecten, getKlanten, getMontageAfspraken, getOffertes, uploadTaakBijlage } from '@/services/supabaseService'
+import type { Taak, Project, Klant, MontageAfspraak, Offerte } from '@/types'
 import { logger } from '../../utils/logger'
 import { AuditLogPanel } from '@/components/shared/AuditLogPanel'
 import { logWijziging } from '@/utils/auditLogger'
@@ -65,21 +68,21 @@ type TaakPrioriteit = Taak['prioriteit']
 const PRIORITEIT_ORDER: Record<string, number> = { kritiek: 4, hoog: 3, medium: 2, laag: 1 }
 
 const PRIORITEIT_COLORS: Record<TaakPrioriteit, { border: string; bg: string; accent: string }> = {
-  kritiek: { border: 'border-l-[var(--color-coral-border)]', bg: 'bg-[var(--color-coral)]/60', accent: 'text-[var(--color-coral-text)]' },
-  hoog: { border: 'border-l-[var(--color-blush-border)]', bg: 'bg-[var(--color-blush)]/60', accent: 'text-[var(--color-blush-text)]' },
-  medium: { border: 'border-l-[var(--color-mist-border)]', bg: 'bg-[var(--color-mist)]/60', accent: 'text-[var(--color-mist-text)]' },
-  laag: { border: 'border-l-[var(--color-cream-border)]', bg: 'bg-[var(--color-cream)]/60', accent: 'text-[var(--color-cream-text)]' },
+  kritiek: { border: 'border-l-mod-werkbonnen-border', bg: 'bg-mod-werkbonnen-light/60', accent: 'text-mod-werkbonnen-text' },
+  hoog: { border: 'border-l-mod-offertes-border', bg: 'bg-mod-offertes-light/60', accent: 'text-mod-offertes-text' },
+  medium: { border: 'border-l-mod-klanten-border', bg: 'bg-mod-klanten-light/60', accent: 'text-mod-klanten-text' },
+  laag: { border: 'border-l-mod-taken-border', bg: 'bg-mod-taken-light/60', accent: 'text-mod-taken-text' },
 }
 
 const PRIORITEIT_FLAG_COLORS: Record<TaakPrioriteit, string> = {
-  kritiek: 'text-[var(--color-coral-text)]', hoog: 'text-[var(--color-blush-text)]', medium: 'text-[var(--color-cream-text)]', laag: 'text-muted-foreground/30',
+  kritiek: 'text-mod-werkbonnen-text', hoog: 'text-mod-offertes-text', medium: 'text-mod-taken-text', laag: 'text-muted-foreground/30',
 }
 
 const PRIORITEIT_RING_COLORS: Record<TaakPrioriteit, string> = {
-  kritiek: 'border-[var(--color-coral-border)] hover:border-[var(--color-coral-text)]',
-  hoog: 'border-[var(--color-blush-border)] hover:border-[var(--color-blush-text)]',
-  medium: 'border-[var(--color-mist-border)] hover:border-[var(--color-mist-text)]',
-  laag: 'border-[var(--color-cream-border)] hover:border-[var(--color-cream-text)]',
+  kritiek: 'border-mod-werkbonnen-border hover:border-mod-werkbonnen-text',
+  hoog: 'border-mod-offertes-border hover:border-mod-offertes-text',
+  medium: 'border-mod-klanten-border hover:border-mod-klanten-text',
+  laag: 'border-mod-taken-border hover:border-mod-taken-text',
 }
 
 const DAY_LABELS = ['ma', 'di', 'wo', 'do', 'vr', 'za', 'zo']
@@ -99,12 +102,13 @@ interface TaakFormData {
   project_id: string
   klant_id: string
   locatie: string
+  bijlagen: string[]
 }
 
 const EMPTY_FORM: TaakFormData = {
   titel: '', beschrijving: '', status: 'todo', prioriteit: 'medium',
   toegewezen_aan: '', deadline: '', geschatte_tijd: 0, bestede_tijd: 0, project_id: '',
-  klant_id: '', locatie: '',
+  klant_id: '', locatie: '', bijlagen: [],
 }
 
 // === HELPERS ===
@@ -147,6 +151,7 @@ export function TasksLayout() {
   const [taken, setTaken] = useState<Taak[]>([])
   const [projecten, setProjecten] = useState<Project[]>([])
   const [klanten, setKlanten] = useState<Klant[]>([])
+  const [offertes, setOffertes] = useState<Offerte[]>([])
   const [montageAfspraken, setMontageAfspraken] = useState<MontageAfspraak[]>([])
   const [showMontage, setShowMontage] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
@@ -195,12 +200,13 @@ export function TasksLayout() {
     async function loadData() {
       setIsLoading(true)
       try {
-        const [takenData, projectenData, klantenData, montageData] = await Promise.all([getTaken(), getProjecten(), getKlanten(), getMontageAfspraken()])
+        const [takenData, projectenData, klantenData, montageData, offertesData] = await Promise.all([getTaken(), getProjecten(), getKlanten(), getMontageAfspraken(), getOffertes()])
         if (!cancelled) {
           setTaken(takenData)
           setProjecten(projectenData)
           setKlanten(klantenData)
           setMontageAfspraken(montageData)
+          setOffertes(offertesData)
         }
       } catch (error) {
         logger.error('Fout bij laden:', error)
@@ -247,6 +253,12 @@ export function TasksLayout() {
     klanten.forEach((k) => { map[k.id] = k.bedrijfsnaam })
     return map
   }, [klanten])
+
+  const offerteMap = useMemo(() => {
+    const map: Record<string, Offerte> = {}
+    offertes.forEach((o) => { map[o.id] = o })
+    return map
+  }, [offertes])
 
   const today = useMemo(() => {
     const d = new Date()
@@ -433,6 +445,7 @@ export function TasksLayout() {
       project_id: taak.project_id || '',
       klant_id: taak.klant_id || '',
       locatie: taak.locatie || '',
+      bijlagen: taak.bijlagen || [],
     })
     setEditDialogOpen(true)
   }
@@ -457,6 +470,7 @@ export function TasksLayout() {
         project_id: formData.project_id || undefined,
         klant_id: formData.klant_id || undefined,
         locatie: formData.locatie.trim() || undefined,
+        bijlagen: formData.bijlagen,
       })
       setTaken((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
       // Audit log
@@ -540,7 +554,7 @@ export function TasksLayout() {
   return (
     <>
       <div className="flex flex-col h-[calc(100vh-120px)] mod-strip mod-strip-taken">
-        <ModuleHeader module="taken" icon={CheckSquare} title="Taken" subtitle="Productie & oplevering" />
+        <ModuleHeader module="taken" icon={Clock} title="Taken" subtitle="Productie & oplevering" />
 
         {/* === WEEK NAV + FILTERS === */}
         <div className="flex items-center justify-between flex-wrap gap-2 px-3 sm:px-5 py-2.5 border-b border-border/60 bg-card/50 flex-shrink-0">
@@ -572,8 +586,8 @@ export function TasksLayout() {
                   className={cn(
                     'text-xs px-2.5 py-1 rounded-lg transition-all duration-200 whitespace-nowrap',
                     taskFilter === key
-                      ? 'bg-background text-foreground shadow-sm font-medium'
-                      : 'text-muted-foreground hover:text-foreground'
+                      ? 'bg-[#191919] text-white shadow-sm font-medium'
+                      : 'text-[#5A5A55] hover:text-foreground'
                   )}
                 >
                   {label}
@@ -583,10 +597,10 @@ export function TasksLayout() {
             <button
               onClick={() => setShowCompleted(!showCompleted)}
               className={cn(
-                'text-xs px-3 py-1.5 rounded-lg border transition-all duration-200 whitespace-nowrap flex-shrink-0',
+                'text-xs px-3 py-1.5 rounded-full border transition-all duration-200 whitespace-nowrap flex-shrink-0',
                 showCompleted
-                  ? 'bg-primary/10 border-primary/30 text-accent dark:text-wm-light shadow-sm'
-                  : 'border-border/60 text-muted-foreground hover:text-foreground hover:border-border'
+                  ? 'bg-[#191919] border-transparent text-white shadow-sm'
+                  : 'border-border/60 text-[#5A5A55] hover:text-foreground hover:border-border'
               )}
             >
               {showCompleted ? 'Afgerond zichtbaar' : 'Toon afgerond'}
@@ -594,10 +608,10 @@ export function TasksLayout() {
             <button
               onClick={() => setShowMontage(!showMontage)}
               className={cn(
-                'text-xs px-3 py-1.5 rounded-lg border transition-all duration-200 whitespace-nowrap flex-shrink-0 flex items-center gap-1.5',
+                'text-xs px-3 py-1.5 rounded-full border transition-all duration-200 whitespace-nowrap flex-shrink-0 flex items-center gap-1.5',
                 showMontage
-                  ? 'bg-orange-500/10 border-orange-500/30 text-orange-600 dark:text-orange-400 shadow-sm'
-                  : 'border-border/60 text-muted-foreground hover:text-foreground hover:border-border'
+                  ? 'bg-[#191919] border-transparent text-white shadow-sm'
+                  : 'border-border/60 text-[#5A5A55] hover:text-foreground hover:border-border'
               )}
             >
               <Wrench className="w-3 h-3" />
@@ -637,7 +651,7 @@ export function TasksLayout() {
                 </div>
                 <div className="flex items-center justify-center gap-1.5 mt-0.5">
                   <span className={cn(
-                    'inline-flex items-center justify-center text-sm font-bold transition-all',
+                    'inline-flex items-center justify-center text-sm font-bold font-mono transition-all',
                     isToday
                       ? 'w-8 h-8 rounded-full bg-primary text-white shadow-sm shadow-primary/30'
                       : isPast ? 'text-muted-foreground/30' : 'text-foreground'
@@ -646,7 +660,7 @@ export function TasksLayout() {
                   </span>
                   {dayTasks.length > 0 && (
                     <span className={cn(
-                      'text-2xs font-medium font-mono tabular-nums px-1.5 py-0.5 rounded-full',
+                      'text-[10px] font-semibold font-mono tabular-nums px-[10px] py-[3px] rounded-full',
                       isToday
                         ? 'bg-primary/15 text-primary'
                         : 'bg-muted/60 text-muted-foreground/50'
@@ -690,6 +704,7 @@ export function TasksLayout() {
                   tasks={dayTasks}
                   projectMap={projectMap}
                   klantMap={klantMap}
+                  offerteMap={offerteMap}
                   nowLineTop={isCurrentWeek && isToday ? nowLineTop : null}
                   draggingTaakId={draggingTaakId}
                   dropTarget={dropTarget}
@@ -781,7 +796,7 @@ export function TasksLayout() {
           onClick={() => setFabOpen(!fabOpen)}
           className={cn(
             'flex items-center justify-center w-14 h-14 rounded-full shadow-sm transition-all duration-200',
-            'bg-foreground text-background hover:opacity-90 hover:shadow-md hover:scale-105',
+            'bg-[#5A5A55] text-white hover:opacity-90 hover:shadow-md hover:scale-105',
             fabOpen && 'rotate-45'
           )}
         >
@@ -835,7 +850,7 @@ export function TasksLayout() {
 // === DAY COLUMN ===
 
 function DayColumn({
-  day, dayIndex, isToday, isPast, tasks, projectMap, klantMap, nowLineTop,
+  day, dayIndex, isToday, isPast, tasks, projectMap, klantMap, offerteMap, nowLineTop,
   draggingTaakId, dropTarget,
   onDragStart, onDragEnd, onDropTargetChange, onDrop,
   onToggle, onEdit, onDelete, onQuickAdd, onQuickAddAtTime, onResize,
@@ -848,6 +863,7 @@ function DayColumn({
   tasks: Taak[]
   projectMap: Record<string, string>
   klantMap: Record<string, string>
+  offerteMap: Record<string, Offerte>
   nowLineTop: number | null
   draggingTaakId: string | null
   dropTarget: { dayIndex: number; hour: number } | null
@@ -1015,9 +1031,9 @@ function DayColumn({
             {/* Drop indicator */}
             {isDropHere && (
               <div className="h-full flex items-start pt-1 px-1 pointer-events-none">
-                <div className="w-full rounded-md border-2 border-dashed border-primary/40 h-10 flex items-center justify-center">
+                <div className="w-full rounded-lg border-2 border-dashed border-primary/40 h-10 flex items-center justify-center">
                   <Clock className="w-3 h-3 text-primary/60 mr-1" />
-                  <span className="text-2xs text-primary/60 font-medium">{String(hour).padStart(2, '0')}:00</span>
+                  <span className="text-[10px] text-primary/60 font-semibold font-mono">{String(hour).padStart(2, '0')}:00</span>
                 </div>
               </div>
             )}
@@ -1048,7 +1064,7 @@ function DayColumn({
             {!isDropHere && !isAddingHere && (
               <button
                 onClick={() => { setAddingAtHour(hour); setHourAddTitle(''); setTimeout(() => hourInputRef.current?.focus(), 50) }}
-                className="absolute top-1 right-1 z-20 opacity-0 group-hover/hour:opacity-100 p-1 rounded-md text-muted-foreground/25 hover:text-primary hover:bg-primary/10 transition-all duration-200"
+                className="absolute top-1 right-1 z-20 opacity-0 group-hover/hour:opacity-100 p-1 rounded-lg text-muted-foreground/25 hover:text-primary hover:bg-primary/10 transition-all duration-200"
               >
                 <Plus className="w-3.5 h-3.5" />
               </button>
@@ -1102,6 +1118,7 @@ function DayColumn({
               taak={taak}
               projectNaam={taak.project_id ? projectMap[taak.project_id] : undefined}
               klantNaam={taak.klant_id ? klantMap[taak.klant_id] : undefined}
+              offerteInfo={taak.offerte_id && offerteMap[taak.offerte_id] ? { nummer: offerteMap[taak.offerte_id].nummer, totaal: offerteMap[taak.offerte_id].totaal, status: offerteMap[taak.offerte_id].status } : undefined}
               isPast={isPast}
               scheduled
               heightPx={heightPx !== null ? heightPx - 6 : undefined}
@@ -1176,6 +1193,7 @@ function DayColumn({
               taak={taak}
               projectNaam={taak.project_id ? projectMap[taak.project_id] : undefined}
               klantNaam={taak.klant_id ? klantMap[taak.klant_id] : undefined}
+              offerteInfo={taak.offerte_id && offerteMap[taak.offerte_id] ? { nummer: offerteMap[taak.offerte_id].nummer, totaal: offerteMap[taak.offerte_id].totaal, status: offerteMap[taak.offerte_id].status } : undefined}
               isPast={isPast}
               onDragStart={() => onDragStart(taak.id)}
               onDragEnd={onDragEnd}
@@ -1223,11 +1241,12 @@ function DayColumn({
 // === TASK CARD ===
 
 function TaskCard({
-  taak, projectNaam, klantNaam, isPast, scheduled, heightPx, isResizing, onDragStart, onDragEnd, onToggle, onEdit, onDelete, onResizeStart,
+  taak, projectNaam, klantNaam, offerteInfo, isPast, scheduled, heightPx, isResizing, onDragStart, onDragEnd, onToggle, onEdit, onDelete, onResizeStart,
 }: {
   taak: Taak
   projectNaam?: string
   klantNaam?: string
+  offerteInfo?: { nummer: string; totaal: number; status: string }
   isPast: boolean
   scheduled?: boolean
   heightPx?: number
@@ -1277,12 +1296,12 @@ function TaskCard({
       onDragStart={handleDragStart}
       onDragEnd={onDragEnd}
       className={cn(
-        'group relative rounded-lg border-l-[3px] px-2.5 py-2 transition-all duration-200',
+        'group relative rounded-lg border-l-[3px] border-l-[#5A5A55] px-2.5 py-2 transition-all duration-200',
         !isResizing && 'cursor-grab active:cursor-grabbing',
         'hover:shadow-lg hover:shadow-black/5 hover:z-10 hover:-translate-y-[1px]',
         isDone
-          ? 'opacity-40 border-l-border bg-muted/40 dark:bg-muted/20 hover:opacity-60'
-          : `${colors.border} ${colors.bg}`,
+          ? 'opacity-40 bg-muted/40 dark:bg-muted/20 hover:opacity-60'
+          : colors.bg,
         isPast && !isDone && 'opacity-60',
         justCompleted && 'scale-95 opacity-50',
         scheduled && 'shadow-sm',
@@ -1300,6 +1319,9 @@ function TaskCard({
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-start gap-1">
+            {(taak.prioriteit === 'kritiek' || taak.prioriteit === 'hoog') && !isDone && (
+              <span className={cn('inline-block w-2 h-2 rounded-full flex-shrink-0 mt-1', taak.prioriteit === 'kritiek' ? 'bg-[#C44830]' : 'bg-[#E8854A]')} title={taak.prioriteit === 'kritiek' ? 'Urgent' : 'Hoog'} />
+            )}
             <p className={cn(
               'text-xs font-medium leading-tight text-foreground flex-1',
               isDone && 'line-through text-muted-foreground'
@@ -1323,14 +1345,32 @@ function TaskCard({
                 <MapPin className="w-2 h-2" />{taak.locatie}
               </span>
             )}
+            {offerteInfo && (
+              <span
+                className="text-2xs flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#FDE8E2] text-[#F15025] cursor-pointer hover:bg-[#FCDDD5] transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  window.location.href = `/offertes/${taak.offerte_id}`
+                }}
+                title={`Offerte ${offerteInfo.nummer}`}
+              >
+                <FilePlus className="w-2.5 h-2.5" />
+                <span className="font-mono">{offerteInfo.nummer || '–'}</span>
+              </span>
+            )}
             {scheduled && hour !== null && (
-              <span className="text-2xs text-muted-foreground/40 flex items-center gap-0.5">
+              <span className="text-2xs text-muted-foreground/40 font-mono flex items-center gap-0.5">
                 <Clock className="w-2 h-2" />{String(hour).padStart(2, '0')}:00
               </span>
             )}
             {durationLabel && (
-              <span className="text-2xs text-muted-foreground/40 font-medium">
+              <span className="text-2xs text-muted-foreground/40 font-medium font-mono">
                 {durationLabel}
+              </span>
+            )}
+            {taak.bijlagen && taak.bijlagen.length > 0 && (
+              <span className="text-2xs text-muted-foreground/40 flex items-center gap-0.5">
+                <Paperclip className="w-2 h-2" />{taak.bijlagen.length}
               </span>
             )}
           </div>
@@ -1341,7 +1381,7 @@ function TaskCard({
           {/* Delete button - visible on hover */}
           <button
             onClick={handleDeleteClick}
-            className="flex-shrink-0 p-0.5 rounded-md opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-red-100 dark:hover:bg-red-900/30"
+            className="flex-shrink-0 p-0.5 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-red-100 dark:hover:bg-red-900/30"
             title="Verwijderen"
           >
             <Trash2 className="w-3.5 h-3.5 text-muted-foreground/40 hover:text-red-500 transition-colors" />
@@ -1351,7 +1391,7 @@ function TaskCard({
           <button
             onClick={handleToggle}
             className={cn(
-              'flex-shrink-0 p-0.5 rounded-md transition-all duration-200',
+              'flex-shrink-0 p-0.5 rounded-lg transition-all duration-200',
               !isDone && 'hover:bg-primary/10'
             )}
             title={isDone ? 'Markeer als ongedaan' : 'Markeer als klaar'}
@@ -1447,7 +1487,7 @@ function EditTaskDialog({
               <button
                 type="button"
                 onClick={() => { updateField('project_id', ''); updateField('klant_id', '') }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
                   !formData.project_id && !formData.klant_id
                     ? 'bg-primary/10 text-primary border-primary/30'
                     : 'bg-muted text-muted-foreground border-transparent'
@@ -1458,7 +1498,7 @@ function EditTaskDialog({
               <button
                 type="button"
                 onClick={() => updateField('klant_id', '')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
                   formData.project_id
                     ? 'bg-primary/10 text-primary border-primary/30'
                     : 'bg-muted text-muted-foreground border-transparent'
@@ -1469,7 +1509,7 @@ function EditTaskDialog({
               <button
                 type="button"
                 onClick={() => { updateField('project_id', ''); updateField('klant_id', formData.klant_id || '') }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
                   !formData.project_id && formData.klant_id
                     ? 'bg-primary/10 text-primary border-primary/30'
                     : 'bg-muted text-muted-foreground border-transparent'
@@ -1510,6 +1550,70 @@ function EditTaskDialog({
           <div className="grid gap-2">
             <Label htmlFor="edit-toegewezen">Toegewezen aan</Label>
             <Input id="edit-toegewezen" value={formData.toegewezen_aan} onChange={(e) => updateField('toegewezen_aan', e.target.value)} placeholder="Optioneel..." />
+          </div>
+          {/* Bijlagen */}
+          <div className="grid gap-2">
+            <Label className="flex items-center gap-1.5"><Paperclip className="h-3.5 w-3.5" />Bijlagen</Label>
+            <div className="flex flex-col gap-2">
+              {formData.bijlagen.map((url, i) => {
+                const isImage = url.startsWith('data:image/') || /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(url)
+                return (
+                  <div key={i} className="flex items-center gap-3 p-2 rounded-lg border border-border bg-muted/20 group hover:bg-muted/40 transition-colors">
+                    {/* Thumbnail / icon */}
+                    {isImage ? (
+                      <a href={url} target="_blank" rel="noopener noreferrer" className="shrink-0">
+                        <img src={url} alt="" className="h-14 w-14 rounded-md object-cover border border-border hover:ring-2 hover:ring-primary/20 transition-all" />
+                      </a>
+                    ) : (
+                      <a href={url} target="_blank" rel="noopener noreferrer" className="shrink-0 h-14 w-14 rounded-md border border-border bg-muted/50 flex items-center justify-center hover:ring-2 hover:ring-primary/20 transition-all">
+                        <Paperclip className="h-5 w-5 text-muted-foreground" />
+                      </a>
+                    )}
+                    {/* Bestandsinfo */}
+                    <div className="flex-1 min-w-0">
+                      <a href={url} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-foreground hover:underline truncate block">
+                        {url.startsWith('data:') ? `Bestand ${i + 1}` : decodeURIComponent(url.split('/').pop()?.split('?')[0] || `Bestand ${i + 1}`).replace(/^\d+_/, '')}
+                      </a>
+                      <span className="text-[10px] text-muted-foreground">
+                        {isImage ? 'Afbeelding' : 'Document'} · Klik om te openen
+                      </span>
+                    </div>
+                    {/* Verwijder knop */}
+                    <button
+                      type="button"
+                      onClick={() => updateField('bijlagen', formData.bijlagen.filter((_, j) => j !== i) as string[])}
+                      className="shrink-0 h-7 w-7 rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                )
+              })}
+              {/* Upload knop */}
+              <label className="flex items-center justify-center gap-2 h-10 rounded-lg border border-dashed border-border bg-muted/20 cursor-pointer hover:border-primary/30 hover:bg-primary/5 transition-colors text-sm text-muted-foreground hover:text-foreground">
+                <Plus className="h-4 w-4" />
+                <span>Bestand toevoegen</span>
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*,.pdf,.doc,.docx"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const files = Array.from(e.target.files || [])
+                    if (!editingTaakId || files.length === 0) return
+                    for (const file of files) {
+                      try {
+                        const url = await uploadTaakBijlage(editingTaakId, file)
+                        setFormData(prev => ({ ...prev, bijlagen: [...prev.bijlagen, url] }))
+                      } catch {
+                        toast.error(`Kon "${file.name}" niet uploaden`)
+                      }
+                    }
+                    e.target.value = ''
+                  }}
+                />
+              </label>
+            </div>
           </div>
         </div>
         {editingTaakId && (

@@ -262,7 +262,7 @@ export function ClientApprovalPage() {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
         <Toaster position="top-center" richColors />
         <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-[#FDE8E2] rounded-full flex items-center justify-center mx-auto mb-4">
             <FileText className="h-8 w-8 text-red-500" />
           </div>
           <h1 className="text-xl font-bold text-foreground mb-2">Link niet geldig</h1>
@@ -295,8 +295,8 @@ export function ClientApprovalPage() {
       {showSuccess && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm animate-in fade-in">
           <div className="bg-white rounded-3xl shadow-2xl p-10 text-center max-w-sm mx-4 animate-in zoom-in-95">
-            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Sparkles className="h-10 w-10 text-green-600" />
+            <div className="w-20 h-20 bg-[#E4F0EA] rounded-full flex items-center justify-center mx-auto mb-4">
+              <Sparkles className="h-10 w-10 text-[#2D6B48]" />
             </div>
             <h2 className="text-2xl font-bold text-foreground mb-2">Goedgekeurd!</h2>
             <p className="text-muted-foreground">
@@ -402,10 +402,10 @@ export function ClientApprovalPage() {
               let activeColor = 'bg-blue-600'
               if (index === 2 && goedkeuring.status === 'goedgekeurd') {
                 StapIcon = CheckCircle2
-                activeColor = 'bg-green-600'
+                activeColor = 'bg-[#2D6B48]'
               } else if (index === 2 && goedkeuring.status === 'revisie') {
                 StapIcon = RotateCcw
-                activeColor = 'bg-amber-500'
+                activeColor = 'bg-[#C03A18]'
               }
 
               return (
@@ -456,22 +456,22 @@ export function ClientApprovalPage() {
         {isDecided && (
           <div className={`rounded-xl p-5 ${
             goedkeuring.status === 'goedgekeurd'
-              ? 'bg-green-50 border border-green-200'
-              : 'bg-amber-50 border border-amber-200'
+              ? 'bg-[#E4F0EA] border border-[#C0DBCC]'
+              : 'bg-[#FDE8E2] border border-[#F5C4B4]'
           }`}>
             <div className="flex items-center gap-3">
               {goedkeuring.status === 'goedgekeurd' ? (
-                <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-                  <CheckCircle2 className="h-5 w-5 text-green-600" />
+                <div className="h-10 w-10 rounded-full bg-[#E4F0EA] flex items-center justify-center flex-shrink-0">
+                  <CheckCircle2 className="h-5 w-5 text-[#2D6B48]" />
                 </div>
               ) : (
-                <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
-                  <RotateCcw className="h-5 w-5 text-amber-600" />
+                <div className="h-10 w-10 rounded-full bg-[#FDE8E2] flex items-center justify-center flex-shrink-0">
+                  <RotateCcw className="h-5 w-5 text-[#C03A18]" />
                 </div>
               )}
               <div>
                 <h2 className={`font-semibold ${
-                  goedkeuring.status === 'goedgekeurd' ? 'text-green-800' : 'text-amber-800'
+                  goedkeuring.status === 'goedgekeurd' ? 'text-[#2D6B48]' : 'text-[#C03A18]'
                 }`}>
                   {goedkeuring.status === 'goedgekeurd'
                     ? `Goedgekeurd door ${goedkeuring.goedgekeurd_door}`
@@ -479,7 +479,7 @@ export function ClientApprovalPage() {
                   }
                 </h2>
                 <p className={`text-sm mt-0.5 ${
-                  goedkeuring.status === 'goedgekeurd' ? 'text-green-600' : 'text-amber-600'
+                  goedkeuring.status === 'goedgekeurd' ? 'text-[#2D6B48]' : 'text-[#C03A18]'
                 }`}>
                   {goedkeuring.status === 'goedgekeurd'
                     ? `Op ${goedkeuring.goedgekeurd_op ? formatDate(goedkeuring.goedgekeurd_op) : 'onbekend'}`

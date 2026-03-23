@@ -1,5 +1,5 @@
 import { Check } from 'lucide-react'
-import { cn, formatDate, getInitials } from '@/lib/utils'
+import { cn, getInitials } from '@/lib/utils'
 import type { Taak, Medewerker } from '@/types'
 
 interface TaskChecklistViewProps {
@@ -10,10 +10,30 @@ interface TaskChecklistViewProps {
 }
 
 const statusBadge: Record<string, { label: string; cls: string }> = {
-  todo: { label: 'Todo', cls: 'bg-cream/60 text-cream-deep' },
-  bezig: { label: 'Bezig', cls: 'bg-mist/60 text-mist-deep' },
-  review: { label: 'Review', cls: 'bg-amber-100 text-amber-700' },
-  klaar: { label: 'Klaar', cls: 'bg-sage/60 text-sage-deep' },
+  todo:   { label: 'Todo',   cls: 'badge-grijs' },
+  bezig:  { label: 'Bezig',  cls: 'badge-blauw' },
+  review: { label: 'Review', cls: 'badge-paars' },
+  klaar:  { label: 'Klaar',  cls: 'badge-petrol' },
+}
+
+// Deterministic color from name
+function avatarGradient(name: string): string {
+  const colors = [
+    'from-[#7EB5A6] to-[#5E9586]',
+    'from-[#9B8EC4] to-[#7B6EA4]',
+    'from-[#C4A882] to-[#A48862]',
+    'from-[#8BAFD4] to-[#6B8FB4]',
+    'from-[#E8866A] to-[#C8664A]',
+    'from-[#D4836A] to-[#B4634A]',
+  ]
+  let hash = 0
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)
+  return colors[Math.abs(hash) % colors.length]
+}
+
+function formatDeadline(dateStr: string): string {
+  const d = new Date(dateStr)
+  return d.toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit' })
 }
 
 export function TaskChecklistView({ taken, medewerkers, onStatusChange, onTaskClick }: TaskChecklistViewProps) {
@@ -35,8 +55,8 @@ export function TaskChecklistView({ taken, medewerkers, onStatusChange, onTaskCl
           <div
             key={taak.id}
             className={cn(
-              'flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[hsl(35,15%,97%)] transition-all duration-200 group cursor-pointer',
-              isDone && 'opacity-35'
+              'flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-[hsl(35,15%,97%)] transition-all group cursor-pointer',
+              isDone && 'opacity-30'
             )}
             onClick={() => onTaskClick?.(taak)}
           >
@@ -47,63 +67,58 @@ export function TaskChecklistView({ taken, medewerkers, onStatusChange, onTaskCl
                 onStatusChange(taak.id, isDone ? 'todo' : 'klaar')
               }}
               className={cn(
-                'flex-shrink-0 rounded border-2 transition-all duration-200 flex items-center justify-center',
+                'flex-shrink-0 rounded-md border-[1.5px] transition-all flex items-center justify-center',
                 isDone
-                  ? 'bg-emerald-500 border-emerald-500 text-white scale-100'
-                  : 'border-[hsl(35,15%,80%)] hover:border-emerald-400 hover:bg-emerald-50'
+                  ? 'bg-mod-projecten border-mod-projecten text-white'
+                  : 'border-sand hover:border-petrol hover:bg-mod-projecten-light'
               )}
               style={{ width: 18, height: 18 }}
             >
-              {isDone && <Check className="h-3 w-3" />}
+              {isDone && <Check className="h-3 w-3" strokeWidth={3} />}
             </button>
 
             {/* Task name */}
             <span className={cn(
-              'flex-1 text-sm font-medium truncate min-w-0 transition-colors duration-200',
+              'flex-1 text-[12px] font-medium truncate min-w-0',
               isDone && 'line-through text-muted-foreground'
             )}>
               {taak.titel}
             </span>
 
             {/* Status badge */}
-            <span className={cn(
-              'rounded-full px-2 py-0.5 text-[11px] font-semibold flex-shrink-0 transition-opacity',
-              badge.cls
-            )}>
-              {badge.label}
-            </span>
+            {!isDone && (
+              <span className={cn(
+                'rounded-md px-1.5 py-0.5 text-[10px] font-medium flex-shrink-0',
+                badge.cls
+              )}>
+                {badge.label}
+              </span>
+            )}
 
             {/* Deadline */}
-            <span className={cn(
-              'text-xs font-mono flex-shrink-0 w-16 text-right',
-              isOverdue ? 'text-red-500 font-medium' : 'text-muted-foreground/50'
-            )}>
-              {taak.deadline ? formatDate(taak.deadline) : '—'}
-            </span>
+            {taak.deadline && (
+              <span className={cn(
+                'text-[10px] font-mono flex-shrink-0',
+                isOverdue ? 'text-destructive font-semibold' : 'text-muted-foreground/40'
+              )}>
+                {formatDeadline(taak.deadline)}
+              </span>
+            )}
 
             {/* Assigned avatar */}
-            <div className="flex-shrink-0 w-6">
-              {taak.toegewezen_aan ? (
-                <div className="h-6 w-6 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-sm" title={taak.toegewezen_aan}>
-                  <span className="text-white text-[8px] font-bold">{getInitials(taak.toegewezen_aan)}</span>
-                </div>
-              ) : (
-                <span className="text-xs text-muted-foreground/25">—</span>
-              )}
-            </div>
-
-            {/* Hours */}
-            <span className="text-xs font-mono text-muted-foreground/50 flex-shrink-0 w-14 text-right">
-              {(taak.bestede_tijd || 0) > 0 || (taak.geschatte_tijd || 0) > 0
-                ? `${taak.bestede_tijd || 0}/${taak.geschatte_tijd || 0}u`
-                : '—'
-              }
-            </span>
+            {taak.toegewezen_aan && (
+              <div
+                className={`h-5 w-5 rounded-full bg-gradient-to-br ${avatarGradient(taak.toegewezen_aan)} flex items-center justify-center flex-shrink-0`}
+                title={taak.toegewezen_aan}
+              >
+                <span className="text-white text-[7px] font-bold">{getInitials(taak.toegewezen_aan)}</span>
+              </div>
+            )}
           </div>
         )
       })}
       {taken.length === 0 && (
-        <div className="text-center py-10 text-muted-foreground/35 text-sm">
+        <div className="text-center py-8 text-muted-foreground/30 text-[11px]">
           Nog geen taken
         </div>
       )}

@@ -84,6 +84,37 @@ function formatDate(dateString: string): string {
   })
 }
 
+// ============ DOCUMENT STRIP ============
+
+/** Draw a spectrum gradient strip at the top of the page (offerte) */
+function addSpectrumStrip(doc: jsPDF, height: number = 1.5): void {
+  const pageWidth = doc.internal.pageSize.getWidth()
+  // Approximate the spectrum gradient with color segments
+  const stops: { pct: number; color: [number, number, number] }[] = [
+    { pct: 0, color: [241, 80, 37] },     // #F15025
+    { pct: 18, color: [212, 69, 58] },     // #D4453A
+    { pct: 38, color: [154, 64, 112] },    // #9A4070
+    { pct: 50, color: [106, 90, 138] },    // #6A5A8A
+    { pct: 65, color: [58, 107, 140] },    // #3A6B8C
+    { pct: 80, color: [45, 107, 72] },     // #2D6B48
+    { pct: 100, color: [26, 83, 92] },     // #1A535C
+  ]
+  for (let i = 0; i < stops.length - 1; i++) {
+    const x1 = (stops[i].pct / 100) * pageWidth
+    const x2 = (stops[i + 1].pct / 100) * pageWidth
+    const [r, g, b] = stops[i].color
+    doc.setFillColor(r, g, b)
+    doc.rect(x1, 0, x2 - x1 + 0.5, height, 'F')
+  }
+}
+
+/** Draw a solid color strip at the top of the page */
+function addColorStrip(doc: jsPDF, color: [number, number, number], height: number = 1.5): void {
+  const pageWidth = doc.internal.pageSize.getWidth()
+  doc.setFillColor(...color)
+  doc.rect(0, 0, pageWidth, height, 'F')
+}
+
 // ============ BRIEFPAPIER BACKGROUND ============
 
 function detectImageFormat(url: string): string {
@@ -290,33 +321,32 @@ function addFooter(doc: jsPDF, bedrijfsProfiel: Partial<Profile>, docStyle?: Doc
   if (docStyle && !docStyle.toon_footer) return
 
   const pageCount = doc.getNumberOfPages()
-  const margins = getMargins(docStyle)
   const bodyFont = getBodyFont(docStyle)
 
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i)
 
-    // Get per-page dimensions (portrait vs landscape pages differ)
     const pw = doc.internal.pageSize.getWidth()
     const ph = doc.internal.pageSize.getHeight()
 
     // Add briefpapier background on subsequent pages
     if (i > 1) addBriefpapierBackground(doc, docStyle, i)
 
-    // Detect landscape pages (bijlage pages): only show page number, no line or company text
     const isLandscape = pw > ph
 
-    doc.setFontSize(8)
-    doc.setFont(bodyFont, 'normal')
-    doc.setTextColor(150, 150, 150)
-
     if (!isLandscape) {
-      // Footer line
-      doc.setDrawColor(200, 200, 200)
-      doc.setLineWidth(0.3)
-      doc.line(margins.left, ph - margins.bottom, pw - margins.right, ph - margins.bottom)
+      // Footer background bar
+      const footerHeight = 16
+      const footerY = ph - footerHeight
+      doc.setFillColor(250, 250, 248) // #FAFAF8
+      doc.rect(0, footerY, pw, footerHeight, 'F')
 
-      // Footer text (company info)
+      // Subtle top border
+      doc.setDrawColor(230, 228, 224) // #E6E4E0
+      doc.setLineWidth(0.3)
+      doc.line(0, footerY, pw, footerY)
+
+      // Footer text — centered company details
       let footerText = ''
       if (docStyle?.footer_tekst) {
         footerText = docStyle.footer_tekst
@@ -326,47 +356,48 @@ function addFooter(doc: jsPDF, bedrijfsProfiel: Partial<Profile>, docStyle?: Doc
         if (bedrijfsProfiel.kvk_nummer) footerParts.push(`KvK: ${bedrijfsProfiel.kvk_nummer}`)
         if (bedrijfsProfiel.btw_nummer) footerParts.push(`BTW: ${bedrijfsProfiel.btw_nummer}`)
         if (bedrijfsProfiel.iban) footerParts.push(`IBAN: ${bedrijfsProfiel.iban}`)
-        footerText = footerParts.join(' | ')
+        footerText = footerParts.join('  ·  ')
       }
 
-      doc.text(footerText, margins.left, ph - margins.bottom + 6)
-      doc.text(`Pagina ${i} van ${pageCount}`, pw - margins.right, ph - margins.bottom + 6, {
-        align: 'right',
-      })
+      doc.setFontSize(8)
+      doc.setFont(bodyFont, 'normal')
+      doc.setTextColor(160, 160, 152) // #A0A098 muted
+      doc.text(footerText, pw / 2, footerY + 7, { align: 'center' })
+      doc.text(`Pagina ${i} van ${pageCount}`, pw / 2, footerY + 12, { align: 'center' })
     } else {
-      // Landscape: only page number, bottom-right
-      doc.text(`Pagina ${i} van ${pageCount}`, pw - 10, ph - 5, {
-        align: 'right',
-      })
+      // Landscape: only page number, bottom-center
+      doc.setFontSize(7)
+      doc.setFont(bodyFont, 'normal')
+      doc.setTextColor(160, 160, 152)
+      doc.text(`Pagina ${i} van ${pageCount}`, pw / 2, ph - 5, { align: 'center' })
     }
   }
 }
 
 // ============ TABLE STYLE HELPERS ============
 
-function getAutoTableStyles(brand: [number, number, number], docStyle?: DocumentStyle | null) {
-  const tableHeaderColor = getTableHeaderColor(docStyle, brand)
+function getAutoTableStyles(_brand: [number, number, number], docStyle?: DocumentStyle | null) {
   const textColor = getTextColor(docStyle)
   const tableTheme = getTableTheme(docStyle)
   const bodyFont = getBodyFont(docStyle)
-  const baseFontSize = getBaseFontSize(docStyle)
 
   return {
     theme: tableTheme,
     headStyles: {
-      fillColor: tableHeaderColor,
-      textColor: [255, 255, 255] as [number, number, number],
+      fillColor: [244, 242, 238] as [number, number, number],  // #F4F2EE warm bg
+      textColor: [160, 160, 152] as [number, number, number],  // #A0A098 muted
       fontStyle: 'bold' as const,
-      fontSize: baseFontSize - 1,
+      fontSize: 9,
       font: bodyFont,
+      cellPadding: { top: 3, bottom: 3, left: 4, right: 4 },
     },
     bodyStyles: {
-      fontSize: baseFontSize - 1,
+      fontSize: 9,
       textColor: textColor,
       font: bodyFont,
     },
     alternateRowStyles: {
-      fillColor: tableTheme === 'striped' ? [245, 247, 250] as [number, number, number] : undefined,
+      fillColor: tableTheme === 'striped' ? [250, 250, 248] as [number, number, number] : undefined,  // #FAFAF8
     },
   }
 }
@@ -387,6 +418,9 @@ export function generateOffertePDF(
   const baseFontSize = getBaseFontSize(docStyle)
   const textColor = getTextColor(docStyle)
   const doc = new jsPDF()
+
+  // Spectrum strip at top
+  addSpectrumStrip(doc)
 
   // Header
   let y = addHeader(doc, bedrijfsProfiel, 'Offerte', offerte.nummer, docStyle)
@@ -461,10 +495,10 @@ export function generateOffertePDF(
       0: { cellWidth: 12, halign: 'center' },
       1: { cellWidth: 'auto' },
       2: { cellWidth: 20, halign: 'center' },
-      3: { cellWidth: 30, halign: 'right' },
+      3: { cellWidth: 30, halign: 'right', font: 'courier' },
       4: { cellWidth: 18, halign: 'center' },
       5: { cellWidth: 20, halign: 'center' },
-      6: { cellWidth: 30, halign: 'right' },
+      6: { cellWidth: 30, halign: 'right', font: 'courier' },
     },
     margin: { left: margins.left, right: margins.right },
   })
@@ -480,16 +514,21 @@ export function generateOffertePDF(
 
   doc.setFont(bodyFont, 'normal')
   doc.text('Subtotaal:', totalsX, totalsY)
+  doc.setFont('courier', 'normal')
   doc.text(formatCurrency(offerte.subtotaal), pageWidth - margins.right, totalsY, { align: 'right' })
   totalsY += 7
 
+  doc.setFont(bodyFont, 'normal')
   doc.text('BTW:', totalsX, totalsY)
+  doc.setFont('courier', 'normal')
   doc.text(formatCurrency(offerte.btw_bedrag), pageWidth - margins.right, totalsY, { align: 'right' })
   totalsY += 7
 
   // FIX 16: Afrondingskorting
   if (offerte.afrondingskorting_excl_btw && offerte.afrondingskorting_excl_btw !== 0) {
+    doc.setFont(bodyFont, 'normal')
     doc.text('Afrondingskorting:', totalsX - 15, totalsY)
+    doc.setFont('courier', 'normal')
     doc.text(formatCurrency(offerte.afrondingskorting_excl_btw), pageWidth - margins.right, totalsY, { align: 'right' })
     totalsY += 7
   }
@@ -503,6 +542,8 @@ export function generateOffertePDF(
   doc.setFontSize(baseFontSize + 2)
   doc.setTextColor(...brand)
   doc.text('Totaal:', totalsX, totalsY + 5)
+  doc.setFont('courier', 'bold')
+  doc.setFontSize(baseFontSize + 2)
   doc.text(formatCurrency(offerte.totaal), pageWidth - margins.right, totalsY + 5, { align: 'right' })
 
   // FIX 13: Optionele items sectie
@@ -746,6 +787,10 @@ export function generateFactuurPDF(
   docStyle?: DocumentStyle | null
 ): jsPDF {
   const doc = new jsPDF()
+
+  // Green strip at top (groen = betaling)
+  addColorStrip(doc, [45, 107, 72]) // #2D6B48
+
   const brand = getBrandColor(bedrijfsProfiel, docStyle)
   const margins = getMargins(docStyle)
   const headingFont = getHeadingFont(docStyle)
@@ -828,10 +873,10 @@ export function generateFactuurPDF(
       0: { cellWidth: 12, halign: 'center' },
       1: { cellWidth: 'auto' },
       2: { cellWidth: 20, halign: 'center' },
-      3: { cellWidth: 30, halign: 'right' },
+      3: { cellWidth: 30, halign: 'right', font: 'courier' },
       4: { cellWidth: 18, halign: 'center' },
       5: { cellWidth: 20, halign: 'center' },
-      6: { cellWidth: 30, halign: 'right' },
+      6: { cellWidth: 30, halign: 'right', font: 'courier' },
     },
     margin: { left: margins.left, right: margins.right },
   })
@@ -847,10 +892,13 @@ export function generateFactuurPDF(
 
   doc.setFont(bodyFont, 'normal')
   doc.text('Subtotaal:', totalsX, totalsY)
+  doc.setFont('courier', 'normal')
   doc.text(formatCurrency(factuurData.subtotaal), pageWidth - margins.right, totalsY, { align: 'right' })
   totalsY += 7
 
+  doc.setFont(bodyFont, 'normal')
   doc.text('BTW:', totalsX, totalsY)
+  doc.setFont('courier', 'normal')
   doc.text(formatCurrency(factuurData.btw_bedrag), pageWidth - margins.right, totalsY, { align: 'right' })
   totalsY += 7
 
@@ -862,6 +910,8 @@ export function generateFactuurPDF(
   doc.setFontSize(baseFontSize + 2)
   doc.setTextColor(...effectiveBrand)
   doc.text('Totaal:', totalsX, totalsY + 5)
+  doc.setFont('courier', 'bold')
+  doc.setFontSize(baseFontSize + 2)
   doc.text(formatCurrency(factuurData.totaal), pageWidth - margins.right, totalsY + 5, { align: 'right' })
 
   // Payment info
@@ -1346,6 +1396,10 @@ export function generateWerkbonPDF(
   docStyle?: DocumentStyle | null
 ): jsPDF {
   const doc = new jsPDF()
+
+  // Terracotta strip at top (werkbon = uitvoering)
+  addColorStrip(doc, [154, 90, 72]) // #9A5A48
+
   const brand = getBrandColor(bedrijfsProfiel, docStyle)
   const margins = getMargins(docStyle)
   const headingFont = getHeadingFont(docStyle)

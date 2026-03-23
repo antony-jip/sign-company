@@ -3,68 +3,68 @@
 @tailwind utilities;
 
 /* ================================================================
-   FORGEDESK DESIGN SYSTEM v4 — PREMIUM
+   DOEN DESIGN SYSTEM v4 — PREMIUM
    $200/mo SaaS energy — warm, deep, liquid
-   #CC8A3F #E0C9A8 #F4F3F0 #1A1A1A
-   Fonts: Plus Jakarta Sans (headings + body)
+   #1A535C #F15025 #FAFAF8 #191919
+   Fonts: IBM Plex Sans (body) + Bricolage Grotesque (headings)
    ================================================================ */
 
 /* ================================================================
-   FONTS — Plus Jakarta Sans via Google Fonts
+   FONTS — IBM Plex Sans + Bricolage Grotesque via Google Fonts
    ================================================================ */
 
 @layer base {
   :root {
     /* Font customization */
-    --font-family: 'Plus Jakarta Sans';
+    --font-family: 'IBM Plex Sans';
     --font-size: 14px;
 
     /* Achtergrond */
-    --background: 38 25% 96%;          /* warm crème, niet koud grijs */
-    --foreground: 25 15% 12%;          /* warm near-black */
+    --background: 40 14% 98%;          /* #FAFAF8 */
+    --foreground: 0 0% 10%;            /* #191919 */
 
     /* Cards */
-    --card: 40 20% 99%;                /* subtiel warm wit — cards tillen op */
-    --card-foreground: 25 15% 12%;
+    --card: 0 0% 100%;                 /* #FFFFFF */
+    --card-foreground: 0 0% 10%;
 
     /* Sidebar */
-    --sidebar-background: 38 22% 97%;  /* warm off-white */
-    --sidebar-foreground: 25 8% 42%;   /* warm grey */
-    --sidebar-primary: 28 60% 52%;     /* #CC8A3F warm amber */
-    --sidebar-primary-foreground: 25 15% 12%;
-    --sidebar-accent: 38 25% 95%;
-    --sidebar-accent-foreground: 25 15% 12%;
-    --sidebar-border: 33 15% 88%;      /* warm zandkleurig */
-    --sidebar-ring: 28 60% 52%;
+    --sidebar-background: 40 14% 98%;  /* #FAFAF8 */
+    --sidebar-foreground: 0 0% 10%;
+    --sidebar-primary: 186 53% 23%;    /* #1A535C petrol */
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 40 10% 95%;
+    --sidebar-accent-foreground: 0 0% 10%;
+    --sidebar-border: 36 8% 89%;       /* #E6E4E0 */
+    --sidebar-ring: 186 53% 23%;
 
-    /* Primary: warm near-black — voor hoofdknoppen */
-    --primary: 25 20% 18%;             /* zacht warm donkerbruin */
-    --primary-foreground: 40 20% 99%;
+    /* Primary: petrol — voor hoofdknoppen */
+    --primary: 186 53% 23%;            /* #1A535C petrol */
+    --primary-foreground: 0 0% 100%;
 
     /* Secondary */
-    --secondary: 35 18% 93%;           /* warm zand */
-    --secondary-foreground: 25 12% 28%;
+    --secondary: 40 10% 95%;           /* #F4F2EE warm */
+    --secondary-foreground: 40 3% 34%;
 
     /* Muted */
-    --muted: 35 18% 93%;              /* warm crème, niet koud grijs */
-    --muted-foreground: 25 10% 45%;    /* warm middengrijs */
+    --muted: 40 10% 95%;
+    --muted-foreground: 40 3% 59%;
 
     /* Accent */
-    --accent: 28 60% 52%;               /* #CC8A3F warm amber — zichtbaar als tekst */
+    --accent: 12 87% 57%;              /* #F15025 flame */
     --accent-foreground: 0 0% 100%;
 
     /* Borders */
-    --border: 33 15% 87%;              /* warm zandkleurige border */
-    --input: 33 15% 87%;
-    --ring: 28 60% 52%;                /* amber focus ring */
+    --border: 36 8% 89%;               /* #E6E4E0 */
+    --input: 36 8% 89%;
+    --ring: 186 53% 23%;               /* petrol als focus ring */
 
     /* Destructive */
-    --destructive: 5 52% 54%;          /* #C45B4F */
-    --destructive-foreground: 40 20% 99%;
+    --destructive: 12 87% 57%;         /* flame als error */
+    --destructive-foreground: 0 0% 100%;
 
     /* Popover */
-    --popover: 40 20% 99%;            /* warm wit */
-    --popover-foreground: 25 15% 12%;
+    --popover: 0 0% 100%;             /* wit */
+    --popover-foreground: 0 0% 10%;
 
     /* Radius */
     --radius: 0.625rem;                /* 10px voor buttons/inputs */
@@ -90,14 +90,14 @@
     --radius-xl: 14px;
     --radius-2xl: 18px;
 
-    /* FORGEdesk design tokens */
-    --wm-gradient-start: #CC8A3F;
-    --wm-gradient-mid: #E0C9A8;
-    --wm-gradient-end: #F0D9D0;
+    /* Doen design tokens */
+    --wm-gradient-start: #1A535C;
+    --wm-gradient-mid: #B8D8DA;
+    --wm-gradient-end: #E2F0F0;
     --wm-sidebar-bg: 38 22% 97%;
     --wm-sidebar-hover: 35 20% 94%;
-    --wm-sidebar-active: 28 60% 52%;
-    --wm-hover: 28 60% 52%;
+    --wm-sidebar-active: 186 52% 23%;
+    --wm-hover: 186 52% 23%;
     --wm-light: 28 55% 65%;
     --wm-pale: 28 50% 88%;
     --wm-glass: rgba(255, 255, 255, 0.72);
@@ -113,7 +113,7 @@
     --shadow-md: 0 4px 16px -2px rgba(120,90,50,0.10), 0 2px 4px -1px rgba(120,90,50,0.05);
     --shadow-lg: 0 12px 40px -8px rgba(120,90,50,0.14), 0 4px 12px -4px rgba(120,90,50,0.06);
     --shadow-xl: 0 20px 60px -12px rgba(120,90,50,0.20), 0 8px 24px -8px rgba(120,90,50,0.10);
-    --shadow-glow: 0 0 0 1px rgba(204,138,63,0.06), 0 4px 24px -4px rgba(204,138,63,0.12);
+    --shadow-glow: 0 0 0 1px rgba(26,83,92,0.06), 0 4px 24px -4px rgba(26,83,92,0.12);
     --shadow-inner-light: inset 0 1px 0 rgba(255,255,255,0.08);
 
     /* Surface layers — for premium depth */
@@ -125,70 +125,47 @@
     --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
     --ease-smooth: cubic-bezier(0.25, 0.46, 0.45, 0.94);
 
-    /* FORGEdesk Pastel Status Palette */
-    --color-blush: #F9E8E8;
-    --color-blush-text: #C0514A;
-    --color-blush-border: #F0C8C8;
-
-    --color-sage: #E8F2EC;
-    --color-sage-text: #3A7D52;
-    --color-sage-border: #C2DFCC;
-
-    --color-mist: #E8EEF9;
-    --color-mist-text: #3A5A9A;
-    --color-mist-border: #C2D0EE;
-
-    --color-cream: #F5F2E8;
-    --color-cream-text: #8A7A4A;
-    --color-cream-border: #E0D8C0;
-
-    --color-coral: #FDE8E4;
-    --color-coral-text: #C0451A;
-    --color-coral-border: #F5C4B8;
-
-    --color-lavender: #EEE8F9;
-    --color-lavender-text: #6A4A9A;
-    --color-lavender-border: #D8C8EE;
+    /* (migrated to tailwind.config.js mod-* tokens) */
   }
 
   .dark {
-    --background: 30 12% 8%;           /* warm donker, niet koud zwart */
-    --foreground: 35 10% 90%;          /* warm light text */
-    --card: 30 12% 10%;                /* warm dark surface */
-    --card-foreground: 35 10% 90%;
-    --sidebar-background: 30 10% 9%;   /* iets donkerder dan content */
-    --sidebar-foreground: 30 8% 55%;
-    --sidebar-border: 30 10% 18%;
-    --primary: 35 10% 90%;
-    --primary-foreground: 30 12% 8%;
-    --secondary: 30 10% 16%;
-    --secondary-foreground: 35 8% 70%;
-    --muted: 30 10% 16%;
-    --muted-foreground: 30 8% 50%;
-    --accent: 28 55% 58%;               /* amber-light — zichtbaar als tekst */
-    --accent-foreground: 30 12% 8%;
-    --border: 30 10% 18%;
-    --input: 30 10% 18%;
-    --destructive: 5 58% 65%;
-    --destructive-foreground: 35 10% 95%;
-    --popover: 30 12% 10%;
-    --popover-foreground: 35 10% 90%;
-    --ring: 28 60% 55%;
+    --background: 40 5% 10%;           /* #1A1A18 */
+    --foreground: 36 8% 89%;           /* #E8E6E0 */
+    --card: 40 5% 13%;                 /* #232320 */
+    --card-foreground: 36 8% 89%;
+    --sidebar-background: 40 5% 10%;
+    --sidebar-foreground: 36 8% 89%;
+    --sidebar-border: 40 5% 22%;
+    --primary: 186 42% 34%;            /* #2A7A86 petrol lichter */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 40 5% 16%;            /* #2A2A26 */
+    --secondary-foreground: 36 8% 70%;
+    --muted: 40 5% 16%;
+    --muted-foreground: 40 5% 50%;
+    --accent: 12 87% 57%;              /* flame blijft gelijk */
+    --accent-foreground: 0 0% 100%;
+    --border: 40 5% 22%;               /* #3A3A36 */
+    --input: 40 5% 22%;
+    --destructive: 12 87% 57%;
+    --destructive-foreground: 0 0% 100%;
+    --popover: 40 5% 13%;
+    --popover-foreground: 36 8% 89%;
+    --ring: 186 42% 34%;
 
-    /* Semantic UI tokens — dark, warm */
-    --border-subtle: 30 10% 20%;
-    --text-placeholder: 30 8% 42%;
-    --text-tertiary: 30 8% 52%;
-    --bg-hover: 30 10% 14%;
-    --bg-subtle: 30 10% 10%;
+    /* Semantic UI tokens — dark */
+    --border-subtle: 40 5% 24%;
+    --text-placeholder: 40 5% 42%;
+    --text-tertiary: 40 5% 52%;
+    --bg-hover: 40 5% 14%;
+    --bg-subtle: 40 5% 10%;
 
-    --sidebar-primary: 28 55% 58%;
-    --wm-sidebar-bg: 30 10% 9%;
-    --wm-sidebar-hover: 30 10% 14%;
-    --wm-sidebar-active: 28 55% 58%;
-    --wm-hover: 28 55% 55%;
-    --wm-light: 28 55% 65%;
-    --wm-pale: 28 50% 20%;
+    --sidebar-primary: 186 42% 34%;
+    --wm-sidebar-bg: 40 5% 9%;
+    --wm-sidebar-hover: 40 5% 14%;
+    --wm-sidebar-active: 186 42% 34%;
+    --wm-hover: 186 42% 30%;
+    --wm-light: 186 42% 40%;
+    --wm-pale: 186 30% 20%;
     --wm-glass: rgba(20, 20, 18, 0.85);
     --wm-glass-border: rgba(255, 255, 255, 0.06);
     --wm-glow: 0 0 40px rgba(204, 138, 63, 0.08);
@@ -199,36 +176,13 @@
     --shadow-md: 0 4px 16px -2px rgba(0,0,0,0.4), 0 2px 4px -1px rgba(0,0,0,0.2);
     --shadow-lg: 0 12px 40px -8px rgba(0,0,0,0.5), 0 4px 12px -4px rgba(0,0,0,0.3);
     --shadow-xl: 0 20px 60px -12px rgba(0,0,0,0.6), 0 8px 24px -8px rgba(0,0,0,0.35);
-    --shadow-glow: 0 0 0 1px rgba(204,138,63,0.10), 0 4px 24px -4px rgba(204,138,63,0.18);
+    --shadow-glow: 0 0 0 1px rgba(26,83,92,0.10), 0 4px 24px -4px rgba(26,83,92,0.18);
     --shadow-inner-light: inset 0 1px 0 rgba(255,255,255,0.03);
     --surface-raised: 30 12% 11%;
     --surface-overlay: 30 12% 13%;
     --surface-sunken: 30 12% 6%;
 
-    /* Pastel palette — dark mode */
-    --color-blush: rgba(192, 81, 74, 0.15);
-    --color-blush-text: #DA8B85;
-    --color-blush-border: rgba(192, 81, 74, 0.25);
-
-    --color-sage: rgba(58, 125, 82, 0.15);
-    --color-sage-text: #7AAF85;
-    --color-sage-border: rgba(58, 125, 82, 0.25);
-
-    --color-mist: rgba(58, 90, 154, 0.15);
-    --color-mist-text: #7AA4CC;
-    --color-mist-border: rgba(58, 90, 154, 0.25);
-
-    --color-cream: rgba(138, 122, 74, 0.15);
-    --color-cream-text: #B8A86A;
-    --color-cream-border: rgba(138, 122, 74, 0.25);
-
-    --color-coral: rgba(192, 69, 26, 0.15);
-    --color-coral-text: #DA7B50;
-    --color-coral-border: rgba(192, 69, 26, 0.25);
-
-    --color-lavender: rgba(106, 74, 154, 0.15);
-    --color-lavender-text: #A07ACC;
-    --color-lavender-border: rgba(106, 74, 154, 0.25);
+    /* (migrated to tailwind.config.js mod-* tokens) */
   }
 }
 
@@ -242,31 +196,57 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: var(--font-family), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    font-weight: 400;
     font-size: 14px;
-    line-height: 1.5;
+    line-height: 1.6;
+    color: #191919;
+    background-color: #FAFAF8;
   }
 
   /* Heading typography */
-  h1, h2, h3, h4 {
-    font-family: var(--font-family), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  h1, h2, h3, .font-heading {
+    font-family: 'Bricolage Grotesque', system-ui, sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
-  h1 { @apply text-[28px] font-extrabold tracking-[-0.04em] leading-tight; }
-  h2 { @apply text-xl font-bold tracking-[-0.02em]; }
+  .dark h1, .dark h2, .dark h3, .dark .font-heading {
+    text-shadow: none;
+  }
+  h4 {
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  }
+  h1 { @apply text-[28px] font-extrabold leading-tight; }
+  h2 { @apply text-xl font-bold; }
   h3 { @apply text-lg font-semibold; }
   h4 { @apply text-base font-medium; }
+
+  /* Alle getallen in Space Grotesk met tabular-nums */
+  .font-mono, [data-mono],
+  input[type="number"],
+  input[inputmode="numeric"],
+  input[inputmode="decimal"],
+  input[inputmode="tel"] {
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1;
+    letter-spacing: -0.3px;
+  }
 
   /* Tabular numbers in tables — digits align neatly */
   table td, table th {
     font-variant-numeric: tabular-nums;
   }
 
-  /* Selection color — warm amber tint */
+  /* Selection color — petrol tint */
   ::selection {
-    background: hsl(28 60% 52% / 0.18);
+    background: hsl(186 53% 23% / 0.18);
     color: hsl(var(--foreground));
   }
 }
@@ -311,7 +291,14 @@ button:active:not(:disabled), [role="button"]:active:not(:disabled) {
   transition-duration: 0.1s;
 }
 
-/* Table row: accent indicator with spring entrance */
+/* Table row: hover lift + accent indicator with spring entrance */
+table tbody tr {
+  transition: all 150ms ease;
+}
+table tbody tr:hover {
+  background: rgba(244, 242, 238, 0.8);
+  transform: translateX(2px);
+}
 table tbody tr td:first-child {
   position: relative;
 }
@@ -333,11 +320,17 @@ table tbody tr:hover td:first-child::before {
   transform: scaleY(1);
 }
 
-/* Focus visible: amber accent ring with background gap */
+/* Focus visible: petrol glow ring */
 *:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--accent) / 0.5);
-  border-radius: 6px;
+  box-shadow: 0 0 0 2px rgba(26, 83, 92, 0.15), 0 0 0 4px rgba(26, 83, 92, 0.05);
+  transition: box-shadow 150ms ease;
+}
+
+/* Inputs: petrol double ring */
+input:focus, textarea:focus, select:focus {
+  border-color: #1A535C;
+  box-shadow: 0 0 0 3px rgba(26, 83, 92, 0.1), inset 0 1px 2px rgba(0, 0, 0, 0.02);
 }
 
 /* Page load animations */
@@ -354,14 +347,14 @@ table tbody tr:hover td:first-child::before {
 /* ================================================================
    SCROLLBAR — Ultra-thin, elegant
    ================================================================ */
-::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--primary) / 0.15);
-  border-radius: 10px;
+  background: rgba(160, 160, 152, 0.3);
+  border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--primary) / 0.3);
+  background: rgba(160, 160, 152, 0.5);
 }
 
 /* ================================================================
@@ -414,7 +407,7 @@ table tbody tr:hover td:first-child::before {
   /* Badge base — pill with dot */
   .badge-success, .badge-warning, .badge-danger,
   .badge-info, .badge-neutral, .badge-purple {
-    @apply inline-flex items-center gap-[5px] px-[10px] py-[3px] rounded-[20px] text-[12px] font-semibold;
+    @apply inline-flex items-center gap-[5px] px-[10px] py-[3px] rounded-[20px] text-[10px] font-semibold;
     border: none;
     transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
@@ -470,22 +463,22 @@ table tbody tr:hover td:first-child::before {
 
 }
 
-/* Input pastel focus style */
+/* Input focus style — DOEN petrol */
 .input-pastel:focus {
   outline: none;
-  border-color: var(--color-mist-border);
-  box-shadow: 0 0 0 3px var(--color-mist);
+  border-color: #B8D8DA;
+  box-shadow: 0 0 0 3px #E2F0F0;
 }
 
-/* Section header with pastel background */
+/* Section header with module background */
 .section-header-pastel {
   padding: 0.5rem 1rem;
   border-radius: 0.5rem;
   margin-bottom: 0.75rem;
-  background: var(--color-cream);
+  background: #EEEEED;
 }
 .section-header-pastel h3 {
-  color: var(--color-cream-text);
+  color: #4A4A45;
 }
 
 /* ================================================================
@@ -724,63 +717,49 @@ tbody tr:hover {
 }
 
 /* ================================================================
-   SIDEBAR — Deep dark, refined
+   SIDEBAR — Doen. vertical navigation
    ================================================================ */
-.wm-sidebar {
-  background: hsl(var(--wm-sidebar-bg));
-  border-right: 1px solid hsl(var(--border) / 0.7);
+.doen-sidebar {
+  background: rgba(250, 250, 248, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-right: 0.5px solid rgba(230, 228, 224, 0.6);
   position: relative;
 }
 
-.wm-sidebar > * {
+.dark .doen-sidebar {
+  background: rgba(26, 26, 24, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-right-color: hsl(var(--border) / 0.7);
+}
+
+/* Keep old class for backward compat (mobile bottom nav etc.) */
+.wm-sidebar {
+  background: #FAFAF8;
+  border-right: 0.5px solid #E6E4E0;
+  position: relative;
+}
+
+.dark .wm-sidebar {
+  background: hsl(var(--wm-sidebar-bg));
+  border-right-color: hsl(var(--border) / 0.7);
+}
+
+.wm-sidebar > *,
+.doen-sidebar > * {
   position: relative;
   z-index: 1;
 }
 
-.wm-sidebar-item {
-  position: relative;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.wm-sidebar-item::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 3px;
-  height: 0;
-  border-radius: 0 4px 4px 0;
-  background: linear-gradient(180deg, var(--wm-gradient-start), var(--wm-gradient-end));
-  transition: height 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.wm-sidebar-item.active::before {
-  height: 60%;
-}
-
-.wm-sidebar-item.active {
-  background: hsl(var(--primary) / 0.08);
-}
-
-/* Section label in sidebar */
-.wm-sidebar-section {
+/* Section label in sidebar (expanded mode) */
+.doen-sidebar-section {
   font-size: 9px;
-  font-weight: 800;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: #a09788;
-  padding: 20px 16px 8px;
-  position: relative;
-}
-.wm-sidebar-section::before {
-  content: '';
-  position: absolute;
-  left: 16px;
-  right: 16px;
-  top: 10px;
-  height: 1px;
-  background: linear-gradient(90deg, hsl(var(--border) / 0.5), transparent);
+  letter-spacing: 1.5px;
+  color: #A0A098;
+  padding: 20px 12px 6px;
 }
 
 /* ================================================================
@@ -1055,9 +1034,9 @@ tbody tr:hover {
    ================================================================ */
 .wm-welcome-banner {
   background: linear-gradient(135deg,
-    hsl(28 60% 52% / 0.05),
+    hsl(186 52% 23% / 0.05),
     hsl(155 27% 50% / 0.04),
-    hsl(28 60% 52% / 0.03)
+    hsl(186 52% 23% / 0.03)
   );
   border: 1px solid hsl(var(--accent) / 0.10);
   box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.15);
@@ -1067,9 +1046,9 @@ tbody tr:hover {
 
 .dark .wm-welcome-banner {
   background: linear-gradient(135deg,
-    hsl(28 60% 52% / 0.06),
+    hsl(186 52% 23% / 0.06),
     hsl(155 27% 50% / 0.03),
-    hsl(28 60% 52% / 0.02)
+    hsl(186 52% 23% / 0.02)
   );
   border-color: hsl(var(--accent) / 0.08);
   box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.02);
@@ -1969,13 +1948,13 @@ html {
 
 /* Serif italic accent */
 .lf-serif-accent {
-  font-family: 'DM Serif Display', Georgia, serif;
+  font-family: 'Bricolage Grotesque', Georgia, serif;
   font-style: italic;
 }
 
 /* Price number styling */
 .lf-price-number {
-  font-family: 'Outfit', sans-serif;
+  font-family: 'DM Mono', monospace;
   font-weight: 800;
 }
 
@@ -2000,7 +1979,7 @@ html {
 }
 
 /* ================================================================
-   FORGEDESK VISUAL IDENTITY — Premium feel, module personality
+   DOEN VISUAL IDENTITY — Premium feel, module personality
    ================================================================ */
 
 /* ── Module Color Strips — top accent bar per page ── */
@@ -2041,39 +2020,47 @@ html {
 .dark .mod-strip::before { opacity: 0.06; }
 
 /* ── Enhanced Stat Cards — rich gradient with liquid glass inner light ── */
-.stat-card-gradient-blush {
+.stat-card-gradient-offertes {
   background: linear-gradient(145deg, #E4AE9C 0%, #F0C8B8 35%, #FAE4DA 70%, #FFF4EE 100%);
   box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.65), inset 0 -1px 0 rgba(0,0,0,0.02);
 }
-.stat-card-gradient-sage {
+.stat-card-gradient-facturen {
   background: linear-gradient(145deg, #98C0A8 0%, #B4D4C2 35%, #D4E8DE 70%, #EFF8F3 100%);
   box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.65), inset 0 -1px 0 rgba(0,0,0,0.02);
 }
-.stat-card-gradient-mist {
+.stat-card-gradient-klanten {
   background: linear-gradient(145deg, #9CB4CA 0%, #B8CDE0 35%, #D6E4F0 70%, #EEF4FA 100%);
   box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.65), inset 0 -1px 0 rgba(0,0,0,0.02);
 }
-.stat-card-gradient-cream {
+.stat-card-gradient-taken {
   background: linear-gradient(145deg, #CCC0A0 0%, #DED4BC 35%, #EDE8DA 70%, #F9F6EE 100%);
+  box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.65), inset 0 -1px 0 rgba(0,0,0,0.02);
+}
+.stat-card-gradient-email {
+  background: linear-gradient(145deg, #B8A8D8 0%, #CEC0E8 35%, #E2D8F2 70%, #F4F0FA 100%);
   box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.65), inset 0 -1px 0 rgba(0,0,0,0.02);
 }
 
 /* Dark mode stat cards — ambient glow */
-.dark .stat-card-gradient-blush {
+.dark .stat-card-gradient-offertes {
   background: linear-gradient(145deg, rgba(232,134,106,0.20) 0%, rgba(232,134,106,0.08) 100%);
   box-shadow: 0 2px 16px rgba(232,134,106,0.10), inset 0 1px 0 rgba(232,134,106,0.06);
 }
-.dark .stat-card-gradient-sage {
+.dark .stat-card-gradient-facturen {
   background: linear-gradient(145deg, rgba(126,181,166,0.20) 0%, rgba(126,181,166,0.08) 100%);
   box-shadow: 0 2px 16px rgba(126,181,166,0.10), inset 0 1px 0 rgba(126,181,166,0.06);
 }
-.dark .stat-card-gradient-mist {
+.dark .stat-card-gradient-klanten {
   background: linear-gradient(145deg, rgba(139,175,212,0.20) 0%, rgba(139,175,212,0.08) 100%);
   box-shadow: 0 2px 16px rgba(139,175,212,0.10), inset 0 1px 0 rgba(139,175,212,0.06);
 }
-.dark .stat-card-gradient-cream {
+.dark .stat-card-gradient-taken {
   background: linear-gradient(145deg, rgba(196,168,130,0.20) 0%, rgba(196,168,130,0.08) 100%);
   box-shadow: 0 2px 16px rgba(196,168,130,0.10), inset 0 1px 0 rgba(196,168,130,0.06);
+}
+.dark .stat-card-gradient-email {
+  background: linear-gradient(145deg, rgba(160,140,200,0.20) 0%, rgba(160,140,200,0.08) 100%);
+  box-shadow: 0 2px 16px rgba(160,140,200,0.10), inset 0 1px 0 rgba(160,140,200,0.06);
 }
 
 /* Stat card inner glow on hover — premium depth */
@@ -2117,6 +2104,7 @@ html {
 
 /* ── Enhanced Page Title Typography ── */
 .page-title {
+  font-family: 'Bricolage Grotesque', system-ui, sans-serif;
   font-size: 26px;
   font-weight: 800;
   letter-spacing: -0.035em;
@@ -2126,11 +2114,13 @@ html {
   .page-title { font-size: 30px; }
 }
 .section-title {
+  font-family: 'Bricolage Grotesque', system-ui, sans-serif;
   font-size: 20px;
   font-weight: 700;
   letter-spacing: -0.025em;
 }
 .card-title-lg {
+  font-family: 'Bricolage Grotesque', system-ui, sans-serif;
   font-size: 17px;
   font-weight: 700;
   letter-spacing: -0.01em;
@@ -2292,15 +2282,22 @@ html {
 }
 
 /* ================================================================
-   PASTEL STATUS BADGES — Outside @layer for highest CSS precedence
-   These override Tailwind utilities to ensure consistent status colors
+   DOEN MODULE STATUS BADGES
    ================================================================ */
-.badge-blush   { background: var(--color-blush) !important; color: var(--color-blush-text) !important; border: 1px solid var(--color-blush-border) !important; }
-.badge-sage    { background: var(--color-sage) !important; color: var(--color-sage-text) !important; border: 1px solid var(--color-sage-border) !important; }
-.badge-mist    { background: var(--color-mist) !important; color: var(--color-mist-text) !important; border: 1px solid var(--color-mist-border) !important; }
-.badge-cream   { background: var(--color-cream) !important; color: var(--color-cream-text) !important; border: 1px solid var(--color-cream-border) !important; }
-.badge-coral   { background: var(--color-coral) !important; color: var(--color-coral-text) !important; border: 1px solid var(--color-coral-border) !important; }
-.badge-lavender{ background: var(--color-lavender) !important; color: var(--color-lavender-text) !important; border: 1px solid var(--color-lavender-border) !important; }
+
+/* Doen. toast styling */
+[data-sonner-toast] [data-icon] svg { color: #1A535C; }
+[data-sonner-toast][data-type="error"] [data-icon] svg { color: #F15025; }
+[data-sonner-toast][data-type="success"] [data-icon] svg { color: #1A535C; }
+
+/* Doen. module-based badge classes */
+.badge-grijs       { background: #EEEEED !important; color: #5A5A55 !important; border: none !important; }
+.badge-flame       { background: #FDE8E2 !important; color: #C03A18 !important; border: none !important; }
+.badge-groen       { background: #E4F0EA !important; color: #2D6B48 !important; border: none !important; }
+.badge-blauw       { background: #E5ECF6 !important; color: #2A5580 !important; border: none !important; }
+.badge-petrol      { background: #E2F0F0 !important; color: #1A535C !important; border: none !important; }
+.badge-paars       { background: #EEE8F5 !important; color: #5A4A78 !important; border: none !important; }
+.badge-warm-paars  { background: #F2E8EF !important; color: #7A3058 !important; border: none !important; }
 
 /* ================================================================
    TAB BAR — Scrollbar hiding and tab animations
@@ -2356,20 +2353,21 @@ html {
 .sidebar-logo-mark {
   width: 34px;
   height: 34px;
-  border-radius: 10px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 900;
   font-size: 15px;
   color: white;
-  background: linear-gradient(135deg, hsl(var(--accent)) 0%, hsl(28, 50%, 42%) 100%);
-  box-shadow: 0 2px 10px rgba(204, 138, 63, 0.3), inset 0 1px 0 rgba(255,255,255,0.15);
-  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  background: linear-gradient(135deg, #1A535C 0%, #2A7A86 100%);
+  box-shadow: 0 2px 8px rgba(26, 83, 92, 0.25);
+  transition: transform 200ms ease, box-shadow 200ms ease;
   flex-shrink: 0;
 }
 .sidebar-logo-mark:hover {
-  transform: scale(1.08) rotate(-3deg);
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(26, 83, 92, 0.35);
 }
 
 /* Premium page header with accent strip */
@@ -2386,4 +2384,95 @@ html {
   border-radius: 2px;
   background: currentColor;
   opacity: 0.6;
+}
+
+/* ================================================================
+   PREMIUM POLISH — Micro-interactions, glass, gradients
+   ================================================================ */
+
+/* Skeleton loading: warm shimmer */
+@keyframes skeleton-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton-warm {
+  background: linear-gradient(90deg, #F4F2EE 25%, #EAE8E2 37%, #F4F2EE 63%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+/* Spectrum loading bar */
+@keyframes spectrum-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.spectrum-loading {
+  background: linear-gradient(90deg, #F15025 0%, #9A4070 25%, #3A6B8C 50%, #1A535C 75%, #F15025 100%);
+  background-size: 200% 100%;
+  animation: spectrum-shimmer 2s ease-in-out infinite;
+  height: 3px;
+  border-radius: 2px;
+}
+
+/* Spectrum bar grow animation */
+@keyframes spectrum-grow {
+  from { width: 0%; }
+  to { width: var(--target-width); }
+}
+.spectrum-fill-animate {
+  animation: spectrum-grow 800ms ease-out;
+}
+
+/* Filter pill pop animation */
+@keyframes pill-pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+.pill-pop-active {
+  animation: pill-pop 200ms ease;
+}
+
+/* Toast slide-in from right with bounce */
+@keyframes toast-in {
+  0% { transform: translateX(100%); opacity: 0; }
+  70% { transform: translateX(-8px); }
+  100% { transform: translateX(0); opacity: 1; }
+}
+
+/* FAB breathing animation for suggestions */
+@keyframes fab-breathe {
+  0%, 100% { box-shadow: 0 2px 12px rgba(26, 83, 92, 0.3); }
+  50% { box-shadow: 0 4px 20px rgba(26, 83, 92, 0.5); }
+}
+.fab-has-suggestion {
+  animation: fab-breathe 3s ease-in-out infinite;
+}
+
+/* Page content enter animation */
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.page-content-enter {
+  animation: page-enter 200ms ease-out;
+}
+
+/* Cursor helpers */
+.drag-handle { cursor: grab; }
+.drag-handle:active { cursor: grabbing; }
+
+/* EUR amount styling */
+.amount-eur {
+  color: #A0A098;
+  font-size: 0.85em;
+  margin-right: 2px;
+}
+.amount-value {
+  color: #191919;
+  font-weight: 500;
+}
+.dark .amount-value {
+  color: #E8E6E0;
 }

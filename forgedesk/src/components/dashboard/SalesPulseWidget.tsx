@@ -134,7 +134,7 @@ export function SalesPulseWidget() {
             </span>
             <ArrowRight className="h-3 w-3 text-muted-foreground/30 opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
-          <p className="text-sm sm:text-lg font-bold text-foreground tracking-tight truncate">{m.value}</p>
+          <p className="text-sm sm:text-lg font-bold text-foreground tracking-tight truncate font-mono">{m.value}</p>
           <p className="text-xs text-muted-foreground mt-0.5">{m.label}</p>
           <p className="text-2xs text-muted-foreground/60 mt-0.5 hidden sm:block">{m.detail}</p>
         </Link>
