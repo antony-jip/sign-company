@@ -88,6 +88,7 @@ const ForecastLayout = lazy(() => import('@/components/reports/ForecastLayout'),
 // Settings
 const SettingsLayout = lazy(() => import('@/components/settings/SettingsLayout'), 'SettingsLayout')
 const DataImportLayout = lazy(() => import('@/components/settings/DataImportLayout'), 'DataImportLayout')
+const JamesProImportWizard = lazy(() => import('@/components/import/JamesProImportWizard'), 'JamesProImportWizard')
 const TeamLayout = lazy(() => import('@/components/settings/TeamLayout'), 'TeamLayout')
 
 // Werkbonnen
@@ -229,7 +230,7 @@ function AppContent() {
         <Route path="nacalculatie" element={<NacalculatieLayout />} />
         <Route path="team" element={<TeamLayout />} />
         <Route path="nieuwsbrieven" element={<NewsletterBuilder />} />
-        <Route path="importeren" element={<DataImportLayout />} />
+        <Route path="importeren" element={<JamesProImportWizard />} />
         <Route path="ai" element={<FORGEdeskAIChat />} />
         <Route path="forgie" element={<ForgieChatPage />} />
         <Route path="werkbonnen" element={<WerkbonnenLayout />} />
