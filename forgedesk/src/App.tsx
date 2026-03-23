@@ -46,7 +46,7 @@ const NacalculatieLayout = lazy(() => import('@/components/projects/Nacalculatie
 // Clients
 const ClientsLayout = lazy(() => import('@/components/clients/ClientsLayout'), 'ClientsLayout')
 const ClientProfile = lazy(() => import('@/components/clients/ClientProfile'), 'ClientProfile')
-const KlantenImportPage = lazy(() => import('@/components/clients/KlantenImportPage'), 'KlantenImportPage')
+
 const DealsLayout = lazy(() => import('@/components/clients/DealsLayout'), 'DealsLayout')
 const DealDetail = lazy(() => import('@/components/clients/DealDetail'), 'DealDetail')
 
@@ -202,7 +202,7 @@ function AppContent() {
         <Route path="projecten/nieuw" element={<ProjectCreate />} />
         <Route path="projecten/:id" element={<ProjectDetail />} />
         <Route path="klanten" element={<ClientsLayout />} />
-        <Route path="klanten/importeren" element={<KlantenImportPage />} />
+        <Route path="klanten/importeren" element={<Navigate to="/importeren" replace />} />
         <Route path="klanten/:id" element={<ClientProfile />} />
         <Route path="deals" element={<DealsLayout />} />
         <Route path="deals/:id" element={<DealDetail />} />

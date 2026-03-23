@@ -910,9 +910,14 @@ export function ClientProfile() {
                               {/* Omschrijving */}
                               <td className="py-3 px-4">
                                 <div>
-                                  <p className="text-sm font-semibold text-foreground hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                                    {project.naam}
-                                  </p>
+                                  <div className="flex items-center gap-1.5">
+                                    <p className="text-sm font-semibold text-foreground hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                                      {project.naam}
+                                    </p>
+                                    {project.import_bron === 'james_pro' && (
+                                      <span className="text-[9px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Geïmporteerd</span>
+                                    )}
+                                  </div>
                                   <p className="text-xs text-muted-foreground mt-0.5 font-mono">
                                     {formatDate(project.start_datum ?? "")}
                                   </p>
@@ -1024,9 +1029,14 @@ export function ClientProfile() {
                           onClick={() => navigate(`/offertes/${offerte.id}/bewerken`, { state: { from: `/klanten/${id}` } })}
                         >
                           <td className="py-3 px-4">
-                            <span className="text-sm font-medium font-mono text-blue-600 dark:text-blue-400">
-                              {offerte.nummer}
-                            </span>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-sm font-medium font-mono text-blue-600 dark:text-blue-400">
+                                {offerte.nummer}
+                              </span>
+                              {offerte.import_bron === 'james_pro' && (
+                                <span className="text-[9px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Geïmporteerd</span>
+                              )}
+                            </div>
                           </td>
                           <td className="py-3 px-4">
                             <span className="text-sm text-foreground">{offerte.titel}</span>
@@ -1129,7 +1139,12 @@ export function ClientProfile() {
                       {clientFacturen.map((factuur) => (
                         <tr key={factuur.id} className="hover:bg-background dark:hover:bg-muted/50 transition-colors">
                           <td className="py-3 px-4">
-                            <span className="text-sm font-medium font-mono text-blue-600 dark:text-blue-400">{factuur.nummer}</span>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-sm font-medium font-mono text-blue-600 dark:text-blue-400">{factuur.nummer}</span>
+                              {factuur.import_bron === 'james_pro' && (
+                                <span className="text-[9px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Geïmporteerd</span>
+                              )}
+                            </div>
                           </td>
                           <td className="py-3 px-4 text-sm">{factuur.titel}</td>
                           <td className="py-3 px-4">
