@@ -127,7 +127,7 @@ export function ClientCard({ klant, projectCount, onEdit, onDelete, selected, on
             </Badge>
 
             {/* Action menu */}
-            <DropdownMenu>
+            <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
                 <button
                   onClick={(e) => e.stopPropagation()}

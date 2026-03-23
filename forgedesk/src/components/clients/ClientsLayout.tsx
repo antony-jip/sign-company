@@ -251,7 +251,7 @@ export function ClientsLayout() {
 
   function renderRowActions(klant: Klant) {
     return (
-      <DropdownMenu>
+      <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <button
             onClick={(e) => e.stopPropagation()}
@@ -668,11 +668,10 @@ export function ClientsLayout() {
                     style={{ borderBottom: '0.5px solid #E6E4E0' }}
                     onClick={() => navigateWithTab({ path: `/klanten/${klant.id}`, label: klant.bedrijfsnaam || klant.voornaam || 'Klant', id: `/klanten/${klant.id}` })}
                   >
-                    <td className="w-10 px-3 py-3.5">
+                    <td className="w-10 px-3 py-3.5" onClick={(e) => e.stopPropagation()}>
                       <Checkbox
                         checked={selectedIds.has(klant.id)}
                         onCheckedChange={() => toggleSelect(klant.id)}
-                        onClick={(e) => e.stopPropagation()}
                         aria-label={`Selecteer ${klant.bedrijfsnaam}`}
                       />
                     </td>
@@ -734,7 +733,7 @@ export function ClientsLayout() {
                         {projectCounts[klant.id] || 0}
                       </Badge>
                     </td>
-                    <td className="px-2 py-3.5 text-right">
+                    <td className="px-2 py-3.5 text-right" onClick={(e) => e.stopPropagation()}>
                       {renderRowActions(klant)}
                     </td>
                   </tr>
