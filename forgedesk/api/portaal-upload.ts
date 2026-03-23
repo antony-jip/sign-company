@@ -127,14 +127,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: 'Kon bestand niet opslaan' })
     }
 
-    // Log upload activiteit via Trigger.dev (fire-and-forget)
+    // Log upload activiteit via Trigger.dev (fire-and-forget, fallback naar directe insert)
+    const logPayload = { portaal_id: portaal.id, actie: 'bestand_geupload', metadata: { bestandsnaam, mime_type, grootte: buffer.length } }
     try {
       await tasks.trigger<typeof logPortaalActiviteit>("log-portaal-activiteit", {
         portaalId: portaal.id,
-        actie: 'bestand_geupload',
-        metadata: { bestandsnaam, mime_type, grootte: buffer.length },
+        actie: logPayload.actie,
+        metadata: logPayload.metadata,
       });
-    } catch { /* non-blocking */ }
+    } catch {
+      await supabaseAdmin.from('portaal_activiteiten').insert(logPayload).then(() => {}, () => {})
+    }
 
     return res.status(201).json({
       url: bestand.url,

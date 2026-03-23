@@ -61,14 +61,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .is('bekeken_op', null)
     }
 
-    // Log bekeken activiteit via Trigger.dev (fire-and-forget)
+    // Log bekeken activiteit via Trigger.dev (fire-and-forget, fallback naar directe insert)
+    const logPayload = { portaal_id: portaal.id, actie: 'bekeken', metadata: { ip: clientIp, item_count: item_ids?.length || 0 } }
     try {
       await tasks.trigger<typeof logPortaalActiviteit>("log-portaal-activiteit", {
         portaalId: portaal.id,
         actie: 'bekeken',
-        metadata: { ip: clientIp, item_count: item_ids?.length || 0 },
+        metadata: logPayload.metadata,
       });
-    } catch { /* non-blocking */ }
+    } catch {
+      // Fallback: directe insert (lokale dev zonder Trigger.dev)
+      await supabaseAdmin.from('portaal_activiteiten').insert(logPayload).then(() => {}, () => {})
+    }
 
     return res.status(200).json({ success: true })
   } catch (error) {

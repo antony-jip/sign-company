@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import {
-  Send, Receipt, CreditCard, ImageIcon, FileText, X
+  Send, Receipt, CreditCard, ImageIcon, FileText, X, Mail
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { createPortaalItem, getOffertesByProject, getFacturenByProject } from '@/services/supabaseService'
@@ -34,6 +34,7 @@ export function PortaalSidebarActions({
   const [tekeningFile, setTekeningFile] = useState<File | null>(null)
   const [tekeningTitel, setTekeningTitel] = useState('')
   const [tekeningPopoverOpen, setTekeningPopoverOpen] = useState(false)
+  const [notificeerKlant, setNotificeerKlant] = useState(true)
   const popoverRef = useRef<HTMLDivElement>(null)
   const fotoInputRef = useRef<HTMLInputElement>(null)
   const tekeningInputRef = useRef<HTMLInputElement>(null)
@@ -49,6 +50,75 @@ export function PortaalSidebarActions({
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
   }, [activePopover])
+
+  // ── Email notificatie naar klant ──
+  async function sendEmailNotification(content: string, titel: string) {
+    try {
+      const { getProject, getKlant, getPortaalInstellingen, getProfile } = await import('@/services/supabaseService')
+      const { sendEmail } = await import('@/services/gmailService')
+      const { buildPortalEmailHtml, replaceEmailVariables } = await import('@/utils/emailTemplate')
+
+      const project = await getProject(projectId)
+      if (!project?.klant_id || !portaal) {
+        toast.warning('Geen klant gekoppeld — email niet verstuurd')
+        return
+      }
+      const klant = await getKlant(project.klant_id)
+      const klantEmail = klant?.email || klant?.contactpersonen?.[0]?.email
+      if (!klantEmail) {
+        toast.warning('Klant heeft geen email — notificatie niet verstuurd')
+        return
+      }
+
+      const profile = await getProfile(userId)
+      const bedrijfsnaam = profile?.bedrijfsnaam || ''
+      const portaalUrl = `${window.location.origin}/portaal/${portaal.token}`
+      const klantNaam = klant?.contactpersoon || klant?.contactpersonen?.[0]?.naam || klant?.bedrijfsnaam || 'klant'
+
+      const instellingen = await getPortaalInstellingen(userId)
+      const vars: Record<string, string> = {
+        klant_naam: klantNaam,
+        project_naam: project.naam,
+        portaal_link: portaalUrl,
+        bedrijfsnaam: bedrijfsnaam || '',
+        item_type: titel,
+        projectnaam: project.naam,
+        itemtitel: titel,
+        klantNaam,
+        portaalUrl,
+      }
+
+      const onderwerp = instellingen?.template_nieuw_item?.onderwerp
+        ? replaceEmailVariables(instellingen.template_nieuw_item.onderwerp, vars)
+        : `${bedrijfsnaam || 'Nieuw item'} — ${titel}`
+      const heading = instellingen?.template_nieuw_item?.inhoud
+        ? replaceEmailVariables(instellingen.template_nieuw_item.inhoud, vars)
+        : `Er is een nieuw item gedeeld voor project ${project.naam}.`
+
+      const plainBody = [
+        `Beste ${klantNaam},`, '', heading, '', content, '',
+        `Bekijk het hier: ${portaalUrl}`, '',
+        `Met vriendelijke groet,`, bedrijfsnaam || 'Het team',
+      ].join('\n')
+
+      const htmlBody = buildPortalEmailHtml({
+        heading,
+        itemTitel: titel,
+        beschrijving: content,
+        ctaLabel: 'Bekijk in portaal →',
+        ctaUrl: portaalUrl,
+        bedrijfsnaam,
+        logoUrl: profile?.logo_url || undefined,
+      })
+
+      await sendEmail(klantEmail, onderwerp, plainBody, { html: htmlBody })
+      toast.success(`Email verstuurd naar ${klantEmail}`)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Onbekende fout'
+      console.error('Email notificatie mislukt:', msg)
+      toast.error(`Email niet verstuurd: ${msg}`)
+    }
+  }
 
   // ── Quick-add handlers ──
 
@@ -94,6 +164,7 @@ export function PortaalSidebarActions({
       toast.success(`Offerte ${offerte.nummer} gedeeld`)
       setActivePopover(null)
       await fetchItems()
+      if (notificeerKlant) sendEmailNotification(`Offerte ${offerte.nummer}`, offerte.titel || `Offerte ${offerte.nummer}`)
     } catch {
       toast.error('Kon offerte niet delen')
     } finally {
@@ -121,6 +192,7 @@ export function PortaalSidebarActions({
       toast.success(`Factuur ${factuur.nummer} gedeeld`)
       setActivePopover(null)
       await fetchItems()
+      if (notificeerKlant) sendEmailNotification(`Factuur ${factuur.nummer}`, `Factuur ${factuur.nummer}`)
     } catch {
       toast.error('Kon factuur niet delen')
     } finally {
@@ -145,8 +217,10 @@ export function PortaalSidebarActions({
         zichtbaar_voor_klant: true,
         volgorde: 0,
       })
+      const tekst = berichtTekstInput.trim()
       setBerichtTekstInput('')
       await fetchItems()
+      if (notificeerKlant) sendEmailNotification(tekst, 'Bericht')
     } catch {
       toast.error('Kon bericht niet versturen')
     } finally {
@@ -175,6 +249,7 @@ export function PortaalSidebarActions({
       })
       toast.success('Afbeelding gedeeld')
       await fetchItems()
+      if (notificeerKlant) sendEmailNotification('Nieuwe foto gedeeld', 'Foto')
     } catch {
       toast.error('Kon afbeelding niet uploaden')
     } finally {
@@ -199,11 +274,13 @@ export function PortaalSidebarActions({
         zichtbaar_voor_klant: true,
         volgorde: 0,
       } as any)
+      const titel = tekeningTitel || tekeningFile.name
       toast.success('Tekening gedeeld')
       setTekeningFile(null)
       setTekeningTitel('')
       setTekeningPopoverOpen(false)
       await fetchItems()
+      if (notificeerKlant) sendEmailNotification(titel, titel)
     } catch {
       toast.error('Kon tekening niet delen')
     } finally {
@@ -399,6 +476,18 @@ export function PortaalSidebarActions({
           </div>
         )}
       </div>
+
+      {/* Notificeer klant checkbox */}
+      <label className="flex items-center gap-2 px-4 py-1.5 cursor-pointer select-none">
+        <input
+          type="checkbox"
+          checked={notificeerKlant}
+          onChange={(e) => setNotificeerKlant(e.target.checked)}
+          className="h-3.5 w-3.5 rounded border-[#E6E4E0] text-petrol focus:ring-petrol/50"
+        />
+        <Mail className="h-3 w-3 text-muted-foreground/50" />
+        <span className="text-[11px] text-muted-foreground">Notificeer klant per email</span>
+      </label>
 
       {/* Message input */}
       <div className="flex items-end gap-2 px-4 py-3">

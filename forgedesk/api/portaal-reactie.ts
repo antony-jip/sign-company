@@ -297,15 +297,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       console.error('[portaal-reactie] notificatie/email error:', notifErr)
     }
 
-    // --- Trigger.dev: log activiteit (fire-and-forget) ---
+    // --- Trigger.dev: log activiteit (fire-and-forget, fallback naar directe insert) ---
+    const logActie = type === 'goedkeuring' ? 'item_goedgekeurd' : type === 'revisie' ? 'item_revisie' : 'bericht_verstuurd'
+    const logPayload = { portaal_id: portaal.id, actie: logActie, metadata: { klant_naam: klant_naam, item_id: portaal_item_id } }
     try {
       await tasks.trigger<typeof logPortaalActiviteit>("log-portaal-activiteit", {
         portaalId: portaal.id,
-        actie: type === 'goedkeuring' ? 'item_goedgekeurd' : type === 'revisie' ? 'item_revisie' : 'bericht_verstuurd',
-        metadata: { klant_naam: klant_naam, item_id: portaal_item_id },
+        actie: logActie,
+        metadata: logPayload.metadata,
       });
-    } catch (triggerErr) {
-      console.warn('[portaal-reactie] Trigger.dev log failed (non-blocking):', triggerErr)
+    } catch {
+      // Fallback: directe insert (lokale dev zonder Trigger.dev)
+      await supabaseAdmin.from('portaal_activiteiten').insert(logPayload).then(() => {}, () => {})
     }
 
     return res.status(201).json({ reactie })
