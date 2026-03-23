@@ -346,8 +346,7 @@ export function FacturenLayout() {
 
   // ============ COMPUTED VALUES ============
 
-  // Eigen facturen (zonder import) voor stats en lijst
-  const eigenFacturen = useMemo(() => facturen.filter((f) => f.import_bron !== 'james_pro'), [facturen])
+  const eigenFacturen = useMemo(() => facturen, [facturen])
 
   const statistics = useMemo(() => {
     const openStatuses: FactuurStatus[] = ['verzonden', 'vervallen']

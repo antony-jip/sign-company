@@ -912,9 +912,6 @@ export function ClientProfile() {
                                     <p className="text-sm font-semibold text-foreground hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                                       {project.naam}
                                     </p>
-                                    {project.import_bron === 'james_pro' && (
-                                      <span className="text-[9px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Geïmporteerd</span>
-                                    )}
                                   </div>
                                   <p className="text-xs text-muted-foreground mt-0.5 font-mono">
                                     {formatDate(project.start_datum ?? "")}
@@ -1031,9 +1028,6 @@ export function ClientProfile() {
                               <span className="text-sm font-medium font-mono text-blue-600 dark:text-blue-400">
                                 {offerte.nummer}
                               </span>
-                              {offerte.import_bron === 'james_pro' && (
-                                <span className="text-[9px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Geïmporteerd</span>
-                              )}
                             </div>
                           </td>
                           <td className="py-3 px-4">
@@ -1139,9 +1133,6 @@ export function ClientProfile() {
                           <td className="py-3 px-4">
                             <div className="flex items-center gap-1.5">
                               <span className="text-sm font-medium font-mono text-blue-600 dark:text-blue-400">{factuur.nummer}</span>
-                              {factuur.import_bron === 'james_pro' && (
-                                <span className="text-[9px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Geïmporteerd</span>
-                              )}
                             </div>
                           </td>
                           <td className="py-3 px-4 text-sm">{factuur.titel}</td>
