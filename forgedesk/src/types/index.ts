@@ -301,6 +301,9 @@ export interface Offerte {
   opvolging_actief?: boolean;
   opvolging_schema_id?: string;
   verzendwijze?: 'via_portaal' | 'via_email_pdf' | 'via_handmatig';
+  // Import
+  import_bron?: string;
+  import_metadata?: Record<string, unknown>;
   created_at: string;
   updated_at: string;
 }
@@ -878,6 +881,9 @@ export interface Factuur {
   // Exact Online sync
   exact_entry_id?: string;
   exact_synced_at?: string;
+  // Import
+  import_bron?: string;
+  import_metadata?: Record<string, unknown>;
   created_at: string;
   updated_at: string;
 }

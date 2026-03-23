@@ -149,6 +149,21 @@ export function ImportProgress({ data, userId, onComplete }: ImportProgressProps
               <ResultLine label="Facturen → klant" value={resultaat.facturen.linkedKlant} />
             </div>
 
+            {/* Unmatched names */}
+            {resultaat.unmatchedNames.length > 0 && (
+              <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 space-y-1">
+                <p className="text-xs font-medium text-amber-800">
+                  {resultaat.unmatchedNames.length} bedrijfsnamen niet gekoppeld:
+                </p>
+                {resultaat.unmatchedNames.slice(0, 20).map((name, i) => (
+                  <p key={i} className="text-xs text-amber-700">{name}</p>
+                ))}
+                {resultaat.unmatchedNames.length > 20 && (
+                  <p className="text-xs text-amber-600 italic">...en {resultaat.unmatchedNames.length - 20} meer</p>
+                )}
+              </div>
+            )}
+
             {/* Error list */}
             {[...resultaat.klanten.errors, ...resultaat.projecten.errors, ...resultaat.offertes.errors, ...resultaat.facturen.errors].length > 0 && (
               <div className="rounded-lg bg-red-50 border border-red-200 p-3 space-y-1">

@@ -346,18 +346,21 @@ export function FacturenLayout() {
 
   // ============ COMPUTED VALUES ============
 
+  // Eigen facturen (zonder import) voor stats en lijst
+  const eigenFacturen = useMemo(() => facturen.filter((f) => f.import_bron !== 'james_pro'), [facturen])
+
   const statistics = useMemo(() => {
     const openStatuses: FactuurStatus[] = ['verzonden', 'vervallen']
-    const openFacturen = facturen.filter((f) => openStatuses.includes(f.status))
+    const openFacturen = eigenFacturen.filter((f) => openStatuses.includes(f.status))
     const totaalOpenstaand = round2(openFacturen.reduce((sum, f) => sum + (f.totaal - f.betaald_bedrag), 0))
 
-    const betaaldDezeMaand = round2(facturen
+    const betaaldDezeMaand = round2(eigenFacturen
       .filter((f) => f.status === 'betaald' && f.betaaldatum && isThisMonth(f.betaaldatum))
       .reduce((sum, f) => sum + f.betaald_bedrag, 0))
 
-    const vervallenCount = facturen.filter((f) => f.status === 'vervallen').length
+    const vervallenCount = eigenFacturen.filter((f) => f.status === 'vervallen').length
 
-    const betaaldeFacturen = facturen.filter((f) => f.status === 'betaald' && f.betaaldatum && f.factuurdatum)
+    const betaaldeFacturen = eigenFacturen.filter((f) => f.status === 'betaald' && f.betaaldatum && f.factuurdatum)
     let gemiddeldeBetaaltermijn = 0
     if (betaaldeFacturen.length > 0) {
       const totalDays = betaaldeFacturen.reduce((sum, f) => {
@@ -369,10 +372,10 @@ export function FacturenLayout() {
     }
 
     return { totaalOpenstaand, betaaldDezeMaand, vervallenCount, gemiddeldeBetaaltermijn }
-  }, [facturen])
+  }, [eigenFacturen])
 
   const filteredFacturen = useMemo(() => {
-    let result = [...facturen]
+    let result = [...eigenFacturen]
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase()
@@ -416,7 +419,7 @@ export function FacturenLayout() {
     })
 
     return result
-  }, [facturen, searchQuery, filterStatus, dagenOpenFilter, sortField, sortDir])
+  }, [eigenFacturen, searchQuery, filterStatus, dagenOpenFilter, sortField, sortDir])
 
   // Reset page when filters change
   useEffect(() => { setCurrentPage(1) }, [searchQuery, filterStatus, dagenOpenFilter, sortField, sortDir])

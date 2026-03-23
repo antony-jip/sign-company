@@ -423,22 +423,25 @@ export function QuotesPipeline() {
     return map
   }, [filteredOffertes, STATUS_COLUMNS])
 
+  // Eigen offertes (zonder import) voor stats
+  const eigenOffertes = useMemo(() => offertes.filter((o) => o.import_bron !== 'james_pro'), [offertes])
+
   // Sales summary
   const salesSummary = useMemo(() => {
     const pipelineStatuses = ['concept', 'verzonden', 'bekeken']
-    const pipelineOffertes = offertes.filter((o) => pipelineStatuses.includes(o.status))
+    const pipelineOffertes = eigenOffertes.filter((o) => pipelineStatuses.includes(o.status))
     const pipelineValue = round2(pipelineOffertes.reduce((sum, o) => sum + o.totaal, 0))
 
-    const verstuurdOffertes = offertes.filter((o) => o.status === 'verzonden')
+    const verstuurdOffertes = eigenOffertes.filter((o) => o.status === 'verzonden')
     const verstuurdValue = round2(verstuurdOffertes.reduce((sum, o) => sum + o.totaal, 0))
 
-    const akkoordThisMonth = offertes.filter(
+    const akkoordThisMonth = eigenOffertes.filter(
       (o) => o.status === 'goedgekeurd' && isThisMonth(o.akkoord_op || o.updated_at)
     )
     const akkoordValue = round2(akkoordThisMonth.reduce((sum, o) => sum + o.totaal, 0))
 
     return { pipelineValue, verstuurdValue, akkoordValue }
-  }, [offertes])
+  }, [eigenOffertes])
 
   // Financial overview per status
   const financialSummary = useMemo(() => {
@@ -447,7 +450,7 @@ export function QuotesPipeline() {
     for (const s of allStatuses) {
       statusTotals[s] = { count: 0, totaal: 0 }
     }
-    for (const o of offertes) {
+    for (const o of eigenOffertes) {
       if (!statusTotals[o.status]) {
         statusTotals[o.status] = { count: 0, totaal: 0 }
       }
@@ -457,7 +460,7 @@ export function QuotesPipeline() {
 
     // Totale pipeline = alles behalve afgewezen en gefactureerd
     const pipelineTotaal = round2(
-      offertes
+      eigenOffertes
         .filter((o) => o.status !== 'afgewezen' && o.status !== 'gefactureerd')
         .reduce((sum, o) => sum + o.totaal, 0)
     )
@@ -466,34 +469,34 @@ export function QuotesPipeline() {
     const verwachteOmzet = round2(statusTotals['goedgekeurd']?.totaal || 0)
 
     return { statusTotals, pipelineTotaal, verwachteOmzet }
-  }, [offertes])
+  }, [eigenOffertes])
 
   const kpis = useMemo(() => {
     const openStatuses = ['verzonden', 'bekeken']
-    const openOffertes = offertes.filter((o) => openStatuses.includes(o.status))
+    const openOffertes = eigenOffertes.filter((o) => openStatuses.includes(o.status))
     const openCount = openOffertes.length
     const openValue = round2(openOffertes.reduce((sum, o) => sum + o.totaal, 0))
 
     const sentStatuses = ['verzonden', 'bekeken', 'goedgekeurd', 'afgewezen']
-    const sentOffertes = offertes.filter((o) => sentStatuses.includes(o.status))
-    const approved = offertes.filter((o) => o.status === 'goedgekeurd').length
+    const sentOffertes = eigenOffertes.filter((o) => sentStatuses.includes(o.status))
+    const approved = eigenOffertes.filter((o) => o.status === 'goedgekeurd').length
     const conversionRate = sentOffertes.length > 0 ? round2((approved / sentOffertes.length) * 100) : 0
 
-    const allValues = offertes.map((o) => o.totaal)
+    const allValues = eigenOffertes.map((o) => o.totaal)
     const avgValue = allValues.length > 0 ? round2(allValues.reduce((s, v) => s + v, 0) / allValues.length) : 0
 
     const now = new Date()
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-    const overdueFollowUps = offertes.filter((o) => {
+    const overdueFollowUps = eigenOffertes.filter((o) => {
       if (!o.follow_up_datum || o.follow_up_status === 'afgerond') return false
       const fuDate = new Date(o.follow_up_datum)
       return fuDate < today
     }).length
 
-    const thisMonthCount = offertes.filter((o) => isThisMonth(o.created_at)).length
+    const thisMonthCount = eigenOffertes.filter((o) => isThisMonth(o.created_at)).length
 
     return { openCount, openValue, conversionRate, avgValue, overdueFollowUps, thisMonthCount }
-  }, [offertes])
+  }, [eigenOffertes])
 
   // Drag & drop handlers
   const handleDragStart = useCallback((e: React.DragEvent, offerteId: string) => {

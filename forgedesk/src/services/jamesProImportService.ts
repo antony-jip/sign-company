@@ -35,6 +35,7 @@ export interface ImportResultaat {
   projecten: { imported: number; linked: number; errors: string[] }
   offertes: { imported: number; linkedKlant: number; errors: string[] }
   facturen: { imported: number; linkedKlant: number; errors: string[] }
+  unmatchedNames: string[] // bedrijfsnamen die niet gekoppeld konden worden
 }
 
 export interface JamesProImportData {
@@ -160,7 +161,12 @@ function normalizeCompanyName(name: string): string {
   return (name || '')
     .trim()
     .toLowerCase()
-    .replace(/\.+$/, '')
+    // Strip rechtsvorm-suffixen
+    .replace(/\b(b\.?\s*v\.?|n\.?\s*v\.?|v\.?\s*o\.?\s*f\.?|c\.?\s*v\.?)\s*$/i, '')
+    // Strip trailing dots, commas, dashes
+    .replace(/[.,\-]+$/, '')
+    .trim()
+    // Collapse multiple spaces
     .replace(/\s+/g, ' ')
 }
 
@@ -267,7 +273,9 @@ export async function importJamesProData(
     projecten: { imported: 0, linked: 0, errors: [] },
     offertes: { imported: 0, linkedKlant: 0, errors: [] },
     facturen: { imported: 0, linkedKlant: 0, errors: [] },
+    unmatchedNames: [],
   }
+  const unmatchedSet = new Set<string>() // track unique unmatched bedrijfsnamen
 
   // ── 1. Klanten (individueel vanwege duplicate check) ──
   onProgress({ type: 'klanten', current: 0, total: data.klanten.length, status: 'bezig' })
@@ -341,8 +349,10 @@ export async function importJamesProData(
     const mappedBatch: ReturnType<typeof mapJamesProProject>[] = []
 
     for (const row of batch) {
-      const company = normalizeCompanyName(row.Company || row.company || '')
+      const rawCompany = row.Company || row.company || ''
+      const company = normalizeCompanyName(rawCompany)
       const klantId = klantMap.get(company)
+      if (company && !klantId) unmatchedSet.add(rawCompany.trim())
       mappedBatch.push(mapJamesProProject(row, klantId, userId))
     }
 
@@ -371,8 +381,10 @@ export async function importJamesProData(
     let batchLinkedKlant = 0
 
     for (const row of batch) {
-      const company = normalizeCompanyName(row.Bedrijfsnaam || row.bedrijfsnaam || '')
+      const rawCompany = row.Bedrijfsnaam || row.bedrijfsnaam || ''
+      const company = normalizeCompanyName(rawCompany)
       const klantId = klantMap.get(company)
+      if (company && !klantId) unmatchedSet.add(rawCompany.trim())
       mappedBatch.push(mapJamesProOfferte(row, klantId, userId))
       if (klantId) batchLinkedKlant++
     }
@@ -399,8 +411,10 @@ export async function importJamesProData(
     let batchLinkedKlant = 0
 
     for (const row of batch) {
-      const company = normalizeCompanyName(row.Bedrijfsnaam || row.bedrijfsnaam || '')
+      const rawCompany = row.Bedrijfsnaam || row.bedrijfsnaam || ''
+      const company = normalizeCompanyName(rawCompany)
       const klantId = klantMap.get(company)
+      if (company && !klantId) unmatchedSet.add(rawCompany.trim())
       mappedBatch.push(mapJamesProFactuur(row, klantId, userId))
       if (klantId) batchLinkedKlant++
     }
@@ -418,6 +432,7 @@ export async function importJamesProData(
   }
   onProgress({ type: 'facturen', current: data.facturen.length, total: data.facturen.length, status: 'klaar' })
 
+  result.unmatchedNames = [...unmatchedSet].sort()
   return result
 }
 
