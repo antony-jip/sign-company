@@ -278,15 +278,27 @@ export async function uploadVervolgpapier(userId: string, file: File): Promise<s
   })
 }
 
-export async function getKlanten(limit = 5000): Promise<Klant[]> {
+export async function getKlanten(limit = 50000): Promise<Klant[]> {
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase
-      .from('klanten')
-      .select('*')
-      .order('bedrijfsnaam')
-      .limit(limit)
-    if (error) throw error
-    return (data || []).map(normalizeKlant)
+    // Supabase returns max 1000 rows per request — paginate to get all
+    const pageSize = 1000
+    const allData: Klant[] = []
+    let offset = 0
+
+    while (offset < limit) {
+      const { data, error } = await supabase
+        .from('klanten')
+        .select('*')
+        .order('bedrijfsnaam')
+        .range(offset, offset + pageSize - 1)
+      if (error) throw error
+      if (!data || data.length === 0) break
+      allData.push(...data.map(normalizeKlant))
+      if (data.length < pageSize) break
+      offset += pageSize
+    }
+
+    return allData
   }
   return getLocalData<Klant>('klanten').map(normalizeKlant)
 }

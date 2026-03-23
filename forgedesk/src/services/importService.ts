@@ -344,7 +344,7 @@ export async function importeerBedrijfsdata(
       } catch (err) {
         resultaat.fouten++
         resultaat.foutMeldingen.push(
-          `Relatie "${rij.bedrijfsnaam}": ${err instanceof Error ? err.message : 'Onbekende fout'}`
+          `Relatie "${rij.bedrijfsnaam}": ${err instanceof Error ? err.message : typeof err === 'object' && err !== null && 'message' in err ? String((err as Record<string, unknown>).message) : String(err)}`
         )
       }
       processed++
@@ -397,7 +397,7 @@ export async function importeerBedrijfsdata(
       } catch (err) {
         resultaat.fouten += batchData.length
         resultaat.foutMeldingen.push(
-          `Batch historie (${batchData.length} rijen): ${err instanceof Error ? err.message : 'Onbekende fout'}`
+          `Batch historie (${batchData.length} rijen): ${err instanceof Error ? err.message : typeof err === 'object' && err !== null && 'message' in err ? String((err as Record<string, unknown>).message) : String(err)}`
         )
       }
 
@@ -529,7 +529,7 @@ export async function importeerContactpersonen(
       } catch (err) {
         resultaat.fouten += batchData.length
         resultaat.foutMeldingen.push(
-          `Batch contactpersonen (${batchData.length} rijen): ${err instanceof Error ? err.message : 'Onbekende fout'}`
+          `Batch contactpersonen (${batchData.length} rijen): ${err instanceof Error ? err.message : typeof err === 'object' && err !== null && 'message' in err ? String((err as Record<string, unknown>).message) : String(err)}`
         )
       }
     }
