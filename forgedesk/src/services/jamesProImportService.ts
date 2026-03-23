@@ -33,8 +33,8 @@ export interface ImportProgress {
 export interface ImportResultaat {
   klanten: { imported: number; skipped: number; errors: string[] }
   projecten: { imported: number; linked: number; errors: string[] }
-  offertes: { imported: number; linkedProject: number; linkedKlant: number; errors: string[] }
-  facturen: { imported: number; linkedProject: number; linkedKlant: number; errors: string[] }
+  offertes: { imported: number; linkedKlant: number; errors: string[] }
+  facturen: { imported: number; linkedKlant: number; errors: string[] }
 }
 
 export interface JamesProImportData {
@@ -164,36 +164,6 @@ function normalizeCompanyName(name: string): string {
     .replace(/\s+/g, ' ')
 }
 
-function similarityRatio(a: string, b: string): number {
-  const s1 = a.toLowerCase()
-  const s2 = b.toLowerCase()
-  if (s1 === s2) return 1
-
-  const longer = s1.length > s2.length ? s1 : s2
-  const shorter = s1.length > s2.length ? s2 : s1
-  if (longer.length === 0) return 0
-
-  // Levenshtein-based
-  const costs: number[] = []
-  for (let i = 0; i <= shorter.length; i++) {
-    let lastValue = i
-    for (let j = 0; j <= longer.length; j++) {
-      if (i === 0) {
-        costs[j] = j
-      } else if (j > 0) {
-        let newValue = costs[j - 1]
-        if (shorter[i - 1] !== longer[j - 1]) {
-          newValue = Math.min(newValue, lastValue, costs[j]) + 1
-        }
-        costs[j - 1] = lastValue
-        lastValue = newValue
-      }
-    }
-    if (i > 0) costs[longer.length] = lastValue
-  }
-  return 1 - costs[longer.length] / longer.length
-}
-
 // ── Samenvatting (Stap 3) ──
 
 export function buildSamenvatting(data: JamesProImportData): ImportSamenvatting {
@@ -295,8 +265,8 @@ export async function importJamesProData(
   const result: ImportResultaat = {
     klanten: { imported: 0, skipped: 0, errors: [] },
     projecten: { imported: 0, linked: 0, errors: [] },
-    offertes: { imported: 0, linkedProject: 0, linkedKlant: 0, errors: [] },
-    facturen: { imported: 0, linkedProject: 0, linkedKlant: 0, errors: [] },
+    offertes: { imported: 0, linkedKlant: 0, errors: [] },
+    facturen: { imported: 0, linkedKlant: 0, errors: [] },
   }
 
   // ── 1. Klanten (individueel vanwege duplicate check) ──
@@ -365,59 +335,46 @@ export async function importJamesProData(
 
   // ── 2. Projecten (batch insert) ──
   onProgress({ type: 'projecten', current: 0, total: data.projecten.length, status: 'bezig' })
-  const projectsByKlant = new Map<string, { id: string; naam: string }[]>()
 
   for (let i = 0; i < data.projecten.length; i += BATCH_SIZE) {
     const batch = data.projecten.slice(i, i + BATCH_SIZE)
     const mappedBatch: ReturnType<typeof mapJamesProProject>[] = []
-    const companyKeys: string[] = [] // parallel array to track company per mapped row
 
     for (const row of batch) {
       const company = normalizeCompanyName(row.Company || row.company || '')
       const klantId = klantMap.get(company)
       mappedBatch.push(mapJamesProProject(row, klantId, userId))
-      companyKeys.push(company)
     }
 
     const { data: created, error } = await supabase
       .from('projecten')
       .insert(mappedBatch)
-      .select('id, naam, klant_id')
+      .select('id, klant_id')
 
     if (error) {
       result.projecten.errors.push(`Batch ${i}: ${error.message}`)
     } else if (created) {
       result.projecten.imported += created.length
-      for (let j = 0; j < created.length; j++) {
-        const company = companyKeys[j]
-        if (created[j].klant_id) {
-          result.projecten.linked++
-          if (!projectsByKlant.has(company)) projectsByKlant.set(company, [])
-          projectsByKlant.get(company)!.push({ id: created[j].id, naam: created[j].naam })
-        }
-      }
+      result.projecten.linked += created.filter((p: { klant_id: string | null }) => !!p.klant_id).length
     }
 
     onProgress({ type: 'projecten', current: Math.min(i + BATCH_SIZE, data.projecten.length), total: data.projecten.length, status: 'bezig' })
   }
   onProgress({ type: 'projecten', current: data.projecten.length, total: data.projecten.length, status: 'klaar' })
 
-  // ── 3. Offertes (batch insert) ──
+  // ── 3. Offertes (batch insert, klant-only koppeling) ──
   onProgress({ type: 'offertes', current: 0, total: data.offertes.length, status: 'bezig' })
 
   for (let i = 0; i < data.offertes.length; i += BATCH_SIZE) {
     const batch = data.offertes.slice(i, i + BATCH_SIZE)
     const mappedBatch: ReturnType<typeof mapJamesProOfferte>[] = []
-    const linkInfo: { hasProject: boolean; hasKlant: boolean }[] = []
+    let batchLinkedKlant = 0
 
     for (const row of batch) {
       const company = normalizeCompanyName(row.Bedrijfsnaam || row.bedrijfsnaam || '')
       const klantId = klantMap.get(company)
-      const projects = projectsByKlant.get(company) || []
-      const omschrijving = row.Omschrijving || row.omschrijving || ''
-      const matchedProject = matchProjectByName(omschrijving, projects)
-      mappedBatch.push(mapJamesProOfferte(row, klantId, matchedProject?.id, userId))
-      linkInfo.push({ hasProject: !!matchedProject, hasKlant: !!klantId })
+      mappedBatch.push(mapJamesProOfferte(row, klantId, userId))
+      if (klantId) batchLinkedKlant++
     }
 
     const { data: created, error } = await supabase.from('offertes').insert(mappedBatch).select('id')
@@ -426,32 +383,26 @@ export async function importJamesProData(
       result.offertes.errors.push(`Batch ${i}: ${error.message}`)
     } else if (created) {
       result.offertes.imported += created.length
-      for (const info of linkInfo) {
-        if (info.hasProject) result.offertes.linkedProject++
-        if (info.hasKlant) result.offertes.linkedKlant++
-      }
+      result.offertes.linkedKlant += batchLinkedKlant
     }
 
     onProgress({ type: 'offertes', current: Math.min(i + BATCH_SIZE, data.offertes.length), total: data.offertes.length, status: 'bezig' })
   }
   onProgress({ type: 'offertes', current: data.offertes.length, total: data.offertes.length, status: 'klaar' })
 
-  // ── 4. Facturen (batch insert) ──
+  // ── 4. Facturen (batch insert, klant-only koppeling) ──
   onProgress({ type: 'facturen', current: 0, total: data.facturen.length, status: 'bezig' })
 
   for (let i = 0; i < data.facturen.length; i += BATCH_SIZE) {
     const batch = data.facturen.slice(i, i + BATCH_SIZE)
     const mappedBatch: ReturnType<typeof mapJamesProFactuur>[] = []
-    const linkInfo: { hasProject: boolean; hasKlant: boolean }[] = []
+    let batchLinkedKlant = 0
 
     for (const row of batch) {
       const company = normalizeCompanyName(row.Bedrijfsnaam || row.bedrijfsnaam || '')
       const klantId = klantMap.get(company)
-      const projects = projectsByKlant.get(company) || []
-      const omschrijving = row.Omschrijving || row.omschrijving || ''
-      const matchedProject = matchProjectByName(omschrijving, projects)
-      mappedBatch.push(mapJamesProFactuur(row, klantId, matchedProject?.id, userId))
-      linkInfo.push({ hasProject: !!matchedProject, hasKlant: !!klantId })
+      mappedBatch.push(mapJamesProFactuur(row, klantId, userId))
+      if (klantId) batchLinkedKlant++
     }
 
     const { data: created, error } = await supabase.from('facturen').insert(mappedBatch).select('id')
@@ -460,10 +411,7 @@ export async function importJamesProData(
       result.facturen.errors.push(`Batch ${i}: ${error.message}`)
     } else if (created) {
       result.facturen.imported += created.length
-      for (const info of linkInfo) {
-        if (info.hasProject) result.facturen.linkedProject++
-        if (info.hasKlant) result.facturen.linkedKlant++
-      }
+      result.facturen.linkedKlant += batchLinkedKlant
     }
 
     onProgress({ type: 'facturen', current: Math.min(i + BATCH_SIZE, data.facturen.length), total: data.facturen.length, status: 'bezig' })
@@ -538,7 +486,6 @@ function mapJamesProProject(row: Record<string, string>, klantId: string | undef
 function mapJamesProOfferte(
   row: Record<string, string>,
   klantId: string | undefined,
-  projectId: string | undefined,
   userId: string,
 ) {
   const nummer = (row.Offertenummer || row.offertenummer || '').trim()
@@ -550,7 +497,7 @@ function mapJamesProOfferte(
   return {
     user_id: userId,
     klant_id: klantId || null,
-    project_id: projectId || null,
+    project_id: null,
     nummer: nummer || `JP-${Date.now()}`,
     titel: titel || 'Onbekend',
     status,
@@ -574,7 +521,6 @@ function mapJamesProOfferte(
 function mapJamesProFactuur(
   row: Record<string, string>,
   klantId: string | undefined,
-  projectId: string | undefined,
   userId: string,
 ) {
   const nummer = (row.Factuurnummer || row.factuurnummer || '').trim()
@@ -588,7 +534,7 @@ function mapJamesProFactuur(
   return {
     user_id: userId,
     klant_id: klantId || null,
-    project_id: projectId || null,
+    project_id: null,
     nummer: nummer || `JP-F-${Date.now()}`,
     titel: titel || 'Onbekend',
     status: (dagenVervallen > 0 ? 'vervallen' : 'verzonden') as 'vervallen' | 'verzonden',
@@ -628,22 +574,3 @@ function parseDate(val: string | undefined): string | undefined {
   return d.toISOString().split('T')[0]
 }
 
-function matchProjectByName(
-  omschrijving: string,
-  projects: { id: string; naam: string }[],
-): { id: string; naam: string } | null {
-  if (!omschrijving || projects.length === 0) return null
-
-  let bestMatch: { id: string; naam: string } | null = null
-  let bestScore = 0
-
-  for (const p of projects) {
-    const score = similarityRatio(omschrijving, p.naam)
-    if (score > bestScore && score > 0.6) {
-      bestScore = score
-      bestMatch = p
-    }
-  }
-
-  return bestMatch
-}
