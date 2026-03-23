@@ -1,16 +1,14 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   FolderKanban,
   Calendar,
-  FileText,
   Filter,
 } from 'lucide-react'
-import { getProjectenByKlant, getOffertesByKlant, getKlantHistorie } from '@/services/supabaseService'
-import type { Project, Offerte } from '@/types'
+import { getKlantHistorie } from '@/services/supabaseService'
 import { cn } from '@/lib/utils'
 import { logger } from '../../utils/logger'
 
@@ -62,7 +60,6 @@ function getStatusBadge(status?: string) {
 }
 
 export function KlantHistorieTab({ klantId, klantNaam }: KlantHistorieTabProps) {
-  const navigate = useNavigate()
   const [items, setItems] = useState<TijdlijnItem[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'alles' | 'project' | 'offerte' | 'factuur'>('alles')
@@ -70,69 +67,25 @@ export function KlantHistorieTab({ klantId, klantNaam }: KlantHistorieTabProps) 
   useEffect(() => {
     setLoading(true)
 
-    Promise.all([
-      getKlantHistorie(klantId).catch((err) => {
-        logger.error('KlantHistorie ophalen mislukt:', err)
-        return [] as Awaited<ReturnType<typeof getKlantHistorie>>
-      }),
-      getProjectenByKlant(klantId).catch(() => [] as Project[]),
-      getOffertesByKlant(klantId).catch(() => [] as Offerte[]),
-    ])
-      .then(([historie, projecten, offertes]) => {
-        const results: TijdlijnItem[] = []
-
-        // Imported historie — type 1:1 uit database overnemen
-        if (historie.length > 0) {
-          logger.info(`KlantHistorie: ${historie.length} items opgehaald, types:`,
-            historie.reduce((acc, h) => { acc[h.type] = (acc[h.type] || 0) + 1; return acc }, {} as Record<string, number>))
-        }
-        for (const h of historie) {
-          const dbType = h.type as string
-          results.push({
-            datum: h.datum || h.created_at,
-            type: dbType === 'factuur' ? 'factuur'
-              : dbType === 'offerte' ? 'offerte'
-              : dbType === 'project' ? 'project'
-              : dbType as TijdlijnItem['type'],
-            omschrijving: h.naam,
-            bedrag: h.bedrag ?? undefined,
-            status: undefined,
-            bron: 'import',
-          })
-        }
-
-        // Live projects (alleen handmatige)
-        for (const p of projecten) {
-          results.push({
-            datum: p.created_at,
-            type: 'project',
-            omschrijving: p.naam,
-            bedrag: p.budget || 0,
-            bron: 'live',
-          })
-        }
-
-        // Live offertes (goedgekeurd/gefactureerd)
-        for (const o of offertes) {
-          if (o.status === 'goedgekeurd' || o.status === 'gefactureerd') {
-            results.push({
-              datum: o.akkoord_op || o.created_at,
-              type: 'offerte',
-              omschrijving: o.titel || `Offerte #${o.nummer}`,
-              bedrag: o.totaal || 0,
-              status: 'Akkoord',
-              bron: 'live',
-            })
-          }
-        }
-
-        logger.info(`Tijdlijn totaal: ${results.length} items (${results.filter(r => r.bron === 'import').length} import, ${results.filter(r => r.bron === 'live').length} live)`)
+    getKlantHistorie(klantId)
+      .then((historie) => {
+        const results: TijdlijnItem[] = historie.map((h) => ({
+          datum: h.datum || h.created_at,
+          type: h.type,
+          omschrijving: h.naam,
+          bedrag: h.bedrag ?? undefined,
+          status: undefined,
+          bron: 'import' as const,
+        }))
 
         // Sort newest first
         results.sort((a, b) => (b.datum || '').localeCompare(a.datum || ''))
         setItems(results)
       })
-      .catch(logger.error)
+      .catch((err) => {
+        logger.error('KlantHistorie ophalen mislukt:', err)
+        setItems([])
+      })
       .finally(() => setLoading(false))
   }, [klantId])
 
@@ -161,9 +114,9 @@ export function KlantHistorieTab({ klantId, klantNaam }: KlantHistorieTabProps) 
           <Button
             variant="link"
             className="mt-2"
-            onClick={() => navigate('/klanten/importeren')}
+            asChild
           >
-            Ga naar importeren
+            <a href="/klanten/importeren">Ga naar importeren</a>
           </Button>
         </CardContent>
       </Card>
