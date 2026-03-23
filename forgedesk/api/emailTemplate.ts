@@ -30,7 +30,7 @@ export function buildPortalEmailHtml(params: PortalEmailParams): string {
     heading,
     itemTitel,
     beschrijving,
-    ctaLabel = 'Bekijk in Doen. \u2192',
+    ctaLabel = 'Bekijk in portaal \u2192',
     ctaUrl,
     bedrijfsnaam,
     quote,
@@ -80,8 +80,8 @@ export function buildPortalEmailHtml(params: PortalEmailParams): string {
     : ''
 
   const footerText = bedrijfsnaam
-    ? `Verzonden via Doen. namens ${escapeHtml(bedrijfsnaam)}`
-    : 'Verzonden via Doen.'
+    ? `Verzonden namens ${escapeHtml(bedrijfsnaam)}`
+    : ''
 
   return `<!DOCTYPE html>
 <html lang="nl">
@@ -93,9 +93,11 @@ export function buildPortalEmailHtml(params: PortalEmailParams): string {
       <tr><td style="padding: 0 0 24px 0; text-align: center;">
         ${logoUrl
           ? `<img src="${escapeHtml(logoUrl)}" alt="${escapeHtml(bedrijfsnaam || '')}" style="max-height: 48px; max-width: 200px; object-fit: contain;" />`
-          : `<span style="font-family: 'DM Sans', Arial, sans-serif; font-size: 22px; color: ${textDark}; letter-spacing: -0.5px;">
-              <strong>Doen.</strong>
+          : bedrijfsnaam
+          ? `<span style="font-family: 'DM Sans', Arial, sans-serif; font-size: 22px; color: ${textDark}; letter-spacing: -0.5px;">
+              <strong>${escapeHtml(bedrijfsnaam)}</strong>
             </span>`
+          : ''
         }
       </td></tr>
     </table>

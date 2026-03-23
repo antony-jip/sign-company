@@ -93,19 +93,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         upsert: false,
       })
 
-    let url: string
     if (uploadError) {
-      // Fallback: sla base64 URL op als storage niet werkt
-      console.warn('Storage upload failed, using base64 fallback:', uploadError.message)
-      url = `data:${mime_type};base64,${fileData.substring(0, 100)}...` // Placeholder
-      // Eigenlijk slaan we gewoon de volledige data URL op voor de fallback
-      url = `data:${mime_type};base64,${fileData}`
-    } else {
-      const { data: publicUrl } = supabaseAdmin.storage
-        .from('portaal-bestanden')
-        .getPublicUrl(filePath)
-      url = publicUrl.publicUrl
+      console.error('Storage upload failed:', uploadError.message)
+      return res.status(500).json({ error: 'Bestand opslaan mislukt. Probeer het opnieuw.' })
     }
+
+    const { data: publicUrl } = supabaseAdmin.storage
+      .from('portaal-bestanden')
+      .getPublicUrl(filePath)
+    const url = publicUrl.publicUrl
 
     const thumbnail_url = mime_type.startsWith('image/') ? url : null
 

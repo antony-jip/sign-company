@@ -297,7 +297,7 @@ export function PortaalReactieForm({ token, itemId, itemType, itemStatus, primai
             onClick={() => handleSubmit('revisie')}
             disabled={loading}
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors disabled:opacity-50"
-            style={{ backgroundColor: '#f59e0b' }}
+            style={{ backgroundColor: '#F15025' }}
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
             Revisie versturen

@@ -30,8 +30,8 @@ export function PortaalChatBubble({ message, isOwnMessage, onImageClick }: Porta
             <span>Jij</span>
             <span>{time}</span>
           </div>
-          <div className="rounded-2xl rounded-br-md border-l-[3px] border-[#F5C4B4] bg-[#FDE8E2]/80 px-4 py-2.5 shadow-sm">
-            <div className="mb-1 flex items-center gap-1 text-xs font-medium text-[#C03A18]">
+          <div className="rounded-2xl rounded-br-md border-l-[3px] border-flame/40 bg-flame-light/80 px-4 py-2.5 shadow-sm">
+            <div className="mb-1 flex items-center gap-1 text-xs font-medium text-flame">
               Intern
             </div>
             <p className="text-sm italic whitespace-pre-wrap text-foreground">{message.text}</p>
@@ -52,8 +52,8 @@ export function PortaalChatBubble({ message, isOwnMessage, onImageClick }: Porta
         <div
           className={
             isOwnMessage
-              ? 'rounded-2xl rounded-br-md bg-[#E8F2EC] px-4 py-2.5 shadow-sm'
-              : 'rounded-2xl rounded-bl-md border border-border bg-white px-4 py-2.5'
+              ? 'rounded-2xl rounded-br-md bg-[#E2F0F0] px-4 py-2.5 shadow-sm'
+              : 'rounded-2xl rounded-bl-md border border-border bg-[#F4F2EE] px-4 py-2.5'
           }
         >
           {message.fotoUrl && (

@@ -184,8 +184,8 @@ export function PortaalBerichtenSection({ items, allItems, token, klantNaam, kan
                     <div
                       className={`max-w-[80%] px-3 py-2 rounded-2xl text-sm ${
                         msg.afzender === 'klant'
-                          ? 'bg-gray-900 text-white rounded-br-md'
-                          : 'bg-gray-100 text-gray-800 rounded-bl-md'
+                          ? 'bg-[#F4F2EE] text-foreground rounded-br-md'
+                          : 'bg-[#E2F0F0] text-foreground rounded-bl-md'
                       }`}
                     >
                       {msg.foto_url && (

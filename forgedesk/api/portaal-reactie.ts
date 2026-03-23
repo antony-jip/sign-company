@@ -33,7 +33,7 @@ function buildPortalEmailHtml(params: {
   heading: string; itemTitel?: string; beschrijving?: string; ctaLabel?: string
   ctaUrl?: string; bedrijfsnaam?: string; quote?: string; logoUrl?: string; primaireKleur?: string
 }): string {
-  const { heading, itemTitel, beschrijving, ctaLabel = 'Bekijk in Doen. \u2192', ctaUrl, bedrijfsnaam, quote, logoUrl, primaireKleur } = params
+  const { heading, itemTitel, beschrijving, ctaLabel = 'Bekijk in portaal \u2192', ctaUrl, bedrijfsnaam, quote, logoUrl, primaireKleur } = params
   const sage = primaireKleur || '#5A8264'
   const sageLight = primaireKleur ? `${primaireKleur}18` : '#E4EBE6'
   const bgOuter = '#F4F3F0', bgCard = '#FFFFFF', textDark = '#1A1A1A', textMuted = '#5A5A55', textLight = '#8A8A85', borderLight = '#E8E8E3'
@@ -41,10 +41,12 @@ function buildPortalEmailHtml(params: {
   const quoteBlock = quote ? `<tr><td style="padding: 0 0 20px 0;"><table width="100%" cellpadding="0" cellspacing="0" style="background-color: ${primaireKleur ? sageLight : '#E4EBE6'}; border-radius: 8px; border-left: 4px solid ${sage};"><tr><td style="padding: 16px 20px; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: ${textDark}; font-style: italic; line-height: 1.6;">&ldquo;${escapeHtml(quote)}&rdquo;</td></tr></table></td></tr>` : ''
   const groetBlock = bedrijfsnaam ? `<tr><td style="padding: 16px 0 0 0; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: ${textMuted}; line-height: 1.8;">Met vriendelijke groet,<br/><strong style="color: ${textDark};">${escapeHtml(bedrijfsnaam)}</strong></td></tr>` : ''
   const ctaBlock = ctaUrl ? `<tr><td style="padding: 8px 0 0 0;" align="center"><a href="${escapeHtml(ctaUrl)}" target="_blank" style="display: inline-block; background-color: ${sage}; color: #FFFFFF; font-family: 'DM Sans', Arial, sans-serif; font-size: 15px; font-weight: 600; text-decoration: none; padding: 14px 32px; border-radius: 8px; line-height: 1;">${escapeHtml(ctaLabel)}</a></td></tr>` : ''
-  const footerText = bedrijfsnaam ? `Verzonden via Doen. namens ${escapeHtml(bedrijfsnaam)}` : 'Verzonden via Doen.'
+  const footerText = bedrijfsnaam ? `Verzonden namens ${escapeHtml(bedrijfsnaam)}` : ''
   const logoHtml = logoUrl
     ? `<img src="${escapeHtml(logoUrl)}" alt="${escapeHtml(bedrijfsnaam || '')}" style="max-height: 48px; max-width: 200px; object-fit: contain;" />`
-    : `<span style="font-family: 'DM Sans', Arial, sans-serif; font-size: 22px; color: ${textDark}; letter-spacing: -0.5px;"><strong>Doen.</strong></span>`
+    : bedrijfsnaam
+    ? `<span style="font-family: 'DM Sans', Arial, sans-serif; font-size: 22px; color: ${textDark}; letter-spacing: -0.5px;"><strong>${escapeHtml(bedrijfsnaam)}</strong></span>`
+    : ''
   return `<!DOCTYPE html><html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body style="margin: 0; padding: 0; background-color: ${bgOuter}; -webkit-font-smoothing: antialiased;"><table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: ${bgOuter}; padding: 40px 0;"><tr><td align="center"><table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%;"><tr><td style="padding: 0 0 24px 0; text-align: center;">${logoHtml}</td></tr></table><table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%; background-color: ${bgCard}; border-radius: 12px; box-shadow: 0 2px 16px rgba(0,0,0,0.04);"><tr><td style="padding: 40px 40px 36px 40px;"><table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding: 0 0 24px 0; font-family: 'DM Sans', Arial, sans-serif; font-size: 20px; font-weight: 700; color: ${textDark}; line-height: 1.3;">${escapeHtml(heading)}</td></tr>${itemBlock}${quoteBlock}${groetBlock}${ctaBlock}</table></td></tr></table><table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%;"><tr><td style="padding: 24px 0 0 0; text-align: center; font-family: 'DM Sans', Arial, sans-serif; font-size: 12px; color: ${textLight}; line-height: 1.6;">${footerText}</td></tr></table></td></tr></table></body></html>`
 }
 // ---- Einde inline email template ----
@@ -144,15 +146,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Haal de offerte_id op via het portaal item
       const { data: fullPortaalItem } = await supabaseAdmin
         .from('portaal_items')
-        .select('referentie_id')
+        .select('offerte_id')
         .eq('id', portaal_item_id)
         .single()
 
-      if (fullPortaalItem?.referentie_id) {
+      if (fullPortaalItem?.offerte_id) {
         const offerteUpdate: Record<string, unknown> = { updated_at: new Date().toISOString() }
         if (gekozen_items) offerteUpdate.gekozen_items = gekozen_items
         if (gekozen_varianten) offerteUpdate.gekozen_varianten = gekozen_varianten
-        await supabaseAdmin.from('offertes').update(offerteUpdate).eq('id', fullPortaalItem.referentie_id)
+        await supabaseAdmin.from('offertes').update(offerteUpdate).eq('id', fullPortaalItem.offerte_id)
       }
     }
 
@@ -241,14 +243,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           ? `Revisie gevraagd: ${fullItem?.titel || 'Item'} — ${displayNaam}`
           : `Nieuw bericht: ${fullItem?.titel || 'Item'} — ${displayNaam}`
 
-        const appUrl = process.env.VITE_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://app.forgedesk.io')
+        const appUrl = process.env.VITE_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://app.doen.team')
 
         const emailBody = [
           `${displayNaam} heeft ${actieLabel}:`,
           bericht?.trim() ? `\n"${bericht.trim()}"` : '',
           `\nItem: ${fullItem?.titel || 'Item'}`,
           `Project: ${project?.naam || 'Project'}`,
-          `\nBekijk in Doen.: ${appUrl}/projecten/${portaal.project_id}`,
+          `\nBekijk: ${appUrl}/projecten/${portaal.project_id}`,
         ].filter(Boolean).join('\n')
 
         const emailHtml = buildPortalEmailHtml({
@@ -256,7 +258,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           itemTitel: fullItem?.titel || 'Item',
           beschrijving: `Project: ${project?.naam || 'Project'}`,
           quote: bericht?.trim() || undefined,
-          ctaLabel: 'Bekijk in Doen. \u2192',
+          ctaLabel: 'Bekijk in portaal \u2192',
           ctaUrl: `${appUrl}/projecten/${portaal.project_id}`,
           bedrijfsnaam: profileData?.bedrijfsnaam || undefined,
           logoUrl: profileData?.logo_url || undefined,
