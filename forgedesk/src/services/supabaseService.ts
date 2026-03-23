@@ -2,6 +2,9 @@ import supabase, { isSupabaseConfigured } from './supabaseClient'
 import { safeSetItem } from '@/utils/localStorageUtils'
 import type {
   Contactpersoon,
+  ContactpersoonRecord,
+  KlantHistorie,
+  ImportLog,
   Klant,
   Project,
   Taak,
@@ -5818,4 +5821,121 @@ export async function getOpvolgLog(offerteId: string): Promise<OpvolgLogEntry[]>
     .order('created_at', { ascending: true })
   if (error) throw error
   return (data || []) as OpvolgLogEntry[]
+}
+
+// ============ CONTACTPERSONEN (DB) ============
+
+export async function getContactpersonenDB(organisatieId: string): Promise<ContactpersoonRecord[]> {
+  if (!isSupabaseConfigured() || !supabase) return []
+  const { data, error } = await supabase
+    .from('contactpersonen')
+    .select('*')
+    .eq('organisatie_id', organisatieId)
+    .order('achternaam', { ascending: true })
+  if (error) throw error
+  return (data || []) as ContactpersoonRecord[]
+}
+
+export async function getContactpersonenByKlant(klantId: string): Promise<ContactpersoonRecord[]> {
+  if (!isSupabaseConfigured() || !supabase) return []
+  const { data, error } = await supabase
+    .from('contactpersonen')
+    .select('*')
+    .eq('klant_id', klantId)
+    .order('achternaam', { ascending: true })
+  if (error) throw error
+  return (data || []) as ContactpersoonRecord[]
+}
+
+export async function createContactpersoonDB(data: Partial<ContactpersoonRecord>): Promise<ContactpersoonRecord> {
+  if (!isSupabaseConfigured() || !supabase) throw new Error('Supabase niet geconfigureerd')
+  const { data: result, error } = await supabase
+    .from('contactpersonen')
+    .insert(data)
+    .select()
+    .single()
+  if (error) throw error
+  return result as ContactpersoonRecord
+}
+
+export async function updateContactpersoonDB(id: string, data: Partial<ContactpersoonRecord>): Promise<ContactpersoonRecord> {
+  assertId(id)
+  if (!isSupabaseConfigured() || !supabase) throw new Error('Supabase niet geconfigureerd')
+  const { data: result, error } = await supabase
+    .from('contactpersonen')
+    .update({ ...data, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) throw error
+  return result as ContactpersoonRecord
+}
+
+export async function deleteContactpersoonDB(id: string): Promise<void> {
+  assertId(id)
+  if (!isSupabaseConfigured() || !supabase) return
+  const { error } = await supabase
+    .from('contactpersonen')
+    .delete()
+    .eq('id', id)
+  if (error) throw error
+}
+
+export async function koppelContactAanKlant(contactId: string, klantId: string): Promise<void> {
+  assertId(contactId, 'contactId')
+  assertId(klantId, 'klantId')
+  if (!isSupabaseConfigured() || !supabase) return
+  const { error } = await supabase
+    .from('contactpersonen')
+    .update({ klant_id: klantId, updated_at: new Date().toISOString() })
+    .eq('id', contactId)
+  if (error) throw error
+}
+
+export async function ontkoppelContact(contactId: string): Promise<void> {
+  assertId(contactId)
+  if (!isSupabaseConfigured() || !supabase) return
+  const { error } = await supabase
+    .from('contactpersonen')
+    .update({ klant_id: null, updated_at: new Date().toISOString() })
+    .eq('id', contactId)
+  if (error) throw error
+}
+
+// ============ KLANT HISTORIE ============
+
+export async function getKlantHistorie(klantId: string): Promise<KlantHistorie[]> {
+  assertId(klantId)
+  if (!isSupabaseConfigured() || !supabase) return []
+  const { data, error } = await supabase
+    .from('klant_historie')
+    .select('*')
+    .eq('klant_id', klantId)
+    .order('datum', { ascending: false })
+  if (error) throw error
+  return (data || []) as KlantHistorie[]
+}
+
+// ============ IMPORT LOGS ============
+
+export async function getImportLogs(organisatieId: string): Promise<ImportLog[]> {
+  if (!isSupabaseConfigured() || !supabase) return []
+  const { data, error } = await supabase
+    .from('import_logs')
+    .select('*')
+    .eq('organisatie_id', organisatieId)
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return (data || []) as ImportLog[]
+}
+
+export async function createImportLog(data: Partial<ImportLog>): Promise<ImportLog> {
+  if (!isSupabaseConfigured() || !supabase) throw new Error('Supabase niet geconfigureerd')
+  const { data: result, error } = await supabase
+    .from('import_logs')
+    .insert(data)
+    .select()
+    .single()
+  if (error) throw error
+  return result as ImportLog
 }

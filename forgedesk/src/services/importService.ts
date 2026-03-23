@@ -1,415 +1,328 @@
-import { getKlanten, getKlant, createKlant, updateKlant } from './supabaseService'
-import { round2 } from '@/utils/budgetUtils'
-import { safeSetItem } from '@/utils/localStorageUtils'
-import type {
-  Klant,
-  Contactpersoon,
-  KlantActiviteit,
-  CSVKlantRij,
-  CSVActiviteitRij,
-  ImportResultaat,
-} from '@/types'
+import { getKlanten, createKlant, createImportLog } from './supabaseService'
+import type { Klant, ImportOperationResult, ImportLog } from '@/types'
+import supabase, { isSupabaseConfigured } from './supabaseClient'
 
-// ============ LOCALSTORAGE KEYS ============
-
-const LS_CONTACTPERSONEN = 'forgedesk_import_contactpersonen'
-const LS_ACTIVITEITEN_PREFIX = 'forgedesk_activiteiten_'
-const LS_ACTIVITEITEN_OLD = 'forgedesk_import_activiteiten'
-
-// ============ HELPERS ============
-
-function getLocalData<T>(key: string): T[] {
-  const data = localStorage.getItem(key)
-  return data ? JSON.parse(data) : []
-}
-
-function setLocalData<T>(key: string, data: T[]): void {
-  safeSetItem(key, JSON.stringify(data))
-}
-
-// Migratie: verplaats data van oude single-key naar per-klant keys
-function migreerOudeActiviteiten(): void {
-  const oudeData = localStorage.getItem(LS_ACTIVITEITEN_OLD)
-  if (!oudeData) return
-  try {
-    const items: KlantActiviteit[] = JSON.parse(oudeData)
-    const perKlant = new Map<string, KlantActiviteit[]>()
-    for (const item of items) {
-      if (!item.klant_id) continue
-      const bestaande = perKlant.get(item.klant_id) || []
-      bestaande.push(item)
-      perKlant.set(item.klant_id, bestaande)
-    }
-    for (const [klantId, activiteiten] of perKlant) {
-      const key = `${LS_ACTIVITEITEN_PREFIX}${klantId}`
-      const bestaande = getLocalData<KlantActiviteit>(key)
-      safeSetItem(key, JSON.stringify([...bestaande, ...activiteiten]))
-    }
-    localStorage.removeItem(LS_ACTIVITEITEN_OLD)
-  } catch {
-    localStorage.removeItem(LS_ACTIVITEITEN_OLD)
-  }
-}
-
-migreerOudeActiviteiten()
+// ============ CSV PARSING ============
 
 /**
- * Migratie: verplaats importcontactpersonen van aparte localStorage key
- * naar het klant.contactpersonen veld op het klant-record.
- * Draait eenmalig bij module-load.
+ * Parse een CSV bestand met automatische separator-detectie.
+ * Ondersteunt ; en , als scheidingsteken, UTF-8 BOM, en quoted fields.
+ * Geen limiet op aantal rijen.
  */
-async function migreerImportContactpersonen(): Promise<void> {
-  const raw = localStorage.getItem(LS_CONTACTPERSONEN)
-  if (!raw) return
-  try {
-    const imported: ImportContactpersoon[] = JSON.parse(raw)
-    if (!imported.length) {
-      localStorage.removeItem(LS_CONTACTPERSONEN)
-      return
-    }
-    // Groepeer per klant
-    const perKlant = new Map<string, ImportContactpersoon[]>()
-    for (const ic of imported) {
-      if (!ic.klant_id) continue
-      const bestaande = perKlant.get(ic.klant_id) || []
-      bestaande.push(ic)
-      perKlant.set(ic.klant_id, bestaande)
-    }
-    // Voeg contactpersonen toe aan klant-records
-    for (const [klantId, contacts] of perKlant) {
+export function parseCSV(file: File): Promise<{ headers: string[]; rows: Record<string, string>[] }> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
       try {
-        const klant = await getKlant(klantId)
-        if (!klant) continue
-        const bestaandeContacten: Contactpersoon[] = klant.contactpersonen || []
-        const bestaandeEmails = new Set(bestaandeContacten.map((c) => c.email?.toLowerCase()).filter(Boolean))
-        const nieuweContacten: Contactpersoon[] = contacts
-          .filter((ic) => !ic.email || !bestaandeEmails.has(ic.email.toLowerCase()))
-          .map((ic) => ({
-            id: crypto.randomUUID(),
-            naam: ic.naam || '',
-            email: ic.email || '',
-            telefoon: ic.telefoon || '',
-            functie: ic.functie || '',
-            is_primair: false,
-          }))
-        if (nieuweContacten.length > 0) {
-          await updateKlant(klantId, {
-            contactpersonen: [...bestaandeContacten, ...nieuweContacten],
-          })
+        let text = e.target?.result as string
+        if (!text) {
+          resolve({ headers: [], rows: [] })
+          return
         }
-      } catch {
-        // Skip klant als er een fout is
+        // Strip BOM
+        if (text.charCodeAt(0) === 0xFEFF) {
+          text = text.slice(1)
+        }
+
+        // Detect separator: count ; and , in first line
+        const firstLine = text.split('\n')[0] || ''
+        const semicolons = (firstLine.match(/;/g) || []).length
+        const commas = (firstLine.match(/,/g) || []).length
+        const separator = semicolons >= commas ? ';' : ','
+
+        // Parse CSV
+        const allRows: string[][] = []
+        let current = ''
+        let inQuotes = false
+        let row: string[] = []
+
+        for (let i = 0; i < text.length; i++) {
+          const char = text[i]
+          if (char === '"') {
+            if (inQuotes && text[i + 1] === '"') {
+              current += '"'
+              i++
+            } else {
+              inQuotes = !inQuotes
+            }
+          } else if (char === separator && !inQuotes) {
+            row.push(current.trim())
+            current = ''
+          } else if (char === '\n' && !inQuotes) {
+            row.push(current.trim())
+            if (row.some((cell) => cell !== '')) allRows.push(row)
+            row = []
+            current = ''
+          } else if (char !== '\r') {
+            current += char
+          }
+        }
+        if (current || row.length > 0) {
+          row.push(current.trim())
+          if (row.some((cell) => cell !== '')) allRows.push(row)
+        }
+
+        if (allRows.length < 2) {
+          resolve({ headers: [], rows: [] })
+          return
+        }
+
+        const headers = allRows[0].map((h) =>
+          h.replace(/^["']|["']$/g, '').trim().toLowerCase()
+        )
+        const rows: Record<string, string>[] = []
+
+        for (let i = 1; i < allRows.length; i++) {
+          const values = allRows[i]
+          const obj: Record<string, string> = {}
+          headers.forEach((h, idx) => {
+            obj[h] = (values[idx] || '').replace(/^["']|["']$/g, '').trim()
+          })
+          rows.push(obj)
+        }
+
+        resolve({ headers, rows })
+      } catch (err) {
+        reject(err)
       }
     }
-    // Verwijder de oude localStorage key na succesvolle migratie
-    localStorage.removeItem(LS_CONTACTPERSONEN)
-  } catch {
-    // Verwijder corrupte data
-    localStorage.removeItem(LS_CONTACTPERSONEN)
+    reader.onerror = () => reject(new Error('Bestand kon niet gelezen worden'))
+    reader.readAsText(file, 'utf-8')
+  })
+}
+
+// ============ VALIDATIE ============
+
+export function valideerBedrijfsdata(
+  headers: string[],
+  rows: Record<string, string>[]
+): { isValid: boolean; fouten: string[]; waarschuwingen: string[] } {
+  const fouten: string[] = []
+  const waarschuwingen: string[] = []
+
+  const lowerHeaders = headers.map((h) => h.toLowerCase())
+
+  if (!lowerHeaders.includes('type')) {
+    fouten.push('Kolom "type" ontbreekt. Deze kolom is verplicht.')
   }
+  if (!lowerHeaders.includes('bedrijfsnaam')) {
+    fouten.push('Kolom "bedrijfsnaam" ontbreekt. Deze kolom is verplicht.')
+  }
+
+  if (fouten.length > 0) {
+    return { isValid: false, fouten, waarschuwingen }
+  }
+
+  const geldigeTypes = ['relatie', 'project', 'offerte', 'factuur']
+  let ongeldigeTypes = 0
+  let leegBedrijf = 0
+
+  for (let i = 0; i < rows.length; i++) {
+    const rij = rows[i]
+    const type = (rij.type || '').toLowerCase().trim()
+
+    if (!geldigeTypes.includes(type)) {
+      ongeldigeTypes++
+      if (ongeldigeTypes <= 3) {
+        fouten.push(`Rij ${i + 2}: ongeldige type "${rij.type}" (verwacht: relatie, project, offerte, of factuur)`)
+      }
+    }
+
+    if (type === 'relatie' && !(rij.bedrijfsnaam || '').trim()) {
+      leegBedrijf++
+    }
+  }
+
+  if (ongeldigeTypes > 3) {
+    fouten.push(`...en nog ${ongeldigeTypes - 3} rijen met ongeldig type.`)
+  }
+
+  if (leegBedrijf > 0) {
+    waarschuwingen.push(`${leegBedrijf} relatie-rij(en) zonder bedrijfsnaam worden overgeslagen.`)
+  }
+
+  const zonderBedrijf = rows.filter(
+    (r) => (r.type || '').toLowerCase().trim() !== 'relatie' && !(r.bedrijfsnaam || '').trim()
+  ).length
+  if (zonderBedrijf > 0) {
+    waarschuwingen.push(`${zonderBedrijf} rij(en) zonder bedrijfsnaam — worden geïmporteerd zonder klantkoppeling.`)
+  }
+
+  return { isValid: fouten.length === 0, fouten, waarschuwingen }
 }
 
-// Voer migratie async uit (blokkeert niet de pagina-load)
-migreerImportContactpersonen()
+export function valideerContactpersonen(
+  headers: string[],
+  rows: Record<string, string>[]
+): { isValid: boolean; fouten: string[]; waarschuwingen: string[] } {
+  const fouten: string[] = []
+  const waarschuwingen: string[] = []
 
-function generateId(): string {
-  return crypto.randomUUID()
+  const lowerHeaders = headers.map((h) => h.toLowerCase())
+  const heeftVoornaam = lowerHeaders.includes('voornaam')
+  const heeftAchternaam = lowerHeaders.includes('achternaam')
+  const heeftEmail = lowerHeaders.includes('email')
+
+  if (!heeftVoornaam && !heeftAchternaam && !heeftEmail) {
+    fouten.push('Minstens één van de kolommen "voornaam", "achternaam", of "email" is vereist.')
+  }
+
+  if (fouten.length > 0) {
+    return { isValid: false, fouten, waarschuwingen }
+  }
+
+  const zonderInfo = rows.filter((r) => {
+    const voornaam = (r.voornaam || '').trim()
+    const achternaam = (r.achternaam || '').trim()
+    const email = (r.email || '').trim()
+    return !voornaam && !achternaam && !email
+  }).length
+
+  if (zonderInfo > 0) {
+    waarschuwingen.push(`${zonderInfo} rij(en) zonder naam en zonder email worden overgeslagen.`)
+  }
+
+  return { isValid: true, fouten, waarschuwingen }
 }
 
-function now(): string {
-  return new Date().toISOString()
-}
+// ============ DATA TRANSFORMATIES ============
 
-function parseNumber(value: string | undefined): number {
-  if (!value) return 0
-  const cleaned = value.replace(',', '.').replace(/[^0-9.\-]/g, '')
+/** "1.234,56" of "€1234.56" of "1234,56" → 1234.56 */
+export function normaliseerBedrag(bedrag: string): number | null {
+  if (!bedrag || !bedrag.trim()) return null
+  let cleaned = bedrag.trim().replace(/[€\s]/g, '')
+
+  // Detect Dutch format: 1.234,56
+  if (cleaned.includes(',') && cleaned.includes('.')) {
+    // Check if comma comes after last dot → Dutch format
+    const lastComma = cleaned.lastIndexOf(',')
+    const lastDot = cleaned.lastIndexOf('.')
+    if (lastComma > lastDot) {
+      // Dutch: 1.234,56 → remove dots, replace comma
+      cleaned = cleaned.replace(/\./g, '').replace(',', '.')
+    }
+    // English: 1,234.56 → remove commas
+    else {
+      cleaned = cleaned.replace(/,/g, '')
+    }
+  } else if (cleaned.includes(',')) {
+    // Only comma: 1234,56 → replace with dot
+    cleaned = cleaned.replace(',', '.')
+  }
+
+  cleaned = cleaned.replace(/[^0-9.\-]/g, '')
   const num = parseFloat(cleaned)
-  return isNaN(num) ? 0 : round2(num)
+  return isNaN(num) ? null : Math.round(num * 100) / 100
 }
 
-/** Normalize a company name for comparison: trim, lowercase, strip trailing dots */
-function normalizeNaam(naam: string): string {
-  return naam.trim().toLowerCase().replace(/\.+$/, '')
-}
+/** "20260323" of "23-03-2026" of "2026/03/23" → "2026-03-23" */
+export function normaliseerDatum(datum: string): string | null {
+  if (!datum || !datum.trim()) return null
+  const d = datum.trim()
 
-// ============ CSV PARSER ============
+  // ISO format: 2026-03-23
+  if (/^\d{4}-\d{2}-\d{2}$/.test(d)) return d
 
-/**
- * Parse CSV text with semicolon delimiter, UTF-8 BOM handling, and quoted fields.
- * Returns an array of objects keyed by header names.
- */
-export function parseCSV<T = Record<string, string>>(text: string, separator = ';'): T[] {
-  // Strip BOM
-  let input = text
-  if (input.charCodeAt(0) === 0xFEFF) {
-    input = input.slice(1)
+  // Compact: 20260323
+  if (/^\d{8}$/.test(d)) {
+    return `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}`
   }
 
-  const rows: string[][] = []
-  let current = ''
-  let inQuotes = false
-  let row: string[] = []
-
-  for (let i = 0; i < input.length; i++) {
-    const char = input[i]
-    if (char === '"') {
-      if (inQuotes && input[i + 1] === '"') {
-        current += '"'
-        i++
-      } else {
-        inQuotes = !inQuotes
-      }
-    } else if (char === separator && !inQuotes) {
-      row.push(current.trim())
-      current = ''
-    } else if (char === '\n' && !inQuotes) {
-      row.push(current.trim())
-      if (row.some((cell) => cell !== '')) rows.push(row)
-      row = []
-      current = ''
-    } else if (char !== '\r') {
-      current += char
-    }
-  }
-  if (current || row.length > 0) {
-    row.push(current.trim())
-    if (row.some((cell) => cell !== '')) rows.push(row)
+  // Dutch: 23-03-2026 or 23/03/2026
+  const nlMatch = d.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/)
+  if (nlMatch) {
+    const dag = nlMatch[1].padStart(2, '0')
+    const maand = nlMatch[2].padStart(2, '0')
+    const jaar = nlMatch[3]
+    return `${jaar}-${maand}-${dag}`
   }
 
-  if (rows.length < 2) return []
-
-  const headers = rows[0].map((h) => h.replace(/^["']|["']$/g, '').trim())
-  const result: T[] = []
-
-  for (let i = 1; i < rows.length; i++) {
-    const values = rows[i]
-    const obj: Record<string, string> = {}
-    headers.forEach((h, idx) => {
-      obj[h] = (values[idx] || '').replace(/^["']|["']$/g, '').trim()
-    })
-    result.push(obj as T)
+  // US/ISO with slashes: 2026/03/23
+  const isoSlash = d.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/)
+  if (isoSlash) {
+    const maand = isoSlash[2].padStart(2, '0')
+    const dag = isoSlash[3].padStart(2, '0')
+    return `${isoSlash[1]}-${maand}-${dag}`
   }
 
-  return result
+  return null
 }
 
-// ============ CONTACTPERSONEN PARSER ============
-
-const CONTACT_REGEX = /^(.+?)\s*(?:<([^>]+)>)?\s*([\d\s\-+()]{7,})?$/
-
-export function parseContactpersonen(raw: string): Array<{ naam: string; email?: string; telefoon?: string }> {
-  if (!raw || !raw.trim()) return []
-
-  // Split on ", " (comma space)
-  const parts = raw.split(/,\s+/)
-  const contacts: Array<{ naam: string; email?: string; telefoon?: string }> = []
-
-  for (const part of parts) {
-    const trimmed = part.trim()
-    if (!trimmed) continue
-
-    const match = trimmed.match(CONTACT_REGEX)
-    if (match) {
-      const naam = match[1].trim()
-      const email = match[2]?.trim() || undefined
-      const telefoon = match[3]?.trim() || undefined
-      if (naam) {
-        contacts.push({ naam, email, telefoon })
-      }
-    } else {
-      // Fallback: treat entire string as name
-      contacts.push({ naam: trimmed })
-    }
-  }
-
-  return contacts
+/** Bedrijfsnaam normaliseren voor matching: lowercase, strip "B.V.", "BV", etc. */
+export function normaliseerBedrijfsnaam(naam: string): string {
+  return naam
+    .trim()
+    .toLowerCase()
+    .replace(/\s*(b\.?v\.?|n\.?v\.?|v\.?o\.?f\.?|holding)\s*$/i, '')
+    .replace(/\.+$/, '')
+    .trim()
 }
 
-// ============ KLANT LOOKUP ============
+// ============ IMPORT: BEDRIJFSDATA ============
 
-export async function findKlantByNaam(naam: string): Promise<Klant | null> {
-  if (!naam) return null
-  const zoek = normalizeNaam(naam)
-  const klanten = await getKlanten()
-  return klanten.find((k) => normalizeNaam(k.bedrijfsnaam) === zoek) || null
-}
+const CHUNK_SIZE = 500
 
-// ============ CONTACTPERSONEN CRUD ============
-
-export interface ImportContactpersoon {
-  id: string;
-  user_id: string;
-  klant_id: string;
-  naam: string;
-  email?: string;
-  telefoon?: string;
-  functie?: string;
-  import_bron?: string;
-  created_at: string;
-}
-
-export function getContactpersonen(klant_id: string): ImportContactpersoon[] {
-  const all = getLocalData<ImportContactpersoon>(LS_CONTACTPERSONEN)
-  return all.filter((c) => c.klant_id === klant_id)
-}
-
-export function createContactpersoon(data: Omit<ImportContactpersoon, 'id' | 'created_at'>): ImportContactpersoon {
-  const all = getLocalData<ImportContactpersoon>(LS_CONTACTPERSONEN)
-  const newRecord: ImportContactpersoon = {
-    ...data,
-    id: generateId(),
-    created_at: now(),
-  }
-  all.push(newRecord)
-  setLocalData(LS_CONTACTPERSONEN, all)
-  return newRecord
-}
-
-export function deleteContactpersoon(id: string): void {
-  const all = getLocalData<ImportContactpersoon>(LS_CONTACTPERSONEN)
-  setLocalData(LS_CONTACTPERSONEN, all.filter((c) => c.id !== id))
-}
-
-// ============ ACTIVITEITEN CRUD ============
-
-export function getActiviteiten(klant_id: string): KlantActiviteit[] {
-  const key = `${LS_ACTIVITEITEN_PREFIX}${klant_id}`
-  return getLocalData<KlantActiviteit>(key)
-    .sort((a, b) => b.datum.localeCompare(a.datum))
-}
-
-export function getAllActiviteiten(): KlantActiviteit[] {
-  const all: KlantActiviteit[] = []
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i)
-    if (key && key.startsWith(LS_ACTIVITEITEN_PREFIX)) {
-      all.push(...getLocalData<KlantActiviteit>(key))
-    }
-  }
-  return all.sort((a, b) => b.datum.localeCompare(a.datum))
-}
-
-function createActiviteit(data: Omit<KlantActiviteit, 'id' | 'created_at'>): KlantActiviteit {
-  const key = `${LS_ACTIVITEITEN_PREFIX}${data.klant_id}`
-  const all = getLocalData<KlantActiviteit>(key)
-  const newRecord: KlantActiviteit = {
-    ...data,
-    id: generateId(),
-    created_at: now(),
-  }
-  all.push(newRecord)
-  try {
-    setLocalData(key, all)
-  } catch {
-    // Quota exceeded — sla deze activiteit over
-    throw new Error('localStorage quota exceeded')
-  }
-  return newRecord
-}
-
-// ============ IMPORT: KLANTEN ============
-
-export async function importKlanten(rows: CSVKlantRij[]): Promise<ImportResultaat> {
-  // Wis activiteiten data om localStorage ruimte vrij te maken voor klantdata
-  clearImportData()
-
-  const resultaat: ImportResultaat = {
-    totaal: rows.length,
+export async function importeerBedrijfsdata(
+  rows: Record<string, string>[],
+  organisatieId: string,
+  userId: string,
+  bestandsnaam: string,
+  onProgress?: (current: number, total: number) => void,
+): Promise<ImportOperationResult> {
+  const resultaat: ImportOperationResult = {
     geimporteerd: 0,
     overgeslagen: 0,
     fouten: 0,
-    fout_details: [],
+    foutMeldingen: [],
   }
 
-  // Build lookup map of existing klanten
-  const bestaandeKlanten = await getKlanten()
-  const klantMap = new Map<string, Klant>()
-  bestaandeKlanten.forEach((k) => klantMap.set(normalizeNaam(k.bedrijfsnaam), k))
-
-  let contactpersonenAangemaakt = 0
-  let quotaVolContacten = 0
+  // Split rows by type
+  const relatieRijen: Record<string, string>[] = []
+  const historieRijen: Record<string, string>[] = []
 
   for (const rij of rows) {
-    try {
-      if (!rij.bedrijfsnaam || !rij.bedrijfsnaam.trim()) {
-        resultaat.overgeslagen++
-        continue
-      }
+    const type = (rij.type || '').toLowerCase().trim()
+    if (type === 'relatie') {
+      relatieRijen.push(rij)
+    } else if (type === 'project' || type === 'offerte' || type === 'factuur') {
+      historieRijen.push(rij)
+    }
+  }
 
-      const zoekNaam = normalizeNaam(rij.bedrijfsnaam)
-      const bestaande = klantMap.get(zoekNaam)
+  const totalSteps = relatieRijen.length + historieRijen.length
+  let processed = 0
 
-      const klantData: Partial<Klant> = {
-        adres: rij.adres || undefined,
-        postcode: rij.postcode || undefined,
-        stad: rij.plaats || undefined,
-        telefoon: rij.telefoon || undefined,
-        email: rij.email || undefined,
-        kvk_nummer: rij.kvk_nummer || undefined,
-        btw_nummer: rij.btw_nummer || undefined,
-        omzet_totaal: rij.omzet_totaal ? parseNumber(rij.omzet_totaal) : undefined,
-        accountmanager: rij.accountmanager || undefined,
-        status: (rij.status === 'actief' || rij.status === 'inactief' || rij.status === 'prospect')
-          ? rij.status
-          : 'actief',
-        klant_sinds: rij.klant_sinds || undefined,
-        laatst_actief: rij.laatst_actief || undefined,
-        aantal_projecten: rij.aantal_projecten ? Math.round(parseNumber(rij.aantal_projecten)) : undefined,
-        aantal_offertes: rij.aantal_offertes ? Math.round(parseNumber(rij.aantal_offertes)) : undefined,
-        offertes_akkoord: rij.offertes_akkoord ? Math.round(parseNumber(rij.offertes_akkoord)) : undefined,
-        totaal_offertewaarde: rij.totaal_offertewaarde ? parseNumber(rij.totaal_offertewaarde) : undefined,
-        import_bron: 'csv_import',
-        import_datum: now(),
-      }
+  // 1. Build existing klant map
+  const bestaandeKlanten = await getKlanten()
+  const klantMap = new Map<string, Klant>()
+  bestaandeKlanten.forEach((k) => klantMap.set(normaliseerBedrijfsnaam(k.bedrijfsnaam), k))
 
-      // Parse contactpersonen from CSV column and convert to Contactpersoon format
-      let csvContactpersonen: Contactpersoon[] = []
-      if (rij.contactpersonen) {
-        const parsedContacts = parseContactpersonen(rij.contactpersonen)
-        csvContactpersonen = parsedContacts.map((pc) => ({
-          id: generateId(),
-          naam: pc.naam,
-          email: pc.email || '',
-          telefoon: pc.telefoon || '',
-          functie: '',
-          is_primair: false,
-        }))
-        contactpersonenAangemaakt += csvContactpersonen.length
-      }
+  // 2. Import relaties → klanten tabel
+  for (let i = 0; i < relatieRijen.length; i += CHUNK_SIZE) {
+    const chunk = relatieRijen.slice(i, i + CHUNK_SIZE)
 
-      let klant: Klant
-      if (bestaande) {
-        // Update existing — merge CSV contacts with existing ones
-        const bestaandeContacten = bestaande.contactpersonen || []
-        const bestaandeEmails = new Set(bestaandeContacten.map((c) => c.email?.toLowerCase()).filter(Boolean))
-        const nieuweContacten = csvContactpersonen.filter(
-          (c) => !c.email || !bestaandeEmails.has(c.email.toLowerCase())
-        )
-        const allContacts = [...bestaandeContacten, ...nieuweContacten]
-        try {
-          klant = await updateKlant(bestaande.id, {
-            ...klantData,
-            contactpersonen: allContacts,
-          })
-        } catch (quotaErr) {
-          // localStorage vol — sla op ZONDER contactpersonen
-          if (String(quotaErr).includes('quota') || String(quotaErr).includes('QuotaExceededError')) {
-            quotaVolContacten += allContacts.length
-            klant = await updateKlant(bestaande.id, klantData)
-          } else {
-            throw quotaErr
-          }
+    for (const rij of chunk) {
+      try {
+        const bedrijfsnaam = (rij.bedrijfsnaam || '').trim()
+        if (!bedrijfsnaam) {
+          resultaat.overgeslagen++
+          processed++
+          onProgress?.(processed, totalSteps)
+          continue
         }
-        klantMap.set(zoekNaam, klant)
-      } else {
-        // Create new — set first contact as primair
-        if (csvContactpersonen.length > 0) {
-          csvContactpersonen[0].is_primair = true
+
+        const zoekNaam = normaliseerBedrijfsnaam(bedrijfsnaam)
+        if (klantMap.has(zoekNaam)) {
+          resultaat.overgeslagen++
+          processed++
+          onProgress?.(processed, totalSteps)
+          continue
         }
-        const createData = {
-          user_id: '',
-          bedrijfsnaam: rij.bedrijfsnaam.trim(),
-          contactpersoon: csvContactpersonen[0]?.naam || '',
+
+        const klant = await createKlant({
+          user_id: userId,
+          bedrijfsnaam,
+          contactpersoon: '',
           email: rij.email || '',
           telefoon: rij.telefoon || '',
           adres: rij.adres || '',
@@ -419,174 +332,268 @@ export async function importKlanten(rows: CSVKlantRij[]): Promise<ImportResultaa
           website: '',
           kvk_nummer: rij.kvk_nummer || '',
           btw_nummer: rij.btw_nummer || '',
-          status: klantData.status as Klant['status'],
+          status: 'actief',
           tags: [],
           notities: '',
-          contactpersonen: csvContactpersonen,
-          ...klantData,
-        }
-        try {
-          klant = await createKlant(createData)
-        } catch (quotaErr) {
-          // localStorage vol — sla op ZONDER contactpersonen
-          if (String(quotaErr).includes('quota') || String(quotaErr).includes('QuotaExceededError')) {
-            quotaVolContacten += csvContactpersonen.length
-            klant = await createKlant({ ...createData, contactpersonen: [] })
-          } else {
-            throw quotaErr
-          }
-        }
-        klantMap.set(zoekNaam, klant)
-      }
+          contactpersonen: [],
+          import_bron: 'csv_import',
+        })
 
-      resultaat.geimporteerd++
-    } catch (error) {
-      resultaat.fouten++
-      resultaat.fout_details.push(
-        `${rij.bedrijfsnaam}: ${error instanceof Error ? error.message : 'Onbekende fout'}`
-      )
+        klantMap.set(zoekNaam, klant)
+        resultaat.geimporteerd++
+      } catch (err) {
+        resultaat.fouten++
+        resultaat.foutMeldingen.push(
+          `Relatie "${rij.bedrijfsnaam}": ${err instanceof Error ? err.message : 'Onbekende fout'}`
+        )
+      }
+      processed++
+      onProgress?.(processed, totalSteps)
     }
   }
 
-  // Add contact count to details for UI
-  if (contactpersonenAangemaakt > 0) {
-    resultaat.fout_details.unshift(`_contactpersonen:${contactpersonenAangemaakt}`)
+  // 3. Import project/offerte/factuur → klant_historie tabel
+  if (isSupabaseConfigured() && supabase) {
+    for (let i = 0; i < historieRijen.length; i += CHUNK_SIZE) {
+      const chunk = historieRijen.slice(i, i + CHUNK_SIZE)
+      const batchData: Array<{
+        organisatie_id: string
+        klant_id: string | null
+        type: string
+        naam: string
+        nummer: string
+        datum: string | null
+        bedrag: number | null
+        verantwoordelijke: string
+        user_id: string
+      }> = []
+
+      for (const rij of chunk) {
+        const type = (rij.type || '').toLowerCase().trim()
+        const bedrijfsnaam = (rij.bedrijfsnaam || '').trim()
+        const zoekNaam = bedrijfsnaam ? normaliseerBedrijfsnaam(bedrijfsnaam) : ''
+        const klant = zoekNaam ? klantMap.get(zoekNaam) : undefined
+
+        batchData.push({
+          organisatie_id: organisatieId,
+          klant_id: klant?.id || null,
+          type,
+          naam: rij.naam || '',
+          nummer: rij.nummer || '',
+          datum: normaliseerDatum(rij.datum || ''),
+          bedrag: normaliseerBedrag(rij.bedrag || ''),
+          verantwoordelijke: rij.verantwoordelijke || '',
+          user_id: userId,
+        })
+      }
+
+      try {
+        const { error } = await supabase
+          .from('klant_historie')
+          .insert(batchData)
+
+        if (error) throw error
+        resultaat.geimporteerd += batchData.length
+      } catch (err) {
+        resultaat.fouten += batchData.length
+        resultaat.foutMeldingen.push(
+          `Batch historie (${batchData.length} rijen): ${err instanceof Error ? err.message : 'Onbekende fout'}`
+        )
+      }
+
+      processed += chunk.length
+      onProgress?.(processed, totalSteps)
+    }
   }
-  if (quotaVolContacten > 0) {
-    resultaat.fout_details.push(
-      `⚠ ${quotaVolContacten} contactpersonen konden niet worden opgeslagen (localStorage vol). Gebruik Supabase voor volledige opslag.`
-    )
+
+  // 4. Log import
+  try {
+    await createImportLog({
+      organisatie_id: organisatieId,
+      user_id: userId,
+      type: 'bedrijfsdata',
+      bestandsnaam,
+      aantal_rijen: rows.length,
+      aantal_geimporteerd: resultaat.geimporteerd,
+      aantal_overgeslagen: resultaat.overgeslagen,
+      aantal_fouten: resultaat.fouten,
+      status: resultaat.fouten > 0 ? 'met_fouten' : 'voltooid',
+    })
+  } catch {
+    // Log failure is niet kritiek
   }
 
   return resultaat
 }
 
-// ============ IMPORT: ACTIVITEITEN ============
+// ============ IMPORT: CONTACTPERSONEN ============
 
-export async function importActiviteiten(rows: CSVActiviteitRij[]): Promise<ImportResultaat> {
-  // Wis oude activiteiten data VOORDAT we nieuwe importeren
-  clearImportData()
-
-  const resultaat: ImportResultaat = {
-    totaal: rows.length,
+export async function importeerContactpersonen(
+  rows: Record<string, string>[],
+  organisatieId: string,
+  userId: string,
+  bestandsnaam: string,
+  onProgress?: (current: number, total: number) => void,
+): Promise<ImportOperationResult> {
+  const resultaat: ImportOperationResult = {
     geimporteerd: 0,
     overgeslagen: 0,
     fouten: 0,
-    fout_details: [],
+    foutMeldingen: [],
   }
 
-  // Build lookup map
+  if (!isSupabaseConfigured() || !supabase) {
+    resultaat.foutMeldingen.push('Supabase niet geconfigureerd')
+    return resultaat
+  }
+
+  // Build klant map
   const klanten = await getKlanten()
   const klantMap = new Map<string, Klant>()
-  klanten.forEach((k) => klantMap.set(normalizeNaam(k.bedrijfsnaam), k))
+  klanten.forEach((k) => klantMap.set(normaliseerBedrijfsnaam(k.bedrijfsnaam), k))
 
-  for (const rij of rows) {
-    try {
-      if (!rij.bedrijfsnaam || !rij.bedrijfsnaam.trim()) {
+  // Get existing emails for dedup
+  const { data: bestaande } = await supabase
+    .from('contactpersonen')
+    .select('email')
+    .eq('organisatie_id', organisatieId)
+  const bestaandeEmails = new Set(
+    (bestaande || [])
+      .map((c: { email: string }) => c.email?.toLowerCase())
+      .filter(Boolean)
+  )
+
+  const totalRows = rows.length
+
+  for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
+    const chunk = rows.slice(i, i + CHUNK_SIZE)
+    const batchData: Array<{
+      organisatie_id: string
+      klant_id: string | null
+      voornaam: string
+      achternaam: string
+      email: string
+      telefoon: string
+      functie: string
+      notities: string
+      user_id: string
+    }> = []
+
+    for (const rij of chunk) {
+      const voornaam = (rij.voornaam || '').trim()
+      const achternaam = (rij.achternaam || '').trim()
+      const email = (rij.email || '').trim()
+
+      // Skip rijen zonder naam en email
+      if (!voornaam && !achternaam && !email) {
         resultaat.overgeslagen++
         continue
       }
 
-      const zoek = normalizeNaam(rij.bedrijfsnaam)
-      const klant = klantMap.get(zoek)
-
-      if (!klant) {
-        resultaat.fouten++
-        resultaat.fout_details.push(`${rij.bedrijfsnaam}: Geen matchende klant gevonden`)
+      // Check duplicaat op email
+      if (email && bestaandeEmails.has(email.toLowerCase())) {
+        resultaat.overgeslagen++
         continue
       }
 
-      const type = rij.type?.toLowerCase().trim()
-      if (type !== 'project' && type !== 'offerte') {
-        resultaat.fouten++
-        resultaat.fout_details.push(`${rij.bedrijfsnaam}: Ongeldig type "${rij.type}" (verwacht: project of offerte)`)
-        continue
-      }
+      // Koppel aan klant
+      const bedrijfsnaam = (rij.bedrijfsnaam || '').trim()
+      const zoekNaam = bedrijfsnaam ? normaliseerBedrijfsnaam(bedrijfsnaam) : ''
+      const klant = zoekNaam ? klantMap.get(zoekNaam) : undefined
 
-      // Validate status for offertes
-      let status: string | undefined
-      if (type === 'offerte' && rij.status) {
-        const validStatuses = ['Akkoord', 'In afwachting', 'Niet akkoord']
-        status = validStatuses.find((s) => s.toLowerCase() === rij.status.trim().toLowerCase())
-        if (!status && rij.status.trim()) {
-          // Try case-insensitive match
-          status = rij.status.trim()
-        }
-      }
-
-      createActiviteit({
-        user_id: klant.user_id || '',
-        klant_id: klant.id,
-        datum: rij.datum || '',
-        type: type as 'project' | 'offerte',
-        omschrijving: rij.omschrijving || '',
-        bedrag: rij.bedrag ? parseNumber(rij.bedrag) : undefined,
-        status,
-        import_bron: 'csv_import',
+      batchData.push({
+        organisatie_id: organisatieId,
+        klant_id: klant?.id || null,
+        voornaam,
+        achternaam,
+        email,
+        telefoon: (rij.telefoon || '').trim(),
+        functie: (rij.functie || '').trim(),
+        notities: '',
+        user_id: userId,
       })
 
-      resultaat.geimporteerd++
-    } catch (error) {
-      resultaat.fouten++
-      resultaat.fout_details.push(
-        `${rij.bedrijfsnaam}: ${error instanceof Error ? error.message : 'Onbekende fout'}`
-      )
+      if (email) {
+        bestaandeEmails.add(email.toLowerCase())
+      }
     }
+
+    if (batchData.length > 0) {
+      try {
+        const { error } = await supabase
+          .from('contactpersonen')
+          .insert(batchData)
+
+        if (error) throw error
+        resultaat.geimporteerd += batchData.length
+      } catch (err) {
+        resultaat.fouten += batchData.length
+        resultaat.foutMeldingen.push(
+          `Batch contactpersonen (${batchData.length} rijen): ${err instanceof Error ? err.message : 'Onbekende fout'}`
+        )
+      }
+    }
+
+    onProgress?.(Math.min(i + chunk.length, totalRows), totalRows)
+  }
+
+  // Log import
+  try {
+    await createImportLog({
+      organisatie_id: organisatieId,
+      user_id: userId,
+      type: 'contactpersonen',
+      bestandsnaam,
+      aantal_rijen: rows.length,
+      aantal_geimporteerd: resultaat.geimporteerd,
+      aantal_overgeslagen: resultaat.overgeslagen,
+      aantal_fouten: resultaat.fouten,
+      status: resultaat.fouten > 0 ? 'met_fouten' : 'voltooid',
+    })
+  } catch {
+    // Log failure is niet kritiek
   }
 
   return resultaat
 }
 
-// ============ CLEAR IMPORT DATA ============
-
-/** Wis alle import-gerelateerde localStorage keys. Retourneert aantal verwijderde keys. */
-export function clearImportData(): number {
-  let verwijderd = 0
-  // Verwijder alle per-klant activiteiten keys + import-prefixed keys
-  // Bewaar contactpersonen — die horen bij klant records
-  const keysToRemove: string[] = []
-  for (let i = localStorage.length - 1; i >= 0; i--) {
-    const key = localStorage.key(i)
-    if (!key) continue
-    if (key === LS_CONTACTPERSONEN) continue // Bewaar contactpersonen
-    if (key.startsWith('forgedesk_activiteiten_') || key.startsWith('forgedesk_import_')) {
-      keysToRemove.push(key)
-    }
-  }
-  for (const key of keysToRemove) {
-    localStorage.removeItem(key)
-    verwijderd++
-  }
-  // Ook legacy keys opruimen
-  for (const legacy of ['forgedesk_klant_historie', 'forgedesk_import_log']) {
-    if (localStorage.getItem(legacy) !== null) {
-      localStorage.removeItem(legacy)
-      verwijderd++
-    }
-  }
-  return verwijderd
-}
-
 // ============ TEMPLATE GENERATORS ============
 
-export function generateKlantenTemplate(): string {
-  const header = 'bedrijfsnaam;adres;postcode;plaats;telefoon;email;kvk_nummer;btw_nummer;omzet_totaal;accountmanager;status;klant_sinds;laatst_actief;aantal_projecten;aantal_offertes;offertes_akkoord;totaal_offertewaarde;contactpersonen'
+export function generateBedrijfsdataTemplate(): string {
+  const BOM = '\uFEFF'
+  const header = 'type;bedrijfsnaam;naam;nummer;datum;bedrag;adres;postcode;plaats;telefoon;email;kvk_nummer;btw_nummer;verantwoordelijke'
   const rows = [
-    'Voorbeeld Signing BV;Keizersgracht 100;1015 AA;Amsterdam;020-1234567;info@voorbeeld.nl;12345678;NL001234567B01;85000.50;Jan Bakker;actief;2020-03-15;2026-02-01;12;25;8;125000.00;Piet Jansen <piet@voorbeeld.nl> 06-12345678, Marie de Vries <marie@voorbeeld.nl>',
-    'Reclamebureau Noord;Stationsweg 5;8011 CW;Zwolle;038-4567890;contact@recnoord.nl;87654321;;42000.00;Lisa Smit;actief;2022-01-10;2026-01-15;5;10;4;65000.00;Karel Groot <karel@recnoord.nl>',
-    'Bouwbedrijf Zuid;Markt 22;5611 EK;Eindhoven;;;;0;;inactief;2019-06-01;2024-08-20;3;8;2;35000.00;',
+    'relatie;Bakkerij Janssen;;;;;Hoofdstraat 1;1234 AB;Amsterdam;020-1234567;info@bakkerij-janssen.nl;12345678;NL123456789B01;',
+    'relatie;Bouwbedrijf De Groot B.V.;;;;;Industrieweg 88;5678 CD;Rotterdam;010-9876543;info@degroot-bouw.nl;87654321;;',
+    'project;Bakkerij Janssen;Gevelreclame hoofdkantoor;P-2026-001;2026-01-15;;;;;;;;;Jan de Vries',
+    'project;Bouwbedrijf De Groot B.V.;Signing entree;P-2026-002;2026-02-20;;;;;;;;;Marie Bakker',
+    'offerte;Bakkerij Janssen;Gevelreclame 3x2m dibond;OFF-2026-001;2026-01-10;2500.00;;;;;;;;',
+    'offerte;Bouwbedrijf De Groot B.V.;Raambelettering 12 stuks;OFF-2026-002;2026-02-15;890.00;;;;;;;;',
+    'factuur;Bakkerij Janssen;Gevelreclame 3x2m dibond;FAC-2026-001;2026-02-01;2500.00;;;;;;;;',
+    'factuur;Bouwbedrijf De Groot B.V.;Raambelettering 12 stuks;FAC-2026-002;2026-03-01;890.00;;;;;;;;',
   ]
-  return [header, ...rows].join('\n')
+  return BOM + [header, ...rows].join('\n')
 }
 
-export function generateActiviteitenTemplate(): string {
-  const header = 'bedrijfsnaam;datum;type;omschrijving;bedrag;status'
+export function generateContactpersonenTemplate(): string {
+  const BOM = '\uFEFF'
+  const header = 'bedrijfsnaam;voornaam;achternaam;email;telefoon;functie'
   const rows = [
-    'Voorbeeld Signing BV;2025-10-15;project;Gevelreclame kantoorpand;;',
-    'Voorbeeld Signing BV;2025-10-15;offerte;Gevelreclame kantoorpand;4500.00;Akkoord',
-    'Voorbeeld Signing BV;2025-06-20;offerte;Raambelettering showroom;1250.00;In afwachting',
-    'Reclamebureau Noord;2026-01-08;project;Beurswand 3x4 meter;;',
-    'Reclamebureau Noord;2026-01-10;offerte;Beurswand 3x4 meter;2800.00;Akkoord',
+    'Bakkerij Janssen;Jan;de Vries;jan@bakkerij-janssen.nl;06-12345678;Directeur',
+    'Bakkerij Janssen;Marie;Bakker;marie@bakkerij-janssen.nl;06-87654321;Projectleider',
+    'Bouwbedrijf De Groot B.V.;Kees;de Groot;kees@degroot-bouw.nl;06-11223344;Eigenaar',
+    ';Piet;Vrijlancer;piet@gmail.com;06-99887766;Freelance monteur',
   ]
-  return [header, ...rows].join('\n')
+  return BOM + [header, ...rows].join('\n')
+}
+
+/** Download een string als CSV bestand */
+export function downloadCSV(content: string, filename: string): void {
+  const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
 }

@@ -1,112 +1,131 @@
 import React from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Users, FolderOpen, FileText, Receipt, AlertTriangle } from 'lucide-react'
-import type { ImportSamenvatting } from '@/services/jamesProImportService'
+import { cn } from '@/lib/utils'
 
 interface ImportPreviewProps {
-  samenvatting: ImportSamenvatting
+  headers: string[]
+  rows: Record<string, string>[]
+  type: 'bedrijfsdata' | 'contactpersonen'
+  maxRows?: number
 }
 
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(amount)
+const TYPE_COLORS: Record<string, string> = {
+  relatie: 'bg-[#1A535C]/10 dark:bg-[#1A535C]/20',
+  project: 'bg-gray-100 dark:bg-gray-800/50',
+  offerte: 'bg-[#F15025]/10 dark:bg-[#F15025]/20',
+  factuur: 'bg-green-50 dark:bg-green-900/20',
 }
 
-export function ImportPreview({ samenvatting }: ImportPreviewProps) {
+function getFilledColumns(row: Record<string, string>, headers: string[]): string[] {
+  return headers.filter((h) => (row[h] || '').trim() !== '')
+}
+
+export function ImportPreview({ headers, rows, type, maxRows = 10 }: ImportPreviewProps) {
+  const preview = rows.slice(0, maxRows)
+
+  if (type === 'bedrijfsdata') {
+    const counts = { relatie: 0, project: 0, offerte: 0, factuur: 0 }
+    for (const row of rows) {
+      const t = (row.type || '').toLowerCase().trim() as keyof typeof counts
+      if (t in counts) counts[t]++
+    }
+
+    return (
+      <div className="space-y-3">
+        <div className="flex flex-wrap gap-2 text-sm">
+          <span className="font-medium">Gevonden:</span>
+          <span className="px-2 py-0.5 rounded bg-[#1A535C]/10 text-[#1A535C] dark:text-[#4ECDC4] font-medium">
+            {counts.relatie} relaties
+          </span>
+          <span className="text-muted-foreground">·</span>
+          <span className="px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 font-medium">
+            {counts.project} projecten
+          </span>
+          <span className="text-muted-foreground">·</span>
+          <span className="px-2 py-0.5 rounded bg-[#F15025]/10 text-[#F15025] font-medium">
+            {counts.offerte} offertes
+          </span>
+          <span className="text-muted-foreground">·</span>
+          <span className="px-2 py-0.5 rounded bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-medium">
+            {counts.factuur} facturen
+          </span>
+        </div>
+
+        <div className="border rounded-lg overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <tbody>
+                {preview.map((row, i) => {
+                  const rowType = (row.type || '').toLowerCase().trim()
+                  const filled = getFilledColumns(row, headers)
+                  return (
+                    <tr key={i} className={cn('border-b last:border-0', TYPE_COLORS[rowType] || '')}>
+                      <td className="px-3 py-2 font-medium whitespace-nowrap w-20">
+                        {row.type}
+                      </td>
+                      <td className="px-3 py-2">
+                        <div className="flex flex-wrap gap-x-4 gap-y-1">
+                          {filled.filter((h) => h !== 'type').map((h) => (
+                            <span key={h}>
+                              <span className="text-muted-foreground">{h}:</span>{' '}
+                              <span className="font-medium">{row[h]}</span>
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {rows.length > maxRows && (
+          <p className="text-xs text-muted-foreground text-center">
+            ...en nog {rows.length - maxRows} rijen
+          </p>
+        )}
+      </div>
+    )
+  }
+
+  // Contactpersonen preview
   return (
-    <div className="space-y-6">
-      {/* Summary cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <SummaryCard
-          icon={Users}
-          label="Klanten"
-          count={samenvatting.klanten}
-        />
-        <SummaryCard
-          icon={FolderOpen}
-          label="Projecten"
-          count={samenvatting.projecten.total}
-          sub={`${samenvatting.projecten.linkedKlanten} gekoppeld`}
-        />
-        <SummaryCard
-          icon={FileText}
-          label="Offertes"
-          count={samenvatting.offertes.total}
-          sub={`${samenvatting.offertes.akkoord} akkoord, ${samenvatting.offertes.inAfwachting} in afwachting, ${samenvatting.offertes.afgewezen} afgewezen`}
-        />
-        <SummaryCard
-          icon={Receipt}
-          label="Facturen"
-          count={samenvatting.facturen.total}
-          sub={formatCurrency(samenvatting.facturen.totaalBedrag)}
-        />
+    <div className="space-y-3">
+      <p className="text-sm font-medium">Gevonden: {rows.length} contactpersonen</p>
+
+      <div className="border rounded-lg overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="bg-muted/50 border-b">
+                {headers.map((h) => (
+                  <th key={h} className="px-3 py-2 text-left font-medium text-muted-foreground capitalize">
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {preview.map((row, i) => (
+                <tr key={i} className="border-b last:border-0">
+                  {headers.map((h) => (
+                    <td key={h} className="px-3 py-2 whitespace-nowrap">
+                      {row[h] || <span className="text-muted-foreground/30">—</span>}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {/* Preview table */}
-      {samenvatting.previewKlanten.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Top 5 klanten</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-[#E6E4E0]">
-                    <th className="text-left py-2 pr-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">Klant</th>
-                    <th className="text-right py-2 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">Projecten</th>
-                    <th className="text-right py-2 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">Offertes</th>
-                    <th className="text-right py-2 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">Facturen</th>
-                    <th className="text-right py-2 pl-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">Omzet</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {samenvatting.previewKlanten.map((klant, i) => (
-                    <tr key={i} className="border-b border-[#E6E4E0]/50 last:border-0">
-                      <td className="py-2.5 pr-4 font-medium text-foreground">{klant.naam}</td>
-                      <td className="py-2.5 px-4 text-right font-mono text-muted-foreground">{klant.projecten}</td>
-                      <td className="py-2.5 px-4 text-right font-mono text-muted-foreground">{klant.offertes}</td>
-                      <td className="py-2.5 px-4 text-right font-mono text-muted-foreground">{klant.facturen}</td>
-                      <td className="py-2.5 pl-4 text-right font-mono text-foreground">{formatCurrency(klant.omzet)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Warnings */}
-      {samenvatting.warnings.length > 0 && (
-        <div className="space-y-2">
-          {samenvatting.warnings.map((warning, i) => (
-            <div key={i} className="flex items-start gap-2 rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
-              <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
-              <span>{warning}</span>
-            </div>
-          ))}
-        </div>
+      {rows.length > maxRows && (
+        <p className="text-xs text-muted-foreground text-center">
+          ...en nog {rows.length - maxRows} rijen
+        </p>
       )}
     </div>
-  )
-}
-
-function SummaryCard({ icon: Icon, label, count, sub }: { icon: React.ElementType; label: string; count: number; sub?: string }) {
-  return (
-    <Card>
-      <CardContent className="p-4">
-        <div className="flex items-center gap-3">
-          <div className="rounded-lg bg-[#1A5C5E]/10 p-2 text-[#1A5C5E]">
-            <Icon className="h-4 w-4" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-xs text-muted-foreground">{label}</p>
-            <p className="text-xl font-semibold font-mono text-foreground">{count.toLocaleString('nl-NL')}</p>
-            {sub && <p className="text-[11px] text-muted-foreground truncate">{sub}</p>}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
   )
 }

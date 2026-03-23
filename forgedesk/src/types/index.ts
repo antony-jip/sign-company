@@ -175,6 +175,64 @@ export interface ImportResultaat {
   fout_details: string[];
 }
 
+// ============ DATA IMPORT SYSTEM ============
+
+/** Contactpersoon record in de database (tabel: contactpersonen) */
+export interface ContactpersoonRecord {
+  id: string;
+  organisatie_id: string;
+  klant_id: string | null;
+  voornaam: string;
+  achternaam: string;
+  email: string;
+  telefoon: string;
+  functie: string;
+  notities: string;
+  created_at: string;
+  updated_at: string;
+  user_id: string;
+  klant?: Klant;
+}
+
+/** Geïmporteerde project/offerte/factuur historie (tabel: klant_historie) */
+export interface KlantHistorie {
+  id: string;
+  organisatie_id: string;
+  klant_id: string | null;
+  type: 'project' | 'offerte' | 'factuur';
+  naam: string;
+  nummer: string;
+  datum: string | null;
+  bedrag: number | null;
+  verantwoordelijke: string;
+  created_at: string;
+  user_id: string;
+  klant?: Klant;
+}
+
+/** Import log record (tabel: import_logs) */
+export interface ImportLog {
+  id: string;
+  organisatie_id: string;
+  user_id: string;
+  type: string;
+  bestandsnaam: string;
+  aantal_rijen: number;
+  aantal_geimporteerd: number;
+  aantal_overgeslagen: number;
+  aantal_fouten: number;
+  status: string;
+  created_at: string;
+}
+
+/** Resultaat van een import operatie */
+export interface ImportOperationResult {
+  geimporteerd: number;
+  overgeslagen: number;
+  fouten: number;
+  foutMeldingen: string[];
+}
+
 export interface Project {
   id: string;
   user_id?: string;

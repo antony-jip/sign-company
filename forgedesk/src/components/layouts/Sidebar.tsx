@@ -4,7 +4,7 @@ import {
   FolderKanban, Users, FileText,
   Mail, Calendar, Settings, ChevronLeft,
   ChevronRight, LogOut, Menu, X, CheckCircle,
-  Receipt, ClipboardCheck, Globe,
+  Receipt, ClipboardCheck, Globe, Upload,
   Moon, Sun, CreditCard,
   type LucideIcon
 } from 'lucide-react'
@@ -46,6 +46,7 @@ const COMMUNICATIE_ITEMS: NavItem[] = [
   { label: 'Portaal', icon: Globe, path: '/portalen', color: '#6A5A8A' },
 ]
 
+const IMPORTEREN_ITEM: NavItem = { label: 'Importeren', icon: Upload, path: '/importeren', color: '#1A535C' }
 const SETTINGS_ITEM: NavItem = { label: 'Instellingen', icon: Settings, path: '/instellingen', color: '#5A5A55' }
 
 const NAV_GROUPS: NavGroup[] = [
@@ -55,7 +56,7 @@ const NAV_GROUPS: NavGroup[] = [
 ]
 
 // Flat list for rail mode (all items in order, no Dashboard)
-const ALL_NAV_ITEMS: NavItem[] = [...WERK_ITEMS, ...PLANNING_ITEMS, ...COMMUNICATIE_ITEMS]
+const ALL_NAV_ITEMS: NavItem[] = [...WERK_ITEMS, ...PLANNING_ITEMS, ...COMMUNICATIE_ITEMS, IMPORTEREN_ITEM]
 
 // Light background colors per module for active/badge states
 const MODULE_LIGHT: Record<string, string> = {
@@ -326,6 +327,8 @@ export function Sidebar() {
             style={{ height: '0.5px', backgroundColor: '#E6E4E0' }}
           />
 
+          {/* Importeren */}
+          {collapsed ? renderRailItem(IMPORTEREN_ITEM) : renderExpandedItem(IMPORTEREN_ITEM)}
           {/* Instellingen */}
           {collapsed ? renderRailItem(SETTINGS_ITEM) : renderExpandedItem(SETTINGS_ITEM)}
 

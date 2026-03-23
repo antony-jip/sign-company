@@ -17,7 +17,7 @@ import {
   BarChart3,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { getActiviteiten } from '@/services/importService'
+import { getKlantHistorie } from '@/services/supabaseService'
 import type { Project, Offerte, Factuur, Deal, Tijdregistratie, KlantActiviteit } from '@/types'
 
 // ─── Types ───────────────────────────────────────────────────────────
@@ -395,7 +395,20 @@ export function KlantAIChat({ klantId, klantNaam, projecten, offertes, facturen,
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const activiteiten = useMemo(() => getActiviteiten(klantId), [klantId])
+  const [activiteiten, setActiviteiten] = useState<KlantActiviteit[]>([])
+  useEffect(() => {
+    getKlantHistorie(klantId).then((historie) => {
+      setActiviteiten(historie.map((h) => ({
+        id: h.id,
+        klant_id: h.klant_id || klantId,
+        datum: h.datum || '',
+        type: h.type === 'factuur' ? 'project' : h.type as 'project' | 'offerte',
+        omschrijving: h.naam,
+        bedrag: h.bedrag ?? undefined,
+        created_at: h.created_at,
+      })))
+    }).catch(() => setActiviteiten([]))
+  }, [klantId])
 
   const klantData = useMemo<KlantData>(() => ({
     klantNaam,

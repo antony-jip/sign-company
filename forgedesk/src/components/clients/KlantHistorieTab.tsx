@@ -9,9 +9,8 @@ import {
   FileText,
   Filter,
 } from 'lucide-react'
-import { getActiviteiten } from '@/services/importService'
-import { getProjectenByKlant, getOffertesByKlant } from '@/services/supabaseService'
-import type { KlantActiviteit, Project, Offerte } from '@/types'
+import { getProjectenByKlant, getOffertesByKlant, getKlantHistorie } from '@/services/supabaseService'
+import type { Project, Offerte } from '@/types'
 import { cn } from '@/lib/utils'
 import { logger } from '../../utils/logger'
 
@@ -72,21 +71,21 @@ export function KlantHistorieTab({ klantId, klantNaam }: KlantHistorieTabProps) 
     setLoading(true)
 
     Promise.all([
-      Promise.resolve(getActiviteiten(klantId)),
+      getKlantHistorie(klantId).catch(() => []),
       getProjectenByKlant(klantId).catch(() => [] as Project[]),
       getOffertesByKlant(klantId).catch(() => [] as Offerte[]),
     ])
-      .then(([activiteiten, projecten, offertes]) => {
+      .then(([historie, projecten, offertes]) => {
         const results: TijdlijnItem[] = []
 
-        // Imported activiteiten
-        for (const a of activiteiten) {
+        // Imported historie
+        for (const h of historie) {
           results.push({
-            datum: a.datum,
-            type: a.type,
-            omschrijving: a.omschrijving,
-            bedrag: a.bedrag,
-            status: a.status,
+            datum: h.datum || h.created_at,
+            type: h.type === 'factuur' ? 'project' : h.type as 'project' | 'offerte',
+            omschrijving: h.naam,
+            bedrag: h.bedrag ?? undefined,
+            status: h.type === 'factuur' ? 'Factuur' : undefined,
             bron: 'import',
           })
         }

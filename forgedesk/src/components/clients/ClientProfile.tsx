@@ -80,12 +80,10 @@ import {
 import { AddEditClient } from './AddEditClient'
 import { KlantHistorieTab } from './KlantHistorieTab'
 import {
-  getContactpersonen as getImportedContactpersonen,
-  createContactpersoon as createImportedContactpersoon,
-  deleteContactpersoon as deleteImportedContactpersoon,
-  type ImportContactpersoon,
-} from '@/services/importService'
-import type { Klant, Project, Email, Document as DocType, Offerte, Contactpersoon, Vestiging, Factuur, Deal, Tijdregistratie } from '@/types'
+  getContactpersonenByKlant,
+  deleteContactpersoonDB,
+} from '@/services/supabaseService'
+import type { Klant, Project, Email, Document as DocType, Offerte, Contactpersoon, ContactpersoonRecord, Vestiging, Factuur, Deal, Tijdregistratie } from '@/types'
 
 function getStatusBarColor(status: string): string {
   switch (status) {
@@ -139,8 +137,8 @@ export function ClientProfile() {
   const [editingContact, setEditingContact] = useState<Contactpersoon | null>(null)
   const [contactForm, setContactForm] = useState({ naam: '', functie: '', email: '', telefoon: '' })
   const csvFileRef = useRef<HTMLInputElement>(null)
-  // Imported contactpersonen (from CSV import)
-  const [importedContacts, setImportedContacts] = useState<ImportContactpersoon[]>([])
+  // DB contactpersonen (from import system)
+  const [importedContacts, setImportedContacts] = useState<ContactpersoonRecord[]>([])
   // Vestiging form
   const [vestigingDialogOpen, setVestigingDialogOpen] = useState(false)
   const [editingVestiging, setEditingVestiging] = useState<Vestiging | null>(null)
@@ -189,8 +187,8 @@ export function ClientProfile() {
       setClientDeals(deals)
       const projectIds = new Set(projecten.map((p) => p.id))
       setClientTijdregistraties(allTijd.filter((t) => projectIds.has(t.project_id)))
-      // Load imported contacts
-      setImportedContacts(getImportedContactpersonen(id))
+      // Load DB contactpersonen
+      getContactpersonenByKlant(id).then(setImportedContacts).catch(() => setImportedContacts([]))
       setIsLoading(false)
     })
     return () => { cancelled = true }
@@ -1424,53 +1422,56 @@ export function ClientProfile() {
                         </div>
                       </div>
                     ))}
-                    {/* Imported contactpersonen */}
-                    {importedContacts.map((ic) => (
-                      <div key={ic.id} className="py-3 flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center flex-shrink-0">
-                            <span className="text-sm font-semibold text-green-600 dark:text-green-400">
-                              {ic.naam.charAt(0).toUpperCase()}
-                            </span>
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-sm font-semibold text-foreground flex items-center gap-2">
-                              {ic.naam}
-                              <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Import</Badge>
-                            </p>
-                            <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
-                              {ic.email && (
-                                <a href={`mailto:${ic.email}`} className="flex items-center gap-1 hover:text-blue-600" onClick={(e) => e.stopPropagation()}>
-                                  <Mail className="w-3 h-3" />
-                                  {ic.email}
-                                </a>
-                              )}
-                              {ic.telefoon && (
-                                <a href={`tel:${ic.telefoon}`} className="flex items-center gap-1 hover:text-blue-600" onClick={(e) => e.stopPropagation()}>
-                                  <Phone className="w-3 h-3" />
-                                  {ic.telefoon}
-                                </a>
-                              )}
+                    {/* DB contactpersonen */}
+                    {importedContacts.map((ic) => {
+                      const fullName = `${ic.voornaam} ${ic.achternaam}`.trim() || ic.email
+                      return (
+                        <div key={ic.id} className="py-3 flex items-center justify-between gap-4">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center flex-shrink-0">
+                              <span className="text-sm font-semibold text-green-600 dark:text-green-400">
+                                {(ic.voornaam || ic.achternaam || ic.email || '?').charAt(0).toUpperCase()}
+                              </span>
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+                                {fullName}
+                                {ic.functie && <span className="text-xs font-normal text-muted-foreground">· {ic.functie}</span>}
+                              </p>
+                              <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
+                                {ic.email && (
+                                  <a href={`mailto:${ic.email}`} className="flex items-center gap-1 hover:text-blue-600" onClick={(e) => e.stopPropagation()}>
+                                    <Mail className="w-3 h-3" />
+                                    {ic.email}
+                                  </a>
+                                )}
+                                {ic.telefoon && (
+                                  <a href={`tel:${ic.telefoon}`} className="flex items-center gap-1 hover:text-blue-600" onClick={(e) => e.stopPropagation()}>
+                                    <Phone className="w-3 h-3" />
+                                    {ic.telefoon}
+                                  </a>
+                                )}
+                              </div>
                             </div>
                           </div>
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            <button
+                              onClick={() => {
+                                if (window.confirm(`${fullName} verwijderen?`)) {
+                                  deleteContactpersoonDB(ic.id).catch(() => {})
+                                  setImportedContacts((prev) => prev.filter((c) => c.id !== ic.id))
+                                  toast.success('Contactpersoon verwijderd')
+                                }
+                              }}
+                              className="p-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                              title="Verwijderen"
+                            >
+                              <Trash2 className="w-3.5 h-3.5 text-muted-foreground/60 hover:text-red-500" />
+                            </button>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1 flex-shrink-0">
-                          <button
-                            onClick={() => {
-                              if (window.confirm(`${ic.naam} verwijderen?`)) {
-                                deleteImportedContactpersoon(ic.id)
-                                setImportedContacts((prev) => prev.filter((c) => c.id !== ic.id))
-                                toast.success('Contactpersoon verwijderd')
-                              }
-                            }}
-                            className="p-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                            title="Verwijderen"
-                          >
-                            <Trash2 className="w-3.5 h-3.5 text-muted-foreground/60 hover:text-red-500" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 )}
               </CardContent>
