@@ -1,5 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
+import { tasks } from '@trigger.dev/sdk/v3'
+import type { logPortaalActiviteit } from '../src/trigger/portaal-activiteit-log'
 
 const supabaseAdmin = createClient(
   process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '',
@@ -124,6 +126,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       console.error('portaal-upload db error:', dbError)
       return res.status(500).json({ error: 'Kon bestand niet opslaan' })
     }
+
+    // Log upload activiteit via Trigger.dev (fire-and-forget)
+    try {
+      await tasks.trigger<typeof logPortaalActiviteit>("log-portaal-activiteit", {
+        portaalId: portaal.id,
+        actie: 'bestand_geupload',
+        metadata: { bestandsnaam, mime_type, grootte: buffer.length },
+      });
+    } catch { /* non-blocking */ }
 
     return res.status(201).json({
       url: bestand.url,

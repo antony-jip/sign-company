@@ -1,5 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
+import { tasks } from '@trigger.dev/sdk/v3'
+import type { logPortaalActiviteit } from '../src/trigger/portaal-activiteit-log'
+import type { portaalReactieNotificatie } from '../src/trigger/portaal-notificatie'
 
 const supabaseAdmin = createClient(
   process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '',
@@ -292,6 +295,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     } catch (notifErr) {
       console.error('[portaal-reactie] notificatie/email error:', notifErr)
+    }
+
+    // --- Trigger.dev: log activiteit (fire-and-forget) ---
+    try {
+      await tasks.trigger<typeof logPortaalActiviteit>("log-portaal-activiteit", {
+        portaalId: portaal.id,
+        actie: type === 'goedkeuring' ? 'item_goedgekeurd' : type === 'revisie' ? 'item_revisie' : 'bericht_verstuurd',
+        metadata: { klant_naam: klant_naam, item_id: portaal_item_id },
+      });
+    } catch (triggerErr) {
+      console.warn('[portaal-reactie] Trigger.dev log failed (non-blocking):', triggerErr)
     }
 
     return res.status(201).json({ reactie })

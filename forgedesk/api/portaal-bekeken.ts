@@ -1,5 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
+import { tasks } from '@trigger.dev/sdk/v3'
+import type { logPortaalActiviteit } from '../src/trigger/portaal-activiteit-log'
 
 const supabaseAdmin = createClient(
   process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '',
@@ -58,6 +60,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .in('id', item_ids)
         .is('bekeken_op', null)
     }
+
+    // Log bekeken activiteit via Trigger.dev (fire-and-forget)
+    try {
+      await tasks.trigger<typeof logPortaalActiviteit>("log-portaal-activiteit", {
+        portaalId: portaal.id,
+        actie: 'bekeken',
+        metadata: { ip: clientIp, item_count: item_ids?.length || 0 },
+      });
+    } catch { /* non-blocking */ }
 
     return res.status(200).json({ success: true })
   } catch (error) {

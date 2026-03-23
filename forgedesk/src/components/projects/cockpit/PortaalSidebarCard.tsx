@@ -7,6 +7,7 @@ import { formatTime } from './portaal/PortaalTimelineItems'
 import { PortaalSidebarHeader } from './portaal/PortaalSidebarHeader'
 import { PortaalSidebarTimeline } from './portaal/PortaalSidebarTimeline'
 import { PortaalSidebarActions } from './portaal/PortaalSidebarActions'
+import { PortaalActiviteitenLog } from './portaal/PortaalActiviteitenLog'
 
 interface PortaalCompactCardProps {
   projectId: string
@@ -123,6 +124,8 @@ export function PortaalCompactCard({ projectId }: PortaalCompactCardProps) {
             voortgang={voortgang}
             timelineEndRef={timelineEndRef}
           />
+
+          <PortaalActiviteitenLog portaalId={portaal.id} />
 
           {portaal && user?.id && (
             <PortaalSidebarActions
