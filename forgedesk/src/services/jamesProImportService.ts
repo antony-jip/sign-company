@@ -299,152 +299,173 @@ export async function importJamesProData(
     facturen: { imported: 0, linkedProject: 0, linkedKlant: 0, errors: [] },
   }
 
-  // ── 1. Klanten ──
+  // ── 1. Klanten (individueel vanwege duplicate check) ──
   onProgress({ type: 'klanten', current: 0, total: data.klanten.length, status: 'bezig' })
   const klantMap = new Map<string, string>() // normalizedName → id
 
+  // Pre-fetch all existing klanten for this user in one query
+  const { data: existingKlanten } = await supabase
+    .from('klanten')
+    .select('id, bedrijfsnaam')
+    .eq('user_id', userId)
+  const existingMap = new Map(
+    (existingKlanten || []).map((k: { id: string; bedrijfsnaam: string }) => [normalizeCompanyName(k.bedrijfsnaam), k.id])
+  )
+
   for (let i = 0; i < data.klanten.length; i += BATCH_SIZE) {
     const batch = data.klanten.slice(i, i + BATCH_SIZE)
+    const newKlanten: ReturnType<typeof mapJamesProKlant>[] = []
+    const updateIds: { id: string; james_pro_id?: string }[] = []
+
     for (const row of batch) {
-      try {
-        const mapped = mapJamesProKlant(row, userId)
-        const norm = normalizeCompanyName(mapped.bedrijfsnaam)
-        if (!norm) { result.klanten.skipped++; continue }
+      const mapped = mapJamesProKlant(row, userId)
+      const norm = normalizeCompanyName(mapped.bedrijfsnaam)
+      if (!norm) { result.klanten.skipped++; continue }
 
-        // Check existing
-        const { data: existing } = await supabase
-          .from('klanten')
-          .select('id')
-          .eq('user_id', userId)
-          .ilike('bedrijfsnaam', mapped.bedrijfsnaam)
-          .limit(1)
-          .maybeSingle()
-
-        if (existing) {
-          klantMap.set(norm, existing.id)
-          // Update with import metadata
-          await supabase.from('klanten').update({
-            james_pro_id: mapped.james_pro_id,
-            import_bron: 'james_pro',
-            import_datum: new Date().toISOString(),
-          }).eq('id', existing.id)
-          result.klanten.skipped++
-        } else {
-          const { data: created, error } = await supabase
-            .from('klanten')
-            .insert(mapped)
-            .select('id')
-            .single()
-
-          if (error) {
-            result.klanten.errors.push(`${mapped.bedrijfsnaam}: ${error.message}`)
-          } else {
-            klantMap.set(norm, created.id)
-            result.klanten.imported++
-          }
-        }
-      } catch (err) {
-        result.klanten.errors.push(`Rij ${i}: ${err instanceof Error ? err.message : 'Onbekende fout'}`)
+      const existingId = existingMap.get(norm)
+      if (existingId) {
+        klantMap.set(norm, existingId)
+        updateIds.push({ id: existingId, james_pro_id: mapped.james_pro_id })
+        result.klanten.skipped++
+      } else {
+        newKlanten.push(mapped)
       }
     }
+
+    // Batch update existing klanten metadata
+    for (const upd of updateIds) {
+      await supabase.from('klanten').update({
+        james_pro_id: upd.james_pro_id,
+        import_bron: 'james_pro',
+        import_datum: new Date().toISOString(),
+      }).eq('id', upd.id)
+    }
+
+    // Batch insert new klanten
+    if (newKlanten.length > 0) {
+      const { data: created, error } = await supabase
+        .from('klanten')
+        .insert(newKlanten)
+        .select('id, bedrijfsnaam')
+
+      if (error) {
+        result.klanten.errors.push(`Batch ${i}: ${error.message}`)
+      } else if (created) {
+        for (const k of created) {
+          klantMap.set(normalizeCompanyName(k.bedrijfsnaam), k.id)
+          existingMap.set(normalizeCompanyName(k.bedrijfsnaam), k.id)
+        }
+        result.klanten.imported += created.length
+      }
+    }
+
     onProgress({ type: 'klanten', current: Math.min(i + BATCH_SIZE, data.klanten.length), total: data.klanten.length, status: 'bezig' })
   }
   onProgress({ type: 'klanten', current: data.klanten.length, total: data.klanten.length, status: 'klaar' })
 
-  // ── 2. Projecten ──
+  // ── 2. Projecten (batch insert) ──
   onProgress({ type: 'projecten', current: 0, total: data.projecten.length, status: 'bezig' })
   const projectsByKlant = new Map<string, { id: string; naam: string }[]>()
 
   for (let i = 0; i < data.projecten.length; i += BATCH_SIZE) {
     const batch = data.projecten.slice(i, i + BATCH_SIZE)
+    const mappedBatch: ReturnType<typeof mapJamesProProject>[] = []
+    const companyKeys: string[] = [] // parallel array to track company per mapped row
+
     for (const row of batch) {
-      try {
-        const company = normalizeCompanyName(row.Company || row.company || '')
-        const klantId = klantMap.get(company)
+      const company = normalizeCompanyName(row.Company || row.company || '')
+      const klantId = klantMap.get(company)
+      mappedBatch.push(mapJamesProProject(row, klantId, userId))
+      companyKeys.push(company)
+    }
 
-        const mapped = mapJamesProProject(row, klantId, userId)
-        const { data: created, error } = await supabase
-          .from('projecten')
-          .insert(mapped)
-          .select('id')
-          .single()
+    const { data: created, error } = await supabase
+      .from('projecten')
+      .insert(mappedBatch)
+      .select('id, naam, klant_id')
 
-        if (error) {
-          result.projecten.errors.push(`${mapped.naam}: ${error.message}`)
-        } else {
-          result.projecten.imported++
-          if (klantId) {
-            result.projecten.linked++
-            if (!projectsByKlant.has(company)) projectsByKlant.set(company, [])
-            projectsByKlant.get(company)!.push({ id: created.id, naam: mapped.naam })
-          }
+    if (error) {
+      result.projecten.errors.push(`Batch ${i}: ${error.message}`)
+    } else if (created) {
+      result.projecten.imported += created.length
+      for (let j = 0; j < created.length; j++) {
+        const company = companyKeys[j]
+        if (created[j].klant_id) {
+          result.projecten.linked++
+          if (!projectsByKlant.has(company)) projectsByKlant.set(company, [])
+          projectsByKlant.get(company)!.push({ id: created[j].id, naam: created[j].naam })
         }
-      } catch (err) {
-        result.projecten.errors.push(`Rij ${i}: ${err instanceof Error ? err.message : 'Onbekende fout'}`)
       }
     }
+
     onProgress({ type: 'projecten', current: Math.min(i + BATCH_SIZE, data.projecten.length), total: data.projecten.length, status: 'bezig' })
   }
   onProgress({ type: 'projecten', current: data.projecten.length, total: data.projecten.length, status: 'klaar' })
 
-  // ── 3. Offertes ──
+  // ── 3. Offertes (batch insert) ──
   onProgress({ type: 'offertes', current: 0, total: data.offertes.length, status: 'bezig' })
 
   for (let i = 0; i < data.offertes.length; i += BATCH_SIZE) {
     const batch = data.offertes.slice(i, i + BATCH_SIZE)
+    const mappedBatch: ReturnType<typeof mapJamesProOfferte>[] = []
+    const linkInfo: { hasProject: boolean; hasKlant: boolean }[] = []
+
     for (const row of batch) {
-      try {
-        const company = normalizeCompanyName(row.Bedrijfsnaam || row.bedrijfsnaam || '')
-        const klantId = klantMap.get(company)
-        const projects = projectsByKlant.get(company) || []
-        const omschrijving = row.Omschrijving || row.omschrijving || ''
-        const matchedProject = matchProjectByName(omschrijving, projects)
+      const company = normalizeCompanyName(row.Bedrijfsnaam || row.bedrijfsnaam || '')
+      const klantId = klantMap.get(company)
+      const projects = projectsByKlant.get(company) || []
+      const omschrijving = row.Omschrijving || row.omschrijving || ''
+      const matchedProject = matchProjectByName(omschrijving, projects)
+      mappedBatch.push(mapJamesProOfferte(row, klantId, matchedProject?.id, userId))
+      linkInfo.push({ hasProject: !!matchedProject, hasKlant: !!klantId })
+    }
 
-        const mapped = mapJamesProOfferte(row, klantId, matchedProject?.id, userId)
-        const { error } = await supabase.from('offertes').insert(mapped)
+    const { data: created, error } = await supabase.from('offertes').insert(mappedBatch).select('id')
 
-        if (error) {
-          result.offertes.errors.push(`${mapped.nummer}: ${error.message}`)
-        } else {
-          result.offertes.imported++
-          if (matchedProject) result.offertes.linkedProject++
-          if (klantId) result.offertes.linkedKlant++
-        }
-      } catch (err) {
-        result.offertes.errors.push(`Rij ${i}: ${err instanceof Error ? err.message : 'Onbekende fout'}`)
+    if (error) {
+      result.offertes.errors.push(`Batch ${i}: ${error.message}`)
+    } else if (created) {
+      result.offertes.imported += created.length
+      for (const info of linkInfo) {
+        if (info.hasProject) result.offertes.linkedProject++
+        if (info.hasKlant) result.offertes.linkedKlant++
       }
     }
+
     onProgress({ type: 'offertes', current: Math.min(i + BATCH_SIZE, data.offertes.length), total: data.offertes.length, status: 'bezig' })
   }
   onProgress({ type: 'offertes', current: data.offertes.length, total: data.offertes.length, status: 'klaar' })
 
-  // ── 4. Facturen ──
+  // ── 4. Facturen (batch insert) ──
   onProgress({ type: 'facturen', current: 0, total: data.facturen.length, status: 'bezig' })
 
   for (let i = 0; i < data.facturen.length; i += BATCH_SIZE) {
     const batch = data.facturen.slice(i, i + BATCH_SIZE)
+    const mappedBatch: ReturnType<typeof mapJamesProFactuur>[] = []
+    const linkInfo: { hasProject: boolean; hasKlant: boolean }[] = []
+
     for (const row of batch) {
-      try {
-        const company = normalizeCompanyName(row.Bedrijfsnaam || row.bedrijfsnaam || '')
-        const klantId = klantMap.get(company)
-        const projects = projectsByKlant.get(company) || []
-        const omschrijving = row.Omschrijving || row.omschrijving || ''
-        const matchedProject = matchProjectByName(omschrijving, projects)
+      const company = normalizeCompanyName(row.Bedrijfsnaam || row.bedrijfsnaam || '')
+      const klantId = klantMap.get(company)
+      const projects = projectsByKlant.get(company) || []
+      const omschrijving = row.Omschrijving || row.omschrijving || ''
+      const matchedProject = matchProjectByName(omschrijving, projects)
+      mappedBatch.push(mapJamesProFactuur(row, klantId, matchedProject?.id, userId))
+      linkInfo.push({ hasProject: !!matchedProject, hasKlant: !!klantId })
+    }
 
-        const mapped = mapJamesProFactuur(row, klantId, matchedProject?.id, userId)
-        const { error } = await supabase.from('facturen').insert(mapped)
+    const { data: created, error } = await supabase.from('facturen').insert(mappedBatch).select('id')
 
-        if (error) {
-          result.facturen.errors.push(`${mapped.nummer}: ${error.message}`)
-        } else {
-          result.facturen.imported++
-          if (matchedProject) result.facturen.linkedProject++
-          if (klantId) result.facturen.linkedKlant++
-        }
-      } catch (err) {
-        result.facturen.errors.push(`Rij ${i}: ${err instanceof Error ? err.message : 'Onbekende fout'}`)
+    if (error) {
+      result.facturen.errors.push(`Batch ${i}: ${error.message}`)
+    } else if (created) {
+      result.facturen.imported += created.length
+      for (const info of linkInfo) {
+        if (info.hasProject) result.facturen.linkedProject++
+        if (info.hasKlant) result.facturen.linkedKlant++
       }
     }
+
     onProgress({ type: 'facturen', current: Math.min(i + BATCH_SIZE, data.facturen.length), total: data.facturen.length, status: 'bezig' })
   }
   onProgress({ type: 'facturen', current: data.facturen.length, total: data.facturen.length, status: 'klaar' })
@@ -493,7 +514,7 @@ function mapJamesProProject(row: Record<string, string>, klantId: string | undef
 
   return {
     user_id: userId,
-    klant_id: klantId || '',
+    klant_id: klantId || null,
     naam,
     beschrijving: '',
     status: 'afgerond' as const,
@@ -528,8 +549,8 @@ function mapJamesProOfferte(
 
   return {
     user_id: userId,
-    klant_id: klantId || '',
-    project_id: projectId || undefined,
+    klant_id: klantId || null,
+    project_id: projectId || null,
     nummer: nummer || `JP-${Date.now()}`,
     titel: titel || 'Onbekend',
     status,
@@ -566,8 +587,8 @@ function mapJamesProFactuur(
 
   return {
     user_id: userId,
-    klant_id: klantId || '',
-    project_id: projectId || undefined,
+    klant_id: klantId || null,
+    project_id: projectId || null,
     nummer: nummer || `JP-F-${Date.now()}`,
     titel: titel || 'Onbekend',
     status: (dagenVervallen > 0 ? 'vervallen' : 'verzonden') as 'vervallen' | 'verzonden',

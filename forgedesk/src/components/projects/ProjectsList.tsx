@@ -126,6 +126,7 @@ export function ProjectsList() {
   const [photoUploadKlantId, setPhotoUploadKlantId] = useState<string | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [dagenOpenFilter, setDagenOpenFilter] = useState<string>('alle')
+  const [showImported, setShowImported] = useState(false)
 
   const handleQuickPhotoUpload = async (files: FileList) => {
     if (!photoUploadProjectId || !user) return
@@ -216,6 +217,11 @@ export function ProjectsList() {
   const gefilterdeProjecten = useMemo(() => {
     let result = [...projecten]
 
+    // Hide imported projects by default
+    if (!showImported) {
+      result = result.filter((p) => p.import_bron !== 'james_pro')
+    }
+
     if (zoekterm.trim()) {
       const term = zoekterm.toLowerCase()
       result = result.filter(
@@ -261,7 +267,7 @@ export function ProjectsList() {
     })
 
     return result
-  }, [projecten, klanten, offertes, zoekterm, statusFilter, dagenOpenFilter, sortField, sortDir])
+  }, [projecten, klanten, offertes, zoekterm, statusFilter, dagenOpenFilter, sortField, sortDir, showImported])
 
   // Reset page when filters change
   useEffect(() => { setCurrentPage(1) }, [zoekterm, statusFilter, dagenOpenFilter, sortField, sortDir])
@@ -493,6 +499,22 @@ export function ProjectsList() {
               </button>
             )
           })}
+
+          {/* Geïmporteerd toggle */}
+          {projecten.some((p) => p.import_bron === 'james_pro') && (
+            <button
+              onClick={() => setShowImported(!showImported)}
+              className={cn(
+                'px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all duration-150 border border-dashed',
+                showImported
+                  ? 'bg-[#191919] text-white border-transparent'
+                  : 'text-[#5A5A55] hover:bg-[#F4F2EE] border-[#E6E4E0]'
+              )}
+            >
+              Geïmporteerd
+              <span className="ml-1 opacity-60 font-mono text-[11px]">{projecten.filter((p) => p.import_bron === 'james_pro').length}</span>
+            </button>
+          )}
         </div>
 
         <div className="hidden sm:flex items-center gap-1 ml-auto flex-shrink-0">

@@ -367,7 +367,8 @@ export function QuotesPipeline() {
   }, [])
 
   const filteredOffertes = useMemo(() => {
-    let result = [...offertes]
+    // Hide imported offertes (james_pro) — they are history, visible in client profile only
+    let result = offertes.filter((o) => o.import_bron !== 'james_pro')
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase()

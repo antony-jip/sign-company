@@ -275,7 +275,7 @@ export async function uploadVervolgpapier(userId: string, file: File): Promise<s
   })
 }
 
-export async function getKlanten(limit = 500): Promise<Klant[]> {
+export async function getKlanten(limit = 5000): Promise<Klant[]> {
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('klanten')
@@ -378,7 +378,7 @@ export async function deleteKlant(id: string): Promise<void> {
 
 // ============ PROJECTEN ============
 
-export async function getProjecten(limit = 500): Promise<Project[]> {
+export async function getProjecten(limit = 5000): Promise<Project[]> {
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('projecten')
@@ -613,7 +613,7 @@ export async function deleteTaak(id: string): Promise<void> {
 
 // ============ OFFERTES ============
 
-export async function getOffertes(limit = 500): Promise<Offerte[]> {
+export async function getOffertes(limit = 5000): Promise<Offerte[]> {
   if (isSupabaseConfigured() && supabase) {
     try {
       const { data, error } = await supabase
@@ -2110,7 +2110,7 @@ export async function updateProfile(userId: string, updates: Partial<Profile>): 
 
 // ============ FACTUREN ============
 
-export async function getFacturen(limit = 500): Promise<Factuur[]> {
+export async function getFacturen(limit = 5000): Promise<Factuur[]> {
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase.from('facturen').select('*').order('factuurdatum', { ascending: false }).limit(limit)
     if (error) throw error
