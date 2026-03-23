@@ -390,6 +390,24 @@ export function SalesFollowUpWidget() {
       </CardHeader>
 
       <CardContent className="space-y-4">
+        {/* Wacht op reactie + herinneringen samenvatting */}
+        {!loading && openCount > 0 && (
+          <div className="flex items-center gap-3 rounded-xl bg-[#FAFAF8] border border-[#E6E4E0] p-2.5">
+            <Link
+              to="/offertes?filter=wacht_op_reactie"
+              className="flex-1 text-xs text-foreground hover:underline"
+            >
+              <span className="font-bold font-mono text-[#1A5C5E]">{openCount}</span>{' '}
+              {openCount === 1 ? 'offerte wacht' : 'offertes wachten'} op reactie
+            </Link>
+            {todayItems.length > 0 && (
+              <span className="text-xs text-muted-foreground">
+                Vandaag: <span className="font-bold font-mono text-[#1A5C5E]">{todayItems.length}</span> herinnering{todayItems.length !== 1 ? 'en' : ''}
+              </span>
+            )}
+          </div>
+        )}
+
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground/60" />

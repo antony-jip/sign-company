@@ -297,6 +297,10 @@ export interface Offerte {
   gekozen_items?: string[];
   gekozen_varianten?: Record<string, string>;
   toegewezen_aan?: string;
+  // Opvolging systeem
+  opvolging_actief?: boolean;
+  opvolging_schema_id?: string;
+  verzendwijze?: 'via_portaal' | 'via_email_pdf' | 'via_handmatig';
   created_at: string;
   updated_at: string;
 }
@@ -1664,6 +1668,42 @@ export interface PortaalInstellingen {
   template_portaallink: PortaalEmailTemplate;
   template_nieuw_item: PortaalEmailTemplate;
   template_herinnering: PortaalEmailTemplate;
+}
+
+// ============ OFFERTE OPVOLGING ============
+
+export interface OpvolgSchema {
+  id: string;
+  organisatie_id: string;
+  naam: string;
+  is_default: boolean;
+  actief: boolean;
+  created_at: string;
+  stappen?: OpvolgStap[];
+}
+
+export interface OpvolgStap {
+  id: string;
+  schema_id: string;
+  stap_nummer: number;
+  dagen_na_versturen: number;
+  actie: 'email_klant' | 'melding_intern' | 'email_en_melding';
+  onderwerp: string;
+  inhoud: string;
+  alleen_als_niet_bekeken: boolean;
+  alleen_als_niet_gereageerd: boolean;
+  actief: boolean;
+  created_at: string;
+}
+
+export interface OpvolgLogEntry {
+  id: string;
+  offerte_id: string;
+  stap_id: string;
+  actie: string;
+  resultaat: 'verstuurd' | 'overgeslagen_bekeken' | 'overgeslagen_gereageerd' | 'overgeslagen_inactief' | 'fout';
+  metadata: Record<string, unknown>;
+  created_at: string;
 }
 
 // ============ AUDIT LOG (Quick Win 3) ============

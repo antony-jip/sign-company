@@ -1138,6 +1138,17 @@ export function QuotesPipeline() {
                                   ✓ {offerte.geaccepteerd_door}
                                 </span>
                               )}
+                              {/* Opvolging: dagen sinds verstuurd */}
+                              {offerte.verstuurd_op && (offerte.status === 'verzonden' || offerte.status === 'bekeken') && (() => {
+                                const sentDays = getDaysOpen(offerte.verstuurd_op!)
+                                const dotColor = sentDays <= 3 ? 'bg-emerald-500' : sentDays <= 14 ? 'bg-orange-500' : 'bg-[#F15025]'
+                                return (
+                                  <span className="inline-flex items-center gap-0.5" title={`${sentDays} dagen sinds verstuurd`}>
+                                    <span className={cn('w-1.5 h-1.5 rounded-full', dotColor)} />
+                                    <span className="text-[10px] font-mono text-muted-foreground">{sentDays}d</span>
+                                  </span>
+                                )
+                              })()}
                             </div>
                           </div>
 

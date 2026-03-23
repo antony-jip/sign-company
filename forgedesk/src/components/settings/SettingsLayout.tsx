@@ -86,7 +86,8 @@ import { PortaalTab } from './PortaalTab'
 import { SidebarTab } from './SidebarTab'
 import { TeamledenTab } from './TeamledenTab'
 import { AbonnementTab } from './AbonnementTab'
-import { Sparkles } from 'lucide-react'
+import { OfferteOpvolgingTab } from './OfferteOpvolgingTab'
+import { Sparkles, Clock } from 'lucide-react'
 
 // Shared sub-tab navigation component
 interface SubTab {
@@ -180,6 +181,7 @@ const settingsSections = [
       { id: 'bedrijf', label: 'Bedrijfsprofiel', icon: Building2 },
       { id: 'teamleden', label: 'Teamleden', icon: Users },
       { id: 'abonnement', label: 'Abonnement', icon: CreditCard },
+      { id: 'opvolging', label: 'Opvolging', icon: Clock },
     ],
   },
   {
@@ -217,6 +219,7 @@ function renderTabContent(tabId: string) {
     case 'forgie': return <ForgieTab />
     case 'teamleden': return <TeamledenTab />
     case 'abonnement': return <AbonnementTab />
+    case 'opvolging': return <OfferteOpvolgingTab />
     default: return null
   }
 }

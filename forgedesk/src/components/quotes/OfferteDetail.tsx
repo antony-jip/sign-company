@@ -64,6 +64,7 @@ import { WerkbonAanmaakDialog } from '@/components/werkbonnen/WerkbonAanmaakDial
 import { PdfPreviewDialog } from '@/components/shared/PdfPreviewDialog'
 import { ShareButton } from '@/components/shared/ShareButton'
 import { VisualisatieGallery } from '@/components/visualizer/VisualisatieGallery'
+import { OfferteOpvolgTimeline } from '@/components/quotes/OfferteOpvolgTimeline'
 
 const STATUS_LABELS: Record<string, string> = {
   concept: 'Concept',
@@ -106,7 +107,7 @@ function calculateLineTotaal(item: { aantal: number; eenheidsprijs: number; kort
 export function OfferteDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, organisatieId } = useAuth()
   const { pipelineStappen, bedrijfsnaam, primaireKleur, emailHandtekening, profile } = useAppSettings()
   const documentStyle = useDocumentStyle()
 
@@ -922,6 +923,17 @@ export function OfferteDetail() {
               )}
             </div>
           </div>
+        )}
+
+        {/* Opvolg timeline — alleen bij verzonden/bekeken */}
+        {(offerte.status === 'verzonden' || offerte.status === 'bekeken') && organisatieId && (
+          <OfferteOpvolgTimeline
+            offerteId={offerte.id}
+            verstuurdOp={offerte.verstuurd_op}
+            schemaId={offerte.opvolging_schema_id}
+            opvolgingActief={offerte.opvolging_actief}
+            organisatieId={organisatieId}
+          />
         )}
       </div>
 
