@@ -312,9 +312,6 @@ export function Sidebar() {
           )}
         </nav>
 
-        {/* Flex spacer to push bottom section down */}
-        <div className="flex-1" />
-
         {/* Bottom section */}
         <div className={cn(
           'flex-shrink-0',
