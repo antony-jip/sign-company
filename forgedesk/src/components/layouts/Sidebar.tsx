@@ -147,7 +147,7 @@ export function Sidebar() {
         key={item.path}
         to={item.path}
         className={cn(
-          'relative flex flex-col items-center justify-center w-full py-2.5 gap-0.5 transition-all duration-200',
+          'relative flex flex-col items-center justify-center w-full py-1.5 gap-0.5 transition-all duration-200',
           active ? 'bg-opacity-100' : 'opacity-60 hover:opacity-100',
         )}
         style={active ? { backgroundColor: `rgba(26, 83, 92, 0.08)` } : undefined}
@@ -175,7 +175,7 @@ export function Sidebar() {
 
         {/* Icon */}
         <Icon
-          className="w-[22px] h-[22px]"
+          className="w-[20px] h-[20px]"
           style={{ color: item.color }}
           strokeWidth={active ? 2.2 : 1.8}
         />
@@ -183,10 +183,10 @@ export function Sidebar() {
         {/* Label */}
         <span
           className={cn(
-            'text-center leading-tight',
+            'text-center leading-none',
             active ? 'font-semibold text-foreground' : 'font-medium text-muted-foreground',
           )}
-          style={{ fontSize: '10px' }}
+          style={{ fontSize: '9px' }}
         >
           {item.label}
         </span>
@@ -196,7 +196,7 @@ export function Sidebar() {
 
   // ── Rail divider ──
   const railDivider = (key: string) => (
-    <div key={key} className="w-12 mx-auto" style={{ height: '0.5px', backgroundColor: '#E6E4E0' }} />
+    <div key={key} className="w-10 mx-auto my-0.5" style={{ height: '0.5px', backgroundColor: '#E6E4E0' }} />
   )
 
   // ── Expanded item ──
