@@ -683,24 +683,30 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
                     Bestanden toevoegen
                   </button>
                   {taakBestanden.map((file, i) => (
-                    <div key={i} className="relative group">
+                    <div key={i} className="flex items-center gap-2 p-1.5 rounded-md border border-border bg-muted/20 group hover:bg-muted/40 transition-colors">
                       {file.type.startsWith('image/') ? (
-                        <img
-                          src={URL.createObjectURL(file)}
-                          alt={file.name}
-                          className="h-10 w-10 rounded-md object-cover border border-border"
-                        />
+                        <a href={URL.createObjectURL(file)} target="_blank" rel="noopener noreferrer" className="shrink-0">
+                          <img
+                            src={URL.createObjectURL(file)}
+                            alt={file.name}
+                            className="h-10 w-10 rounded-md object-cover border border-border hover:ring-2 hover:ring-petrol/20"
+                          />
+                        </a>
                       ) : (
-                        <div className="h-10 w-10 rounded-md border border-border bg-muted/50 flex items-center justify-center">
+                        <a href={URL.createObjectURL(file)} target="_blank" rel="noopener noreferrer" className="shrink-0 h-10 w-10 rounded-md border border-border bg-muted/50 flex items-center justify-center hover:ring-2 hover:ring-petrol/20">
                           <Paperclip className="h-3.5 w-3.5 text-muted-foreground" />
-                        </div>
+                        </a>
                       )}
+                      <div className="flex-1 min-w-0">
+                        <span className="text-[11px] font-medium truncate block">{file.name}</span>
+                        <span className="text-[9px] text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</span>
+                      </div>
                       <button
                         type="button"
                         onClick={() => setTaakBestanden(prev => prev.filter((_, j) => j !== i))}
-                        className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-foreground/80 text-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="shrink-0 h-6 w-6 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
                       >
-                        <X className="h-2.5 w-2.5" />
+                        <X className="h-3 w-3" />
                       </button>
                     </div>
                   ))}

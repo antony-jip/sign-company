@@ -562,14 +562,22 @@ export async function createTaak(taak: Omit<Taak, 'id' | 'created_at' | 'updated
 }
 
 export async function uploadTaakBijlage(taakId: string, file: File): Promise<string> {
-  if (!isSupabaseConfigured() || !supabase) throw new Error('Supabase niet geconfigureerd')
-  const storagePath = `taken/${taakId}/${Date.now()}_${file.name}`
-  const { error } = await supabase.storage
-    .from('project-fotos')
-    .upload(storagePath, file, { cacheControl: '3600', upsert: false })
-  if (error) throw error
-  const { data } = supabase.storage.from('project-fotos').getPublicUrl(storagePath)
-  return data.publicUrl
+  if (isSupabaseConfigured() && supabase) {
+    const storagePath = `taken/${taakId}/${Date.now()}_${file.name}`
+    const { error } = await supabase.storage
+      .from('project-fotos')
+      .upload(storagePath, file, { cacheControl: '3600', upsert: false })
+    if (error) throw error
+    const { data } = supabase.storage.from('project-fotos').getPublicUrl(storagePath)
+    return data.publicUrl
+  }
+  // localStorage fallback: read file as data URL
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = () => reject(new Error('Kon bestand niet lezen'))
+    reader.readAsDataURL(file)
+  })
 }
 
 export async function updateTaak(id: string, updates: Partial<Taak>): Promise<Taak> {
