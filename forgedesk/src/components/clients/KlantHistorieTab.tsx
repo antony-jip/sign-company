@@ -21,7 +21,7 @@ interface KlantHistorieTabProps {
 
 interface TijdlijnItem {
   datum: string
-  type: 'project' | 'offerte'
+  type: 'project' | 'offerte' | 'factuur'
   omschrijving: string
   bedrag?: number
   status?: string
@@ -65,7 +65,7 @@ export function KlantHistorieTab({ klantId, klantNaam }: KlantHistorieTabProps) 
   const navigate = useNavigate()
   const [items, setItems] = useState<TijdlijnItem[]>([])
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState<'alles' | 'project' | 'offerte'>('alles')
+  const [filter, setFilter] = useState<'alles' | 'project' | 'offerte' | 'factuur'>('alles')
 
   useEffect(() => {
     setLoading(true)
@@ -82,10 +82,10 @@ export function KlantHistorieTab({ klantId, klantNaam }: KlantHistorieTabProps) 
         for (const h of historie) {
           results.push({
             datum: h.datum || h.created_at,
-            type: h.type === 'factuur' ? 'project' : h.type as 'project' | 'offerte',
+            type: h.type as 'project' | 'offerte' | 'factuur',
             omschrijving: h.naam,
             bedrag: h.bedrag ?? undefined,
-            status: h.type === 'factuur' ? 'Factuur' : undefined,
+            status: undefined,
             bron: 'import',
           })
         }
@@ -164,8 +164,8 @@ export function KlantHistorieTab({ klantId, klantNaam }: KlantHistorieTabProps) 
       {/* Filter knoppen */}
       <div className="flex items-center gap-2">
         <Filter className="w-4 h-4 text-muted-foreground" />
-        {(['alles', 'project', 'offerte'] as const).map((f) => {
-          const labels = { alles: 'Alles', project: 'Projecten', offerte: 'Offertes' }
+        {(['alles', 'project', 'offerte', 'factuur'] as const).map((f) => {
+          const labels = { alles: 'Alles', project: 'Projecten', offerte: 'Offertes', factuur: 'Facturen' }
           const count = f === 'alles' ? items.length : items.filter((i) => i.type === f).length
           return (
             <button
@@ -217,6 +217,10 @@ export function KlantHistorieTab({ klantId, klantNaam }: KlantHistorieTabProps) 
                       {item.type === 'project' ? (
                         <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 text-2xs px-1.5 py-0">
                           Project
+                        </Badge>
+                      ) : item.type === 'factuur' ? (
+                        <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 text-2xs px-1.5 py-0">
+                          Factuur
                         </Badge>
                       ) : (
                         <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 text-2xs px-1.5 py-0">
