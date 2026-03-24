@@ -5951,3 +5951,48 @@ export async function createImportLog(data: Partial<ImportLog>): Promise<ImportL
   if (error) throw error
   return result as ImportLog
 }
+
+export async function deleteImportLog(id: string): Promise<void> {
+  assertId(id)
+  if (!isSupabaseConfigured() || !supabase) return
+  const { error } = await supabase.from('import_logs').delete().eq('id', id)
+  if (error) throw error
+}
+
+export async function deleteAllImportLogs(organisatieId: string): Promise<void> {
+  if (!isSupabaseConfigured() || !supabase) return
+  const { error } = await supabase.from('import_logs').delete().eq('organisatie_id', organisatieId)
+  if (error) throw error
+}
+
+export async function opschonenAlleImportData(organisatieId: string): Promise<void> {
+  if (!isSupabaseConfigured() || !supabase) return
+  // Verwijder in juiste volgorde (FK constraints)
+  const { error: e1 } = await supabase.from('contactpersonen').delete().eq('organisatie_id', organisatieId)
+  if (e1) throw e1
+  const { error: e2 } = await supabase.from('klant_historie').delete().eq('organisatie_id', organisatieId)
+  if (e2) throw e2
+  const { error: e3 } = await supabase.from('import_logs').delete().eq('organisatie_id', organisatieId)
+  if (e3) throw e3
+  // Alleen geïmporteerde klanten verwijderen
+  const { error: e4 } = await supabase.from('klanten').delete().eq('organisatie_id', organisatieId).eq('import_bron', 'csv_import')
+  if (e4) throw e4
+}
+
+export async function markeerAlsLosContact(ids: string[]): Promise<void> {
+  if (!isSupabaseConfigured() || !supabase || ids.length === 0) return
+  const { error } = await supabase
+    .from('contactpersonen')
+    .update({ notities: '[LOS_CONTACT]' })
+    .in('id', ids)
+  if (error) throw error
+}
+
+export async function bulkDeleteContactpersonen(ids: string[]): Promise<void> {
+  if (!isSupabaseConfigured() || !supabase || ids.length === 0) return
+  const { error } = await supabase
+    .from('contactpersonen')
+    .delete()
+    .in('id', ids)
+  if (error) throw error
+}

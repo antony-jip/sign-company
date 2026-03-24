@@ -10,13 +10,15 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog'
-import { Users, Search, Link2, Building2, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Users, Search, Link2, Building2, ChevronLeft, ChevronRight, Trash2, UserCheck, Plus } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import {
   getContactpersonenDB,
   getKlanten,
   koppelContactAanKlant,
   createKlant,
+  markeerAlsLosContact,
+  bulkDeleteContactpersonen,
 } from '@/services/supabaseService'
 import type { ContactpersoonRecord, Klant } from '@/types'
 import { toast } from 'sonner'
@@ -38,6 +40,8 @@ export function LosseContacten({ organisatieId }: LosseContactenProps) {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [page, setPage] = useState(0)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [bulkLoading, setBulkLoading] = useState(false)
 
   // Koppel dialog state
   const [koppelDialogOpen, setKoppelDialogOpen] = useState(false)
@@ -47,6 +51,11 @@ export function LosseContacten({ organisatieId }: LosseContactenProps) {
   const [selectedKlant, setSelectedKlant] = useState<Klant | null>(null)
   const [koppelLoading, setKoppelLoading] = useState(false)
 
+  // Nieuw bedrijf inline state
+  const [showNieuwBedrijf, setShowNieuwBedrijf] = useState(false)
+  const [nieuwBedrijfsnaam, setNieuwBedrijfsnaam] = useState('')
+  const [nieuwStad, setNieuwStad] = useState('')
+
   useEffect(() => {
     loadContacten()
   }, [organisatieId])
@@ -55,7 +64,7 @@ export function LosseContacten({ organisatieId }: LosseContactenProps) {
     try {
       setLoading(true)
       const alle = await getContactpersonenDB(organisatieId)
-      setContacten(alle.filter((c) => c.klant_id === null))
+      setContacten(alle.filter((c) => c.klant_id === null && !c.notities.startsWith('[LOS_CONTACT]')))
     } catch {
       // Silently fail
     } finally {
@@ -83,10 +92,81 @@ export function LosseContacten({ organisatieId }: LosseContactenProps) {
     setPage(0)
   }, [searchQuery])
 
+  // Selection helpers
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  function toggleSelectAll() {
+    if (selectedIds.size === paged.length && paged.every((c) => selectedIds.has(c.id))) {
+      // Deselect all on current page
+      setSelectedIds((prev) => {
+        const next = new Set(prev)
+        paged.forEach((c) => next.delete(c.id))
+        return next
+      })
+    } else {
+      // Select all on current page
+      setSelectedIds((prev) => {
+        const next = new Set(prev)
+        paged.forEach((c) => next.add(c.id))
+        return next
+      })
+    }
+  }
+
+  const allPageSelected = paged.length > 0 && paged.every((c) => selectedIds.has(c.id))
+
+  async function handleBulkLosOpslaan() {
+    if (selectedIds.size === 0) return
+    const confirmed = window.confirm(
+      `${selectedIds.size} contact${selectedIds.size === 1 ? '' : 'en'} als los contact opslaan? Ze verdwijnen uit deze lijst maar blijven beschikbaar in het systeem.`
+    )
+    if (!confirmed) return
+    setBulkLoading(true)
+    try {
+      await markeerAlsLosContact([...selectedIds])
+      setContacten((prev) => prev.filter((c) => !selectedIds.has(c.id)))
+      toast.success(`${selectedIds.size} contact${selectedIds.size === 1 ? '' : 'en'} opgeslagen als los contact`)
+      setSelectedIds(new Set())
+    } catch {
+      toast.error('Fout bij opslaan als los contact')
+    } finally {
+      setBulkLoading(false)
+    }
+  }
+
+  async function handleBulkDelete() {
+    if (selectedIds.size === 0) return
+    const confirmed = window.confirm(
+      `Weet je zeker dat je ${selectedIds.size} contact${selectedIds.size === 1 ? '' : 'en'} wilt verwijderen? Dit kan niet ongedaan worden.`
+    )
+    if (!confirmed) return
+    setBulkLoading(true)
+    try {
+      await bulkDeleteContactpersonen([...selectedIds])
+      setContacten((prev) => prev.filter((c) => !selectedIds.has(c.id)))
+      toast.success(`${selectedIds.size} contact${selectedIds.size === 1 ? '' : 'en'} verwijderd`)
+      setSelectedIds(new Set())
+    } catch {
+      toast.error('Fout bij verwijderen')
+    } finally {
+      setBulkLoading(false)
+    }
+  }
+
   async function openKoppelDialog(contact: ContactpersoonRecord) {
     setSelectedContact(contact)
     setKoppelSearch('')
     setSelectedKlant(null)
+    setShowNieuwBedrijf(false)
+    setNieuwBedrijfsnaam('')
+    setNieuwStad('')
     setKoppelDialogOpen(true)
     try {
       const allKlanten = await getKlanten()
@@ -102,10 +182,47 @@ export function LosseContacten({ organisatieId }: LosseContactenProps) {
     try {
       await koppelContactAanKlant(selectedContact.id, selectedKlant.id)
       setContacten((prev) => prev.filter((c) => c.id !== selectedContact.id))
+      setSelectedIds((prev) => { const next = new Set(prev); next.delete(selectedContact.id); return next })
       setKoppelDialogOpen(false)
       toast.success(`${selectedContact.voornaam} ${selectedContact.achternaam} gekoppeld aan ${selectedKlant.bedrijfsnaam}`)
     } catch {
       toast.error('Fout bij koppelen')
+    } finally {
+      setKoppelLoading(false)
+    }
+  }
+
+  async function handleNieuwBedrijfEnKoppel() {
+    if (!selectedContact || !nieuwBedrijfsnaam.trim()) return
+    setKoppelLoading(true)
+    try {
+      const nieuwKlant = await createKlant({
+        bedrijfsnaam: nieuwBedrijfsnaam.trim(),
+        organisatie_id: organisatieId,
+        user_id: user?.id || '',
+        import_bron: 'csv_import',
+        status: 'actief',
+        contactpersoon: `${selectedContact.voornaam} ${selectedContact.achternaam}`.trim(),
+        email: selectedContact.email || '',
+        telefoon: selectedContact.telefoon || '',
+        adres: '',
+        postcode: '',
+        stad: nieuwStad.trim(),
+        land: 'Nederland',
+        website: '',
+        kvk_nummer: '',
+        btw_nummer: '',
+        tags: [],
+        notities: '',
+        contactpersonen: [],
+      } as Omit<Klant, 'id' | 'created_at' | 'updated_at'>)
+      await koppelContactAanKlant(selectedContact.id, nieuwKlant.id)
+      setContacten((prev) => prev.filter((c) => c.id !== selectedContact.id))
+      setSelectedIds((prev) => { const next = new Set(prev); next.delete(selectedContact.id); return next })
+      setKoppelDialogOpen(false)
+      toast.success(`Bedrijf "${nieuwBedrijfsnaam.trim()}" aangemaakt en ${selectedContact.voornaam} gekoppeld`)
+    } catch {
+      toast.error('Fout bij aanmaken bedrijf')
     } finally {
       setKoppelLoading(false)
     }
@@ -140,6 +257,7 @@ export function LosseContacten({ organisatieId }: LosseContactenProps) {
       } as Omit<Klant, 'id' | 'created_at' | 'updated_at'>)
       await koppelContactAanKlant(contact.id, nieuwKlant.id)
       setContacten((prev) => prev.filter((c) => c.id !== contact.id))
+      setSelectedIds((prev) => { const next = new Set(prev); next.delete(contact.id); return next })
       toast.success(`Bedrijf "${bedrijfsnaam}" aangemaakt en ${contact.voornaam} gekoppeld`)
     } catch {
       toast.error('Fout bij aanmaken bedrijf')
@@ -193,11 +311,56 @@ export function LosseContacten({ organisatieId }: LosseContactenProps) {
                 />
               </div>
 
+              {/* Bulk actiebalk */}
+              {selectedIds.size > 0 && (
+                <div className="flex items-center gap-3 mb-4 p-3 bg-muted/50 rounded-lg border">
+                  <span className="text-sm font-medium">
+                    {selectedIds.size} geselecteerd
+                  </span>
+                  <div className="flex items-center gap-2 ml-auto">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-xs"
+                      onClick={handleBulkLosOpslaan}
+                      disabled={bulkLoading}
+                    >
+                      <UserCheck className="w-3 h-3 mr-1" />
+                      Als los contact opslaan ({selectedIds.size})
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-xs text-destructive hover:text-destructive"
+                      onClick={handleBulkDelete}
+                      disabled={bulkLoading}
+                    >
+                      <Trash2 className="w-3 h-3 mr-1" />
+                      Verwijderen ({selectedIds.size})
+                    </Button>
+                    <button
+                      className="text-muted-foreground hover:text-foreground ml-1"
+                      onClick={() => setSelectedIds(new Set())}
+                    >
+                      &times;
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Tabel */}
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b">
+                      <th className="py-2 pr-2 w-8">
+                        <input
+                          type="checkbox"
+                          checked={allPageSelected}
+                          onChange={toggleSelectAll}
+                          className="rounded border-gray-300"
+                        />
+                      </th>
                       <th className="text-left py-2 pr-3 text-xs font-medium text-muted-foreground">Voornaam</th>
                       <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">Achternaam</th>
                       <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">Email</th>
@@ -209,7 +372,7 @@ export function LosseContacten({ organisatieId }: LosseContactenProps) {
                   <tbody>
                     {paged.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="py-4 text-center text-sm text-muted-foreground">
+                        <td colSpan={7} className="py-4 text-center text-sm text-muted-foreground">
                           Geen resultaten gevonden.
                         </td>
                       </tr>
@@ -218,6 +381,14 @@ export function LosseContacten({ organisatieId }: LosseContactenProps) {
                         const bedrijfsnaam = parseBedrijfsnaamUitNotities(contact.notities)
                         return (
                           <tr key={contact.id} className="border-b last:border-0">
+                            <td className="py-2.5 pr-2">
+                              <input
+                                type="checkbox"
+                                checked={selectedIds.has(contact.id)}
+                                onChange={() => toggleSelect(contact.id)}
+                                className="rounded border-gray-300"
+                              />
+                            </td>
                             <td className="py-2.5 pr-3 text-sm">{contact.voornaam}</td>
                             <td className="py-2.5 px-3 text-sm">{contact.achternaam}</td>
                             <td className="py-2.5 px-3 text-sm text-muted-foreground truncate max-w-[200px]">{contact.email}</td>
@@ -304,52 +475,100 @@ export function LosseContacten({ organisatieId }: LosseContactenProps) {
             )}
           </DialogHeader>
 
-          <div className="space-y-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Zoek bedrijf..."
-                value={koppelSearch}
-                onChange={(e) => setKoppelSearch(e.target.value)}
-                className="pl-9"
-              />
-            </div>
+          {!showNieuwBedrijf ? (
+            <div className="space-y-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Zoek bedrijf..."
+                  value={koppelSearch}
+                  onChange={(e) => setKoppelSearch(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
 
-            <div className="max-h-64 overflow-y-auto border rounded-md">
-              {filteredKlanten.length === 0 ? (
-                <div className="py-4 text-center text-sm text-muted-foreground">
-                  Geen bedrijven gevonden.
-                </div>
-              ) : (
-                filteredKlanten.map((klant) => (
-                  <button
-                    key={klant.id}
-                    className={`w-full text-left px-3 py-2 hover:bg-muted/50 transition-colors border-b last:border-0 ${
-                      selectedKlant?.id === klant.id ? 'bg-primary/5 border-l-2 border-l-primary' : ''
-                    }`}
-                    onClick={() => setSelectedKlant(klant)}
-                  >
-                    <div className="text-sm font-medium">{klant.bedrijfsnaam}</div>
-                    {klant.contactpersoon && (
-                      <div className="text-xs text-muted-foreground">{klant.contactpersoon}</div>
-                    )}
-                  </button>
-                ))
-              )}
-            </div>
-          </div>
+              <div className="max-h-64 overflow-y-auto border rounded-md">
+                {/* Nieuw bedrijf aanmaken optie */}
+                <button
+                  className="w-full text-left px-3 py-2 hover:bg-muted/50 transition-colors border-b flex items-center gap-2 text-primary"
+                  onClick={() => {
+                    setShowNieuwBedrijf(true)
+                    setNieuwBedrijfsnaam(koppelSearch)
+                  }}
+                >
+                  <Plus className="w-4 h-4" />
+                  <span className="text-sm font-medium">
+                    Nieuw bedrijf aanmaken{koppelSearch.trim() ? `: "${koppelSearch.trim()}"` : ''}
+                  </span>
+                </button>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setKoppelDialogOpen(false)}>
-              Annuleren
-            </Button>
-            <Button
-              onClick={handleKoppel}
-              disabled={!selectedKlant || koppelLoading}
-            >
-              {koppelLoading ? 'Koppelen...' : 'Koppelen'}
-            </Button>
-          </DialogFooter>
+                {filteredKlanten.length === 0 ? (
+                  <div className="py-4 text-center text-sm text-muted-foreground">
+                    Geen bedrijven gevonden.
+                  </div>
+                ) : (
+                  filteredKlanten.map((klant) => (
+                    <button
+                      key={klant.id}
+                      className={`w-full text-left px-3 py-2 hover:bg-muted/50 transition-colors border-b last:border-0 ${
+                        selectedKlant?.id === klant.id ? 'bg-primary/5 border-l-2 border-l-primary' : ''
+                      }`}
+                      onClick={() => setSelectedKlant(klant)}
+                    >
+                      <div className="text-sm font-medium">{klant.bedrijfsnaam}</div>
+                      {klant.contactpersoon && (
+                        <div className="text-xs text-muted-foreground">{klant.contactpersoon}</div>
+                      )}
+                    </button>
+                  ))
+                )}
+              </div>
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setKoppelDialogOpen(false)}>
+                  Annuleren
+                </Button>
+                <Button
+                  onClick={handleKoppel}
+                  disabled={!selectedKlant || koppelLoading}
+                >
+                  {koppelLoading ? 'Koppelen...' : 'Koppelen'}
+                </Button>
+              </DialogFooter>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm font-medium mb-1 block">Bedrijfsnaam *</label>
+                <Input
+                  placeholder="Bijv. Bakkerij De Gouden Korenaar"
+                  value={nieuwBedrijfsnaam}
+                  onChange={(e) => setNieuwBedrijfsnaam(e.target.value)}
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Stad</label>
+                <Input
+                  placeholder="Bijv. Amsterdam"
+                  value={nieuwStad}
+                  onChange={(e) => setNieuwStad(e.target.value)}
+                />
+              </div>
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowNieuwBedrijf(false)}>
+                  Terug
+                </Button>
+                <Button
+                  onClick={handleNieuwBedrijfEnKoppel}
+                  disabled={!nieuwBedrijfsnaam.trim() || koppelLoading}
+                >
+                  {koppelLoading ? 'Aanmaken...' : 'Aanmaken & koppelen'}
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </>

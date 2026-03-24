@@ -193,7 +193,7 @@ export function ClientsLayout() {
       fetchData()
     } catch (error) {
       logger.error(error)
-      toast.error('Fout bij verwijderen van klant')
+      toast.error(error instanceof Error ? error.message : 'Fout bij verwijderen van klant')
     }
   }
 
@@ -220,15 +220,13 @@ export function ClientsLayout() {
       `Weet je zeker dat je ${selectedIds.size} klant${selectedIds.size === 1 ? '' : 'en'} wilt verwijderen? Dit kan niet ongedaan worden.`
     )
     if (!confirmed) return
-    try {
-      await Promise.all([...selectedIds].map((id) => deleteKlant(id)))
-      toast.success(`${selectedIds.size} klant${selectedIds.size === 1 ? '' : 'en'} verwijderd`)
-      setSelectedIds(new Set())
-      fetchData()
-    } catch (error) {
-      logger.error(error)
-      toast.error('Fout bij verwijderen van klanten')
-    }
+    const results = await Promise.allSettled([...selectedIds].map((id) => deleteKlant(id)))
+    const succeeded = results.filter((r) => r.status === 'fulfilled').length
+    const failed = results.filter((r) => r.status === 'rejected').length
+    if (succeeded > 0) toast.success(`${succeeded} klant${succeeded === 1 ? '' : 'en'} verwijderd`)
+    if (failed > 0) toast.error(`${failed} klant${failed === 1 ? '' : 'en'} konden niet verwijderd worden (hebben nog projecten?)`)
+    setSelectedIds(new Set())
+    fetchData()
   }
 
   const exportHeaders = ['Bedrijfsnaam', 'Contactpersoon', 'Email', 'Telefoon', 'Adres', 'Postcode', 'Stad', 'Website', 'KvK', 'BTW', 'Status', 'Tags']

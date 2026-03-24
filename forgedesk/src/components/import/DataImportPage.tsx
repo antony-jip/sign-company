@@ -1,12 +1,21 @@
 import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Upload, Clock, FileSpreadsheet, Users, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import { Upload, Clock, FileSpreadsheet, Users, CheckCircle2, AlertTriangle, XCircle, Trash2, AlertOctagon } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
-import { getImportLogs } from '@/services/supabaseService'
+import { getImportLogs, deleteImportLog, deleteAllImportLogs, opschonenAlleImportData } from '@/services/supabaseService'
 import { BedrijfsdataUpload } from './BedrijfsdataUpload'
 import { ContactpersonenUpload } from './ContactpersonenUpload'
 import { LosseContacten } from './LosseContacten'
 import type { ImportLog } from '@/types'
+import { toast } from 'sonner'
 
 function formatDate(dateStr: string): string {
   if (!dateStr) return '-'
@@ -27,14 +36,59 @@ export function DataImportPage() {
   const { organisatieId } = useAuth()
   const [logs, setLogs] = useState<ImportLog[]>([])
   const [logsLoading, setLogsLoading] = useState(true)
+  const [opschonenDialogOpen, setOpschonenDialogOpen] = useState(false)
+  const [opschonenLoading, setOpschonenLoading] = useState(false)
 
-  useEffect(() => {
+  function loadLogs() {
     if (!organisatieId) return
+    setLogsLoading(true)
     getImportLogs(organisatieId)
       .then(setLogs)
       .catch(() => setLogs([]))
       .finally(() => setLogsLoading(false))
+  }
+
+  useEffect(() => {
+    loadLogs()
   }, [organisatieId])
+
+  async function handleDeleteLog(id: string) {
+    try {
+      await deleteImportLog(id)
+      setLogs((prev) => prev.filter((l) => l.id !== id))
+      toast.success('Import log verwijderd')
+    } catch {
+      toast.error('Fout bij verwijderen van log')
+    }
+  }
+
+  async function handleClearHistory() {
+    if (!organisatieId) return
+    const confirmed = window.confirm('Weet je zeker dat je alle import geschiedenis wilt wissen?')
+    if (!confirmed) return
+    try {
+      await deleteAllImportLogs(organisatieId)
+      setLogs([])
+      toast.success('Import geschiedenis gewist')
+    } catch {
+      toast.error('Fout bij wissen van geschiedenis')
+    }
+  }
+
+  async function handleOpschonen() {
+    if (!organisatieId) return
+    setOpschonenLoading(true)
+    try {
+      await opschonenAlleImportData(organisatieId)
+      setLogs([])
+      setOpschonenDialogOpen(false)
+      toast.success('Alle geïmporteerde data is verwijderd. Je kunt opnieuw beginnen.')
+    } catch (error) {
+      toast.error('Fout bij opschonen van data')
+    } finally {
+      setOpschonenLoading(false)
+    }
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-12">
@@ -60,10 +114,23 @@ export function DataImportPage() {
       {/* Import geschiedenis */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Clock className="w-5 h-5 text-muted-foreground" />
-            Import geschiedenis
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Clock className="w-5 h-5 text-muted-foreground" />
+              Import geschiedenis
+            </CardTitle>
+            {logs.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs text-muted-foreground hover:text-destructive"
+                onClick={handleClearHistory}
+              >
+                <Trash2 className="w-3.5 h-3.5 mr-1" />
+                Geschiedenis wissen
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {logsLoading ? (
@@ -83,12 +150,13 @@ export function DataImportPage() {
                     <th className="text-right py-2 px-4 text-xs font-medium text-muted-foreground">Geïmporteerd</th>
                     <th className="text-right py-2 px-4 text-xs font-medium text-muted-foreground">Overgeslagen</th>
                     <th className="text-right py-2 px-4 text-xs font-medium text-muted-foreground">Fouten</th>
-                    <th className="text-center py-2 pl-4 text-xs font-medium text-muted-foreground">Status</th>
+                    <th className="text-center py-2 px-4 text-xs font-medium text-muted-foreground">Status</th>
+                    <th className="text-center py-2 pl-4 text-xs font-medium text-muted-foreground w-10"></th>
                   </tr>
                 </thead>
                 <tbody>
                   {logs.map((log) => (
-                    <tr key={log.id} className="border-b last:border-0">
+                    <tr key={log.id} className="border-b last:border-0 group">
                       <td className="py-2.5 pr-4 text-xs text-muted-foreground whitespace-nowrap">
                         {formatDate(log.created_at)}
                       </td>
@@ -114,7 +182,7 @@ export function DataImportPage() {
                       <td className="py-2.5 px-4 text-right font-mono text-xs text-red-600">
                         {log.aantal_fouten}
                       </td>
-                      <td className="py-2.5 pl-4 text-center">
+                      <td className="py-2.5 px-4 text-center">
                         {log.status === 'voltooid' ? (
                           <CheckCircle2 className="w-4 h-4 text-green-500 mx-auto" />
                         ) : log.status === 'met_fouten' ? (
@@ -122,6 +190,15 @@ export function DataImportPage() {
                         ) : (
                           <XCircle className="w-4 h-4 text-red-500 mx-auto" />
                         )}
+                      </td>
+                      <td className="py-2.5 pl-4 text-center">
+                        <button
+                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
+                          onClick={() => handleDeleteLog(log.id)}
+                          title="Verwijder log"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -131,6 +208,67 @@ export function DataImportPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Data opschonen */}
+      <Card className="border-destructive/30">
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2 text-destructive">
+            <AlertOctagon className="w-5 h-5" />
+            Data opschonen
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground mb-4">
+            Verwijder alle geïmporteerde data (contactpersonen, klant historie, import logs en geïmporteerde klanten).
+            Handmatig aangemaakte klanten blijven behouden. Handig als je opnieuw wilt beginnen met importeren.
+          </p>
+          <Button
+            variant="destructive"
+            onClick={() => setOpschonenDialogOpen(true)}
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            Alle import data verwijderen
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Opschonen bevestigingsdialog */}
+      <Dialog open={opschonenDialogOpen} onOpenChange={setOpschonenDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-destructive flex items-center gap-2">
+              <AlertOctagon className="w-5 h-5" />
+              Data opschonen
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <p className="text-sm">
+              Dit verwijdert <strong>alle</strong> geïmporteerde data:
+            </p>
+            <ul className="text-sm text-muted-foreground space-y-1 list-disc pl-5">
+              <li>Alle contactpersonen</li>
+              <li>Alle klant historie (projecten, offertes, facturen)</li>
+              <li>Alle import logs</li>
+              <li>Alle geïmporteerde klanten (handmatige klanten blijven behouden)</li>
+            </ul>
+            <p className="text-sm font-medium text-destructive">
+              Dit kan niet ongedaan worden!
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpschonenDialogOpen(false)}>
+              Annuleren
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleOpschonen}
+              disabled={opschonenLoading}
+            >
+              {opschonenLoading ? 'Bezig met opschonen...' : 'Ja, alles verwijderen'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
