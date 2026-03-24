@@ -935,6 +935,8 @@ function DocumentenTab() {
   const [werkbonBriefpapier, setWerkbonBriefpapier] = useState(true)
 
   // Factuur velden
+  const [factuurIntroTekst, setFactuurIntroTekst] = useState('')
+  const [factuurOutroTekst, setFactuurOutroTekst] = useState('')
   const [factuurPrefix, setFactuurPrefix] = useState('FAC')
   const [creditnotaPrefix, setCreditnotaPrefix] = useState('CN')
   const [werkbonPrefix, setWerkbonPrefix] = useState('WB')
@@ -981,6 +983,8 @@ function DocumentenTab() {
       setHerinnering2(data.herinnering_2_tekst || '')
       setAanmaningTekst(data.aanmaning_tekst || '')
       setStandaardUurtarief(String(data.standaard_uurtarief || 75))
+      setFactuurIntroTekst(data.factuur_intro_tekst || '')
+      setFactuurOutroTekst(data.factuur_outro_tekst || '')
     } catch (err) {
       logger.error('Fout bij laden documentinstellingen:', err)
       toast.error('Kon documentinstellingen niet laden')
@@ -1021,6 +1025,8 @@ function DocumentenTab() {
         herinnering_2_tekst: herinnering2,
         aanmaning_tekst: aanmaningTekst,
         standaard_uurtarief: parseFloat(standaardUurtarief) || 75,
+        factuur_intro_tekst: factuurIntroTekst,
+        factuur_outro_tekst: factuurOutroTekst,
       })
       await refreshSettings()
       toast.success('Opgeslagen.')
@@ -1190,6 +1196,18 @@ function DocumentenTab() {
               <div className="space-y-2">
                 <Label htmlFor="voorwaarden">Standaard betalingsvoorwaarden</Label>
                 <Textarea id="voorwaarden" value={voorwaarden} onChange={(e) => setVoorwaarden(e.target.value)} placeholder="Bijv. Op al onze overeenkomsten zijn onze algemene voorwaarden van toepassing, gedeponeerd bij de KvK." rows={3} />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="factuur-intro">Standaard introductietekst</Label>
+                <Textarea id="factuur-intro" value={factuurIntroTekst} onChange={(e) => setFactuurIntroTekst(e.target.value)} placeholder="Bijv. Hierbij ontvangt u de factuur voor de uitgevoerde werkzaamheden." rows={2} />
+                <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Wordt automatisch bovenaan elke nieuwe factuur geplaatst</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="factuur-outro">Standaard afsluittekst</Label>
+                <Textarea id="factuur-outro" value={factuurOutroTekst} onChange={(e) => setFactuurOutroTekst(e.target.value)} placeholder="Bijv. Wij vertrouwen op een tijdige betaling. Bij vragen kunt u contact met ons opnemen." rows={2} />
+                <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Wordt automatisch onderaan elke nieuwe factuur geplaatst</p>
               </div>
 
               <Separator />
@@ -2307,6 +2325,13 @@ function IntegratiesTab() {
   const [exactClientSecret, setExactClientSecret] = useState('')
   const [exactConnected, setExactConnected] = useState(false)
   const [exactSaving, setExactSaving] = useState(false)
+  const [exactAdministratieId, setExactAdministratieId] = useState('')
+  const [exactVerkoopboek, setExactVerkoopboek] = useState('80')
+  const [exactGrootboek, setExactGrootboek] = useState('8090')
+  const [exactBtwHoog, setExactBtwHoog] = useState('2')
+  const [exactBtwLaag, setExactBtwLaag] = useState('')
+  const [exactBtwNul, setExactBtwNul] = useState('')
+  const [exactAdvancedOpen, setExactAdvancedOpen] = useState(false)
 
   // KvK API state
   const [kvkApiKey, setKvkApiKey] = useState('')
@@ -2321,6 +2346,12 @@ function IntegratiesTab() {
       setExactClientId(s.exact_online_client_id ?? '')
       setExactClientSecret(s.exact_online_client_secret ?? '')
       setExactConnected(s.exact_online_connected ?? false)
+      setExactAdministratieId(s.exact_administratie_id ?? '')
+      setExactVerkoopboek(s.exact_verkoopboek ?? '80')
+      setExactGrootboek(s.exact_grootboek ?? '8090')
+      setExactBtwHoog(s.exact_btw_hoog ?? '2')
+      setExactBtwLaag(s.exact_btw_laag ?? '')
+      setExactBtwNul(s.exact_btw_nul ?? '')
       setKvkApiKey(s.kvk_api_key ?? '')
     }).catch(() => {})
   }, [user?.id])
@@ -2346,6 +2377,12 @@ function IntegratiesTab() {
       await updateAppSettings(user.id, {
         exact_online_client_id: exactClientId,
         exact_online_client_secret: exactClientSecret,
+        exact_administratie_id: exactAdministratieId,
+        exact_verkoopboek: exactVerkoopboek,
+        exact_grootboek: exactGrootboek,
+        exact_btw_hoog: exactBtwHoog,
+        exact_btw_laag: exactBtwLaag,
+        exact_btw_nul: exactBtwNul,
       })
       toast.success('Opgeslagen.')
     } catch (err) {
@@ -2495,6 +2532,51 @@ function IntegratiesTab() {
                   </a>{' '}
                   om je Client ID en Secret te verkrijgen.
                 </p>
+              </div>
+
+              {/* Geavanceerde Exact Online instellingen */}
+              <div className="border border-border rounded-lg">
+                <button
+                  type="button"
+                  onClick={() => setExactAdvancedOpen(!exactAdvancedOpen)}
+                  className="w-full flex items-center justify-between p-3 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <span>Geavanceerde instellingen</span>
+                  <ArrowRight className={cn('w-4 h-4 transition-transform', exactAdvancedOpen && 'rotate-90')} />
+                </button>
+                {exactAdvancedOpen && (
+                  <div className="px-3 pb-3 space-y-3 border-t border-border pt-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="exact-admin-id" className="text-sm">Administratie ID</Label>
+                      <Input id="exact-admin-id" value={exactAdministratieId} onChange={(e) => setExactAdministratieId(e.target.value)} placeholder="Exact administratie ID" className="font-mono text-sm" />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="exact-verkoopboek" className="text-sm">Verkoopboek code</Label>
+                        <Input id="exact-verkoopboek" value={exactVerkoopboek} onChange={(e) => setExactVerkoopboek(e.target.value)} placeholder="80" className="font-mono text-sm" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="exact-grootboek" className="text-sm">Grootboek code</Label>
+                        <Input id="exact-grootboek" value={exactGrootboek} onChange={(e) => setExactGrootboek(e.target.value)} placeholder="8090" className="font-mono text-sm" />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="exact-btw-hoog" className="text-sm">BTW code hoog</Label>
+                        <Input id="exact-btw-hoog" value={exactBtwHoog} onChange={(e) => setExactBtwHoog(e.target.value)} placeholder="2" className="font-mono text-sm" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="exact-btw-laag" className="text-sm">BTW code laag</Label>
+                        <Input id="exact-btw-laag" value={exactBtwLaag} onChange={(e) => setExactBtwLaag(e.target.value)} placeholder="" className="font-mono text-sm" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="exact-btw-nul" className="text-sm">BTW code nul</Label>
+                        <Input id="exact-btw-nul" value={exactBtwNul} onChange={(e) => setExactBtwNul(e.target.value)} placeholder="" className="font-mono text-sm" />
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Deze codes worden gebruikt bij het genereren van UBL-bestanden voor Exact Online.</p>
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-end gap-2">
@@ -2836,25 +2918,19 @@ function BeveiligingTab() {
 // ============ WEERGAVE TAB ============
 
 // Alle mogelijke sidebar items met hun labels en secties
+// Moet exact overeenkomen met navItems in Sidebar.tsx en TopNav.tsx
 const ALL_SIDEBAR_ITEMS = [
-  // Moet exact overeenkomen met navSections in Sidebar.tsx
   { label: 'Dashboard', section: 'Overzicht' },
-  { label: 'Klanten', section: 'Verkoop' },
-  { label: 'Offertes', section: 'Verkoop' },
-  { label: 'Facturen', section: 'Verkoop' },
-  { label: 'Projecten', section: 'Productie' },
-  { label: 'Taken', section: 'Productie' },
-  { label: 'Montage', section: 'Productie' },
-  { label: 'Werkbonnen', section: 'Productie' },
-  { label: 'Visualizer', section: 'Productie' },
-  { label: 'Nacalculatie', section: 'Productie' },
+  { label: 'Projecten', section: 'Werk' },
+  { label: 'Offertes', section: 'Werk' },
+  { label: 'Facturen', section: 'Werk' },
+  { label: 'Klanten', section: 'Werk' },
+  { label: 'Werkbonnen', section: 'Werk' },
   { label: 'Planning', section: 'Planning' },
+  { label: 'Taken', section: 'Planning' },
   { label: 'Email', section: 'Communicatie' },
-  { label: 'Nieuwsbrieven', section: 'Communicatie' },
-  { label: 'Financieel', section: 'Financieel' },
-  { label: 'Documenten', section: 'Beheer' },
-  { label: 'Rapportages', section: 'Beheer' },
-  { label: 'Team', section: 'Beheer' },
+  { label: 'Portaal', section: 'Communicatie' },
+  { label: 'Financieel', section: 'Beheer' },
 ]
 
 const WEERGAVE_TABS: SubTab[] = [
@@ -3393,7 +3469,7 @@ function WeergaveTab() {
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Groepeer per sectie */}
-        {['Overzicht', 'Verkoop', 'Productie', 'Planning', 'Communicatie', 'Financieel', 'Beheer'].map((section) => {
+        {['Overzicht', 'Werk', 'Planning', 'Communicatie', 'Beheer'].map((section) => {
           const sectionItems = ALL_SIDEBAR_ITEMS.filter((i) => i.section === section)
           return (
             <div key={section}>
