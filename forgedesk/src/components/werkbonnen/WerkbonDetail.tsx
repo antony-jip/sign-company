@@ -556,30 +556,31 @@ export function WerkbonDetail() {
 
     const pdfBlob = doc.output('blob')
     const file = new File([pdfBlob], bestandsnaam, { type: 'application/pdf' })
+    const deelTekst = `Werkbon ${werkbonNummer}${titel ? ` - ${titel}` : ''}`
+
+    const deelViaWhatsApp = () => {
+      doc.save(bestandsnaam)
+      const tekst = encodeURIComponent(`${deelTekst}\nZie bijgevoegde PDF.`)
+      window.open(`https://wa.me/?text=${tekst}`, '_blank')
+      toast.success('PDF gedownload — voeg toe in WhatsApp')
+    }
 
     // Native Web Share API (mobiel: WhatsApp, Mail, etc.)
     if (navigator.share && navigator.canShare?.({ files: [file] })) {
       try {
         await navigator.share({
-          title: `Werkbon ${werkbonNummer}`,
-          text: `Werkbon ${werkbonNummer}${titel ? ` - ${titel}` : ''}`,
+          title: deelTekst,
+          text: deelTekst,
           files: [file],
         })
         toast.success('Werkbon gedeeld')
       } catch (err: unknown) {
-        // Gebruiker heeft delen geannuleerd
-        if (err instanceof Error && err.name !== 'AbortError') {
-          toast.error('Delen mislukt')
-        }
+        if (err instanceof Error && err.name === 'AbortError') return
+        // Share API faalde, fallback naar WhatsApp
+        deelViaWhatsApp()
       }
     } else {
-      // Fallback: download PDF + open WhatsApp met bericht
-      doc.save(bestandsnaam)
-      const tekst = encodeURIComponent(
-        `Werkbon ${werkbonNummer}${titel ? ` - ${titel}` : ''}\nZie bijgevoegde PDF.`
-      )
-      window.open(`https://wa.me/?text=${tekst}`, '_blank')
-      toast.success('PDF gedownload — voeg toe in WhatsApp')
+      deelViaWhatsApp()
     }
   }, [
     klanten, klantId, projecten, projectId, profile, primaireKleur, documentStyle,
