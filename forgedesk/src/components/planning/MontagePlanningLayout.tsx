@@ -1219,54 +1219,76 @@ export function MontagePlanningLayout() {
                   <ClipboardCheck className="h-3.5 w-3.5" />
                   Werkbon
                 </Label>
-                <Select
-                  value={formData.werkbon_id || "__none__"}
-                  onValueChange={async (v) => {
-                    if (v === "__new__") {
-                      if (!formData.project_id) {
-                        toast.error("Selecteer eerst een project");
-                        return;
+                <div className="flex gap-1.5">
+                  <Select
+                    value={formData.werkbon_id || "__none__"}
+                    onValueChange={async (v) => {
+                      if (v === "__new__") {
+                        if (!formData.project_id) {
+                          toast.error("Selecteer eerst een project");
+                          return;
+                        }
+                        try {
+                          const wb = await createWerkbon({
+                            user_id: "u1",
+                            klant_id: formData.klant_id,
+                            project_id: formData.project_id,
+                            titel: formData.titel || "",
+                            datum: new Date().toISOString().split("T")[0],
+                            status: "concept",
+                          });
+                          setProjectWerkbonnen((prev) => [...prev, wb]);
+                          setFormData((prev) => ({ ...prev, werkbon_id: wb.id }));
+                          toast.success(`Werkbon ${wb.werkbon_nummer} aangemaakt`);
+                        } catch {
+                          toast.error("Kon werkbon niet aanmaken");
+                        }
+                      } else {
+                        setFormData((prev) => ({ ...prev, werkbon_id: v === "__none__" ? "" : v }));
                       }
-                      try {
-                        const wb = await createWerkbon({
-                          user_id: "u1",
-                          klant_id: formData.klant_id,
-                          project_id: formData.project_id,
-                          titel: formData.titel || "",
-                          datum: new Date().toISOString().split("T")[0],
-                          status: "concept",
+                    }}
+                  >
+                    <SelectTrigger className="h-9 flex-1">
+                      <SelectValue placeholder="Geen werkbon" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">Geen werkbon</SelectItem>
+                      {projectWerkbonnen.map((wb) => (
+                        <SelectItem key={wb.id} value={wb.id}>
+                          <span className="font-mono text-xs">{wb.werkbon_nummer}</span>
+                          <span className="ml-1 text-xs text-muted-foreground truncate">{wb.titel}</span>
+                        </SelectItem>
+                      ))}
+                      {formData.project_id && (
+                        <SelectItem value="__new__">
+                          <span className="flex items-center gap-1 text-primary font-medium">
+                            <Plus className="h-3 w-3" /> Nieuwe werkbon
+                          </span>
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                  {formData.werkbon_id && formData.werkbon_id !== "__none__" && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="h-9 w-9 shrink-0"
+                      title="Werkbon openen"
+                      onClick={() => {
+                        const wb = projectWerkbonnen.find((w) => w.id === formData.werkbon_id);
+                        navigateWithTab({
+                          path: `/werkbonnen/${formData.werkbon_id}`,
+                          label: wb?.werkbon_nummer || "Werkbon",
+                          id: `/werkbonnen/${formData.werkbon_id}`,
                         });
-                        setProjectWerkbonnen((prev) => [...prev, wb]);
-                        setFormData((prev) => ({ ...prev, werkbon_id: wb.id }));
-                        toast.success(`Werkbon ${wb.werkbon_nummer} aangemaakt`);
-                      } catch {
-                        toast.error("Kon werkbon niet aanmaken");
-                      }
-                    } else {
-                      setFormData((prev) => ({ ...prev, werkbon_id: v === "__none__" ? "" : v }));
-                    }
-                  }}
-                >
-                  <SelectTrigger className="h-9">
-                    <SelectValue placeholder="Geen werkbon" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none__">Geen werkbon</SelectItem>
-                    {projectWerkbonnen.map((wb) => (
-                      <SelectItem key={wb.id} value={wb.id}>
-                        <span className="font-mono text-xs">{wb.werkbon_nummer}</span>
-                        <span className="ml-1 text-xs text-muted-foreground truncate">{wb.titel}</span>
-                      </SelectItem>
-                    ))}
-                    {formData.project_id && (
-                      <SelectItem value="__new__">
-                        <span className="flex items-center gap-1 text-primary font-medium">
-                          <Plus className="h-3 w-3" /> Nieuwe werkbon
-                        </span>
-                      </SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
+                        setDialogOpen(false);
+                      }}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
 
