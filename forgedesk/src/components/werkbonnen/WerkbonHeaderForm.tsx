@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react'
-import { MapPin } from 'lucide-react'
+import { MapPin, User, Phone } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -17,6 +17,8 @@ interface WerkbonHeaderFormProps {
   locatieAdres: string
   locatieStad: string
   locatiePostcode: string
+  contactNaam: string
+  contactTelefoon: string
   klanten: Klant[]
   projecten: Project[]
   offertes: Offerte[]
@@ -27,6 +29,7 @@ interface WerkbonHeaderFormProps {
 export const WerkbonHeaderForm = React.memo(function WerkbonHeaderForm({
   klantId, projectId, offerteId, titel, datum,
   locatieAdres, locatieStad, locatiePostcode,
+  contactNaam, contactTelefoon,
   klanten, projecten, offertes,
   onKlantChange, onFieldChange,
 }: WerkbonHeaderFormProps) {
@@ -135,6 +138,39 @@ export const WerkbonHeaderForm = React.memo(function WerkbonHeaderForm({
                 onBlur={(e) => onFieldChange('locatieStad', e.target.value)}
                 placeholder="Amsterdam"
               />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Contactpersoon op locatie */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2"><User className="h-4 w-4" /> Contactpersoon op locatie</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div>
+            <Label>Naam</Label>
+            <Input
+              defaultValue={contactNaam}
+              onBlur={(e) => onFieldChange('contactNaam', e.target.value)}
+              placeholder="Naam contactpersoon"
+            />
+          </div>
+          <div>
+            <Label>Telefoonnummer</Label>
+            <div className="flex gap-2">
+              <Input
+                defaultValue={contactTelefoon}
+                onBlur={(e) => onFieldChange('contactTelefoon', e.target.value)}
+                placeholder="06-12345678"
+                type="tel"
+              />
+              {contactTelefoon && (
+                <a href={`tel:${contactTelefoon}`} className="inline-flex items-center justify-center shrink-0 rounded-md border h-9 w-9 hover:bg-accent">
+                  <Phone className="h-4 w-4" />
+                </a>
+              )}
             </div>
           </div>
         </CardContent>

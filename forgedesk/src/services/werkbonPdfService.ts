@@ -13,6 +13,8 @@ interface WerkbonPdfData {
   locatie_adres?: string
   locatie_stad?: string
   locatie_postcode?: string
+  contact_naam?: string
+  contact_telefoon?: string
   toon_briefpapier: boolean
 }
 
@@ -143,6 +145,12 @@ export function generateWerkbonInstructiePDF(
     }
 
     doc.text(`Datum: ${formatDate(werkbonData.datum)}`, rightX, rightY, { align: 'right' })
+    rightY += 4
+
+    if (werkbonData.contact_naam) {
+      doc.text(`Contact: ${werkbonData.contact_naam}${werkbonData.contact_telefoon ? ` — ${werkbonData.contact_telefoon}` : ''}`, rightX, rightY, { align: 'right' })
+      rightY += 4
+    }
 
     // Scheiding
     y += 18

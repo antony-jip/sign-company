@@ -128,16 +128,18 @@ export const WerkbonItemCard = React.memo(function WerkbonItemCard({
         {/* Afbeeldingen */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <Label className="text-xs">Afbeeldingen</Label>
-            <label className="cursor-pointer">
-              <input type="file" accept="image/*" className="hidden" onChange={(e) => onImageAdd(item.id, e)} />
-              <span className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
-                <ImagePlus className="h-3 w-3" /> Toevoegen
-              </span>
-            </label>
+            <Label className="text-xs">Afbeeldingen <span className="text-muted-foreground font-normal">({item.afbeeldingen.length}/2)</span></Label>
+            {item.afbeeldingen.length < 2 && (
+              <label className="cursor-pointer">
+                <input type="file" accept="image/*" className="hidden" onChange={(e) => onImageAdd(item.id, e)} />
+                <span className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
+                  <ImagePlus className="h-3 w-3" /> Toevoegen
+                </span>
+              </label>
+            )}
           </div>
           {item.afbeeldingen.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               {item.afbeeldingen.map((afb) => (
                 <div key={afb.id} className="relative group rounded-lg overflow-hidden border bg-muted/30">
                   <img
@@ -165,7 +167,7 @@ export const WerkbonItemCard = React.memo(function WerkbonItemCard({
               <label className="cursor-pointer">
                 <input type="file" accept="image/*" className="hidden" onChange={(e) => onImageAdd(item.id, e)} />
                 <ImagePlus className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
-                <p className="text-xs text-muted-foreground">Klik om afbeelding toe te voegen</p>
+                <p className="text-xs text-muted-foreground">Upload jouw 4:3 foto (max 2)</p>
               </label>
             </div>
           )}

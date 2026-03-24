@@ -5,7 +5,7 @@ import { useTabDirtyState } from '@/hooks/useTabDirtyState'
 import { useDebouncedCallback } from '@/hooks/useDebounce'
 import { toast } from 'sonner'
 import {
-  ArrowLeft, Save, FileText, Plus, ClipboardCheck,
+  ArrowLeft, Save, FileText, Plus, ClipboardCheck, Printer,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -111,6 +111,8 @@ export function WerkbonDetail() {
   const [werkbonNummer, setWerkbonNummer] = useState('')
   const [werkbonId, setWerkbonId] = useState('')
   const [toonBriefpapier, setToonBriefpapier] = useState(true)
+  const [contactNaam, setContactNaam] = useState('')
+  const [contactTelefoon, setContactTelefoon] = useState('')
 
   // Monteur secties
   const [urenGewerkt, setUrenGewerkt] = useState<number | undefined>()
@@ -157,6 +159,8 @@ export function WerkbonDetail() {
           setDatum(wb.datum)
           setStatus(wb.status)
           setToonBriefpapier(wb.toon_briefpapier ?? werkbonBriefpapier)
+          setContactNaam(wb.contact_naam || '')
+          setContactTelefoon(wb.contact_telefoon || '')
           setUrenGewerkt(wb.uren_gewerkt)
           setMonteurOpmerkingen(wb.monteur_opmerkingen || '')
           setKlantNaamGetekend(wb.klant_naam_getekend || '')
@@ -211,6 +215,8 @@ export function WerkbonDetail() {
       case 'locatieAdres': setLocatieAdres(value); break
       case 'locatieStad': setLocatieStad(value); break
       case 'locatiePostcode': setLocatiePostcode(value); break
+      case 'contactNaam': setContactNaam(value); break
+      case 'contactTelefoon': setContactTelefoon(value); break
     }
   }, [setDirty])
 
@@ -229,6 +235,8 @@ export function WerkbonDetail() {
         locatie_adres: locatieAdres || undefined,
         locatie_stad: locatieStad || undefined,
         locatie_postcode: locatiePostcode || undefined,
+        contact_naam: contactNaam || undefined,
+        contact_telefoon: contactTelefoon || undefined,
         datum,
         status,
         toon_briefpapier: toonBriefpapier,
@@ -257,7 +265,7 @@ export function WerkbonDetail() {
     }
   }, [
     klantId, projectId, offerteId, titel, datum, userId,
-    locatieAdres, locatieStad, locatiePostcode,
+    locatieAdres, locatieStad, locatiePostcode, contactNaam, contactTelefoon,
     status, toonBriefpapier, urenGewerkt, monteurOpmerkingen,
     handtekeningData, klantNaamGetekend, isNew, werkbonId, navigate, setDirty,
   ])
@@ -465,6 +473,8 @@ export function WerkbonDetail() {
         locatie_adres: locatieAdres,
         locatie_stad: locatieStad,
         locatie_postcode: locatiePostcode,
+        contact_naam: contactNaam,
+        contact_telefoon: contactTelefoon,
         toon_briefpapier: toonBriefpapier,
       },
       werkbonItems,
@@ -479,7 +489,43 @@ export function WerkbonDetail() {
   }, [
     klanten, klantId, projecten, projectId, profile, primaireKleur, documentStyle,
     werkbonNummer, titel, datum, locatieAdres, locatieStad, locatiePostcode,
-    toonBriefpapier, werkbonItems,
+    contactNaam, contactTelefoon, toonBriefpapier, werkbonItems,
+  ])
+
+  // Print werkbon (open PDF in nieuw venster met print dialog)
+  const handlePrint = useCallback(() => {
+    const klant = klanten.find((k) => k.id === klantId)
+    const project = projecten.find((p) => p.id === projectId)
+    const bedrijfsProfiel = { ...profile, primaireKleur }
+
+    const doc = generateWerkbonInstructiePDF(
+      {
+        werkbon_nummer: werkbonNummer,
+        titel,
+        datum,
+        locatie_adres: locatieAdres,
+        locatie_stad: locatieStad,
+        locatie_postcode: locatiePostcode,
+        contact_naam: contactNaam,
+        contact_telefoon: contactTelefoon,
+        toon_briefpapier: toonBriefpapier,
+      },
+      werkbonItems,
+      klant || {},
+      project?.naam || '',
+      bedrijfsProfiel,
+      documentStyle
+    )
+
+    const blobUrl = doc.output('bloburl')
+    const printWindow = window.open(blobUrl as string)
+    if (printWindow) {
+      printWindow.onload = () => printWindow.print()
+    }
+  }, [
+    klanten, klantId, projecten, projectId, profile, primaireKleur, documentStyle,
+    werkbonNummer, titel, datum, locatieAdres, locatieStad, locatiePostcode,
+    contactNaam, contactTelefoon, toonBriefpapier, werkbonItems,
   ])
 
   if (isLoading) {
@@ -513,6 +559,9 @@ export function WerkbonDetail() {
         <div className="flex items-center gap-2">
           {!isNew && (
             <>
+              <Button variant="outline" onClick={handlePrint}>
+                <Printer className="h-4 w-4 mr-1" /> Print
+              </Button>
               <Button variant="outline" onClick={handleDownloadPDF}>
                 <FileText className="h-4 w-4 mr-1" /> PDF
               </Button>
@@ -545,6 +594,8 @@ export function WerkbonDetail() {
           locatieAdres={locatieAdres}
           locatieStad={locatieStad}
           locatiePostcode={locatiePostcode}
+          contactNaam={contactNaam}
+          contactTelefoon={contactTelefoon}
           klanten={klanten}
           projecten={projecten}
           offertes={offertes}

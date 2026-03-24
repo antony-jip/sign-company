@@ -1145,6 +1145,9 @@ export interface Werkbon {
   locatie_adres?: string;
   locatie_stad?: string;
   locatie_postcode?: string;
+  // Contactpersoon op locatie
+  contact_naam?: string;
+  contact_telefoon?: string;
   // Monteur feedback (optioneel, instelbaar)
   uren_gewerkt?: number;
   monteur_opmerkingen?: string;
