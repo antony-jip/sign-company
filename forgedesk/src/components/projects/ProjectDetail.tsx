@@ -135,6 +135,7 @@ const statusLabels: Record<string, string> = {
   'on-hold': 'On-hold',
   'te-factureren': 'Te factureren',
   gefactureerd: 'Gefactureerd',
+  'te-plannen': 'Te plannen',
 }
 
 type ProjectTab = 'overzicht' | 'werkbon' | 'financieel' | 'notities'

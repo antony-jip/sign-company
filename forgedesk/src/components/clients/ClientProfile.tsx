@@ -115,6 +115,7 @@ const statusLabels: Record<string, string> = {
   afgerond: 'Afgerond',
   'on-hold': 'On-hold',
   'te-factureren': 'Te factureren',
+  'te-plannen': 'Te plannen',
 }
 
 export function ClientProfile() {

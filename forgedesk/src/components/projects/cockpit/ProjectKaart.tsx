@@ -35,6 +35,7 @@ const statusLabels: Record<string, string> = {
   'on-hold': 'On-hold',
   'te-factureren': 'Te factureren',
   gefactureerd: 'Gefactureerd',
+  'te-plannen': 'Te plannen',
 }
 
 const statusIcons: Record<string, { color: string; bg: string }> = {
@@ -45,6 +46,7 @@ const statusIcons: Record<string, { color: string; bg: string }> = {
   'on-hold':       { color: 'text-flame-text',    bg: 'bg-flame-light border-flame-border' },
   'te-factureren': { color: 'text-mod-email-text',  bg: 'bg-mod-email-light border-mod-email-border' },
   gefactureerd:    { color: 'text-mod-projecten-text',      bg: 'bg-mod-projecten-light border-mod-projecten-border' },
+  'te-plannen':    { color: 'text-flame-text',    bg: 'bg-flame-light border-flame-border' },
 }
 
 /** Badge styling per status */
