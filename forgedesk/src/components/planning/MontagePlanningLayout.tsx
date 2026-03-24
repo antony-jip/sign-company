@@ -67,7 +67,6 @@ import { ClipboardCheck } from "lucide-react";
 import { uploadMontageBijlage } from '@/services/storageService';
 import { WerkbonVanProjectDialog } from "@/components/werkbonnen/WerkbonVanProjectDialog";
 import { cn } from "@/lib/utils";
-import { useNavigateWithTab } from "@/hooks/useNavigateWithTab";
 import { toast } from "sonner";
 import { confirm } from '@/components/shared/ConfirmDialog';
 
@@ -227,7 +226,6 @@ const EMPTY_FORM: MontageFormData = {
 };
 
 export function MontagePlanningLayout() {
-  const { navigateWithTab } = useNavigateWithTab();
   const [currentMonday, setCurrentMonday] = useState<Date>(() =>
     getMondayOfWeek(new Date())
   );
@@ -893,21 +891,18 @@ export function MontagePlanningLayout() {
                 <span className="truncate">{afspraak.locatie}</span>
               </a>
             )}
-            {/* Werkbon — klikbaar, opent in tab */}
-            {afspraak.werkbon_nummer && afspraak.werkbon_id && (
+            {/* Werkbon — altijd zichtbaar als bijlage, opent in nieuw tabblad */}
+            {afspraak.werkbon_id && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigateWithTab({
-                    path: `/werkbonnen/${afspraak.werkbon_id}`,
-                    label: afspraak.werkbon_nummer || "Werkbon",
-                    id: `/werkbonnen/${afspraak.werkbon_id}`,
-                  });
+                  window.open(`/werkbonnen/${afspraak.werkbon_id}`, "_blank");
                 }}
-                className="inline-flex items-center gap-1.5 text-xs bg-[#FDF2F0] text-[#943520] hover:bg-[#FADED8] rounded px-2 py-1 mt-1.5 font-medium transition-colors"
+                className="flex items-center gap-1.5 w-full text-xs bg-[#FDF2F0] text-[#943520] hover:bg-[#FADED8] rounded px-2 py-1.5 mt-1.5 font-medium transition-colors"
               >
-                <ClipboardCheck className="h-3 w-3 shrink-0" />
-                <span className="font-mono">{afspraak.werkbon_nummer}</span>
+                <ClipboardCheck className="h-3.5 w-3.5 shrink-0" />
+                <span className="font-mono">{afspraak.werkbon_nummer || "Werkbon"}</span>
+                <Eye className="h-3 w-3 shrink-0 ml-auto opacity-50" />
               </button>
             )}
           </div>
@@ -1274,16 +1269,8 @@ export function MontagePlanningLayout() {
                       variant="outline"
                       size="icon"
                       className="h-9 w-9 shrink-0"
-                      title="Werkbon openen"
-                      onClick={() => {
-                        const wb = projectWerkbonnen.find((w) => w.id === formData.werkbon_id);
-                        navigateWithTab({
-                          path: `/werkbonnen/${formData.werkbon_id}`,
-                          label: wb?.werkbon_nummer || "Werkbon",
-                          id: `/werkbonnen/${formData.werkbon_id}`,
-                        });
-                        setDialogOpen(false);
-                      }}
+                      title="Werkbon openen in nieuw tabblad"
+                      onClick={() => window.open(`/werkbonnen/${formData.werkbon_id}`, "_blank")}
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
