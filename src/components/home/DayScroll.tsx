@@ -8,30 +8,40 @@ const steps = [
     title: 'Nieuwe aanvraag binnen',
     description: 'Je maakt een offerte in 5 minuten. Sjabloon kiezen, prijzen aanpassen, versturen.',
     status: 'verstuurd.',
+    statusColor: '#C03A18',
+    statusBg: '#FDE8E2',
   },
   {
     time: '09:00',
     title: 'Klant akkoord',
-    description: 'Een klik: project aangemaakt. Alle gegevens overgenomen. Werkbon klaarstaan.',
+    description: 'Een klik: project aangemaakt. Alle gegevens overgenomen. Werkbon staat klaar.',
     status: 'akkoord.',
+    statusColor: '#1A535C',
+    statusBg: '#E2F0F0',
   },
   {
     time: '12:00',
     title: 'Montage op locatie',
     description: 'Je monteur ziet alles op z\'n telefoon. Adres, specificaties, contactpersoon. Geen belletjes nodig.',
     status: 'gepland.',
+    statusColor: '#9A5A48',
+    statusBg: '#F2E8E5',
   },
   {
     time: '16:00',
     title: 'Werkbon getekend',
     description: 'Foto\'s erbij, handtekening van de klant, alles digitaal vastgelegd. Klaar.',
     status: 'getekend.',
+    statusColor: '#C44830',
+    statusBg: '#FAE5E0',
   },
   {
     time: '17:00',
     title: 'Factuur verstuurd',
-    description: 'Automatisch gegenereerd vanuit de werkbon. Eén klik en je klant heeft \'m in z\'n mail.',
+    description: 'Automatisch gegenereerd vanuit de werkbon. Een klik en je klant heeft \'m in z\'n mail.',
     status: 'verstuurd.',
+    statusColor: '#2D6B48',
+    statusBg: '#E4F0EA',
   },
 ]
 
@@ -82,14 +92,20 @@ export default function DayScroll() {
               </div>
 
               {/* Content */}
-              <div className="bg-white rounded-xl p-6 border border-ink/[0.04] flex-1 mt-1">
+              <div
+                className="bg-white rounded-xl p-6 border border-black/[0.05] flex-1 mt-1"
+                style={{ boxShadow: '0 1px 3px rgba(100,80,40,0.04)' }}
+              >
                 <h3 className="font-heading text-lg text-petrol tracking-tight mb-1">
                   {step.title}
                 </h3>
                 <p className="text-muted text-sm leading-relaxed mb-3">
                   {step.description}
                 </p>
-                <span className="font-mono text-xs text-ink/60">
+                <span
+                  className="inline-block font-mono text-[10px] font-bold px-2 py-0.5 rounded-full"
+                  style={{ backgroundColor: step.statusBg, color: step.statusColor }}
+                >
                   {step.status.slice(0, -1)}<span className="text-flame">.</span>
                 </span>
               </div>

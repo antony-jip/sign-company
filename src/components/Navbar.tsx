@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import Logo from './Logo'
+import Toast, { useEasterEgg } from './Toast'
 
 const navLinks = [
   { href: '/features', label: 'Features' },
@@ -15,6 +16,7 @@ const navLinks = [
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
+  const { handlePuntClick, showToast, closeToast } = useEasterEgg()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -43,7 +45,10 @@ export default function Navbar() {
         }`}
       >
         <div className="container-site flex items-center justify-between">
-          <Logo className={`transition-all duration-300 ${isScrolled ? 'text-xl' : 'text-2xl'}`} />
+          <Logo
+            className={`transition-all duration-300 ${isScrolled ? 'text-xl' : 'text-2xl'}`}
+            onPuntClick={handlePuntClick}
+          />
 
           {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-8">
@@ -135,6 +140,13 @@ export default function Navbar() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Easter egg toast */}
+      <Toast
+        message="je hebt het gevonden"
+        isVisible={showToast}
+        onClose={closeToast}
+      />
     </>
   )
 }

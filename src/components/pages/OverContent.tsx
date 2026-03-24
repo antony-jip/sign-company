@@ -3,11 +3,6 @@
 import SectionReveal from '../SectionReveal'
 import WachtlijstForm from '../WachtlijstForm'
 
-const team = [
-  { name: 'Antony', role: 'Oprichter & Product' },
-  { name: 'Daan', role: 'AI & Development' },
-]
-
 export default function OverContent() {
   return (
     <div className="pt-32 md:pt-40">
@@ -17,26 +12,33 @@ export default function OverContent() {
           <SectionReveal>
             <p className="font-mono text-sm text-flame mb-4">Over ons</p>
             <h1 className="hero-heading font-heading text-petrol mb-8">
-              Vakmanschap verdient beter gereedschap<span className="text-flame">.</span>
+              We kennen het vak<span className="text-flame">.</span>
+              <br />
+              Omdat we het zelf doen<span className="text-flame">.</span>
             </h1>
           </SectionReveal>
 
           <SectionReveal delay={0.2}>
             <div className="space-y-6 text-ink/80 leading-relaxed">
               <p>
-                We zagen dat signmakers en creatieve vakbedrijven hun avonden besteedden
-                aan offertes typen in Excel, facturen kopiëren in Word en planningen
-                bijhouden op whiteboards. Professionals die overdag vakwerk leveren,
-                maar 's avonds vastlopen in administratie.
+                We zijn signmakers. We staan in de werkplaats, rijden naar montages,
+                maken offertes en sturen facturen. En we misten software die paste
+                bij hoe wij werken.
               </p>
               <p>
-                Dat kan anders. Dat moet anders.
+                Alles wat er was, was te ingewikkeld, te duur of niet gemaakt voor
+                ons vak. Enterprise-systemen voor multinationals, of simpele
+                factuurtjes-apps die de helft misten. Niets ertussenin.
               </p>
               <p>
-                doen<span className="text-flame">.</span> is gebouwd voor bedrijven die op
-                projectbasis werken. Van eerste klantcontact tot de laatste factuur — alles
-                in een systeem dat meedenkt. Geen overkill enterprise software, geen
-                spreadsheet-chaos. Precies wat je nodig hebt, niets meer.
+                Dus bouwden we het zelf.
+              </p>
+              <p>
+                doen<span className="text-flame">.</span> is geboren uit frustratie
+                en vakmanschap. Gebouwd door mensen die weten hoe een werkdag eruitziet.
+                Die snappen dat je monteur om 7 uur in z&apos;n busje zit en geen
+                handleiding gaat lezen. Die weten dat een offerte soms in de lunchpauze
+                af moet.
               </p>
               <p>
                 We geloven dat goed gereedschap onzichtbaar is. Het staat niet in de weg,
@@ -60,7 +62,7 @@ export default function OverContent() {
               {[
                 {
                   title: 'Signbedrijven',
-                  desc: 'Van gevelreclame tot voertuigbelettering. Je kent het vak, wij kennen de workflow.',
+                  desc: 'Van gevelreclame tot voertuigbelettering. We komen uit dit vak. We weten hoe een werkdag eruitziet.',
                 },
                 {
                   title: 'Creatieve vakbedrijven',
@@ -73,7 +75,8 @@ export default function OverContent() {
               ].map((item, i) => (
                 <div
                   key={i}
-                  className="bg-white rounded-2xl p-8 border border-ink/[0.04]"
+                  className="bg-white rounded-2xl p-8 border border-black/[0.05]"
+                  style={{ boxShadow: '0 1px 3px rgba(100,80,40,0.04)' }}
                 >
                   <h3 className="font-heading text-lg text-petrol tracking-tight mb-2">
                     {item.title}
@@ -86,29 +89,43 @@ export default function OverContent() {
         </div>
       </section>
 
-      {/* Team */}
+      {/* Filosofie */}
       <section className="pb-20 md:pb-32">
-        <div className="container-site">
+        <div className="container-site max-w-3xl">
           <SectionReveal>
-            <h2 className="section-heading font-heading text-petrol mb-10">
-              Het team<span className="text-flame">.</span>
+            <h2 className="section-heading font-heading text-petrol mb-8">
+              Onze filosofie<span className="text-flame">.</span>
             </h2>
           </SectionReveal>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-md">
-            {team.map((person, i) => (
-              <SectionReveal key={i} delay={i * 0.1}>
-                <div className="bg-white rounded-2xl p-6 border border-ink/[0.04]">
-                  <div className="w-12 h-12 rounded-full bg-petrol/10 mb-4 flex items-center justify-center">
-                    <span className="font-heading text-lg text-petrol">
-                      {person.name[0]}
-                    </span>
-                  </div>
-                  <p className="font-semibold text-petrol">{person.name}</p>
-                  <p className="text-sm text-muted">{person.role}</p>
+          <SectionReveal delay={0.2}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {[
+                {
+                  title: 'Alles erin',
+                  desc: 'Geen modules bijkopen. Geen premium-tier. Iedereen krijgt alles. Planning, klantportaal, AI — het zit erin.',
+                },
+                {
+                  title: 'Eerlijke prijs',
+                  desc: 'Geen per-user pricing die meegroeit tot je bankrekening leeg is. Een vaste prijs voor je hele team.',
+                },
+                {
+                  title: 'Gebouwd voor het vak',
+                  desc: 'Geen generieke bedrijfssoftware. Elk scherm, elke workflow is ontworpen voor hoe projectmatige bedrijven werken.',
+                },
+                {
+                  title: 'Geen lock-in',
+                  desc: 'Jouw data is van jou. Export wanneer je wilt. Maandelijks opzegbaar. Je blijft omdat het werkt.',
+                },
+              ].map((item, i) => (
+                <div key={i} className="py-4">
+                  <h3 className="font-heading text-lg text-petrol tracking-tight mb-2">
+                    {item.title}<span className="text-flame">.</span>
+                  </h3>
+                  <p className="text-muted text-sm leading-relaxed">{item.desc}</p>
                 </div>
-              </SectionReveal>
-            ))}
-          </div>
+              ))}
+            </div>
+          </SectionReveal>
         </div>
       </section>
 
