@@ -290,9 +290,9 @@ export function SettingsLayout() {
       </div>
 
       {/* Two-column layout: sidebar nav + content */}
-      <div className="flex flex-col md:flex-row gap-6 min-h-[calc(100vh-12rem)]">
+      <div className="flex flex-col md:flex-row gap-8 min-h-[calc(100vh-12rem)]">
         {/* Left sidebar navigation */}
-        <nav className="w-full md:w-56 flex-shrink-0">
+        <nav className="w-full md:w-52 flex-shrink-0">
           <div className="md:sticky md:top-6 space-y-1">
             {/* Mobile: horizontal scroll */}
             <div className="md:hidden flex overflow-x-auto scrollbar-hide gap-1 p-1 bg-card rounded-xl border border-border">
@@ -364,7 +364,7 @@ export function SettingsLayout() {
         </nav>
 
         {/* Right content area */}
-        <div className="flex-1 min-w-0 max-w-[640px]">
+        <div className="flex-1 min-w-0">
           {/* Sub-tabs for sections with multiple tabs */}
           {currentSection && currentSection.tabs.length > 1 && (
             <SubTabNav
