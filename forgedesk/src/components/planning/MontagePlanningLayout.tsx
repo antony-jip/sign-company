@@ -27,7 +27,6 @@ import {
   ChevronRight,
   Plus,
   List,
-  LayoutGrid,
   Clock,
   MapPin,
   Users,
@@ -781,9 +780,18 @@ export function MontagePlanningLayout() {
     );
   }
 
-  // ── Compact grid card for team grid & week view ──
-  function renderGridCard(afspraak: MontageAfspraak) {
+  // ── Card with colored left border (like screenshot) ──
+  function renderMontageCard(afspraak: MontageAfspraak) {
     const hasConflict = conflictAfspraakIds.has(afspraak.id);
+    const borderColor = {
+      gepland: "border-l-blue-500",
+      onderweg: "border-l-amber-500",
+      bezig: "border-l-green-500",
+      afgerond: "border-l-emerald-400",
+      uitgesteld: "border-l-red-500",
+    }[afspraak.status];
+
+    // Count done items (placeholder: 0/0 like screenshot shows)
     return (
       <div
         key={afspraak.id}
@@ -795,333 +803,206 @@ export function MontagePlanningLayout() {
         }}
         onDragEnd={() => { setDraggingAfspraakId(null); setDragOverDate(null); }}
         className={cn(
-          "rounded-lg border bg-card p-2 mb-1.5 cursor-grab active:cursor-grabbing transition-shadow hover:shadow-md",
-          hasConflict && "ring-1 ring-red-300 bg-red-50/60",
+          "bg-white rounded-md border border-l-[3px] p-3 mb-2 cursor-grab active:cursor-grabbing transition-shadow hover:shadow-md",
+          borderColor,
+          hasConflict && "ring-1 ring-red-300",
           draggingAfspraakId === afspraak.id && "opacity-50 ring-2 ring-primary"
         )}
         onClick={() => openEditDialog(afspraak)}
       >
-        {/* Row 1: status dot + project name (bold) */}
-        <div className="flex items-center gap-1.5 mb-0.5">
-          <span className={cn("w-2 h-2 rounded-full shrink-0", STATUS_DOT[afspraak.status])} title={STATUS_CONFIG[afspraak.status].label} />
-          <span className="text-xs font-semibold truncate leading-tight">{afspraak.titel}</span>
-          {hasConflict && <AlertTriangle className="h-3 w-3 text-red-500 shrink-0" />}
-        </div>
-        {/* Row 2: klant */}
-        {afspraak.klant_naam && (
-          <div className="text-[11px] text-muted-foreground truncate pl-3.5">{afspraak.klant_naam}</div>
-        )}
-        {/* Row 3: tijd */}
-        <div className="flex items-center gap-1 text-[11px] text-muted-foreground pl-3.5 mt-0.5">
-          <Clock className="h-2.5 w-2.5 shrink-0" />
-          <span className="font-mono tabular-nums">{afspraak.start_tijd} – {afspraak.eind_tijd}</span>
-        </div>
-        {/* Row 4: locatie */}
-        {afspraak.locatie && (
-          <a
-            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(afspraak.locatie)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            className="flex items-center gap-1 text-[11px] text-primary hover:underline pl-3.5 mt-0.5 truncate"
-          >
-            <MapPin className="h-2.5 w-2.5 shrink-0" />
-            <span className="truncate">{afspraak.locatie}</span>
-          </a>
-        )}
-        {/* Row 5: werkbon */}
-        {afspraak.werkbon_nummer && (
-          <div className="flex items-center gap-1 text-[10px] font-mono text-[#943520] pl-3.5 mt-0.5">
-            <ClipboardCheck className="h-2.5 w-2.5 shrink-0" />
-            {afspraak.werkbon_nummer}
+        <div className="flex items-start gap-2.5">
+          {/* Left: status counts */}
+          <div className="flex flex-col items-center text-[11px] text-muted-foreground pt-0.5 shrink-0 min-w-[16px]">
+            <span>0</span>
+            <span>0</span>
+            {hasConflict && <AlertTriangle className="h-3 w-3 text-red-500 mt-1" />}
           </div>
-        )}
-      </div>
-    );
-  }
 
-  // ── Day column header with weather ──
-  function renderDayHeader(date: Date, w: DayWeather | undefined) {
-    const dateStr = formatDate(date);
-    const isToday = dateStr === todayStr;
-    const dayIdx = (date.getDay() + 6) % 7; // 0=Ma
-    const isRainy = w && w.precipitationProb > 50;
-
-    return (
-      <div
-        className={cn(
-          "text-center py-2 border-b-2",
-          isToday ? "bg-primary/5 border-primary" : "bg-muted/30 border-border",
-          isRainy && !isToday && "bg-blue-50/60"
-        )}
-      >
-        <div className={cn("text-sm font-bold", isToday ? "text-primary" : "text-foreground/80")}>
-          {DAG_NAMEN[dayIdx]}
-          <span className="font-normal text-xs ml-1">{formatDateDutch(date)}</span>
-        </div>
-        {w && (
-          <div className="flex items-center justify-center gap-1.5 mt-0.5">
-            <span className="text-sm leading-none">{w.emoji}</span>
-            <span className="text-xs font-mono tabular-nums font-medium">{w.maxTemp}°</span>
-            {w.precipitationProb > 0 && (
-              <span className={cn("text-[10px] font-mono tabular-nums", w.precipitationProb > 50 ? "text-blue-600 font-semibold" : "text-muted-foreground")}>
-                💧{w.precipitationProb}%
-              </span>
+          {/* Right: content */}
+          <div className="min-w-0 flex-1">
+            <div className="font-semibold text-sm leading-tight truncate">{afspraak.titel}</div>
+            {afspraak.klant_naam && (
+              <div className="text-xs text-muted-foreground mt-0.5 truncate">{afspraak.klant_naam}</div>
             )}
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // === WEEK VIEW (team grid: monteurs als rijen, dagen als kolommen) ===
-  function renderWeekView() {
-    const werkdagen = weekDates.slice(0, 5); // Ma t/m Vr
-    const hasWeekend = weekAfspraken.some((a) => {
-      const d = new Date(a.datum + "T00:00:00").getDay();
-      return d === 0 || d === 6;
-    });
-    const displayDays = hasWeekend ? weekDates : werkdagen;
-    const colCount = displayDays.length;
-
-    return (
-      <div className="min-w-[700px]">
-        <div className="grid gap-0 rounded-lg overflow-hidden border border-border/40" style={{ gridTemplateColumns: `160px repeat(${colCount}, 1fr)` }}>
-          {/* Corner: Monteur label */}
-          <div className="p-2 border-b-2 border-r border-border bg-muted/30 flex items-end">
-            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Team</span>
-          </div>
-
-          {/* Day headers with weather */}
-          {displayDays.map((date) => {
-            const w = getWeatherForDate(weather, date);
-            return <div key={formatDate(date)} className="border-r last:border-r-0 border-border">{renderDayHeader(date, w)}</div>;
-          })}
-
-          {/* Monteur rows */}
-          {monteurs.map((monteur, monteurIdx) => (
-            <>
-              {/* Monteur name cell */}
-              <div
-                key={`name-${monteur.id}`}
-                className="p-2 border-b border-r border-border bg-card flex items-center gap-2"
-              >
-                <div
-                  className={cn(
-                    "h-8 w-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0",
-                    getAvatarColor(monteurIdx)
-                  )}
-                >
-                  {getInitials(monteur.naam)}
-                </div>
-                <div className="min-w-0">
-                  <div className="text-[13px] font-semibold truncate">{monteur.naam}</div>
-                  {monteur.functie && <div className="text-[10px] text-muted-foreground truncate">{monteur.functie}</div>}
-                </div>
+            {afspraak.beschrijving && (
+              <div className="text-xs text-muted-foreground mt-0.5 truncate">{afspraak.beschrijving}</div>
+            )}
+            {/* Time badge */}
+            {afspraak.start_tijd && (
+              <div className="mt-1.5">
+                <span className="inline-flex items-center gap-1 text-[11px] bg-amber-100 text-amber-800 rounded px-1.5 py-0.5 font-mono">
+                  <Clock className="h-2.5 w-2.5" />
+                  {afspraak.start_tijd} - {afspraak.eind_tijd}
+                </span>
               </div>
-
-              {/* Day cells for this monteur */}
-              {displayDays.map((date) => {
-                const dateStr = formatDate(date);
-                const isToday = dateStr === todayStr;
-                const cellAfspraken = weekAfspraken.filter(
-                  (a) => a.datum === dateStr && a.monteurs.includes(monteur.id)
-                );
-                const w = getWeatherForDate(weather, date);
-                const isRainy = w && w.precipitationProb > 50;
-
-                return (
-                  <div
-                    key={`${monteur.id}-${dateStr}`}
-                    className={cn(
-                      "p-1.5 border-b border-r last:border-r-0 border-border min-h-[80px]",
-                      isToday ? "bg-primary/[0.03]" : "bg-background",
-                      isRainy && !isToday && "bg-blue-50/30",
-                      dragOverDate === `${monteur.id}-${dateStr}` && "bg-primary/5 ring-2 ring-primary/30 ring-inset"
-                    )}
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      e.dataTransfer.dropEffect = "move";
-                      setDragOverDate(`${monteur.id}-${dateStr}`);
-                    }}
-                    onDragLeave={() => setDragOverDate(null)}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      setDragOverDate(null);
-                      const id = e.dataTransfer.getData("text/plain");
-                      if (id) handleDragDrop(id, dateStr);
-                    }}
-                  >
-                    {cellAfspraken.length > 0
-                      ? cellAfspraken.map((a) => renderGridCard(a))
-                      : <div className="h-full flex items-center justify-center"><span className="text-muted-foreground/20">—</span></div>
-                    }
-                  </div>
-                );
-              })}
-            </>
-          ))}
-
-          {/* Unassigned row (montages without monteurs) */}
-          {(() => {
-            const unassigned = weekAfspraken.filter((a) => a.monteurs.length === 0);
-            if (unassigned.length === 0) return null;
-            return (
-              <>
-                <div className="p-2 border-b border-r border-border bg-card flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-full flex items-center justify-center bg-muted text-muted-foreground text-xs font-bold shrink-0">?</div>
-                  <div className="text-[13px] font-semibold text-muted-foreground">Niet toegewezen</div>
-                </div>
-                {displayDays.map((date) => {
-                  const dateStr = formatDate(date);
-                  const cellAfspraken = unassigned.filter((a) => a.datum === dateStr);
-                  return (
-                    <div key={`unassigned-${dateStr}`} className="p-1.5 border-b border-r last:border-r-0 border-border min-h-[60px] bg-muted/10">
-                      {cellAfspraken.map((a) => renderGridCard(a))}
-                    </div>
-                  );
-                })}
-              </>
-            );
-          })()}
+            )}
+            {/* Location */}
+            {afspraak.locatie && (
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(afspraak.locatie)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="flex items-center gap-1 text-[11px] text-primary hover:underline mt-1 truncate"
+              >
+                <MapPin className="h-2.5 w-2.5 shrink-0" />
+                <span className="truncate">{afspraak.locatie}</span>
+              </a>
+            )}
+            {/* Werkbon */}
+            {afspraak.werkbon_nummer && (
+              <div className="flex items-center gap-1 text-[10px] font-mono text-[#943520] mt-1">
+                <ClipboardCheck className="h-2.5 w-2.5 shrink-0" />
+                {afspraak.werkbon_nummer}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     );
   }
 
-  // === LIST VIEW ===
-  function renderListView() {
-    const sortedAfspraken = [...weekAfspraken].sort((a, b) => {
-      if (a.datum !== b.datum) return a.datum.localeCompare(b.datum);
-      return a.start_tijd.localeCompare(b.start_tijd);
-    });
-
+  // ── Weather cell for a day ──
+  function renderWeatherCell(w: DayWeather | undefined) {
+    if (!w) return null;
     return (
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b bg-muted/30">
-              <th className="text-left py-2.5 px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Dag</th>
-              <th className="text-left py-2.5 px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Tijd</th>
-              <th className="text-left py-2.5 px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Project</th>
-              <th className="text-left py-2.5 px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Klant</th>
-              <th className="text-left py-2.5 px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Locatie</th>
-              <th className="text-left py-2.5 px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Team</th>
-              <th className="text-left py-2.5 px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Acties</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sortedAfspraken.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="text-center py-12 text-muted-foreground">
-                  <div className="flex flex-col items-center gap-2">
-                    <Wrench className="h-8 w-8 opacity-30" />
-                    <span>Geen montages deze week</span>
-                  </div>
-                </td>
-              </tr>
-            ) : (
-              sortedAfspraken.map((afspraak) => {
-                const dateObj = new Date(afspraak.datum + "T00:00:00");
-                const dayIdx = (dateObj.getDay() + 6) % 7;
-                const nextActions = getNextStatusActions(afspraak.status);
-                const hasConflict = conflictAfspraakIds.has(afspraak.id);
-
-                return (
-                  <tr
-                    key={afspraak.id}
-                    className={cn(
-                      "border-b hover:bg-muted/20 transition-colors cursor-pointer",
-                      hasConflict && "bg-red-50/50"
-                    )}
-                    onClick={() => openEditDialog(afspraak)}
-                  >
-                    <td className="py-2.5 px-3">
-                      <div className="flex items-center gap-1.5">
-                        <span className={cn("w-2 h-2 rounded-full shrink-0", STATUS_DOT[afspraak.status])} />
-                        <div>
-                          <div className="font-medium text-[13px]">{DAG_NAMEN_LANG[dayIdx]}</div>
-                          <div className="text-[11px] text-muted-foreground">{formatDateDutch(dateObj)}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-2.5 px-3 whitespace-nowrap font-mono text-[13px]">
-                      {afspraak.start_tijd} – {afspraak.eind_tijd}
-                    </td>
-                    <td className="py-2.5 px-3">
-                      <div className="font-semibold text-[13px]">{afspraak.titel}</div>
-                      {afspraak.werkbon_nummer && (
-                        <span className="text-[10px] font-mono text-[#943520]">{afspraak.werkbon_nummer}</span>
-                      )}
-                    </td>
-                    <td className="py-2.5 px-3 text-[13px]">{afspraak.klant_naam}</td>
-                    <td className="py-2.5 px-3">
-                      {afspraak.locatie ? (
-                        <a
-                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(afspraak.locatie)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="flex items-center gap-1 text-[13px] text-primary hover:underline"
-                        >
-                          <MapPin className="h-3 w-3 shrink-0" />
-                          <span className="truncate max-w-[180px]">{afspraak.locatie}</span>
-                        </a>
-                      ) : <span className="text-muted-foreground">—</span>}
-                    </td>
-                    <td className="py-2.5 px-3">
-                      {renderMonteurAvatars(afspraak.monteurs, "md")}
-                    </td>
-                    <td className="py-2.5 px-3" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center gap-1">
-                        {nextActions.map((action) => (
-                          <Button
-                            key={action.status}
-                            variant="outline"
-                            size="sm"
-                            className="h-7 px-2 text-xs"
-                            onClick={() => handleStatusUpdate(afspraak, action.status)}
-                            title={action.label}
-                          >
-                            {action.icon}
-                            <span className="ml-1 hidden xl:inline">{action.label}</span>
-                          </Button>
-                        ))}
-                        <Button variant="ghost" size="sm" className="h-7 px-2" onClick={() => openEditDialog(afspraak)} title="Bewerken">
-                          <Pencil className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
+      <div className="flex flex-col items-center gap-0.5 py-3 px-2">
+        <span className="text-2xl leading-none">{w.emoji}</span>
+        <div className="text-[11px] text-muted-foreground space-y-0 text-center">
+          <div>Min: {w.minTemp}°</div>
+          <div>Max: {w.maxTemp}°</div>
+          {w.precipitationProb > 0 && (
+            <div className={cn(w.precipitationProb > 50 ? "text-blue-600 font-semibold" : "")}>
+              Regen: {w.precipitationProb}%
+            </div>
+          )}
+        </div>
       </div>
     );
   }
 
-  // === RASTER VIEW (original columns-per-day, all monteurs mixed) ===
-  function renderRasterView() {
-    const werkdagen = weekDates.slice(0, 5);
+  // === MEMBER WEEK VIEW (5 day columns like screenshot) ===
+  function renderMemberWeekView() {
+    const werkdagen = weekDates.slice(0, 5); // Ma t/m Vr
+    const selectedName = selectedMonteur === "alle"
+      ? null
+      : monteurMap[selectedMonteur]?.naam || "Onbekend";
+
+    // Get afspraken for selected monteur (or all)
+    const viewAfspraken = selectedMonteur === "alle"
+      ? weekAfspraken
+      : weekAfspraken.filter((a) => a.monteurs.includes(selectedMonteur));
+
     return (
-      <div className="min-w-[700px]">
-        <div className="grid grid-cols-5 gap-2">
+      <div className="flex-1 min-w-0">
+        {/* Header: member name + week nav */}
+        <div className="flex items-center justify-between px-4 py-3 border-b bg-white">
+          <div className="flex items-center gap-3">
+            <User className="h-5 w-5 text-muted-foreground" />
+            <span className="text-base font-semibold">
+              {selectedName || "Overzicht"}
+            </span>
+            <div className="flex items-center gap-1 ml-4">
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigateWeek(-1)}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <button
+                onClick={goToCurrentWeek}
+                className="text-sm font-semibold px-2 py-1 rounded hover:bg-muted transition-colors text-primary"
+              >
+                Week: {weekNumber}
+              </button>
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigateWeek(1)}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={printDagplanning} className="h-8 text-xs hidden sm:flex">
+              <Printer className="h-3.5 w-3.5 mr-1" />
+              Print
+            </Button>
+            <Button onClick={openNewDialog} size="sm" className="h-8">
+              <Plus className="h-3.5 w-3.5 mr-1" />
+              Nieuw
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={goToCurrentWeek}
+              title="Vandaag"
+            >
+              <CalendarDays className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Weather strip */}
+        <div className="grid grid-cols-5 border-b bg-gray-50/80">
+          {werkdagen.map((date) => {
+            const w = getWeatherForDate(weather, date);
+            return (
+              <div key={formatDate(date)} className="border-r last:border-r-0 border-border/40">
+                {renderWeatherCell(w)}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Day column headers */}
+        <div className="grid grid-cols-5 border-b">
           {werkdagen.map((date) => {
             const dateStr = formatDate(date);
             const isToday = dateStr === todayStr;
-            const dayAfspraken = afsprakenPerDag[dateStr] || [];
-            const w = getWeatherForDate(weather, date);
-            const isRainy = w && w.precipitationProb > 50;
+            const dayIdx = (date.getDay() + 6) % 7;
+            const dayAfspraken = viewAfspraken.filter((a) => a.datum === dateStr);
+            const afgerond = dayAfspraken.filter((a) => a.status === "afgerond").length;
 
             return (
               <div
                 key={dateStr}
                 className={cn(
-                  "rounded-lg border border-border/40 overflow-hidden transition-colors",
-                  isRainy && "border-blue-200",
-                  dragOverDate === dateStr && "ring-2 ring-primary/30"
+                  "text-center py-2 border-r last:border-r-0",
+                  isToday ? "bg-primary/5" : "bg-white"
+                )}
+              >
+                <div className={cn(
+                  "text-sm font-bold",
+                  isToday ? "text-primary" : "text-foreground"
+                )}>
+                  {DAG_NAMEN_LANG[dayIdx]}
+                </div>
+                <div className={cn(
+                  "text-xs",
+                  isToday ? "text-primary" : "text-muted-foreground"
+                )}>
+                  {date.toLocaleDateString("nl-NL", { day: "numeric", month: "long" })}
+                </div>
+                <div className="text-[11px] text-muted-foreground mt-0.5">
+                  {afgerond} / {dayAfspraken.length}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Day columns with cards */}
+        <div className="grid grid-cols-5 flex-1">
+          {werkdagen.map((date) => {
+            const dateStr = formatDate(date);
+            const isToday = dateStr === todayStr;
+            const dayAfspraken = viewAfspraken
+              .filter((a) => a.datum === dateStr)
+              .sort((a, b) => a.start_tijd.localeCompare(b.start_tijd));
+
+            return (
+              <div
+                key={dateStr}
+                className={cn(
+                  "border-r last:border-r-0 p-2 min-h-[400px]",
+                  isToday ? "bg-primary/[0.02]" : "bg-gray-50/30",
+                  dragOverDate === dateStr && "bg-primary/5 ring-2 ring-primary/30 ring-inset"
                 )}
                 onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; setDragOverDate(dateStr); }}
                 onDragLeave={() => setDragOverDate(null)}
@@ -1132,25 +1013,13 @@ export function MontagePlanningLayout() {
                   if (id) handleDragDrop(id, dateStr);
                 }}
               >
-                {renderDayHeader(date, w)}
-                <div className={cn("p-1.5 min-h-[200px]", isRainy && "bg-blue-50/20")}>
-                  {dayAfspraken.length === 0 ? (
-                    <div className="flex flex-col items-center gap-1 text-muted-foreground text-center py-8">
-                      <Wrench className="h-4 w-4 opacity-20" />
-                      <span className="text-[11px]">Geen montages</span>
-                    </div>
-                  ) : (
-                    dayAfspraken.map((a) => (
-                      <div key={a.id}>
-                        {renderGridCard(a)}
-                        {/* Show monteur avatars below card in this view */}
-                        <div className="flex items-center gap-1 -mt-1 mb-2 pl-1">
-                          {renderMonteurAvatars(a.monteurs)}
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
+                {dayAfspraken.length === 0 ? (
+                  <div className="flex items-center justify-center h-32 text-muted-foreground/30 text-xs">
+                    Geen montages
+                  </div>
+                ) : (
+                  dayAfspraken.map((a) => renderMontageCard(a))
+                )}
               </div>
             );
           })}
@@ -1581,125 +1450,98 @@ export function MontagePlanningLayout() {
   }
 
   return (
-    <div className="space-y-4 p-4 sm:p-6">
-      {/* ── Header bar ── */}
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="text-xl sm:text-2xl font-extrabold tracking-[-0.03em] font-display truncate">
-          Montage Planning
-        </h1>
-        <div className="flex items-center gap-2 shrink-0">
-          <Button variant="outline" size="sm" onClick={printDagplanning} className="h-9 hidden sm:flex">
-            <Printer className="h-4 w-4 mr-1.5" />
-            Print dagplanning
-          </Button>
-          <Button onClick={openNewDialog} size="default">
-            <Plus className="h-4 w-4 mr-1.5" />
-            <span className="hidden sm:inline">Nieuwe montage</span>
-            <span className="sm:hidden">Nieuw</span>
-          </Button>
+    <div className="flex h-[calc(100vh-64px)] overflow-hidden bg-gray-50">
+      {/* ── Left sidebar: Team ── */}
+      <div className="w-[180px] shrink-0 bg-white border-r flex flex-col">
+        {/* Sidebar header */}
+        <div className="px-3 py-3 border-b">
+          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Team</h2>
         </div>
-      </div>
 
-      {/* ── Conflict banner ── */}
-      {conflicts.length > 0 && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 flex items-start gap-2">
-          <AlertTriangle className="h-4 w-4 text-red-500 mt-0.5 shrink-0" />
-          <div className="text-sm text-red-700">
-            <span className="font-semibold">{conflicts.length} overlap{conflicts.length !== 1 ? "s" : ""}</span>
-            {conflicts.slice(0, 3).map((c, idx) => {
-              const dag = new Date(c.afspraak1.datum + "T00:00:00").toLocaleDateString("nl-NL", { weekday: "short", day: "numeric", month: "short" });
-              return (
-                <span key={idx} className="ml-2">
-                  {c.monteurNaam}: {dag} {c.afspraak1.start_tijd}–{c.afspraak1.eind_tijd} / {c.afspraak2.start_tijd}–{c.afspraak2.eind_tijd}
-                </span>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* ── Toolbar: week nav + filters + view toggle ── */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 flex-wrap">
-        {/* Week navigation */}
-        <div className="flex items-center gap-1.5">
-          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => navigateWeek(-1)} title="Vorige week">
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
+        {/* Sidebar items (scrollable for 10+ members) */}
+        <div className="flex-1 overflow-y-auto">
+          {/* Overzicht option */}
           <button
-            onClick={goToCurrentWeek}
-            className="text-sm font-bold px-3 py-1.5 rounded-lg hover:bg-muted transition-colors min-w-[130px] text-center"
+            onClick={() => setSelectedMonteur("alle")}
+            className={cn(
+              "w-full text-left px-3 py-2.5 flex items-center gap-2 transition-colors border-l-2 text-sm",
+              selectedMonteur === "alle"
+                ? "bg-primary/5 border-l-primary text-primary font-semibold"
+                : "border-l-transparent hover:bg-muted/50 text-muted-foreground"
+            )}
           >
-            Week <span className="font-mono">{weekNumber}</span>
-            <span className="text-xs font-normal text-muted-foreground ml-1.5">{formatDateDutch(weekDates[0])} – {formatDateDutch(weekDates[6])}</span>
+            <List className="h-4 w-4 shrink-0" />
+            <span>Overzicht</span>
           </button>
-          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => navigateWeek(1)} title="Volgende week">
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+
+          {/* Team members */}
+          {monteurs.map((monteur, idx) => {
+            const isSelected = selectedMonteur === monteur.id;
+            const todayCount = weekAfspraken.filter(
+              (a) => a.datum === todayStr && a.monteurs.includes(monteur.id) && a.status !== "afgerond"
+            ).length;
+
+            return (
+              <button
+                key={monteur.id}
+                onClick={() => setSelectedMonteur(monteur.id)}
+                className={cn(
+                  "w-full text-left px-3 py-2.5 flex items-center gap-2 transition-colors border-l-2",
+                  isSelected
+                    ? "bg-primary/5 border-l-primary"
+                    : "border-l-transparent hover:bg-muted/50"
+                )}
+              >
+                <div
+                  className={cn(
+                    "h-7 w-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0",
+                    getAvatarColor(idx)
+                  )}
+                >
+                  {getInitials(monteur.naam)}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className={cn(
+                    "text-[13px] truncate leading-tight",
+                    isSelected ? "font-semibold text-foreground" : "text-foreground/80"
+                  )}>
+                    {monteur.naam}
+                  </div>
+                  {todayCount > 0 && (
+                    <div className="text-[10px] text-muted-foreground">{todayCount} vandaag</div>
+                  )}
+                </div>
+              </button>
+            );
+          })}
         </div>
 
-        {/* Medewerker filter */}
-        <Select value={selectedMonteur} onValueChange={setSelectedMonteur}>
-          <SelectTrigger className="w-[180px] h-8 text-xs">
-            <SelectValue placeholder="Alle medewerkers" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="alle">Alle medewerkers</SelectItem>
-            {monteurs.map((m) => (
-              <SelectItem key={m.id} value={m.id}>{m.naam}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <div className="flex-1" />
-
-        {/* View toggle */}
-        <div className="flex items-center gap-0.5 border rounded-lg p-0.5 bg-muted/30">
-          <Button
-            variant={viewMode === "week" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => setViewMode("week")}
-            className="h-7 text-xs px-2.5"
-          >
-            <Users className="h-3.5 w-3.5 mr-1" />
-            <span className="hidden sm:inline">Teamweergave</span>
-            <span className="sm:hidden">Team</span>
-          </Button>
-          <Button
-            variant={viewMode === "raster" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => setViewMode("raster")}
-            className="h-7 text-xs px-2.5"
-          >
-            <LayoutGrid className="h-3.5 w-3.5 mr-1" />
-            <span className="hidden sm:inline">Dagkolommen</span>
-            <span className="sm:hidden">Dagen</span>
-          </Button>
-          <Button
-            variant={viewMode === "list" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => setViewMode("list")}
-            className="h-7 text-xs px-2.5"
-          >
-            <List className="h-3.5 w-3.5 mr-1" />
-            <span className="hidden sm:inline">Lijstweergave</span>
-            <span className="sm:hidden">Lijst</span>
-          </Button>
+        {/* Sidebar footer: stats */}
+        <div className="px-3 py-2.5 border-t bg-muted/20 text-[11px] text-muted-foreground space-y-0.5">
+          <div>{stats.totaalWeek} montages deze week</div>
+          <div>{stats.monteursBeschikbaar} beschikbaar vandaag</div>
         </div>
       </div>
 
-      {/* ── Main content ── */}
-      <div className="overflow-x-auto">
-        {viewMode === "week" ? renderWeekView() : viewMode === "raster" ? renderRasterView() : renderListView()}
-      </div>
-
-      {/* ── Status legend (compact) ── */}
-      <div className="flex items-center gap-4 text-[11px] text-muted-foreground px-1">
-        {(Object.keys(STATUS_CONFIG) as MontageAfspraak["status"][]).map((s) => (
-          <div key={s} className="flex items-center gap-1">
-            <span className={cn("w-2 h-2 rounded-full", STATUS_DOT[s])} />
-            {STATUS_CONFIG[s].label}
+      {/* ── Right content: member's week planning ── */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Conflict banner */}
+        {conflicts.length > 0 && (
+          <div className="bg-red-50 border-b border-red-200 px-4 py-2 flex items-center gap-2">
+            <AlertTriangle className="h-3.5 w-3.5 text-red-500 shrink-0" />
+            <span className="text-xs text-red-700">
+              <span className="font-semibold">{conflicts.length} overlap{conflicts.length !== 1 ? "s" : ""}</span>
+              {conflicts.slice(0, 2).map((c, idx) => (
+                <span key={idx} className="ml-2">{c.monteurNaam}: {c.afspraak1.titel} / {c.afspraak2.titel}</span>
+              ))}
+            </span>
           </div>
-        ))}
+        )}
+
+        {/* Main view */}
+        <div className="flex-1 overflow-auto">
+          {renderMemberWeekView()}
+        </div>
       </div>
 
       {renderDialog()}
