@@ -85,15 +85,24 @@ export function generateWerkbonInstructiePDF(
 
   function addPageHeader(y: number): number {
     // Logo + bedrijfsnaam (optioneel)
+    let logoWidth = 0
     if (werkbonData.toon_briefpapier && bedrijfsProfiel.logo_url) {
       try {
-        doc.addImage(bedrijfsProfiel.logo_url, 'JPEG', marginLeft, y, 25, 15, undefined, 'MEDIUM')
+        // Bereken aspect ratio om vervorming te voorkomen
+        const maxLogoH = 12
+        const img = new Image()
+        img.src = bedrijfsProfiel.logo_url
+        const naturalW = img.naturalWidth || img.width || 200
+        const naturalH = img.naturalHeight || img.height || 100
+        const ratio = naturalW / naturalH
+        logoWidth = maxLogoH * ratio
+        doc.addImage(bedrijfsProfiel.logo_url, 'JPEG', marginLeft, y + 1, logoWidth, maxLogoH, undefined, 'MEDIUM')
       } catch {
         // logo failed
       }
     }
 
-    const headerX = werkbonData.toon_briefpapier && bedrijfsProfiel.logo_url ? marginLeft + 30 : marginLeft
+    const headerX = logoWidth > 0 ? marginLeft + logoWidth + 5 : marginLeft
 
     // Werkbon nummer + titel
     doc.setFont(headingFont, 'bold')
