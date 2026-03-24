@@ -80,8 +80,8 @@ export default function Hero() {
               transition={{ duration: 0.7, delay: 0.9, ease: [0.16, 1, 0.3, 1] }}
               className="text-muted text-lg max-w-md mb-8 leading-relaxed"
             >
-              Van offerte tot factuur, alles in een systeem.
-              Geen losse tools, geen add-ons. Gebouwd door vakmensen.
+              Van offerte tot factuur, van werkbon tot klantportaal.
+              Alles in een systeem. Mollie, Exact Online, AI. Gebouwd door vakmensen.
             </motion.p>
 
             {/* Waitlist form */}

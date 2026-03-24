@@ -61,8 +61,7 @@ export default function DarkSection() {
               </div>
             </div>
             <p className="text-white/70 text-lg md:text-xl max-w-md mx-auto leading-relaxed mb-4">
-              Alles erin. Geen per-user pricing. Geen add-ons.
-              Geen modules bijkopen. Geen feature-upgrades.
+              Alles erin. Mollie, Exact Online, Probo, AI. Geen per-user pricing. Geen add-ons. Geen modules bijkopen.
             </p>
             <p className="font-heading text-2xl md:text-3xl text-white mt-6 tracking-tight">
               Gewoon doen<span className="text-flame">.</span>

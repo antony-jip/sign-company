@@ -6,7 +6,7 @@ import SectionReveal from '../SectionReveal'
 const props = [
   {
     headline: 'Alles erin. Altijd.',
-    description: 'Projecten, offertes, facturen, planning, klantportaal en AI. Geen modules bijkopen, geen add-ons. Je hebt gewoon alles.',
+    description: 'Projecten, offertes, facturen, planning, klantportaal, AI, email, CRM, voorraad en meer. Mollie, Exact Online, Probo, KVK. Geen add-ons.',
     icon: (
       <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
         <rect x="4" y="4" width="10" height="10" rx="2" className="fill-petrol" />

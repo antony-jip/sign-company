@@ -25,7 +25,7 @@ const features: {
     module: 'Planning',
     headline: 'Wie doet wat, wanneer, waar.',
     status: 'gepland.',
-    description: 'Drag-and-drop planbord, gekoppeld aan projecten, zichtbaar voor je hele team. Je monteur weet precies waar hij wanneer moet zijn.',
+    description: 'Week-, maand- en dagweergave met drag-and-drop. Montage planning met locatie en team. Verlof, feestdagen en sluitingsdagen automatisch verwerkt. Je klant kan zelfs online een afspraak inplannen.',
     color: '#9A5A48',
     lightBg: '#F2E8E5',
     mockup: <PlanningMockup />,
@@ -34,7 +34,7 @@ const features: {
     module: 'Werkbonnen',
     headline: 'Digitaal. Op locatie. Getekend.',
     status: 'getekend.',
-    description: 'Geen papieren werkbonnen meer die kwijtraken in het busje. Foto\'s erbij, handtekening van de klant, alles digitaal vastgelegd.',
+    description: 'Je monteur opent de app, ziet zijn instructies met specificaties in mm, maakt foto\'s op locatie en laat de klant digitaal tekenen. Eén klik en het wordt een factuur.',
     color: '#C44830',
     lightBg: '#FAE5E0',
     mockup: <WerkbonnenMockup />,
@@ -43,7 +43,7 @@ const features: {
     module: 'Klantportaal',
     headline: 'Je klant ziet wat hij moet zien.',
     status: 'goedgekeurd.',
-    description: 'Een eigen portaal voor je klant. Projectstatus, facturen, goedkeuringen. Alles transparant. Minder bellen, meer vertrouwen.',
+    description: 'Unieke link per klant. Projectstatus, tekening goedkeuring, facturen inzien en direct online betalen via Mollie. Reageert je klant niet? Na 3 dagen krijgt hij automatisch een herinnering.',
     color: '#3A6B8C',
     lightBg: '#E5ECF6',
     mockup: <KlantportaalMockup />,
@@ -52,7 +52,7 @@ const features: {
     module: 'Offertes',
     headline: 'Professionele offertes in minuten.',
     status: 'verstuurd.',
-    description: 'Sjablonen, herbruikbare producten, digitale handtekening. Je klant ontvangt een offerte waar je trots op bent. In minuten, niet uren.',
+    description: 'Sjablonen, productbibliotheek, smart calculator met kostprijsberekening. Je klant bekijkt online en je ziet wanneer hij kijkt. Digitaal akkoord, en het project wordt automatisch aangemaakt. Probo-koppeling voor live printprijzen.',
     color: '#F15025',
     lightBg: '#FDE8E2',
     mockup: <OffertesMockup />,
@@ -61,7 +61,7 @@ const features: {
     module: 'Facturen',
     headline: 'Verstuurd. Herinnerd. Betaald.',
     status: 'betaald.',
-    description: 'Automatische herinneringen, betaalstatus op een rij, directe koppeling met je offertes. Geen factuur valt meer tussen wal en schip.',
+    description: 'Eén klik factuur vanuit offerte of werkbon. Mollie betaallinks zodat je klant direct online betaalt. Automatische herinneringen. Creditnota\'s en voorschotfacturen. Exact Online koppeling voor je boekhouding.',
     color: '#2D6B48',
     lightBg: '#E4F0EA',
     mockup: <FacturenMockup />,
@@ -70,7 +70,7 @@ const features: {
     module: 'Daan AI',
     headline: 'Je slimste collega werkt 24/7.',
     status: 'slim.',
-    description: 'Daan AI helpt je met offerteteksten, projectsamenvattingen en slimme suggesties. Geen vervanging, een versterking.',
+    description: 'Schrijft offerteteksten, vat projecten samen, beantwoordt vragen over je bedrijfsdata. "Hoeveel offertes staan open?" "Wie is mijn grootste klant?" 10 herschrijfacties, email assistent, en hij wordt steeds slimmer.',
     color: '#6A5A8A',
     lightBg: '#EEE8F5',
     mockup: <DaanAIMockup />,
@@ -86,7 +86,7 @@ export default function FeatureShowcase() {
             Wat zit er in doen<span className="text-flame">.</span>
           </h2>
           <p className="text-muted text-center max-w-lg mx-auto mb-16">
-            Zes modules. Alles erin. Geen add-ons.
+            Zes modules. Gekoppeld aan Mollie, Exact Online, Probo en meer. Geen add-ons.
           </p>
         </SectionReveal>
 
