@@ -1002,12 +1002,12 @@ export function QuotesPipeline() {
         {/* Financial Overview per Status */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {([
-            { key: 'concept' as const, label: 'Concept', borderColor: 'border-[#D8D8D5]', bgColor: 'from-[#EEEEED]/60 to-card', dotColor: 'bg-[#5A5A55]', textColor: 'text-[#4A4A45]' },
-            { key: 'verzonden' as const, label: 'Verstuurd', borderColor: 'border-[#F5C4B4]', bgColor: 'from-[#FDE8E2]/60 to-card', dotColor: 'bg-[#F15025]', textColor: 'text-[#C03A18]' },
-            { key: 'bekeken' as const, label: 'Bekeken', borderColor: 'border-[#D8CCE8]', bgColor: 'from-[#EEE8F5]/60 to-card', dotColor: 'bg-[#6A5A8A]', textColor: 'text-[#5A4A78]' },
-            { key: 'goedgekeurd' as const, label: 'Akkoord', borderColor: 'border-[#B8D8DA]', bgColor: 'from-[#E2F0F0]/60 to-card', dotColor: 'bg-[#1A535C]', textColor: 'text-[#1A535C]' },
-            { key: 'verlopen' as const, label: 'Verlopen', borderColor: 'border-[#D8D8D5]', bgColor: 'from-[#EEEEED]/60 to-card', dotColor: 'bg-[#A0A098]', textColor: 'text-[#5A5A55]' },
-            { key: 'afgewezen' as const, label: 'Afgewezen', borderColor: 'border-[#F5C4B4]', bgColor: 'from-[#FDE8E2]/60 to-card', dotColor: 'bg-[#C03A18]', textColor: 'text-[#C03A18]' },
+            { key: 'concept' as const, label: 'Concept', borderColor: 'border-[#D8D8D5]', bgColor: 'from-[#EEEEED]/30 to-card', dotColor: 'bg-[#5A5A55]', textColor: 'text-[#4A4A45]' },
+            { key: 'verzonden' as const, label: 'Verstuurd', borderColor: 'border-[#F5C4B4]', bgColor: 'from-[#FDE8E2]/30 to-card', dotColor: 'bg-[#F15025]', textColor: 'text-[#C03A18]' },
+            { key: 'bekeken' as const, label: 'Bekeken', borderColor: 'border-[#D8CCE8]', bgColor: 'from-[#EEE8F5]/30 to-card', dotColor: 'bg-[#6A5A8A]', textColor: 'text-[#5A4A78]' },
+            { key: 'goedgekeurd' as const, label: 'Akkoord', borderColor: 'border-[#B8D8DA]', bgColor: 'from-[#E2F0F0]/30 to-card', dotColor: 'bg-[#1A535C]', textColor: 'text-[#1A535C]' },
+            { key: 'verlopen' as const, label: 'Verlopen', borderColor: 'border-[#D8D8D5]', bgColor: 'from-[#EEEEED]/30 to-card', dotColor: 'bg-[#A0A098]', textColor: 'text-[#5A5A55]' },
+            { key: 'afgewezen' as const, label: 'Afgewezen', borderColor: 'border-[#F5C4B4]', bgColor: 'from-[#FDE8E2]/30 to-card', dotColor: 'bg-[#C03A18]', textColor: 'text-[#C03A18]' },
           ]).map((col) => {
             const data = financialSummary.statusTotals[col.key] || { count: 0, totaal: 0 }
             return (
@@ -1427,17 +1427,17 @@ export function QuotesPipeline() {
               <table className="w-full">
                 <thead>
                   <tr style={{ borderBottom: '0.5px solid #E6E4E0', backgroundColor: '#F4F2EE' }}>
-                    <th className="w-10 px-3 py-3">
+                    <th className="w-10 px-3 py-2.5">
                       <Checkbox
                         checked={sortedListOffertes.length > 0 && selectedIds.size === sortedListOffertes.length}
                         onCheckedChange={toggleSelectAll}
                         aria-label="Selecteer alles"
                       />
                     </th>
-                    <th className="text-left py-3 px-4 w-[110px]">
+                    <th className="text-left py-2.5 px-4 w-[110px]">
                       <span className="text-[10px] font-medium uppercase text-[#A0A098]" style={{ letterSpacing: '0.8px' }}>Status</span>
                     </th>
-                    <th className="text-left py-3 px-4">
+                    <th className="text-left py-2.5 px-4">
                       <button
                         onClick={() => handleListSort('nummer')}
                         className="flex items-center gap-1 text-[10px] font-medium uppercase text-[#A0A098] hover:text-foreground transition-colors"
@@ -1451,7 +1451,7 @@ export function QuotesPipeline() {
                         )}
                       </button>
                     </th>
-                    <th className="text-left py-3 px-4 hidden lg:table-cell">
+                    <th className="text-left py-2.5 px-4 hidden lg:table-cell">
                       <button
                         onClick={() => handleListSort('klant_naam')}
                         className="flex items-center gap-1 text-[10px] font-medium uppercase text-[#A0A098] hover:text-foreground transition-colors"
@@ -1465,7 +1465,7 @@ export function QuotesPipeline() {
                         )}
                       </button>
                     </th>
-                    <th className="text-right py-3 px-4 hidden xl:table-cell">
+                    <th className="text-right py-2.5 px-4 hidden xl:table-cell">
                       <button
                         onClick={() => handleListSort('totaal')}
                         className="flex items-center gap-1 text-[10px] font-medium uppercase text-[#A0A098] hover:text-foreground transition-colors ml-auto"
@@ -1479,7 +1479,7 @@ export function QuotesPipeline() {
                         )}
                       </button>
                     </th>
-                    <th className="text-right py-3 px-4 hidden md:table-cell">
+                    <th className="text-right py-2.5 px-4 hidden md:table-cell">
                       <button
                         onClick={() => handleListSort('created_at')}
                         className="flex items-center gap-1 text-[10px] font-medium uppercase text-[#A0A098] hover:text-foreground transition-colors ml-auto"
@@ -1493,7 +1493,7 @@ export function QuotesPipeline() {
                         )}
                       </button>
                     </th>
-                    <th className="text-right py-3 px-4 hidden lg:table-cell">
+                    <th className="text-right py-2.5 px-4 hidden lg:table-cell">
                       <button
                         onClick={() => handleListSort('days_open')}
                         className="flex items-center gap-1 text-[10px] font-medium uppercase text-[#A0A098] hover:text-foreground transition-colors ml-auto"
@@ -1507,7 +1507,7 @@ export function QuotesPipeline() {
                         )}
                       </button>
                     </th>
-                    <th className="text-right py-3 px-4 hidden md:table-cell">
+                    <th className="text-right py-2.5 px-4 hidden md:table-cell">
                       <button
                         onClick={() => handleListSort('geldig_tot')}
                         className="flex items-center gap-1 text-[10px] font-medium uppercase text-[#A0A098] hover:text-foreground transition-colors ml-auto"
@@ -1521,7 +1521,7 @@ export function QuotesPipeline() {
                         )}
                       </button>
                     </th>
-                    <th className="w-10 py-3 px-2" />
+                    <th className="w-10 py-2.5 px-2" />
                   </tr>
                 </thead>
                 <tbody className="row-stagger">
@@ -1539,7 +1539,7 @@ export function QuotesPipeline() {
                         onClick={() => navigateWithTab({ path: `/offertes/${offerte.id}/bewerken`, label: offerte.nummer || offerte.titel || 'Offerte', id: `/offertes/${offerte.id}` })}
                       >
                         {/* Checkbox */}
-                        <td className="w-10 px-3 py-3">
+                        <td className="w-10 px-3 py-2.5">
                           <Checkbox
                             checked={selectedIds.has(offerte.id)}
                             onCheckedChange={() => toggleSelect(offerte.id)}
@@ -1554,7 +1554,7 @@ export function QuotesPipeline() {
                               <button
                                 onClick={(e) => e.stopPropagation()}
                                 className={cn(
-                                  'w-full h-full py-3 px-4 flex items-center gap-1.5 transition-colors',
+                                  'w-full h-full py-2.5 px-4 flex items-center gap-1.5 transition-colors',
                                   'hover:brightness-95 dark:hover:brightness-110'
                                 )}
                               >
@@ -1598,7 +1598,7 @@ export function QuotesPipeline() {
                         </td>
 
                         {/* Offerte naam + prioriteit */}
-                        <td className="py-3 px-4">
+                        <td className="py-2.5 px-4">
                           <div className="flex items-center gap-2">
                             <div className="min-w-0">
                               <Link
@@ -1665,7 +1665,7 @@ export function QuotesPipeline() {
                         </td>
 
                         {/* Quick actions */}
-                        <td className="py-3 px-2">
+                        <td className="py-2.5 px-2">
                           <div className="flex items-center gap-0.5 justify-end">
                             <Link
                               to={`/offertes/${offerte.id}/preview`}

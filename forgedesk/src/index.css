@@ -2021,23 +2021,23 @@ html {
 
 /* ── Enhanced Stat Cards — rich gradient with liquid glass inner light ── */
 .stat-card-gradient-offertes {
-  background: linear-gradient(145deg, #E4AE9C 0%, #F0C8B8 35%, #FAE4DA 70%, #FFF4EE 100%);
+  background: linear-gradient(145deg, #FAE4DA 0%, #FDF2ED 50%, #FEFAF8 100%);
   box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.65), inset 0 -1px 0 rgba(0,0,0,0.02);
 }
 .stat-card-gradient-facturen {
-  background: linear-gradient(145deg, #98C0A8 0%, #B4D4C2 35%, #D4E8DE 70%, #EFF8F3 100%);
+  background: linear-gradient(145deg, #D4E8DE 0%, #EBF4EF 50%, #F7FBF9 100%);
   box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.65), inset 0 -1px 0 rgba(0,0,0,0.02);
 }
 .stat-card-gradient-klanten {
-  background: linear-gradient(145deg, #9CB4CA 0%, #B8CDE0 35%, #D6E4F0 70%, #EEF4FA 100%);
+  background: linear-gradient(145deg, #D6E4F0 0%, #ECF1F8 50%, #F7FAFE 100%);
   box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.65), inset 0 -1px 0 rgba(0,0,0,0.02);
 }
 .stat-card-gradient-taken {
-  background: linear-gradient(145deg, #CCC0A0 0%, #DED4BC 35%, #EDE8DA 70%, #F9F6EE 100%);
+  background: linear-gradient(145deg, #EDE8DA 0%, #F5F2EA 50%, #FAFAF7 100%);
   box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.65), inset 0 -1px 0 rgba(0,0,0,0.02);
 }
 .stat-card-gradient-email {
-  background: linear-gradient(145deg, #B8A8D8 0%, #CEC0E8 35%, #E2D8F2 70%, #F4F0FA 100%);
+  background: linear-gradient(145deg, #E2D8F2 0%, #F0ECF8 50%, #F9F7FC 100%);
   box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.65), inset 0 -1px 0 rgba(0,0,0,0.02);
 }
 

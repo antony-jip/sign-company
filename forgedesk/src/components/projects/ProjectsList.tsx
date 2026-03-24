@@ -802,7 +802,7 @@ export function ProjectsList() {
                     onClick={() => navigateWithTab({ path: `/projecten/${project.id}`, label: project.naam || 'Project', id: `/projecten/${project.id}` })}
                   >
                     {/* Checkbox */}
-                    <td className="py-3.5 px-3 relative" onClick={(e) => e.stopPropagation()}>
+                    <td className="py-2.5 px-3 relative" onClick={(e) => e.stopPropagation()}>
                       <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-[#1A535C]" />
                       <Checkbox
                         checked={selectedIds.has(project.id)}
@@ -811,7 +811,7 @@ export function ProjectsList() {
                       />
                     </td>
                     {/* Status badge */}
-                    <td className="py-3.5 px-4" onClick={(e) => e.stopPropagation()}>
+                    <td className="py-2.5 px-4" onClick={(e) => e.stopPropagation()}>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <button className="flex items-center gap-1.5">
@@ -872,7 +872,7 @@ export function ProjectsList() {
                     </td>
 
                     {/* Project naam + ref + spectrum bar */}
-                    <td className="py-3.5 px-4">
+                    <td className="py-2.5 px-4">
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
                           <Link
@@ -891,12 +891,12 @@ export function ProjectsList() {
                             {project.beschrijving}
                           </p>
                         )}
-                        <SpectrumBar percentage={getSpectrumFase(project.status).percentage} height={3} className="mt-1.5 w-20" />
+                        <SpectrumBar percentage={getSpectrumFase(project.status).percentage} height={3} className="mt-1 w-20" />
                       </div>
                     </td>
 
                     {/* Klant */}
-                    <td className="py-3.5 px-4 hidden lg:table-cell">
+                    <td className="py-2.5 px-4 hidden lg:table-cell">
                       <span className="text-[13px] text-foreground">{klantNaam}</span>
                       {(project.vestiging_naam || contactpersoon) && (
                         <p className="text-[11px] mt-0.5" style={{ color: '#5A5A55' }}>
@@ -906,7 +906,7 @@ export function ProjectsList() {
                     </td>
 
                     {/* Fase */}
-                    <td className="py-3.5 px-4 hidden md:table-cell">
+                    <td className="py-2.5 px-4 hidden md:table-cell">
                       <span
                         className="text-[11px] font-medium"
                         style={{ color: getSpectrumFase(project.status).color }}
@@ -916,7 +916,7 @@ export function ProjectsList() {
                     </td>
 
                     {/* Bedrag */}
-                    <td className="py-3.5 px-4 text-right hidden xl:table-cell">
+                    <td className="py-2.5 px-4 text-right hidden xl:table-cell">
                       {(() => {
                         const bedrag = getProjectBedrag(project.id)
                         return bedrag > 0 ? (
@@ -930,14 +930,14 @@ export function ProjectsList() {
                     </td>
 
                     {/* Datum */}
-                    <td className="py-3.5 px-4 text-right hidden lg:table-cell">
+                    <td className="py-2.5 px-4 text-right hidden lg:table-cell">
                       <span className="text-xs font-mono tabular-nums" style={{ color: '#A0A098' }}>
                         {new Date(project.created_at).toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit' }).replace('/', '-')}
                       </span>
                     </td>
 
                     {/* Dagen open */}
-                    <td className="py-3.5 px-4 text-right hidden xl:table-cell">
+                    <td className="py-2.5 px-4 text-right hidden xl:table-cell">
                       {(() => {
                         const dagen = getDagenOpen(project)
                         if (dagen === null) return <span className="text-xs text-[#A0A098]">—</span>
@@ -951,7 +951,7 @@ export function ProjectsList() {
                     </td>
 
                     {/* Quick actions + Menu */}
-                    <td className="py-3.5 px-2">
+                    <td className="py-2.5 px-2">
                       <div className="flex items-center gap-0.5 justify-end">
                         {/* Quick photo upload button */}
                         <button

@@ -1365,7 +1365,7 @@ export function FacturenLayout() {
           </p>
         </div>
 
-        <div className="stat-card-hover relative overflow-hidden rounded-2xl p-5" style={{ background: `linear-gradient(135deg, ${MODULE_COLORS.werkbonnen.light}, color-mix(in srgb, ${MODULE_COLORS.werkbonnen.light} 70%, white))` }}>
+        <div className="stat-card-hover relative overflow-hidden rounded-2xl p-5" style={{ background: `linear-gradient(135deg, color-mix(in srgb, ${MODULE_COLORS.werkbonnen.light} 50%, white), color-mix(in srgb, ${MODULE_COLORS.werkbonnen.light} 20%, white))` }}>
           <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] mb-3" style={{ color: MODULE_COLORS.werkbonnen.text }}>
             Vervallen facturen
           </p>
@@ -1386,7 +1386,7 @@ export function FacturenLayout() {
           )}
         </div>
 
-        <div className="stat-card-hover relative overflow-hidden rounded-2xl p-5" style={{ background: `linear-gradient(135deg, ${MODULE_COLORS.taken.light}, color-mix(in srgb, ${MODULE_COLORS.taken.light} 70%, white))` }}>
+        <div className="stat-card-hover relative overflow-hidden rounded-2xl p-5" style={{ background: `linear-gradient(135deg, color-mix(in srgb, ${MODULE_COLORS.taken.light} 50%, white), color-mix(in srgb, ${MODULE_COLORS.taken.light} 20%, white))` }}>
           <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] mb-3" style={{ color: MODULE_COLORS.taken.text }}>
             Gem. betaaltermijn
           </p>
@@ -1642,14 +1642,14 @@ export function FacturenLayout() {
                     )}
                     style={{ borderLeftColor: agingBorderColor, borderBottom: '0.5px solid #E6E4E0' }}
                   >
-                    <td className="w-10 px-3 py-3.5">
+                    <td className="w-10 px-3 py-2.5">
                       <Checkbox
                         checked={selectedIds.has(factuur.id)}
                         onCheckedChange={() => toggleSelect(factuur.id)}
                         aria-label={`Selecteer ${factuur.nummer}`}
                       />
                     </td>
-                    <td className="px-4 py-3.5">
+                    <td className="px-4 py-2.5">
                       <div className="flex items-center gap-1.5">
                         <button
                           onClick={() => setViewingFactuur(factuur)}
@@ -1664,7 +1664,7 @@ export function FacturenLayout() {
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-3.5">
+                    <td className="px-4 py-2.5">
                       <a
                         href={`/klanten/${factuur.klant_id}`}
                         className="text-sm text-foreground/80 hover:text-primary dark:hover:text-wm-light hover:underline transition-colors"
@@ -1673,17 +1673,17 @@ export function FacturenLayout() {
                         {factuur.klant_naam || 'Onbekende klant'}
                       </a>
                     </td>
-                    <td className="px-4 py-3.5 max-w-[220px] hidden md:table-cell">
+                    <td className="px-4 py-2.5 max-w-[220px] hidden md:table-cell">
                       <span className="text-sm text-foreground/80 truncate block">
                         {factuur.titel}
                       </span>
                     </td>
-                    <td className="px-4 py-3.5 hidden sm:table-cell">
+                    <td className="px-4 py-2.5 hidden sm:table-cell">
                       <span className="text-sm font-mono tabular-nums text-muted-foreground">
                         {formatDate(factuur.factuurdatum)}
                       </span>
                     </td>
-                    <td className="px-4 py-3.5 hidden xl:table-cell">
+                    <td className="px-4 py-2.5 hidden xl:table-cell">
                       {factuur.status !== 'betaald' && factuur.status !== 'gecrediteerd' && (() => {
                         const days = getDaysOpen(factuur.factuurdatum)
                         return (
@@ -1696,7 +1696,7 @@ export function FacturenLayout() {
                         )
                       })()}
                     </td>
-                    <td className="px-4 py-3.5 hidden lg:table-cell">
+                    <td className="px-4 py-2.5 hidden lg:table-cell">
                       <div className="flex items-center gap-1.5">
                         <span
                           className={cn(
@@ -1713,12 +1713,12 @@ export function FacturenLayout() {
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-3.5 font-mono font-medium text-right">
+                    <td className="px-4 py-2.5 font-mono font-medium text-right">
                       <span className="text-sm font-mono font-semibold text-foreground">
                         {formatCurrency(factuur.totaal)}
                       </span>
                     </td>
-                    <td className="px-4 py-3.5">
+                    <td className="px-4 py-2.5">
                       {(factuur.status === 'verzonden' || factuur.status === 'vervallen') ? (
                         <Badge
                           variant="secondary"
@@ -1745,7 +1745,7 @@ export function FacturenLayout() {
                         </Badge>
                       )}
                     </td>
-                    <td className="px-4 py-3.5 hidden lg:table-cell">
+                    <td className="px-4 py-2.5 hidden lg:table-cell">
                       {isOverdue && (
                         <div className="flex items-center gap-1">
                           <span className="text-xs font-medium font-mono text-[#C03A18]">{getDagenVerlopen(factuur)}d</span>
@@ -1758,7 +1758,7 @@ export function FacturenLayout() {
                         </div>
                       )}
                     </td>
-                    <td className="px-4 py-3.5 hidden lg:table-cell">
+                    <td className="px-4 py-2.5 hidden lg:table-cell">
                       {factuur.online_bekeken ? (
                         <div className="flex items-center gap-1.5" title={factuur.online_bekeken_op ? `Bekeken op ${new Date(factuur.online_bekeken_op).toLocaleString('nl-NL')}` : 'Online bekeken'}>
                           <Globe className="h-3.5 w-3.5 text-primary" />
@@ -1768,7 +1768,7 @@ export function FacturenLayout() {
                         <span className="text-xs text-muted-foreground/60">—</span>
                       ) : null}
                     </td>
-                    <td className="px-4 py-3.5 hidden md:table-cell">
+                    <td className="px-4 py-2.5 hidden md:table-cell">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button
