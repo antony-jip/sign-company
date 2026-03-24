@@ -160,6 +160,25 @@ export function LosseContacten({ organisatieId }: LosseContactenProps) {
     }
   }
 
+  async function handleDeleteAlleLosse() {
+    if (contacten.length === 0) return
+    const confirmed = window.confirm(
+      `Weet je zeker dat je alle ${contacten.length} losse contacten wilt verwijderen? Dit kan niet ongedaan worden.`
+    )
+    if (!confirmed) return
+    setBulkLoading(true)
+    try {
+      await bulkDeleteContactpersonen(contacten.map((c) => c.id))
+      setContacten([])
+      setSelectedIds(new Set())
+      toast.success(`Alle ${contacten.length} losse contacten verwijderd`)
+    } catch {
+      toast.error('Fout bij verwijderen van contacten')
+    } finally {
+      setBulkLoading(false)
+    }
+  }
+
   async function openKoppelDialog(contact: ContactpersoonRecord) {
     setSelectedContact(contact)
     setKoppelSearch('')
@@ -282,15 +301,29 @@ export function LosseContacten({ organisatieId }: LosseContactenProps) {
     <>
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Users className="w-5 h-5 text-muted-foreground" />
-            Losse contacten
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Users className="w-5 h-5 text-muted-foreground" />
+              Losse contacten
+              {contacten.length > 0 && (
+                <Badge variant="secondary" className="ml-1 font-mono text-xs">
+                  {contacten.length}
+                </Badge>
+              )}
+            </CardTitle>
             {contacten.length > 0 && (
-              <Badge variant="secondary" className="ml-1 font-mono text-xs">
-                {contacten.length}
-              </Badge>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs text-muted-foreground hover:text-destructive"
+                onClick={handleDeleteAlleLosse}
+                disabled={bulkLoading}
+              >
+                <Trash2 className="w-3.5 h-3.5 mr-1" />
+                Alle verwijderen
+              </Button>
             )}
-          </CardTitle>
+          </div>
           <p className="text-sm text-muted-foreground">
             Contactpersonen die niet automatisch aan een bedrijf gekoppeld konden worden.
           </p>
