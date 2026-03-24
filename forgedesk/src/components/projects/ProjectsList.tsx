@@ -356,8 +356,6 @@ export function ProjectsList() {
         @keyframes doen-shimmer { 0% { background-position: -200% 0 } 100% { background-position: 200% 0 } }
         .doen-pulse { animation: doen-pulse 2.5s ease-in-out infinite }
         .doen-row { animation: doen-fade-up .35s cubic-bezier(.22,1,.36,1) both }
-        .doen-row-accent::before { content:''; position:absolute; left:0; top:4px; bottom:4px; width:3px; border-radius:0 3px 3px 0; background:#1A535C; opacity:0; transform:scaleY(.5); transition: all .2s cubic-bezier(.22,1,.36,1) }
-        .doen-row-accent:hover::before { opacity:1; transform:scaleY(1) }
       `}</style>
 
       {/* Hidden photo input */}
@@ -728,8 +726,8 @@ export function ProjectsList() {
                         <tr
                           key={project.id}
                           className={cn(
-                            'doen-row doen-row-accent relative border-b border-[#F0EFEC] last:border-0 cursor-pointer transition-all duration-150 group',
-                            'hover:bg-[#FAFAF8]',
+                            'doen-row border-b border-[#F0EFEC] last:border-0 cursor-pointer transition-all duration-200 group',
+                            'hover:bg-[#F8F7F4]',
                             selectedIds.has(project.id) && 'bg-[#1A535C]/[0.03]'
                           )}
                           style={{ animationDelay: `${i * 25}ms` }}
@@ -750,7 +748,7 @@ export function ProjectsList() {
                               <div className="flex items-baseline gap-2.5">
                                 <Link
                                   to={`/projecten/${project.id}`}
-                                  className="text-[15px] font-semibold text-[#1A1A1A] group-hover:text-[#1A535C] transition-colors truncate"
+                                  className="text-[15px] font-semibold text-[#1A1A1A] group-hover:text-[#1A535C] underline-offset-2 decoration-transparent group-hover:decoration-[#1A535C]/20 underline transition-all truncate"
                                   onClick={(e) => e.stopPropagation()}
                                 >
                                   {project.naam}
@@ -760,7 +758,7 @@ export function ProjectsList() {
                                 )}
                               </div>
                               {project.beschrijving && (
-                                <p className="text-[12px] text-[#9B9B95] truncate max-w-[320px] mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                <p className="text-[11px] text-[#C0BDB8] truncate max-w-[320px] mt-0.5">
                                   {project.beschrijving}
                                 </p>
                               )}
@@ -770,9 +768,21 @@ export function ProjectsList() {
                           {/* Klant */}
                           <td className="py-3.5 pr-4 hidden lg:table-cell">
                             <div className="flex items-center gap-2.5 min-w-0">
-                              <span className="flex-shrink-0 w-7 h-7 rounded-lg bg-[#F0EFEC] flex items-center justify-center text-[11px] font-bold text-[#9B9B95] uppercase select-none">
-                                {klantNaam.charAt(0)}
-                              </span>
+                              {(() => {
+                                const c = klantNaam.charCodeAt(0) % 5
+                                const avatarColors = [
+                                  'bg-[#E8F2EC] text-[#3A7D52]',
+                                  'bg-[#E8EEF9] text-[#3A5A9A]',
+                                  'bg-[#F5F2E8] text-[#8A7A4A]',
+                                  'bg-[#F0EFEC] text-[#6B6B66]',
+                                  'bg-[#EDE8F4] text-[#6A5A8A]',
+                                ]
+                                return (
+                                  <span className={cn('flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold uppercase select-none', avatarColors[c])}>
+                                    {klantNaam.charAt(0)}
+                                  </span>
+                                )
+                              })()}
                               <div className="min-w-0">
                                 <span className="text-[13px] text-[#4A4A46] truncate block leading-tight">{klantNaam}</span>
                                 {(project.vestiging_naam || contactpersoon) && (
@@ -788,7 +798,7 @@ export function ProjectsList() {
                           <td className="py-3.5 pr-4" onClick={(e) => e.stopPropagation()}>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <button className="text-left group/status">
+                                <button className="text-left group/status inline-flex items-center gap-1">
                                   <span
                                     className="inline-flex items-center gap-1.5 text-[13px] font-semibold px-2.5 py-1 rounded-lg transition-all group-hover/status:shadow-sm"
                                     style={{
@@ -801,6 +811,7 @@ export function ProjectsList() {
                                     )}
                                     {statusLabels[project.status] || project.status}<span className="text-[#F15025]">.</span>
                                   </span>
+                                  <ChevronDown className="w-3 h-3 text-[#C0BDB8] opacity-0 group-hover/status:opacity-100 transition-opacity -ml-0.5" />
                                   {isOverdue && (
                                     <span className="ml-1.5 text-[11px] font-semibold text-[#C03A18]">Verlopen</span>
                                   )}
