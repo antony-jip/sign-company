@@ -2946,14 +2946,24 @@ function WeergaveTab() {
   const { language, setLanguage } = useLanguage()
   const { settings, updateSettings } = useAppSettings()
   const { appThemeId, setAppThemeId, accentId, setAccentId } = usePalette()
-  const [sidebarItems, setSidebarItems] = useState<string[]>(
-    settings.sidebar_items || ALL_SIDEBAR_ITEMS.map((i) => i.label)
-  )
+  // Merge opgeslagen sidebar_items met ALL_SIDEBAR_ITEMS:
+  // - Items die in ALL_SIDEBAR_ITEMS staan maar niet in opgeslagen list → toevoegen (nieuw item = default aan)
+  // - Items die in opgeslagen list staan maar niet in ALL_SIDEBAR_ITEMS → verwijderen (verwijderd item)
+  const mergeSidebarItems = useCallback((saved: string[] | undefined) => {
+    if (!saved || saved.length === 0) return ALL_SIDEBAR_ITEMS.map((i) => i.label)
+    const allLabels = ALL_SIDEBAR_ITEMS.map((i) => i.label)
+    // Behoud opgeslagen items die nog bestaan + voeg nieuwe items toe
+    const existing = saved.filter((s) => allLabels.includes(s))
+    const newItems = allLabels.filter((l) => !saved.includes(l))
+    return [...existing, ...newItems]
+  }, [])
+
+  const [sidebarItems, setSidebarItems] = useState<string[]>(() => mergeSidebarItems(settings.sidebar_items))
   const [isSavingSidebar, setIsSavingSidebar] = useState(false)
 
   useEffect(() => {
-    setSidebarItems(settings.sidebar_items || ALL_SIDEBAR_ITEMS.map((i) => i.label))
-  }, [settings.sidebar_items])
+    setSidebarItems(mergeSidebarItems(settings.sidebar_items))
+  }, [settings.sidebar_items, mergeSidebarItems])
 
   const toggleSidebarItem = (label: string) => {
     setSidebarItems((prev) =>
