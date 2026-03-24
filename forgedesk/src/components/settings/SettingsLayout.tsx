@@ -63,6 +63,9 @@ import {
   Zap,
   BookTemplate,
   Home,
+  BookOpen,
+  Percent,
+  Tag,
 } from 'lucide-react'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { useAuth } from '@/contexts/AuthContext'
@@ -88,6 +91,9 @@ import { PortaalTab } from './PortaalTab'
 import { SidebarTab } from './SidebarTab'
 import { TeamledenTab } from './TeamledenTab'
 import { AbonnementTab } from './AbonnementTab'
+import { GeneralLedgerSettings } from '../financial/GeneralLedgerSettings'
+import { VATCodesSettings } from '../financial/VATCodesSettings'
+import { DiscountsSettings } from '../financial/DiscountsSettings'
 import { OfferteOpvolgingTab } from './OfferteOpvolgingTab'
 import { Sparkles, Clock } from 'lucide-react'
 
@@ -187,6 +193,9 @@ const settingsSections: SettingsSection[] = [
   ]},
   { id: 'financieel', label: 'Financieel', icon: CreditCard, tabs: [
     { id: 'abonnement', label: 'Abonnement', icon: CreditCard },
+    { id: 'grootboek', label: 'Grootboekrekening', icon: BookOpen },
+    { id: 'btw-codes', label: 'BTW Codes', icon: Percent },
+    { id: 'kortingen', label: 'Kortingen', icon: Tag },
   ]},
   { id: 'offertes', label: 'Offertes', icon: FileText, tabs: [
     { id: 'calculatie', label: 'Calculatie', icon: Calculator },
@@ -239,6 +248,9 @@ function renderTabContent(tabId: string) {
     case 'forgie': return <ForgieTab />
     case 'teamleden': return <TeamledenTab />
     case 'abonnement': return <AbonnementTab />
+    case 'grootboek': return <GeneralLedgerSettings />
+    case 'btw-codes': return <VATCodesSettings />
+    case 'kortingen': return <DiscountsSettings />
     case 'opvolging': return <OfferteOpvolgingTab />
     default: return null
   }
