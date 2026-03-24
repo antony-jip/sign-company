@@ -213,7 +213,7 @@ function AppContent() {
         <Route path="inkoopoffertes" element={<InkoopOffertesPage />} />
         <Route path="documenten" element={<DocumentsLayout />} />
         <Route path="email" element={<EmailLayout />} />
-        <Route path="email/compose" element={<EmailComposePage />} />
+        <Route path="email/compose" element={<EmailLayout />} />
         <Route path="planning" element={<PlanningLayout />} />
         <Route path="kalender" element={<Navigate to="/planning" replace />} />
         <Route path="montage" element={<Navigate to="/planning?modus=montage" replace />} />
