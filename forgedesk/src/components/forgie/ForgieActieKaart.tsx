@@ -73,7 +73,7 @@ const DISPLAY_FIELDS: Record<string, string[]> = {
   klant: ['bedrijfsnaam', 'contactpersoon', 'email', 'telefoon'],
 }
 
-const VALID_PROJECT_STATUSES = ['gepland', 'actief', 'in-review', 'afgerond', 'on-hold', 'te-factureren']
+const VALID_PROJECT_STATUSES = ['gepland', 'actief', 'in-review', 'afgerond', 'on-hold', 'te-factureren', 'te-plannen']
 
 interface ForgieActieKaartProps {
   actie: ForgieActie
@@ -144,7 +144,7 @@ export function ForgieActieKaart({
           klant_id: klantId,
           naam: String(editedData.naam || 'Nieuw project'),
           beschrijving: String(editedData.beschrijving || ''),
-          status: statusValue as 'gepland' | 'actief' | 'in-review' | 'afgerond' | 'on-hold' | 'te-factureren',
+          status: statusValue as 'gepland' | 'actief' | 'in-review' | 'afgerond' | 'on-hold' | 'te-factureren' | 'te-plannen',
           prioriteit: 'medium',
           budget: 0,
           besteed: 0,

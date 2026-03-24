@@ -280,7 +280,7 @@ function searchData(
 }
 
 const statusLabels: Record<string, string> = {
-  gepland: 'Gepland', actief: 'Actief', 'in-review': 'In review',
+  gepland: 'Gepland', actief: 'Actief', 'te-plannen': 'Te plannen', 'in-review': 'In review',
   afgerond: 'Afgerond', 'on-hold': 'On-hold', 'te-factureren': 'Te factureren',
   concept: 'Concept', verzonden: 'Verzonden', bekeken: 'Bekeken',
   goedgekeurd: 'Goedgekeurd', afgewezen: 'Afgewezen', verlopen: 'Verlopen',

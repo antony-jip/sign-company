@@ -60,6 +60,7 @@ import {
   getOffertes,
   getWerkbonnenByProject,
   createWerkbon,
+  updateProject,
 } from "@/services/supabaseService";
 import type { MontageAfspraak, MontageBijlage, Project, Medewerker, Klant, Offerte, Werkbon } from "@/types";
 import { ClipboardCheck } from "lucide-react";
@@ -405,6 +406,12 @@ export function MontagePlanningLayout() {
     };
   }, [weekAfsprakenAll, afspraken, todayStr, monteurs]);
 
+  // Projects with status "te-plannen" for the sidebar
+  const tePlannenProjecten = useMemo(
+    () => projecten.filter((p) => p.status === "te-plannen"),
+    [projecten]
+  );
+
   function navigateWeek(direction: -1 | 1) {
     setCurrentMonday((prev) => {
       const next = new Date(prev);
@@ -493,6 +500,22 @@ export function MontagePlanningLayout() {
   function openNewDialog() {
     setEditingAfspraak(null);
     setFormData({ ...EMPTY_FORM, datum: todayStr });
+    setDialogOpen(true);
+  }
+
+  function openNewDialogFromProject(project: Project) {
+    setEditingAfspraak(null);
+    setFormData({
+      ...EMPTY_FORM,
+      project_id: project.id,
+      klant_id: project.klant_id,
+      klant_naam: project.klant_naam || "",
+      titel: project.naam,
+      datum: todayStr,
+    });
+    if (project.id) {
+      getWerkbonnenByProject(project.id).then(setProjectWerkbonnen).catch(() => setProjectWerkbonnen([]));
+    }
     setDialogOpen(true);
   }
 
@@ -625,6 +648,16 @@ export function MontagePlanningLayout() {
           updated_at: new Date().toISOString(),
         };
         setAfspraken((prev) => [...prev, newAfspraak]);
+        // Auto-update project from "te-plannen" to "gepland"
+        if (formData.project_id) {
+          const project = projecten.find((p) => p.id === formData.project_id);
+          if (project && project.status === "te-plannen") {
+            await updateProject(project.id, { status: "gepland" }).catch(() => null);
+            setProjecten((prev) =>
+              prev.map((p) => p.id === project.id ? { ...p, status: "gepland" as const } : p)
+            );
+          }
+        }
         toast.success("Montage afspraak aangemaakt");
       }
       setDialogOpen(false);
@@ -1453,9 +1486,35 @@ export function MontagePlanningLayout() {
     <div className="flex h-[calc(100vh-64px)] overflow-hidden bg-gray-50">
       {/* ── Left sidebar: Team ── */}
       <div className="w-[180px] shrink-0 bg-white border-r flex flex-col">
+        {/* Te plannen section */}
+        {tePlannenProjecten.length > 0 && (
+          <div className="border-b">
+            <div className="px-3 py-2 flex items-center justify-between">
+              <h2 className="text-[11px] font-bold text-[#F15025] uppercase tracking-wider">Te plannen</h2>
+              <span className="text-[10px] bg-[#F15025]/10 text-[#F15025] font-bold rounded-full px-1.5 py-0.5">
+                {tePlannenProjecten.length}
+              </span>
+            </div>
+            <div className="max-h-[200px] overflow-y-auto">
+              {tePlannenProjecten.map((project) => (
+                <button
+                  key={project.id}
+                  onClick={() => openNewDialogFromProject(project)}
+                  className="w-full text-left px-3 py-2 border-l-[3px] border-l-[#F15025] hover:bg-orange-50/60 transition-colors"
+                >
+                  <div className="text-[13px] font-semibold truncate leading-tight">{project.naam}</div>
+                  {project.klant_naam && (
+                    <div className="text-[11px] text-muted-foreground truncate">{project.klant_naam}</div>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Sidebar header */}
-        <div className="px-3 py-3 border-b">
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Team</h2>
+        <div className="px-3 py-2 border-b">
+          <h2 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Team</h2>
         </div>
 
         {/* Sidebar items (scrollable for 10+ members) */}

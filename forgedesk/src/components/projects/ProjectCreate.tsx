@@ -33,7 +33,7 @@ export function ProjectCreate() {
   const [klantId, setKlantId] = useState(paramKlantId)
   const [contactpersoonId, setContactpersoonId] = useState('')
   const [vestigingId, setVestigingId] = useState('')
-  const [status, setStatus] = useState<'gepland' | 'actief' | 'in-review' | 'afgerond' | 'on-hold' | 'te-factureren'>('gepland')
+  const [status, setStatus] = useState<'gepland' | 'actief' | 'in-review' | 'afgerond' | 'on-hold' | 'te-factureren' | 'te-plannen'>('gepland')
   const [startDatum, setStartDatum] = useState(() => new Date().toISOString().split('T')[0])
   const [eindDatum, setEindDatum] = useState('')
 
