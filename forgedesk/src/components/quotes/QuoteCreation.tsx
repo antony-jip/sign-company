@@ -61,7 +61,7 @@ import {
   FolderPlus,
   FolderOpen,
 } from 'lucide-react'
-import { getKlanten, getProjecten, getOffertes, createOfferte, createOfferteItem, updateKlant, getOfferte, getOfferteItems, updateOfferte, deleteOfferteItem, getOfferteVersies, createOfferteVersie, getFactuur, createPortaal, createPortaalItem, getPortaalItems, createProject } from '@/services/supabaseService'
+import { getKlanten, getProjecten, getOffertes, createOfferte, createOfferteItem, updateKlant, createKlant, getOfferte, getOfferteItems, updateOfferte, deleteOfferteItem, getOfferteVersies, createOfferteVersie, getFactuur, createPortaal, createPortaalItem, getPortaalItems, createProject } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import type { Klant, Project, Contactpersoon, Factuur } from '@/types'
@@ -138,6 +138,12 @@ export function QuoteCreation() {
   const [projectNaam, setProjectNaam] = useState('')
   const [isCreatingProject, setIsCreatingProject] = useState(false)
   const [klantSearch, setKlantSearch] = useState('')
+  const [showKlantResults, setShowKlantResults] = useState(false)
+  const [showNieuwBedrijf, setShowNieuwBedrijf] = useState(false)
+  const [showNbUitgebreid, setShowNbUitgebreid] = useState(false)
+  const [nbData, setNbData] = useState({ bedrijfsnaam: '', contactpersoon: '', email: '', telefoon: '', adres: '', postcode: '', stad: '', website: '', kvk_nummer: '', btw_nummer: '' })
+  const [nbCreating, setNbCreating] = useState(false)
+  const klantWrapperRef = useRef<HTMLDivElement>(null)
   const [offerteTitel, setOfferteTitel] = useState(paramTitel)
   const [itemCount, setItemCount] = useState(1)
   const [contactpersoon, setContactpersoon] = useState('')
@@ -212,15 +218,47 @@ export function QuoteCreation() {
   )
 
   const filteredKlanten = useMemo(() => {
-    if (!klantSearch) return klanten
-    const search = klantSearch.toLowerCase()
-    return klanten.filter(
-      (k) =>
-        k.bedrijfsnaam.toLowerCase().includes(search) ||
-        k.contactpersoon.toLowerCase().includes(search) ||
-        k.email.toLowerCase().includes(search)
-    )
+    const list = klantSearch
+      ? klanten.filter((k) => {
+          const s = klantSearch.toLowerCase()
+          return k.bedrijfsnaam.toLowerCase().includes(s) || k.contactpersoon.toLowerCase().includes(s) || k.email.toLowerCase().includes(s)
+        })
+      : klanten
+    return list.slice(0, 8)
   }, [klantSearch, klanten])
+
+  // Close klant dropdown on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (klantWrapperRef.current && !klantWrapperRef.current.contains(e.target as Node)) {
+        setShowKlantResults(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  async function handleCreateNieuwBedrijf() {
+    if (!nbData.bedrijfsnaam.trim()) return
+    setNbCreating(true)
+    try {
+      const cpArray = nbData.contactpersoon.trim() ? [{
+        id: crypto.randomUUID(), naam: nbData.contactpersoon.trim(), functie: '', email: nbData.email.trim(), telefoon: nbData.telefoon.trim(), is_primair: true,
+      }] : []
+      const nieuw = await createKlant({
+        bedrijfsnaam: nbData.bedrijfsnaam.trim(), contactpersoon: nbData.contactpersoon.trim(), email: nbData.email.trim(), telefoon: nbData.telefoon.trim(),
+        adres: nbData.adres.trim(), postcode: nbData.postcode.trim(), stad: nbData.stad.trim(), land: 'Nederland',
+        website: nbData.website.trim(), kvk_nummer: nbData.kvk_nummer.trim(), btw_nummer: nbData.btw_nummer.trim(),
+        status: 'actief', tags: [], notities: '', contactpersonen: cpArray, user_id: user?.id || '',
+      } as any)
+      const updated = await getKlanten(); setKlanten(updated)
+      setSelectedKlantId(nieuw.id); setKlantSearch('')
+      setNbData({ bedrijfsnaam: '', contactpersoon: '', email: '', telefoon: '', adres: '', postcode: '', stad: '', website: '', kvk_nummer: '', btw_nummer: '' })
+      setShowNieuwBedrijf(false); setShowKlantResults(false); setShowNbUitgebreid(false)
+      toast.success(`Bedrijf "${nieuw.bedrijfsnaam}" aangemaakt`)
+    } catch { toast.error('Fout bij aanmaken bedrijf') }
+    finally { setNbCreating(false) }
+  }
 
   // ── Helper: get active price data from item (supports variants) ──
   const getActivePriceData = (item: QuoteLineItem) => {
@@ -1865,24 +1903,61 @@ export function QuoteCreation() {
               </div>
             </div>
             <div className="px-5 pb-5 pt-3 space-y-3">
-              <div className="space-y-2">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: '#A0A098' }} />
-                  <Input value={klantSearch} onChange={(e) => setKlantSearch(e.target.value)} placeholder="Zoek op bedrijfsnaam, contactpersoon of email..." className="pl-10 h-10 rounded-lg text-[13px]" style={{ backgroundColor: '#FAFAF8', border: '0.5px solid #E6E4E0' }} />
-                </div>
-                <Select value={selectedKlantId} onValueChange={(val) => { setSelectedKlantId(val); setKlantSearch('') }}>
-                  <SelectTrigger className="h-10 rounded-lg text-[13px]" style={{ backgroundColor: '#FAFAF8', border: '0.5px solid #E6E4E0' }}><SelectValue placeholder="Selecteer een klant..." /></SelectTrigger>
-                  <SelectContent>
-                    {filteredKlanten.map((klant) => (
-                      <SelectItem key={klant.id} value={klant.id}>
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{klant.bedrijfsnaam}</span>
-                          {klant.contactpersoon && (<><span style={{ color: '#A0A098' }}>-</span><span style={{ color: '#5A5A55' }}>{klant.contactpersoon}</span></>)}
+              <div className="space-y-2" ref={klantWrapperRef}>
+                {!selectedKlant && (
+                  <div className="relative">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: '#A0A098' }} />
+                      <Input value={klantSearch} onChange={(e) => { setKlantSearch(e.target.value); setShowKlantResults(true); setShowNieuwBedrijf(false) }} onFocus={() => setShowKlantResults(true)} placeholder="Zoek op bedrijfsnaam, contactpersoon of email..." className="pl-10 h-10 rounded-lg text-[13px]" style={{ backgroundColor: '#FAFAF8', border: '0.5px solid #E6E4E0' }} />
+                    </div>
+                    {showKlantResults && !showNieuwBedrijf && (
+                      <div className="absolute z-50 w-full mt-1 rounded-lg border bg-white shadow-lg max-h-[320px] overflow-y-auto" style={{ border: '0.5px solid #E6E4E0' }}>
+                        <button className="w-full text-left px-3 py-2.5 flex items-center gap-2 text-[#1A535C] hover:bg-[#E2F0F0]/50 transition-colors border-b" style={{ borderColor: '#E6E4E0' }} onClick={() => { setShowNieuwBedrijf(true); setNbData((p) => ({ ...p, bedrijfsnaam: klantSearch })) }}>
+                          <Plus className="w-4 h-4" /><span className="text-[13px] font-medium">Nieuw bedrijf toevoegen{klantSearch.trim() ? `: "${klantSearch.trim()}"` : ''}</span>
+                        </button>
+                        {filteredKlanten.length === 0 ? (
+                          <div className="py-4 text-center text-[13px]" style={{ color: '#A0A098' }}>Geen klanten gevonden</div>
+                        ) : filteredKlanten.map((klant) => (
+                          <button key={klant.id} className="w-full text-left px-3 py-2 hover:bg-[#F4F2EE] transition-colors border-b last:border-0" style={{ borderColor: '#E6E4E0' }} onClick={() => { setSelectedKlantId(klant.id); setKlantSearch(''); setShowKlantResults(false) }}>
+                            <p className="text-[13px] font-medium" style={{ color: '#191919' }}>{klant.bedrijfsnaam}</p>
+                            <div className="flex items-center gap-2">
+                              {klant.contactpersoon && <span className="text-[11px]" style={{ color: '#5A5A55' }}>{klant.contactpersoon}</span>}
+                              {klant.stad && <span className="text-[11px]" style={{ color: '#A0A098' }}>{klant.stad}</span>}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {showNieuwBedrijf && (
+                      <div className="mt-2 rounded-lg p-4 space-y-3" style={{ border: '0.5px solid #E6E4E0', backgroundColor: '#FAFAF8' }}>
+                        <div className="flex items-center gap-2 mb-1"><Building2 className="h-4 w-4" style={{ color: '#1A535C' }} /><span className="text-[13px] font-semibold" style={{ color: '#191919' }}>Nieuw bedrijf</span></div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <Input value={nbData.bedrijfsnaam} onChange={(e) => setNbData({ ...nbData, bedrijfsnaam: e.target.value })} placeholder="Bedrijfsnaam *" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} autoFocus />
+                          <Input value={nbData.stad} onChange={(e) => setNbData({ ...nbData, stad: e.target.value })} placeholder="Stad" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
                         </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                        <button onClick={() => setShowNbUitgebreid(!showNbUitgebreid)} className="flex items-center gap-1.5 text-[11px] font-medium" style={{ color: '#A0A098' }}>
+                          {showNbUitgebreid ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}{showNbUitgebreid ? 'Minder gegevens' : 'Meer gegevens (adres, KvK, etc.)'}
+                        </button>
+                        {showNbUitgebreid && (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <Input value={nbData.contactpersoon} onChange={(e) => setNbData({ ...nbData, contactpersoon: e.target.value })} placeholder="Contactpersoon" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
+                            <Input value={nbData.email} onChange={(e) => setNbData({ ...nbData, email: e.target.value })} placeholder="E-mail" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
+                            <Input value={nbData.telefoon} onChange={(e) => setNbData({ ...nbData, telefoon: e.target.value })} placeholder="Telefoon" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
+                            <Input value={nbData.adres} onChange={(e) => setNbData({ ...nbData, adres: e.target.value })} placeholder="Adres" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
+                            <Input value={nbData.postcode} onChange={(e) => setNbData({ ...nbData, postcode: e.target.value })} placeholder="Postcode" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
+                            <Input value={nbData.website} onChange={(e) => setNbData({ ...nbData, website: e.target.value })} placeholder="Website" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
+                            <Input value={nbData.kvk_nummer} onChange={(e) => setNbData({ ...nbData, kvk_nummer: e.target.value })} placeholder="KvK-nummer" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
+                            <Input value={nbData.btw_nummer} onChange={(e) => setNbData({ ...nbData, btw_nummer: e.target.value })} placeholder="BTW-nummer" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
+                          </div>
+                        )}
+                        <div className="flex items-center gap-2 pt-1">
+                          <button onClick={handleCreateNieuwBedrijf} disabled={!nbData.bedrijfsnaam.trim() || nbCreating} className="h-8 px-3 text-[12px] font-semibold rounded-lg text-white transition-all hover:opacity-90 disabled:opacity-50 flex items-center gap-1.5" style={{ backgroundColor: '#1A535C' }}><Plus className="h-3.5 w-3.5" />{nbCreating ? 'Aanmaken...' : 'Bedrijf aanmaken'}</button>
+                          <button onClick={() => { setShowNieuwBedrijf(false); setShowKlantResults(true) }} className="h-8 px-3 text-[12px] font-medium rounded-lg" style={{ color: '#5A5A55' }}>Annuleren</button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
               {selectedKlant && (
                 <div className="rounded-lg p-3" style={{ backgroundColor: '#FAFAF8', border: '0.5px solid #E6E4E0' }}>

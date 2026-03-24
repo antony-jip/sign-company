@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { KlantContactSelector } from '@/components/shared/KlantContactSelector'
 import { logger } from '../../utils/logger'
 
 export function ProjectCreate() {
@@ -36,16 +37,17 @@ export function ProjectCreate() {
   const [startDatum, setStartDatum] = useState(() => new Date().toISOString().split('T')[0])
   const [eindDatum, setEindDatum] = useState('')
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const klantenData = await getKlanten()
-        setKlanten(klantenData)
-      } catch (error) {
-        logger.error('Fout bij ophalen data:', error)
-      }
+  async function fetchKlanten() {
+    try {
+      const klantenData = await getKlanten()
+      setKlanten(klantenData)
+    } catch (error) {
+      logger.error('Fout bij ophalen data:', error)
     }
-    fetchData()
+  }
+
+  useEffect(() => {
+    fetchKlanten()
   }, [])
 
   const geselecteerdeKlant = useMemo(() => {
@@ -195,79 +197,17 @@ export function ProjectCreate() {
               <p className="text-[11px]" style={{ color: '#A0A098' }}>Koppel aan een klant</p>
             </div>
           </div>
-          <div className="px-5 pb-5 pt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <Label htmlFor="klant" className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider" style={{ color: '#A0A098' }}>
-                Klant
-              </Label>
-              <Select value={klantId} onValueChange={setKlantId}>
-                <SelectTrigger className="h-10 rounded-lg text-[13px]" style={{ backgroundColor: '#FAFAF8', border: '0.5px solid #E6E4E0' }}>
-                  <SelectValue placeholder={klanten.length === 0 ? 'Geen klanten' : 'Selecteer klant'} />
-                </SelectTrigger>
-                <SelectContent>
-                  {klanten.length === 0 ? (
-                    <SelectItem value="_empty" disabled>Voeg eerst een klant toe</SelectItem>
-                  ) : klanten.map((klant) => (
-                    <SelectItem key={klant.id} value={klant.id}>
-                      {klant.bedrijfsnaam || klant.contactpersoon}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="contactpersoon" className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider" style={{ color: '#A0A098' }}>
-                Contactpersoon
-              </Label>
-              <Select
-                value={contactpersoonId}
-                onValueChange={setContactpersoonId}
-                disabled={!klantId || contactpersonen.length === 0}
-              >
-                <SelectTrigger className="h-10 rounded-lg text-[13px]" style={{ backgroundColor: '#FAFAF8', border: '0.5px solid #E6E4E0' }}>
-                  <SelectValue
-                    placeholder={
-                      !klantId
-                        ? 'Selecteer eerst klant'
-                        : contactpersonen.length === 0
-                          ? 'Geen contactpersonen'
-                          : 'Selecteer'
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {contactpersonen.map((cp) => (
-                    <SelectItem key={cp.id} value={cp.id}>
-                      <span>{cp.naam}</span>
-                      {cp.functie && <span className="ml-1.5" style={{ color: '#A0A098' }}>({cp.functie})</span>}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Vestiging — alleen tonen als klant meerdere vestigingen heeft */}
-            {vestigingen.length > 0 && (
-              <div className="sm:col-span-2">
-                <Label htmlFor="vestiging" className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider" style={{ color: '#A0A098' }}>
-                  Vestiging
-                </Label>
-                <Select value={vestigingId} onValueChange={setVestigingId}>
-                  <SelectTrigger className="h-10 rounded-lg text-[13px]" style={{ backgroundColor: '#FAFAF8', border: '0.5px solid #E6E4E0' }}>
-                    <SelectValue placeholder="Selecteer vestiging (optioneel)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {vestigingen.map((v) => (
-                      <SelectItem key={v.id} value={v.id}>
-                        <span>{v.naam}</span>
-                        {v.stad && <span className="ml-1.5" style={{ color: '#A0A098' }}>({v.stad})</span>}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+          <div className="px-5 pb-5 pt-3">
+            <KlantContactSelector
+              klantId={klantId}
+              onKlantChange={(id) => setKlantId(id)}
+              contactpersoonId={contactpersoonId}
+              onContactpersoonChange={setContactpersoonId}
+              vestigingId={vestigingId}
+              onVestigingChange={setVestigingId}
+              klanten={klanten}
+              onKlantenRefresh={fetchKlanten}
+            />
           </div>
         </div>
 
