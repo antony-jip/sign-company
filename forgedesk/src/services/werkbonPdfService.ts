@@ -202,49 +202,39 @@ export function generateWerkbonInstructiePDF(
       y = addNewPage()
     }
 
-    // ─── Item layout: max 2 afbeeldingen links (4:3), info rechts ───
+    // ─── Item layout: 2x2 grid ───
+    // Bovenste rij: 2 foto's (4:3) naast elkaar (elk 50%)
+    // Onderste rij: beschrijving links (50%), rechts leeg
     const itemStartY = y
 
     if (hasImage) {
-      // Bereken afbeeldingsformaat: 2 afbeeldingen (4:3) onder elkaar moeten passen
-      const imgGap = 3
-      const maxImgColumnH = availableHeight - y
-      const imageCount = Math.min(item.afbeeldingen.length, 2)
-      const singleImgH = imageCount === 2
-        ? (maxImgColumnH - imgGap) / 2
-        : maxImgColumnH * 0.55
-      const imgH = Math.min(singleImgH, 73) // max 73mm per afbeelding
-      const imgW = imgH * (4 / 3)           // 4:3 ratio
-      const textX = marginLeft + imgW + 10
-      const textWidth = contentWidth - imgW - 10
+      const colGap = 6
+      const colW = (contentWidth - colGap) / 2
+      const imgH = colW * 0.75  // 4:3 ratio
+      const col2X = marginLeft + colW + colGap
 
-      // Afbeelding 1
+      // Rij 1: foto's naast elkaar
       if (item.afbeeldingen[0]?.url) {
-        drawImage(item.afbeeldingen[0].url, marginLeft, y, imgW, imgH)
+        drawImage(item.afbeeldingen[0].url, marginLeft, y, colW, imgH)
       }
-
-      // Afbeelding 2 (direct eronder)
-      let imgColumnBottom = y + imgH
       if (item.afbeeldingen.length > 1 && item.afbeeldingen[1]?.url) {
-        const img2Y = y + imgH + imgGap
-        drawImage(item.afbeeldingen[1].url, marginLeft, img2Y, imgW, imgH)
-        imgColumnBottom = img2Y + imgH
+        drawImage(item.afbeeldingen[1].url, col2X, y, colW, imgH)
       }
 
-      // Tekst rechts naast afbeeldingen
-      let textY = y + 2
+      // Rij 2: beschrijving linksonder
+      let textY = y + imgH + 4
 
       // Item nummer + omschrijving
       doc.setFont(headingFont, 'bold')
       doc.setFontSize(12)
       doc.setTextColor(...brand)
-      doc.text(`${i + 1}.`, textX, textY)
+      doc.text(`${i + 1}.`, marginLeft, textY + 2)
 
       doc.setFont(headingFont, 'bold')
       doc.setFontSize(11)
       doc.setTextColor(...textColor)
-      const omschrLines = doc.splitTextToSize(item.omschrijving, textWidth - 10)
-      doc.text(omschrLines, textX + 8, textY)
+      const omschrLines = doc.splitTextToSize(item.omschrijving, colW - 12)
+      doc.text(omschrLines, marginLeft + 10, textY + 2)
       textY += omschrLines.length * 5 + 4
 
       // Afmetingen
@@ -252,54 +242,56 @@ export function generateWerkbonInstructiePDF(
         doc.setFont(bodyFont, 'bold')
         doc.setFontSize(14)
         doc.setTextColor(...brand)
-        doc.text(`${item.afmeting_breedte_mm || '?'} \u00d7 ${item.afmeting_hoogte_mm || '?'} mm`, textX, textY)
+        doc.text(`${item.afmeting_breedte_mm || '?'} \u00d7 ${item.afmeting_hoogte_mm || '?'} mm`, marginLeft + 10, textY)
         textY += 8
       }
 
       // Notitie
       if (hasNote) {
         textY += 2
-        const noteLines = doc.splitTextToSize(item.interne_notitie || '', textWidth - 6)
+        const noteLines = doc.splitTextToSize(item.interne_notitie || '', colW - 6)
         const noteHeight = noteLines.length * 4.5 + 6
         doc.setFillColor(255, 251, 235)
         doc.setDrawColor(252, 211, 77)
-        doc.roundedRect(textX, textY, textWidth, noteHeight, 2, 2, 'FD')
+        doc.roundedRect(marginLeft, textY, colW, noteHeight, 2, 2, 'FD')
 
         doc.setFont(bodyFont, 'bold')
         doc.setFontSize(7)
         doc.setTextColor(161, 98, 7)
-        doc.text('NOTITIE', textX + 3, textY + 4)
+        doc.text('NOTITIE', marginLeft + 3, textY + 4)
 
         doc.setFont(bodyFont, 'normal')
         doc.setFontSize(9)
         doc.setTextColor(120, 53, 15)
-        doc.text(noteLines, textX + 3, textY + 9)
+        doc.text(noteLines, marginLeft + 3, textY + 9)
         textY += noteHeight + 3
       }
 
-      // Extra afbeeldingen (3+) als thumbnails rechts
+      // Extra afbeeldingen (3+) als thumbnails rechtsonder
       if (item.afbeeldingen.length > 2) {
-        textY += 2
+        let thumbY = y + imgH + 4
         const thumbW = 30
         const thumbH = 22
-        let thumbX = textX
+        let thumbX = col2X
         for (let ai = 2; ai < item.afbeeldingen.length && ai < 6; ai++) {
           const afb = item.afbeeldingen[ai]
           if (afb?.url) {
             try {
-              doc.addImage(afb.url, 'JPEG', thumbX, textY, thumbW, thumbH, undefined, 'MEDIUM')
+              doc.addImage(afb.url, 'JPEG', thumbX, thumbY, thumbW, thumbH, undefined, 'MEDIUM')
               doc.setDrawColor(200, 200, 200)
               doc.setLineWidth(0.2)
-              doc.rect(thumbX, textY, thumbW, thumbH)
+              doc.rect(thumbX, thumbY, thumbW, thumbH)
             } catch { /* skip */ }
           }
           thumbX += thumbW + 3
-          if (thumbX + thumbW > pageWidth - marginRight) break
+          if (thumbX + thumbW > pageWidth - marginRight) {
+            thumbX = col2X
+            thumbY += thumbH + 3
+          }
         }
-        textY += thumbH + 3
       }
 
-      y = Math.max(imgColumnBottom + 5, textY + 5)
+      y = textY + 5
     } else {
       // Layout: geen afbeelding, volledige breedte tekst
 
