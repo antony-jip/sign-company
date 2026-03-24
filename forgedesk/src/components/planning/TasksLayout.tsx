@@ -938,6 +938,7 @@ export function TasksLayout() {
         open={editDialogOpen} onOpenChange={setEditDialogOpen}
         formData={formData} setFormData={setFormData}
         onSave={handleSave} isSaving={isSaving} projecten={projecten} klanten={klanten}
+        medewerkers={medewerkers}
         editingTaakId={editingTaak?.id}
       />
 
@@ -1564,11 +1565,11 @@ function TaskCard({
 // === EDIT DIALOG ===
 
 function EditTaskDialog({
-  open, onOpenChange, formData, setFormData, onSave, isSaving, projecten, klanten, editingTaakId,
+  open, onOpenChange, formData, setFormData, onSave, isSaving, projecten, klanten, medewerkers, editingTaakId,
 }: {
   open: boolean; onOpenChange: (open: boolean) => void
   formData: TaakFormData; setFormData: React.Dispatch<React.SetStateAction<TaakFormData>>
-  onSave: () => void; isSaving: boolean; projecten: Project[]; klanten: Klant[]
+  onSave: () => void; isSaving: boolean; projecten: Project[]; klanten: Klant[]; medewerkers: Medewerker[]
   editingTaakId?: string
 }) {
   function updateField<K extends keyof TaakFormData>(field: K, value: TaakFormData[K]) {
