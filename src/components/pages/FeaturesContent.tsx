@@ -4,8 +4,27 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import SectionReveal from '../SectionReveal'
 import WachtlijstForm from '../WachtlijstForm'
+import {
+  PlanningMockup,
+  WerkbonnenMockup,
+  KlantportaalMockup,
+  OffertesMockup,
+  FacturenMockup,
+  DaanAIMockup,
+} from '../mockups/ModuleMockups'
+import { ReactNode } from 'react'
 
-const modules = [
+const modules: {
+  id: string
+  name: string
+  color: string
+  lightBg: string
+  headline: string
+  status: string
+  description: string
+  highlights: string[]
+  mockup: ReactNode
+}[] = [
   {
     id: 'planning',
     name: 'Planning',
@@ -13,15 +32,18 @@ const modules = [
     lightBg: '#F2E8E5',
     headline: 'Wie doet wat, wanneer, waar.',
     status: 'gepland.',
-    description: 'Een visueel planbord waar je taken en montages inplant per medewerker. Drag-and-drop, gekoppeld aan projecten, zichtbaar voor je hele team. Je monteur weet precies waar hij wanneer moet zijn.',
+    description: 'Een visueel planbord met dag-, week- en maandweergave. Montage planning met locatie, team en tijdslots. Verlof, Nederlandse feestdagen en bedrijfssluitingsdagen worden automatisch verwerkt. Je klant kan zelfs online een afspraak inplannen via een publieke boekingspagina.',
     highlights: [
-      'Visueel planbord per week/maand',
-      'Drag-and-drop planning',
-      'Per medewerker of per project',
-      'Automatische notificaties',
-      'Mobiel toegankelijk voor je team',
+      'Week-, maand- en dagweergave',
+      'Drag-and-drop montage planning',
+      'Taken met prioriteit (kritiek/hoog/medium/laag)',
+      'Verlof- en sluitingsdagen beheer',
+      'Nederlandse feestdagen automatisch',
+      'Publieke boekingspagina voor klanten',
       'Koppeling met projecten en werkbonnen',
+      'Team beschikbaarheid in een oogopslag',
     ],
+    mockup: <PlanningMockup />,
   },
   {
     id: 'werkbonnen',
@@ -30,15 +52,18 @@ const modules = [
     lightBg: '#FAE5E0',
     headline: 'Digitaal. Op locatie. Getekend.',
     status: 'getekend.',
-    description: 'Geen papieren werkbonnen meer die kwijtraken in het busje. Je monteur opent de app, ziet zijn taken, maakt foto\'s, laat de klant tekenen. Alles digitaal, alles vastgelegd.',
+    description: 'Je monteur opent de app op zijn telefoon, ziet de instructie-items met exacte specificaties (breedte en hoogte in mm), maakt foto\'s op locatie en laat de klant digitaal tekenen. Alles gekoppeld aan het project en de offerte. Eén klik en het wordt een factuur.',
     highlights: [
       'Digitale werkbonnen op je telefoon',
-      'Foto\'s uploaden op locatie',
+      'Instructie-items met specificaties in mm',
+      'Foto\'s uploaden direct op locatie',
       'Digitale handtekening van de klant',
+      'Gekoppeld aan project en offerte',
+      'Direct factureerbaar met een klik',
+      'PDF export (landscape A4)',
       'Uren en materiaal registreren',
-      'Automatisch koppelen aan project',
-      'Direct factureerbaar',
     ],
+    mockup: <WerkbonnenMockup />,
   },
   {
     id: 'klantportaal',
@@ -47,15 +72,18 @@ const modules = [
     lightBg: '#E5ECF6',
     headline: 'Je klant ziet wat hij moet zien.',
     status: 'goedgekeurd.',
-    description: 'Geef je klant een eigen inlogomgeving. Daar ziet hij de status van zijn project, kan hij ontwerpen goedkeuren, facturen inzien en berichten sturen. Minder bellen, meer vertrouwen.',
+    description: 'Elke klant krijgt een unieke link (30 dagen geldig, verlengbaar). Daarin ziet hij een chat-achtige tijdlijn met berichten, offertes, tekeningen en facturen. Tekeningen goedkeuren, drukproeven bekijken, facturen online betalen via Mollie. Reageert je klant niet binnen 3 dagen? Automatische herinnering.',
     highlights: [
-      'Eigen login voor elke klant',
-      'Projectstatus en timeline',
-      'Ontwerp goedkeuring',
-      'Factuuroverzicht',
-      'Berichten uitwisselen',
-      'Professionele uitstraling',
+      'Unieke link per klant (30 dagen geldig)',
+      'Chat-achtige tijdlijn',
+      'Tekening goedkeuring en revisie aanvragen',
+      'Drukproeven bekijken en goedkeuren',
+      'Facturen inzien en direct online betalen (Mollie)',
+      'Bestanden uploaden (foto\'s, PDF\'s)',
+      'Automatische herinneringen na 3 dagen',
+      'Professionele uitstraling met je eigen branding',
     ],
+    mockup: <KlantportaalMockup />,
   },
   {
     id: 'offertes',
@@ -64,15 +92,20 @@ const modules = [
     lightBg: '#FDE8E2',
     headline: 'Professionele offertes in minuten.',
     status: 'verstuurd.',
-    description: 'Geen Word-documenten meer kopiëren en plakken. Kies een sjabloon, selecteer je producten, pas de prijzen aan en verstuur. Je klant ontvangt een offerte die er professioneel uitziet, met digitale akkoordknop.',
+    description: 'Kanban pipeline van concept tot gefactureerd. Sjablonen, productbibliotheek en smart calculator met kostprijsberekening. Probo-koppeling voor live printprijzen. Je klant bekijkt de offerte online en jij ziet precies wanneer hij kijkt. Digitaal akkoord met handtekening, en het project wordt automatisch aangemaakt.',
     highlights: [
-      'Sjablonen met je eigen huisstijl',
-      'Herbruikbare productbibliotheek',
-      'Digitale handtekening en akkoord',
+      'Kanban pipeline (concept, verstuurd, bekeken, akkoord)',
+      'Sjablonen en herbruikbare productbibliotheek',
+      'Smart calculator met kostprijsberekening',
+      'Probo-koppeling voor live printprijzen',
+      'Versiegeschiedenis (elke wijziging bewaard)',
+      'Publieke link met view tracking',
+      'Digitale handtekening en akkoordknop',
       'Automatisch project aanmaken bij akkoord',
-      'PDF export',
-      'Offertehistorie per klant',
+      'Inkoopoffertes (leverancierszijde)',
+      'PDF export met eigen briefpapier',
     ],
+    mockup: <OffertesMockup />,
   },
   {
     id: 'facturen',
@@ -81,15 +114,20 @@ const modules = [
     lightBg: '#E4F0EA',
     headline: 'Verstuurd. Herinnerd. Betaald.',
     status: 'betaald.',
-    description: 'Genereer facturen vanuit je offertes of werkbonnen. Automatische herinneringen sturen als de betaaltermijn verstrekt. Je ziet altijd welke facturen openstaan en welke betaald zijn.',
+    description: 'Eén klik factuur vanuit je offerte of werkbon. Mollie betaallinks zodat je klant direct online betaalt via iDEAL of creditcard. Automatische herinneringen met configureerbare templates. Creditnota\'s en voorschotfacturen. En alles synchroniseert automatisch met Exact Online voor je boekhouding.',
     highlights: [
-      'Een klik factuur vanuit offerte of werkbon',
+      'Eén klik factuur vanuit offerte of werkbon',
+      'Mollie betaallinks (iDEAL, creditcard)',
       'Automatische betalingsherinneringen',
+      'Exact Online koppeling (boekhouding sync)',
+      'Creditnota\'s en voorschotfacturen',
       'Betaalstatus realtime bijgehouden',
-      'Factuuroverzicht met filters',
+      'Aging indicator (dagen open, kleurcode)',
       'Voldoet aan Nederlandse factuureisen',
-      'Creditnota\'s en deelfacturatie',
+      'PDF met eigen briefpapier',
+      'Bulk acties en filters',
     ],
+    mockup: <FacturenMockup />,
   },
   {
     id: 'daan-ai',
@@ -98,15 +136,18 @@ const modules = [
     lightBg: '#EEE8F5',
     headline: 'Je slimste collega werkt 24/7.',
     status: 'slim.',
-    description: 'Daan AI helpt je met het schrijven van offerteteksten, het samenvatten van projecten en het doen van slimme suggesties. Geen vervanging van jou, een versterking. Als een collega die altijd beschikbaar is.',
+    description: 'Een AI chatbot die je bedrijfsdata kent. Schrijft offerteteksten, vat projecten samen, beantwoordt vragen als "hoeveel offertes staan open?" of "wie is mijn grootste klant?". 10 herschrijfacties (korter, langer, professioneler), email schrijfassistent, en importeer je eigen data voor meer context.',
     highlights: [
-      'Offerteteksten genereren',
+      'AI chatbot die je bedrijfsdata kent',
+      'Offerteteksten genereren en verbeteren',
       'Projectsamenvattingen',
-      'Slimme suggesties op basis van je data',
-      'Teksten verbeteren en herschrijven',
-      'Altijd beschikbaar',
-      'Wordt steeds slimmer',
+      '10 herschrijfacties (korter, langer, professioneler)',
+      'Email schrijfassistent',
+      'Business analytics ("hoeveel offertes?", "top klanten?")',
+      'CSV data importeren voor extra context',
+      'Altijd beschikbaar, wordt steeds slimmer',
     ],
+    mockup: <DaanAIMockup />,
   },
 ]
 
@@ -125,7 +166,7 @@ export default function FeaturesContent() {
               Alles wat je nodig hebt<span className="text-flame">.</span>
             </h1>
             <p className="text-muted text-lg max-w-lg mx-auto">
-              Zes modules die samenwerken. Alles erin, geen add-ons.
+              Zes kernmodules, tientallen functies. Gekoppeld aan Mollie, Exact Online, Probo en KVK. Alles erin, geen add-ons.
             </p>
           </SectionReveal>
         </div>
@@ -209,25 +250,12 @@ export default function FeaturesContent() {
                         <span className="text-flame">.</span>
                       </span>
 
-                      {/* Visual placeholder */}
+                      {/* Module mockup */}
                       <div
-                        className="w-full aspect-[16/9] rounded-xl border border-black/[0.03] mb-8 flex items-center justify-center"
+                        className="w-full aspect-[16/9] rounded-xl border border-black/[0.03] mb-8 overflow-hidden"
                         style={{ background: `linear-gradient(160deg, ${mod.lightBg} 0%, ${mod.lightBg}80 100%)` }}
                       >
-                        <div className="text-center">
-                          <div
-                            className="w-16 h-16 rounded-2xl mx-auto mb-3 flex items-center justify-center"
-                            style={{ backgroundColor: mod.color + '15' }}
-                          >
-                            <div
-                              className="w-8 h-8 rounded-lg"
-                              style={{ backgroundColor: mod.color + '30' }}
-                            />
-                          </div>
-                          <p className="font-mono text-xs" style={{ color: mod.color + '60' }}>
-                            {mod.name}
-                          </p>
-                        </div>
+                        {mod.mockup}
                       </div>
 
                       {/* Highlights */}
@@ -252,16 +280,84 @@ export default function FeaturesContent() {
         </div>
       </section>
 
+      {/* Integrations */}
+      <section className="pb-16 md:pb-24">
+        <div className="container-site">
+          <SectionReveal>
+            <h2 className="section-heading font-heading text-petrol text-center mb-4">
+              Koppelingen<span className="text-flame">.</span>
+            </h2>
+            <p className="text-muted text-center max-w-lg mx-auto mb-12">
+              doen. praat met de tools die je al gebruikt.
+            </p>
+          </SectionReveal>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-3xl mx-auto">
+            {[
+              { name: 'Mollie', desc: 'Je klant betaalt facturen direct online via iDEAL, creditcard of andere methodes.' },
+              { name: 'Exact Online', desc: 'Facturen automatisch synchroniseren met je boekhouding.' },
+              { name: 'Probo', desc: 'Live printprijzen ophalen vanuit de offerte-editor. Configureer en bestel direct.' },
+              { name: 'KVK', desc: 'Bedrijfsgegevens automatisch ophalen bij het aanmaken van een nieuwe klant.' },
+              { name: 'Email (IMAP/SMTP)', desc: 'Je eigen email in doen. Versturen, ontvangen, templates, geplande emails.' },
+              { name: 'AI (Claude)', desc: 'Teksten schrijven, verbeteren, samenvatten, analyseren. Geintegreerd in elke module.' },
+            ].map((integ, i) => (
+              <div key={i} className="bg-white rounded-xl p-5 border border-black/[0.05]" style={{ boxShadow: '0 1px 3px rgba(100,80,40,0.04)' }}>
+                <p className="font-mono text-xs font-bold text-petrol mb-1.5">{integ.name}</p>
+                <p className="text-muted text-xs leading-relaxed">{integ.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Extra features */}
+      <section className="pb-16 md:pb-24">
+        <div className="container-site">
+          <SectionReveal>
+            <h2 className="section-heading font-heading text-petrol text-center mb-4">
+              En nog meer<span className="text-flame">.</span>
+            </h2>
+            <p className="text-muted text-center max-w-lg mx-auto mb-12">
+              Naast de zes kernmodules zit er nog veel meer in doen.
+            </p>
+          </SectionReveal>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 max-w-3xl mx-auto">
+            {[
+              'CRM met deals pipeline',
+              'Klantprofielen en contactpersonen',
+              'Email met gedeelde inbox',
+              'Nieuwsbrieven builder',
+              'Leveranciersbeheer',
+              'Bestelbonnen en leveringsbonnen',
+              'Voorraad management',
+              'Tijdregistratie per project',
+              'Nacalculatie',
+              'Rapportages en forecast',
+              'Documenten management',
+              'Lead capture formulieren',
+              'Signing Visualizer (AI mockups)',
+              'Multi-tab interface',
+              'NL/EN taalondersteuning',
+              'Dark mode en 4 thema\'s',
+            ].map((feat, i) => (
+              <div key={i} className="flex items-start gap-2 text-xs">
+                <span className="w-1.5 h-1.5 rounded-full bg-flame mt-1.5 shrink-0" />
+                <span className="text-ink/70">{feat}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Note about all features included */}
       <section className="pb-20 md:pb-32">
         <div className="container-site">
           <div className="bg-petrol/[0.04] rounded-2xl p-8 md:p-12 text-center border border-petrol/10">
             <p className="font-heading text-xl md:text-2xl text-petrol mb-2">
-              Alle zes modules zitten in elk plan<span className="text-flame">.</span>
+              Alles zit in elk plan<span className="text-flame">.</span>
             </p>
             <p className="text-muted text-sm max-w-md mx-auto mb-6">
               Geen add-ons. Geen premium features. Bij anderen betaal je extra voor
-              planning, klantportaal of AI. Bij ons zit alles erin.
+              planning, klantportaal of AI. Bij ons zit alles erin. Inclusief alle koppelingen.
             </p>
             <div className="flex justify-center">
               <WachtlijstForm />

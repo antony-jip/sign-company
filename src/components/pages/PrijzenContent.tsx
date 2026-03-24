@@ -7,13 +7,18 @@ import CountUp from '../CountUp'
 import WachtlijstForm from '../WachtlijstForm'
 
 const allFeatures = [
-  'Projectbeheer, onbeperkt projecten',
-  'Offertes met sjablonen en digitale handtekening',
-  'Facturen met automatische herinneringen',
-  'Planning met drag-and-drop',
-  'Klantportaal',
+  'Onbeperkt projecten, offertes en facturen',
+  'Planning met drag-and-drop en montage planning',
+  'Werkbonnen met foto\'s en digitale handtekening',
+  'Klantportaal met tekening goedkeuring',
   'Daan AI assistent',
-  'Onbeperkt klanten',
+  'Mollie betaallinks (iDEAL, creditcard)',
+  'Exact Online boekhouding koppeling',
+  'Probo printshop integratie',
+  'Email (IMAP/SMTP) met gedeelde inbox',
+  'CRM met deals pipeline en KVK lookup',
+  'Documenten, voorraad en leveranciersbeheer',
+  'Rapportages, forecast en tijdregistratie',
   'Alle toekomstige updates',
   'Nederlandse support',
 ]
@@ -30,6 +35,10 @@ const faqs = [
   {
     q: 'Moet ik extra betalen voor modules zoals AI of klantportaal?',
     a: 'Nee. Alles zit erin. Planning, klantportaal, Daan AI, offertes, facturen. Alles. Bij ons geen feature-gates of premium-tiers.',
+  },
+  {
+    q: 'Welke koppelingen zitten erbij?',
+    a: 'Mollie (online betalingen), Exact Online (boekhouding), Probo (printprijzen), KVK (bedrijfsgegevens), email (IMAP/SMTP) en AI. Alles standaard inbegrepen, geen extra kosten.',
   },
   {
     q: 'Kan ik mijn data exporteren?',
