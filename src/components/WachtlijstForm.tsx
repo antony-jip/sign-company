@@ -13,7 +13,7 @@ export default function WachtlijstForm({ variant = 'default' }: { variant?: 'def
 
     setStatus('loading')
 
-    // Simulate API call — replace with Supabase or API route
+    // Simulate API call, replace with Supabase or API route later
     try {
       await new Promise((resolve) => setTimeout(resolve, 800))
       setStatus('success')

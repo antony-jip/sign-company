@@ -7,7 +7,7 @@ import CountUp from '../CountUp'
 import WachtlijstForm from '../WachtlijstForm'
 
 const allFeatures = [
-  'Projectbeheer — onbeperkt projecten',
+  'Projectbeheer, onbeperkt projecten',
   'Offertes met sjablonen en digitale handtekening',
   'Facturen met automatische herinneringen',
   'Planning met drag-and-drop',
@@ -29,7 +29,7 @@ const faqs = [
   },
   {
     q: 'Moet ik extra betalen voor modules zoals AI of klantportaal?',
-    a: 'Nee. Alles zit erin. Planning, klantportaal, Daan AI, offertes, facturen — alles. Bij ons geen feature-gates of premium-tiers.',
+    a: 'Nee. Alles zit erin. Planning, klantportaal, Daan AI, offertes, facturen. Alles. Bij ons geen feature-gates of premium-tiers.',
   },
   {
     q: 'Kan ik mijn data exporteren?',
