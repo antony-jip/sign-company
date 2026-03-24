@@ -276,12 +276,11 @@ export function Sidebar() {
             collapsed ? 'justify-center h-14 px-0' : 'gap-2.5 h-14 px-4',
           )}
         >
-          <div className="sidebar-logo-mark flex-shrink-0">D</div>
-          {!collapsed && (
-            <span className="text-[16px] font-extrabold tracking-[-0.04em]">
-              Doen.
-            </span>
-          )}
+          <img
+            src="/beeldmerk.png"
+            alt="doen."
+            className={cn('flex-shrink-0 transition-all duration-200', collapsed ? 'w-8 h-8' : 'w-9 h-9')}
+          />
         </NavLink>
 
         {/* Navigation */}
