@@ -1,31 +1,30 @@
-import Link from 'next/link';
-import Navbar from '@/components/landing/Navbar';
-import Footer from '@/components/landing/Footer';
+import Link from 'next/link'
+import Navbar from '@/components/Navbar'
+import Footer from '@/components/Footer'
 
 export default function NotFound() {
   return (
     <>
       <Navbar />
-      <main id="main-content" className="min-h-screen flex items-center justify-center bg-bg pt-20">
+      <main id="main-content" className="min-h-[70vh] flex items-center justify-center">
         <div className="text-center px-6">
-          <h1 className="font-heading text-ink" style={{ fontSize: 'clamp(60px, 8vw, 100px)', fontWeight: 900, letterSpacing: '-3px', lineHeight: 1 }}>
-            404
+          <p className="font-mono text-6xl md:text-8xl text-petrol/20 mb-6">404</p>
+          <h1 className="font-heading text-3xl md:text-4xl text-petrol tracking-tight mb-4">
+            Dit hadden we niet moeten doen<span className="text-flame">.</span>
           </h1>
-          <h2 className="text-[19px] font-bold text-ink mt-4 mb-3">
-            Pagina niet gevonden
-          </h2>
-          <p className="text-[16px] text-ink-60 mb-8 max-w-md mx-auto leading-[1.7]">
-            De pagina die je zoekt bestaat niet of is verplaatst.
+          <p className="text-muted mb-8 max-w-sm mx-auto">
+            Deze pagina bestaat niet. Misschien een typfout, misschien een oud
+            linkje. Hoe dan ook — terug naar veilig.
           </p>
           <Link
             href="/"
-            className="inline-flex items-center justify-center bg-ink hover:bg-ink-80 text-white font-semibold px-7 py-3 rounded-full text-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_28px_rgba(0,0,0,0.15)]"
+            className="inline-block bg-flame text-white font-semibold text-sm px-6 py-3 rounded-lg hover:bg-flame/90 transition-colors duration-200"
           >
-            Naar homepage
+            Terug naar veilig.
           </Link>
         </div>
       </main>
       <Footer />
     </>
-  );
+  )
 }

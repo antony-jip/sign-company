@@ -1,31 +1,29 @@
-import Navbar from '@/components/landing/Navbar';
-import Hero from '@/components/landing/Hero';
-import Marquee from '@/components/landing/Marquee';
-import AppPreview from '@/components/landing/AppPreview';
-import FeaturesGrid from '@/components/landing/FeaturesGrid';
-import StepsSection from '@/components/landing/StepsSection';
-import SocialProof from '@/components/landing/SocialProof';
-import SwitchSection from '@/components/landing/SwitchSection';
-import PricingTeaser from '@/components/landing/PricingTeaser';
-import CTASection from '@/components/landing/CTASection';
-import Footer from '@/components/landing/Footer';
+import Navbar from '@/components/Navbar'
+import ScrollProgress from '@/components/ScrollProgress'
+import Hero from '@/components/home/Hero'
+import ValueProps from '@/components/home/ValueProps'
+import FeatureShowcase from '@/components/home/FeatureShowcase'
+import DayScroll from '@/components/home/DayScroll'
+import DarkSection from '@/components/home/DarkSection'
+import SocialProof from '@/components/home/SocialProof'
+import CTASection from '@/components/home/CTASection'
+import Footer from '@/components/Footer'
 
 export default function Home() {
   return (
     <>
+      <ScrollProgress />
       <Navbar />
       <main id="main-content">
         <Hero />
-        <Marquee />
-        <AppPreview />
-        <StepsSection />
-        <FeaturesGrid />
+        <ValueProps />
+        <FeatureShowcase />
+        <DayScroll />
+        <DarkSection />
         <SocialProof />
-        <PricingTeaser />
-        <SwitchSection />
         <CTASection />
       </main>
       <Footer />
     </>
-  );
+  )
 }
