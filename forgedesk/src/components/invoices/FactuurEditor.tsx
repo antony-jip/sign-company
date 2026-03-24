@@ -1102,12 +1102,12 @@ export function FactuurEditor() {
   // ============ RENDER ============
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[#F4F3F0]">
       <div className="px-6 pt-3">
         <BackButton fallbackPath="/facturen" />
       </div>
       {/* Header */}
-      <div className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b px-6 py-3">
+      <div className="sticky top-0 z-30 bg-[#F4F3F0]/95 backdrop-blur border-b border-sand px-6 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" asChild>
@@ -1137,10 +1137,10 @@ export function FactuurEditor() {
                 {/* Send button */}
                 {(currentStatus === 'concept') && (
                   <Button
-                    variant="outline"
                     size="sm"
                     onClick={() => setSendDialogOpen(true)}
                     disabled={!selectedKlant?.email}
+                    className="bg-flame hover:bg-flame/90 text-white"
                   >
                     <Send className="h-4 w-4 mr-1" />
                     Versturen
@@ -1232,6 +1232,7 @@ export function FactuurEditor() {
               size="sm"
               onClick={handleDownloadPdf}
               disabled={validItems.length === 0}
+              className="border-petrol text-petrol hover:bg-petrol hover:text-white"
             >
               <Download className="h-4 w-4 mr-1" />
               PDF
@@ -1240,6 +1241,7 @@ export function FactuurEditor() {
               size="sm"
               onClick={handleSave}
               disabled={isSaving}
+              className="bg-petrol hover:bg-petrol/90 text-white"
             >
               {isSaving ? (
                 <Loader2 className="h-4 w-4 mr-1 animate-spin" />
@@ -1259,7 +1261,7 @@ export function FactuurEditor() {
             'flex items-center gap-3 rounded-lg border px-4 py-2.5 text-sm',
             currentStatus === 'betaald' && 'bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-900/20 dark:border-emerald-800 dark:text-emerald-300',
             currentStatus === 'verzonden' && !isVervallen && 'bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-300',
-            currentStatus === 'concept' && 'bg-background border-border text-foreground/70 dark:bg-muted dark:border-border dark:text-muted-foreground/50',
+            currentStatus === 'concept' && 'bg-petrol text-white border-petrol dark:bg-petrol/90 dark:border-petrol dark:text-white',
             currentStatus === 'gecrediteerd' && 'bg-purple-50 border-purple-200 text-purple-800 dark:bg-purple-900/20 dark:border-purple-800 dark:text-purple-300',
             isVervallen && 'bg-red-50 border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-300',
           )}>
@@ -1289,9 +1291,9 @@ export function FactuurEditor() {
         {/* LEFT PANEL: Klant & Meta */}
         <div className="space-y-4">
           {/* Klant selectie */}
-          <Card>
+          <Card className="bg-[#1A535C0D] border-petrol-border">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2 text-petrol">
                 <Building2 className="h-4 w-4" />
                 Klant
               </CardTitle>
@@ -1374,9 +1376,9 @@ export function FactuurEditor() {
           </Card>
 
           {/* Factuur gegevens */}
-          <Card>
+          <Card className="bg-[#1A535C0D] border-petrol-border">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2 text-petrol">
                 <FileText className="h-4 w-4" />
                 Factuurgegevens
               </CardTitle>
@@ -1428,28 +1430,28 @@ export function FactuurEditor() {
           </Card>
 
           {/* Financieel overzicht */}
-          <Card>
+          <Card className="bg-[#F4F3F0] border-sand">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2 text-petrol">
                 <Euro className="h-4 w-4" />
                 Financieel
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Subtotaal</span>
-                <span className="font-mono">{formatCurrency(subtotaal)}</span>
+                <span className="text-muted-foreground font-sans">Subtotaal</span>
+                <span className="font-mono tabular-nums">{formatCurrency(subtotaal)}</span>
               </div>
               {Object.entries(btwGroups).map(([pct, bedrag]) => (
                 <div key={pct} className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">BTW <span className="font-mono">{pct}%</span></span>
-                  <span className="font-mono">{formatCurrency(bedrag)}</span>
+                  <span className="text-muted-foreground font-sans">BTW <span className="font-mono">{pct}%</span></span>
+                  <span className="font-mono tabular-nums">{formatCurrency(bedrag)}</span>
                 </div>
               ))}
-              <Separator />
-              <div className="flex justify-between text-sm font-semibold">
-                <span>Totaal incl. BTW</span>
-                <span className="text-lg font-mono">{formatCurrency(totaal)}</span>
+              <Separator className="bg-sand" />
+              <div className="flex justify-between items-baseline pt-1">
+                <span className="text-sm font-semibold text-petrol">Totaal incl. BTW</span>
+                <span className="text-xl font-bold font-mono tabular-nums text-petrol">{formatCurrency(totaal)}</span>
               </div>
               {existingFactuur && existingFactuur.betaald_bedrag > 0 && (
                 <>
@@ -1570,7 +1572,12 @@ export function FactuurEditor() {
 
           {/* Factureerpercentage (DEEL 2) */}
           {hasOfferteItems && paramProjectId && (
-            <Card>
+            <Card className={cn(
+              'border',
+              factureerPercentage !== 100
+                ? 'bg-flame-light border-flame-border'
+                : 'border-border'
+            )}>
               <CardContent className="pt-5 pb-4">
                 <div className="flex items-center gap-4 flex-wrap">
                   <Label className="text-sm font-medium whitespace-nowrap">Factureerpercentage:</Label>
@@ -1581,11 +1588,16 @@ export function FactuurEditor() {
                       max={100}
                       value={factureerPercentage}
                       onChange={(e) => setFactureerPercentage(Number(e.target.value) || 0)}
-                      className="w-20 text-center"
+                      className="w-20 text-center font-mono"
                     />
                     <span className="text-sm text-muted-foreground">%</span>
                   </div>
-                  <span className="text-sm text-muted-foreground">
+                  {factureerPercentage !== 100 && (
+                    <Badge className="bg-flame/10 text-flame-text border-flame-border text-xs">
+                      Deelfactuur
+                    </Badge>
+                  )}
+                  <span className="text-sm text-muted-foreground font-mono">
                     {formatCurrency(subtotaal)} van {formatCurrency(origineleSubtotaal)}
                   </span>
                 </div>
@@ -1608,7 +1620,7 @@ export function FactuurEditor() {
             </CardHeader>
             <CardContent>
               {/* Table header */}
-              <div className="hidden md:grid md:grid-cols-[1fr_80px_100px_70px_70px_100px_36px] gap-2 px-2 mb-2 text-xs font-bold uppercase tracking-label text-text-tertiary">
+              <div className="hidden md:grid md:grid-cols-[1fr_80px_100px_70px_70px_100px_36px] gap-2 px-3 py-2.5 mb-2 text-xs font-bold uppercase tracking-label text-white bg-petrol rounded-lg">
                 <span>Omschrijving</span>
                 <span className="text-right">Aantal</span>
                 <span className="text-right">Prijs</span>
@@ -1618,11 +1630,14 @@ export function FactuurEditor() {
                 <span />
               </div>
 
-              <div className="space-y-2">
-                {items.map((item) => (
+              <div className="space-y-1">
+                {items.map((item, idx) => (
                   <div
                     key={item.id}
-                    className="grid grid-cols-1 md:grid-cols-[1fr_80px_100px_70px_70px_100px_36px] gap-2 p-2 rounded-lg border bg-card hover:bg-accent/30 transition-colors"
+                    className={cn(
+                      "grid grid-cols-1 md:grid-cols-[1fr_80px_100px_70px_70px_100px_36px] gap-2 p-2 rounded-lg border transition-colors hover:bg-petrol-light/60 hover:border-petrol-border",
+                      idx % 2 === 0 ? 'bg-card' : 'bg-[#F4F3F0]/50'
+                    )}
                   >
                     <Input
                       value={item.beschrijving}
@@ -1663,7 +1678,7 @@ export function FactuurEditor() {
                       max={100}
                       step="1"
                     />
-                    <div className="flex items-center justify-end text-sm font-mono font-medium tabular-nums">
+                    <div className="flex items-center justify-end text-sm font-mono font-semibold tabular-nums text-ink">
                       {formatCurrency(calcLineTotal(item))}
                     </div>
                     <div className="flex items-center gap-1">
@@ -1692,11 +1707,24 @@ export function FactuurEditor() {
                 ))}
               </div>
 
+              {/* Totaal rij */}
+              {validItems.length > 0 && (
+                <div className="hidden md:grid md:grid-cols-[1fr_80px_100px_70px_70px_100px_36px] gap-2 px-3 py-2.5 mt-2 bg-[#F4F3F0] rounded-lg border border-sand">
+                  <span className="text-sm font-semibold text-petrol">Totaal</span>
+                  <span />
+                  <span />
+                  <span />
+                  <span />
+                  <span className="text-right text-sm font-bold font-mono tabular-nums text-petrol">{formatCurrency(subtotaal)}</span>
+                  <span />
+                </div>
+              )}
+
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleAddItem}
-                className="mt-3 w-full border-dashed border"
+                className="mt-3 w-full border-dashed border hover:border-petrol hover:text-petrol"
               >
                 <Plus className="h-4 w-4 mr-1" />
                 Regel toevoegen
