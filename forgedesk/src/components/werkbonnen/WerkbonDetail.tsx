@@ -542,9 +542,6 @@ export function WerkbonDetail() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/werkbonnen')}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
           <div>
             <h1 className="text-xl font-extrabold tracking-[-0.03em]">
               {isNew ? 'Nieuwe werkbon' : <span>Werkbon <span className="font-mono">{werkbonNummer}</span></span>}

@@ -6,6 +6,7 @@ interface BackButtonProps {
   label?: string
 }
 
+/** Labels voor lijst-pagina's */
 const PATH_LABELS: Record<string, string> = {
   '/projecten': 'Projecten',
   '/offertes': 'Offertes',
@@ -20,17 +21,44 @@ const PATH_LABELS: Record<string, string> = {
   '/bestelbonnen': 'Bestelbonnen',
   '/leveringsbonnen': 'Leveringsbonnen',
   '/leads': 'Leads',
+  '/deals': 'Deals',
+}
+
+/** Labels voor detail-pagina's (prefix match) */
+const DETAIL_PREFIXES: { prefix: string; label: string }[] = [
+  { prefix: '/projecten/', label: 'Project' },
+  { prefix: '/offertes/', label: 'Offerte' },
+  { prefix: '/facturen/', label: 'Factuur' },
+  { prefix: '/klanten/', label: 'Klant' },
+  { prefix: '/werkbonnen/', label: 'Werkbon' },
+  { prefix: '/bestelbonnen/', label: 'Bestelbon' },
+  { prefix: '/leveringsbonnen/', label: 'Leveringsbon' },
+  { prefix: '/leads/', label: 'Lead' },
+  { prefix: '/deals/', label: 'Deal' },
+]
+
+function getLabelForPath(path: string): string {
+  // Exact match op lijst-pagina
+  if (PATH_LABELS[path]) return PATH_LABELS[path]
+  // Prefix match op detail-pagina
+  for (const { prefix, label } of DETAIL_PREFIXES) {
+    if (path.startsWith(prefix)) return label
+  }
+  return 'Terug'
 }
 
 export function BackButton({ fallbackPath, label }: BackButtonProps) {
   const navigate = useNavigate()
   const location = useLocation()
+  const from = (location.state as { from?: string })?.from
 
-  const displayLabel = label || PATH_LABELS[fallbackPath] || 'Terug'
+  const displayLabel = label || getLabelForPath(from || fallbackPath)
 
   function handleClick() {
-    // If we have history (not a direct link), go back
-    if (window.history.length > 2 && location.key !== 'default') {
+    if (from) {
+      // Navigeer terug naar herkomst (bijv. project waar je vandaan kwam)
+      navigate(from)
+    } else if (window.history.length > 2 && location.key !== 'default') {
       navigate(-1)
     } else {
       navigate(fallbackPath)

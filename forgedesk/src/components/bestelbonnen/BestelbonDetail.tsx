@@ -330,9 +330,6 @@ export function BestelbonDetail() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/bestelbonnen')}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
           <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center shadow-lg shadow-orange-500/20">
             <ShoppingCart className="h-5 w-5 text-white" />
           </div>

@@ -512,14 +512,6 @@ export function ClientProfile() {
       <BackButton fallbackPath="/klanten" />
       {/* ── Header ── */}
       <div className="flex items-start gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => navigate('/klanten')}
-          className="mt-1 flex-shrink-0"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-2xl font-extrabold tracking-[-0.03em] text-accent dark:text-primary font-display">

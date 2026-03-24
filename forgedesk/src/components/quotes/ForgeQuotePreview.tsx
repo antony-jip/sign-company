@@ -351,12 +351,6 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
           {/* Row 2: Title + Status + Actions */}
           <div className="flex items-start justify-between gap-4 px-1">
             <div className="flex items-center gap-3 min-w-0">
-              <button
-                onClick={() => navigate(-1)}
-                className="flex-shrink-0 p-1.5 rounded-lg hover:bg-muted dark:hover:bg-muted transition-colors"
-              >
-                <ArrowLeft className="h-4 w-4 text-muted-foreground dark:text-muted-foreground/60" />
-              </button>
               <div className="min-w-0">
                 <h1 className="text-lg font-bold tracking-[-0.02em] text-foreground dark:text-white truncate">
                   {offerteData.titel}

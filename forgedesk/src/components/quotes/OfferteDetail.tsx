@@ -531,9 +531,6 @@ export function OfferteDetail() {
       {/* Top bar */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/offertes')}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
           <div>
             <p className="text-2xs font-extrabold uppercase tracking-[0.1em] text-[#9B8EC4] mb-0.5">Offerte</p>
             <h1

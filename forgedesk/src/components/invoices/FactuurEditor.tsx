@@ -965,11 +965,6 @@ export function FactuurEditor() {
       <div className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b px-6 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" asChild>
-              <Link to="/facturen">
-                <ArrowLeft className="h-5 w-5" />
-              </Link>
-            </Button>
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-lg font-extrabold tracking-[-0.03em]">

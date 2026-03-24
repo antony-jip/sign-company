@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { BackButton } from '@/components/shared/BackButton'
 import { toast } from 'sonner'
 import {
@@ -50,6 +50,7 @@ const BRON_LABELS: Record<string, string> = {
 export function DealDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const location = useLocation()
   const { pipelineStappen } = useAppSettings()
 
   const [deal, setDeal] = useState<Deal | null>(null)
@@ -262,9 +263,6 @@ export function DealDetail() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/deals')}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
           <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
             <Briefcase className="h-5 w-5 text-white" />
           </div>
@@ -467,7 +465,7 @@ export function DealDetail() {
                 </div>
               )}
               <Separator />
-              <Button variant="outline" size="sm" className="w-full gap-1" onClick={() => navigate(`/offertes/nieuw?klant_id=${deal.klant_id}&deal_id=${deal.id}`)}>
+              <Button variant="outline" size="sm" className="w-full gap-1" onClick={() => navigate(`/offertes/nieuw?klant_id=${deal.klant_id}&deal_id=${deal.id}`, { state: { from: location.pathname } })}>
                 <FileText className="h-3.5 w-3.5" /> Maak offerte
               </Button>
             </CardContent>

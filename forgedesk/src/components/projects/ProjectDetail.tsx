@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
-// BackButton removed — breadcrumb in ProjectKaart is sufficient
+import { BackButton } from '@/components/shared/BackButton'
 import { useTabDirtyState } from '@/hooks/useTabDirtyState'
 import { toast } from 'sonner'
 import {
@@ -213,7 +213,7 @@ export function ProjectDetail() {
       klant_id: project.klant_id || '',
       titel: project.naam || '',
     })
-    navigate(`/offertes/nieuw?${params.toString()}`)
+    navigate(`/offertes/nieuw?${params.toString()}`, { state: { from: location.pathname } })
   }
 
   // ── Verstuur naar klant dialog ──
@@ -369,7 +369,7 @@ export function ProjectDetail() {
     // Duplicate check: als offerte al een factuur heeft, navigeer daarheen
     if (offerte.geconverteerd_naar_factuur_id) {
       toast.info(`Offerte ${offerte.nummer} is al gefactureerd`)
-      navigate(`/facturen/${offerte.geconverteerd_naar_factuur_id}/bewerken`)
+      navigate(`/facturen/${offerte.geconverteerd_naar_factuur_id}/bewerken`, { state: { from: location.pathname } })
       return
     }
 
@@ -380,7 +380,7 @@ export function ProjectDetail() {
       project_id: id || '',
       titel: offerte.titel,
     })
-    navigate(`/facturen/nieuw?${params.toString()}`)
+    navigate(`/facturen/nieuw?${params.toString()}`, { state: { from: location.pathname } })
   }
 
   const openKopieDialog = async () => {
@@ -713,12 +713,7 @@ export function ProjectDetail() {
   if (isLoading) {
     return (
       <div className="space-y-6 animate-fade-in-up">
-        <Button variant="ghost" asChild>
-          <Link to="/projecten">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Terug naar projecten
-          </Link>
-        </Button>
+        <BackButton fallbackPath="/projecten" />
         <Card>
           <CardContent className="py-16 text-center">
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto" />
@@ -732,12 +727,7 @@ export function ProjectDetail() {
   if (!project) {
     return (
       <div className="space-y-6">
-        <Button variant="ghost" asChild>
-          <Link to="/projecten">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Terug naar projecten
-          </Link>
-        </Button>
+        <BackButton fallbackPath="/projecten" />
         <Card>
           <CardContent className="py-16 text-center">
             <h3 className="text-lg font-medium text-foreground">Project niet gevonden</h3>
@@ -863,7 +853,7 @@ export function ProjectDetail() {
               project_id: id || '',
               titel: project.naam || '',
             })
-            navigate(`/facturen/nieuw?${params.toString()}`)
+            navigate(`/facturen/nieuw?${params.toString()}`, { state: { from: location.pathname } })
           }}
           onArchive={async () => {
             try {
@@ -1089,7 +1079,7 @@ export function ProjectDetail() {
                   <div
                     key={wb.id}
                     className="group flex items-center justify-between p-3 rounded-lg border border-[hsl(35,15%,90%)] hover:border-[hsl(35,15%,80%)] hover:bg-[hsl(35,15%,98%)] cursor-pointer transition-all"
-                    onClick={() => navigate(`/werkbonnen/${wb.id}`)}
+                    onClick={() => navigate(`/werkbonnen/${wb.id}`, { state: { from: location.pathname } })}
                   >
                     <div className="flex items-center gap-3">
                       <div className="h-8 w-8 rounded-lg bg-[#C44830]/10 flex items-center justify-center flex-shrink-0">
@@ -1277,7 +1267,7 @@ export function ProjectDetail() {
                             </span>
                           </div>
                           <Button variant="outline" size="sm" className="h-6 px-2.5 text-xs"
-                            onClick={() => navigate(`/facturen/${offerte.geconverteerd_naar_factuur_id}`)}
+                            onClick={() => navigate(`/facturen/${offerte.geconverteerd_naar_factuur_id}`, { state: { from: location.pathname } })}
                           >
                             Bekijk factuur
                           </Button>
@@ -1308,7 +1298,7 @@ export function ProjectDetail() {
                 {projectFacturen.map((factuur) => (
                   <div key={factuur.id}
                     className="flex items-center justify-between p-2 rounded-lg hover:bg-background cursor-pointer transition-colors"
-                    onClick={() => navigate(`/facturen/${factuur.id}`)}
+                    onClick={() => navigate(`/facturen/${factuur.id}`, { state: { from: location.pathname } })}
                   >
                     <div>
                       <p className="text-sm font-medium font-mono">{factuur.nummer}</p>

@@ -2147,12 +2147,6 @@ export function QuoteCreation() {
         <div className="flex items-center justify-between gap-4 flex-wrap">
           {/* Left: Back + Title + Badges */}
           <div className="flex items-center gap-3 min-w-0">
-            <button className="h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors hover:bg-[#F4F2EE]" style={{ border: '0.5px solid #E6E4E0' }} onClick={() => {
-              const from = (location.state as { from?: string })?.from
-              navigate(from || '/offertes')
-            }}>
-              <ArrowLeft className="h-4 w-4" style={{ color: '#5A5A55' }} />
-            </button>
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-2xl font-bold tracking-tight truncate" style={{ color: '#191919' }}>{isEditMode ? 'Offerte Bewerken' : 'Nieuwe Offerte'}</h1>
