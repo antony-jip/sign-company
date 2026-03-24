@@ -41,11 +41,6 @@ interface TekeningGoedkeuringData extends EmailTemplateData {
   goedkeurUrl: string
 }
 
-interface NieuwsbriefWrapperData extends EmailTemplateData {
-  inhoud: string // The HTML content of the newsletter
-  afmeldUrl?: string
-}
-
 interface EmailResult {
   subject: string
   html: string
@@ -539,30 +534,3 @@ export function tekeningGoedkeuringTemplate(data: TekeningGoedkeuringData): Emai
   return { subject, html, text }
 }
 
-// ---------------------------------------------------------------------------
-// 7. Nieuwsbrief wrapper
-// ---------------------------------------------------------------------------
-
-export function nieuwsbriefWrapperTemplate(data: NieuwsbriefWrapperData): EmailResult {
-  const bedrijf = data.bedrijfsnaam || DEFAULT_BEDRIJFSNAAM
-  const subject = `Nieuwsbrief - ${bedrijf}`
-
-  const bodyHtml = data.inhoud
-
-  const { wrap } = getBaseTemplate(data)
-  const html = wrap(bodyHtml, data.afmeldUrl)
-
-  const text = [
-    `Nieuwsbrief - ${bedrijf}`,
-    '',
-    stripHtml(data.inhoud),
-    '',
-    data.handtekening || '',
-    '',
-    data.afmeldUrl ? `Afmelden: ${data.afmeldUrl}` : '',
-  ]
-    .join('\n')
-    .trim()
-
-  return { subject, html, text }
-}

@@ -5,7 +5,7 @@ import {
   Mail, Calendar, Settings,
   Receipt, CheckSquare, ClipboardCheck,
   LogOut, ChevronDown, Menu, X, Search,
-  Plus, Moon, Sun, Monitor, CreditCard, Sparkles,
+  Plus, Moon, Sun, Monitor, CreditCard, Sparkles, PiggyBank,
   type LucideIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -34,6 +34,7 @@ const navItems: NavItem[] = [
   { label: 'Werkbonnen', icon: ClipboardCheck, path: '/werkbonnen', color: '#D4836A' },
   { label: 'Planning', icon: Calendar, path: '/planning', color: '#7EB5A6' },
   { label: 'Email', icon: Mail, path: '/email', color: '#8BAFD4' },
+  { label: 'Financieel', icon: PiggyBank, path: '/financieel', color: '#2D6B48' },
 ]
 
 const quickAddItems = [
