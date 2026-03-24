@@ -69,6 +69,7 @@ import { WerkbonVanProjectDialog } from "@/components/werkbonnen/WerkbonVanProje
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { confirm } from '@/components/shared/ConfirmDialog';
+import { useAuth } from "@/contexts/AuthContext";
 
 const STATUS_CONFIG: Record<
   MontageAfspraak["status"],
@@ -226,6 +227,7 @@ const EMPTY_FORM: MontageFormData = {
 };
 
 export function MontagePlanningLayout() {
+  const { user } = useAuth();
   const [currentMonday, setCurrentMonday] = useState<Date>(() =>
     getMondayOfWeek(new Date())
   );
@@ -505,6 +507,9 @@ export function MontagePlanningLayout() {
 
   function openNewDialogFromProject(project: Project, datum?: string) {
     setEditingAfspraak(null);
+    // Auto-fill locatie vanuit klant adres
+    const klant = klanten.find((k) => k.id === project.klant_id);
+    const locatie = klant ? [klant.adres, klant.postcode, klant.stad].filter(Boolean).join(", ") : "";
     setFormData({
       ...EMPTY_FORM,
       project_id: project.id,
@@ -512,9 +517,16 @@ export function MontagePlanningLayout() {
       klant_naam: project.klant_naam || "",
       titel: project.naam,
       datum: datum || todayStr,
+      locatie,
     });
     if (project.id) {
-      getWerkbonnenByProject(project.id).then(setProjectWerkbonnen).catch(() => setProjectWerkbonnen([]));
+      getWerkbonnenByProject(project.id).then((wbs) => {
+        setProjectWerkbonnen(wbs);
+        // Auto-selecteer werkbon als er precies 1 is
+        if (wbs.length === 1) {
+          setFormData((prev) => ({ ...prev, werkbon_id: wbs[0].id }));
+        }
+      }).catch(() => setProjectWerkbonnen([]));
     }
     setDialogOpen(true);
   }
@@ -596,7 +608,7 @@ export function MontagePlanningLayout() {
       .filter(Boolean);
 
     const payload = {
-      user_id: "u1",
+      user_id: user?.id || "",
       project_id: formData.project_id,
       klant_id: formData.klant_id,
       project_naam:
@@ -619,35 +631,16 @@ export function MontagePlanningLayout() {
 
     try {
       if (editingAfspraak) {
-        const updated = await updateMontageAfspraak(editingAfspraak.id, payload).catch(
-          () => null
+        const updated = await updateMontageAfspraak(editingAfspraak.id, payload);
+        setAfspraken((prev) =>
+          prev.map((a) =>
+            a.id === editingAfspraak.id ? { ...a, ...payload, ...updated } : a
+          )
         );
-        if (updated) {
-          setAfspraken((prev) =>
-            prev.map((a) =>
-              a.id === editingAfspraak.id ? { ...a, ...payload, ...updated } : a
-            )
-          );
-        } else {
-          setAfspraken((prev) =>
-            prev.map((a) =>
-              a.id === editingAfspraak.id
-                ? { ...a, ...payload, updated_at: new Date().toISOString() }
-                : a
-            )
-          );
-        }
         toast.success("Montage afspraak bijgewerkt");
       } else {
-        const created = await createMontageAfspraak(payload).catch(() => null);
-        const newAfspraak: MontageAfspraak = created || {
-          ...payload,
-          id: `temp-${Date.now()}`,
-          user_id: "u1",
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-        setAfspraken((prev) => [...prev, newAfspraak]);
+        const created = await createMontageAfspraak(payload);
+        setAfspraken((prev) => [...prev, created]);
         // Auto-update project from "te-plannen" to "gepland"
         if (formData.project_id) {
           const project = projecten.find((p) => p.id === formData.project_id);
@@ -661,8 +654,9 @@ export function MontagePlanningLayout() {
         toast.success("Montage afspraak aangemaakt");
       }
       setDialogOpen(false);
-    } catch {
-      toast.error("Er ging iets mis bij het opslaan");
+    } catch (err) {
+      console.error("Fout bij opslaan montage:", err);
+      toast.error("Kon afspraak niet opslaan. Probeer opnieuw.");
     }
   }
 
@@ -1225,7 +1219,7 @@ export function MontagePlanningLayout() {
                         }
                         try {
                           const wb = await createWerkbon({
-                            user_id: "u1",
+                            user_id: user?.id || "",
                             klant_id: formData.klant_id,
                             project_id: formData.project_id,
                             titel: formData.titel || "",
