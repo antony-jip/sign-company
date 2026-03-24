@@ -62,6 +62,7 @@ import {
   GripVertical,
   Zap,
   BookTemplate,
+  Home,
 } from 'lucide-react'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { useAuth } from '@/contexts/AuthContext'
@@ -88,9 +89,7 @@ import { SidebarTab } from './SidebarTab'
 import { TeamledenTab } from './TeamledenTab'
 import { AbonnementTab } from './AbonnementTab'
 import { OfferteOpvolgingTab } from './OfferteOpvolgingTab'
-import { KostenplaatsenTab } from './KostenplaatsenTab'
-import { GeneralLedgerSettings } from '@/components/financial/GeneralLedgerSettings'
-import { Sparkles, Clock, MapPin, Landmark } from 'lucide-react'
+import { Sparkles, Clock } from 'lucide-react'
 
 // Shared sub-tab navigation component
 interface SubTab {
@@ -170,48 +169,59 @@ function applyFontSize(size: FontSize) {
   document.documentElement.style.setProperty('--font-size', config?.cssValue ?? '16px')
 }
 
-const settingsSections = [
-  {
-    label: 'PERSOONLIJK',
-    items: [
-      { id: 'profiel', label: 'Profiel', icon: User },
-      { id: 'weergave', label: 'Voorkeuren', icon: Sliders },
-    ],
-  },
-  {
-    label: 'BEDRIJF',
-    items: [
-      { id: 'bedrijf', label: 'Bedrijfsprofiel', icon: Building2 },
-      { id: 'teamleden', label: 'Teamleden', icon: Users },
-      { id: 'abonnement', label: 'Abonnement', icon: CreditCard },
-      { id: 'opvolging', label: 'Opvolging', icon: Clock },
-    ],
-  },
-  {
-    label: 'FINANCIEEL',
-    items: [
-      { id: 'grootboek', label: 'Grootboek', icon: Landmark },
-      { id: 'kostenplaatsen', label: 'Kostenplaatsen', icon: MapPin },
-    ],
-  },
-  {
-    label: 'SYSTEEM',
-    items: [
-      { id: 'forgie', label: 'Daan AI', icon: Sparkles },
-      { id: 'integraties', label: 'Integraties', icon: Puzzle },
-      { id: 'huisstijl', label: 'Document stijl', icon: Palette },
-      { id: 'documenten', label: 'Documenten', icon: FileText },
-      { id: 'calculatie', label: 'Calculatie', icon: Calculator },
-      { id: 'email', label: 'Email', icon: Mail },
-      { id: 'beveiliging', label: 'Beveiliging', icon: Shield },
-      { id: 'sidebar', label: 'Sidebar', icon: PanelLeft },
-      { id: 'portaal', label: 'Portaal', icon: Link2 },
-    ],
-  },
-] as const
+// ─── Settings navigation: Pipedrive-style flat list ───
+interface SettingsSection {
+  id: string
+  label: string
+  icon: React.ElementType
+  tabs: { id: string; label: string; icon: React.ElementType }[]
+}
 
-// Flat list for tab lookup
-const settingsTabs = settingsSections.flatMap(s => s.items)
+const settingsSections: SettingsSection[] = [
+  { id: 'algemeen', label: 'Algemeen', icon: Home, tabs: [
+    { id: 'profiel', label: 'Profiel', icon: User },
+    { id: 'weergave', label: 'Voorkeuren', icon: Sliders },
+  ]},
+  { id: 'gebruikers', label: 'Gebruikers', icon: Users, tabs: [
+    { id: 'teamleden', label: 'Teamleden', icon: Users },
+  ]},
+  { id: 'financieel', label: 'Financieel', icon: CreditCard, tabs: [
+    { id: 'abonnement', label: 'Abonnement', icon: CreditCard },
+  ]},
+  { id: 'offertes', label: 'Offertes', icon: FileText, tabs: [
+    { id: 'calculatie', label: 'Calculatie', icon: Calculator },
+    { id: 'opvolging', label: 'Opvolging', icon: Clock },
+  ]},
+  { id: 'projecten', label: 'Projecten', icon: LayoutGrid, tabs: [
+    { id: 'sidebar', label: 'Sidebar', icon: PanelLeft },
+  ]},
+  { id: 'facturen', label: 'Facturen', icon: Receipt, tabs: [] },
+  { id: 'email-settings', label: 'E-mail', icon: Mail, tabs: [
+    { id: 'email', label: 'E-mail', icon: Mail },
+  ]},
+  { id: 'producten', label: 'Producten', icon: Package, tabs: [
+    { id: 'huisstijl', label: 'Document stijl', icon: Palette },
+    { id: 'documenten', label: 'Documenten', icon: FileText },
+  ]},
+  { id: 'integraties-all', label: 'Integraties', icon: Puzzle, tabs: [
+    { id: 'integraties', label: 'Integraties', icon: Puzzle },
+    { id: 'portaal', label: 'Portaal', icon: Link2 },
+  ]},
+  { id: 'apparaten', label: 'Apparaten', icon: Monitor, tabs: [
+    { id: 'beveiliging', label: 'Beveiliging', icon: Shield },
+  ]},
+  { id: 'daan-ai', label: 'Daan AI', icon: Sparkles, tabs: [
+    { id: 'forgie', label: 'Daan AI', icon: Sparkles },
+  ]},
+]
+
+// Map old tab IDs to section IDs for backwards-compatible URL params
+const tabToSectionMap: Record<string, string> = {}
+settingsSections.forEach(section => {
+  section.tabs.forEach(tab => {
+    tabToSectionMap[tab.id] = section.id
+  })
+})
 
 function renderTabContent(tabId: string) {
   switch (tabId) {
@@ -230,103 +240,111 @@ function renderTabContent(tabId: string) {
     case 'teamleden': return <TeamledenTab />
     case 'abonnement': return <AbonnementTab />
     case 'opvolging': return <OfferteOpvolgingTab />
-    case 'kostenplaatsen': return <KostenplaatsenTab />
-    case 'grootboek': return <GeneralLedgerSettings />
     default: return null
   }
 }
 
 export function SettingsLayout() {
   const [searchParams] = useSearchParams()
-  const initialTab = searchParams.get('tab') || 'profiel'
-  const [activeTab, setActiveTab] = useState(
-    settingsTabs.some((t) => t.id === initialTab) ? initialTab : 'profiel'
-  )
+  const initialTab = searchParams.get('tab') || 'algemeen'
+  // Backwards-compatible: map old tab IDs (e.g. 'profiel') to section IDs (e.g. 'algemeen')
+  const resolvedSection = tabToSectionMap[initialTab] || initialTab
+  const validSection = settingsSections.some(s => s.id === resolvedSection) ? resolvedSection : 'algemeen'
+
+  const [activeSection, setActiveSection] = useState(validSection)
+  const [activeSubTabs, setActiveSubTabs] = useState<Record<string, string>>({})
   const navigate = useNavigate()
 
+  // Get the current section's active sub-tab
+  const currentSection = settingsSections.find(s => s.id === activeSection)
+  const currentSubTab = currentSection?.tabs.length
+    ? (activeSubTabs[activeSection] || currentSection.tabs[0].id)
+    : null
+
+  const setSubTab = useCallback((tabId: string) => {
+    setActiveSubTabs(prev => ({ ...prev, [activeSection]: tabId }))
+  }, [activeSection])
+
   return (
-    <div className="min-h-screen bg-[#F4F3F0]">
+    <div className="space-y-6">
       {/* Page Header */}
-      <div className="px-6 pt-6 pb-4">
-        <h1 className="text-2xl font-extrabold tracking-[-0.03em] text-petrol dark:text-white font-heading">
+      <div className="min-w-0">
+        <h1 className="text-[20px] font-bold tracking-[-0.03em] text-foreground dark:text-white font-display">
           Instellingen
         </h1>
-        <p className="text-sm text-text-sec mt-0.5">
+        <p className="text-[13px] text-muted-foreground dark:text-muted-foreground/60">
           Beheer uw profiel, bedrijfsgegevens en voorkeuren
         </p>
       </div>
 
       {/* Two-column layout: sidebar nav + content */}
-      <div className="flex flex-col md:flex-row gap-0 min-h-[calc(100vh-8rem)]">
+      <div className="flex flex-col md:flex-row gap-6 min-h-[calc(100vh-12rem)]">
         {/* Left sidebar navigation */}
-        <nav className="w-full md:w-60 flex-shrink-0 px-4">
-          <div className="md:sticky md:top-4 space-y-1">
+        <nav className="w-full md:w-56 flex-shrink-0">
+          <div className="md:sticky md:top-6 space-y-1">
             {/* Mobile: horizontal scroll */}
-            <div className="md:hidden flex overflow-x-auto scrollbar-hide gap-1 p-1 bg-white rounded-xl border border-sand">
-              {settingsTabs.map((tab) => {
-                const Icon = tab.icon
-                const isActive = activeTab === tab.id
+            <div className="md:hidden flex overflow-x-auto scrollbar-hide gap-1 p-1 bg-card rounded-xl border border-border">
+              {settingsSections.map((section) => {
+                const Icon = section.icon
+                const isActive = activeSection === section.id
                 return (
                   <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
+                    key={section.id}
+                    onClick={() => setActiveSection(section.id)}
                     className={cn(
                       'flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap',
                       isActive
-                        ? 'bg-petrol/10 text-petrol'
+                        ? 'bg-[#1A535C]/10 text-[#1A535C] dark:bg-[#2A7A86]/20 dark:text-[#2A7A86]'
                         : 'text-muted-foreground hover:text-foreground'
                     )}
                   >
                     <Icon className="w-4 h-4" />
-                    {tab.label}
+                    {section.label}
                   </button>
                 )
               })}
             </div>
 
-            {/* Desktop: grouped sidebar */}
-            <div className="hidden md:block space-y-5">
-              {settingsSections.map((section) => (
-                <div key={section.label}>
-                  <div className="px-3 mb-2">
-                    <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-petrol/50">
-                      {section.label}
-                    </span>
-                  </div>
-                  <div className="space-y-0.5">
-                    {section.items.map((tab) => {
-                      const Icon = tab.icon
-                      const isActive = activeTab === tab.id
-                      return (
-                        <button
-                          key={tab.id}
-                          onClick={() => setActiveTab(tab.id)}
-                          className={cn(
-                            'w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left transition-all duration-150 text-[13px]',
-                            isActive
-                              ? 'text-petrol font-semibold bg-white shadow-sm border border-sand'
-                              : 'text-text-sec hover:bg-white/60 hover:text-foreground font-medium'
-                          )}
-                        >
-                          <Icon className={cn('w-4 h-4 flex-shrink-0', isActive ? 'text-petrol' : 'text-muted-hex')} />
-                          <span className="truncate">{tab.label}</span>
-                          {isActive && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-flame" />}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-              ))}
+            {/* Desktop: flat Pipedrive-style sidebar */}
+            <div className="hidden md:block space-y-0.5">
+              {settingsSections.map((section) => {
+                const Icon = section.icon
+                const isActive = activeSection === section.id
+                return (
+                  <button
+                    key={section.id}
+                    onClick={() => setActiveSection(section.id)}
+                    className={cn(
+                      'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all duration-150',
+                      isActive
+                        ? 'text-[#1A535C] dark:text-[#2A7A86] font-semibold bg-[#1A535C]/5 dark:bg-[#2A7A86]/10 border-l-[3px] border-[#1A535C] dark:border-[#2A7A86]'
+                        : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground font-medium border-l-[3px] border-transparent'
+                    )}
+                  >
+                    <div className={cn(
+                      'w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors',
+                      isActive
+                        ? 'bg-[#1A535C]/10 dark:bg-[#2A7A86]/15'
+                        : 'bg-muted/60 dark:bg-muted/30'
+                    )}>
+                      <Icon className={cn('w-4 h-4', isActive ? 'text-[#1A535C] dark:text-[#2A7A86]' : 'text-[#A0A098]')} />
+                    </div>
+                    <span className="text-[14px] truncate">{section.label}</span>
+                  </button>
+                )
+              })}
 
               {/* Team HR link */}
-              <div className="pt-3 mt-2 border-t border-sand">
+              <div className="pt-3 mt-2 border-t border-border/50">
                 <button
                   onClick={() => navigate('/team')}
-                  className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left transition-all duration-150 text-[13px] text-text-sec hover:bg-white/60 hover:text-foreground font-medium"
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all duration-150 text-muted-foreground hover:bg-muted/50 hover:text-foreground font-medium border-l-[3px] border-transparent"
                 >
-                  <Users className="w-4 h-4 flex-shrink-0 text-muted-hex" />
-                  <span className="truncate flex-1">Team HR</span>
-                  <ArrowRight className="w-3 h-3 text-muted-hex flex-shrink-0" />
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-muted/60 dark:bg-muted/30">
+                    <Users className="w-4 h-4 text-[#A0A098]" />
+                  </div>
+                  <span className="text-[14px] truncate flex-1">Team HR</span>
+                  <ArrowRight className="w-3 h-3 text-[#A0A098] flex-shrink-0" />
                 </button>
               </div>
             </div>
@@ -334,10 +352,31 @@ export function SettingsLayout() {
         </nav>
 
         {/* Right content area */}
-        <div className="flex-1 min-w-0 max-w-[860px] px-6 pb-8">
-          <div className="bg-white rounded-2xl border border-sand p-6 shadow-sm">
-            {renderTabContent(activeTab)}
-          </div>
+        <div className="flex-1 min-w-0 max-w-[640px]">
+          {/* Sub-tabs for sections with multiple tabs */}
+          {currentSection && currentSection.tabs.length > 1 && (
+            <SubTabNav
+              tabs={currentSection.tabs}
+              active={currentSubTab || ''}
+              onChange={setSubTab}
+            />
+          )}
+
+          {/* Content */}
+          {currentSection && currentSection.tabs.length === 0 ? (
+            // Placeholder for empty sections (Facturen)
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <div className="w-12 h-12 rounded-xl bg-muted/60 flex items-center justify-center mb-4">
+                <Receipt className="w-6 h-6 text-muted-foreground/50" />
+              </div>
+              <h3 className="text-[15px] font-semibold text-foreground/70 mb-1">Factuur-instellingen</h3>
+              <p className="text-[13px] text-muted-foreground max-w-[280px]">
+                Factuur-instellingen komen binnenkort beschikbaar.
+              </p>
+            </div>
+          ) : currentSubTab ? (
+            renderTabContent(currentSubTab)
+          ) : null}
         </div>
       </div>
     </div>
