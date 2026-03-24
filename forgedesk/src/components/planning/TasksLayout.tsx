@@ -186,6 +186,11 @@ export function TasksLayout() {
   // Completion prompt
   const [completionPrompt, setCompletionPrompt] = useState<{ open: boolean; projectId: string; projectNaam: string }>({ open: false, projectId: '', projectNaam: '' })
 
+  // Month-view inline add
+  const [monthAddingDay, setMonthAddingDay] = useState<string | null>(null)
+  const [monthAddTitle, setMonthAddTitle] = useState('')
+  const monthAddInputRef = useRef<HTMLInputElement>(null)
+
   // Drag state
   const [draggingTaakId, setDraggingTaakId] = useState<string | null>(null)
   const [dropTarget, setDropTarget] = useState<{ dayIndex: number; hour: number } | null>(null)
@@ -811,11 +816,13 @@ export function TasksLayout() {
               const isCurrentMonth = day.getMonth() === monthDate.getMonth()
               const isToday = isSameDay(day, today)
               const dayTasks = allTasksByDay.get(day.toDateString()) || []
+              const dayKey = day.toDateString()
+              const isAddingHere = monthAddingDay === dayKey
               return (
                 <div
                   key={i}
                   className={cn(
-                    'bg-background min-h-[80px] p-1.5 transition-colors',
+                    'group/monthday bg-background min-h-[80px] p-1.5 transition-colors',
                     !isCurrentMonth && 'opacity-30',
                     isToday && 'bg-primary/5'
                   )}
@@ -827,7 +834,33 @@ export function TasksLayout() {
                     )}>
                       {day.getDate()}
                     </span>
+                    {isCurrentMonth && !isAddingHere && (
+                      <button
+                        onClick={() => { setMonthAddingDay(dayKey); setMonthAddTitle(''); setTimeout(() => monthAddInputRef.current?.focus(), 50) }}
+                        className="opacity-0 group-hover/monthday:opacity-100 p-0.5 rounded text-muted-foreground/30 hover:text-primary hover:bg-primary/10 transition-all duration-200"
+                      >
+                        <Plus className="w-3 h-3" />
+                      </button>
+                    )}
                   </div>
+                  {isAddingHere && (
+                    <input
+                      ref={monthAddInputRef}
+                      value={monthAddTitle}
+                      onChange={(e) => setMonthAddTitle(e.target.value)}
+                      placeholder="Taak..."
+                      className="w-full text-[10px] px-1.5 py-1 rounded border border-primary/40 bg-card focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 text-foreground placeholder:text-muted-foreground/40 mb-0.5"
+                      onKeyDown={async (e) => {
+                        if (e.key === 'Enter' && monthAddTitle.trim()) {
+                          await handleQuickAdd(monthAddTitle.trim(), 'medium', toDateStr(day), '')
+                          setMonthAddingDay(null)
+                          setMonthAddTitle('')
+                        }
+                        if (e.key === 'Escape') { setMonthAddingDay(null); setMonthAddTitle('') }
+                      }}
+                      onBlur={() => { if (!monthAddTitle.trim()) { setMonthAddingDay(null); setMonthAddTitle('') } }}
+                    />
+                  )}
                   <div className="space-y-0.5">
                     {dayTasks.slice(0, 3).map((t) => (
                       <button
