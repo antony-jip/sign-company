@@ -40,7 +40,6 @@ const navigationItems: CommandItem[] = [
   { id: 'nav-documenten', label: 'Documenten', subtitle: 'Navigatie', icon: <Files className="w-4 h-4" />, path: '/documenten', category: 'Navigatie' },
   { id: 'nav-taken', label: 'Taken', subtitle: 'Navigatie', icon: <CheckSquare className="w-4 h-4" />, path: '/taken', category: 'Navigatie' },
   { id: 'nav-financieel', label: 'Financieel', subtitle: 'Navigatie', icon: <PiggyBank className="w-4 h-4" />, path: '/financieel', category: 'Navigatie' },
-  { id: 'nav-nieuwsbrieven', label: 'Nieuwsbrieven', subtitle: 'Navigatie', icon: <Newspaper className="w-4 h-4" />, path: '/nieuwsbrieven', category: 'Navigatie' },
   { id: 'nav-instellingen', label: 'Instellingen', subtitle: 'Navigatie', icon: <Settings className="w-4 h-4" />, path: '/instellingen', category: 'Navigatie' },
 ]
 

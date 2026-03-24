@@ -14,7 +14,6 @@ const storageKeys = [
   'forgedesk_grootboek',
   'forgedesk_btw_codes',
   'forgedesk_kortingen',
-  'forgedesk_nieuwsbrieven',
   'forgedesk_app_settings',
   'forgedesk_montage_afspraken',
   'forgedesk_werkbonnen',

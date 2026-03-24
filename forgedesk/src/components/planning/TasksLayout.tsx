@@ -51,11 +51,11 @@ import {
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
-import { WeatherDayStrip } from './WeatherDayStrip'
+// WeatherDayStrip verwijderd
 import { ModuleHeader } from '@/components/shared/ModuleHeader'
 import { useAuth } from '@/contexts/AuthContext'
-import { getTaken, createTaak, updateTaak, deleteTaak, getProjecten, getKlanten, getMontageAfspraken, getOffertes, uploadTaakBijlage } from '@/services/supabaseService'
-import type { Taak, Project, Klant, MontageAfspraak, Offerte } from '@/types'
+import { getTaken, createTaak, updateTaak, deleteTaak, getProjecten, getKlanten, getMontageAfspraken, getOffertes, uploadTaakBijlage, getMedewerkers } from '@/services/supabaseService'
+import type { Taak, Project, Klant, MontageAfspraak, Offerte, Medewerker } from '@/types'
 import { logger } from '../../utils/logger'
 import { AuditLogPanel } from '@/components/shared/AuditLogPanel'
 import { logWijziging } from '@/utils/auditLogger'
@@ -88,7 +88,7 @@ const PRIORITEIT_RING_COLORS: Record<TaakPrioriteit, string> = {
 const DAY_LABELS = ['ma', 'di', 'wo', 'do', 'vr', 'za', 'zo']
 const MONTH_NAMES = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec']
 const HOURS = Array.from({ length: 13 }, (_, i) => i + 7) // 07:00 - 19:00
-const HOUR_HEIGHT = 72 // px per hour slot
+const HOUR_HEIGHT = 52 // px per hour slot (compact)
 
 interface TaakFormData {
   titel: string
@@ -153,12 +153,16 @@ export function TasksLayout() {
   const [klanten, setKlanten] = useState<Klant[]>([])
   const [offertes, setOffertes] = useState<Offerte[]>([])
   const [montageAfspraken, setMontageAfspraken] = useState<MontageAfspraak[]>([])
+  const [medewerkers, setMedewerkers] = useState<Medewerker[]>([])
   const [showMontage, setShowMontage] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [taskFilter, setTaskFilter] = useState<'alle' | 'project' | 'los'>('alle')
 
   const [weekOffset, setWeekOffset] = useState(0)
+  const [monthOffset, setMonthOffset] = useState(0)
+  const [viewMode, setViewMode] = useState<'week' | 'maand'>('week')
   const [showCompleted, setShowCompleted] = useState(false)
+  const [medewerkerFilter, setMedewerkerFilter] = useState<string>('')
 
   // FAB state
   const [fabOpen, setFabOpen] = useState(false)
@@ -200,13 +204,14 @@ export function TasksLayout() {
     async function loadData() {
       setIsLoading(true)
       try {
-        const [takenData, projectenData, klantenData, montageData, offertesData] = await Promise.all([getTaken(), getProjecten(), getKlanten(), getMontageAfspraken(), getOffertes()])
+        const [takenData, projectenData, klantenData, montageData, offertesData, medewerkersData] = await Promise.all([getTaken(), getProjecten(), getKlanten(), getMontageAfspraken(), getOffertes(), getMedewerkers()])
         if (!cancelled) {
           setTaken(takenData)
           setProjecten(projectenData)
           setKlanten(klantenData)
           setMontageAfspraken(montageData)
           setOffertes(offertesData)
+          setMedewerkers(medewerkersData)
         }
       } catch (error) {
         logger.error('Fout bij laden:', error)
@@ -276,6 +281,33 @@ export function TasksLayout() {
     })
   }, [today, weekOffset])
 
+  // Month view calculations
+  const monthDate = useMemo(() => {
+    const d = new Date(today)
+    d.setMonth(d.getMonth() + monthOffset)
+    d.setDate(1)
+    return d
+  }, [today, monthOffset])
+
+  const monthDays = useMemo(() => {
+    const year = monthDate.getFullYear()
+    const month = monthDate.getMonth()
+    const firstDay = new Date(year, month, 1)
+    // Start on Monday
+    const startOffset = (firstDay.getDay() + 6) % 7
+    const start = new Date(firstDay)
+    start.setDate(start.getDate() - startOffset)
+    const days: Date[] = []
+    for (let i = 0; i < 42; i++) {
+      const d = new Date(start)
+      d.setDate(d.getDate() + i)
+      days.push(d)
+    }
+    return days
+  }, [monthDate])
+
+  const monthLabel = `${MONTH_NAMES[monthDate.getMonth()]} ${monthDate.getFullYear()}`
+
   // Tasks grouped by day key
   const tasksByDay = useMemo(() => {
     const map = new Map<string, Taak[]>()
@@ -288,6 +320,11 @@ export function TasksLayout() {
       activeTaken = activeTaken.filter((t) => !!t.project_id)
     } else if (taskFilter === 'los') {
       activeTaken = activeTaken.filter((t) => !t.project_id)
+    }
+
+    // Apply medewerker filter
+    if (medewerkerFilter) {
+      activeTaken = activeTaken.filter((t) => t.toegewezen_aan === medewerkerFilter)
     }
 
     activeTaken.forEach((t) => {
@@ -315,7 +352,25 @@ export function TasksLayout() {
     })
 
     return map
-  }, [taken, weekDays, showCompleted, taskFilter])
+  }, [taken, weekDays, showCompleted, taskFilter, medewerkerFilter])
+
+  // Tasks grouped by day for month view
+  const allTasksByDay = useMemo(() => {
+    const map = new Map<string, Taak[]>()
+    let activeTaken = showCompleted ? taken : taken.filter((t) => t.status !== 'klaar')
+    if (taskFilter === 'project') activeTaken = activeTaken.filter((t) => !!t.project_id)
+    else if (taskFilter === 'los') activeTaken = activeTaken.filter((t) => !t.project_id)
+    if (medewerkerFilter) activeTaken = activeTaken.filter((t) => t.toegewezen_aan === medewerkerFilter)
+    activeTaken.forEach((t) => {
+      if (!t.deadline) return
+      const d = new Date(t.deadline)
+      d.setHours(0, 0, 0, 0)
+      const key = d.toDateString()
+      if (!map.has(key)) map.set(key, [])
+      map.get(key)!.push(t)
+    })
+    return map
+  }, [taken, showCompleted, taskFilter, medewerkerFilter])
 
   // Montage afspraken grouped by day key
   const montageByDay = useMemo(() => {
@@ -557,25 +612,49 @@ export function TasksLayout() {
         <ModuleHeader module="taken" icon={Clock} title="Taken" subtitle="Productie & oplevering" />
 
         {/* === WEEK NAV + FILTERS === */}
-        <div className="flex items-center justify-between flex-wrap gap-2 px-3 sm:px-5 py-2.5 border-b border-border/60 bg-card/50 flex-shrink-0">
+        <div className="flex items-center justify-between flex-wrap gap-2 px-3 sm:px-5 py-2 border-b border-border/60 bg-card/50 flex-shrink-0">
           <div className="flex items-center gap-3 min-w-0">
-            <span className="text-sm font-semibold text-foreground tracking-tight whitespace-nowrap">{weekLabel}</span>
+            {/* View toggle */}
+            <div className="inline-flex items-center rounded-lg border border-black/[0.06] bg-muted p-0.5 flex-shrink-0">
+              {(['week', 'maand'] as const).map((v) => (
+                <button key={v} onClick={() => setViewMode(v)} className={cn(
+                  'text-xs px-2.5 py-1 rounded-md transition-all capitalize',
+                  viewMode === v ? 'bg-[#191919] text-white shadow-sm font-medium' : 'text-[#5A5A55] hover:text-foreground'
+                )}>{v === 'week' ? 'Week' : 'Maand'}</button>
+              ))}
+            </div>
+            <span className="text-sm font-semibold text-foreground tracking-tight whitespace-nowrap">
+              {viewMode === 'week' ? weekLabel : monthLabel}
+            </span>
             <div className="flex items-center gap-0.5 bg-muted/50 rounded-lg p-0.5">
-              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg" onClick={() => setWeekOffset((w) => w - 1)}>
+              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg" onClick={() => viewMode === 'week' ? setWeekOffset((w) => w - 1) : setMonthOffset((m) => m - 1)}>
                 <ChevronLeft className="w-4 h-4" />
               </Button>
               <Button
-                variant={isCurrentWeek ? 'default' : 'ghost'}
+                variant={viewMode === 'week' ? (isCurrentWeek ? 'default' : 'ghost') : (monthOffset === 0 ? 'default' : 'ghost')}
                 size="sm"
-                className={cn('h-7 text-xs px-3 rounded-lg', isCurrentWeek && 'bg-primary hover:bg-wm-hover shadow-sm')}
-                onClick={() => setWeekOffset(0)}
+                className={cn('h-7 text-xs px-3 rounded-lg', (viewMode === 'week' ? isCurrentWeek : monthOffset === 0) && 'bg-primary hover:bg-wm-hover shadow-sm')}
+                onClick={() => viewMode === 'week' ? setWeekOffset(0) : setMonthOffset(0)}
               >
                 Vandaag
               </Button>
-              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg" onClick={() => setWeekOffset((w) => w + 1)}>
+              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg" onClick={() => viewMode === 'week' ? setWeekOffset((w) => w + 1) : setMonthOffset((m) => m + 1)}>
                 <ChevronRight className="w-4 h-4" />
               </Button>
             </div>
+            {/* Medewerker filter */}
+            {medewerkers.length > 0 && (
+              <select
+                value={medewerkerFilter}
+                onChange={(e) => setMedewerkerFilter(e.target.value)}
+                className="h-7 text-xs rounded-lg border border-border/60 bg-background px-2 max-w-[140px]"
+              >
+                <option value="">Alle medewerkers</option>
+                {medewerkers.filter((m) => m.status === 'actief').map((m) => (
+                  <option key={m.id} value={m.naam}>{m.naam}</option>
+                ))}
+              </select>
+            )}
           </div>
           <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
             <div className="inline-flex items-center rounded-xl border border-black/[0.06] bg-muted p-0.5 flex-shrink-0">
@@ -620,12 +699,7 @@ export function TasksLayout() {
           </div>
         </div>
 
-        {/* === WEATHER STRIP === */}
-        <div className="flex flex-shrink-0">
-          <div className="w-14 flex-shrink-0" />
-          <WeatherDayStrip weekDays={weekDays} />
-        </div>
-
+        {viewMode === 'week' ? (<>
         {/* === DAY HEADERS === */}
         <div className="flex border-b border-border/60 bg-card/80 backdrop-blur-sm flex-shrink-0">
           {/* Time gutter spacer */}
@@ -724,6 +798,61 @@ export function TasksLayout() {
             })}
           </div>
         </div>
+        </>) : (
+        /* === MONTH VIEW === */
+        <div className="flex-1 overflow-y-auto p-3">
+          <div className="grid grid-cols-7 gap-px bg-border/40 rounded-lg overflow-hidden border border-border/40">
+            {/* Day headers */}
+            {DAY_LABELS.map((d) => (
+              <div key={d} className="bg-card/80 text-center py-1.5 text-xs font-bold uppercase tracking-label text-muted-foreground/70">{d}</div>
+            ))}
+            {/* Day cells */}
+            {monthDays.map((day, i) => {
+              const isCurrentMonth = day.getMonth() === monthDate.getMonth()
+              const isToday = isSameDay(day, today)
+              const dayTasks = allTasksByDay.get(day.toDateString()) || []
+              return (
+                <div
+                  key={i}
+                  className={cn(
+                    'bg-background min-h-[80px] p-1.5 transition-colors',
+                    !isCurrentMonth && 'opacity-30',
+                    isToday && 'bg-primary/5'
+                  )}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className={cn(
+                      'text-xs font-mono font-bold',
+                      isToday ? 'w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center' : 'text-muted-foreground'
+                    )}>
+                      {day.getDate()}
+                    </span>
+                  </div>
+                  <div className="space-y-0.5">
+                    {dayTasks.slice(0, 3).map((t) => (
+                      <button
+                        key={t.id}
+                        className={cn(
+                          'w-full text-left text-[10px] leading-tight truncate px-1 py-0.5 rounded border-l-2',
+                          PRIORITEIT_COLORS[t.prioriteit]?.border,
+                          PRIORITEIT_COLORS[t.prioriteit]?.bg,
+                          t.status === 'klaar' && 'line-through opacity-50'
+                        )}
+                        onClick={() => openEditDialog(taken.find((tt) => tt.id === t.id) || t)}
+                      >
+                        {t.titel}
+                      </button>
+                    ))}
+                    {dayTasks.length > 3 && (
+                      <span className="text-[10px] text-muted-foreground/50 px-1">+{dayTasks.length - 3}</span>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+        )}
       </div>
 
       {/* === FLOATING ACTION BUTTON === */}
@@ -1549,7 +1678,19 @@ function EditTaskDialog({
           </div>
           <div className="grid gap-2">
             <Label htmlFor="edit-toegewezen">Toegewezen aan</Label>
-            <Input id="edit-toegewezen" value={formData.toegewezen_aan} onChange={(e) => updateField('toegewezen_aan', e.target.value)} placeholder="Optioneel..." />
+            {medewerkers.length > 0 ? (
+              <Select value={formData.toegewezen_aan || 'none'} onValueChange={(v) => updateField('toegewezen_aan', v === 'none' ? '' : v)}>
+                <SelectTrigger><SelectValue placeholder="Optioneel..." /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Niet toegewezen</SelectItem>
+                  {medewerkers.filter((m) => m.status === 'actief').map((m) => (
+                    <SelectItem key={m.id} value={m.naam}>{m.naam}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <Input id="edit-toegewezen" value={formData.toegewezen_aan} onChange={(e) => updateField('toegewezen_aan', e.target.value)} placeholder="Optioneel..." />
+            )}
           </div>
           {/* Bijlagen */}
           <div className="grid gap-2">

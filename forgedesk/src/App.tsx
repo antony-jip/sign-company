@@ -63,8 +63,6 @@ const DocumentsLayout = lazy(() => import('@/components/documents/DocumentsLayou
 // Email
 const EmailLayout = lazy(() => import('@/components/email/EmailLayout'), 'EmailLayout')
 const EmailComposePage = lazy(() => import('@/components/email/EmailComposePage'), 'EmailComposePage')
-const NewsletterBuilder = lazy(() => import('@/components/email/NewsletterBuilder'), 'NewsletterBuilder')
-
 // Planning
 const PlanningLayout = lazy(() => import('@/components/planning/PlanningLayout'), 'PlanningLayout')
 const TasksLayout = lazy(() => import('@/components/planning/TasksLayout'), 'TasksLayout')
@@ -228,7 +226,7 @@ function AppContent() {
         <Route path="tijdregistratie" element={<TijdregistratieLayout />} />
         <Route path="nacalculatie" element={<NacalculatieLayout />} />
         <Route path="team" element={<TeamLayout />} />
-        <Route path="nieuwsbrieven" element={<NewsletterBuilder />} />
+
         <Route path="importeren" element={<DataImportPage />} />
         <Route path="ai" element={<FORGEdeskAIChat />} />
         <Route path="forgie" element={<ForgieChatPage />} />
