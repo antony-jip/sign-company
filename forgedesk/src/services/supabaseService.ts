@@ -2947,7 +2947,8 @@ export async function getWerkbonAfbeeldingen(werkbonItemId: string): Promise<Wer
 export async function createWerkbonAfbeelding(afbeelding: Omit<WerkbonAfbeelding, 'id' | 'created_at'>): Promise<WerkbonAfbeelding> {
   const newAfb: WerkbonAfbeelding = { ...afbeelding, id: generateId(), created_at: now() } as WerkbonAfbeelding
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('werkbon_afbeeldingen').insert(await withUserId(newAfb)).select().single()
+    // werkbon_afbeeldingen heeft geen user_id kolom — toegang loopt via werkbon_items RLS
+    const { data, error } = await supabase.from('werkbon_afbeeldingen').insert(newAfb).select().single()
     if (error) throw error
     return data
   }

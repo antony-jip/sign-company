@@ -29,15 +29,15 @@ import {
   getKlanten, getProjecten, getOffertes,
 } from '@/services/supabaseService'
 import { generateWerkbonInstructiePDF } from '@/services/werkbonPdfService'
-import { downloadFile } from '@/services/storageService'
+import { uploadFile, downloadFile, getSignedUrl } from '@/services/storageService'
 import { WerkbonItemCard } from './WerkbonItemCard'
 import { WerkbonHeaderForm } from './WerkbonHeaderForm'
 import { WerkbonMonteurFeedback } from './WerkbonMonteurFeedback'
 
-// Resolve a URL: if it's a storage path, convert to public URL
+// Resolve a URL: if it's a storage path, convert to a signed URL
 async function resolveUrl(url: string): Promise<string> {
   if (!url || url.startsWith('data:') || url.startsWith('http') || url.startsWith('blob:')) return url
-  try { return await downloadFile(url) } catch { return url }
+  try { return await getSignedUrl(url) } catch { return url }
 }
 
 // Resize image voor localStorage limiet
@@ -359,25 +359,28 @@ export function WerkbonDetail() {
 
     try {
       const resized = await resizeImage(file, 1200)
-      const reader = new FileReader()
-      reader.onload = async (ev) => {
-        const url = ev.target?.result as string
-        const afb = await createWerkbonAfbeelding({
-          werkbon_item_id: itemId,
-          url,
-          type: 'overig',
-          omschrijving: file.name,
-        })
-        setWerkbonItems((prev) => prev.map((item) =>
-          item.id === itemId
-            ? { ...item, afbeeldingen: [...item.afbeeldingen, afb] }
-            : item
-        ))
-        toast.success('Afbeelding toegevoegd')
-      }
-      reader.readAsDataURL(resized)
-    } catch {
-      toast.error('Fout bij verwerken afbeelding')
+      const resizedFile = new File([resized], file.name, { type: 'image/jpeg' })
+      const storagePath = `werkbon-afbeeldingen/${itemId}/${Date.now()}-${file.name}`
+      const uploadedPath = await uploadFile(resizedFile, storagePath)
+      const displayUrl = await resolveUrl(uploadedPath)
+
+      const afb = await createWerkbonAfbeelding({
+        werkbon_item_id: itemId,
+        url: uploadedPath,
+        type: 'overig',
+        omschrijving: file.name,
+      })
+      // Gebruik display URL voor directe weergave, DB heeft het storage path
+      afb.url = displayUrl
+      setWerkbonItems((prev) => prev.map((item) =>
+        item.id === itemId
+          ? { ...item, afbeeldingen: [...item.afbeeldingen, afb] }
+          : item
+      ))
+      toast.success('Afbeelding toegevoegd')
+    } catch (err) {
+      console.error('Fout bij uploaden afbeelding:', err)
+      toast.error('Fout bij uploaden afbeelding')
     }
     e.target.value = ''
   }, [])
@@ -402,22 +405,24 @@ export function WerkbonDetail() {
 
     try {
       const resized = await resizeImage(file, 1200)
-      const reader = new FileReader()
-      reader.onload = async (ev) => {
-        const url = ev.target?.result as string
-        const foto = await createWerkbonFoto({
-          user_id: userId,
-          werkbon_id: werkbonId,
-          type,
-          url,
-          omschrijving: file.name,
-        })
-        setFotos((prev) => [...prev, foto])
-        toast.success('Foto toegevoegd')
-      }
-      reader.readAsDataURL(resized)
-    } catch {
-      toast.error('Fout bij verwerken foto')
+      const resizedFile = new File([resized], file.name, { type: 'image/jpeg' })
+      const storagePath = `werkbon-fotos/${werkbonId}/${Date.now()}-${file.name}`
+      const uploadedPath = await uploadFile(resizedFile, storagePath)
+      const displayUrl = await resolveUrl(uploadedPath)
+
+      const foto = await createWerkbonFoto({
+        user_id: userId,
+        werkbon_id: werkbonId,
+        type,
+        url: uploadedPath,
+        omschrijving: file.name,
+      })
+      foto.url = displayUrl
+      setFotos((prev) => [...prev, foto])
+      toast.success('Foto toegevoegd')
+    } catch (err) {
+      console.error('Fout bij uploaden foto:', err)
+      toast.error('Fout bij uploaden foto')
     }
     e.target.value = ''
   }, [werkbonId, userId])
