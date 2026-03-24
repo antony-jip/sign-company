@@ -699,8 +699,19 @@ export function MontagePlanningLayout() {
     }
   }
 
-  async function handleDragDrop(afspraakId: string, newDate: string) {
-    const afspraak = afspraken.find((a) => a.id === afspraakId);
+  async function handleDragDrop(dragId: string, newDate: string) {
+    // Handle dragging a "te plannen" project onto a day column
+    if (dragId.startsWith("project:")) {
+      const projectId = dragId.replace("project:", "");
+      const project = projecten.find((p) => p.id === projectId);
+      if (!project) return;
+      openNewDialogFromProject(project);
+      // Pre-fill the date with the drop target date
+      setFormData((prev) => ({ ...prev, datum: newDate }));
+      return;
+    }
+
+    const afspraak = afspraken.find((a) => a.id === dragId);
     if (!afspraak || afspraak.datum === newDate) return;
     try {
       await updateMontageAfspraak(afspraakId, { datum: newDate }).catch(() => null);
@@ -882,12 +893,16 @@ export function MontagePlanningLayout() {
                 <span className="truncate">{afspraak.locatie}</span>
               </a>
             )}
-            {/* Werkbon */}
+            {/* Werkbon — klikbaar naar detail */}
             {afspraak.werkbon_nummer && (
-              <div className="flex items-center gap-1 text-[10px] font-mono text-[#943520] mt-1">
+              <a
+                href={`/werkbonnen/${afspraak.werkbon_id}`}
+                onClick={(e) => e.stopPropagation()}
+                className="flex items-center gap-1 text-[10px] font-mono text-[#943520] hover:underline mt-1"
+              >
                 <ClipboardCheck className="h-2.5 w-2.5 shrink-0" />
                 {afspraak.werkbon_nummer}
-              </div>
+              </a>
             )}
           </div>
         </div>
@@ -1499,8 +1514,13 @@ export function MontagePlanningLayout() {
               {tePlannenProjecten.map((project) => (
                 <button
                   key={project.id}
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.effectAllowed = "copy";
+                    e.dataTransfer.setData("text/plain", `project:${project.id}`);
+                  }}
                   onClick={() => openNewDialogFromProject(project)}
-                  className="w-full text-left px-3 py-2 border-l-[3px] border-l-[#F15025] hover:bg-orange-50/60 transition-colors"
+                  className="w-full text-left px-3 py-2 border-l-[3px] border-l-[#F15025] hover:bg-orange-50/60 transition-colors cursor-grab active:cursor-grabbing"
                 >
                   <div className="text-[13px] font-semibold truncate leading-tight">{project.naam}</div>
                   {project.klant_naam && (
