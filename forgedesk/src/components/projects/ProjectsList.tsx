@@ -349,12 +349,15 @@ export function ProjectsList() {
 
   return (
     <div className="h-full flex flex-col bg-[#F8F7F5]">
-      {/* Inline keyframes for pulse + stagger */}
+      {/* Inline keyframes for pulse + stagger + hover glow */}
       <style>{`
-        @keyframes doen-pulse { 0%,100% { opacity:1 } 50% { opacity:.4 } }
-        @keyframes doen-fade-up { from { opacity:0; transform:translateY(6px) } to { opacity:1; transform:translateY(0) } }
-        .doen-pulse { animation: doen-pulse 2s ease-in-out infinite }
-        .doen-row { animation: doen-fade-up .3s ease-out both }
+        @keyframes doen-pulse { 0%,100% { opacity:1 } 50% { opacity:.35 } }
+        @keyframes doen-fade-up { from { opacity:0; transform:translateY(8px) } to { opacity:1; transform:translateY(0) } }
+        @keyframes doen-shimmer { 0% { background-position: -200% 0 } 100% { background-position: 200% 0 } }
+        .doen-pulse { animation: doen-pulse 2.5s ease-in-out infinite }
+        .doen-row { animation: doen-fade-up .35s cubic-bezier(.22,1,.36,1) both }
+        .doen-gradient-btn { background-size: 200% auto; transition: all .3s ease }
+        .doen-gradient-btn:hover { background-position: right center }
       `}</style>
 
       {/* Hidden photo input */}
@@ -383,13 +386,17 @@ export function ProjectsList() {
                 <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-[#1A1A1A]">
                   Projecten<span className="text-[#F15025]">.</span>
                 </h1>
-                <p className="text-[13px] text-[#9B9B95] mt-0.5 font-mono">
-                  {gefilterdeProjecten.length} van {projecten.length}
+                <p className="text-[13px] text-[#9B9B95] mt-1">
+                  <span className="font-mono font-medium text-[#6B6B66]">{gefilterdeProjecten.length}</span>
+                  <span className="mx-1 text-[#C0BDB8]">/</span>
+                  <span className="font-mono">{projecten.length}</span>
+                  <span className="ml-1.5 text-[12px]">projecten</span>
                 </p>
               </div>
               <Link
                 to="/projecten/nieuw"
-                className="inline-flex items-center gap-2 bg-[#1A535C] text-white pl-4 pr-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_1px_3px_rgba(26,83,92,0.3),0_4px_12px_rgba(26,83,92,0.15)] hover:bg-[#237580] hover:shadow-[0_2px_6px_rgba(26,83,92,0.35),0_8px_20px_rgba(26,83,92,0.2)] hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200"
+                className="doen-gradient-btn inline-flex items-center gap-2 text-white pl-4 pr-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_2px_8px_rgba(241,80,37,0.2),0_1px_3px_rgba(26,83,92,0.15)] hover:shadow-[0_4px_20px_rgba(241,80,37,0.3),0_2px_8px_rgba(26,83,92,0.2)] hover:-translate-y-[1px] active:translate-y-0 active:shadow-[0_1px_4px_rgba(241,80,37,0.2)]"
+                style={{ backgroundImage: 'linear-gradient(135deg, #1A535C 0%, #1A535C 40%, #F15025 100%)' }}
               >
                 <Plus className="w-4 h-4" />
                 Nieuw project
@@ -426,7 +433,7 @@ export function ProjectsList() {
           </div>
 
           {/* Toolbar card — search, filters, export in one white surface */}
-          <div className="bg-white rounded-2xl p-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+          <div className="bg-white rounded-2xl p-5 shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03]">
             <div className="flex items-center gap-5">
               {/* Search with keyboard hint */}
               <div className="relative max-w-[280px] flex-1">
@@ -597,7 +604,8 @@ export function ProjectsList() {
                 action={
                   <Link
                     to="/projecten/nieuw"
-                    className="inline-flex items-center gap-2 bg-[#1A535C] text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-sm hover:bg-[#237580] transition-all mt-4"
+                    className="doen-gradient-btn inline-flex items-center gap-2 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_2px_8px_rgba(241,80,37,0.2),0_1px_3px_rgba(26,83,92,0.15)] hover:shadow-[0_4px_16px_rgba(241,80,37,0.25)] hover:-translate-y-[1px] active:translate-y-0 transition-all mt-4"
+                    style={{ backgroundImage: 'linear-gradient(135deg, #1A535C 0%, #1A535C 40%, #F15025 100%)' }}
                   >
                     <Plus className="w-4 h-4" />
                     Nieuw project
@@ -651,7 +659,7 @@ export function ProjectsList() {
               </div>
 
               {/* Desktop table in white card */}
-              <div className="hidden md:block bg-white rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.04)] overflow-hidden">
+              <div className="hidden md:block bg-white rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03] overflow-hidden">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b-2 border-[#F0EFEC]">
@@ -723,7 +731,7 @@ export function ProjectsList() {
                         <tr
                           key={project.id}
                           className={cn(
-                            'doen-row border-b border-[#F0EFEC] last:border-0 cursor-pointer transition-all duration-150 group',
+                            'doen-row relative border-b border-[#F0EFEC] last:border-0 cursor-pointer transition-all duration-150 group',
                             'hover:bg-[#FAFAF8]',
                             selectedIds.has(project.id) && 'bg-[#1A535C]/[0.03]'
                           )}
@@ -751,7 +759,7 @@ export function ProjectsList() {
                                   {project.naam}
                                 </Link>
                                 {project.project_nummer && (
-                                  <span className="text-[11px] text-[#C0BDB8] font-mono flex-shrink-0 tabular-nums">{project.project_nummer}</span>
+                                  <span className="text-[10px] text-[#B0ADA8] font-mono flex-shrink-0 tabular-nums bg-[#F5F4F1] px-1.5 py-0.5 rounded">{project.project_nummer}</span>
                                 )}
                               </div>
                               {project.beschrijving && (
@@ -824,23 +832,25 @@ export function ProjectsList() {
                           <td className="py-3.5 pr-4 text-right hidden xl:table-cell">
                             {(() => {
                               const bedrag = getProjectBedrag(project.id)
-                              return bedrag > 0 ? (
+                              if (bedrag <= 0) return <span className="text-xs text-[#C0BDB8]">&mdash;</span>
+                              const formatted = formatCurrency(bedrag)
+                              return (
                                 <span className={cn(
-                                  'font-mono tabular-nums text-[#1A1A1A]',
-                                  bedrag >= 10000 ? 'text-[15px] font-semibold' : 'text-sm'
+                                  'font-mono tabular-nums',
+                                  bedrag >= 10000
+                                    ? 'text-[15px] font-bold text-[#1A1A1A]'
+                                    : 'text-sm text-[#4A4A46]'
                                 )}>
-                                  {formatCurrency(bedrag)}
+                                  {formatted}
                                 </span>
-                              ) : (
-                                <span className="text-xs text-[#C0BDB8]">&mdash;</span>
                               )
                             })()}
                           </td>
 
                           {/* Datum */}
                           <td className="py-3.5 pr-4 text-right hidden lg:table-cell">
-                            <span className="text-xs font-mono tabular-nums text-[#C0BDB8]">
-                              {new Date(project.created_at).toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit' }).replace('/', '-')}
+                            <span className="text-[12px] font-mono tabular-nums text-[#B0ADA8]">
+                              {new Date(project.created_at).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' }).replace('.', '')}
                             </span>
                           </td>
 
