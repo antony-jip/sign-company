@@ -14,6 +14,7 @@ import type {
   Email,
   CalendarEvent,
   Grootboek,
+  Kostenplaats,
   BtwCode,
   Korting,
   AIChat,
@@ -1252,6 +1253,72 @@ export async function deleteGrootboekRekening(id: string): Promise<void> {
   }
   const grootboek = getLocalData<Grootboek>('grootboek')
   setLocalData('grootboek', grootboek.filter((g) => g.id !== id))
+}
+
+// ============ KOSTENPLAATSEN ============
+
+export async function getKostenplaatsen(): Promise<Kostenplaats[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('kostenplaatsen')
+      .select('*')
+      .order('code')
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<Kostenplaats>('kostenplaatsen')
+}
+
+export async function createKostenplaats(data: Omit<Kostenplaats, 'id' | 'created_at'>): Promise<Kostenplaats> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data: result, error } = await supabase
+      .from('kostenplaatsen')
+      .insert(data)
+      .select()
+      .single()
+    if (error) throw error
+    return result
+  }
+  const items = getLocalData<Kostenplaats>('kostenplaatsen')
+  const newItem: Kostenplaats = {
+    ...data,
+    id: generateId(),
+    created_at: now(),
+  } as Kostenplaats
+  items.push(newItem)
+  setLocalData('kostenplaatsen', items)
+  return newItem
+}
+
+export async function updateKostenplaats(id: string, updates: Partial<Kostenplaats>): Promise<Kostenplaats> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('kostenplaatsen')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  }
+  const items = getLocalData<Kostenplaats>('kostenplaatsen')
+  const index = items.findIndex((k) => k.id === id)
+  if (index === -1) throw new Error('Kostenplaats niet gevonden')
+  items[index] = { ...items[index], ...updates }
+  setLocalData('kostenplaatsen', items)
+  return items[index]
+}
+
+export async function deleteKostenplaats(id: string): Promise<void> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase.from('kostenplaatsen').delete().eq('id', id)
+    if (error) throw error
+    return
+  }
+  const items = getLocalData<Kostenplaats>('kostenplaatsen')
+  setLocalData('kostenplaatsen', items.filter((k) => k.id !== id))
 }
 
 // ============ BTW CODES ============

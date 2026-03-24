@@ -780,6 +780,7 @@ export function generateFactuurPDF(
     betaalvoorwaarden?: string
     factuur_type?: string
     betaal_link?: string
+    credit_voor_nummer?: string
   },
   items: OfferteItem[],
   klant: Partial<Klant>,
@@ -802,11 +803,12 @@ export function generateFactuurPDF(
   const typeLabels: Record<string, string> = {
     standaard: 'Factuur',
     voorschot: 'Voorschotfactuur',
-    creditnota: 'Creditnota',
+    creditnota: 'Creditfactuur',
+    credit: 'Creditfactuur',
     eindafrekening: 'Eindafrekening',
   }
   const headerLabel = typeLabels[factuurData.factuur_type || 'standaard'] || 'Factuur'
-  const isCreditnota = factuurData.factuur_type === 'creditnota'
+  const isCreditnota = factuurData.factuur_type === 'creditnota' || factuurData.factuur_type === 'credit'
 
   // Override brand color to red for creditnota
   const effectiveBrand: [number, number, number] = isCreditnota ? [200, 50, 50] : brand
@@ -839,6 +841,16 @@ export function generateFactuurPDF(
     doc.setFont(bodyFont, 'bold')
     doc.text(`Betreft: ${factuurData.titel}`, margins.left, y)
     doc.setFont(bodyFont, 'normal')
+    y += 6
+  }
+
+  // Referentie naar originele factuur bij creditnota
+  if (isCreditnota && factuurData.credit_voor_nummer) {
+    doc.setFont(bodyFont, 'bold')
+    doc.setTextColor(200, 50, 50)
+    doc.text(`Creditfactuur voor: ${factuurData.credit_voor_nummer}`, margins.left, y)
+    doc.setFont(bodyFont, 'normal')
+    doc.setTextColor(...textColor)
     y += 6
   }
 

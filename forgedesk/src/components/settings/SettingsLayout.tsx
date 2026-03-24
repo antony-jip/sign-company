@@ -87,7 +87,8 @@ import { SidebarTab } from './SidebarTab'
 import { TeamledenTab } from './TeamledenTab'
 import { AbonnementTab } from './AbonnementTab'
 import { OfferteOpvolgingTab } from './OfferteOpvolgingTab'
-import { Sparkles, Clock } from 'lucide-react'
+import { KostenplaatsenTab } from './KostenplaatsenTab'
+import { Sparkles, Clock, MapPin } from 'lucide-react'
 
 // Shared sub-tab navigation component
 interface SubTab {
@@ -182,6 +183,7 @@ const settingsSections = [
       { id: 'teamleden', label: 'Teamleden', icon: Users },
       { id: 'abonnement', label: 'Abonnement', icon: CreditCard },
       { id: 'opvolging', label: 'Opvolging', icon: Clock },
+      { id: 'kostenplaatsen', label: 'Kostenplaatsen', icon: MapPin },
     ],
   },
   {
@@ -220,6 +222,7 @@ function renderTabContent(tabId: string) {
     case 'teamleden': return <TeamledenTab />
     case 'abonnement': return <AbonnementTab />
     case 'opvolging': return <OfferteOpvolgingTab />
+    case 'kostenplaatsen': return <KostenplaatsenTab />
     default: return null
   }
 }

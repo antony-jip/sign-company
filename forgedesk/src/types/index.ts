@@ -261,6 +261,8 @@ export interface Project {
   // Feature 8: Project kopiëren / template
   is_template?: boolean;
   bron_project_id?: string;
+  // Kostenplaats
+  kostenplaats_id?: string;
   created_at: string;
   updated_at: string;
 }
@@ -359,6 +361,8 @@ export interface Offerte {
   opvolging_actief?: boolean;
   opvolging_schema_id?: string;
   verzendwijze?: 'via_portaal' | 'via_email_pdf' | 'via_handmatig';
+  // Kostenplaats
+  kostenplaats_id?: string;
   created_at: string;
   updated_at: string;
 }
@@ -404,6 +408,8 @@ export interface OfferteItem {
   bijlage_url?: string;
   bijlage_type?: 'image/jpeg' | 'image/png' | 'application/pdf';
   bijlage_naam?: string;
+  // Grootboek
+  grootboek_code?: string;
   created_at: string;
   updated_at?: string;
 }
@@ -531,6 +537,15 @@ export interface CalendarEvent {
   herhaling: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface Kostenplaats {
+  id: string;
+  organisatie_id: string;
+  code: string;
+  naam: string;
+  actief: boolean;
+  created_at: string;
 }
 
 export interface Grootboek {
@@ -913,7 +928,7 @@ export interface Factuur {
   herinnering_3_verstuurd?: string;
   aanmaning_verstuurd?: string;
   // Tier 1 Feature 4: Creditnota's + Voorschotfacturen
-  factuur_type?: 'standaard' | 'voorschot' | 'creditnota' | 'eindafrekening';
+  factuur_type?: 'standaard' | 'voorschot' | 'creditnota' | 'credit' | 'eindafrekening';
   gerelateerde_factuur_id?: string;
   credit_reden?: string;
   voorschot_percentage?: number;
@@ -936,6 +951,10 @@ export interface Factuur {
   // Exact Online sync
   exact_entry_id?: string;
   exact_synced_at?: string;
+  // Creditfactuur referentie
+  credit_voor_factuur_id?: string;
+  // Kostenplaats
+  kostenplaats_id?: string;
   created_at: string;
   updated_at: string;
 }
@@ -951,6 +970,8 @@ export interface FactuurItem {
   korting_percentage: number;
   totaal: number;
   volgorde: number;
+  // Grootboek
+  grootboek_code?: string;
   created_at: string;
   updated_at?: string;
 }
