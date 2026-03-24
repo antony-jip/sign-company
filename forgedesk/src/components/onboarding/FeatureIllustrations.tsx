@@ -337,7 +337,7 @@ export function IllustratieEmail() {
   )
 }
 
-// ─── 7. AI Forgie — Chat met sparkles ───────────────────────
+// ─── 7. AI Daan — Chat met sparkles ───────────────────────
 
 export function IllustratieForgie() {
   return (

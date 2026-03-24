@@ -116,7 +116,7 @@ export function ForgieTab() {
   const [transacties, setTransacties] = useState<CreditTransactie[]>([])
   const [showTransacties, setShowTransacties] = useState(false)
 
-  // Forgie AI usage
+  // Daan AI usage
   const [forgieGebruik, setForgieGebruik] = useState({ geschatte_kosten: 0, aantal_calls: 0, limiet: 5.0 })
 
   // Credits kopen
@@ -324,7 +324,7 @@ export function ForgieTab() {
                 </span>
                 <span className="font-medium">{totaalGebruikt} credits gebruikt</span>
               </div>
-              {/* Forgie usage */}
+              {/* Daan usage */}
               <div className="flex items-center justify-between text-sm">
                 <span className="flex items-center gap-1.5 text-muted-foreground">
                   <Bot className="w-3.5 h-3.5" /> Daan AI
@@ -651,7 +651,7 @@ export function ForgieTab() {
         <CardHeader>
           <CardTitle className="text-base">Bedrijfshistorie importeren</CardTitle>
           <CardDescription>
-            Upload een CSV bestand met je oude bedrijfsdata. Daan kan dan vragen beantwoorden over je hele historie — ook van voor Doen.
+            Upload een CSV bestand met je oude bedrijfsdata. Daan kan dan vragen beantwoorden over je hele historie — ook van voor doen.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

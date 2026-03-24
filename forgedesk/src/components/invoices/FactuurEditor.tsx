@@ -1387,11 +1387,11 @@ export function FactuurEditor() {
             {currentStatus === 'gecrediteerd' && <MinusCircle className="h-4 w-4" />}
             {isVervallen && <AlertTriangle className="h-4 w-4" />}
             <span>
-              {currentStatus === 'betaald' && <>Betaald op <span className="font-mono">{formatDate(existingFactuur.betaaldatum || '')}</span></>}
-              {currentStatus === 'verzonden' && !isVervallen && 'Verstuurd — wachtend op betaling'}
-              {currentStatus === 'concept' && 'Concept — nog niet verstuurd'}
-              {currentStatus === 'gecrediteerd' && 'Gecrediteerd'}
-              {isVervallen && `${dagenVervallen} dag${dagenVervallen !== 1 ? 'en' : ''} vervallen`}
+              {currentStatus === 'betaald' && <>Betaald op <span className="font-mono">{formatDate(existingFactuur.betaaldatum || '')}</span><span style={{ color: '#F15025' }}>.</span></>}
+              {currentStatus === 'verzonden' && !isVervallen && <>Verstuurd — wachtend op betaling<span style={{ color: '#F15025' }}>.</span></>}
+              {currentStatus === 'concept' && <>Concept — nog niet verstuurd<span style={{ color: '#F15025' }}>.</span></>}
+              {currentStatus === 'gecrediteerd' && <>Gecrediteerd<span style={{ color: '#F15025' }}>.</span></>}
+              {isVervallen && <>{dagenVervallen} dag{dagenVervallen !== 1 ? 'en' : ''} vervallen<span style={{ color: '#F15025' }}>.</span></>}
             </span>
             {existingFactuur.betaal_link && currentStatus !== 'betaald' && (
               <span className="ml-auto text-xs opacity-70">

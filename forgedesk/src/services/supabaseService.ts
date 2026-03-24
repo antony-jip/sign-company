@@ -5064,7 +5064,7 @@ export async function getCreditTransacties(user_id: string): Promise<CreditTrans
   return items.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''))
 }
 
-// Forgie AI maandelijks gebruik ophalen
+// Daan AI maandelijks gebruik ophalen
 export async function getForgieGebruik(user_id: string): Promise<{ geschatte_kosten: number; aantal_calls: number; limiet: number }> {
   assertId(user_id, 'user_id')
   const limiet = 5.0 // €5 per maand

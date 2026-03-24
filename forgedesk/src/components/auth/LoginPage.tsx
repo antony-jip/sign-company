@@ -59,7 +59,7 @@ export function LoginPage() {
                 <path d="M12 16v4" />
               </svg>
             </div>
-            <span className="text-lg font-bold text-white tracking-tight" style={{ fontFamily: '"Bricolage Grotesque", sans-serif' }}>Doen.</span>
+            <span className="text-lg font-bold text-white tracking-tight" style={{ fontFamily: '"Bricolage Grotesque", sans-serif' }}>doen<span style={{ color: '#F15025' }}>.</span></span>
           </Link>
         </div>
 
@@ -137,12 +137,12 @@ export function LoginPage() {
         </div>
 
         <p className="relative z-10 text-xs text-white/25" style={{ fontFamily: 'Inter, sans-serif' }}>
-          © {new Date().getFullYear()} Doen. Alle rechten voorbehouden.
+          © {new Date().getFullYear()} doen. Alle rechten voorbehouden.
         </p>
       </div>
 
       {/* Right: Login form */}
-      <div className="flex items-center justify-center flex-1 p-5 sm:p-8 bg-background lg:rounded-l-[2rem]">
+      <div className="flex items-center justify-center flex-1 p-5 sm:p-8 bg-[#FEFDFB] lg:rounded-l-[2rem]">
         <div className="w-full max-w-[400px]">
           <div className="flex items-center gap-2.5 mb-10 lg:hidden">
             <Link to="/" className="flex items-center gap-2.5">
@@ -153,7 +153,7 @@ export function LoginPage() {
                   <path d="M12 16v4" />
                 </svg>
               </div>
-              <span className="text-lg font-bold text-foreground" style={{ fontFamily: '"Bricolage Grotesque", sans-serif' }}>Doen.</span>
+              <span className="text-lg font-bold text-foreground" style={{ fontFamily: '"Bricolage Grotesque", sans-serif' }}>doen<span style={{ color: '#F15025' }}>.</span></span>
             </Link>
           </div>
 
@@ -161,7 +161,7 @@ export function LoginPage() {
             Welkom terug
           </h1>
           <p className="text-[14.5px] text-muted-foreground mb-8" style={{ fontFamily: 'Inter, sans-serif' }}>
-            Log in op je Doen. account
+            Log in op je doen. account
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -217,7 +217,8 @@ export function LoginPage() {
 
             <Button
               type="submit"
-              className="w-full h-11 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl font-semibold text-[14px] transition-all group"
+              className="w-full h-11 text-white hover:opacity-90 rounded-xl font-semibold text-[14px] transition-all group"
+              style={{ backgroundColor: '#F15025' }}
               disabled={isLoading}
             >
               {isLoading ? (
@@ -242,7 +243,7 @@ export function LoginPage() {
           </p>
 
           <p className="text-center text-xs text-muted-foreground/60 mt-6" style={{ fontFamily: 'Inter, sans-serif' }}>
-            Demo: gebruik demo@forgedesk.nl / demo1234
+            Demo: gebruik demo@doen.nl / demo1234
           </p>
         </div>
       </div>

@@ -81,7 +81,7 @@ export function OfferteCard({ item }: { item: PortaalItem }) {
   return (
     <div className="flex justify-end">
       <div className="max-w-[80%] flex flex-col items-end">
-        <div className="bg-white border border-mod-email-border rounded-2xl rounded-br-md overflow-hidden shadow-sm w-full">
+        <div className="bg-[#FEFDFB] border border-mod-email-border rounded-2xl rounded-br-md overflow-hidden shadow-sm w-full">
           <div className="flex items-center gap-2 px-3.5 py-2 bg-mod-email-light border-b border-mod-email-border">
             <Receipt className="h-3.5 w-3.5 text-mod-email-text" />
             <span className="text-[11px] font-semibold text-mod-email-text">Offerte</span>
@@ -116,7 +116,7 @@ export function FactuurCard({ item }: { item: PortaalItem }) {
   return (
     <div className="flex justify-end">
       <div className="max-w-[80%] flex flex-col items-end">
-        <div className="bg-white border border-mod-werkbonnen-border rounded-2xl rounded-br-md overflow-hidden shadow-sm w-full">
+        <div className="bg-[#FEFDFB] border border-mod-werkbonnen-border rounded-2xl rounded-br-md overflow-hidden shadow-sm w-full">
           <div className="flex items-center gap-2 px-3.5 py-2 bg-mod-werkbonnen-light border-b border-mod-werkbonnen-border">
             <CreditCard className="h-3.5 w-3.5 text-mod-werkbonnen-text" />
             <span className="text-[11px] font-semibold text-mod-werkbonnen-text">Factuur</span>
@@ -152,7 +152,7 @@ export function TekeningCard({ item }: { item: PortaalItem }) {
   return (
     <div className="flex justify-end">
       <div className="max-w-[80%] flex flex-col items-end">
-        <div className="bg-white border border-mod-klanten-border rounded-2xl rounded-br-md overflow-hidden shadow-sm w-full">
+        <div className="bg-[#FEFDFB] border border-mod-klanten-border rounded-2xl rounded-br-md overflow-hidden shadow-sm w-full">
           <div className="flex items-center gap-2 px-3.5 py-2 bg-mod-klanten-light border-b border-mod-klanten-border">
             <FileText className="h-3.5 w-3.5 text-mod-klanten-text" />
             <span className="text-[11px] font-semibold text-mod-klanten-text">Tekening</span>

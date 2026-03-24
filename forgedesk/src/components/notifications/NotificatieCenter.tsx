@@ -266,7 +266,7 @@ function NotificatieToast({
         onClick={onClick}
         className="flex items-start gap-3 w-96 p-4 text-left transition-colors hover:bg-[#F4F2EE]"
         style={{
-          background: '#FFFFFF',
+          background: '#FEFDFB',
           border: '0.5px solid #E6E4E0',
           borderRadius: '10px',
           boxShadow: '0 4px 16px rgba(120,90,50,0.10)',
@@ -497,7 +497,7 @@ export function NotificatieCenter() {
         <div
           className="absolute right-0 top-full z-50 mt-2 w-96 overflow-hidden"
           style={{
-            background: '#FFFFFF',
+            background: '#FEFDFB',
             border: '0.5px solid #E6E4E0',
             borderRadius: '10px',
             boxShadow: '0 4px 16px rgba(120,90,50,0.10)',

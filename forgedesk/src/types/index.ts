@@ -678,7 +678,7 @@ export interface AppSettings {
   // Email
   afzender_naam: string;
   email_fetch_limit: number;
-  // Forgie
+  // Daan
   forgie_enabled: boolean;
   forgie_bedrijfscontext: string;
   // Quick Actions

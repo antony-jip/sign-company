@@ -212,7 +212,7 @@ export function BetaalPagina() {
   // Loading
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[#FEFDFB] flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
           <p className="text-sm text-muted-foreground">Factuur laden...</p>
@@ -224,7 +224,7 @@ export function BetaalPagina() {
   // Not found
   if (notFound || !factuur) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[#FEFDFB] flex items-center justify-center p-4">
         <Card className="max-w-md w-full">
           <CardContent className="flex flex-col items-center gap-4 py-12">
             <AlertTriangle className="h-12 w-12 text-amber-500" />
@@ -257,7 +257,7 @@ export function BetaalPagina() {
     : null
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
+    <div className="min-h-screen bg-[#FEFDFB] p-4 md:p-8">
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
@@ -286,7 +286,7 @@ export function BetaalPagina() {
           <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-xl p-4">
             <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
             <div>
-              <p className="font-medium text-emerald-800">Deze factuur is betaald</p>
+              <p className="font-medium text-emerald-800">Deze factuur is betaald<span style={{ color: '#F15025' }}>.</span></p>
               {factuur.betaaldatum && (
                 <p className="text-sm text-emerald-600">Betaald op <span className="font-mono">{formatDate(factuur.betaaldatum)}</span></p>
               )}
@@ -298,7 +298,7 @@ export function BetaalPagina() {
           <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-xl p-4">
             <AlertTriangle className="h-5 w-5 text-red-600 shrink-0" />
             <div>
-              <p className="font-medium text-red-800">Deze factuur is vervallen</p>
+              <p className="font-medium text-red-800">Deze factuur is vervallen<span style={{ color: '#F15025' }}>.</span></p>
               <p className="text-sm text-red-600">Vervaldatum was <span className="font-mono">{formatDate(factuur.vervaldatum)}</span></p>
             </div>
           </div>
@@ -319,7 +319,7 @@ export function BetaalPagina() {
                     : 'bg-blue-100 text-blue-700'
                 }
               >
-                {isBetaald ? 'Betaald' : isVervallen ? 'Vervallen' : 'Openstaand'}
+                {isBetaald ? 'Betaald' : isVervallen ? 'Vervallen' : 'Openstaand'}<span style={{ color: '#F15025' }}>.</span>
               </Badge>
             </div>
 
@@ -351,16 +351,16 @@ export function BetaalPagina() {
             <div className="space-y-2">
               <div className="flex justify-between text-sm text-muted-foreground">
                 <span>Subtotaal</span>
-                <span>{formatCurrency(factuur.subtotaal)}</span>
+                <span className="font-mono">{formatCurrency(factuur.subtotaal)}</span>
               </div>
               <div className="flex justify-between text-sm text-muted-foreground">
                 <span>BTW</span>
-                <span>{formatCurrency(factuur.btw_bedrag)}</span>
+                <span className="font-mono">{formatCurrency(factuur.btw_bedrag)}</span>
               </div>
               {factuur.betaald_bedrag > 0 && !isBetaald && (
                 <div className="flex justify-between text-sm text-emerald-600">
                   <span>Reeds betaald</span>
-                  <span>-{formatCurrency(factuur.betaald_bedrag)}</span>
+                  <span className="font-mono">-{formatCurrency(factuur.betaald_bedrag)}</span>
                 </div>
               )}
               <Separator />
@@ -368,7 +368,7 @@ export function BetaalPagina() {
                 <span className="text-base font-bold text-foreground">
                   {isBetaald ? 'Totaal betaald' : 'Te betalen'}
                 </span>
-                <span className="text-2xl font-bold text-blue-600">
+                <span className="text-2xl font-bold font-mono text-blue-600">
                   {isBetaald
                     ? formatCurrency(factuur.totaal)
                     : formatCurrency(Math.max(0, factuur.totaal - factuur.betaald_bedrag))}
@@ -457,7 +457,7 @@ export function BetaalPagina() {
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
                       Bedrag
                     </p>
-                    <p className="text-base font-semibold text-foreground">
+                    <p className="text-base font-semibold font-mono text-foreground">
                       {formatCurrency(Math.max(0, factuur.totaal - factuur.betaald_bedrag))}
                     </p>
                   </div>

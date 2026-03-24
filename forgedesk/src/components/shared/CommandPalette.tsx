@@ -392,8 +392,8 @@ export function CommandPalette() {
                       transition-colors duration-75
                       ${
                         isSelected
-                          ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                          : 'text-foreground/70 dark:text-muted-foreground/50 hover:bg-background dark:hover:bg-muted/50'
+                          ? 'bg-[#FFF5F0] dark:bg-primary/10 text-[#C03A18] dark:text-primary'
+                          : 'text-foreground/70 dark:text-muted-foreground/50 hover:bg-[#FEFDFB] dark:hover:bg-muted/50'
                       }
                     `}
                     onClick={() => selectItem(item)}
@@ -404,7 +404,7 @@ export function CommandPalette() {
                         flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center
                         ${
                           isSelected
-                            ? 'bg-blue-100 dark:bg-blue-800/50 text-blue-600 dark:text-blue-400'
+                            ? 'bg-[#FDE8E2] dark:bg-primary/20 text-[#C03A18] dark:text-primary'
                             : 'bg-muted dark:bg-muted text-muted-foreground dark:text-muted-foreground/60'
                         }
                       `}
@@ -422,7 +422,7 @@ export function CommandPalette() {
                     <ChevronRight
                       className={`
                         w-4 h-4 flex-shrink-0 transition-opacity duration-75
-                        ${isSelected ? 'opacity-100 text-blue-400 dark:text-blue-500' : 'opacity-0'}
+                        ${isSelected ? 'opacity-100 text-primary dark:text-primary' : 'opacity-0'}
                       `}
                     />
                   </div>

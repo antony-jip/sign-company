@@ -68,7 +68,7 @@ export function PortaalChatProgress({
       </div>
 
       <div className="flex items-center gap-2">
-        <Badge className={statusClass}>{statusLabel}</Badge>
+        <Badge className={statusClass}>{statusLabel}<span style={{ color: '#F15025' }}>.</span></Badge>
         <span className="whitespace-nowrap text-xs text-muted-foreground">
           Geldig tot {formattedDate}
         </span>

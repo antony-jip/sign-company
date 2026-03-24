@@ -415,7 +415,7 @@ export function PortalenOverzicht() {
                       <div className="flex items-center gap-2 mt-1.5">
                         <Badge className={`${status.color} text-2xs px-1.5 flex items-center gap-0.5`}>
                           <StatusIcon className="h-2.5 w-2.5" />
-                          {status.label}
+                          {status.label}<span style={{ color: '#F15025' }}>.</span>
                         </Badge>
                       </div>
 

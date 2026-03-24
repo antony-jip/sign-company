@@ -1,7 +1,7 @@
 /**
  * Email template builder for Trigger.dev tasks.
  * Mirrors api/emailTemplate.ts but available server-side in tasks.
- * White-label: no "Doen." or "FORGEdesk" visible to clients.
+ * White-label: no "doen." branding visible to clients.
  */
 
 function escapeHtml(str: string): string {

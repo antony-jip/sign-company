@@ -259,7 +259,7 @@ export function BestelbonnenLayout() {
                           <span className={cn('w-1.5 h-1.5 rounded-full mr-1.5 inline-block', cfg.dot)} />{cfg.label}
                         </Badge>
                       </td>
-                      <td className="px-4 py-3 text-sm font-semibold text-foreground">{formatCurrency(bedragen[bst.id] || 0)}</td>
+                      <td className="px-4 py-3 text-sm font-semibold font-mono text-foreground">{formatCurrency(bedragen[bst.id] || 0)}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); navigateWithTab({ path: `/bestelbonnen/${bst.id}`, label: bst.bestelbon_nummer || 'Bestelbon', id: `/bestelbonnen/${bst.id}` }) }}>

@@ -114,7 +114,7 @@ const PortalenOverzicht = lazy(() => import('@/components/portaal/PortalenOverzi
 // Notifications
 const MeldingenPage = lazy(() => import('@/components/notifications/MeldingenPage'), 'MeldingenPage')
 
-// AI / Forgie
+// AI / Daan
 const FORGEdeskAIChat = lazy(() => import('@/components/forgie/FORGEdeskAIChat'), 'FORGEdeskAIChat')
 const ForgieChatPage = lazy(() => import('@/components/forgie/ForgieChatPage'), 'ForgieChatPage')
 

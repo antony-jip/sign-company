@@ -225,7 +225,7 @@ export function OfferteOpvolgingTab() {
         </div>
 
         {/* Stappen tabel */}
-        <Card className="border-[#E6E4E0] bg-white">
+        <Card className="border-[#E6E4E0] bg-[#FEFDFB]">
           <CardHeader className="py-3 px-4">
             <CardTitle className="text-sm font-semibold">Opvolgstappen</CardTitle>
           </CardHeader>
@@ -360,7 +360,7 @@ export function OfferteOpvolgingTab() {
                 <span className="font-medium text-muted-foreground">Onderwerp:</span>{' '}
                 <span className="font-semibold">{replaceMergeFields(previewStap.onderwerp)}</span>
               </div>
-              <div className="bg-white rounded border border-[#E6E4E0] p-3 text-xs whitespace-pre-wrap leading-relaxed">
+              <div className="bg-[#FEFDFB] rounded border border-[#E6E4E0] p-3 text-xs whitespace-pre-wrap leading-relaxed">
                 {replaceMergeFields(previewStap.inhoud)}
               </div>
             </CardContent>
@@ -368,7 +368,7 @@ export function OfferteOpvolgingTab() {
         )}
 
         {/* Merge velden */}
-        <Card className="border-[#E6E4E0] bg-white">
+        <Card className="border-[#E6E4E0] bg-[#FEFDFB]">
           <CardHeader className="py-3 px-4">
             <CardTitle className="text-xs font-semibold text-muted-foreground">Beschikbare merge-velden</CardTitle>
           </CardHeader>
@@ -419,7 +419,7 @@ export function OfferteOpvolgingTab() {
           {schemas.map((schema) => (
             <Card
               key={schema.id}
-              className="border-[#E6E4E0] bg-white hover:border-[#1A5C5E]/30 transition-colors cursor-pointer"
+              className="border-[#E6E4E0] bg-[#FEFDFB] hover:border-[#1A5C5E]/30 transition-colors cursor-pointer"
               onClick={() => setSelectedSchema(schema)}
             >
               <CardContent className="flex items-center justify-between py-3 px-4">

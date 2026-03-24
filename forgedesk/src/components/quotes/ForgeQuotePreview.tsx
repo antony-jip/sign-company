@@ -458,7 +458,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
       )}
 
       {/* A4-like document */}
-      <div className="bg-white dark:bg-card shadow-xl rounded-lg border border-border dark:border-border overflow-hidden">
+      <div className="bg-[#FEFDFB] dark:bg-card shadow-xl rounded-lg border border-border dark:border-border overflow-hidden">
         {/* Header */}
         <div className="px-10 pt-10 pb-6">
           <div className="flex justify-between items-start">
@@ -478,7 +478,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
             {/* Status Badge */}
             {offerteData.status && (
               <Badge className={getStatusColor(offerteData.status)}>
-                {offerteData.status.charAt(0).toUpperCase() + offerteData.status.slice(1)}
+                {offerteData.status.charAt(0).toUpperCase() + offerteData.status.slice(1)}<span style={{ color: '#F15025' }}>.</span>
               </Badge>
             )}
           </div>

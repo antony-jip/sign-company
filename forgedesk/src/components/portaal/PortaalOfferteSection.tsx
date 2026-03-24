@@ -137,7 +137,7 @@ function OfferteCard({ item, token, klantNaam, onKlantNaamChange, onReactie, pri
   }
 
   return (
-    <div className="rounded-[10px] transition-all" style={{ backgroundColor: isGetekend ? '#F0F8F3' : '#FFFFFF', border: `0.5px solid ${isGetekend ? '#2D6B48' : '#E6E4E0'}` }}>
+    <div className="rounded-[10px] transition-all" style={{ backgroundColor: isGetekend ? '#F0F8F3' : '#FEFDFB', border: `0.5px solid ${isGetekend ? '#2D6B48' : '#E6E4E0'}` }}>
       {/* Header */}
       <div className="px-5 py-4">
         <div className="flex items-start justify-between gap-3">
@@ -146,7 +146,7 @@ function OfferteCard({ item, token, klantNaam, onKlantNaamChange, onReactie, pri
             <p className="font-mono mt-0.5" style={{ fontSize: 10, color: '#A0A098' }}>Verstuurd op {formatDate(item.created_at)}</p>
           </div>
           {item.bedrag != null && (
-            <span className="text-lg font-semibold text-gray-900 flex-shrink-0 tabular-nums">
+            <span className="text-lg font-semibold font-mono text-gray-900 flex-shrink-0 tabular-nums">
               {formatCurrency(item.bedrag)}
             </span>
           )}

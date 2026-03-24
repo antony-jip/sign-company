@@ -1901,7 +1901,7 @@ export function QuoteCreation() {
                       <Input value={klantSearch} onChange={(e) => { setKlantSearch(e.target.value); setShowKlantResults(true); setShowNieuwBedrijf(false) }} onFocus={() => setShowKlantResults(true)} placeholder="Zoek op bedrijfsnaam, contactpersoon of email..." className="pl-10 h-10 rounded-lg text-[13px]" style={{ backgroundColor: '#FAFAF8', border: '0.5px solid #E6E4E0' }} />
                     </div>
                     {showKlantResults && !showNieuwBedrijf && (
-                      <div className="absolute z-50 w-full mt-1 rounded-lg border bg-white shadow-lg max-h-[320px] overflow-y-auto" style={{ border: '0.5px solid #E6E4E0' }}>
+                      <div className="absolute z-50 w-full mt-1 rounded-lg border bg-[#FEFDFB] shadow-lg max-h-[320px] overflow-y-auto" style={{ border: '0.5px solid #E6E4E0' }}>
                         <button className="w-full text-left px-3 py-2.5 flex items-center gap-2 text-[#1A535C] hover:bg-[#E2F0F0]/50 transition-colors border-b" style={{ borderColor: '#E6E4E0' }} onClick={() => { setShowNieuwBedrijf(true); setNbData((p) => ({ ...p, bedrijfsnaam: klantSearch })) }}>
                           <Plus className="w-4 h-4" /><span className="text-[13px] font-medium">Nieuw bedrijf toevoegen{klantSearch.trim() ? `: "${klantSearch.trim()}"` : ''}</span>
                         </button>

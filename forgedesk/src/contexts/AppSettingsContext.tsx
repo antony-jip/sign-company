@@ -53,7 +53,7 @@ interface AppSettingsContextType {
   werkbonPrefix: string
   // Email
   emailFetchLimit: number
-  // Forgie
+  // Daan
   forgieEnabled: boolean
   // Quick Actions
   quickActionsEnabled: boolean
@@ -180,7 +180,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     werkbonPrefix: settings.werkbon_prefix || 'WB',
     // Email
     emailFetchLimit: settings.email_fetch_limit ?? 200,
-    // Forgie
+    // Daan
     forgieEnabled: settings.forgie_enabled ?? true,
     // Quick Actions
     quickActionsEnabled: settings.quick_actions_enabled ?? true,

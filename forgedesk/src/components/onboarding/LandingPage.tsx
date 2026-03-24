@@ -632,7 +632,7 @@ function HowItWorksSection() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// FORGIE AI — Chat mockup
+// DAAN AI — Chat mockup
 // ═══════════════════════════════════════════════════════════
 
 function ForgieSection() {

@@ -30,7 +30,7 @@ export function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-5" style={{ backgroundColor: '#F4F3F0' }}>
+    <div className="min-h-screen flex items-center justify-center p-5" style={{ backgroundColor: '#FEFDFB' }}>
       <div className="w-full max-w-md text-center">
         <div className="w-14 h-14 rounded-2xl bg-white border border-neutral-200 flex items-center justify-center mx-auto mb-6">
           <Lock className="w-6 h-6 text-neutral-700" />
@@ -63,7 +63,8 @@ export function ResetPasswordPage() {
           </div>
           <Button
             type="submit"
-            className="w-full h-11 bg-black text-white hover:bg-neutral-800 rounded-xl font-semibold text-[14px]"
+            className="w-full h-11 text-white hover:opacity-90 rounded-xl font-semibold text-[14px]"
+            style={{ backgroundColor: '#F15025' }}
             disabled={isLoading}
           >
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}

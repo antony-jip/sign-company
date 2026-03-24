@@ -150,7 +150,7 @@ export function PortaalChatRichCard({
 
   return (
     <div className="w-full">
-      <div className="rounded-xl border border-border bg-white p-4">
+      <div className="rounded-xl border border-border bg-[#FEFDFB] p-4">
         {/* Header row: icon + title + status badge */}
         <div className="flex items-start gap-3">
           {/* Icon in sage circle */}

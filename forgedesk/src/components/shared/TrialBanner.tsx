@@ -31,7 +31,7 @@ export function TrialBanner() {
       <span>Je hebt nog <strong>{trialDagenOver} dagen</strong> gratis uitproberen</span>
     )
   } else if (trialStatus === 'trial' && trialDagenOver <= 7) {
-    bgClass = 'bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300'
+    bgClass = 'bg-[#FFF5F0] dark:bg-[#F15025]/10 text-[#C03A18] dark:text-[#F15025]'
     message = (
       <span>
         Nog <strong>{trialDagenOver} dagen</strong> trial —{' '}

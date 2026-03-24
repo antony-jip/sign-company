@@ -2209,7 +2209,7 @@ function TaakCard({ taak, onStatusChange }: { key?: React.Key; taak: Taak; onSta
                     : 'text-muted-foreground/50 hover:text-foreground hover:bg-muted/50'
                 )}
               >
-                {si.label}
+                {si.label}<span style={{ color: '#F15025' }}>.</span>
               </button>
             )
           })}

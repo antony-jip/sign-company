@@ -184,7 +184,7 @@ export function ProjectKaart({
               </button>
               <button
                 onClick={onCreateWerkbon}
-                className="inline-flex items-center gap-1.5 h-8 px-4 text-[12px] font-medium rounded-lg hover:bg-white/80 transition-all"
+                className="inline-flex items-center gap-1.5 h-8 px-4 text-[12px] font-medium rounded-lg hover:bg-[#FEFDFB]/80 transition-all"
                 style={{ border: '0.5px solid #E6E4E0', color: '#5A5A55' }}
               >
                 <ClipboardCheck className="h-3.5 w-3.5" />
@@ -192,7 +192,7 @@ export function ProjectKaart({
               </button>
               <button
                 onClick={onCreateMontage}
-                className="inline-flex items-center gap-1.5 h-8 px-4 text-[12px] font-medium rounded-lg hover:bg-white/80 transition-all"
+                className="inline-flex items-center gap-1.5 h-8 px-4 text-[12px] font-medium rounded-lg hover:bg-[#FEFDFB]/80 transition-all"
                 style={{ border: '0.5px solid #E6E4E0', color: '#5A5A55' }}
               >
                 <Calendar className="h-3.5 w-3.5" />
@@ -204,7 +204,7 @@ export function ProjectKaart({
               {/* Has offerte — Offerte becomes ghost */}
               <button
                 onClick={onCreateOfferte}
-                className="inline-flex items-center gap-1.5 h-8 px-4 text-[12px] font-medium rounded-lg hover:bg-white/80 transition-all"
+                className="inline-flex items-center gap-1.5 h-8 px-4 text-[12px] font-medium rounded-lg hover:bg-[#FEFDFB]/80 transition-all"
                 style={{ border: '0.5px solid #E6E4E0', color: '#5A5A55' }}
               >
                 <Receipt className="h-3.5 w-3.5" />
@@ -212,7 +212,7 @@ export function ProjectKaart({
               </button>
               <button
                 onClick={onCreateWerkbon}
-                className="inline-flex items-center gap-1.5 h-8 px-4 text-[12px] font-medium rounded-lg hover:bg-white/80 transition-all"
+                className="inline-flex items-center gap-1.5 h-8 px-4 text-[12px] font-medium rounded-lg hover:bg-[#FEFDFB]/80 transition-all"
                 style={{ border: '0.5px solid #E6E4E0', color: '#5A5A55' }}
               >
                 <ClipboardCheck className="h-3.5 w-3.5" />
@@ -220,7 +220,7 @@ export function ProjectKaart({
               </button>
               <button
                 onClick={onCreateMontage}
-                className="inline-flex items-center gap-1.5 h-8 px-4 text-[12px] font-medium rounded-lg hover:bg-white/80 transition-all"
+                className="inline-flex items-center gap-1.5 h-8 px-4 text-[12px] font-medium rounded-lg hover:bg-[#FEFDFB]/80 transition-all"
                 style={{ border: '0.5px solid #E6E4E0', color: '#5A5A55' }}
               >
                 <Calendar className="h-3.5 w-3.5" />
@@ -230,7 +230,7 @@ export function ProjectKaart({
           )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="h-8 w-8 rounded-lg border border-black/[0.06] bg-white/70 backdrop-blur-sm flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-white transition-all">
+              <button className="h-8 w-8 rounded-lg border border-black/[0.06] bg-[#FEFDFB]/70 backdrop-blur-sm flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-[#FEFDFB] transition-all">
                 <MoreHorizontal className="h-4 w-4" />
               </button>
             </DropdownMenuTrigger>
@@ -271,7 +271,7 @@ export function ProjectKaart({
                 backgroundColor: badgeStyle.bg,
                 color: badgeStyle.color,
               }}>
-                {(statusLabels[project.status] || project.status).toUpperCase()}
+                {(statusLabels[project.status] || project.status).toUpperCase()}<span style={{ color: '#F15025' }}>.</span>
               </Badge>
             </div>
             <div className="flex items-center gap-2 text-[13px] text-muted-foreground mt-0.5">
@@ -331,7 +331,7 @@ export function ProjectKaart({
             {klant.telefoon && (
               <button
                 onClick={handleCopyPhone}
-                className="rounded-md px-2.5 py-1 text-[11px] font-mono text-muted-foreground/70 hover:text-foreground bg-white/60 hover:bg-white/90 transition-colors"
+                className="rounded-md px-2.5 py-1 text-[11px] font-mono text-muted-foreground/70 hover:text-foreground bg-[#FEFDFB]/60 hover:bg-[#FEFDFB]/90 transition-colors"
                 title="Klik om te kopieren"
               >
                 {klant.telefoon}

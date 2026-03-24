@@ -169,7 +169,7 @@ export function FinancialLayout() {
                         <p className="text-sm font-medium text-muted-foreground dark:text-muted-foreground/60">
                           {stat.label}
                         </p>
-                        <p className="text-2xl font-bold text-foreground dark:text-white">
+                        <p className="text-2xl font-bold font-mono text-foreground dark:text-white">
                           {stat.value}
                         </p>
                       </div>
@@ -347,7 +347,7 @@ export function FinancialLayout() {
                               {offerte.status.charAt(0).toUpperCase() + offerte.status.slice(1)}
                             </Badge>
                           </td>
-                          <td className="py-3 px-4 text-right font-semibold text-foreground dark:text-white">
+                          <td className="py-3 px-4 text-right font-semibold font-mono text-foreground dark:text-white">
                             {formatCurrency(offerte.totaal)}
                           </td>
                           <td className="py-3 px-4 text-muted-foreground dark:text-muted-foreground/60">

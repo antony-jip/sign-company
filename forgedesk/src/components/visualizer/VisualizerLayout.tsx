@@ -481,7 +481,7 @@ export function VisualizerLayout() {
   const sessieCredits = chatBerichten.filter(b => b.rol === 'assistant' && b.afbeelding_url).length
 
   // ═══════════════════════════════════════════════════════════════════
-  // CHAT MODUS — Forgie-style design met pastel kleuren
+  // CHAT MODUS — Daan-style design met pastel kleuren
   // ═══════════════════════════════════════════════════════════════════
   if (inChatModus) {
     return (
@@ -659,7 +659,7 @@ export function VisualizerLayout() {
             </div>
           ))}
 
-          {/* Typing indicator — bouncing dots like Forgie */}
+          {/* Typing indicator — bouncing dots like Daan */}
           {isGenerating && (
             <div className="flex gap-3 justify-start">
               <div className="flex-shrink-0 mt-1">
@@ -683,7 +683,7 @@ export function VisualizerLayout() {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* ── Input bar — Forgie style ── */}
+        {/* ── Input bar — Daan style ── */}
         <div className="flex-shrink-0 border-t bg-card p-4">
           <div className="flex items-center gap-2">
             <input

@@ -286,7 +286,7 @@ export function WerkbonnenLayout() {
                       <td className="px-4 py-3 text-sm font-mono hidden sm:table-cell">{new Date(wb.datum).toLocaleDateString('nl-NL')}</td>
                       <td className="px-4 py-3">
                         <span className={cn('inline-flex items-center px-[10px] py-[3px] rounded-full text-[10px] font-semibold', cfg.bg, cfg.color)}>
-                          {cfg.label}
+                          {cfg.label}<span style={{ color: '#F15025' }}>.</span>
                         </span>
                       </td>
                       <td className="px-4 py-3 text-sm text-right font-medium hidden sm:table-cell">

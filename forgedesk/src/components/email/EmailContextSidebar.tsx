@@ -324,7 +324,7 @@ export function EmailContextSidebar({
                 </div>
               )}
               {showKlantDropdown && !selectedKlant && (
-                <div className="absolute z-10 mt-1 w-full rounded-lg border border-[hsl(35,15%,87%)] bg-white shadow-lg max-h-[140px] overflow-y-auto">
+                <div className="absolute z-10 mt-1 w-full rounded-lg border border-[hsl(35,15%,87%)] bg-[#FEFDFB] shadow-lg max-h-[140px] overflow-y-auto">
                   {filteredKlanten.length === 0 ? (
                     <p className="text-[11px] text-muted-foreground px-2.5 py-2">Geen klanten gevonden</p>
                   ) : (
@@ -372,7 +372,7 @@ export function EmailContextSidebar({
                   </div>
                 )}
                 {showProjectDropdown && !selectedProject && (
-                  <div className="absolute z-10 mt-1 w-full rounded-lg border border-[hsl(35,15%,87%)] bg-white shadow-lg max-h-[140px] overflow-y-auto">
+                  <div className="absolute z-10 mt-1 w-full rounded-lg border border-[hsl(35,15%,87%)] bg-[#FEFDFB] shadow-lg max-h-[140px] overflow-y-auto">
                     {filteredProjecten.length === 0 ? (
                       <p className="text-[11px] text-muted-foreground px-2.5 py-2">Geen projecten gevonden</p>
                     ) : (

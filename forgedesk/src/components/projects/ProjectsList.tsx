@@ -390,25 +390,25 @@ export function ProjectsList() {
       {/* ── Quick stats ── */}
       <div className="flex items-center gap-2 flex-wrap">
         {stats.actief > 0 && (
-          <div className="flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full bg-white" style={{ color: '#1A535C', border: '1px solid #1A535C' }}>
+          <div className="flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full bg-[#FEFDFB]" style={{ color: '#1A535C', border: '1px solid #1A535C' }}>
             <TrendingUp className="w-3.5 h-3.5" />
             <span className="font-mono text-[11px]">{stats.actief}</span> actief
           </div>
         )}
         {stats.teFactureren > 0 && (
-          <div className="flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full bg-white" style={{ color: '#2D6B48', border: '1px solid #2D6B48' }}>
+          <div className="flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full bg-[#FEFDFB]" style={{ color: '#2D6B48', border: '1px solid #2D6B48' }}>
             <Receipt className="w-3.5 h-3.5" />
             <span className="font-mono text-[11px]">{stats.teFactureren}</span> te factureren
           </div>
         )}
         {stats.overdue > 0 && (
-          <div className="flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full bg-white" style={{ color: '#F15025', border: '1px solid #F15025' }}>
+          <div className="flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full bg-[#FEFDFB]" style={{ color: '#F15025', border: '1px solid #F15025' }}>
             <AlertTriangle className="w-3.5 h-3.5" />
             <span className="font-mono text-[11px]">{stats.overdue}</span> verlopen
           </div>
         )}
         {stats.afgerond > 0 && (
-          <div className="flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full bg-white" style={{ color: '#5A5A55', border: '1px solid #5A5A55' }}>
+          <div className="flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full bg-[#FEFDFB]" style={{ color: '#5A5A55', border: '1px solid #5A5A55' }}>
             <CheckCircle2 className="w-3.5 h-3.5" />
             <span className="font-mono text-[11px]">{stats.afgerond}</span> afgerond
           </div>
@@ -691,7 +691,7 @@ export function ProjectsList() {
                         className="text-[10px] font-semibold px-[10px] py-[3px] rounded-full flex-shrink-0"
                         style={{ backgroundColor: bg, color: fg }}
                       >
-                        {statusLabels[project.status] || project.status}
+                        {statusLabels[project.status] || project.status}<span style={{ color: '#F15025' }}>.</span>
                       </span>
                     )
                   })()}
@@ -836,7 +836,7 @@ export function ProjectsList() {
                                   style={{ backgroundColor: bg, color: fg }}
                                 >
                                   {isUrgent && <span className="w-2 h-2 rounded-full bg-[#F15025] flex-shrink-0" />}
-                                  {statusLabels[project.status] || project.status}
+                                  {statusLabels[project.status] || project.status}<span style={{ color: '#F15025' }}>.</span>
                                 </span>
                               )
                             })()}

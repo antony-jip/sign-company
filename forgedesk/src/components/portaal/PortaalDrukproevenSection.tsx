@@ -154,7 +154,7 @@ function DrukproefCard({ item, token, klantNaam, onReactie, primaire_kleur, kanG
   }
 
   return (
-    <div className="rounded-[10px] transition-all" style={{ backgroundColor: allApproved ? '#F0F8F3' : '#FFFFFF', border: `0.5px solid ${allApproved ? '#2D6B48' : '#E6E4E0'}` }}>
+    <div className="rounded-[10px] transition-all" style={{ backgroundColor: allApproved ? '#F0F8F3' : '#FEFDFB', border: `0.5px solid ${allApproved ? '#2D6B48' : '#E6E4E0'}` }}>
       <div className="px-5 py-4">
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -164,13 +164,13 @@ function DrukproefCard({ item, token, klantNaam, onReactie, primaire_kleur, kanG
           {allApproved && (
             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-[#E4F0EA] text-[#2D6B48]">
               <CheckCircle2 className="w-3.5 h-3.5" />
-              {images.length > 0 ? 'Alles goedgekeurd' : 'Goedgekeurd'}
+              {images.length > 0 ? 'Alles goedgekeurd' : 'Goedgekeurd'}<span style={{ color: '#F15025' }}>.</span>
             </span>
           )}
           {isItemRevisie && (
             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-[#FDE8E2] text-[#C03A18]">
               <RotateCcw className="w-3.5 h-3.5" />
-              Revisie gevraagd
+              Revisie gevraagd<span style={{ color: '#F15025' }}>.</span>
             </span>
           )}
         </div>
@@ -359,14 +359,14 @@ function ImageApprovalCard({ bestand, status, reactie, token, itemId, klantNaam,
         {/* Status overlay */}
         {status === 'goedgekeurd' && (
           <div className="absolute inset-0 rounded-lg bg-[#2D6B48]/20 flex items-center justify-center pointer-events-none">
-            <div className="bg-white rounded-full p-1.5 shadow-sm">
+            <div className="bg-[#FEFDFB] rounded-full p-1.5 shadow-sm">
               <CheckCircle2 className="w-6 h-6 text-[#2D6B48]" />
             </div>
           </div>
         )}
         {status === 'revisie' && (
           <div className="absolute inset-0 rounded-lg bg-[#C03A18]/20 flex items-center justify-center pointer-events-none">
-            <div className="bg-white rounded-full p-1.5 shadow-sm">
+            <div className="bg-[#FEFDFB] rounded-full p-1.5 shadow-sm">
               <RotateCcw className="w-6 h-6 text-[#C03A18]" />
             </div>
           </div>
@@ -379,7 +379,7 @@ function ImageApprovalCard({ bestand, status, reactie, token, itemId, klantNaam,
       {/* Status info */}
       {status === 'goedgekeurd' && reactie && (
         <div className="px-2 py-1.5 rounded-md bg-[#E4F0EA] border border-[#C0DBCC]">
-          <p className="text-xs text-[#2D6B48] font-medium">Goedgekeurd</p>
+          <p className="text-xs text-[#2D6B48] font-medium">Goedgekeurd<span style={{ color: '#F15025' }}>.</span></p>
           {reactie.klant_naam && (
             <p className="text-xs text-[#2D6B48]">door {reactie.klant_naam}</p>
           )}
@@ -388,7 +388,7 @@ function ImageApprovalCard({ bestand, status, reactie, token, itemId, klantNaam,
 
       {status === 'revisie' && reactie && (
         <div className="px-2 py-1.5 rounded-md bg-[#FDE8E2] border border-[#F5C4B4]">
-          <p className="text-xs text-[#C03A18] font-medium">Revisie gevraagd</p>
+          <p className="text-xs text-[#C03A18] font-medium">Revisie gevraagd<span style={{ color: '#F15025' }}>.</span></p>
           {reactie.bericht && (
             <p className="text-xs text-[#C03A18] mt-0.5 line-clamp-2">{reactie.bericht}</p>
           )}

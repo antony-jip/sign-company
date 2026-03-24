@@ -410,24 +410,42 @@ input:focus, textarea:focus, select:focus {
    Uses CSS variables so dark/glass/zwart auto-adapt
    ================================================================ */
 @layer components {
-  /* Badge base — pill with dot */
+  /* Badge base — pill with colored dot + Flame punt */
   .badge-success, .badge-warning, .badge-danger,
-  .badge-info, .badge-neutral, .badge-purple {
+  .badge-info, .badge-neutral, .badge-purple,
+  .badge-flame, .badge-petrol, .badge-groen,
+  .badge-blauw, .badge-paars, .badge-grijs, .badge-warm-paars {
     @apply inline-flex items-center gap-[5px] px-[10px] py-[3px] rounded-[20px] text-[10px] font-semibold;
     border: none;
     transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
   .badge-success::before, .badge-warning::before, .badge-danger::before,
-  .badge-info::before, .badge-neutral::before, .badge-purple::before {
+  .badge-info::before, .badge-neutral::before, .badge-purple::before,
+  .badge-flame::before, .badge-petrol::before, .badge-groen::before,
+  .badge-blauw::before, .badge-paars::before, .badge-grijs::before, .badge-warm-paars::before {
     content: '';
     width: 5px;
     height: 5px;
     border-radius: 50%;
     flex-shrink: 0;
   }
+  /* Flame punt after every status badge */
+  .badge-success::after, .badge-warning::after, .badge-danger::after,
+  .badge-info::after, .badge-neutral::after, .badge-purple::after,
+  .badge-flame::after, .badge-petrol::after, .badge-groen::after,
+  .badge-blauw::after, .badge-paars::after, .badge-grijs::after, .badge-warm-paars::after {
+    content: '.';
+    color: #F15025;
+    font-weight: 800;
+    margin-left: -2px;
+  }
   tbody tr:hover .badge-success, tbody tr:hover .badge-warning,
   tbody tr:hover .badge-danger, tbody tr:hover .badge-info,
-  tbody tr:hover .badge-neutral, tbody tr:hover .badge-purple {
+  tbody tr:hover .badge-neutral, tbody tr:hover .badge-purple,
+  tbody tr:hover .badge-flame, tbody tr:hover .badge-petrol,
+  tbody tr:hover .badge-groen, tbody tr:hover .badge-blauw,
+  tbody tr:hover .badge-paars, tbody tr:hover .badge-grijs,
+  tbody tr:hover .badge-warm-paars {
     transform: scale(1.04);
   }
 
@@ -2123,7 +2141,7 @@ html {
   box-shadow: 0 0 12px currentColor;
 }
 
-/* ── Sidebar Forgie AI Section ── */
+/* ── Sidebar Daan AI Section ── */
 .sidebar-forgie {
   background: linear-gradient(135deg, rgba(155,142,196,0.08), rgba(155,142,196,0.03));
   border: 1px solid rgba(155,142,196,0.12);
@@ -2328,14 +2346,7 @@ html {
 [data-sonner-toast][data-type="error"] [data-icon] svg { color: #F15025; }
 [data-sonner-toast][data-type="success"] [data-icon] svg { color: #1A535C; }
 
-/* Doen. module-based badge classes */
-.badge-grijs       { background: #EEEEED !important; color: #5A5A55 !important; border: none !important; }
-.badge-flame       { background: #FDE8E2 !important; color: #C03A18 !important; border: none !important; }
-.badge-groen       { background: #E4F0EA !important; color: #2D6B48 !important; border: none !important; }
-.badge-blauw       { background: #E5ECF6 !important; color: #2A5580 !important; border: none !important; }
-.badge-petrol      { background: #E2F0F0 !important; color: #1A535C !important; border: none !important; }
-.badge-paars       { background: #EEE8F5 !important; color: #5A4A78 !important; border: none !important; }
-.badge-warm-paars  { background: #F2E8EF !important; color: #7A3058 !important; border: none !important; }
+/* Doen. module-based badge classes — consolidated in @layer components above */
 
 /* ================================================================
    TAB BAR — Scrollbar hiding and tab animations

@@ -608,7 +608,7 @@ export function WerkbonDetail() {
             </h1>
             {!isNew && (
               <span className={cn('inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-1', STATUS_CONFIG[status]?.bg, STATUS_CONFIG[status]?.color)}>
-                {STATUS_CONFIG[status]?.label || status}
+                {STATUS_CONFIG[status]?.label || status}<span style={{ color: '#F15025' }}>.</span>
               </span>
             )}
           </div>

@@ -259,7 +259,7 @@ export function CalculatieModal({
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
-            <Calculator className="h-5 w-5 text-blue-600" />
+            <Calculator className="h-5 w-5 text-[#1A5C5E]" />
             Calculatie maken
           </DialogTitle>
           <DialogDescription>
@@ -487,7 +487,7 @@ export function CalculatieModal({
                         index % 2 === 0
                           ? 'bg-card'
                           : 'bg-background/50 dark:bg-muted/20'
-                      } hover:bg-blue-50/50 dark:hover:bg-blue-950/20 transition-colors`}
+                      } hover:bg-[#E2F0F0]/50 dark:hover:bg-[#1A5C5E]/10 transition-colors`}
                     >
                       {/* Product */}
                       <td className="px-2 py-1.5">
@@ -638,7 +638,7 @@ export function CalculatieModal({
 
                       {/* Regeltotaal */}
                       <td className="px-3 py-1.5 text-right">
-                        <span className={`font-medium text-sm ${
+                        <span className={`font-medium font-mono text-sm ${
                           isWinst
                             ? 'text-foreground dark:text-muted-foreground/20'
                             : 'text-red-600 dark:text-red-400'
@@ -672,7 +672,7 @@ export function CalculatieModal({
             variant="outline"
             size="sm"
             onClick={addRegel}
-            className="w-full mt-3 border-dashed border-2 hover:border-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-950/20"
+            className="w-full mt-3 border-dashed border-2 hover:border-[#1A5C5E]/40 hover:bg-[#E2F0F0]/50 dark:hover:bg-[#1A5C5E]/10"
           >
             <Plus className="h-4 w-4 mr-1.5" />
             Regel toevoegen
@@ -684,12 +684,12 @@ export function CalculatieModal({
         {/* ======== TOTALEN SAMENVATTING ======== */}
         <div className="grid grid-cols-2 gap-4">
           {/* Uitleg blok links */}
-          <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-4 border border-blue-100 dark:border-blue-900">
-            <h4 className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-2 flex items-center gap-1.5">
+          <div className="bg-[#E2F0F0] dark:bg-[#1A5C5E]/20 rounded-lg p-4 border border-[#B8D8D8] dark:border-[#1A5C5E]/40">
+            <h4 className="text-sm font-medium text-[#1A5C5E] dark:text-[#5BB5B5] mb-2 flex items-center gap-1.5">
               <HelpCircle className="h-4 w-4" />
               Zo werkt de calculatie
             </h4>
-            <ul className="text-xs text-blue-700 dark:text-blue-400 space-y-1.5">
+            <ul className="text-xs text-[#1A5C5E] dark:text-[#5BB5B5] space-y-1.5">
               <li><strong>Inkoop:</strong> Wat jij betaalt (ziet de klant niet)</li>
               <li><strong>Marge:</strong> Je winstopslag in %. Pas dit aan of wijzig de verkoopprijs direct</li>
               <li><strong>Verkoop:</strong> Wat de klant betaalt. Wordt de eenheidsprijs op de offerte</li>
@@ -701,20 +701,20 @@ export function CalculatieModal({
           <div className="bg-background dark:bg-muted/50 rounded-lg p-4 border border-border dark:border-border space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground dark:text-muted-foreground/60">Totaal inkoop</span>
-              <span className="font-medium text-foreground/70 dark:text-muted-foreground/50">
+              <span className="font-medium font-mono text-foreground/70 dark:text-muted-foreground/50">
                 {formatCurrency(totalen.totaalInkoop)}
               </span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground dark:text-muted-foreground/60">Totaal verkoop</span>
-              <span className="font-medium text-foreground dark:text-muted-foreground/20">
+              <span className="font-medium font-mono text-foreground dark:text-muted-foreground/20">
                 {formatCurrency(totalen.totaalVerkoop)}
               </span>
             </div>
             {totalen.totaalKorting > 0 && (
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground dark:text-muted-foreground/60">Totaal korting</span>
-                <span className="font-medium text-orange-600 dark:text-orange-400">
+                <span className="font-medium font-mono text-orange-600 dark:text-orange-400">
                   - {formatCurrency(totalen.totaalKorting)}
                 </span>
               </div>
@@ -724,7 +724,7 @@ export function CalculatieModal({
               <span className="text-muted-foreground dark:text-muted-foreground/60">
                 Marge ({Math.round(totalen.margePercentage)}%)
               </span>
-              <span className={`font-bold ${
+              <span className={`font-bold font-mono ${
                 totalen.margeBedrag >= 0
                   ? 'text-green-600 dark:text-green-400'
                   : 'text-red-600 dark:text-red-400'
@@ -735,7 +735,7 @@ export function CalculatieModal({
             <Separator className="my-1" />
             <div className="flex justify-between text-base font-bold">
               <span className="text-foreground dark:text-white">Verkooptotaal</span>
-              <span className="text-blue-600 dark:text-blue-400">
+              <span className="font-mono text-[#1A5C5E] dark:text-[#5BB5B5]">
                 {formatCurrency(totalen.totaalVerkoop)}
               </span>
             </div>

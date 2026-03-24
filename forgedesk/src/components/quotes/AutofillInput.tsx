@@ -165,7 +165,7 @@ export function AutofillInput({
         className={className}
       />
       {shouldShowDropdown && (
-        <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-white dark:bg-card border border-[#E6E4E0] dark:border-border rounded-lg shadow-lg max-h-48 overflow-auto">
+        <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-[#FEFDFB] dark:bg-card border border-[#E6E4E0] dark:border-border rounded-lg shadow-lg max-h-48 overflow-auto">
           {allSuggestions.map((suggestion, i) => (
             <button
               key={suggestion.text}

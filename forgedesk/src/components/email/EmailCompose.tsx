@@ -120,7 +120,7 @@ export function EmailCompose({
   // Editor
   const editorRef = useRef<HTMLDivElement>(null)
 
-  // Forgie AI
+  // Daan AI
   const [forgieLoading, setForgieLoading] = useState(false)
 
   // Auto-save timer

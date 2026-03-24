@@ -32,7 +32,7 @@ export function CheckInboxPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-5" style={{ backgroundColor: '#F4F3F0' }}>
+    <div className="min-h-screen flex items-center justify-center p-5" style={{ backgroundColor: '#FEFDFB' }}>
       <div className="w-full max-w-md text-center">
         {/* Icon */}
         <div className="w-16 h-16 rounded-2xl bg-white border border-neutral-200 flex items-center justify-center mx-auto mb-6">

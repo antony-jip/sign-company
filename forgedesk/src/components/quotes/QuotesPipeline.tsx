@@ -1071,7 +1071,7 @@ export function QuotesPipeline() {
                   <div className="flex items-center gap-2 mb-1">
                     <div className={`w-2 h-2 rounded-full ${col.accent}`} />
                     <h3 className="font-bold text-sm text-foreground">
-                      {col.label}
+                      {col.label}<span style={{ color: '#F15025' }}>.</span>
                     </h3>
                     <Badge variant="secondary" className="ml-auto text-xs px-2 py-0 h-5 rounded-lg">
                       {colOffertes.length}
@@ -1318,7 +1318,7 @@ export function QuotesPipeline() {
                   >
                     <div className="flex items-center justify-center gap-1.5 mb-2">
                       <div className={`w-2 h-2 rounded-full ${col.accent}`} />
-                      <p className="text-sm font-medium text-muted-foreground">{col.label}</p>
+                      <p className="text-sm font-medium text-muted-foreground">{col.label}<span style={{ color: '#F15025' }}>.</span></p>
                     </div>
                     <p className="text-xl font-bold font-mono text-foreground">{colOffertes.length}</p>
                     <p className="text-sm font-mono text-muted-foreground mt-0.5">{formatEur(colTotal)}</p>
@@ -1568,7 +1568,7 @@ export function QuotesPipeline() {
                                   {(offerte.prioriteit === 'urgent' || offerte.prioriteit === 'hoog') && (
                                     <span className="w-2 h-2 rounded-full bg-[#F15025] flex-shrink-0" />
                                   )}
-                                  {STATUS_LABELS[offerte.status] || offerte.status}
+                                  {STATUS_LABELS[offerte.status] || offerte.status}<span style={{ color: '#F15025' }}>.</span>
                                 </span>
                                 <ChevronDown className="w-3 h-3 text-muted-foreground/40 ml-auto" />
                               </button>

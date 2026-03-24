@@ -123,7 +123,7 @@ export function ForgieChatPage() {
         {/* Welcome message */}
         {showSuggestions && (
           <div className="space-y-6 pt-8">
-            {/* Forgie intro */}
+            {/* Daan intro */}
             <div className="flex gap-3 max-w-[85%]">
               <div className="flex-shrink-0 mt-1">
                 <Sparkles className="w-4 h-4 text-petrol" />

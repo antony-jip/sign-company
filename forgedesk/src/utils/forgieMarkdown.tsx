@@ -1,7 +1,7 @@
 import React from 'react'
 
 /**
- * Renders basic markdown formatting in Forgie chat messages.
+ * Renders basic markdown formatting in Daan chat messages.
  * Supports: **bold**, *italic*, `code`
  */
 export function renderForgieMarkdown(text: string): React.ReactNode {

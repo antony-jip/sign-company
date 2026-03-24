@@ -764,7 +764,7 @@ export function OfferteDetail() {
                     isExpired && 'text-amber-500',
                     isModRequested && 'text-blue-500'
                   )}>
-                    {STATUS_LABELS[offerte.status]}
+                    {STATUS_LABELS[offerte.status]}<span style={{ color: '#F15025' }}>.</span>
                   </span>
                 </div>
               </>
@@ -1035,20 +1035,20 @@ export function OfferteDetail() {
           <div className="w-80 space-y-2.5">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Subtotaal</span>
-              <span className="font-semibold tabular-nums text-foreground">{formatCurrency(round2(subtotaal))}</span>
+              <span className="font-semibold font-mono tabular-nums text-foreground">{formatCurrency(round2(subtotaal))}</span>
             </div>
             {Object.entries(btwGroups)
               .sort(([a], [b]) => Number(b) - Number(a))
               .map(([pct, bedrag]) => (
                 <div key={pct} className="flex justify-between text-sm">
                   <span className="text-muted-foreground">BTW {pct}%</span>
-                  <span className="font-semibold tabular-nums text-foreground">{formatCurrency(bedrag)}</span>
+                  <span className="font-semibold font-mono tabular-nums text-foreground">{formatCurrency(bedrag)}</span>
                 </div>
               ))}
             <div className="totalen-groot mt-3">
               <div className="flex justify-between items-center">
                 <span className="text-xs font-extrabold uppercase tracking-[0.08em] text-muted-foreground">Totaal incl. BTW</span>
-                <span className="display-number display-number-md text-foreground">{formatCurrency(totaal)}</span>
+                <span className="display-number display-number-md font-mono text-foreground">{formatCurrency(totaal)}</span>
               </div>
             </div>
           </div>

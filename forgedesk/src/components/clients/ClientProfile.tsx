@@ -951,7 +951,7 @@ export function ClientProfile() {
 
                               {/* Waarde */}
                               <td className="py-3 px-4 text-right">
-                                <span className="text-sm font-semibold text-foreground">
+                                <span className="text-sm font-semibold font-mono text-foreground">
                                   {formatCurrency(project.budget)}
                                 </span>
                               </td>
@@ -1033,7 +1033,7 @@ export function ClientProfile() {
                             </Badge>
                           </td>
                           <td className="py-3 px-4 text-right">
-                            <span className="text-sm font-semibold text-foreground">
+                            <span className="text-sm font-semibold font-mono text-foreground">
                               {formatCurrency(offerte.totaal)}
                             </span>
                           </td>
@@ -1090,7 +1090,7 @@ export function ClientProfile() {
                               {deal.status}
                             </Badge>
                           </td>
-                          <td className="py-3 px-4 text-right text-sm font-semibold">{formatCurrency(deal.verwachte_waarde)}</td>
+                          <td className="py-3 px-4 text-right text-sm font-semibold font-mono">{formatCurrency(deal.verwachte_waarde)}</td>
                           <td className="py-3 px-4 text-right text-sm text-muted-foreground hidden md:table-cell">{deal.kans_percentage || 50}%</td>
                         </tr>
                       ))}
@@ -1140,7 +1140,7 @@ export function ClientProfile() {
                               {factuur.status}
                             </Badge>
                           </td>
-                          <td className="py-3 px-4 text-right text-sm font-semibold">{formatCurrency(factuur.totaal)}</td>
+                          <td className="py-3 px-4 text-right text-sm font-semibold font-mono">{formatCurrency(factuur.totaal)}</td>
                           <td className="py-3 px-4 hidden md:table-cell text-sm text-muted-foreground font-mono">{formatDate(factuur.factuurdatum)}</td>
                         </tr>
                       ))}

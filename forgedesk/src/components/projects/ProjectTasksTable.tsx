@@ -140,7 +140,7 @@ export function ProjectTasksTable({ taken }: ProjectTasksTableProps) {
                 </td>
                 <td className="py-3 px-4">
                   <Badge className={getStatusColor(taak.status)}>
-                    {statusLabels[taak.status] || taak.status}
+                    {statusLabels[taak.status] || taak.status}<span style={{ color: '#F15025' }}>.</span>
                   </Badge>
                 </td>
                 <td className="py-3 px-4">

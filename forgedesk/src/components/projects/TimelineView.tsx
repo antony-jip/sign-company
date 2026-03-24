@@ -159,7 +159,7 @@ export function TimelineView({ taken, projectStart, projectEind }: TimelineViewP
                   </p>
                   <div className="flex gap-1.5">
                     <Badge className={`${getStatusColor(taak.status)} text-2xs px-1.5 py-0`}>
-                      {statusLabels[taak.status]}
+                      {statusLabels[taak.status]}<span style={{ color: '#F15025' }}>.</span>
                     </Badge>
                     <Badge className={`${getPriorityColor(taak.prioriteit)} text-2xs px-1.5 py-0`}>
                       {taak.prioriteit}

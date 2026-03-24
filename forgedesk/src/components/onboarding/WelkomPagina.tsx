@@ -16,7 +16,7 @@ export function WelkomPagina() {
   const navigate = useNavigate()
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-5" style={{ backgroundColor: '#F4F3F0' }}>
+    <div className="min-h-screen flex items-center justify-center p-5" style={{ backgroundColor: '#FEFDFB' }}>
       <div className="w-full max-w-2xl text-center">
         {/* Celebration */}
         <div className="text-5xl mb-6">
@@ -24,7 +24,7 @@ export function WelkomPagina() {
         </div>
 
         <h1 className="text-3xl font-extrabold text-black mb-3" style={{ fontFamily: '"Bricolage Grotesque", sans-serif' }}>
-          Welkom bij Doen.!
+          Welkom bij doen.!
         </h1>
 
         <p className="text-[15px] text-neutral-600 mb-10 max-w-lg mx-auto leading-relaxed" style={{ fontFamily: 'Inter, sans-serif' }}>
@@ -41,7 +41,7 @@ export function WelkomPagina() {
           {features.map(({ icon: Icon, title, description }) => (
             <div
               key={title}
-              className="flex items-start gap-3 p-4 bg-white rounded-xl border border-neutral-200"
+              className="flex items-start gap-3 p-4 bg-[#FEFDFB] rounded-xl border border-neutral-200"
             >
               <div className="w-9 h-9 rounded-lg bg-neutral-100 flex items-center justify-center flex-shrink-0 mt-0.5">
                 <Icon className="w-4.5 h-4.5 text-neutral-700" />
@@ -62,7 +62,8 @@ export function WelkomPagina() {
         {/* CTA */}
         <Button
           onClick={() => navigate('/onboarding')}
-          className="h-12 bg-black text-white hover:bg-neutral-800 rounded-xl font-semibold text-[15px] px-8 group"
+          className="h-12 text-white hover:opacity-90 rounded-xl font-semibold text-[15px] px-8 group"
+          style={{ backgroundColor: '#F15025' }}
         >
           Mijn bedrijf instellen
           <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-0.5 transition-transform" />

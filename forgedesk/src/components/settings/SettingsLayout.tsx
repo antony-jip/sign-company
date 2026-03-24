@@ -1893,7 +1893,7 @@ function EmailTab() {
               <CardDescription>
                 {emailConnected
                   ? 'E-mail is verbonden en geconfigureerd'
-                  : 'Configureer SMTP en IMAP om e-mails te verzenden en ontvangen vanuit Doen.'}
+                  : 'Configureer SMTP en IMAP om e-mails te verzenden en ontvangen vanuit doen.'}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -2098,7 +2098,7 @@ function EmailSettingsInline({
           E-mail Instellingen
         </CardTitle>
         <CardDescription>
-          Configureer SMTP (verzenden) en IMAP (ontvangen) om e-mails te beheren vanuit Doen.
+          Configureer SMTP (verzenden) en IMAP (ontvangen) om e-mails te beheren vanuit doen.
         </CardDescription>
       </CardHeader>
       <CardContent>

@@ -84,20 +84,20 @@ export function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex" style={{ backgroundColor: '#F4F3F0' }}>
+    <div className="min-h-screen flex" style={{ backgroundColor: '#FEFDFB' }}>
       {/* Left: Form */}
       <div className="flex items-center justify-center flex-1 p-5 sm:p-8">
         <div className="w-full max-w-[420px]">
           {/* Logo */}
           <div className="flex items-center gap-2.5 mb-10">
-            <div className="w-9 h-9 rounded-lg bg-black flex items-center justify-center">
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#F15025' }}>
               <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="2" y="4" width="20" height="12" rx="2" />
                 <path d="M8 20h8" />
                 <path d="M12 16v4" />
               </svg>
             </div>
-            <span className="text-lg font-bold text-black tracking-tight" style={{ fontFamily: '"Bricolage Grotesque", sans-serif' }}>Doen.</span>
+            <span className="text-lg font-bold text-black tracking-tight" style={{ fontFamily: '"Bricolage Grotesque", sans-serif' }}>doen<span style={{ color: '#F15025' }}>.</span></span>
           </div>
 
           <h1 className="text-2xl font-bold text-black mb-1.5" style={{ fontFamily: '"Bricolage Grotesque", sans-serif' }}>
@@ -184,7 +184,8 @@ export function RegisterPage() {
 
             <Button
               type="submit"
-              className="w-full h-11 bg-black text-white hover:bg-neutral-800 rounded-xl font-semibold text-[14px] group mt-2"
+              className="w-full h-11 text-white hover:opacity-90 rounded-xl font-semibold text-[14px] group mt-2"
+              style={{ backgroundColor: '#F15025' }}
               disabled={isLoading}
             >
               {isLoading ? (
