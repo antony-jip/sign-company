@@ -13,6 +13,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { getImportLogs, deleteImportLog, deleteAllImportLogs, opschonenAlleImportData } from '@/services/supabaseService'
 import { BedrijfsdataUpload } from './BedrijfsdataUpload'
 import { ContactpersonenUpload } from './ContactpersonenUpload'
+import { ImportHulpBanner } from './ImportHulpBanner'
 import { LosseContacten } from './LosseContacten'
 import type { ImportLog } from '@/types'
 import { toast } from 'sonner'
@@ -231,6 +232,9 @@ export function DataImportPage() {
           </Button>
         </CardContent>
       </Card>
+
+      {/* Hulp banner */}
+      <ImportHulpBanner />
 
       {/* Opschonen bevestigingsdialog */}
       <Dialog open={opschonenDialogOpen} onOpenChange={setOpschonenDialogOpen}>
