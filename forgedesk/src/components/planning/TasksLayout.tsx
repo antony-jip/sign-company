@@ -615,11 +615,11 @@ export function TasksLayout() {
         <div className="flex items-center justify-between flex-wrap gap-2 px-3 sm:px-5 py-2 border-b border-border/60 bg-card/50 flex-shrink-0">
           <div className="flex items-center gap-3 min-w-0">
             {/* View toggle */}
-            <div className="inline-flex items-center rounded-lg border border-[#C44830]/20 bg-[#C44830]/5 p-0.5 flex-shrink-0">
+            <div className="inline-flex items-center rounded-lg border border-primary/20 bg-primary/5 p-0.5 flex-shrink-0">
               {(['week', 'maand'] as const).map((v) => (
                 <button key={v} onClick={() => setViewMode(v)} className={cn(
                   'text-xs px-2.5 py-1 rounded-md transition-all capitalize',
-                  viewMode === v ? 'bg-[#C44830] text-white shadow-sm font-medium' : 'text-[#5A5A55] hover:text-[#C44830]'
+                  viewMode === v ? 'bg-primary text-white shadow-sm font-medium' : 'text-[#5A5A55] hover:text-primary'
                 )}>{v === 'week' ? 'Week' : 'Maand'}</button>
               ))}
             </div>
@@ -633,7 +633,7 @@ export function TasksLayout() {
               <Button
                 variant="ghost"
                 size="sm"
-                className={cn('h-7 text-xs px-3 rounded-lg', (viewMode === 'week' ? isCurrentWeek : monthOffset === 0) && 'bg-[#C44830] text-white hover:bg-[#a93d28] shadow-sm')}
+                className={cn('h-7 text-xs px-3 rounded-lg', (viewMode === 'week' ? isCurrentWeek : monthOffset === 0) && 'bg-primary text-white hover:bg-primary/90 shadow-sm')}
                 onClick={() => viewMode === 'week' ? setWeekOffset(0) : setMonthOffset(0)}
               >
                 Vandaag
@@ -647,7 +647,7 @@ export function TasksLayout() {
               <select
                 value={medewerkerFilter}
                 onChange={(e) => setMedewerkerFilter(e.target.value)}
-                className="h-7 text-xs rounded-lg border border-[#C44830]/20 bg-[#C44830]/5 px-2 max-w-[160px] text-[#5A5A55] focus:outline-none focus:ring-1 focus:ring-[#C44830]/30"
+                className="h-7 text-xs rounded-lg border border-primary/20 bg-primary/5 px-2 max-w-[160px] text-[#5A5A55] focus:outline-none focus:ring-1 focus:ring-primary/30"
               >
                 <option value="">Alle medewerkers</option>
                 {medewerkers.filter((m) => m.status === 'actief').map((m) => (
@@ -714,12 +714,12 @@ export function TasksLayout() {
                 key={i}
                 className={cn(
                   'flex-1 min-w-0 text-center py-2.5 border-l border-border/40 transition-colors',
-                  isToday && 'bg-[#C44830]/[0.04]'
+                  isToday && 'bg-primary/[0.04]'
                 )}
               >
                 <div className={cn(
                   'text-xs uppercase tracking-label font-bold',
-                  isToday ? 'text-[#C44830]' : isPast ? 'text-muted-foreground/30' : 'text-muted-foreground/70'
+                  isToday ? 'text-primary' : isPast ? 'text-muted-foreground/30' : 'text-muted-foreground/70'
                 )}>
                   {DAY_LABELS[i]}
                 </div>
@@ -727,7 +727,7 @@ export function TasksLayout() {
                   <span className={cn(
                     'inline-flex items-center justify-center text-sm font-bold font-mono transition-all',
                     isToday
-                      ? 'w-8 h-8 rounded-full bg-[#C44830] text-white shadow-sm shadow-[#C44830]/30'
+                      ? 'w-8 h-8 rounded-full bg-primary text-white shadow-sm shadow-primary/30'
                       : isPast ? 'text-muted-foreground/30' : 'text-foreground'
                   )}>
                     {day.getDate()}
@@ -736,7 +736,7 @@ export function TasksLayout() {
                     <span className={cn(
                       'text-[10px] font-semibold font-mono tabular-nums px-[10px] py-[3px] rounded-full',
                       isToday
-                        ? 'bg-[#C44830]/15 text-[#C44830]'
+                        ? 'bg-primary/15 text-primary'
                         : 'bg-muted/60 text-muted-foreground/50'
                     )}>
                       {dayTasks.length}
@@ -817,13 +817,13 @@ export function TasksLayout() {
                   className={cn(
                     'bg-background min-h-[80px] p-1.5 transition-colors',
                     !isCurrentMonth && 'opacity-30',
-                    isToday && 'bg-[#C44830]/5'
+                    isToday && 'bg-primary/5'
                   )}
                 >
                   <div className="flex items-center justify-between mb-1">
                     <span className={cn(
                       'text-xs font-mono font-bold',
-                      isToday ? 'w-6 h-6 rounded-full bg-[#C44830] text-white flex items-center justify-center' : 'text-muted-foreground'
+                      isToday ? 'w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center' : 'text-muted-foreground'
                     )}>
                       {day.getDate()}
                     </span>
@@ -912,7 +912,7 @@ export function TasksLayout() {
               </Select>
             </div>
             <Button
-              className="w-full h-9 text-sm bg-[#C44830] hover:bg-[#a93d28] text-white rounded-lg shadow-sm"
+              className="w-full h-9 text-sm bg-primary hover:bg-primary/90 text-white rounded-lg shadow-sm"
               disabled={!fabTitle.trim()}
               onClick={handleFabAdd}
             >
@@ -925,7 +925,7 @@ export function TasksLayout() {
           onClick={() => setFabOpen(!fabOpen)}
           className={cn(
             'flex items-center justify-center w-14 h-14 rounded-full shadow-lg transition-all duration-200',
-            'bg-[#C44830] text-white hover:bg-[#a93d28] hover:shadow-xl hover:scale-105',
+            'bg-primary text-white hover:bg-primary/90 hover:shadow-xl hover:scale-105',
             fabOpen && 'rotate-45'
           )}
         >
@@ -1140,7 +1140,7 @@ function DayColumn({
   return (
     <div className={cn(
       'flex-1 min-w-0 border-l border-border/40 relative',
-      isToday && 'bg-[#C44830]/[0.02]'
+      isToday && 'bg-primary/[0.02]'
     )}>
       {/* Hour grid lines + drop zones */}
       {HOURS.map((hour) => {
@@ -1210,8 +1210,8 @@ function DayColumn({
           style={{ top: `${nowLineTop}%` }}
         >
           <div className="flex items-center">
-            <div className="w-2.5 h-2.5 rounded-full bg-[#C44830] -ml-1.5 flex-shrink-0 shadow-sm shadow-[#C44830]/30" />
-            <div className="flex-1 h-[2px] bg-[#C44830]/80" />
+            <div className="w-2.5 h-2.5 rounded-full bg-primary -ml-1.5 flex-shrink-0 shadow-sm shadow-primary/30" />
+            <div className="flex-1 h-[2px] bg-primary/80" />
           </div>
         </div>
       )}
