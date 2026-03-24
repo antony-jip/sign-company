@@ -1949,13 +1949,10 @@ export function getDefaultAppSettings(userId: string): AppSettings {
     dashboard_widgets: ['follow_ups', 'pipeline', 'kpi', 'kalender'],
     sidebar_items: [
       'Dashboard',
-      'Klanten', 'Deals', 'Offertes', 'Facturen',
-      'Projecten', 'Taken', 'Montage', 'Werkbonnen', 'Nacalculatie',
-      'Planning', 'Tijdregistratie', 'Booking',
-      'Email', 'Daan', 'Nieuwsbrieven', 'Lead Capture',
-      'Financieel', 'Uitgaven', 'Leveranciers', 'Forecast',
-      'Documenten', 'Voorraad', 'Bestelbonnen', 'Leveringsbonnen',
-      'Rapportages', 'Team', 'Importeren', 'AI Assistent', 'Instellingen',
+      'Projecten', 'Offertes', 'Facturen', 'Klanten', 'Werkbonnen',
+      'Planning', 'Taken',
+      'Email', 'Portaal',
+      'Financieel',
     ],
     calculatie_categorieen: ['Materiaal', 'Arbeid', 'Transport', 'Apparatuur', 'Overig'],
     calculatie_eenheden: ['stuks', 'm\u00B2', 'm\u00B9', 'uur', 'dag', 'meter', 'kg', 'set'],
@@ -2008,11 +2005,28 @@ export async function getAppSettings(userId: string): Promise<AppSettings> {
       .eq('user_id', userId)
       .maybeSingle()
     if (error) throw error
-    return data || getDefaultAppSettings(userId)
+    return normalizeSidebarItems(data || getDefaultAppSettings(userId))
   }
   const settings = getLocalData<AppSettings>('app_settings')
   const found = settings.find((s) => s.user_id === userId)
-  return found || getDefaultAppSettings(userId)
+  return normalizeSidebarItems(found || getDefaultAppSettings(userId))
+}
+
+// Huidige geldige sidebar items (moet overeenkomen met Sidebar.tsx + TopNav.tsx)
+const VALID_SIDEBAR_LABELS = [
+  'Dashboard', 'Projecten', 'Offertes', 'Facturen', 'Klanten', 'Werkbonnen',
+  'Planning', 'Taken', 'Email', 'Portaal', 'Financieel',
+]
+
+// Normaliseer sidebar_items: verwijder verouderde items, voeg nieuwe toe
+function normalizeSidebarItems(settings: AppSettings): AppSettings {
+  if (!settings.sidebar_items || !Array.isArray(settings.sidebar_items)) return settings
+  const saved = settings.sidebar_items.map((s: string) => s === 'Kalender' ? 'Planning' : s)
+  // Behoud items die nog geldig zijn
+  const kept = saved.filter((s: string) => VALID_SIDEBAR_LABELS.includes(s))
+  // Voeg nieuwe items toe die niet in de opgeslagen lijst stonden (default aan)
+  const newItems = VALID_SIDEBAR_LABELS.filter(l => !saved.includes(l))
+  return { ...settings, sidebar_items: [...kept, ...newItems] }
 }
 
 export async function updateAppSettings(userId: string, updates: Partial<AppSettings>): Promise<AppSettings> {
