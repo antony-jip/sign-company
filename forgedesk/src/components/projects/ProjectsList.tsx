@@ -348,7 +348,7 @@ export function ProjectsList() {
   }
 
   return (
-    <div className="h-full flex flex-col bg-[#F8F7F5]">
+    <div className="h-full flex flex-col bg-[#F8F7F5] -m-3 sm:-m-4 md:-m-6">
       {/* Inline keyframes for pulse + stagger + hover glow */}
       <style>{`
         @keyframes doen-pulse { 0%,100% { opacity:1 } 50% { opacity:.35 } }
@@ -356,8 +356,8 @@ export function ProjectsList() {
         @keyframes doen-shimmer { 0% { background-position: -200% 0 } 100% { background-position: 200% 0 } }
         .doen-pulse { animation: doen-pulse 2.5s ease-in-out infinite }
         .doen-row { animation: doen-fade-up .35s cubic-bezier(.22,1,.36,1) both }
-        .doen-gradient-btn { background-size: 200% auto; transition: all .3s ease }
-        .doen-gradient-btn:hover { background-position: right center }
+        .doen-row-accent::before { content:''; position:absolute; left:0; top:4px; bottom:4px; width:3px; border-radius:0 3px 3px 0; background:#1A535C; opacity:0; transform:scaleY(.5); transition: all .2s cubic-bezier(.22,1,.36,1) }
+        .doen-row-accent:hover::before { opacity:1; transform:scaleY(1) }
       `}</style>
 
       {/* Hidden photo input */}
@@ -380,53 +380,50 @@ export function ProjectsList() {
         <div className="px-8 py-8 space-y-6 max-w-[1400px]">
 
           {/* Header + Stats */}
-          <div className="space-y-5">
+          <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <div>
+              <div className="flex items-baseline gap-4">
                 <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-[#1A1A1A]">
                   Projecten<span className="text-[#F15025]">.</span>
                 </h1>
-                <p className="text-[13px] text-[#9B9B95] mt-1">
-                  <span className="font-mono font-medium text-[#6B6B66]">{gefilterdeProjecten.length}</span>
-                  <span className="mx-1 text-[#C0BDB8]">/</span>
-                  <span className="font-mono">{projecten.length}</span>
-                  <span className="ml-1.5 text-[12px]">projecten</span>
-                </p>
+                <span className="text-[13px] text-[#9B9B95] font-mono tabular-nums">
+                  <span className="font-medium text-[#6B6B66]">{gefilterdeProjecten.length}</span>
+                  <span className="text-[#C0BDB8]">/</span>{projecten.length}
+                </span>
               </div>
               <Link
                 to="/projecten/nieuw"
-                className="doen-gradient-btn inline-flex items-center gap-2 text-white pl-4 pr-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_2px_8px_rgba(241,80,37,0.2),0_1px_3px_rgba(26,83,92,0.15)] hover:shadow-[0_4px_20px_rgba(241,80,37,0.3),0_2px_8px_rgba(26,83,92,0.2)] hover:-translate-y-[1px] active:translate-y-0 active:shadow-[0_1px_4px_rgba(241,80,37,0.2)]"
-                style={{ backgroundImage: 'linear-gradient(135deg, #1A535C 0%, #1A535C 40%, #F15025 100%)' }}
+                className="inline-flex items-center gap-2 bg-[#F15025] text-white pl-4 pr-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_2px_8px_rgba(241,80,37,0.25),0_0_0_1px_rgba(241,80,37,0.1)] hover:bg-[#E04520] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35),0_0_0_1px_rgba(241,80,37,0.15)] hover:-translate-y-[1px] active:translate-y-0 active:bg-[#D03A18] transition-all duration-200"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-4 h-4 opacity-80" />
                 Nieuw project
               </Link>
             </div>
 
-            {/* Quick stats as glass pills */}
-            <div className="flex items-center gap-2.5 flex-wrap">
+            {/* Quick stats — compact inline badges */}
+            <div className="flex items-center gap-2 flex-wrap">
               {stats.actief > 0 && (
-                <span className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[13px] font-semibold bg-[#E8F2EC] text-[#2D6B48] ring-1 ring-[#2D6B48]/10">
-                  <span className="w-2 h-2 rounded-full bg-[#2D6B48] doen-pulse" />
+                <span className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold bg-[#E8F2EC] text-[#2D6B48]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#2D6B48] doen-pulse" />
                   <span className="font-mono">{stats.actief}</span> actief
                 </span>
               )}
               {stats.teFactureren > 0 && (
-                <span className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[13px] font-semibold bg-[#E8EEF9] text-[#3A5A9A] ring-1 ring-[#3A5A9A]/10">
-                  <span className="w-2 h-2 rounded-full bg-[#3A5A9A]" />
-                  <span className="font-mono">{stats.teFactureren}</span> te factureren
+                <span className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold bg-[#E8EEF9] text-[#3A5A9A]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#3A5A9A]" />
+                  <span className="font-mono">{stats.teFactureren}</span> factureren
                 </span>
               )}
               {stats.overdue > 0 && (
-                <span className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[13px] font-semibold bg-[#FDE8E4] text-[#C0451A] ring-1 ring-[#C0451A]/10">
-                  <span className="w-2 h-2 rounded-full bg-[#F15025] doen-pulse" />
+                <span className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold bg-[#FDE8E4] text-[#C0451A]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#F15025] doen-pulse" />
                   <span className="font-mono">{stats.overdue}</span> verlopen
                 </span>
               )}
               {stats.afgerond > 0 && (
-                <span className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[13px] font-semibold bg-[#F5F2E8] text-[#8A7A4A] ring-1 ring-[#8A7A4A]/10">
-                  <span className="w-2 h-2 rounded-full bg-[#8A7A4A]" />
-                  <span className="font-mono">{stats.afgerond}</span> afgerond
+                <span className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold bg-[#F5F2E8] text-[#8A7A4A]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#8A7A4A]" />
+                  <span className="font-mono">{stats.afgerond}</span> klaar
                 </span>
               )}
             </div>
@@ -511,7 +508,8 @@ export function ProjectsList() {
                       )}
                     >
                       {optie.label}
-                      {count > 0 && <span className="ml-1 font-mono text-[11px] opacity-50">{count}</span>}
+                      {count > 0 && <span className="ml-1 font-mono text-[11px] opacity-40">{count}</span>}
+                      {isActive && <span className="absolute bottom-0 left-3 right-3 h-[2px] bg-[#1A535C] rounded-full" />}
                     </button>
                   )
                 })}
@@ -604,10 +602,9 @@ export function ProjectsList() {
                 action={
                   <Link
                     to="/projecten/nieuw"
-                    className="doen-gradient-btn inline-flex items-center gap-2 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_2px_8px_rgba(241,80,37,0.2),0_1px_3px_rgba(26,83,92,0.15)] hover:shadow-[0_4px_16px_rgba(241,80,37,0.25)] hover:-translate-y-[1px] active:translate-y-0 transition-all mt-4"
-                    style={{ backgroundImage: 'linear-gradient(135deg, #1A535C 0%, #1A535C 40%, #F15025 100%)' }}
+                    className="inline-flex items-center gap-2 bg-[#F15025] text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:bg-[#E04520] hover:-translate-y-[1px] active:translate-y-0 transition-all mt-4"
                   >
-                    <Plus className="w-4 h-4" />
+                    <Plus className="w-4 h-4 opacity-80" />
                     Nieuw project
                   </Link>
                 }
@@ -731,7 +728,7 @@ export function ProjectsList() {
                         <tr
                           key={project.id}
                           className={cn(
-                            'doen-row relative border-b border-[#F0EFEC] last:border-0 cursor-pointer transition-all duration-150 group',
+                            'doen-row doen-row-accent relative border-b border-[#F0EFEC] last:border-0 cursor-pointer transition-all duration-150 group',
                             'hover:bg-[#FAFAF8]',
                             selectedIds.has(project.id) && 'bg-[#1A535C]/[0.03]'
                           )}
@@ -772,13 +769,18 @@ export function ProjectsList() {
 
                           {/* Klant */}
                           <td className="py-3.5 pr-4 hidden lg:table-cell">
-                            <div className="min-w-0">
-                              <span className="text-[13px] text-[#4A4A46] truncate block">{klantNaam}</span>
-                              {(project.vestiging_naam || contactpersoon) && (
-                                <span className="text-[11px] text-[#C0BDB8] truncate block mt-0.5">
-                                  {project.vestiging_naam || contactpersoon}
-                                </span>
-                              )}
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <span className="flex-shrink-0 w-7 h-7 rounded-lg bg-[#F0EFEC] flex items-center justify-center text-[11px] font-bold text-[#9B9B95] uppercase select-none">
+                                {klantNaam.charAt(0)}
+                              </span>
+                              <div className="min-w-0">
+                                <span className="text-[13px] text-[#4A4A46] truncate block leading-tight">{klantNaam}</span>
+                                {(project.vestiging_naam || contactpersoon) && (
+                                  <span className="text-[11px] text-[#C0BDB8] truncate block">
+                                    {project.vestiging_naam || contactpersoon}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </td>
 
