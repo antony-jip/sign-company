@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useNavigateWithTab } from '@/hooks/useNavigateWithTab'
 import {
+  Plus,
   Search,
   ArrowUp,
   ArrowDown,
@@ -354,38 +355,49 @@ export function ProjectsList() {
       <div className="flex-1 min-h-0 overflow-y-auto">
         <div className="px-8 py-6 space-y-8 max-w-[1400px]">
 
-          {/* Header */}
-          <div className="flex items-baseline justify-between">
-            <div>
-              <h1 className="text-[28px] font-bold tracking-[-0.3px] text-[#1A1A1A]">
-                Projecten
-              </h1>
-              <p className="text-sm text-[#9B9B95] mt-1">
-                <span className="font-mono">{gefilterdeProjecten.length}</span> van <span className="font-mono">{projecten.length}</span> projecten
-              </p>
+          {/* Header + Stats */}
+          <div className="space-y-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-[28px] font-bold tracking-[-0.3px] text-[#1A1A1A]">
+                  Projecten
+                </h1>
+                <p className="text-sm text-[#9B9B95] mt-1">
+                  <span className="font-mono">{gefilterdeProjecten.length}</span> van <span className="font-mono">{projecten.length}</span> projecten
+                </p>
+              </div>
+              <Link
+                to="/projecten/nieuw"
+                className="inline-flex items-center gap-1.5 bg-[#1A535C] text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-sm hover:bg-[#237580] transition-all"
+              >
+                <Plus className="w-4 h-4" />
+                Nieuw project
+              </Link>
             </div>
-            <Link
-              to="/projecten/nieuw"
-              className="text-sm font-medium text-[#F15025] hover:text-[#D4421E] transition-colors"
-            >
-              Nieuw project
-            </Link>
-          </div>
 
-          {/* Quick stats */}
-          <div className="flex items-center gap-6 text-sm text-[#6B6B66]">
-            {stats.actief > 0 && (
-              <span><span className="font-mono font-medium text-[#1A1A1A]">{stats.actief}</span> actief</span>
-            )}
-            {stats.teFactureren > 0 && (
-              <span><span className="font-mono font-medium text-[#1A1A1A]">{stats.teFactureren}</span> te factureren</span>
-            )}
-            {stats.overdue > 0 && (
-              <span><span className="font-mono font-medium text-[#C03A18]">{stats.overdue}</span> verlopen</span>
-            )}
-            {stats.afgerond > 0 && (
-              <span><span className="font-mono font-medium text-[#1A1A1A]">{stats.afgerond}</span> afgerond</span>
-            )}
+            {/* Quick stats */}
+            <div className="flex items-center gap-3 flex-wrap">
+              {stats.actief > 0 && (
+                <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium bg-[#E8F2EC] text-[#3A7D52]">
+                  <span className="font-mono">{stats.actief}</span> actief
+                </span>
+              )}
+              {stats.teFactureren > 0 && (
+                <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium bg-[#E8EEF9] text-[#3A5A9A]">
+                  <span className="font-mono">{stats.teFactureren}</span> te factureren
+                </span>
+              )}
+              {stats.overdue > 0 && (
+                <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium bg-[#FDE8E4] text-[#C0451A]">
+                  <span className="font-mono">{stats.overdue}</span> verlopen
+                </span>
+              )}
+              {stats.afgerond > 0 && (
+                <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium bg-[#F5F2E8] text-[#8A7A4A]">
+                  <span className="font-mono">{stats.afgerond}</span> afgerond
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Search + Filters */}
@@ -393,18 +405,18 @@ export function ProjectsList() {
             <div className="flex items-center gap-6">
               {/* Search */}
               <div className="relative max-w-xs flex-1">
-                <Search className="absolute left-0 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9B9B95]" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9B9B95]" />
                 <input
                   type="text"
                   placeholder="Zoek project of klant..."
                   value={zoekterm}
                   onChange={(e) => setZoekterm(e.target.value)}
-                  className="w-full pl-6 pr-2 py-2 text-sm bg-transparent border-b border-[#EBEBEB] text-[#1A1A1A] placeholder:text-[#9B9B95] focus:outline-none focus:border-[#1A535C] transition-colors"
+                  className="w-full pl-9 pr-3 py-2 text-sm bg-[#F8F7F5] border border-[#EBEBEB] rounded-lg text-[#1A1A1A] placeholder:text-[#9B9B95] focus:outline-none focus:border-[#1A535C] focus:ring-1 focus:ring-[#1A535C]/20 transition-all"
                 />
               </div>
 
               {/* Export links */}
-              <div className="hidden sm:flex items-center gap-4 ml-auto text-[#9B9B95]">
+              <div className="hidden sm:flex items-center gap-1 ml-auto">
                 <button
                   onClick={() => {
                     const headers = ['Project', 'Klant', 'Status', 'Prioriteit', 'Bedrag', 'Startdatum']
@@ -418,7 +430,7 @@ export function ProjectsList() {
                     }))
                     exportCSV(`projecten-${new Date().toISOString().split('T')[0]}`, headers, rows)
                   }}
-                  className="flex items-center gap-1 text-xs hover:text-[#1A1A1A] transition-colors"
+                  className="flex items-center gap-1.5 text-xs text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F0EFEC] px-2.5 py-1.5 rounded-md transition-all"
                 >
                   <Download className="w-3.5 h-3.5" />
                   CSV
@@ -436,7 +448,7 @@ export function ProjectsList() {
                     }))
                     exportExcel(`projecten-${new Date().toISOString().split('T')[0]}`, headers, rows, 'Projecten')
                   }}
-                  className="flex items-center gap-1 text-xs hover:text-[#1A1A1A] transition-colors"
+                  className="flex items-center gap-1.5 text-xs text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F0EFEC] px-2.5 py-1.5 rounded-md transition-all"
                 >
                   <FileText className="w-3.5 h-3.5" />
                   Excel
@@ -685,7 +697,7 @@ export function ProjectsList() {
                           onClick={() => navigateWithTab({ path: `/projecten/${project.id}`, label: project.naam || 'Project', id: `/projecten/${project.id}` })}
                         >
                           {/* Checkbox */}
-                          <td className="py-4 pr-4" onClick={(e) => e.stopPropagation()}>
+                          <td className="py-3 pr-4 align-middle" onClick={(e) => e.stopPropagation()}>
                             <Checkbox
                               checked={selectedIds.has(project.id)}
                               onCheckedChange={() => toggleProjectSelection(project.id)}
@@ -694,12 +706,12 @@ export function ProjectsList() {
                           </td>
 
                           {/* Project naam + nummer */}
-                          <td className="py-4 pr-4">
+                          <td className="py-3 pr-4">
                             <div className="min-w-0">
                               <div className="flex items-center gap-2">
                                 <Link
                                   to={`/projecten/${project.id}`}
-                                  className="text-sm font-medium text-[#1A1A1A] hover:text-[#1A535C] transition-colors truncate"
+                                  className="text-[15px] font-medium text-[#1A1A1A] hover:text-[#1A535C] transition-colors truncate"
                                   onClick={(e) => e.stopPropagation()}
                                 >
                                   {project.naam}
@@ -717,7 +729,7 @@ export function ProjectsList() {
                           </td>
 
                           {/* Klant */}
-                          <td className="py-4 pr-4 hidden lg:table-cell">
+                          <td className="py-3 pr-4 hidden lg:table-cell">
                             <div className="min-w-0">
                               <span className="text-sm text-[#6B6B66] truncate block">{klantNaam}</span>
                               {(project.vestiging_naam || contactpersoon) && (
@@ -729,7 +741,7 @@ export function ProjectsList() {
                           </td>
 
                           {/* Status as text + Flame punt */}
-                          <td className="py-4 pr-4" onClick={(e) => e.stopPropagation()}>
+                          <td className="py-3 pr-4" onClick={(e) => e.stopPropagation()}>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <button className="text-left">
@@ -769,7 +781,7 @@ export function ProjectsList() {
                           </td>
 
                           {/* Bedrag */}
-                          <td className="py-4 pr-4 text-right hidden xl:table-cell">
+                          <td className="py-3 pr-4 text-right hidden xl:table-cell">
                             {(() => {
                               const bedrag = getProjectBedrag(project.id)
                               return bedrag > 0 ? (
@@ -783,14 +795,14 @@ export function ProjectsList() {
                           </td>
 
                           {/* Datum */}
-                          <td className="py-4 pr-4 text-right hidden lg:table-cell">
+                          <td className="py-3 pr-4 text-right hidden lg:table-cell">
                             <span className="text-xs font-mono tabular-nums text-[#9B9B95]">
                               {new Date(project.created_at).toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit' }).replace('/', '-')}
                             </span>
                           </td>
 
                           {/* Dagen open */}
-                          <td className="py-4 pr-4 text-right hidden xl:table-cell">
+                          <td className="py-3 pr-4 text-right hidden xl:table-cell">
                             {(() => {
                               const dagen = getDagenOpen(project)
                               if (dagen === null) return <span className="text-xs text-[#9B9B95]">&mdash;</span>
@@ -804,7 +816,7 @@ export function ProjectsList() {
                           </td>
 
                           {/* Actions */}
-                          <td className="py-4">
+                          <td className="py-3">
                             <div className="flex items-center gap-0.5 justify-end">
                               <button
                                 onClick={(e) => {
