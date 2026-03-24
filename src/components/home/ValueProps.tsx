@@ -5,8 +5,8 @@ import SectionReveal from '../SectionReveal'
 
 const props = [
   {
-    headline: 'Alles op een plek.',
-    description: 'Projecten, offertes, facturen en planning. Geen losse tools meer, geen Excel-chaos. Een systeem dat samenwerkt.',
+    headline: 'Alles erin. Altijd.',
+    description: 'Projecten, offertes, facturen, planning, klantportaal en AI. Geen modules bijkopen, geen add-ons. Je hebt gewoon alles.',
     icon: (
       <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
         <rect x="4" y="4" width="10" height="10" rx="2" className="fill-petrol" />
@@ -37,12 +37,12 @@ const props = [
     ),
   },
   {
-    headline: 'Geen per-user pricing.',
-    description: 'Eenvoudig en eerlijk. Vast bedrag per maand, ongeacht hoeveel mensen je team telt. Groei zonder extra kosten.',
+    headline: 'Gebouwd vanuit het vak.',
+    description: 'We kennen het vak omdat we het zelf doen. doen. is gemaakt door signmakers die software misten die bij hun werk paste.',
     icon: (
       <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-        <circle cx="16" cy="16" r="12" className="fill-petrol" />
-        <text x="16" y="21" textAnchor="middle" className="fill-white font-mono text-sm font-bold">&#8364;</text>
+        <path d="M8 24l4-8 4 4 4-6 4 10H8z" className="fill-petrol/20 stroke-petrol" strokeWidth="2" strokeLinejoin="round" />
+        <circle cx="24" cy="8" r="4" className="fill-flame" />
       </svg>
     ),
   },
@@ -73,7 +73,8 @@ export default function ValueProps() {
                 ease: [0.16, 1, 0.3, 1],
               }}
               viewport={{ once: true, margin: '-60px' }}
-              className="group bg-white rounded-2xl p-8 border border-ink/[0.04] hover:border-flame/20 transition-all duration-300 hover:shadow-lg hover:shadow-flame/[0.04]"
+              className="group bg-white rounded-2xl p-8 border border-black/[0.05] hover:border-flame/20 transition-all duration-300 hover:shadow-lg hover:shadow-flame/[0.04] hover:-translate-y-[2px]"
+              style={{ boxShadow: '0 1px 3px rgba(100,80,40,0.04)' }}
             >
               <div className="mb-5">{prop.icon}</div>
               <h3 className="font-heading text-xl text-petrol mb-2 tracking-tight">

@@ -1,6 +1,7 @@
 import Navbar from '@/components/Navbar'
 import ScrollProgress from '@/components/ScrollProgress'
 import Hero from '@/components/home/Hero'
+import DeGolf from '@/components/brand/DeGolf'
 import ValueProps from '@/components/home/ValueProps'
 import FeatureShowcase from '@/components/home/FeatureShowcase'
 import DayScroll from '@/components/home/DayScroll'
@@ -16,9 +17,11 @@ export default function Home() {
       <Navbar />
       <main id="main-content">
         <Hero />
+        <DeGolf className="-mt-1" />
         <ValueProps />
         <FeatureShowcase />
         <DayScroll />
+        <DeGolf className="-mb-1" flip />
         <DarkSection />
         <SocialProof />
         <CTASection />
