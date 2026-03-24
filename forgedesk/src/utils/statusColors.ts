@@ -35,6 +35,7 @@ export function getStatusBadgeClass(status: string): string {
     'afgerond':     'badge-petrol',
     'gepauzeerd':   'badge-grijs',
     'on-hold':      'badge-grijs',
+    'te-plannen':   'badge-flame',
     'geannuleerd':  'badge-flame',
 
     // Taken
@@ -104,6 +105,7 @@ export function getStatusLabel(status: string): string {
     'afgerond':      'Afgerond',
     'gepauzeerd':    'Gepauzeerd',
     'on-hold':       'On-hold',
+    'te-plannen':    'Te plannen',
     'geannuleerd':   'Geannuleerd',
     'todo':          'Open',
     'bezig':         'Bezig',
@@ -154,6 +156,9 @@ export function getRowAccentClass(status: string): string {
     'te-laat':     'border-l-[#C03A18]',
     'geannuleerd': 'border-l-[#C03A18]',
     'wijziging_gevraagd': 'border-l-[#F15025]',
+
+    // Flame
+    'te-plannen':  'border-l-[#F15025]',
 
     // Blauw
     'bezig':       'border-l-[#2A5580]',

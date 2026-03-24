@@ -23,6 +23,7 @@ export const PROJECT_FASES = {
   'on-hold': { label: 'On-hold', percentage: 30, color: '#9A4070' },
   'te-factureren': { label: 'Te factureren', percentage: 85, color: '#2D6B48' },
   gefactureerd: { label: 'Gefactureerd', percentage: 95, color: '#1A535C' },
+  'te-plannen': { label: 'Te plannen', percentage: 60, color: '#3A6B8C' },
 } as const
 
 export type ProjectFase = keyof typeof PROJECT_FASES

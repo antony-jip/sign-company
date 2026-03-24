@@ -241,7 +241,7 @@ export interface Project {
   project_nummer?: string;
   naam: string;
   beschrijving: string;
-  status: 'gepland' | 'actief' | 'in-review' | 'afgerond' | 'on-hold' | 'te-factureren' | 'gefactureerd';
+  status: 'gepland' | 'actief' | 'in-review' | 'afgerond' | 'on-hold' | 'te-factureren' | 'gefactureerd' | 'te-plannen';
   prioriteit: 'laag' | 'medium' | 'hoog' | 'kritiek';
   start_datum?: string;
   eind_datum?: string;

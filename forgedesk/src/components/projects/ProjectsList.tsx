@@ -61,6 +61,7 @@ import { MODULE_COLORS } from '@/lib/moduleColors'
 const statusOpties = [
   { value: 'alle', label: 'Alle' },
   { value: 'actief', label: 'Actief' },
+  { value: 'te-plannen', label: 'Te plannen' },
   { value: 'gepland', label: 'Gepland' },
   { value: 'in-review', label: 'In review' },
   { value: 'te-factureren', label: 'Te factureren' },
@@ -77,12 +78,14 @@ const statusLabels: Record<string, string> = {
   'on-hold': 'On-hold',
   'te-factureren': 'Te factureren',
   'gefactureerd': 'Gefactureerd',
+  'te-plannen': 'Te plannen',
 }
 
 function getStatusDotColor(status: string): string {
   switch (status) {
     case 'actief': return 'bg-[#2D6B48]'
     case 'gepland': return 'bg-[#2A5580]'
+    case 'te-plannen': return 'bg-[#F15025]'
     case 'in-review': return 'bg-[#5A5A55]'
     case 'afgerond': return 'bg-[#1A535C]'
     case 'on-hold': return 'bg-[#5A5A55]'
