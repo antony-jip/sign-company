@@ -897,12 +897,14 @@ export function ProjectsList() {
 
                     {/* Klant */}
                     <td className="py-2.5 px-4 hidden lg:table-cell">
-                      <span className="text-[13px] text-foreground">{klantNaam}</span>
-                      {(project.vestiging_naam || contactpersoon) && (
-                        <p className="text-[11px] mt-0.5" style={{ color: '#5A5A55' }}>
-                          {project.vestiging_naam || contactpersoon}
-                        </p>
-                      )}
+                      <div className="flex items-baseline gap-1.5 min-w-0">
+                        <span className="text-[13px] text-foreground truncate">{klantNaam}</span>
+                        {(project.vestiging_naam || contactpersoon) && (
+                          <span className="text-[11px] text-[#A0A098] truncate flex-shrink-0">
+                            {project.vestiging_naam || contactpersoon}
+                          </span>
+                        )}
+                      </div>
                     </td>
 
                     {/* Fase */}
