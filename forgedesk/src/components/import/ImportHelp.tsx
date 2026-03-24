@@ -81,17 +81,6 @@ function BedrijfsdataHelp() {
         <p>Het template gebruikt <code className="text-xs bg-muted px-1 py-0.5 rounded">;</code> (puntkomma). Open het bestand in Excel of Google Sheets om het in te vullen.</p>
       </div>
 
-      <div className="bg-[#1A535C]/5 dark:bg-[#1A535C]/10 border border-[#1A535C]/20 rounded-lg p-3">
-        <p className="font-semibold text-foreground mb-1">TIP: HEB JE EEN EXPORT UIT JE OUDE SOFTWARE?</p>
-        <p>Plak je export in ChatGPT of Claude met deze instructie:</p>
-        <p className="mt-2 text-xs bg-muted/50 p-2 rounded italic">
-          &quot;Zet deze data om naar CSV met ; als scheidingsteken en deze kolommen:
-          type;bedrijfsnaam;naam;nummer;datum;bedrag;adres;postcode;plaats;telefoon;email;kvk_nummer;btw_nummer;verantwoordelijke.
-          Type is: relatie, project, offerte, of factuur.
-          Bij relatie: vul bedrijfsnaam + adres/postcode/plaats/telefoon/email/kvk/btw in.
-          Bij project/offerte/factuur: vul bedrijfsnaam + naam/nummer/datum/bedrag in.&quot;
-        </p>
-      </div>
     </div>
   )
 }

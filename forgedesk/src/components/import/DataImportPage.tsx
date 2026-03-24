@@ -103,6 +103,21 @@ export function DataImportPage() {
         </p>
       </div>
 
+      {/* AI tip */}
+      <div className="rounded-xl border border-[#1A535C]/15 bg-[#1A535C]/[0.03] p-5">
+        <p className="text-sm font-semibold text-foreground mb-1">Tip: heb je een export uit je oude software?</p>
+        <p className="text-sm text-muted-foreground">
+          Plak je export in ChatGPT of Claude met deze instructie:
+        </p>
+        <p className="mt-2 text-xs text-muted-foreground bg-muted/50 p-3 rounded-lg italic leading-relaxed">
+          &quot;Zet deze data om naar CSV met ; als scheidingsteken en deze kolommen:
+          type;bedrijfsnaam;naam;nummer;datum;bedrag;adres;postcode;plaats;telefoon;email;kvk_nummer;btw_nummer;verantwoordelijke.
+          Type is: relatie, project, offerte, of factuur.
+          Bij relatie: vul bedrijfsnaam + adres/postcode/plaats/telefoon/email/kvk/btw in.
+          Bij project/offerte/factuur: vul bedrijfsnaam + naam/nummer/datum/bedrag in.&quot;
+        </p>
+      </div>
+
       {/* Section 1: Bedrijfsdata */}
       <BedrijfsdataUpload />
 
