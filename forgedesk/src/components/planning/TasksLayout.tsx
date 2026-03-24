@@ -615,11 +615,11 @@ export function TasksLayout() {
         <div className="flex items-center justify-between flex-wrap gap-2 px-3 sm:px-5 py-2 border-b border-border/60 bg-card/50 flex-shrink-0">
           <div className="flex items-center gap-3 min-w-0">
             {/* View toggle */}
-            <div className="inline-flex items-center rounded-lg border border-black/[0.06] bg-muted p-0.5 flex-shrink-0">
+            <div className="inline-flex items-center rounded-lg border border-[#C44830]/20 bg-[#C44830]/5 p-0.5 flex-shrink-0">
               {(['week', 'maand'] as const).map((v) => (
                 <button key={v} onClick={() => setViewMode(v)} className={cn(
                   'text-xs px-2.5 py-1 rounded-md transition-all capitalize',
-                  viewMode === v ? 'bg-[#191919] text-white shadow-sm font-medium' : 'text-[#5A5A55] hover:text-foreground'
+                  viewMode === v ? 'bg-[#C44830] text-white shadow-sm font-medium' : 'text-[#5A5A55] hover:text-[#C44830]'
                 )}>{v === 'week' ? 'Week' : 'Maand'}</button>
               ))}
             </div>
@@ -631,9 +631,9 @@ export function TasksLayout() {
                 <ChevronLeft className="w-4 h-4" />
               </Button>
               <Button
-                variant={viewMode === 'week' ? (isCurrentWeek ? 'default' : 'ghost') : (monthOffset === 0 ? 'default' : 'ghost')}
+                variant="ghost"
                 size="sm"
-                className={cn('h-7 text-xs px-3 rounded-lg', (viewMode === 'week' ? isCurrentWeek : monthOffset === 0) && 'bg-primary hover:bg-wm-hover shadow-sm')}
+                className={cn('h-7 text-xs px-3 rounded-lg', (viewMode === 'week' ? isCurrentWeek : monthOffset === 0) && 'bg-[#C44830] text-white hover:bg-[#a93d28] shadow-sm')}
                 onClick={() => viewMode === 'week' ? setWeekOffset(0) : setMonthOffset(0)}
               >
                 Vandaag
@@ -647,7 +647,7 @@ export function TasksLayout() {
               <select
                 value={medewerkerFilter}
                 onChange={(e) => setMedewerkerFilter(e.target.value)}
-                className="h-7 text-xs rounded-lg border border-border/60 bg-background px-2 max-w-[140px]"
+                className="h-7 text-xs rounded-lg border border-[#C44830]/20 bg-[#C44830]/5 px-2 max-w-[160px] text-[#5A5A55] focus:outline-none focus:ring-1 focus:ring-[#C44830]/30"
               >
                 <option value="">Alle medewerkers</option>
                 {medewerkers.filter((m) => m.status === 'actief').map((m) => (
@@ -714,12 +714,12 @@ export function TasksLayout() {
                 key={i}
                 className={cn(
                   'flex-1 min-w-0 text-center py-2.5 border-l border-border/40 transition-colors',
-                  isToday && 'bg-primary/5'
+                  isToday && 'bg-[#C44830]/[0.04]'
                 )}
               >
                 <div className={cn(
                   'text-xs uppercase tracking-label font-bold',
-                  isToday ? 'text-primary' : isPast ? 'text-muted-foreground/30' : 'text-muted-foreground/70'
+                  isToday ? 'text-[#C44830]' : isPast ? 'text-muted-foreground/30' : 'text-muted-foreground/70'
                 )}>
                   {DAY_LABELS[i]}
                 </div>
@@ -727,7 +727,7 @@ export function TasksLayout() {
                   <span className={cn(
                     'inline-flex items-center justify-center text-sm font-bold font-mono transition-all',
                     isToday
-                      ? 'w-8 h-8 rounded-full bg-primary text-white shadow-sm shadow-primary/30'
+                      ? 'w-8 h-8 rounded-full bg-[#C44830] text-white shadow-sm shadow-[#C44830]/30'
                       : isPast ? 'text-muted-foreground/30' : 'text-foreground'
                   )}>
                     {day.getDate()}
@@ -736,7 +736,7 @@ export function TasksLayout() {
                     <span className={cn(
                       'text-[10px] font-semibold font-mono tabular-nums px-[10px] py-[3px] rounded-full',
                       isToday
-                        ? 'bg-primary/15 text-primary'
+                        ? 'bg-[#C44830]/15 text-[#C44830]'
                         : 'bg-muted/60 text-muted-foreground/50'
                     )}>
                       {dayTasks.length}
@@ -817,13 +817,13 @@ export function TasksLayout() {
                   className={cn(
                     'bg-background min-h-[80px] p-1.5 transition-colors',
                     !isCurrentMonth && 'opacity-30',
-                    isToday && 'bg-primary/5'
+                    isToday && 'bg-[#C44830]/5'
                   )}
                 >
                   <div className="flex items-center justify-between mb-1">
                     <span className={cn(
                       'text-xs font-mono font-bold',
-                      isToday ? 'w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center' : 'text-muted-foreground'
+                      isToday ? 'w-6 h-6 rounded-full bg-[#C44830] text-white flex items-center justify-center' : 'text-muted-foreground'
                     )}>
                       {day.getDate()}
                     </span>
@@ -912,7 +912,7 @@ export function TasksLayout() {
               </Select>
             </div>
             <Button
-              className="w-full h-9 text-sm bg-primary hover:bg-wm-hover rounded-lg shadow-sm"
+              className="w-full h-9 text-sm bg-[#C44830] hover:bg-[#a93d28] text-white rounded-lg shadow-sm"
               disabled={!fabTitle.trim()}
               onClick={handleFabAdd}
             >
@@ -924,8 +924,8 @@ export function TasksLayout() {
         <button
           onClick={() => setFabOpen(!fabOpen)}
           className={cn(
-            'flex items-center justify-center w-14 h-14 rounded-full shadow-sm transition-all duration-200',
-            'bg-[#5A5A55] text-white hover:opacity-90 hover:shadow-md hover:scale-105',
+            'flex items-center justify-center w-14 h-14 rounded-full shadow-lg transition-all duration-200',
+            'bg-[#C44830] text-white hover:bg-[#a93d28] hover:shadow-xl hover:scale-105',
             fabOpen && 'rotate-45'
           )}
         >
@@ -1140,7 +1140,7 @@ function DayColumn({
   return (
     <div className={cn(
       'flex-1 min-w-0 border-l border-border/40 relative',
-      isToday && 'bg-primary/[0.02]'
+      isToday && 'bg-[#C44830]/[0.02]'
     )}>
       {/* Hour grid lines + drop zones */}
       {HOURS.map((hour) => {
@@ -1210,8 +1210,8 @@ function DayColumn({
           style={{ top: `${nowLineTop}%` }}
         >
           <div className="flex items-center">
-            <div className="w-2.5 h-2.5 rounded-full bg-red-500 -ml-1.5 flex-shrink-0 shadow-sm shadow-red-500/30" />
-            <div className="flex-1 h-[2px] bg-red-500/80" />
+            <div className="w-2.5 h-2.5 rounded-full bg-[#C44830] -ml-1.5 flex-shrink-0 shadow-sm shadow-[#C44830]/30" />
+            <div className="flex-1 h-[2px] bg-[#C44830]/80" />
           </div>
         </div>
       )}
@@ -1662,16 +1662,7 @@ function EditTaskDialog({
             </div>
           )}
           {!formData.project_id && (
-            <div className="grid gap-2">
-              <Label>Klant (optioneel)</Label>
-              <Select value={formData.klant_id || 'geen'} onValueChange={(v) => updateField('klant_id', v === 'geen' ? '' : v)}>
-                <SelectTrigger><SelectValue placeholder="Geen klant" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="geen">Intern (geen klant)</SelectItem>
-                  {klanten.map((k) => (<SelectItem key={k.id} value={k.id}>{k.bedrijfsnaam || k.contactpersoon}</SelectItem>))}
-                </SelectContent>
-              </Select>
-            </div>
+            <KlantSearchField klanten={klanten} value={formData.klant_id} onChange={(v) => updateField('klant_id', v)} />
           )}
           <div className="grid gap-2">
             <Label htmlFor="edit-locatie">Locatie</Label>
@@ -1769,5 +1760,71 @@ function EditTaskDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  )
+}
+
+/** Zoekbare klant selector voor taken */
+function KlantSearchField({ klanten, value, onChange }: { klanten: Klant[]; value: string; onChange: (id: string) => void }) {
+  const [search, setSearch] = React.useState('')
+  const [open, setOpen] = React.useState(false)
+  const ref = React.useRef<HTMLDivElement>(null)
+
+  const selected = klanten.find((k) => k.id === value)
+  const filtered = search.trim()
+    ? klanten.filter((k) => {
+        const q = search.toLowerCase()
+        return (k.bedrijfsnaam || '').toLowerCase().includes(q) || (k.contactpersoon || '').toLowerCase().includes(q)
+      }).slice(0, 8)
+    : klanten.slice(0, 8)
+
+  React.useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  if (selected) {
+    return (
+      <div className="grid gap-2">
+        <Label>Klant</Label>
+        <div className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm">
+          <span className="flex-1 truncate">{selected.bedrijfsnaam || selected.contactpersoon}</span>
+          <button type="button" onClick={() => onChange('')} className="text-muted-foreground hover:text-foreground">
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="grid gap-2 relative" ref={ref}>
+      <Label>Klant (optioneel)</Label>
+      <Input
+        value={search}
+        onChange={(e) => { setSearch(e.target.value); setOpen(true) }}
+        onFocus={() => setOpen(true)}
+        placeholder="Zoek op bedrijfsnaam..."
+      />
+      {open && filtered.length > 0 && (
+        <div className="absolute top-full left-0 right-0 z-50 mt-1 rounded-lg border bg-popover shadow-lg max-h-48 overflow-y-auto">
+          {filtered.map((k) => (
+            <button
+              key={k.id}
+              type="button"
+              className="w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors flex items-center gap-2"
+              onClick={() => { onChange(k.id); setSearch(''); setOpen(false) }}
+            >
+              <span className="font-medium truncate">{k.bedrijfsnaam || k.contactpersoon}</span>
+              {k.bedrijfsnaam && k.contactpersoon && (
+                <span className="text-muted-foreground text-xs truncate">— {k.contactpersoon}</span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   )
 }
