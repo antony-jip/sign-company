@@ -75,12 +75,15 @@ import {
   updateOfferte,
   updateProject,
   getOffertesByProject,
+  getFacturenByProject,
+  getProjecten,
+  getKlant,
   generateBetaalToken,
   getHerinneringTemplates,
 } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
-import type { Klant, Factuur, FactuurItem, Offerte, OfferteItem, HerinneringTemplate } from '@/types'
+import type { Klant, Factuur, FactuurItem, Offerte, OfferteItem, HerinneringTemplate, Project } from '@/types'
 import { round2 } from '@/utils/budgetUtils'
 import { generateFactuurPDF } from '@/services/pdfService'
 import { generateUBLInvoice, downloadUBLXml } from '@/services/ublService'
@@ -242,6 +245,14 @@ export function FactuurEditor() {
   const [outroTekst, setOutroTekst] = useState(factuurOutroTekst)
   const [items, setItems] = useState<LineItem[]>([createEmptyLineItem(standaardBtw)])
 
+  // Factureerpercentage (DEEL 2)
+  const [factureerPercentage, setFactureerPercentage] = useState(100)
+  const [origineleItems, setOrigineleItems] = useState<LineItem[]>([])
+  const [hasOfferteItems, setHasOfferteItems] = useState(false)
+
+  // Te factureren projecten (DEEL 3)
+  const [teFacturerenProjecten, setTeFacturerenProjecten] = useState<(Project & { offerteBedrag: number })[]>([])
+
   // Track form modifications after initial load
   const initialLoadDone = useRef(false)
   useEffect(() => {
@@ -340,6 +351,84 @@ export function FactuurEditor() {
           if (paramTitel) setTitel(paramTitel)
           if (paramProjectId) setProjectId(paramProjectId)
 
+          // Import from project (DEEL 2): auto-fill klant, titel, offerte items
+          if (paramProjectId && !paramOfferteId) {
+            try {
+              const projectenData = await getProjecten()
+              const project = projectenData.find((p) => p.id === paramProjectId)
+              if (project) {
+                setKlantId(project.klant_id)
+                setShowKlantSelector(false)
+                setTitel(project.naam)
+                setProjectId(project.id)
+
+                // Find linked offerte and import items
+                const projectOffertes = await getOffertesByProject(project.id).catch(() => [])
+                const offerte = projectOffertes.find((o) => o.status === 'goedgekeurd') || projectOffertes[0]
+                if (offerte) {
+                  setOfferteId(offerte.id)
+                  if (offerte.voorwaarden) setVoorwaarden(offerte.voorwaarden)
+                  if (offerte.intro_tekst) setIntroTekst(offerte.intro_tekst)
+                  if (offerte.outro_tekst) setOutroTekst(offerte.outro_tekst)
+
+                  const offerteItems = await getOfferteItems(offerte.id).catch(() => [])
+                  if (offerteItems.length > 0) {
+                    const mapped = offerteItems
+                      .filter((oi) => !oi.is_optioneel)
+                      .sort((a, b) => a.volgorde - b.volgorde)
+                      .map((oi) => ({
+                        id: crypto.randomUUID(),
+                        beschrijving: oi.beschrijving,
+                        aantal: oi.aantal,
+                        eenheidsprijs: oi.eenheidsprijs,
+                        btw_percentage: oi.btw_percentage,
+                        korting_percentage: oi.korting_percentage,
+                      }))
+                    setItems(mapped)
+                    setOrigineleItems(mapped.map((item) => ({ ...item })))
+                    setHasOfferteItems(true)
+                  } else {
+                    setItems([{
+                      id: crypto.randomUUID(),
+                      beschrijving: offerte.titel,
+                      aantal: 1,
+                      eenheidsprijs: offerte.subtotaal,
+                      btw_percentage: offerte.subtotaal > 0 ? Math.round((offerte.btw_bedrag / offerte.subtotaal) * 100) : 21,
+                      korting_percentage: 0,
+                    }])
+                    setOrigineleItems([{
+                      id: crypto.randomUUID(),
+                      beschrijving: offerte.titel,
+                      aantal: 1,
+                      eenheidsprijs: offerte.subtotaal,
+                      btw_percentage: offerte.subtotaal > 0 ? Math.round((offerte.btw_bedrag / offerte.subtotaal) * 100) : 21,
+                      korting_percentage: 0,
+                    }])
+                    setHasOfferteItems(true)
+                  }
+                }
+              }
+            } catch (err) {
+              logger.error('Failed to import project data:', err)
+            }
+          }
+
+          // Load te factureren projecten (DEEL 3)
+          try {
+            const projectenData = await getProjecten()
+            const tfProjecten = projectenData.filter((p) => p.status === 'te-factureren')
+            const enriched = await Promise.all(
+              tfProjecten.map(async (project) => {
+                const projectOffertes = await getOffertesByProject(project.id).catch(() => [])
+                const offerteBedrag = round2(projectOffertes.reduce((sum, o) => sum + o.totaal, 0))
+                return { ...project, offerteBedrag }
+              })
+            )
+            if (!cancelled) setTeFacturerenProjecten(enriched)
+          } catch {
+            // Non-critical
+          }
+
           // Import from offerte
           if (paramOfferteId) {
             try {
@@ -410,6 +499,39 @@ export function FactuurEditor() {
       cancelled = true
     }
   }, [editFactuurId, paramKlantId, paramOfferteId, paramProjectId, paramTitel, factuurPrefix, standaardBtw, factuurBetaaltermijnDagen, factuurVoorwaarden, factuurIntroTekst, factuurOutroTekst])
+
+  // ============ PERCENTAGE EFFECT ============
+
+  // Recalculate items when factureerPercentage changes
+  useEffect(() => {
+    if (!hasOfferteItems || origineleItems.length === 0) return
+    const pct = Math.max(0, Math.min(100, factureerPercentage))
+    setItems((prev) =>
+      prev.map((item, idx) => {
+        const orig = origineleItems[idx]
+        if (!orig) return item
+        return {
+          ...item,
+          eenheidsprijs: round2(orig.eenheidsprijs * (pct / 100)),
+        }
+      })
+    )
+  }, [factureerPercentage, origineleItems, hasOfferteItems])
+
+  // Original offerte subtotaal for percentage display
+  const origineleSubtotaal = useMemo(() => {
+    if (origineleItems.length === 0) return 0
+    return round2(origineleItems.reduce((sum, item) => {
+      const sub = round2(item.aantal * item.eenheidsprijs)
+      const korting = round2(sub * (item.korting_percentage / 100))
+      return sum + round2(sub - korting)
+    }, 0))
+  }, [origineleItems])
+
+  // Filtered te factureren projecten (exclude current project)
+  const filteredTeFacturerenProjecten = useMemo(() => {
+    return teFacturerenProjecten.filter((p) => p.id !== paramProjectId)
+  }, [teFacturerenProjecten, paramProjectId])
 
   // ============ COMPUTED ============
 
@@ -606,6 +728,29 @@ export function FactuurEditor() {
             } catch (err) {
               logger.error('Kon project status niet bijwerken:', err)
             }
+          }
+        }
+
+        // DEEL 4: Update project status na opslaan
+        if (projectId && !offerteId) {
+          try {
+            const [projectOffertes, projectFacturen] = await Promise.all([
+              getOffertesByProject(projectId).catch(() => []),
+              getFacturenByProject(projectId).catch(() => []),
+            ])
+            const offerteTotaal = round2(projectOffertes.reduce((sum, o) => sum + o.totaal, 0))
+            // Include the just-created factuur in the total
+            const gefactureerdTotaal = round2(
+              projectFacturen
+                .filter((f) => f.status !== 'gecrediteerd')
+                .reduce((sum, f) => sum + f.totaal, 0) + totaal
+            )
+            if (offerteTotaal > 0 && gefactureerdTotaal >= offerteTotaal) {
+              await updateProject(projectId, { status: 'gefactureerd' })
+              toast.info('Project status bijgewerkt naar gefactureerd')
+            }
+          } catch (err) {
+            logger.error('Kon project status niet bijwerken:', err)
           }
         }
 
@@ -1423,6 +1568,31 @@ export function FactuurEditor() {
             </CardContent>
           </Card>
 
+          {/* Factureerpercentage (DEEL 2) */}
+          {hasOfferteItems && paramProjectId && (
+            <Card>
+              <CardContent className="pt-5 pb-4">
+                <div className="flex items-center gap-4 flex-wrap">
+                  <Label className="text-sm font-medium whitespace-nowrap">Factureerpercentage:</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={factureerPercentage}
+                      onChange={(e) => setFactureerPercentage(Number(e.target.value) || 0)}
+                      className="w-20 text-center"
+                    />
+                    <span className="text-sm text-muted-foreground">%</span>
+                  </div>
+                  <span className="text-sm text-muted-foreground">
+                    {formatCurrency(subtotaal)} van {formatCurrency(origineleSubtotaal)}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Line items */}
           <Card>
             <CardHeader className="pb-3">
@@ -1583,6 +1753,50 @@ export function FactuurEditor() {
           </div>
         </div>
       </div>
+
+      {/* ── Nog te factureren blok (DEEL 3) ── */}
+      {filteredTeFacturerenProjecten.length > 0 && (
+        <Card className="mt-6">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <ClipboardList className="h-4 w-4" style={{ color: '#F15025' }} />
+              Nog te factureren
+              <Badge variant="secondary" className="text-xs ml-1">
+                Nog {filteredTeFacturerenProjecten.length} project{filteredTeFacturerenProjecten.length !== 1 ? 'en' : ''} te factureren
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-1">
+              {filteredTeFacturerenProjecten.map((project) => (
+                <div
+                  key={project.id}
+                  className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-muted/50 transition-colors text-sm"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="text-muted-foreground truncate">{project.klant_naam || '-'}</span>
+                    <span className="font-medium truncate">{project.naam}</span>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <span className="text-sm tabular-nums text-muted-foreground">
+                      {project.offerteBedrag > 0 ? formatCurrency(project.offerteBedrag) : '-'}
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => navigate(`/facturen/nieuw?project_id=${project.id}`)}
+                      className="text-xs font-semibold"
+                      style={{ color: '#F15025' }}
+                    >
+                      Factureer →
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* ============ DIALOGS ============ */}
 
