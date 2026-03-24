@@ -14,7 +14,7 @@ export default function NotFound() {
           </h1>
           <p className="text-muted mb-8 max-w-sm mx-auto">
             Deze pagina bestaat niet. Misschien een typfout, misschien een oud
-            linkje. Hoe dan ook — terug naar veilig.
+            linkje. Hoe dan ook, terug naar veilig.
           </p>
           <Link
             href="/"

@@ -64,7 +64,7 @@ const modules = [
     lightBg: '#FDE8E2',
     headline: 'Professionele offertes in minuten.',
     status: 'verstuurd.',
-    description: 'Geen Word-documenten meer kopiëren en plakken. Kies een sjabloon, selecteer je producten, pas de prijzen aan en verstuur. Je klant ontvangt een offerte die er professioneel uitziet — met digitale akkoordknop.',
+    description: 'Geen Word-documenten meer kopiëren en plakken. Kies een sjabloon, selecteer je producten, pas de prijzen aan en verstuur. Je klant ontvangt een offerte die er professioneel uitziet, met digitale akkoordknop.',
     highlights: [
       'Sjablonen met je eigen huisstijl',
       'Herbruikbare productbibliotheek',
@@ -98,7 +98,7 @@ const modules = [
     lightBg: '#EEE8F5',
     headline: 'Je slimste collega werkt 24/7.',
     status: 'slim.',
-    description: 'Daan AI helpt je met het schrijven van offerteteksten, het samenvatten van projecten en het doen van slimme suggesties. Geen vervanging van jou — een versterking. Als een collega die altijd beschikbaar is.',
+    description: 'Daan AI helpt je met het schrijven van offerteteksten, het samenvatten van projecten en het doen van slimme suggesties. Geen vervanging van jou, een versterking. Als een collega die altijd beschikbaar is.',
     highlights: [
       'Offerteteksten genereren',
       'Projectsamenvattingen',
@@ -225,7 +225,7 @@ export default function FeaturesContent() {
                             />
                           </div>
                           <p className="font-mono text-xs" style={{ color: mod.color + '60' }}>
-                            {mod.name} — preview
+                            {mod.name}
                           </p>
                         </div>
                       </div>

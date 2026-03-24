@@ -2,8 +2,25 @@
 
 import { motion } from 'framer-motion'
 import SectionReveal from '../SectionReveal'
+import {
+  PlanningMockup,
+  WerkbonnenMockup,
+  KlantportaalMockup,
+  OffertesMockup,
+  FacturenMockup,
+  DaanAIMockup,
+} from '../mockups/ModuleMockups'
+import { ReactNode } from 'react'
 
-const features = [
+const features: {
+  module: string
+  headline: string
+  status: string
+  description: string
+  color: string
+  lightBg: string
+  mockup: ReactNode
+}[] = [
   {
     module: 'Planning',
     headline: 'Wie doet wat, wanneer, waar.',
@@ -11,6 +28,7 @@ const features = [
     description: 'Drag-and-drop planbord, gekoppeld aan projecten, zichtbaar voor je hele team. Je monteur weet precies waar hij wanneer moet zijn.',
     color: '#9A5A48',
     lightBg: '#F2E8E5',
+    mockup: <PlanningMockup />,
   },
   {
     module: 'Werkbonnen',
@@ -19,22 +37,25 @@ const features = [
     description: 'Geen papieren werkbonnen meer die kwijtraken in het busje. Foto\'s erbij, handtekening van de klant, alles digitaal vastgelegd.',
     color: '#C44830',
     lightBg: '#FAE5E0',
+    mockup: <WerkbonnenMockup />,
   },
   {
     module: 'Klantportaal',
     headline: 'Je klant ziet wat hij moet zien.',
     status: 'goedgekeurd.',
-    description: 'Een eigen portaal voor je klant. Projectstatus, facturen, goedkeuringen — alles transparant. Minder bellen, meer vertrouwen.',
+    description: 'Een eigen portaal voor je klant. Projectstatus, facturen, goedkeuringen. Alles transparant. Minder bellen, meer vertrouwen.',
     color: '#3A6B8C',
     lightBg: '#E5ECF6',
+    mockup: <KlantportaalMockup />,
   },
   {
     module: 'Offertes',
     headline: 'Professionele offertes in minuten.',
     status: 'verstuurd.',
-    description: 'Sjablonen, herbruikbare producten, digitale handtekening. Je klant ontvangt een offerte waar je trots op bent — in minuten, niet uren.',
+    description: 'Sjablonen, herbruikbare producten, digitale handtekening. Je klant ontvangt een offerte waar je trots op bent. In minuten, niet uren.',
     color: '#F15025',
     lightBg: '#FDE8E2',
+    mockup: <OffertesMockup />,
   },
   {
     module: 'Facturen',
@@ -43,14 +64,16 @@ const features = [
     description: 'Automatische herinneringen, betaalstatus op een rij, directe koppeling met je offertes. Geen factuur valt meer tussen wal en schip.',
     color: '#2D6B48',
     lightBg: '#E4F0EA',
+    mockup: <FacturenMockup />,
   },
   {
     module: 'Daan AI',
     headline: 'Je slimste collega werkt 24/7.',
     status: 'slim.',
-    description: 'Daan AI helpt je met offerteteksten, projectsamenvattingen en slimme suggesties. Geen vervanging — een versterking.',
+    description: 'Daan AI helpt je met offerteteksten, projectsamenvattingen en slimme suggesties. Geen vervanging, een versterking.',
     color: '#6A5A8A',
     lightBg: '#EEE8F5',
+    mockup: <DaanAIMockup />,
   },
 ]
 
@@ -115,37 +138,13 @@ export default function FeatureShowcase() {
                 </span>
               </div>
 
-              {/* Visual: Module preview card */}
+              {/* Module mockup */}
               <div className="flex-1 flex justify-center">
                 <div
-                  className="w-full max-w-sm aspect-[4/3] rounded-xl border border-black/[0.03] flex items-center justify-center relative overflow-hidden"
+                  className="w-full max-w-sm aspect-[4/3] rounded-xl border border-black/[0.03] overflow-hidden"
                   style={{ background: `linear-gradient(160deg, ${feature.lightBg} 0%, ${feature.lightBg}80 100%)` }}
                 >
-                  {/* Abstract module illustration */}
-                  <div className="text-center px-6">
-                    <div
-                      className="w-14 h-14 rounded-2xl mx-auto mb-3 flex items-center justify-center"
-                      style={{ backgroundColor: feature.color + '15' }}
-                    >
-                      <div
-                        className="w-7 h-7 rounded-lg"
-                        style={{ backgroundColor: feature.color + '30' }}
-                      />
-                    </div>
-                    <p className="font-mono text-xs font-medium" style={{ color: feature.color + '60' }}>
-                      {feature.module}
-                    </p>
-                  </div>
-
-                  {/* Decorative elements */}
-                  <div
-                    className="absolute top-3 right-3 w-8 h-8 rounded-full opacity-10"
-                    style={{ backgroundColor: feature.color }}
-                  />
-                  <div
-                    className="absolute bottom-4 left-4 w-12 h-2 rounded-full opacity-10"
-                    style={{ backgroundColor: feature.color }}
-                  />
+                  {feature.mockup}
                 </div>
               </div>
             </motion.div>

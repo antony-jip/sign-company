@@ -102,7 +102,7 @@ export default function OverContent() {
               {[
                 {
                   title: 'Alles erin',
-                  desc: 'Geen modules bijkopen. Geen premium-tier. Iedereen krijgt alles. Planning, klantportaal, AI — het zit erin.',
+                  desc: 'Geen modules bijkopen. Geen premium-tier. Iedereen krijgt alles. Planning, klantportaal, AI. Het zit erin.',
                 },
                 {
                   title: 'Eerlijke prijs',

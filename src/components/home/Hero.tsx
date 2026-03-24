@@ -6,7 +6,6 @@ import WachtlijstForm from '../WachtlijstForm'
 import TypeWriter from '../TypeWriter'
 import FlameCursor from '../FlameCursor'
 import DashboardMockup from '../mockups/DashboardMockup'
-import WerkbonMockup from '../mockups/WerkbonMockup'
 
 const words = ['Doe', 'waar', 'je', 'goed', 'in', 'bent.']
 
@@ -17,7 +16,6 @@ export default function Hero() {
     offset: ['start start', 'end start'],
   })
   const mockupY = useTransform(scrollYProgress, [0, 1], [0, -80])
-  const phoneY = useTransform(scrollYProgress, [0, 1], [0, -40])
 
   return (
     <section
@@ -82,7 +80,7 @@ export default function Hero() {
               transition={{ duration: 0.7, delay: 0.9, ease: [0.16, 1, 0.3, 1] }}
               className="text-muted text-lg max-w-md mb-8 leading-relaxed"
             >
-              Van offerte tot factuur — alles in een systeem.
+              Van offerte tot factuur, alles in een systeem.
               Geen losse tools, geen add-ons. Gebouwd door vakmensen.
             </motion.p>
 
@@ -99,7 +97,7 @@ export default function Hero() {
             </motion.div>
           </div>
 
-          {/* Right: Floating mockups */}
+          {/* Right: Laptop mockup */}
           <div className="flex-1 relative hidden lg:block">
             <motion.div
               style={{ y: mockupY }}
@@ -110,19 +108,9 @@ export default function Hero() {
             >
               <DashboardMockup className="w-full max-w-[520px]" />
             </motion.div>
-
-            <motion.div
-              style={{ y: phoneY }}
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1, delay: 1.0, ease: [0.16, 1, 0.3, 1] }}
-              className="absolute -bottom-8 -left-4 z-20 rotate-[-3deg]"
-            >
-              <WerkbonMockup className="w-[160px]" />
-            </motion.div>
           </div>
 
-          {/* Mobile: Single mockup below */}
+          {/* Mobile: Laptop mockup below */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}

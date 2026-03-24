@@ -60,7 +60,7 @@ export default function DayScroll() {
             Wat zou jij doen met 2 uur extra per dag?
           </h2>
           <p className="text-muted max-w-lg mx-auto">
-            Een doorsnee werkdag met doen<span className="text-flame">.</span> — van eerste aanvraag tot betaalde factuur.
+            Een doorsnee werkdag met doen<span className="text-flame">.</span> Van eerste aanvraag tot betaalde factuur.
           </p>
         </motion.div>
 
