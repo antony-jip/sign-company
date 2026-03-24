@@ -1,80 +1,66 @@
-import type { Metadata } from 'next';
-import localFont from 'next/font/local';
-import { DM_Sans, DM_Mono } from 'next/font/google';
-import './globals.css';
+import type { Metadata } from 'next'
+import { Bricolage_Grotesque, IBM_Plex_Sans, DM_Mono } from 'next/font/google'
+import './globals.css'
 
-const madellin = localFont({
-  src: [
-    { path: './fonts/Madellin-Regular.woff', weight: '400', style: 'normal' },
-    { path: './fonts/Madellin-Bold.woff', weight: '700', style: 'normal' },
-  ],
-  variable: '--font-madellin',
-  display: 'swap',
-});
-
-const dmSans = DM_Sans({
+const bricolage = Bricolage_Grotesque({
   subsets: ['latin'],
-  weight: ['400', '500', '700'],
-  variable: '--font-dm-sans',
+  weight: ['800'],
+  variable: '--font-bricolage',
   display: 'swap',
-});
+})
+
+const ibmPlex = IBM_Plex_Sans({
+  subsets: ['latin'],
+  weight: ['400', '500', '600'],
+  variable: '--font-ibm-plex',
+  display: 'swap',
+})
 
 const dmMono = DM_Mono({
   subsets: ['latin'],
   weight: ['400', '500'],
   variable: '--font-dm-mono',
   display: 'swap',
-});
+})
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://forgedesk.io'),
-  title: 'FORGEdesk | Software voor signmakers & creatieve bedrijven',
-  description:
-    'Van offerte tot factuur in minuten. €49/maand voor je hele team. Geen kosten per gebruiker.',
+  metadataBase: new URL('https://doen.team'),
+  title: 'doen. | Software voor signmakers & creatieve bedrijven',
+  description: 'Van offerte tot factuur. Zo gedaan. Alles-in-een bedrijfssoftware voor €49/maand. Geen kosten per gebruiker.',
   keywords: [
+    'signmaker software',
+    'reclame bedrijf software',
+    'offerte software',
+    'factuur software',
+    'werkbon app',
+    'project management signing',
     'bedrijfssoftware',
-    'signmakers',
-    'monteurs',
-    'offertes',
-    'facturatie',
-    'werkbonnen',
-    'interieurbouwers',
   ],
-  authors: [{ name: 'FORGEdesk' }],
-  creator: 'FORGEdesk',
-  publisher: 'FORGEdesk',
   openGraph: {
-    type: 'website',
+    title: 'doen. | Slim gedaan.',
+    description: 'Van offerte tot factuur. Zo gedaan. €49/maand voor je hele team.',
+    url: 'https://doen.team',
+    siteName: 'doen.',
     locale: 'nl_NL',
-    url: 'https://forgedesk.io',
-    siteName: 'FORGEdesk',
-    title: 'FORGEdesk |Alles-in-één software voor de creatieve branche',
-    description:
-      'Bedrijfssoftware voor signmakers, interieurbouwers en monteurs. 30 dagen gratis.',
-    images: [{ url: '/og-image.png', width: 1200, height: 630 }],
+    type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'FORGEdesk |Alles-in-één software voor de creatieve branche',
-    description:
-      'Bedrijfssoftware voor signmakers, interieurbouwers en monteurs. 30 dagen gratis.',
-    images: ['/og-image.png'],
+    title: 'doen. | Slim gedaan.',
+    description: 'Van offerte tot factuur. Zo gedaan. €49/maand voor je hele team.',
   },
-  robots: {
-    index: true,
-    follow: true,
-  },
-};
+  robots: { index: true, follow: true },
+}
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: React.ReactNode
 }) {
   return (
-    <html lang="nl" className={`${madellin.variable} ${dmSans.variable} ${dmMono.variable}`}>
+    <html lang="nl" className={`${bricolage.variable} ${ibmPlex.variable} ${dmMono.variable}`}>
       <head>
-        <link rel="canonical" href="https://forgedesk.io" />
+        <link rel="canonical" href="https://doen.team" />
       </head>
       <body className="font-sans bg-bg text-ink antialiased">
         <a href="#main-content" className="skip-link">
@@ -83,5 +69,5 @@ export default function RootLayout({
         {children}
       </body>
     </html>
-  );
+  )
 }
