@@ -88,7 +88,8 @@ import { TeamledenTab } from './TeamledenTab'
 import { AbonnementTab } from './AbonnementTab'
 import { OfferteOpvolgingTab } from './OfferteOpvolgingTab'
 import { KostenplaatsenTab } from './KostenplaatsenTab'
-import { Sparkles, Clock, MapPin } from 'lucide-react'
+import { GeneralLedgerSettings } from '@/components/financial/GeneralLedgerSettings'
+import { Sparkles, Clock, MapPin, Landmark } from 'lucide-react'
 
 // Shared sub-tab navigation component
 interface SubTab {
@@ -183,6 +184,12 @@ const settingsSections = [
       { id: 'teamleden', label: 'Teamleden', icon: Users },
       { id: 'abonnement', label: 'Abonnement', icon: CreditCard },
       { id: 'opvolging', label: 'Opvolging', icon: Clock },
+    ],
+  },
+  {
+    label: 'FINANCIEEL',
+    items: [
+      { id: 'grootboek', label: 'Grootboek', icon: Landmark },
       { id: 'kostenplaatsen', label: 'Kostenplaatsen', icon: MapPin },
     ],
   },
@@ -223,6 +230,7 @@ function renderTabContent(tabId: string) {
     case 'abonnement': return <AbonnementTab />
     case 'opvolging': return <OfferteOpvolgingTab />
     case 'kostenplaatsen': return <KostenplaatsenTab />
+    case 'grootboek': return <GeneralLedgerSettings />
     default: return null
   }
 }
@@ -236,24 +244,24 @@ export function SettingsLayout() {
   const navigate = useNavigate()
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-[#F4F3F0]">
       {/* Page Header */}
-      <div className="min-w-0">
-        <h1 className="text-[20px] font-bold tracking-[-0.03em] text-foreground dark:text-white font-display">
+      <div className="px-6 pt-6 pb-4">
+        <h1 className="text-2xl font-extrabold tracking-[-0.03em] text-petrol dark:text-white font-heading">
           Instellingen
         </h1>
-        <p className="text-[13px] text-muted-foreground dark:text-muted-foreground/60">
+        <p className="text-sm text-text-sec mt-0.5">
           Beheer uw profiel, bedrijfsgegevens en voorkeuren
         </p>
       </div>
 
       {/* Two-column layout: sidebar nav + content */}
-      <div className="flex flex-col md:flex-row gap-6 min-h-[calc(100vh-12rem)]">
+      <div className="flex flex-col md:flex-row gap-0 min-h-[calc(100vh-8rem)]">
         {/* Left sidebar navigation */}
-        <nav className="w-full md:w-56 flex-shrink-0">
-          <div className="md:sticky md:top-6 space-y-1">
+        <nav className="w-full md:w-60 flex-shrink-0 px-4">
+          <div className="md:sticky md:top-4 space-y-1">
             {/* Mobile: horizontal scroll */}
-            <div className="md:hidden flex overflow-x-auto scrollbar-hide gap-1 p-1 bg-card rounded-xl border border-border">
+            <div className="md:hidden flex overflow-x-auto scrollbar-hide gap-1 p-1 bg-white rounded-xl border border-sand">
               {settingsTabs.map((tab) => {
                 const Icon = tab.icon
                 const isActive = activeTab === tab.id
@@ -264,7 +272,7 @@ export function SettingsLayout() {
                     className={cn(
                       'flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap',
                       isActive
-                        ? 'bg-[#1A535C]/10 text-[#1A535C] dark:bg-[#2A7A86]/20 dark:text-[#2A7A86]'
+                        ? 'bg-petrol/10 text-petrol'
                         : 'text-muted-foreground hover:text-foreground'
                     )}
                   >
@@ -276,11 +284,11 @@ export function SettingsLayout() {
             </div>
 
             {/* Desktop: grouped sidebar */}
-            <div className="hidden md:block space-y-4">
+            <div className="hidden md:block space-y-5">
               {settingsSections.map((section) => (
                 <div key={section.label}>
-                  <div className="px-3 mb-1.5">
-                    <span className="text-[10px] font-semibold uppercase tracking-[1.5px] text-[#A0A098]">
+                  <div className="px-3 mb-2">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-petrol/50">
                       {section.label}
                     </span>
                   </div>
@@ -293,14 +301,15 @@ export function SettingsLayout() {
                           key={tab.id}
                           onClick={() => setActiveTab(tab.id)}
                           className={cn(
-                            'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-all duration-150 text-[13px]',
+                            'w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left transition-all duration-150 text-[13px]',
                             isActive
-                              ? 'text-[#1A535C] dark:text-[#2A7A86] font-semibold border-l-2 border-[#1A535C] dark:border-[#2A7A86] bg-[#1A535C]/5 dark:bg-[#2A7A86]/10'
-                              : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground font-medium border-l-2 border-transparent'
+                              ? 'text-petrol font-semibold bg-white shadow-sm border border-sand'
+                              : 'text-text-sec hover:bg-white/60 hover:text-foreground font-medium'
                           )}
                         >
-                          <Icon className={cn('w-4 h-4 flex-shrink-0', isActive ? 'text-[#1A535C] dark:text-[#2A7A86]' : 'text-[#A0A098]')} />
+                          <Icon className={cn('w-4 h-4 flex-shrink-0', isActive ? 'text-petrol' : 'text-muted-hex')} />
                           <span className="truncate">{tab.label}</span>
+                          {isActive && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-flame" />}
                         </button>
                       )
                     })}
@@ -309,14 +318,14 @@ export function SettingsLayout() {
               ))}
 
               {/* Team HR link */}
-              <div className="pt-2 border-t border-border/50">
+              <div className="pt-3 mt-2 border-t border-sand">
                 <button
                   onClick={() => navigate('/team')}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-all duration-150 text-[13px] text-muted-foreground hover:bg-muted/50 hover:text-foreground font-medium border-l-2 border-transparent"
+                  className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left transition-all duration-150 text-[13px] text-text-sec hover:bg-white/60 hover:text-foreground font-medium"
                 >
-                  <Users className="w-4 h-4 flex-shrink-0 text-[#A0A098]" />
+                  <Users className="w-4 h-4 flex-shrink-0 text-muted-hex" />
                   <span className="truncate flex-1">Team HR</span>
-                  <ArrowRight className="w-3 h-3 text-[#A0A098] flex-shrink-0" />
+                  <ArrowRight className="w-3 h-3 text-muted-hex flex-shrink-0" />
                 </button>
               </div>
             </div>
@@ -324,8 +333,10 @@ export function SettingsLayout() {
         </nav>
 
         {/* Right content area */}
-        <div className="flex-1 min-w-0 max-w-[640px]">
-          {renderTabContent(activeTab)}
+        <div className="flex-1 min-w-0 max-w-[860px] px-6 pb-8">
+          <div className="bg-white rounded-2xl border border-sand p-6 shadow-sm">
+            {renderTabContent(activeTab)}
+          </div>
         </div>
       </div>
     </div>
