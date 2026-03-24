@@ -1766,13 +1766,13 @@ export function FactuurEditor() {
             </CardHeader>
             <CardContent>
               {/* Table header */}
-              <div className="hidden md:grid md:grid-cols-[1fr_80px_100px_70px_70px_90px_100px_36px] gap-2 px-3 py-2.5 mb-2 text-xs font-bold uppercase tracking-label text-white bg-petrol rounded-lg">
+              <div className="hidden md:grid md:grid-cols-[1fr_70px_95px_60px_75px_100px_100px_36px] gap-2 px-3 py-2.5 mb-2 text-xs font-bold uppercase tracking-label text-white bg-petrol rounded-lg">
                 <span>Omschrijving</span>
                 <span className="text-right">Aantal</span>
                 <span className="text-right">Prijs</span>
                 <span className="text-right">BTW%</span>
-                <span className="text-right">Korting%</span>
-                <span>GB</span>
+                <span className="text-right">Kort.%</span>
+                <span>Grootboek</span>
                 <span className="text-right">Totaal</span>
                 <span />
               </div>
@@ -1782,7 +1782,7 @@ export function FactuurEditor() {
                   <div
                     key={item.id}
                     className={cn(
-                      "grid grid-cols-1 md:grid-cols-[1fr_80px_100px_70px_70px_90px_100px_36px] gap-2 p-2 rounded-lg border transition-colors hover:bg-petrol-light/60 hover:border-petrol-border",
+                      "grid grid-cols-1 md:grid-cols-[1fr_70px_95px_60px_75px_100px_100px_36px] gap-2 p-2 rounded-lg border transition-colors hover:bg-petrol-light/60 hover:border-petrol-border",
                       idx % 2 === 0 ? 'bg-card' : 'bg-[#F4F3F0]/50'
                     )}
                   >
@@ -1876,7 +1876,7 @@ export function FactuurEditor() {
 
               {/* Totaal rij */}
               {validItems.length > 0 && (
-                <div className="hidden md:grid md:grid-cols-[1fr_80px_100px_70px_70px_90px_100px_36px] gap-2 px-3 py-2.5 mt-2 bg-[#F4F3F0] rounded-lg border border-sand">
+                <div className="hidden md:grid md:grid-cols-[1fr_70px_95px_60px_75px_100px_100px_36px] gap-2 px-3 py-2.5 mt-2 bg-[#F4F3F0] rounded-lg border border-sand">
                   <span className="text-sm font-semibold text-petrol">Totaal</span>
                   <span />
                   <span />
