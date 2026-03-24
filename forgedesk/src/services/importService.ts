@@ -253,8 +253,9 @@ export function normaliseerBedrijfsnaam(naam: string): string {
   return naam
     .trim()
     .toLowerCase()
-    .replace(/\s*(b\.?v\.?|n\.?v\.?|v\.?o\.?f\.?|holding)\s*$/i, '')
+    .replace(/\b(b\.?v\.?|n\.?v\.?|v\.?o\.?f\.?|holding)\b/g, '')
     .replace(/\.+$/, '')
+    .replace(/\s{2,}/g, ' ')
     .trim()
 }
 
@@ -509,7 +510,7 @@ export async function importeerContactpersonen(
         email,
         telefoon: (rij.telefoon || '').trim(),
         functie: (rij.functie || '').trim(),
-        notities: '',
+        notities: (!klant && bedrijfsnaam) ? `Import: bedrijfsnaam '${bedrijfsnaam}'` : '',
         user_id: userId,
       })
 

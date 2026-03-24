@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { getImportLogs } from '@/services/supabaseService'
 import { BedrijfsdataUpload } from './BedrijfsdataUpload'
 import { ContactpersonenUpload } from './ContactpersonenUpload'
+import { LosseContacten } from './LosseContacten'
 import type { ImportLog } from '@/types'
 
 function formatDate(dateStr: string): string {
@@ -52,6 +53,9 @@ export function DataImportPage() {
 
       {/* Section 2: Contactpersonen */}
       <ContactpersonenUpload />
+
+      {/* Section 3: Losse contacten */}
+      {organisatieId && <LosseContacten organisatieId={organisatieId} />}
 
       {/* Import geschiedenis */}
       <Card>
