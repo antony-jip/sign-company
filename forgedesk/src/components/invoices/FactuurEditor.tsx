@@ -80,10 +80,12 @@ import {
   getKlant,
   generateBetaalToken,
   getHerinneringTemplates,
+  getGrootboek,
+  getKostenplaatsen,
 } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
-import type { Klant, Factuur, FactuurItem, Offerte, OfferteItem, HerinneringTemplate, Project } from '@/types'
+import type { Klant, Factuur, FactuurItem, Offerte, OfferteItem, HerinneringTemplate, Project, Grootboek, Kostenplaats } from '@/types'
 import { round2 } from '@/utils/budgetUtils'
 import { generateFactuurPDF } from '@/services/pdfService'
 import { generateUBLInvoice, downloadUBLXml } from '@/services/ublService'
@@ -107,6 +109,7 @@ interface LineItem {
   eenheidsprijs: number
   btw_percentage: number
   korting_percentage: number
+  grootboek_code: string
 }
 
 // ============ HELPERS ============
@@ -119,6 +122,7 @@ function createEmptyLineItem(defaultBtw: number = 21): LineItem {
     eenheidsprijs: 0,
     btw_percentage: defaultBtw,
     korting_percentage: 0,
+    grootboek_code: '',
   }
 }
 
@@ -228,6 +232,7 @@ export function FactuurEditor() {
   const paramOfferteId = searchParams.get('offerte_id') || ''
   const paramProjectId = searchParams.get('project_id') || ''
   const paramTitel = searchParams.get('titel') || ''
+  const paramCreditVoor = searchParams.get('credit_voor') || ''
   const editFactuurId = routeId || ''
 
   // Form state
@@ -245,6 +250,18 @@ export function FactuurEditor() {
   const [introTekst, setIntroTekst] = useState(factuurIntroTekst)
   const [outroTekst, setOutroTekst] = useState(factuurOutroTekst)
   const [items, setItems] = useState<LineItem[]>([createEmptyLineItem(standaardBtw)])
+
+  // Kostenplaats
+  const [kostenplaatsId, setKostenplaatsId] = useState('')
+  const [kostenplaatsen, setKostenplaatsen] = useState<Kostenplaats[]>([])
+
+  // Grootboekrekeningen
+  const [grootboekrekeningen, setGrootboekrekeningen] = useState<Grootboek[]>([])
+
+  // Credit factuur state
+  const [isCreditFactuur, setIsCreditFactuur] = useState(false)
+  const [creditVoorFactuurId, setCreditVoorFactuurId] = useState('')
+  const [creditVoorNummer, setCreditVoorNummer] = useState('')
 
   // Factureerpercentage (DEEL 2)
   const [factureerPercentage, setFactureerPercentage] = useState(100)
@@ -283,17 +300,21 @@ export function FactuurEditor() {
     async function loadData() {
       try {
         setIsLoading(true)
-        const [klantenData, facturenData, herinneringData, offertesData] = await Promise.all([
+        const [klantenData, facturenData, herinneringData, offertesData, grootboekData, kostenplaatsenData] = await Promise.all([
           getKlanten().catch(() => []),
           getFacturen().catch(() => []),
           getHerinneringTemplates().catch(() => []),
           getOffertes().catch(() => []),
+          getGrootboek().catch(() => []),
+          getKostenplaatsen().catch(() => []),
         ])
         if (!cancelled) {
           setKlanten(klantenData)
           setAllFacturen(facturenData)
           setHerinneringTemplates(herinneringData)
           setAllOffertes(offertesData)
+          setGrootboekrekeningen(grootboekData)
+          setKostenplaatsen(kostenplaatsenData.filter((k: Kostenplaats) => k.actief))
         }
 
         // Edit mode: load existing factuur
@@ -318,6 +339,16 @@ export function FactuurEditor() {
               setNotities(factuur.notities || '')
               setIntroTekst(factuur.intro_tekst || '')
               setOutroTekst(factuur.outro_tekst || '')
+              setKostenplaatsId(factuur.kostenplaats_id || '')
+
+              // Credit factuur state
+              if (factuur.factuur_type === 'creditnota' || factuur.factuur_type === 'credit') {
+                setIsCreditFactuur(true)
+                setCreditVoorFactuurId(factuur.credit_voor_factuur_id || factuur.gerelateerde_factuur_id || '')
+                // Zoek originele factuur nummer
+                const origFactuur = facturenData.find((f: Factuur) => f.id === (factuur.credit_voor_factuur_id || factuur.gerelateerde_factuur_id))
+                if (origFactuur) setCreditVoorNummer(origFactuur.nummer)
+              }
 
               if (factuurItems.length > 0) {
                 setItems(
@@ -330,6 +361,7 @@ export function FactuurEditor() {
                       eenheidsprijs: fi.eenheidsprijs,
                       btw_percentage: fi.btw_percentage,
                       korting_percentage: fi.korting_percentage,
+                      grootboek_code: fi.grootboek_code || '',
                     }))
                 )
               }
@@ -384,6 +416,7 @@ export function FactuurEditor() {
                         eenheidsprijs: oi.eenheidsprijs,
                         btw_percentage: oi.btw_percentage,
                         korting_percentage: oi.korting_percentage,
+                        grootboek_code: oi.grootboek_code || '',
                       }))
                     setItems(mapped)
                     setOrigineleItems(mapped.map((item) => ({ ...item })))
@@ -396,6 +429,7 @@ export function FactuurEditor() {
                       eenheidsprijs: offerte.subtotaal,
                       btw_percentage: offerte.subtotaal > 0 ? Math.round((offerte.btw_bedrag / offerte.subtotaal) * 100) : 21,
                       korting_percentage: 0,
+                      grootboek_code: '',
                     }])
                     setOrigineleItems([{
                       id: crypto.randomUUID(),
@@ -404,6 +438,7 @@ export function FactuurEditor() {
                       eenheidsprijs: offerte.subtotaal,
                       btw_percentage: offerte.subtotaal > 0 ? Math.round((offerte.btw_bedrag / offerte.subtotaal) * 100) : 21,
                       korting_percentage: 0,
+                      grootboek_code: '',
                     }])
                     setHasOfferteItems(true)
                   }
@@ -472,6 +507,7 @@ export function FactuurEditor() {
                         eenheidsprijs: oi.eenheidsprijs,
                         btw_percentage: oi.btw_percentage,
                         korting_percentage: oi.korting_percentage,
+                        grootboek_code: oi.grootboek_code || '',
                       }))
                   )
                 } else {
@@ -483,12 +519,67 @@ export function FactuurEditor() {
                       eenheidsprijs: offerte.subtotaal,
                       btw_percentage: offerte.subtotaal > 0 ? Math.round((offerte.btw_bedrag / offerte.subtotaal) * 100) : 21,
                       korting_percentage: 0,
+                      grootboek_code: '',
                     },
                   ])
                 }
               }
             } catch (err) {
               logger.error('Failed to import offerte items:', err)
+            }
+          }
+
+          // Credit factuur: importeer van originele factuur
+          if (paramCreditVoor) {
+            try {
+              const [origFactuur, origItems] = await Promise.all([
+                getFactuur(paramCreditVoor),
+                getFactuurItems(paramCreditVoor),
+              ])
+              if (origFactuur && !cancelled) {
+                setIsCreditFactuur(true)
+                setCreditVoorFactuurId(origFactuur.id)
+                setCreditVoorNummer(origFactuur.nummer)
+                setKlantId(origFactuur.klant_id)
+                setShowKlantSelector(false)
+                setTitel(`Credit: ${origFactuur.titel}`)
+                setProjectId(origFactuur.project_id || '')
+                setOfferteId(origFactuur.offerte_id || '')
+                setNummer(generateTypedNummer(facturenData, 'CR'))
+                setKostenplaatsId(origFactuur.kostenplaats_id || '')
+                if (origFactuur.voorwaarden) setVoorwaarden(origFactuur.voorwaarden)
+                if (origFactuur.intro_tekst) setIntroTekst(origFactuur.intro_tekst)
+                if (origFactuur.outro_tekst) setOutroTekst(origFactuur.outro_tekst)
+
+                if (origItems.length > 0) {
+                  setItems(
+                    origItems
+                      .sort((a, b) => a.volgorde - b.volgorde)
+                      .map((fi) => ({
+                        id: crypto.randomUUID(),
+                        beschrijving: fi.beschrijving,
+                        aantal: fi.aantal,
+                        eenheidsprijs: round2(-fi.eenheidsprijs),
+                        btw_percentage: fi.btw_percentage,
+                        korting_percentage: fi.korting_percentage,
+                        grootboek_code: fi.grootboek_code || '',
+                      }))
+                  )
+                } else {
+                  setItems([{
+                    id: crypto.randomUUID(),
+                    beschrijving: origFactuur.titel,
+                    aantal: 1,
+                    eenheidsprijs: round2(-origFactuur.subtotaal),
+                    btw_percentage: origFactuur.subtotaal > 0 ? Math.round((origFactuur.btw_bedrag / origFactuur.subtotaal) * 100) : 21,
+                    korting_percentage: 0,
+                    grootboek_code: '',
+                  }])
+                }
+              }
+            } catch (err) {
+              logger.error('Failed to import credit factuur:', err)
+              toast.error('Kon originele factuur niet laden voor creditering')
             }
           }
         }
@@ -500,7 +591,7 @@ export function FactuurEditor() {
     return () => {
       cancelled = true
     }
-  }, [editFactuurId, paramKlantId, paramOfferteId, paramProjectId, paramTitel, factuurPrefix, standaardBtw, factuurBetaaltermijnDagen, factuurVoorwaarden, factuurIntroTekst, factuurOutroTekst])
+  }, [editFactuurId, paramKlantId, paramOfferteId, paramProjectId, paramTitel, paramCreditVoor, factuurPrefix, standaardBtw, factuurBetaaltermijnDagen, factuurVoorwaarden, factuurIntroTekst, factuurOutroTekst])
 
   // ============ PERCENTAGE EFFECT ============
 
@@ -649,6 +740,7 @@ export function FactuurEditor() {
           subtotaal,
           btw_bedrag: btwBedrag,
           totaal,
+          kostenplaats_id: kostenplaatsId || undefined,
         }
         const updated = await updateFactuur(existingFactuur.id, updates)
         setExistingFactuur({ ...existingFactuur, ...updated })
@@ -682,7 +774,10 @@ export function FactuurEditor() {
           bron_project_id: projectId || undefined,
           betaal_token: betaalToken,
           betaal_link: betaalLink,
-          factuur_type: 'standaard',
+          factuur_type: isCreditFactuur ? 'creditnota' : 'standaard',
+          kostenplaats_id: kostenplaatsId || undefined,
+          credit_voor_factuur_id: creditVoorFactuurId || undefined,
+          gerelateerde_factuur_id: creditVoorFactuurId || undefined,
         })
 
         for (let i = 0; i < validItems.length; i++) {
@@ -697,7 +792,17 @@ export function FactuurEditor() {
             korting_percentage: item.korting_percentage,
             totaal: calcLineTotal(item),
             volgorde: i + 1,
+            grootboek_code: item.grootboek_code || '',
           })
+        }
+
+        // Credit factuur: markeer origineel als gecrediteerd
+        if (isCreditFactuur && creditVoorFactuurId) {
+          try {
+            await updateFactuur(creditVoorFactuurId, { status: 'gecrediteerd' })
+          } catch (err) {
+            logger.error('Kon originele factuur niet als gecrediteerd markeren:', err)
+          }
         }
 
         // Update offerte met factuur link (bidirectioneel) en zet status op gefactureerd
@@ -790,6 +895,7 @@ export function FactuurEditor() {
     klantId, selectedKlant, titel, validItems, isEditMode, existingFactuur,
     factuurdatum, vervaldatum, voorwaarden, notities, introTekst, outroTekst,
     subtotaal, btwBedrag, totaal, nummer, offerteId, projectId, user, navigate,
+    kostenplaatsId, isCreditFactuur, creditVoorFactuurId,
   ])
 
   // ============ PDF ============
@@ -811,8 +917,9 @@ export function FactuurEditor() {
       totaal,
       notities: notities || undefined,
       betaalvoorwaarden: voorwaarden || undefined,
-      factuur_type: (existingFactuur?.factuur_type || 'standaard') as 'standaard' | 'voorschot' | 'creditnota' | 'eindafrekening',
+      factuur_type: (isCreditFactuur ? 'creditnota' : existingFactuur?.factuur_type || 'standaard') as string,
       betaal_link: existingFactuur?.betaal_link || undefined,
+      credit_voor_nummer: creditVoorNummer || undefined,
     }
 
     const pdfItems: OfferteItem[] = validItems.map((item, idx) => ({
@@ -847,6 +954,8 @@ export function FactuurEditor() {
     }
 
     try {
+      // Zoek kostenplaats code voor UBL
+      const selectedKostenplaats = kostenplaatsen.find((k) => k.id === kostenplaatsId)
       const xml = generateUBLInvoice({
         factuur: {
           nummer,
@@ -856,9 +965,11 @@ export function FactuurEditor() {
           subtotaal,
           btw_bedrag: btwBedrag,
           totaal,
-          factuur_type: existingFactuur?.factuur_type || 'standaard',
+          factuur_type: isCreditFactuur ? 'creditnota' : (existingFactuur?.factuur_type || 'standaard'),
           notities: notities || '',
           voorwaarden: voorwaarden || '',
+          kostenplaats_code: selectedKostenplaats ? `${selectedKostenplaats.code} - ${selectedKostenplaats.naam}` : undefined,
+          credit_voor_nummer: creditVoorNummer || undefined,
         },
         items: validItems.map((item, idx) => ({
           beschrijving: item.beschrijving,
@@ -868,6 +979,7 @@ export function FactuurEditor() {
           korting_percentage: item.korting_percentage,
           totaal: calcLineTotal(item),
           volgorde: idx + 1,
+          grootboek_code: item.grootboek_code || undefined,
         })),
         klant: selectedKlant,
         profiel: profile || {},
@@ -1115,9 +1227,16 @@ export function FactuurEditor() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-lg font-extrabold tracking-[-0.03em]">
-                  {isEditMode ? `Factuur ${nummer}` : 'Nieuwe factuur'}
+                  {isCreditFactuur
+                    ? (isEditMode ? `Creditfactuur ${nummer}` : 'Nieuwe creditfactuur')
+                    : (isEditMode ? `Factuur ${nummer}` : 'Nieuwe factuur')}
                 </h1>
-                {isEditMode && existingFactuur && (
+                {isCreditFactuur && (
+                  <Badge className="text-2xs px-1.5 h-5 bg-flame/10 text-flame border-flame-border">
+                    CREDIT
+                  </Badge>
+                )}
+                {isEditMode && existingFactuur && !isCreditFactuur && (
                   <Badge className={cn('text-2xs px-1.5 h-5', STATUS_CONFIG[currentStatus]?.color)}>
                     {isVervallen ? 'Vervallen' : STATUS_CONFIG[currentStatus]?.label || currentStatus}
                   </Badge>
@@ -1423,6 +1542,33 @@ export function FactuurEditor() {
                   Vanuit offerte geimporteerd
                 </div>
               )}
+              {kostenplaatsen.length > 0 && (
+                <div>
+                  <Label className="text-xs">Kostenplaats</Label>
+                  <Select
+                    value={kostenplaatsId || '_geen'}
+                    onValueChange={(val) => setKostenplaatsId(val === '_geen' ? '' : val)}
+                  >
+                    <SelectTrigger className="text-sm">
+                      <SelectValue placeholder="Geen kostenplaats" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="_geen">Geen kostenplaats</SelectItem>
+                      {kostenplaatsen.map((kp) => (
+                        <SelectItem key={kp.id} value={kp.id}>
+                          {kp.code} - {kp.naam}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              {isCreditFactuur && creditVoorNummer && (
+                <div className="flex items-center gap-2 text-xs text-flame bg-flame-light rounded-lg px-3 py-2">
+                  <MinusCircle className="h-3 w-3" />
+                  Creditfactuur voor {creditVoorNummer}
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -1617,12 +1763,13 @@ export function FactuurEditor() {
             </CardHeader>
             <CardContent>
               {/* Table header */}
-              <div className="hidden md:grid md:grid-cols-[1fr_80px_100px_70px_70px_100px_36px] gap-2 px-3 py-2.5 mb-2 text-xs font-bold uppercase tracking-label text-white bg-petrol rounded-lg">
+              <div className="hidden md:grid md:grid-cols-[1fr_80px_100px_70px_70px_90px_100px_36px] gap-2 px-3 py-2.5 mb-2 text-xs font-bold uppercase tracking-label text-white bg-petrol rounded-lg">
                 <span>Omschrijving</span>
                 <span className="text-right">Aantal</span>
                 <span className="text-right">Prijs</span>
                 <span className="text-right">BTW%</span>
                 <span className="text-right">Korting%</span>
+                <span>GB</span>
                 <span className="text-right">Totaal</span>
                 <span />
               </div>
@@ -1632,7 +1779,7 @@ export function FactuurEditor() {
                   <div
                     key={item.id}
                     className={cn(
-                      "grid grid-cols-1 md:grid-cols-[1fr_80px_100px_70px_70px_100px_36px] gap-2 p-2 rounded-lg border transition-colors hover:bg-petrol-light/60 hover:border-petrol-border",
+                      "grid grid-cols-1 md:grid-cols-[1fr_80px_100px_70px_70px_90px_100px_36px] gap-2 p-2 rounded-lg border transition-colors hover:bg-petrol-light/60 hover:border-petrol-border",
                       idx % 2 === 0 ? 'bg-card' : 'bg-[#F4F3F0]/50'
                     )}
                   >
@@ -1675,6 +1822,26 @@ export function FactuurEditor() {
                       max={100}
                       step="1"
                     />
+                    {grootboekrekeningen.length > 0 ? (
+                      <Select
+                        value={item.grootboek_code || '_leeg'}
+                        onValueChange={(val) => handleUpdateItem(item.id, 'grootboek_code', val === '_leeg' ? '' : val)}
+                      >
+                        <SelectTrigger className="h-9 text-xs font-mono px-1.5 truncate">
+                          <SelectValue placeholder="—" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="_leeg">—</SelectItem>
+                          {grootboekrekeningen.map((gb) => (
+                            <SelectItem key={gb.id} value={gb.code}>
+                              {gb.code} - {gb.naam}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <div className="flex items-center text-xs text-muted-foreground">—</div>
+                    )}
                     <div className="flex items-center justify-end text-sm font-mono font-semibold tabular-nums text-ink">
                       {formatCurrency(calcLineTotal(item))}
                     </div>
@@ -1706,8 +1873,9 @@ export function FactuurEditor() {
 
               {/* Totaal rij */}
               {validItems.length > 0 && (
-                <div className="hidden md:grid md:grid-cols-[1fr_80px_100px_70px_70px_100px_36px] gap-2 px-3 py-2.5 mt-2 bg-[#F4F3F0] rounded-lg border border-sand">
+                <div className="hidden md:grid md:grid-cols-[1fr_80px_100px_70px_70px_90px_100px_36px] gap-2 px-3 py-2.5 mt-2 bg-[#F4F3F0] rounded-lg border border-sand">
                   <span className="text-sm font-semibold text-petrol">Totaal</span>
+                  <span />
                   <span />
                   <span />
                   <span />

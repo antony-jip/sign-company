@@ -55,6 +55,7 @@ import {
   Copy,
   Receipt,
   Share2,
+  MinusCircle,
 } from 'lucide-react'
 import {
   getFacturen,
@@ -101,7 +102,7 @@ import { berekenDagenOpen, getAgingColor, getAgingBgColor } from '@/utils/spectr
 
 type FactuurStatus = Factuur['status']
 type FactuurType = NonNullable<Factuur['factuur_type']>
-type FilterStatus = 'alle' | FactuurStatus | 'verlopen' | 'te_factureren'
+type FilterStatus = 'alle' | FactuurStatus | 'verlopen' | 'te_factureren' | 'credit'
 type SortField = 'datum' | 'bedrag' | 'klantnaam'
 type SortDir = 'asc' | 'desc'
 
@@ -164,7 +165,8 @@ const STATUS_CONFIG: Record<FactuurStatus, { label: string; bg: string; text: st
 const TYPE_CONFIG: Record<FactuurType, { label: string; prefix: string; color: string }> = {
   standaard: { label: 'Factuur', prefix: 'FAC', color: '' },
   voorschot: { label: 'Voorschot', prefix: 'VS', color: 'badge-paars' },
-  creditnota: { label: 'Creditnota', prefix: 'CN', color: 'badge-flame' },
+  creditnota: { label: 'Creditfactuur', prefix: 'CN', color: 'badge-flame' },
+  credit: { label: 'Creditfactuur', prefix: 'CR', color: 'badge-flame' },
   eindafrekening: { label: 'Eindafrekening', prefix: 'EA', color: 'badge-petrol' },
 }
 
@@ -176,6 +178,7 @@ const FILTER_OPTIONS: { value: FilterStatus; label: string }[] = [
   { value: 'vervallen', label: 'Vervallen' },
   { value: 'verlopen', label: 'Verlopen' },
   { value: 'gecrediteerd', label: 'Gecrediteerd' },
+  { value: 'credit', label: 'Creditfacturen' },
   { value: 'te_factureren', label: 'Te factureren' },
 ]
 
@@ -420,6 +423,8 @@ export function FacturenLayout() {
     if (filterStatus === 'verlopen') {
       const vandaag = getTodayString()
       result = result.filter((f) => f.vervaldatum < vandaag && f.status !== 'betaald' && f.status !== 'gecrediteerd')
+    } else if (filterStatus === 'credit') {
+      result = result.filter((f) => f.factuur_type === 'creditnota' || f.factuur_type === 'credit')
     } else if (filterStatus !== 'alle') {
       result = result.filter((f) => f.status === filterStatus)
     }
@@ -470,6 +475,7 @@ export function FacturenLayout() {
       counts[f.status] = (counts[f.status] || 0) + 1
     }
     counts['te_factureren'] = teFacturerenProjecten.length
+    counts['credit'] = facturen.filter((f) => f.factuur_type === 'creditnota' || f.factuur_type === 'credit').length
     return counts
   }, [facturen, teFacturerenProjecten])
 
@@ -2095,6 +2101,45 @@ export function FacturenLayout() {
                   {viewingFactuur.voorschot_percentage && ` — ${viewingFactuur.voorschot_percentage}%`}
                 </div>
               )}
+
+              {/* Credit referentie: toon link naar creditfactuur als origineel gecrediteerd is */}
+              {viewingFactuur.status === 'gecrediteerd' && (() => {
+                const creditFactuur = facturen.find((f) =>
+                  f.gerelateerde_factuur_id === viewingFactuur.id &&
+                  (f.factuur_type === 'creditnota' || f.factuur_type === 'credit')
+                )
+                if (!creditFactuur) return null
+                return (
+                  <div className="flex items-center gap-2 text-xs text-flame bg-flame-light px-3 py-2 rounded-lg">
+                    <MinusCircle className="h-3.5 w-3.5" />
+                    Gecrediteerd door{' '}
+                    <button
+                      className="font-mono font-semibold underline hover:no-underline"
+                      onClick={() => navigate(`/facturen/${creditFactuur.id}`)}
+                    >
+                      {creditFactuur.nummer}
+                    </button>
+                  </div>
+                )
+              })()}
+
+              {/* Credit referentie: toon link naar originele factuur als dit een creditfactuur is */}
+              {(viewingFactuur.factuur_type === 'creditnota' || viewingFactuur.factuur_type === 'credit') && viewingFactuur.gerelateerde_factuur_id && (() => {
+                const origFactuur = facturen.find((f) => f.id === viewingFactuur.gerelateerde_factuur_id)
+                if (!origFactuur) return null
+                return (
+                  <div className="flex items-center gap-2 text-xs text-petrol bg-petrol-light px-3 py-2 rounded-lg">
+                    <FileText className="h-3.5 w-3.5" />
+                    Creditfactuur voor{' '}
+                    <button
+                      className="font-mono font-semibold underline hover:no-underline"
+                      onClick={() => navigate(`/facturen/${origFactuur.id}`)}
+                    >
+                      {origFactuur.nummer}
+                    </button>
+                  </div>
+                )
+              })()}
 
               {viewingFactuur.betalingsherinnering_verzonden && (
                 <div className="flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-3 py-2 rounded-lg">

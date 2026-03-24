@@ -28,14 +28,14 @@ function dateStr(val: string | undefined): string {
 }
 
 interface UBLInput {
-  factuur: Pick<Factuur, 'nummer' | 'titel' | 'factuurdatum' | 'vervaldatum' | 'subtotaal' | 'btw_bedrag' | 'totaal' | 'factuur_type' | 'notities' | 'voorwaarden'>
-  items: Pick<FactuurItem, 'beschrijving' | 'aantal' | 'eenheidsprijs' | 'btw_percentage' | 'korting_percentage' | 'totaal' | 'volgorde'>[]
+  factuur: Pick<Factuur, 'nummer' | 'titel' | 'factuurdatum' | 'vervaldatum' | 'subtotaal' | 'btw_bedrag' | 'totaal' | 'factuur_type' | 'notities' | 'voorwaarden'> & { kostenplaats_code?: string; credit_voor_nummer?: string }
+  items: (Pick<FactuurItem, 'beschrijving' | 'aantal' | 'eenheidsprijs' | 'btw_percentage' | 'korting_percentage' | 'totaal' | 'volgorde'> & { grootboek_code?: string })[]
   klant: Partial<Klant>
   profiel: Partial<Profile>
 }
 
 export function generateUBLInvoice({ factuur, items, klant, profiel }: UBLInput): string {
-  const isCreditnota = factuur.factuur_type === 'creditnota'
+  const isCreditnota = factuur.factuur_type === 'creditnota' || factuur.factuur_type === 'credit'
   const docType = isCreditnota ? 'CreditNote' : 'Invoice'
   const ns = isCreditnota
     ? 'urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2'
@@ -89,6 +89,20 @@ export function generateUBLInvoice({ factuur, items, klant, profiel }: UBLInput)
 
   // BT-5: Currency
   lines.push('  <cbc:DocumentCurrencyCode>EUR</cbc:DocumentCurrencyCode>')
+
+  // BT-19: AccountingCost (kostenplaats)
+  if (factuur.kostenplaats_code) {
+    lines.push(`  <cbc:AccountingCost>${esc(factuur.kostenplaats_code)}</cbc:AccountingCost>`)
+  }
+
+  // BG-3: Billing reference (credit note → original invoice)
+  if (isCreditnota && factuur.credit_voor_nummer) {
+    lines.push('  <cac:BillingReference>')
+    lines.push('    <cac:InvoiceDocumentReference>')
+    lines.push(`      <cbc:ID>${esc(factuur.credit_voor_nummer)}</cbc:ID>`)
+    lines.push('    </cac:InvoiceDocumentReference>')
+    lines.push('  </cac:BillingReference>')
+  }
 
   // BG-4: Seller (leverancier)
   lines.push('  <cac:AccountingSupplierParty>')
@@ -226,6 +240,11 @@ export function generateUBLInvoice({ factuur, items, klant, profiel }: UBLInput)
     lines.push(`    <cbc:ID>${item.volgorde}</cbc:ID>`)
     lines.push(`    <cbc:${qtyTag} unitCode="EA">${item.aantal}</cbc:${qtyTag}>`)
     lines.push(`    <cbc:LineExtensionAmount currencyID="EUR">${amount(lineNet)}</cbc:LineExtensionAmount>`)
+
+    // BT-133: AccountingCost per regel (grootboekrekening)
+    if (item.grootboek_code) {
+      lines.push(`    <cbc:AccountingCost>${esc(item.grootboek_code)}</cbc:AccountingCost>`)
+    }
 
     // Korting op regelniveau
     if (item.korting_percentage > 0) {
