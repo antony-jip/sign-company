@@ -364,7 +364,7 @@ export function SettingsLayout() {
         </nav>
 
         {/* Right content area */}
-        <div className="flex-1 min-w-0 max-w-[640px]">
+        <div className="flex-1 min-w-0 max-w-4xl">
           {/* Sub-tabs for sections with multiple tabs */}
           {currentSection && currentSection.tabs.length > 1 && (
             <SubTabNav
