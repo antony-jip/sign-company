@@ -706,17 +706,18 @@ export function MontagePlanningLayout() {
     const afspraak = afspraken.find((a) => a.id === dragId);
     if (!afspraak || afspraak.datum === newDate) return;
     try {
-      await updateMontageAfspraak(afspraakId, { datum: newDate }).catch(() => null);
+      await updateMontageAfspraak(afspraak.id, { datum: newDate });
       setAfspraken((prev) =>
         prev.map((a) =>
-          a.id === afspraakId
+          a.id === afspraak.id
             ? { ...a, datum: newDate, updated_at: new Date().toISOString() }
             : a
         )
       );
       const dateObj = new Date(newDate + "T00:00:00");
       toast.success(`Verplaatst naar ${formatDateDutch(dateObj)}`);
-    } catch {
+    } catch (err) {
+      console.error("Fout bij verplaatsen:", err);
       toast.error("Kon afspraak niet verplaatsen");
     }
   }
