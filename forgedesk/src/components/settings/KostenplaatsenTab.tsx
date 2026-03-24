@@ -37,7 +37,7 @@ const emptyForm: KostenplaatsForm = {
 }
 
 export function KostenplaatsenTab() {
-  const { user } = useAuth()
+  const { organisatieId } = useAuth()
   const [items, setItems] = useState<Kostenplaats[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -90,7 +90,7 @@ export function KostenplaatsenTab() {
         toast.success('Kostenplaats bijgewerkt')
       } else {
         await createKostenplaats({
-          organisatie_id: user?.id || '',
+          organisatie_id: organisatieId || '',
           code: form.code.trim(),
           naam: form.naam.trim(),
           actief: form.actief,
