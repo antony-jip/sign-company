@@ -20,11 +20,11 @@
     --font-size: 14px;
 
     /* Achtergrond */
-    --background: 40 14% 98%;          /* #FAFAF8 */
-    --foreground: 0 0% 10%;            /* #191919 */
+    --background: 37 25% 96%;          /* #F5F4F1 warm off-white */
+    --foreground: 25 15% 12%;           /* warm near-black */
 
     /* Cards */
-    --card: 0 0% 100%;                 /* #FFFFFF */
+    --card: 40 60% 99%;                 /* #FEFDFB */
     --card-foreground: 0 0% 10%;
 
     /* Sidebar */
@@ -38,7 +38,7 @@
     --sidebar-ring: 186 53% 23%;
 
     /* Primary: petrol — voor hoofdknoppen */
-    --primary: 186 53% 23%;            /* #1A535C petrol */
+    --primary: 12 87% 54%;             /* #F15025 Flame as primary */
     --primary-foreground: 0 0% 100%;
 
     /* Secondary */
@@ -47,15 +47,15 @@
 
     /* Muted */
     --muted: 40 10% 95%;
-    --muted-foreground: 40 3% 59%;
+    --muted-foreground: 25 10% 45%;
 
     /* Accent */
     --accent: 12 87% 57%;              /* #F15025 flame */
     --accent-foreground: 0 0% 100%;
 
     /* Borders */
-    --border: 36 8% 89%;               /* #E6E4E0 */
-    --input: 36 8% 89%;
+    --border: 35 15% 87%;
+    --input: 35 15% 87%;
     --ring: 186 53% 23%;               /* petrol als focus ring */
 
     /* Destructive */
@@ -105,6 +105,12 @@
     --wm-shadow-color: 0 0% 50%;
     --wm-glow: 0 0 40px rgba(204, 138, 63, 0.15);
     --wm-noise: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+
+    /* DOEN brand colors */
+    --color-flame: #F15025;
+    --color-petrol: #1A535C;
+    --color-petrol-light: #237580;
+    --color-petrol-dark: #143F46;
 
     /* Elevation system — layered depth */
     /* Warm shadows — not cold black but warm brown-tinted */
@@ -204,7 +210,7 @@
     font-size: 14px;
     line-height: 1.6;
     color: #191919;
-    background-color: #FAFAF8;
+    background-color: #F5F4F1;
   }
 
   /* Heading typography */
@@ -460,6 +466,42 @@ input:focus, textarea:focus, select:focus {
   .badge-purple::before { background: #7A5AB5; }
   .dark .badge-purple { background: rgba(122, 90, 181, 0.15); color: #A07ACC; }
   .dark .badge-purple::before { background: #A07ACC; }
+
+  /* DOEN status badges with Flame dot */
+  .badge-flame { background: #FDE8E2; color: #C03A18; }
+  .badge-flame::before { background: #F15025; }
+  .dark .badge-flame { background: rgba(241, 80, 37, 0.15); color: #F18060; }
+  .dark .badge-flame::before { background: #F15025; }
+
+  .badge-petrol { background: #E2F0F0; color: #1A535C; }
+  .badge-petrol::before { background: #1A535C; }
+  .dark .badge-petrol { background: rgba(26, 83, 92, 0.15); color: #5AABB5; }
+  .dark .badge-petrol::before { background: #5AABB5; }
+
+  .badge-groen { background: #E8F2EC; color: #3A7D52; }
+  .badge-groen::before { background: #2D6B48; }
+  .dark .badge-groen { background: rgba(45, 107, 72, 0.15); color: #7AAF85; }
+  .dark .badge-groen::before { background: #7AAF85; }
+
+  .badge-blauw { background: #E8EEF9; color: #3A5A9A; }
+  .badge-blauw::before { background: #3A6B8C; }
+  .dark .badge-blauw { background: rgba(58, 107, 140, 0.15); color: #7AA4CC; }
+  .dark .badge-blauw::before { background: #7AA4CC; }
+
+  .badge-paars { background: #EEE8F9; color: #6A4A9A; }
+  .badge-paars::before { background: #6A5A8A; }
+  .dark .badge-paars { background: rgba(106, 90, 138, 0.15); color: #A07ACC; }
+  .dark .badge-paars::before { background: #A07ACC; }
+
+  .badge-grijs { background: #F0F0EE; color: #8A8A8A; }
+  .badge-grijs::before { background: #8A8A8A; }
+  .dark .badge-grijs { background: rgba(138, 138, 138, 0.15); color: #A0A0A0; }
+  .dark .badge-grijs::before { background: #A0A0A0; }
+
+  .badge-warm-paars { background: #EEE8F5; color: #5A4A78; }
+  .badge-warm-paars::before { background: #5A4A78; }
+  .dark .badge-warm-paars { background: rgba(90, 74, 120, 0.15); color: #9A7ACC; }
+  .dark .badge-warm-paars::before { background: #9A7ACC; }
 
 }
 
@@ -720,18 +762,14 @@ tbody tr:hover {
    SIDEBAR — Doen. vertical navigation
    ================================================================ */
 .doen-sidebar {
-  background: rgba(250, 250, 248, 0.85);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-right: 0.5px solid rgba(230, 228, 224, 0.6);
+  background: #1A535C;
+  border-right: 0.5px solid rgba(255, 255, 255, 0.08);
   position: relative;
 }
 
 .dark .doen-sidebar {
-  background: rgba(26, 26, 24, 0.85);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-right-color: hsl(var(--border) / 0.7);
+  background: #143F46;
+  border-right-color: rgba(255, 255, 255, 0.06);
 }
 
 /* Keep old class for backward compat (mobile bottom nav etc.) */
@@ -754,11 +792,11 @@ tbody tr:hover {
 
 /* Section label in sidebar (expanded mode) */
 .doen-sidebar-section {
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 1.5px;
-  color: #A0A098;
+  letter-spacing: 1px;
+  color: rgba(255, 255, 255, 0.4);
   padding: 20px 12px 6px;
 }
 

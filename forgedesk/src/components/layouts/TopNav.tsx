@@ -95,7 +95,7 @@ export function TopNav() {
         <NavLink to="/" className="flex items-center gap-2.5 mr-4 flex-shrink-0">
           <div className="sidebar-logo-mark flex-shrink-0" style={{ width: 34, height: 34, fontSize: 15 }}>D</div>
           <span className="hidden sm:block text-[16px] font-extrabold tracking-[-0.04em]">
-            Doen.
+            Doen<span style={{ color: '#F15025' }}>.</span>
           </span>
         </NavLink>
 

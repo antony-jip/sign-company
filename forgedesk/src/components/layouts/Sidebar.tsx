@@ -153,27 +153,17 @@ export function Sidebar() {
         key={item.path}
         to={item.path}
         className={cn(
-          'relative flex flex-col items-center justify-center w-full py-2.5 gap-0.5 transition-all duration-200',
-          active ? 'bg-opacity-100' : 'opacity-60 hover:opacity-100',
+          'relative flex flex-col items-center justify-center w-full py-2.5 gap-0.5 transition-all duration-200 hover:bg-white/[0.08]',
+          active ? '' : 'opacity-60 hover:opacity-100',
         )}
-        style={active ? { backgroundColor: `rgba(26, 83, 92, 0.08)` } : undefined}
-        onMouseEnter={e => {
-          if (!active) {
-            (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(244, 242, 238, 0.6)';
-          }
-        }}
-        onMouseLeave={e => {
-          if (!active) {
-            (e.currentTarget as HTMLElement).style.backgroundColor = '';
-          }
-        }}
+        style={active ? { backgroundColor: 'rgba(255,255,255,0.12)' } : undefined}
       >
-        {/* Active indicator — 3px left bar with gradient */}
+        {/* Active indicator — 3px left bar in Flame */}
         {active && (
           <div
             className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-[20px]"
             style={{
-              background: `linear-gradient(180deg, ${item.color} 0%, transparent 100%)`,
+              backgroundColor: '#F15025',
               borderRadius: '0 2px 2px 0',
             }}
           />
@@ -190,7 +180,7 @@ export function Sidebar() {
         <span
           className={cn(
             'text-center leading-tight',
-            active ? 'font-semibold text-foreground' : 'font-medium text-muted-foreground',
+            active ? 'text-white font-semibold' : 'text-white/60 font-medium',
           )}
           style={{ fontSize: '10px' }}
         >
@@ -202,7 +192,7 @@ export function Sidebar() {
 
   // ── Rail divider ──
   const railDivider = (key: string) => (
-    <div key={key} className="w-12 mx-auto" style={{ height: '0.5px', backgroundColor: '#E6E4E0' }} />
+    <div key={key} className="w-12 mx-auto" style={{ height: '0.5px', backgroundColor: 'rgba(255,255,255,0.08)' }} />
   )
 
   // ── Expanded item ──
@@ -217,52 +207,28 @@ export function Sidebar() {
         className={cn(
           'relative flex items-center gap-2.5 py-[7px] px-3 rounded-lg text-[13px] transition-all duration-200',
           active
-            ? 'font-semibold text-foreground'
-            : 'font-medium text-muted-foreground hover:text-foreground',
+            ? 'font-semibold text-white'
+            : 'font-medium text-white/[0.85] hover:text-white hover:bg-white/[0.08]',
         )}
         style={active
-          ? { backgroundColor: `rgba(26, 83, 92, 0.08)` }
+          ? { backgroundColor: 'rgba(255,255,255,0.12)', borderLeft: '3px solid #F15025' }
           : undefined
         }
-        onMouseEnter={e => {
-          if (!active) {
-            (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(244, 242, 238, 0.6)';
-            (e.currentTarget as HTMLElement).style.transform = 'translateX(2px)';
-          }
-        }}
-        onMouseLeave={e => {
-          if (!active) {
-            (e.currentTarget as HTMLElement).style.backgroundColor = '';
-            (e.currentTarget as HTMLElement).style.transform = '';
-          }
-        }}
       >
-        {/* Active indicator — gradient from module color to transparent */}
-        {active && (
-          <div
-            className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-[18px]"
-            style={{
-              background: `linear-gradient(180deg, ${item.color} 0%, transparent 100%)`,
-              borderRadius: '0 2px 2px 0',
-            }}
-          />
-        )}
-
-        {/* Color dot */}
+        {/* Icon container with colored background */}
         <div
-          className="w-2 h-2 rounded-full flex-shrink-0"
-          style={{ backgroundColor: item.color }}
-        />
-
-        {/* Icon */}
-        <Icon
-          className="w-[16px] h-[16px] flex-shrink-0"
-          style={{ color: item.color }}
-          strokeWidth={active ? 2.2 : 1.8}
-        />
+          className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+          style={{ backgroundColor: `${item.color}26` }}
+        >
+          <Icon
+            className="w-[16px] h-[16px]"
+            style={{ color: item.color }}
+            strokeWidth={active ? 2.2 : 1.8}
+          />
+        </div>
 
         {/* Label */}
-        <span className="truncate">{item.label}</span>
+        <span className="truncate text-white">{item.label}</span>
       </NavLink>
     )
   }
@@ -278,14 +244,14 @@ export function Sidebar() {
           to="/"
           className={cn(
             'flex items-center flex-shrink-0 transition-all duration-200',
-            collapsed ? 'justify-center h-14 px-0' : 'gap-2.5 h-14 px-4',
+            collapsed ? 'justify-center h-14 px-0' : 'gap-0 h-14 px-4',
           )}
         >
-          <img
-            src="/beeldmerk.png"
-            alt="doen."
-            className={cn('flex-shrink-0 transition-all duration-200', collapsed ? 'w-8 h-8' : 'w-9 h-9')}
-          />
+          {collapsed ? (
+            <span className="text-[18px] font-bold text-white">d<span style={{ color: '#F15025' }}>.</span></span>
+          ) : (
+            <span className="text-[20px] font-bold text-white tracking-[-0.02em]">doen<span style={{ color: '#F15025' }}>.</span></span>
+          )}
         </NavLink>
 
         {/* Navigation */}
@@ -331,7 +297,7 @@ export function Sidebar() {
           {/* Divider above settings */}
           <div
             className={collapsed ? 'w-12 mb-2' : 'mx-2 mb-2'}
-            style={{ height: '0.5px', backgroundColor: '#E6E4E0' }}
+            style={{ height: '0.5px', backgroundColor: 'rgba(255,255,255,0.08)' }}
           />
 
           {/* Importeren */}
@@ -344,14 +310,14 @@ export function Sidebar() {
             collapsed ? (
               <button
                 onClick={toggleSidebar}
-                className="w-9 h-8 flex items-center justify-center rounded-md text-muted-foreground/40 hover:text-muted-foreground hover:bg-muted/40 transition-all duration-200"
+                className="w-9 h-8 flex items-center justify-center rounded-md text-white/40 hover:text-white hover:bg-white/[0.08] transition-all duration-200"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
             ) : (
               <button
                 onClick={toggleSidebar}
-                className="flex items-center justify-center h-8 px-3 gap-1.5 rounded-md text-muted-foreground/40 hover:text-muted-foreground hover:bg-muted/40 transition-all duration-200 w-full"
+                className="flex items-center justify-center h-8 px-3 gap-1.5 rounded-md text-white/40 hover:text-white hover:bg-white/[0.08] transition-all duration-200 w-full"
               >
                 <ChevronLeft className="w-3.5 h-3.5" />
                 <span className="text-[11px]">Inklappen</span>
@@ -365,17 +331,17 @@ export function Sidebar() {
               <button
                 onClick={() => setUserPopoverOpen(!userPopoverOpen)}
                 className={cn(
-                  'flex items-center transition-all duration-200 rounded-lg hover:bg-muted/40',
+                  'flex items-center transition-all duration-200 rounded-lg hover:bg-white/[0.08]',
                   collapsed ? 'w-10 h-10 justify-center' : 'gap-2.5 h-10 px-3 w-full',
                 )}
               >
-                <div className="w-[30px] h-[30px] rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#F4F2EE' }}>
-                  <span className="text-[11px] font-semibold" style={{ color: '#5A5A55' }}>{userInitial}</span>
+                <div className="w-[30px] h-[30px] rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}>
+                  <span className="text-[11px] font-semibold text-white">{userInitial}</span>
                 </div>
                 {!collapsed && (
                   <div className="flex-1 min-w-0 text-left">
-                    <p className="text-[12px] font-medium text-foreground truncate leading-tight">{userName}</p>
-                    <p className="text-[10px] text-muted-foreground/50 truncate">{user.email}</p>
+                    <p className="text-white text-[12px] font-medium truncate leading-tight">{userName}</p>
+                    <p className="text-white/50 text-[10px] truncate">{user.email}</p>
                   </div>
                 )}
               </button>

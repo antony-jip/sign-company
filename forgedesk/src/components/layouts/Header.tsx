@@ -60,12 +60,12 @@ export function Header() {
 
   return (
     <header
-      className="h-12 flex items-center justify-between px-3 md:px-5 flex-shrink-0 z-10 bg-white transition-shadow duration-200"
-      style={{ borderBottom: '0.5px solid #E6E4E0', boxShadow: scrolled ? '0 1px 3px rgba(120,90,50,0.07)' : 'none' }}
+      className="h-12 flex items-center justify-between px-3 md:px-5 flex-shrink-0 z-10 transition-shadow duration-200"
+      style={{ backgroundColor: '#F5F4F1', borderBottom: '0.5px solid hsl(35, 15%, 87%)', boxShadow: scrolled ? '0 1px 3px rgba(130,100,60,0.07)' : 'none' }}
     >
       {/* Mobile search overlay */}
       {mobileSearchOpen && (
-        <div className="absolute inset-x-0 top-0 h-12 z-20 bg-white flex items-center gap-2 px-3 md:hidden" style={{ borderBottom: '0.5px solid #E6E4E0' }}>
+        <div className="absolute inset-x-0 top-0 h-12 z-20 flex items-center gap-2 px-3 md:hidden" style={{ backgroundColor: '#F5F4F1', borderBottom: '0.5px solid hsl(35, 15%, 87%)' }}>
           <GlobalSearch className="flex flex-1" compact />
           <Button variant="ghost" size="icon" className="w-8 h-8 rounded-lg flex-shrink-0" onClick={() => setMobileSearchOpen(false)}>
             <X className="w-4 h-4" />

@@ -153,7 +153,7 @@ export function MontagePlanningWidget() {
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
-            <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-orange-500 to-amber-400 shadow-md">
+            <div className="flex items-center justify-center h-8 w-8 rounded-xl shadow-md" style={{ background: 'linear-gradient(135deg, #9A5A48, #B8725A)' }}>
               <Wrench className="h-4 w-4 text-white" />
             </div>
             Montageplanning
@@ -220,7 +220,7 @@ export function MontagePlanningWidget() {
           </div>
         ) : weekTotal === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500/10 to-amber-400/10 flex items-center justify-center mb-3">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-3" style={{ background: 'rgba(154, 90, 72, 0.1)' }}>
               <CalendarDays className="w-6 h-6 opacity-30" />
             </div>
             <p className="text-sm font-medium text-foreground/70">Nog geen montages deze week</p>

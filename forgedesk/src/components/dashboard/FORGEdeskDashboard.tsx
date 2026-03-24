@@ -206,11 +206,11 @@ export function FORGEdeskDashboard() {
       <div>
         <h1
           className="font-heading text-[20px] font-bold leading-tight"
-          style={{ letterSpacing: '-0.8px', color: '#191919' }}
+          style={{ letterSpacing: '-0.8px', color: 'hsl(25, 15%, 12%)' }}
         >
           {greeting}{userName ? `, ${userName}.` : '.'}
         </h1>
-        <p className="text-[13px] font-normal mt-1" style={{ color: '#5A5A55' }}>
+        <p className="text-[13px] font-normal mt-1" style={{ color: 'hsl(25, 10%, 45%)' }}>
           {formattedDate}
         </p>
       </div>
@@ -301,7 +301,7 @@ export function FORGEdeskDashboard() {
               {isDragOver && !isDragging && (
                 <div className="h-1 bg-primary/50 rounded-full mb-2 animate-pulse" />
               )}
-              <Card className="h-full overflow-hidden rounded-[10px] bg-white" style={{ border: '0.5px solid #E6E4E0' }}>
+              <Card className="h-full overflow-hidden rounded-2xl bg-[#FEFDFB]" style={{ border: '0.5px solid hsl(35, 15%, 87%)' }}>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.06em]">

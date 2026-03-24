@@ -172,7 +172,7 @@ export function TodayPlanningWidget() {
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
-            <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-primary to-wm-light shadow-md">
+            <div className="flex items-center justify-center h-8 w-8 rounded-xl shadow-md" style={{ background: 'linear-gradient(135deg, #1A535C, #237580)' }}>
               <Calendar className="h-4 w-4 text-white" />
             </div>
             Vandaag
@@ -215,7 +215,7 @@ export function TodayPlanningWidget() {
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center mb-3">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-3" style={{ background: 'rgba(26, 83, 92, 0.1)' }}>
               <CheckCircle2 className="w-6 h-6 text-primary/40" />
             </div>
             <p className="text-sm font-medium text-foreground/70">Geen montages of taken vandaag</p>

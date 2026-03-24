@@ -40,7 +40,7 @@ export function OpenstaandeOffertesWidget() {
     <Card>
       <CardContent className="p-5">
         <div className="flex items-center justify-between mb-5">
-          <h3 className="card-title-lg text-foreground">Openstaande offertes</h3>
+          <h3 className="text-[11px] font-semibold uppercase tracking-[0.5px] text-foreground" style={{ color: 'hsl(25, 10%, 45%)' }}>Openstaande offertes</h3>
           <span
             onClick={() => navigate('/offertes')}
             className="text-xs font-bold uppercase tracking-[0.06em] text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
@@ -83,7 +83,7 @@ export function OpenstaandeOffertesWidget() {
                     </p>
                   </div>
                   <span className={`text-xs font-semibold whitespace-nowrap ${statusInfo.color}`}>
-                    {statusInfo.label}
+                    {statusInfo.label}<span style={{ color: '#F15025' }}>.</span>
                   </span>
                 </div>
               )

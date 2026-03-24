@@ -66,10 +66,10 @@ export function TeFacturerenWidget() {
   const totaalBedrag = offertes.reduce((sum, o) => sum + (o.totaal || 0), 0)
 
   return (
-    <Card className="overflow-hidden border-emerald-200 dark:border-emerald-800/50">
+    <Card className="overflow-hidden" style={{ borderColor: 'hsl(35, 15%, 87%)' }}>
       <CardContent className="p-0">
         {/* Header with total */}
-        <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 px-4 py-3">
+        <div className="px-4 py-3" style={{ background: 'linear-gradient(135deg, #1A535C, #237580)' }}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Receipt className="h-4 w-4 text-white" />
@@ -91,10 +91,10 @@ export function TeFacturerenWidget() {
             <Link
               key={offerte.id}
               to={`/facturen/nieuw?offerte_id=${offerte.id}&klant_id=${offerte.klant_id}${offerte.titel ? `&titel=${encodeURIComponent(offerte.titel)}` : ''}${offerte.project_id ? `&project_id=${offerte.project_id}` : ''}`}
-              className="flex items-center gap-3 p-2 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors group"
+              className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#F5F4F1] transition-colors group"
             >
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition-colors">
+                <p className="text-sm font-medium text-foreground truncate group-hover:text-[#1A535C] transition-colors">
                   {offerte.titel || offerte.nummer}
                 </p>
                 <p className="text-xs text-muted-foreground truncate">
