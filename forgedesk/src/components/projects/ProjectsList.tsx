@@ -334,8 +334,29 @@ export function ProjectsList() {
     return <SkeletonTable rows={6} cols={4} />
   }
 
+  /** Status bg tint for inline chip */
+  const statusBg: Record<string, string> = {
+    gepland: '#F5F2E8',
+    'te-plannen': '#F5F2E8',
+    actief: '#E8EEF9',
+    'in-review': '#E8EEF9',
+    'te-factureren': '#E8F2EC',
+    gefactureerd: '#E8F2EC',
+    afgerond: '#E8F2EC',
+    opgeleverd: '#E8F2EC',
+    'on-hold': '#F0EFEC',
+  }
+
   return (
     <div className="h-full flex flex-col bg-[#F8F7F5]">
+      {/* Inline keyframes for pulse + stagger */}
+      <style>{`
+        @keyframes doen-pulse { 0%,100% { opacity:1 } 50% { opacity:.4 } }
+        @keyframes doen-fade-up { from { opacity:0; transform:translateY(6px) } to { opacity:1; transform:translateY(0) } }
+        .doen-pulse { animation: doen-pulse 2s ease-in-out infinite }
+        .doen-row { animation: doen-fade-up .3s ease-out both }
+      `}</style>
+
       {/* Hidden photo input */}
       <input
         ref={photoInputRef}
@@ -353,69 +374,74 @@ export function ProjectsList() {
 
       {/* Page content */}
       <div className="flex-1 min-h-0 overflow-y-auto">
-        <div className="px-8 py-6 space-y-8 max-w-[1400px]">
+        <div className="px-8 py-8 space-y-6 max-w-[1400px]">
 
           {/* Header + Stats */}
           <div className="space-y-5">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-[28px] font-bold tracking-[-0.3px] text-[#1A1A1A]">
-                  Projecten
+                <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-[#1A1A1A]">
+                  Projecten<span className="text-[#F15025]">.</span>
                 </h1>
-                <p className="text-sm text-[#9B9B95] mt-1">
-                  <span className="font-mono">{gefilterdeProjecten.length}</span> van <span className="font-mono">{projecten.length}</span> projecten
+                <p className="text-[13px] text-[#9B9B95] mt-0.5 font-mono">
+                  {gefilterdeProjecten.length} van {projecten.length}
                 </p>
               </div>
               <Link
                 to="/projecten/nieuw"
-                className="inline-flex items-center gap-1.5 bg-[#1A535C] text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-sm hover:bg-[#237580] transition-all"
+                className="inline-flex items-center gap-2 bg-[#1A535C] text-white pl-4 pr-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_1px_3px_rgba(26,83,92,0.3),0_4px_12px_rgba(26,83,92,0.15)] hover:bg-[#237580] hover:shadow-[0_2px_6px_rgba(26,83,92,0.35),0_8px_20px_rgba(26,83,92,0.2)] hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200"
               >
                 <Plus className="w-4 h-4" />
                 Nieuw project
               </Link>
             </div>
 
-            {/* Quick stats */}
-            <div className="flex items-center gap-3 flex-wrap">
+            {/* Quick stats as glass pills */}
+            <div className="flex items-center gap-2.5 flex-wrap">
               {stats.actief > 0 && (
-                <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium bg-[#E8F2EC] text-[#3A7D52]">
+                <span className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[13px] font-semibold bg-[#E8F2EC] text-[#2D6B48] ring-1 ring-[#2D6B48]/10">
+                  <span className="w-2 h-2 rounded-full bg-[#2D6B48] doen-pulse" />
                   <span className="font-mono">{stats.actief}</span> actief
                 </span>
               )}
               {stats.teFactureren > 0 && (
-                <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium bg-[#E8EEF9] text-[#3A5A9A]">
+                <span className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[13px] font-semibold bg-[#E8EEF9] text-[#3A5A9A] ring-1 ring-[#3A5A9A]/10">
+                  <span className="w-2 h-2 rounded-full bg-[#3A5A9A]" />
                   <span className="font-mono">{stats.teFactureren}</span> te factureren
                 </span>
               )}
               {stats.overdue > 0 && (
-                <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium bg-[#FDE8E4] text-[#C0451A]">
+                <span className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[13px] font-semibold bg-[#FDE8E4] text-[#C0451A] ring-1 ring-[#C0451A]/10">
+                  <span className="w-2 h-2 rounded-full bg-[#F15025] doen-pulse" />
                   <span className="font-mono">{stats.overdue}</span> verlopen
                 </span>
               )}
               {stats.afgerond > 0 && (
-                <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium bg-[#F5F2E8] text-[#8A7A4A]">
+                <span className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[13px] font-semibold bg-[#F5F2E8] text-[#8A7A4A] ring-1 ring-[#8A7A4A]/10">
+                  <span className="w-2 h-2 rounded-full bg-[#8A7A4A]" />
                   <span className="font-mono">{stats.afgerond}</span> afgerond
                 </span>
               )}
             </div>
           </div>
 
-          {/* Search + Filters */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-6">
-              {/* Search */}
-              <div className="relative max-w-xs flex-1">
+          {/* Toolbar card — search, filters, export in one white surface */}
+          <div className="bg-white rounded-2xl p-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+            <div className="flex items-center gap-5">
+              {/* Search with keyboard hint */}
+              <div className="relative max-w-[280px] flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9B9B95]" />
                 <input
                   type="text"
                   placeholder="Zoek project of klant..."
                   value={zoekterm}
                   onChange={(e) => setZoekterm(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 text-sm bg-[#F8F7F5] border border-[#EBEBEB] rounded-lg text-[#1A1A1A] placeholder:text-[#9B9B95] focus:outline-none focus:border-[#1A535C] focus:ring-1 focus:ring-[#1A535C]/20 transition-all"
+                  className="w-full pl-9 pr-12 py-2 text-sm bg-[#F8F7F5] border border-[#EBEBEB] rounded-lg text-[#1A1A1A] placeholder:text-[#9B9B95] focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/10 transition-all"
                 />
+                <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono text-[#9B9B95] bg-[#F0EFEC] rounded border border-[#E5E4E0]">/</kbd>
               </div>
 
-              {/* Export links */}
+              {/* Export buttons */}
               <div className="hidden sm:flex items-center gap-1 ml-auto">
                 <button
                   onClick={() => {
@@ -430,7 +456,7 @@ export function ProjectsList() {
                     }))
                     exportCSV(`projecten-${new Date().toISOString().split('T')[0]}`, headers, rows)
                   }}
-                  className="flex items-center gap-1.5 text-xs text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F0EFEC] px-2.5 py-1.5 rounded-md transition-all"
+                  className="flex items-center gap-1.5 text-xs font-medium text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] px-3 py-2 rounded-lg transition-all"
                 >
                   <Download className="w-3.5 h-3.5" />
                   CSV
@@ -448,7 +474,7 @@ export function ProjectsList() {
                     }))
                     exportExcel(`projecten-${new Date().toISOString().split('T')[0]}`, headers, rows, 'Projecten')
                   }}
-                  className="flex items-center gap-1.5 text-xs text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F0EFEC] px-2.5 py-1.5 rounded-md transition-all"
+                  className="flex items-center gap-1.5 text-xs font-medium text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] px-3 py-2 rounded-lg transition-all"
                 >
                   <FileText className="w-3.5 h-3.5" />
                   Excel
@@ -456,45 +482,46 @@ export function ProjectsList() {
               </div>
             </div>
 
-            {/* Status filter tabs as text links */}
-            <div className="flex items-center gap-5 flex-wrap">
-              {statusOpties.map((optie) => {
-                const count = optie.value === 'alle'
-                  ? projecten.length
-                  : projecten.filter((p) => p.status === optie.value).length
-                if (optie.value !== 'alle' && count === 0) return null
-                const isActive = statusFilter === optie.value
-                return (
-                  <button
-                    key={optie.value}
-                    onClick={() => setStatusFilter(optie.value)}
-                    className={cn(
-                      'text-sm transition-colors',
-                      isActive
-                        ? 'font-semibold text-[#1A1A1A]'
-                        : 'text-[#9B9B95] hover:text-[#6B6B66]'
-                    )}
-                  >
-                    {optie.label}
-                    {count > 0 && <span className="ml-1 font-mono text-xs opacity-60">{count}</span>}
-                  </button>
-                )
-              })}
-            </div>
+            {/* Filters row */}
+            <div className="flex items-center gap-6 mt-4 pt-4 border-t border-[#F0EFEC]">
+              {/* Status tabs with active indicator */}
+              <div className="flex items-center gap-1 flex-wrap flex-1">
+                {statusOpties.map((optie) => {
+                  const count = optie.value === 'alle'
+                    ? projecten.length
+                    : projecten.filter((p) => p.status === optie.value).length
+                  if (optie.value !== 'alle' && count === 0) return null
+                  const isActive = statusFilter === optie.value
+                  return (
+                    <button
+                      key={optie.value}
+                      onClick={() => setStatusFilter(optie.value)}
+                      className={cn(
+                        'relative px-3 py-1.5 rounded-lg text-[13px] transition-all duration-150',
+                        isActive
+                          ? 'font-semibold text-[#1A535C] bg-[#1A535C]/[0.07]'
+                          : 'text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F8F7F5]'
+                      )}
+                    >
+                      {optie.label}
+                      {count > 0 && <span className="ml-1 font-mono text-[11px] opacity-50">{count}</span>}
+                    </button>
+                  )
+                })}
+              </div>
 
-            {/* Dagen open filter */}
-            <div className="flex items-center gap-4">
-              <span className="text-[11px] font-medium uppercase tracking-wider text-[#9B9B95]">
-                Dagen open
-              </span>
-              <div className="flex items-center gap-3">
+              {/* Dagen open filter */}
+              <div className="hidden lg:flex items-center gap-2 pl-4 border-l border-[#F0EFEC]">
+                <span className="text-[10px] font-semibold uppercase tracking-widest text-[#9B9B95]">
+                  Open
+                </span>
                 {([
                   { value: 'alle', label: 'Alle' },
-                  { value: '<7', label: '< 7d' },
+                  { value: '<7', label: '<7d' },
                   { value: '7-14', label: '7-14d' },
                   { value: '14-30', label: '14-30d' },
                   { value: '30-90', label: '30-90d' },
-                  { value: '>90', label: '> 90d' },
+                  { value: '>90', label: '>90d' },
                 ] as const).map((optie) => {
                   const isActive = dagenOpenFilter === optie.value
                   return (
@@ -502,10 +529,10 @@ export function ProjectsList() {
                       key={optie.value}
                       onClick={() => setDagenOpenFilter(optie.value)}
                       className={cn(
-                        'text-xs font-mono transition-colors',
+                        'px-2 py-1 rounded-md text-[11px] font-mono transition-all duration-150',
                         isActive
-                          ? 'font-semibold text-[#1A1A1A]'
-                          : 'text-[#9B9B95] hover:text-[#6B6B66]'
+                          ? 'font-bold text-[#1A1A1A] bg-[#1A1A1A]/[0.06]'
+                          : 'text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F8F7F5]'
                       )}
                     >
                       {optie.label}
@@ -518,20 +545,20 @@ export function ProjectsList() {
 
           {/* Bulk action bar */}
           {selectedIds.size > 0 && (
-            <div className="flex items-center gap-4 py-3 border-b border-[#EBEBEB]">
-              <span className="text-sm text-[#1A1A1A]">
-                <span className="font-mono font-medium">{selectedIds.size}</span> van {gefilterdeProjecten.length} geselecteerd
+            <div className="flex items-center gap-4 px-5 py-3 bg-[#1A535C]/[0.06] rounded-xl ring-1 ring-[#1A535C]/10">
+              <span className="text-sm text-[#1A1A1A] font-medium">
+                <span className="font-mono font-bold text-[#1A535C]">{selectedIds.size}</span> geselecteerd
               </span>
               <button
                 onClick={toggleSelectAll}
-                className="text-xs font-medium text-[#1A535C] hover:text-[#143F46] transition-colors"
+                className="text-xs font-medium text-[#1A535C] hover:underline transition-colors"
               >
                 {selectedIds.size === gefilterdeProjecten.length ? 'Deselecteer alles' : 'Selecteer alles'}
               </button>
               <div className="flex-1" />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-1.5 text-xs font-medium text-[#1A535C] hover:text-[#143F46] transition-colors">
+                  <button className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#1A535C] bg-white px-3 py-1.5 rounded-lg shadow-sm hover:shadow transition-all">
                     Status wijzigen
                     <ChevronDown className="w-3 h-3" />
                   </button>
@@ -551,7 +578,7 @@ export function ProjectsList() {
               </DropdownMenu>
               <button
                 onClick={() => setSelectedIds(new Set())}
-                className="text-[#9B9B95] hover:text-[#1A1A1A] transition-colors"
+                className="text-[#9B9B95] hover:text-[#1A1A1A] transition-colors p-1 rounded-md hover:bg-white/60"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -560,7 +587,7 @@ export function ProjectsList() {
 
           {/* Table */}
           {gefilterdeProjecten.length === 0 ? (
-            <div className="py-16 text-center">
+            <div className="py-20 text-center bg-white rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
               <EmptyState
                 module="projecten"
                 title="Nog geen projecten"
@@ -570,9 +597,10 @@ export function ProjectsList() {
                 action={
                   <Link
                     to="/projecten/nieuw"
-                    className="text-sm font-medium text-[#F15025] hover:text-[#D4421E] transition-colors"
+                    className="inline-flex items-center gap-2 bg-[#1A535C] text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-sm hover:bg-[#237580] transition-all mt-4"
                   >
-                    Nieuw project aanmaken
+                    <Plus className="w-4 h-4" />
+                    Nieuw project
                   </Link>
                 }
               />
@@ -580,22 +608,26 @@ export function ProjectsList() {
           ) : (
             <>
               {/* Mobile view */}
-              <div className="md:hidden space-y-0">
-                {paginatedProjecten.map((project) => {
+              <div className="md:hidden space-y-2">
+                {paginatedProjecten.map((project, i) => {
                   const klantNaam = project.klant_naam || getKlantNaam(project.klant_id)
                   const bedrag = getProjectBedrag(project.id)
                   return (
                     <div
                       key={`mobile-${project.id}`}
                       onClick={() => navigateWithTab({ path: `/projecten/${project.id}`, label: project.naam || 'Project', id: `/projecten/${project.id}` })}
-                      className="py-4 border-b border-[#EBEBEB] cursor-pointer active:bg-[#F8F7F5] transition-colors"
+                      className="doen-row bg-white rounded-xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)] cursor-pointer active:scale-[0.99] transition-all"
+                      style={{ animationDelay: `${i * 30}ms` }}
                     >
                       <div className="flex items-start justify-between gap-3 mb-2">
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium text-[#1A1A1A] truncate">{project.naam}</p>
+                          <p className="text-[15px] font-semibold text-[#1A1A1A] truncate">{project.naam}</p>
                           {klantNaam && <p className="text-xs text-[#9B9B95] mt-0.5 truncate">{klantNaam}</p>}
                         </div>
-                        <span className="text-xs flex-shrink-0" style={{ color: getStatusTextColor(project.status) }}>
+                        <span
+                          className="text-xs font-semibold flex-shrink-0 px-2.5 py-1 rounded-full"
+                          style={{ color: getStatusTextColor(project.status), backgroundColor: statusBg[project.status] || '#F0EFEC' }}
+                        >
                           {statusLabels[project.status] || project.status}<span className="text-[#F15025]">.</span>
                         </span>
                       </div>
@@ -606,10 +638,10 @@ export function ProjectsList() {
                             const dagen = getDagenOpen(project)
                             if (dagen === null) return null
                             const color = dagen > 90 ? '#C03A18' : dagen > 30 ? '#F15025' : '#9B9B95'
-                            return <span className="font-mono text-[11px]" style={{ color }}>{dagen}d</span>
+                            return <span className="font-mono text-[11px] font-medium" style={{ color }}>{dagen}d</span>
                           })()}
                           {bedrag > 0 && (
-                            <span className="font-mono text-[#1A1A1A]">{formatCurrency(bedrag)}</span>
+                            <span className="font-mono font-medium text-[#1A1A1A]">{formatCurrency(bedrag)}</span>
                           )}
                         </div>
                       </div>
@@ -618,22 +650,22 @@ export function ProjectsList() {
                 })}
               </div>
 
-              {/* Desktop table */}
-              <div className="hidden md:block">
+              {/* Desktop table in white card */}
+              <div className="hidden md:block bg-white rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.04)] overflow-hidden">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-[#EBEBEB]">
-                      <th className="py-3 pr-4 w-10 text-left">
+                    <tr className="border-b-2 border-[#F0EFEC]">
+                      <th className="py-3.5 pl-5 pr-3 w-10 text-left">
                         <Checkbox
                           checked={selectedIds.size > 0 && selectedIds.size === gefilterdeProjecten.length}
                           onCheckedChange={toggleSelectAll}
                           aria-label="Selecteer alle projecten"
                         />
                       </th>
-                      <th className="text-left py-3 pr-4">
+                      <th className="text-left py-3.5 pr-4">
                         <button
                           onClick={() => handleSort('naam')}
-                          className="flex items-center gap-1 text-[11px] font-medium uppercase tracking-wider text-[#9B9B95] hover:text-[#6B6B66] transition-colors"
+                          className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95] hover:text-[#6B6B66] transition-colors"
                         >
                           Project
                           {sortField === 'naam' ? (
@@ -643,16 +675,16 @@ export function ProjectsList() {
                           )}
                         </button>
                       </th>
-                      <th className="text-left py-3 pr-4 w-[160px] hidden lg:table-cell">
-                        <span className="text-[11px] font-medium uppercase tracking-wider text-[#9B9B95]">Klant</span>
+                      <th className="text-left py-3.5 pr-4 w-[160px] hidden lg:table-cell">
+                        <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Klant</span>
                       </th>
-                      <th className="text-left py-3 pr-4 w-[130px]">
-                        <span className="text-[11px] font-medium uppercase tracking-wider text-[#9B9B95]">Status</span>
+                      <th className="text-left py-3.5 pr-4 w-[150px]">
+                        <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Status</span>
                       </th>
-                      <th className="text-right py-3 pr-4 w-[110px] hidden xl:table-cell">
+                      <th className="text-right py-3.5 pr-4 w-[110px] hidden xl:table-cell">
                         <button
                           onClick={() => handleSort('bedrag')}
-                          className="flex items-center gap-1 text-[11px] font-medium uppercase tracking-wider text-[#9B9B95] hover:text-[#6B6B66] transition-colors ml-auto"
+                          className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95] hover:text-[#6B6B66] transition-colors ml-auto"
                         >
                           Bedrag
                           {sortField === 'bedrag' ? (
@@ -662,10 +694,10 @@ export function ProjectsList() {
                           )}
                         </button>
                       </th>
-                      <th className="text-right py-3 pr-4 w-[80px] hidden lg:table-cell">
+                      <th className="text-right py-3.5 pr-4 w-[80px] hidden lg:table-cell">
                         <button
                           onClick={() => handleSort('start_datum')}
-                          className="flex items-center gap-1 text-[11px] font-medium uppercase tracking-wider text-[#9B9B95] hover:text-[#6B6B66] transition-colors ml-auto"
+                          className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95] hover:text-[#6B6B66] transition-colors ml-auto"
                         >
                           Datum
                           {sortField === 'start_datum' ? (
@@ -675,14 +707,14 @@ export function ProjectsList() {
                           )}
                         </button>
                       </th>
-                      <th className="text-right py-3 pr-4 w-[70px] hidden xl:table-cell">
-                        <span className="text-[11px] font-medium uppercase tracking-wider text-[#9B9B95]">Open</span>
+                      <th className="text-right py-3.5 pr-4 w-[70px] hidden xl:table-cell">
+                        <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Open</span>
                       </th>
-                      <th className="w-10 py-3" />
+                      <th className="w-10 py-3.5 pr-4" />
                     </tr>
                   </thead>
                   <tbody>
-                    {paginatedProjecten.map((project) => {
+                    {paginatedProjecten.map((project, i) => {
                       const klantNaam = project.klant_naam || getKlantNaam(project.klant_id)
                       const contactpersoon = getKlantContactpersoon(project.klant_id)
                       const isOverdue = project.eind_datum && new Date(project.eind_datum ?? "") < new Date() && project.status !== 'afgerond'
@@ -691,13 +723,15 @@ export function ProjectsList() {
                         <tr
                           key={project.id}
                           className={cn(
-                            'border-b border-[#EBEBEB] hover:bg-[#F8F7F5] cursor-pointer transition-colors duration-100 group',
-                            selectedIds.has(project.id) && 'bg-[#F8F7F5]'
+                            'doen-row border-b border-[#F0EFEC] last:border-0 cursor-pointer transition-all duration-150 group',
+                            'hover:bg-[#FAFAF8]',
+                            selectedIds.has(project.id) && 'bg-[#1A535C]/[0.03]'
                           )}
+                          style={{ animationDelay: `${i * 25}ms` }}
                           onClick={() => navigateWithTab({ path: `/projecten/${project.id}`, label: project.naam || 'Project', id: `/projecten/${project.id}` })}
                         >
                           {/* Checkbox */}
-                          <td className="py-3 pr-4 align-middle" onClick={(e) => e.stopPropagation()}>
+                          <td className="py-3.5 pl-5 pr-3 align-middle" onClick={(e) => e.stopPropagation()}>
                             <Checkbox
                               checked={selectedIds.has(project.id)}
                               onCheckedChange={() => toggleProjectSelection(project.id)}
@@ -706,22 +740,22 @@ export function ProjectsList() {
                           </td>
 
                           {/* Project naam + nummer */}
-                          <td className="py-3 pr-4">
+                          <td className="py-3.5 pr-4">
                             <div className="min-w-0">
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-baseline gap-2.5">
                                 <Link
                                   to={`/projecten/${project.id}`}
-                                  className="text-[15px] font-medium text-[#1A1A1A] hover:text-[#1A535C] transition-colors truncate"
+                                  className="text-[15px] font-semibold text-[#1A1A1A] group-hover:text-[#1A535C] transition-colors truncate"
                                   onClick={(e) => e.stopPropagation()}
                                 >
                                   {project.naam}
                                 </Link>
                                 {project.project_nummer && (
-                                  <span className="text-[11px] text-[#9B9B95] font-mono flex-shrink-0">{project.project_nummer}</span>
+                                  <span className="text-[11px] text-[#C0BDB8] font-mono flex-shrink-0 tabular-nums">{project.project_nummer}</span>
                                 )}
                               </div>
                               {project.beschrijving && (
-                                <p className="text-xs text-[#9B9B95] truncate max-w-[300px] mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <p className="text-[12px] text-[#9B9B95] truncate max-w-[320px] mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                                   {project.beschrijving}
                                 </p>
                               )}
@@ -729,30 +763,36 @@ export function ProjectsList() {
                           </td>
 
                           {/* Klant */}
-                          <td className="py-3 pr-4 hidden lg:table-cell">
+                          <td className="py-3.5 pr-4 hidden lg:table-cell">
                             <div className="min-w-0">
-                              <span className="text-sm text-[#6B6B66] truncate block">{klantNaam}</span>
+                              <span className="text-[13px] text-[#4A4A46] truncate block">{klantNaam}</span>
                               {(project.vestiging_naam || contactpersoon) && (
-                                <span className="text-[11px] text-[#9B9B95] truncate block">
+                                <span className="text-[11px] text-[#C0BDB8] truncate block mt-0.5">
                                   {project.vestiging_naam || contactpersoon}
                                 </span>
                               )}
                             </div>
                           </td>
 
-                          {/* Status as text + Flame punt */}
-                          <td className="py-3 pr-4" onClick={(e) => e.stopPropagation()}>
+                          {/* Status chip with bg tint + Flame punt */}
+                          <td className="py-3.5 pr-4" onClick={(e) => e.stopPropagation()}>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <button className="text-left">
+                                <button className="text-left group/status">
                                   <span
-                                    className="text-sm font-medium"
-                                    style={{ color: getStatusTextColor(project.status) }}
+                                    className="inline-flex items-center gap-1.5 text-[13px] font-semibold px-2.5 py-1 rounded-lg transition-all group-hover/status:shadow-sm"
+                                    style={{
+                                      color: getStatusTextColor(project.status),
+                                      backgroundColor: statusBg[project.status] || '#F0EFEC',
+                                    }}
                                   >
+                                    {(project.status === 'actief') && (
+                                      <span className="w-1.5 h-1.5 rounded-full bg-current doen-pulse" />
+                                    )}
                                     {statusLabels[project.status] || project.status}<span className="text-[#F15025]">.</span>
                                   </span>
                                   {isOverdue && (
-                                    <span className="ml-2 text-xs text-[#C03A18]">Verlopen</span>
+                                    <span className="ml-1.5 text-[11px] font-semibold text-[#C03A18]">Verlopen</span>
                                   )}
                                 </button>
                               </DropdownMenuTrigger>
@@ -781,34 +821,45 @@ export function ProjectsList() {
                           </td>
 
                           {/* Bedrag */}
-                          <td className="py-3 pr-4 text-right hidden xl:table-cell">
+                          <td className="py-3.5 pr-4 text-right hidden xl:table-cell">
                             {(() => {
                               const bedrag = getProjectBedrag(project.id)
                               return bedrag > 0 ? (
-                                <span className="text-sm font-mono tabular-nums text-[#1A1A1A]">
+                                <span className={cn(
+                                  'font-mono tabular-nums text-[#1A1A1A]',
+                                  bedrag >= 10000 ? 'text-[15px] font-semibold' : 'text-sm'
+                                )}>
                                   {formatCurrency(bedrag)}
                                 </span>
                               ) : (
-                                <span className="text-xs text-[#9B9B95]">&mdash;</span>
+                                <span className="text-xs text-[#C0BDB8]">&mdash;</span>
                               )
                             })()}
                           </td>
 
                           {/* Datum */}
-                          <td className="py-3 pr-4 text-right hidden lg:table-cell">
-                            <span className="text-xs font-mono tabular-nums text-[#9B9B95]">
+                          <td className="py-3.5 pr-4 text-right hidden lg:table-cell">
+                            <span className="text-xs font-mono tabular-nums text-[#C0BDB8]">
                               {new Date(project.created_at).toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit' }).replace('/', '-')}
                             </span>
                           </td>
 
                           {/* Dagen open */}
-                          <td className="py-3 pr-4 text-right hidden xl:table-cell">
+                          <td className="py-3.5 pr-4 text-right hidden xl:table-cell">
                             {(() => {
                               const dagen = getDagenOpen(project)
-                              if (dagen === null) return <span className="text-xs text-[#9B9B95]">&mdash;</span>
-                              const color = dagen > 90 ? '#C03A18' : dagen > 30 ? '#F15025' : '#9B9B95'
+                              if (dagen === null) return <span className="text-xs text-[#C0BDB8]">&mdash;</span>
+                              const urgent = dagen > 90
+                              const warning = dagen > 30
                               return (
-                                <span className="text-[11px] font-mono tabular-nums" style={{ color }}>
+                                <span
+                                  className={cn(
+                                    'inline-flex items-center justify-center text-[11px] font-mono font-semibold tabular-nums rounded-md px-2 py-0.5',
+                                    urgent ? 'bg-[#FDE8E4] text-[#C03A18]' :
+                                    warning ? 'bg-[#FEF3E8] text-[#D4621A]' :
+                                    'text-[#9B9B95]'
+                                  )}
+                                >
                                   {dagen}d
                                 </span>
                               )
@@ -816,7 +867,7 @@ export function ProjectsList() {
                           </td>
 
                           {/* Actions */}
-                          <td className="py-3">
+                          <td className="py-3.5 pr-4">
                             <div className="flex items-center gap-0.5 justify-end">
                               <button
                                 onClick={(e) => {
@@ -825,19 +876,19 @@ export function ProjectsList() {
                                   setPhotoUploadKlantId(project.klant_id)
                                   photoInputRef.current?.click()
                                 }}
-                                className="p-1 rounded-md hover:bg-[#EBEBEB] transition-colors opacity-0 group-hover:opacity-100"
+                                className="p-1.5 rounded-lg hover:bg-[#F0EFEC] transition-all opacity-0 group-hover:opacity-100"
                                 title="Foto's toevoegen"
                               >
-                                <Camera className="w-4 h-4 text-[#9B9B95]" />
+                                <Camera className="w-3.5 h-3.5 text-[#9B9B95]" />
                               </button>
 
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <button
                                     onClick={(e) => e.stopPropagation()}
-                                    className="p-1 rounded-md hover:bg-[#EBEBEB] transition-colors opacity-0 group-hover:opacity-100"
+                                    className="p-1.5 rounded-lg hover:bg-[#F0EFEC] transition-all opacity-0 group-hover:opacity-100"
                                   >
-                                    <MoreHorizontal className="w-4 h-4 text-[#9B9B95]" />
+                                    <MoreHorizontal className="w-3.5 h-3.5 text-[#9B9B95]" />
                                   </button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end" className="w-48">
