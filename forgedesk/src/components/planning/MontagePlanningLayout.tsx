@@ -67,6 +67,7 @@ import { ClipboardCheck } from "lucide-react";
 import { uploadMontageBijlage } from '@/services/storageService';
 import { WerkbonVanProjectDialog } from "@/components/werkbonnen/WerkbonVanProjectDialog";
 import { cn } from "@/lib/utils";
+import { useNavigateWithTab } from "@/hooks/useNavigateWithTab";
 import { toast } from "sonner";
 import { confirm } from '@/components/shared/ConfirmDialog';
 
@@ -226,6 +227,7 @@ const EMPTY_FORM: MontageFormData = {
 };
 
 export function MontagePlanningLayout() {
+  const { navigateWithTab } = useNavigateWithTab();
   const [currentMonday, setCurrentMonday] = useState<Date>(() =>
     getMondayOfWeek(new Date())
   );
@@ -503,7 +505,7 @@ export function MontagePlanningLayout() {
     setDialogOpen(true);
   }
 
-  function openNewDialogFromProject(project: Project) {
+  function openNewDialogFromProject(project: Project, datum?: string) {
     setEditingAfspraak(null);
     setFormData({
       ...EMPTY_FORM,
@@ -511,7 +513,7 @@ export function MontagePlanningLayout() {
       klant_id: project.klant_id,
       klant_naam: project.klant_naam || "",
       titel: project.naam,
-      datum: todayStr,
+      datum: datum || todayStr,
     });
     if (project.id) {
       getWerkbonnenByProject(project.id).then(setProjectWerkbonnen).catch(() => setProjectWerkbonnen([]));
@@ -705,9 +707,7 @@ export function MontagePlanningLayout() {
       const projectId = dragId.replace("project:", "");
       const project = projecten.find((p) => p.id === projectId);
       if (!project) return;
-      openNewDialogFromProject(project);
-      // Pre-fill the date with the drop target date
-      setFormData((prev) => ({ ...prev, datum: newDate }));
+      openNewDialogFromProject(project, newDate);
       return;
     }
 
@@ -893,16 +893,22 @@ export function MontagePlanningLayout() {
                 <span className="truncate">{afspraak.locatie}</span>
               </a>
             )}
-            {/* Werkbon — klikbaar naar detail */}
-            {afspraak.werkbon_nummer && (
-              <a
-                href={`/werkbonnen/${afspraak.werkbon_id}`}
-                onClick={(e) => e.stopPropagation()}
-                className="flex items-center gap-1 text-[10px] font-mono text-[#943520] hover:underline mt-1"
+            {/* Werkbon — klikbaar, opent in tab */}
+            {afspraak.werkbon_nummer && afspraak.werkbon_id && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigateWithTab({
+                    path: `/werkbonnen/${afspraak.werkbon_id}`,
+                    label: afspraak.werkbon_nummer || "Werkbon",
+                    id: `/werkbonnen/${afspraak.werkbon_id}`,
+                  });
+                }}
+                className="inline-flex items-center gap-1.5 text-xs bg-[#FDF2F0] text-[#943520] hover:bg-[#FADED8] rounded px-2 py-1 mt-1.5 font-medium transition-colors"
               >
-                <ClipboardCheck className="h-2.5 w-2.5 shrink-0" />
-                {afspraak.werkbon_nummer}
-              </a>
+                <ClipboardCheck className="h-3 w-3 shrink-0" />
+                <span className="font-mono">{afspraak.werkbon_nummer}</span>
+              </button>
             )}
           </div>
         </div>
