@@ -171,6 +171,23 @@ export function generateWerkbonInstructiePDF(
   let y = addPageHeader(marginTop)
   const availableHeight = pageHeight - marginBottom
 
+  // Helper: teken één afbeelding met border (of placeholder)
+  function drawImage(url: string, x: number, iy: number, w: number, h: number) {
+    try {
+      doc.addImage(url, 'JPEG', x, iy, w, h, undefined, 'MEDIUM')
+      doc.setDrawColor(200, 200, 200)
+      doc.setLineWidth(0.3)
+      doc.rect(x, iy, w, h)
+    } catch {
+      doc.setDrawColor(200, 200, 200)
+      doc.setFillColor(245, 245, 245)
+      doc.rect(x, iy, w, h, 'FD')
+      doc.setFontSize(8)
+      doc.setTextColor(150, 150, 150)
+      doc.text('Afbeelding niet beschikbaar', x + w / 2, iy + h / 2, { align: 'center' })
+    }
+  }
+
   for (let i = 0; i < items.length; i++) {
     const item = items[i]
     const hasImage = item.afbeeldingen.length > 0
@@ -185,37 +202,36 @@ export function generateWerkbonInstructiePDF(
       y = addNewPage()
     }
 
-    // ─── Item layout: afbeelding links, info rechts ───
+    // ─── Item layout: max 2 afbeeldingen links (4:3), info rechts ───
     const itemStartY = y
 
     if (hasImage) {
-      // Layout: afbeelding links (4:3 ratio), tekst rechts
-      const imgWidth = contentWidth * 0.45
-      const imgHeight = imgWidth * 0.75 // 4:3 ratio
-      const textX = marginLeft + imgWidth + 10
-      const textWidth = contentWidth - imgWidth - 10
+      // Bereken afbeeldingsformaat: 2 afbeeldingen (4:3) onder elkaar moeten passen
+      const imgGap = 3
+      const maxImgColumnH = availableHeight - y
+      const imageCount = Math.min(item.afbeeldingen.length, 2)
+      const singleImgH = imageCount === 2
+        ? (maxImgColumnH - imgGap) / 2
+        : maxImgColumnH * 0.55
+      const imgH = Math.min(singleImgH, 73) // max 73mm per afbeelding
+      const imgW = imgH * (4 / 3)           // 4:3 ratio
+      const textX = marginLeft + imgW + 10
+      const textWidth = contentWidth - imgW - 10
 
-      // Afbeelding
-      const firstImage = item.afbeeldingen[0]
-      if (firstImage?.url) {
-        try {
-          doc.addImage(firstImage.url, 'JPEG', marginLeft, y, imgWidth, imgHeight, undefined, 'MEDIUM')
-          // Border rond afbeelding
-          doc.setDrawColor(200, 200, 200)
-          doc.setLineWidth(0.3)
-          doc.rect(marginLeft, y, imgWidth, imgHeight)
-        } catch {
-          // afbeelding laden mislukt - teken placeholder
-          doc.setDrawColor(200, 200, 200)
-          doc.setFillColor(245, 245, 245)
-          doc.rect(marginLeft, y, imgWidth, imgHeight, 'FD')
-          doc.setFontSize(8)
-          doc.setTextColor(150, 150, 150)
-          doc.text('Afbeelding niet beschikbaar', marginLeft + imgWidth / 2, y + imgHeight / 2, { align: 'center' })
-        }
+      // Afbeelding 1
+      if (item.afbeeldingen[0]?.url) {
+        drawImage(item.afbeeldingen[0].url, marginLeft, y, imgW, imgH)
       }
 
-      // Tekst rechts naast afbeelding
+      // Afbeelding 2 (direct eronder)
+      let imgColumnBottom = y + imgH
+      if (item.afbeeldingen.length > 1 && item.afbeeldingen[1]?.url) {
+        const img2Y = y + imgH + imgGap
+        drawImage(item.afbeeldingen[1].url, marginLeft, img2Y, imgW, imgH)
+        imgColumnBottom = img2Y + imgH
+      }
+
+      // Tekst rechts naast afbeeldingen
       let textY = y + 2
 
       // Item nummer + omschrijving
@@ -243,10 +259,9 @@ export function generateWerkbonInstructiePDF(
       // Notitie
       if (hasNote) {
         textY += 2
-        // Geel achtergrondvlak
         const noteLines = doc.splitTextToSize(item.interne_notitie || '', textWidth - 6)
         const noteHeight = noteLines.length * 4.5 + 6
-        doc.setFillColor(255, 251, 235) // warm yellow
+        doc.setFillColor(255, 251, 235)
         doc.setDrawColor(252, 211, 77)
         doc.roundedRect(textX, textY, textWidth, noteHeight, 2, 2, 'FD')
 
@@ -262,13 +277,13 @@ export function generateWerkbonInstructiePDF(
         textY += noteHeight + 3
       }
 
-      // Extra afbeeldingen (kleiner, naast elkaar)
-      if (item.afbeeldingen.length > 1) {
+      // Extra afbeeldingen (3+) als thumbnails rechts
+      if (item.afbeeldingen.length > 2) {
         textY += 2
         const thumbW = 30
         const thumbH = 22
         let thumbX = textX
-        for (let ai = 1; ai < item.afbeeldingen.length && ai < 5; ai++) {
+        for (let ai = 2; ai < item.afbeeldingen.length && ai < 6; ai++) {
           const afb = item.afbeeldingen[ai]
           if (afb?.url) {
             try {
@@ -284,7 +299,7 @@ export function generateWerkbonInstructiePDF(
         textY += thumbH + 3
       }
 
-      y = Math.max(itemStartY + imgHeight + 5, textY + 5)
+      y = Math.max(imgColumnBottom + 5, textY + 5)
     } else {
       // Layout: geen afbeelding, volledige breedte tekst
 
