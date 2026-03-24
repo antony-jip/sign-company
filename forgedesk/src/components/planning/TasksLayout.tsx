@@ -822,7 +822,7 @@ export function TasksLayout() {
                 <div
                   key={i}
                   className={cn(
-                    'group/monthday bg-background min-h-[80px] p-1.5 transition-colors',
+                    'bg-background min-h-[80px] p-1.5 transition-colors',
                     !isCurrentMonth && 'opacity-30',
                     isToday && 'bg-primary/5'
                   )}
@@ -837,7 +837,7 @@ export function TasksLayout() {
                     {isCurrentMonth && !isAddingHere && (
                       <button
                         onClick={() => { setMonthAddingDay(dayKey); setMonthAddTitle(''); setTimeout(() => monthAddInputRef.current?.focus(), 50) }}
-                        className="opacity-0 group-hover/monthday:opacity-100 p-0.5 rounded text-muted-foreground/30 hover:text-primary hover:bg-primary/10 transition-all duration-200"
+                        className="p-0.5 rounded text-muted-foreground/30 hover:text-primary hover:bg-primary/10 transition-all duration-200"
                       >
                         <Plus className="w-3 h-3" />
                       </button>
