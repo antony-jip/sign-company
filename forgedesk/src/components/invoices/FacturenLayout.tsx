@@ -69,8 +69,11 @@ import {
   getHerinneringTemplates,
   generateBetaalToken,
   updateProject,
+  getProjecten,
+  getOffertesByProject,
+  getFacturenByProject,
 } from '@/services/supabaseService'
-import type { Factuur, FactuurItem, Klant, Offerte, OfferteItem, HerinneringTemplate } from '@/types'
+import type { Factuur, FactuurItem, Klant, Offerte, OfferteItem, HerinneringTemplate, Project } from '@/types'
 import { Checkbox } from '@/components/ui/checkbox'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
 import { round2 } from '@/utils/budgetUtils'
@@ -98,7 +101,7 @@ import { berekenDagenOpen, getAgingColor, getAgingBgColor } from '@/utils/spectr
 
 type FactuurStatus = Factuur['status']
 type FactuurType = NonNullable<Factuur['factuur_type']>
-type FilterStatus = 'alle' | FactuurStatus | 'verlopen'
+type FilterStatus = 'alle' | FactuurStatus | 'verlopen' | 'te_factureren'
 type SortField = 'datum' | 'bedrag' | 'klantnaam'
 type SortDir = 'asc' | 'desc'
 
@@ -173,6 +176,7 @@ const FILTER_OPTIONS: { value: FilterStatus; label: string }[] = [
   { value: 'vervallen', label: 'Vervallen' },
   { value: 'verlopen', label: 'Verlopen' },
   { value: 'gecrediteerd', label: 'Gecrediteerd' },
+  { value: 'te_factureren', label: 'Te factureren' },
 ]
 
 const SORT_OPTIONS: { value: SortField; label: string }[] = [
@@ -266,6 +270,7 @@ export function FacturenLayout() {
   const [facturen, setFacturen] = useState<Factuur[]>([])
   const [klanten, setKlanten] = useState<Klant[]>([])
   const [offertes, setOffertes] = useState<Offerte[]>([])
+  const [teFacturerenProjecten, setTeFacturerenProjecten] = useState<(Project & { offerteBedrag: number; alGefactureerd: number })[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   // Filter & sort state
@@ -335,6 +340,32 @@ export function FacturenLayout() {
           setKlanten(klantenData)
           setOffertes(offertesData)
           setHerinneringTemplates(herinneringData)
+        }
+
+        // Fetch te factureren projects with enriched data
+        try {
+          const projectenData = await getProjecten()
+          const tfProjecten = projectenData.filter((p) => p.status === 'te-factureren')
+          const enriched = await Promise.all(
+            tfProjecten.map(async (project) => {
+              const [projectOffertes, projectFacturen] = await Promise.all([
+                getOffertesByProject(project.id).catch(() => []),
+                getFacturenByProject(project.id).catch(() => []),
+              ])
+              const offerteBedrag = round2(projectOffertes.reduce((sum, o) => sum + o.totaal, 0))
+              const alGefactureerd = round2(
+                projectFacturen
+                  .filter((f) => f.status !== 'gecrediteerd')
+                  .reduce((sum, f) => sum + f.totaal, 0)
+              )
+              return { ...project, offerteBedrag, alGefactureerd }
+            })
+          )
+          // Sort oldest first
+          enriched.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+          if (!cancelled) setTeFacturerenProjecten(enriched)
+        } catch {
+          // Non-critical, continue without te factureren data
         }
       } finally {
         if (!cancelled) setIsLoading(false)
@@ -438,8 +469,9 @@ export function FacturenLayout() {
     for (const f of facturen) {
       counts[f.status] = (counts[f.status] || 0) + 1
     }
+    counts['te_factureren'] = teFacturerenProjecten.length
     return counts
-  }, [facturen])
+  }, [facturen, teFacturerenProjecten])
 
   // ============ BULK SELECTION ============
 
@@ -1487,6 +1519,64 @@ export function FacturenLayout() {
         ))}
       </div>
 
+      {/* ── Te factureren projecten view ── */}
+      {filterStatus === 'te_factureren' ? (
+        <div className="rounded-xl border border-border bg-card overflow-hidden -mx-3 sm:mx-0">
+          {teFacturerenProjecten.length === 0 ? (
+            <div className="flex flex-col items-center gap-2 py-16 text-muted-foreground">
+              <CheckCircle2 className="h-10 w-10 text-emerald-400 mb-2" />
+              <p className="text-sm font-medium">Geen projecten om te factureren.</p>
+              <p className="text-xs text-muted-foreground/60">Goed gedaan!</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b bg-muted/30">
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs">Klant</th>
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs">Project</th>
+                    <th className="text-right px-4 py-3 font-medium text-muted-foreground text-xs">Offertebedrag</th>
+                    <th className="text-right px-4 py-3 font-medium text-muted-foreground text-xs">Al gefactureerd</th>
+                    <th className="text-right px-4 py-3 font-medium text-muted-foreground text-xs">Nog te factureren</th>
+                    <th className="text-right px-4 py-3 font-medium text-muted-foreground text-xs"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {teFacturerenProjecten.map((project) => {
+                    const nogTeFactureren = round2(project.offerteBedrag - project.alGefactureerd)
+                    return (
+                      <tr key={project.id} className="border-b last:border-b-0 hover:bg-muted/30 transition-colors">
+                        <td className="px-4 py-3 text-sm">{project.klant_naam || '-'}</td>
+                        <td className="px-4 py-3 text-sm font-medium">{project.naam}</td>
+                        <td className="px-4 py-3 text-sm text-right tabular-nums">
+                          {project.offerteBedrag > 0 ? formatCurrency(project.offerteBedrag) : '-'}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-right tabular-nums">
+                          {project.alGefactureerd > 0 ? formatCurrency(project.alGefactureerd) : '-'}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-right tabular-nums font-medium">
+                          {project.offerteBedrag > 0 ? formatCurrency(nogTeFactureren) : '-'}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <Button
+                            size="sm"
+                            onClick={() => navigate(`/facturen/nieuw?project_id=${project.id}`)}
+                            className="text-white text-xs font-semibold"
+                            style={{ backgroundColor: '#F15025' }}
+                          >
+                            Factureer
+                          </Button>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      ) : (
+      <>
       {/* ── Mobile card view ── */}
       <div className="md:hidden space-y-2 -mx-1">
         {filteredFacturen.length === 0 && (
@@ -1872,6 +1962,8 @@ export function FacturenLayout() {
         pageSize={PAGE_SIZE}
         onPageChange={setCurrentPage}
       />
+      </>
+      )}
 
       {/* ── View Factuur Dialog ────────────────────────────────────── */}
       <Dialog open={!!viewingFactuur} onOpenChange={(open) => !open && setViewingFactuur(null)}>
