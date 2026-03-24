@@ -17,6 +17,7 @@ import { ImportHulpBanner } from './ImportHulpBanner'
 import { LosseContacten } from './LosseContacten'
 import type { ImportLog } from '@/types'
 import { toast } from 'sonner'
+import { confirm } from '@/components/shared/ConfirmDialog'
 
 function formatDate(dateStr: string): string {
   if (!dateStr) return '-'
@@ -65,7 +66,7 @@ export function DataImportPage() {
 
   async function handleClearHistory() {
     if (!organisatieId) return
-    const confirmed = window.confirm('Weet je zeker dat je alle import geschiedenis wilt wissen?')
+    const confirmed = await confirm({ message: 'Weet je zeker dat je alle import geschiedenis wilt wissen?', variant: 'destructive', confirmLabel: 'Verwijderen' })
     if (!confirmed) return
     try {
       await deleteAllImportLogs(organisatieId)

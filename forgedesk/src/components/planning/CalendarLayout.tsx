@@ -83,6 +83,7 @@ import {
 import type { MontageAfspraak, MontageBijlage, Project, Medewerker, Klant, Taak, Werkbon } from '@/types'
 import { logger } from '../../utils/logger'
 import { getNederlandseFeestdagen, isFeestdag } from '@/utils/feestdagen'
+import { confirm } from '@/components/shared/ConfirmDialog'
 
 // ============================================================
 // STATUS CONFIG
@@ -430,9 +431,10 @@ export function CalendarLayout() {
     // Feestdag waarschuwing
     const feestdagCheck = isFeestdag(formData.datum, feestdagen)
     if (feestdagCheck) {
-      const doorgaan = window.confirm(
-        `Let op: ${formData.datum} valt op ${feestdagCheck.naam}. Toch inplannen?`
-      )
+      const doorgaan = await confirm({
+        message: `Let op: ${formData.datum} valt op ${feestdagCheck.naam}. Toch inplannen?`,
+        confirmLabel: 'Doorgaan'
+      })
       if (!doorgaan) return
     }
 

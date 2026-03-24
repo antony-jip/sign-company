@@ -22,6 +22,7 @@ import {
 } from '@/services/supabaseService'
 import type { ContactpersoonRecord, Klant } from '@/types'
 import { toast } from 'sonner'
+import { confirm } from '@/components/shared/ConfirmDialog'
 
 interface LosseContactenProps {
   organisatieId: string
@@ -124,9 +125,9 @@ export function LosseContacten({ organisatieId }: LosseContactenProps) {
 
   async function handleBulkLosOpslaan() {
     if (selectedIds.size === 0) return
-    const confirmed = window.confirm(
-      `${selectedIds.size} contact${selectedIds.size === 1 ? '' : 'en'} als los contact opslaan? Ze verdwijnen uit deze lijst maar blijven beschikbaar in het systeem.`
-    )
+    const confirmed = await confirm({
+      message: `${selectedIds.size} contact${selectedIds.size === 1 ? '' : 'en'} als los contact opslaan? Ze verdwijnen uit deze lijst maar blijven beschikbaar in het systeem.`,
+    })
     if (!confirmed) return
     setBulkLoading(true)
     try {
@@ -143,9 +144,11 @@ export function LosseContacten({ organisatieId }: LosseContactenProps) {
 
   async function handleBulkDelete() {
     if (selectedIds.size === 0) return
-    const confirmed = window.confirm(
-      `Weet je zeker dat je ${selectedIds.size} contact${selectedIds.size === 1 ? '' : 'en'} wilt verwijderen? Dit kan niet ongedaan worden.`
-    )
+    const confirmed = await confirm({
+      message: `Weet je zeker dat je ${selectedIds.size} contact${selectedIds.size === 1 ? '' : 'en'} wilt verwijderen? Dit kan niet ongedaan worden.`,
+      variant: 'destructive',
+      confirmLabel: 'Verwijderen',
+    })
     if (!confirmed) return
     setBulkLoading(true)
     try {
@@ -162,9 +165,11 @@ export function LosseContacten({ organisatieId }: LosseContactenProps) {
 
   async function handleDeleteAlleLosse() {
     if (contacten.length === 0) return
-    const confirmed = window.confirm(
-      `Weet je zeker dat je alle ${contacten.length} losse contacten wilt verwijderen? Dit kan niet ongedaan worden.`
-    )
+    const confirmed = await confirm({
+      message: `Weet je zeker dat je alle ${contacten.length} losse contacten wilt verwijderen? Dit kan niet ongedaan worden.`,
+      variant: 'destructive',
+      confirmLabel: 'Verwijderen',
+    })
     if (!confirmed) return
     setBulkLoading(true)
     try {

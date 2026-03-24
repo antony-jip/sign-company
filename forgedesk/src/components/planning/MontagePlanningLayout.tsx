@@ -75,6 +75,7 @@ import { uploadMontageBijlage } from '@/services/storageService';
 import { WerkbonVanProjectDialog } from "@/components/werkbonnen/WerkbonVanProjectDialog";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { confirm } from '@/components/shared/ConfirmDialog';
 
 const STATUS_CONFIG: Record<
   MontageAfspraak["status"],
@@ -632,7 +633,7 @@ export function MontagePlanningLayout() {
   }
 
   async function handleDelete(afspraakId: string) {
-    const confirmed = window.confirm('Weet je zeker dat je deze montage-afspraak wilt verwijderen?')
+    const confirmed = await confirm({ message: 'Weet je zeker dat je deze montage-afspraak wilt verwijderen?', variant: 'destructive', confirmLabel: 'Verwijderen' })
     if (!confirmed) return
     try {
       await deleteMontageAfspraak(afspraakId).catch(() => null);

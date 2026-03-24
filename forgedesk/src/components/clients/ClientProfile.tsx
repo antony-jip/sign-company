@@ -84,6 +84,7 @@ import {
   deleteContactpersoonDB,
 } from '@/services/supabaseService'
 import type { Klant, Project, Email, Document as DocType, Offerte, Contactpersoon, ContactpersoonRecord, Vestiging, Factuur, Deal, Tijdregistratie } from '@/types'
+import { confirm } from '@/components/shared/ConfirmDialog'
 
 function getStatusBarColor(status: string): string {
   switch (status) {
@@ -270,7 +271,7 @@ export function ClientProfile() {
     if (!klant) return
     const contact = (klant.contactpersonen || []).find((c) => c.id === contactId)
     const naam = contact?.naam || 'deze contactpersoon'
-    if (!window.confirm(`Weet je zeker dat je ${naam} wilt verwijderen?`)) return
+    if (!await confirm({ message: `Weet je zeker dat je ${naam} wilt verwijderen?`, variant: 'destructive', confirmLabel: 'Verwijderen' })) return
     const updated = (klant.contactpersonen || []).filter((c) => c.id !== contactId)
     try {
       const updatedKlant = await updateKlant(klant.id, { contactpersonen: updated })
@@ -368,7 +369,7 @@ export function ClientProfile() {
   async function handleDeleteVestiging(vestigingId: string) {
     if (!klant) return
     const v = (klant.vestigingen || []).find((x) => x.id === vestigingId)
-    if (!window.confirm(`Weet je zeker dat je vestiging "${v?.naam}" wilt verwijderen?`)) return
+    if (!await confirm({ message: `Weet je zeker dat je vestiging "${v?.naam}" wilt verwijderen?`, variant: 'destructive', confirmLabel: 'Verwijderen' })) return
     const updated = (klant.vestigingen || []).filter((x) => x.id !== vestigingId)
     try {
       const updatedKlant = await updateKlant(klant.id, { vestigingen: updated })
@@ -1439,8 +1440,9 @@ export function ClientProfile() {
                           </div>
                           <div className="flex items-center gap-1 flex-shrink-0">
                             <button
-                              onClick={() => {
-                                if (window.confirm(`${fullName} verwijderen?`)) {
+                              onClick={async () => {
+                                const confirmed = await confirm({ message: `${fullName} verwijderen?`, variant: 'destructive', confirmLabel: 'Verwijderen' })
+                                if (confirmed) {
                                   deleteContactpersoonDB(ic.id).catch(() => {})
                                   setImportedContacts((prev) => prev.filter((c) => c.id !== ic.id))
                                   toast.success('Contactpersoon verwijderd')

@@ -92,6 +92,7 @@ import { logger } from '../../utils/logger'
 import { KlantStatusWarning } from '@/components/shared/KlantStatusWarning'
 import { useUnsavedWarning } from '@/hooks/useUnsavedWarning'
 import { AuditLogPanel } from '@/components/shared/AuditLogPanel'
+import { confirm } from '@/components/shared/ConfirmDialog'
 import { logWijziging } from '@/utils/auditLogger'
 
 // ============ TYPES ============
@@ -349,11 +350,12 @@ export function FactuurEditor() {
               if (offerte) {
                 // Waarschuwing bij dubbele facturatie
                 if (offerte.status === 'gefactureerd' || offerte.geconverteerd_naar_factuur_id) {
-                  const doorgaan = window.confirm(
-                    `Let op: offerte ${offerte.nummer} is al eerder gefactureerd` +
+                  const doorgaan = await confirm({
+                    message: `Let op: offerte ${offerte.nummer} is al eerder gefactureerd` +
                     (offerte.geconverteerd_naar_factuur_op ? ` op ${new Date(offerte.geconverteerd_naar_factuur_op).toLocaleDateString('nl-NL')}` : '') +
-                    '.\n\nWil je toch een nieuwe factuur aanmaken?'
-                  )
+                    '.\n\nWil je toch een nieuwe factuur aanmaken?',
+                    confirmLabel: 'Doorgaan'
+                  })
                   if (!doorgaan) {
                     navigate('/facturen')
                     return

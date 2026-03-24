@@ -1,18 +1,8 @@
-import { useEffect } from 'react'
-
 /**
- * Shows a browser warning when the user tries to close/navigate away
- * with unsaved changes. Pass `true` when the form has been modified.
+ * Previously showed a native browser `beforeunload` warning.
+ * Now a no-op — unsaved-change protection is handled by the
+ * tab dirty-state system and the in-app ConfirmDialog.
  */
-export function useUnsavedWarning(isDirty: boolean) {
-  useEffect(() => {
-    if (!isDirty) return
-
-    const handler = (e: BeforeUnloadEvent) => {
-      e.preventDefault()
-    }
-
-    window.addEventListener('beforeunload', handler)
-    return () => window.removeEventListener('beforeunload', handler)
-  }, [isDirty])
+export function useUnsavedWarning(_isDirty: boolean) {
+  // intentionally empty – kept for backwards compatibility
 }

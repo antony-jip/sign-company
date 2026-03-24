@@ -12,6 +12,7 @@ import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { AppLayout } from '@/components/layouts/AppLayout'
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
 import { CommandPalette } from '@/components/shared/CommandPalette'
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { useDataInit } from '@/hooks/useDataInit'
 import { useParams } from 'react-router-dom'
 
@@ -287,6 +288,7 @@ function App() {
                           },
                         }}
                       />
+                      <ConfirmDialog />
                       <AppContent />
                     </ErrorBoundary>
                   </TabsProvider>

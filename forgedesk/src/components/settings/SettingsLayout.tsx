@@ -82,6 +82,7 @@ import { WIDGET_REGISTRY } from '@/components/dashboard/FORGEdeskDashboard'
 import { HuisstijlTab } from './HuisstijlTab'
 import { CalculatieTab } from './CalculatieTab'
 import { ForgieTab } from './ForgieTab'
+import { confirm } from '@/components/shared/ConfirmDialog'
 import { PortaalTab } from './PortaalTab'
 import { SidebarTab } from './SidebarTab'
 import { TeamledenTab } from './TeamledenTab'
@@ -775,7 +776,7 @@ function DemoDataSection() {
 
   const handleDelete = async () => {
     if (!user?.id || !supabase) return
-    if (!window.confirm('Weet je zeker dat je alle voorbeelddata wilt verwijderen? Dit kan niet ongedaan worden.')) return
+    if (!await confirm({ message: 'Weet je zeker dat je alle voorbeelddata wilt verwijderen? Dit kan niet ongedaan worden.', variant: 'destructive', confirmLabel: 'Verwijderen' })) return
 
     setIsDeleting(true)
     try {

@@ -114,6 +114,7 @@ import { getSpectrumPercentage } from '@/utils/spectrumUtils'
 import { getFase } from '@/utils/projectFases'
 import { ProjectKaart } from './cockpit/ProjectKaart'
 import { PortaalCompactCard } from './cockpit/PortaalSidebarCard'
+import { confirm } from '@/components/shared/ConfirmDialog'
 import { TaskChecklistView } from './cockpit/TaskChecklistView'
 import { BriefingCard } from './cockpit/BriefingCard'
 import { TakenOfferteGrid } from './cockpit/TakenOfferteGrid'
@@ -1101,9 +1102,10 @@ export function ProjectDetail() {
                         {wb.status === 'concept' ? 'Concept' : wb.status === 'definitief' ? 'Definitief' : wb.status === 'afgerond' ? 'Afgerond' : wb.status}
                       </span>
                       <button
-                        onClick={(e) => {
+                        onClick={async (e) => {
                           e.stopPropagation()
-                          if (window.confirm(`Werkbon ${wb.werkbon_nummer} verwijderen?`)) {
+                          const confirmed = await confirm({ message: `Werkbon ${wb.werkbon_nummer} verwijderen?`, variant: 'destructive', confirmLabel: 'Verwijderen' })
+                          if (confirmed) {
                             deleteWerkbon(wb.id)
                               .then(() => {
                                 setProjectWerkbonnen(prev => prev.filter(w => w.id !== wb.id))

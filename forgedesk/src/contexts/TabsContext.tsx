@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { confirm } from '@/components/shared/ConfirmDialog'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -124,6 +125,13 @@ export function TabsProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate()
   const location = useLocation()
 
+  // Keep a ref so async callbacks can read current tabs without stale closures
+  const tabsRef = useRef(tabs)
+  useEffect(() => { tabsRef.current = tabs }, [tabs])
+
+  const activeTabIdRef = useRef(activeTabId)
+  useEffect(() => { activeTabIdRef.current = activeTabId }, [activeTabId])
+
   // Ref to prevent infinite loops between location change and navigate
   const isNavigatingRef = useRef(false)
   const isSwitchingTabRef = useRef(false)
@@ -196,84 +204,92 @@ export function TabsProvider({ children }: { children: ReactNode }) {
 
   // ── Close tab ──────────────────────────────────────────────────────
   const closeTab = useCallback(
-    (id: string) => {
-      setTabs(prev => {
-        const idx = prev.findIndex((t: AppTab) => t.id === id)
-        if (idx === -1) return prev
+    async (id: string) => {
+      const prev = tabsRef.current
+      const idx = prev.findIndex((t: AppTab) => t.id === id)
+      if (idx === -1) return
 
-        const tab = prev[idx]
-        if (tab.isDirty) {
-          const confirmed = window.confirm(
-            'Er zijn onopgeslagen wijzigingen. Weet je zeker dat je dit tabblad wilt sluiten?'
-          )
-          if (!confirmed) return prev
-        }
+      const tab = prev[idx]
+      if (tab.isDirty) {
+        const confirmed = await confirm({
+          title: 'Onopgeslagen wijzigingen',
+          message: 'Er zijn onopgeslagen wijzigingen. Weet je zeker dat je dit tabblad wilt sluiten?',
+          confirmLabel: 'Sluiten',
+          variant: 'destructive',
+        })
+        if (!confirmed) return
+      }
 
-        const next = prev.filter((t: AppTab) => t.id !== id)
+      const next = tabsRef.current.filter((t: AppTab) => t.id !== id)
 
-        // Never go to zero tabs — create a fresh one
-        if (next.length === 0) {
-          const fresh: AppTab = { id: nextTabId(), path: '/', label: 'Dashboard', isDirty: false }
-          const result = [fresh]
-          saveTabs(result)
-          setActiveTabId(fresh.id)
-          isSwitchingTabRef.current = true
-          navigate('/')
-          return result
-        }
+      // Never go to zero tabs — create a fresh one
+      if (next.length === 0) {
+        const fresh: AppTab = { id: nextTabId(), path: '/', label: 'Dashboard', isDirty: false }
+        const result = [fresh]
+        saveTabs(result)
+        setActiveTabId(fresh.id)
+        isSwitchingTabRef.current = true
+        navigate('/')
+        setTabs(result)
+        return
+      }
 
-        saveTabs(next)
+      saveTabs(next)
 
-        // If we closed the active tab, activate an adjacent one
-        if (activeTabId === id) {
-          const newIdx = Math.min(idx, next.length - 1)
-          const newActive = next[newIdx]
-          setActiveTabId(newActive.id)
-          isSwitchingTabRef.current = true
-          navigate(newActive.path)
-        }
+      // If we closed the active tab, activate an adjacent one
+      if (activeTabIdRef.current === id) {
+        const currentIdx = tabsRef.current.findIndex((t: AppTab) => t.id === id)
+        const newIdx = Math.min(currentIdx, next.length - 1)
+        const newActive = next[newIdx]
+        setActiveTabId(newActive.id)
+        isSwitchingTabRef.current = true
+        navigate(newActive.path)
+      }
 
-        return next
-      })
+      setTabs(next)
     },
-    [activeTabId, navigate]
+    [navigate]
   )
 
   const closeOtherTabs = useCallback(
-    (id: string) => {
-      setTabs(prev => {
-        const hasDirty = prev.some((t: AppTab) => t.id !== id && t.isDirty)
-        if (hasDirty) {
-          const confirmed = window.confirm(
-            'Sommige tabbladen hebben onopgeslagen wijzigingen. Toch sluiten?'
-          )
-          if (!confirmed) return prev
-        }
-        const next = prev.filter((t: AppTab) => t.id === id)
-        saveTabs(next)
-        setActiveTabId(id)
-        return next
-      })
+    async (id: string) => {
+      const prev = tabsRef.current
+      const hasDirty = prev.some((t: AppTab) => t.id !== id && t.isDirty)
+      if (hasDirty) {
+        const confirmed = await confirm({
+          title: 'Onopgeslagen wijzigingen',
+          message: 'Sommige tabbladen hebben onopgeslagen wijzigingen. Toch sluiten?',
+          confirmLabel: 'Sluiten',
+          variant: 'destructive',
+        })
+        if (!confirmed) return
+      }
+      const next = tabsRef.current.filter((t: AppTab) => t.id === id)
+      saveTabs(next)
+      setActiveTabId(id)
+      setTabs(next)
     },
     []
   )
 
-  const closeAllTabs = useCallback(() => {
-    setTabs(prev => {
-      const hasDirty = prev.some((t: AppTab) => t.isDirty)
-      if (hasDirty) {
-        const confirmed = window.confirm(
-          'Er zijn onopgeslagen wijzigingen. Weet je zeker dat je alle tabbladen wilt sluiten?'
-        )
-        if (!confirmed) return prev
-      }
-      const fresh: AppTab = { id: nextTabId(), path: '/', label: 'Dashboard', isDirty: false }
-      saveTabs([fresh])
-      setActiveTabId(fresh.id)
-      isSwitchingTabRef.current = true
-      navigate('/')
-      return [fresh]
-    })
+  const closeAllTabs = useCallback(async () => {
+    const prev = tabsRef.current
+    const hasDirty = prev.some((t: AppTab) => t.isDirty)
+    if (hasDirty) {
+      const confirmed = await confirm({
+        title: 'Onopgeslagen wijzigingen',
+        message: 'Er zijn onopgeslagen wijzigingen. Weet je zeker dat je alle tabbladen wilt sluiten?',
+        confirmLabel: 'Alles sluiten',
+        variant: 'destructive',
+      })
+      if (!confirmed) return
+    }
+    const fresh: AppTab = { id: nextTabId(), path: '/', label: 'Dashboard', isDirty: false }
+    saveTabs([fresh])
+    setActiveTabId(fresh.id)
+    isSwitchingTabRef.current = true
+    navigate('/')
+    setTabs([fresh])
   }, [navigate])
 
   // ── Switch to existing tab ─────────────────────────────────────────

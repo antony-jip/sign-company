@@ -56,6 +56,7 @@ import { toast } from 'sonner'
 import { cn, formatCurrency } from '@/lib/utils'
 import { round2 } from '@/utils/budgetUtils'
 import { logger } from '../../utils/logger'
+import { confirm } from '@/components/shared/ConfirmDialog'
 
 // ============ STARTER TEMPLATES ============
 // Pre-built calculatie templates for sign companies — installable with 1 click
@@ -682,7 +683,7 @@ function ProductenSection({
   }
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Weet je zeker dat je dit product wilt verwijderen?')) return
+    if (!await confirm({ message: 'Weet je zeker dat je dit product wilt verwijderen?', variant: 'destructive', confirmLabel: 'Verwijderen' })) return
     try {
       await deleteCalculatieProduct(id)
       setProducten((prev) => prev.filter((p) => p.id !== id))
@@ -1131,7 +1132,7 @@ function TemplatesSection({
   }
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Weet je zeker dat je deze template wilt verwijderen?')) return
+    if (!await confirm({ message: 'Weet je zeker dat je deze template wilt verwijderen?', variant: 'destructive', confirmLabel: 'Verwijderen' })) return
     try {
       await deleteCalculatieTemplate(id)
       setTemplates((prev) => prev.filter((t) => t.id !== id))
@@ -1669,7 +1670,7 @@ function OfferteTemplatesSubSection({
   }
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Weet je zeker dat je deze template wilt verwijderen?')) return
+    if (!await confirm({ message: 'Weet je zeker dat je deze template wilt verwijderen?', variant: 'destructive', confirmLabel: 'Verwijderen' })) return
     try {
       await deleteOfferteTemplate(id)
       setOfferteTemplates((prev) => prev.filter((t) => t.id !== id))

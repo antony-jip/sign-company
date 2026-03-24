@@ -45,6 +45,7 @@ import { logger } from '../../utils/logger'
 import { SkeletonTable } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/ui/empty-state'
 import { ModuleHeader } from '@/components/shared/ModuleHeader'
+import { confirm } from '@/components/shared/ConfirmDialog'
 
 type ViewMode = 'grid' | 'list'
 type StatusFilter = 'alle' | 'actief' | 'inactief' | 'prospect'
@@ -185,7 +186,7 @@ export function ClientsLayout() {
   }
 
   async function handleDeleteClient(id: string) {
-    const confirmed = window.confirm('Weet je zeker dat je deze klant wilt verwijderen? Dit kan niet ongedaan worden.')
+    const confirmed = await confirm({ message: 'Weet je zeker dat je deze klant wilt verwijderen? Dit kan niet ongedaan worden.', variant: 'destructive', confirmLabel: 'Verwijderen' })
     if (!confirmed) return
     try {
       await deleteKlant(id)
@@ -216,9 +217,11 @@ export function ClientsLayout() {
 
   async function handleBulkDelete() {
     if (selectedIds.size === 0) return
-    const confirmed = window.confirm(
-      `Weet je zeker dat je ${selectedIds.size} klant${selectedIds.size === 1 ? '' : 'en'} wilt verwijderen? Dit kan niet ongedaan worden.`
-    )
+    const confirmed = await confirm({
+      message: `Weet je zeker dat je ${selectedIds.size} klant${selectedIds.size === 1 ? '' : 'en'} wilt verwijderen? Dit kan niet ongedaan worden.`,
+      variant: 'destructive',
+      confirmLabel: 'Verwijderen'
+    })
     if (!confirmed) return
     const results = await Promise.allSettled([...selectedIds].map((id) => deleteKlant(id)))
     const succeeded = results.filter((r) => r.status === 'fulfilled').length

@@ -45,6 +45,7 @@ import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { getCalculatieProducten, getCalculatieTemplates } from '@/services/supabaseService'
 import type { CalculatieRegel, CalculatieProduct, CalculatieTemplate } from '@/types'
 import { logger } from '../../utils/logger'
+import { confirm } from '@/components/shared/ConfirmDialog'
 
 // ============================================================
 // CALCULATIE MODAL
@@ -189,10 +190,10 @@ export function CalculatieModal({
 
   // ---- Template laden ----
 
-  const laadTemplate = useCallback((template: CalculatieTemplate) => {
+  const laadTemplate = useCallback(async (template: CalculatieTemplate) => {
     // Waarschuw als er al regels zijn
     if (regels.length > 0 && regels.some((r) => r.product_naam.trim())) {
-      const confirmed = window.confirm('Let op: dit vervangt alle huidige calculatie-regels. Doorgaan?')
+      const confirmed = await confirm({ message: 'Let op: dit vervangt alle huidige calculatie-regels. Doorgaan?', confirmLabel: 'Doorgaan' })
       if (!confirmed) return
     }
     // Geef elke regel een nieuw ID zodat er geen conflicten zijn

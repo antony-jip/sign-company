@@ -1085,16 +1085,6 @@ export function QuoteCreation() {
     }
   }, [])
 
-  // Warn user about unsaved changes when closing tab/browser
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (hasUnsavedChangesRef.current) {
-        e.preventDefault()
-      }
-    }
-    window.addEventListener('beforeunload', handleBeforeUnload)
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
-  }, [])
 
   // ── Contactpersoon toevoegen ──
   const handleAddContact = async () => {

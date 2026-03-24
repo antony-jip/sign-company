@@ -9,6 +9,7 @@ import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useDocumentStyle } from '@/hooks/useDocumentStyle'
 import type { Klant, OfferteItem, CalculatieTemplate, CalculatieRegel, Medewerker } from '@/types'
 import { toast } from 'sonner'
+import { confirm } from '@/components/shared/ConfirmDialog'
 import { round2 } from '@/utils/budgetUtils'
 import { Building2, ChevronDown, Plus, X, Send, BookTemplate, Settings, Save, UserCircle, ListTodo, FolderPlus, Calendar, UserPlus, Paperclip, Image } from 'lucide-react'
 
@@ -232,9 +233,9 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
     setRegels(prev => prev.filter(r => r.id !== id))
   }
 
-  const laadTemplate = useCallback((template: CalculatieTemplate) => {
+  const laadTemplate = useCallback(async (template: CalculatieTemplate) => {
     if (regels.length > 0 && regels.some(r => r.omschrijving.trim())) {
-      if (!window.confirm('Dit vervangt alle huidige regels. Doorgaan?')) return
+      if (!await confirm({ message: 'Dit vervangt alle huidige regels. Doorgaan?', confirmLabel: 'Doorgaan' })) return
     }
     const nieuweRegels: QuickRegel[] = template.regels.map((r: CalculatieRegel) => ({
       id: makeId(),
