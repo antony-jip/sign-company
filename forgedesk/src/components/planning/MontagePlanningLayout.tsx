@@ -73,54 +73,13 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const STATUS_CONFIG: Record<
   MontageAfspraak["status"],
-  { label: string; color: string; bgColor: string; borderColor: string }
+  { label: string; text: string; bg: string; border: string; dot: string }
 > = {
-  gepland: {
-    label: "Gepland",
-    color: "text-blue-700",
-    bgColor: "bg-blue-50",
-    borderColor: "border-blue-200",
-  },
-  onderweg: {
-    label: "Onderweg",
-    color: "text-amber-700",
-    bgColor: "bg-amber-50",
-    borderColor: "border-amber-200",
-  },
-  bezig: {
-    label: "Bezig",
-    color: "text-green-700",
-    bgColor: "bg-green-50",
-    borderColor: "border-green-200",
-  },
-  afgerond: {
-    label: "Afgerond",
-    color: "text-emerald-700",
-    bgColor: "bg-emerald-50",
-    borderColor: "border-emerald-200",
-  },
-  uitgesteld: {
-    label: "Uitgesteld",
-    color: "text-red-700",
-    bgColor: "bg-red-50",
-    borderColor: "border-red-200",
-  },
-};
-
-const BADGE_VARIANT_CLASSES: Record<MontageAfspraak["status"], string> = {
-  gepland: "bg-blue-100 text-blue-700 hover:bg-blue-100",
-  onderweg: "bg-amber-100 text-amber-700 hover:bg-amber-100",
-  bezig: "bg-green-100 text-green-700 hover:bg-green-100",
-  afgerond: "bg-emerald-100 text-emerald-700 hover:bg-emerald-100",
-  uitgesteld: "bg-red-100 text-red-700 hover:bg-red-100",
-};
-
-const STATUS_DOT: Record<MontageAfspraak["status"], string> = {
-  gepland: "bg-blue-500",
-  onderweg: "bg-amber-500",
-  bezig: "bg-green-500",
-  afgerond: "bg-emerald-400",
-  uitgesteld: "bg-red-500",
+  gepland: { label: "Gepland", text: "#3A5A9A", bg: "#E8EEF9", border: "#C5D5EA", dot: "#4A7AC7" },
+  onderweg: { label: "Onderweg", text: "#8A6A2A", bg: "#F5F2E8", border: "#E5DCC8", dot: "#C49A30" },
+  bezig: { label: "Bezig", text: "#3A7D52", bg: "#E8F2EC", border: "#C5E0D0", dot: "#4AA366" },
+  afgerond: { label: "Afgerond", text: "#1A535C", bg: "#E2F0F0", border: "#C0DDDD", dot: "#2A8A8A" },
+  uitgesteld: { label: "Uitgesteld", text: "#C03A18", bg: "#FDE8E2", border: "#F0C8BC", dot: "#E04A28" },
 };
 
 const DAG_NAMEN = ["Ma", "Di", "Wo", "Do", "Vr", "Za", "Zo"];
@@ -178,17 +137,17 @@ function getInitials(naam: string): string {
     .slice(0, 2);
 }
 
-const AVATAR_COLORS = [
-  "bg-primary",
-  "bg-accent",
-  "bg-teal-500",
-  "bg-orange-500",
-  "bg-pink-500",
-  "bg-[#4A442D]",
+const DOEN_AVATAR_PALETTE = [
+  { bg: '#E8F2EC', text: '#3A7D52' },
+  { bg: '#E8EEF9', text: '#3A5A9A' },
+  { bg: '#F5F2E8', text: '#8A7A4A' },
+  { bg: '#F0EFEC', text: '#6B6B66' },
+  { bg: '#EDE8F4', text: '#6A5A8A' },
 ];
 
-function getAvatarColor(index: number): string {
-  return AVATAR_COLORS[index % AVATAR_COLORS.length];
+function getAvatarStyle(index: number): { backgroundColor: string; color: string } {
+  const p = DOEN_AVATAR_PALETTE[index % DOEN_AVATAR_PALETTE.length];
+  return { backgroundColor: p.bg, color: p.text };
 }
 
 
@@ -781,7 +740,7 @@ export function MontagePlanningLayout() {
   }
 
   function renderMonteurAvatars(monteurIds: string[], size: "sm" | "md" = "sm") {
-    const sizeClasses = size === "sm" ? "h-6 w-6 text-2xs" : "h-8 w-8 text-xs";
+    const sizeClasses = size === "sm" ? "h-6 w-6 text-[10px]" : "h-7 w-7 text-[11px]";
     return (
       <div className="flex -space-x-1.5">
         {monteurIds.map((id, idx) => {
@@ -790,11 +749,8 @@ export function MontagePlanningLayout() {
           return (
             <div
               key={id}
-              className={cn(
-                sizeClasses,
-                "rounded-full flex items-center justify-center text-white font-medium ring-2 ring-white",
-                getAvatarColor(idx)
-              )}
+              className={cn(sizeClasses, "rounded-lg flex items-center justify-center font-bold ring-2 ring-white")}
+              style={getAvatarStyle(idx)}
               title={naam}
             >
               {getInitials(naam)}
@@ -806,29 +762,23 @@ export function MontagePlanningLayout() {
   }
 
   function renderStatusBadge(status: MontageAfspraak["status"]) {
-    const config = STATUS_CONFIG[status];
+    const cfg = STATUS_CONFIG[status];
     return (
-      <Badge
-        variant="secondary"
-        className={cn("text-xs font-medium", BADGE_VARIANT_CLASSES[status])}
+      <span
+        className="text-[13px] font-semibold px-2.5 py-1 rounded-lg inline-flex items-center gap-1.5"
+        style={{ backgroundColor: cfg.bg, color: cfg.text }}
       >
-        {config.label}
-      </Badge>
+        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: cfg.dot }} />
+        {cfg.label}<span className="text-[#F15025]">.</span>
+      </span>
     );
   }
 
-  // ── Card with colored left border (like screenshot) ──
+  // ── Card with colored left border — DOEN style ──
   function renderMontageCard(afspraak: MontageAfspraak) {
     const hasConflict = conflictAfspraakIds.has(afspraak.id);
-    const borderColor = {
-      gepland: "border-l-blue-500",
-      onderweg: "border-l-amber-500",
-      bezig: "border-l-green-500",
-      afgerond: "border-l-emerald-400",
-      uitgesteld: "border-l-red-500",
-    }[afspraak.status];
+    const cfg = STATUS_CONFIG[afspraak.status];
 
-    // Count done items (placeholder: 0/0 like screenshot shows)
     return (
       <div
         key={afspraak.id}
@@ -840,67 +790,67 @@ export function MontagePlanningLayout() {
         }}
         onDragEnd={() => { setDraggingAfspraakId(null); setDragOverDate(null); }}
         className={cn(
-          "bg-white rounded-md border border-l-[3px] p-3 mb-2 cursor-grab active:cursor-grabbing transition-shadow hover:shadow-md",
-          borderColor,
-          hasConflict && "ring-1 ring-red-300",
-          draggingAfspraakId === afspraak.id && "opacity-50 ring-2 ring-primary"
+          "bg-white rounded-xl border border-[#F0EFEC] border-l-[3px] p-3 mb-2 cursor-grab active:cursor-grabbing transition-all hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] group/card",
+          hasConflict && "ring-1 ring-[#F0C8BC]",
+          draggingAfspraakId === afspraak.id && "opacity-50 ring-2 ring-[#1A535C]/30"
         )}
+        style={{ borderLeftColor: cfg.dot }}
         onClick={() => openEditDialog(afspraak)}
       >
-        <div className="flex items-start gap-2.5">
-          {/* Left: status counts */}
-          <div className="flex flex-col items-center text-[11px] text-muted-foreground pt-0.5 shrink-0 min-w-[16px]">
-            <span>0</span>
-            <span>0</span>
-            {hasConflict && <AlertTriangle className="h-3 w-3 text-red-500 mt-1" />}
+        <div className="min-w-0">
+          <div className="flex items-start justify-between gap-1">
+            <div className="text-[13px] font-semibold text-[#1A1A1A] leading-tight truncate">{afspraak.titel}</div>
+            {hasConflict && <AlertTriangle className="h-3 w-3 text-[#C03A18] shrink-0 mt-0.5" />}
           </div>
-
-          {/* Right: content */}
-          <div className="min-w-0 flex-1">
-            <div className="font-semibold text-sm leading-tight truncate">{afspraak.titel}</div>
-            {afspraak.klant_naam && (
-              <div className="text-xs text-muted-foreground mt-0.5 truncate">{afspraak.klant_naam}</div>
-            )}
-            {afspraak.beschrijving && (
-              <div className="text-xs text-muted-foreground mt-0.5 truncate">{afspraak.beschrijving}</div>
-            )}
-            {/* Time badge */}
-            {afspraak.start_tijd && (
-              <div className="mt-1.5">
-                <span className="inline-flex items-center gap-1 text-[11px] bg-amber-100 text-amber-800 rounded px-1.5 py-0.5 font-mono">
-                  <Clock className="h-2.5 w-2.5" />
-                  {afspraak.start_tijd} - {afspraak.eind_tijd}
-                </span>
-              </div>
-            )}
-            {/* Location */}
-            {afspraak.locatie && (
-              <a
-                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(afspraak.locatie)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                className="flex items-center gap-1 text-[11px] text-primary hover:underline mt-1 truncate"
-              >
-                <MapPin className="h-2.5 w-2.5 shrink-0" />
-                <span className="truncate">{afspraak.locatie}</span>
-              </a>
-            )}
-            {/* Werkbon — altijd zichtbaar als bijlage, opent in nieuw tabblad */}
-            {afspraak.werkbon_id && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  window.open(`/werkbonnen/${afspraak.werkbon_id}`, "_blank");
-                }}
-                className="flex items-center gap-1.5 w-full text-xs bg-[#FDF2F0] text-[#943520] hover:bg-[#FADED8] rounded px-2 py-1.5 mt-1.5 font-medium transition-colors"
-              >
-                <ClipboardCheck className="h-3.5 w-3.5 shrink-0" />
-                <span className="font-mono">{afspraak.werkbon_nummer || "Werkbon"}</span>
-                <Eye className="h-3 w-3 shrink-0 ml-auto opacity-50" />
-              </button>
-            )}
-          </div>
+          {afspraak.klant_naam && (
+            <div className="text-[12px] text-[#9B9B95] mt-0.5 truncate">{afspraak.klant_naam}</div>
+          )}
+          {afspraak.beschrijving && (
+            <div className="text-[12px] text-[#B0ADA8] mt-0.5 truncate">{afspraak.beschrijving}</div>
+          )}
+          {/* Time badge */}
+          {afspraak.start_tijd && (
+            <div className="mt-1.5">
+              <span className="inline-flex items-center gap-1 text-[11px] rounded-md px-1.5 py-0.5 font-mono tabular-nums" style={{ backgroundColor: cfg.bg, color: cfg.text }}>
+                <Clock className="h-2.5 w-2.5" />
+                {afspraak.start_tijd} – {afspraak.eind_tijd}
+              </span>
+            </div>
+          )}
+          {/* Location */}
+          {afspraak.locatie && (
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(afspraak.locatie)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="flex items-center gap-1 text-[11px] text-[#1A535C] hover:underline mt-1 truncate"
+            >
+              <MapPin className="h-2.5 w-2.5 shrink-0" />
+              <span className="truncate">{afspraak.locatie}</span>
+            </a>
+          )}
+          {/* Monteur avatars */}
+          {afspraak.monteurs.length > 0 && (
+            <div className="mt-1.5">
+              {renderMonteurAvatars(afspraak.monteurs)}
+            </div>
+          )}
+          {/* Werkbon */}
+          {afspraak.werkbon_id && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                window.open(`/werkbonnen/${afspraak.werkbon_id}`, "_blank");
+              }}
+              className="flex items-center gap-1.5 w-full text-[11px] rounded-lg px-2 py-1.5 mt-1.5 font-medium transition-colors"
+              style={{ backgroundColor: '#FDE8E2', color: '#C03A18' }}
+            >
+              <ClipboardCheck className="h-3.5 w-3.5 shrink-0" />
+              <span className="font-mono">{afspraak.werkbon_nummer || "Werkbon"}</span>
+              <Eye className="h-3 w-3 shrink-0 ml-auto opacity-50" />
+            </button>
+          )}
         </div>
       </div>
     );
@@ -912,11 +862,11 @@ export function MontagePlanningLayout() {
     return (
       <div className="flex flex-col items-center gap-0.5 py-3 px-2">
         <span className="text-2xl leading-none">{w.emoji}</span>
-        <div className="text-[11px] text-muted-foreground space-y-0 text-center">
+        <div className="text-[11px] text-[#9B9B95] space-y-0 text-center">
           <div>Min: {w.minTemp}°</div>
           <div>Max: {w.maxTemp}°</div>
           {w.precipitationProb > 0 && (
-            <div className={cn(w.precipitationProb > 50 ? "text-blue-600 font-semibold" : "")}>
+            <div className={cn(w.precipitationProb > 50 ? "text-[#3A5A9A] font-semibold" : "")}>
               Regen: {w.precipitationProb}%
             </div>
           )}
@@ -940,54 +890,55 @@ export function MontagePlanningLayout() {
     return (
       <div className="flex-1 min-w-0">
         {/* Header: member name + week nav */}
-        <div className="flex items-center justify-between px-4 py-3 border-b bg-white">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-[#F0EFEC] bg-white">
           <div className="flex items-center gap-3">
-            <User className="h-5 w-5 text-muted-foreground" />
-            <span className="text-base font-semibold">
+            <User className="h-5 w-5 text-[#9B9B95]" />
+            <span className="text-[15px] font-semibold text-[#1A1A1A]">
               {selectedName || "Overzicht"}
             </span>
             <div className="flex items-center gap-1 ml-4">
-              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigateWeek(-1)}>
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
+              <button className="p-1.5 rounded-lg hover:bg-[#F0EFEC] transition-all" onClick={() => navigateWeek(-1)}>
+                <ChevronLeft className="h-4 w-4 text-[#6B6B66]" />
+              </button>
               <button
                 onClick={goToCurrentWeek}
-                className="text-sm font-semibold px-2 py-1 rounded hover:bg-muted transition-colors text-primary"
+                className="text-[13px] font-bold px-3 py-1 rounded-lg hover:bg-[#1A535C]/[0.07] transition-all text-[#1A535C] font-mono tabular-nums"
               >
-                Week: {weekNumber}
+                Week {weekNumber}
               </button>
-              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigateWeek(1)}>
-                <ChevronRight className="h-4 w-4" />
-              </Button>
+              <button className="p-1.5 rounded-lg hover:bg-[#F0EFEC] transition-all" onClick={() => navigateWeek(1)}>
+                <ChevronRight className="h-4 w-4 text-[#6B6B66]" />
+              </button>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={printDagplanning} className="h-8 text-xs hidden sm:flex">
-              <Printer className="h-3.5 w-3.5 mr-1" />
+            <button onClick={printDagplanning} className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium text-[#6B6B66] hover:bg-[#F0EFEC] transition-all">
+              <Printer className="h-3.5 w-3.5" />
               Print
-            </Button>
-            <Button onClick={openNewDialog} size="sm" className="h-8">
-              <Plus className="h-3.5 w-3.5 mr-1" />
+            </button>
+            <button
+              onClick={openNewDialog}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-semibold text-white bg-[#F15025] shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35)] hover:-translate-y-[1px] active:translate-y-0 active:shadow-[0_1px_4px_rgba(241,80,37,0.2)] transition-all"
+            >
+              <Plus className="h-3.5 w-3.5" />
               Nieuw
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8"
+            </button>
+            <button
+              className="p-1.5 rounded-lg hover:bg-[#F0EFEC] transition-all"
               onClick={goToCurrentWeek}
               title="Vandaag"
             >
-              <CalendarDays className="h-4 w-4" />
-            </Button>
+              <CalendarDays className="h-4 w-4 text-[#6B6B66]" />
+            </button>
           </div>
         </div>
 
         {/* Weather strip */}
-        <div className="grid grid-cols-5 border-b bg-gray-50/80">
+        <div className="grid grid-cols-5 border-b border-[#F0EFEC] bg-[#F8F7F5]">
           {werkdagen.map((date) => {
             const w = getWeatherForDate(weather, date);
             return (
-              <div key={formatDate(date)} className="border-r last:border-r-0 border-border/40">
+              <div key={formatDate(date)} className="border-r last:border-r-0 border-[#F0EFEC]">
                 {renderWeatherCell(w)}
               </div>
             );
@@ -995,7 +946,7 @@ export function MontagePlanningLayout() {
         </div>
 
         {/* Day column headers */}
-        <div className="grid grid-cols-5 border-b">
+        <div className="grid grid-cols-5 border-b border-[#F0EFEC]">
           {werkdagen.map((date) => {
             const dateStr = formatDate(date);
             const isToday = dateStr === todayStr;
@@ -1007,24 +958,24 @@ export function MontagePlanningLayout() {
               <div
                 key={dateStr}
                 className={cn(
-                  "text-center py-2 border-r last:border-r-0",
-                  isToday ? "bg-primary/5" : "bg-white"
+                  "text-center py-2.5 border-r last:border-r-0 border-[#F0EFEC]",
+                  isToday ? "bg-[#1A535C]/[0.04]" : "bg-white"
                 )}
               >
                 <div className={cn(
-                  "text-sm font-bold",
-                  isToday ? "text-primary" : "text-foreground"
+                  "text-[13px] font-bold",
+                  isToday ? "text-[#1A535C]" : "text-[#1A1A1A]"
                 )}>
                   {DAG_NAMEN_LANG[dayIdx]}
                 </div>
                 <div className={cn(
-                  "text-xs",
-                  isToday ? "text-primary" : "text-muted-foreground"
+                  "text-[12px] font-mono tabular-nums",
+                  isToday ? "text-[#1A535C]" : "text-[#B0ADA8]"
                 )}>
-                  {date.toLocaleDateString("nl-NL", { day: "numeric", month: "long" })}
+                  {date.toLocaleDateString("nl-NL", { day: "numeric", month: "short" })}
                 </div>
-                <div className="text-[11px] text-muted-foreground mt-0.5">
-                  {afgerond} / {dayAfspraken.length}
+                <div className="text-[11px] text-[#B0ADA8] font-mono tabular-nums mt-0.5">
+                  {afgerond}/{dayAfspraken.length}
                 </div>
               </div>
             );
@@ -1044,9 +995,9 @@ export function MontagePlanningLayout() {
               <div
                 key={dateStr}
                 className={cn(
-                  "border-r last:border-r-0 p-2 min-h-[400px]",
-                  isToday ? "bg-primary/[0.02]" : "bg-gray-50/30",
-                  dragOverDate === dateStr && "bg-primary/5 ring-2 ring-primary/30 ring-inset"
+                  "border-r last:border-r-0 border-[#F0EFEC] p-2 min-h-[400px]",
+                  isToday ? "bg-[#1A535C]/[0.02]" : "bg-[#F8F7F5]/50",
+                  dragOverDate === dateStr && "bg-[#1A535C]/[0.06] ring-2 ring-[#1A535C]/20 ring-inset"
                 )}
                 onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; setDragOverDate(dateStr); }}
                 onDragLeave={() => setDragOverDate(null)}
@@ -1058,7 +1009,7 @@ export function MontagePlanningLayout() {
                 }}
               >
                 {dayAfspraken.length === 0 ? (
-                  <div className="flex items-center justify-center h-32 text-muted-foreground/30 text-xs">
+                  <div className="flex items-center justify-center h-32 text-[#B0ADA8]/50 text-xs">
                     Geen montages
                   </div>
                 ) : (
@@ -1500,23 +1451,23 @@ export function MontagePlanningLayout() {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center space-y-3">
-          <div className="animate-spin h-8 w-8 border-4 border-[#7EB5A6] border-t-transparent rounded-full mx-auto" />
-          <p className="text-muted-foreground">Planning laden...</p>
+          <div className="animate-spin h-8 w-8 border-4 border-[#1A535C] border-t-transparent rounded-full mx-auto" />
+          <p className="text-[#9B9B95]">Planning laden...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-[calc(100vh-64px)] overflow-hidden bg-gray-50">
+    <div className="flex h-[calc(100vh-120px)] overflow-hidden bg-[#F8F7F5]">
       {/* ── Left sidebar: Team ── */}
-      <div className="w-[180px] shrink-0 bg-white border-r flex flex-col">
+      <div className="w-[200px] shrink-0 bg-white border-r border-[#F0EFEC] flex flex-col rounded-tr-2xl">
         {/* Te plannen section */}
         {tePlannenProjecten.length > 0 && (
-          <div className="border-b">
-            <div className="px-3 py-2 flex items-center justify-between">
+          <div className="border-b border-[#F0EFEC]">
+            <div className="px-3 py-2.5 flex items-center justify-between">
               <h2 className="text-[11px] font-bold text-[#F15025] uppercase tracking-wider">Te plannen</h2>
-              <span className="text-[10px] bg-[#F15025]/10 text-[#F15025] font-bold rounded-full px-1.5 py-0.5">
+              <span className="text-[10px] font-bold rounded-md px-1.5 py-0.5" style={{ backgroundColor: '#FDE8E2', color: '#F15025' }}>
                 {tePlannenProjecten.length}
               </span>
             </div>
@@ -1530,11 +1481,11 @@ export function MontagePlanningLayout() {
                     e.dataTransfer.setData("text/plain", `project:${project.id}`);
                   }}
                   onClick={() => openNewDialogFromProject(project)}
-                  className="w-full text-left px-3 py-2 border-l-[3px] border-l-[#F15025] hover:bg-orange-50/60 transition-colors cursor-grab active:cursor-grabbing"
+                  className="w-full text-left px-3 py-2 border-l-[3px] border-l-[#F15025] hover:bg-[#FDE8E2]/40 transition-colors cursor-grab active:cursor-grabbing"
                 >
-                  <div className="text-[13px] font-semibold truncate leading-tight">{project.naam}</div>
+                  <div className="text-[13px] font-semibold truncate leading-tight text-[#1A1A1A]">{project.naam}</div>
                   {project.klant_naam && (
-                    <div className="text-[11px] text-muted-foreground truncate">{project.klant_naam}</div>
+                    <div className="text-[11px] text-[#9B9B95] truncate">{project.klant_naam}</div>
                   )}
                 </button>
               ))}
@@ -1543,20 +1494,20 @@ export function MontagePlanningLayout() {
         )}
 
         {/* Sidebar header */}
-        <div className="px-3 py-2 border-b">
-          <h2 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Team</h2>
+        <div className="px-3 py-2.5 border-b border-[#F0EFEC]">
+          <h2 className="text-[11px] font-semibold text-[#9B9B95] uppercase tracking-widest">Team</h2>
         </div>
 
-        {/* Sidebar items (scrollable for 10+ members) */}
+        {/* Sidebar items */}
         <div className="flex-1 overflow-y-auto">
           {/* Overzicht option */}
           <button
             onClick={() => setSelectedMonteur("alle")}
             className={cn(
-              "w-full text-left px-3 py-2.5 flex items-center gap-2 transition-colors border-l-2 text-sm",
+              "w-full text-left px-3 py-2.5 flex items-center gap-2 transition-all border-l-2 text-sm",
               selectedMonteur === "alle"
-                ? "bg-primary/5 border-l-primary text-primary font-semibold"
-                : "border-l-transparent hover:bg-muted/50 text-muted-foreground"
+                ? "bg-[#1A535C]/[0.05] border-l-[#1A535C] text-[#1A535C] font-semibold"
+                : "border-l-transparent hover:bg-[#F8F7F4] text-[#6B6B66]"
             )}
           >
             <List className="h-4 w-4 shrink-0" />
@@ -1575,29 +1526,27 @@ export function MontagePlanningLayout() {
                 key={monteur.id}
                 onClick={() => setSelectedMonteur(monteur.id)}
                 className={cn(
-                  "w-full text-left px-3 py-2.5 flex items-center gap-2 transition-colors border-l-2",
+                  "w-full text-left px-3 py-2.5 flex items-center gap-2 transition-all border-l-2",
                   isSelected
-                    ? "bg-primary/5 border-l-primary"
-                    : "border-l-transparent hover:bg-muted/50"
+                    ? "bg-[#1A535C]/[0.05] border-l-[#1A535C]"
+                    : "border-l-transparent hover:bg-[#F8F7F4]"
                 )}
               >
                 <div
-                  className={cn(
-                    "h-7 w-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0",
-                    getAvatarColor(idx)
-                  )}
+                  className="h-7 w-7 rounded-lg flex items-center justify-center text-[10px] font-bold shrink-0"
+                  style={getAvatarStyle(idx)}
                 >
                   {getInitials(monteur.naam)}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className={cn(
                     "text-[13px] truncate leading-tight",
-                    isSelected ? "font-semibold text-foreground" : "text-foreground/80"
+                    isSelected ? "font-semibold text-[#1A1A1A]" : "text-[#4A4A46]"
                   )}>
                     {monteur.naam}
                   </div>
                   {todayCount > 0 && (
-                    <div className="text-[10px] text-muted-foreground">{todayCount} vandaag</div>
+                    <div className="text-[10px] text-[#9B9B95]">{todayCount} vandaag</div>
                   )}
                 </div>
               </button>
@@ -1606,7 +1555,7 @@ export function MontagePlanningLayout() {
         </div>
 
         {/* Sidebar footer: stats */}
-        <div className="px-3 py-2.5 border-t bg-muted/20 text-[11px] text-muted-foreground space-y-0.5">
+        <div className="px-3 py-2.5 border-t border-[#F0EFEC] bg-[#F8F7F5] text-[11px] text-[#9B9B95] space-y-0.5">
           <div>{stats.totaalWeek} montages deze week</div>
           <div>{stats.monteursBeschikbaar} beschikbaar vandaag</div>
         </div>
@@ -1616,9 +1565,9 @@ export function MontagePlanningLayout() {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Conflict banner */}
         {conflicts.length > 0 && (
-          <div className="bg-red-50 border-b border-red-200 px-4 py-2 flex items-center gap-2">
-            <AlertTriangle className="h-3.5 w-3.5 text-red-500 shrink-0" />
-            <span className="text-xs text-red-700">
+          <div className="bg-[#FDE8E2] border-b border-[#F0C8BC] px-4 py-2 flex items-center gap-2">
+            <AlertTriangle className="h-3.5 w-3.5 text-[#C03A18] shrink-0" />
+            <span className="text-xs text-[#C03A18]">
               <span className="font-semibold">{conflicts.length} overlap{conflicts.length !== 1 ? "s" : ""}</span>
               {conflicts.slice(0, 2).map((c, idx) => (
                 <span key={idx} className="ml-2">{c.monteurNaam}: {c.afspraak1.titel} / {c.afspraak2.titel}</span>

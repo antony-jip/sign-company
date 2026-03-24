@@ -43,6 +43,27 @@ export function getAvatarRingColor(name: string): string {
   return AVATAR_RING_COLORS[hash % AVATAR_RING_COLORS.length]
 }
 
+// DOEN Design System avatar palette
+const DOEN_AVATAR_PALETTE = [
+  { bg: '#E8F2EC', text: '#3A7D52' },
+  { bg: '#E8EEF9', text: '#3A5A9A' },
+  { bg: '#F5F2E8', text: '#8A7A4A' },
+  { bg: '#F0EFEC', text: '#6B6B66' },
+  { bg: '#EDE8F4', text: '#6A5A8A' },
+]
+
+const avatarStyleCache = new Map<string, { bg: string; text: string }>()
+
+export function getAvatarStyle(name: string): { bg: string; text: string } {
+  const cached = avatarStyleCache.get(name)
+  if (cached) return cached
+  let hash = 0
+  for (let i = 0; i < name.length; i++) hash += name.charCodeAt(i)
+  const style = DOEN_AVATAR_PALETTE[hash % DOEN_AVATAR_PALETTE.length]
+  avatarStyleCache.set(name, style)
+  return style
+}
+
 export function formatShortDate(dateStr: string): string {
   const date = new Date(dateStr)
   const now = new Date()

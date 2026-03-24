@@ -780,7 +780,7 @@ tbody tr:hover {
    SIDEBAR — Doen. vertical navigation
    ================================================================ */
 .doen-sidebar {
-  background: linear-gradient(180deg, #1A535C 0%, #154750 40%, #0F3A42 100%);
+  background: linear-gradient(172deg, #1E5D66 0%, #174D56 30%, #113E46 60%, #0C333A 100%);
   border-right: 0.5px solid rgba(255, 255, 255, 0.06);
   position: relative;
 }
@@ -795,20 +795,33 @@ tbody tr:hover {
   z-index: 0;
   border-radius: inherit;
 }
+/* Subtle warm light from top-left corner */
+.doen-sidebar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 200px;
+  background: radial-gradient(ellipse at 20% 0%, rgba(241, 80, 37, 0.06) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
 
 /* Active pill — frosted glass on dark */
 .doen-sidebar-active-pill {
-  background: rgba(255, 255, 255, 0.10);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 0.5px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.11);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 0.5px solid rgba(255, 255, 255, 0.10);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    0 1px 3px rgba(0, 0, 0, 0.12);
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 2px 8px rgba(0, 0, 0, 0.15),
+    0 0 20px rgba(241, 80, 37, 0.04);
 }
 
 .dark .doen-sidebar {
-  background: linear-gradient(180deg, #143F46 0%, #0F3038 40%, #0A252C 100%);
+  background: linear-gradient(172deg, #153F46 0%, #103038 40%, #0A252C 100%);
   border-right-color: rgba(255, 255, 255, 0.04);
 }
 
@@ -832,19 +845,70 @@ tbody tr:hover {
 
 /* Section label in sidebar (expanded mode) */
 .doen-sidebar-section {
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 1.2px;
-  color: rgba(255, 255, 255, 0.3);
-  padding: 20px 16px 6px;
+  letter-spacing: 1.5px;
+  color: rgba(255, 255, 255, 0.22);
+  padding: 0 20px 8px;
+  position: relative;
+}
+
+/* Sidebar active Flame accent glow */
+.doen-sidebar-flame-accent {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 20px;
+  border-radius: 0 4px 4px 0;
+  background: #F15025;
+  box-shadow: 0 0 12px rgba(241, 80, 37, 0.5), 0 0 4px rgba(241, 80, 37, 0.8);
+}
+
+/* Sidebar nav item hover sweep */
+.doen-sidebar-item-hover {
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+  opacity: 0;
+  background: linear-gradient(90deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
+  transition: opacity 0.25s ease;
+}
+.group\/nav:hover .doen-sidebar-item-hover,
+.group\/rail:hover .doen-sidebar-item-hover {
+  opacity: 1;
+}
+
+/* Active dot pulse */
+@keyframes sidebar-dot-pulse {
+  0%, 100% { box-shadow: 0 0 6px rgba(241, 80, 37, 0.6); }
+  50% { box-shadow: 0 0 10px rgba(241, 80, 37, 0.9), 0 0 3px rgba(241, 80, 37, 1); }
+}
+.doen-sidebar-active-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #F15025;
+  animation: sidebar-dot-pulse 3s ease-in-out infinite;
 }
 
 /* Scrollbar in sidebar — invisible until hover */
 .doen-sidebar nav::-webkit-scrollbar { width: 3px; }
 .doen-sidebar nav::-webkit-scrollbar-track { background: transparent; }
-.doen-sidebar nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
-.doen-sidebar nav::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+.doen-sidebar nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+.doen-sidebar nav::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.18); }
+
+/* User avatar gradient ring animation */
+@keyframes avatar-ring-shift {
+  0%, 100% { border-color: rgba(241, 80, 37, 0.35); }
+  50% { border-color: rgba(126, 200, 208, 0.35); }
+}
+.doen-sidebar-avatar {
+  border: 1.5px solid rgba(241, 80, 37, 0.3);
+  animation: avatar-ring-shift 6s ease-in-out infinite;
+}
 
 /* ================================================================
    CARD SYSTEM — Premium layered depth with inner light

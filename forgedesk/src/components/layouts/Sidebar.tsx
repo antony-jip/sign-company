@@ -5,7 +5,7 @@ import {
   Mail, Calendar, Settings, ChevronLeft,
   ChevronRight, LogOut, Menu, X, CheckCircle,
   Receipt, ClipboardCheck, Globe, Upload,
-  Moon, Sun, CreditCard, PiggyBank,
+  Moon, Sun, CreditCard, PiggyBank, PanelTop,
   LayoutDashboard,
   type LucideIcon
 } from 'lucide-react'
@@ -61,38 +61,19 @@ const NAV_GROUPS: NavGroup[] = [
   { section: 'BEHEER', items: BEHEER_ITEMS },
 ]
 
-// Flat list for rail mode (all items in order, no Dashboard)
+// Flat list for rail mode
 const ALL_NAV_ITEMS: NavItem[] = [...WERK_ITEMS, ...PLANNING_ITEMS, ...COMMUNICATIE_ITEMS, ...BEHEER_ITEMS, IMPORTEREN_ITEM]
 
-// Light background colors per module for active/badge states
-const MODULE_LIGHT: Record<string, string> = {
-  '#1A535C': '#E2F0F0',
-  '#F15025': '#FDE8E2',
-  '#2D6B48': '#E4F0EA',
-  '#3A6B8C': '#E5ECF6',
-  '#C44830': '#FAE5E0',
-  '#9A5A48': '#F2E8E5',
-  '#5A5A55': '#EEEEED',
-  '#6A5A8A': '#EEE8F5',
-}
-
-const MODULE_TEXT: Record<string, string> = {
-  '#F15025': '#C03A18',
-  '#2D6B48': '#2D6B48',
-  '#5A5A55': '#4A4A45',
-  '#6A5A8A': '#5A4A78',
-}
-
-// Bright icon tints for dark sidebar — every module gets a vibrant, readable variant
+// Bright icon tints for dark sidebar
 const ICON_BRIGHT: Record<string, string> = {
-  '#1A535C': '#7EC8D0', // Petrol → bright teal
-  '#F15025': '#FF8A6A', // Flame → bright coral
-  '#2D6B48': '#6CC98A', // Green → bright mint
-  '#3A6B8C': '#7AAED4', // Blue → bright sky
-  '#C44830': '#F0826A', // Werkbonnen → bright salmon
-  '#9A5A48': '#D4927E', // Terracotta → bright warm
-  '#5A5A55': '#A8A8A2', // Grey → bright silver
-  '#6A5A8A': '#A896CC', // Purple → bright lavender
+  '#1A535C': '#7EC8D0',
+  '#F15025': '#FF8A6A',
+  '#2D6B48': '#6CC98A',
+  '#3A6B8C': '#7AAED4',
+  '#C44830': '#F0826A',
+  '#9A5A48': '#D4927E',
+  '#5A5A55': '#A8A8A2',
+  '#6A5A8A': '#A896CC',
 }
 
 export function Sidebar() {
@@ -107,7 +88,6 @@ export function Sidebar() {
   const sidebarRef = useRef<HTMLDivElement>(null)
   const userPopoverRef = useRef<HTMLDivElement>(null)
 
-  // Filter helpers
   const isItemVisible = useMemo(() => {
     const sidebarItems = settings?.sidebar_items
     if (!Array.isArray(sidebarItems) || sidebarItems.length === 0) return () => true
@@ -123,10 +103,8 @@ export function Sidebar() {
       .filter(g => g.items.length > 0)
   }, [isItemVisible])
 
-  // Close mobile on navigate
   useEffect(() => { setMobileOpen(false) }, [location.pathname])
 
-  // Close mobile on outside click / escape
   useEffect(() => {
     if (!mobileOpen) return
     const handleClick = (e: MouseEvent) => {
@@ -138,7 +116,6 @@ export function Sidebar() {
     return () => { document.removeEventListener('mousedown', handleClick); document.removeEventListener('keydown', handleEscape) }
   }, [mobileOpen])
 
-  // Close user popover on outside click
   useEffect(() => {
     if (!userPopoverOpen) return
     const handleClick = (e: MouseEvent) => {
@@ -168,37 +145,33 @@ export function Sidebar() {
       <NavLink
         key={item.path}
         to={item.path}
-        className="relative flex flex-col items-center justify-center w-full py-2 gap-0.5 group/rail"
+        className="relative flex flex-col items-center justify-center w-full py-2.5 gap-1 group/rail"
       >
-        {/* Active pill background */}
-        <div
-          className={cn(
-            'absolute inset-x-2 inset-y-0 rounded-[10px] transition-all duration-200',
-            active
-              ? 'doen-sidebar-active-pill opacity-100'
-              : 'opacity-0 group-hover/rail:opacity-100 group-hover/rail:bg-white/[0.06]',
-          )}
-        />
+        {/* Hover bg */}
+        <div className="doen-sidebar-item-hover" style={{ borderRadius: '12px', insetInline: '8px' }} />
 
-        {/* Flame left accent for active */}
         {active && (
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full" style={{ backgroundColor: '#F15025' }} />
+          <div className="absolute inset-x-[8px] inset-y-0.5 rounded-[12px] doen-sidebar-active-pill" />
         )}
 
-        {/* Icon */}
+        {active && <div className="doen-sidebar-flame-accent" />}
+
         <div className="relative z-10">
           <Icon
-            className={cn('w-[20px] h-[20px] transition-all duration-200', active && 'drop-shadow-[0_0_6px_rgba(255,255,255,0.3)]')}
+            className={cn(
+              'w-[22px] h-[22px] transition-all duration-300 ease-out',
+              active && 'drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]',
+              !active && 'group-hover/rail:scale-110',
+            )}
             style={{ color: iconColor }}
-            strokeWidth={active ? 2.2 : 1.7}
+            strokeWidth={active ? 2 : 1.6}
           />
         </div>
 
-        {/* Label */}
         <span
           className={cn(
-            'relative z-10 text-center leading-tight transition-all duration-200',
-            active ? 'text-white font-semibold' : 'text-white/50 font-medium group-hover/rail:text-white/80',
+            'relative z-10 text-center leading-tight transition-all duration-300',
+            active ? 'text-white font-semibold' : 'text-white/40 font-medium group-hover/rail:text-white/75',
           )}
           style={{ fontSize: '9px' }}
         >
@@ -210,11 +183,11 @@ export function Sidebar() {
 
   // ── Rail divider ──
   const railDivider = (key: string) => (
-    <div key={key} className="w-8 mx-auto my-1.5" style={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)' }} />
+    <div key={key} className="w-6 mx-auto my-2.5" style={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.07), transparent)' }} />
   )
 
   // ── Expanded item ──
-  const renderExpandedItem = (item: NavItem) => {
+  const renderExpandedItem = (item: NavItem, isBottom = false) => {
     const active = isActivePath(item.path)
     const Icon = item.icon
     const iconColor = active ? '#FFFFFF' : brightIcon(item.color)
@@ -223,48 +196,52 @@ export function Sidebar() {
       <NavLink
         key={item.path}
         to={item.path}
-        className="relative flex items-center gap-2.5 py-[7px] px-2.5 mx-1 rounded-[10px] text-[13px] group/nav"
+        className={cn(
+          'relative flex items-center gap-3.5 py-[10px] px-4 mx-2 rounded-[12px] group/nav',
+          isBottom ? 'text-[13px]' : 'text-[14px]',
+        )}
       >
-        {/* Background layer */}
-        <div
-          className={cn(
-            'absolute inset-0 rounded-[10px] transition-all duration-200',
-            active
-              ? 'doen-sidebar-active-pill opacity-100'
-              : 'opacity-0 group-hover/nav:opacity-100 group-hover/nav:bg-white/[0.06]',
-          )}
-        />
+        {/* Hover sweep background */}
+        <div className="doen-sidebar-item-hover" />
 
-        {/* Flame left accent for active */}
+        {/* Active pill */}
         {active && (
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full" style={{ backgroundColor: '#F15025' }} />
+          <div className="absolute inset-0 rounded-[12px] doen-sidebar-active-pill" />
         )}
 
-        {/* Icon container */}
+        {/* Flame left accent */}
+        {active && <div className="doen-sidebar-flame-accent" style={{ left: '-8px' }} />}
+
+        {/* Icon — rounded container with subtle bg */}
         <div
           className={cn(
-            'relative z-10 w-7 h-7 rounded-[8px] flex items-center justify-center flex-shrink-0 transition-all duration-200',
-            active ? 'bg-white/20 shadow-[0_0_12px_rgba(255,255,255,0.1)]' : 'bg-white/[0.07] group-hover/nav:bg-white/[0.12]',
+            'relative z-10 w-8 h-8 rounded-[9px] flex items-center justify-center flex-shrink-0 transition-all duration-300',
+            active
+              ? 'bg-white/[0.15] shadow-[0_0_12px_rgba(255,255,255,0.06)]'
+              : 'bg-white/[0.06] group-hover/nav:bg-white/[0.10]',
           )}
         >
           <Icon
-            className={cn('w-[15px] h-[15px] transition-all duration-200', active && 'drop-shadow-[0_0_4px_rgba(255,255,255,0.4)]')}
+            className={cn(
+              'w-[19px] h-[19px] transition-all duration-300 ease-out',
+              active && 'drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]',
+            )}
             style={{ color: iconColor }}
-            strokeWidth={active ? 2.2 : 1.7}
+            strokeWidth={active ? 2 : 1.6}
           />
         </div>
 
         {/* Label */}
         <span className={cn(
-          'relative z-10 truncate transition-all duration-200',
-          active ? 'text-white font-semibold' : 'text-white/70 font-medium group-hover/nav:text-white/95',
+          'relative z-10 truncate transition-all duration-300 tracking-[-0.01em]',
+          active ? 'text-white font-semibold' : 'text-white/55 font-medium group-hover/nav:text-white/90',
         )}>
           {item.label}
         </span>
 
-        {/* Active glow indicator dot */}
+        {/* Active dot */}
         {active && (
-          <div className="relative z-10 ml-auto w-1.5 h-1.5 rounded-full bg-[#F15025] shadow-[0_0_6px_#F15025]" />
+          <div className="relative z-10 ml-auto doen-sidebar-active-dot" />
         )}
       </NavLink>
     )
@@ -275,29 +252,34 @@ export function Sidebar() {
     const collapsed = forMobile ? false : isCollapsed
 
     return (
-      <>
-        {/* Logo — navigates to dashboard */}
+      <div className="flex flex-col h-full">
+        {/* Logo */}
         <NavLink
           to="/"
           className={cn(
-            'flex items-center flex-shrink-0 transition-all duration-200',
-            collapsed ? 'justify-center h-[56px] px-0' : 'gap-0 h-[56px] px-5',
+            'flex items-center flex-shrink-0 transition-all duration-300 group/logo',
+            collapsed ? 'justify-center h-[68px] px-0' : 'gap-0 h-[68px] px-6',
           )}
         >
           {collapsed ? (
-            <span className="text-[18px] font-extrabold text-white tracking-tight">d<span style={{ color: '#F15025' }}>.</span></span>
+            <span className="text-[22px] font-extrabold text-white tracking-tight transition-transform duration-300 group-hover/logo:scale-105">
+              d<span className="text-[#F15025]" style={{ textShadow: '0 0 12px rgba(241, 80, 37, 0.4)' }}>.</span>
+            </span>
           ) : (
-            <span className="text-[20px] font-extrabold text-white tracking-[-0.03em]">doen<span style={{ color: '#F15025' }}>.</span></span>
+            <span className="text-[24px] font-extrabold text-white tracking-[-0.03em] transition-transform duration-300 group-hover/logo:translate-x-0.5">
+              doen<span className="text-[#F15025]" style={{ textShadow: '0 0 14px rgba(241, 80, 37, 0.5)' }}>.</span>
+            </span>
           )}
         </NavLink>
 
-        {/* Thin separator under logo */}
-        <div className={cn('mx-3 mb-1', collapsed && 'mx-4')} style={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)' }} />
+        {/* Separator */}
+        <div className={cn(collapsed ? 'mx-4' : 'mx-5')}>
+          <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.09) 20%, rgba(255,255,255,0.09) 80%, transparent 100%)' }} />
+        </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto scrollbar-thin py-1">
+        {/* Main navigation — NO scroll, flex-distributed */}
+        <nav className="flex-1 flex flex-col justify-start pt-4 overflow-hidden">
           {collapsed ? (
-            // ── Rail mode ──
             <div className="flex flex-col items-center gap-0">
               {filteredNavItems.filter(i => WERK_ITEMS.some(w => w.path === i.path)).map(renderRailItem)}
               {railDivider('div-1')}
@@ -308,13 +290,12 @@ export function Sidebar() {
               {filteredNavItems.filter(i => BEHEER_ITEMS.some(b => b.path === i.path)).map(renderRailItem)}
             </div>
           ) : (
-            // ── Expanded mode ──
-            <div className="px-1">
-              {filteredGroups.map((group) => (
-                <div key={group.section}>
+            <div className="px-0">
+              {filteredGroups.map((group, gi) => (
+                <div key={group.section} className={gi > 0 ? 'mt-6' : ''}>
                   <div className="doen-sidebar-section">{group.section}</div>
                   <div className="space-y-[2px]">
-                    {group.items.map(renderExpandedItem)}
+                    {group.items.map(item => renderExpandedItem(item))}
                   </div>
                 </div>
               ))}
@@ -322,38 +303,37 @@ export function Sidebar() {
           )}
         </nav>
 
-        {/* Spacer */}
-        <div className="flex-1" />
-
-        {/* Bottom section */}
+        {/* Bottom section — pushed to bottom */}
         <div className={cn(
           'flex-shrink-0',
-          collapsed ? 'py-3 flex flex-col items-center gap-1' : 'py-2 px-1 space-y-[2px]',
+          collapsed ? 'pb-4 pt-2 flex flex-col items-center gap-1' : 'pb-4 pt-2 space-y-[2px]',
         )}>
           {/* Divider */}
-          <div className={cn('mb-2', collapsed ? 'w-8 mx-auto' : 'mx-3')} style={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)' }} />
+          <div className={cn('mb-3', collapsed ? 'w-6 mx-auto' : 'mx-5')}>
+            <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.07) 20%, rgba(255,255,255,0.07) 80%, transparent 100%)' }} />
+          </div>
 
           {/* Importeren */}
-          {collapsed ? renderRailItem(IMPORTEREN_ITEM) : renderExpandedItem(IMPORTEREN_ITEM)}
+          {collapsed ? renderRailItem(IMPORTEREN_ITEM) : renderExpandedItem(IMPORTEREN_ITEM, true)}
           {/* Instellingen */}
-          {collapsed ? renderRailItem(SETTINGS_ITEM) : renderExpandedItem(SETTINGS_ITEM)}
+          {collapsed ? renderRailItem(SETTINGS_ITEM) : renderExpandedItem(SETTINGS_ITEM, true)}
 
-          {/* Collapse toggle (desktop only) */}
+          {/* Collapse toggle */}
           {!forMobile && (
             collapsed ? (
               <button
                 onClick={toggleSidebar}
-                className="w-8 h-7 flex items-center justify-center rounded-lg text-white/30 hover:text-white/70 hover:bg-white/[0.06] transition-all duration-200 mt-1"
+                className="w-9 h-8 flex items-center justify-center rounded-[10px] text-white/20 hover:text-white/55 hover:bg-white/[0.05] transition-all duration-300 mt-2"
               >
-                <ChevronRight className="w-3.5 h-3.5" />
+                <ChevronRight className="w-4 h-4" />
               </button>
             ) : (
               <button
                 onClick={toggleSidebar}
-                className="flex items-center justify-center h-7 px-2.5 mx-1 gap-1.5 rounded-lg text-white/30 hover:text-white/70 hover:bg-white/[0.06] transition-all duration-200 w-auto mt-1"
+                className="flex items-center justify-center h-8 px-4 mx-2 gap-2 rounded-[10px] text-white/20 hover:text-white/55 hover:bg-white/[0.05] transition-all duration-300 w-auto mt-2"
               >
-                <ChevronLeft className="w-3 h-3" />
-                <span className="text-[10px] font-medium">Inklappen</span>
+                <ChevronLeft className="w-3.5 h-3.5" />
+                <span className="text-[11px] font-medium tracking-wide">Inklappen</span>
               </button>
             )
           )}
@@ -364,20 +344,20 @@ export function Sidebar() {
               <button
                 onClick={() => setUserPopoverOpen(!userPopoverOpen)}
                 className={cn(
-                  'flex items-center transition-all duration-200 rounded-[10px] hover:bg-white/[0.06]',
-                  collapsed ? 'w-10 h-10 justify-center' : 'gap-2.5 h-11 px-3 mx-1 w-[calc(100%-8px)]',
+                  'flex items-center transition-all duration-300 rounded-[12px] hover:bg-white/[0.05]',
+                  collapsed ? 'w-11 h-11 justify-center' : 'gap-3 h-[52px] px-4 mx-2 w-[calc(100%-16px)]',
                 )}
               >
                 <div
-                  className="w-[28px] h-[28px] rounded-full flex items-center justify-center flex-shrink-0 ring-[1.5px] ring-white/20"
-                  style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.08))' }}
+                  className="w-[32px] h-[32px] rounded-full flex items-center justify-center flex-shrink-0 doen-sidebar-avatar"
+                  style={{ background: 'linear-gradient(145deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05))' }}
                 >
-                  <span className="text-[10px] font-bold text-white">{userInitial}</span>
+                  <span className="text-[12px] font-bold text-white/90">{userInitial}</span>
                 </div>
                 {!collapsed && (
                   <div className="flex-1 min-w-0 text-left">
-                    <p className="text-white/90 text-[12px] font-medium truncate leading-tight">{userName}</p>
-                    <p className="text-white/40 text-[10px] truncate leading-tight">{user.email}</p>
+                    <p className="text-white/85 text-[13px] font-medium truncate leading-tight">{userName}</p>
+                    <p className="text-white/30 text-[10px] truncate leading-tight mt-0.5">{user.email}</p>
                   </div>
                 )}
               </button>
@@ -385,55 +365,66 @@ export function Sidebar() {
               {/* User popover */}
               {userPopoverOpen && (
                 <div className={cn(
-                  'absolute z-50 w-56 bg-card border border-border/60 rounded-xl shadow-2xl shadow-[rgba(120,90,50,0.10)] overflow-hidden animate-scale-in',
-                  collapsed ? 'left-full bottom-0 ml-3' : 'left-0 bottom-full mb-2',
-                )}>
-                  {/* User info */}
-                  <div className="px-4 py-3 border-b border-border/40">
-                    <p className="text-sm font-semibold text-foreground truncate">{userName}</p>
-                    <p className="text-[11px] text-muted-foreground truncate mt-0.5">{user.email}</p>
+                  'absolute z-50 w-56 overflow-hidden',
+                  collapsed ? 'left-full bottom-0 ml-3' : 'left-2 bottom-full mb-2',
+                )}
+                  style={{
+                    background: 'rgba(15, 58, 66, 0.95)',
+                    backdropFilter: 'blur(20px)',
+                    WebkitBackdropFilter: 'blur(20px)',
+                    border: '0.5px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: '14px',
+                    boxShadow: '0 16px 48px rgba(0, 0, 0, 0.3), 0 0 0 0.5px rgba(255,255,255,0.05)',
+                  }}
+                >
+                  <div className="px-4 py-3.5" style={{ borderBottom: '0.5px solid rgba(255,255,255,0.08)' }}>
+                    <p className="text-[13px] font-semibold text-white/90 truncate">{userName}</p>
+                    <p className="text-[11px] text-white/40 truncate mt-0.5">{user.email}</p>
                   </div>
 
-                  {/* Quick actions */}
-                  <div className="py-1.5">
+                  <div className="py-1">
                     <button
                       onClick={() => { setUserPopoverOpen(false); navigate('/instellingen') }}
-                      className="flex items-center gap-2.5 w-full px-4 py-2 text-[13px] text-foreground/80 hover:bg-muted/40 transition-colors"
+                      className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-white/70 hover:text-white hover:bg-white/[0.06] transition-all duration-200"
                     >
-                      <Settings className="w-3.5 h-3.5 text-muted-foreground" />
+                      <Settings className="w-4 h-4 text-white/40" />
                       Profiel
                     </button>
                     <button
                       onClick={() => { setUserPopoverOpen(false); navigate('/instellingen?tab=abonnement') }}
-                      className="flex items-center gap-2.5 w-full px-4 py-2 text-[13px] text-foreground/80 hover:bg-muted/40 transition-colors"
+                      className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-white/70 hover:text-white hover:bg-white/[0.06] transition-all duration-200"
                     >
-                      <CreditCard className="w-3.5 h-3.5 text-muted-foreground" />
+                      <CreditCard className="w-4 h-4 text-white/40" />
                       Abonnement
                     </button>
                   </div>
 
-                  {/* Appearance & layout */}
-                  <div className="border-t border-border/40 py-1.5">
+                  <div className="py-1" style={{ borderTop: '0.5px solid rgba(255,255,255,0.08)' }}>
                     <button
                       onClick={toggleTheme}
-                      className="flex items-center gap-2.5 w-full px-4 py-2 text-[13px] text-foreground/80 hover:bg-muted/40 transition-colors"
+                      className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-white/70 hover:text-white hover:bg-white/[0.06] transition-all duration-200"
                     >
-                      {theme === 'dark' ? (
-                        <Sun className="w-3.5 h-3.5 text-muted-foreground" />
-                      ) : (
-                        <Moon className="w-3.5 h-3.5 text-muted-foreground" />
-                      )}
+                      {theme === 'dark' ? <Sun className="w-4 h-4 text-white/40" /> : <Moon className="w-4 h-4 text-white/40" />}
                       {theme === 'dark' ? 'Light mode' : 'Dark mode'}
                     </button>
                   </div>
 
-                  {/* Logout */}
-                  <div className="border-t border-border/40 py-1.5">
+                  <div className="py-1" style={{ borderTop: '0.5px solid rgba(255,255,255,0.08)' }}>
+                    <button
+                      onClick={() => { setUserPopoverOpen(false); setLayoutMode('topnav') }}
+                      className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-white/70 hover:text-white hover:bg-white/[0.06] transition-all duration-200"
+                    >
+                      <PanelTop className="w-4 h-4 text-white/40" />
+                      Top navigatie
+                    </button>
+                  </div>
+
+                  <div className="py-1" style={{ borderTop: '0.5px solid rgba(255,255,255,0.08)' }}>
                     <button
                       onClick={() => { setUserPopoverOpen(false); logout() }}
-                      className="flex items-center gap-2.5 w-full px-4 py-2 text-[13px] text-destructive hover:bg-destructive/5 transition-colors"
+                      className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-[#F15025]/80 hover:text-[#F15025] hover:bg-[#F15025]/[0.06] transition-all duration-200"
                     >
-                      <LogOut className="w-3.5 h-3.5" />
+                      <LogOut className="w-4 h-4" />
                       Uitloggen
                     </button>
                   </div>
@@ -442,7 +433,7 @@ export function Sidebar() {
             </div>
           )}
         </div>
-      </>
+      </div>
     )
   }
 
@@ -464,7 +455,7 @@ export function Sidebar() {
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 md:hidden" aria-hidden="true" />
       )}
 
-      {/* Mobile sidebar (always expanded) */}
+      {/* Mobile sidebar */}
       <aside
         ref={sidebarRef}
         className={cn(

@@ -38,11 +38,12 @@ const reminderOptions = [
   { label: 'Over 1 week', value: '1w' },
 ]
 
-const aiAccent = '#B8860B' // warm gold for AI section
+const aiAccent = '#1A535C'
 
 const sectionStyle = {
-  background: 'linear-gradient(135deg, hsl(30 40% 97%) 0%, hsl(28 35% 94%) 100%)',
-  boxShadow: '0 2px 12px rgba(140,100,50,0.08), 0 0 0 1px rgba(140,100,50,0.04)',
+  background: '#FFFFFF',
+  boxShadow: '0 1px 2px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.03)',
+  border: '1px solid rgba(0,0,0,0.03)',
 }
 
 export function EmailContextSidebar({
@@ -147,86 +148,85 @@ export function EmailContextSidebar({
   // ── Compose mode ──
   return (
     <div
-      className="w-[300px] border-l border-[hsl(35,15%,87%)] flex-shrink-0 overflow-y-auto hidden xl:flex flex-col"
-      style={{ background: 'hsl(36 18% 97%)' }}
+      className="w-[300px] border-l border-[#F0EFEC] bg-[#F8F7F5] flex-shrink-0 overflow-y-auto hidden xl:flex flex-col"
     >
       <div className="p-4 space-y-3 flex-1">
 
         {/* ── Daan AI Tools ── */}
-        <div className="rounded-xl border border-white/60 overflow-hidden" style={sectionStyle}>
+        <div className="rounded-2xl overflow-hidden" style={sectionStyle}>
           <div
             className="flex items-center gap-2.5 px-3.5 py-2.5"
-            style={{ background: `${aiAccent}0C`, borderBottom: `1px solid ${aiAccent}15` }}
+            style={{ background: '#1A535C0C', borderBottom: '1px solid #F0EFEC' }}
           >
             <div className="w-1.5 h-1.5 rounded-full" style={{ background: aiAccent }} />
-            <h4 className="text-[12px] font-semibold text-foreground/60">Daan AI</h4>
-            {forgieLoading && <Loader2 className="h-3 w-3 animate-spin text-foreground/30 ml-auto" />}
+            <h4 className="text-[12px] font-semibold text-[#6B6B66]">Daan AI</h4>
+            {forgieLoading && <Loader2 className="h-3 w-3 animate-spin text-[#B0ADA8] ml-auto" />}
           </div>
           <div className="p-2 space-y-0.5">
             <button
               onClick={() => onForgieWrite?.()}
               disabled={forgieLoading}
-              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-[8px] hover:bg-background transition-colors text-left group disabled:opacity-50"
+              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-[8px] hover:bg-[#F0EFEC]/50 transition-colors text-left group disabled:opacity-50"
             >
               <div className="w-7 h-7 rounded-[7px] flex items-center justify-center flex-shrink-0" style={{ background: `${aiAccent}12` }}>
                 <Sparkles className="h-3.5 w-3.5" style={{ color: aiAccent }} />
               </div>
               <div className="min-w-0">
-                <p className="text-[12px] font-medium text-foreground/65 group-hover:text-foreground transition-colors">Schrijf mijn e-mail</p>
-                <p className="text-[10px] text-muted-foreground">Genereer volledige email</p>
+                <p className="text-[12px] font-medium text-[#6B6B66] group-hover:text-[#1A1A1A] transition-colors">Schrijf mijn e-mail</p>
+                <p className="text-[10px] text-[#9B9B95]">Genereer volledige email</p>
               </div>
             </button>
             <button
               onClick={() => onForgieRewrite?.('rewrite-professional', 'Professioneler herschreven')}
               disabled={forgieLoading}
-              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-[8px] hover:bg-background transition-colors text-left group disabled:opacity-50"
+              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-[8px] hover:bg-[#F0EFEC]/50 transition-colors text-left group disabled:opacity-50"
             >
               <div className="w-7 h-7 rounded-[7px] flex items-center justify-center flex-shrink-0" style={{ background: `${aiAccent}12` }}>
                 <Wand2 className="h-3.5 w-3.5" style={{ color: aiAccent }} />
               </div>
               <div className="min-w-0">
-                <p className="text-[12px] font-medium text-foreground/65 group-hover:text-foreground transition-colors">Professioneler</p>
-                <p className="text-[10px] text-muted-foreground">Formele toon</p>
+                <p className="text-[12px] font-medium text-[#6B6B66] group-hover:text-[#1A1A1A] transition-colors">Professioneler</p>
+                <p className="text-[10px] text-[#9B9B95]">Formele toon</p>
               </div>
             </button>
             <button
               onClick={() => onForgieRewrite?.('rewrite-shorter', 'Korter herschreven')}
               disabled={forgieLoading}
-              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-[8px] hover:bg-background transition-colors text-left group disabled:opacity-50"
+              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-[8px] hover:bg-[#F0EFEC]/50 transition-colors text-left group disabled:opacity-50"
             >
               <div className="w-7 h-7 rounded-[7px] flex items-center justify-center flex-shrink-0" style={{ background: `${aiAccent}12` }}>
                 <Minimize2 className="h-3.5 w-3.5" style={{ color: aiAccent }} />
               </div>
               <div className="min-w-0">
-                <p className="text-[12px] font-medium text-foreground/65 group-hover:text-foreground transition-colors">Korter maken</p>
-                <p className="text-[10px] text-muted-foreground">Beknopter formuleren</p>
+                <p className="text-[12px] font-medium text-[#6B6B66] group-hover:text-[#1A1A1A] transition-colors">Korter maken</p>
+                <p className="text-[10px] text-[#9B9B95]">Beknopter formuleren</p>
               </div>
             </button>
             <button
               onClick={() => onForgieRewrite?.('translate-en', 'Vertaald naar Engels')}
               disabled={forgieLoading}
-              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-[8px] hover:bg-background transition-colors text-left group disabled:opacity-50"
+              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-[8px] hover:bg-[#F0EFEC]/50 transition-colors text-left group disabled:opacity-50"
             >
               <div className="w-7 h-7 rounded-[7px] flex items-center justify-center flex-shrink-0" style={{ background: `${aiAccent}12` }}>
                 <Globe className="h-3.5 w-3.5" style={{ color: aiAccent }} />
               </div>
               <div className="min-w-0">
-                <p className="text-[12px] font-medium text-foreground/65 group-hover:text-foreground transition-colors">Vertaal Engels</p>
-                <p className="text-[10px] text-muted-foreground">Translate to English</p>
+                <p className="text-[12px] font-medium text-[#6B6B66] group-hover:text-[#1A1A1A] transition-colors">Vertaal Engels</p>
+                <p className="text-[10px] text-[#9B9B95]">Translate to English</p>
               </div>
             </button>
           </div>
         </div>
 
         {/* ── Opvolg-herinnering ── */}
-        <div className="rounded-xl border border-white/60 overflow-hidden" style={sectionStyle}>
-          <div className="flex items-center gap-2.5 px-4 py-3 border-b border-amber-900/[0.06]">
-            <Bell className="h-3.5 w-3.5 text-amber-700/30" />
-            <h4 className="text-[12px] font-semibold text-foreground/60">Opvolg-herinnering</h4>
+        <div className="rounded-2xl overflow-hidden" style={sectionStyle}>
+          <div className="flex items-center gap-2.5 px-4 py-3 border-b border-[#F0EFEC]">
+            <Bell className="h-3.5 w-3.5 text-[#B0ADA8]" />
+            <h4 className="text-[12px] font-semibold text-[#6B6B66]">Opvolg-herinnering</h4>
             {composeReminder && (
               <button
                 onClick={() => { onComposeReminderChange?.(null); toast('Herinnering verwijderd') }}
-                className="ml-auto text-foreground/25 hover:text-foreground/50 transition-colors"
+                className="ml-auto text-[#B0ADA8] hover:text-[#6B6B66] transition-colors"
                 title="Verwijder herinnering"
               >
                 <BellOff className="h-3 w-3" />
@@ -235,7 +235,7 @@ export function EmailContextSidebar({
           </div>
           <div className="p-2">
             {composeReminder ? (
-              <div className="flex items-center gap-2 px-2.5 py-2 rounded-[8px] bg-mod-taken-light text-mod-taken-text text-[12px]">
+              <div className="flex items-center gap-2 px-2.5 py-2 rounded-[8px] bg-[#1A535C]/10 text-[#1A535C] text-[12px]">
                 <Clock className="h-3.5 w-3.5 flex-shrink-0" />
                 <span>Herinnering: {reminderOptions.find(r => r.value === composeReminder)?.label}</span>
               </div>
@@ -245,7 +245,7 @@ export function EmailContextSidebar({
                   <button
                     key={opt.value}
                     onClick={() => handleSetReminder(opt.value)}
-                    className="px-2 py-1.5 rounded-[6px] text-[11px] text-foreground/50 hover:text-foreground/80 hover:bg-background transition-colors text-center"
+                    className="px-2 py-1.5 rounded-[6px] text-[11px] text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F0EFEC]/50 transition-colors text-center"
                   >
                     {opt.label}
                   </button>
@@ -256,28 +256,28 @@ export function EmailContextSidebar({
         </div>
 
         {/* ── Eerdere emails ── */}
-        <div className="rounded-xl border border-white/60 overflow-hidden" style={sectionStyle}>
-          <div className="flex items-center gap-2.5 px-4 py-3 border-b border-amber-900/[0.06]">
-            <Mail className="h-3.5 w-3.5 text-amber-700/30" />
-            <h4 className="text-[12px] font-semibold text-foreground/60">Eerdere emails</h4>
+        <div className="rounded-2xl overflow-hidden" style={sectionStyle}>
+          <div className="flex items-center gap-2.5 px-4 py-3 border-b border-[#F0EFEC]">
+            <Mail className="h-3.5 w-3.5 text-[#B0ADA8]" />
+            <h4 className="text-[12px] font-semibold text-[#6B6B66]">Eerdere emails</h4>
             {previousEmails.length > 0 && (
-              <span className="ml-auto text-[10px] text-muted-foreground font-mono tabular-nums">{previousEmails.length}</span>
+              <span className="ml-auto text-[10px] text-[#9B9B95] font-mono tabular-nums">{previousEmails.length}</span>
             )}
           </div>
           <div className="p-2">
             {!composeToAddress?.trim() ? (
-              <p className="text-[11px] text-muted-foreground px-2 py-2">Vul een ontvanger in om eerdere emails te zien</p>
+              <p className="text-[11px] text-[#9B9B95] px-2 py-2">Vul een ontvanger in om eerdere emails te zien</p>
             ) : previousEmails.length === 0 ? (
-              <p className="text-[11px] text-muted-foreground px-2 py-2">Geen eerdere emails gevonden</p>
+              <p className="text-[11px] text-[#9B9B95] px-2 py-2">Geen eerdere emails gevonden</p>
             ) : (
               <div className="space-y-0.5">
                 {previousEmails.map(e => (
-                  <div key={e.id} className="px-2.5 py-1.5 rounded-[6px] hover:bg-background transition-colors cursor-default">
+                  <div key={e.id} className="px-2.5 py-1.5 rounded-[6px] hover:bg-[#F0EFEC]/50 transition-colors cursor-default">
                     <div className="flex items-center justify-between gap-2">
-                      <p className="text-[11px] font-medium text-foreground/60 truncate flex-1">{e.onderwerp || '(geen onderwerp)'}</p>
-                      <span className="text-[9px] text-muted-foreground tabular-nums flex-shrink-0">{formatShortDate(e.datum)}</span>
+                      <p className="text-[11px] font-medium text-[#6B6B66] truncate flex-1">{e.onderwerp || '(geen onderwerp)'}</p>
+                      <span className="text-[9px] text-[#9B9B95] tabular-nums flex-shrink-0">{formatShortDate(e.datum)}</span>
                     </div>
-                    <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+                    <p className="text-[10px] text-[#9B9B95] truncate mt-0.5">
                       {e.inhoud?.replace(/<[^>]*>/g, '').slice(0, 60) || '...'}
                     </p>
                   </div>
@@ -288,30 +288,30 @@ export function EmailContextSidebar({
         </div>
 
         {/* ── Koppelen ── */}
-        <div className="rounded-xl border border-white/60 overflow-hidden" style={sectionStyle}>
-          <div className="flex items-center gap-2.5 px-4 py-3 border-b border-amber-900/[0.06]">
-            <Link2 className="h-3.5 w-3.5 text-amber-700/30" />
-            <h4 className="text-[11px] font-semibold text-foreground/60 uppercase tracking-wider">Koppelen</h4>
+        <div className="rounded-2xl overflow-hidden" style={sectionStyle}>
+          <div className="flex items-center gap-2.5 px-4 py-3 border-b border-[#F0EFEC]">
+            <Link2 className="h-3.5 w-3.5 text-[#B0ADA8]" />
+            <h4 className="text-[11px] font-semibold text-[#6B6B66] uppercase tracking-wider">Koppelen</h4>
           </div>
           <div className="p-2 space-y-2">
 
             {/* Klant dropdown */}
             <div className="relative">
-              <label className="text-[10px] text-muted-foreground px-1 mb-0.5 block">Klant</label>
+              <label className="text-[10px] text-[#9B9B95] px-1 mb-0.5 block">Klant</label>
               {selectedKlant ? (
-                <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-[hsl(35,15%,87%)] bg-white/60 text-[12px]">
-                  <Building2 className="h-3.5 w-3.5 text-foreground/40 flex-shrink-0" />
-                  <span className="text-foreground/70 truncate flex-1">{selectedKlant.bedrijfsnaam}</span>
+                <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-[#F0EFEC] bg-white text-[12px]">
+                  <Building2 className="h-3.5 w-3.5 text-[#9B9B95] flex-shrink-0" />
+                  <span className="text-[#6B6B66] truncate flex-1">{selectedKlant.bedrijfsnaam}</span>
                   <button
                     onClick={() => { setSelectedKlant(null); setKlantSearch(''); setShowKlantDropdown(false) }}
-                    className="text-foreground/30 hover:text-foreground/60 transition-colors"
+                    className="text-[#B0ADA8] hover:text-[#6B6B66] transition-colors"
                   >
                     <ChevronDown className="h-3 w-3 rotate-180" />
                   </button>
                 </div>
               ) : (
                 <div className="relative">
-                  <Building2 className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-foreground/30" />
+                  <Building2 className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#B0ADA8]" />
                   <input
                     type="text"
                     value={klantSearch}
@@ -319,20 +319,20 @@ export function EmailContextSidebar({
                     onFocus={() => setShowKlantDropdown(true)}
                     onBlur={() => setTimeout(() => setShowKlantDropdown(false), 200)}
                     placeholder="Zoek klant..."
-                    className="w-full pl-8 pr-2.5 py-1.5 rounded-lg border border-[hsl(35,15%,87%)] bg-white/60 text-[12px] text-foreground/70 placeholder:text-foreground/30 outline-none focus:border-amber-700/20 transition-colors"
+                    className="w-full pl-8 pr-2.5 py-1.5 rounded-lg border border-[#F0EFEC] bg-white text-[12px] text-[#6B6B66] placeholder:text-[#B0ADA8] outline-none focus:border-[#1A535C]/20 transition-colors"
                   />
                 </div>
               )}
               {showKlantDropdown && !selectedKlant && (
-                <div className="absolute z-10 mt-1 w-full rounded-lg border border-[hsl(35,15%,87%)] bg-[#FEFDFB] shadow-lg max-h-[140px] overflow-y-auto">
+                <div className="absolute z-10 mt-1 w-full rounded-lg border border-[#F0EFEC] bg-white shadow-lg max-h-[140px] overflow-y-auto">
                   {filteredKlanten.length === 0 ? (
-                    <p className="text-[11px] text-muted-foreground px-2.5 py-2">Geen klanten gevonden</p>
+                    <p className="text-[11px] text-[#9B9B95] px-2.5 py-2">Geen klanten gevonden</p>
                   ) : (
                     filteredKlanten.map(k => (
                       <button
                         key={k.id}
                         onMouseDown={() => { setSelectedKlant(k); setKlantSearch(''); setShowKlantDropdown(false) }}
-                        className="w-full text-left px-2.5 py-1.5 text-[11px] text-foreground/70 hover:bg-amber-50 transition-colors"
+                        className="w-full text-left px-2.5 py-1.5 text-[11px] text-[#6B6B66] hover:bg-[#F0EFEC] transition-colors"
                       >
                         {k.bedrijfsnaam}
                       </button>
@@ -345,21 +345,21 @@ export function EmailContextSidebar({
             {/* Project dropdown (only when klant selected) */}
             {selectedKlant && (
               <div className="relative">
-                <label className="text-[10px] text-muted-foreground px-1 mb-0.5 block">Project</label>
+                <label className="text-[10px] text-[#9B9B95] px-1 mb-0.5 block">Project</label>
                 {selectedProject ? (
-                  <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-[hsl(35,15%,87%)] bg-white/60 text-[12px]">
-                    <FolderOpen className="h-3.5 w-3.5 text-foreground/40 flex-shrink-0" />
-                    <span className="text-foreground/70 truncate flex-1">{selectedProject.naam}</span>
+                  <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-[#F0EFEC] bg-white text-[12px]">
+                    <FolderOpen className="h-3.5 w-3.5 text-[#9B9B95] flex-shrink-0" />
+                    <span className="text-[#6B6B66] truncate flex-1">{selectedProject.naam}</span>
                     <button
                       onClick={() => { setSelectedProject(null); setProjectSearch(''); setShowProjectDropdown(false) }}
-                      className="text-foreground/30 hover:text-foreground/60 transition-colors"
+                      className="text-[#B0ADA8] hover:text-[#6B6B66] transition-colors"
                     >
                       <ChevronDown className="h-3 w-3 rotate-180" />
                     </button>
                   </div>
                 ) : (
                   <div className="relative">
-                    <FolderOpen className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-foreground/30" />
+                    <FolderOpen className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#B0ADA8]" />
                     <input
                       type="text"
                       value={projectSearch}
@@ -367,24 +367,24 @@ export function EmailContextSidebar({
                       onFocus={() => setShowProjectDropdown(true)}
                       onBlur={() => setTimeout(() => setShowProjectDropdown(false), 200)}
                       placeholder="Zoek project..."
-                      className="w-full pl-8 pr-2.5 py-1.5 rounded-lg border border-[hsl(35,15%,87%)] bg-white/60 text-[12px] text-foreground/70 placeholder:text-foreground/30 outline-none focus:border-amber-700/20 transition-colors"
+                      className="w-full pl-8 pr-2.5 py-1.5 rounded-lg border border-[#F0EFEC] bg-white text-[12px] text-[#6B6B66] placeholder:text-[#B0ADA8] outline-none focus:border-[#1A535C]/20 transition-colors"
                     />
                   </div>
                 )}
                 {showProjectDropdown && !selectedProject && (
-                  <div className="absolute z-10 mt-1 w-full rounded-lg border border-[hsl(35,15%,87%)] bg-[#FEFDFB] shadow-lg max-h-[140px] overflow-y-auto">
+                  <div className="absolute z-10 mt-1 w-full rounded-lg border border-[#F0EFEC] bg-white shadow-lg max-h-[140px] overflow-y-auto">
                     {filteredProjecten.length === 0 ? (
-                      <p className="text-[11px] text-muted-foreground px-2.5 py-2">Geen projecten gevonden</p>
+                      <p className="text-[11px] text-[#9B9B95] px-2.5 py-2">Geen projecten gevonden</p>
                     ) : (
                       filteredProjecten.map(p => (
                         <button
                           key={p.id}
                           onMouseDown={() => { setSelectedProject(p); setProjectSearch(''); setShowProjectDropdown(false) }}
-                          className="w-full text-left px-2.5 py-1.5 text-[11px] text-foreground/70 hover:bg-amber-50 transition-colors"
+                          className="w-full text-left px-2.5 py-1.5 text-[11px] text-[#6B6B66] hover:bg-[#F0EFEC] transition-colors"
                         >
                           <span>{p.naam}</span>
                           {p.project_nummer && (
-                            <span className="ml-1.5 text-[10px] text-muted-foreground">#{p.project_nummer}</span>
+                            <span className="ml-1.5 text-[10px] text-[#9B9B95]">#{p.project_nummer}</span>
                           )}
                         </button>
                       ))

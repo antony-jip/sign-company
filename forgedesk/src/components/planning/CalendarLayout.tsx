@@ -91,61 +91,34 @@ import { confirm } from '@/components/shared/ConfirmDialog'
 
 const STATUS_CONFIG: Record<
   MontageAfspraak['status'],
-  { label: string; color: string; bgColor: string; borderColor: string; darkBg: string }
+  { label: string; text: string; bg: string; border: string; dot: string }
 > = {
-  gepland: {
-    label: 'Gepland',
-    color: 'text-blue-700 dark:text-blue-300',
-    bgColor: 'bg-blue-50 dark:bg-blue-950/40',
-    borderColor: 'border-blue-200 dark:border-blue-800',
-    darkBg: 'bg-blue-500',
-  },
-  onderweg: {
-    label: 'Onderweg',
-    color: 'text-amber-700 dark:text-amber-300',
-    bgColor: 'bg-amber-50 dark:bg-amber-950/40',
-    borderColor: 'border-amber-200 dark:border-amber-800',
-    darkBg: 'bg-amber-500',
-  },
-  bezig: {
-    label: 'Bezig',
-    color: 'text-green-700 dark:text-green-300',
-    bgColor: 'bg-green-50 dark:bg-green-950/40',
-    borderColor: 'border-green-200 dark:border-green-800',
-    darkBg: 'bg-green-500',
-  },
-  afgerond: {
-    label: 'Afgerond',
-    color: 'text-emerald-700 dark:text-emerald-300',
-    bgColor: 'bg-emerald-50 dark:bg-emerald-950/40',
-    borderColor: 'border-emerald-200 dark:border-emerald-800',
-    darkBg: 'bg-emerald-500',
-  },
-  uitgesteld: {
-    label: 'Uitgesteld',
-    color: 'text-red-700 dark:text-red-300',
-    bgColor: 'bg-red-50 dark:bg-red-950/40',
-    borderColor: 'border-red-200 dark:border-red-800',
-    darkBg: 'bg-red-500',
-  },
+  gepland: { label: 'Gepland', text: '#3A5A9A', bg: '#E8EEF9', border: '#C5D5EA', dot: '#4A7AC7' },
+  onderweg: { label: 'Onderweg', text: '#8A6A2A', bg: '#F5F2E8', border: '#E5DCC8', dot: '#C49A30' },
+  bezig: { label: 'Bezig', text: '#3A7D52', bg: '#E8F2EC', border: '#C5E0D0', dot: '#4AA366' },
+  afgerond: { label: 'Afgerond', text: '#1A535C', bg: '#E2F0F0', border: '#C0DDDD', dot: '#2A8A8A' },
+  uitgesteld: { label: 'Uitgesteld', text: '#C03A18', bg: '#FDE8E2', border: '#F0C8BC', dot: '#E04A28' },
 }
 
 // ============================================================
 // HELPERS
 // ============================================================
 
-const AVATAR_COLORS = [
-  'bg-blue-500', 'bg-emerald-500', 'bg-purple-500',
-  'bg-amber-500', 'bg-rose-500', 'bg-cyan-500',
-  'bg-indigo-500', 'bg-teal-500',
+const DOEN_AVATAR_PALETTE = [
+  { bg: '#E8F2EC', text: '#3A7D52' },
+  { bg: '#E8EEF9', text: '#3A5A9A' },
+  { bg: '#F5F2E8', text: '#8A7A4A' },
+  { bg: '#F0EFEC', text: '#6B6B66' },
+  { bg: '#EDE8F4', text: '#6A5A8A' },
 ]
 
 function getInitials(naam: string): string {
   return naam.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2)
 }
 
-function getAvatarColor(index: number): string {
-  return AVATAR_COLORS[index % AVATAR_COLORS.length]
+function getAvatarStyle(index: number): { backgroundColor: string; color: string } {
+  const p = DOEN_AVATAR_PALETTE[index % DOEN_AVATAR_PALETTE.length]
+  return { backgroundColor: p.bg, color: p.text }
 }
 
 function formatDateYMD(d: Date): string {
@@ -569,11 +542,8 @@ export function CalendarLayout() {
           return (
             <div
               key={mId}
-              className={cn(
-                dims,
-                'rounded-full flex items-center justify-center text-white font-bold ring-2 ring-white dark:ring-border',
-                getAvatarColor(idx >= 0 ? idx : 0)
-              )}
+              className={cn(dims, 'rounded-lg flex items-center justify-center font-bold ring-2 ring-white')}
+              style={getAvatarStyle(idx >= 0 ? idx : 0)}
               title={mw?.naam || mId}
             >
               {mw ? getInitials(mw.naam) : '?'}
@@ -582,10 +552,8 @@ export function CalendarLayout() {
         })}
         {monteurIds.length > 3 && (
           <div
-            className={cn(
-              dims,
-              'rounded-full flex items-center justify-center text-muted-foreground dark:text-muted-foreground/50 bg-secondary dark:bg-muted font-bold ring-2 ring-white dark:ring-border'
-            )}
+            className={cn(dims, 'rounded-lg flex items-center justify-center font-bold ring-2 ring-white')}
+            style={{ backgroundColor: '#F0EFEC', color: '#6B6B66' }}
           >
             +{monteurIds.length - 3}
           </div>
@@ -624,42 +592,39 @@ export function CalendarLayout() {
       return (
         <div
           key={afspraak.id}
-          className={cn(
-            'absolute rounded-lg border cursor-pointer transition-all hover:shadow-md hover:z-20 overflow-hidden',
-            cfg.bgColor,
-            cfg.borderColor
-          )}
+          className="absolute rounded-xl cursor-pointer transition-all hover:shadow-[0_2px_8px_rgba(0,0,0,0.1)] hover:z-20 overflow-hidden"
           style={{
             top: `${topOffset}px`,
             height: `${height}px`,
             left: `calc(${leftPercent}% + 2px)`,
             width: `calc(${widthPercent}% - 4px)`,
+            backgroundColor: cfg.bg,
+            border: `1px solid ${cfg.border}`,
           }}
           onClick={() => openEditDialog(afspraak)}
         >
           <div className={cn('h-full px-1.5 py-1', isNarrow && 'px-1')}>
             <div className="flex items-start gap-1 min-h-0">
-              <div className={cn('w-1.5 h-1.5 rounded-full mt-1 flex-shrink-0', cfg.darkBg)} />
+              <div className="w-1.5 h-1.5 rounded-full mt-1 flex-shrink-0" style={{ backgroundColor: cfg.dot }} />
               <div className="flex-1 min-w-0">
                 <p className={cn(
                   'font-semibold truncate leading-tight',
-                  cfg.color,
                   isNarrow ? 'text-2xs' : 'text-xs'
-                )}>
+                )} style={{ color: cfg.text }}>
                   {afspraak.titel}
                 </p>
                 {monteurName && height > 28 && (
-                  <p className="text-2xs text-muted-foreground truncate font-medium">
+                  <p className="text-2xs text-[#9B9B95] truncate font-medium">
                     {monteurName}
                   </p>
                 )}
                 {height > 36 && (
-                  <p className="text-2xs text-muted-foreground truncate">
-                    {afspraak.start_tijd} - {afspraak.eind_tijd}
+                  <p className="text-2xs text-[#9B9B95] truncate font-mono tabular-nums">
+                    {afspraak.start_tijd} – {afspraak.eind_tijd}
                   </p>
                 )}
                 {!isNarrow && height > 52 && afspraak.locatie && (
-                  <p className="text-2xs text-muted-foreground truncate flex items-center gap-0.5">
+                  <p className="text-2xs text-[#9B9B95] truncate flex items-center gap-0.5">
                     <MapPin className="w-2.5 h-2.5 flex-shrink-0" />
                     {afspraak.locatie}
                   </p>
@@ -676,34 +641,31 @@ export function CalendarLayout() {
       )
     }
 
-    // Flat card for the sidebar/list view
+    // Flat card for the sidebar/list view — DOEN style
     return (
       <div
         key={afspraak.id}
-        className={cn(
-          'rounded-lg border p-3 cursor-pointer transition-all hover:shadow-md',
-          cfg.bgColor,
-          cfg.borderColor
-        )}
+        className="rounded-xl p-3 cursor-pointer transition-all hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)]"
+        style={{ backgroundColor: cfg.bg, border: `1px solid ${cfg.border}` }}
         onClick={() => openEditDialog(afspraak)}
       >
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
-            <p className={cn('text-sm font-semibold truncate', cfg.color)}>
+            <p className="text-sm font-semibold truncate" style={{ color: cfg.text }}>
               {afspraak.titel}
             </p>
-            <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+            <div className="flex items-center gap-2 mt-1 text-xs text-[#9B9B95]">
               <Clock className="w-3 h-3" />
-              <span>{afspraak.start_tijd} - {afspraak.eind_tijd}</span>
+              <span className="font-mono tabular-nums">{afspraak.start_tijd} – {afspraak.eind_tijd}</span>
             </div>
             {afspraak.locatie && (
-              <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
+              <div className="flex items-center gap-2 mt-0.5 text-xs text-[#9B9B95]">
                 <MapPin className="w-3 h-3" />
                 <span className="truncate">{afspraak.locatie}</span>
               </div>
             )}
             {afspraak.klant_naam && (
-              <p className="text-xs text-muted-foreground mt-0.5 truncate">
+              <p className="text-xs text-[#9B9B95] mt-0.5 truncate">
                 {afspraak.klant_naam}
               </p>
             )}
@@ -723,98 +685,69 @@ export function CalendarLayout() {
   // ============================================================
 
   return (
-    <div className="space-y-4">
-      {/* ── Page Header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground font-display">
-            Planning
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            {activeMedewerker
-              ? `Planning van ${medewerkers.find((m) => m.id === activeMedewerker)?.naam || 'medewerker'}`
-              : 'Plan en beheer montage, installatie en uitvoering'}
-          </p>
-        </div>
-        <Button
+    <div className="space-y-5 px-4">
+      {/* ── DOEN Inline Stats ── */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[13px] font-medium" style={{ backgroundColor: '#E8EEF9', color: '#3A5A9A' }}>
+          <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#4A7AC7' }} />
+          {todayAfspraken.length} vandaag
+        </span>
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[13px] font-medium" style={{ backgroundColor: '#E2F0F0', color: '#1A535C' }}>
+          <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#2A8A8A' }} />
+          {weekAfspraken.length} deze week
+        </span>
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[13px] font-medium" style={{ backgroundColor: '#F0EFEC', color: '#6B6B66' }}>
+          {medewerkers.length} monteurs
+        </span>
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[13px] font-medium" style={{ backgroundColor: '#F5F2E8', color: '#8A6A2A' }}>
+          <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: '#C49A30' }} />
+          {afspraken.filter((a) => a.status !== 'afgerond').length} openstaand
+        </span>
+        <div className="flex-1" />
+        <button
           onClick={() => openNewDialog()}
-          className="gap-2"
+          className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-semibold text-white bg-[#F15025] shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35)] hover:-translate-y-[1px] active:translate-y-0 active:shadow-[0_1px_4px_rgba(241,80,37,0.2)] transition-all"
         >
           <Plus className="w-4 h-4" />
           Taak inplannen
-        </Button>
-      </div>
-
-      {/* ── Stats Cards ── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card className="bg-gradient-to-br from-blue-50 to-white dark:from-blue-950/30 dark:to-background border-blue-200/50 dark:border-blue-800/50">
-          <CardContent className="p-3">
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Vandaag</p>
-            <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{todayAfspraken.length}</p>
-            <p className="text-xs text-muted-foreground">
-              {todayAfspraken.filter((a) => a.status === 'afgerond').length} afgerond
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-primary/5 to-white dark:from-primary/10 dark:to-background border-primary/20">
-          <CardContent className="p-3">
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Deze week</p>
-            <p className="text-2xl font-bold text-accent dark:text-primary">{weekAfspraken.length}</p>
-            <p className="text-xs text-muted-foreground">
-              {weekAfspraken.filter((a) => a.status === 'gepland').length} gepland
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-3">
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Monteurs</p>
-            <p className="text-2xl font-bold text-foreground">{medewerkers.length}</p>
-            <p className="text-xs text-muted-foreground">beschikbaar</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-3">
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Openstaand</p>
-            <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">
-              {afspraken.filter((a) => a.status !== 'afgerond').length}
-            </p>
-            <p className="text-xs text-muted-foreground">nog uit te voeren</p>
-          </CardContent>
-        </Card>
+        </button>
       </div>
 
       {/* ── Main Layout: Calendar + Sidebar ── */}
       <div className="flex flex-col lg:flex-row gap-4">
         {/* ──── Week Grid (Main Area) ──── */}
         <div className="flex-1 min-w-0">
-          {/* Navigation bar */}
-          <Card className="mb-3">
-            <CardContent className="p-3">
+          {/* Navigation bar — DOEN toolbar card */}
+          <div className="bg-white rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03] mb-3">
+            <div className="p-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" onClick={() => setCurrentDate(new Date())}>
+                  <button
+                    onClick={() => setCurrentDate(new Date())}
+                    className="px-3 py-1.5 rounded-lg text-[13px] font-medium text-[#1A535C] bg-[#1A535C]/[0.07] hover:bg-[#1A535C]/[0.12] transition-all"
+                  >
                     Vandaag
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setCurrentDate((d) => subWeeks(d, 1))}>
-                    <ChevronLeft className="w-4 h-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setCurrentDate((d) => addWeeks(d, 1))}>
-                    <ChevronRight className="w-4 h-4" />
-                  </Button>
-                  <h2 className="text-sm sm:text-lg font-semibold text-foreground capitalize truncate">
+                  </button>
+                  <button className="p-1.5 rounded-lg hover:bg-[#F0EFEC] transition-all" onClick={() => setCurrentDate((d) => subWeeks(d, 1))}>
+                    <ChevronLeft className="w-4 h-4 text-[#6B6B66]" />
+                  </button>
+                  <button className="p-1.5 rounded-lg hover:bg-[#F0EFEC] transition-all" onClick={() => setCurrentDate((d) => addWeeks(d, 1))}>
+                    <ChevronRight className="w-4 h-4 text-[#6B6B66]" />
+                  </button>
+                  <h2 className="text-[15px] font-semibold text-[#1A1A1A] capitalize truncate">
                     {weekLabel}
                   </h2>
                 </div>
                 {/* Medewerker switcher tabs */}
                 {medewerkers.length > 0 && (
-                  <div className="hidden md:flex items-center gap-1 bg-muted dark:bg-muted rounded-lg p-0.5">
+                  <div className="hidden md:flex items-center gap-1 bg-[#F0EFEC] rounded-xl p-0.5">
                     <button
                       onClick={() => setActiveMedewerker(null)}
                       className={cn(
-                        'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
+                        'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all',
                         !activeMedewerker
-                          ? 'bg-card text-foreground shadow-sm'
-                          : 'text-muted-foreground hover:text-foreground'
+                          ? 'bg-white text-[#1A1A1A] shadow-[0_1px_2px_rgba(0,0,0,0.06)]'
+                          : 'text-[#9B9B95] hover:text-[#6B6B66]'
                       )}
                     >
                       <Users className="w-3.5 h-3.5" />
@@ -827,17 +760,15 @@ export function CalendarLayout() {
                           key={mw.id}
                           onClick={() => switchMedewerker(mw.id)}
                           className={cn(
-                            'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
+                            'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all',
                             isActive
-                              ? 'bg-card text-foreground shadow-sm'
-                              : 'text-muted-foreground hover:text-foreground'
+                              ? 'bg-white text-[#1A1A1A] shadow-[0_1px_2px_rgba(0,0,0,0.06)]'
+                              : 'text-[#9B9B95] hover:text-[#6B6B66]'
                           )}
                         >
                           <div
-                            className={cn(
-                              'w-5 h-5 rounded-full flex items-center justify-center text-2xs text-white font-bold',
-                              getAvatarColor(idx)
-                            )}
+                            className="w-5 h-5 rounded-md flex items-center justify-center text-2xs font-bold"
+                            style={getAvatarStyle(idx)}
                           >
                             {getInitials(mw.naam)}
                           </div>
@@ -848,16 +779,16 @@ export function CalendarLayout() {
                   </div>
                 )}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
-          {/* Week grid */}
-          <Card className="overflow-hidden">
+          {/* Week grid — DOEN card */}
+          <div className="bg-white rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03] overflow-hidden">
             {isLoading ? (
               <div className="flex items-center justify-center h-96">
                 <div className="flex flex-col items-center gap-3">
-                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                  <p className="text-sm text-muted-foreground">Planning laden...</p>
+                  <Loader2 className="w-8 h-8 animate-spin text-[#1A535C]" />
+                  <p className="text-sm text-[#9B9B95]">Planning laden...</p>
                 </div>
               </div>
             ) : (
@@ -866,12 +797,12 @@ export function CalendarLayout() {
                   {/* ── Time column ── */}
                   <div className="w-[50px] flex-shrink-0">
                     {/* Sticky header spacer */}
-                    <div className="sticky top-0 z-10 bg-card border-b border-border dark:border-border h-[60px]" />
+                    <div className="sticky top-0 z-10 bg-white border-b border-[#F0EFEC] h-[60px]" />
                     {/* Hour labels */}
                     {HOURS.map((hour) => (
                       <div
                         key={hour}
-                        className="border-b border-border dark:border-border text-2xs text-muted-foreground text-right pr-2 pt-1"
+                        className="border-b border-[#F0EFEC] text-2xs text-[#B0ADA8] text-right pr-2 pt-1 font-mono tabular-nums"
                         style={{ height: `${HOUR_HEIGHT}px` }}
                       >
                         {`${String(hour).padStart(2, '0')}:00`}
@@ -888,23 +819,23 @@ export function CalendarLayout() {
                     const feestdagInfo = isFeestdag(format(date, 'yyyy-MM-dd'), feestdagen)
 
                     return (
-                      <div key={date.toISOString()} className={cn('flex-1 min-w-0 border-l border-border dark:border-border', feestdagInfo && 'bg-red-50/40 dark:bg-red-950/10')}>
+                      <div key={date.toISOString()} className={cn('flex-1 min-w-0 border-l border-[#F0EFEC]', feestdagInfo && 'bg-[#FDE8E2]/20')}>
                         {/* Sticky day header */}
                         <div
                           className={cn(
-                            'sticky top-0 z-10 bg-card border-b border-border dark:border-border px-2 py-2 text-center h-[60px] flex flex-col items-center justify-center',
-                            today && 'bg-primary/5 dark:bg-primary/10',
-                            feestdagInfo && !today && 'bg-red-50/60 dark:bg-red-950/20'
+                            'sticky top-0 z-10 bg-white border-b border-[#F0EFEC] px-2 py-2 text-center h-[60px] flex flex-col items-center justify-center',
+                            today && 'bg-[#1A535C]/[0.04]',
+                            feestdagInfo && !today && 'bg-[#FDE8E2]/30'
                           )}
                           title={feestdagInfo ? feestdagInfo.naam : undefined}
                         >
-                          <p className={cn('text-2xs uppercase font-medium', feestdagInfo ? 'text-red-500 dark:text-red-400' : 'text-muted-foreground')}>
+                          <p className={cn('text-2xs uppercase font-medium', feestdagInfo ? 'text-[#C03A18]' : 'text-[#9B9B95]')}>
                             {feestdagInfo ? feestdagInfo.naam : format(date, 'EEE', { locale: nl })}
                           </p>
                           <p
                             className={cn(
                               'text-lg font-bold leading-tight',
-                              today ? 'text-primary' : feestdagInfo ? 'text-red-600 dark:text-red-400' : 'text-foreground'
+                              today ? 'text-[#1A535C]' : feestdagInfo ? 'text-[#C03A18]' : 'text-[#1A1A1A]'
                             )}
                           >
                             {format(date, 'd')}
@@ -912,14 +843,14 @@ export function CalendarLayout() {
                           {(dayAfspraken.length > 0 || taskCount > 0) && (
                             <div className="flex items-center gap-0.5 justify-center">
                               {dayAfspraken.length > 0 && (
-                                <Badge variant="secondary" className="text-2xs px-1 py-0">
+                                <span className="text-2xs px-1 py-0 rounded bg-[#F0EFEC] text-[#6B6B66] font-medium">
                                   {dayAfspraken.length}
-                                </Badge>
+                                </span>
                               )}
                               {taskCount > 0 && (
-                                <Badge className="text-2xs px-1 py-0 bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300 border-0">
+                                <span className="text-2xs px-1 py-0 rounded bg-[#EDE8F4] text-[#6A5A8A] font-medium">
                                   {taskCount}
-                                </Badge>
+                                </span>
                               )}
                             </div>
                           )}
@@ -932,8 +863,8 @@ export function CalendarLayout() {
                             <div
                               key={hour}
                               className={cn(
-                                'border-b border-border dark:border-border group cursor-pointer',
-                                today && 'bg-primary/[0.02] dark:bg-primary/[0.04]'
+                                'border-b border-[#F0EFEC] group cursor-pointer',
+                                today && 'bg-[#1A535C]/[0.02]'
                               )}
                               style={{ height: `${HOUR_HEIGHT}px` }}
                               onClick={() => {
@@ -949,7 +880,7 @@ export function CalendarLayout() {
                               }}
                             >
                               <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                                <Plus className="w-4 h-4 text-muted-foreground/30" />
+                                <Plus className="w-4 h-4 text-[#B0ADA8]/40" />
                               </div>
                             </div>
                           ))}
@@ -990,33 +921,33 @@ export function CalendarLayout() {
                 </div>
               </div>
             )}
-          </Card>
+          </div>
         </div>
 
         {/* ──── Sidebar ──── */}
         <div className="w-72 flex-shrink-0 hidden lg:block space-y-3">
-          {/* Mini calendar */}
-          <Card>
-            <CardHeader className="pb-2">
+          {/* Mini calendar — DOEN card */}
+          <div className="bg-white rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03]">
+            <div className="px-4 pt-3 pb-2">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <CalendarIcon className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm font-semibold flex items-center gap-2 text-[#1A1A1A]">
+                  <CalendarIcon className="w-4 h-4 text-[#9B9B95]" />
                   {format(miniCalMonth, 'MMMM yyyy', { locale: nl })}
-                </CardTitle>
+                </span>
                 <div className="flex items-center gap-0.5">
-                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setCurrentDate((d) => subMonths(d, 1))}>
-                    <ChevronLeft className="w-3 h-3" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setCurrentDate((d) => addMonths(d, 1))}>
-                    <ChevronRight className="w-3 h-3" />
-                  </Button>
+                  <button className="p-1 rounded-lg hover:bg-[#F0EFEC] transition-all" onClick={() => setCurrentDate((d) => subMonths(d, 1))}>
+                    <ChevronLeft className="w-3 h-3 text-[#6B6B66]" />
+                  </button>
+                  <button className="p-1 rounded-lg hover:bg-[#F0EFEC] transition-all" onClick={() => setCurrentDate((d) => addMonths(d, 1))}>
+                    <ChevronRight className="w-3 h-3 text-[#6B6B66]" />
+                  </button>
                 </div>
               </div>
-            </CardHeader>
-            <CardContent className="pb-3">
+            </div>
+            <div className="px-4 pb-3">
               <div className="grid grid-cols-7 mb-1">
                 {['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'].map((d) => (
-                  <div key={d} className="text-center text-2xs font-semibold text-muted-foreground uppercase py-0.5">
+                  <div key={d} className="text-center text-2xs font-semibold text-[#9B9B95] uppercase py-0.5">
                     {d}
                   </div>
                 ))}
@@ -1036,39 +967,39 @@ export function CalendarLayout() {
                       title={miniFeestdag ? miniFeestdag.naam : undefined}
                       className={cn(
                         'relative w-full aspect-square flex flex-col items-center justify-center text-xs rounded-lg transition-colors',
-                        !isCurrentMonth && 'text-muted-foreground/40',
-                        isCurrentMonth && 'text-foreground',
-                        isTodayDate && 'bg-primary text-white font-bold',
-                        isInWeek && !isTodayDate && 'bg-primary/10 font-semibold',
-                        miniFeestdag && !isTodayDate && !isInWeek && 'text-red-500 dark:text-red-400',
-                        !isTodayDate && !isInWeek && 'hover:bg-muted/50'
+                        !isCurrentMonth && 'text-[#B0ADA8]/40',
+                        isCurrentMonth && 'text-[#1A1A1A]',
+                        isTodayDate && 'bg-[#1A535C] text-white font-bold',
+                        isInWeek && !isTodayDate && 'bg-[#1A535C]/10 font-semibold',
+                        miniFeestdag && !isTodayDate && !isInWeek && 'text-[#C03A18]',
+                        !isTodayDate && !isInWeek && 'hover:bg-[#F0EFEC]'
                       )}
                     >
                       {format(day, 'd')}
                       {miniFeestdag && !isTodayDate && (
-                        <div className="absolute bottom-0 w-1 h-1 rounded-full bg-red-400" />
+                        <div className="absolute bottom-0 w-1 h-1 rounded-full bg-[#E04A28]" />
                       )}
                       {hasEvent && !isTodayDate && !miniFeestdag && (
-                        <div className="absolute bottom-0 w-1 h-1 rounded-full bg-primary" />
+                        <div className="absolute bottom-0 w-1 h-1 rounded-full bg-[#1A535C]" />
                       )}
                     </button>
                   )
                 })}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
-          {/* Medewerkers sidebar */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <Users className="w-4 h-4 text-muted-foreground" />
+          {/* Medewerkers sidebar — DOEN card */}
+          <div className="bg-white rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03]">
+            <div className="px-4 pt-3 pb-2">
+              <span className="text-sm font-semibold flex items-center gap-2 text-[#1A1A1A]">
+                <Users className="w-4 h-4 text-[#9B9B95]" />
                 Team
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pb-3">
+              </span>
+            </div>
+            <div className="px-4 pb-3">
               {medewerkers.length === 0 ? (
-                <p className="text-xs text-muted-foreground text-center py-3">
+                <p className="text-xs text-[#9B9B95] text-center py-3">
                   Geen medewerkers gevonden. Voeg medewerkers toe bij Team.
                 </p>
               ) : (
@@ -1092,37 +1023,35 @@ export function CalendarLayout() {
                         className={cn(
                           'w-full flex items-center gap-2.5 p-2 rounded-lg transition-all text-left',
                           isSelected
-                            ? 'bg-primary/10 ring-1 ring-primary/30 hover:bg-primary/15'
+                            ? 'bg-[#1A535C]/[0.07] ring-1 ring-[#1A535C]/20 hover:bg-[#1A535C]/[0.10]'
                             : isActive
-                              ? 'bg-background dark:bg-muted/50 hover:bg-muted dark:hover:bg-muted'
+                              ? 'hover:bg-[#F8F7F4]'
                               : 'opacity-40 hover:opacity-70'
                         )}
                       >
                         <div
-                          className={cn(
-                            'w-7 h-7 rounded-full flex items-center justify-center text-2xs text-white font-bold flex-shrink-0',
-                            getAvatarColor(idx)
-                          )}
+                          className="w-7 h-7 rounded-lg flex items-center justify-center text-2xs font-bold flex-shrink-0"
+                          style={getAvatarStyle(idx)}
                         >
                           {getInitials(mw.naam)}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium text-foreground truncate">
+                          <p className="text-xs font-medium text-[#1A1A1A] truncate">
                             {mw.naam}
                           </p>
-                          <p className="text-2xs text-muted-foreground">
+                          <p className="text-2xs text-[#9B9B95]">
                             {mw.functie || mw.rol}
                           </p>
                         </div>
                         <div className="text-right flex-shrink-0">
                           {todayCount > 0 ? (
-                            <Badge variant="secondary" className="text-2xs px-1 py-0">
+                            <span className="text-2xs px-1.5 py-0.5 rounded-md font-medium" style={{ backgroundColor: '#E2F0F0', color: '#1A535C' }}>
                               {todayCount} vandaag
-                            </Badge>
+                            </span>
                           ) : weekCount > 0 ? (
-                            <span className="text-2xs text-muted-foreground">{weekCount}/wk</span>
+                            <span className="text-2xs text-[#9B9B95]">{weekCount}/wk</span>
                           ) : (
-                            <span className="text-2xs text-muted-foreground/50">vrij</span>
+                            <span className="text-2xs text-[#B0ADA8]">vrij</span>
                           )}
                         </div>
                       </button>
@@ -1130,20 +1059,20 @@ export function CalendarLayout() {
                   })}
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
-          {/* Today's tasks sidebar */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <Wrench className="w-4 h-4 text-muted-foreground" />
+          {/* Today's tasks sidebar — DOEN card */}
+          <div className="bg-white rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03]">
+            <div className="px-4 pt-3 pb-2">
+              <span className="text-sm font-semibold flex items-center gap-2 text-[#1A1A1A]">
+                <Wrench className="w-4 h-4 text-[#9B9B95]" />
                 Vandaag
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pb-3">
+              </span>
+            </div>
+            <div className="px-4 pb-3">
               {todayAfspraken.length === 0 && getTasksForDay(new Date()).length === 0 ? (
-                <p className="text-xs text-muted-foreground text-center py-3">
+                <p className="text-xs text-[#9B9B95] text-center py-3">
                   Geen taken voor vandaag
                 </p>
               ) : (
@@ -1156,36 +1085,34 @@ export function CalendarLayout() {
                       return (
                         <div
                           key={`task-${taak.id}`}
-                          className="rounded-lg border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/40 p-3 cursor-pointer transition-all hover:shadow-md"
+                          className="rounded-xl border border-[#EDE8F4] bg-[#EDE8F4]/30 p-3 cursor-pointer transition-all hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)]"
                           onClick={() => handlePlanTask(taak)}
                         >
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-1.5 mb-0.5">
-                                <Badge className="text-[8px] px-1 py-0 bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300 border-0">
+                                <span className="text-[8px] px-1 py-0 rounded bg-[#EDE8F4] text-[#6A5A8A] font-medium">
                                   Projecttaak
-                                </Badge>
+                                </span>
                               </div>
-                              <p className="text-sm font-semibold text-purple-700 dark:text-purple-300 truncate">
+                              <p className="text-sm font-semibold text-[#6A5A8A] truncate">
                                 {taak.titel}
                               </p>
                               {project && (
-                                <p className="text-2xs text-muted-foreground truncate mt-0.5">
+                                <p className="text-2xs text-[#9B9B95] truncate mt-0.5">
                                   {project.naam}
                                 </p>
                               )}
                             </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 px-2 text-2xs text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/30"
+                            <button
+                              className="h-6 px-2 text-2xs text-[#6A5A8A] rounded-lg hover:bg-[#EDE8F4] transition-all font-medium"
                               onClick={(e) => {
                                 e.stopPropagation()
                                 handlePlanTask(taak)
                               }}
                             >
                               Inplannen
-                            </Button>
+                            </button>
                           </div>
                         </div>
                       )
@@ -1193,8 +1120,8 @@ export function CalendarLayout() {
                   </div>
                 </ScrollArea>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1205,8 +1132,8 @@ export function CalendarLayout() {
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-accent to-primary flex items-center justify-center">
-                <Wrench className="h-3.5 w-3.5 text-white" />
+              <div className="h-7 w-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#E2F0F0', color: '#1A535C' }}>
+                <Wrench className="h-3.5 w-3.5" />
               </div>
               {editingId ? 'Taak bewerken' : 'Taak toevoegen'}
             </DialogTitle>
@@ -1332,10 +1259,8 @@ export function CalendarLayout() {
                           onCheckedChange={() => toggleFormMonteur(mw.id)}
                         />
                         <div
-                          className={cn(
-                            'w-6 h-6 rounded-full flex items-center justify-center text-2xs text-white font-bold',
-                            getAvatarColor(idx)
-                          )}
+                          className="w-6 h-6 rounded-lg flex items-center justify-center text-2xs font-bold"
+                          style={getAvatarStyle(idx)}
                         >
                           {getInitials(mw.naam)}
                         </div>

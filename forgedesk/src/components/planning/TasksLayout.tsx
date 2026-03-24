@@ -51,8 +51,7 @@ import {
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
-// WeatherDayStrip verwijderd
-import { ModuleHeader } from '@/components/shared/ModuleHeader'
+// DOEN design — ModuleHeader verwijderd
 import { useAuth } from '@/contexts/AuthContext'
 import { getTaken, createTaak, updateTaak, deleteTaak, getProjecten, getKlanten, getMontageAfspraken, getOffertes, uploadTaakBijlage, getMedewerkers } from '@/services/supabaseService'
 import type { Taak, Project, Klant, MontageAfspraak, Offerte, Medewerker } from '@/types'
@@ -67,22 +66,22 @@ type TaakPrioriteit = Taak['prioriteit']
 
 const PRIORITEIT_ORDER: Record<string, number> = { kritiek: 4, hoog: 3, medium: 2, laag: 1 }
 
-const PRIORITEIT_COLORS: Record<TaakPrioriteit, { border: string; bg: string; accent: string }> = {
-  kritiek: { border: 'border-l-mod-werkbonnen-border', bg: 'bg-mod-werkbonnen-light/60', accent: 'text-mod-werkbonnen-text' },
-  hoog: { border: 'border-l-mod-offertes-border', bg: 'bg-mod-offertes-light/60', accent: 'text-mod-offertes-text' },
-  medium: { border: 'border-l-mod-klanten-border', bg: 'bg-mod-klanten-light/60', accent: 'text-mod-klanten-text' },
-  laag: { border: 'border-l-mod-taken-border', bg: 'bg-mod-taken-light/60', accent: 'text-mod-taken-text' },
+const PRIORITEIT_COLORS: Record<TaakPrioriteit, { border: string; bg: string; text: string; dot: string }> = {
+  kritiek: { border: '#E04A28', bg: '#FDE8E2', text: '#C03A18', dot: '#E04A28' },
+  hoog: { border: '#C49A30', bg: '#F5F2E8', text: '#8A6A2A', dot: '#C49A30' },
+  medium: { border: '#4A7AC7', bg: '#E8EEF9', text: '#3A5A9A', dot: '#4A7AC7' },
+  laag: { border: '#B0ADA8', bg: '#F0EFEC', text: '#6B6B66', dot: '#B0ADA8' },
 }
 
 const PRIORITEIT_FLAG_COLORS: Record<TaakPrioriteit, string> = {
-  kritiek: 'text-mod-werkbonnen-text', hoog: 'text-mod-offertes-text', medium: 'text-mod-taken-text', laag: 'text-muted-foreground/30',
+  kritiek: 'text-[#C03A18]', hoog: 'text-[#8A6A2A]', medium: 'text-[#3A5A9A]', laag: 'text-[#B0ADA8]',
 }
 
 const PRIORITEIT_RING_COLORS: Record<TaakPrioriteit, string> = {
-  kritiek: 'border-mod-werkbonnen-border hover:border-mod-werkbonnen-text',
-  hoog: 'border-mod-offertes-border hover:border-mod-offertes-text',
-  medium: 'border-mod-klanten-border hover:border-mod-klanten-text',
-  laag: 'border-mod-taken-border hover:border-mod-taken-text',
+  kritiek: 'border-[#E04A28] hover:border-[#C03A18]',
+  hoog: 'border-[#C49A30] hover:border-[#8A6A2A]',
+  medium: 'border-[#4A7AC7] hover:border-[#3A5A9A]',
+  laag: 'border-[#B0ADA8] hover:border-[#6B6B66]',
 }
 
 const DAY_LABELS = ['ma', 'di', 'wo', 'do', 'vr', 'za', 'zo']
@@ -604,109 +603,128 @@ export function TasksLayout() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center py-24">
-        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground mb-4" />
-        <p className="text-muted-foreground">Taken laden...</p>
+      <div className="flex flex-col items-center justify-center py-24 bg-[#F8F7F5] -m-3 sm:-m-4 md:-m-6 h-full">
+        <Loader2 className="w-8 h-8 animate-spin text-[#1A535C] mb-4" />
+        <p className="text-[#9B9B95]">Taken laden...</p>
       </div>
     )
   }
 
+  const totalTaken = taken.length
+  const klaartaken = taken.filter((t) => t.status === 'klaar').length
+
   return (
     <>
-      <div className="flex flex-col h-[calc(100vh-120px)] mod-strip mod-strip-taken">
-        <ModuleHeader module="taken" icon={Clock} title="Taken" subtitle="Productie & oplevering" />
-
-        {/* === WEEK NAV + FILTERS === */}
-        <div className="flex items-center justify-between flex-wrap gap-2 px-3 sm:px-5 py-2 border-b border-border/60 bg-card/50 flex-shrink-0">
-          <div className="flex items-center gap-3 min-w-0">
-            {/* View toggle */}
-            <div className="inline-flex items-center rounded-lg border border-primary/20 bg-primary/5 p-0.5 flex-shrink-0">
-              {(['week', 'maand'] as const).map((v) => (
-                <button key={v} onClick={() => setViewMode(v)} className={cn(
-                  'text-xs px-2.5 py-1 rounded-md transition-all capitalize',
-                  viewMode === v ? 'bg-primary text-white shadow-sm font-medium' : 'text-[#5A5A55] hover:text-primary'
-                )}>{v === 'week' ? 'Week' : 'Maand'}</button>
-              ))}
+      <div className="flex flex-col h-[calc(100vh-120px)] bg-[#F8F7F5] -m-3 sm:-m-4 md:-m-6">
+        {/* DOEN Header */}
+        <div className="px-8 pt-8 pb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-baseline gap-4">
+              <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-[#1A1A1A]">
+                Taken<span className="text-[#F15025]">.</span>
+              </h1>
+              <span className="text-[13px] text-[#9B9B95] font-mono tabular-nums">
+                {klaartaken}/{totalTaken}
+              </span>
             </div>
-            <span className="text-sm font-semibold text-foreground tracking-tight whitespace-nowrap">
-              {viewMode === 'week' ? weekLabel : monthLabel}
-            </span>
-            <div className="flex items-center gap-0.5 bg-muted/50 rounded-lg p-0.5">
-              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg" onClick={() => viewMode === 'week' ? setWeekOffset((w) => w - 1) : setMonthOffset((m) => m - 1)}>
-                <ChevronLeft className="w-4 h-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className={cn('h-7 text-xs px-3 rounded-lg', (viewMode === 'week' ? isCurrentWeek : monthOffset === 0) && 'bg-primary text-white hover:bg-primary/90 shadow-sm')}
-                onClick={() => viewMode === 'week' ? setWeekOffset(0) : setMonthOffset(0)}
-              >
-                Vandaag
-              </Button>
-              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg" onClick={() => viewMode === 'week' ? setWeekOffset((w) => w + 1) : setMonthOffset((m) => m + 1)}>
-                <ChevronRight className="w-4 h-4" />
-              </Button>
-            </div>
-            {/* Medewerker filter */}
-            {medewerkers.length > 0 && (
-              <select
-                value={medewerkerFilter}
-                onChange={(e) => setMedewerkerFilter(e.target.value)}
-                className="h-7 text-xs rounded-lg border border-primary/20 bg-primary/5 px-2 max-w-[160px] text-[#5A5A55] focus:outline-none focus:ring-1 focus:ring-primary/30"
-              >
-                <option value="">Alle medewerkers</option>
-                {medewerkers.filter((m) => m.status === 'actief').map((m) => (
-                  <option key={m.id} value={m.naam}>{m.naam}</option>
-                ))}
-              </select>
-            )}
           </div>
-          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
-            <div className="inline-flex items-center rounded-xl border border-black/[0.06] bg-muted p-0.5 flex-shrink-0">
+        </div>
+
+        {/* === DOEN Toolbar Card === */}
+        <div className="mx-8 mb-4 bg-white rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03]">
+          <div className="flex items-center justify-between flex-wrap gap-2 px-4 py-3">
+            <div className="flex items-center gap-3 min-w-0">
+              {/* View toggle */}
+              <div className="inline-flex items-center rounded-xl bg-[#F0EFEC] p-0.5 flex-shrink-0">
+                {(['week', 'maand'] as const).map((v) => (
+                  <button key={v} onClick={() => setViewMode(v)} className={cn(
+                    'text-[12px] px-3 py-1.5 rounded-lg transition-all font-medium',
+                    viewMode === v ? 'bg-white text-[#1A1A1A] shadow-[0_1px_2px_rgba(0,0,0,0.06)]' : 'text-[#9B9B95] hover:text-[#6B6B66]'
+                  )}>{v === 'week' ? 'Week' : 'Maand'}</button>
+                ))}
+              </div>
+              <span className="text-[15px] font-semibold text-[#1A1A1A] tracking-tight whitespace-nowrap">
+                {viewMode === 'week' ? weekLabel : monthLabel}
+              </span>
+              <div className="flex items-center gap-0.5">
+                <button className="p-1.5 rounded-lg hover:bg-[#F0EFEC] transition-all" onClick={() => viewMode === 'week' ? setWeekOffset((w) => w - 1) : setMonthOffset((m) => m - 1)}>
+                  <ChevronLeft className="w-4 h-4 text-[#6B6B66]" />
+                </button>
+                <button
+                  className={cn(
+                    'text-[12px] px-3 py-1.5 rounded-lg font-medium transition-all',
+                    (viewMode === 'week' ? isCurrentWeek : monthOffset === 0)
+                      ? 'text-[#1A535C] bg-[#1A535C]/[0.07]'
+                      : 'text-[#9B9B95] hover:bg-[#F0EFEC]'
+                  )}
+                  onClick={() => viewMode === 'week' ? setWeekOffset(0) : setMonthOffset(0)}
+                >
+                  Vandaag
+                </button>
+                <button className="p-1.5 rounded-lg hover:bg-[#F0EFEC] transition-all" onClick={() => viewMode === 'week' ? setWeekOffset((w) => w + 1) : setMonthOffset((m) => m + 1)}>
+                  <ChevronRight className="w-4 h-4 text-[#6B6B66]" />
+                </button>
+              </div>
+              {/* Medewerker filter */}
+              {medewerkers.length > 0 && (
+                <select
+                  value={medewerkerFilter}
+                  onChange={(e) => setMedewerkerFilter(e.target.value)}
+                  className="h-7 text-[12px] rounded-lg border border-[#F0EFEC] bg-[#F8F7F5] px-2 max-w-[160px] text-[#6B6B66] focus:outline-none focus:ring-1 focus:ring-[#1A535C]/20"
+                >
+                  <option value="">Alle medewerkers</option>
+                  {medewerkers.filter((m) => m.status === 'actief').map((m) => (
+                    <option key={m.id} value={m.naam}>{m.naam}</option>
+                  ))}
+                </select>
+              )}
+            </div>
+            <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+              {/* Filter tabs — DOEN style */}
               {([['alle', 'Alle'], ['project', 'Projecttaken'], ['los', 'Losse taken']] as const).map(([key, label]) => (
                 <button
                   key={key}
                   onClick={() => setTaskFilter(key)}
                   className={cn(
-                    'text-xs px-2.5 py-1 rounded-lg transition-all duration-200 whitespace-nowrap',
+                    'text-[12px] px-3 py-1.5 rounded-lg transition-all whitespace-nowrap font-medium',
                     taskFilter === key
-                      ? 'bg-[#191919] text-white shadow-sm font-medium'
-                      : 'text-[#5A5A55] hover:text-foreground'
+                      ? 'text-[#1A535C] bg-[#1A535C]/[0.07]'
+                      : 'text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC]'
                   )}
                 >
                   {label}
                 </button>
               ))}
+              <button
+                onClick={() => setShowCompleted(!showCompleted)}
+                className={cn(
+                  'text-[12px] px-3 py-1.5 rounded-lg transition-all whitespace-nowrap flex-shrink-0 font-medium',
+                  showCompleted
+                    ? 'text-[#1A535C] bg-[#1A535C]/[0.07]'
+                    : 'text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC]'
+                )}
+              >
+                {showCompleted ? 'Afgerond zichtbaar' : 'Toon afgerond'}
+              </button>
+              <button
+                onClick={() => setShowMontage(!showMontage)}
+                className={cn(
+                  'text-[12px] px-3 py-1.5 rounded-lg transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-1.5 font-medium',
+                  showMontage
+                    ? 'text-[#1A535C] bg-[#1A535C]/[0.07]'
+                    : 'text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC]'
+                )}
+              >
+                <Wrench className="w-3 h-3" />
+                {showMontage ? 'Montage zichtbaar' : 'Toon montage'}
+              </button>
             </div>
-            <button
-              onClick={() => setShowCompleted(!showCompleted)}
-              className={cn(
-                'text-xs px-3 py-1.5 rounded-full border transition-all duration-200 whitespace-nowrap flex-shrink-0',
-                showCompleted
-                  ? 'bg-[#191919] border-transparent text-white shadow-sm'
-                  : 'border-border/60 text-[#5A5A55] hover:text-foreground hover:border-border'
-              )}
-            >
-              {showCompleted ? 'Afgerond zichtbaar' : 'Toon afgerond'}
-            </button>
-            <button
-              onClick={() => setShowMontage(!showMontage)}
-              className={cn(
-                'text-xs px-3 py-1.5 rounded-full border transition-all duration-200 whitespace-nowrap flex-shrink-0 flex items-center gap-1.5',
-                showMontage
-                  ? 'bg-[#191919] border-transparent text-white shadow-sm'
-                  : 'border-border/60 text-[#5A5A55] hover:text-foreground hover:border-border'
-              )}
-            >
-              <Wrench className="w-3 h-3" />
-              {showMontage ? 'Montage zichtbaar' : 'Toon montage'}
-            </button>
           </div>
         </div>
 
         {viewMode === 'week' ? (<>
-        {/* === DAY HEADERS === */}
-        <div className="flex border-b border-border/60 bg-card/80 backdrop-blur-sm flex-shrink-0">
+        {/* === DAY HEADERS — DOEN === */}
+        <div className="flex border-b border-[#F0EFEC] bg-white mx-8 rounded-t-2xl flex-shrink-0 ring-1 ring-black/[0.03] ring-b-0">
           {/* Time gutter spacer */}
           <div className="w-14 flex-shrink-0" />
           {/* Day columns headers */}
@@ -718,22 +736,22 @@ export function TasksLayout() {
               <div
                 key={i}
                 className={cn(
-                  'flex-1 min-w-0 text-center py-2.5 border-l border-border/40 transition-colors',
-                  isToday && 'bg-primary/[0.04]'
+                  'flex-1 min-w-0 text-center py-2.5 border-l border-[#F0EFEC] transition-colors',
+                  isToday && 'bg-[#1A535C]/[0.04]'
                 )}
               >
                 <div className={cn(
-                  'text-xs uppercase tracking-label font-bold',
-                  isToday ? 'text-primary' : isPast ? 'text-muted-foreground/30' : 'text-muted-foreground/70'
+                  'text-[11px] uppercase tracking-widest font-semibold',
+                  isToday ? 'text-[#1A535C]' : isPast ? 'text-[#B0ADA8]/40' : 'text-[#9B9B95]'
                 )}>
                   {DAY_LABELS[i]}
                 </div>
                 <div className="flex items-center justify-center gap-1.5 mt-0.5">
                   <span className={cn(
-                    'inline-flex items-center justify-center text-sm font-bold font-mono transition-all',
+                    'inline-flex items-center justify-center text-sm font-bold font-mono tabular-nums transition-all',
                     isToday
-                      ? 'w-8 h-8 rounded-full bg-primary text-white shadow-sm shadow-primary/30'
-                      : isPast ? 'text-muted-foreground/30' : 'text-foreground'
+                      ? 'w-8 h-8 rounded-full bg-[#1A535C] text-white shadow-sm'
+                      : isPast ? 'text-[#B0ADA8]/40' : 'text-[#1A1A1A]'
                   )}>
                     {day.getDate()}
                   </span>
@@ -741,8 +759,8 @@ export function TasksLayout() {
                     <span className={cn(
                       'text-[10px] font-semibold font-mono tabular-nums px-[10px] py-[3px] rounded-full',
                       isToday
-                        ? 'bg-primary/15 text-primary'
-                        : 'bg-muted/60 text-muted-foreground/50'
+                        ? 'bg-[#1A535C]/10 text-[#1A535C]'
+                        : 'bg-[#F0EFEC] text-[#9B9B95]'
                     )}>
                       {dayTasks.length}
                     </span>
@@ -753,14 +771,14 @@ export function TasksLayout() {
           })}
         </div>
 
-        {/* === CALENDAR GRID === */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden relative bg-background">
+        {/* === CALENDAR GRID — DOEN === */}
+        <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden relative bg-white mx-8 rounded-b-2xl ring-1 ring-black/[0.03] shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)]">
           <div className="flex" style={{ minHeight: HOURS.length * HOUR_HEIGHT }}>
             {/* Time gutter */}
             <div className="w-14 flex-shrink-0 relative">
               {HOURS.map((hour) => (
                 <div key={hour} style={{ height: HOUR_HEIGHT }} className="relative">
-                  <span className="absolute -top-2.5 right-3 text-xs text-muted-foreground/40 font-mono tabular-nums font-medium">
+                  <span className="absolute -top-2.5 right-3 text-xs text-[#B0ADA8] font-mono tabular-nums font-medium">
                     {String(hour).padStart(2, '0')}:00
                   </span>
                 </div>
@@ -804,12 +822,12 @@ export function TasksLayout() {
           </div>
         </div>
         </>) : (
-        /* === MONTH VIEW === */
-        <div className="flex-1 overflow-y-auto p-3">
-          <div className="grid grid-cols-7 gap-px bg-border/40 rounded-lg overflow-hidden border border-border/40">
+        /* === MONTH VIEW — DOEN === */
+        <div className="flex-1 overflow-y-auto px-8 pb-4">
+          <div className="grid grid-cols-7 gap-px bg-[#F0EFEC] rounded-2xl overflow-hidden ring-1 ring-black/[0.03] shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)]">
             {/* Day headers */}
             {DAY_LABELS.map((d) => (
-              <div key={d} className="bg-card/80 text-center py-1.5 text-xs font-bold uppercase tracking-label text-muted-foreground/70">{d}</div>
+              <div key={d} className="bg-white text-center py-1.5 text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">{d}</div>
             ))}
             {/* Day cells */}
             {monthDays.map((day, i) => {
@@ -822,22 +840,22 @@ export function TasksLayout() {
                 <div
                   key={i}
                   className={cn(
-                    'bg-background min-h-[80px] p-1.5 transition-colors',
+                    'bg-white min-h-[80px] p-1.5 transition-colors',
                     !isCurrentMonth && 'opacity-30',
-                    isToday && 'bg-primary/5'
+                    isToday && 'bg-[#1A535C]/[0.04]'
                   )}
                 >
                   <div className="flex items-center justify-between mb-1">
                     <span className={cn(
                       'text-xs font-mono font-bold',
-                      isToday ? 'w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center' : 'text-muted-foreground'
+                      isToday ? 'w-6 h-6 rounded-full bg-[#1A535C] text-white flex items-center justify-center' : 'text-[#9B9B95]'
                     )}>
                       {day.getDate()}
                     </span>
                     {isCurrentMonth && !isAddingHere && (
                       <button
                         onClick={() => { setMonthAddingDay(dayKey); setMonthAddTitle(''); setTimeout(() => monthAddInputRef.current?.focus(), 50) }}
-                        className="p-0.5 rounded text-muted-foreground/30 hover:text-primary hover:bg-primary/10 transition-all duration-200"
+                        className="p-0.5 rounded text-[#B0ADA8]/40 hover:text-[#1A535C] hover:bg-[#1A535C]/10 transition-all duration-200"
                       >
                         <Plus className="w-3 h-3" />
                       </button>
@@ -849,7 +867,7 @@ export function TasksLayout() {
                       value={monthAddTitle}
                       onChange={(e) => setMonthAddTitle(e.target.value)}
                       placeholder="Taak..."
-                      className="w-full text-[10px] px-1.5 py-1 rounded border border-primary/40 bg-card focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 text-foreground placeholder:text-muted-foreground/40 mb-0.5"
+                      className="w-full text-[10px] px-1.5 py-1 rounded-lg border border-[#1A535C]/30 bg-white focus:outline-none focus:border-[#1A535C] focus:ring-1 focus:ring-[#1A535C]/20 text-[#1A1A1A] placeholder:text-[#B0ADA8] mb-0.5"
                       onKeyDown={async (e) => {
                         if (e.key === 'Enter' && monthAddTitle.trim()) {
                           await handleQuickAdd(monthAddTitle.trim(), 'medium', toDateStr(day), '')
@@ -862,22 +880,24 @@ export function TasksLayout() {
                     />
                   )}
                   <div className="space-y-0.5">
-                    {dayTasks.slice(0, 3).map((t) => (
-                      <button
-                        key={t.id}
-                        className={cn(
-                          'w-full text-left text-[10px] leading-tight truncate px-1 py-0.5 rounded border-l-2',
-                          PRIORITEIT_COLORS[t.prioriteit]?.border,
-                          PRIORITEIT_COLORS[t.prioriteit]?.bg,
-                          t.status === 'klaar' && 'line-through opacity-50'
-                        )}
-                        onClick={() => openEditDialog(taken.find((tt) => tt.id === t.id) || t)}
-                      >
-                        {t.titel}
-                      </button>
-                    ))}
+                    {dayTasks.slice(0, 3).map((t) => {
+                      const pc = PRIORITEIT_COLORS[t.prioriteit]
+                      return (
+                        <button
+                          key={t.id}
+                          className={cn(
+                            'w-full text-left text-[10px] leading-tight truncate px-1 py-0.5 rounded-md border-l-2',
+                            t.status === 'klaar' && 'line-through opacity-50'
+                          )}
+                          style={{ borderLeftColor: pc.border, backgroundColor: pc.bg, color: pc.text }}
+                          onClick={() => openEditDialog(taken.find((tt) => tt.id === t.id) || t)}
+                        >
+                          {t.titel}
+                        </button>
+                      )
+                    })}
                     {dayTasks.length > 3 && (
-                      <span className="text-[10px] text-muted-foreground/50 px-1">+{dayTasks.length - 3}</span>
+                      <span className="text-[10px] text-[#B0ADA8] px-1">+{dayTasks.length - 3}</span>
                     )}
                   </div>
                 </div>
@@ -888,15 +908,15 @@ export function TasksLayout() {
         )}
       </div>
 
-      {/* === FLOATING ACTION BUTTON === */}
+      {/* === FLOATING ACTION BUTTON — DOEN === */}
       <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
         {fabOpen && (
-          <div className="w-80 rounded-xl border border-black/[0.06] bg-card shadow-2xl shadow-black/10 p-4 space-y-3 animate-in slide-in-from-bottom-2 fade-in duration-200">
+          <div className="w-80 rounded-2xl bg-white shadow-[0_4px_24px_rgba(0,0,0,0.12)] ring-1 ring-black/[0.06] p-4 space-y-3 animate-in slide-in-from-bottom-2 fade-in duration-200">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-foreground">Snel toevoegen</span>
-              <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={() => setFabOpen(false)}>
-                <X className="w-3.5 h-3.5" />
-              </Button>
+              <span className="text-sm font-semibold text-[#1A1A1A]">Snel toevoegen</span>
+              <button className="p-1 rounded-lg hover:bg-[#F0EFEC] transition-all" onClick={() => setFabOpen(false)}>
+                <X className="w-3.5 h-3.5 text-[#9B9B95]" />
+              </button>
             </div>
             <Input
               ref={fabInputRef}
@@ -944,21 +964,21 @@ export function TasksLayout() {
                 </SelectContent>
               </Select>
             </div>
-            <Button
-              className="w-full h-9 text-sm bg-primary hover:bg-primary/90 text-white rounded-lg shadow-sm"
+            <button
+              className="w-full h-9 text-sm font-semibold text-white rounded-xl bg-[#F15025] shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35)] hover:-translate-y-[1px] active:translate-y-0 transition-all disabled:opacity-40 disabled:shadow-none disabled:translate-y-0"
               disabled={!fabTitle.trim()}
               onClick={handleFabAdd}
             >
               Toevoegen
-            </Button>
+            </button>
           </div>
         )}
 
         <button
           onClick={() => setFabOpen(!fabOpen)}
           className={cn(
-            'flex items-center justify-center w-14 h-14 rounded-full shadow-lg transition-all duration-200',
-            'bg-primary text-white hover:bg-primary/90 hover:shadow-xl hover:scale-105',
+            'flex items-center justify-center w-14 h-14 rounded-2xl shadow-[0_4px_16px_rgba(241,80,37,0.35)] transition-all duration-200',
+            'bg-[#F15025] text-white hover:shadow-[0_6px_24px_rgba(241,80,37,0.45)] hover:scale-105',
             fabOpen && 'rotate-45'
           )}
         >
@@ -1172,8 +1192,8 @@ function DayColumn({
 
   return (
     <div className={cn(
-      'flex-1 min-w-0 border-l border-border/40 relative',
-      isToday && 'bg-primary/[0.02]'
+      'flex-1 min-w-0 border-l border-[#F0EFEC] relative',
+      isToday && 'bg-[#1A535C]/[0.02]'
     )}>
       {/* Hour grid lines + drop zones */}
       {HOURS.map((hour) => {
@@ -1184,8 +1204,8 @@ function DayColumn({
             key={hour}
             style={{ height: HOUR_HEIGHT }}
             className={cn(
-              'group/hour border-b border-border/30 transition-colors duration-150 relative',
-              isDropHere && 'bg-primary/10'
+              'group/hour border-b border-[#F0EFEC]/60 transition-colors duration-150 relative',
+              isDropHere && 'bg-[#1A535C]/[0.08]'
             )}
             onDragOver={(e) => handleDragOver(e, hour)}
             onDrop={(e) => handleDrop(e, hour)}
@@ -1194,9 +1214,9 @@ function DayColumn({
             {/* Drop indicator */}
             {isDropHere && (
               <div className="h-full flex items-start pt-1 px-1 pointer-events-none">
-                <div className="w-full rounded-lg border-2 border-dashed border-primary/40 h-10 flex items-center justify-center">
-                  <Clock className="w-3 h-3 text-primary/60 mr-1" />
-                  <span className="text-[10px] text-primary/60 font-semibold font-mono">{String(hour).padStart(2, '0')}:00</span>
+                <div className="w-full rounded-lg border-2 border-dashed border-[#1A535C]/30 h-10 flex items-center justify-center">
+                  <Clock className="w-3 h-3 text-[#1A535C]/50 mr-1" />
+                  <span className="text-[10px] text-[#1A535C]/50 font-semibold font-mono">{String(hour).padStart(2, '0')}:00</span>
                 </div>
               </div>
             )}
@@ -1209,7 +1229,7 @@ function DayColumn({
                   value={hourAddTitle}
                   onChange={(e) => setHourAddTitle(e.target.value)}
                   placeholder={`Taak om ${String(hour).padStart(2, '0')}:00...`}
-                  className="w-full text-xs px-2.5 py-2 rounded-lg border border-primary/50 bg-card shadow-lg focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-foreground placeholder:text-muted-foreground/40 transition-all"
+                  className="w-full text-xs px-2.5 py-2 rounded-lg border border-[#1A535C]/30 bg-white shadow-lg focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/20 text-[#1A1A1A] placeholder:text-[#B0ADA8] transition-all"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && hourAddTitle.trim()) {
                       onQuickAddAtTime(hour, hourAddTitle.trim())
@@ -1227,7 +1247,7 @@ function DayColumn({
             {!isDropHere && !isAddingHere && (
               <button
                 onClick={() => { setAddingAtHour(hour); setHourAddTitle(''); setTimeout(() => hourInputRef.current?.focus(), 50) }}
-                className="absolute top-1 right-1 z-20 opacity-0 group-hover/hour:opacity-100 p-1 rounded-lg text-muted-foreground/25 hover:text-primary hover:bg-primary/10 transition-all duration-200"
+                className="absolute top-1 right-1 z-20 opacity-0 group-hover/hour:opacity-100 p-1 rounded-lg text-[#B0ADA8]/40 hover:text-[#1A535C] hover:bg-[#1A535C]/10 transition-all duration-200"
               >
                 <Plus className="w-3.5 h-3.5" />
               </button>
@@ -1243,8 +1263,8 @@ function DayColumn({
           style={{ top: `${nowLineTop}%` }}
         >
           <div className="flex items-center">
-            <div className="w-2.5 h-2.5 rounded-full bg-primary -ml-1.5 flex-shrink-0 shadow-sm shadow-primary/30" />
-            <div className="flex-1 h-[2px] bg-primary/80" />
+            <div className="w-2.5 h-2.5 rounded-full bg-[#F15025] -ml-1.5 flex-shrink-0 shadow-sm" />
+            <div className="flex-1 h-[2px] bg-[#F15025]/80" />
           </div>
         </div>
       )}
@@ -1335,11 +1355,11 @@ function DayColumn({
             title={tooltipText}
           >
             <div className="px-2 py-1 overflow-hidden">
-              <div className="text-xs text-muted-foreground/60 truncate font-medium">
+              <div className="text-xs text-[#1A535C]/50 truncate font-medium">
                 {afspraak.titel}
               </div>
               {afspraak.locatie && (
-                <div className="text-xs text-muted-foreground/40 truncate">
+                <div className="text-xs text-[#1A535C]/30 truncate">
                   {afspraak.locatie}
                 </div>
               )}
@@ -1376,7 +1396,7 @@ function DayColumn({
                 value={addTitle}
                 onChange={(e) => setAddTitle(e.target.value)}
                 placeholder="Taak..."
-                className="w-full text-xs px-2.5 py-2 rounded-lg border border-primary/40 bg-card focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-foreground placeholder:text-muted-foreground/40 transition-all"
+                className="w-full text-xs px-2.5 py-2 rounded-lg border border-[#1A535C]/30 bg-white focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/20 text-[#1A1A1A] placeholder:text-[#B0ADA8] transition-all"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && addTitle.trim()) {
                     onQuickAdd(addTitle.trim())
@@ -1390,7 +1410,7 @@ function DayColumn({
           ) : (
             <button
               onClick={() => { setIsAdding(true); setTimeout(() => inputRef.current?.focus(), 50) }}
-              className="mx-0.5 flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs text-muted-foreground/30 hover:text-primary hover:bg-primary/5 transition-all duration-200"
+              className="mx-0.5 flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs text-[#B0ADA8]/40 hover:text-[#1A535C] hover:bg-[#1A535C]/[0.05] transition-all duration-200"
             >
               <Plus className="w-3 h-3" />
             </button>
@@ -1423,7 +1443,7 @@ function TaskCard({
 }) {
   const isDone = taak.status === 'klaar'
   const [justCompleted, setJustCompleted] = useState(false)
-  const colors = PRIORITEIT_COLORS[taak.prioriteit]
+  const pc = PRIORITEIT_COLORS[taak.prioriteit]
   const hour = getHourFromDeadline(taak.deadline ?? "")
 
   function handleToggle(e: React.MouseEvent) {
@@ -1459,18 +1479,20 @@ function TaskCard({
       onDragStart={handleDragStart}
       onDragEnd={onDragEnd}
       className={cn(
-        'group relative rounded-lg border-l-[3px] border-l-[#5A5A55] px-2.5 py-2 transition-all duration-200',
+        'group relative rounded-xl border-l-[3px] px-2.5 py-2 transition-all duration-200',
         !isResizing && 'cursor-grab active:cursor-grabbing',
-        'hover:shadow-lg hover:shadow-black/5 hover:z-10 hover:-translate-y-[1px]',
-        isDone
-          ? 'opacity-40 bg-muted/40 dark:bg-muted/20 hover:opacity-60'
-          : colors.bg,
+        'hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] hover:z-10 hover:-translate-y-[1px]',
+        isDone && 'opacity-40 hover:opacity-60',
         isPast && !isDone && 'opacity-60',
         justCompleted && 'scale-95 opacity-50',
         scheduled && 'shadow-sm',
-        isResizing && 'ring-2 ring-primary/30 shadow-xl'
+        isResizing && 'ring-2 ring-[#1A535C]/30 shadow-xl'
       )}
-      style={heightPx !== undefined ? { height: heightPx, overflow: 'hidden' } : undefined}
+      style={{
+        ...(heightPx !== undefined ? { height: heightPx, overflow: 'hidden' } : {}),
+        borderLeftColor: pc.border,
+        backgroundColor: isDone ? '#F0EFEC' : pc.bg,
+      }}
       onClick={onEdit}
     >
       <div className="flex items-start gap-2">
@@ -1483,28 +1505,28 @@ function TaskCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-start gap-1">
             {(taak.prioriteit === 'kritiek' || taak.prioriteit === 'hoog') && !isDone && (
-              <span className={cn('inline-block w-2 h-2 rounded-full flex-shrink-0 mt-1', taak.prioriteit === 'kritiek' ? 'bg-[#C44830]' : 'bg-[#E8854A]')} title={taak.prioriteit === 'kritiek' ? 'Urgent' : 'Hoog'} />
+              <span className="inline-block w-2 h-2 rounded-full flex-shrink-0 mt-1" style={{ backgroundColor: pc.dot }} title={taak.prioriteit === 'kritiek' ? 'Urgent' : 'Hoog'} />
             )}
             <p className={cn(
-              'text-xs font-medium leading-tight text-foreground flex-1',
-              isDone && 'line-through text-muted-foreground'
+              'text-xs font-medium leading-tight text-[#1A1A1A] flex-1',
+              isDone && 'line-through text-[#9B9B95]'
             )}>
               {taak.titel}
             </p>
           </div>
           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
             {projectNaam && (
-              <span className="text-2xs text-muted-foreground/50 flex items-center gap-0.5">
+              <span className="text-2xs text-[#9B9B95] flex items-center gap-0.5">
                 <Hash className="w-2 h-2" />{projectNaam}
               </span>
             )}
             {!projectNaam && klantNaam && (
-              <span className="text-2xs text-muted-foreground/50 flex items-center gap-0.5">
+              <span className="text-2xs text-[#9B9B95] flex items-center gap-0.5">
                 <User2 className="w-2 h-2" />{klantNaam}
               </span>
             )}
             {taak.locatie && (
-              <span className="text-2xs text-muted-foreground/40 flex items-center gap-0.5">
+              <span className="text-2xs text-[#B0ADA8] flex items-center gap-0.5">
                 <MapPin className="w-2 h-2" />{taak.locatie}
               </span>
             )}
@@ -1522,17 +1544,17 @@ function TaskCard({
               </span>
             )}
             {scheduled && hour !== null && (
-              <span className="text-2xs text-muted-foreground/40 font-mono flex items-center gap-0.5">
+              <span className="text-2xs text-[#B0ADA8] font-mono flex items-center gap-0.5">
                 <Clock className="w-2 h-2" />{String(hour).padStart(2, '0')}:00
               </span>
             )}
             {durationLabel && (
-              <span className="text-2xs text-muted-foreground/40 font-medium font-mono">
+              <span className="text-2xs text-[#B0ADA8] font-medium font-mono">
                 {durationLabel}
               </span>
             )}
             {taak.bijlagen && taak.bijlagen.length > 0 && (
-              <span className="text-2xs text-muted-foreground/40 flex items-center gap-0.5">
+              <span className="text-2xs text-[#B0ADA8] flex items-center gap-0.5">
                 <Paperclip className="w-2 h-2" />{taak.bijlagen.length}
               </span>
             )}
@@ -1544,10 +1566,10 @@ function TaskCard({
           {/* Delete button - visible on hover */}
           <button
             onClick={handleDeleteClick}
-            className="flex-shrink-0 p-0.5 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-red-100 dark:hover:bg-red-900/30"
+            className="flex-shrink-0 p-1 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-[#FDE8E2]"
             title="Verwijderen"
           >
-            <Trash2 className="w-3.5 h-3.5 text-muted-foreground/40 hover:text-red-500 transition-colors" />
+            <Trash2 className="w-3.5 h-3.5 text-[#B0ADA8] hover:text-[#C03A18] transition-colors" />
           </button>
 
           {/* Checkbox */}
@@ -1555,19 +1577,19 @@ function TaskCard({
             onClick={handleToggle}
             className={cn(
               'flex-shrink-0 p-0.5 rounded-lg transition-all duration-200',
-              !isDone && 'hover:bg-primary/10'
+              !isDone && 'hover:bg-[#1A535C]/10'
             )}
             title={isDone ? 'Markeer als ongedaan' : 'Markeer als klaar'}
           >
             {isDone ? (
-              <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center shadow-sm shadow-primary/20">
+              <div className="w-5 h-5 rounded-full bg-[#1A535C] flex items-center justify-center shadow-sm">
                 <Check className="w-3 h-3 text-white" strokeWidth={3} />
               </div>
             ) : (
               <div className={cn(
                 'w-5 h-5 rounded-full border-2 transition-all duration-200',
                 PRIORITEIT_RING_COLORS[taak.prioriteit],
-                'hover:border-primary hover:bg-primary/10'
+                'hover:border-[#1A535C] hover:bg-[#1A535C]/10'
               )} />
             )}
           </button>
@@ -1581,14 +1603,14 @@ function TaskCard({
           onMouseDown={(e) => { onResizeStart(e) }}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="w-8 h-1 rounded-full bg-muted-foreground/0 group-hover:bg-muted-foreground/30 group-hover/resize:bg-primary/50 transition-colors mb-0.5" />
+          <div className="w-8 h-1 rounded-full bg-transparent group-hover:bg-[#B0ADA8]/30 group-hover/resize:bg-[#1A535C]/50 transition-colors mb-0.5" />
         </div>
       )}
 
       {/* Completion animation overlay */}
       {justCompleted && (
-        <div className="absolute inset-0 rounded-lg bg-primary/20 flex items-center justify-center pointer-events-none animate-in fade-in duration-200">
-          <CheckCircle2 className="w-6 h-6 text-primary animate-in zoom-in duration-300" />
+        <div className="absolute inset-0 rounded-xl bg-[#1A535C]/15 flex items-center justify-center pointer-events-none animate-in fade-in duration-200">
+          <CheckCircle2 className="w-6 h-6 text-[#1A535C] animate-in zoom-in duration-300" />
         </div>
       )}
     </div>

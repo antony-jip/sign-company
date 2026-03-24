@@ -77,8 +77,8 @@ function getFileTypeColor(name: string): string {
     case 'pdf': return 'bg-red-500'
     case 'doc': case 'docx': return 'bg-blue-600'
     case 'xls': case 'xlsx': return 'bg-green-600'
-    case 'png': case 'jpg': case 'jpeg': case 'gif': case 'svg': return 'bg-primary'
-    default: return 'bg-muted-foreground'
+    case 'png': case 'jpg': case 'jpeg': case 'gif': case 'svg': return 'bg-[#1A535C]'
+    default: return 'bg-[#9B9B95]'
   }
 }
 
@@ -316,16 +316,16 @@ export function EmailCompose({
   if (!open) return null
 
   return (
-    <div className="flex flex-col h-full bg-card min-w-0">
+    <div className="flex flex-col h-full bg-white min-w-0">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-2 border-b border-border/50 flex-shrink-0">
+        <div className="flex items-center justify-between px-4 py-2 border-b border-[#F0EFEC] flex-shrink-0">
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-foreground/60" onClick={() => onOpenChange(false)}>
+            <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-[#6B6B66]" onClick={() => onOpenChange(false)}>
               <ArrowLeft className="h-3.5 w-3.5" />
               <span className="text-xs">Terug naar inbox</span>
             </Button>
           </div>
-          <h2 className="text-sm font-medium text-foreground/60">Nieuw bericht</h2>
+          <h2 className="text-sm font-medium text-[#6B6B66]">Nieuw bericht</h2>
           <div />
         </div>
 
@@ -334,8 +334,8 @@ export function EmailCompose({
           <div className="max-w-[800px] mx-auto px-6 py-4">
             {/* To field with autocomplete */}
             <div className="relative">
-              <div className="flex items-center border-b border-border/30 py-2">
-                <label className="text-sm text-foreground/40 w-12 flex-shrink-0">Aan</label>
+              <div className="flex items-center border-b border-[#F0EFEC] py-2">
+                <label className="text-sm text-[#9B9B95] w-12 flex-shrink-0">Aan</label>
                 <Input
                   ref={toInputRef}
                   type="email"
@@ -349,7 +349,7 @@ export function EmailCompose({
                 {!showCcBcc && (
                   <button
                     onClick={() => setShowCcBcc(true)}
-                    className="text-xs text-foreground/40 hover:text-foreground/60 flex-shrink-0"
+                    className="text-xs text-[#9B9B95] hover:text-[#6B6B66] flex-shrink-0"
                   >
                     CC BCC
                   </button>
@@ -357,19 +357,19 @@ export function EmailCompose({
               </div>
               {/* Autocomplete dropdown */}
               {showSuggestions && suggestions.length > 0 && (
-                <div className="absolute left-12 top-full mt-1 w-80 bg-card rounded-lg border border-border shadow-lg z-50 py-1">
+                <div className="absolute left-12 top-full mt-1 w-80 bg-white rounded-xl border border-[#F0EFEC] ring-1 ring-black/[0.03] shadow-lg z-50 py-1">
                   {suggestions.map(klant => (
                     <button
                       key={klant.id}
                       onClick={() => handleSelectContact(klant)}
-                      className="w-full text-left px-3 py-2 hover:bg-foreground/5 flex items-center gap-2"
+                      className="w-full text-left px-3 py-2 hover:bg-[#F0EFEC] flex items-center gap-2"
                     >
-                      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <span className="text-xs font-medium text-primary">{getInitials(klant.bedrijfsnaam || klant.contactpersoon || '')}</span>
+                      <div className="w-7 h-7 rounded-lg bg-[#1A535C]/10 flex items-center justify-center flex-shrink-0">
+                        <span className="text-xs font-medium text-[#1A535C]">{getInitials(klant.bedrijfsnaam || klant.contactpersoon || '')}</span>
                       </div>
                       <div className="min-w-0">
                         <div className="text-sm font-medium truncate">{klant.bedrijfsnaam || klant.contactpersoon}</div>
-                        <div className="text-xs text-foreground/40 truncate">{klant.email}</div>
+                        <div className="text-xs text-[#9B9B95] truncate">{klant.email}</div>
                       </div>
                     </button>
                   ))}
@@ -380,8 +380,8 @@ export function EmailCompose({
             {/* CC/BCC */}
             {showCcBcc && (
               <>
-                <div className="flex items-center border-b border-border/30 py-2">
-                  <label className="text-sm text-foreground/40 w-12 flex-shrink-0">CC</label>
+                <div className="flex items-center border-b border-[#F0EFEC] py-2">
+                  <label className="text-sm text-[#9B9B95] w-12 flex-shrink-0">CC</label>
                   <Input
                     type="email"
                     value={cc}
@@ -390,8 +390,8 @@ export function EmailCompose({
                     placeholder="cc@voorbeeld.nl"
                   />
                 </div>
-                <div className="flex items-center border-b border-border/30 py-2">
-                  <label className="text-sm text-foreground/40 w-12 flex-shrink-0">BCC</label>
+                <div className="flex items-center border-b border-[#F0EFEC] py-2">
+                  <label className="text-sm text-[#9B9B95] w-12 flex-shrink-0">BCC</label>
                   <Input
                     type="email"
                     value={bcc}
@@ -404,8 +404,8 @@ export function EmailCompose({
             )}
 
             {/* Subject — larger, prominent */}
-            <div className="flex items-center border-b border-border/30 py-2.5">
-              <label className="text-sm text-foreground/40 w-12 flex-shrink-0">Onderwerp</label>
+            <div className="flex items-center border-b border-[#F0EFEC] py-2.5">
+              <label className="text-sm text-[#9B9B95] w-12 flex-shrink-0">Onderwerp</label>
               <Input
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
@@ -415,12 +415,12 @@ export function EmailCompose({
             </div>
 
             {/* Action bar: template, merge fields, AI */}
-            <div className="flex items-center gap-2 py-2 border-b border-border/20">
+            <div className="flex items-center gap-2 py-2 border-b border-[#F0EFEC]">
               <div className="relative">
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-7 text-xs gap-1 text-foreground/40"
+                  className="h-7 text-xs gap-1 text-[#9B9B95]"
                   onClick={() => setShowTemplateMenu(!showTemplateMenu)}
                 >
                   Template kiezen <ChevronDown className="h-3 w-3" />
@@ -428,12 +428,12 @@ export function EmailCompose({
                 {showTemplateMenu && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setShowTemplateMenu(false)} />
-                    <div className="absolute left-0 top-full mt-1 w-48 bg-card rounded-lg border border-border shadow-lg z-50 py-1">
+                    <div className="absolute left-0 top-full mt-1 w-48 bg-white rounded-xl border border-[#F0EFEC] ring-1 ring-black/[0.03] shadow-lg z-50 py-1">
                       {Object.entries(emailTemplates).filter(([k]) => k !== 'none').map(([key, tmpl]) => (
                         <button
                           key={key}
                           onClick={() => handleTemplateSelect(key)}
-                          className="w-full text-left px-3 py-2 text-sm hover:bg-foreground/5"
+                          className="w-full text-left px-3 py-2 text-sm hover:bg-[#F0EFEC]"
                         >
                           {tmpl.onderwerp}
                         </button>
@@ -447,7 +447,7 @@ export function EmailCompose({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-7 text-xs gap-1 text-foreground/40"
+                  className="h-7 text-xs gap-1 text-[#9B9B95]"
                   onClick={() => setShowMergeFields(!showMergeFields)}
                 >
                   Veld invoegen <ChevronDown className="h-3 w-3" />
@@ -455,12 +455,12 @@ export function EmailCompose({
                 {showMergeFields && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setShowMergeFields(false)} />
-                    <div className="absolute left-0 top-full mt-1 w-40 bg-card rounded-lg border border-border shadow-lg z-50 py-1">
+                    <div className="absolute left-0 top-full mt-1 w-40 bg-white rounded-xl border border-[#F0EFEC] ring-1 ring-black/[0.03] shadow-lg z-50 py-1">
                       {mergeFields.map(field => (
                         <button
                           key={field.id}
                           onClick={() => handleMergeFieldInsert(field.value)}
-                          className="w-full text-left px-3 py-2 text-sm hover:bg-foreground/5"
+                          className="w-full text-left px-3 py-2 text-sm hover:bg-[#F0EFEC]"
                         >
                           {field.label}
                         </button>
@@ -473,7 +473,7 @@ export function EmailCompose({
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-7 text-xs gap-1 text-foreground/40"
+                className="h-7 text-xs gap-1 text-[#9B9B95]"
                 onClick={handleForgieWrite}
                 disabled={forgieLoading}
               >
@@ -488,8 +488,8 @@ export function EmailCompose({
               contentEditable
               suppressContentEditableWarning
               className={cn(
-                'min-h-[300px] py-5 text-[15px] leading-[1.7] text-foreground outline-none [&_img]:max-w-[200px] transition-shadow duration-200 focus:shadow-sm',
-                isDragging && 'ring-2 ring-primary/30 ring-inset rounded-lg bg-primary/5',
+                'min-h-[300px] py-5 text-[15px] leading-[1.7] text-[#1A1A1A] outline-none [&_img]:max-w-[200px] transition-shadow duration-200 focus:shadow-sm',
+                isDragging && 'ring-2 ring-[#1A535C]/30 ring-inset rounded-lg bg-[#1A535C]/5',
               )}
               onDragOver={(e) => { e.preventDefault(); setIsDragging(true) }}
               onDragLeave={() => setIsDragging(false)}
@@ -507,16 +507,16 @@ export function EmailCompose({
 
             {/* Attachments */}
             {attachments.length > 0 && (
-              <div className="flex flex-wrap gap-2 py-3 border-t border-border/30">
+              <div className="flex flex-wrap gap-2 py-3 border-t border-[#F0EFEC]">
                 {attachments.map((file, i) => (
-                  <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border/50 bg-foreground/[0.02] text-sm">
+                  <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-[#F0EFEC] bg-[#F8F7F5] text-sm">
                     <div className={cn('w-6 h-6 rounded text-white text-[8px] font-bold flex items-center justify-center', getFileTypeColor(file.name))}>
                       {getFileExt(file.name)}
                     </div>
-                    <span className="text-foreground/70 max-w-[150px] truncate">{file.name}</span>
-                    <span className="text-foreground/30 text-xs">{formatFileSize(file.size)}</span>
+                    <span className="text-[#6B6B66] max-w-[150px] truncate">{file.name}</span>
+                    <span className="text-[#9B9B95] text-xs">{formatFileSize(file.size)}</span>
                     <button onClick={() => setAttachments(prev => prev.filter((_, idx) => idx !== i))}>
-                      <X className="h-3 w-3 text-foreground/30 hover:text-foreground/60" />
+                      <X className="h-3 w-3 text-[#B0ADA8] hover:text-[#6B6B66]" />
                     </button>
                   </div>
                 ))}
@@ -526,20 +526,20 @@ export function EmailCompose({
         </div>
 
         {/* Bottom toolbar */}
-        <div className="flex items-center justify-between px-6 py-3 border-t border-border/50 bg-foreground/[0.02] flex-shrink-0">
+        <div className="flex items-center justify-between px-6 py-3 border-t border-[#F0EFEC] bg-[#F8F7F5] flex-shrink-0">
           <div className="flex items-center gap-0.5">
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/40" onClick={() => execCommand('bold')}><Bold className="h-4 w-4" /></Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/40" onClick={() => execCommand('italic')}><Italic className="h-4 w-4" /></Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/40" onClick={() => execCommand('underline')}><Underline className="h-4 w-4" /></Button>
-            <div className="w-px h-5 bg-border/50 mx-1" />
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/40" onClick={() => execCommand('insertUnorderedList')}><List className="h-4 w-4" /></Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/40" onClick={() => execCommand('insertOrderedList')}><ListOrdered className="h-4 w-4" /></Button>
-            <div className="w-px h-5 bg-border/50 mx-1" />
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/40" onClick={() => {
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-[#9B9B95]" onClick={() => execCommand('bold')}><Bold className="h-4 w-4" /></Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-[#9B9B95]" onClick={() => execCommand('italic')}><Italic className="h-4 w-4" /></Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-[#9B9B95]" onClick={() => execCommand('underline')}><Underline className="h-4 w-4" /></Button>
+            <div className="w-px h-5 bg-[#F0EFEC] mx-1" />
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-[#9B9B95]" onClick={() => execCommand('insertUnorderedList')}><List className="h-4 w-4" /></Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-[#9B9B95]" onClick={() => execCommand('insertOrderedList')}><ListOrdered className="h-4 w-4" /></Button>
+            <div className="w-px h-5 bg-[#F0EFEC] mx-1" />
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-[#9B9B95]" onClick={() => {
               const url = prompt('URL:')
               if (url) execCommand('createLink', url)
             }}><Link2 className="h-4 w-4" /></Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/40" onClick={() => fileInputRef.current?.click()}>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-[#9B9B95]" onClick={() => fileInputRef.current?.click()}>
               <Paperclip className="h-4 w-4" />
             </Button>
             <input
@@ -555,20 +555,19 @@ export function EmailCompose({
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 text-sm text-foreground/40"
+              className="h-8 text-sm text-[#9B9B95]"
               onClick={() => onOpenChange(false)}
             >
               Annuleren
             </Button>
-            <div className="flex items-center">
-              <Button size="sm" className="h-9 gap-1.5 rounded-r-none px-5 shadow-sm" onClick={handleSend} disabled={isSending}>
-                <Send className="h-3.5 w-3.5" />
-                {isSending ? 'Verzenden...' : 'Versturen'}
-              </Button>
-              <Button size="sm" className="h-9 rounded-l-none border-l border-primary-foreground/20 px-1.5 shadow-sm" disabled={isSending}>
-                <ChevronDown className="h-3.5 w-3.5" />
-              </Button>
-            </div>
+            <button
+              className="h-9 px-6 rounded-xl text-[13px] font-semibold text-white bg-[#F15025] shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_12px_rgba(241,80,37,0.35)] hover:-translate-y-px active:translate-y-0 transition-all flex items-center gap-1.5 disabled:opacity-50"
+              onClick={handleSend}
+              disabled={isSending}
+            >
+              <Send className="h-3.5 w-3.5" />
+              {isSending ? 'Verzenden...' : 'Versturen'}
+            </button>
           </div>
         </div>
     </div>

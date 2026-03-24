@@ -7,13 +7,11 @@ import {
   Download, Loader2
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card, CardContent } from '@/components/ui/card'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
-import { ModuleHeader } from '@/components/shared/ModuleHeader'
+// ModuleHeader removed — using DOEN inline header
 import { EmptyState } from '@/components/ui/empty-state'
 import type { Werkbon, Klant, Project, Offerte } from '@/types'
 import {
@@ -22,14 +20,10 @@ import {
 
 type FilterStatus = 'alle' | 'concept' | 'definitief' | 'afgerond'
 
-const TABLE_HEADER_STYLE = { borderBottom: '0.5px solid #E6E4E0', backgroundColor: '#F4F2EE' } as const
-const TABLE_ROW_STYLE = { borderBottom: '0.5px solid #E6E4E0' } as const
-const TH_CLASS = 'px-4 py-3 text-left text-[10px] font-medium uppercase text-[#A0A098] tracking-label'
-
-const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  concept: { label: 'Open', color: 'text-[#5A5A55]', bg: 'bg-[#EEEEED]' },
-  definitief: { label: 'In uitvoering', color: 'text-[#943520]', bg: 'bg-[#FAE5E0]' },
-  afgerond: { label: 'Afgetekend', color: 'text-[#1A535C]', bg: 'bg-[#E2F0F0]' },
+const STATUS_CONFIG: Record<string, { label: string; text: string; bg: string }> = {
+  concept: { label: 'Open', text: '#5A5A55', bg: '#EEEEED' },
+  definitief: { label: 'In uitvoering', text: '#C03A18', bg: '#FDE8E2' },
+  afgerond: { label: 'Afgetekend', text: '#1A535C', bg: '#E2F0F0' },
 }
 
 export function WerkbonnenLayout() {
@@ -164,144 +158,234 @@ export function WerkbonnenLayout() {
   }
 
   return (
-    <div className="h-full flex flex-col mod-strip mod-strip-werkbonnen">
-      <ModuleHeader
-        module="werkbonnen"
-        icon={ClipboardCheck}
-        title="Werkbonnen"
-        subtitle="Instructiebladen voor monteurs — afbeeldingen, afmetingen en notities"
-        actions={
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <Button variant="outline" size="sm" onClick={handleExportCSV} className="hidden sm:flex">
-              <Download className="h-4 w-4 mr-1" /> CSV
-            </Button>
-            <Button onClick={() => navigate('/werkbonnen/nieuw')} size="sm" className="bg-[#C44830] hover:bg-[#A33B28] text-white rounded-lg">
-              <Plus className="h-4 w-4 mr-1" />
-              <span className="hidden sm:inline">Nieuwe werkbon</span>
-              <span className="sm:hidden">Nieuw</span>
-            </Button>
-          </div>
-        }
-      />
+    <div className="h-full flex flex-col bg-[#F8F7F5] -m-3 sm:-m-4 md:-m-6">
+      {/* Inline keyframes for pulse + stagger */}
+      <style>{`
+        @keyframes doen-pulse { 0%,100% { opacity:1 } 50% { opacity:.35 } }
+        @keyframes doen-fade-up { from { opacity:0; transform:translateY(8px) } to { opacity:1; transform:translateY(0) } }
+        .doen-pulse { animation: doen-pulse 2.5s ease-in-out infinite }
+        .doen-row { animation: doen-fade-up .35s cubic-bezier(.22,1,.36,1) both }
+      `}</style>
 
-      {/* Content */}
       <div className="flex-1 min-h-0 overflow-y-auto">
-      <div className="space-y-6 p-5">
+      <div className="px-8 py-8 space-y-6 max-w-[1400px]">
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-        {(['concept', 'definitief', 'afgerond'] as const).map((status) => {
-          const cfg = STATUS_CONFIG[status]
-          return (
-            <Card key={status} className="cursor-pointer hover-lift rounded-full"
-              onClick={() => setFilterStatus(status === filterStatus ? 'alle' : status)}>
-              <CardContent className="p-5">
-                <p className="text-[10px] font-bold text-text-tertiary uppercase tracking-label">{cfg.label}</p>
-                <p className="text-2xl font-bold mt-1"><span className="font-mono">{statusCounts[status] || 0}</span></p>
-              </CardContent>
-            </Card>
-          )
-        })}
+      {/* ── Header + Stats ── */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-baseline gap-4">
+            <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-[#1A1A1A]">
+              Werkbonnen<span className="text-[#F15025]">.</span>
+            </h1>
+            <span className="text-[13px] text-[#9B9B95] font-mono tabular-nums">
+              <span className="font-medium text-[#6B6B66]">{gefilterd.length}</span>
+              <span className="text-[#C0BDB8]">/</span>{werkbonnen.length}
+            </span>
+          </div>
+          <button
+            onClick={() => navigate('/werkbonnen/nieuw')}
+            className="inline-flex items-center gap-2 bg-[#F15025] text-white pl-4 pr-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_2px_8px_rgba(241,80,37,0.25),0_0_0_1px_rgba(241,80,37,0.1)] hover:bg-[#E04520] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35),0_0_0_1px_rgba(241,80,37,0.15)] hover:-translate-y-[1px] active:translate-y-0 active:bg-[#D03A18] transition-all duration-200"
+          >
+            <Plus className="w-4 h-4 opacity-80" />
+            Nieuwe werkbon
+          </button>
+        </div>
+
+        {/* Quick stats — compact inline badges */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {(statusCounts['concept'] || 0) > 0 && (
+            <span className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold bg-[#EEEEED] text-[#5A5A55]">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#5A5A55]" />
+              <span className="font-mono">{statusCounts['concept']}</span> open
+            </span>
+          )}
+          {(statusCounts['definitief'] || 0) > 0 && (
+            <span className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold bg-[#FDE8E2] text-[#C03A18]">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#F15025] doen-pulse" />
+              <span className="font-mono">{statusCounts['definitief']}</span> in uitvoering
+            </span>
+          )}
+          {(statusCounts['afgerond'] || 0) > 0 && (
+            <span className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold bg-[#E8F2EC] text-[#2D6B48]">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#2D6B48]" />
+              <span className="font-mono">{statusCounts['afgerond']}</span> afgetekend
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Zoek op nummer, klant, project..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        <div className="flex gap-1 flex-wrap overflow-x-auto scrollbar-hide">
-          {(['alle', 'concept', 'definitief', 'afgerond'] as const).map((status) => (
-            <Button
-              key={status}
-              variant={filterStatus === status ? 'default' : 'outline'}
-              size="sm"
-              className={cn(
-                'whitespace-nowrap rounded-full',
-                filterStatus === status
-                  ? 'bg-[#191919] text-white hover:bg-[#191919]/90 border-transparent'
-                  : 'text-[#5A5A55]'
-              )}
-              onClick={() => setFilterStatus(status)}
+      {/* ── Toolbar card ── */}
+      <div className="bg-white rounded-2xl p-5 shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03]">
+        <div className="flex items-center gap-5">
+          {/* Search with keyboard hint */}
+          <div className="relative max-w-[280px] flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9B9B95]" />
+            <input
+              type="text"
+              placeholder="Zoek op nummer, klant, project..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-12 py-2 text-sm bg-[#F8F7F5] border border-[#EBEBEB] rounded-lg text-[#1A1A1A] placeholder:text-[#9B9B95] focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/10 transition-all"
+            />
+            <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono text-[#9B9B95] bg-[#F0EFEC] rounded border border-[#E5E4E0]">/</kbd>
+          </div>
+
+          {/* Export */}
+          <div className="hidden sm:flex items-center gap-1 ml-auto">
+            <button
+              onClick={handleExportCSV}
+              className="flex items-center gap-1.5 text-xs font-medium text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] px-3 py-2 rounded-lg transition-all"
             >
-              {status === 'alle' ? 'Alle' : STATUS_CONFIG[status].label}
-              {statusCounts[status] !== undefined && <>{' ('}<span className="font-mono">{statusCounts[status] || 0}</span>{')'}</>}
-            </Button>
-          ))}
+              <Download className="w-3.5 h-3.5" />
+              CSV
+            </button>
+          </div>
+        </div>
+
+        {/* Filter tabs */}
+        <div className="flex items-center gap-6 mt-4 pt-4 border-t border-[#F0EFEC]">
+          <div className="flex items-center gap-1 flex-wrap flex-1">
+            {(['alle', 'concept', 'definitief', 'afgerond'] as const).map((status) => {
+              const labels: Record<string, string> = { alle: 'Alle', concept: 'Open', definitief: 'In uitvoering', afgerond: 'Afgetekend' }
+              const count = statusCounts[status] || 0
+              const isActive = filterStatus === status
+              return (
+                <button
+                  key={status}
+                  onClick={() => setFilterStatus(status)}
+                  className={cn(
+                    'relative text-[13px] font-medium px-3 py-1.5 rounded-lg whitespace-nowrap transition-all',
+                    isActive
+                      ? 'text-[#1A535C] font-semibold bg-[#1A535C]/[0.07]'
+                      : 'text-[#9B9B95] hover:text-[#6B6B66]'
+                  )}
+                >
+                  {labels[status]}
+                  {count > 0 && <span className="ml-1 font-mono text-[11px] opacity-50">{count}</span>}
+                  {isActive && <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-[2px] bg-[#1A535C] rounded-full" />}
+                </button>
+              )
+            })}
+          </div>
         </div>
       </div>
 
-      {/* Table */}
+      {/* ── Table ── */}
       {gefilterd.length === 0 ? (
-        <Card className="border-dashed">
+        <div className="bg-white rounded-2xl p-12 ring-1 ring-black/[0.03] text-center">
           <EmptyState
             module="werkbonnen"
             title="Nog geen werkbonnen"
             description="Maak een werkbon aan vanuit een offerte of handmatig."
-            action={
-              <Button onClick={() => navigate('/werkbonnen/nieuw')} size="sm">
-                <Plus className="h-4 w-4 mr-2" /> Nieuwe werkbon
-              </Button>
-            }
           />
-        </Card>
+        </div>
       ) : (
-        <div className="rounded-xl border border-black/[0.06] bg-card/80 dark:bg-card/80 backdrop-blur-sm overflow-hidden -mx-3 sm:mx-0">
-          <div className="overflow-x-auto">
-            <table className="w-full">
+        <div className="bg-white rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03] overflow-hidden">
+            <table className="w-full table-fixed">
               <thead>
-                <tr style={TABLE_HEADER_STYLE}>
-                  <th className={TH_CLASS}>Nummer</th>
-                  <th className={TH_CLASS}>Klant</th>
-                  <th className={`${TH_CLASS} hidden md:table-cell`}>Offerte / Project</th>
-                  <th className={`${TH_CLASS} hidden sm:table-cell`}>Datum</th>
-                  <th className={TH_CLASS}>Status</th>
-                  <th className={`${TH_CLASS} text-right hidden sm:table-cell`}>Items</th>
-                  <th className={`${TH_CLASS} text-right hidden md:table-cell`}>Acties</th>
+                <tr className="border-b-2 border-[#F0EFEC]">
+                  <th className="text-left py-3.5 pl-5 pr-4">
+                    <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Nummer</span>
+                  </th>
+                  <th className="text-left py-3.5 pr-4 w-[160px]">
+                    <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Klant</span>
+                  </th>
+                  <th className="text-left py-3.5 pr-4">
+                    <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Offerte / Project</span>
+                  </th>
+                  <th className="text-right py-3.5 pr-4 w-[90px]">
+                    <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Datum</span>
+                  </th>
+                  <th className="text-left py-3.5 pr-4 w-[150px]">
+                    <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Status</span>
+                  </th>
+                  <th className="text-center py-3.5 pr-4 w-[70px]">
+                    <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Items</span>
+                  </th>
+                  <th className="w-[80px] py-3.5 pr-4" />
                 </tr>
               </thead>
-              <tbody className="divide-y row-stagger">
-                {gefilterd.map((wb) => {
+              <tbody>
+                {gefilterd.map((wb, i) => {
                   const cfg = STATUS_CONFIG[wb.status] || STATUS_CONFIG.concept
                   const offerteRef = getOfferteNummer(wb.offerte_id)
                   const projectRef = getProjectNaam(wb.project_id)
                   const ref = offerteRef !== '-' ? offerteRef : projectRef
                   return (
-                    <tr key={wb.id} className="group border-l-[3px] border-l-[#C44830] cursor-pointer hover:bg-[#F4F2EE] transition-colors duration-150"
-                      style={TABLE_ROW_STYLE}
-                      onClick={() => navigateWithTab({ path: `/werkbonnen/${wb.id}`, label: wb.werkbon_nummer || 'Werkbon', id: `/werkbonnen/${wb.id}` })}>
-                      <td className="px-4 py-3">
-                        <div>
-                          <span className="font-mono text-sm font-medium">{wb.werkbon_nummer}</span>
-                          {wb.titel && <p className="text-xs text-muted-foreground truncate max-w-[200px]">{wb.titel}</p>}
+                    <tr
+                      key={wb.id}
+                      className={cn(
+                        'doen-row border-b border-[#F0EFEC] last:border-0 cursor-pointer transition-all duration-200 group',
+                        'hover:bg-[#F8F7F4]',
+                      )}
+                      style={{ animationDelay: `${i * 25}ms` }}
+                      onClick={() => navigateWithTab({ path: `/werkbonnen/${wb.id}`, label: wb.werkbon_nummer || 'Werkbon', id: `/werkbonnen/${wb.id}` })}
+                    >
+                      <td className="py-3.5 pl-5 pr-4">
+                        <div className="min-w-0">
+                          <div className="flex items-baseline gap-2.5">
+                            <span className="text-[15px] font-semibold text-[#1A1A1A] group-hover:text-[#1A535C] transition-colors">{wb.werkbon_nummer}</span>
+                          </div>
+                          {wb.titel && <p className="text-[11px] text-[#C0BDB8] truncate max-w-[240px] mt-0.5">{wb.titel}</p>}
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-sm">{getKlantNaam(wb.klant_id)}</td>
-                      <td className="px-4 py-3 text-sm hidden md:table-cell">{ref}</td>
-                      <td className="px-4 py-3 text-sm font-mono hidden sm:table-cell">{new Date(wb.datum).toLocaleDateString('nl-NL')}</td>
-                      <td className="px-4 py-3">
-                        <span className={cn('inline-flex items-center px-[10px] py-[3px] rounded-full text-[10px] font-semibold', cfg.bg, cfg.color)}>
-                          {cfg.label}<span style={{ color: '#F15025' }}>.</span>
+                      <td className="py-3.5 pr-4">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          {(() => {
+                            const naam = getKlantNaam(wb.klant_id)
+                            const c = naam.charCodeAt(0) % 5
+                            const avatarColors = [
+                              'bg-[#E8F2EC] text-[#3A7D52]',
+                              'bg-[#E8EEF9] text-[#3A5A9A]',
+                              'bg-[#F5F2E8] text-[#8A7A4A]',
+                              'bg-[#F0EFEC] text-[#6B6B66]',
+                              'bg-[#EDE8F4] text-[#6A5A8A]',
+                            ]
+                            return (
+                              <span className={cn('flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold uppercase select-none', avatarColors[c])}>
+                                {naam.charAt(0)}
+                              </span>
+                            )
+                          })()}
+                          <span className="text-[13px] text-[#4A4A46] truncate block leading-tight">{getKlantNaam(wb.klant_id)}</span>
+                        </div>
+                      </td>
+                      <td className="py-3.5 pr-4">
+                        <span className="text-[13px] text-[#6B6B66] truncate block">{ref}</span>
+                      </td>
+                      <td className="py-3.5 pr-4 text-right">
+                        <span className="text-[12px] font-mono tabular-nums text-[#B0ADA8]">
+                          {new Date(wb.datum).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' }).replace('.', '')}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-right font-medium hidden sm:table-cell">
-                        <span className="font-mono">{itemCounts[wb.id] || 0}</span>
+                      <td className="py-3.5 pr-4">
+                        <span
+                          className="inline-flex items-center gap-1.5 text-[13px] font-semibold px-2.5 py-1 rounded-lg transition-all"
+                          style={{ backgroundColor: cfg.bg, color: cfg.text }}
+                        >
+                          {wb.status === 'definitief' && <span className="w-1.5 h-1.5 rounded-full bg-current doen-pulse" />}
+                          {cfg.label}<span className="text-[#F15025]">.</span>
+                        </span>
                       </td>
-                      <td className="px-4 py-3 text-right hidden md:table-cell" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button variant="ghost" size="icon" className="h-8 w-8"
-                            onClick={() => navigateWithTab({ path: `/werkbonnen/${wb.id}`, label: wb.werkbon_nummer || 'Werkbon', id: `/werkbonnen/${wb.id}` })}>
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive"
-                            onClick={() => { setDeleteTarget(wb); setDeleteDialogOpen(true) }}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                      <td className="py-3.5 pr-4 text-center">
+                        <span className="inline-flex items-center justify-center text-[11px] font-mono font-semibold tabular-nums rounded-md px-2 py-0.5 bg-[#F5F4F1] text-[#6B6B66]">
+                          {itemCounts[wb.id] || 0}
+                        </span>
+                      </td>
+                      <td className="py-3.5 pr-4" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-end gap-0.5">
+                          <button
+                            className="p-1.5 rounded-lg hover:bg-[#F0EFEC] transition-all opacity-0 group-hover:opacity-100"
+                            onClick={() => navigateWithTab({ path: `/werkbonnen/${wb.id}`, label: wb.werkbon_nummer || 'Werkbon', id: `/werkbonnen/${wb.id}` })}
+                          >
+                            <Eye className="w-3.5 h-3.5 text-[#9B9B95]" />
+                          </button>
+                          <button
+                            className="p-1.5 rounded-lg hover:bg-[#FDE8E4] transition-all opacity-0 group-hover:opacity-100"
+                            onClick={() => { setDeleteTarget(wb); setDeleteDialogOpen(true) }}
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-[#C03A18]" />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -309,7 +393,6 @@ export function WerkbonnenLayout() {
                 })}
               </tbody>
             </table>
-          </div>
         </div>
       )}
 

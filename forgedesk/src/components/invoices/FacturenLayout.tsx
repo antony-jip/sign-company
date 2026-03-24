@@ -92,8 +92,7 @@ import { logger } from '../../utils/logger'
 import { SkeletonTable } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/ui/empty-state'
 import { PaginationControls } from '@/components/ui/pagination-controls'
-import { ModuleHeader } from '@/components/shared/ModuleHeader'
-import { MODULE_COLORS } from '@/lib/moduleColors'
+// ModuleHeader + MODULE_COLORS removed — using DOEN inline header
 import { DagenOpenFilterBar, getDaysOpen, getDaysColor, matchDagenFilter } from '@/components/shared/DagenOpenFilter'
 import type { DagenOpenFilter } from '@/components/shared/DagenOpenFilter'
 import { berekenDagenOpen, getAgingColor, getAgingBgColor } from '@/utils/spectrumUtils'
@@ -1325,204 +1324,174 @@ export function FacturenLayout() {
   }
 
   return (
-    <div className="h-full flex flex-col mod-strip mod-strip-facturen">
-      {/* ── Header bar ────────────────────────────────────────────── */}
-      <ModuleHeader
-        module="facturen"
-        icon={Receipt}
-        title="Facturen"
-        subtitle={`${filteredFacturen.length} van ${facturen.length} facturen`}
-        actions={
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2 hidden sm:flex">
-                  <Download className="h-4 w-4" />
-                  Exporteer
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handleExportCSV}>
-                  Exporteer als CSV
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleExportExcel}>
-                  Exporteer als Excel
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <Button
-              variant="outline"
-              onClick={() => setOfferteDialogOpen(true)}
-              className="gap-2 hidden sm:flex"
-              size="sm"
-            >
-              <FileInput className="h-4 w-4" />
-              Vanuit offerte
-            </Button>
-            <Button
-              onClick={() => navigate('/facturen/nieuw')}
-              className="gap-2 rounded-lg text-white"
-              size="sm"
-              style={{ backgroundColor: '#2D6B48' }}
-            >
-              <Plus className="h-4 w-4" />
-              <span className="hidden sm:inline">Nieuwe factuur</span>
-              <span className="sm:hidden">Nieuw</span>
-            </Button>
-          </div>
-        }
-      />
+    <div className="h-full flex flex-col bg-[#F8F7F5] -m-3 sm:-m-4 md:-m-6">
+      {/* Inline keyframes for pulse + stagger */}
+      <style>{`
+        @keyframes doen-pulse { 0%,100% { opacity:1 } 50% { opacity:.35 } }
+        @keyframes doen-fade-up { from { opacity:0; transform:translateY(8px) } to { opacity:1; transform:translateY(0) } }
+        .doen-pulse { animation: doen-pulse 2.5s ease-in-out infinite }
+        .doen-row { animation: doen-fade-up .35s cubic-bezier(.22,1,.36,1) both }
+      `}</style>
 
       {/* ── Content ── */}
       <div className="flex-1 min-h-0 overflow-y-auto">
-      <div className="space-y-6 p-5">
+      <div className="px-8 py-8 space-y-6 max-w-[1400px]">
 
-      {/* ── Statistics ────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 stat-cards-stagger">
-        <div className="stat-card-gradient-offertes stat-card-hover stat-card-glow relative overflow-hidden rounded-2xl p-5">
-          <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-text-tertiary mb-3">
-            Totaal openstaand
-          </p>
-          <p className="display-number display-number-lg text-foreground font-mono">
-            {formatCurrency(statistics.totaalOpenstaand)}
-          </p>
-          <p className="text-[10px] font-semibold text-[#3A7D52] mt-3">
-            nog te ontvangen
-          </p>
+      {/* ── Header + Stats ── */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-baseline gap-4">
+            <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-[#1A1A1A]">
+              Facturen<span className="text-[#F15025]">.</span>
+            </h1>
+            <span className="text-[13px] text-[#9B9B95] font-mono tabular-nums">
+              <span className="font-medium text-[#6B6B66]">{filteredFacturen.length}</span>
+              <span className="text-[#C0BDB8]">/</span>{facturen.length}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setOfferteDialogOpen(true)}
+              className="hidden sm:inline-flex items-center gap-2 text-[13px] font-medium text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-white px-3.5 py-2 rounded-xl ring-1 ring-black/[0.06] transition-all"
+            >
+              <FileInput className="w-4 h-4" />
+              Vanuit offerte
+            </button>
+            <button
+              onClick={() => navigate('/facturen/nieuw')}
+              className="inline-flex items-center gap-2 bg-[#F15025] text-white pl-4 pr-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_2px_8px_rgba(241,80,37,0.25),0_0_0_1px_rgba(241,80,37,0.1)] hover:bg-[#E04520] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35),0_0_0_1px_rgba(241,80,37,0.15)] hover:-translate-y-[1px] active:translate-y-0 active:bg-[#D03A18] transition-all duration-200"
+            >
+              <Plus className="w-4 h-4 opacity-80" />
+              Nieuwe factuur
+            </button>
+          </div>
         </div>
 
-        <div className="stat-card-gradient-facturen stat-card-hover stat-card-glow relative overflow-hidden rounded-2xl p-5">
-          <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-text-tertiary mb-3">
-            Betaald deze maand
-          </p>
-          <p className="display-number display-number-lg text-foreground font-mono">
-            {formatCurrency(statistics.betaaldDezeMaand)}
-          </p>
-          <p className="text-[10px] font-semibold text-[#3A7D52] mt-3">
-            ontvangen
-          </p>
-        </div>
-
-        <div className="stat-card-hover relative overflow-hidden rounded-2xl p-5" style={{ background: `linear-gradient(135deg, color-mix(in srgb, ${MODULE_COLORS.werkbonnen.light} 50%, white), color-mix(in srgb, ${MODULE_COLORS.werkbonnen.light} 20%, white))` }}>
-          <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] mb-3" style={{ color: MODULE_COLORS.werkbonnen.text }}>
-            Vervallen facturen
-          </p>
-          <p className="display-number display-number-lg text-foreground">
-            <span className="font-mono">{verlopenCount}</span>
-          </p>
-          <p className="text-[10px] font-semibold mt-3" style={{ color: MODULE_COLORS.werkbonnen.text }}>
-            {verlopenTotaal > 0 ? <span className="font-mono">{formatCurrency(verlopenTotaal)}</span> : 'actie vereist'}
-          </p>
+        {/* Quick stats — compact inline badges */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {statistics.totaalOpenstaand > 0 && (
+            <span className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold bg-[#FDE8E2] text-[#C03A18]">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#F15025] doen-pulse" />
+              <span className="font-mono">{formatCurrency(statistics.totaalOpenstaand)}</span> open
+            </span>
+          )}
+          {statistics.betaaldDezeMaand > 0 && (
+            <span className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold bg-[#E8F2EC] text-[#2D6B48]">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#2D6B48]" />
+              <span className="font-mono">{formatCurrency(statistics.betaaldDezeMaand)}</span> betaald
+            </span>
+          )}
           {verlopenCount > 0 && (
             <button
-              className="text-[10px] font-bold hover:underline mt-1"
-              style={{ color: MODULE_COLORS.werkbonnen.text }}
               onClick={() => setFilterStatus('verlopen')}
+              className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold bg-[#FDE8E4] text-[#C0451A] hover:bg-[#FBD8D2] transition-colors"
             >
-              Toon verlopen →
+              <span className="w-1.5 h-1.5 rounded-full bg-[#F15025] doen-pulse" />
+              <span className="font-mono">{verlopenCount}</span> vervallen
             </button>
           )}
-        </div>
-
-        <div className="stat-card-hover relative overflow-hidden rounded-2xl p-5" style={{ background: `linear-gradient(135deg, color-mix(in srgb, ${MODULE_COLORS.taken.light} 50%, white), color-mix(in srgb, ${MODULE_COLORS.taken.light} 20%, white))` }}>
-          <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] mb-3" style={{ color: MODULE_COLORS.taken.text }}>
-            Gem. betaaltermijn
-          </p>
-          <p className="display-number display-number-lg text-foreground">
-            <span className="font-mono">{statistics.gemiddeldeBetaaltermijn}</span> <span className="text-[18px]">dagen</span>
-          </p>
-          <p className="text-[10px] font-semibold mt-3" style={{ color: MODULE_COLORS.taken.text }}>
-            gemiddeld
-          </p>
+          <span className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold bg-[#F5F2E8] text-[#8A7A4A]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#8A7A4A]" />
+            <span className="font-mono">{statistics.gemiddeldeBetaaltermijn}</span> dgn termijn
+          </span>
         </div>
       </div>
 
-      {/* ── Search + Filters ──────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Zoek op nummer, titel of klant..."
-            className="pl-10 rounded-xl bg-card/70 backdrop-blur-sm"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
-        </div>
-      </div>
+      {/* ── Toolbar card ── */}
+      <div className="bg-white rounded-2xl p-5 shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03]">
+        <div className="flex items-center gap-5">
+          {/* Search with keyboard hint */}
+          <div className="relative max-w-[280px] flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9B9B95]" />
+            <input
+              type="text"
+              placeholder="Zoek op nummer, titel of klant..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-12 py-2 text-sm bg-[#F8F7F5] border border-[#EBEBEB] rounded-lg text-[#1A1A1A] placeholder:text-[#9B9B95] focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/10 transition-all"
+            />
+            <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono text-[#9B9B95] bg-[#F0EFEC] rounded border border-[#E5E4E0]">/</kbd>
+          </div>
 
-      {/* Filter pills */}
-      <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1">
-        {FILTER_OPTIONS.map((option) => {
-          const count = statusCounts[option.value] || 0
-          return (
-            <button
-              key={option.value}
-              onClick={() => setFilterStatus(option.value)}
-              className={cn(
-                'px-3 py-1.5 rounded-full text-[10px] font-medium whitespace-nowrap transition-all duration-200 flex items-center gap-1.5',
-                filterStatus === option.value
-                  ? 'bg-[#191919] text-white'
-                  : 'text-[#5A5A55] hover:bg-muted/80'
-              )}
-            >
-              {option.value !== 'alle' && (
-                <span
-                  className="w-2 h-2 rounded-full"
-                  style={{ backgroundColor: STATUS_CONFIG[option.value as FactuurStatus]?.dot }}
-                />
-              )}
-              {option.label}
-              <span className="text-[10px] opacity-70">({count})</span>
-            </button>
-          )
-        })}
-      </div>
-
-      {/* ── Dagen open filter ── */}
-      <DagenOpenFilterBar
-        value={dagenOpenFilter}
-        onChange={setDagenOpenFilter}
-        items={facturen
-          .filter((f) => ['concept', 'verzonden', 'vervallen'].includes(f.status))
-          .map((f) => ({ dateField: f.factuurdatum }))
-        }
-      />
-
-      {/* ── Sort toolbar ──────────────────────────────────────────── */}
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <ArrowUpDown className="w-3.5 h-3.5" />
-        <span className="font-medium">Sorteer:</span>
-        {SORT_OPTIONS.map((option) => (
-          <button
-            key={option.value}
-            onClick={() => handleSort(option.value)}
-            className={cn(
-              'px-2 py-1 rounded-lg transition-colors',
-              sortField === option.value
-                ? 'text-accent dark:text-wm-light font-semibold bg-primary/8 dark:bg-primary/15'
-                : 'hover:text-foreground hover:bg-muted/50'
-            )}
-          >
-            {option.label}
-            {sortField === option.value && (
-              <span className="ml-1 inline-flex">
-                {sortDir === 'asc' ? (
-                  <ArrowUp className="h-3 w-3 inline" />
-                ) : (
-                  <ArrowDown className="h-3 w-3 inline" />
+          {/* Sort buttons */}
+          <div className="hidden sm:flex items-center gap-1">
+            {SORT_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                onClick={() => handleSort(option.value)}
+                className={cn(
+                  'px-2 py-1.5 rounded-lg text-xs transition-colors',
+                  sortField === option.value
+                    ? 'text-[#1A535C] font-semibold bg-[#1A535C]/[0.07]'
+                    : 'text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F8F7F5]'
                 )}
-              </span>
-            )}
-          </button>
-        ))}
+              >
+                {option.label}
+                {sortField === option.value && (
+                  <span className="ml-1 inline-flex">
+                    {sortDir === 'asc' ? <ArrowUp className="h-3 w-3 inline" /> : <ArrowDown className="h-3 w-3 inline" />}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {/* Export buttons */}
+          <div className="hidden sm:flex items-center gap-1 ml-auto">
+            <button
+              onClick={handleExportCSV}
+              className="flex items-center gap-1.5 text-xs font-medium text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] px-3 py-2 rounded-lg transition-all"
+            >
+              <Download className="w-3.5 h-3.5" />
+              CSV
+            </button>
+            <button
+              onClick={handleExportExcel}
+              className="flex items-center gap-1.5 text-xs font-medium text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] px-3 py-2 rounded-lg transition-all"
+            >
+              <FileText className="w-3.5 h-3.5" />
+              Excel
+            </button>
+          </div>
+        </div>
+
+        {/* Filter tabs */}
+        <div className="flex items-center gap-6 mt-4 pt-4 border-t border-[#F0EFEC]">
+          <div className="flex items-center gap-1 flex-wrap flex-1">
+            {FILTER_OPTIONS.map((option) => {
+              const count = statusCounts[option.value] || 0
+              const isActive = filterStatus === option.value
+              return (
+                <button
+                  key={option.value}
+                  onClick={() => setFilterStatus(option.value)}
+                  className={cn(
+                    'relative text-[13px] font-medium px-3 py-1.5 rounded-lg whitespace-nowrap transition-all',
+                    isActive
+                      ? 'text-[#1A535C] font-semibold bg-[#1A535C]/[0.07]'
+                      : 'text-[#9B9B95] hover:text-[#6B6B66]'
+                  )}
+                >
+                  {option.label}
+                  {count > 0 && <span className="ml-1 font-mono text-[11px] opacity-50">{count}</span>}
+                  {isActive && <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-[2px] bg-[#1A535C] rounded-full" />}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Dagen open filter */}
+        <div className="mt-3">
+          <DagenOpenFilterBar
+            value={dagenOpenFilter}
+            onChange={setDagenOpenFilter}
+            items={facturen
+              .filter((f) => ['concept', 'verzonden', 'vervallen'].includes(f.status))
+              .map((f) => ({ dateField: f.factuurdatum }))
+            }
+          />
+        </div>
       </div>
 
       {/* ── Te factureren projecten view ── */}
@@ -1609,50 +1578,57 @@ export function FacturenLayout() {
             <div
               key={`mobile-${factuur.id}`}
               onClick={() => setViewingFactuur(factuur)}
-              className="p-4 rounded-xl border bg-card cursor-pointer active:bg-muted/50 transition-colors border-l-[3px]"
-              style={{ borderLeftColor: mobileBorderColor }}
+              className="doen-row p-4 rounded-xl bg-white ring-1 ring-black/[0.03] cursor-pointer active:bg-[#F8F7F4] transition-all"
+              style={{ animationDelay: `${paginatedFacturen.indexOf(factuur) * 25}ms` }}
             >
               <div className="flex items-start justify-between gap-2 mb-2">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-sm font-mono font-semibold text-foreground">{factuur.nummer}</span>
+                    <span className="text-[15px] font-semibold text-[#1A1A1A]">{factuur.nummer}</span>
                     {factuur.factuur_type && factuur.factuur_type !== 'standaard' && (
-                      <Badge variant="secondary" className={cn('text-[10px] font-semibold px-[10px] py-[3px] rounded-full', TYPE_CONFIG[factuur.factuur_type].color)}>
+                      <span className="text-[10px] text-[#B0ADA8] font-mono bg-[#F5F4F1] px-1.5 py-0.5 rounded font-semibold">
                         {TYPE_CONFIG[factuur.factuur_type].label}
-                      </Badge>
+                      </span>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground truncate mt-0.5">
+                  <p className="text-[12px] text-[#9B9B95] truncate mt-0.5">
                     {factuur.klant_naam || 'Onbekende klant'}
                   </p>
                 </div>
-                <Badge
-                  variant="secondary"
-                  className="text-[10px] font-semibold px-[10px] py-[3px] rounded-full flex-shrink-0"
+                <span
+                  className="inline-flex items-center gap-1.5 text-[13px] font-semibold px-2.5 py-1 rounded-lg flex-shrink-0"
                   style={{ backgroundColor: config.bg, color: config.text }}
                 >
-                  <span className="w-1.5 h-1.5 rounded-full mr-1 inline-block" style={{ backgroundColor: config.dot }} />
-                  {config.label}
-                </Badge>
+                  {(factuur.status === 'verzonden' || factuur.status === 'vervallen') && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-current doen-pulse" />
+                  )}
+                  {config.label}<span className="text-[#F15025]">.</span>
+                </span>
               </div>
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <div className="flex items-center justify-between text-[12px] text-[#9B9B95]">
                 <div className="flex items-center gap-2">
-                  <span className="font-mono">{formatDate(factuur.factuurdatum)}</span>
+                  <span className="font-mono tabular-nums text-[#B0ADA8]">{new Date(factuur.factuurdatum).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' }).replace('.', '')}</span>
                   {(factuur.status === 'verzonden' || factuur.status === 'vervallen') && mobileDagenOpen > 0 && (
                     <span
-                      className="font-mono font-semibold flex items-center gap-1 rounded-full px-[10px] py-[3px] text-[10px]"
-                      style={{ backgroundColor: getAgingBgColor(mobileDagenOpen), color: getAgingColor(mobileDagenOpen) }}
+                      className={cn(
+                        'text-[11px] font-mono font-semibold tabular-nums rounded-md px-2 py-0.5',
+                        mobileDagenOpen > 90 ? 'bg-[#FDE8E4] text-[#C03A18]' :
+                        mobileDagenOpen > 30 ? 'bg-[#FEF3E8] text-[#D4621A]' :
+                        'text-[#9B9B95]'
+                      )}
                     >
-                      <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: getAgingColor(mobileDagenOpen) }} />
-                      {mobileDagenOpen} dgn
+                      {mobileDagenOpen}d
                     </span>
                   )}
                 </div>
                 <div className="flex items-center gap-2">
                   {openstaand > 0 && openstaand < factuur.totaal && (
-                    <span className="text-[10px] text-muted-foreground">open: <span className="font-mono">{formatCurrency(openstaand)}</span></span>
+                    <span className="text-[10px] text-[#C0BDB8]">open: <span className="font-mono">{formatCurrency(openstaand)}</span></span>
                   )}
-                  <span className="font-mono font-semibold text-foreground">{formatCurrency(factuur.totaal)}</span>
+                  <span className={cn(
+                    'font-mono tabular-nums',
+                    factuur.totaal >= 10000 ? 'text-[15px] font-bold text-[#1A1A1A]' : 'text-sm text-[#4A4A46]'
+                  )}>{formatCurrency(factuur.totaal)}</span>
                 </div>
               </div>
             </div>
@@ -1661,39 +1637,49 @@ export function FacturenLayout() {
       </div>
 
       {/* ── Desktop Table ─────────────────────────────────────────────────── */}
-      <div className="hidden md:block rounded-xl border border-border bg-card overflow-hidden -mx-3 sm:mx-0">
+      <div className="hidden md:block bg-white rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="" style={{ borderBottom: '0.5px solid #E6E4E0', backgroundColor: '#F4F2EE' }}>
-                <th className="w-10 px-3 py-3">
+              <tr className="border-b-2 border-[#F0EFEC]">
+                <th className="py-3.5 pl-5 pr-3 w-10 text-left">
                   <Checkbox
                     checked={filteredFacturen.length > 0 && selectedIds.size === filteredFacturen.length}
                     onCheckedChange={toggleSelectAll}
                     aria-label="Selecteer alles"
                   />
                 </th>
-                {[
-                  { key: 'nummer', label: 'Nummer', hide: '' },
-                  { key: 'klant', label: 'Klant', hide: '' },
-                  { key: 'titel', label: 'Titel', hide: 'hidden md:table-cell' },
-                  { key: 'factuurdatum', label: 'Datum', hide: 'hidden sm:table-cell' },
-                  { key: 'dagen_open', label: 'Open', hide: 'hidden xl:table-cell' },
-                  { key: 'vervaldatum', label: 'Vervaldatum', hide: 'hidden lg:table-cell' },
-                  { key: 'bedrag', label: 'Bedrag', hide: '' },
-                  { key: 'status', label: 'Status', hide: '' },
-                  { key: 'verlopen', label: 'Verlopen', hide: 'hidden lg:table-cell' },
-                  { key: 'bekeken', label: 'Online', hide: 'hidden lg:table-cell' },
-                  { key: 'acties', label: '', hide: 'hidden md:table-cell' },
-                ].map((col) => (
-                  <th
-                    key={col.key}
-                    className={`px-4 py-3 text-left text-[10px] font-medium uppercase text-[#A0A098] ${col.hide}`}
-                    style={{ letterSpacing: '0.8px' }}
-                  >
-                    {col.label}
-                  </th>
-                ))}
+                <th className="text-left py-3.5 pr-4">
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Nummer</span>
+                </th>
+                <th className="text-left py-3.5 pr-4 w-[160px]">
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Klant</span>
+                </th>
+                <th className="text-left py-3.5 pr-4 hidden md:table-cell">
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Titel</span>
+                </th>
+                <th className="text-right py-3.5 pr-4 w-[80px] hidden sm:table-cell">
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Datum</span>
+                </th>
+                <th className="text-right py-3.5 pr-4 w-[70px] hidden xl:table-cell">
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Open</span>
+                </th>
+                <th className="text-right py-3.5 pr-4 w-[90px] hidden lg:table-cell">
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Vervaldatum</span>
+                </th>
+                <th className="text-right py-3.5 pr-4 w-[110px]">
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Bedrag</span>
+                </th>
+                <th className="text-left py-3.5 pr-4 w-[150px]">
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Status</span>
+                </th>
+                <th className="text-right py-3.5 pr-4 w-[70px] hidden lg:table-cell">
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Verlopen</span>
+                </th>
+                <th className="text-left py-3.5 pr-4 hidden lg:table-cell">
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Online</span>
+                </th>
+                <th className="w-10 py-3.5 pr-4 hidden md:table-cell" />
               </tr>
             </thead>
             <tbody className="row-stagger">
@@ -1730,150 +1716,169 @@ export function FacturenLayout() {
                   <tr
                     key={factuur.id}
                     className={cn(
-                      'group cursor-pointer hover:bg-[#F4F2EE] transition-colors duration-150',
-                      'border-l-[3px]',
-                      factuur.status === 'betaald' && 'factuur-row-betaald',
-                      isOverdue && 'factuur-row-verlopen',
-                      selectedIds.has(factuur.id) && 'bg-primary/5'
+                      'doen-row border-b border-[#F0EFEC] last:border-0 cursor-pointer transition-all duration-200 group',
+                      'hover:bg-[#F8F7F4]',
+                      selectedIds.has(factuur.id) && 'bg-[#1A535C]/[0.03]'
                     )}
-                    style={{ borderLeftColor: agingBorderColor, borderBottom: '0.5px solid #E6E4E0' }}
                   >
-                    <td className="w-10 px-3 py-2.5">
+                    <td className="py-3.5 pl-5 pr-3 align-middle" onClick={(e) => e.stopPropagation()}>
                       <Checkbox
                         checked={selectedIds.has(factuur.id)}
                         onCheckedChange={() => toggleSelect(factuur.id)}
                         aria-label={`Selecteer ${factuur.nummer}`}
                       />
                     </td>
-                    <td className="px-4 py-2.5">
-                      <div className="flex items-center gap-1.5">
+                    <td className="py-3.5 pr-4">
+                      <div className="flex items-baseline gap-2.5">
                         <button
                           onClick={() => setViewingFactuur(factuur)}
-                          className="text-sm font-mono font-semibold text-foreground hover:text-primary hover:underline transition-colors"
+                          className="text-[15px] font-semibold text-[#1A1A1A] group-hover:text-[#1A535C] underline-offset-2 decoration-transparent group-hover:decoration-[#1A535C]/20 underline transition-all"
                         >
                           {factuur.nummer}
                         </button>
                         {factuur.factuur_type && factuur.factuur_type !== 'standaard' && (
-                          <Badge variant="secondary" className={cn('text-[10px] font-semibold px-[10px] py-[3px] rounded-full', TYPE_CONFIG[factuur.factuur_type].color)}>
+                          <span className="text-[10px] text-[#B0ADA8] font-mono flex-shrink-0 bg-[#F5F4F1] px-1.5 py-0.5 rounded font-semibold">
                             {TYPE_CONFIG[factuur.factuur_type].label}
-                          </Badge>
+                          </span>
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-2.5">
-                      <a
-                        href={`/klanten/${factuur.klant_id}`}
-                        className="text-sm text-foreground/80 hover:text-primary dark:hover:text-wm-light hover:underline transition-colors"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        {factuur.klant_naam || 'Onbekende klant'}
-                      </a>
+                    <td className="py-3.5 pr-4">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        {(() => {
+                          const naam = factuur.klant_naam || 'Onbekend'
+                          const c = naam.charCodeAt(0) % 5
+                          const avatarColors = [
+                            'bg-[#E8F2EC] text-[#3A7D52]',
+                            'bg-[#E8EEF9] text-[#3A5A9A]',
+                            'bg-[#F5F2E8] text-[#8A7A4A]',
+                            'bg-[#F0EFEC] text-[#6B6B66]',
+                            'bg-[#EDE8F4] text-[#6A5A8A]',
+                          ]
+                          return (
+                            <span className={cn('flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold uppercase select-none', avatarColors[c])}>
+                              {naam.charAt(0)}
+                            </span>
+                          )
+                        })()}
+                        <div className="min-w-0">
+                          <a
+                            href={`/klanten/${factuur.klant_id}`}
+                            className="text-[13px] text-[#4A4A46] truncate block leading-tight hover:text-[#1A535C] transition-colors"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {factuur.klant_naam || 'Onbekende klant'}
+                          </a>
+                        </div>
+                      </div>
                     </td>
-                    <td className="px-4 py-2.5 max-w-[220px] hidden md:table-cell">
-                      <span className="text-sm text-foreground/80 truncate block">
+                    <td className="py-3.5 pr-4 max-w-[220px] hidden md:table-cell">
+                      <span className="text-[13px] text-[#6B6B66] truncate block">
                         {factuur.titel}
                       </span>
                     </td>
-                    <td className="px-4 py-2.5 hidden sm:table-cell">
-                      <span className="text-sm font-mono tabular-nums text-muted-foreground">
-                        {formatDate(factuur.factuurdatum)}
+                    <td className="py-3.5 pr-4 text-right hidden sm:table-cell">
+                      <span className="text-[12px] font-mono tabular-nums text-[#B0ADA8]">
+                        {new Date(factuur.factuurdatum).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' }).replace('.', '')}
                       </span>
                     </td>
-                    <td className="px-4 py-2.5 hidden xl:table-cell">
+                    <td className="py-3.5 pr-4 text-right hidden xl:table-cell">
                       {factuur.status !== 'betaald' && factuur.status !== 'gecrediteerd' && (() => {
                         const days = getDaysOpen(factuur.factuurdatum)
+                        const urgent = days > 90
+                        const warning = days > 30
                         return (
                           <span
-                            className="text-[10px] font-semibold px-[10px] py-[3px] rounded-full font-mono tabular-nums"
-                            style={{ backgroundColor: getAgingBgColor(days), color: getAgingColor(days) }}
+                            className={cn(
+                              'inline-flex items-center justify-center text-[11px] font-mono font-semibold tabular-nums rounded-md px-2 py-0.5',
+                              urgent ? 'bg-[#FDE8E4] text-[#C03A18]' :
+                              warning ? 'bg-[#FEF3E8] text-[#D4621A]' :
+                              'text-[#9B9B95]'
+                            )}
                           >
-                            {days} dgn
+                            {days}d
                           </span>
                         )
                       })()}
                     </td>
-                    <td className="px-4 py-2.5 hidden lg:table-cell">
-                      <div className="flex items-center gap-1.5">
+                    <td className="py-3.5 pr-4 text-right hidden lg:table-cell">
+                      <div className="flex items-center gap-1.5 justify-end">
                         <span
                           className={cn(
-                            'text-sm font-mono tabular-nums',
+                            'text-[12px] font-mono tabular-nums',
                             isOverdue
                               ? 'text-[#C03A18] font-medium'
-                              : 'text-muted-foreground'
+                              : 'text-[#B0ADA8]'
                           )}
                         >
-                          {formatDate(factuur.vervaldatum)}
+                          {new Date(factuur.vervaldatum).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' }).replace('.', '')}
                         </span>
                         {isOverdue && (
-                          <span className="w-2 h-2 rounded-full bg-[#C03A18] animate-pulse" title="Vervallen" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#C03A18] doen-pulse" title="Vervallen" />
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-2.5 font-mono font-medium text-right">
-                      <span className="text-sm font-mono font-semibold text-foreground">
-                        {formatCurrency(factuur.totaal)}
+                    <td className="py-3.5 pr-4 text-right">
+                      {(() => {
+                        if (factuur.totaal <= 0) return <span className="text-xs text-[#C0BDB8]">&mdash;</span>
+                        return (
+                          <span className={cn(
+                            'font-mono tabular-nums',
+                            factuur.totaal >= 10000
+                              ? 'text-[15px] font-bold text-[#1A1A1A]'
+                              : 'text-sm text-[#4A4A46]'
+                          )}>
+                            {formatCurrency(factuur.totaal)}
+                          </span>
+                        )
+                      })()}
+                    </td>
+                    <td className="py-3.5 pr-4">
+                      <span
+                        className="inline-flex items-center gap-1.5 text-[13px] font-semibold px-2.5 py-1 rounded-lg transition-all"
+                        style={{
+                          backgroundColor: config.bg,
+                          color: config.text,
+                        }}
+                      >
+                        {(factuur.status === 'verzonden' || factuur.status === 'vervallen') && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-current doen-pulse" />
+                        )}
+                        {config.label}<span className="text-[#F15025]">.</span>
                       </span>
                     </td>
-                    <td className="px-4 py-2.5">
-                      {(factuur.status === 'verzonden' || factuur.status === 'vervallen') ? (
-                        <Badge
-                          variant="secondary"
-                          className="text-[10px] font-semibold px-[10px] py-[3px] rounded-full font-mono"
-                          style={{
-                            backgroundColor: getAgingBgColor(dagenOpen),
-                            color: getAgingColor(dagenOpen),
-                          }}
-                        >
-                          <span
-                            className="w-1.5 h-1.5 rounded-full mr-1.5 inline-block"
-                            style={{ backgroundColor: getAgingColor(dagenOpen) }}
-                          />
-                          {dagenOpen} dgn
-                        </Badge>
-                      ) : (
-                        <Badge
-                          variant="secondary"
-                          className="text-[10px] font-semibold px-[10px] py-[3px] rounded-full"
-                          style={{ backgroundColor: config.bg, color: config.text }}
-                        >
-                          <span className="w-1.5 h-1.5 rounded-full mr-1.5 inline-block" style={{ backgroundColor: config.dot }} />
-                          {config.label}
-                        </Badge>
-                      )}
-                    </td>
-                    <td className="px-4 py-2.5 hidden lg:table-cell">
+                    <td className="py-3.5 pr-4 text-right hidden lg:table-cell">
                       {isOverdue && (
-                        <div className="flex items-center gap-1">
-                          <span className="text-xs font-medium font-mono text-[#C03A18]">{getDagenVerlopen(factuur)}d</span>
+                        <div className="flex items-center gap-1 justify-end">
+                          <span className="text-[11px] font-semibold font-mono text-[#C03A18]">{getDagenVerlopen(factuur)}d</span>
                           <div className="flex gap-0.5">
-                            {factuur.herinnering_1_verstuurd && <span className="w-1.5 h-1.5 rounded-full bg-orange-400" title="Herinnering 1" />}
-                            {factuur.herinnering_2_verstuurd && <span className="w-1.5 h-1.5 rounded-full bg-orange-500" title="Herinnering 2" />}
-                            {factuur.herinnering_3_verstuurd && <span className="w-1.5 h-1.5 rounded-full bg-red-400" title="Herinnering 3" />}
-                            {factuur.aanmaning_verstuurd && <span className="w-1.5 h-1.5 rounded-full bg-red-600" title="Aanmaning" />}
+                            {factuur.herinnering_1_verstuurd && <span className="w-1.5 h-1.5 rounded-full bg-[#FEA060]" title="Herinnering 1" />}
+                            {factuur.herinnering_2_verstuurd && <span className="w-1.5 h-1.5 rounded-full bg-[#F15025]" title="Herinnering 2" />}
+                            {factuur.herinnering_3_verstuurd && <span className="w-1.5 h-1.5 rounded-full bg-[#C03A18]" title="Herinnering 3" />}
+                            {factuur.aanmaning_verstuurd && <span className="w-1.5 h-1.5 rounded-full bg-[#8A1A0A]" title="Aanmaning" />}
                           </div>
                         </div>
                       )}
                     </td>
-                    <td className="px-4 py-2.5 hidden lg:table-cell">
+                    <td className="py-3.5 pr-4 hidden lg:table-cell">
                       {factuur.online_bekeken ? (
                         <div className="flex items-center gap-1.5" title={factuur.online_bekeken_op ? `Bekeken op ${new Date(factuur.online_bekeken_op).toLocaleString('nl-NL')}` : 'Online bekeken'}>
-                          <Globe className="h-3.5 w-3.5 text-primary" />
-                          <span className="text-xs text-accent font-medium">Bekeken</span>
+                          <Globe className="h-3.5 w-3.5 text-[#1A535C]" />
+                          <span className="text-[11px] text-[#1A535C] font-semibold">Bekeken</span>
                         </div>
                       ) : factuur.betaal_link ? (
-                        <span className="text-xs text-muted-foreground/60">—</span>
+                        <span className="text-[11px] text-[#C0BDB8]">—</span>
                       ) : null}
                     </td>
-                    <td className="px-4 py-2.5 hidden md:table-cell">
+                    <td className="py-3.5 pr-4 hidden md:table-cell">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                          <button
+                            className="p-1.5 rounded-lg hover:bg-[#F0EFEC] transition-all opacity-0 group-hover:opacity-100"
+                            onClick={(e) => e.stopPropagation()}
                           >
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
+                            <MoreHorizontal className="w-3.5 h-3.5 text-[#9B9B95]" />
+                          </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-48">
                           <DropdownMenuItem onClick={() => setViewingFactuur(factuur)}>
