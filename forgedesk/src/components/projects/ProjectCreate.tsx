@@ -188,8 +188,8 @@ export function ProjectCreate() {
         </div>
 
         {/* Section 2: Klant & Contact — compact */}
-        <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#FFFFFE', border: '0.5px solid #E6E4E0' }}>
-          <div className="h-[3px]" style={{ background: 'linear-gradient(90deg, #9A4070, #9A407060)' }} />
+        <div className="rounded-xl relative" style={{ backgroundColor: '#FFFFFE', border: '0.5px solid #E6E4E0' }}>
+          <div className="h-[3px] rounded-t-xl" style={{ background: 'linear-gradient(90deg, #9A4070, #9A407060)' }} />
           <div className="flex items-center gap-3 px-5 pt-4 pb-1">
             <div className="flex items-center justify-center h-7 w-7 rounded-lg text-white text-[11px] font-bold" style={{ backgroundColor: '#9A4070' }}>2</div>
             <div>
