@@ -5,7 +5,7 @@ import { useTabDirtyState } from '@/hooks/useTabDirtyState'
 import { useDebouncedCallback } from '@/hooks/useDebounce'
 import { toast } from 'sonner'
 import {
-  ArrowLeft, Save, FileText, Plus, ClipboardCheck, Printer,
+  ArrowLeft, Save, FileText, Plus, ClipboardCheck, Printer, Share2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -528,6 +528,65 @@ export function WerkbonDetail() {
     contactNaam, contactTelefoon, toonBriefpapier, werkbonItems,
   ])
 
+  // Deel werkbon PDF via WhatsApp / native share
+  const handleShare = useCallback(async () => {
+    const klant = klanten.find((k) => k.id === klantId)
+    const project = projecten.find((p) => p.id === projectId)
+    const bedrijfsProfiel = { ...profile, primaireKleur }
+    const bestandsnaam = `werkbon-${werkbonNummer || 'nieuw'}.pdf`
+
+    const doc = generateWerkbonInstructiePDF(
+      {
+        werkbon_nummer: werkbonNummer,
+        titel,
+        datum,
+        locatie_adres: locatieAdres,
+        locatie_stad: locatieStad,
+        locatie_postcode: locatiePostcode,
+        contact_naam: contactNaam,
+        contact_telefoon: contactTelefoon,
+        toon_briefpapier: toonBriefpapier,
+      },
+      werkbonItems,
+      klant || {},
+      project?.naam || '',
+      bedrijfsProfiel,
+      documentStyle
+    )
+
+    const pdfBlob = doc.output('blob')
+    const file = new File([pdfBlob], bestandsnaam, { type: 'application/pdf' })
+
+    // Native Web Share API (mobiel: WhatsApp, Mail, etc.)
+    if (navigator.share && navigator.canShare?.({ files: [file] })) {
+      try {
+        await navigator.share({
+          title: `Werkbon ${werkbonNummer}`,
+          text: `Werkbon ${werkbonNummer}${titel ? ` - ${titel}` : ''}`,
+          files: [file],
+        })
+        toast.success('Werkbon gedeeld')
+      } catch (err: unknown) {
+        // Gebruiker heeft delen geannuleerd
+        if (err instanceof Error && err.name !== 'AbortError') {
+          toast.error('Delen mislukt')
+        }
+      }
+    } else {
+      // Fallback: download PDF + open WhatsApp met bericht
+      doc.save(bestandsnaam)
+      const tekst = encodeURIComponent(
+        `Werkbon ${werkbonNummer}${titel ? ` - ${titel}` : ''}\nZie bijgevoegde PDF.`
+      )
+      window.open(`https://wa.me/?text=${tekst}`, '_blank')
+      toast.success('PDF gedownload — voeg toe in WhatsApp')
+    }
+  }, [
+    klanten, klantId, projecten, projectId, profile, primaireKleur, documentStyle,
+    werkbonNummer, titel, datum, locatieAdres, locatieStad, locatiePostcode,
+    contactNaam, contactTelefoon, toonBriefpapier, werkbonItems,
+  ])
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -561,6 +620,9 @@ export function WerkbonDetail() {
               </Button>
               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleDownloadPDF} title="Download PDF">
                 <FileText className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleShare} title="Deel via WhatsApp">
+                <Share2 className="h-4 w-4" />
               </Button>
               <Select value={status} onValueChange={(v) => { setStatus(v as Werkbon['status']); setDirty(true) }}>
                 <SelectTrigger className="w-[130px] h-8 text-xs">
