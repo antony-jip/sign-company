@@ -5,7 +5,6 @@ import {
   Send, Paperclip, Sparkles, ArrowLeft, X, Loader2,
   Bold, Italic, Underline, List, ListOrdered, Link2,
   ChevronDown, Image, Trash2,
-  Wand2, FileText, Clock, Mail, Bell, BellOff, Minimize2, Globe,
 } from 'lucide-react'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { getKlanten } from '@/services/supabaseService'
@@ -13,9 +12,13 @@ import { toast } from 'sonner'
 import { cn, getInitials } from '@/lib/utils'
 import type { Klant, Email } from '@/types'
 import { callForgie } from '@/services/forgieService'
-import { extractSenderEmail, formatShortDate } from './emailHelpers'
 import { logger } from '../../utils/logger'
 import { AIContentEditableToolbar } from '@/components/ui/AIContentEditableToolbar'
+
+export interface ComposeActions {
+  forgieWrite: () => void
+  forgieRewrite: (action: string, label: string) => void
+}
 
 interface EmailComposeProps {
   open: boolean
@@ -25,6 +28,9 @@ interface EmailComposeProps {
   defaultBody?: string
   onSend?: (data: { to: string; subject: string; body: string; html?: string; scheduledAt?: string }) => void
   allEmails?: Email[]
+  onToChange?: (to: string) => void
+  onRegisterActions?: (actions: ComposeActions) => void
+  onForgieLoadingChange?: (loading: boolean) => void
 }
 
 const emailTemplates: Record<string, { onderwerp: string; body: string }> = {
@@ -84,6 +90,9 @@ export function EmailCompose({
   defaultBody = '',
   onSend,
   allEmails = [],
+  onToChange,
+  onRegisterActions,
+  onForgieLoadingChange,
 }: EmailComposeProps) {
   const { emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte } = useAppSettings()
 
@@ -256,34 +265,12 @@ export function EmailCompose({
     }
   }, [subject, signatureHtml])
 
-  // Follow-up reminder
-  const [reminder, setReminder] = useState<string | null>(null)
-  const reminderOptions = [
-    { label: 'Over 1 uur', value: '1h' },
-    { label: 'Morgen 9:00', value: '1d' },
-    { label: 'Over 2 dagen', value: '2d' },
-    { label: 'Over 1 week', value: '1w' },
-  ]
-
-  function setFollowUpReminder(value: string) {
-    setReminder(value)
-    const labels: Record<string, string> = { '1h': '1 uur', '1d': 'morgen 9:00', '2d': '2 dagen', '1w': '1 week' }
-    toast.success(`Herinnering ingesteld: ${labels[value]}`)
-  }
-
-  // Previous emails with this contact
-  const previousEmails = useMemo(() => {
-    if (!to.trim() || to.length < 3) return []
-    const toAddr = to.toLowerCase()
-    return allEmails
-      .filter(e => {
-        const from = extractSenderEmail(e.van)?.toLowerCase()
-        const toField = e.aan?.toLowerCase() || ''
-        return from === toAddr || toField.includes(toAddr)
-      })
-      .sort((a, b) => new Date(b.datum).getTime() - new Date(a.datum).getTime())
-      .slice(0, 5)
-  }, [to, allEmails])
+  // Report state to parent for context sidebar
+  useEffect(() => { onToChange?.(to) }, [to, onToChange])
+  useEffect(() => { onForgieLoadingChange?.(forgieLoading) }, [forgieLoading, onForgieLoadingChange])
+  useEffect(() => {
+    onRegisterActions?.({ forgieWrite: handleForgieWrite, forgieRewrite: handleForgieRewrite })
+  }, [onRegisterActions, handleForgieWrite, handleForgieRewrite])
 
   const execCommand = useCallback((command: string, value?: string) => {
     document.execCommand(command, false, value)
@@ -328,13 +315,8 @@ export function EmailCompose({
 
   if (!open) return null
 
-  // Module accent color for AI
-  const aiAccent = '#9B8EC4' // lavender (forgie module)
-
   return (
-    <div className="flex h-full bg-card">
-      {/* ─── MAIN: compose form ─── */}
-      <div className="flex-1 flex flex-col min-w-0">
+    <div className="flex flex-col h-full bg-card min-w-0">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-2 border-b border-border/50 flex-shrink-0">
           <div className="flex items-center gap-2">
@@ -589,142 +571,6 @@ export function EmailCompose({
             </div>
           </div>
         </div>
-      </div>
-
-      {/* ─── SIDEBAR ─── */}
-      <div className="w-[280px] border-l border-amber-900/[0.06] flex-shrink-0 overflow-y-auto hidden xl:flex flex-col" style={{ background: 'linear-gradient(180deg, hsl(30 35% 93%) 0%, hsl(28 30% 91%) 100%)' }}>
-        <div className="p-4 space-y-3 flex-1">
-
-          {/* ── Forgie AI Tools ── */}
-          <div className="rounded-xl border border-white/60 overflow-hidden" style={{ background: 'linear-gradient(135deg, hsl(30 40% 97%) 0%, hsl(28 35% 94%) 100%)', boxShadow: '0 2px 12px rgba(140,100,50,0.08), 0 0 0 1px rgba(140,100,50,0.04)' }}>
-            <div className="flex items-center gap-2.5 px-3.5 py-2.5" style={{ background: `${aiAccent}0C`, borderBottom: `1px solid ${aiAccent}15` }}>
-              <div className="w-1.5 h-1.5 rounded-full" style={{ background: aiAccent }} />
-              <h4 className="text-[12px] font-semibold text-foreground/60">Daan AI</h4>
-              {forgieLoading && <Loader2 className="h-3 w-3 animate-spin text-foreground/30 ml-auto" />}
-            </div>
-            <div className="p-2 space-y-0.5">
-              <button
-                onClick={handleForgieWrite}
-                disabled={forgieLoading}
-                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-[8px] hover:bg-background transition-colors text-left group disabled:opacity-50"
-              >
-                <div className="w-7 h-7 rounded-[7px] flex items-center justify-center flex-shrink-0" style={{ background: `${aiAccent}12` }}>
-                  <Sparkles className="h-3.5 w-3.5" style={{ color: aiAccent }} />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[12px] font-medium text-foreground/65 group-hover:text-foreground transition-colors">Schrijf mijn e-mail</p>
-                  <p className="text-[10px] text-muted-foreground">Genereer volledige email</p>
-                </div>
-              </button>
-              <button
-                onClick={() => handleForgieRewrite('rewrite-professional', 'Professioneler herschreven')}
-                disabled={forgieLoading}
-                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-[8px] hover:bg-background transition-colors text-left group disabled:opacity-50"
-              >
-                <div className="w-7 h-7 rounded-[7px] flex items-center justify-center flex-shrink-0" style={{ background: `${aiAccent}12` }}>
-                  <Wand2 className="h-3.5 w-3.5" style={{ color: aiAccent }} />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[12px] font-medium text-foreground/65 group-hover:text-foreground transition-colors">Professioneler</p>
-                  <p className="text-[10px] text-muted-foreground">Formele toon</p>
-                </div>
-              </button>
-              <button
-                onClick={() => handleForgieRewrite('rewrite-shorter', 'Korter herschreven')}
-                disabled={forgieLoading}
-                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-[8px] hover:bg-background transition-colors text-left group disabled:opacity-50"
-              >
-                <div className="w-7 h-7 rounded-[7px] flex items-center justify-center flex-shrink-0" style={{ background: `${aiAccent}12` }}>
-                  <Minimize2 className="h-3.5 w-3.5" style={{ color: aiAccent }} />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[12px] font-medium text-foreground/65 group-hover:text-foreground transition-colors">Korter maken</p>
-                  <p className="text-[10px] text-muted-foreground">Beknopter formuleren</p>
-                </div>
-              </button>
-              <button
-                onClick={() => handleForgieRewrite('translate-en', 'Vertaald naar Engels')}
-                disabled={forgieLoading}
-                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-[8px] hover:bg-background transition-colors text-left group disabled:opacity-50"
-              >
-                <div className="w-7 h-7 rounded-[7px] flex items-center justify-center flex-shrink-0" style={{ background: `${aiAccent}12` }}>
-                  <Globe className="h-3.5 w-3.5" style={{ color: aiAccent }} />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[12px] font-medium text-foreground/65 group-hover:text-foreground transition-colors">Vertaal Engels</p>
-                  <p className="text-[10px] text-muted-foreground">Translate to English</p>
-                </div>
-              </button>
-            </div>
-          </div>
-
-          {/* ── Opvolg-herinnering ── */}
-          <div className="rounded-xl border border-white/60 overflow-hidden" style={{ background: 'linear-gradient(135deg, hsl(30 40% 97%) 0%, hsl(28 35% 94%) 100%)', boxShadow: '0 2px 12px rgba(140,100,50,0.08), 0 0 0 1px rgba(140,100,50,0.04)' }}>
-            <div className="flex items-center gap-2.5 px-4 py-3 border-b border-amber-900/[0.06]">
-              <Bell className="h-3.5 w-3.5 text-amber-700/30" />
-              <h4 className="text-[12px] font-semibold text-foreground/60">Opvolg-herinnering</h4>
-              {reminder && (
-                <button onClick={() => { setReminder(null); toast('Herinnering verwijderd') }} className="ml-auto text-foreground/25 hover:text-foreground/50 transition-colors" title="Verwijder herinnering">
-                  <BellOff className="h-3 w-3" />
-                </button>
-              )}
-            </div>
-            <div className="p-2">
-              {reminder ? (
-                <div className="flex items-center gap-2 px-2.5 py-2 rounded-[8px] bg-mod-taken-light text-mod-taken-text text-[12px]">
-                  <Clock className="h-3.5 w-3.5 flex-shrink-0" />
-                  <span>Herinnering: {reminderOptions.find(r => r.value === reminder)?.label}</span>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-1">
-                  {reminderOptions.map(opt => (
-                    <button
-                      key={opt.value}
-                      onClick={() => setFollowUpReminder(opt.value)}
-                      className="px-2 py-1.5 rounded-[6px] text-[11px] text-foreground/50 hover:text-foreground/80 hover:bg-background transition-colors text-center"
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* ── Eerdere emails ── */}
-          <div className="rounded-xl border border-white/60 overflow-hidden" style={{ background: 'linear-gradient(135deg, hsl(30 40% 97%) 0%, hsl(28 35% 94%) 100%)', boxShadow: '0 2px 12px rgba(140,100,50,0.08), 0 0 0 1px rgba(140,100,50,0.04)' }}>
-            <div className="flex items-center gap-2.5 px-4 py-3 border-b border-amber-900/[0.06]">
-              <Mail className="h-3.5 w-3.5 text-amber-700/30" />
-              <h4 className="text-[12px] font-semibold text-foreground/60">Eerdere emails</h4>
-              {previousEmails.length > 0 && (
-                <span className="ml-auto text-[10px] text-muted-foreground font-mono tabular-nums">{previousEmails.length}</span>
-              )}
-            </div>
-            <div className="p-2">
-              {!to.trim() ? (
-                <p className="text-[11px] text-muted-foreground px-2 py-2">Vul een ontvanger in om eerdere emails te zien</p>
-              ) : previousEmails.length === 0 ? (
-                <p className="text-[11px] text-muted-foreground px-2 py-2">Geen eerdere emails gevonden</p>
-              ) : (
-                <div className="space-y-0.5">
-                  {previousEmails.map(e => (
-                    <div key={e.id} className="px-2.5 py-1.5 rounded-[6px] hover:bg-background transition-colors cursor-default">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-[11px] font-medium text-foreground/60 truncate flex-1">{e.onderwerp || '(geen onderwerp)'}</p>
-                        <span className="text-[9px] text-muted-foreground tabular-nums flex-shrink-0">{formatShortDate(e.datum)}</span>
-                      </div>
-                      <p className="text-[10px] text-muted-foreground truncate mt-0.5">
-                        {e.inhoud?.replace(/<[^>]*>/g, '').slice(0, 60) || '...'}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-        </div>
-      </div>
     </div>
   )
 }

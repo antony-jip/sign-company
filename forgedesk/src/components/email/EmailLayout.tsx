@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
+import { useLocation } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import {
   Search, Pencil, Inbox, Send, FileEdit, Trash2,
@@ -11,11 +12,13 @@ import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { EmailReader } from './EmailReader'
 import { EmailCompose } from './EmailCompose'
+import type { ComposeActions } from './EmailCompose'
+import { EmailContextSidebar } from './EmailContextSidebar'
 import { EmailListItem } from './EmailListItem'
 import type { Email } from '@/types'
 import { logger } from '../../utils/logger'
 import type { EmailFolder, FilterType, FontSize, ViewMode } from './emailTypes'
-import { extractSenderEmail, parseSearchQuery, IMAP_FOLDER_MAP, KEYBOARD_SHORTCUTS, calculateSnoozeDate } from './emailHelpers'
+import { extractSenderEmail, extractSenderName, getAvatarColor, getAvatarRingColor, parseSearchQuery, IMAP_FOLDER_MAP, KEYBOARD_SHORTCUTS, calculateSnoozeDate } from './emailHelpers'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { ModuleHeader } from '@/components/shared/ModuleHeader'
@@ -87,6 +90,26 @@ export function EmailLayout() {
   const [composeDefaults, setComposeDefaults] = useState<{
     to?: string; subject?: string; body?: string
   }>({})
+
+  // ─── Compose-sidebar communication ───
+  const [composeToAddress, setComposeToAddress] = useState('')
+  const [composeReminder, setComposeReminder] = useState<string | null>(null)
+  const [composeForgieLoading, setComposeForgieLoading] = useState(false)
+  const composeActionsRef = useRef<ComposeActions | null>(null)
+
+  // ─── Location-based compose detection ───
+  const location = useLocation()
+  useEffect(() => {
+    if (location.pathname.endsWith('/email/compose')) {
+      const params = new URLSearchParams(location.search)
+      setComposeDefaults({
+        to: params.get('to') || undefined,
+        subject: params.get('subject') || undefined,
+        body: params.get('body') || undefined,
+      })
+      setViewMode('composing')
+    }
+  }, [location.pathname, location.search])
 
   // ─── Selection state (bulk actions) ───
   const [checkedEmails, setCheckedEmails] = useState<Set<string>>(new Set())
@@ -654,53 +677,19 @@ export function EmailLayout() {
   const handleDeleteAndNavigate = useMemo(() => navigateAfterAction(handleDelete), [navigateAfterAction, handleDelete])
   const handleArchiveAndNavigate = useMemo(() => navigateAfterAction(handleArchive), [navigateAfterAction, handleArchive])
 
-  // ─── FULL-SCREEN EMAIL READER ───
-  if (viewMode === 'reading') {
-    return (
-      <div className="h-[calc(100vh-56px)] bg-card overflow-hidden">
-        <EmailReader
-          email={selectedEmail}
-          isLoadingBody={isLoadingBody}
-          emailIndex={emailIndex}
-          emailTotal={threadedEmails.length}
-          allEmails={emails}
-          onToggleStar={handleToggleStar}
-          onToggleRead={handleToggleRead}
-          onDelete={handleDeleteAndNavigate}
-          onArchive={handleArchiveAndNavigate}
-          onBack={handleBack}
-          onNavigate={handleNavigate}
-          onSendReply={handleSendReply}
-          onSelectEmail={handleSelectEmail}
-        />
-      </div>
-    )
-  }
+  // ─── Computed reading-mode props ───
+  const readerSenderName = selectedEmail ? extractSenderName(selectedEmail.van) : ''
+  const readerSenderEmail = selectedEmail ? extractSenderEmail(selectedEmail.van) : ''
+  const readerAvatarColor = selectedEmail ? getAvatarColor(readerSenderName) : ''
+  const readerAvatarRingColor = selectedEmail ? getAvatarRingColor(readerSenderName) : undefined
 
-  // ─── FULL-SCREEN COMPOSE ───
-  if (viewMode === 'composing') {
-    return (
-      <div className="h-[calc(100vh-56px)] bg-card overflow-hidden">
-        <EmailCompose
-          open={true}
-          onOpenChange={(open) => { if (!open) handleBack() }}
-          defaultTo={composeDefaults.to}
-          defaultSubject={composeDefaults.subject}
-          defaultBody={composeDefaults.body}
-          onSend={handleSendEmail}
-          allEmails={emails}
-        />
-      </div>
-    )
-  }
-
-  // ─── INBOX VIEW: sidebar + email list ───
+  // ─── UNIFIED 3-COLUMN LAYOUT ───
   return (
     <div className="h-[calc(100vh-56px)] flex flex-col bg-background overflow-hidden mod-strip mod-strip-email">
-      <ModuleHeader module="email" icon={Mail} title="Email" subtitle="Inbox en berichten" />
+      {viewMode === 'idle' && <ModuleHeader module="email" icon={Mail} title="Email" subtitle="Inbox en berichten" />}
       <div className="flex flex-1 min-h-0 overflow-hidden">
-      {/* ─── SIDEBAR ─── */}
-      <div className="w-[240px] bg-card border-r border-foreground/[0.06] flex flex-col flex-shrink-0">
+      {/* ─── LEFT SIDEBAR — always visible ─── */}
+      <div className="w-[220px] bg-[#FAFAF8] border-r border-[hsl(35,15%,87%)] flex flex-col flex-shrink-0">
         <div className="p-3">
           <Button
             className="w-full h-10 rounded-lg gap-2 text-sm font-medium shadow-sm"
@@ -721,10 +710,10 @@ export function EmailLayout() {
                 key={folder.id}
                 onClick={() => handleFolderChange(folder.id)}
                 className={cn(
-                  'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] transition-all duration-150',
+                  'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-150',
                   isActive
-                    ? 'bg-primary/[0.08] text-primary font-semibold'
-                    : 'text-foreground/55 hover:bg-foreground/[0.04] hover:text-foreground/75',
+                    ? 'bg-primary/[0.08] text-primary font-semibold border-l-[3px] border-l-primary'
+                    : 'text-[hsl(25,15%,12%)]/55 hover:bg-[hsl(35,15%,87%)]/40 hover:text-[hsl(25,15%,12%)]/75',
                 )}
               >
                 <Icon className={cn('h-4 w-4 flex-shrink-0', isActive && 'text-primary')} />
@@ -764,8 +753,51 @@ export function EmailLayout() {
         </div>
       </div>
 
-      {/* ─── EMAIL LIST (full remaining width) ─── */}
+      {/* ─── MIDDLE: content area ─── */}
       <div className="flex-1 bg-card flex flex-col min-w-0">
+
+      {/* Compose view */}
+      {viewMode === 'composing' && (
+        <div className="flex-1 flex items-start justify-center overflow-y-auto p-6">
+          <div className="w-full max-w-[720px]">
+            <EmailCompose
+              open={true}
+              onOpenChange={(open) => { if (!open) handleBack() }}
+              defaultTo={composeDefaults.to}
+              defaultSubject={composeDefaults.subject}
+              defaultBody={composeDefaults.body}
+              onSend={handleSendEmail}
+              allEmails={emails}
+              onToChange={setComposeToAddress}
+              onRegisterActions={(a) => { composeActionsRef.current = a }}
+              onForgieLoadingChange={setComposeForgieLoading}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Reader view */}
+      {viewMode === 'reading' && selectedEmail && (
+        <EmailReader
+          email={selectedEmail}
+          isLoadingBody={isLoadingBody}
+          emailIndex={emailIndex}
+          emailTotal={threadedEmails.length}
+          allEmails={emails}
+          onToggleStar={handleToggleStar}
+          onToggleRead={handleToggleRead}
+          onDelete={handleDeleteAndNavigate}
+          onArchive={handleArchiveAndNavigate}
+          onBack={handleBack}
+          onNavigate={handleNavigate}
+          onSendReply={handleSendReply}
+          onSelectEmail={handleSelectEmail}
+        />
+      )}
+
+      {/* Email list (idle view) */}
+      {viewMode === 'idle' && (<>
+        {/* Toolbar */}
         {/* Toolbar */}
         <div className="flex items-center justify-between px-4 h-12 border-b border-foreground/[0.06] flex-shrink-0">
           <div className="flex items-center gap-3">
@@ -944,9 +976,6 @@ export function EmailLayout() {
             </div>
           )}
         </div>
-      </div>
-
-      </div>
       {/* Keyboard shortcuts overlay */}
       {showShortcuts && (
         <>
@@ -969,6 +998,29 @@ export function EmailLayout() {
           </div>
         </>
       )}
+      </>)}
+      </div>
+
+      {/* ─── RIGHT CONTEXT SIDEBAR ─── */}
+      {(viewMode === 'composing' || viewMode === 'reading') && (
+        <EmailContextSidebar
+          mode={viewMode === 'composing' ? 'compose' : 'reading'}
+          composeToAddress={composeToAddress}
+          composeReminder={composeReminder}
+          onComposeReminderChange={setComposeReminder}
+          forgieLoading={composeForgieLoading}
+          onForgieWrite={() => composeActionsRef.current?.forgieWrite()}
+          onForgieRewrite={(a, l) => composeActionsRef.current?.forgieRewrite(a, l)}
+          allEmails={emails}
+          email={selectedEmail}
+          senderName={readerSenderName}
+          senderEmail={readerSenderEmail}
+          avatarColor={readerAvatarColor}
+          avatarRingColor={readerAvatarRingColor}
+          onSelectEmail={handleSelectEmail}
+        />
+      )}
+      </div>
     </div>
   )
 }
