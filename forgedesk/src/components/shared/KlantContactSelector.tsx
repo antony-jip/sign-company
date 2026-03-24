@@ -3,8 +3,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Search, X, Plus, ChevronDown, ChevronUp, Building2, UserPlus, Check } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
-import { createKlant, updateKlant } from '@/services/supabaseService'
-import type { Klant, Contactpersoon } from '@/types'
+import { createKlant, updateKlant, getContactpersonenByKlant } from '@/services/supabaseService'
+import type { Klant, Contactpersoon, ContactpersoonRecord } from '@/types'
 import { toast } from 'sonner'
 
 interface KlantContactSelectorProps {
@@ -43,8 +43,42 @@ export function KlantContactSelector({
   const [nc, setNc] = useState({ naam: '', functie: '', email: '', telefoon: '' })
 
   const selectedKlant = useMemo(() => klanten.find((k) => k.id === klantId) || null, [klanten, klantId])
-  const contactpersonen = selectedKlant?.contactpersonen || []
+  const [dbContacten, setDbContacten] = useState<ContactpersoonRecord[]>([])
   const vestigingen = selectedKlant?.vestigingen || []
+
+  // Merge JSONB contactpersonen + DB contactpersonen into one list
+  const contactpersonen: Contactpersoon[] = useMemo(() => {
+    const jsonbCps = selectedKlant?.contactpersonen || []
+    // Convert DB records to Contactpersoon format, skip duplicates by email
+    const jsonbEmails = new Set(jsonbCps.map((c) => c.email?.toLowerCase()).filter(Boolean))
+    const fromDb: Contactpersoon[] = dbContacten
+      .filter((c) => !jsonbEmails.has(c.email?.toLowerCase()))
+      .map((c) => ({
+        id: c.id,
+        naam: [c.voornaam, c.achternaam].filter(Boolean).join(' ') || c.email,
+        functie: c.functie || '',
+        email: c.email || '',
+        telefoon: c.telefoon || '',
+        is_primair: false,
+      }))
+    return [...jsonbCps, ...fromDb]
+  }, [selectedKlant, dbContacten])
+
+  // Fetch DB contactpersonen when klant changes
+  useEffect(() => {
+    if (!klantId) { setDbContacten([]); return }
+    getContactpersonenByKlant(klantId).then(setDbContacten).catch(() => setDbContacten([]))
+  }, [klantId])
+
+  // Auto-select first contactpersoon when klant changes and has contacts
+  useEffect(() => {
+    if (!klantId || !onContactpersoonChange) return
+    // Wait for contactpersonen to load
+    if (contactpersonen.length > 0 && !contactpersoonId) {
+      const primair = contactpersonen.find((c) => c.is_primair)
+      onContactpersoonChange((primair || contactpersonen[0]).id)
+    }
+  }, [klantId, contactpersonen.length])
 
   const filtered = useMemo(() => {
     if (!search.trim()) return klanten.slice(0, 8)
@@ -146,6 +180,8 @@ export function KlantContactSelector({
       const updatedCps = [...(selectedKlant.contactpersonen || []), newCp]
       await updateKlant(selectedKlant.id, { contactpersonen: updatedCps })
       onKlantenRefresh?.()
+      // Refresh DB contacts too
+      getContactpersonenByKlant(selectedKlant.id).then(setDbContacten).catch(() => {})
       onContactpersoonChange?.(newCp.id)
       setNc({ naam: '', functie: '', email: '', telefoon: '' })
       setShowNieuwContact(false)
