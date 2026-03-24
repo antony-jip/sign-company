@@ -154,8 +154,8 @@ export function generateWerkbonInstructiePDF(
 
     // Scheiding
     y += 18
-    doc.setDrawColor(...brand)
-    doc.setLineWidth(0.5)
+    doc.setDrawColor(220, 220, 220)
+    doc.setLineWidth(0.3)
     doc.line(marginLeft, y, pageWidth - marginRight, y)
 
     return y + 5
