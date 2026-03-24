@@ -1,11 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { WeatherDayStrip } from "./WeatherDayStrip";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { useWeekWeather, getWeatherForDate } from "./WeatherDayStrip";
+import type { DayWeather } from "./WeatherDayStrip";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -45,11 +40,9 @@ import {
   Trash2,
   Package,
   ClipboardList,
-  UserCheck,
   X,
   AlertTriangle,
   Printer,
-  Filter,
   User,
   Paperclip,
   FileText,
@@ -119,6 +112,14 @@ const BADGE_VARIANT_CLASSES: Record<MontageAfspraak["status"], string> = {
   bezig: "bg-green-100 text-green-700 hover:bg-green-100",
   afgerond: "bg-emerald-100 text-emerald-700 hover:bg-emerald-100",
   uitgesteld: "bg-red-100 text-red-700 hover:bg-red-100",
+};
+
+const STATUS_DOT: Record<MontageAfspraak["status"], string> = {
+  gepland: "bg-blue-500",
+  onderweg: "bg-amber-500",
+  bezig: "bg-green-500",
+  afgerond: "bg-emerald-400",
+  uitgesteld: "bg-red-500",
 };
 
 const DAG_NAMEN = ["Ma", "Di", "Wo", "Do", "Vr", "Za", "Zo"];
@@ -257,6 +258,7 @@ export function MontagePlanningLayout() {
   const year = currentMonday.getFullYear();
 
   const todayStr = formatDate(new Date());
+  const weather = useWeekWeather(weekDates);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -779,11 +781,9 @@ export function MontagePlanningLayout() {
     );
   }
 
-  function renderWeekCard(afspraak: MontageAfspraak) {
-    const config = STATUS_CONFIG[afspraak.status];
-    const nextActions = getNextStatusActions(afspraak.status);
+  // ── Compact grid card for team grid & week view ──
+  function renderGridCard(afspraak: MontageAfspraak) {
     const hasConflict = conflictAfspraakIds.has(afspraak.id);
-
     return (
       <div
         key={afspraak.id}
@@ -795,443 +795,148 @@ export function MontagePlanningLayout() {
         }}
         onDragEnd={() => { setDraggingAfspraakId(null); setDragOverDate(null); }}
         className={cn(
-          "rounded-lg border p-3 mb-2 cursor-grab active:cursor-grabbing transition-shadow hover:shadow-md",
-          hasConflict ? "bg-red-50 border-red-300 ring-1 ring-red-200" : config.bgColor,
-          !hasConflict && config.borderColor,
+          "rounded-lg border bg-card p-2 mb-1.5 cursor-grab active:cursor-grabbing transition-shadow hover:shadow-md",
+          hasConflict && "ring-1 ring-red-300 bg-red-50/60",
           draggingAfspraakId === afspraak.id && "opacity-50 ring-2 ring-primary"
         )}
         onClick={() => openEditDialog(afspraak)}
       >
-        {hasConflict && (
-          <div className="flex items-center gap-1 text-2xs font-medium text-red-600 mb-1">
-            <AlertTriangle className="h-3 w-3" />
-            Overlap
-          </div>
-        )}
-        <div className="flex items-start justify-between gap-1 mb-1.5">
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Clock className="h-3 w-3" />
-            <span className="font-mono">
-              {afspraak.start_tijd} - {afspraak.eind_tijd}
-            </span>
-          </div>
-          {renderStatusBadge(afspraak.status)}
+        {/* Row 1: status dot + project name (bold) */}
+        <div className="flex items-center gap-1.5 mb-0.5">
+          <span className={cn("w-2 h-2 rounded-full shrink-0", STATUS_DOT[afspraak.status])} title={STATUS_CONFIG[afspraak.status].label} />
+          <span className="text-xs font-semibold truncate leading-tight">{afspraak.titel}</span>
+          {hasConflict && <AlertTriangle className="h-3 w-3 text-red-500 shrink-0" />}
         </div>
-
-        <h4 className="text-sm font-semibold leading-tight mb-1 truncate">
-          {afspraak.titel}
-        </h4>
-
-        {afspraak.project_naam && (
-          <p className="text-xs text-muted-foreground truncate mb-1">
-            {afspraak.project_naam}
-          </p>
+        {/* Row 2: klant */}
+        {afspraak.klant_naam && (
+          <div className="text-[11px] text-muted-foreground truncate pl-3.5">{afspraak.klant_naam}</div>
         )}
-
+        {/* Row 3: tijd */}
+        <div className="flex items-center gap-1 text-[11px] text-muted-foreground pl-3.5 mt-0.5">
+          <Clock className="h-2.5 w-2.5 shrink-0" />
+          <span className="font-mono tabular-nums">{afspraak.start_tijd} – {afspraak.eind_tijd}</span>
+        </div>
+        {/* Row 4: locatie */}
         {afspraak.locatie && (
           <a
             href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(afspraak.locatie)}`}
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="flex items-center gap-1 text-xs text-primary hover:underline mb-2"
+            className="flex items-center gap-1 text-[11px] text-primary hover:underline pl-3.5 mt-0.5 truncate"
           >
-            <MapPin className="h-3 w-3 shrink-0" />
+            <MapPin className="h-2.5 w-2.5 shrink-0" />
             <span className="truncate">{afspraak.locatie}</span>
           </a>
         )}
-
-        {/* Werkbon nummer */}
+        {/* Row 5: werkbon */}
         {afspraak.werkbon_nummer && (
-          <div className="flex items-center gap-1 mb-1">
-            <ClipboardCheck className="h-3 w-3 text-[#C44830]" />
-            <span className="text-[10px] font-mono text-[#943520]">{afspraak.werkbon_nummer}</span>
+          <div className="flex items-center gap-1 text-[10px] font-mono text-[#943520] pl-3.5 mt-0.5">
+            <ClipboardCheck className="h-2.5 w-2.5 shrink-0" />
+            {afspraak.werkbon_nummer}
           </div>
         )}
-
-        {/* Bijlagen indicator */}
-        {afspraak.bijlagen && afspraak.bijlagen.length > 0 && (
-          <div className="flex items-center gap-1 mb-1">
-            <Paperclip className="h-3 w-3 text-[#5A5A55]" />
-            <span className="text-[10px] text-[#5A5A55] font-medium">{afspraak.bijlagen.length} bijlage{afspraak.bijlagen.length !== 1 ? 'n' : ''}</span>
-          </div>
-        )}
-
-        <div className="flex items-center justify-between">
-          {renderMonteurAvatars(afspraak.monteurs)}
-          <div className="flex gap-1">
-            {!afspraak.werkbon_id && afspraak.project_id && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 px-1.5 text-xs"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setWerkbonMontage(afspraak);
-                  setWerkbonDialogOpen(true);
-                }}
-                title="Werkbon toevoegen"
-              >
-                <ClipboardList className="h-3 w-3" />
-              </Button>
-            )}
-            {nextActions.length > 0 && nextActions.map((action) => (
-              <Button
-                key={action.status}
-                variant="ghost"
-                size="sm"
-                className="h-6 px-1.5 text-xs"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleStatusUpdate(afspraak, action.status);
-                }}
-                title={action.label}
-              >
-                {action.icon}
-              </Button>
-            ))}
-          </div>
-        </div>
       </div>
     );
   }
 
+  // ── Day column header with weather ──
+  function renderDayHeader(date: Date, w: DayWeather | undefined) {
+    const dateStr = formatDate(date);
+    const isToday = dateStr === todayStr;
+    const dayIdx = (date.getDay() + 6) % 7; // 0=Ma
+    const isRainy = w && w.precipitationProb > 50;
+
+    return (
+      <div
+        className={cn(
+          "text-center py-2 border-b-2",
+          isToday ? "bg-primary/5 border-primary" : "bg-muted/30 border-border",
+          isRainy && !isToday && "bg-blue-50/60"
+        )}
+      >
+        <div className={cn("text-sm font-bold", isToday ? "text-primary" : "text-foreground/80")}>
+          {DAG_NAMEN[dayIdx]}
+          <span className="font-normal text-xs ml-1">{formatDateDutch(date)}</span>
+        </div>
+        {w && (
+          <div className="flex items-center justify-center gap-1.5 mt-0.5">
+            <span className="text-sm leading-none">{w.emoji}</span>
+            <span className="text-xs font-mono tabular-nums font-medium">{w.maxTemp}°</span>
+            {w.precipitationProb > 0 && (
+              <span className={cn("text-[10px] font-mono tabular-nums", w.precipitationProb > 50 ? "text-blue-600 font-semibold" : "text-muted-foreground")}>
+                💧{w.precipitationProb}%
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // === WEEK VIEW (team grid: monteurs als rijen, dagen als kolommen) ===
   function renderWeekView() {
+    const werkdagen = weekDates.slice(0, 5); // Ma t/m Vr
+    const hasWeekend = weekAfspraken.some((a) => {
+      const d = new Date(a.datum + "T00:00:00").getDay();
+      return d === 0 || d === 6;
+    });
+    const displayDays = hasWeekend ? weekDates : werkdagen;
+    const colCount = displayDays.length;
+
     return (
       <div className="min-w-[700px]">
-        <WeatherDayStrip weekDays={weekDates} />
-        <div className="grid grid-cols-7 gap-2">
-        {weekDates.map((date, dayIndex) => {
-          const dateStr = formatDate(date);
-          const isToday = dateStr === todayStr;
-          const dayAfspraken = afsprakenPerDag[dateStr] || [];
-
-          return (
-            <div
-              key={dateStr}
-              className={cn(
-                "min-h-[200px] rounded-lg transition-colors",
-                dragOverDate === dateStr && "bg-primary/5 ring-2 ring-primary/30 ring-dashed"
-              )}
-              onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; setDragOverDate(dateStr); }}
-              onDragLeave={() => setDragOverDate(null)}
-              onDrop={(e) => {
-                e.preventDefault();
-                setDragOverDate(null);
-                const id = e.dataTransfer.getData("text/plain");
-                if (id) handleDragDrop(id, dateStr);
-              }}
-            >
-              <div
-                className={cn(
-                  "text-center py-2 rounded-t-lg mb-2 border-b-2",
-                  isToday
-                    ? "bg-blue-50 border-blue-500"
-                    : "bg-background border-border"
-                )}
-              >
-                <div
-                  className={cn(
-                    "text-sm font-semibold",
-                    isToday ? "text-blue-700" : "text-foreground/70"
-                  )}
-                >
-                  {DAG_NAMEN[dayIndex]}
-                </div>
-                <div
-                  className={cn(
-                    "text-xs",
-                    isToday ? "text-blue-600" : "text-muted-foreground"
-                  )}
-                >
-                  {formatDateDutch(date)}
-                </div>
-              </div>
-
-              <div className="space-y-0">
-                {dayAfspraken.length === 0 ? (
-                  <div className="flex flex-col items-center gap-1 text-xs text-muted-foreground text-center py-4">
-                    <Wrench className="h-4 w-4 opacity-30" />
-                    Geen montages
-                  </div>
-                ) : (
-                  dayAfspraken.map((afspraak) => renderWeekCard(afspraak))
-                )}
-              </div>
-            </div>
-          );
-        })}
-        </div>
-      </div>
-    );
-  }
-
-  function renderListView() {
-    const sortedAfspraken = [...weekAfspraken].sort((a, b) => {
-      if (a.datum !== b.datum) return a.datum.localeCompare(b.datum);
-      return a.start_tijd.localeCompare(b.start_tijd);
-    });
-
-    return (
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b bg-background">
-              <th className="text-left py-3 px-4 text-xs font-bold uppercase tracking-label text-text-tertiary">
-                Datum
-              </th>
-              <th className="text-left py-3 px-4 text-xs font-bold uppercase tracking-label text-text-tertiary">
-                Tijd
-              </th>
-              <th className="text-left py-3 px-4 text-xs font-bold uppercase tracking-label text-text-tertiary">
-                Project
-              </th>
-              <th className="text-left py-3 px-4 text-xs font-bold uppercase tracking-label text-text-tertiary">
-                Klant
-              </th>
-              <th className="text-left py-3 px-4 text-xs font-bold uppercase tracking-label text-text-tertiary">
-                Locatie
-              </th>
-              <th className="text-left py-3 px-4 text-xs font-bold uppercase tracking-label text-text-tertiary">
-                Medewerkers
-              </th>
-              <th className="text-left py-3 px-4 text-xs font-bold uppercase tracking-label text-text-tertiary">
-                Status
-              </th>
-              <th className="text-left py-3 px-4 text-xs font-bold uppercase tracking-label text-text-tertiary">
-                Materialen
-              </th>
-              <th className="text-left py-3 px-4 text-xs font-bold uppercase tracking-label text-text-tertiary">
-                Acties
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {sortedAfspraken.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={9}
-                  className="text-center py-12 text-muted-foreground"
-                >
-                  <div className="flex flex-col items-center gap-2">
-                    <Wrench className="h-8 w-8 opacity-30" />
-                    <span>Geen montages</span>
-                  </div>
-                </td>
-              </tr>
-            ) : (
-              sortedAfspraken.map((afspraak) => {
-                const dateObj = new Date(afspraak.datum + "T00:00:00");
-                const dayIdx =
-                  (dateObj.getDay() + 6) % 7;
-                const nextActions = getNextStatusActions(afspraak.status);
-                const rowConflict = conflictAfspraakIds.has(afspraak.id);
-
-                return (
-                  <tr
-                    key={afspraak.id}
-                    className={cn(
-                      "border-b hover:bg-background transition-colors",
-                      rowConflict && "bg-red-50/60"
-                    )}
-                  >
-                    <td className="py-3 px-4">
-                      {rowConflict && (
-                        <div className="flex items-center gap-1 text-2xs font-medium text-red-600 mb-0.5">
-                          <AlertTriangle className="h-3 w-3" />
-                          Overlap
-                        </div>
-                      )}
-                      <div className="font-medium">
-                        {DAG_NAMEN_LANG[dayIdx]}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {formatDateDutch(dateObj)}
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 whitespace-nowrap font-mono">
-                      {afspraak.start_tijd} - {afspraak.eind_tijd}
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="font-medium">{afspraak.titel}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {afspraak.project_naam}
-                      </div>
-                    </td>
-                    <td className="py-3 px-4">{afspraak.klant_naam}</td>
-                    <td className="py-3 px-4">
-                      {afspraak.locatie ? (
-                        <a
-                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(afspraak.locatie)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="flex items-center gap-1 text-primary hover:underline"
-                        >
-                          <MapPin className="h-3 w-3 shrink-0" />
-                          <span className="truncate max-w-[180px]">
-                            {afspraak.locatie}
-                          </span>
-                        </a>
-                      ) : (
-                        <span className="text-muted-foreground">-</span>
-                      )}
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-2">
-                        {renderMonteurAvatars(afspraak.monteurs, "md")}
-                        <div className="text-xs text-muted-foreground">
-                          {afspraak.monteurs
-                            .map(
-                              (id) =>
-                                monteurMap[id]?.naam?.split(" ")[0] || "?"
-                            )
-                            .join(", ")}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4">
-                      {renderStatusBadge(afspraak.status)}
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="flex flex-wrap gap-1 max-w-[200px]">
-                        {afspraak.materialen.slice(0, 2).map((mat, idx) => (
-                          <Badge
-                            key={idx}
-                            variant="outline"
-                            className="text-xs"
-                          >
-                            {mat}
-                          </Badge>
-                        ))}
-                        {afspraak.materialen.length > 2 && (
-                          <Badge variant="outline" className="text-xs">
-                            +{afspraak.materialen.length - 2}
-                          </Badge>
-                        )}
-                      </div>
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-1">
-                        {afspraak.bijlagen && afspraak.bijlagen.length > 0 && (
-                          <span className="flex items-center gap-0.5 text-[10px] text-[#5A5A55] mr-1" title={`${afspraak.bijlagen.length} bijlage${afspraak.bijlagen.length !== 1 ? 'n' : ''}`}>
-                            <Paperclip className="h-3 w-3" />
-                            {afspraak.bijlagen.length}
-                          </span>
-                        )}
-                        {nextActions.map((action) => (
-                          <Button
-                            key={action.status}
-                            variant="outline"
-                            size="sm"
-                            className="h-7 px-2 text-xs"
-                            onClick={() =>
-                              handleStatusUpdate(afspraak, action.status)
-                            }
-                            title={action.label}
-                          >
-                            {action.icon}
-                            <span className="ml-1">{action.label}</span>
-                          </Button>
-                        ))}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 px-2"
-                          onClick={() => openEditDialog(afspraak)}
-                          title="Bewerken"
-                        >
-                          <Pencil className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 px-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-                          onClick={() => handleDelete(afspraak.id)}
-                          title="Verwijderen"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
-    );
-  }
-
-  function renderRasterView() {
-    // Grid: monteurs als rijen, Ma-Vr als kolommen
-    const werkdagen = weekDates.slice(0, 5); // Ma t/m Vr
-
-    return (
-      <div className="min-w-[800px]">
-        {/* Header rij met dagen */}
-        <div className="grid gap-0" style={{ gridTemplateColumns: "180px repeat(5, 1fr)" }}>
-          <div className="p-2 border-b-2 border-r bg-muted/30">
-            <span className="text-xs font-bold text-text-tertiary uppercase tracking-label">Monteur</span>
+        <div className="grid gap-0 rounded-lg overflow-hidden border border-border/40" style={{ gridTemplateColumns: `160px repeat(${colCount}, 1fr)` }}>
+          {/* Corner: Monteur label */}
+          <div className="p-2 border-b-2 border-r border-border bg-muted/30 flex items-end">
+            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Team</span>
           </div>
-          {werkdagen.map((date, i) => {
-            const dateStr = formatDate(date);
-            const isToday = dateStr === todayStr;
-            return (
-              <div
-                key={dateStr}
-                className={cn(
-                  "p-2 text-center border-b-2 border-r last:border-r-0",
-                  isToday ? "bg-blue-50 border-blue-500" : "bg-muted/30 border-border"
-                )}
-              >
-                <div className={cn("text-sm font-semibold", isToday ? "text-blue-700" : "text-foreground/70")}>
-                  {DAG_NAMEN[i]}
-                </div>
-                <div className={cn("text-xs", isToday ? "text-blue-600" : "text-muted-foreground")}>
-                  {formatDateDutch(date)}
-                </div>
-              </div>
-            );
+
+          {/* Day headers with weather */}
+          {displayDays.map((date) => {
+            const w = getWeatherForDate(weather, date);
+            return <div key={formatDate(date)} className="border-r last:border-r-0 border-border">{renderDayHeader(date, w)}</div>;
           })}
 
-          {/* Monteur rijen */}
+          {/* Monteur rows */}
           {monteurs.map((monteur, monteurIdx) => (
             <>
-              {/* Monteur naam cel */}
+              {/* Monteur name cell */}
               <div
                 key={`name-${monteur.id}`}
-                className="p-2 border-b border-r bg-background flex items-center gap-2"
+                className="p-2 border-b border-r border-border bg-card flex items-center gap-2"
               >
                 <div
                   className={cn(
-                    "h-7 w-7 rounded-full flex items-center justify-center text-white text-xs font-medium shrink-0",
+                    "h-8 w-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0",
                     getAvatarColor(monteurIdx)
                   )}
                 >
                   {getInitials(monteur.naam)}
                 </div>
                 <div className="min-w-0">
-                  <div className="text-sm font-medium truncate">{monteur.naam}</div>
-                  <div className="text-2xs text-muted-foreground truncate">{monteur.functie}</div>
+                  <div className="text-[13px] font-semibold truncate">{monteur.naam}</div>
+                  {monteur.functie && <div className="text-[10px] text-muted-foreground truncate">{monteur.functie}</div>}
                 </div>
               </div>
 
-              {/* Dag cellen voor deze monteur */}
-              {werkdagen.map((date) => {
+              {/* Day cells for this monteur */}
+              {displayDays.map((date) => {
                 const dateStr = formatDate(date);
                 const isToday = dateStr === todayStr;
                 const cellAfspraken = weekAfspraken.filter(
                   (a) => a.datum === dateStr && a.monteurs.includes(monteur.id)
                 );
+                const w = getWeatherForDate(weather, date);
+                const isRainy = w && w.precipitationProb > 50;
 
                 return (
                   <div
                     key={`${monteur.id}-${dateStr}`}
                     className={cn(
-                      "p-1 border-b border-r last:border-r-0 min-h-[80px]",
-                      isToday ? "bg-blue-50/30" : "bg-background",
+                      "p-1.5 border-b border-r last:border-r-0 border-border min-h-[80px]",
+                      isToday ? "bg-primary/[0.03]" : "bg-background",
+                      isRainy && !isToday && "bg-blue-50/30",
                       dragOverDate === `${monteur.id}-${dateStr}` && "bg-primary/5 ring-2 ring-primary/30 ring-inset"
                     )}
                     onDragOver={(e) => {
@@ -1247,78 +952,208 @@ export function MontagePlanningLayout() {
                       if (id) handleDragDrop(id, dateStr);
                     }}
                   >
-                    {cellAfspraken.map((afspraak) => {
-                      const config = STATUS_CONFIG[afspraak.status];
-                      return (
-                        <div
-                          key={afspraak.id}
-                          draggable
-                          onDragStart={(e) => {
-                            setDraggingAfspraakId(afspraak.id);
-                            e.dataTransfer.effectAllowed = "move";
-                            e.dataTransfer.setData("text/plain", afspraak.id);
-                          }}
-                          onDragEnd={() => { setDraggingAfspraakId(null); setDragOverDate(null); }}
-                          className={cn(
-                            "rounded-lg border p-1.5 mb-1 cursor-grab active:cursor-grabbing transition-shadow hover:shadow-sm text-xs",
-                            config.bgColor, config.borderColor,
-                            draggingAfspraakId === afspraak.id && "opacity-50 ring-2 ring-primary"
-                          )}
-                          onClick={() => openEditDialog(afspraak)}
-                        >
-                          <div className="flex items-center gap-1 mb-0.5">
-                            <Clock className="h-2.5 w-2.5 text-muted-foreground shrink-0" />
-                            <span className="text-2xs text-muted-foreground font-mono">
-                              {afspraak.start_tijd}-{afspraak.eind_tijd}
-                            </span>
-                          </div>
-                          <div className="font-medium truncate leading-tight">{afspraak.titel}</div>
-                          {afspraak.locatie && (
-                            <div className="flex items-center gap-0.5 text-2xs text-muted-foreground mt-0.5 truncate">
-                              <MapPin className="h-2.5 w-2.5 shrink-0" />
-                              {afspraak.locatie}
-                            </div>
-                          )}
-                          {afspraak.werkbon_nummer && (
-                            <div className="flex items-center gap-0.5 text-2xs text-[#943520] mt-0.5">
-                              <ClipboardCheck className="h-2.5 w-2.5 shrink-0" />
-                              <span className="font-mono">{afspraak.werkbon_nummer}</span>
-                            </div>
-                          )}
-                          {afspraak.werkbon_id && !afspraak.werkbon_nummer && (
-                            <div className="flex items-center gap-0.5 text-2xs text-primary mt-0.5">
-                              <ClipboardList className="h-2.5 w-2.5 shrink-0" />
-                              Werkbon
-                            </div>
-                          )}
-                          {!afspraak.werkbon_id && afspraak.project_id && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-5 px-1 text-2xs mt-0.5 w-full justify-start text-muted-foreground hover:text-primary"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setWerkbonMontage(afspraak);
-                                setWerkbonDialogOpen(true);
-                              }}
-                            >
-                              <ClipboardList className="h-2.5 w-2.5 mr-0.5" />
-                              + Werkbon
-                            </Button>
-                          )}
-                        </div>
-                      );
-                    })}
-                    {cellAfspraken.length === 0 && (
-                      <div className="h-full flex items-center justify-center">
-                        <span className="text-2xs text-muted-foreground/40 italic">—</span>
-                      </div>
-                    )}
+                    {cellAfspraken.length > 0
+                      ? cellAfspraken.map((a) => renderGridCard(a))
+                      : <div className="h-full flex items-center justify-center"><span className="text-muted-foreground/20">—</span></div>
+                    }
                   </div>
                 );
               })}
             </>
           ))}
+
+          {/* Unassigned row (montages without monteurs) */}
+          {(() => {
+            const unassigned = weekAfspraken.filter((a) => a.monteurs.length === 0);
+            if (unassigned.length === 0) return null;
+            return (
+              <>
+                <div className="p-2 border-b border-r border-border bg-card flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-full flex items-center justify-center bg-muted text-muted-foreground text-xs font-bold shrink-0">?</div>
+                  <div className="text-[13px] font-semibold text-muted-foreground">Niet toegewezen</div>
+                </div>
+                {displayDays.map((date) => {
+                  const dateStr = formatDate(date);
+                  const cellAfspraken = unassigned.filter((a) => a.datum === dateStr);
+                  return (
+                    <div key={`unassigned-${dateStr}`} className="p-1.5 border-b border-r last:border-r-0 border-border min-h-[60px] bg-muted/10">
+                      {cellAfspraken.map((a) => renderGridCard(a))}
+                    </div>
+                  );
+                })}
+              </>
+            );
+          })()}
+        </div>
+      </div>
+    );
+  }
+
+  // === LIST VIEW ===
+  function renderListView() {
+    const sortedAfspraken = [...weekAfspraken].sort((a, b) => {
+      if (a.datum !== b.datum) return a.datum.localeCompare(b.datum);
+      return a.start_tijd.localeCompare(b.start_tijd);
+    });
+
+    return (
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b bg-muted/30">
+              <th className="text-left py-2.5 px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Dag</th>
+              <th className="text-left py-2.5 px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Tijd</th>
+              <th className="text-left py-2.5 px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Project</th>
+              <th className="text-left py-2.5 px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Klant</th>
+              <th className="text-left py-2.5 px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Locatie</th>
+              <th className="text-left py-2.5 px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Team</th>
+              <th className="text-left py-2.5 px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Acties</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sortedAfspraken.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="text-center py-12 text-muted-foreground">
+                  <div className="flex flex-col items-center gap-2">
+                    <Wrench className="h-8 w-8 opacity-30" />
+                    <span>Geen montages deze week</span>
+                  </div>
+                </td>
+              </tr>
+            ) : (
+              sortedAfspraken.map((afspraak) => {
+                const dateObj = new Date(afspraak.datum + "T00:00:00");
+                const dayIdx = (dateObj.getDay() + 6) % 7;
+                const nextActions = getNextStatusActions(afspraak.status);
+                const hasConflict = conflictAfspraakIds.has(afspraak.id);
+
+                return (
+                  <tr
+                    key={afspraak.id}
+                    className={cn(
+                      "border-b hover:bg-muted/20 transition-colors cursor-pointer",
+                      hasConflict && "bg-red-50/50"
+                    )}
+                    onClick={() => openEditDialog(afspraak)}
+                  >
+                    <td className="py-2.5 px-3">
+                      <div className="flex items-center gap-1.5">
+                        <span className={cn("w-2 h-2 rounded-full shrink-0", STATUS_DOT[afspraak.status])} />
+                        <div>
+                          <div className="font-medium text-[13px]">{DAG_NAMEN_LANG[dayIdx]}</div>
+                          <div className="text-[11px] text-muted-foreground">{formatDateDutch(dateObj)}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-2.5 px-3 whitespace-nowrap font-mono text-[13px]">
+                      {afspraak.start_tijd} – {afspraak.eind_tijd}
+                    </td>
+                    <td className="py-2.5 px-3">
+                      <div className="font-semibold text-[13px]">{afspraak.titel}</div>
+                      {afspraak.werkbon_nummer && (
+                        <span className="text-[10px] font-mono text-[#943520]">{afspraak.werkbon_nummer}</span>
+                      )}
+                    </td>
+                    <td className="py-2.5 px-3 text-[13px]">{afspraak.klant_naam}</td>
+                    <td className="py-2.5 px-3">
+                      {afspraak.locatie ? (
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(afspraak.locatie)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="flex items-center gap-1 text-[13px] text-primary hover:underline"
+                        >
+                          <MapPin className="h-3 w-3 shrink-0" />
+                          <span className="truncate max-w-[180px]">{afspraak.locatie}</span>
+                        </a>
+                      ) : <span className="text-muted-foreground">—</span>}
+                    </td>
+                    <td className="py-2.5 px-3">
+                      {renderMonteurAvatars(afspraak.monteurs, "md")}
+                    </td>
+                    <td className="py-2.5 px-3" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center gap-1">
+                        {nextActions.map((action) => (
+                          <Button
+                            key={action.status}
+                            variant="outline"
+                            size="sm"
+                            className="h-7 px-2 text-xs"
+                            onClick={() => handleStatusUpdate(afspraak, action.status)}
+                            title={action.label}
+                          >
+                            {action.icon}
+                            <span className="ml-1 hidden xl:inline">{action.label}</span>
+                          </Button>
+                        ))}
+                        <Button variant="ghost" size="sm" className="h-7 px-2" onClick={() => openEditDialog(afspraak)} title="Bewerken">
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+
+  // === RASTER VIEW (original columns-per-day, all monteurs mixed) ===
+  function renderRasterView() {
+    const werkdagen = weekDates.slice(0, 5);
+    return (
+      <div className="min-w-[700px]">
+        <div className="grid grid-cols-5 gap-2">
+          {werkdagen.map((date) => {
+            const dateStr = formatDate(date);
+            const isToday = dateStr === todayStr;
+            const dayAfspraken = afsprakenPerDag[dateStr] || [];
+            const w = getWeatherForDate(weather, date);
+            const isRainy = w && w.precipitationProb > 50;
+
+            return (
+              <div
+                key={dateStr}
+                className={cn(
+                  "rounded-lg border border-border/40 overflow-hidden transition-colors",
+                  isRainy && "border-blue-200",
+                  dragOverDate === dateStr && "ring-2 ring-primary/30"
+                )}
+                onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; setDragOverDate(dateStr); }}
+                onDragLeave={() => setDragOverDate(null)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setDragOverDate(null);
+                  const id = e.dataTransfer.getData("text/plain");
+                  if (id) handleDragDrop(id, dateStr);
+                }}
+              >
+                {renderDayHeader(date, w)}
+                <div className={cn("p-1.5 min-h-[200px]", isRainy && "bg-blue-50/20")}>
+                  {dayAfspraken.length === 0 ? (
+                    <div className="flex flex-col items-center gap-1 text-muted-foreground text-center py-8">
+                      <Wrench className="h-4 w-4 opacity-20" />
+                      <span className="text-[11px]">Geen montages</span>
+                    </div>
+                  ) : (
+                    dayAfspraken.map((a) => (
+                      <div key={a.id}>
+                        {renderGridCard(a)}
+                        {/* Show monteur avatars below card in this view */}
+                        <div className="flex items-center gap-1 -mt-1 mb-2 pl-1">
+                          {renderMonteurAvatars(a.monteurs)}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     );
@@ -1746,180 +1581,126 @@ export function MontagePlanningLayout() {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-4 p-4 sm:p-6">
+      {/* ── Header bar ── */}
       <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-[-0.03em] font-display truncate">
-            Montage Planning
-          </h1>
-          <p className="text-muted-foreground mt-1 truncate">
-            Plan en beheer montage afspraken
-          </p>
+        <h1 className="text-xl sm:text-2xl font-extrabold tracking-[-0.03em] font-display truncate">
+          Montage Planning
+        </h1>
+        <div className="flex items-center gap-2 shrink-0">
+          <Button variant="outline" size="sm" onClick={printDagplanning} className="h-9 hidden sm:flex">
+            <Printer className="h-4 w-4 mr-1.5" />
+            Print dagplanning
+          </Button>
+          <Button onClick={openNewDialog} size="default">
+            <Plus className="h-4 w-4 mr-1.5" />
+            <span className="hidden sm:inline">Nieuwe montage</span>
+            <span className="sm:hidden">Nieuw</span>
+          </Button>
         </div>
-        <Button onClick={openNewDialog} size="lg" className="flex-shrink-0">
-          <Plus className="h-5 w-5 mr-2" />
-          <span className="hidden sm:inline">Nieuwe montage</span>
-          <span className="sm:hidden">Nieuw</span>
-        </Button>
       </div>
 
-      {/* Conflict warnings */}
+      {/* ── Conflict banner ── */}
       {conflicts.length > 0 && (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <AlertTriangle className="h-4 w-4 text-red-600" />
-            <span className="text-sm font-semibold text-red-700">
-              {conflicts.length} dubbele boeking{conflicts.length !== 1 ? "en" : ""} gedetecteerd
-            </span>
-          </div>
-          <div className="space-y-1.5">
-            {conflicts.map((c, idx) => {
-              const dag = new Date(c.afspraak1.datum + "T00:00:00").toLocaleDateString("nl-NL", {
-                weekday: "short",
-                day: "numeric",
-                month: "short",
-              });
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 flex items-start gap-2">
+          <AlertTriangle className="h-4 w-4 text-red-500 mt-0.5 shrink-0" />
+          <div className="text-sm text-red-700">
+            <span className="font-semibold">{conflicts.length} overlap{conflicts.length !== 1 ? "s" : ""}</span>
+            {conflicts.slice(0, 3).map((c, idx) => {
+              const dag = new Date(c.afspraak1.datum + "T00:00:00").toLocaleDateString("nl-NL", { weekday: "short", day: "numeric", month: "short" });
               return (
-                <div key={idx} className="flex items-center gap-2 text-sm text-red-700">
-                  <span className="font-medium">{c.monteurNaam}</span>
-                  <span className="text-red-400">—</span>
-                  <span>{dag}: {c.afspraak1.titel} ({c.afspraak1.start_tijd}–{c.afspraak1.eind_tijd})</span>
-                  <span className="text-red-400">&amp;</span>
-                  <span>{c.afspraak2.titel} ({c.afspraak2.start_tijd}–{c.afspraak2.eind_tijd})</span>
-                </div>
+                <span key={idx} className="ml-2">
+                  {c.monteurNaam}: {dag} {c.afspraak1.start_tijd}–{c.afspraak1.eind_tijd} / {c.afspraak2.start_tijd}–{c.afspraak2.eind_tijd}
+                </span>
               );
             })}
           </div>
         </div>
       )}
 
-      {/* Filter bar */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 flex-wrap">
-        {/* Medewerker filter */}
-        <div className="flex items-center gap-2">
-          <User className="h-4 w-4 text-muted-foreground" />
-          <Select value={selectedMonteur} onValueChange={setSelectedMonteur}>
-            <SelectTrigger className="w-[200px] h-9">
-              <SelectValue placeholder="Alle medewerkers" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="alle">Alle medewerkers</SelectItem>
-              {monteurs.map((m) => (
-                <SelectItem key={m.id} value={m.id}>{m.naam}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      {/* ── Toolbar: week nav + filters + view toggle ── */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 flex-wrap">
+        {/* Week navigation */}
+        <div className="flex items-center gap-1.5">
+          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => navigateWeek(-1)} title="Vorige week">
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <button
+            onClick={goToCurrentWeek}
+            className="text-sm font-bold px-3 py-1.5 rounded-lg hover:bg-muted transition-colors min-w-[130px] text-center"
+          >
+            Week <span className="font-mono">{weekNumber}</span>
+            <span className="text-xs font-normal text-muted-foreground ml-1.5">{formatDateDutch(weekDates[0])} – {formatDateDutch(weekDates[6])}</span>
+          </button>
+          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => navigateWeek(1)} title="Volgende week">
+            <ChevronRight className="h-4 w-4" />
+          </Button>
         </div>
 
-        {/* Status filters */}
-        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
-          <Filter className="h-4 w-4 text-muted-foreground" />
-          {(Object.keys(STATUS_CONFIG) as MontageAfspraak["status"][]).map((status) => (
-            <Button
-              key={status}
-              variant={statusFilter.has(status) ? "default" : "outline"}
-              size="sm"
-              className={cn(
-                "h-7 px-2.5 text-xs",
-                statusFilter.has(status) && BADGE_VARIANT_CLASSES[status]
-              )}
-              onClick={() => toggleStatusFilter(status)}
-            >
-              {STATUS_CONFIG[status].label}
-            </Button>
-          ))}
-        </div>
+        {/* Medewerker filter */}
+        <Select value={selectedMonteur} onValueChange={setSelectedMonteur}>
+          <SelectTrigger className="w-[180px] h-8 text-xs">
+            <SelectValue placeholder="Alle medewerkers" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="alle">Alle medewerkers</SelectItem>
+            {monteurs.map((m) => (
+              <SelectItem key={m.id} value={m.id}>{m.naam}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
         <div className="flex-1" />
 
-        {/* Print button */}
-        <Button variant="outline" size="sm" onClick={printDagplanning} className="h-9 hidden sm:flex">
-          <Printer className="h-4 w-4 mr-1.5" />
-          Print dagplanning
-        </Button>
+        {/* View toggle */}
+        <div className="flex items-center gap-0.5 border rounded-lg p-0.5 bg-muted/30">
+          <Button
+            variant={viewMode === "week" ? "default" : "ghost"}
+            size="sm"
+            onClick={() => setViewMode("week")}
+            className="h-7 text-xs px-2.5"
+          >
+            <Users className="h-3.5 w-3.5 mr-1" />
+            <span className="hidden sm:inline">Teamweergave</span>
+            <span className="sm:hidden">Team</span>
+          </Button>
+          <Button
+            variant={viewMode === "raster" ? "default" : "ghost"}
+            size="sm"
+            onClick={() => setViewMode("raster")}
+            className="h-7 text-xs px-2.5"
+          >
+            <LayoutGrid className="h-3.5 w-3.5 mr-1" />
+            <span className="hidden sm:inline">Dagkolommen</span>
+            <span className="sm:hidden">Dagen</span>
+          </Button>
+          <Button
+            variant={viewMode === "list" ? "default" : "ghost"}
+            size="sm"
+            onClick={() => setViewMode("list")}
+            className="h-7 text-xs px-2.5"
+          >
+            <List className="h-3.5 w-3.5 mr-1" />
+            <span className="hidden sm:inline">Lijstweergave</span>
+            <span className="sm:hidden">Lijst</span>
+          </Button>
+        </div>
       </div>
 
-      <Card className="rounded-xl border-black/[0.06]">
-        <CardHeader className="pb-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-2 sm:gap-4">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => navigateWeek(-1)}
-                title="Vorige week"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
+      {/* ── Main content ── */}
+      <div className="overflow-x-auto">
+        {viewMode === "week" ? renderWeekView() : viewMode === "raster" ? renderRasterView() : renderListView()}
+      </div>
 
-              <div className="text-center min-w-[140px] sm:min-w-[180px]">
-                <CardTitle className="text-base sm:text-lg font-bold tracking-[-0.02em]">
-                  Week <span className="font-mono">{weekNumber}</span>, {year}
-                </CardTitle>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {formatDateDutch(weekDates[0])} -{" "}
-                  {formatDateDutch(weekDates[6])}
-                </p>
-              </div>
-
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => navigateWeek(1)}
-                title="Volgende week"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={goToCurrentWeek}
-                className="text-xs"
-              >
-                Vandaag
-              </Button>
-            </div>
-
-            <div className="flex items-center gap-1 border rounded-xl p-1">
-              <Button
-                variant={viewMode === "week" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setViewMode("week")}
-                className="h-8"
-              >
-                <LayoutGrid className="h-4 w-4 mr-1.5" />
-                <span className="hidden sm:inline">Weekoverzicht</span>
-                <span className="sm:hidden">Week</span>
-              </Button>
-              <Button
-                variant={viewMode === "raster" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setViewMode("raster")}
-                className="h-8"
-              >
-                <Users className="h-4 w-4 mr-1.5" />
-                <span className="hidden sm:inline">Rasterweergave</span>
-                <span className="sm:hidden">Raster</span>
-              </Button>
-              <Button
-                variant={viewMode === "list" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setViewMode("list")}
-                className="h-8"
-              >
-                <List className="h-4 w-4 mr-1.5" />
-                <span className="hidden sm:inline">Lijstweergave</span>
-                <span className="sm:hidden">Lijst</span>
-              </Button>
-            </div>
+      {/* ── Status legend (compact) ── */}
+      <div className="flex items-center gap-4 text-[11px] text-muted-foreground px-1">
+        {(Object.keys(STATUS_CONFIG) as MontageAfspraak["status"][]).map((s) => (
+          <div key={s} className="flex items-center gap-1">
+            <span className={cn("w-2 h-2 rounded-full", STATUS_DOT[s])} />
+            {STATUS_CONFIG[s].label}
           </div>
-        </CardHeader>
-
-        <CardContent className="overflow-x-auto">
-          {viewMode === "week" ? renderWeekView() : viewMode === "raster" ? renderRasterView() : renderListView()}
-        </CardContent>
-      </Card>
+        ))}
+      </div>
 
       {renderDialog()}
 

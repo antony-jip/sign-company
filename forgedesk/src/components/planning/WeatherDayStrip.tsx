@@ -4,10 +4,11 @@ interface WeatherDayStripProps {
   weekDays: Date[]
 }
 
-interface DayWeather {
+export interface DayWeather {
   date: string // YYYY-MM-DD
   maxTemp: number
   emoji: string
+  precipitationProb: number // 0-100
 }
 
 function wmoToEmoji(code: number): string {
@@ -34,7 +35,7 @@ export function useWeekWeather(weekDays: Date[]) {
     const controller = new AbortController()
 
     fetch(
-      `https://api.open-meteo.com/v1/forecast?latitude=52.74&longitude=5.22&daily=temperature_2m_max,weathercode&timezone=Europe/Amsterdam&start_date=${startDate}&end_date=${endDate}`,
+      `https://api.open-meteo.com/v1/forecast?latitude=52.74&longitude=5.22&daily=temperature_2m_max,weathercode,precipitation_probability_max&timezone=Europe/Amsterdam&start_date=${startDate}&end_date=${endDate}`,
       { signal: controller.signal }
     )
       .then(res => res.ok ? res.json() : null)
@@ -44,11 +45,13 @@ export function useWeekWeather(weekDays: Date[]) {
         const dates = data.daily.time as string[]
         const temps = data.daily.temperature_2m_max as number[]
         const codes = data.daily.weathercode as number[]
+        const precip = (data.daily.precipitation_probability_max as number[] | undefined) || []
         dates.forEach((date: string, i: number) => {
           map.set(date, {
             date,
             maxTemp: Math.round(temps[i]),
             emoji: wmoToEmoji(codes[i]),
+            precipitationProb: precip[i] ?? 0,
           })
         })
         setWeather(map)
@@ -69,7 +72,7 @@ export function getWeatherForDate(weather: Map<string, DayWeather>, day: Date): 
   return weather.get(dateStr)
 }
 
-/** Legacy component — kept for backward compat but no longer used in TasksLayout */
+/** Legacy component — kept for backward compat */
 export function WeatherDayStrip({ weekDays }: WeatherDayStripProps) {
   const weather = useWeekWeather(weekDays)
 
