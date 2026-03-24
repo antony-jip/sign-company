@@ -556,17 +556,17 @@ export function WerkbonDetail() {
             )}
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           {!isNew && (
             <>
-              <Button variant="outline" onClick={handlePrint}>
-                <Printer className="h-4 w-4 mr-1" /> Print
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handlePrint} title="Printen">
+                <Printer className="h-4 w-4" />
               </Button>
-              <Button variant="outline" onClick={handleDownloadPDF}>
-                <FileText className="h-4 w-4 mr-1" /> PDF
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleDownloadPDF} title="Download PDF">
+                <FileText className="h-4 w-4" />
               </Button>
               <Select value={status} onValueChange={(v) => { setStatus(v as Werkbon['status']); setDirty(true) }}>
-                <SelectTrigger className="w-[140px]">
+                <SelectTrigger className="w-[130px] h-8 text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -577,7 +577,7 @@ export function WerkbonDetail() {
               </Select>
             </>
           )}
-          <Button onClick={handleSave} disabled={isSaving}>
+          <Button size="sm" onClick={handleSave} disabled={isSaving}>
             <Save className="h-4 w-4 mr-1" /> {isSaving ? 'Opslaan...' : 'Opslaan'}
           </Button>
         </div>
@@ -609,7 +609,7 @@ export function WerkbonDetail() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold tracking-[-0.02em]">Items ({werkbonItems.length})</h2>
-              <Button size="sm" onClick={handleItemToevoegen}>
+              <Button size="sm" onClick={handleItemToevoegen} className="bg-[#C44830] hover:bg-[#a93d28] text-white">
                 <Plus className="h-4 w-4 mr-1" /> Item toevoegen
               </Button>
             </div>
