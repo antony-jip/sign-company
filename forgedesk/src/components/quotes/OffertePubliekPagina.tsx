@@ -232,15 +232,35 @@ export function OffertePubliekPagina() {
           return
         }
         const data = await resp.json()
-        setOfferte(data.offerte)
-        setItems(data.items || [])
+        const loadedItems: PubliekItem[] = data.items || []
+        const loadedOfferte: PubliekOfferte | null = data.offerte
+
+        // Initialize selection state in same batch as data loading
+        if (loadedOfferte?.gekozen_items) {
+          setSelectedItems(new Set(loadedOfferte.gekozen_items))
+          setSelectedVariants(loadedOfferte.gekozen_varianten || {})
+        } else if (loadedItems.length > 0) {
+          const initial = new Set<string>()
+          const initialVariants: Record<string, string> = {}
+          for (const item of loadedItems) {
+            if (item.soort === 'tekst') continue
+            if (!item.is_optioneel) initial.add(item.id)
+            if (item.actieve_variant_id && item.prijs_varianten?.length) {
+              initialVariants[item.id] = item.actieve_variant_id
+            }
+          }
+          setSelectedItems(initial)
+          setSelectedVariants(initialVariants)
+        }
+
+        setOfferte(loadedOfferte)
+        setItems(loadedItems)
         setBedrijf(data.bedrijf)
         setKlant(data.klant)
       } catch {
         setNotFound(true)
       } finally {
         setIsLoading(false)
-        // Trigger fade-in
         requestAnimationFrame(() => setFadeIn(true))
       }
     }
@@ -254,36 +274,6 @@ export function OffertePubliekPagina() {
   const hasOptionalItems = useMemo(() => items.some(i => i.is_optioneel), [items])
   const hasVariants = useMemo(() => items.some(i => i.prijs_varianten && i.prijs_varianten.length > 0), [items])
   const hasSelections = hasOptionalItems || hasVariants
-
-  // Stable key to detect when items actually change (avoid re-running on same data)
-  const itemsKey = useMemo(() => items.map(i => i.id).join(','), [items])
-
-  // Initialize selection state when items load
-  useEffect(() => {
-    if (items.length === 0) return
-    // If offerte already has saved selections (after acceptance), use those
-    if (offerte?.gekozen_items) {
-      setSelectedItems(new Set(offerte.gekozen_items))
-      setSelectedVariants(offerte.gekozen_varianten || {})
-      return
-    }
-    // Default: all non-text items selected, optional items deselected
-    const initial = new Set<string>()
-    const initialVariants: Record<string, string> = {}
-    for (const item of items) {
-      if (item.soort === 'tekst') continue
-      if (!item.is_optioneel) {
-        initial.add(item.id)
-      }
-      // Set active variant if defined
-      if (item.actieve_variant_id && item.prijs_varianten?.length) {
-        initialVariants[item.id] = item.actieve_variant_id
-      }
-    }
-    setSelectedItems(initial)
-    setSelectedVariants(initialVariants)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [itemsKey])
 
   // Accepteren
   const handleAccepteren = useCallback(async () => {
@@ -460,6 +450,25 @@ export function OffertePubliekPagina() {
     }
   }, [offerte, items, bedrijf, klant])
 
+  // ============ DERIVED STATE (must be before early returns to respect rules of hooks) ============
+  const vandaag = useMemo(() => new Date().toISOString().split('T')[0], [])
+  const btwGroepen = useMemo(
+    () => groepeerBtwMetSelectie(items, selectedItems, selectedVariants, hasOptionalItems),
+    [items, selectedItems, selectedVariants, hasOptionalItems],
+  )
+  const berekendeSubtotaal = useMemo(() => {
+    let sum = 0
+    for (const item of items) {
+      if (item.soort === 'tekst') continue
+      if (hasOptionalItems && !selectedItems.has(item.id)) continue
+      sum += getEffectiveItemTotal(item, selectedVariants[item.id])
+    }
+    return round2(sum)
+  }, [items, selectedItems, selectedVariants, hasOptionalItems])
+  const berekendeBtw = useMemo(() => {
+    return round2(btwGroepen.reduce((sum, g) => sum + g.btw, 0))
+  }, [btwGroepen])
+
   // ============ LOADING STATE ============
   if (isLoading) {
     return (
@@ -507,7 +516,6 @@ export function OffertePubliekPagina() {
   }
 
   // ============ DERIVED STATE ============
-  const vandaag = useMemo(() => new Date().toISOString().split('T')[0], [])
   const isVerlopen = offerte.geldig_tot && offerte.geldig_tot < vandaag
   const isGeaccepteerd = offerte.status === 'goedgekeurd'
   const isAfgewezen = offerte.status === 'afgewezen'
@@ -515,25 +523,6 @@ export function OffertePubliekPagina() {
   const isWijzigingGevraagd = offerte.status === 'wijziging_gevraagd'
   const kanActie = !isVerlopen && !isGeaccepteerd && !isAfgewezen && !isGefactureerd
   const dagenOver = dagenTotVerlopen(offerte.geldig_tot)
-  const btwGroepen = useMemo(
-    () => groepeerBtwMetSelectie(items, selectedItems, selectedVariants, hasOptionalItems),
-    [items, selectedItems, selectedVariants, hasOptionalItems],
-  )
-
-  // Compute live total based on selections
-  const berekendeSubtotaal = useMemo(() => {
-    let sum = 0
-    for (const item of items) {
-      if (item.soort === 'tekst') continue
-      if (hasOptionalItems && !selectedItems.has(item.id)) continue
-      sum += getEffectiveItemTotal(item, selectedVariants[item.id])
-    }
-    return round2(sum)
-  }, [items, selectedItems, selectedVariants, hasOptionalItems])
-
-  const berekendeBtw = useMemo(() => {
-    return round2(btwGroepen.reduce((sum, g) => sum + g.btw, 0))
-  }, [btwGroepen])
 
   // Use live-computed totals if there are selections to make, otherwise use server totals
   const subtotaalBedrag = hasSelections ? berekendeSubtotaal : offerte.subtotaal
