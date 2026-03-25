@@ -5526,16 +5526,32 @@ export async function getPortaalItems(portaalId: string, alleenZichtbaar = false
   if (isSupabaseConfigured() && supabase) {
     let query = supabase
       .from('portaal_items')
-      .select('*, portaal_bestanden(*), portaal_reacties(*)')
+      .select('*, portaal_bestanden(*)')
       .eq('portaal_id', portaalId)
       .order('created_at', { ascending: false })
     if (alleenZichtbaar) query = query.eq('zichtbaar_voor_klant', true)
     const { data, error } = await query
     if (error) throw error
-    return (data || []).map((item: Record<string, unknown>) => ({
+    const items = data || []
+    // Haal reacties apart op (nested select + RLS geeft soms lege arrays)
+    const itemIds = items.map((i: Record<string, unknown>) => i.id as string)
+    let reactiesMap: Record<string, PortaalReactie[]> = {}
+    if (itemIds.length > 0) {
+      const { data: reacties } = await supabase
+        .from('portaal_reacties')
+        .select('*')
+        .in('portaal_item_id', itemIds)
+      if (reacties) {
+        for (const r of reacties as PortaalReactie[]) {
+          if (!reactiesMap[r.portaal_item_id]) reactiesMap[r.portaal_item_id] = []
+          reactiesMap[r.portaal_item_id].push(r)
+        }
+      }
+    }
+    return items.map((item: Record<string, unknown>) => ({
       ...item,
       bestanden: (item.portaal_bestanden || []) as PortaalBestand[],
-      reacties: (item.portaal_reacties || []) as PortaalReactie[],
+      reacties: reactiesMap[item.id as string] || [],
     })) as PortaalItem[]
   }
   const items = getLocalData<PortaalItem>('portaal_items')
