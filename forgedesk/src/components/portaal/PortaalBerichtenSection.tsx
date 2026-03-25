@@ -214,12 +214,24 @@ export function PortaalBerichtenSection({ items, allItems, token, klantNaam, kan
                       }`}
                     >
                       {msg.foto_url && (
-                        <img
-                          src={msg.foto_url}
-                          alt={msg.tekst || 'Foto'}
-                          className="max-w-[240px] rounded-lg mb-1.5 cursor-pointer"
-                          onClick={() => setLightboxUrl(msg.foto_url!)}
-                        />
+                        /\.(pdf)$/i.test(msg.foto_url) || msg.foto_url.includes('application/pdf') ? (
+                          <a
+                            href={msg.foto_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 rounded-md bg-gray-50 px-3 py-2 text-xs hover:bg-gray-100 mb-1.5"
+                          >
+                            <svg className="w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                            <span>PDF bekijken</span>
+                          </a>
+                        ) : (
+                          <img
+                            src={msg.foto_url}
+                            alt={msg.tekst || 'Foto'}
+                            className="max-w-[240px] rounded-lg mb-1.5 cursor-pointer"
+                            onClick={() => setLightboxUrl(msg.foto_url!)}
+                          />
+                        )
                       )}
                       {msg.tekst && (
                         <p className="whitespace-pre-wrap break-words">{msg.tekst}</p>

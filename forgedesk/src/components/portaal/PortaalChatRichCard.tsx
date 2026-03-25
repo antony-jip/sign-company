@@ -130,12 +130,25 @@ export function PortaalChatRichCard({
       <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
         <div className="max-w-[300px] md:max-w-[300px] max-[768px]:max-w-full">
           {item.foto_url && (
-            <img
-              src={item.foto_url}
-              alt={item.titel}
-              className="cursor-pointer rounded-lg"
-              onClick={() => onImageClick?.(item.foto_url!)}
-            />
+            /\.(pdf)$/i.test(item.foto_url) || item.foto_url.includes('application/pdf') ? (
+              <a
+                href={item.foto_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 rounded-md border border-border bg-muted/50 px-3 py-2 text-xs hover:bg-muted"
+              >
+                <FileText className="h-4 w-4 text-red-500" />
+                <span className="flex-1 truncate">{item.titel || 'PDF bekijken'}</span>
+                <ExternalLink className="h-3 w-3 text-muted-foreground" />
+              </a>
+            ) : (
+              <img
+                src={item.foto_url}
+                alt={item.titel}
+                className="cursor-pointer rounded-lg"
+                onClick={() => onImageClick?.(item.foto_url!)}
+              />
+            )
           )}
           {item.bericht_tekst && (
             <p className="mt-1 text-sm whitespace-pre-wrap">{item.bericht_tekst}</p>

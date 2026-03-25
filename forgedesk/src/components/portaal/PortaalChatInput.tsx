@@ -221,8 +221,14 @@ export function PortaalChatInput({
   const handleAttachChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      setPendingFoto(file)
-      setPendingTekeningFiles([])
+      // PDFs en andere niet-afbeeldingen → als bestand (tekening-pad), niet als foto
+      if (!file.type.startsWith('image/')) {
+        setPendingTekeningFiles([file])
+        setPendingFoto(null)
+      } else {
+        setPendingFoto(file)
+        setPendingTekeningFiles([])
+      }
     }
     e.target.value = ''
   }
