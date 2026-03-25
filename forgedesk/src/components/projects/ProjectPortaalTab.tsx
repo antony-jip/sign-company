@@ -75,6 +75,9 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
           console.warn('[portaal] API error, using fallback:', apiErr)
           itms = await getPortaalItems(p.id)
         }
+        // DEBUG: log items + reacties count
+        const totalReacties = itms.reduce((sum: number, i: PortaalItem) => sum + (i.reacties?.length || 0), 0)
+        console.log(`[portaal] ${itms.length} items, ${totalReacties} reacties`, itms.map((i: PortaalItem) => ({ id: i.id, type: i.type, titel: i.titel, reacties: i.reacties?.length || 0, reactieData: i.reacties })))
         setItems(itms)
         // Load offertes + facturen for the + menu
         getOffertesByProject(projectId).then(setOffertes).catch(() => {})
