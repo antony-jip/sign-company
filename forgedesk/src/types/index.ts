@@ -1822,3 +1822,22 @@ export const klantStatusConfig: Record<string, KlantStatusConfigItem> = {
   voorrang:         { label: 'Voorrang',          color: '#059669', bgColor: '#D1FAE5' },
   geblokkeerd:      { label: 'Geblokkeerd',       color: '#991B1B', bgColor: '#FCA5A5' },
 };
+
+// ── Email auto-opvolging ──
+export interface EmailOpvolging {
+  id: string
+  email_id: string
+  ontvanger: string
+  onderwerp: string
+  oorspronkelijke_body: string
+  dagen: number
+  status: 'wachtend' | 'verstuurd' | 'geannuleerd' | 'reply_ontvangen'
+  gepland_op: string
+  user_id: string
+  organisatie_id: string
+  handtekening: string
+  message_id: string
+  opvolg_body?: string
+  verstuurd_op?: string
+  created_at: string
+}

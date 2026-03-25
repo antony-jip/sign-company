@@ -58,7 +58,7 @@ export const EmailListItem = memo(function EmailListItem({
     <div
       onClick={handleClick}
       className={cn(
-        'group flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors duration-150 select-none',
+        'group flex items-center gap-3 px-4 py-3 cursor-pointer transition-all duration-150 select-none',
         isActive
           ? 'bg-[#1A535C]/[0.05]'
           : 'hover:bg-[#F0EFEC]/50',
@@ -71,7 +71,7 @@ export const EmailListItem = memo(function EmailListItem({
         {/* Avatar */}
         <div
           className={cn(
-            'w-9 h-9 rounded-lg flex items-center justify-center transition-opacity',
+            'w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-150',
             'group-hover:opacity-0',
             isChecked && 'opacity-0',
           )}
@@ -83,7 +83,7 @@ export const EmailListItem = memo(function EmailListItem({
         </div>
         {/* Checkbox on hover / when checked */}
         <div className={cn(
-          'absolute inset-0 flex items-center justify-center transition-opacity',
+          'absolute inset-0 flex items-center justify-center transition-all duration-150',
           'opacity-0 group-hover:opacity-100',
           isChecked && '!opacity-100',
         )}>
@@ -110,14 +110,14 @@ export const EmailListItem = memo(function EmailListItem({
               {senderName}
             </span>
             {email.threadCount && email.threadCount > 1 && (
-              <span className="text-[10px] text-[#9B9B95] bg-[#F0EFEC] rounded-full px-1.5 py-px flex-shrink-0 font-medium">
+              <span className="text-[10px] text-[#9B9B95] bg-[#F0EFEC] rounded-md px-1.5 py-0.5 flex-shrink-0 font-medium">
                 {email.threadCount}
               </span>
             )}
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             {email.bijlagen > 0 && (
-              <Paperclip className="h-3.5 w-3.5 text-[#B0ADA8]" />
+              <Paperclip className="h-3.5 w-3.5 text-[#C5C2BD]" />
             )}
             <span className={cn(
               'text-[#B0ADA8] font-mono tabular-nums',
@@ -141,7 +141,7 @@ export const EmailListItem = memo(function EmailListItem({
           </span>
           {!compact && preview && (
             <>
-              <span className="text-[#F0EFEC] flex-shrink-0">&mdash;</span>
+              <span className="text-[#EBEBEB] flex-shrink-0">&mdash;</span>
               <span className={cn('text-[#B0ADA8] truncate', sizes.preview)}>{preview}</span>
             </>
           )}
@@ -168,7 +168,7 @@ export const EmailListItem = memo(function EmailListItem({
 
       {/* Unread indicator dot */}
       {isUnread && (
-        <div className="w-2 h-2 rounded-full bg-[#1A535C] flex-shrink-0" />
+        <div className="w-[5px] h-[5px] rounded-full bg-[#1A535C] flex-shrink-0" />
       )}
     </div>
   )

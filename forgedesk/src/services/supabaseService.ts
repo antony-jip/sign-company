@@ -5995,3 +5995,15 @@ export async function bulkDeleteContactpersonen(ids: string[]): Promise<void> {
     .in('id', ids)
   if (error) throw error
 }
+
+// ── Email auto-opvolging ──
+export async function createEmailOpvolging(opvolging: Omit<import('@/types').EmailOpvolging, 'id' | 'created_at'>): Promise<import('@/types').EmailOpvolging> {
+  if (!isSupabaseConfigured() || !supabase) throw new Error('Supabase niet geconfigureerd')
+  const { data, error } = await supabase
+    .from('email_opvolgingen')
+    .insert(opvolging)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}

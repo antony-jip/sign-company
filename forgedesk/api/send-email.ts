@@ -100,6 +100,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       body,
       html,
       attachments,
+      opvolging_id,
     } = req.body as {
       to: string
       cc?: string
@@ -107,6 +108,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       body?: string
       html?: string
       attachments?: Array<{ filename: string; content: string; encoding: 'base64' }>
+      opvolging_id?: string
     }
 
     if (!to || !subject) {
@@ -149,6 +151,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.log('[send-email] html present:', !!html, 'html length:', html?.length || 0)
 
     await transporter.sendMail(mailOptions)
+
+    // Trigger auto-opvolging task als opvolging_id meegegeven is
+    if (opvolging_id) {
+      try {
+        const { tasks } = await import("@trigger.dev/sdk/v3")
+        await tasks.trigger("email-opvolging", { opvolgingId: opvolging_id })
+        console.log('[send-email] Auto-opvolging task getriggerd:', opvolging_id)
+      } catch (triggerErr) {
+        // Niet fataal — email is al verstuurd, log de fout
+        console.error('[send-email] Trigger.dev task starten mislukt:', triggerErr)
+      }
+    }
 
     return res.status(200).json({ success: true, message: 'Email verzonden' })
   } catch (error: unknown) {

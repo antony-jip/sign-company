@@ -18,7 +18,7 @@ import { EmailListItem } from './EmailListItem'
 import type { Email } from '@/types'
 import { logger } from '../../utils/logger'
 import type { EmailFolder, FilterType, FontSize, ViewMode } from './emailTypes'
-import { extractSenderEmail, extractSenderName, getAvatarColor, getAvatarRingColor, parseSearchQuery, IMAP_FOLDER_MAP, KEYBOARD_SHORTCUTS, calculateSnoozeDate } from './emailHelpers'
+import { extractSenderEmail, extractSenderName, parseSearchQuery, IMAP_FOLDER_MAP, KEYBOARD_SHORTCUTS, calculateSnoozeDate } from './emailHelpers'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 
@@ -63,7 +63,7 @@ function imapToEmail(msg: IMAPEmailSummary, folder: string, userId: string): Ema
 
 export function EmailLayout() {
   const { user } = useAuth()
-  const { emailFetchLimit } = useAppSettings()
+  const { emailFetchLimit, emailHandtekening } = useAppSettings()
 
   // ─── Core state ───
   const [emails, setEmails] = useState<Email[]>([])
@@ -95,6 +95,7 @@ export function EmailLayout() {
   const [composeReminder, setComposeReminder] = useState<string | null>(null)
   const [composeForgieLoading, setComposeForgieLoading] = useState(false)
   const composeActionsRef = useRef<ComposeActions | null>(null)
+  const [composeAutoFollowUp, setComposeAutoFollowUp] = useState<{ enabled: boolean; dagen: number }>({ enabled: false, dagen: 3 })
 
   // ─── Location-based compose detection ───
   const location = useLocation()
@@ -598,17 +599,52 @@ export function EmailLayout() {
     })
   }, [handleCompose])
 
-  const handleSendEmail = useCallback(async (data: { to: string; subject: string; body: string; html?: string; scheduledAt?: string }) => {
+  const handleSendEmail = useCallback(async (data: { to: string; subject: string; body: string; html?: string; scheduledAt?: string; autoFollowUp?: { enabled: boolean; dagen: number } }) => {
     try {
+      let opvolgingId: string | undefined
+
+      // Als auto-opvolging aan staat, maak het record aan in Supabase
+      if (data.autoFollowUp?.enabled && user) {
+        try {
+          const { createEmailOpvolging } = await import('@/services/supabaseService')
+          const geplandOp = new Date()
+          geplandOp.setDate(geplandOp.getDate() + data.autoFollowUp.dagen)
+
+          const opvolging = await createEmailOpvolging({
+            email_id: '',
+            ontvanger: data.to,
+            onderwerp: data.subject,
+            oorspronkelijke_body: data.body,
+            dagen: data.autoFollowUp.dagen,
+            status: 'wachtend',
+            gepland_op: geplandOp.toISOString(),
+            user_id: user.id,
+            organisatie_id: user.user_metadata?.organisatie_id || '',
+            handtekening: emailHandtekening || '',
+            message_id: '',
+          })
+          opvolgingId = opvolging.id
+        } catch (err) {
+          logger.error('Auto-opvolging record aanmaken mislukt:', err)
+          // Niet fataal, email wordt alsnog verstuurd
+        }
+      }
+
       await sendEmailViaApi(data.to, data.subject, data.body, {
         html: data.html,
         scheduledAt: data.scheduledAt,
+        opvolging_id: opvolgingId,
       })
+
+      // Reset auto-opvolging state na succesvol verzenden
+      if (data.autoFollowUp?.enabled) {
+        setComposeAutoFollowUp({ enabled: false, dagen: 3 })
+      }
     } catch (err) {
       logger.error('Email verzenden mislukt:', err)
       throw err
     }
-  }, [])
+  }, [user, emailHandtekening])
 
   const handleSendReply = useCallback(async (data: { to: string; subject: string; body: string; html?: string }) => {
     try {
@@ -679,20 +715,19 @@ export function EmailLayout() {
   // ─── Computed reading-mode props ───
   const readerSenderName = selectedEmail ? extractSenderName(selectedEmail.van) : ''
   const readerSenderEmail = selectedEmail ? extractSenderEmail(selectedEmail.van) : ''
-  const readerAvatarColor = selectedEmail ? getAvatarColor(readerSenderName) : ''
-  const readerAvatarRingColor = selectedEmail ? getAvatarRingColor(readerSenderName) : undefined
+  // Avatar helpers kept in emailHelpers for EmailReader usage
 
   // ─── UNIFIED 3-COLUMN LAYOUT ───
   return (
-    <div className="h-full flex flex-col bg-[#F8F7F5] -m-3 sm:-m-4 md:-m-6 overflow-hidden">
+    <div className={cn('h-full flex flex-col -m-3 sm:-m-4 md:-m-6 overflow-hidden', viewMode === 'idle' ? 'bg-[#F8F7F5]' : 'bg-white')}>
       {viewMode === 'idle' && (
         <div className="px-8 pt-8 pb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-baseline gap-4">
-              <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-[#1A1A1A]">
+              <h1 className="text-[28px] font-extrabold tracking-[-0.3px] text-[#1A1A1A]">
                 Email<span className="text-[#F15025]">.</span>
               </h1>
-              <span className="text-[13px] font-mono tabular-nums text-[#B0ADA8]">
+              <span className="text-[12px] font-mono tabular-nums text-[#B0ADA8] bg-[#F0EFEC] rounded-md px-2 py-0.5">
                 {folderCounts['inbox'] > 0 ? `${folderCounts['inbox']} ongelezen` : 'inbox'}
               </span>
             </div>
@@ -701,14 +736,14 @@ export function EmailLayout() {
       )}
       <div className="flex flex-1 min-h-0 overflow-hidden">
       {/* ─── LEFT SIDEBAR — always visible ─── */}
-      <div className="w-[220px] bg-white border-r border-[#F0EFEC] flex flex-col flex-shrink-0">
+      <div className="w-[220px] bg-white border-r border-[#EBEBEB] flex flex-col flex-shrink-0">
         <div className="p-3">
           <button
             className="w-full h-10 rounded-xl flex items-center justify-center gap-2 text-[13px] font-semibold text-white bg-[#F15025] shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_12px_rgba(241,80,37,0.35)] hover:-translate-y-px active:translate-y-0 transition-all"
             onClick={() => handleCompose()}
           >
             <Pencil className="h-4 w-4" />
-            Nieuwe email
+            Nieuw bericht
           </button>
         </div>
 
@@ -722,7 +757,7 @@ export function EmailLayout() {
                 key={folder.id}
                 onClick={() => handleFolderChange(folder.id)}
                 className={cn(
-                  'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-150',
+                  'w-full h-[40px] flex items-center gap-2.5 px-3 rounded-lg text-[13px] font-medium transition-all duration-150',
                   isActive
                     ? 'bg-[#1A535C]/[0.07] text-[#1A535C] font-semibold'
                     : 'text-[#6B6B66] hover:bg-[#F0EFEC]/60 hover:text-[#4A4A46]',
@@ -732,12 +767,12 @@ export function EmailLayout() {
                 <span className="flex-1 text-left">{folder.label}</span>
                 {count > 0 && (
                   <span className={cn(
-                    'text-[11px] px-1.5 py-0.5 rounded-full min-w-[20px] text-center font-medium',
+                    'text-[11px] font-mono px-1.5 py-0.5 rounded-full min-w-[20px] text-center',
                     folder.id === 'inbox' && isActive
                       ? 'bg-[#1A535C] text-white'
                       : folder.id === 'inbox'
                         ? 'bg-[#1A535C]/10 text-[#1A535C]'
-                        : 'text-[#B0ADA8]',
+                        : 'text-[#9B9B95]',
                   )}>
                     {count}
                   </span>
@@ -746,18 +781,18 @@ export function EmailLayout() {
             )
           })}
 
-          <div className="my-2 border-t border-[#F0EFEC]" />
+          <div className="my-2 border-t border-[#EBEBEB]/60" />
 
           <button
             onClick={() => handleFolderChange('gepland' as EmailFolder)}
-            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] text-[#6B6B66] hover:bg-[#F0EFEC]/60 hover:text-[#4A4A46] transition-all duration-150"
+            className="w-full h-[40px] flex items-center gap-2.5 px-3 rounded-lg text-[13px] text-[#6B6B66] hover:bg-[#F0EFEC]/60 hover:text-[#4A4A46] transition-all duration-150"
           >
             <Archive className="h-4 w-4 flex-shrink-0" />
             <span className="flex-1 text-left">Archief</span>
           </button>
         </nav>
 
-        <div className="px-4 py-3 border-t border-[#F0EFEC]">
+        <div className="px-4 py-3 border-t border-[#EBEBEB]">
           <div className="flex items-center gap-2 text-[11px] text-[#B0ADA8]">
             <Mail className="h-3 w-3" />
             <span>Doen. Mail</span>
@@ -768,24 +803,22 @@ export function EmailLayout() {
       {/* ─── MIDDLE: content area ─── */}
       <div className="flex-1 bg-white flex flex-col min-w-0">
 
-      {/* Compose view */}
+      {/* Compose view — full width like reader */}
       {viewMode === 'composing' && (
-        <div className="flex-1 flex items-start justify-center overflow-y-auto p-6">
-          <div className="w-full max-w-[720px]">
-            <EmailCompose
-              open={true}
-              onOpenChange={(open) => { if (!open) handleBack() }}
-              defaultTo={composeDefaults.to}
-              defaultSubject={composeDefaults.subject}
-              defaultBody={composeDefaults.body}
-              onSend={handleSendEmail}
-              allEmails={emails}
-              onToChange={setComposeToAddress}
-              onRegisterActions={(a) => { composeActionsRef.current = a }}
-              onForgieLoadingChange={setComposeForgieLoading}
-            />
-          </div>
-        </div>
+        <EmailCompose
+          open={true}
+          onOpenChange={(open) => { if (!open) handleBack() }}
+          defaultTo={composeDefaults.to}
+          defaultSubject={composeDefaults.subject}
+          defaultBody={composeDefaults.body}
+          onSend={handleSendEmail}
+          allEmails={emails}
+          onToChange={setComposeToAddress}
+          onRegisterActions={(a) => { composeActionsRef.current = a }}
+          onForgieLoadingChange={setComposeForgieLoading}
+          autoFollowUp={composeAutoFollowUp}
+          onAutoFollowUpChange={setComposeAutoFollowUp}
+        />
       )}
 
       {/* Reader view */}
@@ -811,7 +844,7 @@ export function EmailLayout() {
       {viewMode === 'idle' && (<>
         {/* Toolbar */}
         {/* Toolbar */}
-        <div className="flex items-center justify-between px-4 h-12 border-b border-[#F0EFEC] flex-shrink-0">
+        <div className="flex items-center justify-between px-4 h-12 border-b border-[#EBEBEB] flex-shrink-0">
           <div className="flex items-center gap-3">
             <input
               type="checkbox"
@@ -823,16 +856,16 @@ export function EmailLayout() {
 
             {hasChecked ? (
               <div className="flex items-center gap-0.5">
-                <Button variant="ghost" size="sm" className="h-8 text-xs gap-1.5 text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F0EFEC]" onClick={handleBulkArchive}>
+                <Button variant="ghost" size="sm" className="h-8 text-[12px] gap-1.5 text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F0EFEC] rounded-lg" onClick={handleBulkArchive}>
                   <Archive className="h-3.5 w-3.5" /> Archief
                 </Button>
-                <Button variant="ghost" size="sm" className="h-8 text-xs gap-1.5 text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F0EFEC]" onClick={handleBulkDelete}>
+                <Button variant="ghost" size="sm" className="h-8 text-[12px] gap-1.5 text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F0EFEC] rounded-lg" onClick={handleBulkDelete}>
                   <Trash2 className="h-3.5 w-3.5" /> Verwijder
                 </Button>
-                <Button variant="ghost" size="sm" className="h-8 text-xs gap-1.5 text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F0EFEC]" onClick={handleBulkMarkRead}>
+                <Button variant="ghost" size="sm" className="h-8 text-[12px] gap-1.5 text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F0EFEC] rounded-lg" onClick={handleBulkMarkRead}>
                   <CheckCheck className="h-3.5 w-3.5" /> Gelezen
                 </Button>
-                <Button variant="ghost" size="sm" className="h-8 text-xs text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F0EFEC]" onClick={handleBulkMarkUnread}>
+                <Button variant="ghost" size="sm" className="h-8 text-[12px] text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F0EFEC] rounded-lg" onClick={handleBulkMarkUnread}>
                   Ongelezen
                 </Button>
               </div>
@@ -845,9 +878,9 @@ export function EmailLayout() {
                       key={f.id}
                       onClick={() => setFilter(f.id)}
                       className={cn(
-                        'px-3 py-1.5 rounded-xl text-xs transition-all duration-150',
+                        'px-3 py-1.5 rounded-xl text-[13px] transition-all duration-150',
                         isActiveFilter
-                          ? 'bg-white text-[#1A1A1A] font-medium shadow-[0_1px_2px_rgba(0,0,0,0.06)]'
+                          ? 'bg-white text-[#1A1A1A] font-semibold shadow-[0_1px_2px_rgba(0,0,0,0.06)]'
                           : 'text-[#9B9B95] hover:text-[#6B6B66]',
                       )}
                     >
@@ -882,8 +915,8 @@ export function EmailLayout() {
                   <span className={cn(
                     'font-semibold leading-none',
                     size === 'small' && 'text-[10px]',
-                    size === 'medium' && 'text-xs',
-                    size === 'large' && 'text-sm',
+                    size === 'medium' && 'text-[12px]',
+                    size === 'large' && 'text-[14px]',
                   )}>A</span>
                 </button>
               ))}
@@ -891,7 +924,7 @@ export function EmailLayout() {
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC]"
+              className="h-8 w-8 text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC] rounded-lg transition-colors duration-150"
               onClick={() => setShowSearch(!showSearch)}
             >
               <Search className="h-4 w-4" />
@@ -899,7 +932,7 @@ export function EmailLayout() {
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC]"
+              className="h-8 w-8 text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC] rounded-lg transition-colors duration-150"
               onClick={() => handleRefresh(selectedFolder)}
               disabled={isRefreshing}
             >
@@ -910,14 +943,14 @@ export function EmailLayout() {
 
         {/* Search bar */}
         {showSearch && (
-          <div className="flex items-center px-4 h-11 mx-3 my-2 rounded-xl bg-[#F0EFEC]/50 border border-[#F0EFEC]">
+          <div className="flex items-center px-4 h-11 border-b border-[#EBEBEB]">
             <Search className="h-4 w-4 text-[#B0ADA8] mr-3 flex-shrink-0" />
             <input
               type="text"
               value={searchInput}
               onChange={(e) => handleSearchChange(e.target.value)}
               placeholder="Zoek in emails..."
-              className="flex-1 bg-transparent text-sm outline-none placeholder:text-[#B0ADA8]"
+              className="flex-1 bg-transparent text-[14px] outline-none placeholder:text-[#B0ADA8]"
               autoFocus
             />
             {searchInput && (
@@ -937,17 +970,17 @@ export function EmailLayout() {
           {isLoading ? (
             <div className="flex flex-col items-center justify-center h-full gap-3">
               <Loader2 className="h-6 w-6 animate-spin text-[#1A535C]/40" />
-              <p className="text-sm text-[#B0ADA8]">Emails laden...</p>
+              <p className="text-[14px] text-[#B0ADA8]">Emails laden...</p>
             </div>
           ) : threadedEmails.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center px-8">
-              <div className="w-16 h-16 rounded-2xl bg-[#F0EFEC] flex items-center justify-center mb-4">
-                <Inbox className="h-7 w-7 text-[#B0ADA8]" />
+              <div className="w-14 h-14 rounded-2xl bg-[#F0EFEC] flex items-center justify-center mb-5">
+                <Inbox className="h-6 w-6 text-[#B0ADA8]" />
               </div>
-              <h3 className="text-sm font-medium text-[#6B6B66] mb-1">
+              <h3 className="text-[14px] font-medium text-[#6B6B66] mb-1.5">
                 {searchQuery ? 'Geen resultaten' : filter !== 'alle' ? 'Geen emails met dit filter' : 'Inbox is leeg'}
               </h3>
-              <p className="text-xs text-[#9B9B95] max-w-[240px]">
+              <p className="text-[13px] text-[#9B9B95] max-w-[260px] leading-relaxed">
                 {searchQuery
                   ? `Geen emails gevonden voor "${searchQuery}"`
                   : filter !== 'alle'
@@ -957,7 +990,7 @@ export function EmailLayout() {
               </p>
             </div>
           ) : (
-            <div className="divide-y divide-[#F0EFEC]">
+            <div className="divide-y divide-[#EBEBEB]">
               {threadedEmails.map((email, index) => (
                 <EmailListItem
                   key={email.id}
@@ -974,13 +1007,13 @@ export function EmailLayout() {
               {isLoadingMore && (
                 <div className="flex items-center justify-center py-5">
                   <Loader2 className="h-4 w-4 animate-spin text-[#1A535C]/40 mr-2" />
-                  <span className="text-xs text-[#B0ADA8]">Meer laden...</span>
+                  <span className="text-[12px] text-[#B0ADA8]">Meer laden...</span>
                 </div>
               )}
               {threadedEmails.length < imapTotal && !isLoadingMore && (
                 <button
                   onClick={() => loadMoreEmails(selectedFolder)}
-                  className="w-full py-4 text-xs text-[#9B9B95] hover:text-[#1A535C] hover:bg-[#1A535C]/[0.03] transition-colors"
+                  className="w-full py-4 text-[12px] text-[#9B9B95] hover:text-[#1A535C] hover:bg-[#1A535C]/[0.03] transition-colors duration-150"
                 >
                   Meer laden ({threadedEmails.length} van {imapTotal})
                 </button>
@@ -991,19 +1024,19 @@ export function EmailLayout() {
       {/* Keyboard shortcuts overlay */}
       {showShortcuts && (
         <>
-          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" onClick={() => setShowShortcuts(false)} />
-          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-white rounded-xl shadow-2xl border border-[#F0EFEC] p-6 w-[340px]">
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="text-sm font-semibold text-[#1A1A1A]">Sneltoetsen</h3>
-              <button onClick={() => setShowShortcuts(false)} className="p-1 hover:bg-[#F0EFEC] rounded">
+          <div className="fixed inset-0 z-50 bg-black/20 backdrop-blur-sm" onClick={() => setShowShortcuts(false)} />
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-white rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.08)] p-8 w-[360px]">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-[15px] font-semibold text-[#1A1A1A]">Sneltoetsen</h3>
+              <button onClick={() => setShowShortcuts(false)} className="p-1.5 hover:bg-[#F0EFEC] rounded-lg transition-colors duration-150">
                 <X className="h-4 w-4 text-[#9B9B95]" />
               </button>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-3">
               {KEYBOARD_SHORTCUTS.map(s => (
                 <div key={s.key} className="flex items-center justify-between">
-                  <span className="text-sm text-[#6B6B66]">{s.action}</span>
-                  <kbd className="px-2 py-1 bg-[#F0EFEC] border border-[#F0EFEC] rounded text-xs font-mono text-[#6B6B66]">{s.key}</kbd>
+                  <span className="text-[14px] text-[#6B6B66]">{s.action}</span>
+                  <kbd className="px-2.5 py-1 bg-[#F0EFEC] rounded-lg text-[12px] font-mono text-[#6B6B66]">{s.key}</kbd>
                 </div>
               ))}
             </div>
@@ -1014,24 +1047,21 @@ export function EmailLayout() {
       </div>
 
       {/* ─── RIGHT CONTEXT SIDEBAR ─── */}
-      {(viewMode === 'composing' || viewMode === 'reading') && (
-        <EmailContextSidebar
-          mode={viewMode === 'composing' ? 'compose' : 'reading'}
-          composeToAddress={composeToAddress}
-          composeReminder={composeReminder}
-          onComposeReminderChange={setComposeReminder}
-          forgieLoading={composeForgieLoading}
-          onForgieWrite={() => composeActionsRef.current?.forgieWrite()}
-          onForgieRewrite={(a, l) => composeActionsRef.current?.forgieRewrite(a, l)}
-          allEmails={emails}
-          email={selectedEmail}
-          senderName={readerSenderName}
-          senderEmail={readerSenderEmail}
-          avatarColor={readerAvatarColor}
-          avatarRingColor={readerAvatarRingColor}
-          onSelectEmail={handleSelectEmail}
-        />
-      )}
+      <EmailContextSidebar
+        mode={viewMode === 'composing' ? 'compose' : viewMode === 'reading' ? 'reading' : 'idle'}
+        composeToAddress={composeToAddress}
+        composeReminder={composeReminder}
+        onComposeReminderChange={setComposeReminder}
+        allEmails={emails}
+        email={selectedEmail}
+        senderName={readerSenderName}
+        senderEmail={readerSenderEmail}
+        onSelectEmail={handleSelectEmail}
+        onCompose={() => handleCompose()}
+        autoFollowUp={composeAutoFollowUp}
+        onAutoFollowUpChange={setComposeAutoFollowUp}
+        unreadCount={emails.filter(e => !e.gelezen).length}
+      />
       </div>
     </div>
   )
