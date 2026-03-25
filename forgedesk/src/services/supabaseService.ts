@@ -5524,34 +5524,40 @@ export async function deactiveerPortaal(portaalId: string): Promise<void> {
 export async function getPortaalItems(portaalId: string, alleenZichtbaar = false): Promise<PortaalItem[]> {
   assertId(portaalId, 'portaal_id')
   if (isSupabaseConfigured() && supabase) {
+    // Probeer via server-side API (omzeilt RLS op portaal_reacties)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.access_token) {
+        const resp = await fetch(`/api/portaal-items-get?portaal_id=${encodeURIComponent(portaalId)}`, {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        })
+        if (resp.ok) {
+          const { items: apiItems } = await resp.json()
+          let result = (apiItems || []).map((item: Record<string, unknown>) => ({
+            ...item,
+            bestanden: (item.portaal_bestanden || []) as PortaalBestand[],
+            reacties: (item.portaal_reacties || []) as PortaalReactie[],
+          })) as PortaalItem[]
+          if (alleenZichtbaar) result = result.filter(i => i.zichtbaar_voor_klant)
+          return result
+        }
+      }
+    } catch {
+      // Fallback naar client-side query
+    }
+    // Fallback: client-side query (reacties mogelijk leeg door RLS)
     let query = supabase
       .from('portaal_items')
-      .select('*, portaal_bestanden(*)')
+      .select('*, portaal_bestanden(*), portaal_reacties(*)')
       .eq('portaal_id', portaalId)
       .order('created_at', { ascending: false })
     if (alleenZichtbaar) query = query.eq('zichtbaar_voor_klant', true)
     const { data, error } = await query
     if (error) throw error
-    const items = data || []
-    // Haal reacties apart op (nested select + RLS geeft soms lege arrays)
-    const itemIds = items.map((i: Record<string, unknown>) => i.id as string)
-    let reactiesMap: Record<string, PortaalReactie[]> = {}
-    if (itemIds.length > 0) {
-      const { data: reacties } = await supabase
-        .from('portaal_reacties')
-        .select('*')
-        .in('portaal_item_id', itemIds)
-      if (reacties) {
-        for (const r of reacties as PortaalReactie[]) {
-          if (!reactiesMap[r.portaal_item_id]) reactiesMap[r.portaal_item_id] = []
-          reactiesMap[r.portaal_item_id].push(r)
-        }
-      }
-    }
-    return items.map((item: Record<string, unknown>) => ({
+    return (data || []).map((item: Record<string, unknown>) => ({
       ...item,
       bestanden: (item.portaal_bestanden || []) as PortaalBestand[],
-      reacties: reactiesMap[item.id as string] || [],
+      reacties: (item.portaal_reacties || []) as PortaalReactie[],
     })) as PortaalItem[]
   }
   const items = getLocalData<PortaalItem>('portaal_items')
