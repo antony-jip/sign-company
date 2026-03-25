@@ -324,7 +324,7 @@ export function FactuurEditor() {
               getFactuur(editFactuurId),
               getFactuurItems(editFactuurId),
             ])
-            if (!cancelled) {
+            if (!cancelled && factuur) {
               setExistingFactuur(factuur)
               setIsEditMode(true)
               setKlantId(factuur.klant_id)
@@ -1216,12 +1216,12 @@ export function FactuurEditor() {
   // ============ RENDER ============
 
   return (
-    <div className="min-h-screen bg-[#F4F3F0]">
+    <div className="min-h-screen bg-[#F8F7F5]">
       <div className="px-6 pt-3">
         <BackButton fallbackPath="/facturen" />
       </div>
       {/* Header */}
-      <div className="sticky top-0 z-30 bg-[#F4F3F0]/95 backdrop-blur border-b border-sand px-6 py-3">
+      <div className="sticky top-0 z-30 bg-[#F8F7F5]/95 backdrop-blur border-b border-sand px-6 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div>
@@ -1573,7 +1573,7 @@ export function FactuurEditor() {
           </Card>
 
           {/* Financieel overzicht */}
-          <Card className="bg-[#F4F3F0] border-sand">
+          <Card className="bg-[#F8F7F5] border-sand">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium flex items-center gap-2 text-petrol">
                 <Euro className="h-4 w-4" />
@@ -1780,7 +1780,7 @@ export function FactuurEditor() {
                     key={item.id}
                     className={cn(
                       "grid grid-cols-1 md:grid-cols-[1fr_70px_95px_60px_75px_100px_100px_36px] gap-2 p-2 rounded-lg border transition-colors hover:bg-petrol-light/60 hover:border-petrol-border",
-                      idx % 2 === 0 ? 'bg-card' : 'bg-[#F4F3F0]/50'
+                      idx % 2 === 0 ? 'bg-card' : 'bg-[#F8F7F5]/50'
                     )}
                   >
                     <Input
@@ -1873,7 +1873,7 @@ export function FactuurEditor() {
 
               {/* Totaal rij */}
               {validItems.length > 0 && (
-                <div className="hidden md:grid md:grid-cols-[1fr_70px_95px_60px_75px_100px_100px_36px] gap-2 px-3 py-2.5 mt-2 bg-[#F4F3F0] rounded-lg border border-sand">
+                <div className="hidden md:grid md:grid-cols-[1fr_70px_95px_60px_75px_100px_100px_36px] gap-2 px-3 py-2.5 mt-2 bg-[#F8F7F5] rounded-lg border border-sand">
                   <span className="text-sm font-semibold text-petrol">Totaal</span>
                   <span />
                   <span />

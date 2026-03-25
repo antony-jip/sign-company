@@ -85,12 +85,12 @@ function assertId(id: unknown, label = 'id'): asserts id is string {
 }
 
 function getLocalData<T>(key: string): T[] {
-  const data = localStorage.getItem(`forgedesk_${key}`)
+  const data = localStorage.getItem(`doen_${key}`)
   return data ? JSON.parse(data) : []
 }
 
 function setLocalData<T>(key: string, data: T[]): void {
-  if (!safeSetItem(`forgedesk_${key}`, JSON.stringify(data))) {
+  if (!safeSetItem(`doen_${key}`, JSON.stringify(data))) {
     throw new Error(`localStorage quota exceeded voor ${key}`)
   }
 }
@@ -124,15 +124,43 @@ const UUID_FIELDS = [
  * Als user_id al in het object zit, wordt het behouden.
  * Anders wordt het opgehaald uit de huidige Supabase auth sessie.
  */
-async function withUserId<T extends Record<string, unknown>>(data: T): Promise<T & { user_id: string }> {
-  if (data.user_id && typeof data.user_id === 'string') return data as T & { user_id: string }
+async function withUserId<T extends object>(data: T): Promise<T & { user_id: string }> {
+  if ((data as any).user_id && typeof (data as any).user_id === 'string') return data as T & { user_id: string }
   if (!supabase) return data as T & { user_id: string }
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Niet ingelogd — kan user_id niet bepalen')
   return { ...data, user_id: user.id }
 }
 
-function sanitizeDates<T extends Record<string, unknown>>(data: T): T {
+/** Voeg organisatie_id toe aan data als die ontbreekt — haalt het op uit het user profiel */
+async function withOrganisatieId<T extends object>(data: T): Promise<T & { organisatie_id?: string }> {
+  if ((data as any).organisatie_id) return data as T & { organisatie_id: string }
+  if (!supabase) return data as T & { organisatie_id?: string }
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return data as T & { organisatie_id?: string }
+  const { data: profile } = await supabase.from('profiles').select('organisatie_id').eq('id', user.id).maybeSingle()
+  if (profile?.organisatie_id) return { ...data, organisatie_id: profile.organisatie_id }
+  return data as T & { organisatie_id?: string }
+}
+
+// Cache organisatie_id zodat we niet bij elke create het profiel opvragen
+let _cachedOrgId: string | null = null
+async function getOrgId(): Promise<string | undefined> {
+  if (_cachedOrgId) return _cachedOrgId
+  if (!supabase) return undefined
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return undefined
+  const { data: profile } = await supabase.from('profiles').select('organisatie_id').eq('id', user.id).maybeSingle()
+  if (profile?.organisatie_id) { _cachedOrgId = profile.organisatie_id; return _cachedOrgId }
+  return undefined
+}
+
+// Reset cache bij auth changes
+if (typeof window !== 'undefined') {
+  supabase?.auth.onAuthStateChange(() => { _cachedOrgId = null })
+}
+
+function sanitizeDates<T extends object>(data: T): T {
   const result = { ...data } as Record<string, unknown>
   for (const field of DATE_FIELDS) {
     if (field in result && (result[field] === '' || result[field] === undefined)) {
@@ -326,7 +354,8 @@ export async function createKlant(klant: Omit<Klant, 'id' | 'created_at' | 'upda
       const { data: { user } } = await supabase.auth.getUser()
       user_id = user?.id || ''
     }
-    const klantInsert = { ...klant, user_id }
+    const orgId = klant.organisatie_id || await getOrgId()
+    const klantInsert = { ...klant, user_id, organisatie_id: orgId }
     if (!Array.isArray(klantInsert.tags)) klantInsert.tags = []
     if (!Array.isArray(klantInsert.klant_labels)) klantInsert.klant_labels = []
     const { data, error } = await supabase
@@ -449,9 +478,10 @@ export async function getProjectenByKlant(klantId: string): Promise<Project[]> {
 
 export async function createProject(project: Omit<Project, 'id' | 'created_at' | 'updated_at' | 'klant_naam'>): Promise<Project> {
   if (isSupabaseConfigured() && supabase) {
+    const _orgId = await getOrgId()
     const { data, error } = await supabase
       .from('projecten')
-      .insert(await withUserId(sanitizeDates(project)))
+      .insert({ ...await withUserId(sanitizeDates(project)), organisatie_id: _orgId })
       .select()
       .single()
     if (error) throw error
@@ -556,9 +586,10 @@ export async function getTakenByProject(projectId: string): Promise<Taak[]> {
 
 export async function createTaak(taak: Omit<Taak, 'id' | 'created_at' | 'updated_at'>): Promise<Taak> {
   if (isSupabaseConfigured() && supabase) {
+    const _orgId = await getOrgId()
     const { data, error } = await supabase
       .from('taken')
-      .insert(await withUserId(sanitizeDates(taak)))
+      .insert({ ...await withUserId(sanitizeDates(taak)), organisatie_id: _orgId })
       .select()
       .single()
     if (error) throw error
@@ -764,9 +795,10 @@ export async function getMateriaalSuggesties(query: string): Promise<Array<{ mat
 
 export async function createOfferte(offerte: Omit<Offerte, 'id' | 'created_at' | 'updated_at'>): Promise<Offerte> {
   if (isSupabaseConfigured() && supabase) {
+    const _orgId = await getOrgId()
     const { data, error } = await supabase
       .from('offertes')
-      .insert(await withUserId(sanitizeDates(offerte)))
+      .insert({ ...await withUserId(sanitizeDates(offerte)), organisatie_id: _orgId })
       .select()
       .single()
     if (error) throw error
@@ -955,9 +987,10 @@ export async function getDocument(id: string): Promise<Document | null> {
 
 export async function createDocument(document: Omit<Document, 'id' | 'created_at' | 'updated_at'>): Promise<Document> {
   if (isSupabaseConfigured() && supabase) {
+    const _orgId = await getOrgId()
     const { data, error } = await supabase
       .from('documenten')
-      .insert(await withUserId(document))
+      .insert({ ...await withUserId(document), organisatie_id: _orgId })
       .select()
       .single()
     if (error) throw error
@@ -1056,9 +1089,10 @@ export async function getEmailBody(id: string): Promise<{ body_html: string | nu
 
 export async function createEmail(email: Omit<Email, 'id' | 'created_at'>): Promise<Email> {
   if (isSupabaseConfigured() && supabase) {
+    const _orgId = await getOrgId()
     const { data, error } = await supabase
       .from('emails')
-      .insert(await withUserId(email))
+      .insert({ ...await withUserId(email), organisatie_id: _orgId })
       .select()
       .single()
     if (error) throw error
@@ -1137,9 +1171,10 @@ export async function getEvent(id: string): Promise<CalendarEvent | null> {
 
 export async function createEvent(event: Omit<CalendarEvent, 'id' | 'created_at' | 'updated_at'>): Promise<CalendarEvent> {
   if (isSupabaseConfigured() && supabase) {
+    const _orgId = await getOrgId()
     const { data, error } = await supabase
       .from('events')
-      .insert(await withUserId(sanitizeDates(event)))
+      .insert({ ...await withUserId(sanitizeDates(event)), organisatie_id: _orgId })
       .select()
       .single()
     if (error) throw error
@@ -1336,9 +1371,10 @@ export async function getBtwCodes(): Promise<BtwCode[]> {
 
 export async function createBtwCode(btwCode: Omit<BtwCode, 'id' | 'created_at'>): Promise<BtwCode> {
   if (isSupabaseConfigured() && supabase) {
+    const _orgId = await getOrgId()
     const { data, error } = await supabase
       .from('btw_codes')
-      .insert(await withUserId(btwCode))
+      .insert({ ...await withUserId(btwCode), organisatie_id: _orgId })
       .select()
       .single()
     if (error) throw error
@@ -1402,9 +1438,10 @@ export async function getKortingen(): Promise<Korting[]> {
 
 export async function createKorting(korting: Omit<Korting, 'id' | 'created_at'>): Promise<Korting> {
   if (isSupabaseConfigured() && supabase) {
+    const _orgId = await getOrgId()
     const { data, error } = await supabase
       .from('kortingen')
-      .insert(await withUserId(korting))
+      .insert({ ...await withUserId(korting), organisatie_id: _orgId })
       .select()
       .single()
     if (error) throw error
@@ -1551,9 +1588,10 @@ export async function getCalculatieProducten(): Promise<CalculatieProduct[]> {
 
 export async function createCalculatieProduct(product: Omit<CalculatieProduct, 'id' | 'created_at' | 'updated_at'>): Promise<CalculatieProduct> {
   if (isSupabaseConfigured() && supabase) {
+    const _orgId = await getOrgId()
     const { data, error } = await supabase
       .from('calculatie_producten')
-      .insert(await withUserId(product))
+      .insert({ ...await withUserId(product), organisatie_id: _orgId })
       .select()
       .single()
     if (error) throw error
@@ -1618,9 +1656,10 @@ export async function getCalculatieTemplates(): Promise<CalculatieTemplate[]> {
 
 export async function createCalculatieTemplate(template: Omit<CalculatieTemplate, 'id' | 'created_at' | 'updated_at'>): Promise<CalculatieTemplate> {
   if (isSupabaseConfigured() && supabase) {
+    const _orgId = await getOrgId()
     const { data, error } = await supabase
       .from('calculatie_templates')
-      .insert(await withUserId(template))
+      .insert({ ...await withUserId(template), organisatie_id: _orgId })
       .select()
       .single()
     if (error) throw error
@@ -1842,9 +1881,10 @@ export async function createTekeningGoedkeuring(
 ): Promise<TekeningGoedkeuring> {
   const token = generateToken()
   if (isSupabaseConfigured() && supabase) {
+    const _orgId = await getOrgId()
     const { data, error } = await supabase
       .from('tekening_goedkeuringen')
-      .insert(await withUserId({ ...goedkeuring, token }))
+      .insert({ ...await withUserId({ ...goedkeuring, token }), organisatie_id: _orgId })
       .select()
       .single()
     if (error) throw error
@@ -1991,6 +2031,13 @@ export function getDefaultAppSettings(userId: string): AppSettings {
     exact_btw_hoog: '2',
     exact_btw_laag: '',
     exact_btw_nul: '',
+    project_prefix: 'PRJ',
+    werkbon_monteur_uren: true,
+    werkbon_monteur_opmerkingen: true,
+    werkbon_monteur_fotos: true,
+    werkbon_monteur_handtekening: true,
+    werkbon_monteur_materialen: false,
+    werkbon_toon_km: false,
     created_at: now(),
     updated_at: now(),
   }
@@ -2146,7 +2193,8 @@ export async function getFactuur(id: string): Promise<Factuur | null> {
 export async function createFactuur(factuur: Omit<Factuur, 'id' | 'created_at' | 'updated_at'>): Promise<Factuur> {
   const newFactuur: Factuur = { ...sanitizeDates(factuur), id: generateId(), created_at: now(), updated_at: now() } as Factuur
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('facturen').insert(await withUserId(newFactuur)).select().single()
+    const _orgId = await getOrgId()
+    const { data, error } = await supabase.from('facturen').insert({ ...await withUserId(newFactuur), organisatie_id: _orgId }).select().single()
     if (error) throw error
     return data
   }
@@ -2221,7 +2269,8 @@ export async function getTijdregistraties(): Promise<Tijdregistratie[]> {
 export async function createTijdregistratie(entry: Omit<Tijdregistratie, 'id' | 'created_at' | 'updated_at'>): Promise<Tijdregistratie> {
   const newEntry: Tijdregistratie = { ...sanitizeDates(entry), id: generateId(), created_at: now(), updated_at: now() } as Tijdregistratie
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('tijdregistraties').insert(await withUserId(newEntry)).select().single()
+    const _orgId = await getOrgId()
+    const { data, error } = await supabase.from('tijdregistraties').insert({ ...await withUserId(newEntry), organisatie_id: _orgId }).select().single()
     if (error) throw error
     return data
   }
@@ -2271,7 +2320,8 @@ export async function getMedewerkers(): Promise<Medewerker[]> {
 export async function createMedewerker(mw: Omit<Medewerker, 'id' | 'created_at' | 'updated_at'>): Promise<Medewerker> {
   const newMw: Medewerker = { ...mw, id: generateId(), created_at: now(), updated_at: now() } as Medewerker
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('medewerkers').insert(await withUserId(newMw)).select().single()
+    const _orgId = await getOrgId()
+    const { data, error } = await supabase.from('medewerkers').insert({ ...await withUserId(newMw), organisatie_id: _orgId }).select().single()
     if (error) throw error
     return data
   }
@@ -2325,7 +2375,8 @@ export async function getNotificaties(limit = 100): Promise<Notificatie[]> {
 export async function createNotificatie(notif: Omit<Notificatie, 'id' | 'created_at'>): Promise<Notificatie> {
   const newNotif: Notificatie = { ...notif, id: generateId(), created_at: now() } as Notificatie
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('notificaties').insert(await withUserId(newNotif)).select().single()
+    const _orgId = await getOrgId()
+    const { data, error } = await supabase.from('notificaties').insert({ ...await withUserId(newNotif), organisatie_id: _orgId }).select().single()
     if (error) throw error
     return data
   }
@@ -2373,7 +2424,8 @@ export async function getMontageAfspraken(): Promise<MontageAfspraak[]> {
 export async function createMontageAfspraak(afspraak: Omit<MontageAfspraak, 'id' | 'created_at' | 'updated_at'>): Promise<MontageAfspraak> {
   const newAfspraak: MontageAfspraak = { ...sanitizeDates(afspraak), id: generateId(), created_at: now(), updated_at: now() } as MontageAfspraak
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('montage_afspraken').insert(await withUserId(newAfspraak)).select().single()
+    const _orgId = await getOrgId()
+    const { data, error } = await supabase.from('montage_afspraken').insert({ ...await withUserId(newAfspraak), organisatie_id: _orgId }).select().single()
     if (error) throw error
     return data
   }
@@ -2445,7 +2497,8 @@ export async function getVerlofByMedewerker(medewerkerId: string): Promise<Verlo
 export async function createVerlof(verlof: Omit<Verlof, 'id' | 'created_at'>): Promise<Verlof> {
   const newVerlof: Verlof = { ...sanitizeDates(verlof), id: generateId(), created_at: now() } as Verlof
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('verlof').insert(await withUserId(newVerlof)).select().single()
+    const _orgId = await getOrgId()
+    const { data, error } = await supabase.from('verlof').insert({ ...await withUserId(newVerlof), organisatie_id: _orgId }).select().single()
     if (error) throw error
     return data
   }
@@ -2493,7 +2546,8 @@ export async function getBedrijfssluitingsdagen(): Promise<Bedrijfssluitingsdag[
 export async function createBedrijfssluitingsdag(dag: Omit<Bedrijfssluitingsdag, 'id' | 'created_at'>): Promise<Bedrijfssluitingsdag> {
   const newDag: Bedrijfssluitingsdag = { ...sanitizeDates(dag), id: generateId(), created_at: now() } as Bedrijfssluitingsdag
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('bedrijfssluitingsdagen').insert(await withUserId(newDag)).select().single()
+    const _orgId = await getOrgId()
+    const { data, error } = await supabase.from('bedrijfssluitingsdagen').insert({ ...await withUserId(newDag), organisatie_id: _orgId }).select().single()
     if (error) throw error
     return data
   }
@@ -2574,7 +2628,8 @@ export async function getBookingSlots(): Promise<BookingSlot[]> {
 export async function createBookingSlot(slot: Omit<BookingSlot, 'id' | 'created_at'>): Promise<BookingSlot> {
   const newSlot: BookingSlot = { ...slot, id: generateId(), created_at: now() } as BookingSlot
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('booking_slots').insert(await withUserId(newSlot)).select().single()
+    const _orgId = await getOrgId()
+    const { data, error } = await supabase.from('booking_slots').insert({ ...await withUserId(newSlot), organisatie_id: _orgId }).select().single()
     if (error) throw error
     return data
   }
@@ -2633,7 +2688,8 @@ export async function getBookingAfspraakByToken(token: string): Promise<BookingA
 export async function createBookingAfspraak(afspraak: Omit<BookingAfspraak, 'id' | 'token' | 'created_at'>): Promise<BookingAfspraak> {
   const newAfspraak: BookingAfspraak = { ...afspraak, id: generateId(), token: generateToken(), created_at: now() } as BookingAfspraak
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('booking_afspraken').insert(await withUserId(newAfspraak)).select().single()
+    const _orgId = await getOrgId()
+    const { data, error } = await supabase.from('booking_afspraken').insert({ ...await withUserId(newAfspraak), organisatie_id: _orgId }).select().single()
     if (error) throw error
     return data
   }
@@ -2730,7 +2786,8 @@ export async function createWerkbon(werkbon: Omit<Werkbon, 'id' | 'werkbon_numme
   const werkbon_nummer = await generateWerkbonNummer()
   const newWerkbon: Werkbon = { ...sanitizeDates(werkbon), id: generateId(), werkbon_nummer, created_at: now(), updated_at: now() } as Werkbon
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('werkbonnen').insert(await withUserId(newWerkbon)).select().single()
+    const _orgId = await getOrgId()
+    const { data, error } = await supabase.from('werkbonnen').insert({ ...await withUserId(newWerkbon), organisatie_id: _orgId }).select().single()
     if (error) throw error
     return data
   }
@@ -3016,7 +3073,8 @@ export function getDefaultHerinneringTemplates(userId: string): HerinneringTempl
 export async function createHerinneringTemplate(template: Omit<HerinneringTemplate, 'id' | 'created_at'>): Promise<HerinneringTemplate> {
   const newTemplate: HerinneringTemplate = { ...template, id: generateId(), created_at: now() } as HerinneringTemplate
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('herinnering_templates').insert(await withUserId(newTemplate)).select().single()
+    const _orgId = await getOrgId()
+    const { data, error } = await supabase.from('herinnering_templates').insert({ ...await withUserId(newTemplate), organisatie_id: _orgId }).select().single()
     if (error) throw error
     return data
   }
@@ -3082,7 +3140,8 @@ export async function getLeverancier(id: string): Promise<Leverancier | null> {
 export async function createLeverancier(lev: Omit<Leverancier, 'id' | 'created_at'>): Promise<Leverancier> {
   const newLev: Leverancier = { ...lev, id: generateId(), created_at: now() } as Leverancier
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('leveranciers').insert(await withUserId(newLev)).select().single()
+    const _orgId = await getOrgId()
+    const { data, error } = await supabase.from('leveranciers').insert({ ...await withUserId(newLev), organisatie_id: _orgId }).select().single()
     if (error) throw error
     return data
   }
@@ -3174,7 +3233,8 @@ export async function createUitgave(uitgave: Omit<Uitgave, 'id' | 'uitgave_numme
   const uitgave_nummer = await generateUitgaveNummer()
   const newUitgave: Uitgave = { ...sanitizeDates(uitgave), id: generateId(), uitgave_nummer, created_at: now(), updated_at: now() } as Uitgave
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('uitgaven').insert(await withUserId(newUitgave)).select().single()
+    const _orgId = await getOrgId()
+    const { data, error } = await supabase.from('uitgaven').insert({ ...await withUserId(newUitgave), organisatie_id: _orgId }).select().single()
     if (error) throw error
     return data
   }
@@ -3368,7 +3428,8 @@ export async function createBestelbon(data: Omit<Bestelbon, 'id' | 'bestelbon_nu
   const bestelbon_nummer = await generateBestelbonNummer()
   const newItem: Bestelbon = { ...sanitizeDates(data), id: generateId(), bestelbon_nummer, created_at: now(), updated_at: now() } as Bestelbon
   if (isSupabaseConfigured() && supabase) {
-    const { data: saved, error } = await supabase.from('bestelbonnen').insert(await withUserId(newItem)).select().single()
+    const _orgId = await getOrgId()
+    const { data: saved, error } = await supabase.from('bestelbonnen').insert({ ...await withUserId(newItem), organisatie_id: _orgId }).select().single()
     if (error) throw error
     return saved
   }
@@ -3509,7 +3570,8 @@ export async function createLeveringsbon(data: Omit<Leveringsbon, 'id' | 'leveri
   const leveringsbon_nummer = await generateLeveringsbonNummer()
   const newItem: Leveringsbon = { ...sanitizeDates(data), id: generateId(), leveringsbon_nummer, created_at: now(), updated_at: now() } as Leveringsbon
   if (isSupabaseConfigured() && supabase) {
-    const { data: saved, error } = await supabase.from('leveringsbonnen').insert(await withUserId(newItem)).select().single()
+    const _orgId = await getOrgId()
+    const { data: saved, error } = await supabase.from('leveringsbonnen').insert({ ...await withUserId(newItem), organisatie_id: _orgId }).select().single()
     if (error) throw error
     return saved
   }
@@ -3623,7 +3685,8 @@ export async function getVoorraadArtikelenBijMinimum(): Promise<VoorraadArtikel[
 export async function createVoorraadArtikel(data: Omit<VoorraadArtikel, 'id' | 'created_at' | 'updated_at'>): Promise<VoorraadArtikel> {
   const newItem: VoorraadArtikel = { ...data, id: generateId(), created_at: now(), updated_at: now() } as VoorraadArtikel
   if (isSupabaseConfigured() && supabase) {
-    const { data: saved, error } = await supabase.from('voorraad_artikelen').insert(await withUserId(newItem)).select().single()
+    const _orgId = await getOrgId()
+    const { data: saved, error } = await supabase.from('voorraad_artikelen').insert({ ...await withUserId(newItem), organisatie_id: _orgId }).select().single()
     if (error) throw error
     return saved
   }
@@ -3685,7 +3748,8 @@ export async function createVoorraadMutatie(data: Omit<VoorraadMutatie, 'id' | '
   const nieuwSaldo = round2(artikel.huidige_voorraad + data.aantal)
   const newItem: VoorraadMutatie = { ...data, id: generateId(), saldo_na_mutatie: nieuwSaldo, created_at: now() } as VoorraadMutatie
   if (isSupabaseConfigured() && supabase) {
-    const { data: saved, error } = await supabase.from('voorraad_mutaties').insert(await withUserId(newItem)).select().single()
+    const _orgId = await getOrgId()
+    const { data: saved, error } = await supabase.from('voorraad_mutaties').insert({ ...await withUserId(newItem), organisatie_id: _orgId }).select().single()
     if (error) throw error
     await supabase.from('voorraad_artikelen').update({ huidige_voorraad: nieuwSaldo, updated_at: now() }).eq('id', data.artikel_id)
     return saved
@@ -3783,7 +3847,8 @@ export async function getDealsByMedewerker(medewerkerId: string): Promise<Deal[]
 export async function createDeal(data: Omit<Deal, 'id' | 'created_at' | 'updated_at'>): Promise<Deal> {
   const newItem: Deal = { ...sanitizeDates(data), id: generateId(), created_at: now(), updated_at: now() } as Deal
   if (isSupabaseConfigured() && supabase) {
-    const { data: saved, error } = await supabase.from('deals').insert(await withUserId(newItem)).select().single()
+    const _orgId = await getOrgId()
+    const { data: saved, error } = await supabase.from('deals').insert({ ...await withUserId(newItem), organisatie_id: _orgId }).select().single()
     if (error) throw error
     return saved
   }
@@ -3893,7 +3958,8 @@ export async function createLeadFormulier(data: Omit<LeadFormulier, 'id' | 'publ
   const publiek_token = generateLeadToken()
   const newItem: LeadFormulier = { ...data, id: generateId(), publiek_token, created_at: now(), updated_at: now() } as LeadFormulier
   if (isSupabaseConfigured() && supabase) {
-    const { data: saved, error } = await supabase.from('lead_formulieren').insert(await withUserId(newItem)).select().single()
+    const _orgId = await getOrgId()
+    const { data: saved, error } = await supabase.from('lead_formulieren').insert({ ...await withUserId(newItem), organisatie_id: _orgId }).select().single()
     if (error) throw error
     return saved
   }
@@ -4053,6 +4119,10 @@ export async function getDocumentStyle(userId: string): Promise<DocumentStyle | 
 export async function upsertDocumentStyle(userId: string, style: Partial<DocumentStyle>): Promise<DocumentStyle> {
   assertId(userId, 'user_id')
   if (isSupabaseConfigured() && supabase) {
+    // Strip invalid id (empty string is not a valid UUID)
+    const { id: styleId, ...styleWithoutId } = style as any
+    const cleanStyle = (styleId && typeof styleId === 'string' && styleId.length > 10) ? style : styleWithoutId
+
     const { data: existing } = await supabase
       .from('document_styles')
       .select('id')
@@ -4060,18 +4130,20 @@ export async function upsertDocumentStyle(userId: string, style: Partial<Documen
       .maybeSingle()
 
     if (existing) {
+      const { id: _id, ...updateFields } = cleanStyle as any
       const { data, error } = await supabase
         .from('document_styles')
-        .update({ ...style, updated_at: now() })
+        .update({ ...updateFields, updated_at: now() })
         .eq('user_id', userId)
         .select()
         .single()
       if (error) throw error
       return data
     } else {
+      const { id: _id, ...insertFields } = cleanStyle as any
       const { data, error } = await supabase
         .from('document_styles')
-        .insert({ ...style, user_id: userId, created_at: now(), updated_at: now() })
+        .insert({ ...insertFields, user_id: userId, created_at: now(), updated_at: now() })
         .select()
         .single()
       if (error) throw error
@@ -4244,6 +4316,7 @@ export async function createProjectFoto(
 
   if (isSupabaseConfigured() && supabase) {
     const { error: uploadError } = await supabase.storage
+    const _orgId = await getOrgId()
       .from(PHOTO_BUCKET)
       .upload(storagePath, file, { cacheControl: '3600', upsert: false })
     if (uploadError) throw uploadError
@@ -4252,7 +4325,7 @@ export async function createProjectFoto(
 
     const { data, error } = await supabase
       .from('project_fotos')
-      .insert({
+      .insert({ organisatie_id: _orgId, 
         user_id: foto.user_id,
         project_id: foto.project_id,
         url,
@@ -4639,7 +4712,7 @@ export async function getSigningVisualisatiesByOfferte(offerte_id: string): Prom
     return data || []
   }
   // localStorage fallback: search across all user data
-  const keys = Object.keys(localStorage).filter(k => k.startsWith('forgedesk_signing_visualisaties_'))
+  const keys = Object.keys(localStorage).filter(k => k.startsWith('doen_signing_visualisaties_'))
   const results: SigningVisualisatie[] = []
   for (const key of keys) {
     const items: SigningVisualisatie[] = JSON.parse(localStorage.getItem(key) || '[]')
@@ -4659,7 +4732,7 @@ export async function getSigningVisualisatiesByProject(project_id: string): Prom
     if (error) throw error
     return data || []
   }
-  const keys = Object.keys(localStorage).filter(k => k.startsWith('forgedesk_signing_visualisaties_'))
+  const keys = Object.keys(localStorage).filter(k => k.startsWith('doen_signing_visualisaties_'))
   const results: SigningVisualisatie[] = []
   for (const key of keys) {
     const items: SigningVisualisatie[] = JSON.parse(localStorage.getItem(key) || '[]')
@@ -4679,7 +4752,7 @@ export async function getSigningVisualisatiesByKlant(klant_id: string): Promise<
     if (error) throw error
     return data || []
   }
-  const keys = Object.keys(localStorage).filter(k => k.startsWith('forgedesk_signing_visualisaties_'))
+  const keys = Object.keys(localStorage).filter(k => k.startsWith('doen_signing_visualisaties_'))
   const results: SigningVisualisatie[] = []
   for (const key of keys) {
     const items: SigningVisualisatie[] = JSON.parse(localStorage.getItem(key) || '[]')
@@ -4759,7 +4832,7 @@ export async function deleteSigningVisualisatie(id: string, user_id: string): Pr
 
 export async function getVisualizerInstellingen(user_id: string): Promise<VisualizerInstellingen> {
   assertId(user_id, 'user_id')
-  const key = `forgedesk_visualizer_instellingen_${user_id}`
+  const key = `doen_visualizer_instellingen_${user_id}`
   try {
     const stored = localStorage.getItem(key)
     if (stored) {
@@ -4775,7 +4848,7 @@ export async function saveVisualizerInstellingen(
   instellingen: Partial<VisualizerInstellingen>
 ): Promise<VisualizerInstellingen> {
   assertId(user_id, 'user_id')
-  const key = `forgedesk_visualizer_instellingen_${user_id}`
+  const key = `doen_visualizer_instellingen_${user_id}`
   const current = await getVisualizerInstellingen(user_id)
   const updated = { ...current, ...instellingen }
   if (!safeSetItem(key, JSON.stringify(updated))) {
@@ -4797,7 +4870,7 @@ export async function logVisualizerActie(
     if (error) throw error
     return
   }
-  const key = `forgedesk_visualizer_log_${data.user_id}`
+  const key = `doen_visualizer_log_${data.user_id}`
   const items: VisualizerApiLog[] = JSON.parse(localStorage.getItem(key) || '[]')
   items.push({ ...data, id: generateId(), created_at: now() })
   safeSetItem(key, JSON.stringify(items))
@@ -4814,7 +4887,7 @@ export async function getVisualizerLog(user_id: string): Promise<VisualizerApiLo
     if (error) throw error
     return data || []
   }
-  const key = `forgedesk_visualizer_log_${user_id}`
+  const key = `doen_visualizer_log_${user_id}`
   const items: VisualizerApiLog[] = JSON.parse(localStorage.getItem(key) || '[]')
   return items.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''))
 }
@@ -4913,7 +4986,7 @@ export async function getVisualizerCredits(user_id: string): Promise<VisualizerC
   }
 
   // Fallback: localStorage (voor lokale dev zonder Supabase)
-  const key = `forgedesk_visualizer_credits_${user_id}`
+  const key = `doen_visualizer_credits_${user_id}`
   try {
     const stored = localStorage.getItem(key)
     if (stored) return JSON.parse(stored) as VisualizerCredits
@@ -4952,7 +5025,7 @@ export async function gebruikCredit(user_id: string, visualisatie_id: string, aa
     })
   } else {
     // localStorage fallback
-    const key = `forgedesk_visualizer_credits_${user_id}`
+    const key = `doen_visualizer_credits_${user_id}`
     const updated = { ...credits, saldo: nieuwSaldo, totaal_gebruikt: nieuwGebruikt, laatst_bijgewerkt: now() }
     safeSetItem(key, JSON.stringify(updated))
     await logCreditTransactieLocal({ user_id, type: 'gebruik', aantal: -aantal, saldo_na: nieuwSaldo, beschrijving: 'Credit gebruikt voor visualisatie', visualisatie_id })
@@ -4989,7 +5062,7 @@ export async function voegCreditsToe(
       beschrijving,
     })
   } else {
-    const key = `forgedesk_visualizer_credits_${user_id}`
+    const key = `doen_visualizer_credits_${user_id}`
     const updated = { ...credits, saldo: nieuwSaldo, totaal_gekocht: nieuwGekocht, laatst_bijgewerkt: now() }
     safeSetItem(key, JSON.stringify(updated))
     await logCreditTransactieLocal({ user_id, type: 'aankoop', aantal, saldo_na: nieuwSaldo, beschrijving })
@@ -5026,7 +5099,7 @@ export async function handmatigCreditsToewijzen(
       beschrijving,
     })
   } else {
-    const key = `forgedesk_visualizer_credits_${user_id}`
+    const key = `doen_visualizer_credits_${user_id}`
     const updated = { ...credits, saldo: nieuwSaldo, totaal_gekocht: nieuwGekocht, laatst_bijgewerkt: now() }
     safeSetItem(key, JSON.stringify(updated))
     await logCreditTransactieLocal({ user_id, type: 'handmatig_toegevoegd', aantal, saldo_na: nieuwSaldo, beschrijving })
@@ -5039,7 +5112,7 @@ export async function handmatigCreditsToewijzen(
 async function logCreditTransactieLocal(
   data: Omit<CreditTransactie, 'id' | 'created_at'>
 ): Promise<void> {
-  const key = `forgedesk_credit_transacties_${data.user_id}`
+  const key = `doen_credit_transacties_${data.user_id}`
   const items: CreditTransactie[] = JSON.parse(localStorage.getItem(key) || '[]')
   items.push({ ...data, id: generateId(), created_at: now() })
   safeSetItem(key, JSON.stringify(items))
@@ -5059,7 +5132,7 @@ export async function getCreditTransacties(user_id: string): Promise<CreditTrans
   }
 
   // localStorage fallback
-  const key = `forgedesk_credit_transacties_${user_id}`
+  const key = `doen_credit_transacties_${user_id}`
   const items: CreditTransactie[] = JSON.parse(localStorage.getItem(key) || '[]')
   return items.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''))
 }
@@ -5148,9 +5221,10 @@ export async function getInkoopOffertesByOfferte(offerte_id: string): Promise<In
 
 export async function createInkoopOfferte(data: Omit<InkoopOfferte, 'id' | 'created_at' | 'regels'>): Promise<InkoopOfferte> {
   if (isSupabaseConfigured() && supabase) {
+    const _orgId = await getOrgId()
     const { data: row, error } = await supabase
       .from('inkoop_offertes')
-      .insert(await withUserId({ ...data, totaal: round2(data.totaal) }))
+      .insert({ ...await withUserId({ ...data, totaal: round2(data.totaal) }), organisatie_id: _orgId })
       .select()
       .single()
     if (error) throw error
@@ -5282,7 +5356,7 @@ export async function getPortaalInstellingen(userId: string): Promise<PortaalIns
       return { ...DEFAULT_PORTAAL_INSTELLINGEN, ...(data.portaal_instellingen as Partial<PortaalInstellingen>) }
     }
   }
-  const stored = localStorage.getItem('forgedesk_portaal_instellingen')
+  const stored = localStorage.getItem('doen_portaal_instellingen')
   if (stored) return { ...DEFAULT_PORTAAL_INSTELLINGEN, ...JSON.parse(stored) }
   return { ...DEFAULT_PORTAAL_INSTELLINGEN }
 }
@@ -5298,7 +5372,7 @@ export async function updatePortaalInstellingen(userId: string, settings: Partia
       .eq('user_id', userId)
     return updated
   }
-  safeSetItem('forgedesk_portaal_instellingen', JSON.stringify(updated))
+  safeSetItem('doen_portaal_instellingen', JSON.stringify(updated))
   return updated
 }
 
@@ -5390,9 +5464,10 @@ export async function createPortaal(projectId: string, userId: string): Promise<
     instructie_tekst: instellingen.instructie_tekst,
   }
   if (isSupabaseConfigured() && supabase) {
+    const _orgId = await getOrgId()
     const { data, error } = await supabase
       .from('project_portalen')
-      .insert(portaal)
+      .insert({ ...portaal, organisatie_id: _orgId })
       .select()
       .single()
     if (error) throw error
@@ -5481,9 +5556,10 @@ export async function createPortaalItem(
   item: Omit<PortaalItem, 'id' | 'bestanden' | 'reacties' | 'created_at' | 'updated_at'>
 ): Promise<PortaalItem> {
   if (isSupabaseConfigured() && supabase) {
+    const _orgId = await getOrgId()
     const { data, error } = await supabase
       .from('portaal_items')
-      .insert(await withUserId(item))
+      .insert({ ...await withUserId(item), organisatie_id: _orgId })
       .select()
       .single()
     if (error) throw error
@@ -5675,7 +5751,7 @@ export async function createOrganisatie(naam: string, eigenaarId: string): Promi
   }
   const orgs = getLocalData<Organisatie>('organisaties')
   orgs.push(record)
-  safeSetItem('forgedesk_organisaties', JSON.stringify(orgs))
+  safeSetItem('doen_organisaties', JSON.stringify(orgs))
   return record
 }
 
@@ -5710,7 +5786,7 @@ export async function updateOrganisatie(id: string, updates: Partial<Organisatie
   const idx = orgs.findIndex((o) => o.id === id)
   if (idx === -1) throw new Error('Organisatie niet gevonden')
   orgs[idx] = { ...orgs[idx], ...updates }
-  safeSetItem('forgedesk_organisaties', JSON.stringify(orgs))
+  safeSetItem('doen_organisaties', JSON.stringify(orgs))
   return orgs[idx]
 }
 

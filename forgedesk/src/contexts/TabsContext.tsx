@@ -70,8 +70,8 @@ function labelForPath(path: string): string {
 
 // ─── Storage helpers ─────────────────────────────────────────────────────────
 
-const STORAGE_KEY = 'forgedesk_tabs'
-const ACTIVE_KEY = 'forgedesk_active_tab'
+const STORAGE_KEY = 'doen_tabs'
+const ACTIVE_KEY = 'doen_active_tab'
 
 function loadTabs(): AppTab[] {
   try {

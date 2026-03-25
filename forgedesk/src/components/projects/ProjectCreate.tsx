@@ -123,7 +123,7 @@ export function ProjectCreate() {
   }
 
   return (
-    <div className="relative -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 min-h-full" style={{ backgroundColor: '#F4F3F0' }}>
+    <div className="relative -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 min-h-full bg-[#F8F7F5]">
       <div className="relative max-w-2xl mx-auto px-4 py-8 md:py-12 animate-fade-in-up">
       {/* Header */}
       <div className="flex items-center gap-4 mb-8">

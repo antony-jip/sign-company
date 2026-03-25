@@ -42,7 +42,7 @@ export function PortaalTab() {
     })
 
     // Check of email gekoppeld is
-    const cached = sessionStorage.getItem('forgedesk_email_settings')
+    const cached = sessionStorage.getItem('doen_email_settings')
     if (cached) {
       try {
         const parsed = JSON.parse(cached)

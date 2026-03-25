@@ -8,6 +8,8 @@
 interface EmailTemplateData {
   bedrijfsnaam?: string
   handtekening?: string
+  handtekeningAfbeelding?: string
+  handtekeningAfbeeldingGrootte?: number
   logoUrl?: string
   primaireKleur?: string
 }
@@ -125,11 +127,15 @@ export function getBaseTemplate(data: EmailTemplateData): {
       ? `<img src="${escapeHtml(data.logoUrl)}" alt="${escapeHtml(bedrijf)}" style="max-height: 48px; margin-bottom: 8px; display: block;" />`
       : ''
 
+    const sigImgHeight = data.handtekeningAfbeeldingGrootte ?? 64
+    const sigImgHtml = data.handtekeningAfbeelding
+      ? `<br /><img src="${escapeHtml(data.handtekeningAfbeelding)}" alt="" style="max-height:${sigImgHeight}px;max-width:240px;object-fit:contain;margin-top:8px;display:block;" />`
+      : ''
     const handtekeningHtml = data.handtekening
       ? `
           <tr>
             <td style="padding: 24px 32px 0 32px; font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 1.6; color: #555555; white-space: pre-line;">
-              ${escapeHtml(data.handtekening)}
+              ${escapeHtml(data.handtekening)}${sigImgHtml}
             </td>
           </tr>`
       : ''

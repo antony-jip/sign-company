@@ -17,30 +17,30 @@ const SidebarContext = createContext<SidebarContextType | undefined>(undefined)
 
 export function SidebarProvider({ children }: { children: ReactNode }) {
   const [isCollapsed, setIsCollapsed] = useState(() => {
-    const stored = localStorage.getItem('forgedesk_sidebar_collapsed')
+    const stored = localStorage.getItem('doen_sidebar_collapsed')
     return stored !== 'false' // Default to collapsed (rail mode)
   })
 
   const [layoutMode, setLayoutModeState] = useState<LayoutMode>(() => {
-    const stored = localStorage.getItem('forgedesk_layout_mode')
+    const stored = localStorage.getItem('doen_layout_mode')
     return stored === 'topnav' ? 'topnav' : 'sidebar'
   })
 
   const toggleSidebar = () => {
     setIsCollapsed(prev => {
-      localStorage.setItem('forgedesk_sidebar_collapsed', String(!prev))
+      localStorage.setItem('doen_sidebar_collapsed', String(!prev))
       return !prev
     })
   }
 
   const setCollapsed = (collapsed: boolean) => {
     setIsCollapsed(collapsed)
-    localStorage.setItem('forgedesk_sidebar_collapsed', String(collapsed))
+    localStorage.setItem('doen_sidebar_collapsed', String(collapsed))
   }
 
   const setLayoutMode = (mode: LayoutMode) => {
     setLayoutModeState(mode)
-    localStorage.setItem('forgedesk_layout_mode', mode)
+    localStorage.setItem('doen_layout_mode', mode)
   }
 
   return (

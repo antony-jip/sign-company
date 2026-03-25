@@ -3,22 +3,22 @@ import type { Email, Klant, Project, Offerte, OfferteItem, MontageAfspraak, Taak
 import { safeSetItem } from '@/utils/localStorageUtils'
 
 const storageKeys = [
-  'forgedesk_klanten',
-  'forgedesk_projecten',
-  'forgedesk_taken',
-  'forgedesk_offertes',
-  'forgedesk_offerte_items',
-  'forgedesk_documenten',
-  'forgedesk_emails',
-  'forgedesk_events',
-  'forgedesk_grootboek',
-  'forgedesk_btw_codes',
-  'forgedesk_kortingen',
-  'forgedesk_app_settings',
-  'forgedesk_montage_afspraken',
-  'forgedesk_werkbonnen',
-  'forgedesk_facturen',
-  'forgedesk_factuur_items',
+  'doen_klanten',
+  'doen_projecten',
+  'doen_taken',
+  'doen_offertes',
+  'doen_offerte_items',
+  'doen_documenten',
+  'doen_emails',
+  'doen_events',
+  'doen_grootboek',
+  'doen_btw_codes',
+  'doen_kortingen',
+  'doen_app_settings',
+  'doen_montage_afspraken',
+  'doen_werkbonnen',
+  'doen_facturen',
+  'doen_factuur_items',
 ]
 
 // ── Demo seed data (only used when localStorage is empty) ──
@@ -778,18 +778,18 @@ export function useDataInit() {
         }
       }
 
-      seedIfEmpty('forgedesk_emails', demoEmails)
-      seedIfEmpty('forgedesk_klanten', demoKlanten)
-      seedIfEmpty('forgedesk_projecten', demoProjecten)
-      seedIfEmpty('forgedesk_offertes', demoOffertes)
-      seedIfEmpty('forgedesk_offerte_items', demoOfferteItems)
-      seedIfEmpty('forgedesk_taken', demoTaken)
-      seedIfEmpty('forgedesk_montage_afspraken', demoMontageAfspraken)
-      seedIfEmpty('forgedesk_facturen', demoFacturen)
-      seedIfEmpty('forgedesk_factuur_items', demoFactuurItems)
+      seedIfEmpty('doen_emails', demoEmails)
+      seedIfEmpty('doen_klanten', demoKlanten)
+      seedIfEmpty('doen_projecten', demoProjecten)
+      seedIfEmpty('doen_offertes', demoOffertes)
+      seedIfEmpty('doen_offerte_items', demoOfferteItems)
+      seedIfEmpty('doen_taken', demoTaken)
+      seedIfEmpty('doen_montage_afspraken', demoMontageAfspraken)
+      seedIfEmpty('doen_facturen', demoFacturen)
+      seedIfEmpty('doen_factuur_items', demoFactuurItems)
 
       // Seed demo credits voor visualizer
-      const creditsKey = 'forgedesk_visualizer_credits_demo-user'
+      const creditsKey = 'doen_visualizer_credits_demo-user'
       if (!localStorage.getItem(creditsKey)) {
         safeSetItem(creditsKey, JSON.stringify({
           user_id: 'demo-user',

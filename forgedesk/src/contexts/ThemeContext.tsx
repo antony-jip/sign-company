@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import React, { createContext, useContext, useEffect, ReactNode } from 'react'
 
 type Theme = 'light' | 'dark'
 
@@ -11,26 +11,18 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>(() => {
-    const stored = localStorage.getItem('forgedesk_theme')
-    return stored === 'dark' ? 'dark' : 'light'
-  })
-
+  // Forceer light mode — dark mode is uitgeschakeld
   useEffect(() => {
     const root = window.document.documentElement
-    root.classList.remove('light', 'dark')
-    root.classList.add(theme)
-    localStorage.setItem('forgedesk_theme', theme)
-  }, [theme])
+    root.classList.remove('dark')
+    root.classList.add('light')
+    localStorage.removeItem('doen_theme')
+  }, [])
 
-  const toggleTheme = () => {
-    setThemeState(prev => prev === 'light' ? 'dark' : 'light')
-  }
-
-  const setTheme = (t: Theme) => setThemeState(t)
+  const noop = () => {}
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, setTheme }}>
+    <ThemeContext.Provider value={{ theme: 'light', toggleTheme: noop, setTheme: noop }}>
       {children}
     </ThemeContext.Provider>
   )

@@ -24,23 +24,23 @@ function hexToRgb(hex: string): [number, number, number] {
 }
 
 function getBrandColor(profiel: PdfBedrijfsProfiel, docStyle?: DocumentStyle | null): [number, number, number] {
-  const kleur = docStyle?.primaryColor || profiel.primaireKleur || '#2563eb'
+  const kleur = docStyle?.primaire_kleur || profiel.primaireKleur || '#2563eb'
   return hexToRgb(kleur)
 }
 
 function getTextColor(docStyle?: DocumentStyle | null): [number, number, number] {
-  if (docStyle?.textColor) {
-    try { return hexToRgb(docStyle.textColor) } catch { /* use default */ }
+  if (docStyle?.tekst_kleur) {
+    try { return hexToRgb(docStyle.tekst_kleur) } catch { /* use default */ }
   }
   return [30, 30, 30]
 }
 
 function getHeadingFont(docStyle?: DocumentStyle | null): string {
-  return getJsPdfFontFamily(docStyle?.headingFont || 'helvetica')
+  return getJsPdfFontFamily(docStyle?.heading_font || 'helvetica')
 }
 
 function getBodyFont(docStyle?: DocumentStyle | null): string {
-  return getJsPdfFontFamily(docStyle?.bodyFont || 'helvetica')
+  return getJsPdfFontFamily(docStyle?.body_font || 'helvetica')
 }
 
 function formatDate(dateString: string): string {

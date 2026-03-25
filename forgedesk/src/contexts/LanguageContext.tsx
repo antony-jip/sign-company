@@ -930,12 +930,12 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<Language>(() => {
-    const stored = localStorage.getItem('forgedesk_language')
+    const stored = localStorage.getItem('doen_language')
     return stored === 'en' ? 'en' : 'nl'
   })
 
   useEffect(() => {
-    localStorage.setItem('forgedesk_language', language)
+    localStorage.setItem('doen_language', language)
     document.documentElement.lang = language
   }, [language])
 

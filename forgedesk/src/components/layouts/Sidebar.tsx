@@ -6,7 +6,7 @@ import {
   ChevronRight, LogOut, Menu, X, CheckCircle,
   Receipt, ClipboardCheck, Globe, Upload,
   Moon, Sun, CreditCard, PiggyBank, PanelTop,
-  LayoutDashboard,
+  LayoutDashboard, Sparkles,
   type LucideIcon
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -49,6 +49,7 @@ const COMMUNICATIE_ITEMS: NavItem[] = [
 
 const BEHEER_ITEMS: NavItem[] = [
   { label: 'Financieel', icon: PiggyBank, path: '/financieel', color: '#2D6B48' },
+  { label: 'Visualizer', icon: Sparkles, path: '/visualizer', color: '#9A5A48' },
 ]
 
 const IMPORTEREN_ITEM: NavItem = { label: 'Importeren', icon: Upload, path: '/importeren', color: '#1A535C' }
@@ -396,16 +397,6 @@ export function Sidebar() {
                     >
                       <CreditCard className="w-4 h-4 text-white/40" />
                       Abonnement
-                    </button>
-                  </div>
-
-                  <div className="py-1" style={{ borderTop: '0.5px solid rgba(255,255,255,0.08)' }}>
-                    <button
-                      onClick={toggleTheme}
-                      className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-white/70 hover:text-white hover:bg-white/[0.06] transition-all duration-200"
-                    >
-                      {theme === 'dark' ? <Sun className="w-4 h-4 text-white/40" /> : <Moon className="w-4 h-4 text-white/40" />}
-                      {theme === 'dark' ? 'Light mode' : 'Dark mode'}
                     </button>
                   </div>
 

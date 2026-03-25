@@ -86,7 +86,7 @@ export function EmailComposePage() {
 
         // Generate PDF
         try {
-          const doc = generateOffertePDF(
+          const doc = await generateOffertePDF(
             fetchedOfferte,
             fetchedItems,
             fetchedKlant || {},

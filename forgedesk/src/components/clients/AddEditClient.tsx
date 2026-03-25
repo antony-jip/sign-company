@@ -75,7 +75,7 @@ const initialFormData: FormData = {
   website: '',
   kvk_nummer: '',
   btw_nummer: '',
-  status: 'prospect',
+  status: 'actief',
   tags: '',
   notities: '',
   klant_labels: [],

@@ -16,6 +16,48 @@ interface PdfBedrijfsProfiel extends Partial<Profile> {
 
 // ============ HELPERS ============
 
+/**
+ * Resolve a storage path or URL to a base64 data URL for embedding in PDFs.
+ * Handles: data: URLs (passthrough), http URLs (fetch), storage paths (resolve via Supabase).
+ */
+async function resolveImageToBase64(urlOrPath: string, timeoutMs = 8000): Promise<string | null> {
+  try {
+    // Already a data URL — use directly
+    if (urlOrPath.startsWith('data:')) return urlOrPath
+
+    // Resolve storage path to public URL if needed
+    let fetchUrl = urlOrPath
+    if (!urlOrPath.startsWith('http')) {
+      const { downloadFile } = await import('@/services/storageService')
+      fetchUrl = await downloadFile(urlOrPath)
+      if (!fetchUrl) return null
+    }
+
+    // Fetch the image as blob and convert to base64
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), timeoutMs)
+    const response = await fetch(fetchUrl, { signal: controller.signal })
+    clearTimeout(timer)
+
+    if (!response.ok) return null
+
+    const blob = await response.blob()
+    return new Promise((resolve) => {
+      const reader = new FileReader()
+      reader.onloadend = () => resolve(reader.result as string)
+      reader.onerror = () => resolve(null)
+      reader.readAsDataURL(blob)
+    })
+  } catch {
+    return null
+  }
+}
+
+/** Check of briefpapier actief is — als ja, skip eigen branding elementen */
+function isBriefpapierActief(docStyle?: DocumentStyle | null): boolean {
+  return !!docStyle && docStyle.briefpapier_modus !== 'geen' && !!docStyle.briefpapier_url
+}
+
 function hexToRgb(hex: string): [number, number, number] {
   const h = hex.replace('#', '')
   const r = parseInt(h.substring(0, 2), 16)
@@ -173,98 +215,119 @@ function addHeader(
     return margins.top + 10
   }
 
-  const logoPositie = docStyle?.logo_positie || 'links'
-  const logoGrootte = docStyle?.logo_grootte ?? 100
-  const logoScale = logoGrootte / 100
+  const hasBriefpapier = isBriefpapierActief(docStyle)
 
-  // Company logo + name area
-  let nameX = margins.left
-  const logoW = 25 * logoScale
-  const logoH = 20 * logoScale
+  // Als briefpapier actief → skip branding (logo, naam, adres, lijn) want dat staat al op het briefpapier
+  if (!hasBriefpapier) {
+    const logoPositie = docStyle?.logo_positie || 'links'
+    const logoGrootte = docStyle?.logo_grootte ?? 100
+    const logoScale = logoGrootte / 100
 
-  if (bedrijfsProfiel.logo_url) {
-    try {
-      const logoFormat = detectImageFormat(bedrijfsProfiel.logo_url)
-      if (logoPositie === 'rechts') {
-        doc.addImage(bedrijfsProfiel.logo_url, logoFormat, pageWidth - margins.right - logoW, margins.top, logoW, logoH)
-      } else if (logoPositie === 'midden') {
-        doc.addImage(bedrijfsProfiel.logo_url, logoFormat, (pageWidth - logoW) / 2, margins.top, logoW, logoH)
-      } else {
-        doc.addImage(bedrijfsProfiel.logo_url, logoFormat, margins.left, margins.top, logoW, logoH)
-        nameX = margins.left + logoW + 5
+    // Company logo + name area
+    let nameX = margins.left
+    const logoW = 25 * logoScale
+    const logoH = 20 * logoScale
+
+    if (bedrijfsProfiel.logo_url) {
+      try {
+        const logoFormat = detectImageFormat(bedrijfsProfiel.logo_url)
+        if (logoPositie === 'rechts') {
+          doc.addImage(bedrijfsProfiel.logo_url, logoFormat, pageWidth - margins.right - logoW, margins.top, logoW, logoH)
+        } else if (logoPositie === 'midden') {
+          doc.addImage(bedrijfsProfiel.logo_url, logoFormat, (pageWidth - logoW) / 2, margins.top, logoW, logoH)
+        } else {
+          doc.addImage(bedrijfsProfiel.logo_url, logoFormat, margins.left, margins.top, logoW, logoH)
+          nameX = margins.left + logoW + 5
+        }
+      } catch {
+        // Logo loading failed, just show text
       }
-    } catch {
-      // Logo loading failed, just show text
     }
+
+    // Company name
+    const nameY = margins.top + 15
+    doc.setFontSize(baseFontSize * 2.2)
+    doc.setFont(headingFont, 'bold')
+    doc.setTextColor(...brand)
+
+    if (logoPositie === 'midden') {
+      doc.text(bedrijfsProfiel.bedrijfsnaam || 'Uw Bedrijf', pageWidth / 2, nameY + logoH + 5, { align: 'center' })
+    } else if (logoPositie === 'rechts') {
+      doc.text(bedrijfsProfiel.bedrijfsnaam || 'Uw Bedrijf', margins.left, nameY)
+    } else {
+      doc.text(bedrijfsProfiel.bedrijfsnaam || 'Uw Bedrijf', nameX, nameY)
+    }
+
+    // Company details (opposite side of logo)
+    doc.setFontSize(baseFontSize - 1)
+    doc.setFont(bodyFont, 'normal')
+    doc.setTextColor(100, 100, 100)
+
+    const detailsAlign = logoPositie === 'rechts' ? 'left' : 'right'
+    const detailsX = logoPositie === 'rechts' ? margins.left : pageWidth - margins.right
+    let rightY = margins.top + 5
+
+    if (logoPositie !== 'midden') {
+      if (bedrijfsProfiel.bedrijfs_adres) {
+        doc.text(bedrijfsProfiel.bedrijfs_adres, detailsX, rightY, { align: detailsAlign })
+        rightY += 5
+      }
+      const displayTel = bedrijfsProfiel.bedrijfs_telefoon || bedrijfsProfiel.telefoon
+      if (displayTel) {
+        doc.text(`Tel: ${displayTel}`, detailsX, rightY, { align: detailsAlign })
+        rightY += 5
+      }
+      const displayEmail = bedrijfsProfiel.bedrijfs_email || bedrijfsProfiel.email
+      if (displayEmail) {
+        doc.text(displayEmail, detailsX, rightY, { align: detailsAlign })
+        rightY += 5
+      }
+      if (bedrijfsProfiel.kvk_nummer) {
+        doc.text(`KvK: ${bedrijfsProfiel.kvk_nummer}`, detailsX, rightY, { align: detailsAlign })
+        rightY += 5
+      }
+      if (bedrijfsProfiel.btw_nummer) {
+        doc.text(`BTW: ${bedrijfsProfiel.btw_nummer}`, detailsX, rightY, { align: detailsAlign })
+        rightY += 5
+      }
+    }
+
+    // Divider line
+    const lineY = margins.top + 27
+    doc.setDrawColor(...brand)
+    doc.setLineWidth(0.5)
+    doc.line(margins.left, lineY, pageWidth - margins.right, lineY)
+
+    // Document title and number
+    doc.setFontSize(baseFontSize * 1.6)
+    doc.setFont(headingFont, 'bold')
+    doc.setTextColor(...brand)
+    doc.text(title, margins.left, lineY + 12)
+
+    doc.setFontSize(baseFontSize)
+    doc.setFont(bodyFont, 'normal')
+    doc.setTextColor(80, 80, 80)
+    doc.text(`Nummer: ${nummer}`, margins.left, lineY + 19)
+    doc.text(`Datum: ${formatDate(new Date().toISOString())}`, margins.left, lineY + 25)
+
+    return lineY + 32
   }
 
-  // Company name
-  const nameY = margins.top + 15
-  doc.setFontSize(baseFontSize * 2.2)
-  doc.setFont(headingFont, 'bold')
-  doc.setTextColor(...brand)
+  // ── Briefpapier modus: alleen document titel + nummer, geen branding ──
+  const contentStartY = margins.top
 
-  if (logoPositie === 'midden') {
-    doc.text(bedrijfsProfiel.bedrijfsnaam || 'Uw Bedrijf', pageWidth / 2, nameY + logoH + 5, { align: 'center' })
-  } else if (logoPositie === 'rechts') {
-    doc.text(bedrijfsProfiel.bedrijfsnaam || 'Uw Bedrijf', margins.left, nameY)
-  } else {
-    doc.text(bedrijfsProfiel.bedrijfsnaam || 'Uw Bedrijf', nameX, nameY)
-  }
-
-  // Company details (opposite side of logo)
-  doc.setFontSize(baseFontSize - 1)
-  doc.setFont(bodyFont, 'normal')
-  doc.setTextColor(100, 100, 100)
-
-  const detailsAlign = logoPositie === 'rechts' ? 'left' : 'right'
-  const detailsX = logoPositie === 'rechts' ? margins.left : pageWidth - margins.right
-  let rightY = margins.top + 5
-
-  if (logoPositie !== 'midden') {
-    if (bedrijfsProfiel.bedrijfs_adres) {
-      doc.text(bedrijfsProfiel.bedrijfs_adres, detailsX, rightY, { align: detailsAlign })
-      rightY += 5
-    }
-    const displayTel = bedrijfsProfiel.bedrijfs_telefoon || bedrijfsProfiel.telefoon
-    if (displayTel) {
-      doc.text(`Tel: ${displayTel}`, detailsX, rightY, { align: detailsAlign })
-      rightY += 5
-    }
-    const displayEmail = bedrijfsProfiel.bedrijfs_email || bedrijfsProfiel.email
-    if (displayEmail) {
-      doc.text(displayEmail, detailsX, rightY, { align: detailsAlign })
-      rightY += 5
-    }
-    if (bedrijfsProfiel.kvk_nummer) {
-      doc.text(`KvK: ${bedrijfsProfiel.kvk_nummer}`, detailsX, rightY, { align: detailsAlign })
-      rightY += 5
-    }
-    if (bedrijfsProfiel.btw_nummer) {
-      doc.text(`BTW: ${bedrijfsProfiel.btw_nummer}`, detailsX, rightY, { align: detailsAlign })
-      rightY += 5
-    }
-  }
-
-  // Divider line
-  const lineY = margins.top + 27
-  doc.setDrawColor(...brand)
-  doc.setLineWidth(0.5)
-  doc.line(margins.left, lineY, pageWidth - margins.right, lineY)
-
-  // Document title and number
   doc.setFontSize(baseFontSize * 1.6)
   doc.setFont(headingFont, 'bold')
   doc.setTextColor(...brand)
-  doc.text(title, margins.left, lineY + 12)
+  doc.text(title, margins.left, contentStartY + 8)
 
   doc.setFontSize(baseFontSize)
   doc.setFont(bodyFont, 'normal')
   doc.setTextColor(80, 80, 80)
-  doc.text(`Nummer: ${nummer}`, margins.left, lineY + 19)
-  doc.text(`Datum: ${formatDate(new Date().toISOString())}`, margins.left, lineY + 25)
+  doc.text(`Nummer: ${nummer}`, margins.left, contentStartY + 15)
+  doc.text(`Datum: ${formatDate(new Date().toISOString())}`, margins.left, contentStartY + 21)
 
-  return lineY + 32
+  return contentStartY + 28
 }
 
 // ============ STYLED CLIENT INFO ============
@@ -322,6 +385,7 @@ function addFooter(doc: jsPDF, bedrijfsProfiel: Partial<Profile>, docStyle?: Doc
 
   const pageCount = doc.getNumberOfPages()
   const bodyFont = getBodyFont(docStyle)
+  const hasBriefpapier = isBriefpapierActief(docStyle)
 
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i)
@@ -334,19 +398,25 @@ function addFooter(doc: jsPDF, bedrijfsProfiel: Partial<Profile>, docStyle?: Doc
 
     const isLandscape = pw > ph
 
-    if (!isLandscape) {
-      // Footer background bar
+    if (hasBriefpapier) {
+      // Briefpapier actief → alleen paginanummer, geen footer-bar of bedrijfsinfo
+      if (pageCount > 1) {
+        doc.setFontSize(7)
+        doc.setFont(bodyFont, 'normal')
+        doc.setTextColor(160, 160, 152)
+        doc.text(`${i} / ${pageCount}`, pw / 2, ph - 8, { align: 'center' })
+      }
+    } else if (!isLandscape) {
+      // Geen briefpapier → volledige footer met bedrijfsinfo
       const footerHeight = 16
       const footerY = ph - footerHeight
-      doc.setFillColor(250, 250, 248) // #FAFAF8
+      doc.setFillColor(250, 250, 248)
       doc.rect(0, footerY, pw, footerHeight, 'F')
 
-      // Subtle top border
-      doc.setDrawColor(230, 228, 224) // #E6E4E0
+      doc.setDrawColor(230, 228, 224)
       doc.setLineWidth(0.3)
       doc.line(0, footerY, pw, footerY)
 
-      // Footer text — centered company details
       let footerText = ''
       if (docStyle?.footer_tekst) {
         footerText = docStyle.footer_tekst
@@ -361,11 +431,10 @@ function addFooter(doc: jsPDF, bedrijfsProfiel: Partial<Profile>, docStyle?: Doc
 
       doc.setFontSize(8)
       doc.setFont(bodyFont, 'normal')
-      doc.setTextColor(160, 160, 152) // #A0A098 muted
+      doc.setTextColor(160, 160, 152)
       doc.text(footerText, pw / 2, footerY + 7, { align: 'center' })
       doc.text(`Pagina ${i} van ${pageCount}`, pw / 2, footerY + 12, { align: 'center' })
     } else {
-      // Landscape: only page number, bottom-center
       doc.setFontSize(7)
       doc.setFont(bodyFont, 'normal')
       doc.setTextColor(160, 160, 152)
@@ -404,7 +473,7 @@ function getAutoTableStyles(_brand: [number, number, number], docStyle?: Documen
 
 // ============ OFFERTE PDF ============
 
-export function generateOffertePDF(
+export async function generateOffertePDF(
   offerte: Offerte,
   items: OfferteItem[],
   klant: Partial<Klant>,
@@ -637,7 +706,23 @@ export function generateOffertePDF(
 
   // ============ BIJLAGE / TEKENING PAGINA'S (Landscape A4) ============
   // Per item met bijlage_url: professioneel gestylede pagina met logo, specs box en tekening
+  // Pre-resolve all bijlage URLs to base64 in parallel
   const bijlageItems = items.filter(i => i.bijlage_url && i.bijlage_type !== 'application/pdf')
+  const bijlageDataMap = new Map<string, string | null>()
+  if (bijlageItems.length > 0) {
+    const resolvePromises = bijlageItems.map(async (item) => {
+      const data = await resolveImageToBase64(item.bijlage_url!)
+      bijlageDataMap.set(item.id, data)
+    })
+    await Promise.all(resolvePromises)
+  }
+
+  // Also pre-resolve logo for bijlage pages
+  let logoBase64ForBijlage: string | null = null
+  if (bedrijfsProfiel.logo_url && bijlageItems.length > 0) {
+    logoBase64ForBijlage = await resolveImageToBase64(bedrijfsProfiel.logo_url)
+  }
+
   for (const bijlageItem of bijlageItems) {
     doc.addPage('a4', 'landscape')
     const pgW = doc.internal.pageSize.getWidth()   // 297mm
@@ -648,11 +733,11 @@ export function generateOffertePDF(
 
     // --- Logo (linksboven) ---
     let logoEndX = bMargin
-    if (bedrijfsProfiel.logo_url) {
+    if (logoBase64ForBijlage) {
       try {
         const logoMaxW = 30
         const logoMaxH = 20
-        const logoProps = doc.getImageProperties(bedrijfsProfiel.logo_url)
+        const logoProps = doc.getImageProperties(logoBase64ForBijlage)
         const logoAspect = logoProps.width / logoProps.height
         let logoW = logoMaxW
         let logoH = logoW / logoAspect
@@ -660,7 +745,7 @@ export function generateOffertePDF(
           logoH = logoMaxH
           logoW = logoH * logoAspect
         }
-        doc.addImage(bedrijfsProfiel.logo_url, detectImageFormat(bedrijfsProfiel.logo_url), bMargin, bMargin, logoW, logoH)
+        doc.addImage(logoBase64ForBijlage, detectImageFormat(logoBase64ForBijlage), bMargin, bMargin, logoW, logoH)
         logoEndX = bMargin + logoW + 5
       } catch {
         // Logo loading failed, skip
@@ -737,25 +822,32 @@ export function generateOffertePDF(
     const imgMaxW = pgW - 2 * bMargin
     const availableH = pgH - imgY - bMargin
 
-    try {
-      const imgProps = doc.getImageProperties(bijlageItem.bijlage_url!)
-      const widthRatio = imgMaxW / imgProps.width
-      const heightRatio = availableH / imgProps.height
-      const ratio = Math.min(widthRatio, heightRatio)
-      const imgW = imgProps.width * ratio
-      const imgH = imgProps.height * ratio
-      // Center horizontally
-      const imgX = bMargin + (imgMaxW - imgW) / 2
-      const format = bijlageItem.bijlage_type === 'image/png' ? 'PNG' : 'JPEG'
-      doc.addImage(bijlageItem.bijlage_url!, format, imgX, imgY, imgW, imgH, undefined, 'MEDIUM')
-    } catch {
-      doc.setDrawColor(200, 200, 200)
-      doc.setLineWidth(0.3)
-      doc.rect(bMargin, imgY, imgMaxW, availableH)
+    const bijlageBase64 = bijlageDataMap.get(bijlageItem.id)
+    if (bijlageBase64) {
+      try {
+        const imgProps = doc.getImageProperties(bijlageBase64)
+        const widthRatio = imgMaxW / imgProps.width
+        const heightRatio = availableH / imgProps.height
+        const ratio = Math.min(widthRatio, heightRatio)
+        const imgW = imgProps.width * ratio
+        const imgH = imgProps.height * ratio
+        // Center horizontally
+        const imgX = bMargin + (imgMaxW - imgW) / 2
+        const format = bijlageItem.bijlage_type === 'image/png' ? 'PNG' : 'JPEG'
+        doc.addImage(bijlageBase64, format, imgX, imgY, imgW, imgH, undefined, 'MEDIUM')
+      } catch {
+        // Image decode failed — show filename as fallback
+        doc.setFontSize(10)
+        doc.setFont(bodyFont, 'normal')
+        doc.setTextColor(130, 130, 130)
+        doc.text(`Bijlage: ${bijlageItem.bijlage_naam || bijlageItem.beschrijving || 'bestand'}`, bMargin + imgMaxW / 2, imgY + 20, { align: 'center' })
+      }
+    } else {
+      // Could not load image — show filename
       doc.setFontSize(10)
       doc.setFont(bodyFont, 'normal')
-      doc.setTextColor(180, 180, 180)
-      doc.text('Bijlage niet beschikbaar', bMargin + imgMaxW / 2, imgY + availableH / 2, { align: 'center' })
+      doc.setTextColor(130, 130, 130)
+      doc.text(`Bijlage: ${bijlageItem.bijlage_naam || bijlageItem.beschrijving || 'bestand'}`, bMargin + imgMaxW / 2, imgY + 20, { align: 'center' })
     }
   }
 
@@ -1399,6 +1491,7 @@ export function generateWerkbonPDF(
     klant_handtekening?: string
     klant_naam_getekend?: string
     getekend_op?: string
+    btw_percentage?: number
   },
   regels: WerkbonRegel[],
   fotos: WerkbonFoto[],
@@ -1530,7 +1623,8 @@ export function generateWerkbonPDF(
     const subtotaal = round2(regels.filter((r) => r.factureerbaar).reduce((sum, r) => sum + r.totaal, 0))
     const kmKosten = round2((werkbonData.kilometers || 0) * (werkbonData.km_tarief || 0))
     const totaalExcl = round2(subtotaal + kmKosten)
-    const btw = round2(totaalExcl * 0.21)
+    const btwPerc = (werkbonData.btw_percentage ?? 21) / 100
+    const btw = round2(totaalExcl * btwPerc)
     const totaalIncl = round2(totaalExcl + btw)
 
     const totalsX = pageWidth - margins.right - 50
@@ -1548,7 +1642,7 @@ export function generateWerkbonPDF(
       y += 6
     }
 
-    doc.text('BTW (21%):', totalsX, y)
+    doc.text(`BTW (${werkbonData.btw_percentage ?? 21}%):`, totalsX, y)
     doc.text(formatCurrency(btw), pageWidth - margins.right, y, { align: 'right' })
     y += 6
 

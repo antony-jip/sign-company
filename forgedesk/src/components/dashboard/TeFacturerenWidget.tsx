@@ -91,7 +91,7 @@ export function TeFacturerenWidget() {
             <Link
               key={offerte.id}
               to={`/facturen/nieuw?offerte_id=${offerte.id}&klant_id=${offerte.klant_id}${offerte.titel ? `&titel=${encodeURIComponent(offerte.titel)}` : ''}${offerte.project_id ? `&project_id=${offerte.project_id}` : ''}`}
-              className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#F5F4F1] transition-colors group"
+              className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#F8F7F5] transition-colors group"
             >
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground truncate group-hover:text-[#1A535C] transition-colors">

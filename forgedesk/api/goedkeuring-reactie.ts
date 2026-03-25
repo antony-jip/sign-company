@@ -79,6 +79,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(404).json({ error: 'Goedkeuring niet gevonden' })
     }
 
+    // Idempotency: skip als al goedgekeurd
+    if (gk.status === 'goedgekeurd' && status === 'goedgekeurd') {
+      return res.status(200).json({ success: true, already_approved: true })
+    }
+
     // Update goedkeuring
     const updates: Record<string, unknown> = {
       status,

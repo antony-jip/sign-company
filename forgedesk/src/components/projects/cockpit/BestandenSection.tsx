@@ -56,32 +56,23 @@ export function BestandenSection({ documenten, onUpload, onDelete }: BestandenSe
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-[13px] font-semibold text-foreground flex items-center gap-2">
-          Bestanden
-          {documenten.length > 0 && (
-            <span className="text-[10px] text-muted-foreground/50 font-mono font-normal">{documenten.length}</span>
-          )}
-        </h3>
+        <h3 className="text-xs font-semibold text-[#1A1A1A] uppercase tracking-wider">Bestanden</h3>
         <button
           onClick={onUpload}
-          className="text-[11px] text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+          className="text-[12px] text-[#1A535C] hover:underline transition-colors"
         >
-          <Plus className="h-3 w-3" />
-          Upload
+          + Upload
         </button>
       </div>
 
       {documenten.length === 0 ? (
-        <div className="text-center py-6 border border-dashed border-sand rounded-lg">
-          <div className="h-10 w-10 rounded-xl bg-mod-klanten-light flex items-center justify-center mx-auto mb-2">
-            <Upload className="h-5 w-5 text-mod-klanten-text" />
-          </div>
-          <p className="text-[11px] text-muted-foreground mb-2">Nog geen bestanden</p>
+        <div className="py-6 text-center">
+          <p className="text-sm text-[#9B9B95]">Nog geen bestanden</p>
           <button
             onClick={onUpload}
-            className="text-[11px] text-foreground font-medium hover:text-foreground/80 transition-colors"
+            className="text-sm text-[#1A535C] hover:underline mt-1"
           >
-            + Upload
+            Bestand uploaden
           </button>
         </div>
       ) : (

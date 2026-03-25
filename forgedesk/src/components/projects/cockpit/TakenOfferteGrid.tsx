@@ -1,9 +1,18 @@
-import { Plus, FileText } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { cn, formatCurrency, getStatusColor } from '@/lib/utils'
-import { Badge } from '@/components/ui/badge'
+import { formatCurrency } from '@/lib/utils'
 import { TaskChecklistView } from './TaskChecklistView'
 import type { Taak, Offerte, Medewerker } from '@/types'
+
+const offerteStatusLabel: Record<string, string> = {
+  concept: 'Concept',
+  verzonden: 'Verzonden',
+  bekeken: 'Bekeken',
+  goedgekeurd: 'Goedgekeurd',
+  afgewezen: 'Afgewezen',
+  verlopen: 'Verlopen',
+  gefactureerd: 'Gefactureerd',
+}
 
 interface TakenOfferteGridProps {
   taken: Taak[]
@@ -28,21 +37,20 @@ export function TakenOfferteGrid({
   const takenKlaar = taken.filter(t => t.status === 'klaar').length
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
       {/* Taken Column */}
-      <div className="border border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px] p-4">
+      <div>
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-[13px] font-semibold text-foreground flex items-center gap-2">
-            Taken
-            <span className="text-[10px] text-muted-foreground/50 font-mono font-normal">{takenKlaar}/{taken.length}</span>
+          <h3 className="text-xs font-semibold text-[#1A1A1A] uppercase tracking-wider">
+            Taken <span className="font-mono text-[#9B9B95]">{takenKlaar}/{taken.length}</span>
           </h3>
-          <button onClick={onNewTaak} className="text-muted-foreground/50 hover:text-foreground transition-colors">
-            <Plus className="h-4 w-4" />
+          <button onClick={onNewTaak} className="text-[12px] text-[#F15025] hover:underline">
+            + Taak
           </button>
         </div>
 
         {taken.length > 0 ? (
-          <div className="max-h-[300px] overflow-y-auto -mx-1">
+          <div className="max-h-[300px] overflow-y-auto">
             <TaskChecklistView
               taken={taken}
               medewerkers={medewerkers}
@@ -50,58 +58,51 @@ export function TakenOfferteGrid({
             />
           </div>
         ) : (
-          <div className="text-center py-6 border border-dashed border-[hsl(35,15%,87%)] rounded-lg">
-            <p className="text-[11px] text-muted-foreground/50">Nog geen taken</p>
+          <div className="py-6 text-center">
+            <p className="text-sm text-[#9B9B95]">Nog geen taken</p>
+            <button onClick={onNewTaak} className="text-sm text-[#1A535C] hover:underline mt-1">
+              Taak toevoegen
+            </button>
           </div>
         )}
-
-        <button
-          onClick={onNewTaak}
-          className="w-full mt-2 py-2 text-[11px] text-muted-foreground/50 hover:text-foreground hover:bg-[hsl(35,15%,97%)] rounded-lg transition-colors border border-dashed border-[hsl(35,15%,90%)]"
-        >
-          + Taak toevoegen
-        </button>
       </div>
 
       {/* Offerte Column */}
-      <div className="border border-[hsl(35,15%,87%)] bg-[#FFFFFE] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px] p-4">
+      <div>
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-[13px] font-semibold text-foreground">Offerte</h3>
-          <button onClick={onNewOfferte} className="text-muted-foreground/50 hover:text-foreground transition-colors">
-            <Plus className="h-4 w-4" />
+          <h3 className="text-xs font-semibold text-[#1A1A1A] uppercase tracking-wider">Offerte</h3>
+          <button onClick={onNewOfferte} className="text-[12px] text-[#F15025] hover:underline">
+            + Offerte
           </button>
         </div>
 
         {offertes.length > 0 ? (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {offertes.map((offerte) => (
               <div
                 key={offerte.id}
-                className="border border-[hsl(35,15%,90%)] rounded-lg p-3 hover:border-[hsl(35,15%,80%)] transition-colors"
+                className="bg-[#FFFFFF] rounded-xl p-5 border border-[#EBEBEB]/60 shadow-[0_1px_4px_rgba(0,0,0,0.04)]"
               >
-                <div className="flex items-start justify-between mb-1.5">
-                  <div className="min-w-0">
-                    <p className="text-[13px] font-medium text-foreground truncate">{offerte.titel}</p>
-                    <p className="text-[11px] font-mono text-muted-foreground/60">{offerte.nummer}</p>
-                  </div>
-                  <Badge className={cn(getStatusColor(offerte.status), 'text-[10px] px-1.5 py-0')}>
-                    {offerte.status}
-                  </Badge>
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <p className="text-sm font-medium text-[#1A1A1A] truncate">{offerte.titel}</p>
+                  <span className="text-xs text-[#6B6B66] flex-shrink-0">
+                    {offerteStatusLabel[offerte.status] || offerte.status}<span className="text-[#F15025]">.</span>
+                  </span>
                 </div>
-                <p className="text-lg font-semibold font-mono text-foreground mb-2.5">
-                  {formatCurrency(offerte.totaal)}
-                </p>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-mono text-[#9B9B95]">{offerte.nummer}</span>
+                  <span className="text-lg font-mono font-bold text-[#1A1A1A]">{formatCurrency(offerte.totaal)}</span>
+                </div>
+                <div className="flex items-center gap-3">
                   <button
                     onClick={() => navigate(`/offertes/${offerte.id}/bewerken`)}
-                    className="flex-1 h-8 text-[11px] font-medium text-white rounded-lg hover:opacity-90 transition-colors"
-                    style={{ backgroundColor: '#1A535C' }}
+                    className="text-sm font-medium text-[#1A535C] hover:underline"
                   >
                     Bewerken
                   </button>
                   <button
                     onClick={() => navigate(`/offertes/${offerte.id}`)}
-                    className="flex-1 h-8 text-[11px] font-medium border border-[hsl(35,15%,85%)] rounded-lg hover:bg-[hsl(35,15%,97%)] text-foreground transition-colors"
+                    className="text-sm font-medium text-[#1A535C] hover:underline"
                   >
                     Bekijken
                   </button>
@@ -110,24 +111,12 @@ export function TakenOfferteGrid({
             ))}
           </div>
         ) : (
-          <div
-            className="text-center py-8 rounded-lg cursor-pointer transition-colors hover:bg-[#FFF5F0]"
-            style={{
-              border: '1.5px dashed #F5C4B4',
-              backgroundColor: '#FFFAF8',
-            }}
-            onClick={onNewOfferte}
-          >
-            <div className="h-10 w-10 rounded-xl flex items-center justify-center mx-auto mb-2" style={{ backgroundColor: '#FDE8E2' }}>
-              <FileText className="h-5 w-5" style={{ color: '#F15025' }} />
-            </div>
-            <p className="text-[13px] font-medium text-foreground/70 mb-0.5">Nog geen offerte</p>
-            <p className="text-[11px] text-muted-foreground/50 mb-3">De eerste is altijd het spannendst.</p>
+          <div className="py-6 text-center">
+            <p className="text-sm text-[#9B9B95]">Nog geen offerte</p>
             <button
-              className="inline-flex items-center gap-1.5 text-[13px] font-bold text-white rounded-lg hover:opacity-90 transition-all shadow-sm mx-auto"
-              style={{ backgroundColor: '#F15025', padding: '9px 20px' }}
+              onClick={onNewOfferte}
+              className="text-sm text-[#F15025] font-medium hover:underline mt-1"
             >
-              <FileText className="h-3.5 w-3.5" />
               Offerte maken
             </button>
           </div>

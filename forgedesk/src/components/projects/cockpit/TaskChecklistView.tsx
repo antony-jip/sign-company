@@ -79,8 +79,8 @@ export function TaskChecklistView({ taken, medewerkers, onStatusChange, onTaskCl
 
             {/* Task name */}
             <span className={cn(
-              'flex-1 text-[12px] font-medium truncate min-w-0',
-              isDone && 'line-through text-muted-foreground'
+              'flex-1 text-[13px] font-medium text-[#1A1A1A] truncate min-w-0',
+              isDone && 'line-through !text-[#9B9B95]'
             )}>
               {taak.titel}
             </span>
@@ -99,7 +99,7 @@ export function TaskChecklistView({ taken, medewerkers, onStatusChange, onTaskCl
             {taak.deadline && (
               <span className={cn(
                 'text-[10px] font-mono flex-shrink-0',
-                isOverdue ? 'text-destructive font-semibold' : 'text-muted-foreground/40'
+                isOverdue ? 'text-[#C0451A] font-semibold' : 'text-[#9B9B95]'
               )}>
                 {formatDeadline(taak.deadline)}
               </span>

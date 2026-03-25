@@ -61,7 +61,7 @@ export function KvkZoekVeld({ kvkNummer, onKvkChange, onResultSelect }: KvkZoekV
   const [isLoadingProfiel, setIsLoadingProfiel] = useState(false)
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const isApiAvailable = !!(settings.kvk_api_enabled || settings.kvk_api_key || !process.env.KVK_API_KEY)
+  const isApiAvailable = !!(settings.kvk_api_enabled || settings.kvk_api_key)
 
   const searchApi = useCallback(async (query: string) => {
     if (query.length < 3) {

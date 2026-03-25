@@ -66,6 +66,8 @@ import {
   BookOpen,
   Percent,
   Tag,
+  FolderKanban,
+  Sparkles,
 } from 'lucide-react'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { useAuth } from '@/contexts/AuthContext'
@@ -95,7 +97,7 @@ import { GeneralLedgerSettings } from '../financial/GeneralLedgerSettings'
 import { VATCodesSettings } from '../financial/VATCodesSettings'
 import { DiscountsSettings } from '../financial/DiscountsSettings'
 import { OfferteOpvolgingTab } from './OfferteOpvolgingTab'
-import { Sparkles, Clock } from 'lucide-react'
+import { Clock } from 'lucide-react'
 
 // Shared sub-tab navigation component
 interface SubTab {
@@ -106,7 +108,7 @@ interface SubTab {
 
 function SubTabNav({ tabs, active, onChange }: { tabs: SubTab[]; active: string; onChange: (id: string) => void }) {
   return (
-    <div className="flex items-center gap-1 p-1 bg-muted/60 dark:bg-muted/40 rounded-xl overflow-x-auto mb-6">
+    <div className="flex items-center gap-0.5 p-1 bg-[#F3F2F0] rounded-lg overflow-x-auto mb-6">
       {tabs.map((tab) => {
         const Icon = tab.icon
         const isActive = active === tab.id
@@ -115,13 +117,13 @@ function SubTabNav({ tabs, active, onChange }: { tabs: SubTab[]; active: string;
             key={tab.id}
             onClick={() => onChange(tab.id)}
             className={cn(
-              'flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap',
+              'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[13px] font-medium transition-all whitespace-nowrap',
               isActive
-                ? 'bg-card text-foreground dark:text-white shadow-sm'
-                : 'text-muted-foreground dark:text-muted-foreground/60 hover:text-foreground/70 dark:hover:text-muted-foreground/50'
+                ? 'bg-[#FFFFFF] text-[#1A1A1A] shadow-[0_1px_3px_rgba(0,0,0,0.06)]'
+                : 'text-[#9B9B95] hover:text-[#6B6B66]'
             )}
           >
-            <Icon className="h-4 w-4" />
+            <Icon className="h-3.5 w-3.5" />
             {tab.label}
           </button>
         )
@@ -142,7 +144,7 @@ const BESCHIKBARE_FONT_SIZES: { value: FontSize; label: string; beschrijving: st
   { value: 'extra-groot', label: 'Extra groot', beschrijving: 'Maximale leesbaarheid', cssValue: '20px' },
 ]
 
-const FONT_STORAGE_KEY = 'forgedesk_weergave_instellingen'
+const FONT_STORAGE_KEY = 'doen_weergave_instellingen'
 
 function getFontSettings(): { font_family: string; font_size: FontSize } {
   try {
@@ -281,21 +283,21 @@ export function SettingsLayout() {
     <div className="space-y-6">
       {/* Page Header */}
       <div className="min-w-0">
-        <h1 className="text-[20px] font-bold tracking-[-0.03em] text-foreground dark:text-white font-display">
-          Instellingen
+        <h1 className="text-xl font-bold tracking-[-0.3px] text-[#1A1A1A]">
+          Instellingen<span className="text-[#F15025]">.</span>
         </h1>
-        <p className="text-[13px] text-muted-foreground dark:text-muted-foreground/60">
-          Beheer uw profiel, bedrijfsgegevens en voorkeuren
+        <p className="text-[13px] text-[#9B9B95] mt-0.5">
+          Beheer je profiel, bedrijfsgegevens en voorkeuren
         </p>
       </div>
 
       {/* Two-column layout: sidebar nav + content */}
       <div className="flex flex-col md:flex-row gap-8 min-h-[calc(100vh-12rem)]">
         {/* Left sidebar navigation */}
-        <nav className="w-full md:w-52 flex-shrink-0">
-          <div className="md:sticky md:top-6 space-y-1">
+        <nav className="w-full md:w-48 flex-shrink-0">
+          <div className="md:sticky md:top-6">
             {/* Mobile: horizontal scroll */}
-            <div className="md:hidden flex overflow-x-auto scrollbar-hide gap-1 p-1 bg-card rounded-xl border border-border">
+            <div className="md:hidden flex overflow-x-auto gap-0.5 p-1 bg-[#F3F2F0] rounded-lg">
               {settingsSections.map((section) => {
                 const Icon = section.icon
                 const isActive = activeSection === section.id
@@ -304,20 +306,20 @@ export function SettingsLayout() {
                     key={section.id}
                     onClick={() => setActiveSection(section.id)}
                     className={cn(
-                      'flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap',
+                      'flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[13px] font-medium transition-all whitespace-nowrap',
                       isActive
-                        ? 'bg-[#1A535C]/10 text-[#1A535C] dark:bg-[#2A7A86]/20 dark:text-[#2A7A86]'
-                        : 'text-muted-foreground hover:text-foreground'
+                        ? 'bg-[#FFFFFF] text-[#1A1A1A] shadow-[0_1px_3px_rgba(0,0,0,0.06)]'
+                        : 'text-[#9B9B95] hover:text-[#6B6B66]'
                     )}
                   >
-                    <Icon className="w-4 h-4" />
+                    <Icon className="w-3.5 h-3.5" />
                     {section.label}
                   </button>
                 )
               })}
             </div>
 
-            {/* Desktop: flat Pipedrive-style sidebar */}
+            {/* Desktop: clean sidebar */}
             <div className="hidden md:block space-y-0.5">
               {settingsSections.map((section) => {
                 const Icon = section.icon
@@ -327,38 +329,17 @@ export function SettingsLayout() {
                     key={section.id}
                     onClick={() => setActiveSection(section.id)}
                     className={cn(
-                      'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all duration-150',
+                      'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-all duration-150',
                       isActive
-                        ? 'text-[#1A535C] dark:text-[#2A7A86] font-semibold bg-[#1A535C]/5 dark:bg-[#2A7A86]/10 border-l-[3px] border-[#1A535C] dark:border-[#2A7A86]'
-                        : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground font-medium border-l-[3px] border-transparent'
+                        ? 'text-[#1A1A1A] font-semibold bg-[#FFFFFF] shadow-[0_1px_3px_rgba(0,0,0,0.05)]'
+                        : 'text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#FFFFFF]/50'
                     )}
                   >
-                    <div className={cn(
-                      'w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors',
-                      isActive
-                        ? 'bg-[#1A535C]/10 dark:bg-[#2A7A86]/15'
-                        : 'bg-muted/60 dark:bg-muted/30'
-                    )}>
-                      <Icon className={cn('w-4 h-4', isActive ? 'text-[#1A535C] dark:text-[#2A7A86]' : 'text-[#A0A098]')} />
-                    </div>
-                    <span className="text-[14px] truncate">{section.label}</span>
+                    <Icon className={cn('w-4 h-4', isActive ? 'text-[#1A535C]' : 'text-[#9B9B95]')} />
+                    <span className="text-[13px] truncate">{section.label}</span>
                   </button>
                 )
               })}
-
-              {/* Team HR link */}
-              <div className="pt-3 mt-2 border-t border-border/50">
-                <button
-                  onClick={() => navigate('/team')}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all duration-150 text-muted-foreground hover:bg-muted/50 hover:text-foreground font-medium border-l-[3px] border-transparent"
-                >
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-muted/60 dark:bg-muted/30">
-                    <Users className="w-4 h-4 text-[#A0A098]" />
-                  </div>
-                  <span className="text-[14px] truncate flex-1">Team HR</span>
-                  <ArrowRight className="w-3 h-3 text-[#A0A098] flex-shrink-0" />
-                </button>
-              </div>
             </div>
           </div>
         </nav>
@@ -1658,7 +1639,7 @@ function EmailTab() {
     async function loadEmailSettings() {
       // 1. Try sessionStorage cache first (fast)
       try {
-        const cached = sessionStorage.getItem('forgedesk_email_settings')
+        const cached = sessionStorage.getItem('doen_email_settings')
         if (cached) {
           const parsed = JSON.parse(cached)
           if (parsed.gmail_address && parsed.app_password) {
@@ -1682,7 +1663,7 @@ function EmailTab() {
           setEmailSettings(merged)
           setEmailConnected(true)
           // Update cache
-          sessionStorage.setItem('forgedesk_email_settings', JSON.stringify(merged))
+          sessionStorage.setItem('doen_email_settings', JSON.stringify(merged))
         }
       } catch (err) {
         console.error('Email settings laden mislukt:', err)
@@ -2022,7 +2003,7 @@ function EmailSettingsInline({
       })
 
       // Cache in sessionStorage for quick loads
-      sessionStorage.setItem('forgedesk_email_settings', JSON.stringify(settings))
+      sessionStorage.setItem('doen_email_settings', JSON.stringify(settings))
 
       setSuccess('E-mailinstellingen opgeslagen!')
       onSaved()
@@ -2080,8 +2061,8 @@ function EmailSettingsInline({
         await deleteEmailSettingsFromDb()
       }
     } catch { /* ignore */ }
-    sessionStorage.removeItem('forgedesk_email_settings')
-    localStorage.removeItem('forgedesk_email_settings')
+    sessionStorage.removeItem('doen_email_settings')
+    localStorage.removeItem('doen_email_settings')
     setSettings(DEFAULT_EMAIL_SETTINGS)
     setSuccess('')
     setError('')
@@ -2744,15 +2725,15 @@ function BeveiligingTab() {
         toast.success('Opgeslagen.')
       } else {
         // Demo mode - update password in localStorage
-        const storedUser = localStorage.getItem('forgedesk_demo_user')
+        const storedUser = localStorage.getItem('doen_demo_user')
         if (storedUser) {
           const userData = JSON.parse(storedUser)
-          const storedPw = localStorage.getItem('forgedesk_demo_password') || 'demo'
+          const storedPw = localStorage.getItem('doen_demo_password') || 'demo'
           if (currentPassword !== storedPw) {
             toast.error('Huidig wachtwoord is onjuist (standaard: "demo")')
             return
           }
-          localStorage.setItem('forgedesk_demo_password', newPassword)
+          localStorage.setItem('doen_demo_password', newPassword)
           toast.success('Opgeslagen.')
         }
       }
@@ -2934,7 +2915,6 @@ const ALL_SIDEBAR_ITEMS = [
 ]
 
 const WEERGAVE_TABS: SubTab[] = [
-  { id: 'thema', label: 'Thema & Kleuren', icon: Sun },
   { id: 'layout', label: 'Layout', icon: Monitor },
   { id: 'voorkeuren', label: 'Voorkeuren', icon: Sliders },
   { id: 'navigatie', label: 'Navigatie', icon: Settings },
@@ -2988,7 +2968,7 @@ function WeergaveTab() {
     setSidebarItems(ALL_SIDEBAR_ITEMS.map((i) => i.label))
   }
 
-  const [subTab, setSubTab] = useState('thema')
+  const [subTab, setSubTab] = useState('layout')
   // Font size state (font family is fixed to Inter)
   const [fontSize, setFontSize] = useState<FontSize>(() => getFontSettings().font_size)
   const { layoutMode, setLayoutMode } = useSidebar()
@@ -3002,11 +2982,11 @@ function WeergaveTab() {
   }
 
   const [autoCollapse, setAutoCollapse] = useState(() => {
-    const stored = localStorage.getItem('forgedesk_autoCollapse')
+    const stored = localStorage.getItem('doen_autoCollapse')
     return stored !== null ? JSON.parse(stored) : true
   })
   const [compactMode, setCompactMode] = useState(() => {
-    const stored = localStorage.getItem('forgedesk_compactMode')
+    const stored = localStorage.getItem('doen_compactMode')
     return stored !== null ? JSON.parse(stored) : false
   })
 
@@ -3014,7 +2994,7 @@ function WeergaveTab() {
     <>
     <SubTabNav tabs={WEERGAVE_TABS} active={subTab} onChange={setSubTab} />
 
-    {subTab === 'thema' && (
+    {false && subTab === 'thema' && (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
@@ -3367,7 +3347,7 @@ function WeergaveTab() {
             checked={autoCollapse}
             onCheckedChange={(checked) => {
               setAutoCollapse(checked)
-              localStorage.setItem('forgedesk_autoCollapse', JSON.stringify(checked))
+              localStorage.setItem('doen_autoCollapse', JSON.stringify(checked))
               toast.success(
                 checked
                   ? 'Sidebar klapt automatisch in op mobiel'
@@ -3393,7 +3373,7 @@ function WeergaveTab() {
             checked={compactMode}
             onCheckedChange={(checked) => {
               setCompactMode(checked)
-              localStorage.setItem('forgedesk_compactMode', JSON.stringify(checked))
+              localStorage.setItem('doen_compactMode', JSON.stringify(checked))
               toast.success(
                 checked
                   ? 'Compacte modus ingeschakeld'

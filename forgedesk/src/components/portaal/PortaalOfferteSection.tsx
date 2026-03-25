@@ -127,7 +127,7 @@ function OfferteCard({ item, token, klantNaam, onKlantNaamChange, onReactie, pri
         throw new Error(err.error || 'Kon niet ondertekenen')
       }
       setSuccess(true)
-      try { localStorage.setItem('forgedesk_portaal_klant_naam', klantNaam.trim()) } catch { /* ignore */ }
+      try { localStorage.setItem('doen_portaal_klant_naam', klantNaam.trim()) } catch { /* ignore */ }
       setTimeout(() => onReactie(), 1500)
     } catch (err) {
       setError((err as Error).message)

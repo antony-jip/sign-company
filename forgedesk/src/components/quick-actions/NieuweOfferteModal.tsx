@@ -399,7 +399,7 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
         const items: OfferteItem[] = createdItem ? [createdItem] : []
         let attachments: Array<{ filename: string; content: string; encoding: 'base64' }> = []
         try {
-          const doc = generateOffertePDF(
+          const doc = await generateOffertePDF(
             offerte,
             items,
             selectedKlant,

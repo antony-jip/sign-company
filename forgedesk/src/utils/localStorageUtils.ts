@@ -8,15 +8,15 @@
 
 /** Keys ordered by priority for cleanup (first = least important, removed first). */
 const CLEANUP_KEYS_ORDERED = [
-  'forgedesk_files',           // base64 file data — largest offender
-  'forgedesk_clipboard_items', // clipboard — ephemeral data
-  'forgedesk_ai_chats',       // AI chat history — can be regenerated
+  'doen_files',           // base64 file data — largest offender
+  'doen_clipboard_items', // clipboard — ephemeral data
+  'doen_ai_chats',       // AI chat history — can be regenerated
 ] as const
 
 /** Prefixes for per-entity keys that can be cleaned up. */
 const CLEANUP_PREFIXES = [
-  'forgedesk_activiteiten_',   // per-customer activity logs
-  'forgedesk_import_',         // temporary import data
+  'doen_activiteiten_',   // per-customer activity logs
+  'doen_import_',         // temporary import data
 ] as const
 
 /**

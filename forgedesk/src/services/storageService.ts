@@ -3,6 +3,27 @@ import { safeSetItem } from '@/utils/localStorageUtils'
 
 const BUCKET = 'documenten'
 
+/** Allowed MIME types for file uploads */
+const ALLOWED_MIME_TYPES = new Set([
+  'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // xlsx
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // docx
+  'text/csv',
+])
+
+/** Max file size: 25MB */
+const MAX_UPLOAD_SIZE = 25 * 1024 * 1024
+
+function validateFile(file: File): void {
+  if (file.size > MAX_UPLOAD_SIZE) {
+    throw new Error(`Bestand te groot (max ${MAX_UPLOAD_SIZE / 1024 / 1024}MB)`)
+  }
+  if (ALLOWED_MIME_TYPES.size > 0 && !ALLOWED_MIME_TYPES.has(file.type) && file.type !== '') {
+    throw new Error(`Bestandstype "${file.type}" niet toegestaan`)
+  }
+}
+
 /** Max file size (in bytes) that will be stored in localStorage fallback (5MB). */
 const MAX_LOCAL_FILE_SIZE = 5 * 1024 * 1024
 
@@ -44,6 +65,7 @@ function compressImageForStorage(file: File, maxWidth = 1200, quality = 0.7): Pr
 }
 
 export async function uploadFile(file: File, path: string): Promise<string> {
+  validateFile(file)
   if (!isSupabaseConfigured() || !supabase) {
     return uploadFileToLocalStorage(file, path)
   }
@@ -68,9 +90,9 @@ async function uploadFileToLocalStorage(file: File, path: string): Promise<strin
     )
   }
   const dataUrl = await compressImageForStorage(file)
-  const stored = JSON.parse(localStorage.getItem('forgedesk_files') || '{}')
+  const stored = JSON.parse(localStorage.getItem('doen_files') || '{}')
   stored[path] = { name: file.name, size: file.size, type: file.type, dataUrl }
-  if (!safeSetItem('forgedesk_files', JSON.stringify(stored))) {
+  if (!safeSetItem('doen_files', JSON.stringify(stored))) {
     throw new Error('Onvoldoende opslagruimte. Verwijder oude bestanden of configureer Supabase.')
   }
   return path
@@ -78,7 +100,7 @@ async function uploadFileToLocalStorage(file: File, path: string): Promise<strin
 
 export async function downloadFile(path: string): Promise<string> {
   if (!isSupabaseConfigured() || !supabase) {
-    const stored = JSON.parse(localStorage.getItem('forgedesk_files') || '{}')
+    const stored = JSON.parse(localStorage.getItem('doen_files') || '{}')
     return stored[path]?.dataUrl || ''
   }
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(path)
@@ -87,7 +109,7 @@ export async function downloadFile(path: string): Promise<string> {
 
 export async function getSignedUrl(path: string): Promise<string> {
   if (!isSupabaseConfigured() || !supabase) {
-    const stored = JSON.parse(localStorage.getItem('forgedesk_files') || '{}')
+    const stored = JSON.parse(localStorage.getItem('doen_files') || '{}')
     return stored[path]?.dataUrl || ''
   }
   const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, 3600)
@@ -135,9 +157,9 @@ export async function uploadMontageBijlage(file: File): Promise<{
 
 export async function deleteFile(path: string): Promise<void> {
   if (!isSupabaseConfigured() || !supabase) {
-    const stored = JSON.parse(localStorage.getItem('forgedesk_files') || '{}')
+    const stored = JSON.parse(localStorage.getItem('doen_files') || '{}')
     delete stored[path]
-    safeSetItem('forgedesk_files', JSON.stringify(stored))
+    safeSetItem('doen_files', JSON.stringify(stored))
     return
   }
   const { error } = await supabase.storage.from(BUCKET).remove([path])
@@ -152,7 +174,7 @@ interface StorageFile {
 
 export async function listFiles(folder: string): Promise<StorageFile[]> {
   if (!isSupabaseConfigured() || !supabase) {
-    const stored = JSON.parse(localStorage.getItem('forgedesk_files') || '{}') as Record<string, { name: string; size: number; type: string }>
+    const stored = JSON.parse(localStorage.getItem('doen_files') || '{}') as Record<string, { name: string; size: number; type: string }>
     return Object.entries(stored)
       .filter(([key]) => key.startsWith(folder))
       .map(([key, val]) => ({ name: val.name, id: key, metadata: { size: val.size, mimetype: val.type } }))

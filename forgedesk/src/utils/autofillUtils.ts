@@ -65,7 +65,7 @@ const DEFAULT_SUGGESTIONS: Record<AutofillField, string[]> = {
 }
 
 function getStorageKey(field: string): string {
-  return `forgedesk_autofill_${field}`
+  return `doen_autofill_${field}`
 }
 
 /** Seed localStorage with default suggestions for fields that have no data yet. */

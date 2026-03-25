@@ -239,7 +239,7 @@ export async function syncEmailSettingsFromServer(): Promise<boolean> {
   try {
     const settings = await loadEmailSettingsFromDb()
     if (settings?.gmail_address) {
-      sessionStorage.setItem('forgedesk_email_settings', JSON.stringify(settings))
+      sessionStorage.setItem('doen_email_settings', JSON.stringify(settings))
       return true
     }
   } catch { /* ignore */ }

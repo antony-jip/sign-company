@@ -35,6 +35,7 @@ const navItems: NavItem[] = [
   { label: 'Planning', icon: Calendar, path: '/planning', color: '#7EB5A6' },
   { label: 'Email', icon: Mail, path: '/email', color: '#8BAFD4' },
   { label: 'Financieel', icon: PiggyBank, path: '/financieel', color: '#2D6B48' },
+  { label: 'Visualizer', icon: Sparkles, path: '/visualizer', color: '#9A5A48' },
 ]
 
 const quickAddItems = [
@@ -90,45 +91,42 @@ export function TopNav() {
   return (
     <header className="flex-shrink-0" style={{ position: 'relative', zIndex: 30 }}>
       {/* ── Row 1: Utility bar ── */}
-      <div className="flex items-center h-14 px-4 md:px-6 bg-card/80 backdrop-blur-sm border-b border-border/30">
+      <div className="flex items-center h-12 px-5 md:px-6 bg-[#1A535C]">
         {/* Logo */}
-        <NavLink to="/" className="flex items-center gap-2.5 mr-4 flex-shrink-0">
-          <div className="sidebar-logo-mark flex-shrink-0" style={{ width: 34, height: 34, fontSize: 15 }}>D</div>
-          <span className="hidden sm:block text-[16px] font-extrabold tracking-[-0.04em]">
-            Doen<span style={{ color: '#F15025' }}>.</span>
+        <NavLink to="/" className="flex items-center gap-2 mr-5 flex-shrink-0">
+          <div className="w-7 h-7 rounded-md bg-white/15 flex items-center justify-center text-white font-extrabold text-[13px] flex-shrink-0">D</div>
+          <span className="hidden sm:block text-[15px] font-extrabold tracking-[-0.04em] text-white">
+            Doen<span className="text-[#F15025]">.</span>
           </span>
         </NavLink>
-
-        {/* Separator */}
-        <div className="hidden md:block w-px h-6 bg-border/40 mr-4" />
 
         {/* Quick-add button */}
         <div ref={quickAddRef} className="relative" style={{ zIndex: 40 }}>
           <button
             onClick={() => setQuickAddOpen(!quickAddOpen)}
             className={cn(
-              'h-9 px-3 rounded-[10px] flex items-center gap-2 transition-all duration-200 text-[13px] font-medium',
-              'bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm hover:shadow-md',
-              quickAddOpen && 'ring-2 ring-primary/20',
+              'h-7 px-2.5 rounded-md flex items-center gap-1.5 transition-all duration-200 text-[12px] font-medium',
+              'bg-[#F15025] text-white hover:bg-[#D94520]',
+              quickAddOpen && 'ring-2 ring-white/20',
             )}
           >
-            <Plus className={cn('w-4 h-4 transition-transform duration-200', quickAddOpen && 'rotate-45')} />
+            <Plus className={cn('w-3.5 h-3.5 transition-transform duration-200', quickAddOpen && 'rotate-45')} />
             <span className="hidden sm:inline">Nieuw</span>
           </button>
           {quickAddOpen && (
-            <div className="absolute left-0 top-full mt-2 w-56 bg-card border border-border/60 rounded-2xl shadow-2xl shadow-[rgba(120,90,50,0.10)] z-50 overflow-hidden animate-scale-in">
-              <div className="px-3 py-2.5 border-b border-border/40">
-                <span className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider">Snel aanmaken</span>
+            <div className="absolute left-0 top-full mt-2 w-52 bg-[#FFFFFF] border border-[#EBEBEB] rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] z-50 overflow-hidden">
+              <div className="px-3 py-2 border-b border-[#EBEBEB]/40">
+                <span className="text-[10px] font-semibold text-[#9B9B95] uppercase tracking-wider">Snel aanmaken</span>
               </div>
-              <div className="py-1.5">
+              <div className="py-1">
                 {quickAddItems.map((item) => (
                   <button
                     key={item.path}
                     onClick={() => { setQuickAddOpen(false); navigate(item.path) }}
-                    className="flex items-center gap-3 w-full px-3 py-2.5 text-[13px] text-foreground/80 hover:bg-muted/50 transition-colors rounded-lg mx-0"
+                    className="flex items-center gap-2.5 w-full px-3 py-2 text-[13px] text-[#1A1A1A] hover:bg-[#F8F7F5] transition-colors"
                   >
-                    <div className="w-8 h-8 rounded-[10px] flex items-center justify-center" style={{ background: `${item.color}18` }}>
-                      <item.icon className="w-4 h-4" style={{ color: item.color }} />
+                    <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: `${item.color}15` }}>
+                      <item.icon className="w-3.5 h-3.5" style={{ color: item.color }} />
                     </div>
                     <span className="font-medium">{item.label}</span>
                   </button>
@@ -138,63 +136,52 @@ export function TopNav() {
           )}
         </div>
 
-        {/* Search — desktop (prominent, centered) */}
-        <div className="hidden md:flex flex-1 justify-center mx-6">
-          <GlobalSearch className="w-full max-w-lg" />
+        {/* Search — desktop, compact centered */}
+        <div className="hidden md:flex flex-1 justify-center mx-8">
+          <GlobalSearch className="w-full max-w-xs" />
         </div>
 
         {/* Mobile search */}
         {mobileSearchOpen && (
-          <div className="absolute inset-x-0 top-0 h-14 z-40 bg-background border-b border-border/50 flex items-center gap-2 px-4 md:hidden">
+          <div className="absolute inset-x-0 top-0 h-12 z-40 bg-[#1A535C] flex items-center gap-2 px-4 md:hidden">
             <GlobalSearch className="flex flex-1" />
-            <Button variant="ghost" size="icon" className="w-8 h-8 rounded-lg" onClick={() => setMobileSearchOpen(false)}>
+            <button onClick={() => setMobileSearchOpen(false)} className="w-8 h-8 rounded-lg flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10">
               <X className="w-4 h-4" />
-            </Button>
+            </button>
           </div>
         )}
 
         {/* Right actions */}
-        <div className="flex items-center gap-0.5">
-          {/* Mobile search */}
+        <div className="flex items-center gap-1">
           <button
             onClick={() => setMobileSearchOpen(true)}
-            className="w-9 h-9 rounded-[10px] md:hidden flex items-center justify-center text-muted-foreground/50 hover:text-foreground hover:bg-muted/40 transition-all"
+            className="w-8 h-8 rounded-lg md:hidden flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-all"
           >
             <Search className="w-4 h-4" />
           </button>
 
-          {/* Dark mode */}
-          <button
-            onClick={toggleTheme}
-            className="w-9 h-9 rounded-[10px] flex items-center justify-center text-muted-foreground/50 hover:text-foreground hover:bg-muted/40 transition-all duration-200"
-            title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
-          >
-            {theme === 'dark' ? <Sun className="w-[18px] h-[18px]" /> : <Moon className="w-[18px] h-[18px]" />}
-          </button>
-
-          {/* Notifications */}
           <NotificatieCenter />
 
-          <div className="hidden md:block w-px h-6 bg-border/40 mx-1.5" />
+          <div className="hidden md:block w-px h-5 bg-white/10 mx-1" />
 
           {/* User dropdown — desktop */}
           <div ref={userMenuRef} className="relative hidden md:block">
             <button
               onClick={() => setUserMenuOpen(!userMenuOpen)}
               className={cn(
-                'flex items-center gap-2.5 pl-1.5 pr-2.5 py-1.5 rounded-[12px] transition-all duration-200',
-                'hover:bg-muted/40',
-                userMenuOpen && 'bg-muted/50',
+                'flex items-center gap-2.5 pl-1.5 pr-2.5 py-1.5 rounded-lg transition-all duration-200',
+                'hover:bg-white/10',
+                userMenuOpen && 'bg-white/15',
               )}
             >
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#8BAFD4] to-[#6B8FB4] flex items-center justify-center ring-2 ring-border/20">
-                <span className="text-white text-[11px] font-bold">{userInitial}</span>
+              <div className="w-7 h-7 rounded-full bg-white/15 flex items-center justify-center">
+                <span className="text-white text-[10px] font-bold">{userInitial}</span>
               </div>
               <div className="hidden xl:block text-left min-w-0">
-                <p className="text-[12px] font-semibold text-foreground truncate max-w-[100px] leading-tight">{userName}</p>
-                <p className="text-[10px] text-muted-foreground/50 truncate max-w-[100px]">{user?.email?.split('@')[0]}</p>
+                <p className="text-[12px] font-semibold text-white truncate max-w-[100px] leading-tight">{userName}</p>
+                <p className="text-[10px] text-white/50 truncate max-w-[100px]">{user?.email?.split('@')[0]}</p>
               </div>
-              <ChevronDown className={cn('w-3 h-3 text-muted-foreground/40 transition-transform hidden xl:block', userMenuOpen && 'rotate-180')} />
+              <ChevronDown className={cn('w-3 h-3 text-white/40 transition-transform hidden xl:block', userMenuOpen && 'rotate-180')} />
             </button>
 
             {userMenuOpen && (
@@ -230,7 +217,7 @@ export function TopNav() {
           </div>
 
           {/* Mobile hamburger */}
-          <Button variant="ghost" size="icon" className="w-9 h-9 rounded-[10px] text-muted-foreground hover:text-foreground lg:hidden"
+          <Button variant="ghost" size="icon" className="w-8 h-8 rounded-lg text-white/60 hover:text-white hover:bg-white/10 lg:hidden"
             onClick={() => setMobileOpen(!mobileOpen)}>
             {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </Button>
@@ -238,7 +225,7 @@ export function TopNav() {
       </div>
 
       {/* ── Row 2: Navigation tabs — desktop ── */}
-      <nav className="hidden lg:flex items-center gap-1 h-11 px-6 bg-background/60 backdrop-blur-sm border-b border-border/40 overflow-x-auto scrollbar-none">
+      <nav className="hidden lg:flex items-center gap-0.5 h-11 px-5 bg-[#F3F2F0] border-b border-[#EBEBEB] overflow-x-auto scrollbar-none">
         {visibleItems.map((item) => {
           const isActive = item.path === '/' ? location.pathname === '/' : location.pathname.startsWith(item.path)
           const Icon = item.icon
@@ -248,43 +235,28 @@ export function TopNav() {
               to={item.path}
               end={item.path === '/'}
               className={cn(
-                'relative flex items-center gap-2 px-3.5 h-full text-[13px] font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0',
+                'relative flex items-center gap-1.5 px-3 py-1.5 text-[13px] rounded-md transition-all duration-200 whitespace-nowrap flex-shrink-0',
                 isActive
-                  ? 'text-foreground'
-                  : 'text-muted-foreground/50 hover:text-foreground/80',
+                  ? 'text-[#1A1A1A] font-semibold bg-[#FFFFFF] shadow-[0_1px_3px_rgba(0,0,0,0.06)]'
+                  : 'text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#FFFFFF]/50',
               )}
             >
-              <div
-                className={cn(
-                  'w-6 h-6 rounded-[7px] flex items-center justify-center transition-all duration-200',
-                  isActive ? 'opacity-100' : 'opacity-40',
-                )}
-                style={isActive ? { background: `${item.color}1A` } : undefined}
-              >
-                <Icon className="w-3.5 h-3.5" style={isActive ? { color: item.color } : undefined} />
-              </div>
-              <span className={isActive ? 'font-semibold' : ''}>{item.label}</span>
-
-              {/* Active underline */}
-              {isActive && (
-                <div
-                  className="absolute bottom-0 left-3 right-3 h-[2.5px] rounded-t-full transition-all duration-300"
-                  style={{ background: item.color, boxShadow: `0 -2px 8px ${item.color}30` }}
-                />
-              )}
+              <Icon className={cn('w-3.5 h-3.5', isActive ? '' : 'opacity-50')} style={isActive ? { color: item.color } : undefined} />
+              <span>{item.label}</span>
+              {isActive && <span className="text-[#F15025] text-[13px] font-semibold -ml-0.5">.</span>}
             </NavLink>
           )
         })}
 
         {/* Separator + Instellingen */}
-        <div className="w-px h-5 bg-border/30 mx-1 flex-shrink-0" />
+        <div className="flex-1" />
         <NavLink
           to="/instellingen"
           className={cn(
-            'relative flex items-center gap-2 px-3 h-full text-[13px] font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0',
+            'flex items-center gap-1.5 px-3 py-1.5 text-[13px] rounded-md transition-all duration-200 whitespace-nowrap flex-shrink-0',
             location.pathname.startsWith('/instellingen')
-              ? 'text-foreground'
-              : 'text-muted-foreground/40 hover:text-foreground/70',
+              ? 'text-[#1A1A1A] font-semibold bg-[#FFFFFF] shadow-[0_1px_3px_rgba(0,0,0,0.06)]'
+              : 'text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#FFFFFF]/50',
           )}
         >
           <Settings className="w-3.5 h-3.5" />
@@ -352,13 +324,6 @@ export function TopNav() {
                 </div>
               </div>
               <div className="flex gap-2">
-                <button
-                  onClick={toggleTheme}
-                  className="flex-1 flex items-center justify-center gap-2 h-9 rounded-[10px] border border-border/40 text-[12px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-all"
-                >
-                  {theme === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
-                  {theme === 'dark' ? 'Light' : 'Dark'}
-                </button>
                 <button
                   onClick={() => { setMobileOpen(false); setLayoutMode('sidebar') }}
                   className="flex-1 flex items-center justify-center gap-2 h-9 rounded-[10px] border border-border/40 text-[12px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-all"

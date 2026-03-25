@@ -349,7 +349,7 @@ export function OfferteDetail() {
       // Genereer PDF bijlage
       let attachments: Array<{ filename: string; content: string; encoding: 'base64' }> = []
       try {
-        const doc = generateOffertePDF(
+        const doc = await generateOffertePDF(
           offerte,
           items,
           klant || {},
@@ -672,7 +672,7 @@ export function OfferteDetail() {
                       soort: 'prijs' as const,
                       extra_velden: rest.extra_velden || {},
                     }))
-                    const key = 'forgedesk_clipboard_items'
+                    const key = 'doen_clipboard_items'
                     localStorage.setItem(key, JSON.stringify(templates))
                     toast.success(`${templates.length} item${templates.length === 1 ? '' : 's'} gekopieerd — plak in een andere offerte`)
                   } catch {
@@ -1274,7 +1274,7 @@ export function OfferteDetail() {
           onOpenChange={setShowPdfPreview}
           title={`Offerte ${offerte.nummer}`}
           generatePdf={async () => {
-            const doc = generateOffertePDF(
+            const doc = await generateOffertePDF(
               offerte,
               items,
               klant || {},

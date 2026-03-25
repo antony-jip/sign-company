@@ -95,6 +95,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.log(`Mollie webhook: payment ${paymentId} status=${payment.status}`)
 
     if (payment.status === 'paid') {
+      // Idempotency: skip als factuur al betaald is
+      if (factuur.status === 'betaald') {
+        console.log(`Factuur ${factuur.id} is al betaald — webhook skip`)
+        return res.status(200).json({ received: true, already_paid: true })
+      }
+
       const now = new Date().toISOString()
       await supabase
         .from('facturen')

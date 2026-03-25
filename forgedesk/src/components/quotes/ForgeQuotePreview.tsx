@@ -233,10 +233,10 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
   }
 
   // Handle PDF download
-  function handleDownloadPDF() {
+  async function handleDownloadPDF() {
     if (!fetchedOfferte || !fetchedItems.length) return
     try {
-      const doc = generateOffertePDF(
+      const doc = await generateOffertePDF(
         fetchedOfferte,
         fetchedItems,
         fetchedKlant || {},

@@ -55,8 +55,8 @@ export const ACCENT_PALETTES: AccentPalette[] = [
 // Keep PALETTES export for backwards compatibility
 export const PALETTES: never[] = []
 
-const THEME_STORAGE_KEY = 'forgedesk_app_theme'
-const ACCENT_STORAGE_KEY = 'forgedesk_accent'
+const THEME_STORAGE_KEY = 'doen_app_theme'
+const ACCENT_STORAGE_KEY = 'doen_accent'
 
 interface PaletteContextType {
   appThemeId: string
@@ -118,29 +118,27 @@ function applyAppTheme(theme: AppTheme, accent: AccentPalette) {
 }
 
 export function PaletteProvider({ children }: { children: ReactNode }) {
-  const [appThemeId, setAppThemeIdState] = useState<string>(() => {
-    const stored = localStorage.getItem(THEME_STORAGE_KEY)
-    if (stored === 'standaard' || stored === 'snow' || stored === 'sand' || stored === 'glass') return 'normaal'
-    if (stored === 'midnight' || stored === 'dusk' || stored === 'zwart') return 'dark'
-    return stored || 'normaal'
-  })
+  // Geforceerd: altijd normaal thema, altijd petrol accent
+  const appThemeId = 'normaal'
+  const accentId = 'petrol'
 
-  const [accentId, setAccentIdState] = useState<string>(() => {
-    return localStorage.getItem(ACCENT_STORAGE_KEY) || 'petrol'
-  })
+  const appTheme = APP_THEMES[0] // normaal
+  const accent = ACCENT_PALETTES[0] // petrol
 
-  const appTheme = APP_THEMES.find((t) => t.id === appThemeId) || APP_THEMES[0]
-  const accent = ACCENT_PALETTES.find((a) => a.id === accentId) || ACCENT_PALETTES[0]
-
-  const setAppThemeId = useCallback((id: string) => {
-    localStorage.setItem(THEME_STORAGE_KEY, id)
-    localStorage.setItem('forgedesk_theme', APP_THEMES.find((t) => t.id === id)?.isDark ? 'dark' : 'light')
-    setAppThemeIdState(id)
+  // Opruimen bij init
+  useEffect(() => {
+    localStorage.removeItem(THEME_STORAGE_KEY)
+    localStorage.removeItem(ACCENT_STORAGE_KEY)
+    document.documentElement.classList.remove('dark')
+    document.documentElement.classList.add('light')
   }, [])
 
-  const setAccentId = useCallback((id: string) => {
-    localStorage.setItem(ACCENT_STORAGE_KEY, id)
-    setAccentIdState(id)
+  const setAppThemeId = useCallback((_id: string) => {
+    // no-op — thema is vast
+  }, [])
+
+  const setAccentId = useCallback((_id: string) => {
+    // no-op — accent is vast
   }, [])
 
   useEffect(() => {

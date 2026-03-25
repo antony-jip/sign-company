@@ -20,7 +20,7 @@
     --font-size: 14px;
 
     /* Achtergrond */
-    --background: 37 25% 96%;          /* #F5F4F1 warm off-white */
+    --background: 40 18% 97%;          /* #F8F7F5 warm off-white (DOEN) */
     --foreground: 25 15% 12%;           /* warm near-black */
 
     /* Cards */
@@ -135,55 +135,55 @@
   }
 
   .dark {
-    --background: 40 5% 10%;           /* #1A1A18 */
-    --foreground: 36 8% 89%;           /* #E8E6E0 */
-    --card: 40 5% 13%;                 /* #232320 */
-    --card-foreground: 36 8% 89%;
-    --sidebar-background: 40 5% 10%;
-    --sidebar-foreground: 36 8% 89%;
-    --sidebar-border: 40 5% 22%;
-    --primary: 186 42% 34%;            /* #2A7A86 petrol lichter */
+    --background: 220 10% 8%;           /* #131518 koel donker */
+    --foreground: 30 10% 90%;           /* #E9E6E1 warm wit */
+    --card: 220 8% 11%;                 /* #1A1C20 */
+    --card-foreground: 30 10% 90%;
+    --sidebar-background: 220 10% 7%;
+    --sidebar-foreground: 30 10% 90%;
+    --sidebar-border: 220 8% 18%;
+    --primary: 14 88% 55%;              /* #F15025 Flame als primary! */
     --primary-foreground: 0 0% 100%;
-    --secondary: 40 5% 16%;            /* #2A2A26 */
-    --secondary-foreground: 36 8% 70%;
-    --muted: 40 5% 16%;
-    --muted-foreground: 40 5% 50%;
-    --accent: 12 87% 57%;              /* flame blijft gelijk */
+    --secondary: 220 8% 14%;            /* #222428 */
+    --secondary-foreground: 30 10% 70%;
+    --muted: 220 8% 14%;
+    --muted-foreground: 220 5% 50%;
+    --accent: 14 88% 55%;               /* Flame */
     --accent-foreground: 0 0% 100%;
-    --border: 40 5% 22%;               /* #3A3A36 */
-    --input: 40 5% 22%;
-    --destructive: 12 87% 57%;
+    --border: 220 8% 18%;               /* #2A2D32 */
+    --input: 220 8% 18%;
+    --destructive: 0 72% 55%;
     --destructive-foreground: 0 0% 100%;
-    --popover: 40 5% 13%;
-    --popover-foreground: 36 8% 89%;
-    --ring: 186 42% 34%;
+    --popover: 220 8% 11%;
+    --popover-foreground: 30 10% 90%;
+    --ring: 14 88% 55%;                 /* Flame ring */
 
     /* Semantic UI tokens — dark */
-    --border-subtle: 40 5% 24%;
-    --text-placeholder: 40 5% 42%;
-    --text-tertiary: 40 5% 52%;
-    --bg-hover: 40 5% 14%;
-    --bg-subtle: 40 5% 10%;
+    --border-subtle: 220 8% 20%;
+    --text-placeholder: 220 5% 40%;
+    --text-tertiary: 220 5% 48%;
+    --bg-hover: 220 8% 12%;
+    --bg-subtle: 220 10% 8%;
 
-    --sidebar-primary: 186 42% 34%;
-    --wm-sidebar-bg: 40 5% 9%;
-    --wm-sidebar-hover: 40 5% 14%;
-    --wm-sidebar-active: 186 42% 34%;
-    --wm-hover: 186 42% 30%;
-    --wm-light: 186 42% 40%;
-    --wm-pale: 186 30% 20%;
-    --wm-glass: rgba(20, 20, 18, 0.85);
+    --sidebar-primary: 14 88% 55%;      /* Flame */
+    --wm-sidebar-bg: 220 10% 6%;
+    --wm-sidebar-hover: 220 8% 12%;
+    --wm-sidebar-active: 14 88% 55%;    /* Flame active */
+    --wm-hover: 14 88% 50%;
+    --wm-light: 14 88% 60%;
+    --wm-pale: 14 50% 20%;
+    --wm-glass: rgba(19, 21, 24, 0.90);
     --wm-glass-border: rgba(255, 255, 255, 0.06);
-    --wm-glow: 0 0 40px rgba(204, 138, 63, 0.08);
+    --wm-glow: 0 0 40px rgba(241, 80, 37, 0.08);
 
     /* Elevation — dark */
-    --shadow-xs: 0 1px 2px rgba(0,0,0,0.2);
-    --shadow-sm: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
-    --shadow-md: 0 4px 16px -2px rgba(0,0,0,0.4), 0 2px 4px -1px rgba(0,0,0,0.2);
-    --shadow-lg: 0 12px 40px -8px rgba(0,0,0,0.5), 0 4px 12px -4px rgba(0,0,0,0.3);
-    --shadow-xl: 0 20px 60px -12px rgba(0,0,0,0.6), 0 8px 24px -8px rgba(0,0,0,0.35);
-    --shadow-glow: 0 0 0 1px rgba(26,83,92,0.10), 0 4px 24px -4px rgba(26,83,92,0.18);
-    --shadow-inner-light: inset 0 1px 0 rgba(255,255,255,0.03);
+    --shadow-xs: 0 1px 2px rgba(0,0,0,0.3);
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
+    --shadow-md: 0 4px 16px -2px rgba(0,0,0,0.5), 0 2px 4px -1px rgba(0,0,0,0.3);
+    --shadow-lg: 0 12px 40px -8px rgba(0,0,0,0.6), 0 4px 12px -4px rgba(0,0,0,0.4);
+    --shadow-xl: 0 20px 60px -12px rgba(0,0,0,0.7), 0 8px 24px -8px rgba(0,0,0,0.4);
+    --shadow-glow: 0 0 0 1px rgba(241,80,37,0.10), 0 4px 24px -4px rgba(241,80,37,0.15);
+    --shadow-inner-light: inset 0 1px 0 rgba(255,255,255,0.04);
     --surface-raised: 30 12% 11%;
     --surface-overlay: 30 12% 13%;
     --surface-sunken: 30 12% 6%;
@@ -821,8 +821,8 @@ tbody tr:hover {
 }
 
 .dark .doen-sidebar {
-  background: linear-gradient(172deg, #153F46 0%, #103038 40%, #0A252C 100%);
-  border-right-color: rgba(255, 255, 255, 0.04);
+  background: linear-gradient(172deg, #1A1C20 0%, #15171A 40%, #111315 100%);
+  border-right-color: rgba(241, 80, 37, 0.06);
 }
 
 /* Keep old class for backward compat (mobile bottom nav etc.) */
@@ -1794,9 +1794,10 @@ textarea:focus {
 /* ================================================================
    MOBILE UTILITIES
    ================================================================ */
-html, body {
+html, body, #root {
   overflow-x: hidden;
   max-width: 100vw;
+  background-color: hsl(var(--background));
 }
 
 .safe-area-bottom {
@@ -2509,6 +2510,13 @@ html {
 .sidebar-logo-mark:hover {
   transform: scale(1.05);
   box-shadow: 0 4px 12px rgba(26, 83, 92, 0.35);
+}
+.dark .sidebar-logo-mark {
+  background: linear-gradient(135deg, #F15025 0%, #D94520 100%);
+  box-shadow: 0 2px 8px rgba(241, 80, 37, 0.25);
+}
+.dark .sidebar-logo-mark:hover {
+  box-shadow: 0 4px 12px rgba(241, 80, 37, 0.35);
 }
 
 /* Premium page header with accent strip */

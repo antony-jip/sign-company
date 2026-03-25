@@ -84,10 +84,21 @@ const PRIORITEIT_RING_COLORS: Record<TaakPrioriteit, string> = {
   laag: 'border-[#B0ADA8] hover:border-[#6B6B66]',
 }
 
+// Deterministic project color from name
+const PROJECT_COLORS = ['#1A535C', '#F15025', '#2D6B48', '#3A6B8C', '#9A5A48', '#6A5A8A', '#C44830', '#5A5A55']
+function getProjectColor(name: string): string {
+  let hash = 0
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)
+  return PROJECT_COLORS[Math.abs(hash) % PROJECT_COLORS.length]
+}
+
 const DAY_LABELS = ['ma', 'di', 'wo', 'do', 'vr', 'za', 'zo']
 const MONTH_NAMES = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec']
 const HOURS = Array.from({ length: 13 }, (_, i) => i + 7) // 07:00 - 19:00
-const HOUR_HEIGHT = 52 // px per hour slot (compact)
+const HOUR_HEIGHT_DEFAULT = 52
+const HOUR_HEIGHT_MIN = 36
+const HOUR_HEIGHT_MAX = 80
+const ZOOM_STORAGE_KEY = 'doen_taken_zoom'
 
 interface TaakFormData {
   titel: string
@@ -160,6 +171,17 @@ export function TasksLayout() {
   const [weekOffset, setWeekOffset] = useState(0)
   const [monthOffset, setMonthOffset] = useState(0)
   const [viewMode, setViewMode] = useState<'week' | 'maand'>('week')
+  const [hourHeight, setHourHeight] = useState(() => {
+    try { const v = parseInt(localStorage.getItem(ZOOM_STORAGE_KEY) || '', 10); return v >= HOUR_HEIGHT_MIN && v <= HOUR_HEIGHT_MAX ? v : HOUR_HEIGHT_DEFAULT } catch { return HOUR_HEIGHT_DEFAULT }
+  })
+  const HOUR_HEIGHT = hourHeight
+  const handleZoom = useCallback((delta: number) => {
+    setHourHeight(prev => {
+      const next = Math.max(HOUR_HEIGHT_MIN, Math.min(HOUR_HEIGHT_MAX, prev + delta))
+      localStorage.setItem(ZOOM_STORAGE_KEY, String(next))
+      return next
+    })
+  }, [])
   const [showCompleted, setShowCompleted] = useState(false)
   const [medewerkerFilter, setMedewerkerFilter] = useState<string>('')
 
@@ -566,6 +588,27 @@ export function TasksLayout() {
 
   // Drag & drop: move task to a new day/time
   async function handleDropTask(taakId: string, dayIndex: number, hour: number) {
+    // "Niet vergeten" item → maak nieuwe taak aan
+    if (taakId.startsWith('nv:')) {
+      const parts = taakId.split(':')
+      const nvIdx = parseInt(parts[1], 10)
+      const nvTitel = parts.slice(2).join(':')
+      if (nvTitel) {
+        const day = weekDays[dayIndex]
+        await handleQuickAdd(nvTitel, 'medium', toDateTimeStr(day, hour), '')
+        // Verwijder uit niet-vergeten
+        try {
+          const stored: string[] = JSON.parse(localStorage.getItem(NIET_VERGETEN_KEY) || '[]')
+          stored.splice(nvIdx, 1)
+          localStorage.setItem(NIET_VERGETEN_KEY, JSON.stringify(stored))
+          // Force re-render van NietVergetenStrip
+          window.dispatchEvent(new Event('storage'))
+        } catch {}
+        toast.success(`"${nvTitel}" ingepland`)
+      }
+      return
+    }
+
     const day = weekDays[dayIndex]
     const newDeadline = toDateTimeStr(day, hour)
     try {
@@ -615,119 +658,102 @@ export function TasksLayout() {
 
   return (
     <>
-      <div className="flex flex-col h-[calc(100vh-120px)] bg-[#F8F7F5] -m-3 sm:-m-4 md:-m-6">
-        {/* DOEN Header */}
-        <div className="px-8 pt-8 pb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-baseline gap-4">
-              <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-[#1A1A1A]">
+      <div className="flex flex-col h-[calc(100vh-56px)] -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 bg-[#F8F7F5]">
+        {/* === Sticky header + toolbar === */}
+        <div className="sticky top-0 z-20 bg-[#FFFFFF] border-b border-[#EBEBEB] shadow-[0_1px_3px_rgba(0,0,0,0.03)] px-6 py-2.5 flex-shrink-0">
+          {/* Row 1: title + navigation */}
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-3">
+              <h1 className="text-lg font-bold text-[#1A1A1A] tracking-[-0.3px]">
                 Taken<span className="text-[#F15025]">.</span>
               </h1>
-              <span className="text-[13px] text-[#9B9B95] font-mono tabular-nums">
+              <span className="text-[12px] text-[#9B9B95] font-mono tabular-nums">
                 {klaartaken}/{totalTaken}
               </span>
             </div>
-          </div>
-        </div>
-
-        {/* === DOEN Toolbar Card === */}
-        <div className="mx-8 mb-4 bg-white rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03]">
-          <div className="flex items-center justify-between flex-wrap gap-2 px-4 py-3">
-            <div className="flex items-center gap-3 min-w-0">
+            <div className="flex items-center gap-2">
               {/* View toggle */}
-              <div className="inline-flex items-center rounded-xl bg-[#F0EFEC] p-0.5 flex-shrink-0">
+              <div className="inline-flex items-center rounded-md bg-[#F3F2F0] p-0.5 flex-shrink-0">
                 {(['week', 'maand'] as const).map((v) => (
                   <button key={v} onClick={() => setViewMode(v)} className={cn(
-                    'text-[12px] px-3 py-1.5 rounded-lg transition-all font-medium',
-                    viewMode === v ? 'bg-white text-[#1A1A1A] shadow-[0_1px_2px_rgba(0,0,0,0.06)]' : 'text-[#9B9B95] hover:text-[#6B6B66]'
+                    'text-[12px] px-3 py-1 rounded-[5px] transition-all font-medium',
+                    viewMode === v ? 'bg-[#FFFFFF] text-[#1A1A1A] shadow-[0_1px_3px_rgba(0,0,0,0.06)]' : 'text-[#9B9B95] hover:text-[#6B6B66]'
                   )}>{v === 'week' ? 'Week' : 'Maand'}</button>
                 ))}
               </div>
-              <span className="text-[15px] font-semibold text-[#1A1A1A] tracking-tight whitespace-nowrap">
-                {viewMode === 'week' ? weekLabel : monthLabel}
-              </span>
-              <div className="flex items-center gap-0.5">
-                <button className="p-1.5 rounded-lg hover:bg-[#F0EFEC] transition-all" onClick={() => viewMode === 'week' ? setWeekOffset((w) => w - 1) : setMonthOffset((m) => m - 1)}>
-                  <ChevronLeft className="w-4 h-4 text-[#6B6B66]" />
+              <div className="flex items-center gap-1">
+                <button className="p-1 rounded-md hover:bg-[#EBEBEB]/40 transition-all" onClick={() => viewMode === 'week' ? setWeekOffset((w) => w - 1) : setMonthOffset((m) => m - 1)}>
+                  <ChevronLeft className="w-4 h-4 text-[#9B9B95]" />
                 </button>
                 <button
-                  className={cn(
-                    'text-[12px] px-3 py-1.5 rounded-lg font-medium transition-all',
-                    (viewMode === 'week' ? isCurrentWeek : monthOffset === 0)
-                      ? 'text-[#1A535C] bg-[#1A535C]/[0.07]'
-                      : 'text-[#9B9B95] hover:bg-[#F0EFEC]'
-                  )}
+                  className="text-[13px] px-2 py-1 rounded-md font-semibold text-[#1A1A1A] min-w-[140px] text-center"
+                  onClick={() => viewMode === 'week' ? setWeekOffset(0) : setMonthOffset(0)}
+                >
+                  {viewMode === 'week' ? weekLabel : monthLabel}
+                </button>
+                <button className="p-1 rounded-md hover:bg-[#EBEBEB]/40 transition-all" onClick={() => viewMode === 'week' ? setWeekOffset((w) => w + 1) : setMonthOffset((m) => m + 1)}>
+                  <ChevronRight className="w-4 h-4 text-[#9B9B95]" />
+                </button>
+              </div>
+              {!(viewMode === 'week' ? isCurrentWeek : monthOffset === 0) && (
+                <button
+                  className="text-[12px] px-2.5 py-1 rounded-md font-medium text-[#1A535C] hover:bg-[#1A535C]/[0.05] transition-all"
                   onClick={() => viewMode === 'week' ? setWeekOffset(0) : setMonthOffset(0)}
                 >
                   Vandaag
                 </button>
-                <button className="p-1.5 rounded-lg hover:bg-[#F0EFEC] transition-all" onClick={() => viewMode === 'week' ? setWeekOffset((w) => w + 1) : setMonthOffset((m) => m + 1)}>
-                  <ChevronRight className="w-4 h-4 text-[#6B6B66]" />
-                </button>
-              </div>
-              {/* Medewerker filter */}
-              {medewerkers.length > 0 && (
-                <select
-                  value={medewerkerFilter}
-                  onChange={(e) => setMedewerkerFilter(e.target.value)}
-                  className="h-7 text-[12px] rounded-lg border border-[#F0EFEC] bg-[#F8F7F5] px-2 max-w-[160px] text-[#6B6B66] focus:outline-none focus:ring-1 focus:ring-[#1A535C]/20"
-                >
-                  <option value="">Alle medewerkers</option>
-                  {medewerkers.filter((m) => m.status === 'actief').map((m) => (
-                    <option key={m.id} value={m.naam}>{m.naam}</option>
-                  ))}
-                </select>
               )}
             </div>
-            <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
-              {/* Filter tabs — DOEN style */}
-              {([['alle', 'Alle'], ['project', 'Projecttaken'], ['los', 'Losse taken']] as const).map(([key, label]) => (
-                <button
-                  key={key}
-                  onClick={() => setTaskFilter(key)}
-                  className={cn(
-                    'text-[12px] px-3 py-1.5 rounded-lg transition-all whitespace-nowrap font-medium',
-                    taskFilter === key
-                      ? 'text-[#1A535C] bg-[#1A535C]/[0.07]'
-                      : 'text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC]'
-                  )}
-                >
-                  {label}
-                </button>
+          </div>
+          {/* Row 2: filters */}
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
+              {([['alle', 'Alle'], ['project', 'Project'], ['los', 'Los']] as const).map(([key, label]) => (
+                <button key={key} onClick={() => setTaskFilter(key)} className={cn(
+                  'text-[12px] px-2.5 py-1 rounded-md transition-all whitespace-nowrap font-medium',
+                  taskFilter === key
+                    ? 'text-[#1A1A1A] bg-[#FFFFFF] shadow-[0_1px_3px_rgba(0,0,0,0.06)]'
+                    : 'text-[#9B9B95] hover:text-[#6B6B66]'
+                )}>{label}</button>
               ))}
-              <button
-                onClick={() => setShowCompleted(!showCompleted)}
-                className={cn(
-                  'text-[12px] px-3 py-1.5 rounded-lg transition-all whitespace-nowrap flex-shrink-0 font-medium',
-                  showCompleted
-                    ? 'text-[#1A535C] bg-[#1A535C]/[0.07]'
-                    : 'text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC]'
-                )}
+              <span className="w-px h-4 bg-[#EBEBEB] mx-1" />
+              <button onClick={() => setShowCompleted(!showCompleted)} className={cn(
+                'text-[12px] px-2.5 py-1 rounded-md transition-all whitespace-nowrap font-medium',
+                showCompleted ? 'text-[#1A1A1A] bg-[#FFFFFF] shadow-[0_1px_3px_rgba(0,0,0,0.06)]' : 'text-[#9B9B95] hover:text-[#6B6B66]'
+              )}>{showCompleted ? 'Afgerond ✓' : 'Afgerond'}</button>
+              <button onClick={() => setShowMontage(!showMontage)} className={cn(
+                'text-[12px] px-2.5 py-1 rounded-md transition-all whitespace-nowrap font-medium flex items-center gap-1',
+                showMontage ? 'text-[#1A1A1A] bg-[#FFFFFF] shadow-[0_1px_3px_rgba(0,0,0,0.06)]' : 'text-[#9B9B95] hover:text-[#6B6B66]'
+              )}><Wrench className="w-3 h-3" />Montage</button>
+            </div>
+            {medewerkers.length > 0 && (
+              <select
+                value={medewerkerFilter}
+                onChange={(e) => setMedewerkerFilter(e.target.value)}
+                className="h-7 text-[12px] rounded-md border border-[#EBEBEB] bg-[#F8F7F5] px-2 max-w-[150px] text-[#6B6B66] focus:outline-none focus:border-[#1A535C]/30"
               >
-                {showCompleted ? 'Afgerond zichtbaar' : 'Toon afgerond'}
-              </button>
-              <button
-                onClick={() => setShowMontage(!showMontage)}
-                className={cn(
-                  'text-[12px] px-3 py-1.5 rounded-lg transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-1.5 font-medium',
-                  showMontage
-                    ? 'text-[#1A535C] bg-[#1A535C]/[0.07]'
-                    : 'text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC]'
-                )}
-              >
-                <Wrench className="w-3 h-3" />
-                {showMontage ? 'Montage zichtbaar' : 'Toon montage'}
-              </button>
+                <option value="">Iedereen</option>
+                {medewerkers.filter((m) => m.status === 'actief').map((m) => (
+                  <option key={m.id} value={m.naam}>{m.naam}</option>
+                ))}
+              </select>
+            )}
+            {/* Zoom */}
+            <div className="flex items-center gap-0.5 border border-[#EBEBEB] rounded-md overflow-hidden">
+              <button onClick={() => handleZoom(-4)} className="px-1.5 py-0.5 text-[12px] text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] transition-colors" title="Kleiner">A</button>
+              <span className="w-px h-4 bg-[#EBEBEB]" />
+              <button onClick={() => handleZoom(4)} className="px-1.5 py-0.5 text-[14px] text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] transition-colors font-medium" title="Groter">A</button>
             </div>
           </div>
         </div>
 
         {viewMode === 'week' ? (<>
-        {/* === DAY HEADERS — DOEN === */}
-        <div className="flex border-b border-[#F0EFEC] bg-white mx-8 rounded-t-2xl flex-shrink-0 ring-1 ring-black/[0.03] ring-b-0">
-          {/* Time gutter spacer */}
-          <div className="w-14 flex-shrink-0" />
-          {/* Day columns headers */}
+        {/* === NIET VERGETEN — sticky note === */}
+        <NietVergetenStrip />
+
+        {/* === DAY HEADERS === */}
+        <div className="flex border-b border-[#EBEBEB] bg-[#FAFAF9] flex-shrink-0">
+          <div className="w-12 flex-shrink-0" />
           {weekDays.map((day, i) => {
             const isToday = isSameDay(day, today)
             const dayTasks = tasksByDay.get(day.toDateString()) || []
@@ -736,34 +762,27 @@ export function TasksLayout() {
               <div
                 key={i}
                 className={cn(
-                  'flex-1 min-w-0 text-center py-2.5 border-l border-[#F0EFEC] transition-colors',
-                  isToday && 'bg-[#1A535C]/[0.04]'
+                  'flex-1 min-w-0 text-center py-2 border-l border-[#EBEBEB]/30 transition-colors',
+                  isToday && 'bg-[#1A535C]/[0.03]'
                 )}
               >
-                <div className={cn(
-                  'text-[11px] uppercase tracking-widest font-semibold',
-                  isToday ? 'text-[#1A535C]' : isPast ? 'text-[#B0ADA8]/40' : 'text-[#9B9B95]'
-                )}>
-                  {DAY_LABELS[i]}
-                </div>
-                <div className="flex items-center justify-center gap-1.5 mt-0.5">
+                <div className="flex items-center justify-center gap-1">
                   <span className={cn(
-                    'inline-flex items-center justify-center text-sm font-bold font-mono tabular-nums transition-all',
+                    'text-[10px] uppercase tracking-widest font-semibold',
+                    isToday ? 'text-[#1A535C]' : isPast ? 'text-[#EBEBEB]' : 'text-[#9B9B95]'
+                  )}>
+                    {DAY_LABELS[i]}
+                  </span>
+                  <span className={cn(
+                    'text-[13px] font-bold font-mono tabular-nums',
                     isToday
-                      ? 'w-8 h-8 rounded-full bg-[#1A535C] text-white shadow-sm'
-                      : isPast ? 'text-[#B0ADA8]/40' : 'text-[#1A1A1A]'
+                      ? 'w-7 h-7 rounded-full bg-[#1A535C] text-white inline-flex items-center justify-center text-[12px]'
+                      : isPast ? 'text-[#EBEBEB]' : 'text-[#1A1A1A]'
                   )}>
                     {day.getDate()}
                   </span>
-                  {dayTasks.length > 0 && (
-                    <span className={cn(
-                      'text-[10px] font-semibold font-mono tabular-nums px-[10px] py-[3px] rounded-full',
-                      isToday
-                        ? 'bg-[#1A535C]/10 text-[#1A535C]'
-                        : 'bg-[#F0EFEC] text-[#9B9B95]'
-                    )}>
-                      {dayTasks.length}
-                    </span>
+                  {dayTasks.length > 0 && !isToday && (
+                    <span className="text-[9px] font-mono text-[#9B9B95]">{dayTasks.length}</span>
                   )}
                 </div>
               </div>
@@ -772,14 +791,14 @@ export function TasksLayout() {
         </div>
 
         {/* === CALENDAR GRID — DOEN === */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden relative bg-white mx-8 rounded-b-2xl ring-1 ring-black/[0.03] shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)]">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden relative bg-[#FFFFFF]">
           <div className="flex" style={{ minHeight: HOURS.length * HOUR_HEIGHT }}>
             {/* Time gutter */}
-            <div className="w-14 flex-shrink-0 relative">
+            <div className="w-12 flex-shrink-0 relative border-r border-[#EBEBEB]/20">
               {HOURS.map((hour) => (
                 <div key={hour} style={{ height: HOUR_HEIGHT }} className="relative">
-                  <span className="absolute -top-2.5 right-3 text-xs text-[#B0ADA8] font-mono tabular-nums font-medium">
-                    {String(hour).padStart(2, '0')}:00
+                  <span className="absolute -top-2 right-2 text-[10px] text-[#9B9B95] font-mono tabular-nums">
+                    {String(hour).padStart(2, '0')}
                   </span>
                 </div>
               ))}
@@ -816,6 +835,7 @@ export function TasksLayout() {
                   onQuickAddAtTime={(hour, title) => handleDayHourQuickAdd(day, hour, title)}
                   onResize={handleResizeTask}
                   montageAfspraken={montageByDay.get(day.toDateString()) || []}
+                  hourHeight={HOUR_HEIGHT}
                 />
               )
             })}
@@ -840,9 +860,9 @@ export function TasksLayout() {
                 <div
                   key={i}
                   className={cn(
-                    'bg-white min-h-[80px] p-1.5 transition-colors',
-                    !isCurrentMonth && 'opacity-30',
-                    isToday && 'bg-[#1A535C]/[0.04]'
+                    'bg-[#FFFFFF] min-h-[80px] p-1.5 transition-colors border-b border-r border-[#EBEBEB]/20',
+                    !isCurrentMonth && 'opacity-25',
+                    isToday && 'bg-[#1A535C]/[0.02]'
                   )}
                 >
                   <div className="flex items-center justify-between mb-1">
@@ -1032,12 +1052,106 @@ export function TasksLayout() {
 
 // === DAY COLUMN ===
 
+// === NIET VERGETEN — persoonlijke sticky notes ===
+const NIET_VERGETEN_KEY = 'doen_niet_vergeten'
+
+function NietVergetenStrip() {
+  const [items, setItems] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem(NIET_VERGETEN_KEY) || '[]') } catch { return [] }
+  })
+  const [input, setInput] = useState('')
+  const [open, setOpen] = useState(() => {
+    try { return localStorage.getItem('doen_nv_open') !== 'false' } catch { return true }
+  })
+
+  // Sync met localStorage als een item via drag wordt verwijderd
+  useEffect(() => {
+    const handler = () => {
+      try { setItems(JSON.parse(localStorage.getItem(NIET_VERGETEN_KEY) || '[]')) } catch {}
+    }
+    window.addEventListener('storage', handler)
+    return () => window.removeEventListener('storage', handler)
+  }, [])
+
+  const save = useCallback((next: string[]) => {
+    setItems(next)
+    localStorage.setItem(NIET_VERGETEN_KEY, JSON.stringify(next))
+  }, [])
+
+  const add = useCallback(() => {
+    if (!input.trim()) return
+    save([...items, input.trim()])
+    setInput('')
+  }, [input, items, save])
+
+  const remove = useCallback((idx: number) => {
+    save(items.filter((_, i) => i !== idx))
+  }, [items, save])
+
+  const toggle = useCallback(() => {
+    const next = !open
+    setOpen(next)
+    localStorage.setItem('doen_nv_open', String(next))
+  }, [open])
+
+  return (
+    <div className="px-6 py-2 bg-[#FAFAF9] border-b border-[#EBEBEB]/40">
+      <button onClick={toggle} className="flex items-center gap-1.5 group w-full">
+        <ChevronRight className={cn('w-3 h-3 text-[#9B9B95] transition-transform duration-200', open && 'rotate-90')} />
+        <span className="text-[11px] font-semibold text-[#6B6B66] uppercase tracking-wider">Niet vergeten</span>
+        {items.length > 0 && <span className="text-[10px] text-[#9B9B95] font-mono">{items.length}</span>}
+      </button>
+      {open && (
+        <div className="mt-2 bg-[#FFF9E6]/60 rounded-md px-3 py-2 border border-[#F5E6A3]/30">
+          {items.length > 0 && (
+            <ul className="space-y-0.5 mb-2">
+              {items.map((item, idx) => (
+                <li
+                  key={idx}
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.effectAllowed = 'move'
+                    e.dataTransfer.setData('text/plain', `nv:${idx}:${item}`)
+                    requestAnimationFrame(() => { (e.currentTarget as HTMLElement).style.opacity = '0.4' })
+                  }}
+                  onDragEnd={(e) => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
+                  className="flex items-center gap-2 group/item py-0.5 cursor-grab active:cursor-grabbing"
+                >
+                  <GripVertical className="w-2.5 h-2.5 text-[#C4A060]/30 flex-shrink-0" />
+                  <span className="text-[12px] text-[#6B6B66] flex-1">{item}</span>
+                  <button onClick={() => remove(idx)} className="text-[#9B9B95] hover:text-[#C03A18] opacity-0 group-hover/item:opacity-100 transition-opacity p-0.5">
+                    <X className="w-3 h-3" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <form onSubmit={(e) => { e.preventDefault(); add() }} className="flex items-center gap-1.5">
+            <input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Typ iets om te onthouden..."
+              className="flex-1 text-[12px] bg-transparent border-none outline-none placeholder:text-[#C4A060]/50 text-[#6B6B66]"
+            />
+            {input.trim() && (
+              <button type="submit" className="text-[10px] font-medium text-[#8A7A4A] hover:text-[#6B5A2A] transition-colors">
+                + Voeg toe
+              </button>
+            )}
+          </form>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function DayColumn({
   day, dayIndex, isToday, isPast, tasks, projectMap, klantMap, offerteMap, nowLineTop,
   draggingTaakId, dropTarget,
   onDragStart, onDragEnd, onDropTargetChange, onDrop,
   onToggle, onEdit, onDelete, onQuickAdd, onQuickAddAtTime, onResize,
   montageAfspraken = [],
+  hourHeight: HOUR_HEIGHT,
 }: {
   day: Date
   dayIndex: number
@@ -1061,6 +1175,7 @@ function DayColumn({
   onQuickAddAtTime: (hour: number, title: string) => void
   onResize: (taakId: string, newDurationHours: number) => void
   montageAfspraken?: MontageAfspraak[]
+  hourHeight: number
 }) {
   const [addTitle, setAddTitle] = useState('')
   const [isAdding, setIsAdding] = useState(false)
@@ -1177,7 +1292,10 @@ function DayColumn({
 
   function handleDrop(e: React.DragEvent, hour: number) {
     e.preventDefault()
-    if (draggingTaakId) {
+    const data = e.dataTransfer.getData('text/plain')
+    if (data) {
+      onDrop(data, dayIndex, hour)
+    } else if (draggingTaakId) {
       onDrop(draggingTaakId, dayIndex, hour)
     }
     onDragEnd()
@@ -1192,8 +1310,8 @@ function DayColumn({
 
   return (
     <div className={cn(
-      'flex-1 min-w-0 border-l border-[#F0EFEC] relative',
-      isToday && 'bg-[#1A535C]/[0.02]'
+      'flex-1 min-w-0 border-l border-[#EBEBEB]/20 relative',
+      isToday && 'bg-[#1A535C]/[0.015]'
     )}>
       {/* Hour grid lines + drop zones */}
       {HOURS.map((hour) => {
@@ -1204,8 +1322,8 @@ function DayColumn({
             key={hour}
             style={{ height: HOUR_HEIGHT }}
             className={cn(
-              'group/hour border-b border-[#F0EFEC]/60 transition-colors duration-150 relative',
-              isDropHere && 'bg-[#1A535C]/[0.08]'
+              'group/hour border-b border-[#EBEBEB]/30 transition-all duration-200 relative',
+              isDropHere && 'bg-[#1A535C]/[0.06] scale-[1.01]'
             )}
             onDragOver={(e) => handleDragOver(e, hour)}
             onDrop={(e) => handleDrop(e, hour)}
@@ -1213,10 +1331,10 @@ function DayColumn({
           >
             {/* Drop indicator */}
             {isDropHere && (
-              <div className="h-full flex items-start pt-1 px-1 pointer-events-none">
-                <div className="w-full rounded-lg border-2 border-dashed border-[#1A535C]/30 h-10 flex items-center justify-center">
-                  <Clock className="w-3 h-3 text-[#1A535C]/50 mr-1" />
-                  <span className="text-[10px] text-[#1A535C]/50 font-semibold font-mono">{String(hour).padStart(2, '0')}:00</span>
+              <div className="absolute inset-1 pointer-events-none animate-[fadeIn_150ms_ease-out]">
+                <div className="w-full h-full rounded-xl border-2 border-dashed border-[#1A535C]/25 bg-[#1A535C]/[0.04] flex items-center justify-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-[#1A535C]/40" />
+                  <span className="text-[11px] text-[#1A535C]/50 font-semibold font-mono">{String(hour).padStart(2, '0')}:00</span>
                 </div>
               </div>
             )}
@@ -1272,7 +1390,7 @@ function DayColumn({
       {/* Scheduled tasks - positioned at their time */}
       {scheduledTasks.map((taak) => {
         const hour = getHourFromDeadline(taak.deadline ?? "")!
-        const topPx = (hour - 7) * HOUR_HEIGHT + 4
+        const topPx = (hour - 7) * HOUR_HEIGHT
         const duration = taak.geschatte_tijd || 0
         const isResizing = resizingTaakId === taak.id
         // Height: use geschatte_tijd if > 0, otherwise auto (null)
@@ -1289,12 +1407,12 @@ function DayColumn({
         return (
           <div
             key={taak.id}
-            className={cn('absolute z-10', isResizing && 'z-30')}
+            className={cn('absolute z-10 transition-[left,width] duration-200 ease-out', isResizing && 'z-30')}
             style={{
               top: topPx,
-              left: `calc(${leftPercent}% + 4px)`,
-              width: `calc(${widthPercent}% - 8px)`,
-              height: heightPx !== null ? `${heightPx - 6}px` : undefined,
+              left: `calc(${leftPercent}% + ${colCount > 1 ? 2 : 4}px)`,
+              width: `calc(${widthPercent}% - ${colCount > 1 ? 4 : 8}px)`,
+              height: heightPx !== null ? `${heightPx}px` : undefined,
             }}
           >
             <TaskCard
@@ -1304,7 +1422,7 @@ function DayColumn({
               offerteInfo={taak.offerte_id && offerteMap[taak.offerte_id] ? { nummer: offerteMap[taak.offerte_id].nummer, totaal: offerteMap[taak.offerte_id].totaal, status: offerteMap[taak.offerte_id].status } : undefined}
               isPast={isPast}
               scheduled
-              heightPx={heightPx !== null ? heightPx - 6 : undefined}
+              heightPx={heightPx !== null ? heightPx : undefined}
               isResizing={isResizing}
               onDragStart={() => onDragStart(taak.id)}
               onDragEnd={onDragEnd}
@@ -1370,8 +1488,8 @@ function DayColumn({
 
       {/* Unscheduled tasks - at top of column */}
       <div className="absolute inset-x-0 top-0 p-1 pt-1.5 flex flex-col gap-1 z-10 pointer-events-none">
-        {unscheduledTasks.map((taak) => (
-          <div key={taak.id} className="pointer-events-auto">
+        {unscheduledTasks.map((taak, i) => (
+          <div key={taak.id} className="pointer-events-auto" style={{ animationDelay: `${i * 30}ms` }}>
             <TaskCard
               taak={taak}
               projectNaam={taak.project_id ? projectMap[taak.project_id] : undefined}
@@ -1450,9 +1568,14 @@ function TaskCard({
     e.stopPropagation()
     if (!isDone) {
       setJustCompleted(true)
-      setTimeout(() => setJustCompleted(false), 600)
+      // Korte delay zodat de gebruiker de animatie ziet voordat de taak verdwijnt
+      setTimeout(() => {
+        setJustCompleted(false)
+        onToggle()
+      }, 400)
+    } else {
+      onToggle()
     }
-    onToggle()
   }
 
   function handleDeleteClick(e: React.MouseEvent) {
@@ -1463,6 +1586,9 @@ function TaskCard({
   function handleDragStart(e: React.DragEvent) {
     e.dataTransfer.effectAllowed = 'move'
     e.dataTransfer.setData('text/plain', taak.id)
+    // Smooth ghost: make the dragged element semi-transparent
+    const el = e.currentTarget as HTMLElement
+    requestAnimationFrame(() => { el.style.opacity = '0.4'; el.style.transform = 'scale(0.97)' })
     onDragStart()
   }
 
@@ -1473,127 +1599,83 @@ function TaskCard({
         : `${Math.round(taak.geschatte_tijd * 60)}min`)
     : null
 
+  const isCompact = heightPx !== undefined && heightPx < 36
+
   return (
     <div
       draggable={!isResizing}
       onDragStart={handleDragStart}
-      onDragEnd={onDragEnd}
+      onDragEnd={(e) => { const el = e.currentTarget as HTMLElement; el.style.opacity = '1'; el.style.transform = ''; onDragEnd() }}
       className={cn(
-        'group relative rounded-xl border-l-[3px] px-2.5 py-2 transition-all duration-200',
+        'group relative border-l-[3px] transition-all duration-200 ease-out select-none',
+        scheduled ? 'h-full' : 'rounded-sm',
         !isResizing && 'cursor-grab active:cursor-grabbing',
-        'hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] hover:z-10 hover:-translate-y-[1px]',
-        isDone && 'opacity-40 hover:opacity-60',
+        'hover:brightness-[0.97] hover:z-10',
+        isDone && 'opacity-35 hover:opacity-55',
         isPast && !isDone && 'opacity-60',
-        justCompleted && 'scale-95 opacity-50',
-        scheduled && 'shadow-sm',
-        isResizing && 'ring-2 ring-[#1A535C]/30 shadow-xl'
+        justCompleted && 'scale-[0.98] opacity-40 transition-all duration-500',
+        isResizing && 'ring-2 ring-[#1A535C]/30 z-30'
       )}
       style={{
         ...(heightPx !== undefined ? { height: heightPx, overflow: 'hidden' } : {}),
         borderLeftColor: pc.border,
-        backgroundColor: isDone ? '#F0EFEC' : pc.bg,
+        backgroundColor: isDone ? '#EEEDEB' : pc.bg,
       }}
       onClick={onEdit}
     >
-      <div className="flex items-start gap-2">
-        {/* Drag handle */}
-        <div className="flex-shrink-0 mt-0.5 opacity-0 group-hover:opacity-40 transition-opacity cursor-grab">
-          <GripVertical className="w-3 h-3" />
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start gap-1">
-            {(taak.prioriteit === 'kritiek' || taak.prioriteit === 'hoog') && !isDone && (
-              <span className="inline-block w-2 h-2 rounded-full flex-shrink-0 mt-1" style={{ backgroundColor: pc.dot }} title={taak.prioriteit === 'kritiek' ? 'Urgent' : 'Hoog'} />
-            )}
-            <p className={cn(
-              'text-xs font-medium leading-tight text-[#1A1A1A] flex-1',
-              isDone && 'line-through text-[#9B9B95]'
-            )}>
-              {taak.titel}
-            </p>
+      {/* Checkbox links */}
+      <button
+        onClick={handleToggle}
+        className={cn('absolute top-1.5 left-1 z-10 transition-all duration-200', isCompact && 'top-1')}
+        title={isDone ? 'Ongedaan maken' : 'Markeer als klaar'}
+      >
+        {isDone ? (
+          <div className="w-3.5 h-3.5 rounded-sm bg-[#1A535C] flex items-center justify-center">
+            <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
           </div>
-          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+        ) : (
+          <div className={cn(
+            'w-3.5 h-3.5 rounded-sm border-[1.5px] transition-all duration-200',
+            PRIORITEIT_RING_COLORS[taak.prioriteit],
+            'hover:border-[#1A535C] hover:bg-[#1A535C]/10'
+          )} />
+        )}
+      </button>
+
+      {/* Content */}
+      <div className={cn('h-full', isCompact ? 'pl-5 pr-2 py-1' : 'pl-5 pr-2 py-1.5')}>
+        <div className="flex items-center gap-1">
+          {(taak.prioriteit === 'kritiek' || taak.prioriteit === 'hoog') && !isDone && (
+            <span className="inline-block w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: pc.dot }} />
+          )}
+          <p className={cn(
+            'text-[11px] font-semibold leading-tight text-[#1A1A1A] truncate flex-1',
+            isDone && 'line-through text-[#9B9B95]',
+            isCompact && 'text-[10px]'
+          )}>
+            {taak.titel}
+          </p>
+          {/* Delete — hover only */}
+          <button onClick={handleDeleteClick} className="p-0.5 text-transparent group-hover:text-[#9B9B95] hover:!text-[#C03A18] transition-colors flex-shrink-0" title="Verwijderen">
+            <Trash2 className="w-3 h-3" />
+          </button>
+        </div>
+        {!isCompact && (
+          <div className="flex items-center gap-1.5 mt-0.5 overflow-hidden">
             {projectNaam && (
-              <span className="text-2xs text-[#9B9B95] flex items-center gap-0.5">
-                <Hash className="w-2 h-2" />{projectNaam}
-              </span>
-            )}
-            {!projectNaam && klantNaam && (
-              <span className="text-2xs text-[#9B9B95] flex items-center gap-0.5">
-                <User2 className="w-2 h-2" />{klantNaam}
-              </span>
-            )}
-            {taak.locatie && (
-              <span className="text-2xs text-[#B0ADA8] flex items-center gap-0.5">
-                <MapPin className="w-2 h-2" />{taak.locatie}
-              </span>
-            )}
-            {offerteInfo && (
-              <span
-                className="text-2xs flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#FDE8E2] text-[#F15025] cursor-pointer hover:bg-[#FCDDD5] transition-colors"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  window.location.href = `/offertes/${taak.offerte_id}`
-                }}
-                title={`Offerte ${offerteInfo.nummer}`}
-              >
-                <FilePlus className="w-2.5 h-2.5" />
-                <span className="font-mono">{offerteInfo.nummer || '–'}</span>
+              <span className="text-[10px] text-[#9B9B95] truncate max-w-[80px] flex items-center gap-0.5">
+                <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: getProjectColor(projectNaam) }} />
+                {projectNaam}
               </span>
             )}
             {scheduled && hour !== null && (
-              <span className="text-2xs text-[#B0ADA8] font-mono flex items-center gap-0.5">
-                <Clock className="w-2 h-2" />{String(hour).padStart(2, '0')}:00
-              </span>
+              <span className="text-[10px] text-[#9B9B95] font-mono">{String(hour).padStart(2, '0')}:00</span>
             )}
             {durationLabel && (
-              <span className="text-2xs text-[#B0ADA8] font-medium font-mono">
-                {durationLabel}
-              </span>
-            )}
-            {taak.bijlagen && taak.bijlagen.length > 0 && (
-              <span className="text-2xs text-[#B0ADA8] flex items-center gap-0.5">
-                <Paperclip className="w-2 h-2" />{taak.bijlagen.length}
-              </span>
+              <span className="text-[10px] text-[#9B9B95] font-mono">{durationLabel}</span>
             )}
           </div>
-        </div>
-
-        {/* Action buttons */}
-        <div className="flex items-center gap-0.5 flex-shrink-0">
-          {/* Delete button - visible on hover */}
-          <button
-            onClick={handleDeleteClick}
-            className="flex-shrink-0 p-1 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-[#FDE8E2]"
-            title="Verwijderen"
-          >
-            <Trash2 className="w-3.5 h-3.5 text-[#B0ADA8] hover:text-[#C03A18] transition-colors" />
-          </button>
-
-          {/* Checkbox */}
-          <button
-            onClick={handleToggle}
-            className={cn(
-              'flex-shrink-0 p-0.5 rounded-lg transition-all duration-200',
-              !isDone && 'hover:bg-[#1A535C]/10'
-            )}
-            title={isDone ? 'Markeer als ongedaan' : 'Markeer als klaar'}
-          >
-            {isDone ? (
-              <div className="w-5 h-5 rounded-full bg-[#1A535C] flex items-center justify-center shadow-sm">
-                <Check className="w-3 h-3 text-white" strokeWidth={3} />
-              </div>
-            ) : (
-              <div className={cn(
-                'w-5 h-5 rounded-full border-2 transition-all duration-200',
-                PRIORITEIT_RING_COLORS[taak.prioriteit],
-                'hover:border-[#1A535C] hover:bg-[#1A535C]/10'
-              )} />
-            )}
-          </button>
-        </div>
+        )}
       </div>
 
       {/* Resize handle - bottom edge for scheduled tasks */}
@@ -1609,8 +1691,8 @@ function TaskCard({
 
       {/* Completion animation overlay */}
       {justCompleted && (
-        <div className="absolute inset-0 rounded-xl bg-[#1A535C]/15 flex items-center justify-center pointer-events-none animate-in fade-in duration-200">
-          <CheckCircle2 className="w-6 h-6 text-[#1A535C] animate-in zoom-in duration-300" />
+        <div className="absolute inset-0 bg-[#1A535C]/10 flex items-center justify-center pointer-events-none">
+          <Check className="w-4 h-4 text-[#1A535C]" strokeWidth={3} />
         </div>
       )}
     </div>

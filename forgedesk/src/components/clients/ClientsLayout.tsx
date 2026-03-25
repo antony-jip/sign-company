@@ -313,7 +313,7 @@ export function ClientsLayout() {
 
       {/* Content */}
       <div className="flex-1 min-h-0 overflow-y-auto">
-      <div className="px-8 py-8 space-y-6 max-w-[1400px]">
+      <div className="px-8 py-8 space-y-6">
 
       {/* ── Header + Stats ── */}
       <div className="space-y-4">
@@ -721,7 +721,7 @@ export function ClientsLayout() {
                       </span>
                     </td>
                     <td className="py-3.5 pr-4 text-center">
-                      <span className="inline-flex items-center justify-center text-[11px] font-mono font-semibold tabular-nums rounded-md px-2 py-0.5 bg-[#F5F4F1] text-[#6B6B66]">
+                      <span className="inline-flex items-center justify-center text-[11px] font-mono font-semibold tabular-nums rounded-md px-2 py-0.5 bg-[#F8F7F5] text-[#6B6B66]">
                         {projectCounts[klant.id] || 0}
                       </span>
                     </td>

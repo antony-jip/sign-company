@@ -36,32 +36,23 @@ export function MontageSection({ montageAfspraken, onInplannen }: MontageSection
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-[13px] font-semibold text-foreground flex items-center gap-2">
-          Montage
-          {montageAfspraken.length > 0 && (
-            <span className="text-[10px] text-muted-foreground/50 font-mono font-normal">{montageAfspraken.length}</span>
-          )}
-        </h3>
+        <h3 className="text-xs font-semibold text-[#1A1A1A] uppercase tracking-wider">Montage</h3>
         <button
           onClick={onInplannen}
-          className="text-[11px] text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+          className="text-[12px] text-[#1A535C] hover:underline transition-colors"
         >
-          <Plus className="h-3 w-3" />
-          Inplannen
+          + Inplannen
         </button>
       </div>
 
       {montageAfspraken.length === 0 ? (
-        <div className="text-center py-6 border border-dashed border-sand rounded-lg">
-          <div className="h-10 w-10 rounded-xl bg-mod-planning-light flex items-center justify-center mx-auto mb-2">
-            <Wrench className="h-5 w-5 text-mod-planning-text" />
-          </div>
-          <p className="text-[11px] text-muted-foreground mb-2">Nog niet gepland</p>
+        <div className="py-6 text-center">
+          <p className="text-sm text-[#9B9B95]">Nog niet gepland</p>
           <button
             onClick={onInplannen}
-            className="text-[11px] text-foreground font-medium hover:text-foreground/80 transition-colors"
+            className="text-sm text-[#1A535C] hover:underline mt-1"
           >
-            + Inplannen
+            Montage inplannen
           </button>
         </div>
       ) : (
@@ -71,18 +62,17 @@ export function MontageSection({ montageAfspraken, onInplannen }: MontageSection
             const StatusIcon = st.icon
 
             return (
-              <div key={m.id} className="rounded-lg border border-sand p-3 space-y-2 hover:border-sand transition-colors">
+              <div key={m.id} className="py-3 border-b border-[#EBEBEB] last:border-0 space-y-1.5">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-[12px] font-medium text-foreground truncate">{m.titel}</p>
-                  <span className={`inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full flex-shrink-0 ${st.cls}`}>
-                    <StatusIcon className="h-3 w-3" />
-                    {st.label}
+                  <p className="text-sm font-medium text-[#1A1A1A] truncate">{m.titel}</p>
+                  <span className="text-xs text-[#6B6B66] flex-shrink-0">
+                    {st.label}<span className="text-[#F15025]">.</span>
                   </span>
                 </div>
 
-                <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                  <CalendarDays className="h-3 w-3 flex-shrink-0 text-muted-foreground/50" />
-                  <span className="font-mono">
+                <div className="flex items-center gap-1.5 text-[11px] text-[#6B6B66]">
+                  <CalendarDays className="h-3 w-3 flex-shrink-0 text-[#9B9B95]" />
+                  <span className="font-mono text-[#1A1A1A]">
                     {new Date(m.datum).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}
                     {' '}
                     {m.start_tijd}–{m.eind_tijd}
@@ -90,8 +80,8 @@ export function MontageSection({ montageAfspraken, onInplannen }: MontageSection
                 </div>
 
                 {m.locatie && (
-                  <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                    <MapPin className="h-3 w-3 flex-shrink-0 text-muted-foreground/50" />
+                  <div className="flex items-center gap-1.5 text-[11px] text-[#6B6B66]">
+                    <MapPin className="h-3 w-3 flex-shrink-0 text-[#9B9B95]" />
                     <span className="truncate">{m.locatie}</span>
                   </div>
                 )}
@@ -120,7 +110,7 @@ export function MontageSection({ montageAfspraken, onInplannen }: MontageSection
                     <ClipboardCheck className="h-3 w-3 flex-shrink-0 text-[#C44830]" />
                     <Link
                       to={`/werkbonnen/${m.werkbon_id}`}
-                      className="font-mono text-[#943520] hover:underline"
+                      className="font-mono font-medium text-[#1A535C] hover:underline"
                       onClick={(e) => e.stopPropagation()}
                     >
                       {m.werkbon_nummer || 'Werkbon'}

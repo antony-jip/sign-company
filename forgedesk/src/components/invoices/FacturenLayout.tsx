@@ -1335,7 +1335,7 @@ export function FacturenLayout() {
 
       {/* ── Content ── */}
       <div className="flex-1 min-h-0 overflow-y-auto">
-      <div className="px-8 py-8 space-y-6 max-w-[1400px]">
+      <div className="px-8 py-8 space-y-6">
 
       {/* ── Header + Stats ── */}
       <div className="space-y-4">
@@ -1586,7 +1586,7 @@ export function FacturenLayout() {
                   <div className="flex items-center gap-1.5">
                     <span className="text-[15px] font-semibold text-[#1A1A1A]">{factuur.nummer}</span>
                     {factuur.factuur_type && factuur.factuur_type !== 'standaard' && (
-                      <span className="text-[10px] text-[#B0ADA8] font-mono bg-[#F5F4F1] px-1.5 py-0.5 rounded font-semibold">
+                      <span className="text-[10px] text-[#B0ADA8] font-mono bg-[#F8F7F5] px-1.5 py-0.5 rounded font-semibold">
                         {TYPE_CONFIG[factuur.factuur_type].label}
                       </span>
                     )}
@@ -1737,7 +1737,7 @@ export function FacturenLayout() {
                           {factuur.nummer}
                         </button>
                         {factuur.factuur_type && factuur.factuur_type !== 'standaard' && (
-                          <span className="text-[10px] text-[#B0ADA8] font-mono flex-shrink-0 bg-[#F5F4F1] px-1.5 py-0.5 rounded font-semibold">
+                          <span className="text-[10px] text-[#B0ADA8] font-mono flex-shrink-0 bg-[#F8F7F5] px-1.5 py-0.5 rounded font-semibold">
                             {TYPE_CONFIG[factuur.factuur_type].label}
                           </span>
                         )}

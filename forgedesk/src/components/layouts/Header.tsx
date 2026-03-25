@@ -22,6 +22,7 @@ const ROUTE_NAMES: Record<string, string> = {
   'forgie': 'Daan',
   'cockpit': 'Cockpit',
   'documenten': 'Documenten',
+  'visualizer': 'Visualizer',
 }
 
 function isUuid(str: string) {
@@ -60,44 +61,46 @@ export function Header() {
 
   return (
     <header
-      className="h-12 flex items-center justify-between px-3 md:px-5 flex-shrink-0 z-10 transition-shadow duration-200"
-      style={{ backgroundColor: '#F5F4F1', borderBottom: '0.5px solid hsl(35, 15%, 87%)', boxShadow: scrolled ? '0 1px 3px rgba(130,100,60,0.07)' : 'none' }}
+      className="h-11 flex items-center justify-between px-5 flex-shrink-0 z-10 transition-all duration-200 relative bg-[#FFFFFF] border-b border-[#EBEBEB]"
+      style={{ boxShadow: scrolled ? '0 1px 3px rgba(0,0,0,0.04)' : 'none' }}
     >
       {/* Mobile search overlay */}
       {mobileSearchOpen && (
-        <div className="absolute inset-x-0 top-0 h-12 z-20 flex items-center gap-2 px-3 md:hidden" style={{ backgroundColor: '#F5F4F1', borderBottom: '0.5px solid hsl(35, 15%, 87%)' }}>
+        <div className="absolute inset-x-0 top-0 h-11 z-20 flex items-center gap-2 px-3 md:hidden bg-[#FFFFFF] border-b border-[#EBEBEB]">
           <GlobalSearch className="flex flex-1" compact />
-          <Button variant="ghost" size="icon" className="w-8 h-8 rounded-lg flex-shrink-0" onClick={() => setMobileSearchOpen(false)}>
+          <Button variant="ghost" size="icon" className="w-8 h-8 rounded-lg text-[#9B9B95] hover:text-[#1A1A1A]" onClick={() => setMobileSearchOpen(false)}>
             <X className="w-4 h-4" />
           </Button>
         </div>
       )}
 
       {/* Left: Breadcrumb */}
-      <div className="flex items-center gap-1 min-w-0">
-        <span className="text-[13px] font-semibold" style={{ color: '#191919' }}>
-          {moduleName}
+      <div className="flex items-center gap-1.5 min-w-0">
+        <span className="text-[13px] font-semibold text-[#1A1A1A]">
+          {moduleName}<span className="text-[#F15025]">.</span>
         </span>
         {subPage && (
           <>
-            <span className="text-[13px] mx-1" style={{ color: '#5A5A55' }}>/</span>
-            <span className="text-[13px] font-normal truncate" style={{ color: '#5A5A55' }}>
+            <span className="text-[13px] text-[#EBEBEB] mx-0.5">/</span>
+            <span className="text-[13px] font-normal text-[#9B9B95] truncate">
               {subPage}
             </span>
           </>
         )}
       </div>
 
-      {/* Center: Search bar (desktop) */}
-      <GlobalSearch className="hidden md:flex flex-1 max-w-md mx-6 min-w-[200px]" />
+      {/* Center: Search bar (desktop) — compact */}
+      <div className="hidden md:flex flex-1 justify-center mx-8">
+        <GlobalSearch className="w-full max-w-xs" />
+      </div>
 
       {/* Right: Actions */}
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-2">
         {/* Mobile search button */}
         <Button
           variant="ghost"
           size="icon"
-          className="w-8 h-8 md:hidden rounded-lg text-muted-foreground hover:text-foreground"
+          className="w-8 h-8 md:hidden rounded-lg text-[#9B9B95] hover:text-[#1A1A1A]"
           onClick={() => setMobileSearchOpen(true)}
           aria-label="Zoeken"
         >
@@ -108,20 +111,8 @@ export function Header() {
         <NotificatieCenter />
 
         {/* User avatar */}
-        <div
-          className="flex items-center justify-center rounded-full flex-shrink-0"
-          style={{
-            width: 30,
-            height: 30,
-            backgroundColor: '#F4F2EE',
-          }}
-        >
-          <span
-            className="font-semibold leading-none"
-            style={{ fontSize: 11, color: '#5A5A55' }}
-          >
-            {initials}
-          </span>
+        <div className="flex items-center justify-center w-7 h-7 rounded-full flex-shrink-0 bg-[#1A535C]">
+          <span className="font-semibold leading-none text-[10px] text-white">{initials}</span>
         </div>
       </div>
     </header>

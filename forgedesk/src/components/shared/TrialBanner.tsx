@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { X } from 'lucide-react'
 
-const DISMISS_KEY = 'forgedesk_trial_banner_dismissed'
+const DISMISS_KEY = 'doen_trial_banner_dismissed'
 
 export function TrialBanner() {
   const { trialStatus, trialDagenOver } = useAuth()

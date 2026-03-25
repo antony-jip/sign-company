@@ -3,7 +3,7 @@ import supabase, { isSupabaseConfigured } from './supabaseClient'
 export async function signIn(email: string, password: string) {
   if (!isSupabaseConfigured() || !supabase) {
     // Demo mode - store in localStorage
-    localStorage.setItem('forgedesk_demo_user', JSON.stringify({
+    localStorage.setItem('doen_demo_user', JSON.stringify({
       id: 'demo-user',
       email,
       user_metadata: { voornaam: 'Demo', achternaam: 'Gebruiker' }
@@ -19,7 +19,7 @@ export async function signIn(email: string, password: string) {
 export async function signUp(email: string, password: string, metadata?: { voornaam?: string; achternaam?: string }) {
   if (!isSupabaseConfigured() || !supabase) {
     const user = { id: 'demo-user', email, user_metadata: metadata || {} }
-    localStorage.setItem('forgedesk_demo_user', JSON.stringify(user))
+    localStorage.setItem('doen_demo_user', JSON.stringify(user))
     return { user, session: { access_token: 'demo' } }
   }
   const { data, error } = await supabase.auth.signUp({
@@ -37,7 +37,7 @@ export async function signUp(email: string, password: string, metadata?: { voorn
 
 export async function signOut() {
   if (!isSupabaseConfigured() || !supabase) {
-    localStorage.removeItem('forgedesk_demo_user')
+    localStorage.removeItem('doen_demo_user')
     return
   }
   const { error } = await supabase.auth.signOut()
@@ -46,11 +46,11 @@ export async function signOut() {
 
 export async function getSession() {
   if (!isSupabaseConfigured() || !supabase) {
-    let user = localStorage.getItem('forgedesk_demo_user')
+    let user = localStorage.getItem('doen_demo_user')
     if (!user) {
       // Auto-create demo user so the app is always accessible without login
-      const demoUser = { id: 'demo-user', email: 'demo@forgedesk.nl', user_metadata: { voornaam: 'Demo', achternaam: 'Gebruiker' } }
-      localStorage.setItem('forgedesk_demo_user', JSON.stringify(demoUser))
+      const demoUser = { id: 'demo-user', email: 'demo@doen.app', user_metadata: { voornaam: 'Demo', achternaam: 'Gebruiker' } }
+      localStorage.setItem('doen_demo_user', JSON.stringify(demoUser))
       user = JSON.stringify(demoUser)
     }
     return { session: { access_token: 'demo', user: JSON.parse(user) }, user: JSON.parse(user) }
@@ -98,10 +98,10 @@ export interface AuthSession {
 export function onAuthStateChange(callback: (event: string, session: AuthSession | null) => void) {
   if (!isSupabaseConfigured() || !supabase) {
     // Demo mode - auto-create user if needed and always fire SIGNED_IN
-    let user = localStorage.getItem('forgedesk_demo_user')
+    let user = localStorage.getItem('doen_demo_user')
     if (!user) {
-      const demoUser = { id: 'demo-user', email: 'demo@forgedesk.nl', user_metadata: { voornaam: 'Demo', achternaam: 'Gebruiker' } }
-      localStorage.setItem('forgedesk_demo_user', JSON.stringify(demoUser))
+      const demoUser = { id: 'demo-user', email: 'demo@doen.app', user_metadata: { voornaam: 'Demo', achternaam: 'Gebruiker' } }
+      localStorage.setItem('doen_demo_user', JSON.stringify(demoUser))
       user = JSON.stringify(demoUser)
     }
     callback('SIGNED_IN', { access_token: 'demo', user: JSON.parse(user) })

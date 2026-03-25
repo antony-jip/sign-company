@@ -11,6 +11,13 @@ const resizeObserverErr = (e: ErrorEvent) => {
 }
 window.addEventListener('error', resizeObserverErr)
 
+// Global unhandled promise rejection handler
+window.addEventListener('unhandledrejection', (event) => {
+  const message = event.reason instanceof Error ? event.reason.message : String(event.reason)
+  if (message.includes('Failed to fetch') || message.includes('NetworkError') || message.includes('AbortError')) return
+  console.error('[Unhandled rejection]', message)
+})
+
 try {
   ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>

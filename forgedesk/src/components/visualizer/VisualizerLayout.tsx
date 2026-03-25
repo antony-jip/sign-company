@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label'
 import {
   Palette, Upload, X, Image as ImageIcon, Sparkles,
   Loader2, Download, Save, Trash2, Eye, Link2, Filter,
-  Send, Plus, Maximize2, RotateCcw,
+  Send, Plus, Maximize2, RotateCcw, Mail,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -18,6 +18,9 @@ import {
   deleteSigningVisualisatie,
   getProjecten,
   getOffertes,
+  createPortaal,
+  createPortaalItem,
+  getPortaalItems,
 } from '@/services/supabaseService'
 import supabase from '@/services/supabaseClient'
 import { uploadFile } from '@/services/storageService'
@@ -91,6 +94,12 @@ export function VisualizerLayout() {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
   const [filterKoppeling, setFilterKoppeling] = useState<'alle' | 'gekoppeld' | 'los'>('alle')
   const [showCreditsPakket, setShowCreditsPakket] = useState(false)
+  const [shareDropdownId, setShareDropdownId] = useState<string | null>(null)
+  const [shareEmailVis, setShareEmailVis] = useState<SigningVisualisatie | null>(null)
+  const [shareEmailTo, setShareEmailTo] = useState('')
+  const [shareEmailSubject, setShareEmailSubject] = useState('')
+  const [shareEmailBody, setShareEmailBody] = useState('')
+  const [isSendingShareEmail, setIsSendingShareEmail] = useState(false)
 
   // ── Data for linking ──
   const [projecten, setProjecten] = useState<Project[]>([])
@@ -458,6 +467,58 @@ export function VisualizerLayout() {
     a.click()
   }, [])
 
+  const handleShareViaPortaal = useCallback(async (v: SigningVisualisatie) => {
+    if (!user?.id || !v.project_id) return
+    try {
+      const portaal = await createPortaal(v.project_id, user.id)
+      const bestaandeItems = await getPortaalItems(portaal.id)
+      if (!bestaandeItems.find(i => i.type === 'tekening' && i.titel === 'Visualisatie mockup')) {
+        await createPortaalItem({
+          user_id: user.id,
+          project_id: v.project_id,
+          portaal_id: portaal.id,
+          type: 'tekening',
+          titel: 'Visualisatie mockup',
+          omschrijving: v.prompt_gebruikt?.slice(0, 100) || '',
+          status: 'verstuurd',
+          zichtbaar_voor_klant: true,
+          volgorde: 0,
+          foto_url: v.resultaat_url,
+        })
+      }
+      toast.success('Visualisatie gedeeld via portaal')
+      setShareDropdownId(null)
+    } catch {
+      toast.error('Kon niet delen via portaal')
+    }
+  }, [user?.id])
+
+  const handleOpenShareEmail = useCallback((v: SigningVisualisatie) => {
+    const project = projecten.find(p => p.id === v.project_id)
+    setShareEmailVis(v)
+    setShareEmailTo('')
+    setShareEmailSubject(`Visualisatie${project ? ` — ${project.naam}` : ''}`)
+    setShareEmailBody(`Hallo,\n\nBijgaand een visualisatie van het gewenste ontwerp.\n\nMet vriendelijke groet`)
+    setShareDropdownId(null)
+  }, [projecten])
+
+  const handleSendShareEmail = useCallback(async () => {
+    if (!shareEmailVis || !shareEmailTo.trim()) return
+    setIsSendingShareEmail(true)
+    try {
+      const { sendEmail } = await import('@/services/gmailService')
+      const imgHtml = `<p><img src="${shareEmailVis.resultaat_url}" alt="Visualisatie" style="max-width:600px;border-radius:8px;" /></p>`
+      const bodyHtml = shareEmailBody.split('\n').map(l => `<p>${l || '&nbsp;'}</p>`).join('') + imgHtml
+      await sendEmail(shareEmailTo.trim(), shareEmailSubject.trim(), shareEmailBody, { html: bodyHtml })
+      toast.success(`Visualisatie verstuurd naar ${shareEmailTo.trim()}`)
+      setShareEmailVis(null)
+    } catch {
+      toast.error('Kon email niet versturen')
+    } finally {
+      setIsSendingShareEmail(false)
+    }
+  }, [shareEmailVis, shareEmailTo, shareEmailSubject, shareEmailBody])
+
   const handleDelete = useCallback(async (id: string) => {
     if (!user?.id) return
     try {
@@ -721,34 +782,53 @@ export function VisualizerLayout() {
   // START SCHERM — Generator formulier
   // ═══════════════════════════════════════════════════════════════════
   return (
-    <div className="h-full flex flex-col mod-strip mod-strip-visualizer">
-      {/* Header bar */}
-      <ModuleHeader
-        module="visualizer"
-        icon={Palette}
-        title="Signing Visualizer"
-        subtitle="Upload een foto of ontwerp, beschrijf het gewenste resultaat — AI doet de rest"
-        actions={
+    <div className="h-full flex flex-col">
+      {/* Header */}
+      <div className="sticky top-0 z-10 bg-[#F8F7F5]/80 backdrop-blur-sm border-b border-[#EBEBEB] px-8 py-3 flex-shrink-0">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl font-bold text-[#1A1A1A] tracking-[-0.3px]">Visualizer<span className="text-[#F15025]">.</span></h1>
+              <span className="text-xs font-mono text-[#9B9B95]">Nano Banana Gemini + Claude</span>
+            </div>
+            <p className="text-[13px] text-[#6B6B66] mt-0.5">Upload een foto, beschrijf wat je wilt zien — Claude verfijnt je prompt, Gemini genereert het beeld</p>
+          </div>
           <button
             onClick={() => setShowCreditsPakket(true)}
-            className={cn(
-              'text-sm font-medium px-3 py-1.5 rounded-full transition-colors cursor-pointer flex-shrink-0',
-              creditSaldo < 5
-                ? 'bg-flame-light text-flame-text hover:bg-flame-light/80'
-                : 'bg-petrol-light text-petrol hover:bg-petrol-light/80',
-            )}
+            className="text-sm font-mono font-medium px-3 py-1.5 rounded-lg transition-colors cursor-pointer flex-shrink-0 bg-[#F8F7F5] border border-[#EBEBEB] text-[#1A1A1A] hover:border-[#1A535C]/30"
           >
-            {creditSaldo} credits {creditSaldo < 5 ? '— bijkopen' : ''}
+            <span className="font-mono">{creditSaldo}</span> credits{creditSaldo < 5 && <span className="text-[#F15025] ml-1">— bijkopen</span>}
           </button>
-        }
-      />
+        </div>
+      </div>
 
       {/* Content */}
       <div className="flex-1 min-h-0 overflow-y-auto">
-      <div className="space-y-8 p-4 sm:p-6">
+      <div className="space-y-8 px-8 py-6">
+
+      {/* How it works */}
+      <div className="flex items-center gap-3 text-[13px]">
+        <div className="flex items-center gap-2 bg-[#FFFFFF] rounded-lg px-3 py-2 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+          <Upload className="h-4 w-4 text-[#1A535C]" />
+          <span className="text-[#1A1A1A] font-medium">Upload</span>
+          <span className="text-[#9B9B95]">foto + beschrijving</span>
+        </div>
+        <RotateCcw className="h-3 w-3 text-[#EBEBEB] rotate-180 flex-shrink-0" />
+        <div className="flex items-center gap-2 bg-[#FFFFFF] rounded-lg px-3 py-2 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+          <Sparkles className="h-4 w-4 text-[#1A535C]" />
+          <span className="text-[#1A1A1A] font-medium">Claude</span>
+          <span className="text-[#9B9B95]">verfijnt je prompt</span>
+        </div>
+        <RotateCcw className="h-3 w-3 text-[#EBEBEB] rotate-180 flex-shrink-0" />
+        <div className="flex items-center gap-2 bg-[#FFFFFF] rounded-lg px-3 py-2 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+          <ImageIcon className="h-4 w-4 text-[#F15025]" />
+          <span className="text-[#1A1A1A] font-medium">Gemini</span>
+          <span className="text-[#9B9B95]">genereert het beeld</span>
+        </div>
+      </div>
 
       {/* Generator form */}
-      <div className="border rounded-2xl bg-card p-6">
+      <div className="bg-[#FFFFFF] rounded-xl p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
         <div className="grid grid-cols-[1fr_1fr_1.5fr] gap-6">
           {/* Col 1: Foto */}
           <div>
@@ -907,18 +987,17 @@ export function VisualizerLayout() {
       {/* ═══ Library ═══ */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-foreground">Bibliotheek</h2>
+          <h2 className="text-xs font-semibold text-[#1A1A1A] uppercase tracking-wider">Bibliotheek</h2>
           <div className="flex items-center gap-1.5">
-            <Filter className="h-3.5 w-3.5 text-muted-foreground mr-1" />
             {(['alle', 'gekoppeld', 'los'] as const).map((val) => (
               <button
                 key={val}
                 onClick={() => setFilterKoppeling(val)}
                 className={cn(
-                  'rounded-full px-3 py-1.5 text-xs font-medium transition-colors',
+                  'px-3 py-1 text-xs font-medium rounded-md transition-colors',
                   filterKoppeling === val
-                    ? 'bg-petrol-light text-petrol'
-                    : 'text-muted-foreground hover:bg-muted',
+                    ? 'text-[#1A1A1A] bg-[#FFFFFF] shadow-[0_1px_3px_rgba(0,0,0,0.06)]'
+                    : 'text-[#9B9B95] hover:text-[#6B6B66]',
                 )}
               >
                 {val === 'alle' ? 'Alle' : val === 'gekoppeld' ? 'Aan project' : 'Losse mockups'}
@@ -942,14 +1021,14 @@ export function VisualizerLayout() {
               : 'Geen resultaten voor dit filter'}
           </div>
         ) : (
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {gefilterd.map((v, index) => {
               const project = projecten.find(p => p.id === v.project_id)
               const offerte = offertes.find(o => o.id === v.offerte_id)
               return (
                 <div
                   key={v.id}
-                  className="group relative border rounded-2xl overflow-hidden bg-card hover:shadow-lg transition-all"
+                  className="group relative rounded-xl overflow-hidden bg-[#FFFFFF] shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all"
                 >
                   <div className="aspect-[16/10] cursor-pointer overflow-hidden"
                     onClick={() => setLightboxIndex(index)}>
@@ -977,11 +1056,34 @@ export function VisualizerLayout() {
                   {/* Actions */}
                   <div className="absolute top-1.5 right-1.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Button size="sm" variant="secondary" className="h-6 w-6 p-0 rounded-lg"
-                      onClick={() => setLightboxIndex(index)}>
+                      onClick={() => setLightboxIndex(index)} title="Bekijken">
                       <Eye className="h-3 w-3" />
                     </Button>
+                    <div className="relative">
+                      <Button size="sm" variant="secondary" className="h-6 w-6 p-0 rounded-lg"
+                        onClick={() => setShareDropdownId(shareDropdownId === v.id ? null : v.id)} title="Delen">
+                        <Send className="h-3 w-3" />
+                      </Button>
+                      {shareDropdownId === v.id && (
+                        <>
+                          <div className="fixed inset-0 z-40" onClick={() => setShareDropdownId(null)} />
+                          <div className="absolute right-0 top-full mt-1 z-50 w-48 bg-[#FFFFFF] rounded-lg border border-[#EBEBEB] shadow-[0_4px_16px_rgba(0,0,0,0.12)] overflow-hidden">
+                            {v.project_id && (
+                              <button onClick={() => handleShareViaPortaal(v)} className="w-full text-left px-3 py-2 text-xs hover:bg-[#F8F7F5] transition-colors flex items-center gap-2">
+                                <Send className="h-3 w-3 text-[#1A535C]" />
+                                Via portaal
+                              </button>
+                            )}
+                            <button onClick={() => handleOpenShareEmail(v)} className="w-full text-left px-3 py-2 text-xs hover:bg-[#F8F7F5] transition-colors flex items-center gap-2">
+                              <Mail className="h-3 w-3 text-[#F15025]" />
+                              Via email
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
                     <Button size="sm" variant="secondary" className="h-6 w-6 p-0 rounded-lg"
-                      onClick={() => handleDownload(v.resultaat_url, v.id)}>
+                      onClick={() => handleDownload(v.resultaat_url, v.id)} title="Download">
                       <Download className="h-3 w-3" />
                     </Button>
                     {deleteConfirmId === v.id ? (
@@ -1010,6 +1112,46 @@ export function VisualizerLayout() {
           startIndex={lightboxIndex}
           onClose={() => setLightboxIndex(null)}
         />
+      )}
+
+      {/* Inline email compose voor delen */}
+      {shareEmailVis && (
+        <div className="fixed inset-0 z-50 bg-black/20 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShareEmailVis(null)}>
+          <div className="bg-[#FFFFFF] rounded-xl w-full max-w-lg shadow-[0_8px_32px_rgba(0,0,0,0.12)] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-3 border-b border-[#EBEBEB]/60">
+              <h3 className="text-sm font-semibold text-[#1A1A1A]">Visualisatie delen via email</h3>
+              <button onClick={() => setShareEmailVis(null)} className="text-[#9B9B95] hover:text-[#1A1A1A] transition-colors"><X className="h-4 w-4" /></button>
+            </div>
+            <div className="p-5 space-y-3">
+              {/* Preview */}
+              <img src={shareEmailVis.resultaat_url} alt="" className="w-full max-h-48 object-cover rounded-lg" />
+
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-medium text-[#9B9B95] w-16 flex-shrink-0">Aan</span>
+                <input value={shareEmailTo} onChange={(e) => setShareEmailTo(e.target.value)} placeholder="email@voorbeeld.nl" type="email" className="flex-1 text-sm px-3 py-2 border border-[#EBEBEB] rounded-lg bg-[#F8F7F5] focus:outline-none focus:border-[#1A535C]/40 focus:bg-white transition-colors" />
+              </div>
+              <input value={shareEmailSubject} onChange={(e) => setShareEmailSubject(e.target.value)} placeholder="Onderwerp..." className="w-full text-sm font-medium px-3 py-2 border border-[#EBEBEB] rounded-lg focus:outline-none focus:border-[#1A535C]/40 transition-colors" />
+              <textarea
+                value={shareEmailBody}
+                onChange={(e) => setShareEmailBody(e.target.value)}
+                rows={4}
+                className="w-full text-sm px-3 py-3 border border-[#EBEBEB] rounded-lg bg-[#F8F7F5] focus:outline-none focus:border-[#1A535C]/40 focus:bg-white transition-colors resize-y leading-relaxed"
+                placeholder="Bericht..."
+              />
+            </div>
+            <div className="flex items-center justify-between px-5 py-3 border-t border-[#EBEBEB]/60 bg-[#F8F7F5]/50">
+              <button onClick={() => setShareEmailVis(null)} className="text-sm text-[#9B9B95] hover:text-[#6B6B66] transition-colors">Annuleren</button>
+              <button
+                onClick={handleSendShareEmail}
+                disabled={!shareEmailTo.trim() || isSendingShareEmail}
+                className="inline-flex items-center gap-1.5 px-5 py-2 text-sm font-medium rounded-lg bg-[#F15025] text-white hover:bg-[#D94520] disabled:opacity-40 transition-colors"
+              >
+                <Send className="h-3.5 w-3.5" />
+                {isSendingShareEmail ? 'Verzenden...' : 'Verstuur'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Credits Pakket Dialog */}

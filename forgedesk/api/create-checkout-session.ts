@@ -17,7 +17,7 @@ function isAllowedRedirectUrl(url: string): boolean {
 
 const supabaseAdmin = createClient(
   process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || ''
+  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 )
 
 async function verifyUser(req: VercelRequest): Promise<{ id: string; email?: string }> {

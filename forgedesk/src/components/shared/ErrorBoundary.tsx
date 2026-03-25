@@ -30,6 +30,10 @@ export class ErrorBoundary extends Component<Props, State> {
     this.setState({ hasError: false, error: null })
   }
 
+  handleReload = () => {
+    window.location.reload()
+  }
+
   render() {
     if (this.state.hasError) {
       if (this.props.fallback) {
@@ -37,29 +41,36 @@ export class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div role="alert" aria-live="assertive" className="flex flex-col items-center justify-center min-h-[40vh] px-4 text-center">
-          <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-4">
-            <AlertTriangle className="w-8 h-8 text-red-500 dark:text-red-400" />
+        <div role="alert" aria-live="assertive" className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center bg-[#F8F7F5]">
+          <div className="w-14 h-14 bg-[#FDE8E4] rounded-2xl flex items-center justify-center mb-5">
+            <AlertTriangle className="w-7 h-7 text-[#C0451A]" />
           </div>
-          <h2 className="text-xl font-semibold text-foreground dark:text-white mb-2">
-            Er is iets misgegaan
+          <h2 className="text-xl font-bold text-[#1A1A1A] tracking-[-0.3px] mb-2">
+            Er is iets misgegaan<span className="text-[#F15025]">.</span>
           </h2>
-          <p className="text-muted-foreground dark:text-muted-foreground/60 max-w-md mb-2">
-            Er is een onverwachte fout opgetreden. Probeer het opnieuw.
+          <p className="text-sm text-[#6B6B66] max-w-md mb-2">
+            Er is een onverwachte fout opgetreden. Probeer het opnieuw of herlaad de pagina.
           </p>
           {this.state.error && (
-            <p className="text-sm text-red-500 dark:text-red-400 mb-4 font-mono max-w-lg break-all">
+            <p className="text-xs text-[#C0451A] mb-5 font-mono max-w-lg break-all bg-[#FDE8E4]/50 px-3 py-2 rounded-lg">
               {this.state.error.message}
             </p>
           )}
-          <button
-            onClick={this.handleReset}
-            aria-label="Opnieuw proberen"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <RotateCcw className="w-4 h-4" />
-            Opnieuw proberen
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={this.handleReset}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#1A535C] text-white text-sm font-medium rounded-lg hover:bg-[#164850] transition-colors"
+            >
+              <RotateCcw className="w-4 h-4" />
+              Opnieuw proberen
+            </button>
+            <button
+              onClick={this.handleReload}
+              className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-[#6B6B66] border border-[#EBEBEB] rounded-lg hover:bg-[#F8F7F5] transition-colors"
+            >
+              Pagina herladen
+            </button>
+          </div>
         </div>
       )
     }

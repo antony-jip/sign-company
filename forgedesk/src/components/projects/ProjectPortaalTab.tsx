@@ -307,7 +307,7 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
         ])
         const klant = project?.klant_id ? await getKlant(project.klant_id) : null
 
-        const doc = generateOffertePDF(
+        const doc = await generateOffertePDF(
           offerte,
           offerteItems,
           klant || {},

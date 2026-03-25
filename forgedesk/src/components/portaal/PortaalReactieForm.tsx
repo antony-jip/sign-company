@@ -18,7 +18,7 @@ interface PortaalReactieFormProps {
   onReactie: () => void // callback to refresh data
 }
 
-const NAAM_KEY = 'forgedesk_portaal_klant_naam'
+const NAAM_KEY = 'doen_portaal_klant_naam'
 const MAX_FILES = 5
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'application/pdf']

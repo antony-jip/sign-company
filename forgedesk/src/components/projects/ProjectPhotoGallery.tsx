@@ -157,43 +157,30 @@ export function ProjectPhotoGallery({
 
   return (
     <>
-      <Card className="border-black/[0.06] rounded-xl">
-        <CardContent className="p-4">
+      <div className="bg-[#FFFFFF] rounded-lg p-4 border border-[#EBEBEB]">
           {/* Header */}
           <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
-                <Camera className="h-3.5 w-3.5 text-white" />
-              </div>
-              <h3 className="text-sm font-bold tracking-[-0.02em] text-foreground">Situatiefoto's</h3>
-              {photos.length > 0 && (
-                <Badge variant="secondary" className="text-2xs font-mono px-1.5 py-0">
-                  {photos.length}
-                </Badge>
-              )}
-            </div>
+            <h3 className="text-xs font-semibold text-[#1A1A1A] uppercase tracking-wider">
+              Situatiefoto's
+              {photos.length > 0 && <span className="font-mono text-[#9B9B95] ml-1.5">{photos.length}</span>}
+            </h3>
             <div className="flex items-center gap-1.5">
               {photos.length > 0 && (
                 <>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 px-2 text-xs text-muted-foreground"
+                  <button
+                    className="text-[12px] font-medium text-[#1A535C] hover:underline"
                     onClick={() => setLightboxIndex(0)}
                   >
-                    <Eye className="h-3.5 w-3.5 mr-1" />
-                    Bekijk alles
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 px-2 text-xs text-muted-foreground"
+                    Bekijken
+                  </button>
+                  <span className="text-[#EBEBEB]">·</span>
+                  <button
+                    className="text-[12px] font-medium text-[#1A535C] hover:underline disabled:opacity-40"
                     onClick={handleBulkDownload}
                     disabled={isDownloading}
                   >
-                    <Download className="h-3.5 w-3.5 mr-1" />
-                    {isDownloading ? 'Downloaden...' : 'Download alles'}
-                  </Button>
+                    {isDownloading ? 'Downloaden...' : 'Download'}
+                  </button>
                 </>
               )}
             </div>
@@ -299,8 +286,7 @@ export function ProjectPhotoGallery({
               e.target.value = ''
             }}
           />
-        </CardContent>
-      </Card>
+      </div>
 
       {/* ── Lightbox ── */}
       {lightboxIndex !== null && currentPhoto && (

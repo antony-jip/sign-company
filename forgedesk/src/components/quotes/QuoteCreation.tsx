@@ -60,6 +60,11 @@ import {
   Pin,
   FolderPlus,
   FolderOpen,
+  Bold,
+  Italic,
+  Underline,
+  List,
+  Link2,
 } from 'lucide-react'
 import { getKlanten, getProjecten, getOffertes, createOfferte, createOfferteItem, updateKlant, createKlant, getOfferte, getOfferteItems, updateOfferte, deleteOfferteItem, getOfferteVersies, createOfferteVersie, getFactuur, createPortaal, createPortaalItem, getPortaalItems, createProject } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
@@ -114,7 +119,7 @@ export function QuoteCreation() {
   const [searchParams] = useSearchParams()
   const { id: routeId } = useParams<{ id: string }>()
   const { user } = useAuth()
-  const { settings, offertePrefix, offerteGeldigheidDagen, standaardBtw, bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur, logoUrl, profile, offerteToonM2, emailHandtekening } = useAppSettings()
+  const { settings, offertePrefix, offerteGeldigheidDagen, standaardBtw, bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur, logoUrl, profile, offerteToonM2, emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte } = useAppSettings()
   const documentStyle = useDocumentStyle()
   const [showKlantSelector, setShowKlantSelector] = useState(true)
   const [klanten, setKlanten] = useState<Klant[]>([])
@@ -776,7 +781,7 @@ export function QuoteCreation() {
   }
 
   // ── Clipboard helpers ──
-  const CLIPBOARD_KEY = 'forgedesk_clipboard_items'
+  const CLIPBOARD_KEY = 'doen_clipboard_items'
 
   const [clipboardCount, setClipboardCount] = useState(() => {
     try {
@@ -1558,7 +1563,7 @@ export function QuoteCreation() {
     }
   }
 
-  const handleDownloadPdf = () => {
+  const handleDownloadPdf = async () => {
     if (!selectedKlant) {
       toast.error('Selecteer eerst een klant')
       return
@@ -1609,7 +1614,7 @@ export function QuoteCreation() {
         bijlage_naam: item.bijlage_naam,
         created_at: new Date().toISOString(),
       }))
-      const doc = generateOffertePDF(offerteData, offerteItems, selectedKlant, {
+      const doc = await generateOffertePDF(offerteData, offerteItems, selectedKlant, {
         ...profile,
         primaireKleur: primaireKleur || '#2563eb',
       }, documentStyle)
@@ -1623,6 +1628,8 @@ export function QuoteCreation() {
 
   // ── Verstuur offerte → navigeer naar email compose pagina ──
   // ── Inline email compose state ──
+  const [showVerstuurKeuze, setShowVerstuurKeuze] = useState(false)
+  const [isSendingPortaal, setIsSendingPortaal] = useState(false)
   const [showEmailCompose, setShowEmailCompose] = useState(false)
   const [emailTo, setEmailTo] = useState('')
   const [emailCc, setEmailCc] = useState('')
@@ -1649,18 +1656,25 @@ export function QuoteCreation() {
       toast.info('Offerte wordt eerst opgeslagen...')
       await saveOfferte('concept')
     }
-    // Pre-fill email fields — use selected contactpersoon (FIX 7)
+    // Toon de keuze dialog
+    setShowVerstuurKeuze(true)
+  }
+
+  const handleKeuzeEmail = () => {
+    setShowVerstuurKeuze(false)
+    // Pre-fill email fields
     const selectedCp = selectedContactId
-      ? selectedKlant.contactpersonen?.find(c => c.id === selectedContactId)
-      : selectedKlant.contactpersonen?.[0]
-    const contactEmail = selectedCp?.email || selectedKlant.email || ''
-    const klantNaam = selectedCp?.naam || selectedKlant.contactpersoon || selectedKlant.bedrijfsnaam || ''
+      ? selectedKlant?.contactpersonen?.find(c => c.id === selectedContactId)
+      : selectedKlant?.contactpersonen?.[0]
+    const contactEmail = selectedCp?.email || selectedKlant?.email || ''
+    const klantNaam = selectedCp?.naam || selectedKlant?.contactpersoon || selectedKlant?.bedrijfsnaam || ''
     setEmailTo(contactEmail)
     setEmailSubject(`Offerte ${offerteNummer} - ${offerteTitel}`)
+    const signature = emailHandtekening ? `\n\n${emailHandtekening}` : `\n\nMet vriendelijke groet,\n${bedrijfsnaam || ''}`
     setEmailBody(
       introTekst
-        ? introTekst
-        : `Beste ${klantNaam},\n\nHierbij ontvangt u onze offerte ${offerteNummer} voor "${offerteTitel}".\n\nHet totaalbedrag van deze offerte is ${formatCurrency(round2(subtotaal + btwBedrag))} (incl. BTW).\n\nDe offerte is geldig tot ${geldigTot ? new Date(geldigTot).toLocaleDateString('nl-NL') : '-'}.\n\nMocht u vragen hebben of aanvullende informatie wensen, neem dan gerust contact met ons op.\n\nMet vriendelijke groet,\n${bedrijfsnaam || ''}`
+        ? introTekst + signature
+        : `Beste ${klantNaam},\n\nHierbij ontvangt u onze offerte ${offerteNummer} voor "${offerteTitel}".\n\nHet totaalbedrag van deze offerte is ${formatCurrency(round2(subtotaal + btwBedrag))} (incl. BTW).\n\nDe offerte is geldig tot ${geldigTot ? new Date(geldigTot).toLocaleDateString('nl-NL') : '-'}.\n\nMocht u vragen hebben of aanvullende informatie wensen, neem dan gerust contact met ons op.${signature}`
     )
     setEmailBijlagen([{ naam: `${offerteNummer}.pdf`, grootte: 0 }])
     setEmailScheduled(false)
@@ -1668,8 +1682,87 @@ export function QuoteCreation() {
     setEmailCc('')
     setEmailBcc('')
     setShowEmailCompose(true)
-    // Scroll to email section
     setTimeout(() => emailSectionRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
+  }
+
+  const handleKeuzePortaal = async () => {
+    if (!user?.id || !selectedKlant || !selectedProjectId) {
+      toast.error('Portaal vereist een gekoppeld project')
+      setShowVerstuurKeuze(false)
+      // Fallback naar email
+      handleKeuzeEmail()
+      return
+    }
+    setIsSendingPortaal(true)
+    try {
+      const savedQuoteId = editOfferteId || autoSaveIdRef.current
+      if (!savedQuoteId) { toast.error('Offerte nog niet opgeslagen'); return }
+
+      // Maak portaal aan (of hergebruik) + deel offerte
+      const portaal = await createPortaal(selectedProjectId, user.id)
+      const bestaandeItems = await getPortaalItems(portaal.id)
+      if (!bestaandeItems.find(i => i.type === 'offerte' && i.offerte_id === savedQuoteId)) {
+        await createPortaalItem({
+          user_id: user.id,
+          project_id: selectedProjectId,
+          portaal_id: portaal.id,
+          type: 'offerte',
+          offerte_id: savedQuoteId,
+          titel: `Offerte ${offerteNummer}`,
+          omschrijving: offerteTitel,
+          label: formatCurrency(round2(subtotaal + btwBedrag)),
+          status: 'verstuurd',
+          zichtbaar_voor_klant: true,
+          bedrag: round2(subtotaal + btwBedrag),
+          volgorde: 0,
+        })
+      }
+
+      // Update offerte status
+      if (savedQuoteId) {
+        await updateOfferte(savedQuoteId, {
+          status: 'verzonden',
+          verstuurd_op: new Date().toISOString(),
+        })
+      }
+
+      // Stuur email notificatie naar klant
+      const portaalUrl = `${window.location.origin}/portaal/${portaal.token}`
+      const selectedCp = selectedContactId
+        ? selectedKlant.contactpersonen?.find(c => c.id === selectedContactId)
+        : selectedKlant.contactpersonen?.[0]
+      const contactEmail = selectedCp?.email || selectedKlant.email || ''
+      const klantNaam = selectedCp?.naam || selectedKlant.contactpersoon || selectedKlant.bedrijfsnaam || ''
+
+      if (contactEmail) {
+        try {
+          const { buildPortalEmailHtml } = await import('@/utils/emailTemplate')
+          const htmlBody = buildPortalEmailHtml({
+            heading: `Er staat een nieuwe offerte voor u klaar.`,
+            itemTitel: `Offerte ${offerteNummer} — ${offerteTitel}`,
+            beschrijving: `Bedrag: ${formatCurrency(round2(subtotaal + btwBedrag))} incl. BTW`,
+            ctaLabel: 'Bekijk in portaal →',
+            ctaUrl: portaalUrl,
+            bedrijfsnaam,
+            logoUrl: profile?.logo_url || undefined,
+          })
+          const plainBody = `Beste ${klantNaam},\n\nEr staat een nieuwe offerte voor u klaar: ${offerteTitel}\nBedrag: ${formatCurrency(round2(subtotaal + btwBedrag))}\n\nBekijk het hier: ${portaalUrl}\n\nMet vriendelijke groet,\n${bedrijfsnaam || ''}`
+          await sendEmail(contactEmail, `Nieuwe offerte: ${offerteTitel}`, plainBody, { html: htmlBody })
+          toast.success(`Offerte gedeeld via portaal · Notificatie verstuurd naar ${contactEmail}`)
+        } catch {
+          toast.success('Offerte gedeeld via portaal (email notificatie mislukt)')
+        }
+      } else {
+        toast.success('Offerte gedeeld via portaal')
+      }
+
+      setShowVerstuurKeuze(false)
+    } catch (err) {
+      logger.error('Portaal delen mislukt:', err)
+      toast.error('Kon offerte niet delen via portaal')
+    } finally {
+      setIsSendingPortaal(false)
+    }
   }
 
   const handleSendEmailInline = async () => {
@@ -1734,6 +1827,8 @@ export function QuoteCreation() {
         bedrijfsnaam,
         primaireKleur,
         handtekening: emailHandtekening || undefined,
+        handtekeningAfbeelding: handtekeningAfbeelding || undefined,
+        handtekeningAfbeeldingGrootte: handtekeningAfbeeldingGrootte || undefined,
         logoUrl: profile?.logo_url || undefined,
         bekijkUrl,
       })
@@ -1770,7 +1865,7 @@ export function QuoteCreation() {
             detail_regels: item.detail_regels,
             is_optioneel: item.is_optioneel,
           })) as Parameters<typeof generateOffertePDF>[1]
-          const doc = generateOffertePDF(offerteData, pdfItems, selectedKlant, {
+          const doc = await generateOffertePDF(offerteData, pdfItems, selectedKlant, {
             ...profile,
             primaireKleur: primaireKleur || '#2563eb',
           }, documentStyle)
@@ -1858,38 +1953,38 @@ export function QuoteCreation() {
   // ────────────────────────────────────────────────────────────────────
   if (showKlantSelector && !isEditMode) {
     return (
-      <div className="relative -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 min-h-full" style={{ backgroundColor: '#F4F3F0' }}>
+      <div className="relative -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 min-h-full" style={{ backgroundColor: '#F8F7F5' }}>
         <div className="relative max-w-2xl mx-auto px-4 py-8 md:py-12 animate-fade-in-up">
           {/* Header */}
           <div className="flex items-center gap-4 mb-8">
             <button
               className="h-10 w-10 rounded-xl flex items-center justify-center transition-colors"
-              style={{ backgroundColor: '#FFFFFE', border: '0.5px solid #E6E4E0' }}
+              style={{ backgroundColor: '#FFFFFF', border: '1px solid #EBEBEB' }}
               onClick={() => {
                 const from = (location.state as { from?: string })?.from
                 navigate(from || '/offertes')
               }}
             >
-              <ArrowLeft className="h-4 w-4" style={{ color: '#5A5A55' }} />
+              <ArrowLeft className="h-4 w-4" style={{ color: '#6B6B66' }} />
             </button>
             <div className="h-12 w-12 rounded-2xl flex items-center justify-center shadow-sm" style={{ backgroundColor: '#F15025' }}>
               <Receipt className="h-5 w-5 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight" style={{ color: '#191919' }}>Nieuwe Offerte</h1>
-              <p className="text-[13px]" style={{ color: '#5A5A55' }}>Selecteer een klant en vul de details in</p>
+              <h1 className="text-2xl font-bold tracking-tight" style={{ color: '#1A1A1A' }}>Nieuwe Offerte</h1>
+              <p className="text-[13px]" style={{ color: '#6B6B66' }}>Selecteer een klant en vul de details in</p>
             </div>
           </div>
 
         <div className="space-y-4">
           {/* Step 1: Klant */}
-          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#FFFFFE', border: '0.5px solid #E6E4E0' }}>
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#FFFFFF', border: '1px solid #EBEBEB' }}>
             <div className="h-[3px]" style={{ background: 'linear-gradient(90deg, #F15025, #F1502560)' }} />
             <div className="flex items-center gap-3 px-5 pt-4 pb-1">
               <div className="flex items-center justify-center h-7 w-7 rounded-lg text-white text-[11px] font-bold" style={{ backgroundColor: '#F15025' }}>1</div>
               <div>
-                <span className="text-[13px] font-semibold" style={{ color: '#191919' }}>Klant</span>
-                <p className="text-[11px]" style={{ color: '#A0A098' }}>Wie is de opdrachtgever?</p>
+                <span className="text-[13px] font-semibold" style={{ color: '#1A1A1A' }}>Klant</span>
+                <p className="text-[11px]" style={{ color: '#9B9B95' }}>Wie is de opdrachtgever?</p>
               </div>
             </div>
             <div className="px-5 pb-5 pt-3 space-y-3">
@@ -1897,52 +1992,52 @@ export function QuoteCreation() {
                 {!selectedKlant && (
                   <div className="relative">
                     <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: '#A0A098' }} />
-                      <Input value={klantSearch} onChange={(e) => { setKlantSearch(e.target.value); setShowKlantResults(true); setShowNieuwBedrijf(false) }} onFocus={() => setShowKlantResults(true)} placeholder="Zoek op bedrijfsnaam, contactpersoon of email..." className="pl-10 h-10 rounded-lg text-[13px]" style={{ backgroundColor: '#FAFAF8', border: '0.5px solid #E6E4E0' }} />
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: '#9B9B95' }} />
+                      <Input value={klantSearch} onChange={(e) => { setKlantSearch(e.target.value); setShowKlantResults(true); setShowNieuwBedrijf(false) }} onFocus={() => setShowKlantResults(true)} placeholder="Zoek op bedrijfsnaam, contactpersoon of email..." className="pl-10 h-10 rounded-lg text-[13px]" style={{ backgroundColor: '#F8F7F5', border: '1px solid #EBEBEB' }} />
                     </div>
                     {showKlantResults && !showNieuwBedrijf && (
-                      <div className="absolute z-50 w-full mt-1 rounded-lg border bg-[#FEFDFB] shadow-lg max-h-[320px] overflow-y-auto" style={{ border: '0.5px solid #E6E4E0' }}>
-                        <button className="w-full text-left px-3 py-2.5 flex items-center gap-2 text-[#1A535C] hover:bg-[#E2F0F0]/50 transition-colors border-b" style={{ borderColor: '#E6E4E0' }} onClick={() => { setShowNieuwBedrijf(true); setNbData((p) => ({ ...p, bedrijfsnaam: klantSearch })) }}>
+                      <div className="absolute z-50 w-full mt-1 rounded-lg border bg-[#FEFDFB] shadow-lg max-h-[320px] overflow-y-auto" style={{ border: '1px solid #EBEBEB' }}>
+                        <button className="w-full text-left px-3 py-2.5 flex items-center gap-2 text-[#1A535C] hover:bg-[#E2F0F0]/50 transition-colors border-b" style={{ borderColor: '#EBEBEB' }} onClick={() => { setShowNieuwBedrijf(true); setNbData((p) => ({ ...p, bedrijfsnaam: klantSearch })) }}>
                           <Plus className="w-4 h-4" /><span className="text-[13px] font-medium">Nieuw bedrijf toevoegen{klantSearch.trim() ? `: "${klantSearch.trim()}"` : ''}</span>
                         </button>
                         {filteredKlanten.length === 0 ? (
-                          <div className="py-4 text-center text-[13px]" style={{ color: '#A0A098' }}>Geen klanten gevonden</div>
+                          <div className="py-4 text-center text-[13px]" style={{ color: '#9B9B95' }}>Geen klanten gevonden</div>
                         ) : filteredKlanten.map((klant) => (
-                          <button key={klant.id} className="w-full text-left px-3 py-2 hover:bg-[#F4F2EE] transition-colors border-b last:border-0" style={{ borderColor: '#E6E4E0' }} onClick={() => { setSelectedKlantId(klant.id); setKlantSearch(''); setShowKlantResults(false) }}>
-                            <p className="text-[13px] font-medium" style={{ color: '#191919' }}>{klant.bedrijfsnaam}</p>
+                          <button key={klant.id} className="w-full text-left px-3 py-2 hover:bg-[#F4F2EE] transition-colors border-b last:border-0" style={{ borderColor: '#EBEBEB' }} onClick={() => { setSelectedKlantId(klant.id); setKlantSearch(''); setShowKlantResults(false) }}>
+                            <p className="text-[13px] font-medium" style={{ color: '#1A1A1A' }}>{klant.bedrijfsnaam}</p>
                             <div className="flex items-center gap-2">
-                              {klant.contactpersoon && <span className="text-[11px]" style={{ color: '#5A5A55' }}>{klant.contactpersoon}</span>}
-                              {klant.stad && <span className="text-[11px]" style={{ color: '#A0A098' }}>{klant.stad}</span>}
+                              {klant.contactpersoon && <span className="text-[11px]" style={{ color: '#6B6B66' }}>{klant.contactpersoon}</span>}
+                              {klant.stad && <span className="text-[11px]" style={{ color: '#9B9B95' }}>{klant.stad}</span>}
                             </div>
                           </button>
                         ))}
                       </div>
                     )}
                     {showNieuwBedrijf && (
-                      <div className="mt-2 rounded-lg p-4 space-y-3" style={{ border: '0.5px solid #E6E4E0', backgroundColor: '#FAFAF8' }}>
-                        <div className="flex items-center gap-2 mb-1"><Building2 className="h-4 w-4" style={{ color: '#1A535C' }} /><span className="text-[13px] font-semibold" style={{ color: '#191919' }}>Nieuw bedrijf</span></div>
+                      <div className="mt-2 rounded-lg p-4 space-y-3" style={{ border: '1px solid #EBEBEB', backgroundColor: '#F8F7F5' }}>
+                        <div className="flex items-center gap-2 mb-1"><Building2 className="h-4 w-4" style={{ color: '#1A535C' }} /><span className="text-[13px] font-semibold" style={{ color: '#1A1A1A' }}>Nieuw bedrijf</span></div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          <Input value={nbData.bedrijfsnaam} onChange={(e) => setNbData({ ...nbData, bedrijfsnaam: e.target.value })} placeholder="Bedrijfsnaam *" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} autoFocus />
-                          <Input value={nbData.stad} onChange={(e) => setNbData({ ...nbData, stad: e.target.value })} placeholder="Stad" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
+                          <Input value={nbData.bedrijfsnaam} onChange={(e) => setNbData({ ...nbData, bedrijfsnaam: e.target.value })} placeholder="Bedrijfsnaam *" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} autoFocus />
+                          <Input value={nbData.stad} onChange={(e) => setNbData({ ...nbData, stad: e.target.value })} placeholder="Stad" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} />
                         </div>
-                        <button onClick={() => setShowNbUitgebreid(!showNbUitgebreid)} className="flex items-center gap-1.5 text-[11px] font-medium" style={{ color: '#A0A098' }}>
+                        <button onClick={() => setShowNbUitgebreid(!showNbUitgebreid)} className="flex items-center gap-1.5 text-[11px] font-medium" style={{ color: '#9B9B95' }}>
                           {showNbUitgebreid ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}{showNbUitgebreid ? 'Minder gegevens' : 'Meer gegevens (adres, KvK, etc.)'}
                         </button>
                         {showNbUitgebreid && (
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            <Input value={nbData.contactpersoon} onChange={(e) => setNbData({ ...nbData, contactpersoon: e.target.value })} placeholder="Contactpersoon" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
-                            <Input value={nbData.email} onChange={(e) => setNbData({ ...nbData, email: e.target.value })} placeholder="E-mail" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
-                            <Input value={nbData.telefoon} onChange={(e) => setNbData({ ...nbData, telefoon: e.target.value })} placeholder="Telefoon" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
-                            <Input value={nbData.adres} onChange={(e) => setNbData({ ...nbData, adres: e.target.value })} placeholder="Adres" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
-                            <Input value={nbData.postcode} onChange={(e) => setNbData({ ...nbData, postcode: e.target.value })} placeholder="Postcode" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
-                            <Input value={nbData.website} onChange={(e) => setNbData({ ...nbData, website: e.target.value })} placeholder="Website" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
-                            <Input value={nbData.kvk_nummer} onChange={(e) => setNbData({ ...nbData, kvk_nummer: e.target.value })} placeholder="KvK-nummer" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
-                            <Input value={nbData.btw_nummer} onChange={(e) => setNbData({ ...nbData, btw_nummer: e.target.value })} placeholder="BTW-nummer" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
+                            <Input value={nbData.contactpersoon} onChange={(e) => setNbData({ ...nbData, contactpersoon: e.target.value })} placeholder="Contactpersoon" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} />
+                            <Input value={nbData.email} onChange={(e) => setNbData({ ...nbData, email: e.target.value })} placeholder="E-mail" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} />
+                            <Input value={nbData.telefoon} onChange={(e) => setNbData({ ...nbData, telefoon: e.target.value })} placeholder="Telefoon" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} />
+                            <Input value={nbData.adres} onChange={(e) => setNbData({ ...nbData, adres: e.target.value })} placeholder="Adres" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} />
+                            <Input value={nbData.postcode} onChange={(e) => setNbData({ ...nbData, postcode: e.target.value })} placeholder="Postcode" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} />
+                            <Input value={nbData.website} onChange={(e) => setNbData({ ...nbData, website: e.target.value })} placeholder="Website" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} />
+                            <Input value={nbData.kvk_nummer} onChange={(e) => setNbData({ ...nbData, kvk_nummer: e.target.value })} placeholder="KvK-nummer" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} />
+                            <Input value={nbData.btw_nummer} onChange={(e) => setNbData({ ...nbData, btw_nummer: e.target.value })} placeholder="BTW-nummer" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} />
                           </div>
                         )}
                         <div className="flex items-center gap-2 pt-1">
                           <button onClick={handleCreateNieuwBedrijf} disabled={!nbData.bedrijfsnaam.trim() || nbCreating} className="h-8 px-3 text-[12px] font-semibold rounded-lg text-white transition-all hover:opacity-90 disabled:opacity-50 flex items-center gap-1.5" style={{ backgroundColor: '#1A535C' }}><Plus className="h-3.5 w-3.5" />{nbCreating ? 'Aanmaken...' : 'Bedrijf aanmaken'}</button>
-                          <button onClick={() => { setShowNieuwBedrijf(false); setShowKlantResults(true) }} className="h-8 px-3 text-[12px] font-medium rounded-lg" style={{ color: '#5A5A55' }}>Annuleren</button>
+                          <button onClick={() => { setShowNieuwBedrijf(false); setShowKlantResults(true) }} className="h-8 px-3 text-[12px] font-medium rounded-lg" style={{ color: '#6B6B66' }}>Annuleren</button>
                         </div>
                       </div>
                     )}
@@ -1950,32 +2045,32 @@ export function QuoteCreation() {
                 )}
               </div>
               {selectedKlant && (
-                <div className="rounded-lg p-3" style={{ backgroundColor: '#FAFAF8', border: '0.5px solid #E6E4E0' }}>
+                <div className="rounded-lg p-3" style={{ backgroundColor: '#F8F7F5', border: '1px solid #EBEBEB' }}>
                   <div className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#8BAFD4] to-[#6B8FB4] flex items-center justify-center flex-shrink-0">
                       <span className="text-white font-bold text-[10px]">{selectedKlant.bedrijfsnaam[0]?.toUpperCase()}</span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-semibold text-[13px] truncate" style={{ color: '#191919' }}>{selectedKlant.bedrijfsnaam}</h4>
+                      <h4 className="font-semibold text-[13px] truncate" style={{ color: '#1A1A1A' }}>{selectedKlant.bedrijfsnaam}</h4>
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
-                        {selectedKlant.email && <span className="flex items-center gap-1 text-[11px]" style={{ color: '#5A5A55' }}><Mail className="h-3 w-3" />{selectedKlant.email}</span>}
-                        {selectedKlant.telefoon && <span className="flex items-center gap-1 text-[11px] font-mono" style={{ color: '#5A5A55' }}><Phone className="h-3 w-3" />{selectedKlant.telefoon}</span>}
+                        {selectedKlant.email && <span className="flex items-center gap-1 text-[11px]" style={{ color: '#6B6B66' }}><Mail className="h-3 w-3" />{selectedKlant.email}</span>}
+                        {selectedKlant.telefoon && <span className="flex items-center gap-1 text-[11px] font-mono" style={{ color: '#6B6B66' }}><Phone className="h-3 w-3" />{selectedKlant.telefoon}</span>}
                       </div>
                     </div>
                     <button className="h-7 w-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors hover:bg-[#F4F2EE]" onClick={() => { setSelectedKlantId(''); setSelectedProjectId(''); setContactpersoon(''); setSelectedContactId('') }}>
-                      <X className="h-3.5 w-3.5" style={{ color: '#A0A098' }} />
+                      <X className="h-3.5 w-3.5" style={{ color: '#9B9B95' }} />
                     </button>
                   </div>
                 </div>
               )}
               {selectedKlantId && (
                 <div className="space-y-1.5">
-                  <Label className="text-[11px] font-semibold uppercase tracking-wider flex items-center gap-1.5" style={{ color: '#A0A098' }}>Project <span className="text-[11px] font-normal normal-case tracking-normal">(optioneel)</span></Label>
+                  <Label className="text-[11px] font-semibold uppercase tracking-wider flex items-center gap-1.5" style={{ color: '#9B9B95' }}>Project <span className="text-[11px] font-normal normal-case tracking-normal">(optioneel)</span></Label>
                   {klantProjecten.length > 0 ? (
                     <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
-                      <SelectTrigger className="h-10 rounded-lg text-[13px]" style={{ backgroundColor: '#FAFAF8', border: '0.5px solid #E6E4E0' }}><SelectValue placeholder="Koppel aan een project..." /></SelectTrigger>
+                      <SelectTrigger className="h-10 rounded-lg text-[13px]" style={{ backgroundColor: '#F8F7F5', border: '1px solid #EBEBEB' }}><SelectValue placeholder="Koppel aan een project..." /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="geen"><span style={{ color: '#A0A098' }}>Geen project</span></SelectItem>
+                        <SelectItem value="geen"><span style={{ color: '#9B9B95' }}>Geen project</span></SelectItem>
                         {klantProjecten.map((project) => (
                           <SelectItem key={project.id} value={project.id}>
                             <div className="flex items-center gap-2"><span className="font-medium">{project.naam}</span><Badge variant="outline" className="text-2xs px-1.5 py-0">{project.status}</Badge></div>
@@ -1983,20 +2078,20 @@ export function QuoteCreation() {
                         ))}
                       </SelectContent>
                     </Select>
-                  ) : <p className="text-[11px] py-1" style={{ color: '#A0A098' }}>Geen projecten gevonden voor deze klant</p>}
+                  ) : <p className="text-[11px] py-1" style={{ color: '#9B9B95' }}>Geen projecten gevonden voor deze klant</p>}
                 </div>
               )}
             </div>
           </div>
 
           {/* Step 2: Contactpersoon — compact */}
-          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#FFFFFE', border: '0.5px solid #E6E4E0' }}>
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#FFFFFF', border: '1px solid #EBEBEB' }}>
             <div className="h-[3px]" style={{ background: 'linear-gradient(90deg, #9A4070, #9A407060)' }} />
             <div className="flex items-center gap-3 px-5 pt-4 pb-1">
               <div className="flex items-center justify-center h-7 w-7 rounded-lg text-white text-[11px] font-bold" style={{ backgroundColor: '#9A4070' }}>2</div>
               <div>
-                <span className="text-[13px] font-semibold" style={{ color: '#191919' }}>Contactpersoon</span>
-                <p className="text-[11px]" style={{ color: '#A0A098' }}>Wie ontvangt de offerte?</p>
+                <span className="text-[13px] font-semibold" style={{ color: '#1A1A1A' }}>Contactpersoon</span>
+                <p className="text-[11px]" style={{ color: '#9B9B95' }}>Wie ontvangt de offerte?</p>
               </div>
             </div>
             <div className="px-5 pb-5 pt-3 space-y-2">
@@ -2005,12 +2100,12 @@ export function QuoteCreation() {
                   {(selectedKlant.contactpersonen?.length > 0 || selectedKlant.contactpersoon) && (
                     <div className="space-y-1.5">
                       {selectedKlant.contactpersonen?.map((cp) => (
-                        <button key={cp.id} onClick={() => handleSelectContact(cp.id)} className={cn('w-full text-left rounded-lg p-2.5 transition-all')} style={{ border: selectedContactId === cp.id ? '1px solid #1A535C' : '0.5px solid #E6E4E0', backgroundColor: selectedContactId === cp.id ? '#E2F0F0' : 'transparent' }}>
+                        <button key={cp.id} onClick={() => handleSelectContact(cp.id)} className={cn('w-full text-left rounded-lg p-2.5 transition-all')} style={{ border: selectedContactId === cp.id ? '1px solid #1A535C' : '0.5px solid #EBEBEB', backgroundColor: selectedContactId === cp.id ? '#E2F0F0' : 'transparent' }}>
                           <div className="flex items-center gap-2">
-                            <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold" style={{ backgroundColor: selectedContactId === cp.id ? '#1A535C' : '#EEEEED', color: selectedContactId === cp.id ? '#FFFFFF' : '#5A5A55' }}>{cp.naam[0]?.toUpperCase()}</div>
+                            <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold" style={{ backgroundColor: selectedContactId === cp.id ? '#1A535C' : '#EBEBEB', color: selectedContactId === cp.id ? '#FFFFFF' : '#6B6B66' }}>{cp.naam[0]?.toUpperCase()}</div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-[13px] font-medium truncate" style={{ color: '#191919' }}>{cp.naam}</p>
-                              {cp.functie && <p className="text-[11px] truncate" style={{ color: '#A0A098' }}>{cp.functie}</p>}
+                              <p className="text-[13px] font-medium truncate" style={{ color: '#1A1A1A' }}>{cp.naam}</p>
+                              {cp.functie && <p className="text-[11px] truncate" style={{ color: '#9B9B95' }}>{cp.functie}</p>}
                             </div>
                             {cp.is_primair && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: '#E2F0F0', color: '#1A535C' }}>primair</span>}
                           </div>
@@ -2020,94 +2115,94 @@ export function QuoteCreation() {
                         <div className="rounded-lg p-2.5" style={{ border: '1px solid #1A535C', backgroundColor: '#E2F0F0' }}>
                           <div className="flex items-center gap-2">
                             <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold" style={{ backgroundColor: '#1A535C', color: '#FFFFFF' }}>{selectedKlant.contactpersoon[0]?.toUpperCase()}</div>
-                            <p className="text-[13px] font-medium" style={{ color: '#191919' }}>{selectedKlant.contactpersoon}</p>
+                            <p className="text-[13px] font-medium" style={{ color: '#1A1A1A' }}>{selectedKlant.contactpersoon}</p>
                           </div>
                         </div>
                       )}
                     </div>
                   )}
                   {!showNewContact ? (
-                    <button onClick={() => setShowNewContact(true)} className="w-full flex items-center gap-2 text-[11px] py-2 px-3 rounded-lg transition-colors hover:bg-[#FAFAF8]" style={{ border: '1px dashed #E6E4E0', color: '#A0A098' }}>
+                    <button onClick={() => setShowNewContact(true)} className="w-full flex items-center gap-2 text-[11px] py-2 px-3 rounded-lg transition-colors hover:bg-[#F8F7F5]" style={{ border: '1px dashed #EBEBEB', color: '#9B9B95' }}>
                       <UserPlus className="h-3.5 w-3.5" />Nieuwe contactpersoon toevoegen
                     </button>
                   ) : (
-                    <div className="rounded-lg p-3.5 space-y-2" style={{ border: '0.5px solid #E6E4E0', backgroundColor: '#FAFAF8' }}>
-                      <p className="text-[12px] font-semibold flex items-center gap-1.5" style={{ color: '#191919' }}><UserPlus className="h-3.5 w-3.5" style={{ color: '#1A535C' }} />Nieuwe contactpersoon</p>
-                      <Input value={newContactNaam} onChange={(e) => setNewContactNaam(e.target.value)} placeholder="Naam *" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} autoFocus />
-                      <Input value={newContactFunctie} onChange={(e) => setNewContactFunctie(e.target.value)} placeholder="Functie" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
-                      <Input value={newContactEmail} onChange={(e) => setNewContactEmail(e.target.value)} placeholder="E-mailadres" type="email" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
-                      <Input value={newContactTelefoon} onChange={(e) => setNewContactTelefoon(e.target.value)} placeholder="Telefoonnummer" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
+                    <div className="rounded-lg p-3.5 space-y-2" style={{ border: '1px solid #EBEBEB', backgroundColor: '#F8F7F5' }}>
+                      <p className="text-[12px] font-semibold flex items-center gap-1.5" style={{ color: '#1A1A1A' }}><UserPlus className="h-3.5 w-3.5" style={{ color: '#1A535C' }} />Nieuwe contactpersoon</p>
+                      <Input value={newContactNaam} onChange={(e) => setNewContactNaam(e.target.value)} placeholder="Naam *" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} autoFocus />
+                      <Input value={newContactFunctie} onChange={(e) => setNewContactFunctie(e.target.value)} placeholder="Functie" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} />
+                      <Input value={newContactEmail} onChange={(e) => setNewContactEmail(e.target.value)} placeholder="E-mailadres" type="email" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} />
+                      <Input value={newContactTelefoon} onChange={(e) => setNewContactTelefoon(e.target.value)} placeholder="Telefoonnummer" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} />
                       <div className="flex items-center gap-2 pt-1">
                         <button onClick={handleAddContact} disabled={!newContactNaam.trim()} className="h-7 px-3 text-[11px] font-semibold rounded-lg text-white transition-all hover:opacity-90 disabled:opacity-50 flex items-center gap-1" style={{ backgroundColor: '#1A535C' }}><Plus className="h-3 w-3" />Toevoegen</button>
-                        <button onClick={() => { setShowNewContact(false); setNewContactNaam(''); setNewContactFunctie(''); setNewContactEmail(''); setNewContactTelefoon('') }} className="h-7 px-3 text-[11px] font-medium rounded-lg" style={{ color: '#5A5A55' }}>Annuleren</button>
+                        <button onClick={() => { setShowNewContact(false); setNewContactNaam(''); setNewContactFunctie(''); setNewContactEmail(''); setNewContactTelefoon('') }} className="h-7 px-3 text-[11px] font-medium rounded-lg" style={{ color: '#6B6B66' }}>Annuleren</button>
                       </div>
                     </div>
                   )}
                   {!showNewContact && (
-                    <div className="space-y-1 pt-2" style={{ borderTop: '0.5px solid #E6E4E0' }}>
-                      <Label className="text-[11px]" style={{ color: '#A0A098' }}>Of typ een naam</Label>
-                      <Input value={contactpersoon} onChange={(e) => { setContactpersoon(e.target.value); setSelectedContactId('') }} placeholder="Contactpersoon naam..." className="h-9 text-[13px] rounded-lg" style={{ backgroundColor: '#FAFAF8', border: '0.5px solid #E6E4E0' }} />
+                    <div className="space-y-1 pt-2" style={{ borderTop: '0.5px solid #EBEBEB' }}>
+                      <Label className="text-[11px]" style={{ color: '#9B9B95' }}>Of typ een naam</Label>
+                      <Input value={contactpersoon} onChange={(e) => { setContactpersoon(e.target.value); setSelectedContactId('') }} placeholder="Contactpersoon naam..." className="h-9 text-[13px] rounded-lg" style={{ backgroundColor: '#F8F7F5', border: '1px solid #EBEBEB' }} />
                     </div>
                   )}
                 </>
               ) : (
                 <div className="flex flex-col items-center py-4 text-center">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2" style={{ backgroundColor: '#EEEEED' }}>
-                    <User className="h-4 w-4" style={{ color: '#A0A098' }} />
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2" style={{ backgroundColor: '#EBEBEB' }}>
+                    <User className="h-4 w-4" style={{ color: '#9B9B95' }} />
                   </div>
-                  <p className="text-[12px]" style={{ color: '#A0A098' }}>Selecteer eerst een klant</p>
+                  <p className="text-[12px]" style={{ color: '#9B9B95' }}>Selecteer eerst een klant</p>
                 </div>
               )}
             </div>
           </div>
 
           {/* Step 3: Offerte details */}
-          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#FFFFFE', border: '0.5px solid #E6E4E0' }}>
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#FFFFFF', border: '1px solid #EBEBEB' }}>
             <div className="h-[3px]" style={{ background: 'linear-gradient(90deg, #3A6B8C, #3A6B8C60)' }} />
             <div className="flex items-center gap-3 px-5 pt-4 pb-1">
               <div className="flex items-center justify-center h-7 w-7 rounded-lg text-white text-[11px] font-bold" style={{ backgroundColor: '#3A6B8C' }}>3</div>
               <div>
-                <span className="text-[13px] font-semibold" style={{ color: '#191919' }}>Offerte details</span>
-                <p className="text-[11px]" style={{ color: '#A0A098' }}>Titel, nummer en geldigheid</p>
+                <span className="text-[13px] font-semibold" style={{ color: '#1A1A1A' }}>Offerte details</span>
+                <p className="text-[11px]" style={{ color: '#9B9B95' }}>Titel, nummer en geldigheid</p>
               </div>
             </div>
             <div className="px-5 pb-5 pt-3 space-y-3">
               <div className="space-y-1.5">
-                <Label htmlFor="offerte-titel" className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: '#A0A098' }}>Titel</Label>
-                <Input id="offerte-titel" value={offerteTitel} onChange={(e) => setOfferteTitel(e.target.value)} placeholder="bijv. Gevelreclame nieuwe locatie, Autobelettering wagenpark..." className="text-[14px] h-10 rounded-lg" style={{ backgroundColor: '#FAFAF8', border: '0.5px solid #E6E4E0' }} autoFocus />
+                <Label htmlFor="offerte-titel" className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: '#9B9B95' }}>Titel</Label>
+                <Input id="offerte-titel" value={offerteTitel} onChange={(e) => setOfferteTitel(e.target.value)} placeholder="bijv. Gevelreclame nieuwe locatie, Autobelettering wagenpark..." className="text-[14px] h-10 rounded-lg" style={{ backgroundColor: '#F8F7F5', border: '1px solid #EBEBEB' }} autoFocus />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label htmlFor="offerte-nummer" className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: '#A0A098' }}>Nummer</Label>
-                  <Input id="offerte-nummer" value={offerteNummer} readOnly className="text-[13px] font-mono h-10 rounded-lg" style={{ backgroundColor: '#EEEEED', border: '0.5px solid #E6E4E0', color: '#5A5A55' }} />
+                  <Label htmlFor="offerte-nummer" className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: '#9B9B95' }}>Nummer</Label>
+                  <Input id="offerte-nummer" value={offerteNummer} readOnly className="text-[13px] font-mono h-10 rounded-lg" style={{ backgroundColor: '#EBEBEB', border: '1px solid #EBEBEB', color: '#6B6B66' }} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="geldig-tot" className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: '#A0A098' }}>Geldig tot</Label>
-                  <Input id="geldig-tot" type="date" value={geldigTot} onChange={(e) => setGeldigTot(e.target.value)} className="text-[13px] font-mono h-10 rounded-lg" style={{ backgroundColor: '#FAFAF8', border: '0.5px solid #E6E4E0' }} />
+                  <Label htmlFor="geldig-tot" className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: '#9B9B95' }}>Geldig tot</Label>
+                  <Input id="geldig-tot" type="date" value={geldigTot} onChange={(e) => setGeldigTot(e.target.value)} className="text-[13px] font-mono h-10 rounded-lg" style={{ backgroundColor: '#F8F7F5', border: '1px solid #EBEBEB' }} />
                 </div>
               </div>
             </div>
           </div>
 
           {/* Step 4: Aantal items */}
-          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#FFFFFE', border: '0.5px solid #E6E4E0' }}>
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#FFFFFF', border: '1px solid #EBEBEB' }}>
             <div className="h-[3px]" style={{ background: 'linear-gradient(90deg, #1A535C, #1A535C60)' }} />
             <div className="flex items-center gap-3 px-5 pt-4 pb-1">
               <div className="flex items-center justify-center h-7 w-7 rounded-lg text-white text-[11px] font-bold" style={{ backgroundColor: '#1A535C' }}>4</div>
               <div>
-                <span className="text-[13px] font-semibold" style={{ color: '#191919' }}>Aantal items</span>
-                <p className="text-[11px]" style={{ color: '#A0A098' }}>Hoeveel prijsberekeningen?</p>
+                <span className="text-[13px] font-semibold" style={{ color: '#1A1A1A' }}>Aantal items</span>
+                <p className="text-[11px]" style={{ color: '#9B9B95' }}>Hoeveel prijsberekeningen?</p>
               </div>
             </div>
             <div className="px-5 pb-5 pt-3">
-              <p className="text-[12px] mb-3" style={{ color: '#5A5A55' }}>Elk item is een complete prijsberekening. Je kunt later altijd items toevoegen of verwijderen.</p>
+              <p className="text-[12px] mb-3" style={{ color: '#6B6B66' }}>Elk item is een complete prijsberekening. Je kunt later altijd items toevoegen of verwijderen.</p>
               <div className="flex items-center gap-2">
                 {ITEM_COUNT_OPTIONS.map((count) => (
-                  <button key={count} onClick={() => setItemCount(count)} className="h-10 w-10 rounded-lg text-[14px] font-bold transition-all" style={{ border: itemCount === count ? '2px solid #1A535C' : '0.5px solid #E6E4E0', backgroundColor: itemCount === count ? '#1A535C' : '#FAFAF8', color: itemCount === count ? '#FFFFFF' : '#191919' }}>
+                  <button key={count} onClick={() => setItemCount(count)} className="h-10 w-10 rounded-lg text-[14px] font-bold transition-all" style={{ border: itemCount === count ? '2px solid #1A535C' : '0.5px solid #EBEBEB', backgroundColor: itemCount === count ? '#1A535C' : '#F8F7F5', color: itemCount === count ? '#FFFFFF' : '#1A1A1A' }}>
                     {count}
                   </button>
                 ))}
-                <span className="text-[12px] ml-2 font-medium" style={{ color: '#A0A098' }}>{itemCount === 1 ? 'item' : 'items'}</span>
+                <span className="text-[12px] ml-2 font-medium" style={{ color: '#9B9B95' }}>{itemCount === 1 ? 'item' : 'items'}</span>
               </div>
             </div>
           </div>
@@ -2129,50 +2224,90 @@ export function QuoteCreation() {
   // MAIN LAYOUT: Two columns — Left: scrollable content, Right: sticky sidebar (380px)
   // ────────────────────────────────────────────────────────────────────
   return (
-    <div className="relative -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 min-h-full" style={{ backgroundColor: '#F4F3F0' }}>
-    <div className="relative pb-6 px-4 py-8 md:py-12">
-      <BackButton fallbackPath="/offertes" />
+    <div className="relative -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 min-h-full" style={{ backgroundColor: '#F8F7F5' }}>
+    <div className="relative pb-6 px-4 md:px-6 pt-0">
       {/* ──── HEADER BAR ──── */}
-      <div className="rounded-xl px-4 py-3 mb-6 overflow-hidden" style={{ backgroundColor: '#FFFFFE', border: '0.5px solid #E6E4E0' }}>
+      <div className="sticky top-0 z-10 bg-[#F8F7F5]/80 backdrop-blur-sm border-b border-[#EBEBEB] px-6 py-3 mb-6 -mx-4 md:-mx-6">
         <div className="flex items-center justify-between gap-4 flex-wrap">
-          {/* Left: Back + Title + Badges */}
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-2xl font-bold tracking-tight truncate" style={{ color: '#191919' }}>{isEditMode ? 'Offerte Bewerken' : 'Nieuwe Offerte'}</h1>
-                <Badge className="rounded-full text-[10px] font-mono font-semibold px-2.5 py-0.5 flex-shrink-0" style={{ backgroundColor: '#EEEEED', color: '#5A5A55', border: 'none' }}>{offerteNummer}</Badge>
-                {versieNummer > 1 && (
-                  <Badge variant="outline" className="text-2xs bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 border-purple-200 cursor-pointer flex-shrink-0" onClick={() => setShowVersieHistorie(!showVersieHistorie)}>v{versieNummer}</Badge>
-                )}
-                {geldigTot && (() => {
-                  const days = Math.floor((new Date(geldigTot).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-                  if (days < 0) return <Badge className="text-2xs bg-red-100 text-red-700 border-red-200 flex-shrink-0">Verlopen</Badge>
-                  if (days < 7) return <Badge className="text-2xs bg-orange-100 text-orange-700 border-orange-200 flex-shrink-0">Verloopt over {days} {days === 1 ? 'dag' : 'dagen'}</Badge>
-                  return <Badge variant="outline" className="text-2xs bg-green-50 text-green-700 border-green-200 flex-shrink-0"><Calendar className="h-3 w-3 mr-1" />Geldig t/m <span className="font-mono">{new Date(geldigTot).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}</span></Badge>
-                })()}
-              </div>
-              <div className="flex items-center gap-2 mt-0.5">
-                <p className="text-[13px]" style={{ color: '#5A5A55' }}>{isEditMode ? 'Bewerk de offertegegevens' : 'Selecteer een klant en vul de details in'}</p>
-                {autoSaveStatus === 'saving' && <span className="flex items-center gap-1.5 text-xs text-amber-600"><div className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />Opslaan...</span>}
-                {autoSaveStatus === 'saved' && <span className="flex items-center gap-1.5 text-xs text-emerald-600"><Check className="h-3 w-3" />Opgeslagen</span>}
-              </div>
+          {/* Left: Title + meta */}
+          <div className="min-w-0">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <Link to="/offertes" className="text-[#9B9B95] hover:text-[#6B6B66] transition-colors flex-shrink-0"><ArrowLeft className="h-4 w-4" /></Link>
+              <h1 className="text-xl font-bold text-[#1A1A1A] tracking-[-0.3px] truncate">{isEditMode ? 'Offerte bewerken' : 'Nieuwe offerte'}</h1>
+              <span className="text-[13px] font-mono text-[#9B9B95] flex-shrink-0">{offerteNummer}</span>
+              {versieNummer > 1 && (
+                <button onClick={() => setShowVersieHistorie(!showVersieHistorie)} className="text-[11px] font-mono text-[#6A5A8A] hover:underline flex-shrink-0">v{versieNummer}</button>
+              )}
+              {geldigTot && (() => {
+                const days = Math.floor((new Date(geldigTot).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+                if (days < 0) return <span className="text-xs text-[#C0451A] font-medium flex-shrink-0">Verlopen<span className="text-[#F15025]">.</span></span>
+                if (days < 7) return <span className="text-xs text-[#C0451A] flex-shrink-0">Nog {days}d</span>
+                return <span className="text-xs text-[#9B9B95] flex-shrink-0">t/m <span className="font-mono">{new Date(geldigTot).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}</span></span>
+              })()}
+            </div>
+            <div className="flex items-center gap-2 mt-0.5">
+              {autoSaveStatus === 'saving' && <span className="flex items-center gap-1.5 text-xs text-[#8A7A4A]"><div className="h-1.5 w-1.5 rounded-full bg-[#8A7A4A] animate-pulse" />Opslaan...</span>}
+              {autoSaveStatus === 'saved' && <span className="flex items-center gap-1.5 text-xs text-[#3A7D52]"><Check className="h-3 w-3" />Opgeslagen</span>}
+              {!autoSaveStatus && <p className="text-[13px] text-[#9B9B95]">{isEditMode ? selectedKlantNaam || '' : 'Selecteer een klant en vul de details in'}</p>}
             </div>
           </div>
 
           {/* Right: Action buttons */}
           <div className="flex items-center gap-2 flex-shrink-0">
-            <button onClick={handleDownloadPdf} className="inline-flex items-center gap-1.5 h-8 px-3 text-[12px] font-medium rounded-lg transition-colors hover:bg-[#F4F2EE]" style={{ border: '0.5px solid #E6E4E0', color: '#5A5A55' }}>
+            <button onClick={handleDownloadPdf} className="inline-flex items-center gap-1.5 h-8 px-3 text-[12px] font-medium rounded-lg border border-[#EBEBEB] text-[#6B6B66] hover:text-[#1A1A1A] hover:border-[#EBEBEB] hover:bg-[#F8F7F5] transition-colors">
               <Download className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">PDF</span>
             </button>
-            <button onClick={() => saveOfferte('concept')} disabled={isSaving} className="inline-flex items-center gap-1.5 h-8 px-4 text-[12px] font-semibold rounded-lg text-white transition-all hover:opacity-90 disabled:opacity-50" style={{ backgroundColor: '#1A535C' }}>
+            <button onClick={() => saveOfferte('concept')} disabled={isSaving} className="inline-flex items-center gap-1.5 h-8 px-4 text-[12px] font-medium rounded-lg bg-[#1A535C] text-white hover:bg-[#164850] transition-colors disabled:opacity-50">
               <Save className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">{isSaving ? 'Opslaan...' : 'Opslaan'}</span>
             </button>
-            <button onClick={handleVerstuurOfferte} disabled={isSaving} className="inline-flex items-center gap-1.5 h-9 px-5 text-[13px] font-bold rounded-lg text-white shadow-sm transition-all hover:opacity-90 disabled:opacity-50" style={{ backgroundColor: '#F15025' }}>
-              <Send className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Verstuur</span>
-            </button>
+            {/* Verstuur split button */}
+            <div className="relative">
+              <button onClick={handleVerstuurOfferte} disabled={isSaving} className="inline-flex items-center gap-1.5 h-9 px-5 text-sm font-semibold rounded-lg bg-[#F15025] text-white hover:bg-[#D94520] transition-colors disabled:opacity-50">
+                <Send className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Verstuur</span>
+                <ChevronDown className="h-3 w-3 ml-0.5 opacity-70" />
+              </button>
+              {showVerstuurKeuze && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowVerstuurKeuze(false)} />
+                  <div className="absolute right-0 top-full mt-1.5 z-50 w-72 bg-[#FFFFFF] rounded-xl border border-[#EBEBEB] shadow-[0_4px_20px_rgba(0,0,0,0.12)] overflow-hidden">
+                    <button
+                      onClick={handleKeuzePortaal}
+                      disabled={isSendingPortaal || !selectedProjectId}
+                      className="w-full text-left px-4 py-3 hover:bg-[#F8F7F5] transition-colors disabled:opacity-40 disabled:cursor-not-allowed border-b border-[#EBEBEB]/40"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="h-7 w-7 rounded-md bg-[#1A535C] flex items-center justify-center flex-shrink-0">
+                          <Send className="h-3.5 w-3.5 text-white" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-[#1A1A1A]">Via portaal</p>
+                          <p className="text-[11px] text-[#9B9B95] leading-snug">Klant bekijkt online + email notificatie</p>
+                        </div>
+                      </div>
+                      {!selectedProjectId && <p className="text-[10px] text-[#C0451A] mt-1 ml-9">Koppel eerst een project</p>}
+                      {isSendingPortaal && <p className="text-[10px] text-[#1A535C] mt-1 ml-9 flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-[#1A535C] animate-pulse" />Delen...</p>}
+                    </button>
+                    <button
+                      onClick={handleKeuzeEmail}
+                      className="w-full text-left px-4 py-3 hover:bg-[#F8F7F5] transition-colors"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="h-7 w-7 rounded-md bg-[#F15025] flex items-center justify-center flex-shrink-0">
+                          <Mail className="h-3.5 w-3.5 text-white" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-[#1A1A1A]">Via email</p>
+                          <p className="text-[11px] text-[#9B9B95] leading-snug">PDF bijlage + gepersonaliseerde email</p>
+                        </div>
+                      </div>
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
 
             {/* Actions dropdown */}
             {isEditMode && (
@@ -2316,42 +2451,32 @@ export function QuoteCreation() {
         {/* ════════════════════════════════════════════════════════════════ */}
         {/* LEFT COLUMN: Scrollable content                                */}
         {/* ════════════════════════════════════════════════════════════════ */}
-        <div className="space-y-4 min-w-0">
+        <div className="space-y-5 min-w-0">
           {/* ── Introductietekst ── */}
-          <Card className="rounded-xl overflow-hidden shadow-none" style={{ backgroundColor: '#FFFFFE', border: '0.5px solid #E6E4E0' }}>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-[14px] flex items-center gap-2" style={{ color: '#191919' }}>
-                <div className="h-6 w-6 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#1A535C' }}><Mail className="h-3 w-3 text-white" /></div>
-                Introductietekst
-                <span className="text-[11px] font-normal ml-1" style={{ color: '#A0A098' }}>optioneel</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex flex-wrap gap-1.5">
-                {[
-                  { label: 'Standaard', tekst: `Beste ${selectedKlant?.contactpersoon || selectedKlant?.bedrijfsnaam || '{klant_naam}'}, hierbij ontvangt u onze offerte voor de door u gevraagde werkzaamheden.` },
-                  { label: 'Na gesprek', tekst: `Geachte heer/mevrouw ${selectedKlant?.contactpersoon || selectedKlant?.bedrijfsnaam || '{klant_naam}'}, naar aanleiding van ons gesprek sturen wij u hierbij onze offerte.` },
-                  { label: 'Bedankt', tekst: `Beste ${selectedKlant?.contactpersoon || selectedKlant?.bedrijfsnaam || '{klant_naam}'}, bedankt voor uw aanvraag. Hierbij onze offerte.` },
-                ].map((tmpl) => (
-                  <Button key={tmpl.label} variant="outline" size="sm" className="text-xs h-7" onClick={() => setIntroTekst(tmpl.tekst)}>{tmpl.label}</Button>
-                ))}
-              </div>
-              <Textarea value={introTekst} onChange={(e) => setIntroTekst(e.target.value)} placeholder="Beste ..., hierbij ontvangt u onze offerte voor..." rows={3} className="resize-y" />
-            </CardContent>
-          </Card>
+          <div className="bg-[#FFFFFF] rounded-xl p-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xs font-semibold text-[#1A1A1A] uppercase tracking-wider">Introductietekst <span className="font-normal text-[#9B9B95] normal-case tracking-normal">optioneel</span></h3>
+            </div>
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {[
+                { label: 'Standaard', tekst: `Beste ${selectedKlant?.contactpersoon || selectedKlant?.bedrijfsnaam || '{klant_naam}'}, hierbij ontvangt u onze offerte voor de door u gevraagde werkzaamheden.` },
+                { label: 'Na gesprek', tekst: `Geachte heer/mevrouw ${selectedKlant?.contactpersoon || selectedKlant?.bedrijfsnaam || '{klant_naam}'}, naar aanleiding van ons gesprek sturen wij u hierbij onze offerte.` },
+                { label: 'Bedankt', tekst: `Beste ${selectedKlant?.contactpersoon || selectedKlant?.bedrijfsnaam || '{klant_naam}'}, bedankt voor uw aanvraag. Hierbij onze offerte.` },
+              ].map((tmpl) => (
+                <button key={tmpl.label} onClick={() => setIntroTekst(tmpl.tekst)} className="text-xs px-2.5 py-1 border border-[#EBEBEB] rounded-md hover:bg-[#F8F7F5] text-[#6B6B66] transition-colors">{tmpl.label}</button>
+              ))}
+            </div>
+            <Textarea value={introTekst} onChange={(e) => setIntroTekst(e.target.value)} placeholder="Beste ..., hierbij ontvangt u onze offerte voor..." rows={3} className="resize-y text-sm border-[#EBEBEB] bg-[#F8F7F5] focus:bg-white focus:border-[#1A535C]/30 rounded-lg transition-colors" />
+          </div>
 
           {/* ── Items ── */}
-          <Card className="rounded-xl overflow-hidden shadow-none" style={{ backgroundColor: '#FFFFFE', border: '0.5px solid #E6E4E0' }}>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-[14px] flex items-center gap-2" style={{ color: '#191919' }}>
-                  <div className="h-6 w-6 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#F15025' }}><FileText className="h-3 w-3 text-white" /></div>
-                  Offerte items
-                  <span className="text-[11px] font-normal font-mono ml-1" style={{ color: '#A0A098' }}>{items.length} {items.length === 1 ? 'item' : 'items'}</span>
-                </CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent>
+          <div className="bg-[#FFFFFF] rounded-xl p-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xs font-semibold text-[#1A1A1A] uppercase tracking-wider">
+                Offerte items <span className="font-mono text-[#9B9B95] font-normal">{items.length}</span>
+              </h3>
+            </div>
+            <div>
               <QuoteItemsTable
                 items={items}
                 onAddItem={handleAddItem}
@@ -2371,162 +2496,176 @@ export function QuoteCreation() {
                 klantId={selectedKlantId || undefined}
                 offerteId={editOfferteId || autoSaveIdRef.current || undefined}
               />
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* ── Afsluittekst ── */}
-          <Card className="bg-gradient-to-br from-white/90 to-violet-50/50 dark:bg-card dark:from-card dark:to-card backdrop-blur-sm border-border-primary/50">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center"><FileText className="h-3.5 w-3.5 text-white" /></div>
-                Afsluittekst
-                <span className="text-xs text-muted-foreground font-normal ml-1">optioneel</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex flex-wrap gap-1.5">
-                {[
-                  { label: 'Standaard', tekst: 'Wij zien uw reactie graag tegemoet.' },
-                  { label: 'Met vragen', tekst: 'Mocht u vragen hebben of aanvullende informatie wensen, neem dan gerust contact met ons op.' },
-                  { label: 'Dank', tekst: 'Wij danken u voor uw vertrouwen en hopen u van dienst te mogen zijn.' },
-                ].map((tmpl) => (
-                  <Button key={tmpl.label} variant="outline" size="sm" className="text-xs h-7" onClick={() => setOutroTekst(tmpl.tekst)}>{tmpl.label}</Button>
-                ))}
-              </div>
-              <Textarea value={outroTekst} onChange={(e) => setOutroTekst(e.target.value)} placeholder="Wij zien uw reactie graag tegemoet." rows={2} className="resize-y" />
-            </CardContent>
-          </Card>
+          <div className="bg-[#FFFFFF] rounded-xl p-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xs font-semibold text-[#1A1A1A] uppercase tracking-wider">Afsluittekst <span className="font-normal text-[#9B9B95] normal-case tracking-normal">optioneel</span></h3>
+            </div>
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {[
+                { label: 'Standaard', tekst: 'Wij zien uw reactie graag tegemoet.' },
+                { label: 'Met vragen', tekst: 'Mocht u vragen hebben of aanvullende informatie wensen, neem dan gerust contact met ons op.' },
+                { label: 'Dank', tekst: 'Wij danken u voor uw vertrouwen en hopen u van dienst te mogen zijn.' },
+              ].map((tmpl) => (
+                <button key={tmpl.label} onClick={() => setOutroTekst(tmpl.tekst)} className="text-xs px-2.5 py-1 border border-[#EBEBEB] rounded-md hover:bg-[#F8F7F5] text-[#6B6B66] transition-colors">{tmpl.label}</button>
+              ))}
+            </div>
+            <Textarea value={outroTekst} onChange={(e) => setOutroTekst(e.target.value)} placeholder="Wij zien uw reactie graag tegemoet." rows={2} className="resize-y text-sm border-[#EBEBEB] bg-[#F8F7F5] focus:bg-white focus:border-[#1A535C]/30 rounded-lg transition-colors" />
+          </div>
 
           {/* ── Notities & Voorwaarden ── */}
-          <Card className="bg-gradient-to-br from-white/90 to-amber-50/50 dark:bg-card dark:from-card dark:to-card backdrop-blur-sm border-border-primary/50">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-muted-foreground to-foreground/60 flex items-center justify-center"><FileText className="h-3.5 w-3.5 text-white" /></div>
-                Notities & Voorwaarden
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+          <div className="bg-[#FFFFFF] rounded-xl p-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xs font-semibold text-[#1A1A1A] uppercase tracking-wider">Notities & Voorwaarden</h3>
+            </div>
+            <div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">Notities</Label>
-                  <Textarea value={notities} onChange={(e) => setNotities(e.target.value)} placeholder="Interne notities of opmerkingen voor de klant..." rows={4} />
+                  <label className="text-[11px] font-semibold text-[#6B6B66] uppercase tracking-wider">Notities</label>
+                  <Textarea value={notities} onChange={(e) => setNotities(e.target.value)} placeholder="Interne notities of opmerkingen voor de klant..." rows={4} className="text-sm border-[#EBEBEB] bg-[#F8F7F5] focus:bg-white focus:border-[#1A535C]/30 rounded-lg transition-colors" />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">Voorwaarden</Label>
-                  <Textarea value={voorwaarden} onChange={(e) => setVoorwaarden(e.target.value)} rows={4} />
+                  <label className="text-[11px] font-semibold text-[#6B6B66] uppercase tracking-wider">Voorwaarden</label>
+                  <Textarea value={voorwaarden} onChange={(e) => setVoorwaarden(e.target.value)} rows={4} className="text-sm border-[#EBEBEB] bg-[#F8F7F5] focus:bg-white focus:border-[#1A535C]/30 rounded-lg transition-colors" />
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* ════════════════════════════════════════════════════════════════ */}
           {/* INLINE EMAIL COMPOSE — bottom of left column                   */}
           {/* ════════════════════════════════════════════════════════════════ */}
           <div ref={emailSectionRef}>
             {showEmailCompose && (
-              <Card className="border-2 border-primary/30">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center"><Send className="h-3.5 w-3.5 text-white" /></div>
-                      Offerte versturen
-                    </CardTitle>
-                    <Button variant="ghost" size="icon" onClick={() => setShowEmailCompose(false)}><X className="h-4 w-4" /></Button>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center gap-3"><Label className="text-sm font-medium w-20 flex-shrink-0">Aan</Label><Input value={emailTo} onChange={(e) => setEmailTo(e.target.value)} placeholder="email@voorbeeld.nl" type="email" className="h-9" /></div>
-                  <div className="flex items-center gap-3"><Label className="text-sm font-medium w-20 flex-shrink-0">CC</Label><Input value={emailCc} onChange={(e) => setEmailCc(e.target.value)} placeholder="cc@voorbeeld.nl (meerdere met komma)" className="h-9" /></div>
-                  <div className="flex items-center gap-3"><Label className="text-sm font-medium w-20 flex-shrink-0">BCC</Label><Input value={emailBcc} onChange={(e) => setEmailBcc(e.target.value)} placeholder="bcc@voorbeeld.nl" className="h-9" /></div>
-                  <div className="flex items-center gap-3"><Label className="text-sm font-medium w-20 flex-shrink-0">Onderwerp</Label><Input value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} placeholder="Onderwerp..." className="h-9" /></div>
+              <div className="bg-[#FFFFFF] rounded-xl border border-[#EBEBEB] shadow-[0_1px_4px_rgba(0,0,0,0.06)] overflow-hidden">
+                {/* Header */}
+                <div className="flex items-center justify-between px-5 py-3 border-b border-[#EBEBEB]/60">
+                  <h3 className="text-sm font-semibold text-[#1A1A1A]">Email versturen</h3>
+                  <button onClick={() => setShowEmailCompose(false)} className="text-[#9B9B95] hover:text-[#1A1A1A] transition-colors"><X className="h-4 w-4" /></button>
+                </div>
 
-                  <Separator />
-
-                  {/* Bijlagen */}
+                <div className="px-5 py-4 space-y-3">
+                  {/* Email velden */}
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">Bijlagen</span>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={handleAddBijlage}><Paperclip className="h-3 w-3" />Bijlage toevoegen</Button>
-                        <input ref={fileInputRef} type="file" multiple className="hidden" onChange={handleFileSelect} accept=".pdf,.jpg,.jpeg,.png,.dwg,.dxf,.doc,.docx" />
-                      </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs font-medium text-[#9B9B95] w-16 flex-shrink-0">Aan</span>
+                      <input value={emailTo} onChange={(e) => setEmailTo(e.target.value)} placeholder="email@voorbeeld.nl" type="email" className="flex-1 text-sm px-3 py-2 border border-[#EBEBEB] rounded-lg bg-[#F8F7F5] focus:outline-none focus:border-[#1A535C]/40 focus:bg-white transition-colors" />
                     </div>
-                    {emailBijlagen.map((bijlage, idx) => (
-                      <div key={idx} className="flex items-center gap-3 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                        <div className="w-7 h-7 rounded flex items-center justify-center bg-red-500 text-white text-[8px] font-bold flex-shrink-0">PDF</div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-foreground truncate">{bijlage.naam}</p>
-                          {idx === 0 && <p className="text-xs text-muted-foreground">Offerte PDF — Automatisch bijgevoegd</p>}
-                        </div>
-                        {idx > 0 && <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setEmailBijlagen((prev) => prev.filter((_, i) => i !== idx))}><Trash2 className="h-3 w-3" /></Button>}
-                      </div>
-                    ))}
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs font-medium text-[#9B9B95] w-16 flex-shrink-0">CC</span>
+                      <input value={emailCc} onChange={(e) => setEmailCc(e.target.value)} placeholder="Optioneel" className="flex-1 text-sm px-3 py-2 border border-[#EBEBEB] rounded-lg bg-[#F8F7F5] focus:outline-none focus:border-[#1A535C]/40 focus:bg-white transition-colors" />
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs font-medium text-[#9B9B95] w-16 flex-shrink-0">BCC</span>
+                      <input value={emailBcc} onChange={(e) => setEmailBcc(e.target.value)} placeholder="Optioneel" className="flex-1 text-sm px-3 py-2 border border-[#EBEBEB] rounded-lg bg-[#F8F7F5] focus:outline-none focus:border-[#1A535C]/40 focus:bg-white transition-colors" />
+                    </div>
                   </div>
 
-                  <Separator />
+                  {/* Onderwerp */}
+                  <input value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} placeholder="Onderwerp..." className="w-full text-sm font-medium px-3 py-2 border border-[#EBEBEB] rounded-lg focus:outline-none focus:border-[#1A535C]/40 transition-colors" />
 
-                  <div className="rounded-lg border border-border bg-muted/20 p-4 space-y-3">
-                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                      <Mail className="h-3.5 w-3.5" />
-                      Email preview — HTML template
+                  {/* Bericht */}
+                  <div className="border border-[#EBEBEB] rounded-lg bg-[#F8F7F5] focus-within:border-[#1A535C]/40 focus-within:bg-white transition-colors overflow-hidden">
+                    {/* Toolbar */}
+                    <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-[#EBEBEB]/30">
+                      {[
+                        { cmd: 'bold', icon: <Bold className="h-3.5 w-3.5" />, title: 'Vet' },
+                        { cmd: 'italic', icon: <Italic className="h-3.5 w-3.5" />, title: 'Cursief' },
+                        { cmd: 'underline', icon: <Underline className="h-3.5 w-3.5" />, title: 'Onderstreept' },
+                        { cmd: 'insertUnorderedList', icon: <List className="h-3.5 w-3.5" />, title: 'Opsomming' },
+                        { cmd: 'createLink', icon: <Link2 className="h-3.5 w-3.5" />, title: 'Link' },
+                      ].map((btn) => (
+                        <button
+                          key={btn.cmd}
+                          title={btn.title}
+                          type="button"
+                          onMouseDown={(e) => {
+                            e.preventDefault()
+                            if (btn.cmd === 'createLink') {
+                              const url = prompt('URL invoeren:')
+                              if (url) document.execCommand('createLink', false, url)
+                            } else {
+                              document.execCommand(btn.cmd)
+                            }
+                          }}
+                          className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-[#EBEBEB]/40 text-[#9B9B95] hover:text-[#1A1A1A] transition-colors"
+                        >
+                          {btn.icon}
+                        </button>
+                      ))}
                     </div>
-                    <div className="text-sm text-foreground/80 space-y-2">
-                      <p>Beste {selectedKlant?.contactpersoon || selectedKlant?.bedrijfsnaam || 'klant'},</p>
-                      <p>Hierbij ontvangt u onze offerte <strong>{offerteNummer}</strong> voor <strong>{offerteTitel}</strong>.</p>
-                      <div className="bg-card rounded border border-border p-3 text-xs space-y-1">
-                        <p><strong>Totaalbedrag:</strong> {formatCurrency(round2(subtotaal + btwBedrag))}</p>
-                        <p><strong>Geldig tot:</strong> <span className="font-mono">{geldigTot ? new Date(geldigTot).toLocaleDateString('nl-NL') : '-'}</span></p>
-                      </div>
-                      <div className="flex items-center gap-2 py-1">
-                        <span className="inline-block px-4 py-2 rounded-md text-xs font-semibold text-white" style={{ backgroundColor: primaireKleur || '#2941aa' }}>
-                          Offerte bekijken →
-                        </span>
-                      </div>
-                      <p className="text-xs text-muted-foreground">Heeft u vragen? Neem gerust contact op.</p>
-                    </div>
-                    <p className="text-2xs text-muted-foreground/60">De klant ontvangt een professionele HTML email met uw bedrijfslogo, huisstijlkleur en een directe link naar de offerte.</p>
-                  </div>
-
-                  <Separator />
-
-                  {/* Inplannen */}
-                  <div className="space-y-3">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" checked={emailScheduled} onChange={(e) => setEmailScheduled(e.target.checked)} className="rounded border-border" />
-                      <CalendarClock className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm font-medium">Inplannen</span>
-                    </label>
-                    {emailScheduled && (
-                      <div className="pl-7 space-y-2">
-                        <div className="flex flex-wrap gap-2">
-                          {(() => {
-                            const morgen = new Date(); morgen.setDate(morgen.getDate() + 1)
-                            const morgenStr = morgen.toISOString().split('T')[0]
-                            return [
-                              { label: 'Morgenochtend 08:00', datum: morgenStr, tijd: '08:00' },
-                              { label: 'Morgen 10:00', datum: morgenStr, tijd: '10:00' },
-                              { label: 'Morgen 14:00', datum: morgenStr, tijd: '14:00' },
-                            ].map((opt) => (
-                              <Button key={opt.label} variant="outline" size="sm" className="text-xs h-7" onClick={() => { setEmailScheduleDate(opt.datum); setEmailScheduleTime(opt.tijd) }}>{opt.label}</Button>
-                            ))
-                          })()}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Input type="date" value={emailScheduleDate} onChange={(e) => setEmailScheduleDate(e.target.value)} className="h-8 w-40" />
-                          <Input type="time" value={emailScheduleTime} onChange={(e) => setEmailScheduleTime(e.target.value)} className="h-8 w-28" />
-                        </div>
+                    <textarea
+                      value={emailBody}
+                      onChange={(e) => setEmailBody(e.target.value)}
+                      rows={8}
+                      className="w-full text-sm px-3 py-3 bg-transparent focus:outline-none resize-y leading-relaxed border-none"
+                      placeholder="Schrijf je bericht..."
+                    />
+                    {handtekeningAfbeelding && (
+                      <div className="px-3 pb-3">
+                        <img src={handtekeningAfbeelding} alt="" style={{ maxHeight: handtekeningAfbeeldingGrootte || 64, maxWidth: 200, objectFit: 'contain' }} />
                       </div>
                     )}
                   </div>
 
-                  <div className="flex items-center justify-between pt-2">
-                    <Button variant="outline" onClick={() => setShowEmailCompose(false)}>Annuleren</Button>
-                    <Button onClick={handleSendEmailInline} disabled={!emailTo.trim() || !emailSubject.trim() || isSendingEmail} className="gap-2">
-                      <Send className="h-4 w-4" />{isSendingEmail ? 'Verzenden...' : emailScheduled ? 'Inplannen' : 'Verstuur email'}
-                    </Button>
+                  {/* Bijlagen */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {emailBijlagen.map((bijlage, idx) => (
+                      <div key={idx} className="flex items-center gap-2 px-3 py-1.5 bg-[#F8F7F5] rounded-lg text-sm">
+                        <FileText className="h-3.5 w-3.5 text-[#C03A18]" />
+                        <span className="text-[#1A1A1A] font-mono text-xs">{bijlage.naam}</span>
+                        {idx > 0 && <button onClick={() => setEmailBijlagen((prev) => prev.filter((_, i) => i !== idx))} className="text-[#9B9B95] hover:text-[#C03A18] transition-colors"><X className="h-3 w-3" /></button>}
+                      </div>
+                    ))}
+                    <button onClick={handleAddBijlage} className="flex items-center gap-1 px-2 py-1.5 text-xs text-[#1A535C] hover:underline">
+                      <Paperclip className="h-3 w-3" />Bijlage
+                    </button>
+                    <input ref={fileInputRef} type="file" multiple className="hidden" onChange={handleFileSelect} accept=".pdf,.jpg,.jpeg,.png,.dwg,.dxf,.doc,.docx" />
                   </div>
-                </CardContent>
-              </Card>
+
+                  {/* Inplannen */}
+                  <div className="border-t border-[#EBEBEB]/40 pt-3">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" checked={emailScheduled} onChange={(e) => setEmailScheduled(e.target.checked)} className="h-3.5 w-3.5 rounded border-[#EBEBEB] text-[#1A535C] focus:ring-[#1A535C]/30" />
+                      <CalendarClock className="h-3.5 w-3.5 text-[#9B9B95]" />
+                      <span className="text-xs text-[#6B6B66]">Inplannen</span>
+                    </label>
+                    {emailScheduled && (
+                      <div className="mt-2 flex flex-wrap items-center gap-2 ml-6">
+                        {(() => {
+                          const morgen = new Date(); morgen.setDate(morgen.getDate() + 1)
+                          const morgenStr = morgen.toISOString().split('T')[0]
+                          return [
+                            { label: 'Morgen 08:00', datum: morgenStr, tijd: '08:00' },
+                            { label: 'Morgen 10:00', datum: morgenStr, tijd: '10:00' },
+                            { label: 'Morgen 14:00', datum: morgenStr, tijd: '14:00' },
+                          ].map((opt) => (
+                            <button key={opt.label} onClick={() => { setEmailScheduleDate(opt.datum); setEmailScheduleTime(opt.tijd) }} className="text-xs px-2.5 py-1 border border-[#EBEBEB] rounded-md hover:bg-[#F8F7F5] text-[#6B6B66] transition-colors">{opt.label}</button>
+                          ))
+                        })()}
+                        <input type="date" value={emailScheduleDate} onChange={(e) => setEmailScheduleDate(e.target.value)} className="text-xs px-2 py-1 border border-[#EBEBEB] rounded-md w-32" />
+                        <input type="time" value={emailScheduleTime} onChange={(e) => setEmailScheduleTime(e.target.value)} className="text-xs px-2 py-1 border border-[#EBEBEB] rounded-md w-20" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="flex items-center justify-between px-5 py-3 border-t border-[#EBEBEB]/60 bg-[#F8F7F5]/50">
+                  <button onClick={() => setShowEmailCompose(false)} className="text-sm text-[#9B9B95] hover:text-[#6B6B66] transition-colors">Annuleren</button>
+                  <button
+                    onClick={handleSendEmailInline}
+                    disabled={!emailTo.trim() || !emailSubject.trim() || isSendingEmail}
+                    className="inline-flex items-center gap-1.5 px-5 py-2 text-sm font-medium rounded-lg bg-[#F15025] text-white hover:bg-[#D94520] disabled:opacity-40 transition-colors"
+                  >
+                    <Send className="h-3.5 w-3.5" />
+                    {isSendingEmail ? 'Verzenden...' : emailScheduled ? 'Inplannen' : 'Verstuur'}
+                  </button>
+                </div>
+              </div>
             )}
           </div>
         </div>{/* end LEFT COLUMN */}
@@ -2622,25 +2761,25 @@ export function QuoteCreation() {
                     {sectionId === 'klant' && (
                       <>
                         {selectedKlant ? (
-                          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#FFFFFE', border: '0.5px solid #E6E4E0' }}>
-                            <button onClick={() => setKlantPanelOpen(!klantPanelOpen)} className="w-full flex items-center gap-2.5 px-4 py-2.5 hover:bg-[#FAFAF8] transition-colors" style={{ borderBottom: '0.5px solid #E6E4E0' }}>
+                          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#FFFFFF', border: '1px solid #EBEBEB' }}>
+                            <button onClick={() => setKlantPanelOpen(!klantPanelOpen)} className="w-full flex items-center gap-2.5 px-4 py-2.5 hover:bg-[#F8F7F5] transition-colors" style={{ borderBottom: '0.5px solid #EBEBEB' }}>
                               <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#8BAFD4] to-[#6B8FB4] flex items-center justify-center flex-shrink-0">
                                 <span className="text-white font-bold text-[10px]">{selectedKlant.bedrijfsnaam[0]?.toUpperCase()}</span>
                               </div>
                               <div className="flex-1 text-left min-w-0">
-                                <p className="text-[13px] font-semibold truncate" style={{ color: '#191919' }}>{selectedKlant.bedrijfsnaam}</p>
-                                <p className="text-[11px] truncate" style={{ color: '#A0A098' }}>{contactpersoon ? `t.a.v. ${contactpersoon}` : 'Geen contactpersoon'}</p>
+                                <p className="text-[13px] font-semibold truncate" style={{ color: '#1A1A1A' }}>{selectedKlant.bedrijfsnaam}</p>
+                                <p className="text-[11px] truncate" style={{ color: '#9B9B95' }}>{contactpersoon ? `t.a.v. ${contactpersoon}` : 'Geen contactpersoon'}</p>
                               </div>
-                              {klantPanelOpen ? <ChevronUp className="h-3.5 w-3.5 flex-shrink-0" style={{ color: '#A0A098' }} /> : <ChevronDown className="h-3.5 w-3.5 flex-shrink-0" style={{ color: '#A0A098' }} />}
+                              {klantPanelOpen ? <ChevronUp className="h-3.5 w-3.5 flex-shrink-0" style={{ color: '#9B9B95' }} /> : <ChevronDown className="h-3.5 w-3.5 flex-shrink-0" style={{ color: '#9B9B95' }} />}
                             </button>
 
                             {klantPanelOpen && (
                               <div className="px-4 py-3 space-y-2.5">
-                                <div className="text-[11px] space-y-0.5" style={{ color: '#5A5A55' }}>
-                                  {selectedKlant.telefoon && <p className="flex items-center gap-1.5 font-mono"><Phone className="h-3 w-3" style={{ color: '#A0A098' }} />{selectedKlant.telefoon}</p>}
-                                  {selectedKlant.email && <p className="flex items-center gap-1.5"><Mail className="h-3 w-3" style={{ color: '#A0A098' }} />{selectedKlant.email}</p>}
+                                <div className="text-[11px] space-y-0.5" style={{ color: '#6B6B66' }}>
+                                  {selectedKlant.telefoon && <p className="flex items-center gap-1.5 font-mono"><Phone className="h-3 w-3" style={{ color: '#9B9B95' }} />{selectedKlant.telefoon}</p>}
+                                  {selectedKlant.email && <p className="flex items-center gap-1.5"><Mail className="h-3 w-3" style={{ color: '#9B9B95' }} />{selectedKlant.email}</p>}
                                   {(selectedKlant.adres || selectedKlant.stad) && (
-                                    <p className="flex items-center gap-1.5"><MapPin className="h-3 w-3" style={{ color: '#A0A098' }} />{[selectedKlant.adres, selectedKlant.postcode, selectedKlant.stad].filter(Boolean).join(', ')}</p>
+                                    <p className="flex items-center gap-1.5"><MapPin className="h-3 w-3" style={{ color: '#9B9B95' }} />{[selectedKlant.adres, selectedKlant.postcode, selectedKlant.stad].filter(Boolean).join(', ')}</p>
                                   )}
                                 </div>
 
@@ -2648,9 +2787,9 @@ export function QuoteCreation() {
 
                                 {selectedKlant.contactpersonen?.length > 0 && (
                                   <div className="space-y-1">
-                                    <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: '#A0A098' }}>Contactpersoon</label>
+                                    <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: '#9B9B95' }}>Contactpersoon</label>
                                     <Select value={selectedContactId} onValueChange={(val) => handleSelectContact(val)}>
-                                      <SelectTrigger className="h-8 text-[12px] rounded-lg" style={{ backgroundColor: '#FAFAF8', border: '0.5px solid #E6E4E0' }}><SelectValue placeholder="Selecteer..." /></SelectTrigger>
+                                      <SelectTrigger className="h-8 text-[12px] rounded-lg" style={{ backgroundColor: '#F8F7F5', border: '1px solid #EBEBEB' }}><SelectValue placeholder="Selecteer..." /></SelectTrigger>
                                       <SelectContent>
                                         {selectedKlant.contactpersonen.map((cp) => (
                                           <SelectItem key={cp.id} value={cp.id}>
@@ -2664,24 +2803,24 @@ export function QuoteCreation() {
                                 )}
 
                                 {(selectedKlant.kvk_nummer || selectedKlant.btw_nummer) && (
-                                  <div className="text-[11px] font-mono space-y-0.5 pt-2" style={{ color: '#5A5A55', borderTop: '0.5px solid #E6E4E0' }}>
+                                  <div className="text-[11px] font-mono space-y-0.5 pt-2" style={{ color: '#6B6B66', borderTop: '0.5px solid #EBEBEB' }}>
                                     {selectedKlant.kvk_nummer && <p>KvK: {selectedKlant.kvk_nummer}</p>}
                                     {selectedKlant.btw_nummer && <p>BTW: {selectedKlant.btw_nummer}</p>}
                                   </div>
                                 )}
 
-                                <div className="flex flex-wrap gap-1.5 pt-2" style={{ borderTop: '0.5px solid #E6E4E0' }}>
+                                <div className="flex flex-wrap gap-1.5 pt-2" style={{ borderTop: '0.5px solid #EBEBEB' }}>
                                   {selectedKlant.telefoon && <a href={`tel:${selectedKlant.telefoon}`} className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors" style={{ backgroundColor: '#E2F0E8', color: '#2D6B48' }}><Phone className="h-3 w-3" />Bellen</a>}
                                   {selectedKlant.email && <a href={`mailto:${selectedKlant.email}`} className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors" style={{ backgroundColor: '#E2F0F0', color: '#1A535C' }}><Mail className="h-3 w-3" />Email</a>}
-                                  <Link to={`/klanten/${selectedKlant.id}`} className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors" style={{ backgroundColor: '#EEEEED', color: '#5A5A55' }}><ExternalLink className="h-3 w-3" />Profiel</Link>
+                                  <Link to={`/klanten/${selectedKlant.id}`} className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors" style={{ backgroundColor: '#EBEBEB', color: '#6B6B66' }}><ExternalLink className="h-3 w-3" />Profiel</Link>
                                 </div>
                               </div>
                             )}
                           </div>
                         ) : (
-                          <div className="rounded-xl p-5 text-center" style={{ border: '1.5px dashed #E6E4E0', backgroundColor: '#FAFAF8' }}>
-                            <Building2 className="h-7 w-7 mx-auto mb-1.5" style={{ color: '#A0A098' }} />
-                            <p className="text-[12px]" style={{ color: '#A0A098' }}>Geen klant geselecteerd</p>
+                          <div className="rounded-xl p-5 text-center" style={{ border: '1.5px dashed #EBEBEB', backgroundColor: '#F8F7F5' }}>
+                            <Building2 className="h-7 w-7 mx-auto mb-1.5" style={{ color: '#9B9B95' }} />
+                            <p className="text-[12px]" style={{ color: '#9B9B95' }}>Geen klant geselecteerd</p>
                             <button className="mt-2 h-7 px-3 text-[11px] font-semibold rounded-lg text-white transition-all hover:opacity-90" style={{ backgroundColor: '#1A535C' }} onClick={() => setShowKlantSelector(true)}>Klant kiezen</button>
                           </div>
                         )}

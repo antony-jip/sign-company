@@ -286,7 +286,7 @@ export function ActiviteitFeed({
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-[13px] font-semibold text-foreground">Activiteit</h3>
+        <h3 className="text-xs font-semibold text-[#1A1A1A] uppercase tracking-wider">Activiteit</h3>
         <span className="text-[10px] text-muted-foreground/50 font-mono">{allEvents.length}</span>
       </div>
 

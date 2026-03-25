@@ -375,7 +375,7 @@ export function ProjectsList() {
 
       {/* Page content */}
       <div className="flex-1 min-h-0 overflow-y-auto">
-        <div className="px-8 py-8 space-y-6 max-w-[1400px]">
+        <div className="px-8 py-8 space-y-6">
 
           {/* Header + Stats */}
           <div className="space-y-4">
@@ -754,7 +754,7 @@ export function ProjectsList() {
                                   {project.naam}
                                 </Link>
                                 {project.project_nummer && (
-                                  <span className="text-[10px] text-[#B0ADA8] font-mono flex-shrink-0 tabular-nums bg-[#F5F4F1] px-1.5 py-0.5 rounded">{project.project_nummer}</span>
+                                  <span className="text-[10px] text-[#B0ADA8] font-mono flex-shrink-0 tabular-nums bg-[#F8F7F5] px-1.5 py-0.5 rounded">{project.project_nummer}</span>
                                 )}
                               </div>
                               {project.beschrijving && (

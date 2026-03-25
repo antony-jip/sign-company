@@ -225,13 +225,13 @@ export function PortaalPagina() {
   const [error, setError] = useState('')
   const [data, setData] = useState<PortaalData | null>(null)
   const [klantNaam, setKlantNaam] = useState(() => {
-    try { return localStorage.getItem('forgedesk_portaal_klant_naam') || '' } catch { return '' }
+    try { return localStorage.getItem('doen_portaal_klant_naam') || '' } catch { return '' }
   })
   const { markBekeken } = useBekekenTracker(token)
 
   function handleKlantNaamChange(naam: string) {
     setKlantNaam(naam)
-    try { localStorage.setItem('forgedesk_portaal_klant_naam', naam) } catch { /* ignore */ }
+    try { localStorage.setItem('doen_portaal_klant_naam', naam) } catch { /* ignore */ }
   }
 
   const fetchPortaal = useCallback(async () => {
