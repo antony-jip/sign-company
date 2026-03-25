@@ -400,7 +400,7 @@ export function PortaalPagina() {
                 className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm"
                 style={{ backgroundColor: primaire_kleur }}
               >
-                {bedrijf.naam.charAt(0).toUpperCase()}
+                {(bedrijf.naam || 'P').charAt(0).toUpperCase()}
               </div>
             )}
             <div>

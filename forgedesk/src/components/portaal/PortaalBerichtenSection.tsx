@@ -104,9 +104,13 @@ export function PortaalBerichtenSection({ items, allItems, token, klantNaam, kan
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
+  const [optimisticMessages, setOptimisticMessages] = useState<Message[]>([])
   const scrollRef = useRef<HTMLDivElement>(null)
 
-  const messages = extractMessages(items)
+  const serverMessages = extractMessages(items)
+  // Merge: toon optimistic berichten die nog niet in server data zitten
+  const serverIds = new Set(serverMessages.map(m => m.id))
+  const messages = [...serverMessages, ...optimisticMessages.filter(m => !serverIds.has(m.id))]
   const hasMessages = messages.length > 0
 
   // Auto-scroll naar beneden bij nieuwe berichten
@@ -119,34 +123,55 @@ export function PortaalBerichtenSection({ items, allItems, token, klantNaam, kan
   // Niet tonen als er geen berichten zijn en klant niet kan sturen
   if (!hasMessages && !kanBerichtenSturen) return null
 
+  // Kies het beste item om een bericht aan te koppelen:
+  // voorkeur voor een bestaand bericht-item, anders het laatste item
+  function getBerichtItemId(): string {
+    const berichtItem = allItems.slice().reverse().find((i) => 'bericht_type' in i)
+    if (berichtItem) return berichtItem.id
+    return allItems.length > 0 ? allItems[allItems.length - 1].id : ''
+  }
+
   async function handleSend() {
     if (!bericht.trim() || loading) return
+    const tekst = bericht.trim()
+    const itemId = getBerichtItemId()
+    if (!itemId) {
+      setError('Kan bericht niet versturen')
+      return
+    }
+
+    // Optimistic: toon bericht direct
+    const optimisticMsg: Message = {
+      id: `optimistic-${Date.now()}`,
+      tekst,
+      afzender: 'klant',
+      created_at: new Date().toISOString(),
+    }
+    setOptimisticMessages(prev => [...prev, optimisticMsg])
+    setBericht('')
     setLoading(true)
     setError('')
-    try {
-      const lastItemId = allItems.length > 0 ? allItems[allItems.length - 1].id : ''
-      if (!lastItemId) {
-        setError('Kan bericht niet versturen')
-        return
-      }
 
+    try {
       const response = await fetch('/api/portaal-reactie', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           token,
-          portaal_item_id: lastItemId,
+          portaal_item_id: itemId,
           type: 'bericht',
-          bericht: bericht.trim(),
+          bericht: tekst,
           klant_naam: klantNaam.trim() || undefined,
         }),
       })
       if (!response.ok) {
         throw new Error('Versturen mislukt')
       }
-      setBericht('')
       onReactie()
     } catch {
+      // Rollback optimistic message
+      setOptimisticMessages(prev => prev.filter(m => m.id !== optimisticMsg.id))
+      setBericht(tekst)
       setError('Bericht versturen mislukt. Probeer het opnieuw.')
     } finally {
       setLoading(false)
