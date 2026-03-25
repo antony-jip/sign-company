@@ -255,12 +255,14 @@ export const emailOpvolgingTask = task({
       return { status: "reply_ontvangen" };
     }
 
-    // 5. Geen reply → genereer opvolg-email
-    const opvolgBody = await generateFollowUpEmail(
-      opvolging.ontvanger,
-      opvolging.onderwerp,
-      opvolging.oorspronkelijke_body
-    );
+    // 5. Geen reply → gebruik handmatige tekst of genereer via AI
+    const opvolgBody = opvolging.opvolg_body
+      ? opvolging.opvolg_body
+      : await generateFollowUpEmail(
+          opvolging.ontvanger,
+          opvolging.onderwerp,
+          opvolging.oorspronkelijke_body
+        );
 
     // Voeg handtekening toe
     const volledigeTekst = opvolging.handtekening

@@ -17,7 +17,7 @@ import { EmailContextSidebar } from './EmailContextSidebar'
 import { EmailListItem } from './EmailListItem'
 import type { Email } from '@/types'
 import { logger } from '../../utils/logger'
-import type { EmailFolder, FilterType, FontSize, ViewMode } from './emailTypes'
+import type { AutoFollowUp, EmailFolder, FilterType, FontSize, ViewMode } from './emailTypes'
 import { extractSenderEmail, extractSenderName, parseSearchQuery, IMAP_FOLDER_MAP, KEYBOARD_SHORTCUTS, calculateSnoozeDate } from './emailHelpers'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -95,7 +95,7 @@ export function EmailLayout() {
   const [composeReminder, setComposeReminder] = useState<string | null>(null)
   const [composeForgieLoading, setComposeForgieLoading] = useState(false)
   const composeActionsRef = useRef<ComposeActions | null>(null)
-  const [composeAutoFollowUp, setComposeAutoFollowUp] = useState<{ enabled: boolean; dagen: number }>({ enabled: false, dagen: 3 })
+  const [composeAutoFollowUp, setComposeAutoFollowUp] = useState<AutoFollowUp>({ enabled: false, dagen: 3, mode: 'auto' })
 
   // ─── Location-based compose detection ───
   const location = useLocation()
@@ -599,7 +599,7 @@ export function EmailLayout() {
     })
   }, [handleCompose])
 
-  const handleSendEmail = useCallback(async (data: { to: string; subject: string; body: string; html?: string; scheduledAt?: string; autoFollowUp?: { enabled: boolean; dagen: number } }) => {
+  const handleSendEmail = useCallback(async (data: { to: string; subject: string; body: string; html?: string; scheduledAt?: string; autoFollowUp?: AutoFollowUp }) => {
     try {
       let opvolgingId: string | undefined
 
@@ -622,6 +622,7 @@ export function EmailLayout() {
             organisatie_id: user.user_metadata?.organisatie_id || '',
             handtekening: emailHandtekening || '',
             message_id: '',
+            opvolg_body: data.autoFollowUp.mode === 'handmatig' ? data.autoFollowUp.customTekst : undefined,
           })
           opvolgingId = opvolging.id
         } catch (err) {
@@ -638,7 +639,7 @@ export function EmailLayout() {
 
       // Reset auto-opvolging state na succesvol verzenden
       if (data.autoFollowUp?.enabled) {
-        setComposeAutoFollowUp({ enabled: false, dagen: 3 })
+        setComposeAutoFollowUp({ enabled: false, dagen: 3, mode: 'auto' })
       }
     } catch (err) {
       logger.error('Email verzenden mislukt:', err)

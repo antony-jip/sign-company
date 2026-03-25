@@ -12,6 +12,7 @@ import type { Klant, Email } from '@/types'
 import { callForgie } from '@/services/forgieService'
 import { logger } from '../../utils/logger'
 import { AIContentEditableToolbar } from '@/components/ui/AIContentEditableToolbar'
+import type { AutoFollowUp } from './emailTypes'
 
 export interface ComposeActions {
   forgieWrite: () => void
@@ -24,13 +25,13 @@ interface EmailComposeProps {
   defaultTo?: string
   defaultSubject?: string
   defaultBody?: string
-  onSend?: (data: { to: string; subject: string; body: string; html?: string; scheduledAt?: string; autoFollowUp?: { enabled: boolean; dagen: number } }) => void
+  onSend?: (data: { to: string; subject: string; body: string; html?: string; scheduledAt?: string; autoFollowUp?: AutoFollowUp }) => void
   allEmails?: Email[]
   onToChange?: (to: string) => void
   onRegisterActions?: (actions: ComposeActions) => void
   onForgieLoadingChange?: (loading: boolean) => void
-  autoFollowUp?: { enabled: boolean; dagen: number }
-  onAutoFollowUpChange?: (value: { enabled: boolean; dagen: number }) => void
+  autoFollowUp?: AutoFollowUp
+  onAutoFollowUpChange?: (value: AutoFollowUp) => void
 }
 
 const emailTemplates: Record<string, { onderwerp: string; body: string }> = {
@@ -96,7 +97,7 @@ export function EmailCompose({
   autoFollowUp: autoFollowUpProp,
   onAutoFollowUpChange,
 }: EmailComposeProps) {
-  const autoFollowUp = autoFollowUpProp ?? { enabled: false, dagen: 3 }
+  const autoFollowUp = autoFollowUpProp ?? { enabled: false, dagen: 3, mode: 'auto' as const }
   const { emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte } = useAppSettings()
 
   const [to, setTo] = useState(defaultTo)
