@@ -255,6 +255,9 @@ export function OffertePubliekPagina() {
   const hasVariants = useMemo(() => items.some(i => i.prijs_varianten && i.prijs_varianten.length > 0), [items])
   const hasSelections = hasOptionalItems || hasVariants
 
+  // Stable key to detect when items actually change (avoid re-running on same data)
+  const itemsKey = useMemo(() => items.map(i => i.id).join(','), [items])
+
   // Initialize selection state when items load
   useEffect(() => {
     if (items.length === 0) return
@@ -279,7 +282,8 @@ export function OffertePubliekPagina() {
     }
     setSelectedItems(initial)
     setSelectedVariants(initialVariants)
-  }, [items, offerte?.gekozen_items, offerte?.gekozen_varianten])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itemsKey])
 
   // Accepteren
   const handleAccepteren = useCallback(async () => {
@@ -503,14 +507,18 @@ export function OffertePubliekPagina() {
   }
 
   // ============ DERIVED STATE ============
-  const isVerlopen = offerte.geldig_tot && offerte.geldig_tot < new Date().toISOString().split('T')[0]
+  const vandaag = useMemo(() => new Date().toISOString().split('T')[0], [])
+  const isVerlopen = offerte.geldig_tot && offerte.geldig_tot < vandaag
   const isGeaccepteerd = offerte.status === 'goedgekeurd'
   const isAfgewezen = offerte.status === 'afgewezen'
   const isGefactureerd = offerte.status === 'gefactureerd'
   const isWijzigingGevraagd = offerte.status === 'wijziging_gevraagd'
   const kanActie = !isVerlopen && !isGeaccepteerd && !isAfgewezen && !isGefactureerd
   const dagenOver = dagenTotVerlopen(offerte.geldig_tot)
-  const btwGroepen = groepeerBtwMetSelectie(items, selectedItems, selectedVariants, hasOptionalItems)
+  const btwGroepen = useMemo(
+    () => groepeerBtwMetSelectie(items, selectedItems, selectedVariants, hasOptionalItems),
+    [items, selectedItems, selectedVariants, hasOptionalItems],
+  )
 
   // Compute live total based on selections
   const berekendeSubtotaal = useMemo(() => {

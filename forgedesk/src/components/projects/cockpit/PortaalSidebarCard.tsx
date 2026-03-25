@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getPortaalByProject, getPortaalItems } from '@/services/supabaseService'
+import { getPortaalByProject, getPortaalItems, createPortaal } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
+import { toast } from 'sonner'
+import { Send } from 'lucide-react'
 import type { ProjectPortaal, PortaalItem } from '@/types'
 import { formatTime } from './portaal/PortaalTimelineItems'
 import { PortaalSidebarHeader } from './portaal/PortaalSidebarHeader'
@@ -89,7 +91,42 @@ export function PortaalCompactCard({ projectId }: PortaalCompactCardProps) {
     return () => { cancelled = true }
   }, [projectId])
 
-  if (loading || !portaal) return null
+  const handleActiveerPortaal = async () => {
+    if (!user?.id) return
+    try {
+      const nieuwPortaal = await createPortaal(projectId, user.id)
+      setPortaal(nieuwPortaal)
+      setExpanded(true)
+      toast.success('Portaal geactiveerd')
+    } catch {
+      toast.error('Kon portaal niet activeren')
+    }
+  }
+
+  if (loading) return null
+
+  if (!portaal) {
+    return (
+      <div className="border border-[#E6E4E0] bg-[#FAFAF8] shadow-[0_1px_3px_rgba(130,100,60,0.04)] rounded-[10px] overflow-hidden">
+        <div className="flex items-center gap-3 px-4 py-3">
+          <div className="h-9 w-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-[#E6E4E0]">
+            <Send className="h-4 w-4 text-[#9B9B95]" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <span className="text-sm font-semibold text-foreground">Portaal</span>
+            <p className="text-[11px] text-muted-foreground/60 mt-0.5">Deel offertes, tekeningen en updates met je klant</p>
+          </div>
+          <button
+            onClick={handleActiveerPortaal}
+            className="text-[12px] font-semibold px-3 py-1.5 rounded-lg transition-all hover:opacity-90"
+            style={{ backgroundColor: '#1A535C', color: '#FFFFFF' }}
+          >
+            Activeer
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   const isVerlopen = new Date(portaal.verloopt_op) < new Date()
   const isActief = portaal.actief && !isVerlopen

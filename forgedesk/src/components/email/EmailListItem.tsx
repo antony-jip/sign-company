@@ -11,6 +11,7 @@ interface EmailListItemProps {
   isChecked: boolean
   isFocused: boolean
   compact?: boolean
+  stacked?: boolean
   fontSize?: FontSize
   onSelect: (email: Email) => void
   onToggleStar: (email: Email) => void
@@ -23,6 +24,7 @@ export const EmailListItem = memo(function EmailListItem({
   isChecked,
   isFocused,
   compact,
+  stacked,
   fontSize = 'medium',
   onSelect,
   onToggleStar,
@@ -54,6 +56,124 @@ export const EmailListItem = memo(function EmailListItem({
     onToggleCheck(email.id)
   }, [email.id, onToggleCheck])
 
+  // Dense / single-line mode: sender + subject + preview all on one row
+  if (stacked) {
+    return (
+      <div
+        onClick={handleClick}
+        className={cn(
+          'group flex items-center gap-3 px-4 py-2 cursor-pointer transition-all duration-150 select-none',
+          isActive
+            ? 'bg-[#1A535C]/[0.05]'
+            : 'hover:bg-[#F0EFEC]/50',
+          isFocused && !isActive && 'bg-[#F0EFEC]/30',
+          isUnread && !isActive && 'bg-white',
+        )}
+      >
+        {/* Checkbox / avatar */}
+        <div className="relative flex-shrink-0">
+          <div
+            className={cn(
+              'w-7 h-7 rounded-md flex items-center justify-center transition-all duration-150',
+              'group-hover:opacity-0',
+              isChecked && 'opacity-0',
+            )}
+            style={{ backgroundColor: avatarStyle.bg }}
+          >
+            <span className="text-[10px] font-bold leading-none" style={{ color: avatarStyle.text }}>
+              {senderName[0]?.toUpperCase()}
+            </span>
+          </div>
+          <div className={cn(
+            'absolute inset-0 flex items-center justify-center transition-all duration-150',
+            'opacity-0 group-hover:opacity-100',
+            isChecked && '!opacity-100',
+          )}>
+            <input
+              type="checkbox"
+              checked={isChecked}
+              onChange={() => {}}
+              onClick={handleCheckClick}
+              className="h-3.5 w-3.5 rounded border-foreground/20 cursor-pointer accent-[#1A535C]"
+            />
+          </div>
+        </div>
+
+        {/* Single line: sender | subject — preview | date */}
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          {/* Sender — fixed width */}
+          <span className={cn(
+            'w-[140px] flex-shrink-0 truncate leading-snug',
+            sizes.preview,
+            isUnread ? 'font-semibold text-[#1A1A1A]' : 'text-[#9B9B95]',
+          )}>
+            {senderName}
+          </span>
+
+          {email.threadCount && email.threadCount > 1 && (
+            <span className="text-[9px] text-[#9B9B95] bg-[#F0EFEC] rounded px-1 py-px flex-shrink-0 font-medium">
+              {email.threadCount}
+            </span>
+          )}
+
+          {/* Subject + preview */}
+          <div className="flex items-center gap-1.5 flex-1 min-w-0">
+            <span className={cn(
+              'truncate leading-snug flex-shrink-0 max-w-[45%]',
+              sizes.preview,
+              isUnread ? 'font-medium text-[#1A1A1A]' : 'text-[#6B6B66]',
+            )}>
+              {email.onderwerp || '(geen onderwerp)'}
+            </span>
+            {preview && (
+              <>
+                <span className="text-[#EBEBEB] flex-shrink-0">—</span>
+                <span className={cn('text-[#B0ADA8] truncate', sizes.preview)}>{preview}</span>
+              </>
+            )}
+          </div>
+
+          {/* Meta: attachment + date */}
+          <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
+            {email.bijlagen > 0 && (
+              <Paperclip className="h-3 w-3 text-[#C5C2BD]" />
+            )}
+            <span className={cn(
+              'text-[#B0ADA8] font-mono tabular-nums',
+              sizes.date,
+              isUnread && 'text-[#6B6B66] font-medium',
+            )}>
+              {formatShortDate(email.datum)}
+            </span>
+          </div>
+        </div>
+
+        {/* Star */}
+        <button
+          onClick={handleStarClick}
+          className={cn(
+            'flex-shrink-0 p-0.5 rounded transition-all duration-150',
+            'opacity-0 group-hover:opacity-100',
+            email.starred && '!opacity-100',
+            !email.starred && 'hover:bg-[#F0EFEC]',
+          )}
+        >
+          <Star
+            className={cn(
+              'h-3.5 w-3.5 transition-colors',
+              email.starred ? 'fill-amber-400 text-amber-400' : 'text-[#B0ADA8] hover:text-[#9B9B95]',
+            )}
+          />
+        </button>
+
+        {isUnread && (
+          <div className="w-[5px] h-[5px] rounded-full bg-[#1A535C] flex-shrink-0" />
+        )}
+      </div>
+    )
+  }
+
+  // Default two-line mode
   return (
     <div
       onClick={handleClick}

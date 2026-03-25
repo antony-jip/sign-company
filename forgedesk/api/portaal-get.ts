@@ -350,7 +350,7 @@ async function handleGoedkeuringToken(supabase: any, token: string, res: VercelR
       id: `reactie-${gk.id}`,
       type: gk.status === 'goedgekeurd' ? 'goedkeuring' : 'revisie',
       bericht: gk.revisie_opmerkingen || `Goedgekeurd door ${gk.goedgekeurd_door}`,
-      naam: gk.goedgekeurd_door,
+      klant_naam: gk.goedgekeurd_door,
       created_at: gk.goedgekeurd_op || gk.updated_at,
     }] : [],
   }]

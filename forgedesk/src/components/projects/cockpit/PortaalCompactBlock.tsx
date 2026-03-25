@@ -6,7 +6,7 @@ import {
   Bold, Italic, Underline, List, Link2,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { getPortaalByProject, getPortaalItems, createPortaalItem, getOffertesByProject, getFacturenByProject } from '@/services/supabaseService'
+import { getPortaalByProject, getPortaalItems, createPortaalItem, getOffertesByProject, getFacturenByProject, createPortaal } from '@/services/supabaseService'
 import { uploadFile } from '@/services/storageService'
 import { useAuth } from '@/contexts/AuthContext'
 import type { ProjectPortaal, PortaalItem, Offerte, Factuur } from '@/types'
@@ -284,9 +284,11 @@ function Feed({ items, feedEndRef }: { items: PortaalItem[]; feedEndRef: React.R
 
   if (items.length === 0) {
     return (
-      <div className="py-10 text-center">
-        <p className="text-sm text-[#9B9B95]">Nog geen berichten</p>
-        <p className="text-xs text-[#9B9B95] mt-1">Stuur een bericht, offerte of factuur naar je klant.</p>
+      <div className="py-8 text-center">
+        <p className="text-sm font-medium text-[#1A1A1A]">Nog niets gedeeld</p>
+        <p className="text-xs text-[#9B9B95] mt-1.5 leading-relaxed max-w-[280px] mx-auto">
+          Deel offertes, tekeningen, foto's of facturen met je klant via het portaal. Je klant kan reageren en goedkeuren.
+        </p>
       </div>
     )
   }
@@ -517,15 +519,38 @@ function InputBar({
 
       {/* Action buttons row */}
       <div className="flex items-center justify-between mt-2">
-        <div className="flex items-center gap-0.5">
-          <button onClick={() => tekeningInputRef.current?.click()} disabled={isSending} title="Tekening" className="p-1.5 rounded-md hover:bg-[#F8F7F5] text-[#9B9B95] hover:text-[#1A1A1A] transition-colors disabled:opacity-40">
-            <FileText className="h-4 w-4" />
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => tekeningInputRef.current?.click()}
+            disabled={isSending}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md hover:bg-[#F8F7F5] text-[#9B9B95] hover:text-[#1A1A1A] transition-colors disabled:opacity-40 text-[12px]"
+          >
+            <FileText className="h-3.5 w-3.5" />
+            <span>Tekening</span>
           </button>
-          <button onClick={async () => { try { setOffertes(await getOffertesByProject(projectId)) } catch { setOffertes([]) }; setActivePopover('offerte') }} disabled={isSending} title="Offerte delen" className="p-1.5 rounded-md hover:bg-[#F8F7F5] text-[#9B9B95] hover:text-[#1A1A1A] transition-colors disabled:opacity-40">
-            <Receipt className="h-4 w-4" />
+          <button
+            onClick={async () => { try { setOffertes(await getOffertesByProject(projectId)) } catch { setOffertes([]) }; setActivePopover('offerte') }}
+            disabled={isSending}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md hover:bg-[#F8F7F5] text-[#9B9B95] hover:text-[#1A1A1A] transition-colors disabled:opacity-40 text-[12px]"
+          >
+            <Receipt className="h-3.5 w-3.5" />
+            <span>Offerte</span>
           </button>
-          <button onClick={async () => { try { setFacturen(await getFacturenByProject(projectId)) } catch { setFacturen([]) }; setActivePopover('factuur') }} disabled={isSending} title="Factuur delen" className="p-1.5 rounded-md hover:bg-[#F8F7F5] text-[#9B9B95] hover:text-[#1A1A1A] transition-colors disabled:opacity-40">
-            <CreditCard className="h-4 w-4" />
+          <button
+            onClick={async () => { try { setFacturen(await getFacturenByProject(projectId)) } catch { setFacturen([]) }; setActivePopover('factuur') }}
+            disabled={isSending}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md hover:bg-[#F8F7F5] text-[#9B9B95] hover:text-[#1A1A1A] transition-colors disabled:opacity-40 text-[12px]"
+          >
+            <CreditCard className="h-3.5 w-3.5" />
+            <span>Factuur</span>
+          </button>
+          <button
+            onClick={() => fotoInputRef.current?.click()}
+            disabled={isSending}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md hover:bg-[#F8F7F5] text-[#9B9B95] hover:text-[#1A1A1A] transition-colors disabled:opacity-40 text-[12px]"
+          >
+            <ImageIcon className="h-3.5 w-3.5" />
+            <span>Foto</span>
           </button>
         </div>
         <button
@@ -607,7 +632,39 @@ export function PortaalCompactBlock({ projectId }: { projectId: string }) {
     if (!collapsed && feedEndRef.current) feedEndRef.current.scrollIntoView({ behavior: 'smooth' })
   }, [items.length, collapsed])
 
-  if (loading || !portaal) return null
+  const handleActiveerPortaal = async () => {
+    if (!user?.id) return
+    try {
+      const nieuwPortaal = await createPortaal(projectId, user.id)
+      setPortaal(nieuwPortaal)
+      setCollapsed(false)
+      toast.success('Portaal geactiveerd')
+    } catch {
+      toast.error('Kon portaal niet activeren')
+    }
+  }
+
+  if (loading) return null
+
+  if (!portaal) {
+    return (
+      <div className="bg-[#1A535C] rounded-lg px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <Send className="h-4 w-4 text-white/50" />
+          <div>
+            <h3 className="text-[12px] font-semibold text-white uppercase tracking-widest">Portaal</h3>
+            <p className="text-[11px] text-white/40 mt-0.5">Deel offertes, tekeningen en updates met je klant</p>
+          </div>
+        </div>
+        <button
+          onClick={handleActiveerPortaal}
+          className="text-[12px] font-semibold px-3 py-1.5 rounded-lg bg-white/15 text-white hover:bg-white/25 transition-colors"
+        >
+          Activeer
+        </button>
+      </div>
+    )
+  }
 
   const isVerlopen = new Date(portaal.verloopt_op) < new Date()
   const isActief = portaal.actief && !isVerlopen

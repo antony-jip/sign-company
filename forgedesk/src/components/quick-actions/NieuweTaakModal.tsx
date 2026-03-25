@@ -36,6 +36,7 @@ export function NieuweTaakModal({ open, onOpenChange }: Props) {
         status: 'todo',
         prioriteit: 'medium',
         toegewezen_aan: '',
+        deadline: new Date().toISOString().split('T')[0],
         geschatte_tijd: 0,
         bestede_tijd: 0,
       })

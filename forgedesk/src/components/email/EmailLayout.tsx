@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import {
   Search, Pencil, Inbox, Send, FileEdit, Trash2,
   Loader2, Archive, RefreshCw, CheckCheck, X, Mail,
+  Rows3, StretchHorizontal,
 } from 'lucide-react'
 import { sendEmail as sendEmailViaApi, fetchEmailsFromIMAP, readEmailFromIMAP } from '@/services/gmailService'
 import type { IMAPEmailSummary } from '@/services/gmailService'
@@ -74,8 +75,10 @@ export function EmailLayout() {
   const [searchInput, setSearchInput] = useState('')
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [filter, setFilter] = useState<FilterType>('alle')
-  const [showSearch, setShowSearch] = useState(false)
   const [fontSize, setFontSize] = useState<FontSize>('medium')
+  const [listStyle, setListStyle] = useState<'inline' | 'stacked'>(() => {
+    try { return (localStorage.getItem('email_list_style') as 'inline' | 'stacked') || 'inline' } catch { return 'inline' }
+  })
 
   // ─── Loading state ───
   const [isLoading, setIsLoading] = useState(true)
@@ -922,14 +925,32 @@ export function EmailLayout() {
                 </button>
               ))}
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC] rounded-lg transition-colors duration-150"
-              onClick={() => setShowSearch(!showSearch)}
-            >
-              <Search className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center bg-[#F0EFEC] rounded-xl p-0.5 mr-1">
+              <button
+                onClick={() => { setListStyle('stacked'); localStorage.setItem('email_list_style', 'stacked') }}
+                className={cn(
+                  'p-1.5 rounded transition-all duration-150',
+                  listStyle === 'stacked'
+                    ? 'bg-white text-[#1A1A1A] shadow-[0_1px_2px_rgba(0,0,0,0.06)]'
+                    : 'text-[#9B9B95] hover:text-[#6B6B66]',
+                )}
+                title="Compact — alles op één regel"
+              >
+                <StretchHorizontal className="h-3.5 w-3.5" />
+              </button>
+              <button
+                onClick={() => { setListStyle('inline'); localStorage.setItem('email_list_style', 'inline') }}
+                className={cn(
+                  'p-1.5 rounded transition-all duration-150',
+                  listStyle === 'inline'
+                    ? 'bg-white text-[#1A1A1A] shadow-[0_1px_2px_rgba(0,0,0,0.06)]'
+                    : 'text-[#9B9B95] hover:text-[#6B6B66]',
+                )}
+                title="Standaard — twee regels"
+              >
+                <Rows3 className="h-3.5 w-3.5" />
+              </button>
+            </div>
             <Button
               variant="ghost"
               size="icon"
@@ -942,25 +963,22 @@ export function EmailLayout() {
           </div>
         </div>
 
-        {/* Search bar */}
-        {showSearch && (
-          <div className="flex items-center px-4 h-11 border-b border-[#EBEBEB]">
-            <Search className="h-4 w-4 text-[#B0ADA8] mr-3 flex-shrink-0" />
-            <input
-              type="text"
-              value={searchInput}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              placeholder="Zoek in emails..."
-              className="flex-1 bg-transparent text-[14px] outline-none placeholder:text-[#B0ADA8]"
-              autoFocus
-            />
-            {searchInput && (
-              <button onClick={() => { setSearchInput(''); setSearchQuery('') }} className="p-1 hover:bg-[#F0EFEC] rounded">
-                <X className="h-4 w-4 text-[#B0ADA8]" />
-              </button>
-            )}
-          </div>
-        )}
+        {/* Search bar — always visible */}
+        <div className="flex items-center px-4 h-11 border-b border-[#EBEBEB]">
+          <Search className="h-4 w-4 text-[#B0ADA8] mr-3 flex-shrink-0" />
+          <input
+            type="text"
+            value={searchInput}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            placeholder="Zoek in emails..."
+            className="flex-1 bg-transparent text-[14px] outline-none placeholder:text-[#B0ADA8]"
+          />
+          {searchInput && (
+            <button onClick={() => { setSearchInput(''); setSearchQuery('') }} className="p-1 hover:bg-[#F0EFEC] rounded">
+              <X className="h-4 w-4 text-[#B0ADA8]" />
+            </button>
+          )}
+        </div>
 
         {/* Email list */}
         <div
@@ -1000,6 +1018,7 @@ export function EmailLayout() {
                   isChecked={checkedEmails.has(email.id)}
                   isFocused={focusedIndex === index}
                   fontSize={fontSize}
+                  stacked={listStyle === 'stacked'}
                   onSelect={handleSelectEmail}
                   onToggleStar={handleToggleStar}
                   onToggleCheck={toggleCheckEmail}

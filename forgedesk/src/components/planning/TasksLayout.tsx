@@ -398,6 +398,15 @@ export function TasksLayout() {
     return map
   }, [taken, showCompleted, taskFilter, medewerkerFilter])
 
+  // Tasks without deadline (ongepland)
+  const unscheduledTaken = useMemo(() => {
+    let activeTaken = showCompleted ? taken : taken.filter((t) => t.status !== 'klaar')
+    if (taskFilter === 'project') activeTaken = activeTaken.filter((t) => !!t.project_id)
+    else if (taskFilter === 'los') activeTaken = activeTaken.filter((t) => !t.project_id)
+    if (medewerkerFilter) activeTaken = activeTaken.filter((t) => t.toegewezen_aan === medewerkerFilter)
+    return activeTaken.filter((t) => !t.deadline).sort((a, b) => (PRIORITEIT_ORDER[b.prioriteit] || 0) - (PRIORITEIT_ORDER[a.prioriteit] || 0))
+  }, [taken, showCompleted, taskFilter, medewerkerFilter])
+
   // Montage afspraken grouped by day key
   const montageByDay = useMemo(() => {
     const map = new Map<string, MontageAfspraak[]>()
@@ -750,6 +759,39 @@ export function TasksLayout() {
         {viewMode === 'week' ? (<>
         {/* === NIET VERGETEN — sticky note === */}
         <NietVergetenStrip />
+
+        {/* === ONGEPLAND — taken zonder deadline === */}
+        {unscheduledTaken.length > 0 && (
+          <div className="flex items-center gap-2 px-4 py-2 border-b border-[#EBEBEB] bg-[#FAFAF9]/50">
+            <span className="text-[10px] uppercase tracking-widest font-semibold text-[#9B9B95] flex-shrink-0">Ongepland</span>
+            <span className="text-[10px] font-mono text-[#B0ADA8]">{unscheduledTaken.length}</span>
+            <div className="flex-1 flex items-center gap-1.5 overflow-x-auto scrollbar-none">
+              {unscheduledTaken.map((t) => {
+                const isDone = t.status === 'klaar'
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => openEditDialog(t)}
+                    className={cn(
+                      'flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[12px] whitespace-nowrap flex-shrink-0 transition-colors',
+                      'border border-[#EBEBEB] hover:border-[#1A535C]/20 hover:bg-[#1A535C]/[0.03]',
+                      isDone && 'opacity-40 line-through',
+                    )}
+                  >
+                    <span
+                      className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: PRIORITEIT_COLORS[t.prioriteit]?.dot || '#9B9B95' }}
+                    />
+                    <span className={cn('text-[#1A1A1A]', isDone && 'text-[#9B9B95]')}>{t.titel}</span>
+                    {t.project_id && projectMap.get(t.project_id) && (
+                      <span className="text-[10px] text-[#9B9B95]">{projectMap.get(t.project_id)}</span>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         {/* === DAY HEADERS === */}
         <div className="flex border-b border-[#EBEBEB] bg-[#FAFAF9] flex-shrink-0">

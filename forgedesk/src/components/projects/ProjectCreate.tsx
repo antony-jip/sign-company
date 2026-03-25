@@ -93,7 +93,7 @@ export function ProjectCreate() {
       const settings = await getAppSettings(user.id)
       const projectNummer = await generateProjectNummer(settings?.project_prefix || 'P')
 
-      await createProject({
+      const nieuwProject = await createProject({
         user_id: user.id,
         klant_id: klantId,
         project_nummer: projectNummer,
@@ -113,7 +113,7 @@ export function ProjectCreate() {
       })
 
       toast.success('Project succesvol aangemaakt')
-      navigate('/projecten')
+      navigate(`/projecten/${nieuwProject.id}`)
     } catch (error) {
       logger.error('Fout bij aanmaken project:', error)
       toast.error('Er is iets misgegaan bij het aanmaken van het project')

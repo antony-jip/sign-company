@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import {
   Loader2,
@@ -229,10 +229,10 @@ export function PortaalPagina() {
   })
   const { markBekeken } = useBekekenTracker(token)
 
-  function handleKlantNaamChange(naam: string) {
+  const handleKlantNaamChange = useCallback((naam: string) => {
     setKlantNaam(naam)
     try { localStorage.setItem('doen_portaal_klant_naam', naam) } catch { /* ignore */ }
-  }
+  }, [])
 
   const fetchPortaal = useCallback(async () => {
     if (!token) return
@@ -284,13 +284,19 @@ export function PortaalPagina() {
     }).catch(() => {})
   }, [token, data?.status])
 
+  // Stable key for items — only changes when item set actually changes
+  const itemIds = useMemo(
+    () => (data?.items || []).filter(i => !i.bekeken_op).map(i => i.id).join(','),
+    [data?.items],
+  )
+
   // Mark individual items as bekeken
   useEffect(() => {
-    if (!data?.items) return
-    for (const item of data.items) {
-      if (!item.bekeken_op) markBekeken(item.id)
+    if (!itemIds) return
+    for (const id of itemIds.split(',')) {
+      markBekeken(id)
     }
-  }, [data?.items, markBekeken])
+  }, [itemIds, markBekeken])
 
   // ── Loading / Error / Expired / Closed states ───────────────────────────
   if (loading) {
@@ -337,10 +343,22 @@ export function PortaalPagina() {
     )
   }
 
-  const bedrijf = data.bedrijf!
+  const bedrijf = data.bedrijf
   const project = data.project
-  const portaal = data.portaal!
+  const portaal = data.portaal
   const rawItems = data.items || []
+
+  // Guard: bedrijf and portaal must exist for active portals
+  if (!bedrijf || !portaal) {
+    return (
+      <div className="min-h-screen bg-[#FAFAF8] flex items-center justify-center p-4">
+        <div className="text-center space-y-4">
+          <AlertCircle className="w-12 h-12 text-gray-400 mx-auto" />
+          <p className="text-gray-600">Portaal kon niet geladen worden</p>
+        </div>
+      </div>
+    )
+  }
   const instellingen = (data.instellingen || {}) as Record<string, unknown>
   const gebruikKleuren = instellingen.bedrijfskleuren_gebruiken !== false
   const primaire_kleur = gebruikKleuren ? (bedrijf.primaire_kleur || '#1a1a1a') : '#1a1a1a'
