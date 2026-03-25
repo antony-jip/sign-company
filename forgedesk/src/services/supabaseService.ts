@@ -5524,28 +5524,23 @@ export async function deactiveerPortaal(portaalId: string): Promise<void> {
 export async function getPortaalItems(portaalId: string, alleenZichtbaar = false): Promise<PortaalItem[]> {
   assertId(portaalId, 'portaal_id')
   if (isSupabaseConfigured() && supabase) {
-    // Probeer via server-side API (omzeilt RLS op portaal_reacties)
+    // RPC functie (SECURITY DEFINER) omzeilt RLS op portaal_reacties/bestanden
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session?.access_token) {
-        const resp = await fetch(`/api/portaal-items-get?portaal_id=${encodeURIComponent(portaalId)}`, {
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        })
-        if (resp.ok) {
-          const { items: apiItems } = await resp.json()
-          let result = (apiItems || []).map((item: Record<string, unknown>) => ({
-            ...item,
-            bestanden: (item.portaal_bestanden || []) as PortaalBestand[],
-            reacties: (item.portaal_reacties || []) as PortaalReactie[],
-          })) as PortaalItem[]
-          if (alleenZichtbaar) result = result.filter(i => i.zichtbaar_voor_klant)
-          return result
-        }
+      const { data: rpcData, error: rpcError } = await supabase.rpc('get_my_portaal_items', { p_portaal_id: portaalId })
+      if (!rpcError && rpcData) {
+        const items = (Array.isArray(rpcData) ? rpcData : []) as Record<string, unknown>[]
+        let result = items.map((item) => ({
+          ...item,
+          bestanden: (item.bestanden || []) as PortaalBestand[],
+          reacties: (item.reacties || []) as PortaalReactie[],
+        })) as PortaalItem[]
+        if (alleenZichtbaar) result = result.filter(i => i.zichtbaar_voor_klant)
+        return result
       }
     } catch {
-      // Fallback naar client-side query
+      // Fallback naar directe query
     }
-    // Fallback: client-side query (reacties mogelijk leeg door RLS)
+    // Fallback: directe query
     let query = supabase
       .from('portaal_items')
       .select('*, portaal_bestanden(*), portaal_reacties(*)')
