@@ -49,7 +49,32 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
       const p = await getPortaalByProject(projectId)
       setPortaal(p)
       if (p) {
-        const itms = await getPortaalItems(p.id)
+        // Haal items op via server-side API (supabaseAdmin, geen RLS)
+        let itms: PortaalItem[] = []
+        try {
+          const jwt = await getAuthToken()
+          if (jwt) {
+            const resp = await fetch(`/api/portaal-items-get?portaal_id=${encodeURIComponent(p.id)}`, {
+              headers: { Authorization: `Bearer ${jwt}` },
+            })
+            if (resp.ok) {
+              const { items: apiItems } = await resp.json()
+              itms = (apiItems || []).map((item: Record<string, unknown>) => ({
+                ...item,
+                bestanden: (item.portaal_bestanden || []) as unknown[],
+                reacties: (item.portaal_reacties || []) as unknown[],
+              })) as PortaalItem[]
+            } else {
+              console.warn('[portaal] API fallback, status:', resp.status)
+              itms = await getPortaalItems(p.id)
+            }
+          } else {
+            itms = await getPortaalItems(p.id)
+          }
+        } catch (apiErr) {
+          console.warn('[portaal] API error, using fallback:', apiErr)
+          itms = await getPortaalItems(p.id)
+        }
         setItems(itms)
         // Load offertes + facturen for the + menu
         getOffertesByProject(projectId).then(setOffertes).catch(() => {})

@@ -32,14 +32,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'portaal_id is verplicht' })
     }
 
-    // Verifieer dat de user eigenaar is van dit portaal
+    // Verifieer dat de user toegang heeft (eigenaar of org-lid)
     const { data: portaal } = await supabaseAdmin
       .from('project_portalen')
-      .select('id, user_id')
+      .select('id, user_id, organisatie_id')
       .eq('id', portaalId)
       .single()
 
-    if (!portaal || portaal.user_id !== user.id) {
+    if (!portaal) {
+      return res.status(404).json({ error: 'Portaal niet gevonden' })
+    }
+
+    // Check directe eigenaar OF zelfde organisatie
+    let hasAccess = portaal.user_id === user.id
+    if (!hasAccess && portaal.organisatie_id) {
+      const { data: membership } = await supabaseAdmin
+        .from('profiles')
+        .select('organisatie_id')
+        .eq('id', user.id)
+        .single()
+      hasAccess = membership?.organisatie_id === portaal.organisatie_id
+    }
+    if (!hasAccess) {
       return res.status(403).json({ error: 'Geen toegang tot dit portaal' })
     }
 
