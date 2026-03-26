@@ -1016,7 +1016,44 @@ export function FactuurEditor() {
         betaalUrl: existingFactuur.betaal_link || undefined,
       })
 
-      await sendEmail(selectedKlant.email, subject, '', { html })
+      // Generate PDF attachment
+      let attachments: Array<{ filename: string; content: string; encoding: 'base64' }> | undefined
+      try {
+        const bedrijfsProfiel = { ...profile, primaireKleur }
+        const factuurData = {
+          nummer,
+          titel,
+          datum: factuurdatum,
+          vervaldatum,
+          subtotaal,
+          btw_bedrag: btwBedrag,
+          totaal,
+          notities: notities || undefined,
+          betaalvoorwaarden: voorwaarden || undefined,
+          factuur_type: (isCreditFactuur ? 'creditnota' : existingFactuur.factuur_type || 'standaard') as string,
+          betaal_link: existingFactuur.betaal_link || undefined,
+        }
+        const pdfItems: OfferteItem[] = validItems.map((item, idx) => ({
+          id: item.id,
+          offerte_id: '',
+          beschrijving: item.beschrijving,
+          aantal: item.aantal,
+          eenheidsprijs: item.eenheidsprijs,
+          btw_percentage: item.btw_percentage,
+          korting_percentage: item.korting_percentage,
+          totaal: calcLineTotal(item),
+          volgorde: idx + 1,
+          created_at: new Date().toISOString(),
+        }))
+        const doc = generateFactuurPDF(factuurData, pdfItems, selectedKlant, bedrijfsProfiel, documentStyle)
+        const pdfBase64 = doc.output('datauristring').split(',')[1]
+        attachments = [{ filename: `Factuur-${nummer}.pdf`, content: pdfBase64, encoding: 'base64' }]
+      } catch (pdfErr) {
+        logger.warn('PDF bijlage genereren mislukt, email wordt zonder bijlage verstuurd:', pdfErr)
+        toast.warning('PDF bijlage kon niet gegenereerd worden — email wordt zonder bijlage verstuurd')
+      }
+
+      await sendEmail(selectedKlant.email, subject, '', { html, attachments })
 
       const updated = await updateFactuur(existingFactuur.id, { status: 'verzonden' })
       setExistingFactuur({ ...existingFactuur, ...updated, status: 'verzonden' })
@@ -1034,7 +1071,7 @@ export function FactuurEditor() {
     } finally {
       setIsSending(false)
     }
-  }, [existingFactuur, selectedKlant, nummer, titel, totaal, vervaldatum, bedrijfsnaam, primaireKleur, emailHandtekening])
+  }, [existingFactuur, selectedKlant, nummer, titel, totaal, vervaldatum, bedrijfsnaam, primaireKleur, emailHandtekening, profile, factuurdatum, subtotaal, btwBedrag, notities, voorwaarden, validItems, isCreditFactuur, documentStyle])
 
   // ============ MARK AS PAID ============
 
