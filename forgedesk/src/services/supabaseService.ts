@@ -5618,7 +5618,7 @@ export async function createPortaalBestand(bestand: Omit<PortaalBestand, 'id' | 
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('portaal_bestanden')
-      .insert(await withUserId(bestand))
+      .insert(bestand)
       .select()
       .single()
     if (error) throw error
