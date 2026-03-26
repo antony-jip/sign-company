@@ -53,29 +53,7 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
       const p = await getPortaalByProject(projectId)
       setPortaal(p)
       if (p) {
-        // Haal items op via API route (service role, omzeilt RLS)
-        const jwt = await getAuthToken()
-        let itms: PortaalItem[] = []
-
-        if (jwt) {
-          const resp = await fetch(`/api/portaal-items-get?portaal_id=${encodeURIComponent(p.id)}`, {
-            headers: { Authorization: `Bearer ${jwt}` },
-          })
-          if (resp.ok) {
-            const { items: apiItems } = await resp.json()
-            itms = (apiItems || []).map((item: Record<string, unknown>) => ({
-              ...item,
-              bestanden: (item.portaal_bestanden || []) as unknown[],
-              reacties: (item.portaal_reacties || []) as unknown[],
-            })) as PortaalItem[]
-            console.log('[portaal] API items:', itms.length, 'reacties:', itms.map(i => ({ id: i.id, titel: i.titel, reacties: (i as Record<string, unknown>).reacties })))
-          } else {
-            console.warn('[portaal] API call mislukt:', resp.status, await resp.text())
-          }
-        } else {
-          console.warn('[portaal] Geen JWT token — kan items niet ophalen')
-        }
-
+        const itms = await getPortaalItems(p.id)
         setItems(itms)
         getOffertesByProject(projectId).then(setOffertes).catch(() => {})
         getFacturenByProject(projectId).then(setFacturen).catch(() => {})
