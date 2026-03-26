@@ -444,7 +444,7 @@ function InputBar({
   if (!isActief) return null
 
   return (
-    <div className="border-t border-[#1A535C]/8 p-3 relative" ref={popoverRef}>
+    <div className="border-t border-[#EBEBEB] px-4 py-4 relative" ref={popoverRef}>
       <input ref={fotoInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleSendFoto(f); e.target.value = '' }} />
       <input ref={tekeningInputRef} type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) { setTekeningFile(f); setTekeningTitel(f.name.replace(/\.[^/.]+$/, '')); setTekeningPopoverOpen(true) }; e.target.value = '' }} />
 
@@ -487,9 +487,9 @@ function InputBar({
       )}
 
       {/* Input area with toolbar */}
-      <div className="bg-[#FFFFFF] border border-[#EBEBEB]/40 rounded-lg shadow-[0_1px_2px_rgba(0,0,0,0.04)] focus-within:border-[#1A535C]/40 focus-within:shadow-[0_0_0_2px_rgba(26,83,92,0.08)] transition-all overflow-hidden">
+      <div className="bg-[#FFFFFF] rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] focus-within:shadow-[0_0_0_2px_rgba(26,83,92,0.10)] transition-all overflow-hidden">
         {/* Toolbar */}
-        <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-[#EBEBEB]/30">
+        <div className="flex items-center gap-0.5 px-3 py-2 border-b border-[#EBEBEB]/40">
           {[
             { cmd: 'bold', icon: <Bold className="h-3.5 w-3.5" />, title: 'Vet' },
             { cmd: 'italic', icon: <Italic className="h-3.5 w-3.5" />, title: 'Cursief' },
@@ -532,12 +532,12 @@ function InputBar({
             if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendBericht() }
           }}
           data-placeholder="Bericht..."
-          className="min-h-[40px] max-h-[120px] overflow-y-auto px-3 py-2.5 text-sm text-[#1A1A1A] focus:outline-none leading-relaxed empty:before:content-[attr(data-placeholder)] empty:before:text-[#9B9B95]/50"
+          className="min-h-[60px] max-h-[140px] overflow-y-auto px-4 py-3 text-sm text-[#1A1A1A] focus:outline-none leading-relaxed empty:before:content-[attr(data-placeholder)] empty:before:text-[#9B9B95]/40"
         />
       </div>
 
       {/* Action buttons row */}
-      <div className="flex items-center justify-between mt-2">
+      <div className="flex items-center justify-between mt-3">
         <div className="flex items-center gap-1">
           <button
             onClick={() => tekeningInputRef.current?.click()}
@@ -582,9 +582,9 @@ function InputBar({
       </div>
 
       {/* Notificeer */}
-      <label className="flex items-center gap-2 mt-2 cursor-pointer select-none">
-        <input type="checkbox" checked={notificeerKlant} onChange={(e) => setNotificeerKlant(e.target.checked)} className="h-3.5 w-3.5 rounded border-[#EBEBEB] text-[#1A535C] focus:ring-[#1A535C]/30" />
-        <span className="text-xs text-[#9B9B95]">Notificeer klant per email</span>
+      <label className="flex items-center gap-2 mt-2.5 cursor-pointer select-none">
+        <input type="checkbox" checked={notificeerKlant} onChange={(e) => setNotificeerKlant(e.target.checked)} className="h-3.5 w-3.5 rounded border-[#EBEBEB] text-[#1A535C] focus:ring-[#1A535C]/30" style={{ accentColor: '#1A535C' }} />
+        <span className="text-[11px] text-[#9B9B95]">Notificeer klant per email</span>
       </label>
     </div>
   )
