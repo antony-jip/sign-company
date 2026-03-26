@@ -741,7 +741,7 @@ export function MontagePlanningLayout() {
   }
 
   function renderMonteurAvatars(monteurIds: string[], size: "sm" | "md" = "sm") {
-    const sizeClasses = size === "sm" ? "h-6 w-6 text-[10px]" : "h-7 w-7 text-[11px]";
+    const sizeClasses = size === "sm" ? "h-5 w-5 text-[9px]" : "h-6 w-6 text-[10px]";
     return (
       <div className="flex -space-x-1.5">
         {monteurIds.map((id, idx) => {
@@ -804,7 +804,7 @@ export function MontagePlanningLayout() {
         }}
         onDragEnd={() => { setDraggingAfspraakId(null); setDragOverDate(null); }}
         className={cn(
-          "bg-white rounded-xl border border-[#F0EFEC] border-l-[3px] p-3 mb-2 cursor-grab active:cursor-grabbing transition-all duration-200 hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] group/card",
+          "bg-white rounded-lg border border-[#F0EFEC] border-l-[3px] px-2.5 py-2 mb-1.5 cursor-grab active:cursor-grabbing transition-all duration-200 hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] group/card",
           hasConflict && "ring-1 ring-[#F0C8BC]",
           draggingAfspraakId === afspraak.id && "opacity-30 scale-[0.97] ring-2 ring-[#1A535C]/30"
         )}
@@ -813,57 +813,52 @@ export function MontagePlanningLayout() {
       >
         <div className="min-w-0">
           <div className="flex items-start justify-between gap-1">
-            <div className="text-[13px] font-semibold text-[#1A1A1A] leading-tight truncate">{afspraak.titel}</div>
+            <div className="text-[12px] font-semibold text-[#1A1A1A] leading-tight truncate">{afspraak.titel}</div>
             {hasConflict && <AlertTriangle className="h-3 w-3 text-[#C03A18] shrink-0 mt-0.5" />}
           </div>
           {afspraak.klant_naam && (
-            <div className="text-[12px] text-[#9B9B95] mt-0.5 truncate">{afspraak.klant_naam}</div>
+            <div className="text-[11px] text-[#9B9B95] truncate">{afspraak.klant_naam}</div>
           )}
-          {afspraak.beschrijving && (
-            <div className="text-[12px] text-[#B0ADA8] mt-0.5 truncate">{afspraak.beschrijving}</div>
-          )}
-          {/* Time badge */}
-          {afspraak.start_tijd && (
-            <div className="mt-1.5">
-              <span className="inline-flex items-center gap-1 text-[11px] rounded-md px-1.5 py-0.5 font-mono tabular-nums" style={{ backgroundColor: cfg.bg, color: cfg.text }}>
-                <Clock className="h-2.5 w-2.5" />
+          {/* Time + Location inline */}
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
+            {afspraak.start_tijd && (
+              <span className="inline-flex items-center gap-0.5 text-[10px] rounded px-1 py-px font-mono tabular-nums" style={{ backgroundColor: cfg.bg, color: cfg.text }}>
+                <Clock className="h-2 w-2" />
                 {afspraak.start_tijd} – {afspraak.eind_tijd}
               </span>
+            )}
+            {afspraak.locatie && (
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(afspraak.locatie)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="inline-flex items-center gap-0.5 text-[10px] text-[#1A535C] hover:underline truncate max-w-[120px]"
+              >
+                <MapPin className="h-2 w-2 shrink-0" />
+                <span className="truncate">{afspraak.locatie}</span>
+              </a>
+            )}
+          </div>
+          {/* Monteur avatars + Werkbon inline */}
+          {(afspraak.monteurs.length > 0 || afspraak.werkbon_id) && (
+            <div className="flex items-center gap-1.5 mt-1">
+              {afspraak.monteurs.length > 0 && renderMonteurAvatars(afspraak.monteurs)}
+              {afspraak.werkbon_id && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    window.open(`/werkbonnen/${afspraak.werkbon_id}`, "_blank");
+                  }}
+                  className="inline-flex items-center gap-1 text-[10px] rounded px-1.5 py-0.5 font-medium font-mono transition-colors ml-auto"
+                  style={{ backgroundColor: '#FDE8E2', color: '#C03A18' }}
+                >
+                  <ClipboardCheck className="h-2.5 w-2.5 shrink-0" />
+                  {afspraak.werkbon_nummer || "WB"}
+                  <Eye className="h-2 w-2 shrink-0 opacity-50" />
+                </button>
+              )}
             </div>
-          )}
-          {/* Location */}
-          {afspraak.locatie && (
-            <a
-              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(afspraak.locatie)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-              className="flex items-center gap-1 text-[11px] text-[#1A535C] hover:underline mt-1 truncate"
-            >
-              <MapPin className="h-2.5 w-2.5 shrink-0" />
-              <span className="truncate">{afspraak.locatie}</span>
-            </a>
-          )}
-          {/* Monteur avatars */}
-          {afspraak.monteurs.length > 0 && (
-            <div className="mt-1.5">
-              {renderMonteurAvatars(afspraak.monteurs)}
-            </div>
-          )}
-          {/* Werkbon */}
-          {afspraak.werkbon_id && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                window.open(`/werkbonnen/${afspraak.werkbon_id}`, "_blank");
-              }}
-              className="flex items-center gap-1.5 w-full text-[11px] rounded-lg px-2 py-1.5 mt-1.5 font-medium transition-colors"
-              style={{ backgroundColor: '#FDE8E2', color: '#C03A18' }}
-            >
-              <ClipboardCheck className="h-3.5 w-3.5 shrink-0" />
-              <span className="font-mono">{afspraak.werkbon_nummer || "Werkbon"}</span>
-              <Eye className="h-3 w-3 shrink-0 ml-auto opacity-50" />
-            </button>
           )}
         </div>
       </div>
@@ -874,17 +869,14 @@ export function MontagePlanningLayout() {
   function renderWeatherCell(w: DayWeather | undefined) {
     if (!w) return null;
     return (
-      <div className="flex flex-col items-center gap-0.5 py-3 px-2">
-        <span className="text-2xl leading-none">{w.emoji}</span>
-        <div className="text-[11px] text-[#9B9B95] space-y-0 text-center">
-          <div>Min: {w.minTemp}°</div>
-          <div>Max: {w.maxTemp}°</div>
-          {w.precipitationProb > 0 && (
-            <div className={cn(w.precipitationProb > 50 ? "text-[#3A5A9A] font-semibold" : "")}>
-              Regen: {w.precipitationProb}%
-            </div>
-          )}
-        </div>
+      <div className="flex items-center justify-center gap-1.5 py-1.5 px-2">
+        <span className="text-base leading-none">{w.emoji}</span>
+        <span className="text-[10px] text-[#9B9B95] tabular-nums">{w.maxTemp}°</span>
+        {w.precipitationProb > 30 && (
+          <span className={cn("text-[10px] tabular-nums", w.precipitationProb > 50 ? "text-[#3A5A9A] font-semibold" : "text-[#9B9B95]")}>
+            {w.precipitationProb}%
+          </span>
+        )}
       </div>
     );
   }
@@ -902,7 +894,7 @@ export function MontagePlanningLayout() {
       : weekAfspraken.filter((a) => a.monteurs.includes(selectedMonteur));
 
     return (
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
         {/* Header: member name + week nav */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-[#F0EFEC] bg-white">
           <div className="flex items-center gap-3">
@@ -972,32 +964,34 @@ export function MontagePlanningLayout() {
               <div
                 key={dateStr}
                 className={cn(
-                  "text-center py-2.5 border-r last:border-r-0 border-[#F0EFEC]",
+                  "text-center py-1.5 border-r last:border-r-0 border-[#F0EFEC]",
                   isToday ? "bg-[#1A535C]/[0.04]" : "bg-white"
                 )}
               >
-                <div className={cn(
-                  "text-[13px] font-bold",
-                  isToday ? "text-[#1A535C]" : "text-[#1A1A1A]"
-                )}>
-                  {DAG_NAMEN_LANG[dayIdx]}
-                </div>
-                <div className={cn(
-                  "text-[12px] font-mono tabular-nums",
-                  isToday ? "text-[#1A535C]" : "text-[#B0ADA8]"
-                )}>
-                  {date.toLocaleDateString("nl-NL", { day: "numeric", month: "short" })}
-                </div>
-                <div className="text-[11px] text-[#B0ADA8] font-mono tabular-nums mt-0.5">
-                  {afgerond}/{dayAfspraken.length}
+                <div className="flex items-baseline justify-center gap-1.5">
+                  <span className={cn(
+                    "text-[13px] font-bold",
+                    isToday ? "text-[#1A535C]" : "text-[#1A1A1A]"
+                  )}>
+                    {DAG_NAMEN_LANG[dayIdx]}
+                  </span>
+                  <span className={cn(
+                    "text-[11px] font-mono tabular-nums",
+                    isToday ? "text-[#1A535C]" : "text-[#B0ADA8]"
+                  )}>
+                    {date.getDate()} {date.toLocaleDateString("nl-NL", { month: "short" })}
+                  </span>
+                  <span className="text-[10px] text-[#B0ADA8] font-mono tabular-nums">
+                    {afgerond}/{dayAfspraken.length}
+                  </span>
                 </div>
               </div>
             );
           })}
         </div>
 
-        {/* Day columns with cards */}
-        <div className="grid grid-cols-5 flex-1">
+        {/* Day columns with cards — scrollable area */}
+        <div className="grid grid-cols-5 flex-1 overflow-y-auto">
           {werkdagen.map((date) => {
             const dateStr = formatDate(date);
             const isToday = dateStr === todayStr;
@@ -1009,7 +1003,7 @@ export function MontagePlanningLayout() {
               <div
                 key={dateStr}
                 className={cn(
-                  "border-r last:border-r-0 border-[#F0EFEC] p-2 min-h-[400px] transition-all duration-200",
+                  "border-r last:border-r-0 border-[#F0EFEC] p-1.5 min-h-[200px] transition-all duration-200",
                   isToday ? "bg-[#1A535C]/[0.02]" : "bg-[#F8F7F5]/50",
                   dragOverDate === dateStr && "bg-[#1A535C]/[0.08] ring-2 ring-[#1A535C]/25 ring-inset scale-[1.01]"
                 )}
