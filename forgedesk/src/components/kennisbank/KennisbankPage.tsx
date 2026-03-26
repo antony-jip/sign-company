@@ -330,14 +330,14 @@ const ARTICLES: KbArticle[] = [
 // ── The DOEN workflow — the visual spectrum ──
 
 const FLOW_STEPS = [
-  { icon: Users, label: 'Klant', desc: 'Leg je klant vast', color: '#3A6B8C', category: 'klanten' },
-  { icon: FolderKanban, label: 'Project', desc: 'Start het traject', color: '#1A535C', category: 'projecten' },
-  { icon: FileText, label: 'Offerte', desc: 'Maak de deal', color: '#F15025', category: 'offertes' },
-  { icon: Globe, label: 'Portaal', desc: 'Deel met je klant', color: '#6A5A8A', category: 'klanten' },
-  { icon: ClipboardCheck, label: 'Werkbon', desc: 'Geef de opdracht', color: '#9A5A48', category: 'uitvoering' },
-  { icon: Calendar, label: 'Planning', desc: 'Plan de montage', color: '#1A535C', category: 'uitvoering' },
-  { icon: Receipt, label: 'Factuur', desc: 'Stuur de rekening', color: '#2D6B48', category: 'financieel' },
-  { icon: Heart, label: 'Blije klant', desc: 'Dat is het doel', color: '#F15025', category: 'start' },
+  { icon: Users, label: 'Klant', desc: 'Leg je klant vast', color: '#3A6B8C', category: 'klanten', voordelen: ['Contactpersonen', 'Vestigingen', 'Volledige historie'] },
+  { icon: FolderKanban, label: 'Project', desc: 'Start het traject', color: '#1A535C', category: 'projecten', voordelen: ['Taken toewijzen', 'Bestanden delen', 'Voortgang bijhouden'] },
+  { icon: FileText, label: 'Offerte', desc: 'Maak de deal', color: '#F15025', category: 'offertes', voordelen: ['PDF genereren', 'Direct versturen', 'Calculatie-templates'] },
+  { icon: Globe, label: 'Portaal', desc: 'Deel met je klant', color: '#6A5A8A', category: 'klanten', voordelen: ['Tekeningen delen', 'Offertes goedkeuren', 'Berichten sturen'] },
+  { icon: ClipboardCheck, label: 'Werkbon', desc: 'Geef de opdracht', color: '#9A5A48', category: 'uitvoering', voordelen: ['Neemt offerte over', 'Foto\'s uploaden', 'Klant handtekening'] },
+  { icon: Calendar, label: 'Planning', desc: 'Plan de montage', color: '#1A535C', category: 'uitvoering', voordelen: ['Drag & drop', 'Weer integratie', 'Per monteur filteren'] },
+  { icon: Receipt, label: 'Factuur', desc: 'Stuur de rekening', color: '#2D6B48', category: 'financieel', voordelen: ['Mollie betaallink', 'Auto herinneringen', 'PDF bijlage'] },
+  { icon: Heart, label: 'Blije klant', desc: 'Dat is het doel', color: '#F15025', category: 'start', voordelen: ['Transparant proces', 'Snelle oplevering', 'Professionele uitstraling'] },
 ]
 
 // ── Component ──
@@ -469,13 +469,13 @@ export function KennisbankPage() {
                   <div key={step.label} className="flex items-center animate-stagger-item" style={{ animationDelay: `${idx * 80}ms` }}>
                     <button
                       onClick={() => { setActiveCategory(step.category); setSearch('') }}
-                      className="group flex flex-col items-center text-center flex-shrink-0 relative"
+                      className="group/step flex flex-col items-center text-center flex-shrink-0 relative"
                       style={{ minWidth: isLast ? 80 : 0 }}
                     >
                       {/* Icon */}
                       <div
                         className={cn(
-                          "flex items-center justify-center transition-all duration-300 group-hover:scale-110 relative z-10",
+                          "flex items-center justify-center transition-all duration-300 group-hover/step:scale-110 relative z-10",
                           isLast ? "h-14 w-14 rounded-2xl" : "h-11 w-11 rounded-xl"
                         )}
                         style={{ backgroundColor: step.color, boxShadow: `0 4px 16px ${step.color}40` }}
@@ -485,6 +485,21 @@ export function KennisbankPage() {
                       {/* Label */}
                       <span className={cn("font-bold text-white mt-2 whitespace-nowrap", isLast ? "text-[13px]" : "text-[11px]")}>{step.label}</span>
                       <span className="text-[10px] text-white/30 whitespace-nowrap leading-tight">{step.desc}</span>
+                      {/* Hover tooltip with voordelen */}
+                      <div className="absolute top-full mt-4 left-1/2 -translate-x-1/2 opacity-0 scale-95 group-hover/step:opacity-100 group-hover/step:scale-100 transition-all duration-200 pointer-events-none z-30">
+                        <div className="relative rounded-xl px-4 py-3 shadow-xl min-w-[160px]" style={{ backgroundColor: step.color }}>
+                          {/* Arrow */}
+                          <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rotate-45" style={{ backgroundColor: step.color }} />
+                          <ul className="space-y-1.5 relative">
+                            {step.voordelen.map(v => (
+                              <li key={v} className="flex items-center gap-2 text-[11px] text-white/90 whitespace-nowrap">
+                                <span className="w-1 h-1 rounded-full bg-white/50 flex-shrink-0" />
+                                {v}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
                     </button>
 
                     {/* Connector arrow */}
