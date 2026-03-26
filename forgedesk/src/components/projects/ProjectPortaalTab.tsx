@@ -26,7 +26,7 @@ import {
 } from '@/services/supabaseService'
 import { uploadFile } from '@/services/storageService'
 import type { ProjectPortaal, PortaalItem, Offerte, Factuur, Notificatie } from '@/types'
-import { PortaalFeed } from '@/components/portaal/PortaalFeed'
+import { PortaalTimeline } from '@/components/portaal/PortaalTimeline'
 import { PortaalItemToevoegen } from '@/components/portaal/PortaalItemToevoegen'
 import { PortaalLightbox } from '@/components/portaal/PortaalLightbox'
 
@@ -540,27 +540,11 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
         </div>
       )}
 
-      {/* DEBUG: reacties per item — verwijder na testen */}
-      <div className="text-xs bg-yellow-50 border border-yellow-200 rounded p-2 mb-2">
-        <strong>DEBUG reacties:</strong>
-        {items.map(i => (
-          <div key={i.id}>
-            {i.titel || i.bericht_tekst?.slice(0, 30) || '(geen titel)'}: <strong>{(i.reacties || []).length} reacties</strong>
-            {(i.reacties || []).map(r => (
-              <span key={r.id} className="ml-2 text-green-700">[{r.type}: {r.bericht?.slice(0, 20) || '(leeg)'}]</span>
-            ))}
-          </div>
-        ))}
-      </div>
-
-      {/* Feed */}
-      <PortaalFeed
+      {/* Timeline */}
+      <PortaalTimeline
         items={items}
-        token={portaal.token}
-        klantNaam=""
-        bedrijfNaam={profile?.bedrijfsnaam}
         isPublic={false}
-        onReactie={fetchPortaal}
+        bedrijfNaam={profile?.bedrijfsnaam}
         onImageClick={(url) => setLightboxUrl(url)}
       />
 
