@@ -1978,8 +1978,8 @@ export function QuoteCreation() {
 
         <div className="space-y-4">
           {/* Step 1: Klant */}
-          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#FFFFFF', border: '1px solid #EBEBEB' }}>
-            <div className="h-[3px]" style={{ background: 'linear-gradient(90deg, #F15025, #F1502560)' }} />
+          <div className="rounded-xl" style={{ backgroundColor: '#FFFFFF', border: '1px solid #EBEBEB' }}>
+            <div className="h-[3px] rounded-t-xl" style={{ background: 'linear-gradient(90deg, #F15025, #F1502560)' }} />
             <div className="flex items-center gap-3 px-5 pt-4 pb-1">
               <div className="flex items-center justify-center h-7 w-7 rounded-lg text-white text-[11px] font-bold" style={{ backgroundColor: '#F15025' }}>1</div>
               <div>
