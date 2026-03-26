@@ -783,8 +783,8 @@ export function TasksLayout() {
                       style={{ backgroundColor: PRIORITEIT_COLORS[t.prioriteit]?.dot || '#9B9B95' }}
                     />
                     <span className={cn('text-[#1A1A1A]', isDone && 'text-[#9B9B95]')}>{t.titel}</span>
-                    {t.project_id && projectMap.get(t.project_id) && (
-                      <span className="text-[10px] text-[#9B9B95]">{projectMap.get(t.project_id)}</span>
+                    {t.project_id && projectMap[t.project_id] && (
+                      <span className="text-[10px] text-[#9B9B95]">{projectMap[t.project_id]}</span>
                     )}
                   </button>
                 )
