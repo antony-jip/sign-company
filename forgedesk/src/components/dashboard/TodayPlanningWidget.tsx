@@ -170,22 +170,20 @@ export function TodayPlanningWidget() {
     <Card>
       <CardContent className="p-5">
         {/* Header */}
-        <div className="flex items-center justify-between mb-5">
-          <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
-            <div className="flex items-center justify-center h-8 w-8 rounded-xl shadow-md" style={{ background: 'linear-gradient(135deg, #1A535C, #237580)' }}>
-              <Calendar className="h-4 w-4 text-white" />
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2.5">
+            <div className="flex items-center justify-center h-8 w-8 rounded-xl text-white" style={{ backgroundColor: '#1A535C' }}>
+              <Calendar className="h-4 w-4" />
             </div>
-            Vandaag
-          </h3>
-          <div className="flex items-center gap-2">
-            {totalOverdue > 0 && (
-              <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ color: MODULE_COLORS.werkbonnen.text, background: MODULE_COLORS.werkbonnen.light }}>
-                <span className="font-mono">{totalOverdue}</span> achterstallig
-              </span>
-            )}
-            <span className="text-xs text-muted-foreground">
-              <span className="font-mono">{totalToday}</span> {totalToday === 1 ? 'item' : 'items'}
-            </span>
+            <div>
+              <h3 className="text-[14px] font-bold text-foreground leading-tight">Vandaag</h3>
+              <p className="text-[11px] text-muted-foreground font-mono">
+                {totalToday} {totalToday === 1 ? 'item' : 'items'}
+                {totalOverdue > 0 && (
+                  <span className="ml-1.5 text-[#C03A18] font-semibold">{totalOverdue} achterstallig</span>
+                )}
+              </p>
+            </div>
           </div>
         </div>
 

@@ -69,11 +69,16 @@ export function PriorityTasks() {
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <div className="flex items-center justify-center h-8 w-8 rounded-xl shadow-md" style={{ background: 'linear-gradient(135deg, #1A535C, #237580)' }}>
-            <ListTodo className="h-4 w-4 text-white" />
+        <CardTitle className="flex items-center gap-2.5 text-base">
+          <div className="flex items-center justify-center h-8 w-8 rounded-xl text-white" style={{ backgroundColor: '#1A535C' }}>
+            <ListTodo className="h-4 w-4" />
           </div>
-          <span>Prioritaire Taken</span>
+          <div>
+            <span className="text-[14px] font-bold leading-tight">Prioritaire Taken</span>
+            {!loading && topTasks.length > 0 && (
+              <p className="text-[11px] text-muted-foreground font-mono font-normal">{topTasks.length} openstaand</p>
+            )}
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent>

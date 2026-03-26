@@ -105,11 +105,13 @@ export function RecenteActiviteitWidget() {
   return (
     <Card>
       <CardContent className="p-5">
-        <div className="flex items-center justify-between mb-5">
-          <h3 className="card-title-lg text-foreground">Recente activiteit</h3>
-          <span className="text-xs font-bold uppercase tracking-[0.06em] text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
-            Alles →
-          </span>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2.5">
+            <div className="flex items-center justify-center h-8 w-8 rounded-xl text-white" style={{ backgroundColor: '#3A5A9A' }}>
+              <Clock className="h-4 w-4" />
+            </div>
+            <h3 className="text-[14px] font-bold text-foreground">Recente activiteit</h3>
+          </div>
         </div>
         {loading ? (
           <div className="flex items-center justify-center py-8">

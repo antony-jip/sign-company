@@ -1,38 +1,14 @@
 import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { getProjecten, getOffertes, getFacturen } from '@/services/supabaseService'
 import type { Project, Offerte, Factuur } from '@/types'
 import { formatCurrency } from '@/lib/utils'
 import { useCountUp } from '@/hooks/useCountUp'
 import { logger } from '../../utils/logger'
-
-function StatusBadge({ status }: { status: string }) {
-  const bgMap: Record<string, string> = {
-    verstuurd: '#E8EEF9',
-    betaald: '#E8F2EC',
-    gepland: '#F5F2E8',
-    opgeleverd: '#E8F2EC',
-    concept: '#F5F2E8',
-    'in_uitvoering': '#E8EEF9',
-  }
-  const textMap: Record<string, string> = {
-    verstuurd: '#3A5A9A',
-    betaald: '#3A7D52',
-    gepland: '#8A7A4A',
-    opgeleverd: '#3A7D52',
-    concept: '#8A7A4A',
-    'in_uitvoering': '#3A5A9A',
-  }
-  return (
-    <span
-      className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-semibold"
-      style={{ backgroundColor: bgMap[status] || '#F0F0EE', color: textMap[status] || '#8A8A8A' }}
-    >
-      {status.replace(/_/g, ' ')}<span style={{ color: '#F15025' }}>.</span>
-    </span>
-  )
-}
+import { TrendingUp, TrendingDown, ArrowRight, Receipt, FolderOpen, FileText, Wallet, Target } from 'lucide-react'
 
 export function StatisticsCards() {
+  const navigate = useNavigate()
   const [projecten, setProjecten] = useState<Project[]>([])
   const [offertes, setOffertes] = useState<Offerte[]>([])
   const [facturen, setFacturen] = useState<Factuur[]>([])
@@ -51,7 +27,6 @@ export function StatisticsCards() {
 
   const actieveProjecten = projecten.filter(p => p.status === 'actief' || p.status === 'in-review').length
   const geplande = projecten.filter(p => p.status === 'gepland').length
-  const opgeleverd = projecten.filter(p => p.status === 'opgeleverd' || p.status === 'afgerond').length
 
   const openFacturen = facturen.filter(f => f.status === 'verzonden' || f.status === 'vervallen')
   const openstaandeFacturen = openFacturen.reduce((sum, f) => sum + (f.totaal - f.betaald_bedrag), 0)
@@ -69,7 +44,7 @@ export function StatisticsCards() {
   const verstuurdeOffertes = offertes.filter(o => o.status === 'verzonden' || o.status === 'bekeken').length
   const goedgekeurd = offertes.filter(o => o.status === 'goedgekeurd').length
   const totaalOffertes = offertes.filter(o => o.status !== 'concept').length
-  const openOffertes = offertes.filter(o => ['concept', 'verzonden', 'bekeken'].includes(o.status)).length
+  const hitRate = totaalOffertes > 0 ? Math.round((goedgekeurd / totaalOffertes) * 100) : 0
 
   const teFactureren = offertes
     .filter(o => o.status === 'goedgekeurd')
@@ -81,7 +56,11 @@ export function StatisticsCards() {
     return (
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="rounded-2xl p-6 h-[140px] bg-[#FEFDFB] animate-pulse" style={{ boxShadow: '0 1px 3px rgba(130,100,60,0.06)' }} />
+          <div
+            key={i}
+            className="rounded-2xl h-[120px] animate-pulse"
+            style={{ backgroundColor: '#FEFDFB', boxShadow: '0 1px 3px rgba(130,100,60,0.06)' }}
+          />
         ))}
       </div>
     )
@@ -89,125 +68,171 @@ export function StatisticsCards() {
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-      {/* Omzet dit kwartaal / deze maand */}
-      <div
-        className="rounded-2xl p-6 relative overflow-hidden transition-all duration-200 hover:-translate-y-[2px]"
-        style={{ backgroundColor: '#FEFDFB', boxShadow: '0 1px 3px rgba(130,100,60,0.06), inset 0 1px 0 rgba(255,255,255,0.5)' }}
-      >
-        <p className="text-[11px] font-semibold uppercase tracking-[0.5px]" style={{ color: 'hsl(25, 10%, 45%)' }}>
-          Omzet deze maand
-        </p>
-        <p className="font-mono text-[32px] font-bold tracking-tight mt-2" style={{ color: '#1A535C' }}>
-          {formatCurrency(omzetDezeMaand)}
-        </p>
-        <p className="font-mono text-[14px] mt-1" style={{ color: 'hsl(25, 10%, 45%)' }}>
-          {formatCurrency(openstaandeFacturen)} openstaand
-        </p>
-        {/* Decorative dots */}
-        <div className="absolute top-4 right-4 grid grid-cols-3 gap-1 opacity-[0.08]">
-          {Array.from({ length: 9 }).map((_, i) => (
-            <div key={i} className="w-1.5 h-1.5 rounded-full bg-[#1A535C]" />
-          ))}
-        </div>
-      </div>
-
-      {/* Openstaande offertes */}
-      <div
-        className="rounded-2xl p-6 relative overflow-hidden transition-all duration-200 hover:-translate-y-[2px]"
-        style={{ backgroundColor: '#FEFDFB', boxShadow: '0 1px 3px rgba(130,100,60,0.06), inset 0 1px 0 rgba(255,255,255,0.5)' }}
-      >
-        <p className="text-[11px] font-semibold uppercase tracking-[0.5px]" style={{ color: 'hsl(25, 10%, 45%)' }}>
-          Openstaande offertes ({openOffertes})
-        </p>
-        <div className="flex flex-wrap gap-1.5 mt-3">
-          <StatusBadge status="verstuurd" />
-          <StatusBadge status="betaald" />
-        </div>
-        <div className="flex flex-wrap gap-1.5 mt-1.5">
-          <StatusBadge status="concept" />
-        </div>
-      </div>
-
-      {/* Projecten actief */}
-      <div
-        className="rounded-2xl p-6 relative overflow-hidden transition-all duration-200 hover:-translate-y-[2px]"
-        style={{ backgroundColor: '#FEFDFB', boxShadow: '0 1px 3px rgba(130,100,60,0.06), inset 0 1px 0 rgba(255,255,255,0.5)' }}
-      >
-        <p className="text-[11px] font-semibold uppercase tracking-[0.5px]" style={{ color: 'hsl(25, 10%, 45%)' }}>
-          Projecten actief ({animProjecten})
-        </p>
-        <div className="flex flex-wrap gap-1.5 mt-3">
-          <StatusBadge status="gepland" />
-          <StatusBadge status="opgeleverd" />
-        </div>
-        <p className="font-mono text-[13px] mt-2" style={{ color: 'hsl(25, 10%, 45%)' }}>
-          Projecten: {actieveProjecten} &nbsp; Gepland: {geplande} &nbsp; Klaar: {opgeleverd}
-        </p>
-        {/* Decorative cluster */}
-        <div className="absolute bottom-3 right-3 flex gap-0.5 opacity-[0.06]">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="w-2 h-2 rounded-full bg-[#1A535C]" style={{ transform: `translateY(${Math.sin(i) * 4}px)` }} />
-          ))}
-        </div>
-      </div>
+      {/* Omzet deze maand — primary hero card */}
+      <StatCard
+        label="Omzet deze maand"
+        value={formatCurrency(omzetDezeMaand)}
+        sub={`${formatCurrency(openstaandeFacturen)} openstaand`}
+        icon={<TrendingUp className="h-4 w-4" />}
+        iconBg="#1A535C"
+        valueColor="#1A535C"
+        onClick={() => navigate('/facturen')}
+      />
 
       {/* Te factureren */}
-      <div
-        className="rounded-2xl p-6 relative overflow-hidden transition-all duration-200 hover:-translate-y-[2px]"
-        style={{ backgroundColor: '#FEFDFB', boxShadow: '0 1px 3px rgba(130,100,60,0.06), inset 0 1px 0 rgba(255,255,255,0.5)' }}
+      <StatCard
+        label="Te factureren"
+        value={formatCurrency(teFactureren)}
+        icon={<Receipt className="h-4 w-4" />}
+        iconBg="#F15025"
+        valueColor="#1A535C"
+        onClick={() => navigate('/facturen')}
+        progress={
+          omzetDezeMaand + teFactureren > 0
+            ? Math.min((omzetDezeMaand / (omzetDezeMaand + teFactureren)) * 100, 100)
+            : 0
+        }
+      />
+
+      {/* Openstaand */}
+      <StatCard
+        label="Openstaand"
+        value={formatCurrency(openstaandeFacturen)}
+        sub={`${openFacturen.length} facturen`}
+        icon={<Wallet className="h-4 w-4" />}
+        iconBg="#C03A18"
+        valueColor="#C03A18"
+        onClick={() => navigate('/facturen')}
+      />
+
+      {/* Projecten actief */}
+      <StatCard
+        label="Actieve projecten"
+        value={String(animProjecten)}
+        sub={`${geplande} gepland`}
+        icon={<FolderOpen className="h-4 w-4" />}
+        iconBg="#1A535C"
+        onClick={() => navigate('/projecten')}
+      />
+
+      {/* Offertes verstuurd */}
+      <StatCard
+        label="Offertes verstuurd"
+        value={String(verstuurdeOffertes)}
+        sub={`${goedgekeurd} goedgekeurd`}
+        icon={<FileText className="h-4 w-4" />}
+        iconBg="#3A5A9A"
+        onClick={() => navigate('/offertes')}
+      />
+
+      {/* Hit rate */}
+      <StatCard
+        label="Hit rate"
+        value={`${hitRate}%`}
+        sub={`${goedgekeurd}/${totaalOffertes} offertes`}
+        icon={<Target className="h-4 w-4" />}
+        iconBg={hitRate >= 50 ? '#3A7D52' : '#8A7A4A'}
+        valueColor={hitRate >= 50 ? '#3A7D52' : '#8A7A4A'}
+        onClick={() => navigate('/offertes')}
+        ring={hitRate}
+      />
+    </div>
+  )
+}
+
+// ── Reusable stat card ──
+
+function StatCard({
+  label,
+  value,
+  sub,
+  icon,
+  iconBg,
+  valueColor,
+  onClick,
+  progress,
+  ring,
+}: {
+  label: string
+  value: string
+  sub?: string
+  icon: React.ReactNode
+  iconBg: string
+  valueColor?: string
+  onClick?: () => void
+  progress?: number
+  ring?: number
+}) {
+  return (
+    <div
+      onClick={onClick}
+      className="group rounded-2xl p-5 relative overflow-hidden cursor-pointer transition-all duration-300 hover:-translate-y-[2px] hover:shadow-elevation-md"
+      style={{
+        backgroundColor: '#FEFDFB',
+        boxShadow: '0 1px 4px rgba(130,100,60,0.06), inset 0 1px 0 rgba(255,255,255,0.6)',
+      }}
+    >
+      {/* Icon badge */}
+      <div className="flex items-center justify-between mb-3">
+        <div
+          className="flex items-center justify-center h-8 w-8 rounded-xl text-white"
+          style={{ backgroundColor: iconBg }}
+        >
+          {icon}
+        </div>
+        <ArrowRight className="h-3.5 w-3.5 text-muted-foreground/0 group-hover:text-muted-foreground/50 transition-all duration-200 group-hover:translate-x-0.5" />
+      </div>
+
+      {/* Label */}
+      <p className="text-[11px] font-semibold uppercase tracking-[0.5px]" style={{ color: 'hsl(25, 10%, 50%)' }}>
+        {label}
+      </p>
+
+      {/* Value */}
+      <p
+        className="font-mono text-[26px] font-bold tracking-tight mt-0.5 leading-tight"
+        style={{ color: valueColor || '#1A1A1A' }}
       >
-        <p className="text-[11px] font-semibold uppercase tracking-[0.5px]" style={{ color: 'hsl(25, 10%, 45%)' }}>
-          Te factureren
+        {value}
+      </p>
+
+      {/* Sub text */}
+      {sub && (
+        <p className="font-mono text-[12px] mt-1" style={{ color: 'hsl(25, 10%, 55%)' }}>
+          {sub}
         </p>
-        <p className="font-mono text-[32px] font-bold tracking-tight mt-2" style={{ color: '#1A535C' }}>
-          {formatCurrency(teFactureren)}
-        </p>
-        {/* Progress bar */}
-        <div className="mt-3 h-2 rounded-full overflow-hidden" style={{ backgroundColor: 'hsl(35, 15%, 90%)' }}>
+      )}
+
+      {/* Optional progress bar */}
+      {progress !== undefined && (
+        <div className="mt-3 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: 'hsl(35, 15%, 92%)' }}>
           <div
-            className="h-full rounded-full transition-all duration-500"
+            className="h-full rounded-full transition-all duration-700 ease-out"
             style={{
-              width: `${omzetDezeMaand + teFactureren > 0 ? Math.min((omzetDezeMaand / (omzetDezeMaand + teFactureren)) * 100, 100) : 0}%`,
+              width: `${progress}%`,
               background: 'linear-gradient(90deg, #1A535C, #F15025)',
             }}
           />
         </div>
-        <p className="font-mono text-[13px] mt-1" style={{ color: 'hsl(25, 10%, 45%)' }}>
-          {formatCurrency(omzetDezeMaand + teFactureren)} target
-        </p>
-      </div>
+      )}
 
-      {/* Offertes verstuurd / hit rate */}
-      <div
-        className="rounded-2xl p-6 relative overflow-hidden transition-all duration-200 hover:-translate-y-[2px]"
-        style={{ backgroundColor: '#FEFDFB', boxShadow: '0 1px 3px rgba(130,100,60,0.06), inset 0 1px 0 rgba(255,255,255,0.5)' }}
-      >
-        <p className="text-[11px] font-semibold uppercase tracking-[0.5px]" style={{ color: 'hsl(25, 10%, 45%)' }}>
-          Offertes verstuurd
-        </p>
-        <p className="font-mono text-[32px] font-bold tracking-tight mt-2" style={{ color: '#1A535C' }}>
-          {verstuurdeOffertes}
-        </p>
-        <p className="font-mono text-[13px] mt-1" style={{ color: 'hsl(25, 10%, 45%)' }}>
-          {goedgekeurd} goedgekeurd &middot; {totaalOffertes > 0 ? Math.round((goedgekeurd / totaalOffertes) * 100) : 0}% hit rate
-        </p>
-      </div>
-
-      {/* Openstaand te ontvangen */}
-      <div
-        className="rounded-2xl p-6 relative overflow-hidden transition-all duration-200 hover:-translate-y-[2px]"
-        style={{ backgroundColor: '#FEFDFB', boxShadow: '0 1px 3px rgba(130,100,60,0.06), inset 0 1px 0 rgba(255,255,255,0.5)' }}
-      >
-        <p className="text-[11px] font-semibold uppercase tracking-[0.5px]" style={{ color: 'hsl(25, 10%, 45%)' }}>
-          Openstaand
-        </p>
-        <p className="font-mono text-[32px] font-bold tracking-tight mt-2" style={{ color: '#C03A18' }}>
-          {formatCurrency(openstaandeFacturen)}
-        </p>
-        <p className="font-mono text-[13px] mt-1" style={{ color: 'hsl(25, 10%, 45%)' }}>
-          {openFacturen.length} facturen &middot; te ontvangen
-        </p>
-      </div>
+      {/* Optional ring indicator */}
+      {ring !== undefined && (
+        <div className="absolute top-5 right-5">
+          <svg width="36" height="36" viewBox="0 0 36 36" className="opacity-20">
+            <circle cx="18" cy="18" r="14" fill="none" stroke="currentColor" strokeWidth="3" className="text-muted-foreground/20" />
+            <circle
+              cx="18" cy="18" r="14" fill="none"
+              stroke={iconBg}
+              strokeWidth="3"
+              strokeDasharray={`${ring * 0.88} 88`}
+              strokeLinecap="round"
+              transform="rotate(-90 18 18)"
+              className="transition-all duration-700"
+            />
+          </svg>
+        </div>
+      )}
     </div>
   )
 }

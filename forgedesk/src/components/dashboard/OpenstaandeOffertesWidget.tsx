@@ -39,11 +39,16 @@ export function OpenstaandeOffertesWidget() {
   return (
     <Card>
       <CardContent className="p-5">
-        <div className="flex items-center justify-between mb-5">
-          <h3 className="text-[11px] font-semibold uppercase tracking-[0.5px] text-foreground" style={{ color: 'hsl(25, 10%, 45%)' }}>Openstaande offertes</h3>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2.5">
+            <div className="flex items-center justify-center h-8 w-8 rounded-xl text-white" style={{ backgroundColor: '#F15025' }}>
+              <FileText className="h-4 w-4" />
+            </div>
+            <h3 className="text-[14px] font-bold text-foreground">Openstaande offertes</h3>
+          </div>
           <span
             onClick={() => navigate('/offertes')}
-            className="text-xs font-bold uppercase tracking-[0.06em] text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
+            className="text-[11px] font-bold uppercase tracking-[0.06em] text-muted-foreground cursor-pointer hover:text-[#1A535C] transition-colors"
           >
             Alles →
           </span>

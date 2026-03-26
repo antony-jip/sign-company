@@ -195,15 +195,15 @@ export function ActionBlock() {
     <Card>
       <CardContent className="p-5">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
-            <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-primary to-wm-light shadow-md">
-              <AlertCircle className="h-4 w-4 text-white" />
+          <div className="flex items-center gap-2.5">
+            <div className="flex items-center justify-center h-8 w-8 rounded-xl text-white" style={{ backgroundColor: '#F15025' }}>
+              <AlertCircle className="h-4 w-4" />
             </div>
-            Wat moet ik vandaag doen?
-          </h3>
-          <span className="text-xs text-muted-foreground">
-            <span className="font-mono">{actions.length}</span> {actions.length === 1 ? 'actie' : 'acties'}
-          </span>
+            <div>
+              <h3 className="text-[14px] font-bold text-foreground leading-tight">Wat moet ik doen?</h3>
+              <p className="text-[11px] text-muted-foreground font-mono">{actions.length} {actions.length === 1 ? 'actie' : 'acties'}</p>
+            </div>
+          </div>
         </div>
 
         {actions.length === 0 ? (

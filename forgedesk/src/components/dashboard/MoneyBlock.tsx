@@ -84,12 +84,12 @@ export function MoneyBlock() {
     <Card>
       <CardContent className="p-5">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
-            <div className="flex items-center justify-center h-8 w-8 rounded-xl shadow-md" style={{ background: 'linear-gradient(135deg, #2D6B48, #3A8A5E)' }}>
-              <Wallet className="h-4 w-4 text-white" />
+          <div className="flex items-center gap-2.5">
+            <div className="flex items-center justify-center h-8 w-8 rounded-xl text-white" style={{ backgroundColor: '#2D6B48' }}>
+              <Wallet className="h-4 w-4" />
             </div>
-            Waar zit mijn geld?
-          </h3>
+            <h3 className="text-[14px] font-bold text-foreground">Waar zit mijn geld?</h3>
+          </div>
         </div>
 
         {/* Two big numbers */}

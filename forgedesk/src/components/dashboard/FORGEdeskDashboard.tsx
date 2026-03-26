@@ -42,6 +42,7 @@ import {
   Newspaper,
   EyeOff,
   Columns3,
+  ArrowRight,
   type LucideIcon,
 } from 'lucide-react'
 import { getFacturen } from '@/services/supabaseService'
@@ -54,6 +55,7 @@ import { useDashboardLayout, type DashboardWidgetId, type WidgetSize } from '@/h
 
 function getGreeting(): string {
   const hour = new Date().getHours()
+  if (hour < 6) return 'Goeienacht'
   if (hour < 12) return 'Goeiemorgen'
   if (hour < 18) return 'Goedemiddag'
   return 'Goeienavond'
@@ -99,11 +101,11 @@ function getSizeClass(size: WidgetSize): string {
 
 // ============ RESIZE CONTROL ============
 
-const SIZE_OPTIONS: { value: WidgetSize; label: string; indicator: string }[] = [
-  { value: 1, label: 'Smal', indicator: '▪' },
-  { value: 2, label: 'Half', indicator: '▪▪' },
-  { value: 3, label: 'Breed', indicator: '▪▪▪' },
-  { value: 4, label: 'Volledig', indicator: '▪▪▪▪' },
+const SIZE_OPTIONS: { value: WidgetSize; label: string; bars: number }[] = [
+  { value: 1, label: 'Smal', bars: 1 },
+  { value: 2, label: 'Half', bars: 2 },
+  { value: 3, label: 'Breed', bars: 3 },
+  { value: 4, label: 'Volledig', bars: 4 },
 ]
 
 function WidgetResizeControl({
@@ -136,7 +138,7 @@ function WidgetResizeControl({
       </button>
       {open && (
         <div
-          className="absolute right-0 top-full mt-1 z-50 bg-card border border-border rounded-lg shadow-elevation-md py-1 min-w-[140px]"
+          className="absolute right-0 top-full mt-1 z-50 bg-card border border-border rounded-xl shadow-elevation-md py-1.5 min-w-[150px]"
           onClick={e => e.stopPropagation()}
         >
           {SIZE_OPTIONS.map(opt => (
@@ -144,14 +146,26 @@ function WidgetResizeControl({
               key={opt.value}
               onClick={() => { onResize(opt.value); setOpen(false) }}
               className={cn(
-                'w-full flex items-center gap-2.5 px-3 py-1.5 text-left text-xs transition-colors',
+                'w-full flex items-center gap-3 px-3 py-2 text-left text-xs transition-colors',
                 currentSize === opt.value
-                  ? 'bg-muted font-semibold text-foreground'
+                  ? 'bg-[#1A535C]/[0.06] font-semibold text-[#1A535C]'
                   : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
               )}
             >
-              <span className="font-mono text-[10px] w-10 tracking-tight">{opt.indicator}</span>
-              <span>{opt.label} ({opt.value === 1 ? '25%' : opt.value === 2 ? '50%' : opt.value === 3 ? '75%' : '100%'})</span>
+              <div className="flex gap-0.5">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className={cn(
+                      'w-2.5 h-1.5 rounded-[2px] transition-colors',
+                      i < opt.bars
+                        ? currentSize === opt.value ? 'bg-[#1A535C]' : 'bg-muted-foreground/40'
+                        : 'bg-muted-foreground/10'
+                    )}
+                  />
+                ))}
+              </div>
+              <span>{opt.label}</span>
             </button>
           ))}
         </div>
@@ -201,40 +215,54 @@ export function FORGEdeskDashboard() {
   const hiddenWidgets = layout.allWidgets.filter(id => layout.hidden.has(id))
 
   return (
-    <div className="space-y-6">
-      {/* Welcome header */}
-      <div>
-        <h1
-          className="font-heading text-[20px] font-bold leading-tight"
-          style={{ letterSpacing: '-0.8px', color: 'hsl(25, 15%, 12%)' }}
-        >
-          {greeting}{userName ? `, ${userName}.` : '.'}
-        </h1>
-        <p className="text-[13px] font-normal mt-1" style={{ color: 'hsl(25, 10%, 45%)' }}>
-          {formattedDate}
-        </p>
+    <div className="space-y-8 pb-12">
+      {/* ── Hero header ── */}
+      <div className="flex items-end justify-between gap-6">
+        <div>
+          <h1
+            className="font-heading text-[28px] font-bold leading-[1.1]"
+            style={{ letterSpacing: '-1.2px', color: 'hsl(25, 15%, 12%)' }}
+          >
+            {greeting}{userName ? `, ${userName}` : ''}<span className="text-primary">.</span>
+          </h1>
+          <p className="text-[14px] font-normal mt-1.5" style={{ color: 'hsl(25, 10%, 55%)' }}>
+            {formattedDate}
+          </p>
+        </div>
+        <div className="hidden md:block">
+          <WeekStripWidget />
+        </div>
       </div>
 
-      {/* Verlopen facturen alert */}
+      {/* ── Alerts ── */}
       {verlopenFacturen.count > 0 && (
         <div
           onClick={() => navigate('/facturen')}
-          className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-destructive/8 dark:bg-destructive/10 text-destructive cursor-pointer hover:bg-destructive/12 transition-colors"
+          className="flex items-center gap-3 px-5 py-3.5 rounded-2xl cursor-pointer transition-all duration-200 hover:scale-[1.005] active:scale-[0.998]"
+          style={{
+            background: 'linear-gradient(135deg, #FDE8E2 0%, #FEF2EE 100%)',
+            border: '1px solid rgba(241, 80, 37, 0.12)',
+          }}
         >
-          <AlertTriangle className="h-4 w-4 flex-shrink-0" />
-          <span className="text-sm font-medium">
-            <strong>{verlopenFacturen.count} facturen verlopen</strong> — {formatCurrency(verlopenFacturen.bedrag)} openstaand
-          </span>
-          <span className="ml-auto text-sm font-bold whitespace-nowrap hover:translate-x-0.5 transition-transform">
-            Bekijk →
-          </span>
+          <div className="flex items-center justify-center h-9 w-9 rounded-xl bg-[#F15025]/10 flex-shrink-0">
+            <AlertTriangle className="h-4 w-4 text-[#C03A18]" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <span className="text-sm font-semibold text-[#C03A18]">
+              {verlopenFacturen.count} facturen verlopen
+            </span>
+            <span className="text-sm text-[#C03A18]/70 ml-2">
+              {formatCurrency(verlopenFacturen.bedrag)} openstaand
+            </span>
+          </div>
+          <ArrowRight className="h-4 w-4 text-[#C03A18]/50 flex-shrink-0" />
         </div>
       )}
 
       <PortaalAlerts />
 
-      {/* Configurable widget grid — 4 columns on lg+ */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* ── Configurable widget grid — 4 columns on lg+ ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
         {layout.order.map((widgetId, index) => {
           const def = WIDGET_REGISTRY[widgetId]
           if (!def) return null
@@ -260,15 +288,15 @@ export function FORGEdeskDashboard() {
                 className={cn(
                   'group/widget relative transition-all duration-300 ease-smooth animate-stagger-item',
                   getSizeClass(size),
-                  isDragging && 'opacity-40',
+                  isDragging && 'opacity-40 scale-[0.98]',
                 )}
                 style={{ animationDelay: `${index * 50}ms` }}
               >
                 {isDragOver && !isDragging && (
-                  <div className="h-1 bg-primary/50 rounded-full mb-2 animate-pulse" />
+                  <div className="h-1 bg-[#1A535C]/40 rounded-full mb-3 animate-pulse" />
                 )}
                 {showResize && (
-                  <div className="absolute top-2 right-2 z-10 opacity-0 group-hover/widget:opacity-100 transition-opacity">
+                  <div className="absolute top-2 right-2 z-10 opacity-0 group-hover/widget:opacity-100 transition-opacity duration-200">
                     <WidgetResizeControl
                       currentSize={size}
                       onResize={(s) => layout.resizeWidget(widgetId, s)}
@@ -294,14 +322,14 @@ export function FORGEdeskDashboard() {
               className={cn(
                 'group/widget transition-all duration-300 ease-smooth animate-stagger-item',
                 getSizeClass(size),
-                isDragging && 'opacity-40',
+                isDragging && 'opacity-40 scale-[0.98]',
               )}
               style={{ animationDelay: `${index * 50}ms` }}
             >
               {isDragOver && !isDragging && (
-                <div className="h-1 bg-primary/50 rounded-full mb-2 animate-pulse" />
+                <div className="h-1 bg-[#1A535C]/40 rounded-full mb-3 animate-pulse" />
               )}
-              <Card className="h-full overflow-hidden rounded-2xl bg-[#FEFDFB]" style={{ border: '0.5px solid hsl(35, 15%, 87%)' }}>
+              <Card className="h-full overflow-hidden rounded-2xl bg-[#FEFDFB] hover:shadow-elevation-md transition-shadow duration-300" style={{ border: '0.5px solid hsl(35, 15%, 87%)' }}>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.06em]">
@@ -337,12 +365,12 @@ export function FORGEdeskDashboard() {
         })}
       </div>
 
-      {/* Add widget */}
+      {/* ── Add widget ── */}
       {hiddenWidgets.length > 0 && (
         <div className="relative">
           <button
             onClick={() => setShowAddMenu(!showAddMenu)}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed border-border hover:border-primary/40 text-muted-foreground hover:text-primary transition-colors"
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-dashed border-border/60 hover:border-[#1A535C]/30 text-muted-foreground hover:text-[#1A535C] transition-all duration-200"
           >
             <Plus className="h-4 w-4" />
             <span className="text-sm font-medium">Widget toevoegen</span>
@@ -350,7 +378,7 @@ export function FORGEdeskDashboard() {
           {showAddMenu && (
             <>
               <div className="fixed inset-0 z-10" onClick={() => setShowAddMenu(false)} />
-              <div className="absolute bottom-full left-0 right-0 mb-2 bg-card border border-border rounded-xl shadow-xl p-3 z-20 max-h-[300px] overflow-y-auto">
+              <div className="absolute bottom-full left-0 right-0 mb-2 bg-card border border-border rounded-2xl shadow-elevation-lg p-4 z-20 max-h-[300px] overflow-y-auto">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {hiddenWidgets.map((id) => {
                     const def = WIDGET_REGISTRY[id]
@@ -362,16 +390,16 @@ export function FORGEdeskDashboard() {
                           layout.toggleWidget(id)
                           setShowAddMenu(false)
                         }}
-                        className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors text-left"
+                        className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#1A535C]/[0.04] transition-all duration-150 text-left group/add"
                       >
-                        <div className="flex items-center justify-center h-9 w-9 rounded-xl bg-gradient-to-br from-accent/20 to-primary/20 flex-shrink-0">
-                          <def.icon className="h-4 w-4 text-primary" />
+                        <div className="flex items-center justify-center h-10 w-10 rounded-xl flex-shrink-0 transition-colors" style={{ backgroundColor: 'rgba(26, 83, 92, 0.06)' }}>
+                          <def.icon className="h-4.5 w-4.5 text-[#1A535C]" />
                         </div>
-                        <div className="min-w-0">
+                        <div className="min-w-0 flex-1">
                           <p className="text-sm font-semibold text-foreground">{def.label}</p>
                           <p className="text-xs text-muted-foreground truncate">{def.description}</p>
                         </div>
-                        <Plus className="h-4 w-4 text-primary ml-auto flex-shrink-0" />
+                        <Plus className="h-4 w-4 text-[#1A535C] opacity-0 group-hover/add:opacity-100 transition-opacity flex-shrink-0" />
                       </button>
                     )
                   })}
