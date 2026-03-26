@@ -1266,9 +1266,10 @@ export function MontagePlanningLayout() {
                     className={cn(
                       "h-7 w-7 rounded-full flex items-center justify-center text-[9px] font-bold transition-colors",
                       formData.monteurs.includes(monteur.id)
-                        ? "text-white ring-2 ring-primary/30 " + getAvatarColor(idx)
+                        ? "text-white ring-2 ring-primary/30"
                         : "bg-muted text-muted-foreground hover:bg-muted/80"
                     )}
+                    style={formData.monteurs.includes(monteur.id) ? getAvatarStyle(idx) : undefined}
                     title={monteur.naam}
                   >
                     {getInitials(monteur.naam)}
