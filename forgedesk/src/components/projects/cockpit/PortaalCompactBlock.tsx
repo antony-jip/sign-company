@@ -66,7 +66,6 @@ function AfzenderLabel({ item }: { item: PortaalItem }) {
 
 function OfferteKaart({ item }: { item: PortaalItem }) {
   const st = statusStyle(item.status)
-  const hasReacties = item.reacties && item.reacties.length > 0
   // Extract nummer from titel if it contains it
   const nummer = item.offerte_id ? item.titel : ''
 
@@ -100,23 +99,6 @@ function OfferteKaart({ item }: { item: PortaalItem }) {
         )}
         </div>
       </div>
-      {/* Reacties */}
-      {hasReacties && (
-        <div className="mt-2 ml-3 space-y-1 border-l-2 border-[#F15025]/30 pl-3">
-          {item.reacties.map((r) => {
-            const isGoedkeuring = r.type === 'goedkeuring'
-            return (
-              <div key={r.id} className="flex items-start gap-1.5 text-xs">
-                <span className="w-1.5 h-1.5 rounded-full mt-1 flex-shrink-0" style={{ backgroundColor: isGoedkeuring ? '#3A7D52' : '#C0451A' }} />
-                <span>
-                  <span className="font-medium text-[#1A1A1A]">{r.klant_naam || 'Klant'}</span>
-                  <span className="text-[#6B6B66]"> — {r.bericht || (isGoedkeuring ? 'Goedgekeurd' : 'Revisie gevraagd')}</span>
-                </span>
-              </div>
-            )
-          })}
-        </div>
-      )}
     </div>
   )
 }
@@ -153,7 +135,6 @@ function FactuurKaart({ item }: { item: PortaalItem }) {
 function TekeningKaart({ item }: { item: PortaalItem }) {
   const st = statusStyle(item.status)
   const hasFiles = item.bestanden && item.bestanden.length > 0
-  const hasReacties = item.reacties && item.reacties.length > 0
   // Check if any bestand is an image
   const thumbFile = item.bestanden?.find(b => b.mime_type?.startsWith('image/') || /\.(jpg|jpeg|png|webp|gif)$/i.test(b.bestandsnaam))
 
@@ -195,22 +176,6 @@ function TekeningKaart({ item }: { item: PortaalItem }) {
         )}
         </div>
       </div>
-      {hasReacties && (
-        <div className="mt-2 ml-3 space-y-1 border-l-2 border-[#F15025]/30 pl-3">
-          {item.reacties.map((r) => {
-            const isGoedkeuring = r.type === 'goedkeuring'
-            return (
-              <div key={r.id} className="flex items-start gap-1.5 text-xs">
-                <span className="w-1.5 h-1.5 rounded-full mt-1 flex-shrink-0" style={{ backgroundColor: isGoedkeuring ? '#3A7D52' : '#C0451A' }} />
-                <span>
-                  <span className="font-medium text-[#1A1A1A]">{r.klant_naam || 'Klant'}</span>
-                  <span className="text-[#6B6B66]"> — {r.bericht || (isGoedkeuring ? 'Goedgekeurd' : 'Revisie gevraagd')}</span>
-                </span>
-              </div>
-            )
-          })}
-        </div>
-      )}
     </div>
   )
 }
@@ -264,11 +229,33 @@ function FotoBubbel({ item }: { item: PortaalItem }) {
 // ── Feed Item Router ──
 
 function FeedItem({ item }: { item: PortaalItem }) {
-  if (item.type === 'offerte') return <OfferteKaart item={item} />
-  if (item.type === 'factuur') return <FactuurKaart item={item} />
-  if (item.type === 'tekening') return <TekeningKaart item={item} />
-  if (item.bericht_type === 'foto' && item.foto_url) return <FotoBubbel item={item} />
-  return <TekstBubbel item={item} />
+  return (
+    <div>
+      {item.type === 'offerte' ? <OfferteKaart item={item} />
+        : item.type === 'factuur' ? <FactuurKaart item={item} />
+        : item.type === 'tekening' ? <TekeningKaart item={item} />
+        : item.bericht_type === 'foto' && item.foto_url ? <FotoBubbel item={item} />
+        : <TekstBubbel item={item} />}
+
+      {/* Reacties — altijd renderen voor alle item types */}
+      {(item.reacties ?? []).map((r) => (
+        <div
+          key={r.id}
+          className="ml-4 mt-1.5 border-l-2 pl-3 py-1"
+          style={{ borderColor: '#F15025' }}
+        >
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] font-semibold" style={{ color: r.type === 'goedkeuring' ? '#3A7D52' : r.type === 'revisie' ? '#C0451A' : '#5A5A55' }}>
+              {r.type === 'goedkeuring' ? 'Goedgekeurd' : r.type === 'revisie' ? 'Revisie' : 'Reactie'}
+            </span>
+            <span className="text-[11px] text-[#9B9B95]">— {r.klant_naam || 'Klant'}</span>
+            <span className="text-[10px] font-mono text-[#C0BDB8] ml-auto">{formatTime(r.created_at)}</span>
+          </div>
+          {r.bericht && <p className="text-xs text-[#3A3A35] mt-0.5">{r.bericht}</p>}
+        </div>
+      ))}
+    </div>
+  )
 }
 
 // ── Feed ──
