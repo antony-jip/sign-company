@@ -6101,3 +6101,72 @@ export async function createEmailOpvolging(opvolging: Omit<import('@/types').Ema
   if (error) throw error
   return data
 }
+
+// ============ KENNISBANK ============
+
+export async function getKbCategories(): Promise<import('@/types').KbCategory[]> {
+  if (!isSupabaseConfigured() || !supabase) return getLocalData<import('@/types').KbCategory>('kb_categories')
+  const { data, error } = await supabase.from('kb_categories').select('*').order('volgorde')
+  if (error) throw error
+  return data || []
+}
+
+export async function createKbCategory(cat: Omit<import('@/types').KbCategory, 'id' | 'created_at' | 'updated_at'>): Promise<import('@/types').KbCategory> {
+  if (!isSupabaseConfigured() || !supabase) return createLocalItem('kb_categories', cat)
+  const { data, error } = await supabase.from('kb_categories').insert(withUserId(cat)).select().single()
+  if (error) throw error
+  return data
+}
+
+export async function updateKbCategory(id: string, updates: Partial<import('@/types').KbCategory>): Promise<import('@/types').KbCategory> {
+  if (!isSupabaseConfigured() || !supabase) return updateLocalItem('kb_categories', id, updates)
+  const { data, error } = await supabase.from('kb_categories').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', id).select().single()
+  if (error) throw error
+  return data
+}
+
+export async function deleteKbCategory(id: string): Promise<void> {
+  if (!isSupabaseConfigured() || !supabase) { deleteLocalItem('kb_categories', id); return }
+  const { error } = await supabase.from('kb_categories').delete().eq('id', id)
+  if (error) throw error
+}
+
+export async function getKbArticles(): Promise<import('@/types').KbArticle[]> {
+  if (!isSupabaseConfigured() || !supabase) return getLocalData<import('@/types').KbArticle>('kb_articles')
+  const { data, error } = await supabase.from('kb_articles').select('*, kb_categories(naam)').order('updated_at', { ascending: false })
+  if (error) throw error
+  return (data || []).map((a: Record<string, unknown>) => ({
+    ...a,
+    bijlagen: a.bijlagen || [],
+    zoek_tags: a.zoek_tags || [],
+    category_naam: (a.kb_categories as Record<string, unknown> | null)?.naam as string | undefined,
+  })) as import('@/types').KbArticle[]
+}
+
+export async function getKbArticle(id: string): Promise<import('@/types').KbArticle | null> {
+  if (!isSupabaseConfigured() || !supabase) return getLocalData<import('@/types').KbArticle>('kb_articles').find(a => a.id === id) || null
+  const { data, error } = await supabase.from('kb_articles').select('*, kb_categories(naam)').eq('id', id).single()
+  if (error) return null
+  return { ...data, bijlagen: data.bijlagen || [], zoek_tags: data.zoek_tags || [], category_naam: (data.kb_categories as Record<string, unknown> | null)?.naam as string | undefined } as import('@/types').KbArticle
+}
+
+export async function createKbArticle(article: Omit<import('@/types').KbArticle, 'id' | 'created_at' | 'updated_at' | 'category_naam'>): Promise<import('@/types').KbArticle> {
+  if (!isSupabaseConfigured() || !supabase) return createLocalItem('kb_articles', article)
+  const { data, error } = await supabase.from('kb_articles').insert(withUserId(article)).select().single()
+  if (error) throw error
+  return data
+}
+
+export async function updateKbArticle(id: string, updates: Partial<import('@/types').KbArticle>): Promise<import('@/types').KbArticle> {
+  const { category_naam: _, ...clean } = updates as Record<string, unknown> & { category_naam?: unknown }
+  if (!isSupabaseConfigured() || !supabase) return updateLocalItem('kb_articles', id, clean)
+  const { data, error } = await supabase.from('kb_articles').update({ ...clean, updated_at: new Date().toISOString() }).eq('id', id).select().single()
+  if (error) throw error
+  return data
+}
+
+export async function deleteKbArticle(id: string): Promise<void> {
+  if (!isSupabaseConfigured() || !supabase) { deleteLocalItem('kb_articles', id); return }
+  const { error } = await supabase.from('kb_articles').delete().eq('id', id)
+  if (error) throw error
+}

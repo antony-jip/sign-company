@@ -1915,3 +1915,41 @@ export interface EmailOpvolging {
   verstuurd_op?: string
   created_at: string
 }
+
+// ============ KENNISBANK ============
+
+export interface KbCategory {
+  id: string
+  user_id?: string
+  organisatie_id?: string
+  naam: string
+  beschrijving?: string
+  kleur?: string
+  icoon?: string
+  volgorde: number
+  created_at: string
+  updated_at?: string
+}
+
+export interface KbBijlage {
+  naam: string
+  url: string
+  type: string
+  grootte: number
+}
+
+export interface KbArticle {
+  id: string
+  user_id?: string
+  organisatie_id?: string
+  category_id?: string
+  titel: string
+  inhoud: string
+  bijlagen: KbBijlage[]
+  zoek_tags: string[]
+  gepubliceerd: boolean
+  created_at: string
+  updated_at?: string
+  // Joined
+  category_naam?: string
+}

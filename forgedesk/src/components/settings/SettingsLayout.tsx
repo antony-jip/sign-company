@@ -97,6 +97,7 @@ import { GeneralLedgerSettings } from '../financial/GeneralLedgerSettings'
 import { VATCodesSettings } from '../financial/VATCodesSettings'
 import { DiscountsSettings } from '../financial/DiscountsSettings'
 import { OfferteOpvolgingTab } from './OfferteOpvolgingTab'
+import { KennisbankTab } from './KennisbankTab'
 import { Clock } from 'lucide-react'
 
 // Shared sub-tab navigation component
@@ -224,6 +225,9 @@ const settingsSections: SettingsSection[] = [
   { id: 'daan-ai', label: 'Daan AI', icon: Sparkles, tabs: [
     { id: 'forgie', label: 'Daan AI', icon: Sparkles },
   ]},
+  { id: 'kennisbank', label: 'Kennisbank', icon: BookOpen, tabs: [
+    { id: 'kb-artikelen', label: 'Artikelen', icon: BookOpen },
+  ]},
 ]
 
 // Map old tab IDs to section IDs for backwards-compatible URL params
@@ -254,6 +258,7 @@ function renderTabContent(tabId: string) {
     case 'btw-codes': return <VATCodesSettings />
     case 'kortingen': return <DiscountsSettings />
     case 'opvolging': return <OfferteOpvolgingTab />
+    case 'kb-artikelen': return <KennisbankTab />
     default: return null
   }
 }
