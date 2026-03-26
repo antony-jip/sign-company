@@ -281,14 +281,27 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
         : `${bedrijfsnaam || 'Nieuw item'} — ${titel}`
       const heading = instellingen?.template_nieuw_item?.inhoud
         ? replaceEmailVariables(instellingen.template_nieuw_item.inhoud, vars)
-        : `Er is een nieuw item gedeeld voor project ${projectNaam}.`
+        : `Er staat een nieuw item voor u klaar.`
 
-      const plainBody = [`Beste ${klantNaam},`, '', heading, '', content, '', `Bekijk het hier: ${portaalUrl}`, '', `Met vriendelijke groet,`, bedrijfsnaam || 'Het team'].join('\n')
+      const plainBody = [
+        `Beste ${klantNaam},`,
+        '',
+        heading,
+        '',
+        `Item: ${titel}`,
+        `Project: ${projectNaam}`,
+        '',
+        `Bekijk het in uw portaal:`,
+        portaalUrl,
+        '',
+        `Met vriendelijke groet,`,
+        bedrijfsnaam || 'Het team',
+      ].join('\n')
 
       const htmlBody = buildPortalEmailHtml({
         heading,
         itemTitel: titel,
-        beschrijving: content,
+        beschrijving: `Project: ${projectNaam}`,
         ctaLabel: 'Bekijk in portaal →',
         ctaUrl: portaalUrl,
         bedrijfsnaam,

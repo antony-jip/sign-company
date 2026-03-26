@@ -361,9 +361,22 @@ function InputBar({
       const instellingen = await getPortaalInstellingen(userId)
       const vars: Record<string, string> = { klant_naam: klantNaam, project_naam: project.naam, portaal_link: portaalUrl, bedrijfsnaam: bedrijfsnaam || '', item_type: titel, projectnaam: project.naam, itemtitel: titel, klantNaam, portaalUrl }
       const onderwerp = instellingen?.template_nieuw_item?.onderwerp ? replaceEmailVariables(instellingen.template_nieuw_item.onderwerp, vars) : `${bedrijfsnaam || 'Nieuw item'} — ${titel}`
-      const heading = instellingen?.template_nieuw_item?.inhoud ? replaceEmailVariables(instellingen.template_nieuw_item.inhoud, vars) : `Er is een nieuw item gedeeld voor project ${project.naam}.`
-      const plainBody = [`Beste ${klantNaam},`, '', heading, '', content, '', `Bekijk het hier: ${portaalUrl}`, '', `Met vriendelijke groet,`, bedrijfsnaam || 'Het team'].join('\n')
-      const htmlBody = buildPortalEmailHtml({ heading, itemTitel: titel, beschrijving: content, ctaLabel: 'Bekijk in portaal →', ctaUrl: portaalUrl, bedrijfsnaam, logoUrl: profile?.logo_url || undefined })
+      const heading = instellingen?.template_nieuw_item?.inhoud ? replaceEmailVariables(instellingen.template_nieuw_item.inhoud, vars) : `Er staat een nieuw item voor u klaar.`
+      const plainBody = [
+        `Beste ${klantNaam},`,
+        '',
+        heading,
+        '',
+        `Item: ${titel}`,
+        `Project: ${project.naam}`,
+        '',
+        `Bekijk het in uw portaal:`,
+        portaalUrl,
+        '',
+        `Met vriendelijke groet,`,
+        bedrijfsnaam || 'Het team',
+      ].join('\n')
+      const htmlBody = buildPortalEmailHtml({ heading, itemTitel: titel, beschrijving: `Project: ${project.naam}`, ctaLabel: 'Bekijk in portaal →', ctaUrl: portaalUrl, bedrijfsnaam, logoUrl: profile?.logo_url || undefined })
       await sendEmail(klantEmail, onderwerp, plainBody, { html: htmlBody })
       toast.success(`Email verstuurd naar ${klantEmail}`)
     } catch (err) {
