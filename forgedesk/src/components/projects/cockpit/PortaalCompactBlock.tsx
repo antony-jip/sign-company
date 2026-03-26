@@ -631,7 +631,18 @@ export function PortaalCompactBlock({ projectId }: { projectId: string }) {
     }
     setup()
 
+    // Polling fallback — elke 10s data verversen
+    const poll = setInterval(() => fetchItems(), 10_000)
+
+    // Visibility change — data verversen bij terugkeer
+    function handleVisibility() {
+      if (document.visibilityState === 'visible') fetchItems()
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+
     return () => {
+      clearInterval(poll)
+      document.removeEventListener('visibilitychange', handleVisibility)
       if (channel) {
         import('@/services/supabaseClient').then(({ default: supabase }) => {
           supabase?.removeChannel(channel!)
