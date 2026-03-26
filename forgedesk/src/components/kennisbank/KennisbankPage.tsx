@@ -427,58 +427,57 @@ export function KennisbankPage() {
   return (
     <div className="animate-fade-in-up">
       {/* ── Hero with workflow spectrum ── */}
-      <div className="relative overflow-hidden rounded-3xl mx-4 mb-10" style={{ background: 'linear-gradient(135deg, #1A535C 0%, #237580 40%, #1A535C 100%)' }}>
-        {/* Decorative circles */}
-        <div className="absolute top-[-60px] right-[-40px] w-[200px] h-[200px] rounded-full opacity-[0.06] bg-white" />
-        <div className="absolute bottom-[-30px] left-[10%] w-[120px] h-[120px] rounded-full opacity-[0.04] bg-white" />
+      <div className="relative overflow-hidden rounded-3xl mx-4 mb-10" style={{ background: 'linear-gradient(160deg, #0F3A42 0%, #1A535C 30%, #237580 60%, #1A535C 100%)' }}>
+        {/* Decorative elements */}
+        <div className="absolute top-[-80px] right-[-60px] w-[300px] h-[300px] rounded-full opacity-[0.05] bg-white" />
+        <div className="absolute bottom-[-50px] left-[5%] w-[180px] h-[180px] rounded-full opacity-[0.03] bg-white" />
+        <div className="absolute top-[20%] right-[15%] w-[60px] h-[60px] rounded-full opacity-[0.06]" style={{ backgroundColor: '#F15025' }} />
 
-        <div className="relative px-8 pt-10 pb-8">
+        <div className="relative px-8 md:px-12 pt-12 pb-10">
           <div className="max-w-3xl">
-            <p className="text-[12px] font-semibold uppercase tracking-[0.15em] text-white/40 mb-2">Kennisbank</p>
-            <h1 className="font-heading text-[36px] font-bold tracking-tight leading-[1.05] text-white mb-3">
-              Doen<span style={{ color: '#F15025' }}>.</span> de kracht<br />achter doeners.
+            <h1 className="font-heading text-[44px] md:text-[52px] font-bold tracking-[-2px] leading-[1] text-white mb-4">
+              Doen<span style={{ color: '#F15025' }}>.</span><br />
+              <span className="text-white/50">de kracht achter</span><br />
+              doeners.
             </h1>
-            <p className="text-[15px] text-white/60 max-w-lg leading-relaxed">
-              Van eerste klantcontact tot factuur. Alles verbonden, niets overbodig. Klik op een stap om te leren hoe het werkt.
+            <p className="text-[16px] text-white/50 max-w-md leading-relaxed">
+              Van eerste klantcontact tot factuur. Klik op een stap om te ontdekken hoe het werkt.
             </p>
           </div>
 
           {/* ── Flow spectrum ── */}
-          <div className="mt-8 grid grid-cols-8 gap-0 overflow-x-auto pb-2">
-            {FLOW_STEPS.map((step, idx) => {
-              const StepIcon = step.icon
-              const isLast = idx === FLOW_STEPS.length - 1
-              return (
-                <button
-                  key={step.label}
-                  onClick={() => { setActiveCategory(step.category); setSearch('') }}
-                  className="group flex flex-col items-center text-center relative animate-stagger-item"
-                  style={{ animationDelay: `${idx * 80}ms` }}
-                >
-                  {/* Connector line */}
-                  {!isLast && (
-                    <div className="absolute top-[18px] left-[calc(50%+18px)] h-[2px] right-[-2px]" style={{ backgroundColor: 'rgba(255,255,255,0.12)' }}>
-                      <div
-                        className="h-full rounded-full animate-stagger-item"
-                        style={{ backgroundColor: FLOW_STEPS[idx + 1]?.color || '#fff', opacity: 0.4, animationDelay: `${idx * 80 + 200}ms` }}
-                      />
-                    </div>
-                  )}
-                  {/* Icon circle */}
-                  <div
-                    className="h-9 w-9 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg relative z-10"
-                    style={{ backgroundColor: step.color }}
+          <div className="mt-10">
+            {/* Gradient line underneath */}
+            <div className="h-[3px] rounded-full mb-6 mx-4" style={{ background: `linear-gradient(90deg, ${FLOW_STEPS.map(s => s.color).join(', ')})` }} />
+
+            <div className="grid grid-cols-4 md:grid-cols-8 gap-y-5 gap-x-0">
+              {FLOW_STEPS.map((step, idx) => {
+                const StepIcon = step.icon
+                return (
+                  <button
+                    key={step.label}
+                    onClick={() => { setActiveCategory(step.category); setSearch('') }}
+                    className="group flex flex-col items-center text-center relative animate-stagger-item"
+                    style={{ animationDelay: `${idx * 80}ms` }}
                   >
-                    <StepIcon className="h-4 w-4 text-white" />
-                  </div>
-                  {/* Label */}
-                  <span className="text-[11px] font-bold text-white mt-2 whitespace-nowrap">{step.label}</span>
-                  <span className="text-[10px] text-white/40 whitespace-nowrap">{step.desc}</span>
-                  {/* Glow on hover */}
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-9 h-9 rounded-xl opacity-0 group-hover:opacity-30 blur-md transition-opacity" style={{ backgroundColor: step.color }} />
-                </button>
-              )
-            })}
+                    {/* Icon */}
+                    <div
+                      className="h-12 w-12 rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:shadow-[0_0_20px_rgba(255,255,255,0.2)] relative z-10"
+                      style={{ backgroundColor: step.color, boxShadow: `0 4px 14px ${step.color}50` }}
+                    >
+                      <StepIcon className="h-5 w-5 text-white" />
+                    </div>
+                    {/* Step number */}
+                    <div className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-white/10 flex items-center justify-center z-20">
+                      <span className="text-[8px] font-bold text-white/60">{idx + 1}</span>
+                    </div>
+                    {/* Label */}
+                    <span className="text-[12px] font-bold text-white mt-2.5 whitespace-nowrap">{step.label}</span>
+                    <span className="text-[10px] text-white/35 whitespace-nowrap leading-tight">{step.desc}</span>
+                  </button>
+                )
+              })}
+            </div>
           </div>
         </div>
       </div>
