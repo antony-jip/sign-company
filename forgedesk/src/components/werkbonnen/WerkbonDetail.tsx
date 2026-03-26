@@ -597,17 +597,27 @@ export function WerkbonDetail() {
   }
 
   return (
-    <div className="space-y-6 p-6 pb-32">
-      <BackButton fallbackPath="/werkbonnen" />
+    <div className="relative -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 min-h-full" style={{ backgroundColor: '#F8F7F5' }}>
+    <div className="max-w-6xl mx-auto px-4 md:px-6 py-5 pb-32">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate('/werkbonnen')}
+            className="h-9 w-9 rounded-xl flex items-center justify-center transition-colors"
+            style={{ backgroundColor: '#FFFFFF', border: '1px solid #EBEBEB' }}
+          >
+            <ArrowLeft className="h-3.5 w-3.5" style={{ color: '#6B6B66' }} />
+          </button>
+          <div className="h-10 w-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#C44830' }}>
+            <ClipboardCheck className="h-4 w-4 text-white" />
+          </div>
           <div>
-            <h1 className="text-xl font-extrabold tracking-[-0.03em]">
+            <h1 className="text-lg font-bold tracking-tight" style={{ color: '#1A1A1A' }}>
               {isNew ? 'Nieuwe werkbon' : <span>Werkbon <span className="font-mono">{werkbonNummer}</span></span>}
             </h1>
             {!isNew && (
-              <span className={cn('inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-1', STATUS_CONFIG[status]?.bg, STATUS_CONFIG[status]?.color)}>
+              <span className={cn('inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold', STATUS_CONFIG[status]?.bg, STATUS_CONFIG[status]?.color)}>
                 {STATUS_CONFIG[status]?.label || status}<span style={{ color: '#F15025' }}>.</span>
               </span>
             )}
@@ -616,17 +626,17 @@ export function WerkbonDetail() {
         <div className="flex items-center gap-1.5">
           {!isNew && (
             <>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handlePrint} title="Printen">
-                <Printer className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleDownloadPDF} title="Download PDF">
-                <FileText className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleShare} title="Deel via WhatsApp">
-                <Share2 className="h-4 w-4" />
-              </Button>
+              <button onClick={handlePrint} className="h-8 w-8 rounded-lg flex items-center justify-center transition-colors hover:bg-[#F4F2EE]" style={{ border: '1px solid #EBEBEB' }} title="Printen">
+                <Printer className="h-3.5 w-3.5 text-[#6B6B66]" />
+              </button>
+              <button onClick={handleDownloadPDF} className="h-8 w-8 rounded-lg flex items-center justify-center transition-colors hover:bg-[#F4F2EE]" style={{ border: '1px solid #EBEBEB' }} title="Download PDF">
+                <FileText className="h-3.5 w-3.5 text-[#6B6B66]" />
+              </button>
+              <button onClick={handleShare} className="h-8 w-8 rounded-lg flex items-center justify-center transition-colors hover:bg-[#F4F2EE]" style={{ border: '1px solid #EBEBEB' }} title="Deel via WhatsApp">
+                <Share2 className="h-3.5 w-3.5 text-[#6B6B66]" />
+              </button>
               <Select value={status} onValueChange={(v) => { setStatus(v as Werkbon['status']); setDirty(true) }}>
-                <SelectTrigger className="w-[130px] h-8 text-xs">
+                <SelectTrigger className="w-[120px] h-8 text-[12px] rounded-lg" style={{ border: '1px solid #EBEBEB' }}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -637,13 +647,18 @@ export function WerkbonDetail() {
               </Select>
             </>
           )}
-          <Button size="sm" onClick={handleSave} disabled={isSaving}>
-            <Save className="h-4 w-4 mr-1" /> {isSaving ? 'Opslaan...' : 'Opslaan'}
-          </Button>
+          <button
+            onClick={handleSave}
+            disabled={isSaving}
+            className="h-9 px-4 text-[13px] font-semibold text-white rounded-lg transition-all hover:opacity-90 disabled:opacity-50 flex items-center gap-1.5"
+            style={{ backgroundColor: '#1A535C' }}
+          >
+            <Save className="h-3.5 w-3.5" /> {isSaving ? 'Opslaan...' : 'Opslaan'}
+          </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Linker kolom: meta info */}
         <WerkbonHeaderForm
           klantId={klantId}
@@ -664,25 +679,31 @@ export function WerkbonDetail() {
         />
 
         {/* Rechter kolom: items + monteur secties */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-5">
           {/* Items */}
-          <div className="space-y-4">
+          <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold tracking-[-0.02em]">Items ({werkbonItems.length})</h2>
-              <Button size="sm" onClick={handleItemToevoegen} className="bg-[#C44830] hover:bg-[#a93d28] text-white">
-                <Plus className="h-4 w-4 mr-1" /> Item toevoegen
-              </Button>
+              <h2 className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: '#9B9B95' }}>Items ({werkbonItems.length})</h2>
+              <button
+                onClick={handleItemToevoegen}
+                className="inline-flex items-center gap-1 h-8 px-3 text-[12px] font-semibold rounded-lg text-white transition-all hover:opacity-90"
+                style={{ backgroundColor: '#C44830' }}
+              >
+                <Plus className="h-3.5 w-3.5" /> Item toevoegen
+              </button>
             </div>
 
             {werkbonItems.length === 0 ? (
-              <Card className="border-dashed rounded-xl border-black/[0.06]">
-                <CardContent className="flex flex-col items-center justify-center py-12">
-                  <ClipboardCheck className="h-8 w-8 text-[#C44830] opacity-30 mb-3" />
-                  <p className="text-sm text-muted-foreground">
-                    Nog geen items. Voeg een item toe.
-                  </p>
-                </CardContent>
-              </Card>
+              <button
+                onClick={handleItemToevoegen}
+                className="w-full py-8 text-center rounded-xl border-2 border-dashed hover:border-[#C44830]/30 transition-colors group"
+                style={{ borderColor: '#EBEBEB', backgroundColor: '#FFFFFF' }}
+              >
+                <ClipboardCheck className="h-6 w-6 mx-auto mb-2 text-[#C44830] opacity-30 group-hover:opacity-60 transition-opacity" />
+                <p className="text-[13px] text-[#9B9B95] group-hover:text-[#C44830] transition-colors">
+                  Voeg een item toe
+                </p>
+              </button>
             ) : (
               werkbonItems.map((item, idx) => (
                 <WerkbonItemCard
@@ -734,6 +755,7 @@ export function WerkbonDetail() {
           )}
         </DialogContent>
       </Dialog>
+    </div>
     </div>
   )
 }
