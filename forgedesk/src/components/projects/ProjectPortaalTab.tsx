@@ -1,23 +1,16 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { toast } from 'sonner'
 import {
-  Link2,
   Plus,
   Loader2,
-  Bell,
   Copy,
-  Calendar,
   Power,
   RefreshCw,
   Send,
   FileText,
   Image as ImageIcon,
   Receipt,
-  ChevronDown,
-  X,
 } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import {
@@ -65,22 +58,13 @@ function dayLabel(ts: string): string {
   return new Intl.DateTimeFormat('nl-NL', { day: 'numeric', month: 'long' }).format(d)
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  verstuurd: 'Verstuurd',
-  bekeken: 'Bekeken',
-  goedgekeurd: 'Goedgekeurd',
-  revisie: 'Revisie',
-  betaald: 'Betaald',
-  vervangen: 'Vervangen',
-}
-
-const STATUS_COLORS: Record<string, string> = {
-  verstuurd: '#F15025',
-  bekeken: '#6A4A9A',
-  goedgekeurd: '#2D6B48',
-  revisie: '#C03A18',
-  betaald: '#2D6B48',
-  vervangen: '#A0A098',
+const STATUS_STYLE: Record<string, { color: string; label: string }> = {
+  verstuurd: { color: '#3A5A9A', label: 'Verstuurd' },
+  bekeken: { color: '#3A5A9A', label: 'Bekeken' },
+  goedgekeurd: { color: '#3A7D52', label: 'Goedgekeurd' },
+  revisie: { color: '#C0451A', label: 'Revisie' },
+  betaald: { color: '#3A7D52', label: 'Betaald' },
+  vervangen: { color: '#9B9B95', label: 'Vervangen' },
 }
 
 // ---------------------------------------------------------------------------
@@ -486,36 +470,30 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
   // ── Loading state ───────────────────────────────────────────────────────
   if (loading) {
     return (
-      <Card className="border-border/80">
-        <CardContent className="py-8 flex justify-center">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-        </CardContent>
-      </Card>
+      <div className="flex justify-center py-12">
+        <Loader2 className="h-5 w-5 animate-spin" style={{ color: '#9B9B95' }} />
+      </div>
     )
   }
 
   // ── No portaal ──────────────────────────────────────────────────────────
   if (!portaal) {
     return (
-      <Card className="border-border/80">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
-              <Link2 className="h-3.5 w-3.5 text-white" />
-            </div>
-            Klantportaal
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground mb-3">
-            Maak een klantportaal aan om offertes, tekeningen en facturen te delen.
-          </p>
-          <Button size="sm" onClick={handleCreatePortaal} disabled={creating}>
-            {creating ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Plus className="h-4 w-4 mr-1.5" />}
-            Portaal aanmaken
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="py-12 text-center">
+        <p className="text-sm font-medium" style={{ color: '#1A1A1A' }}>Nog geen klantportaal</p>
+        <p className="text-xs mt-1" style={{ color: '#9B9B95' }}>
+          Deel offertes, tekeningen en facturen met je klant.
+        </p>
+        <button
+          onClick={handleCreatePortaal}
+          disabled={creating}
+          className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-white disabled:opacity-50"
+          style={{ backgroundColor: '#1A535C' }}
+        >
+          {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+          Portaal aanmaken
+        </button>
+      </div>
     )
   }
 
@@ -531,42 +509,35 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
 
   return (
     <div className="flex flex-col" style={{ height: 'calc(100vh - 220px)', minHeight: 400 }}>
-      {/* ── Header bar ─────────────────────────────────────────────────── */}
-      <div
-        className="rounded-xl px-4 py-3 flex flex-wrap items-center gap-3 shrink-0"
-        style={{ backgroundColor: '#fff', border: '0.5px solid #E8E6E1' }}
-      >
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          <div
-            className="w-2 h-2 rounded-full flex-shrink-0"
-            style={{ backgroundColor: isActief ? '#2D6B48' : isVerlopen ? '#F15025' : '#A0A098' }}
-          />
-          <span className="text-sm font-medium" style={{ color: '#191919' }}>
+      {/* ── Header ─────────────────────────────────────────────────────── */}
+      <div className="flex flex-wrap items-center gap-3 shrink-0 pb-3" style={{ borderBottom: '0.5px solid #EBEBEB' }}>
+        <div className="flex items-center gap-2.5 flex-1 min-w-0">
+          <span className="text-sm font-medium" style={{ color: isActief ? '#3A7D52' : '#C0451A' }}>
             {isActief ? 'Actief' : isVerlopen ? 'Verlopen' : 'Inactief'}
           </span>
-          <span className="text-xs" style={{ color: '#A0A098', fontFamily: "'DM Mono', monospace" }}>
-            <Calendar className="w-3 h-3 inline mr-1" />
-            Verloopt {formatDate(portaal.verloopt_op)}
+          <span style={{ color: '#F15025', fontSize: 10 }}>●</span>
+          <span className="text-[11px]" style={{ color: '#9B9B95', fontFamily: "'DM Mono', monospace" }}>
+            verloopt {formatDate(portaal.verloopt_op)}
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <button
             onClick={copyLink}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors hover:bg-gray-50"
-            style={{ border: '0.5px solid #E8E6E1', color: '#5A5A55' }}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium transition-opacity hover:opacity-70"
+            style={{ color: '#1A535C' }}
           >
-            <Copy className="w-3.5 h-3.5" />
-            Link kopiëren
+            <Copy className="w-3 h-3" />
+            Link
           </button>
 
           {!isActief && (
             <button
               onClick={handleVerlengen}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium text-white"
               style={{ backgroundColor: '#1A535C' }}
             >
-              <RefreshCw className="w-3.5 h-3.5" />
+              <RefreshCw className="w-3 h-3" />
               {isVerlopen ? 'Heractiveren' : 'Verlengen'}
             </button>
           )}
@@ -574,9 +545,9 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
           {isActief && (
             <button
               onClick={handleDeactiveer}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors hover:bg-red-50"
-              style={{ color: '#C44830' }}
-              title="Portaal deactiveren"
+              className="p-1 transition-opacity hover:opacity-60"
+              style={{ color: '#C0451A' }}
+              title="Deactiveren"
             >
               <Power className="w-3.5 h-3.5" />
             </button>
@@ -586,16 +557,20 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
 
       {/* ── Notification banner ────────────────────────────────────────── */}
       {notificaties.length > 0 && (
-        <div className="flex items-center gap-2 text-xs px-3 py-2 mt-3 rounded-lg bg-amber-50/60 border border-amber-200/40 shrink-0">
-          <Bell className="h-3.5 w-3.5 text-amber-500 flex-shrink-0" />
-          <span className="text-amber-700">
-            {notificaties.length} nieuwe melding{notificaties.length !== 1 ? 'en' : ''} van klant
+        <div
+          className="flex items-center gap-2 text-[11px] px-3 py-2 mt-3 rounded-lg shrink-0"
+          style={{ backgroundColor: '#FDE8E4', color: '#C0451A' }}
+        >
+          <span style={{ fontSize: 8 }}>●</span>
+          <span className="font-medium">
+            {notificaties.length} nieuwe melding{notificaties.length !== 1 ? 'en' : ''}
           </span>
           <button
             onClick={() => notificaties.forEach(n => markNotificatieGelezen(n.id))}
-            className="ml-auto text-amber-600 hover:text-amber-800 underline"
+            className="ml-auto font-medium transition-opacity hover:opacity-70"
+            style={{ color: '#1A535C' }}
           >
-            Alles gelezen
+            Gelezen
           </button>
         </div>
       )}
@@ -622,12 +597,12 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
             <div key={item.id}>
               {/* Day separator */}
               {showDay && (
-                <div className="flex items-center gap-3 py-2">
-                  <div className="flex-1 border-t" style={{ borderColor: '#E8E6E1' }} />
-                  <span className="text-xs font-medium" style={{ color: '#A0A098', fontFamily: "'DM Mono', monospace" }}>
+                <div className="flex items-center gap-3 py-3">
+                  <div className="flex-1 h-px" style={{ backgroundColor: '#EBEBEB' }} />
+                  <span className="text-[10px] uppercase tracking-widest" style={{ color: '#9B9B95', fontFamily: "'DM Mono', monospace" }}>
                     {dayLabel(item.created_at)}
                   </span>
-                  <div className="flex-1 border-t" style={{ borderColor: '#E8E6E1' }} />
+                  <div className="flex-1 h-px" style={{ backgroundColor: '#EBEBEB' }} />
                 </div>
               )}
 
@@ -635,22 +610,22 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
               {isBubble && (
                 <div className={`flex ${isKlant ? 'justify-start' : 'justify-end'}`}>
                   <div
-                    className="rounded-xl px-4 py-2.5 max-w-[75%]"
+                    className="rounded-2xl px-4 py-2.5 max-w-[75%]"
                     style={
                       isIntern
-                        ? { backgroundColor: '#FFFBEB', border: '0.5px solid #FDE68A' }
+                        ? { backgroundColor: '#F5F2E8', borderLeft: '3px solid #8A7A4A' }
                         : isKlant
-                          ? { backgroundColor: '#F5F5F0', border: '0.5px solid #E8E6E1' }
-                          : { backgroundColor: '#E2F0F0', border: '0.5px solid #C0DBDB' }
+                          ? { backgroundColor: '#FFFFFF', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }
+                          : { backgroundColor: 'rgba(26,83,92,0.07)' }
                     }
                   >
-                    {isIntern && <p className="text-xs font-medium mb-1" style={{ color: '#92400E' }}>Interne notitie</p>}
-                    <p className="text-sm whitespace-pre-wrap" style={{ color: '#3A3A35', lineHeight: 1.6 }}>
+                    {isIntern && <p className="text-[10px] font-medium uppercase tracking-wider mb-1" style={{ color: '#8A7A4A' }}>Intern</p>}
+                    <p className="text-sm whitespace-pre-wrap" style={{ color: '#1A1A1A', lineHeight: 1.55 }}>
                       {item.bericht_tekst || ''}
                     </p>
-                    <div className="mt-1 text-right">
-                      <span className="text-xs" style={{ color: '#C0BDB8', fontFamily: "'DM Mono', monospace" }}>
-                        {isKlant ? 'Klant' : (profile?.bedrijfsnaam || 'Jij')} · {formatTime(item.created_at)}
+                    <div className="mt-1.5 text-right">
+                      <span className="text-[10px]" style={{ color: '#9B9B95', fontFamily: "'DM Mono', monospace" }}>
+                        {isKlant ? 'Klant' : 'Jij'} · {formatTime(item.created_at)}
                       </span>
                     </div>
                   </div>
@@ -660,20 +635,21 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
               {/* ── Photo ────────────────────────────────────────────── */}
               {isPhoto && (
                 <div className={`flex ${isKlant ? 'justify-start' : 'justify-end'}`}>
-                  <div className="max-w-[300px]">
+                  <div className="max-w-[280px]">
                     {item.foto_url && (
                       <img
                         src={item.foto_url}
                         alt={item.titel}
                         className="cursor-pointer rounded-xl hover:opacity-90 transition-opacity"
+                        style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
                         onClick={() => setLightboxUrl(item.foto_url!)}
                       />
                     )}
                     {item.bericht_tekst && (
-                      <p className="mt-1 text-sm whitespace-pre-wrap" style={{ color: '#3A3A35' }}>{item.bericht_tekst}</p>
+                      <p className="mt-1.5 text-sm whitespace-pre-wrap" style={{ color: '#1A1A1A' }}>{item.bericht_tekst}</p>
                     )}
                     <div className="mt-1 text-right">
-                      <span className="text-xs" style={{ color: '#C0BDB8', fontFamily: "'DM Mono', monospace" }}>
+                      <span className="text-[10px]" style={{ color: '#9B9B95', fontFamily: "'DM Mono', monospace" }}>
                         {formatTime(item.created_at)}
                       </span>
                     </div>
@@ -682,84 +658,83 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
               )}
 
               {/* ── Card (offerte/factuur/tekening) ──────────────────── */}
-              {!isBubble && !isPhoto && (
-                <div className="rounded-xl p-4" style={{ backgroundColor: '#FEFDFB', border: '0.5px solid #E8E6E1' }}>
-                  <div className="flex items-start gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full" style={{ backgroundColor: '#E8F2EC' }}>
-                      {item.type === 'offerte' && <FileText className="h-4 w-4" style={{ color: '#4a7c5f' }} />}
-                      {item.type === 'factuur' && <Receipt className="h-4 w-4" style={{ color: '#4a7c5f' }} />}
-                      {item.type === 'tekening' && <ImageIcon className="h-4 w-4" style={{ color: '#4a7c5f' }} />}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h4 className="text-sm font-medium" style={{ color: '#191919' }}>{item.titel}</h4>
-                      {item.bedrag != null && (
-                        <p className="text-base font-semibold" style={{ fontFamily: "'DM Mono', monospace" }}>
-                          {formatCurrency(item.bedrag)}
+              {!isBubble && !isPhoto && (() => {
+                const st = STATUS_STYLE[item.status] || { color: '#9B9B95', label: item.status }
+                const typeColor = item.type === 'offerte' ? '#F15025' : item.type === 'factuur' ? '#2D6B48' : '#1A535C'
+                return (
+                  <div className="rounded-xl p-5" style={{ backgroundColor: '#FFFFFF', boxShadow: '0 1px 4px rgba(0,0,0,0.03)' }}>
+                    <div className="flex items-start gap-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[10px] uppercase tracking-wider font-medium" style={{ color: typeColor, fontFamily: "'DM Mono', monospace" }}>
+                          {item.type}
                         </p>
-                      )}
+                        <h4 className="text-sm font-semibold mt-0.5" style={{ color: '#1A1A1A' }}>{item.titel}</h4>
+                        {item.bedrag != null && (
+                          <p className="text-lg font-semibold mt-0.5" style={{ fontFamily: "'DM Mono', monospace", color: '#1A1A1A' }}>
+                            {formatCurrency(item.bedrag)}
+                          </p>
+                        )}
+                      </div>
+                      <span className="text-sm shrink-0 flex items-center gap-0.5" style={{ color: st.color }}>
+                        {st.label}<span style={{ color: '#F15025' }}>.</span>
+                      </span>
                     </div>
-                    <span
-                      className="shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium"
-                      style={{ backgroundColor: `${STATUS_COLORS[item.status] || '#A0A098'}15`, color: STATUS_COLORS[item.status] || '#A0A098' }}
-                    >
-                      {STATUS_LABELS[item.status] || item.status}
-                    </span>
-                  </div>
 
-                  {/* Bestanden */}
-                  {item.bestanden.length > 0 && (
-                    <div className="mt-3 space-y-1">
-                      {item.bestanden.map((b) => (
-                        <a
-                          key={b.id}
-                          href={b.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs hover:bg-gray-50"
-                          style={{ backgroundColor: '#F5F5F0' }}
-                        >
-                          <FileText className="h-3.5 w-3.5" style={{ color: '#A0A098' }} />
-                          <span className="flex-1 truncate" style={{ color: '#3A3A35' }}>{b.bestandsnaam}</span>
-                        </a>
-                      ))}
+                    {/* Bestanden */}
+                    {item.bestanden.length > 0 && (
+                      <div className="mt-3 space-y-1">
+                        {item.bestanden.map((b) => (
+                          <a
+                            key={b.id}
+                            href={b.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs transition-opacity hover:opacity-70"
+                            style={{ backgroundColor: '#F8F7F5' }}
+                          >
+                            <FileText className="h-3.5 w-3.5" style={{ color: '#9B9B95' }} />
+                            <span className="flex-1 truncate" style={{ color: '#1A1A1A' }}>{b.bestandsnaam}</span>
+                          </a>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="mt-2.5 text-right">
+                      <span className="text-[10px]" style={{ color: '#9B9B95', fontFamily: "'DM Mono', monospace" }}>
+                        {formatTime(item.created_at)}
+                      </span>
                     </div>
-                  )}
-
-                  <div className="mt-2 text-right">
-                    <span className="text-xs" style={{ color: '#C0BDB8', fontFamily: "'DM Mono', monospace" }}>
-                      {formatTime(item.created_at)}
-                    </span>
                   </div>
-                </div>
-              )}
+                )
+              })()}
 
               {/* ── Reacties van klant ────────────────────────────────── */}
               {(item.reacties || []).map((r) => (
                 <div
                   key={r.id}
-                  className="ml-6 mt-2 rounded-r-lg py-2.5 px-4"
-                  style={{ borderLeft: '3px solid #F15025', backgroundColor: '#FAFAF8' }}
+                  className="ml-5 mt-2 py-2 px-3.5"
+                  style={{ borderLeft: '2px solid #F15025' }}
                 >
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <span
-                      className="text-xs font-semibold"
-                      style={{ color: r.type === 'goedkeuring' ? '#2D6B48' : r.type === 'revisie' ? '#6A4A9A' : '#5A5A55' }}
-                    >
-                      {r.type === 'goedkeuring' ? 'Goedgekeurd' : r.type === 'revisie' ? 'Revisie gevraagd' : 'Reactie'}
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] font-medium" style={{ color: '#1A1A1A' }}>
+                      {r.klant_naam || 'Klant'}
                     </span>
-                    {r.klant_naam && <span className="text-xs" style={{ color: '#A0A098' }}>— {r.klant_naam}</span>}
-                    <span className="text-xs ml-auto" style={{ color: '#C0BDB8', fontFamily: "'DM Mono', monospace" }}>
+                    <span className="text-[11px]" style={{ color: r.type === 'goedkeuring' ? '#3A7D52' : r.type === 'revisie' ? '#C0451A' : '#6B6B66' }}>
+                      {r.type === 'goedkeuring' ? 'heeft goedgekeurd' : r.type === 'revisie' ? 'vraagt revisie' : 'reageerde'}
+                    </span>
+                    <span className="text-[10px] ml-auto" style={{ color: '#9B9B95', fontFamily: "'DM Mono', monospace" }}>
                       {formatTime(r.created_at)}
                     </span>
                   </div>
                   {r.bericht && (
-                    <p className="text-sm whitespace-pre-wrap" style={{ color: '#3A3A35', lineHeight: 1.5 }}>{r.bericht}</p>
+                    <p className="text-sm whitespace-pre-wrap mt-0.5" style={{ color: '#6B6B66', lineHeight: 1.55 }}>{r.bericht}</p>
                   )}
                   {r.foto_url && (
                     <img
                       src={r.foto_url}
                       alt=""
-                      className="mt-1.5 max-w-[250px] max-h-[180px] rounded-lg object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                      className="mt-2 max-w-[240px] max-h-[170px] rounded-xl object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                      style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
                       onClick={() => setLightboxUrl(r.foto_url!)}
                     />
                   )}
@@ -773,7 +748,7 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
 
       {/* ── Input bar ──────────────────────────────────────────────────── */}
       {isActief && (
-        <div className="shrink-0 mt-3 rounded-xl p-3" style={{ backgroundColor: '#fff', border: '0.5px solid #E8E6E1' }}>
+        <div className="shrink-0 mt-3 pt-3" style={{ borderTop: '0.5px solid #EBEBEB' }}>
           {/* Type selector */}
           <div className="flex items-center gap-2 mb-2">
             <select
@@ -785,8 +760,8 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
                 setSelectedOfferteId('')
                 setSelectedFactuurId('')
               }}
-              className="text-xs rounded-lg px-2 py-1.5 bg-gray-50 border-0 outline-none"
-              style={{ color: '#5A5A55' }}
+              className="text-[11px] rounded-lg px-2 py-1 border-0 outline-none"
+              style={{ backgroundColor: '#F8F7F5', color: '#6B6B66' }}
             >
               <option value="bericht">Bericht</option>
               <option value="notitie_intern">Interne notitie</option>
@@ -797,14 +772,15 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
             </select>
 
             {inputType !== 'notitie_intern' && (
-              <label className="flex items-center gap-1.5 text-xs ml-auto cursor-pointer" style={{ color: '#A0A098' }}>
+              <label className="flex items-center gap-1.5 text-[11px] ml-auto cursor-pointer" style={{ color: '#9B9B95' }}>
                 <input
                   type="checkbox"
                   checked={emailNotify}
                   onChange={(e) => setEmailNotify(e.target.checked)}
                   className="rounded"
+                  style={{ accentColor: '#1A535C' }}
                 />
-                Email klant
+                Notificeer klant
               </label>
             )}
           </div>
@@ -815,16 +791,16 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
               <textarea
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
-                placeholder={inputType === 'notitie_intern' ? 'Interne notitie (niet zichtbaar voor klant)...' : 'Typ een bericht...'}
-                className="flex-1 resize-none rounded-lg px-3 py-2 text-sm border-0 outline-none"
-                style={{ backgroundColor: '#F5F5F0', color: '#3A3A35', minHeight: 40, maxHeight: 120 }}
+                placeholder={inputType === 'notitie_intern' ? 'Interne notitie...' : 'Typ een bericht...'}
+                className="flex-1 resize-none rounded-xl px-3.5 py-2.5 text-sm border-0 outline-none"
+                style={{ backgroundColor: '#F8F7F5', color: '#1A1A1A', minHeight: 40, maxHeight: 120 }}
                 rows={1}
                 onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }}
               />
               <button
                 onClick={handleSend}
                 disabled={sending || !inputText.trim()}
-                className="self-end rounded-lg p-2 text-white disabled:opacity-40"
+                className="self-end rounded-lg p-2 text-white disabled:opacity-30 transition-opacity"
                 style={{ backgroundColor: '#1A535C' }}
               >
                 {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
