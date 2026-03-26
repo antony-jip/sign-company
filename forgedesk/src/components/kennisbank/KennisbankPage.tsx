@@ -427,13 +427,17 @@ export function KennisbankPage() {
   return (
     <div className="animate-fade-in-up">
       {/* ── Hero with workflow spectrum ── */}
-      <div className="relative overflow-hidden rounded-3xl mx-4 mb-10" style={{ background: 'linear-gradient(160deg, #0F3A42 0%, #1A535C 30%, #237580 60%, #1A535C 100%)' }}>
-        {/* Decorative bg elements */}
-        <div className="absolute top-[-80px] right-[-60px] w-[300px] h-[300px] rounded-full opacity-[0.05] bg-white" />
-        <div className="absolute bottom-[-50px] left-[5%] w-[180px] h-[180px] rounded-full opacity-[0.03] bg-white" />
-        {/* Pulsing heart glow — the goal */}
-        <div className="absolute top-[15%] right-[8%] w-[100px] h-[100px] rounded-full animate-pulse" style={{ backgroundColor: '#F15025', opacity: 0.06 }} />
-        <div className="absolute top-[18%] right-[9.5%] w-[60px] h-[60px] rounded-full animate-pulse" style={{ backgroundColor: '#F15025', opacity: 0.08, animationDelay: '0.5s' }} />
+      <div className="relative rounded-3xl mx-4 mb-10" style={{ background: 'linear-gradient(160deg, #0F3A42 0%, #1A535C 30%, #237580 60%, #1A535C 100%)' }}>
+        {/* Decorative bg elements — clipped to banner shape */}
+        <div className="absolute inset-0 overflow-hidden rounded-3xl pointer-events-none">
+          <div className="absolute top-[-80px] right-[-60px] w-[300px] h-[300px] rounded-full opacity-[0.05] bg-white" />
+          <div className="absolute bottom-[-50px] left-[5%] w-[180px] h-[180px] rounded-full opacity-[0.03] bg-white" />
+        </div>
+        {/* Pulsing heart glow — clipped */}
+        <div className="absolute inset-0 overflow-hidden rounded-3xl pointer-events-none">
+          <div className="absolute top-[15%] right-[8%] w-[100px] h-[100px] rounded-full animate-pulse" style={{ backgroundColor: '#F15025', opacity: 0.06 }} />
+          <div className="absolute top-[18%] right-[9.5%] w-[60px] h-[60px] rounded-full animate-pulse" style={{ backgroundColor: '#F15025', opacity: 0.08, animationDelay: '0.5s' }} />
+        </div>
 
         <div className="relative px-8 md:px-12 pt-12 pb-10">
           {/* Title + mission */}
