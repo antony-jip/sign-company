@@ -199,7 +199,7 @@ export function TopNav() {
                     className="flex items-center gap-3 w-full px-4 py-2.5 text-[13px] text-foreground/80 hover:bg-muted/50 transition-colors">
                     <CreditCard className="w-4 h-4 text-muted-foreground" /> Abonnement
                   </button>
-                  <button onClick={() => { setUserMenuOpen(false); navigate('/instellingen?tab=kennisbank') }}
+                  <button onClick={() => { setUserMenuOpen(false); navigate('/kennisbank') }}
                     className="flex items-center gap-3 w-full px-4 py-2.5 text-[13px] text-foreground/80 hover:bg-muted/50 transition-colors">
                     <BookOpen className="w-4 h-4 text-muted-foreground" /> Kennisbank
                   </button>

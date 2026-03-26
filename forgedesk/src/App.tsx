@@ -93,6 +93,9 @@ const TeamLayout = lazy(() => import('@/components/settings/TeamLayout'), 'TeamL
 const WerkbonnenLayout = lazy(() => import('@/components/werkbonnen/WerkbonnenLayout'), 'WerkbonnenLayout')
 const WerkbonDetail = lazy(() => import('@/components/werkbonnen/WerkbonDetail'), 'WerkbonDetail')
 
+// Kennisbank
+const KennisbankPage = lazy(() => import('@/components/kennisbank/KennisbankPage'), 'KennisbankPage')
+
 // Bestelbonnen
 const BestelbonnenLayout = lazy(() => import('@/components/bestelbonnen/BestelbonnenLayout'), 'BestelbonnenLayout')
 const BestelbonDetail = lazy(() => import('@/components/bestelbonnen/BestelbonDetail'), 'BestelbonDetail')
@@ -231,6 +234,7 @@ function AppContent() {
         <Route path="importeren" element={<DataImportPage />} />
         <Route path="ai" element={<FORGEdeskAIChat />} />
         <Route path="forgie" element={<ForgieChatPage />} />
+        <Route path="kennisbank" element={<KennisbankPage />} />
         <Route path="werkbonnen" element={<WerkbonnenLayout />} />
         <Route path="werkbonnen/:id" element={<WerkbonDetail />} />
         <Route path="bestelbonnen" element={<BestelbonnenLayout />} />
