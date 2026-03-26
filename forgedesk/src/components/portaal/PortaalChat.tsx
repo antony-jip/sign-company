@@ -149,7 +149,7 @@ export function PortaalChat({
       // Add client reactions as chat messages
       if (item.reacties) {
         for (const r of item.reacties) {
-          if (r.bericht) {
+          if (r.bericht || r.type === 'goedkeuring' || r.type === 'revisie') {
             entries.push({
               kind: 'reaction_bubble',
               key: `react-${r.id}`,
@@ -159,7 +159,7 @@ export function PortaalChat({
                 type: 'reaction',
                 source: 'klant',
                 timestamp: r.created_at,
-                text: r.bericht,
+                text: r.bericht || (r.type === 'goedkeuring' ? '✓ Goedgekeurd' : '↩ Revisie gevraagd'),
                 senderName: r.klant_naam || 'Klant',
               },
             })
