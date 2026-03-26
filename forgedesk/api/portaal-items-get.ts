@@ -8,15 +8,15 @@ const supabaseAdmin = createClient(
 
 /**
  * Authenticated endpoint: haalt portaal items + reacties + bestanden op.
- * Gebruikt supabaseAdmin (service role) om RLS-problemen te omzeilen.
- * Auth: Bearer token (Supabase JWT) verplicht.
+ * Alles apart opgehaald en samengevoegd (geen PostgREST nested select).
+ * Gebruikt service role om RLS te omzeilen.
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
   try {
-    // Verifieer JWT token
+    // Auth check
     const authHeader = req.headers.authorization
     if (!authHeader?.startsWith('Bearer ')) {
       return res.status(401).json({ error: 'Niet geautoriseerd' })
@@ -32,7 +32,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'portaal_id is verplicht' })
     }
 
-    // Verifieer dat de user toegang heeft (eigenaar of org-lid)
+    // Toegangscheck (eigenaar of org-lid)
     const { data: portaal } = await supabaseAdmin
       .from('project_portalen')
       .select('id, user_id, organisatie_id')
@@ -43,7 +43,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(404).json({ error: 'Portaal niet gevonden' })
     }
 
-    // Check directe eigenaar OF zelfde organisatie
     let hasAccess = portaal.user_id === user.id
     if (!hasAccess && portaal.organisatie_id) {
       const { data: membership } = await supabaseAdmin
@@ -57,31 +56,39 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(403).json({ error: 'Geen toegang tot dit portaal' })
     }
 
-    // Haal items + bestanden + reacties op via admin (geen RLS)
-    const { data: items, error: itemsError } = await supabaseAdmin
+    // ── Stap 1: items ophalen ────────────────────────────────────────
+    const { data: items, error: itemsErr } = await supabaseAdmin
       .from('portaal_items')
-      .select('*, portaal_bestanden(*), portaal_reacties(*)')
+      .select('*')
       .eq('portaal_id', portaalId)
       .order('created_at', { ascending: false })
 
-    if (itemsError) {
-      console.error('portaal-items-get error:', itemsError)
+    if (itemsErr) {
+      console.error('[portaal-items-get] items error:', itemsErr)
       return res.status(500).json({ error: 'Kon items niet ophalen' })
     }
 
-    // Debug: log reacties per item
+    const itemIds = (items || []).map((i: { id: string }) => i.id)
+
+    // ── Stap 2: bestanden + reacties apart ophalen ───────────────────
+    const [bestandenRes, reactiesRes] = itemIds.length > 0
+      ? await Promise.all([
+          supabaseAdmin.from('portaal_bestanden').select('*').in('portaal_item_id', itemIds),
+          supabaseAdmin.from('portaal_reacties').select('*').in('portaal_item_id', itemIds).order('created_at', { ascending: true }),
+        ])
+      : [{ data: [], error: null }, { data: [], error: null }]
+
+    const bestanden = bestandenRes.data || []
+    const reacties = reactiesRes.data || []
+
     console.log('[portaal-items-get]', {
-      portaalId,
-      itemCount: items?.length || 0,
-      reactiesPerItem: (items || []).map((i: Record<string, unknown>) => ({
-        id: i.id,
-        titel: i.titel,
-        reacties: Array.isArray(i.portaal_reacties) ? (i.portaal_reacties as unknown[]).length : i.portaal_reacties,
-      })),
+      items: items.length,
+      bestanden: bestanden.length,
+      reacties: reacties.length,
     })
 
-    // Resolve offerte_publiek_token for offerte items
-    const offerteIds = (items || [])
+    // Offerte publiek tokens ophalen
+    const offerteIds = items
       .filter((i: Record<string, unknown>) => i.type === 'offerte' && i.offerte_id)
       .map((i: Record<string, unknown>) => i.offerte_id as string)
 
@@ -98,14 +105,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    const enrichedItems = (items || []).map((item: Record<string, unknown>) => ({
+    // ── Samenvoegen ───────────────────────────────────────────────────
+    const enrichedItems = items.map((item: Record<string, unknown>) => ({
       ...item,
+      portaal_bestanden: bestanden.filter((b: Record<string, unknown>) => b.portaal_item_id === item.id),
+      portaal_reacties: reacties.filter((r: Record<string, unknown>) => r.portaal_item_id === item.id),
       offerte_publiek_token: item.offerte_id ? offerteTokenMap[item.offerte_id as string] || null : null,
     }))
 
     return res.status(200).json({ items: enrichedItems })
   } catch (error) {
-    console.error('portaal-items-get error:', error)
+    console.error('[portaal-items-get] error:', error)
     return res.status(500).json({ error: 'Er ging iets mis' })
   }
 }
