@@ -387,15 +387,32 @@ function InputBar({
       const url = await uploadFile(tekeningFile, `${userId}/portaal/${portaal.id}/${Date.now()}_${tekeningFile.name}`)
       const newItem = await createPortaalItem({ user_id: userId, project_id: projectId, portaal_id: portaal.id, type: 'tekening', titel: tekeningTitel || tekeningFile.name, status: 'verstuurd', zichtbaar_voor_klant: true, volgorde: 0 } as any)
       const { createPortaalBestand } = await import('@/services/supabaseService')
-      await createPortaalBestand({
-        portaal_item_id: newItem.id,
-        bestandsnaam: tekeningFile.name,
-        mime_type: tekeningFile.type,
-        grootte: tekeningFile.size,
-        url,
-        thumbnail_url: tekeningFile.type.startsWith('image/') ? url : undefined,
-        uploaded_by: 'bedrijf',
-      })
+      try {
+        await createPortaalBestand({
+          portaal_item_id: newItem.id,
+          bestandsnaam: tekeningFile.name,
+          mime_type: tekeningFile.type,
+          grootte: tekeningFile.size,
+          url,
+          thumbnail_url: tekeningFile.type.startsWith('image/') ? url : undefined,
+          uploaded_by: 'bedrijf',
+        })
+      } catch (bestandErr) {
+        console.error('[Tekening] createPortaalBestand failed:', bestandErr)
+        // Fallback: direct insert via supabase client
+        const { default: supabase } = await import('@/services/supabaseClient')
+        if (supabase) {
+          await supabase.from('portaal_bestanden').insert({
+            portaal_item_id: newItem.id,
+            bestandsnaam: tekeningFile.name,
+            mime_type: tekeningFile.type,
+            grootte: tekeningFile.size,
+            url,
+            thumbnail_url: tekeningFile.type.startsWith('image/') ? url : undefined,
+            uploaded_by: 'bedrijf',
+          })
+        }
+      }
       toast.success('Tekening gedeeld'); setTekeningFile(null); setTekeningTitel(''); setTekeningPopoverOpen(false)
       await fetchItems()
       if (notificeerKlant) sendEmailNotification(tekeningTitel || tekeningFile.name, tekeningTitel || tekeningFile.name)
