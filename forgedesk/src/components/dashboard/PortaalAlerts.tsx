@@ -191,60 +191,83 @@ export function PortaalAlerts() {
 
   return (
     <>
-      <div className="space-y-2">
+      <div className="space-y-2.5">
         {visibleAlerts.map(alert => {
           const isGoedkeuring = alert.type === 'portaal_goedkeuring'
-          const borderColor = isGoedkeuring ? 'border-l-green-500' : 'border-l-amber-500'
-          const bgColor = isGoedkeuring ? 'bg-green-50/50 dark:bg-green-950/20' : 'bg-amber-50/50 dark:bg-amber-950/20'
           const Icon = isGoedkeuring ? CheckCircle2 : RotateCcw
-          const iconColor = isGoedkeuring ? 'text-green-600' : 'text-amber-600'
+          const accentColor = isGoedkeuring ? '#2D6B48' : '#F15025'
 
           return (
-            <div key={alert.id} className={`relative rounded-xl border-l-4 ${borderColor} ${bgColor} px-4 py-3`}>
+            <div
+              key={alert.id}
+              className="relative rounded-[10px] px-4 py-3"
+              style={{
+                backgroundColor: '#FAFAF8',
+                border: '0.5px solid #E8E6E1',
+                borderLeft: `3px solid ${accentColor}`,
+              }}
+            >
               <button
                 onClick={() => handleDismiss(alert.id)}
-                className="absolute top-2.5 right-2.5 text-muted-foreground hover:text-foreground"
+                className="absolute top-3 right-3 transition-opacity hover:opacity-60"
+                style={{ color: '#A0A098' }}
               >
                 <X className="h-3.5 w-3.5" />
               </button>
-              <div className="flex items-start gap-2.5 pr-6">
-                <Icon className={`h-4 w-4 mt-0.5 flex-shrink-0 ${iconColor}`} />
+              <div className="flex items-start gap-3 pr-6">
+                <div
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full mt-0.5"
+                  style={{ backgroundColor: `${accentColor}12` }}
+                >
+                  <Icon className="h-3.5 w-3.5" style={{ color: accentColor }} />
+                </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-foreground">{alert.titel}</span>
-                    <span className="text-xs text-muted-foreground">{formatTijdGeleden(alert.created_at)}</span>
+                    <span className="text-[13px] font-medium" style={{ color: '#191919' }}>{alert.titel}</span>
+                    <span className="text-[10px] font-mono" style={{ color: '#C0BDB8' }}>{formatTijdGeleden(alert.created_at)}</span>
                   </div>
                   {alert.bericht && (
-                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{alert.bericht}</p>
+                    <p className="text-xs mt-0.5 line-clamp-2" style={{ color: '#5A5A55' }}>{alert.bericht}</p>
                   )}
-                  <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                  <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
                     {isGoedkeuring ? (
                       <>
-                        <Button variant="outline" size="sm" className="h-6 text-xs px-2" onClick={() => handlePlanMontage(alert)}>
-                          <Calendar className="h-3 w-3 mr-1" />
+                        <button
+                          onClick={() => handlePlanMontage(alert)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors hover:opacity-80"
+                          style={{ backgroundColor: '#1A535C', color: '#fff' }}
+                        >
+                          <Calendar className="h-3 w-3" />
                           Plan montage
-                        </Button>
-                        <Button variant="outline" size="sm" className="h-6 text-xs px-2" onClick={() => handleMaakTaak(alert)}>
-                          <ClipboardCheck className="h-3 w-3 mr-1" />
+                        </button>
+                        <button
+                          onClick={() => handleMaakTaak(alert)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors hover:bg-gray-100"
+                          style={{ backgroundColor: '#F0EEEA', color: '#5A5A55' }}
+                        >
+                          <ClipboardCheck className="h-3 w-3" />
                           Maak taak
-                        </Button>
+                        </button>
                       </>
                     ) : (
-                      <Button variant="outline" size="sm" className="h-6 text-xs px-2" onClick={() => handleUploadRevisie(alert)}>
-                        <Upload className="h-3 w-3 mr-1" />
+                      <button
+                        onClick={() => handleUploadRevisie(alert)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors hover:opacity-80"
+                        style={{ backgroundColor: '#1A535C', color: '#fff' }}
+                      >
+                        <Upload className="h-3 w-3" />
                         Nieuwe versie uploaden
-                      </Button>
+                      </button>
                     )}
                     {alert.project_id && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 text-xs px-2 text-muted-foreground"
+                      <button
                         onClick={() => navigate(`/projecten/${alert.project_id}`)}
+                        className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium transition-colors hover:opacity-70"
+                        style={{ color: '#1A535C' }}
                       >
                         Bekijk project
-                        <ArrowRight className="h-3 w-3 ml-1" />
-                      </Button>
+                        <ArrowRight className="h-3 w-3" />
+                      </button>
                     )}
                   </div>
                 </div>
@@ -255,7 +278,8 @@ export function PortaalAlerts() {
         {extraCount > 0 && (
           <button
             onClick={() => navigate('/portalen')}
-            className="text-xs text-primary font-medium hover:underline px-4"
+            className="text-[11px] font-medium hover:opacity-70 px-4 transition-opacity"
+            style={{ color: '#1A535C' }}
           >
             en {extraCount} meer meldingen →
           </button>
