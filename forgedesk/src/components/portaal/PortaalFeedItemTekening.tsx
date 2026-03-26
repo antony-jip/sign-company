@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FileText, Download, Loader2 } from 'lucide-react'
+import { FileText, Download, Loader2, Eye, X } from 'lucide-react'
 
 interface PortaalFeedItemTekeningProps {
   item: {
@@ -54,9 +54,11 @@ export function PortaalFeedItemTekening({
 }: PortaalFeedItemTekeningProps) {
   const [loading, setLoading] = useState(false)
   const [confirmAction, setConfirmAction] = useState<'goedkeuren' | 'revisie' | null>(null)
+  const [pdfViewUrl, setPdfViewUrl] = useState<string | null>(null)
   const isAfgehandeld = ['goedgekeurd', 'revisie'].includes(item.status)
   const images = (item.bestanden || []).filter(b => b.mime_type?.startsWith('image/'))
-  const otherFiles = (item.bestanden || []).filter(b => !b.mime_type?.startsWith('image/'))
+  const pdfFiles = (item.bestanden || []).filter(b => b.mime_type === 'application/pdf' || b.bestandsnaam?.toLowerCase().endsWith('.pdf'))
+  const otherFiles = (item.bestanden || []).filter(b => !b.mime_type?.startsWith('image/') && b.mime_type !== 'application/pdf' && !b.bestandsnaam?.toLowerCase().endsWith('.pdf'))
 
   async function handleAction(type: 'goedkeuring' | 'revisie') {
     setLoading(true)
@@ -124,6 +126,59 @@ export function PortaalFeedItemTekening({
                   style={{ borderColor: '#E8E6E1' }}
                   onClick={() => onImageClick?.(img.url)}
                 />
+              ))}
+            </div>
+          )}
+
+          {/* PDF files — inline preview */}
+          {pdfFiles.length > 0 && (
+            <div className="mt-3 space-y-2">
+              {pdfFiles.map((f) => (
+                <div key={f.id}>
+                  <div
+                    className="flex items-center gap-2 py-2 px-3 rounded-lg"
+                    style={{ backgroundColor: '#F5F5F0', border: '0.5px solid #E8E6E1' }}
+                  >
+                    <FileText className="w-4 h-4 flex-shrink-0" style={{ color: '#C03A18' }} />
+                    <span className="truncate flex-1 text-sm" style={{ color: '#191919' }}>{f.bestandsnaam}</span>
+                    {f.grootte != null && (
+                      <span style={{ fontSize: 11, color: '#A0A098', fontFamily: "'DM Mono', monospace" }}>
+                        {formatFileSize(f.grootte)}
+                      </span>
+                    )}
+                    <button
+                      onClick={() => setPdfViewUrl(pdfViewUrl === f.url ? null : f.url)}
+                      className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors hover:opacity-80"
+                      style={{ backgroundColor: '#1A535C', color: '#fff' }}
+                    >
+                      <Eye className="w-3 h-3" />
+                      Bekijk
+                    </button>
+                    <a
+                      href={f.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-1 rounded hover:bg-gray-200 transition-colors"
+                      title="Download"
+                    >
+                      <Download className="w-3.5 h-3.5" style={{ color: '#A0A098' }} />
+                    </a>
+                  </div>
+                  {pdfViewUrl === f.url && (
+                    <div className="mt-2 rounded-lg overflow-hidden" style={{ border: '0.5px solid #E8E6E1' }}>
+                      <div className="flex items-center justify-between px-3 py-1.5" style={{ backgroundColor: '#F5F5F0' }}>
+                        <span className="text-xs" style={{ color: '#5A5A55' }}>{f.bestandsnaam}</span>
+                        <button onClick={() => setPdfViewUrl(null)} className="hover:opacity-60"><X className="w-3.5 h-3.5" style={{ color: '#A0A098' }} /></button>
+                      </div>
+                      <iframe
+                        src={f.url}
+                        className="w-full border-0"
+                        style={{ height: 500 }}
+                        title={f.bestandsnaam}
+                      />
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           )}
