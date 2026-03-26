@@ -115,8 +115,8 @@ export function PortaalFeedItemOfferte({
             </p>
           )}
 
-          {/* Offerte PDF link */}
-          {item.offerte_publiek_token && (
+          {/* Offerte bekijken link */}
+          {item.offerte_publiek_token ? (
             <a
               href={`/offerte-bekijken/${item.offerte_publiek_token}`}
               target="_blank"
@@ -127,7 +127,18 @@ export function PortaalFeedItemOfferte({
               <ExternalLink className="w-3.5 h-3.5" />
               Offerte bekijken
             </a>
-          )}
+          ) : item.bestanden && item.bestanden.length > 0 ? (
+            <a
+              href={item.bestanden[0].url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 mt-2 text-sm hover:opacity-70 transition-opacity"
+              style={{ color: '#1A535C' }}
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              Offerte bekijken
+            </a>
+          ) : null}
 
           {/* Bestanden */}
           {item.bestanden && item.bestanden.length > 0 && (
