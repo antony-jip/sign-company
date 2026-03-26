@@ -146,32 +146,26 @@ export function PortaalChat({
         })
       }
 
-      // Add client reactions as chat messages
-      if (item.reacties) {
-        for (const r of item.reacties) {
-          if (r.bericht || r.type === 'goedkeuring' || r.type === 'revisie') {
-            entries.push({
-              kind: 'reaction_bubble',
-              key: `react-${r.id}`,
-              ts: r.created_at,
-              message: {
-                id: r.id,
-                type: 'reaction',
-                source: 'klant',
-                timestamp: r.created_at,
-                text: r.bericht || (r.type === 'goedkeuring' ? '✓ Goedgekeurd' : '↩ Revisie gevraagd'),
-                senderName: r.klant_naam || 'Klant',
-              },
-            })
-          }
-        }
+      // Add client reactions as chat messages — always, no filtering
+      for (const r of item.reacties || []) {
+        entries.push({
+          kind: 'reaction_bubble',
+          key: `react-${r.id}`,
+          ts: r.created_at,
+          message: {
+            id: r.id,
+            type: 'reaction',
+            source: 'klant',
+            timestamp: r.created_at,
+            text: r.bericht || `[${r.type}]`,
+            senderName: r.klant_naam || 'Klant',
+          },
+        })
       }
     }
 
     // Sort chronologically
     entries.sort((a, b) => new Date(a.ts).getTime() - new Date(b.ts).getTime())
-
-    console.log('[Timeline]', entries.map(e => ({ kind: e.kind, key: e.key })))
 
     // Insert day separators
     const result: TimelineEntry[] = []
@@ -245,7 +239,6 @@ export function PortaalChat({
               case 'day_separator':
                 return <PortaalChatDaySeparator key={entry.key} date={entry.date} />
               case 'bubble':
-              case 'reaction_bubble':
                 return (
                   <PortaalChatBubble
                     key={entry.key}
@@ -253,6 +246,15 @@ export function PortaalChat({
                     isOwnMessage={isOwnMessage(entry.message.source)}
                     onImageClick={handleImageClick}
                   />
+                )
+              case 'reaction_bubble':
+                return (
+                  <div key={entry.key} className="flex justify-start">
+                    <div className="rounded-lg bg-gray-100 px-3 py-2 text-sm max-w-[65%]">
+                      <div className="text-xs text-gray-500 mb-1">{entry.message.senderName}</div>
+                      <p>{entry.message.text}</p>
+                    </div>
+                  </div>
                 )
               case 'rich_card':
                 return (
