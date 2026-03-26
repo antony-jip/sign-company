@@ -5,6 +5,10 @@ import {
   Plus,
   Loader2,
   Bell,
+  Copy,
+  Calendar,
+  Power,
+  RefreshCw,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -15,7 +19,6 @@ import {
   getPortaalItems,
   createPortaalItem,
   createPortaalBestand,
-  updatePortaalItem,
   getOffertesByProject,
   getFacturenByProject,
   getNotificaties,
@@ -23,9 +26,9 @@ import {
 } from '@/services/supabaseService'
 import { uploadFile } from '@/services/storageService'
 import type { ProjectPortaal, PortaalItem, Offerte, Factuur, Notificatie } from '@/types'
-import { PortaalChat } from '@/components/portaal/PortaalChat'
-import { PortaalChatProgress } from '@/components/portaal/PortaalChatProgress'
-import type { SendPayload } from '@/components/portaal/PortaalChatInput'
+import { PortaalFeed } from '@/components/portaal/PortaalFeed'
+import { PortaalItemToevoegen } from '@/components/portaal/PortaalItemToevoegen'
+import { PortaalLightbox } from '@/components/portaal/PortaalLightbox'
 
 interface ProjectPortaalTabProps {
   projectId: string
@@ -42,6 +45,7 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
   const [notificaties, setNotificaties] = useState<Notificatie[]>([])
   const [offertes, setOffertes] = useState<Offerte[]>([])
   const [facturen, setFacturen] = useState<Factuur[]>([])
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
 
   // ── Fetch portaal data ──────────────────────────────────────────────────
   const fetchPortaal = useCallback(async () => {
@@ -49,7 +53,6 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
       const p = await getPortaalByProject(projectId)
       setPortaal(p)
       if (p) {
-        // Haal items op via server-side API (supabaseAdmin, geen RLS)
         let itms: PortaalItem[] = []
         try {
           const jwt = await getAuthToken()
@@ -65,28 +68,22 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
                 reacties: (item.portaal_reacties || []) as unknown[],
               })) as PortaalItem[]
             } else {
-              console.warn('[portaal] API fallback, status:', resp.status)
               itms = await getPortaalItems(p.id)
             }
           } else {
             itms = await getPortaalItems(p.id)
           }
-        } catch (apiErr) {
-          console.warn('[portaal] API error, using fallback:', apiErr)
+        } catch {
           itms = await getPortaalItems(p.id)
         }
-        // DEBUG: log items + reacties count
-        const totalReacties = itms.reduce((sum: number, i: PortaalItem) => sum + (i.reacties?.length || 0), 0)
-        console.log(`[portaal] ${itms.length} items, ${totalReacties} reacties`, itms.map((i: PortaalItem) => ({ id: i.id, type: i.type, titel: i.titel, reacties: i.reacties?.length || 0, reactieData: i.reacties })))
         setItems(itms)
-        // Load offertes + facturen for the + menu
         getOffertesByProject(projectId).then(setOffertes).catch(() => {})
         getFacturenByProject(projectId).then(setFacturen).catch(() => {})
       }
       try {
         const allNotifs = await getNotificaties()
         const portaalNotifs = allNotifs.filter(
-          n => n.project_id === projectId &&
+          (n: Notificatie) => n.project_id === projectId &&
             ['portaal_goedkeuring', 'portaal_revisie', 'portaal_bericht', 'portaal_bekeken'].includes(n.type) &&
             !n.gelezen
         )
@@ -99,9 +96,7 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
     }
   }, [projectId])
 
-  useEffect(() => {
-    fetchPortaal()
-  }, [fetchPortaal])
+  useEffect(() => { fetchPortaal() }, [fetchPortaal])
 
   // ── Real-time updates via Supabase subscription ────────────────────────
   useEffect(() => {
@@ -114,30 +109,10 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
 
       const channel = supabase
         .channel(`portaal-items-${portaal!.id}`)
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'portaal_items',
-            filter: `portaal_id=eq.${portaal!.id}`,
-          },
-          () => { fetchPortaal() }
-        )
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'portaal_reacties',
-          },
-          () => { fetchPortaal() }
-        )
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'portaal_items', filter: `portaal_id=eq.${portaal!.id}` }, () => { fetchPortaal() })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'portaal_reacties' }, () => { fetchPortaal() })
         .subscribe((status) => {
-          // On reconnect after disconnect, refetch data
-          if (status === 'SUBSCRIBED') {
-            fetchPortaal()
-          }
+          if (status === 'SUBSCRIBED') fetchPortaal()
         })
 
       return channel
@@ -146,16 +121,10 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
     let channel: Awaited<ReturnType<typeof subscribe>> | undefined
     subscribe().then(c => { channel = c })
 
-    // Fallback polling every 10s in case Realtime disconnects silently
-    const pollInterval = setInterval(() => {
-      if (!cancelled) fetchPortaal()
-    }, 10_000)
+    const pollInterval = setInterval(() => { if (!cancelled) fetchPortaal() }, 10_000)
 
-    // Refetch when tab becomes visible again (mobile resume)
     function handleVisibility() {
-      if (document.visibilityState === 'visible' && !cancelled) {
-        fetchPortaal()
-      }
+      if (document.visibilityState === 'visible' && !cancelled) fetchPortaal()
     }
     document.addEventListener('visibilitychange', handleVisibility)
 
@@ -171,7 +140,7 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
     }
   }, [portaal?.id, fetchPortaal])
 
-  // ── Portaal management ──────────────────────────────────────────────────
+  // ── Auth token helper ─────────────────────────────────────────────────
   async function getAuthToken() {
     const { createClient } = await import('@supabase/supabase-js')
     const client = createClient(
@@ -182,6 +151,7 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
     return data.session?.access_token || ''
   }
 
+  // ── Portaal management ──────────────────────────────────────────────────
   async function handleCreatePortaal() {
     if (!user?.id) return
     setCreating(true)
@@ -234,10 +204,6 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
     }
   }
 
-  async function handleActiveer() {
-    await handleVerlengen()
-  }
-
   function copyLink() {
     if (!portaal) return
     const url = `${window.location.origin}/portaal/${portaal.token}`
@@ -245,176 +211,7 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
     toast.success('Portaallink gekopieerd')
   }
 
-  // ── Send handler (from chat input) ──────────────────────────────────────
-  async function handleSend(payload: SendPayload) {
-    if (!portaal || !user?.id) throw new Error('Sessie verlopen. Ververs de pagina.')
-
-    let newItem: PortaalItem | null = null
-
-    try {
-
-    if (payload.kind === 'tekst') {
-      newItem = await createPortaalItem({
-        user_id: user.id,
-        project_id: projectId,
-        portaal_id: portaal.id,
-        type: 'bericht',
-        titel: 'Bericht',
-        bericht_type: 'tekst',
-        bericht_tekst: payload.tekst,
-        afzender: 'bedrijf',
-        status: 'verstuurd',
-        zichtbaar_voor_klant: true,
-        volgorde: 0,
-      })
-      if (payload.emailNotify) sendEmailNotification(payload.tekst, 'Bericht')
-    } else if (payload.kind === 'notitie_intern') {
-      newItem = await createPortaalItem({
-        user_id: user.id,
-        project_id: projectId,
-        portaal_id: portaal.id,
-        type: 'bericht',
-        titel: 'Interne notitie',
-        bericht_type: 'notitie_intern',
-        bericht_tekst: payload.tekst,
-        afzender: 'bedrijf',
-        status: 'verstuurd',
-        zichtbaar_voor_klant: false,
-        volgorde: 0,
-      })
-    } else if (payload.kind === 'foto') {
-      const path = `${user.id}/portaal/${portaal.id}/${Date.now()}_${payload.file.name}`
-      const url = await uploadFile(payload.file, path)
-      newItem = await createPortaalItem({
-        user_id: user.id,
-        project_id: projectId,
-        portaal_id: portaal.id,
-        type: 'bericht',
-        titel: payload.caption || 'Foto',
-        bericht_type: 'foto',
-        foto_url: url,
-        bericht_tekst: payload.caption,
-        afzender: 'bedrijf',
-        status: 'verstuurd',
-        zichtbaar_voor_klant: true,
-        volgorde: 0,
-      })
-      if (payload.emailNotify) sendEmailNotification('Nieuwe foto gedeeld', 'Foto')
-    } else if (payload.kind === 'offerte') {
-      const offerte = offertes.find(o => o.id === payload.offerteId)
-      if (!offerte) return
-      // Zorg dat de offerte een publiek_token heeft zodat de klant hem kan bekijken
-      if (!offerte.publiek_token) {
-        const { updateOfferte } = await import('@/services/supabaseService')
-        const publiekToken = crypto.randomUUID()
-        await updateOfferte(offerte.id, { publiek_token: publiekToken })
-        offerte.publiek_token = publiekToken
-      }
-      newItem = await createPortaalItem({
-        user_id: user.id,
-        project_id: projectId,
-        portaal_id: portaal.id,
-        type: 'offerte',
-        titel: offerte.titel || `Offerte ${offerte.nummer}`,
-        offerte_id: offerte.id,
-        bedrag: offerte.totaal,
-        status: 'verstuurd',
-        zichtbaar_voor_klant: true,
-        volgorde: 0,
-      })
-      // Genereer offerte PDF en koppel als bestand
-      try {
-        const { getOfferteItems, getKlant, getProject } = await import('@/services/supabaseService')
-        const { generateOffertePDF } = await import('@/services/pdfService')
-        const { getDocumentStyle } = await import('@/services/supabaseService')
-
-        const [offerteItems, project, docStyle] = await Promise.all([
-          getOfferteItems(offerte.id),
-          getProject(projectId),
-          user?.id ? getDocumentStyle(user.id) : Promise.resolve(null),
-        ])
-        const klant = project?.klant_id ? await getKlant(project.klant_id) : null
-
-        const doc = await generateOffertePDF(
-          offerte,
-          offerteItems,
-          klant || {},
-          { ...profile, primaireKleur: docStyle?.primaire_kleur || '#2563eb' },
-          docStyle,
-        )
-        const pdfBlob = doc.output('blob')
-        const pdfFile = new File([pdfBlob], `${offerte.nummer}.pdf`, { type: 'application/pdf' })
-        const pdfPath = `${user.id}/portaal/${portaal.id}/${Date.now()}_${offerte.nummer}.pdf`
-        const pdfUrl = await uploadFile(pdfFile, pdfPath)
-        await createPortaalBestand({
-          portaal_item_id: newItem.id,
-          bestandsnaam: `${offerte.nummer}.pdf`,
-          mime_type: 'application/pdf',
-          grootte: pdfBlob.size,
-          url: pdfUrl,
-          uploaded_by: 'bedrijf',
-        })
-      } catch (pdfErr) {
-        console.warn('Offerte PDF genereren/uploaden mislukt:', pdfErr)
-        // Niet blokkeren — offerte is al gedeeld via de publiek_token link
-      }
-      if (payload.emailNotify) sendEmailNotification(`Offerte ${offerte.nummer}`, offerte.titel || `Offerte ${offerte.nummer}`)
-    } else if (payload.kind === 'factuur') {
-      const factuur = facturen.find(f => f.id === payload.factuurId)
-      if (!factuur) return
-      newItem = await createPortaalItem({
-        user_id: user.id,
-        project_id: projectId,
-        portaal_id: portaal.id,
-        type: 'factuur',
-        titel: `Factuur ${factuur.nummer}`,
-        factuur_id: factuur.id,
-        bedrag: factuur.totaal,
-        mollie_payment_url: factuur.betaal_link || undefined,
-        status: 'verstuurd',
-        zichtbaar_voor_klant: true,
-        volgorde: 0,
-      })
-      if (payload.emailNotify) sendEmailNotification(`Factuur ${factuur.nummer}`, `Factuur ${factuur.nummer}`)
-    } else if (payload.kind === 'tekening') {
-      newItem = await createPortaalItem({
-        user_id: user.id,
-        project_id: projectId,
-        portaal_id: portaal.id,
-        type: 'tekening',
-        titel: payload.titel,
-        status: 'verstuurd',
-        zichtbaar_voor_klant: true,
-        volgorde: 0,
-      })
-      // Upload files
-      for (const file of payload.files) {
-        const path = `${user.id}/portaal/${portaal.id}/${Date.now()}_${file.name}`
-        const url = await uploadFile(file, path)
-        await createPortaalBestand({
-          portaal_item_id: newItem.id,
-          bestandsnaam: file.name,
-          mime_type: file.type,
-          grootte: file.size,
-          url,
-          thumbnail_url: file.type.startsWith('image/') ? url : undefined,
-          uploaded_by: 'bedrijf',
-        })
-      }
-      if (payload.emailNotify) sendEmailNotification(payload.titel, payload.titel)
-    }
-
-    toast.success('Verstuurd')
-    await fetchPortaal()
-
-    } catch (err) {
-      console.error('Fout bij versturen:', err)
-      toast.error('Versturen mislukt. Probeer het opnieuw.')
-      throw err // Re-throw so PortaalChatInput can also handle it
-    }
-  }
-
-  // ── Email notification (user explicitly checked "Klant notificeren") ────
+  // ── Email notification helper ──────────────────────────────────────────
   async function sendEmailNotification(content: string, titel: string) {
     try {
       const { getProject, getKlant, getPortaalInstellingen } = await import('@/services/supabaseService')
@@ -423,31 +220,27 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
 
       const project = await getProject(projectId)
       if (!project?.klant_id || !portaal) {
-        toast.warning('Geen klant gekoppeld aan project — email niet verstuurd')
+        toast.warning('Geen klant gekoppeld aan project')
         return
       }
       const klant = await getKlant(project.klant_id)
       const klantEmail = klant?.email || klant?.contactpersonen?.[0]?.email
       if (!klantEmail) {
-        toast.warning('Klant heeft geen email adres — notificatie niet verstuurd')
+        toast.warning('Klant heeft geen email adres')
         return
       }
 
       const bedrijfsnaam = profile?.bedrijfsnaam || ''
       const portaalUrl = `${window.location.origin}/portaal/${portaal.token}`
       const klantNaam = klant?.contactpersoon || klant?.contactpersonen?.[0]?.naam || klant?.bedrijfsnaam || 'klant'
-      const primaireKleur = profile?.primaireKleur || undefined
 
-      // Gebruik email templates uit portaal instellingen
       const instellingen = user?.id ? await getPortaalInstellingen(user.id) : null
       const vars: Record<string, string> = {
-        // New {{var}} format
         klant_naam: klantNaam,
         project_naam: projectNaam,
         portaal_link: portaalUrl,
         bedrijfsnaam: bedrijfsnaam || '',
         item_type: titel,
-        // Legacy {var} format
         projectnaam: projectNaam,
         itemtitel: titel,
         klantNaam,
@@ -461,18 +254,7 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
         ? replaceEmailVariables(instellingen.template_nieuw_item.inhoud, vars)
         : `Er is een nieuw item gedeeld voor project ${projectNaam}.`
 
-      const plainBody = [
-        `Beste ${klantNaam},`,
-        '',
-        heading,
-        '',
-        content,
-        '',
-        `Bekijk het hier: ${portaalUrl}`,
-        '',
-        `Met vriendelijke groet,`,
-        bedrijfsnaam || 'Het team',
-      ].join('\n')
+      const plainBody = [`Beste ${klantNaam},`, '', heading, '', content, '', `Bekijk het hier: ${portaalUrl}`, '', `Met vriendelijke groet,`, bedrijfsnaam || 'Het team'].join('\n')
 
       const htmlBody = buildPortalEmailHtml({
         heading,
@@ -482,16 +264,178 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
         ctaUrl: portaalUrl,
         bedrijfsnaam,
         logoUrl: profile?.logo_url || undefined,
-        primaireKleur,
+        primaireKleur: profile?.primaireKleur || undefined,
       })
 
       await sendEmail(klantEmail, onderwerp, plainBody, { html: htmlBody })
       toast.success(`Email verstuurd naar ${klantEmail}`)
     } catch (emailErr) {
       const msg = emailErr instanceof Error ? emailErr.message : 'Onbekende fout'
-      console.error('Email notificatie mislukt:', msg, emailErr)
+      console.error('Email notificatie mislukt:', msg)
       toast.error(`Email niet verstuurd: ${msg}`)
     }
+  }
+
+  // ── Item toevoegen handlers ──────────────────────────────────────────────
+  async function handleAddOfferte(offerteId: string, emailNotify: boolean) {
+    if (!portaal || !user?.id) return
+    const offerte = offertes.find(o => o.id === offerteId)
+    if (!offerte) return
+
+    if (!offerte.publiek_token) {
+      const { updateOfferte } = await import('@/services/supabaseService')
+      const publiekToken = crypto.randomUUID()
+      await updateOfferte(offerte.id, { publiek_token: publiekToken })
+      offerte.publiek_token = publiekToken
+    }
+
+    const newItem = await createPortaalItem({
+      user_id: user.id,
+      project_id: projectId,
+      portaal_id: portaal.id,
+      type: 'offerte',
+      titel: offerte.titel || `Offerte ${offerte.nummer}`,
+      offerte_id: offerte.id,
+      bedrag: offerte.totaal,
+      status: 'verstuurd',
+      zichtbaar_voor_klant: true,
+      volgorde: 0,
+    })
+
+    // Generate and attach PDF
+    try {
+      const { getOfferteItems, getKlant, getProject, getDocumentStyle } = await import('@/services/supabaseService')
+      const { generateOffertePDF } = await import('@/services/pdfService')
+      const [offerteItems, project, docStyle] = await Promise.all([
+        getOfferteItems(offerte.id),
+        getProject(projectId),
+        user?.id ? getDocumentStyle(user.id) : Promise.resolve(null),
+      ])
+      const klant = project?.klant_id ? await getKlant(project.klant_id) : null
+      const doc = await generateOffertePDF(offerte, offerteItems, klant || {}, { ...profile, primaireKleur: docStyle?.primaire_kleur || '#2563eb' }, docStyle)
+      const pdfBlob = doc.output('blob')
+      const pdfFile = new File([pdfBlob], `${offerte.nummer}.pdf`, { type: 'application/pdf' })
+      const pdfPath = `${user.id}/portaal/${portaal.id}/${Date.now()}_${offerte.nummer}.pdf`
+      const pdfUrl = await uploadFile(pdfFile, pdfPath)
+      await createPortaalBestand({
+        portaal_item_id: newItem.id,
+        bestandsnaam: `${offerte.nummer}.pdf`,
+        mime_type: 'application/pdf',
+        grootte: pdfBlob.size,
+        url: pdfUrl,
+        uploaded_by: 'bedrijf',
+      })
+    } catch (pdfErr) {
+      console.warn('Offerte PDF genereren/uploaden mislukt:', pdfErr)
+    }
+
+    if (emailNotify) sendEmailNotification(`Offerte ${offerte.nummer}`, offerte.titel || `Offerte ${offerte.nummer}`)
+    toast.success('Offerte gedeeld')
+    await fetchPortaal()
+  }
+
+  async function handleAddFactuur(factuurId: string, emailNotify: boolean) {
+    if (!portaal || !user?.id) return
+    const factuur = facturen.find(f => f.id === factuurId)
+    if (!factuur) return
+
+    await createPortaalItem({
+      user_id: user.id,
+      project_id: projectId,
+      portaal_id: portaal.id,
+      type: 'factuur',
+      titel: `Factuur ${factuur.nummer}`,
+      factuur_id: factuur.id,
+      bedrag: factuur.totaal,
+      mollie_payment_url: factuur.betaal_link || undefined,
+      status: 'verstuurd',
+      zichtbaar_voor_klant: true,
+      volgorde: 0,
+    })
+
+    if (emailNotify) sendEmailNotification(`Factuur ${factuur.nummer}`, `Factuur ${factuur.nummer}`)
+    toast.success('Factuur gedeeld')
+    await fetchPortaal()
+  }
+
+  async function handleAddTekening(titel: string, files: File[], emailNotify: boolean) {
+    if (!portaal || !user?.id) return
+
+    const newItem = await createPortaalItem({
+      user_id: user.id,
+      project_id: projectId,
+      portaal_id: portaal.id,
+      type: 'tekening',
+      titel,
+      status: 'verstuurd',
+      zichtbaar_voor_klant: true,
+      volgorde: 0,
+    })
+
+    for (const file of files) {
+      const path = `${user.id}/portaal/${portaal.id}/${Date.now()}_${file.name}`
+      const url = await uploadFile(file, path)
+      await createPortaalBestand({
+        portaal_item_id: newItem.id,
+        bestandsnaam: file.name,
+        mime_type: file.type,
+        grootte: file.size,
+        url,
+        thumbnail_url: file.type.startsWith('image/') ? url : undefined,
+        uploaded_by: 'bedrijf',
+      })
+    }
+
+    if (emailNotify) sendEmailNotification(titel, titel)
+    toast.success('Tekening gedeeld')
+    await fetchPortaal()
+  }
+
+  async function handleAddAfbeelding(titel: string, file: File, emailNotify: boolean) {
+    if (!portaal || !user?.id) return
+
+    const path = `${user.id}/portaal/${portaal.id}/${Date.now()}_${file.name}`
+    const url = await uploadFile(file, path)
+
+    await createPortaalItem({
+      user_id: user.id,
+      project_id: projectId,
+      portaal_id: portaal.id,
+      type: 'afbeelding',
+      titel,
+      foto_url: url,
+      bericht_type: 'foto',
+      afzender: 'bedrijf',
+      status: 'verstuurd',
+      zichtbaar_voor_klant: true,
+      volgorde: 0,
+    })
+
+    if (emailNotify) sendEmailNotification(titel, titel)
+    toast.success('Afbeelding gedeeld')
+    await fetchPortaal()
+  }
+
+  async function handleAddBericht(tekst: string, emailNotify: boolean) {
+    if (!portaal || !user?.id) return
+
+    await createPortaalItem({
+      user_id: user.id,
+      project_id: projectId,
+      portaal_id: portaal.id,
+      type: 'bericht',
+      titel: 'Bericht',
+      bericht_type: 'tekst',
+      bericht_tekst: tekst,
+      afzender: 'bedrijf',
+      status: 'verstuurd',
+      zichtbaar_voor_klant: true,
+      volgorde: 0,
+    })
+
+    if (emailNotify) sendEmailNotification(tekst, 'Bericht')
+    toast.success('Bericht verstuurd')
+    await fetchPortaal()
   }
 
   // ── Loading state ───────────────────────────────────────────────────────
@@ -534,46 +478,112 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
   const isVerlopen = new Date(portaal.verloopt_op) < new Date()
   const isActief = portaal.actief && !isVerlopen
 
-  return (
-    <div className="flex flex-col h-[calc(100vh-16rem)] min-h-[400px]">
-      {/* Compact progress header */}
-      <div className="space-y-2 mb-3">
-        <PortaalChatProgress
-          items={items}
-          portaal={portaal}
-          onCopyLink={copyLink}
-          onVerlengen={handleVerlengen}
-          onDeactiveer={handleDeactiveer}
-          onActiveer={handleActiveer}
-        />
+  function formatDate(d: string) {
+    return new Intl.DateTimeFormat('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(d))
+  }
 
-        {/* Notification banner */}
-        {notificaties.length > 0 && (
-          <div className="flex items-center gap-2 text-xs px-3 py-2 rounded-lg bg-amber-50/60 border border-amber-200/40">
-            <Bell className="h-3.5 w-3.5 text-amber-500 flex-shrink-0" />
-            <span className="text-amber-700">
-              {notificaties.length} nieuwe melding{notificaties.length !== 1 ? 'en' : ''} van klant
-            </span>
+  return (
+    <div className="space-y-4">
+      {/* Toolbar */}
+      <div
+        className="rounded-xl px-4 py-3 flex flex-wrap items-center gap-3"
+        style={{ backgroundColor: '#fff', border: '0.5px solid #E8E6E1' }}
+      >
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <div
+            className="w-2 h-2 rounded-full flex-shrink-0"
+            style={{ backgroundColor: isActief ? '#2D6B48' : isVerlopen ? '#F15025' : '#A0A098' }}
+          />
+          <span className="text-sm font-medium" style={{ color: '#191919' }}>
+            {isActief ? 'Actief' : isVerlopen ? 'Verlopen' : 'Inactief'}
+          </span>
+          <span className="text-xs" style={{ color: '#A0A098', fontFamily: "'DM Mono', monospace" }}>
+            <Calendar className="w-3 h-3 inline mr-1" />
+            Verloopt {formatDate(portaal.verloopt_op)}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={copyLink}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors hover:bg-gray-50"
+            style={{ border: '0.5px solid #E8E6E1', color: '#5A5A55' }}
+          >
+            <Copy className="w-3.5 h-3.5" />
+            Link kopiëren
+          </button>
+
+          {isActief && (
+            <PortaalItemToevoegen
+              offertes={offertes}
+              facturen={facturen}
+              onAddOfferte={handleAddOfferte}
+              onAddFactuur={handleAddFactuur}
+              onAddTekening={handleAddTekening}
+              onAddAfbeelding={handleAddAfbeelding}
+              onAddBericht={handleAddBericht}
+            />
+          )}
+
+          {!isActief && (
             <button
-              onClick={() => notificaties.forEach(n => markNotificatieGelezen(n.id))}
-              className="ml-auto text-amber-600 hover:text-amber-800 underline"
+              onClick={handleVerlengen}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white"
+              style={{ backgroundColor: '#1A535C' }}
             >
-              Alles gelezen
+              <RefreshCw className="w-3.5 h-3.5" />
+              {isVerlopen ? 'Heractiveren' : 'Verlengen'}
             </button>
-          </div>
-        )}
+          )}
+
+          {isActief && (
+            <button
+              onClick={handleDeactiveer}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors hover:bg-red-50"
+              style={{ color: '#C44830' }}
+              title="Portaal deactiveren"
+            >
+              <Power className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Chat timeline + input */}
-      <PortaalChat
+      {/* Notification banner */}
+      {notificaties.length > 0 && (
+        <div className="flex items-center gap-2 text-xs px-3 py-2 rounded-lg bg-amber-50/60 border border-amber-200/40">
+          <Bell className="h-3.5 w-3.5 text-amber-500 flex-shrink-0" />
+          <span className="text-amber-700">
+            {notificaties.length} nieuwe melding{notificaties.length !== 1 ? 'en' : ''} van klant
+          </span>
+          <button
+            onClick={() => notificaties.forEach(n => markNotificatieGelezen(n.id))}
+            className="ml-auto text-amber-600 hover:text-amber-800 underline"
+          >
+            Alles gelezen
+          </button>
+        </div>
+      )}
+
+      {/* Feed */}
+      <PortaalFeed
         items={items}
-        isPublic={false}
+        token={portaal.token}
+        klantNaam=""
         bedrijfNaam={profile?.bedrijfsnaam}
-        offertes={offertes}
-        facturen={facturen}
-        onSend={isActief ? handleSend : undefined}
-        disabled={!isActief}
+        isPublic={false}
+        onReactie={fetchPortaal}
+        onImageClick={(url) => setLightboxUrl(url)}
       />
+
+      {/* Lightbox */}
+      {lightboxUrl && (
+        <PortaalLightbox
+          images={[{ url: lightboxUrl, bestandsnaam: '' }]}
+          startIndex={0}
+          onClose={() => setLightboxUrl(null)}
+        />
+      )}
     </div>
   )
 }

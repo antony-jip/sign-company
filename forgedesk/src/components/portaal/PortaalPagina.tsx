@@ -1,22 +1,12 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
-import {
-  Loader2,
-  AlertCircle,
-  Calendar,
-  Building2,
-  Phone,
-  Mail,
-  Globe,
-  CheckCircle2,
-  Clock,
-} from 'lucide-react'
-import { SpectrumBar } from '@/components/ui/SpectrumBar'
+import { Loader2, AlertCircle } from 'lucide-react'
 import { PortaalVerlopen } from './PortaalVerlopen'
 import { PortaalGesloten } from './PortaalGesloten'
-import { PortaalOfferteSection } from './PortaalOfferteSection'
-import { PortaalDrukproevenSection } from './PortaalDrukproevenSection'
-import { PortaalBerichtenSection } from './PortaalBerichtenSection'
+import { PortaalHeader } from './PortaalHeader'
+import { PortaalSidebar } from './PortaalSidebar'
+import { PortaalFeed } from './PortaalFeed'
+import { PortaalLightbox } from './PortaalLightbox'
 
 // ── API Response Types ────────────────────────────────────────────────────
 
@@ -37,6 +27,7 @@ interface PortaalReactieData {
   bericht: string | null
   klant_naam: string | null
   portaal_bestand_id: string | null
+  foto_url?: string | null
   created_at: string
 }
 
@@ -61,7 +52,7 @@ interface PortaalItemData {
   offerte_publiek_token?: string | null
 }
 
-interface PortaalData {
+interface PortaalApiResponse {
   status: 'actief' | 'verlopen' | 'gesloten'
   token?: string
   bedrijfsnaam?: string
@@ -75,9 +66,12 @@ interface PortaalData {
   }
   project?: {
     naam: string
+    status?: string
     adres: string | null
     postcode: string | null
     plaats: string | null
+    start_datum?: string
+    deadline?: string
   } | null
   bedrijf?: {
     naam: string
@@ -87,18 +81,9 @@ interface PortaalData {
     website: string
     primaire_kleur: string
   }
+  montage?: { datum: string; start_tijd?: string } | null
   instellingen?: Record<string, unknown>
   items?: PortaalItemData[]
-}
-
-// ── Helpers ───────────────────────────────────────────────────────────────
-
-function formatDate(dateStr: string): string {
-  return new Intl.DateTimeFormat('nl-NL', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  }).format(new Date(dateStr))
 }
 
 // ── Bekeken Tracker Hook ─────────────────────────────────────────────────
@@ -142,97 +127,24 @@ function useBekekenTracker(token: string | undefined) {
   return { markBekeken }
 }
 
-// ── Phase Labels ─────────────────────────────────────────────────────────
-
-const FASE_LABELS = ['Offerte', 'Akkoord', 'Productie', 'Montage', 'Klaar']
-
-function PortaalVoortgang({ percentage }: { percentage: number }) {
-  return (
-    <div className="space-y-2">
-      <SpectrumBar percentage={percentage} height={8} className="rounded-full" />
-      <div className="flex justify-between">
-        {FASE_LABELS.map((label, i) => {
-          const labelPct = (i / (FASE_LABELS.length - 1)) * 100
-          const isActive = percentage >= labelPct
-          return (
-            <span
-              key={label}
-              style={{
-                fontSize: 11,
-                fontWeight: isActive ? 600 : 400,
-                color: isActive ? '#191919' : '#A0A098',
-              }}
-            >
-              {label}
-            </span>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-// ── Action Summary Component ─────────────────────────────────────────────
-
-function PortaalActionSummary({ offertes, drukproeven }: {
-  offertes: PortaalItemData[]
-  drukproeven: PortaalItemData[]
-}) {
-  const pendingOffertes = offertes.filter(i => i.status !== 'goedgekeurd' && i.status !== 'betaald')
-  const pendingDrukproeven = drukproeven.filter(i => i.status !== 'goedgekeurd')
-  const totalPending = pendingOffertes.length + pendingDrukproeven.length
-  const totalItems = offertes.length + drukproeven.length
-  const completed = totalItems - totalPending
-
-  if (totalItems === 0) return null
-
-  const allDone = totalPending === 0
-
-  return (
-    <div
-      className="rounded-xl px-5 py-4"
-      style={{
-        backgroundColor: allDone ? '#E4F0EA' : '#FFFFFF',
-        border: `0.5px solid ${allDone ? '#2D6B48' : '#E6E4E0'}`,
-      }}
-    >
-      <div className="flex items-center gap-3">
-        {allDone ? (
-          <CheckCircle2 className="w-5 h-5 flex-shrink-0" style={{ color: '#2D6B48' }} />
-        ) : (
-          <Clock className="w-5 h-5 flex-shrink-0" style={{ color: '#A0A098' }} />
-        )}
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium" style={{ color: allDone ? '#2D6B48' : '#191919' }}>
-            {allDone
-              ? 'Alles is afgehandeld!'
-              : `${totalPending} ${totalPending === 1 ? 'item wacht' : 'items wachten'} op uw goedkeuring`}
-          </p>
-          <p className="font-mono mt-0.5" style={{ fontSize: 10, color: '#A0A098' }}>
-            {completed} van {totalItems} afgerond
-          </p>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 // ── Main Component ───────────────────────────────────────────────────────
 
 export function PortaalPagina() {
   const { token } = useParams<{ token: string }>()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [data, setData] = useState<PortaalData | null>(null)
+  const [data, setData] = useState<PortaalApiResponse | null>(null)
   const [klantNaam, setKlantNaam] = useState(() => {
     try { return localStorage.getItem('doen_portaal_klant_naam') || '' } catch { return '' }
   })
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
   const { markBekeken } = useBekekenTracker(token)
 
-  const handleKlantNaamChange = useCallback((naam: string) => {
-    setKlantNaam(naam)
-    try { localStorage.setItem('doen_portaal_klant_naam', naam) } catch { /* ignore */ }
-  }, [])
+  useEffect(() => {
+    if (klantNaam) {
+      try { localStorage.setItem('doen_portaal_klant_naam', klantNaam) } catch { /* ignore */ }
+    }
+  }, [klantNaam])
 
   const fetchPortaal = useCallback(async () => {
     if (!token) return
@@ -242,8 +154,7 @@ export function PortaalPagina() {
         setError(response.status === 404 ? 'Portaal niet gevonden' : 'Er ging iets mis')
         return
       }
-      const result = await response.json()
-      setData(result)
+      setData(await response.json())
     } catch {
       setError('Verbinding mislukt. Probeer het later opnieuw.')
     } finally {
@@ -251,21 +162,14 @@ export function PortaalPagina() {
     }
   }, [token])
 
-  useEffect(() => {
-    fetchPortaal()
-  }, [fetchPortaal])
+  useEffect(() => { fetchPortaal() }, [fetchPortaal])
 
-  // Poll for new messages every 5 seconds + refetch on tab focus
+  // Poll every 15s + refetch on tab focus
   useEffect(() => {
     if (!token || !data || data.status !== 'actief') return
-    const interval = setInterval(() => {
-      fetchPortaal()
-    }, 5000)
-    // Refetch immediately when tab becomes visible again (mobile resume)
+    const interval = setInterval(fetchPortaal, 15000)
     function handleVisibility() {
-      if (document.visibilityState === 'visible') {
-        fetchPortaal()
-      }
+      if (document.visibilityState === 'visible') fetchPortaal()
     }
     document.addEventListener('visibilitychange', handleVisibility)
     return () => {
@@ -274,7 +178,7 @@ export function PortaalPagina() {
     }
   }, [token, data?.status, fetchPortaal])
 
-  // Mark portaal as bekeken on load
+  // Mark portaal as bekeken
   useEffect(() => {
     if (!token || !data || data.status !== 'actief') return
     fetch('/api/portaal-bekeken', {
@@ -284,24 +188,20 @@ export function PortaalPagina() {
     }).catch(() => {})
   }, [token, data?.status])
 
-  // Stable key for items — only changes when item set actually changes
-  const itemIds = useMemo(
+  // Mark items as bekeken
+  const unbekekenIds = useMemo(
     () => (data?.items || []).filter(i => !i.bekeken_op).map(i => i.id).join(','),
     [data?.items],
   )
-
-  // Mark individual items as bekeken
   useEffect(() => {
-    if (!itemIds) return
-    for (const id of itemIds.split(',')) {
-      markBekeken(id)
-    }
-  }, [itemIds, markBekeken])
+    if (!unbekekenIds) return
+    for (const id of unbekekenIds.split(',')) markBekeken(id)
+  }, [unbekekenIds, markBekeken])
 
-  // ── Loading / Error / Expired / Closed states ───────────────────────────
+  // ── Loading / Error / Expired / Closed ────────────────────────────────
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FAFAF8] flex items-center justify-center">
+      <div className="min-h-screen bg-[#FAF9F7] flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
       </div>
     )
@@ -309,7 +209,7 @@ export function PortaalPagina() {
 
   if (error || !data) {
     return (
-      <div className="min-h-screen bg-[#FAFAF8] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[#FAF9F7] flex items-center justify-center p-4">
         <div className="text-center space-y-4">
           <AlertCircle className="w-12 h-12 text-gray-400 mx-auto" />
           <p className="text-gray-600">{error || 'Portaal niet gevonden'}</p>
@@ -348,10 +248,9 @@ export function PortaalPagina() {
   const portaal = data.portaal
   const rawItems = data.items || []
 
-  // Guard: bedrijf and portaal must exist for active portals
   if (!bedrijf || !portaal) {
     return (
-      <div className="min-h-screen bg-[#FAFAF8] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[#FAF9F7] flex items-center justify-center p-4">
         <div className="text-center space-y-4">
           <AlertCircle className="w-12 h-12 text-gray-400 mx-auto" />
           <p className="text-gray-600">Portaal kon niet geladen worden</p>
@@ -359,153 +258,126 @@ export function PortaalPagina() {
       </div>
     )
   }
+
   const instellingen = (data.instellingen || {}) as Record<string, unknown>
-  const gebruikKleuren = instellingen.bedrijfskleuren_gebruiken !== false
-  const primaire_kleur = gebruikKleuren ? (bedrijf.primaire_kleur || '#1a1a1a') : '#1a1a1a'
   const toonContact = instellingen.contactgegevens_tonen !== false
   const toonLogo = instellingen.bedrijfslogo_op_portaal !== false
-  const kanBerichtenSturen = instellingen.klant_kan_berichten_sturen !== false
   const kanOfferteGoedkeuren = instellingen.klant_kan_offerte_goedkeuren !== false
   const kanTekeningGoedkeuren = instellingen.klant_kan_tekening_goedkeuren !== false
 
-  // Filter items per sectie
-  const offerteItems = rawItems.filter(i => i.type === 'offerte' && (!i.bericht_type || i.bericht_type === 'item'))
-  const tekeningItems = rawItems.filter(i => i.type === 'tekening' && (!i.bericht_type || i.bericht_type === 'item'))
-  const berichtItems = rawItems.filter(i => i.bericht_type === 'tekst' || i.type === 'bericht')
-
-  // Calculate progress from portal items
-  const allApprovalItems = [...offerteItems, ...tekeningItems]
-  const completedItems = allApprovalItems.filter(i => i.status === 'goedgekeurd' || i.status === 'betaald').length
-  const portaalProgress = allApprovalItems.length > 0
-    ? Math.round((completedItems / allApprovalItems.length) * 100)
-    : 0
+  // Build documents list for sidebar from item bestanden
+  const documenten = rawItems
+    .filter(i => i.bestanden?.length && ['offerte', 'factuur', 'tekening'].includes(i.type))
+    .flatMap(i =>
+      (i.bestanden || [])
+        .filter(b => b.mime_type === 'application/pdf')
+        .map(b => ({ naam: b.bestandsnaam, url: b.url, type: i.type }))
+    )
 
   return (
-    <div className="min-h-screen bg-[#FAFAF8] flex flex-col">
-      {/* Spectrum strip */}
-      <SpectrumBar percentage={portaalProgress} height={5} className="rounded-none" />
+    <div className="min-h-screen bg-[#FAF9F7] flex flex-col">
+      <PortaalHeader
+        bedrijfNaam={bedrijf.naam}
+        logoUrl={toonLogo ? bedrijf.logo_url : undefined}
+        verlooptOp={portaal.verloopt_op}
+        projectNaam={project?.naam}
+      />
 
-      {/* Header */}
-      <header className="flex-shrink-0" style={{ backgroundColor: '#FFFFFF', borderBottom: '0.5px solid #E6E4E0' }}>
-        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {toonLogo && bedrijf.logo_url ? (
-              <img
-                src={bedrijf.logo_url}
-                alt={bedrijf.naam}
-                className="h-10 w-auto max-w-[160px] object-contain"
-              />
-            ) : (
-              <div
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm"
-                style={{ backgroundColor: primaire_kleur }}
-              >
-                {(bedrijf.naam || 'P').charAt(0).toUpperCase()}
-              </div>
-            )}
-            <div>
-              <span className="font-semibold" style={{ fontSize: 14, color: '#191919' }}>{bedrijf.naam}</span>
-              {project && (
-                <p style={{ fontSize: 12, color: '#5A5A55' }}>{project.naam}</p>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center gap-2" style={{ fontSize: 11, color: '#A0A098' }}>
-            <Calendar className="w-3.5 h-3.5" />
-            <span className="font-mono">Geldig tot {formatDate(portaal.verloopt_op)}</span>
-          </div>
-        </div>
-      </header>
-
-      {/* Content */}
-      <main className="flex-1 max-w-2xl mx-auto w-full px-4 py-6 space-y-6">
-        {/* Instruction text */}
-        {portaal.instructie_tekst && (
-          <div className="rounded-[10px] px-5 py-4" style={{ backgroundColor: '#FFFFFF', border: '0.5px solid #E6E4E0' }}>
-            <p className="whitespace-pre-wrap" style={{ fontSize: 13, color: '#5A5A55', lineHeight: 1.6 }}>{portaal.instructie_tekst}</p>
-          </div>
-        )}
-
-        {/* Action summary */}
-        {/* Progress bar with phase labels */}
-        <PortaalVoortgang percentage={portaalProgress} />
-
-        {/* Action summary */}
-        <PortaalActionSummary
-          offertes={offerteItems}
-          drukproeven={tekeningItems}
-        />
-
-        {/* Offertes section */}
-        {offerteItems.length > 0 && (
-          <PortaalOfferteSection
-            items={offerteItems}
-            token={token!}
-            klantNaam={klantNaam}
-            onKlantNaamChange={handleKlantNaamChange}
-            onReactie={fetchPortaal}
-            primaire_kleur={primaire_kleur}
-            kanGoedkeuren={kanOfferteGoedkeuren}
-          />
-        )}
-
-        {/* Drukproeven section */}
-        {tekeningItems.length > 0 && (
-          <PortaalDrukproevenSection
-            items={tekeningItems}
-            token={token!}
-            klantNaam={klantNaam}
-            onReactie={fetchPortaal}
-            primaire_kleur={primaire_kleur}
-            kanGoedkeuren={kanTekeningGoedkeuren}
-          />
-        )}
-
-        {/* Berichten section */}
-        <PortaalBerichtenSection
-          items={berichtItems}
-          allItems={rawItems}
-          token={token!}
-          klantNaam={klantNaam}
-          kanBerichtenSturen={kanBerichtenSturen}
-          primaire_kleur={primaire_kleur}
-          onReactie={fetchPortaal}
-        />
-      </main>
-
-      {/* Contact section */}
-      {toonContact && (bedrijf.telefoon || bedrijf.email || bedrijf.website) && (
-        <div className="max-w-2xl mx-auto w-full px-4 pb-4">
-          <div className="rounded-[10px] px-5 py-4 space-y-2" style={{ backgroundColor: '#FFFFFF', border: '0.5px solid #E6E4E0' }}>
-            <div className="flex items-center gap-2 font-medium" style={{ fontSize: 12, color: '#5A5A55' }}>
-              <Building2 className="w-4 h-4" />
-              <span>Contact</span>
-            </div>
-            <div className="flex flex-wrap gap-4" style={{ fontSize: 13, color: '#5A5A55' }}>
-              {bedrijf.telefoon && (
-                <a href={`tel:${bedrijf.telefoon}`} className="inline-flex items-center gap-1.5 hover:text-gray-900">
-                  <Phone className="w-3.5 h-3.5" />
-                  {bedrijf.telefoon}
-                </a>
-              )}
-              {bedrijf.email && (
-                <a href={`mailto:${bedrijf.email}`} className="inline-flex items-center gap-1.5 hover:text-gray-900">
-                  <Mail className="w-3.5 h-3.5" />
-                  {bedrijf.email}
-                </a>
-              )}
-              {bedrijf.website && (
-                <a href={bedrijf.website.startsWith('http') ? bedrijf.website : `https://${bedrijf.website}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 hover:text-gray-900">
-                  <Globe className="w-3.5 h-3.5" />
-                  {bedrijf.website.replace(/^https?:\/\//, '')}
-                </a>
-              )}
-            </div>
+      {/* Project bar */}
+      {project && (
+        <div className="flex-shrink-0 border-b" style={{ borderColor: '#E8E6E1', backgroundColor: '#fff' }}>
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+            <h1
+              className="text-base font-bold"
+              style={{ color: '#191919', fontFamily: '"Bricolage Grotesque", sans-serif' }}
+            >
+              {project.naam}
+            </h1>
           </div>
         </div>
       )}
 
-      <div className="h-4 flex-shrink-0" />
+      {/* Mobile sidebar (accordion) */}
+      <div className="md:hidden max-w-5xl mx-auto w-full px-4 pt-4">
+        <PortaalSidebar
+          project={project || { naam: '' }}
+          bedrijf={bedrijf}
+          montage={data.montage}
+          documenten={documenten}
+          toonContact={toonContact}
+          isMobiel
+        />
+      </div>
+
+      {/* Main content: feed + sidebar */}
+      <main className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-6 py-6">
+        <div className="flex gap-8">
+          {/* Feed */}
+          <div className="flex-1 min-w-0">
+            {/* Instruction text */}
+            {portaal.instructie_tekst && (
+              <div
+                className="rounded-[10px] px-5 py-4 mb-4"
+                style={{ backgroundColor: '#fff', border: '0.5px solid #E8E6E1' }}
+              >
+                <p className="whitespace-pre-wrap" style={{ fontSize: 13, color: '#5A5A55', lineHeight: 1.6 }}>
+                  {portaal.instructie_tekst}
+                </p>
+              </div>
+            )}
+
+            <PortaalFeed
+              items={rawItems}
+              token={token!}
+              klantNaam={klantNaam}
+              bedrijfNaam={bedrijf.naam}
+              kanOfferteGoedkeuren={kanOfferteGoedkeuren}
+              kanTekeningGoedkeuren={kanTekeningGoedkeuren}
+              isPublic
+              onReactie={fetchPortaal}
+              onImageClick={(url) => setLightboxUrl(url)}
+            />
+          </div>
+
+          {/* Desktop sidebar */}
+          <div className="hidden md:block w-[260px] flex-shrink-0">
+            <PortaalSidebar
+              project={project || { naam: '' }}
+              bedrijf={bedrijf}
+              montage={data.montage}
+              documenten={documenten}
+              toonContact={toonContact}
+            />
+          </div>
+        </div>
+      </main>
+
+      {/* Klant naam prompt (eerste keer) */}
+      {!klantNaam && rawItems.length > 0 && (
+        <div
+          className="fixed bottom-0 left-0 right-0 py-3 px-4 flex items-center justify-center gap-3"
+          style={{ backgroundColor: '#fff', borderTop: '0.5px solid #E8E6E1', boxShadow: '0 -2px 12px rgba(0,0,0,0.04)' }}
+        >
+          <span className="text-sm" style={{ color: '#5A5A55' }}>Uw naam:</span>
+          <input
+            type="text"
+            value={klantNaam}
+            onChange={(e) => setKlantNaam(e.target.value)}
+            placeholder="Vul uw naam in"
+            className="px-3 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A535C]/30 focus:border-[#1A535C]"
+            style={{ borderColor: '#E8E6E1', maxWidth: 200 }}
+          />
+        </div>
+      )}
+
+      {/* Lightbox */}
+      {lightboxUrl && (
+        <PortaalLightbox
+          images={[{ url: lightboxUrl, bestandsnaam: '' }]}
+          startIndex={0}
+          onClose={() => setLightboxUrl(null)}
+        />
+      )}
     </div>
   )
 }
