@@ -485,11 +485,11 @@ export function KennisbankPage() {
                       {/* Label */}
                       <span className={cn("font-bold text-white mt-2 whitespace-nowrap", isLast ? "text-[13px]" : "text-[11px]")}>{step.label}</span>
                       <span className="text-[10px] text-white/30 whitespace-nowrap leading-tight">{step.desc}</span>
-                      {/* Hover tooltip with voordelen */}
-                      <div className="absolute top-full mt-4 left-1/2 -translate-x-1/2 opacity-0 scale-95 group-hover/step:opacity-100 group-hover/step:scale-100 transition-all duration-200 pointer-events-none z-30">
+                      {/* Hover tooltip with voordelen — above */}
+                      <div className="absolute bottom-full mb-4 left-1/2 -translate-x-1/2 opacity-0 scale-95 group-hover/step:opacity-100 group-hover/step:scale-100 transition-all duration-200 pointer-events-none z-30">
                         <div className="relative rounded-xl px-4 py-3 shadow-xl min-w-[160px]" style={{ backgroundColor: step.color }}>
-                          {/* Arrow */}
-                          <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rotate-45" style={{ backgroundColor: step.color }} />
+                          {/* Arrow pointing down */}
+                          <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rotate-45" style={{ backgroundColor: step.color }} />
                           <ul className="space-y-1.5 relative">
                             {step.voordelen.map(v => (
                               <li key={v} className="flex items-center gap-2 text-[11px] text-white/90 whitespace-nowrap">
