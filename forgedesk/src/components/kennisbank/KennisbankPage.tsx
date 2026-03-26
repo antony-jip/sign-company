@@ -2,7 +2,7 @@ import { useState, useMemo, type ReactNode } from 'react'
 import {
   Search, BookOpen, FolderKanban, FileText, Receipt, Users, ClipboardCheck,
   Calendar, CheckCircle, Mail, Globe, PiggyBank, Sparkles, ChevronRight,
-  Wrench, ArrowLeft, Zap, Shield, BarChart3, Palette, Bell, Heart, SmilePlus,
+  Wrench, ArrowLeft, Zap, Shield, BarChart3, Palette, Bell,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
@@ -331,7 +331,7 @@ const FLOW_STEPS = [
   { icon: ClipboardCheck, label: 'Werkbon', desc: 'Geef de opdracht', color: '#9A5A48', category: 'uitvoering', voordelen: ['Neemt offerte over', 'Foto\'s uploaden', 'Klant handtekening'] },
   { icon: Calendar, label: 'Planning', desc: 'Plan de montage', color: '#1A535C', category: 'uitvoering', voordelen: ['Drag & drop', 'Weer integratie', 'Per monteur filteren'] },
   { icon: Receipt, label: 'Factuur', desc: 'Stuur de rekening', color: '#2D6B48', category: 'financieel', voordelen: ['Mollie betaallink', 'Auto herinneringen', 'PDF bijlage'] },
-  { icon: Heart, label: 'Blije klant', desc: 'Dat is het doel', color: '#F15025', category: 'start', voordelen: ['Transparant proces', 'Snelle oplevering', 'Professionele uitstraling'] },
+  { icon: CheckCircle, label: 'Gedaan.', desc: 'Klant tevreden', color: '#F15025', category: 'start', voordelen: ['Transparant proces', 'Snelle oplevering', 'Professionele uitstraling'] },
 ]
 
 // ── Component ──
@@ -449,10 +449,10 @@ export function KennisbankPage() {
             {/* The goal — visual anchor */}
             <div className="hidden md:flex flex-col items-center animate-stagger-item" style={{ animationDelay: '600ms' }}>
               <div className="h-20 w-20 rounded-3xl flex items-center justify-center relative" style={{ backgroundColor: '#F15025', boxShadow: '0 8px 30px rgba(241,80,37,0.4)' }}>
-                <Heart className="h-9 w-9 text-white" fill="white" />
+                <CheckCircle className="h-9 w-9 text-white" />
               </div>
-              <span className="text-[13px] font-bold text-white mt-3">Blije klant</span>
-              <span className="text-[11px] text-white/35">Dat is het doel</span>
+              <span className="text-[15px] font-bold text-white mt-3">Gedaan<span style={{ color: '#F15025' }}>.</span></span>
+              <span className="text-[11px] text-white/35">Klant tevreden</span>
             </div>
           </div>
 
