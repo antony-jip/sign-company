@@ -43,7 +43,7 @@ export const WerkbonHeaderForm = React.memo(function WerkbonHeaderForm({
     <div className="space-y-5">
       {/* Section 1: Klant & details */}
       <div className="rounded-xl" style={{ backgroundColor: '#FFFFFF', border: '1px solid #EBEBEB' }}>
-        <div className="h-[3px] rounded-t-xl" style={{ background: 'linear-gradient(90deg, #C44830, #C4483060)' }} />
+        <div className="h-[3px] rounded-t-xl" style={{ background: 'linear-gradient(90deg, #F15025, #F1502560)' }} />
         <div className="px-4 py-4 space-y-3">
           <div>
             <Label className={labelClass} style={labelColor}>Klant *</Label>

@@ -609,7 +609,7 @@ export function WerkbonDetail() {
           >
             <ArrowLeft className="h-3.5 w-3.5" style={{ color: '#6B6B66' }} />
           </button>
-          <div className="h-10 w-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#C44830' }}>
+          <div className="h-10 w-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#F15025' }}>
             <ClipboardCheck className="h-4 w-4 text-white" />
           </div>
           <div>
@@ -687,7 +687,7 @@ export function WerkbonDetail() {
               <button
                 onClick={handleItemToevoegen}
                 className="inline-flex items-center gap-1 h-8 px-3 text-[12px] font-semibold rounded-lg text-white transition-all hover:opacity-90"
-                style={{ backgroundColor: '#C44830' }}
+                style={{ backgroundColor: '#F15025' }}
               >
                 <Plus className="h-3.5 w-3.5" /> Item toevoegen
               </button>
@@ -696,11 +696,11 @@ export function WerkbonDetail() {
             {werkbonItems.length === 0 ? (
               <button
                 onClick={handleItemToevoegen}
-                className="w-full py-8 text-center rounded-xl border-2 border-dashed hover:border-[#C44830]/30 transition-colors group"
+                className="w-full py-8 text-center rounded-xl border-2 border-dashed hover:border-[#F15025]/30 transition-colors group"
                 style={{ borderColor: '#EBEBEB', backgroundColor: '#FFFFFF' }}
               >
-                <ClipboardCheck className="h-6 w-6 mx-auto mb-2 text-[#C44830] opacity-30 group-hover:opacity-60 transition-opacity" />
-                <p className="text-[13px] text-[#9B9B95] group-hover:text-[#C44830] transition-colors">
+                <ClipboardCheck className="h-6 w-6 mx-auto mb-2 text-[#F15025] opacity-30 group-hover:opacity-60 transition-opacity" />
+                <p className="text-[13px] text-[#9B9B95] group-hover:text-[#F15025] transition-colors">
                   Voeg een item toe
                 </p>
               </button>
