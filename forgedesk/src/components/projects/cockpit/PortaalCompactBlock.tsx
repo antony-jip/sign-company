@@ -536,56 +536,68 @@ function InputBar({
         />
       </div>
 
-      {/* Action buttons row */}
-      <div className="flex items-center justify-between mt-3">
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => tekeningInputRef.current?.click()}
-            disabled={isSending}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md hover:bg-[#F8F7F5] text-[#9B9B95] hover:text-[#1A1A1A] transition-colors disabled:opacity-40 text-[12px]"
-          >
-            <FileText className="h-3.5 w-3.5" />
-            <span>Tekening</span>
-          </button>
-          <button
-            onClick={async () => { try { setOffertes(await getOffertesByProject(projectId)) } catch { setOffertes([]) }; setActivePopover('offerte') }}
-            disabled={isSending}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md hover:bg-[#F8F7F5] text-[#9B9B95] hover:text-[#1A1A1A] transition-colors disabled:opacity-40 text-[12px]"
-          >
-            <Receipt className="h-3.5 w-3.5" />
-            <span>Offerte</span>
-          </button>
-          <button
-            onClick={async () => { try { setFacturen(await getFacturenByProject(projectId)) } catch { setFacturen([]) }; setActivePopover('factuur') }}
-            disabled={isSending}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md hover:bg-[#F8F7F5] text-[#9B9B95] hover:text-[#1A1A1A] transition-colors disabled:opacity-40 text-[12px]"
-          >
-            <CreditCard className="h-3.5 w-3.5" />
-            <span>Factuur</span>
-          </button>
-          <button
-            onClick={() => fotoInputRef.current?.click()}
-            disabled={isSending}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md hover:bg-[#F8F7F5] text-[#9B9B95] hover:text-[#1A1A1A] transition-colors disabled:opacity-40 text-[12px]"
-          >
-            <ImageIcon className="h-3.5 w-3.5" />
-            <span>Foto</span>
-          </button>
+      {/* Action buttons + send */}
+      <div className="flex items-center gap-2 mt-3">
+        <div className="flex items-center gap-1.5 flex-1">
+          {[
+            { label: 'Tekening', icon: <FileText className="h-3.5 w-3.5" />, onClick: () => tekeningInputRef.current?.click() },
+            { label: 'Offerte', icon: <Receipt className="h-3.5 w-3.5" />, onClick: async () => { try { setOffertes(await getOffertesByProject(projectId)) } catch { setOffertes([]) }; setActivePopover('offerte') } },
+            { label: 'Factuur', icon: <CreditCard className="h-3.5 w-3.5" />, onClick: async () => { try { setFacturen(await getFacturenByProject(projectId)) } catch { setFacturen([]) }; setActivePopover('factuur') } },
+            { label: 'Foto', icon: <ImageIcon className="h-3.5 w-3.5" />, onClick: () => fotoInputRef.current?.click() },
+          ].map((btn) => (
+            <button
+              key={btn.label}
+              onClick={btn.onClick}
+              disabled={isSending}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all disabled:opacity-40"
+              style={{ backgroundColor: '#F8F7F5', color: '#6B6B66', border: '0.5px solid #EBEBEB' }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#F0EEEA'; e.currentTarget.style.color = '#1A1A1A' }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#F8F7F5'; e.currentTarget.style.color = '#6B6B66' }}
+            >
+              {btn.icon}
+              {btn.label}
+            </button>
+          ))}
         </div>
         <button
           onClick={handleSendBericht}
           disabled={isSending || !berichtTekst.trim()}
-          className="p-2 rounded-lg bg-[#F15025] text-white hover:bg-[#D94520] disabled:opacity-30 transition-colors flex-shrink-0"
+          className="p-2.5 rounded-xl text-white disabled:opacity-20 transition-all flex-shrink-0"
+          style={{ backgroundColor: '#1A535C' }}
         >
           <Send className="h-4 w-4" />
         </button>
       </div>
 
-      {/* Notificeer */}
-      <label className="flex items-center gap-2 mt-2.5 cursor-pointer select-none">
-        <input type="checkbox" checked={notificeerKlant} onChange={(e) => setNotificeerKlant(e.target.checked)} className="h-3.5 w-3.5 rounded border-[#EBEBEB] text-[#1A535C] focus:ring-[#1A535C]/30" style={{ accentColor: '#1A535C' }} />
-        <span className="text-[11px] text-[#9B9B95]">Notificeer klant per email</span>
-      </label>
+      {/* Notificeer klant — prominent toggle */}
+      <button
+        onClick={() => setNotificeerKlant(!notificeerKlant)}
+        className="flex items-center gap-2.5 mt-3 w-full px-3 py-2.5 rounded-lg transition-all cursor-pointer select-none"
+        style={{
+          backgroundColor: notificeerKlant ? '#E2F0F0' : '#F8F7F5',
+          border: `0.5px solid ${notificeerKlant ? '#1A535C40' : '#EBEBEB'}`,
+        }}
+      >
+        <div
+          className="w-8 h-[18px] rounded-full relative transition-colors flex-shrink-0"
+          style={{ backgroundColor: notificeerKlant ? '#1A535C' : '#D0CFC9' }}
+        >
+          <div
+            className="absolute top-[2px] w-[14px] h-[14px] rounded-full bg-white transition-all"
+            style={{ left: notificeerKlant ? 15 : 2 }}
+          />
+        </div>
+        <div className="flex-1 text-left">
+          <span className="text-[12px] font-medium" style={{ color: notificeerKlant ? '#1A535C' : '#6B6B66' }}>
+            Klant notificeren per email
+          </span>
+          {notificeerKlant && (
+            <span className="text-[10px] ml-1.5" style={{ color: '#9B9B95' }}>
+              Klant ontvangt een email bij verzending
+            </span>
+          )}
+        </div>
+      </button>
     </div>
   )
 }
