@@ -478,7 +478,7 @@ export function KennisbankPage() {
                         )}
                         style={{ backgroundColor: step.color, boxShadow: `0 4px 16px ${step.color}40` }}
                       >
-                        <StepIcon className={cn("text-white", isLast ? "h-6 w-6" : "h-4.5 w-4.5")} fill={isLast ? 'white' : 'none'} />
+                        <StepIcon className={cn("text-white", isLast ? "h-6 w-6" : "h-4.5 w-4.5")} />
                       </div>
                       {/* Label */}
                       <span className={cn("font-bold text-white mt-2 whitespace-nowrap", isLast ? "text-[13px]" : "text-[11px]")}>{step.label}</span>
