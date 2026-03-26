@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, type ReactNode } from 'react'
 import {
   Search, BookOpen, FolderKanban, FileText, Receipt, Users, ClipboardCheck,
   Calendar, CheckCircle, Mail, Globe, PiggyBank, Sparkles, ChevronRight,
@@ -33,7 +33,6 @@ const CATEGORIES = [
 ]
 
 const ARTICLES: KbArticle[] = [
-  // ── Aan de slag ──
   {
     id: 'welkom',
     category: 'start',
@@ -42,13 +41,13 @@ const ARTICLES: KbArticle[] = [
     titel: 'Welkom bij Doen.',
     subtitel: 'Alles wat je nodig hebt, op één plek',
     inhoud: [
-      'Doen. is gebouwd voor creatieve maakbedrijven. Signing, reclame, interieurbouw — bedrijven die ideeën omzetten in fysieke producten. Geen overbodige complexiteit, wel alles wat je nodig hebt.',
-      'Van het eerste klantcontact tot de laatste factuur: projecten, offertes, werkbonnen, planning, email en een klantportaal. Allemaal verbonden, allemaal snel.',
+      'Doen. is gebouwd voor **creatieve maakbedrijven**. Signing, reclame, interieurbouw. Bedrijven die ideeën omzetten in fysieke producten.',
+      'Van het eerste klantcontact tot de laatste factuur. **Projecten, offertes, werkbonnen, planning, email** en een klantportaal. Allemaal verbonden, allemaal snel.',
     ],
     tips: [
       'Begin met een klant aanmaken en je eerste project starten',
       'Stel je bedrijfsprofiel in via Instellingen > Profiel',
-      'Verbind je email via Instellingen > E-mail voor directe communicatie',
+      'Verbind je email via Instellingen > E-mail',
     ],
   },
   {
@@ -59,15 +58,13 @@ const ARTICLES: KbArticle[] = [
     titel: 'De snelste workflow',
     subtitel: 'In 5 stappen van klant naar factuur',
     inhoud: [
-      '1. Klant aanmaken — bedrijfsnaam, contactpersoon, adres. Dat is alles.',
-      '2. Offerte maken — selecteer de klant, voeg items toe met je prijscalculatie, verstuur direct per email met PDF bijlage.',
-      '3. Project starten — zodra de offerte goedgekeurd is, maak je een project aan. Taken toewijzen, montage plannen.',
-      '4. Uitvoeren — werkbon genereren voor de monteurs, planning bijhouden, foto\'s uploaden vanuit het veld.',
-      '5. Factureren — met één klik een factuur aanmaken op basis van de offerte. Betaallink via Mollie, automatische herinneringen.',
+      '1. **Klant aanmaken.** Bedrijfsnaam, contactpersoon, adres. Dat is alles.',
+      '2. **Offerte maken.** Selecteer de klant, voeg items toe met je prijscalculatie, verstuur direct per email met PDF.',
+      '3. **Project starten.** Zodra de offerte goedgekeurd is maak je een project aan. Taken toewijzen, montage plannen.',
+      '4. **Uitvoeren.** Werkbon genereren voor de monteurs, planning bijhouden, foto\'s uploaden vanuit het veld.',
+      '5. **Factureren.** Met één klik een factuur op basis van de offerte. Betaallink via Mollie, automatische herinneringen.',
     ],
   },
-
-  // ── Projecten ──
   {
     id: 'projecten-cockpit',
     category: 'projecten',
@@ -76,9 +73,9 @@ const ARTICLES: KbArticle[] = [
     titel: 'De project cockpit',
     subtitel: 'Alles over je project in één scherm',
     inhoud: [
-      'Elk project heeft een cockpit — je commandocentrum. Hier zie je in één oogopslag: briefing, taken, offertes, montage-afspraken, bestanden en activiteit.',
-      'Bovenaan staan quick actions: Taak, Offerte, Werkbon, Montage, Factuur. Eén klik en je bent bezig.',
-      'De briefing is je projectomschrijving. Klik om te typen. Geen gedoe met formulieren — gewoon schrijven wat er moet gebeuren.',
+      'Elk project heeft een cockpit. Je **commandocentrum**. Briefing, taken, offertes, montage-afspraken, bestanden en activiteit in één overzicht.',
+      'Bovenaan staan **quick actions**: Taak, Offerte, Werkbon, Montage, Factuur. Eén klik en je bent bezig.',
+      'De briefing is je projectomschrijving. Klik om te typen. Geen gedoe met formulieren, gewoon schrijven wat er moet gebeuren.',
     ],
     tips: [
       'Gebruik de briefing als interne opdracht voor je team',
@@ -95,27 +92,25 @@ const ARTICLES: KbArticle[] = [
     titel: 'Project statussen',
     subtitel: 'Van gepland tot gefactureerd',
     inhoud: [
-      'Elk project doorloopt een traject: Gepland → Actief → Te plannen → Te factureren → Gefactureerd → Afgerond.',
+      'Elk project doorloopt een traject: **Gepland → Actief → Te plannen → Te factureren → Gefactureerd → Afgerond.**',
       'Doen. suggereert automatisch de volgende stap. Alle taken afgerond? "Klaar voor montage?" verschijnt. Montage klaar? "Klaar om te factureren."',
-      'Je kunt statussen ook handmatig wijzigen via de header van het project.',
+      'Statussen kun je ook handmatig wijzigen via de header van het project.',
     ],
   },
-
-  // ── Offertes ──
   {
     id: 'offertes-maken',
     category: 'offertes',
     icon: FileText,
     iconColor: '#F15025',
     titel: 'Offertes maken',
-    subtitel: 'Van idee naar professionele offerte in minuten',
+    subtitel: 'Professionele offerte in minuten',
     inhoud: [
-      'Selecteer een klant, kies een contactpersoon, geef je offerte een titel en je bent bezig. Items toevoegen met beschrijving, aantal, prijs, BTW en korting.',
-      'De offerte wordt automatisch opgeslagen terwijl je werkt (autosave). Download als PDF, verstuur per email, of deel via het klantportaal.',
-      'Offertes hebben versioning — maak een nieuwe versie aan als de klant wijzigingen wil. De historie blijft bewaard.',
+      'Selecteer een klant, kies een contactpersoon, geef je offerte een titel en je bent bezig. Items toevoegen met beschrijving, aantal, prijs, **BTW en korting**.',
+      'De offerte wordt **automatisch opgeslagen** terwijl je werkt. Download als PDF, verstuur per email, of deel via het klantportaal.',
+      'Offertes hebben **versioning**. Maak een nieuwe versie aan als de klant wijzigingen wil. De historie blijft bewaard.',
     ],
     tips: [
-      'Gebruik calculatie-templates voor terugkerende producten (Instellingen > Calculatie)',
+      'Gebruik calculatie-templates voor terugkerende producten',
       'De PDF wordt automatisch als bijlage meegestuurd bij email',
       'Klanten kunnen offertes goedkeuren via het portaal met één klik',
     ],
@@ -129,12 +124,10 @@ const ARTICLES: KbArticle[] = [
     titel: 'Automatische opvolging',
     subtitel: 'Nooit meer een offerte vergeten',
     inhoud: [
-      'Stel automatische opvolging in voor verstuurde offertes. Na X dagen krijgt de klant automatisch een herinnering — of je krijgt een notificatie om zelf na te bellen.',
+      'Stel **automatische opvolging** in voor verstuurde offertes. Na X dagen krijgt de klant automatisch een herinnering, of je krijgt een notificatie om zelf na te bellen.',
       'Configureer je opvolg-strategie in Instellingen > Offertes > Opvolging. Kies het aantal dagen, de emailtekst en of het automatisch of handmatig gaat.',
     ],
   },
-
-  // ── Klanten ──
   {
     id: 'klanten-beheer',
     category: 'klanten',
@@ -143,9 +136,9 @@ const ARTICLES: KbArticle[] = [
     titel: 'Klantenbeheer',
     subtitel: 'Alle klantinformatie op één plek',
     inhoud: [
-      'Elke klant heeft een profiel met bedrijfsgegevens, contactpersonen, vestigingen en een complete historie van projecten, offertes en facturen.',
-      'Meerdere contactpersonen per bedrijf — markeer wie de primaire contactpersoon is. Vestigingen voor bedrijven met meerdere locaties.',
-      'De klantkaart toont alles: openstaande offertes, lopende projecten, factuurhistorie. Zodat je altijd weet waar je staat.',
+      'Elke klant heeft een profiel met bedrijfsgegevens, **contactpersonen**, **vestigingen** en een complete historie van projecten, offertes en facturen.',
+      'Meerdere contactpersonen per bedrijf. Markeer wie de primaire is. Vestigingen voor bedrijven met meerdere locaties.',
+      'De klantkaart toont alles: openstaande offertes, lopende projecten, factuurhistorie. Je weet altijd waar je staat.',
     ],
     tips: [
       'Importeer klanten vanuit een CSV via Importeren',
@@ -161,14 +154,12 @@ const ARTICLES: KbArticle[] = [
     titel: 'Klantportaal',
     subtitel: 'Deel tekeningen, offertes en updates met je klant',
     inhoud: [
-      'Activeer het portaal voor een project en je klant krijgt een unieke link. Daar kan de klant offertes bekijken en goedkeuren, tekeningen inzien, berichten sturen en bestanden uploaden.',
-      'Geen inloggen nodig — de link is het toegangsbewijs. Veilig en simpel.',
-      'Je krijgt een notificatie als de klant reageert of een offerte goedkeurt.',
+      'Activeer het portaal voor een project en je klant krijgt een **unieke link**. Daar kan de klant offertes bekijken en goedkeuren, tekeningen inzien, berichten sturen en bestanden uploaden.',
+      'Geen inloggen nodig. De link is het toegangsbewijs. Veilig en simpel.',
+      'Je krijgt een **notificatie** als de klant reageert of een offerte goedkeurt.',
     ],
     link: '/portalen',
   },
-
-  // ── Financieel ──
   {
     id: 'facturen',
     category: 'financieel',
@@ -177,9 +168,9 @@ const ARTICLES: KbArticle[] = [
     titel: 'Factureren',
     subtitel: 'Professionele facturen met betaallink',
     inhoud: [
-      'Maak facturen aan op basis van goedgekeurde offertes — alle regels worden automatisch overgenomen. Of maak een losse factuur.',
-      'Facturen worden verstuurd per email met PDF bijlage. Optioneel met Mollie betaallink zodat klanten direct online kunnen betalen.',
-      'Automatische herinneringen bij vervallen facturen: 1e herinnering na 7 dagen, 2e na 14, 3e na 21, aanmaning na 30 dagen.',
+      'Maak facturen aan op basis van goedgekeurde offertes. **Alle regels worden automatisch overgenomen.** Of maak een losse factuur.',
+      'Facturen worden verstuurd per email met **PDF bijlage**. Optioneel met Mollie betaallink zodat klanten direct online kunnen betalen.',
+      'Automatische herinneringen bij vervallen facturen: **1e na 7 dagen, 2e na 14, 3e na 21, aanmaning na 30 dagen.**',
     ],
     tips: [
       'Koppel Mollie via Instellingen > Integraties voor online betalingen',
@@ -196,14 +187,12 @@ const ARTICLES: KbArticle[] = [
     titel: 'Financieel overzicht',
     subtitel: 'Omzet, openstaand en cashflow in één oogopslag',
     inhoud: [
-      'Het financieel dashboard toont je omzet deze maand, openstaande facturen, te factureren bedragen en je hit rate op offertes.',
-      'Filter op periode, klant of project. Exporteer naar CSV voor je boekhouder.',
+      'Het financieel dashboard toont je **omzet deze maand**, openstaande facturen, te factureren bedragen en je hit rate op offertes.',
+      'Filter op periode, klant of project. Exporteer naar **CSV** voor je boekhouder.',
       'Grootboekrekeningen en BTW-codes configureer je in Instellingen > Financieel.',
     ],
     link: '/financieel',
   },
-
-  // ── Uitvoering ──
   {
     id: 'werkbonnen',
     category: 'uitvoering',
@@ -212,9 +201,9 @@ const ARTICLES: KbArticle[] = [
     titel: 'Werkbonnen',
     subtitel: 'Instructies voor je monteurs',
     inhoud: [
-      'Een werkbon is de opdracht voor je monteur: wat moet er gedaan worden, waar, en met welke materialen. Koppel aan een project en offerte.',
+      'Een werkbon is de opdracht voor je monteur: wat moet er gedaan worden, waar, en met welke materialen. **Koppel aan een project en offerte**, alles wordt overgenomen.',
       'Voeg items toe met beschrijving en afbeeldingen. De monteur ziet dit op zijn telefoon of tablet.',
-      'Na afloop kan de monteur uren registreren, opmerkingen toevoegen, foto\'s uploaden en een klanthandtekening laten zetten.',
+      'Na afloop kan de monteur **uren registreren**, opmerkingen toevoegen, foto\'s uploaden en een klanthandtekening laten zetten.',
     ],
     tips: [
       'Genereer een PDF werkbon-instructie voor de monteur',
@@ -230,9 +219,9 @@ const ARTICLES: KbArticle[] = [
     titel: 'Montage planning',
     subtitel: 'Weekoverzicht met drag-and-drop',
     inhoud: [
-      'De montageplanning toont een weekoverzicht met alle montage-afspraken per dag. Sleep "te plannen" projecten direct naar een dag om een afspraak in te plannen.',
-      'Filter op monteur om per persoon te zien wat er gepland staat. Het weerbericht is geïntegreerd — handig voor buitenwerk.',
-      'Statusbeheer: Gepland → Onderweg → Bezig → Afgerond. Met conflict-detectie als monteurs dubbel gepland staan.',
+      'De montageplanning toont een **weekoverzicht** met alle montage-afspraken per dag. Sleep "te plannen" projecten direct naar een dag om in te plannen.',
+      'Filter op monteur om per persoon te zien wat er gepland staat. Het **weerbericht** is geïntegreerd, handig voor buitenwerk.',
+      'Statusbeheer: **Gepland → Onderweg → Bezig → Afgerond.** Met conflict-detectie als monteurs dubbel gepland staan.',
     ],
     tips: [
       'Gebruik het "Overzicht" filter om alle monteurs tegelijk te zien',
@@ -248,14 +237,12 @@ const ARTICLES: KbArticle[] = [
     titel: 'Takenbeheer',
     subtitel: 'Wat moet er nog gebeuren?',
     inhoud: [
-      'Taken zijn je to-do lijst, gekoppeld aan projecten of los. Wijs taken toe aan teamleden, stel deadlines in en volg de voortgang.',
-      'Prioriteiten: Kritiek, Hoog, Medium, Laag. Het dashboard toont altijd je top 5 taken op prioriteit.',
-      'In de weekplanning zie je taken op een tijdlijn — sleep ze naar een ander tijdslot of dag.',
+      'Taken zijn je to-do lijst, gekoppeld aan projecten of los. Wijs taken toe aan teamleden, stel **deadlines** in en volg de voortgang.',
+      'Prioriteiten: **Kritiek, Hoog, Medium, Laag.** Het dashboard toont altijd je top 5 taken op prioriteit.',
+      'In de weekplanning zie je taken op een tijdlijn. Sleep ze naar een ander tijdslot of dag.',
     ],
     link: '/taken',
   },
-
-  // ── Communicatie ──
   {
     id: 'email',
     category: 'communicatie',
@@ -264,8 +251,8 @@ const ARTICLES: KbArticle[] = [
     titel: 'Geïntegreerde email',
     subtitel: 'Verstuur en ontvang email vanuit Doen.',
     inhoud: [
-      'Koppel je emailadres (Gmail, Outlook, of eigen SMTP) en verstuur offertes, facturen en berichten direct vanuit de app.',
-      'Inkomende emails worden gesynchroniseerd en automatisch gekoppeld aan klanten op basis van emailadres.',
+      'Koppel je emailadres (Gmail, Outlook, of eigen SMTP) en verstuur offertes, facturen en berichten **direct vanuit de app**.',
+      'Inkomende emails worden gesynchroniseerd en **automatisch gekoppeld aan klanten** op basis van emailadres.',
       'Email templates voor offertes en facturen worden automatisch gegenereerd met je bedrijfskleuren en logo.',
     ],
     link: '/email',
@@ -278,13 +265,11 @@ const ARTICLES: KbArticle[] = [
     titel: 'AI Visualizer',
     subtitel: 'Laat je klant zien hoe het eruit gaat zien',
     inhoud: [
-      'Upload een foto van de locatie en laat AI een visualisatie maken van het eindresultaat. Gevelreclame, signing, interieurbelettering — de klant ziet direct wat je bedoelt.',
-      'Deel visualisaties via het klantportaal of voeg ze toe aan je offerte. Verhoog je conversie door verwachtingen te managen.',
+      'Upload een foto van de locatie en laat AI een **visualisatie** maken van het eindresultaat. Gevelreclame, signing, interieurbelettering. De klant ziet direct wat je bedoelt.',
+      'Deel visualisaties via het klantportaal of voeg ze toe aan je offerte. Verhoog je **conversie** door verwachtingen te managen.',
     ],
     link: '/visualizer',
   },
-
-  // ── Slim werken ──
   {
     id: 'dashboard',
     category: 'slim-werken',
@@ -293,9 +278,9 @@ const ARTICLES: KbArticle[] = [
     titel: 'Het dashboard',
     subtitel: 'Je dag begint hier',
     inhoud: [
-      'Het dashboard toont in één oogopslag: omzet, openstaande offertes, planning vandaag, prioritaire taken en recente activiteit.',
+      'Het dashboard toont in één oogopslag: **omzet, openstaande offertes, planning vandaag**, prioritaire taken en recente activiteit.',
       'Widgets zijn verplaatsbaar en resizable. Verberg wat je niet nodig hebt, maak groter wat belangrijk is.',
-      'Het weerbericht is geïntegreerd — direct zien of buitenwerk mogelijk is.',
+      'Het **weerbericht** is geïntegreerd. Direct zien of buitenwerk mogelijk is.',
     ],
     link: '/',
   },
@@ -307,9 +292,9 @@ const ARTICLES: KbArticle[] = [
     titel: 'Huisstijl & documenten',
     subtitel: 'Professionele uitstraling zonder moeite',
     inhoud: [
-      'Upload je logo, stel je bedrijfskleuren in, en alle documenten (offertes, facturen, werkbonnen) worden automatisch in jouw stijl gegenereerd.',
+      'Upload je logo, stel je bedrijfskleuren in, en alle documenten (offertes, facturen, werkbonnen) worden automatisch **in jouw stijl** gegenereerd.',
       'Kies je lettertype, pas de kleur van de accent-balk aan, voeg je KvK- en BTW-nummer toe aan de voettekst.',
-      'Configureer dit eenmalig in Instellingen > Producten > Document stijl.',
+      'Configureer dit **eenmalig** in Instellingen > Producten > Document stijl.',
     ],
   },
   {
@@ -320,12 +305,21 @@ const ARTICLES: KbArticle[] = [
     titel: 'Veiligheid & privacy',
     subtitel: 'Je data is van jou',
     inhoud: [
-      'Doen. draait op Supabase met Row Level Security — elke gebruiker ziet alleen data van zijn eigen organisatie.',
-      'Wachtwoorden en API-keys worden versleuteld opgeslagen. Email-wachtwoorden worden server-side geëncrypt met AES-256.',
+      'Doen. draait op Supabase met **Row Level Security**. Elke gebruiker ziet alleen data van zijn eigen organisatie.',
+      'Wachtwoorden en API-keys worden **versleuteld** opgeslagen. Email-wachtwoorden worden server-side geëncrypt met AES-256.',
       'Alle communicatie gaat via HTTPS. Geen data wordt gedeeld met derden.',
     ],
   },
 ]
+
+// Render **bold** markdown as <strong>
+function renderBold(text: string): ReactNode {
+  const parts = text.split(/\*\*(.+?)\*\*/g)
+  if (parts.length === 1) return text
+  return parts.map((part, i) =>
+    i % 2 === 1 ? <strong key={i} className="font-semibold text-[#1A1A1A]">{part}</strong> : part
+  )
+}
 
 // ── The DOEN workflow — the visual spectrum ──
 
@@ -391,7 +385,7 @@ export function KennisbankPage() {
 
         <div className="space-y-5">
           {activeArticle.inhoud.map((p, i) => (
-            <p key={i} className="text-[15px] leading-[1.8] animate-stagger-item" style={{ color: '#3A3A3A', animationDelay: `${i * 60}ms` }}>{p}</p>
+            <p key={i} className="text-[15px] leading-[1.8] animate-stagger-item" style={{ color: '#3A3A3A', animationDelay: `${i * 60}ms` }}>{renderBold(p)}</p>
           ))}
         </div>
 
