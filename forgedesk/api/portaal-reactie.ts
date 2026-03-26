@@ -64,7 +64,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { token, portaal_item_id, type, bericht, klant_naam, bestanden, gekozen_items, gekozen_varianten } = req.body as {
+    const { token, portaal_item_id, type, bericht, klant_naam, bestanden, gekozen_items, gekozen_varianten, foto_url } = req.body as {
       token: string
       portaal_item_id: string
       type: 'goedkeuring' | 'revisie' | 'bericht'
@@ -73,6 +73,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       bestanden?: string[] // URLs van geüploade bestanden
       gekozen_items?: string[]
       gekozen_varianten?: Record<string, string>
+      foto_url?: string
     }
 
     if (!token || !portaal_item_id || !type) {
@@ -126,6 +127,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         type,
         bericht: bericht?.trim() || null,
         klant_naam: klant_naam?.trim() || null,
+        foto_url: foto_url || null,
       })
       .select()
       .single()

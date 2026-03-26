@@ -1710,7 +1710,7 @@ export interface PortaalItem {
   organisatie_id?: string;
   project_id: string;
   portaal_id: string;
-  type: 'offerte' | 'tekening' | 'factuur' | 'bericht';
+  type: 'offerte' | 'tekening' | 'factuur' | 'bericht' | 'afbeelding';
   offerte_id?: string;
   factuur_id?: string;
   titel: string;
@@ -1756,7 +1756,17 @@ export interface PortaalReactie {
   bericht?: string;
   klant_naam?: string;
   klant_email?: string;
+  foto_url?: string;
   created_at: string;
+}
+
+export interface PortaalFeedData {
+  portaal: ProjectPortaal;
+  items: (PortaalItem & { reacties: PortaalReactie[]; bestanden: PortaalBestand[] })[];
+  project: { naam: string; status: string; start_datum?: string; deadline?: string };
+  bedrijf: { naam: string; telefoon?: string; email?: string; website?: string; logo_url?: string; primaire_kleur?: string };
+  montage?: { datum: string; start_tijd?: string } | null;
+  instellingen?: Record<string, unknown>;
 }
 
 export interface AppNotificatie {

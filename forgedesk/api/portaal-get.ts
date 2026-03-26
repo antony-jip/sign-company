@@ -110,7 +110,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     ] = await Promise.all([
       supabaseAdmin
         .from('projecten')
-        .select('id, naam, klant_id, status, adres, postcode, plaats')
+        .select('id, naam, klant_id, status, adres, postcode, plaats, start_datum, deadline')
         .eq('id', portaal.project_id)
         .single(),
       supabaseAdmin
@@ -120,7 +120,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .single(),
       supabaseAdmin
         .from('document_styles')
-        .select('primaire_kleur')
+        .select('primaire_kleur, logo_url')
         .eq('user_id', portaal.user_id)
         .maybeSingle(),
       supabaseAdmin
@@ -149,6 +149,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       }
     }
+
+    // Haal montage afspraak op (als die er is)
+    let montageData = null
+    try {
+      const { data: montage } = await supabaseAdmin
+        .from('montage_afspraken')
+        .select('datum, start_tijd')
+        .eq('project_id', portaal.project_id)
+        .order('datum', { ascending: true })
+        .limit(1)
+        .maybeSingle()
+      if (montage) montageData = { datum: montage.datum, start_tijd: montage.start_tijd }
+    } catch { /* montage_afspraken table may not exist */ }
 
     // Genereer publieke URLs voor bestanden die als storage-pad zijn opgeslagen
     const DOCUMENTEN_BUCKET = 'documenten'
@@ -217,10 +230,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       },
       project: project ? {
         naam: project.naam,
+        status: project.status,
         adres: project.adres,
         postcode: project.postcode,
         plaats: project.plaats,
+        start_datum: project.start_datum,
+        deadline: project.deadline,
       } : null,
+      montage: montageData,
       bedrijf: {
         naam: profile?.bedrijfsnaam || '',
         logo_url: profile?.logo_url || '',
