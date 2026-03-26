@@ -328,6 +328,7 @@ export function PortaalTimeline({ items, isPublic, bedrijfNaam, onImageClick }: 
             {isCard && <ItemCard item={item} onImageClick={onImageClick} />}
 
             {/* Klant-reacties direct onder het item */}
+            {console.log('[TL]', item.titel, item.reacties?.length)}
             {item.reacties && item.reacties.length > 0 && (
               <div className="space-y-2">
                 {item.reacties.map((r) => (
