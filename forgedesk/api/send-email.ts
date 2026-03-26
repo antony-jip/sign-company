@@ -137,10 +137,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       from: fromAddress,
       to,
       subject,
-      text: body,
+    }
+    // Als er HTML is, gebruik die als primaire content. Plain text alleen als fallback.
+    if (html) {
+      mailOptions.html = html
+      // Minimale plain text voor email clients zonder HTML support
+      mailOptions.text = body || subject
+    } else {
+      mailOptions.text = body
     }
     if (cc) mailOptions.cc = cc
-    if (html) mailOptions.html = html
     if (attachments?.length) {
       mailOptions.attachments = attachments.map((a) => ({
         filename: a.filename,
