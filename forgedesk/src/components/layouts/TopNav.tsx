@@ -5,7 +5,7 @@ import {
   Mail, Calendar, Settings,
   Receipt, CheckSquare, ClipboardCheck,
   LogOut, ChevronDown, Menu, X, Search,
-  Plus, Moon, Sun, Monitor, CreditCard, Sparkles, PiggyBank,
+  Plus, Moon, Sun, Monitor, CreditCard, Sparkles, PiggyBank, BookOpen,
   type LucideIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -198,6 +198,10 @@ export function TopNav() {
                   <button onClick={() => { setUserMenuOpen(false); navigate('/instellingen?tab=abonnement') }}
                     className="flex items-center gap-3 w-full px-4 py-2.5 text-[13px] text-foreground/80 hover:bg-muted/50 transition-colors">
                     <CreditCard className="w-4 h-4 text-muted-foreground" /> Abonnement
+                  </button>
+                  <button onClick={() => { setUserMenuOpen(false); navigate('/instellingen?tab=kennisbank') }}
+                    className="flex items-center gap-3 w-full px-4 py-2.5 text-[13px] text-foreground/80 hover:bg-muted/50 transition-colors">
+                    <BookOpen className="w-4 h-4 text-muted-foreground" /> Kennisbank
                   </button>
                 </div>
                 <div className="border-t border-border/40 py-1.5">
