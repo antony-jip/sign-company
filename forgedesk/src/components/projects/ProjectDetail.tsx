@@ -970,10 +970,37 @@ export function ProjectDetail() {
       {/* ══════════ OVERZICHT TAB ══════════ */}
       {activeTab === 'overzicht' && (
       <div className="flex-1 overflow-y-auto">
-      <div className="flex flex-col lg:flex-row gap-8 px-8 py-6">
+      <div className="flex flex-col lg:flex-row gap-6 px-8 py-5">
 
         {/* ── Left column (65%) ── */}
-        <div className="flex-1 min-w-0 space-y-8">
+        <div className="flex-1 min-w-0 space-y-5">
+
+          {/* Quick actions — prominent row */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <button onClick={() => setNieuweTaakOpen(true)} className="inline-flex items-center gap-1.5 h-8 px-3 text-[12px] font-medium rounded-lg border border-[#EBEBEB] text-[#1A535C] hover:bg-[#E2F0F0]/50 transition-colors">
+              <Plus className="h-3 w-3" /> Taak
+            </button>
+            <button onClick={openNieuweOfferte} className="inline-flex items-center gap-1.5 h-8 px-3 text-[12px] font-medium rounded-lg border border-[#EBEBEB] text-[#F15025] hover:bg-[#FDE8E2]/50 transition-colors">
+              <Receipt className="h-3 w-3" /> Offerte
+            </button>
+            <button onClick={() => setShowWerkbonDialog(true)} className="inline-flex items-center gap-1.5 h-8 px-3 text-[12px] font-medium rounded-lg border border-[#EBEBEB] text-[#6B6B66] hover:bg-[#F4F2EE] transition-colors">
+              <ClipboardCheck className="h-3 w-3" /> Werkbon
+            </button>
+            <button onClick={handleOpenMontageDialog} className="inline-flex items-center gap-1.5 h-8 px-3 text-[12px] font-medium rounded-lg border border-[#EBEBEB] text-[#6B6B66] hover:bg-[#F4F2EE] transition-colors">
+              <Wrench className="h-3 w-3" /> Montage
+            </button>
+            <button onClick={() => {
+              const params = new URLSearchParams({ klant_id: project.klant_id || '', project_id: id || '', titel: project.naam || '' })
+              navigate(`/facturen/nieuw?${params.toString()}`, { state: { from: location.pathname } })
+            }} className="inline-flex items-center gap-1.5 h-8 px-3 text-[12px] font-medium rounded-lg border border-[#EBEBEB] text-[#6B6B66] hover:bg-[#F4F2EE] transition-colors">
+              <CreditCard className="h-3 w-3" /> Factuur
+            </button>
+            {klant?.email && (
+              <button onClick={() => window.location.href = `mailto:${klant.email}`} className="inline-flex items-center gap-1.5 h-8 px-3 text-[12px] font-medium rounded-lg border border-[#EBEBEB] text-[#6B6B66] hover:bg-[#F4F2EE] transition-colors">
+                <Mail className="h-3 w-3" /> Email
+              </button>
+            )}
+          </div>
 
           {/* Briefing */}
           <BriefingCard
@@ -1047,48 +1074,7 @@ export function ProjectDetail() {
         </div>
 
         {/* ── Right column (sidebar, 35%) ── */}
-        <div className="w-full lg:w-[300px] xl:w-[320px] flex-shrink-0 space-y-6 lg:self-start lg:sticky lg:top-20">
-
-          {/* Quick actions */}
-          <div>
-            <h3 className="text-xs font-semibold text-[#1A1A1A] uppercase tracking-wider mb-3">Acties</h3>
-            <div className="space-y-1.5">
-              {projectOffertes.length === 0 ? (
-                <button onClick={() => setShowWerkbonDialog(true)} className="flex items-center gap-2 text-sm text-white bg-[#1A535C] hover:bg-[#164850] rounded-md px-3 py-1.5 transition-colors">
-                  <ClipboardCheck className="h-3.5 w-3.5" />
-                  Werkbon maken
-                </button>
-              ) : (
-                <button onClick={openNieuweOfferte} className="flex items-center gap-2 text-sm font-medium text-[#1A535C] hover:underline">
-                  <Receipt className="h-3.5 w-3.5" />
-                  Offerte maken
-                </button>
-              )}
-              {projectOffertes.length > 0 && (
-                <button onClick={() => setShowWerkbonDialog(true)} className="flex items-center gap-2 text-sm font-medium text-[#1A535C] hover:underline">
-                  <ClipboardCheck className="h-3.5 w-3.5" />
-                  Werkbon maken
-                </button>
-              )}
-              <button onClick={handleOpenMontageDialog} className="flex items-center gap-2 text-sm font-medium text-[#1A535C] hover:underline">
-                <Wrench className="h-3.5 w-3.5" />
-                Montage plannen
-              </button>
-              <button onClick={() => {
-                const params = new URLSearchParams({ klant_id: project.klant_id || '', project_id: id || '', titel: project.naam || '' })
-                navigate(`/facturen/nieuw?${params.toString()}`, { state: { from: location.pathname } })
-              }} className="flex items-center gap-2 text-sm font-medium text-[#1A535C] hover:underline">
-                <CreditCard className="h-3.5 w-3.5" />
-                Factuur maken
-              </button>
-              {klant?.email && (
-                <button onClick={() => window.location.href = `mailto:${klant.email}`} className="flex items-center gap-2 text-sm font-medium text-[#1A535C] hover:underline">
-                  <Mail className="h-3.5 w-3.5" />
-                  Email sturen
-                </button>
-              )}
-            </div>
-          </div>
+        <div className="w-full lg:w-[300px] xl:w-[320px] flex-shrink-0 space-y-4 lg:self-start lg:sticky lg:top-20">
 
           {/* Montage */}
           <div className="bg-white rounded-lg p-4 border border-[#EBEBEB]">
