@@ -436,7 +436,7 @@ export function KennisbankPage() {
           <div className="max-w-3xl">
             <p className="text-[12px] font-semibold uppercase tracking-[0.15em] text-white/40 mb-2">Kennisbank</p>
             <h1 className="font-heading text-[36px] font-bold tracking-tight leading-[1.05] text-white mb-3">
-              Doen<span style={{ color: '#F15025' }}>.</span> is de kracht<br />achter doeners.
+              Doen<span style={{ color: '#F15025' }}>.</span> de kracht<br />achter doeners.
             </h1>
             <p className="text-[15px] text-white/60 max-w-lg leading-relaxed">
               Van eerste klantcontact tot factuur. Alles verbonden, niets overbodig. Klik op een stap om te leren hoe het werkt.
