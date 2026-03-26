@@ -283,20 +283,7 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
         ? replaceEmailVariables(instellingen.template_nieuw_item.inhoud, vars)
         : `Er staat een nieuw item voor u klaar.`
 
-      const plainBody = [
-        `Beste ${klantNaam},`,
-        '',
-        heading,
-        '',
-        `Item: ${titel}`,
-        `Project: ${projectNaam}`,
-        '',
-        `Bekijk het in uw portaal:`,
-        portaalUrl,
-        '',
-        `Met vriendelijke groet,`,
-        bedrijfsnaam || 'Het team',
-      ].join('\n')
+      const plainBody = `${heading} — ${titel} (${projectNaam})`
 
       const htmlBody = buildPortalEmailHtml({
         heading,
