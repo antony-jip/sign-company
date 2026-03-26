@@ -142,12 +142,9 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
 
   // ── Auth token helper ─────────────────────────────────────────────────
   async function getAuthToken() {
-    const { createClient } = await import('@supabase/supabase-js')
-    const client = createClient(
-      import.meta.env.VITE_SUPABASE_URL || '',
-      import.meta.env.VITE_SUPABASE_ANON_KEY || ''
-    )
-    const { data } = await client.auth.getSession()
+    const { default: supabase } = await import('@/services/supabaseClient')
+    if (!supabase) return ''
+    const { data } = await supabase.auth.getSession()
     return data.session?.access_token || ''
   }
 

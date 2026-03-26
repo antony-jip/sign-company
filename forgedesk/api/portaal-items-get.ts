@@ -69,7 +69,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: 'Kon items niet ophalen' })
     }
 
-    return res.status(200).json({ items: items || [] })
+    // Resolve offerte_publiek_token for offerte items
+    const offerteIds = (items || [])
+      .filter((i: Record<string, unknown>) => i.type === 'offerte' && i.offerte_id)
+      .map((i: Record<string, unknown>) => i.offerte_id as string)
+
+    let offerteTokenMap: Record<string, string> = {}
+    if (offerteIds.length > 0) {
+      const { data: offertes } = await supabaseAdmin
+        .from('offertes')
+        .select('id, publiek_token')
+        .in('id', offerteIds)
+      if (offertes) {
+        offerteTokenMap = Object.fromEntries(
+          offertes.filter((o: Record<string, unknown>) => o.publiek_token).map((o: Record<string, unknown>) => [o.id, o.publiek_token])
+        )
+      }
+    }
+
+    const enrichedItems = (items || []).map((item: Record<string, unknown>) => ({
+      ...item,
+      offerte_publiek_token: item.offerte_id ? offerteTokenMap[item.offerte_id as string] || null : null,
+    }))
+
+    return res.status(200).json({ items: enrichedItems })
   } catch (error) {
     console.error('portaal-items-get error:', error)
     return res.status(500).json({ error: 'Er ging iets mis' })

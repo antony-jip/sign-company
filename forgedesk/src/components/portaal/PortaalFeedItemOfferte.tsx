@@ -118,7 +118,7 @@ export function PortaalFeedItemOfferte({
           {/* Offerte PDF link */}
           {item.offerte_publiek_token && (
             <a
-              href={`/offerte/${item.offerte_publiek_token}`}
+              href={`/offerte-bekijken/${item.offerte_publiek_token}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 mt-2 text-sm hover:opacity-70 transition-opacity"
