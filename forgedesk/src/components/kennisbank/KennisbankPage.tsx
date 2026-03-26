@@ -378,7 +378,7 @@ export function KennisbankPage() {
 
         <div className="space-y-4">
           {activeArticle.inhoud.map((p, i) => (
-            <p key={i} className="text-[14px] leading-[1.7]" style={{ color: '#3A3A3A' }}>{p}</p>
+            <p key={i} className="text-[15px] leading-[1.75] animate-stagger-item" style={{ color: '#3A3A3A', animationDelay: `${i * 60}ms` }}>{p}</p>
           ))}
         </div>
 
@@ -496,14 +496,14 @@ export function KennisbankPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map(article => {
+          {filtered.map((article, idx) => {
             const cat = CATEGORIES.find(c => c.id === article.category)
             return (
               <button
                 key={article.id}
                 onClick={() => setActiveArticle(article)}
-                className="group text-left bg-white rounded-2xl p-5 transition-all duration-200 hover:-translate-y-[2px] hover:shadow-[0_4px_20px_rgba(130,100,60,0.1)]"
-                style={{ border: '1px solid #EBEBEB' }}
+                className="group text-left bg-white rounded-2xl p-5 transition-all duration-300 hover:-translate-y-[3px] hover:shadow-[0_8px_30px_rgba(130,100,60,0.12)] animate-stagger-item"
+                style={{ border: '1px solid #EBEBEB', animationDelay: `${idx * 40}ms` }}
               >
                 {/* Icon + category */}
                 <div className="flex items-center gap-2 mb-3">
