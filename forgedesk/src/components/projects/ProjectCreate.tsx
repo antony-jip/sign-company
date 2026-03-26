@@ -6,7 +6,6 @@ import type { Klant } from '@/types'
 import { toast } from 'sonner'
 import { ArrowLeft, Save, FolderKanban } from 'lucide-react'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -53,10 +52,6 @@ export function ProjectCreate() {
   const geselecteerdeKlant = useMemo(() => {
     return klanten.find((k) => k.id === klantId)
   }, [klanten, klantId])
-
-  const contactpersonen = useMemo(() => {
-    return geselecteerdeKlant?.contactpersonen || []
-  }, [geselecteerdeKlant])
 
   const vestigingen = useMemo(() => {
     return geselecteerdeKlant?.vestigingen || []
@@ -126,7 +121,7 @@ export function ProjectCreate() {
     <div className="relative -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 min-h-full bg-[#F8F7F5]">
       <div className="relative max-w-2xl mx-auto px-4 py-8 md:py-12 animate-fade-in-up">
       {/* Header */}
-      <div className="flex items-center gap-4 mb-8">
+      <div className="flex items-center gap-4 mb-6">
         <button
           onClick={() => navigate('/projecten')}
           className="h-10 w-10 rounded-xl flex items-center justify-center transition-colors"
@@ -144,50 +139,91 @@ export function ProjectCreate() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Section 1: Projectgegevens */}
-        <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#FFFFFE', border: '0.5px solid #E6E4E0' }}>
-          <div className="h-[3px]" style={{ background: 'linear-gradient(90deg, #F15025, #F1502560)' }} />
+        {/* Section 1: Project + Planning — merged */}
+        <div className="rounded-xl" style={{ backgroundColor: '#FFFFFE', border: '0.5px solid #E6E4E0' }}>
+          <div className="h-[3px] rounded-t-xl" style={{ background: 'linear-gradient(90deg, #F15025, #F1502560)' }} />
           <div className="flex items-center gap-3 px-5 pt-4 pb-1">
             <div className="flex items-center justify-center h-7 w-7 rounded-lg text-white text-[11px] font-bold" style={{ backgroundColor: '#F15025' }}>1</div>
             <div>
               <span className="text-[13px] font-semibold" style={{ color: '#191919' }}>Projectgegevens</span>
-              <p className="text-[11px]" style={{ color: '#A0A098' }}>Naam en omschrijving</p>
+              <p className="text-[11px]" style={{ color: '#A0A098' }}>Naam, planning en status</p>
             </div>
           </div>
           <div className="px-5 pb-5 pt-3 space-y-3">
-            <div>
-              <Label htmlFor="naam" className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider" style={{ color: '#A0A098' }}>
-                Projectnaam *
-              </Label>
-              <Input
-                id="naam"
-                value={naam}
-                onChange={(e) => setNaam(e.target.value)}
-                placeholder="Bijv. Gevelbelettering Bakkerij Jansen"
-                className="h-10 rounded-lg text-[14px]"
-                style={{ backgroundColor: '#FAFAF8', border: '0.5px solid #E6E4E0' }}
-                required
-              />
+            {/* Naam + Beschrijving inline */}
+            <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr] gap-3">
+              <div>
+                <Label htmlFor="naam" className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider" style={{ color: '#A0A098' }}>
+                  Projectnaam *
+                </Label>
+                <Input
+                  id="naam"
+                  value={naam}
+                  onChange={(e) => setNaam(e.target.value)}
+                  placeholder="Bijv. Gevelbelettering Bakkerij Jansen"
+                  className="h-10 rounded-lg text-[14px]"
+                  style={{ backgroundColor: '#FAFAF8', border: '0.5px solid #E6E4E0' }}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="beschrijving" className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider" style={{ color: '#A0A098' }}>
+                  Beschrijving
+                </Label>
+                <Input
+                  id="beschrijving"
+                  value={beschrijving}
+                  onChange={(e) => setBeschrijving(e.target.value)}
+                  placeholder="Korte omschrijving..."
+                  className="h-10 rounded-lg text-[14px]"
+                  style={{ backgroundColor: '#FAFAF8', border: '0.5px solid #E6E4E0' }}
+                />
+              </div>
             </div>
 
-            <div>
-              <Label htmlFor="beschrijving" className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider" style={{ color: '#A0A098' }}>
-                Beschrijving
-              </Label>
-              <Textarea
-                id="beschrijving"
-                value={beschrijving}
-                onChange={(e) => setBeschrijving(e.target.value)}
-                placeholder="Korte omschrijving van het project..."
-                rows={3}
-                className="resize-none rounded-lg text-[14px]"
-                style={{ backgroundColor: '#FAFAF8', border: '0.5px solid #E6E4E0' }}
-              />
+            {/* Status + Dates row */}
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <Label className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider" style={{ color: '#A0A098' }}>Status</Label>
+                <Select value={status} onValueChange={(value: typeof status) => setStatus(value)}>
+                  <SelectTrigger className="h-10 rounded-lg text-[13px]" style={{ backgroundColor: '#FAFAF8', border: '0.5px solid #E6E4E0' }}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="gepland">Gepland</SelectItem>
+                    <SelectItem value="actief">Actief</SelectItem>
+                    <SelectItem value="in-review">In Review</SelectItem>
+                    <SelectItem value="afgerond">Afgerond</SelectItem>
+                    <SelectItem value="on-hold">On Hold</SelectItem>
+                    <SelectItem value="te-factureren">Te factureren</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider" style={{ color: '#A0A098' }}>Startdatum</Label>
+                <Input
+                  type="date"
+                  value={startDatum}
+                  onChange={(e) => setStartDatum(e.target.value)}
+                  className="h-10 rounded-lg font-mono text-[13px]"
+                  style={{ backgroundColor: '#FAFAF8', border: '0.5px solid #E6E4E0' }}
+                />
+              </div>
+              <div>
+                <Label className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider" style={{ color: '#A0A098' }}>Einddatum</Label>
+                <Input
+                  type="date"
+                  value={eindDatum}
+                  onChange={(e) => setEindDatum(e.target.value)}
+                  className="h-10 rounded-lg font-mono text-[13px]"
+                  style={{ backgroundColor: '#FAFAF8', border: '0.5px solid #E6E4E0' }}
+                />
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Section 2: Klant & Contact — compact */}
+        {/* Section 2: Klant & Contact */}
         <div className="rounded-xl relative" style={{ backgroundColor: '#FFFFFE', border: '0.5px solid #E6E4E0' }}>
           <div className="h-[3px] rounded-t-xl" style={{ background: 'linear-gradient(90deg, #9A4070, #9A407060)' }} />
           <div className="flex items-center gap-3 px-5 pt-4 pb-1">
@@ -211,60 +247,8 @@ export function ProjectCreate() {
           </div>
         </div>
 
-        {/* Section 3: Planning */}
-        <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#FFFFFE', border: '0.5px solid #E6E4E0' }}>
-          <div className="h-[3px]" style={{ background: 'linear-gradient(90deg, #3A6B8C, #3A6B8C60)' }} />
-          <div className="flex items-center gap-3 px-5 pt-4 pb-1">
-            <div className="flex items-center justify-center h-7 w-7 rounded-lg text-white text-[11px] font-bold" style={{ backgroundColor: '#3A6B8C' }}>3</div>
-            <div>
-              <span className="text-[13px] font-semibold" style={{ color: '#191919' }}>Planning</span>
-              <p className="text-[11px]" style={{ color: '#A0A098' }}>Status en tijdlijn</p>
-            </div>
-          </div>
-          <div className="px-5 pb-5 pt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div>
-              <Label className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider" style={{ color: '#A0A098' }}>Status</Label>
-              <Select value={status} onValueChange={(value: typeof status) => setStatus(value)}>
-                <SelectTrigger className="h-10 rounded-lg text-[13px]" style={{ backgroundColor: '#FAFAF8', border: '0.5px solid #E6E4E0' }}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="gepland">Gepland</SelectItem>
-                  <SelectItem value="actief">Actief</SelectItem>
-                  <SelectItem value="in-review">In Review</SelectItem>
-                  <SelectItem value="afgerond">Afgerond</SelectItem>
-                  <SelectItem value="on-hold">On Hold</SelectItem>
-                  <SelectItem value="te-factureren">Te factureren</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider" style={{ color: '#A0A098' }}>Startdatum</Label>
-              <Input
-                type="date"
-                value={startDatum}
-                onChange={(e) => setStartDatum(e.target.value)}
-                className="h-10 rounded-lg font-mono text-[13px]"
-                style={{ backgroundColor: '#FAFAF8', border: '0.5px solid #E6E4E0' }}
-              />
-            </div>
-
-            <div>
-              <Label className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider" style={{ color: '#A0A098' }}>Einddatum</Label>
-              <Input
-                type="date"
-                value={eindDatum}
-                onChange={(e) => setEindDatum(e.target.value)}
-                className="h-10 rounded-lg font-mono text-[13px]"
-                style={{ backgroundColor: '#FAFAF8', border: '0.5px solid #E6E4E0' }}
-              />
-            </div>
-          </div>
-        </div>
-
         {/* Actions */}
-        <div className="flex items-center justify-end gap-3 pt-4">
+        <div className="flex items-center justify-end gap-3 pt-2">
           <button
             type="button"
             onClick={() => navigate('/projecten')}

@@ -1977,13 +1977,13 @@ export function QuoteCreation() {
           </div>
 
         <div className="space-y-4">
-          {/* Step 1: Klant */}
+          {/* Step 1: Klant + Contactpersoon — merged */}
           <div className="rounded-xl" style={{ backgroundColor: '#FFFFFF', border: '1px solid #EBEBEB' }}>
             <div className="h-[3px] rounded-t-xl" style={{ background: 'linear-gradient(90deg, #F15025, #F1502560)' }} />
             <div className="flex items-center gap-3 px-5 pt-4 pb-1">
               <div className="flex items-center justify-center h-7 w-7 rounded-lg text-white text-[11px] font-bold" style={{ backgroundColor: '#F15025' }}>1</div>
               <div>
-                <span className="text-[13px] font-semibold" style={{ color: '#1A1A1A' }}>Klant</span>
+                <span className="text-[13px] font-semibold" style={{ color: '#1A1A1A' }}>Klant & contactpersoon</span>
                 <p className="text-[11px]" style={{ color: '#9B9B95' }}>Wie is de opdrachtgever?</p>
               </div>
             </div>
@@ -2081,22 +2081,10 @@ export function QuoteCreation() {
                   ) : <p className="text-[11px] py-1" style={{ color: '#9B9B95' }}>Geen projecten gevonden voor deze klant</p>}
                 </div>
               )}
-            </div>
-          </div>
-
-          {/* Step 2: Contactpersoon — compact */}
-          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#FFFFFF', border: '1px solid #EBEBEB' }}>
-            <div className="h-[3px]" style={{ background: 'linear-gradient(90deg, #9A4070, #9A407060)' }} />
-            <div className="flex items-center gap-3 px-5 pt-4 pb-1">
-              <div className="flex items-center justify-center h-7 w-7 rounded-lg text-white text-[11px] font-bold" style={{ backgroundColor: '#9A4070' }}>2</div>
-              <div>
-                <span className="text-[13px] font-semibold" style={{ color: '#1A1A1A' }}>Contactpersoon</span>
-                <p className="text-[11px]" style={{ color: '#9B9B95' }}>Wie ontvangt de offerte?</p>
-              </div>
-            </div>
-            <div className="px-5 pb-5 pt-3 space-y-2">
-              {selectedKlant ? (
-                <>
+              {/* Contactpersoon — inline under klant */}
+              {selectedKlant && (
+                <div className="pt-2 border-t space-y-2" style={{ borderColor: '#EBEBEB' }}>
+                  <Label className="text-[11px] font-semibold uppercase tracking-wider block" style={{ color: '#9B9B95' }}>Contactpersoon</Label>
                   {(selectedKlant.contactpersonen?.length > 0 || selectedKlant.contactpersoon) && (
                     <div className="space-y-1.5">
                       {selectedKlant.contactpersonen?.map((cp) => (
@@ -2144,23 +2132,16 @@ export function QuoteCreation() {
                       <Input value={contactpersoon} onChange={(e) => { setContactpersoon(e.target.value); setSelectedContactId('') }} placeholder="Contactpersoon naam..." className="h-9 text-[13px] rounded-lg" style={{ backgroundColor: '#F8F7F5', border: '1px solid #EBEBEB' }} />
                     </div>
                   )}
-                </>
-              ) : (
-                <div className="flex flex-col items-center py-4 text-center">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2" style={{ backgroundColor: '#EBEBEB' }}>
-                    <User className="h-4 w-4" style={{ color: '#9B9B95' }} />
-                  </div>
-                  <p className="text-[12px]" style={{ color: '#9B9B95' }}>Selecteer eerst een klant</p>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Step 3: Offerte details */}
+          {/* Step 2: Offerte details + items — merged */}
           <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#FFFFFF', border: '1px solid #EBEBEB' }}>
             <div className="h-[3px]" style={{ background: 'linear-gradient(90deg, #3A6B8C, #3A6B8C60)' }} />
             <div className="flex items-center gap-3 px-5 pt-4 pb-1">
-              <div className="flex items-center justify-center h-7 w-7 rounded-lg text-white text-[11px] font-bold" style={{ backgroundColor: '#3A6B8C' }}>3</div>
+              <div className="flex items-center justify-center h-7 w-7 rounded-lg text-white text-[11px] font-bold" style={{ backgroundColor: '#3A6B8C' }}>2</div>
               <div>
                 <span className="text-[13px] font-semibold" style={{ color: '#1A1A1A' }}>Offerte details</span>
                 <p className="text-[11px]" style={{ color: '#9B9B95' }}>Titel, nummer en geldigheid</p>
@@ -2184,31 +2165,16 @@ export function QuoteCreation() {
             </div>
           </div>
 
-          {/* Step 4: Aantal items */}
-          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#FFFFFF', border: '1px solid #EBEBEB' }}>
-            <div className="h-[3px]" style={{ background: 'linear-gradient(90deg, #1A535C, #1A535C60)' }} />
-            <div className="flex items-center gap-3 px-5 pt-4 pb-1">
-              <div className="flex items-center justify-center h-7 w-7 rounded-lg text-white text-[11px] font-bold" style={{ backgroundColor: '#1A535C' }}>4</div>
-              <div>
-                <span className="text-[13px] font-semibold" style={{ color: '#1A1A1A' }}>Aantal items</span>
-                <p className="text-[11px]" style={{ color: '#9B9B95' }}>Hoeveel prijsberekeningen?</p>
-              </div>
+          {/* Start button with inline item count */}
+          <div className="flex items-center justify-between pt-2">
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: '#9B9B95' }}>Items</span>
+              {ITEM_COUNT_OPTIONS.map((count) => (
+                <button key={count} onClick={() => setItemCount(count)} className="h-8 w-8 rounded-lg text-[13px] font-bold transition-all" style={{ border: itemCount === count ? '2px solid #1A535C' : '0.5px solid #EBEBEB', backgroundColor: itemCount === count ? '#1A535C' : '#F8F7F5', color: itemCount === count ? '#FFFFFF' : '#1A1A1A' }}>
+                  {count}
+                </button>
+              ))}
             </div>
-            <div className="px-5 pb-5 pt-3">
-              <p className="text-[12px] mb-3" style={{ color: '#6B6B66' }}>Elk item is een complete prijsberekening. Je kunt later altijd items toevoegen of verwijderen.</p>
-              <div className="flex items-center gap-2">
-                {ITEM_COUNT_OPTIONS.map((count) => (
-                  <button key={count} onClick={() => setItemCount(count)} className="h-10 w-10 rounded-lg text-[14px] font-bold transition-all" style={{ border: itemCount === count ? '2px solid #1A535C' : '0.5px solid #EBEBEB', backgroundColor: itemCount === count ? '#1A535C' : '#F8F7F5', color: itemCount === count ? '#FFFFFF' : '#1A1A1A' }}>
-                    {count}
-                  </button>
-                ))}
-                <span className="text-[12px] ml-2 font-medium" style={{ color: '#9B9B95' }}>{itemCount === 1 ? 'item' : 'items'}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Start button */}
-          <div className="flex justify-end pt-2">
             <button onClick={handleStartEditing} disabled={!canStartEditing} className="h-10 px-6 text-[14px] font-bold text-white rounded-lg shadow-sm transition-all hover:opacity-90 disabled:opacity-40 flex items-center gap-2" style={{ backgroundColor: '#F15025' }}>
               Items toevoegen
               <ArrowRight className="h-4 w-4" />
