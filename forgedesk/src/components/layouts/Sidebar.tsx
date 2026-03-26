@@ -405,6 +405,13 @@ export function Sidebar() {
                       <BookOpen className="w-4 h-4 text-white/40" />
                       Kennisbank
                     </button>
+                    <button
+                      onClick={() => { setUserPopoverOpen(false); navigate('/changelog') }}
+                      className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-white/70 hover:text-white hover:bg-white/[0.06] transition-all duration-200"
+                    >
+                      <Sparkles className="w-4 h-4 text-white/40" />
+                      What's new
+                    </button>
                   </div>
 
                   <div className="py-1" style={{ borderTop: '0.5px solid rgba(255,255,255,0.08)' }}>
