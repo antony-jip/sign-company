@@ -204,6 +204,7 @@ export function MontagePlanningLayout() {
     new Set(["gepland", "onderweg", "bezig", "uitgesteld"])
   );
   const [draggingAfspraakId, setDraggingAfspraakId] = useState<string | null>(null);
+  const [draggingProjectId, setDraggingProjectId] = useState<string | null>(null);
   const [dragOverDate, setDragOverDate] = useState<string | null>(null);
   const [klanten, setKlanten] = useState<Klant[]>([]);
   const [offertes, setOffertes] = useState<Offerte[]>([]);
@@ -787,12 +788,25 @@ export function MontagePlanningLayout() {
           setDraggingAfspraakId(afspraak.id);
           e.dataTransfer.effectAllowed = "move";
           e.dataTransfer.setData("text/plain", afspraak.id);
+          // Custom drag image for smooth feel
+          const ghost = e.currentTarget.cloneNode(true) as HTMLElement;
+          ghost.style.width = `${e.currentTarget.offsetWidth}px`;
+          ghost.style.background = '#fff';
+          ghost.style.borderRadius = '12px';
+          ghost.style.boxShadow = '0 12px 32px rgba(0,0,0,0.18)';
+          ghost.style.opacity = '0.92';
+          ghost.style.transform = 'rotate(2deg)';
+          ghost.style.position = 'absolute';
+          ghost.style.top = '-1000px';
+          document.body.appendChild(ghost);
+          e.dataTransfer.setDragImage(ghost, 30, 20);
+          requestAnimationFrame(() => document.body.removeChild(ghost));
         }}
         onDragEnd={() => { setDraggingAfspraakId(null); setDragOverDate(null); }}
         className={cn(
-          "bg-white rounded-xl border border-[#F0EFEC] border-l-[3px] p-3 mb-2 cursor-grab active:cursor-grabbing transition-all hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] group/card",
+          "bg-white rounded-xl border border-[#F0EFEC] border-l-[3px] p-3 mb-2 cursor-grab active:cursor-grabbing transition-all duration-200 hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] group/card",
           hasConflict && "ring-1 ring-[#F0C8BC]",
-          draggingAfspraakId === afspraak.id && "opacity-50 ring-2 ring-[#1A535C]/30"
+          draggingAfspraakId === afspraak.id && "opacity-30 scale-[0.97] ring-2 ring-[#1A535C]/30"
         )}
         style={{ borderLeftColor: cfg.dot }}
         onClick={() => openEditDialog(afspraak)}
@@ -995,12 +1009,21 @@ export function MontagePlanningLayout() {
               <div
                 key={dateStr}
                 className={cn(
-                  "border-r last:border-r-0 border-[#F0EFEC] p-2 min-h-[400px]",
+                  "border-r last:border-r-0 border-[#F0EFEC] p-2 min-h-[400px] transition-all duration-200",
                   isToday ? "bg-[#1A535C]/[0.02]" : "bg-[#F8F7F5]/50",
-                  dragOverDate === dateStr && "bg-[#1A535C]/[0.06] ring-2 ring-[#1A535C]/20 ring-inset"
+                  dragOverDate === dateStr && "bg-[#1A535C]/[0.08] ring-2 ring-[#1A535C]/25 ring-inset scale-[1.01]"
                 )}
-                onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; setDragOverDate(dateStr); }}
-                onDragLeave={() => setDragOverDate(null)}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = draggingProjectId ? "copy" : "move";
+                  if (dragOverDate !== dateStr) setDragOverDate(dateStr);
+                }}
+                onDragLeave={(e) => {
+                  // Only reset if leaving the column itself, not entering a child
+                  if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                    setDragOverDate(null);
+                  }
+                }}
                 onDrop={(e) => {
                   e.preventDefault();
                   setDragOverDate(null);
@@ -1009,8 +1032,13 @@ export function MontagePlanningLayout() {
                 }}
               >
                 {dayAfspraken.length === 0 ? (
-                  <div className="flex items-center justify-center h-32 text-[#B0ADA8]/50 text-xs">
-                    Geen montages
+                  <div className={cn(
+                    "flex items-center justify-center h-32 text-xs transition-all duration-200",
+                    dragOverDate === dateStr
+                      ? "text-[#1A535C] font-medium border-2 border-dashed border-[#1A535C]/30 rounded-xl bg-[#1A535C]/[0.04]"
+                      : "text-[#B0ADA8]/50"
+                  )}>
+                    {(draggingAfspraakId || draggingProjectId) ? "Hier neerzetten" : "Geen montages"}
                   </div>
                 ) : (
                   dayAfspraken.map((a) => renderMontageCard(a))
@@ -1473,21 +1501,38 @@ export function MontagePlanningLayout() {
             </div>
             <div className="max-h-[200px] overflow-y-auto">
               {tePlannenProjecten.map((project) => (
-                <button
+                <div
                   key={project.id}
                   draggable
                   onDragStart={(e) => {
-                    e.dataTransfer.effectAllowed = "copy";
+                    setDraggingProjectId(project.id);
+                    e.dataTransfer.effectAllowed = "copyMove";
                     e.dataTransfer.setData("text/plain", `project:${project.id}`);
+                    // Custom drag image
+                    const ghost = e.currentTarget.cloneNode(true) as HTMLElement;
+                    ghost.style.width = `${e.currentTarget.offsetWidth}px`;
+                    ghost.style.background = '#fff';
+                    ghost.style.borderRadius = '8px';
+                    ghost.style.boxShadow = '0 8px 24px rgba(0,0,0,0.15)';
+                    ghost.style.opacity = '0.95';
+                    ghost.style.position = 'absolute';
+                    ghost.style.top = '-1000px';
+                    document.body.appendChild(ghost);
+                    e.dataTransfer.setDragImage(ghost, 20, 20);
+                    requestAnimationFrame(() => document.body.removeChild(ghost));
                   }}
+                  onDragEnd={() => { setDraggingProjectId(null); setDragOverDate(null); }}
                   onClick={() => openNewDialogFromProject(project)}
-                  className="w-full text-left px-3 py-2 border-l-[3px] border-l-[#F15025] hover:bg-[#FDE8E2]/40 transition-colors cursor-grab active:cursor-grabbing"
+                  className={cn(
+                    "w-full text-left px-3 py-2 border-l-[3px] border-l-[#F15025] hover:bg-[#FDE8E2]/40 transition-all duration-200 cursor-grab active:cursor-grabbing select-none",
+                    draggingProjectId === project.id && "opacity-40 scale-95"
+                  )}
                 >
                   <div className="text-[13px] font-semibold truncate leading-tight text-[#1A1A1A]">{project.naam}</div>
                   {project.klant_naam && (
                     <div className="text-[11px] text-[#9B9B95] truncate">{project.klant_naam}</div>
                   )}
-                </button>
+                </div>
               ))}
             </div>
           </div>
