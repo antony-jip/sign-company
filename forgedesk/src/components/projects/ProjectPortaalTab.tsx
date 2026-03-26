@@ -755,6 +755,14 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
                   {r.bericht && (
                     <p className="text-sm whitespace-pre-wrap" style={{ color: '#3A3A35', lineHeight: 1.5 }}>{r.bericht}</p>
                   )}
+                  {r.foto_url && (
+                    <img
+                      src={r.foto_url}
+                      alt=""
+                      className="mt-1.5 max-w-[250px] max-h-[180px] rounded-lg object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                      onClick={() => setLightboxUrl(r.foto_url!)}
+                    />
+                  )}
                 </div>
               ))}
             </div>

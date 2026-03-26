@@ -252,6 +252,14 @@ function FeedItem({ item }: { item: PortaalItem }) {
             <span className="text-[10px] font-mono text-[#C0BDB8] ml-auto">{formatTime(r.created_at)}</span>
           </div>
           {r.bericht && <p className="text-xs text-[#3A3A35] mt-0.5">{r.bericht}</p>}
+          {r.foto_url && (
+            <img
+              src={r.foto_url}
+              alt=""
+              className="mt-1.5 max-w-[200px] max-h-[150px] rounded-lg object-cover cursor-pointer hover:opacity-90 transition-opacity"
+              onClick={() => window.open(r.foto_url!, '_blank')}
+            />
+          )}
         </div>
       ))}
     </div>
