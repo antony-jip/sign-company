@@ -110,6 +110,7 @@ export function PortaalChatRichCard({
   onImageClick,
   instellingen,
 }: PortaalChatRichCardProps) {
+  console.log('[RichCard]', item.titel, 'reacties:', item.reacties)
   const TypeIcon = TYPE_ICONS[item.type] || FileText
   const statusLabel = STATUS_LABELS[item.status] || item.status
   const badgeClass = getStatusBadgeClass(item.status)

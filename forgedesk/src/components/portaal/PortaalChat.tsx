@@ -171,6 +171,8 @@ export function PortaalChat({
     // Sort chronologically
     entries.sort((a, b) => new Date(a.ts).getTime() - new Date(b.ts).getTime())
 
+    console.log('[Timeline]', entries.map(e => ({ kind: e.kind, key: e.key })))
+
     // Insert day separators
     const result: TimelineEntry[] = []
     let lastDay = ''
