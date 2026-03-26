@@ -327,6 +327,19 @@ const ARTICLES: KbArticle[] = [
   },
 ]
 
+// ── The DOEN workflow — the visual spectrum ──
+
+const FLOW_STEPS = [
+  { icon: Users, label: 'Klant', desc: 'Leg je klant vast', color: '#3A6B8C', category: 'klanten' },
+  { icon: FolderKanban, label: 'Project', desc: 'Start het traject', color: '#1A535C', category: 'projecten' },
+  { icon: FileText, label: 'Offerte', desc: 'Maak de deal', color: '#F15025', category: 'offertes' },
+  { icon: Globe, label: 'Portaal', desc: 'Deel met je klant', color: '#6A5A8A', category: 'klanten' },
+  { icon: ClipboardCheck, label: 'Werkbon', desc: 'Geef de opdracht', color: '#9A5A48', category: 'uitvoering' },
+  { icon: Calendar, label: 'Planning', desc: 'Plan de montage', color: '#1A535C', category: 'uitvoering' },
+  { icon: Receipt, label: 'Factuur', desc: 'Stuur de rekening', color: '#2D6B48', category: 'financieel' },
+  { icon: CheckCircle, label: 'Klaar', desc: 'Klant is blij', color: '#3A7D52', category: 'start' },
+]
+
 // ── Component ──
 
 export function KennisbankPage() {
@@ -364,31 +377,31 @@ export function KennisbankPage() {
 
         {cat && (
           <div className="flex items-center gap-2 mb-3">
-            <div className="h-6 w-6 rounded-lg flex items-center justify-center" style={{ backgroundColor: cat.color + '15' }}>
-              <cat.icon className="h-3 w-3" style={{ color: cat.color }} />
+            <div className="h-7 w-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: cat.color + '15' }}>
+              <cat.icon className="h-3.5 w-3.5" style={{ color: cat.color }} />
             </div>
             <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: cat.color }}>{cat.label}</span>
           </div>
         )}
 
-        <h1 className="text-[28px] font-bold tracking-tight leading-[1.15] mb-2" style={{ color: '#1A1A1A' }}>
+        <h1 className="font-heading text-[32px] font-bold tracking-tight leading-[1.1] mb-2" style={{ color: '#1A1A1A' }}>
           {activeArticle.titel}
         </h1>
-        <p className="text-[15px] mb-8" style={{ color: '#6B6B66' }}>{activeArticle.subtitel}</p>
+        <p className="text-[16px] mb-10" style={{ color: '#6B6B66' }}>{activeArticle.subtitel}</p>
 
-        <div className="space-y-4">
+        <div className="space-y-5">
           {activeArticle.inhoud.map((p, i) => (
-            <p key={i} className="text-[15px] leading-[1.75] animate-stagger-item" style={{ color: '#3A3A3A', animationDelay: `${i * 60}ms` }}>{p}</p>
+            <p key={i} className="text-[15px] leading-[1.8] animate-stagger-item" style={{ color: '#3A3A3A', animationDelay: `${i * 60}ms` }}>{p}</p>
           ))}
         </div>
 
         {activeArticle.tips && activeArticle.tips.length > 0 && (
-          <div className="mt-8 rounded-xl p-5" style={{ backgroundColor: '#E2F0F0', border: '1px solid #C0DDDD' }}>
-            <h3 className="text-[12px] font-bold uppercase tracking-wider mb-3" style={{ color: '#1A535C' }}>Tips</h3>
-            <ul className="space-y-2">
+          <div className="mt-10 rounded-2xl p-6 animate-stagger-item" style={{ backgroundColor: '#1A535C', animationDelay: `${activeArticle.inhoud.length * 60 + 100}ms` }}>
+            <h3 className="text-[12px] font-bold uppercase tracking-wider mb-3 text-white/60">Tips</h3>
+            <ul className="space-y-2.5">
               {activeArticle.tips.map((tip, i) => (
-                <li key={i} className="flex items-start gap-2 text-[13px]" style={{ color: '#1A535C' }}>
-                  <span className="mt-1.5 w-1 h-1 rounded-full flex-shrink-0" style={{ backgroundColor: '#1A535C' }} />
+                <li key={i} className="flex items-start gap-2.5 text-[14px] text-white/90">
+                  <span className="mt-2 w-1.5 h-1.5 rounded-full flex-shrink-0 bg-[#F15025]" />
                   {tip}
                 </li>
               ))}
@@ -399,11 +412,11 @@ export function KennisbankPage() {
         {activeArticle.link && (
           <button
             onClick={() => navigate(activeArticle.link!)}
-            className="mt-6 inline-flex items-center gap-2 h-10 px-5 text-[13px] font-semibold text-white rounded-xl transition-all hover:opacity-90"
+            className="mt-8 inline-flex items-center gap-2 h-11 px-6 text-[14px] font-bold text-white rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
             style={{ backgroundColor: '#F15025' }}
           >
-            Ga naar {activeArticle.titel.split(' ').slice(-1)[0]}
-            <ChevronRight className="h-3.5 w-3.5" />
+            Bekijk in de app
+            <ChevronRight className="h-4 w-4" />
           </button>
         )}
       </div>
@@ -412,137 +425,168 @@ export function KennisbankPage() {
 
   // ── Main view ──
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8 animate-fade-in-up">
-      {/* Hero */}
-      <div className="text-center mb-10">
-        <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl mb-4" style={{ backgroundColor: '#1A535C' }}>
-          <BookOpen className="h-6 w-6 text-white" />
-        </div>
-        <h1 className="text-[32px] font-bold tracking-tight leading-[1.1]" style={{ color: '#1A1A1A' }}>
-          Kennisbank<span style={{ color: '#F15025' }}>.</span>
-        </h1>
-        <p className="text-[15px] mt-2 max-w-md mx-auto" style={{ color: '#6B6B66' }}>
-          Leer hoe je het meeste uit Doen. haalt. Geen fluff, alleen wat je nodig hebt.
-        </p>
+    <div className="animate-fade-in-up">
+      {/* ── Hero with workflow spectrum ── */}
+      <div className="relative overflow-hidden rounded-3xl mx-4 mb-10" style={{ background: 'linear-gradient(135deg, #1A535C 0%, #237580 40%, #1A535C 100%)' }}>
+        {/* Decorative circles */}
+        <div className="absolute top-[-60px] right-[-40px] w-[200px] h-[200px] rounded-full opacity-[0.06] bg-white" />
+        <div className="absolute bottom-[-30px] left-[10%] w-[120px] h-[120px] rounded-full opacity-[0.04] bg-white" />
 
-        {/* Search */}
-        <div className="relative max-w-lg mx-auto mt-6">
+        <div className="relative px-8 pt-10 pb-8">
+          <div className="max-w-3xl">
+            <p className="text-[12px] font-semibold uppercase tracking-[0.15em] text-white/40 mb-2">Kennisbank</p>
+            <h1 className="font-heading text-[36px] font-bold tracking-tight leading-[1.05] text-white mb-3">
+              Doen<span style={{ color: '#F15025' }}>.</span> is de kracht<br />achter doeners.
+            </h1>
+            <p className="text-[15px] text-white/60 max-w-lg leading-relaxed">
+              Van eerste klantcontact tot factuur. Alles verbonden, niets overbodig. Klik op een stap om te leren hoe het werkt.
+            </p>
+          </div>
+
+          {/* ── Flow spectrum ── */}
+          <div className="mt-8 grid grid-cols-8 gap-0 overflow-x-auto pb-2">
+            {FLOW_STEPS.map((step, idx) => {
+              const StepIcon = step.icon
+              const isLast = idx === FLOW_STEPS.length - 1
+              return (
+                <button
+                  key={step.label}
+                  onClick={() => { setActiveCategory(step.category); setSearch('') }}
+                  className="group flex flex-col items-center text-center relative animate-stagger-item"
+                  style={{ animationDelay: `${idx * 80}ms` }}
+                >
+                  {/* Connector line */}
+                  {!isLast && (
+                    <div className="absolute top-[18px] left-[calc(50%+18px)] h-[2px] right-[-2px]" style={{ backgroundColor: 'rgba(255,255,255,0.12)' }}>
+                      <div
+                        className="h-full rounded-full animate-stagger-item"
+                        style={{ backgroundColor: FLOW_STEPS[idx + 1]?.color || '#fff', opacity: 0.4, animationDelay: `${idx * 80 + 200}ms` }}
+                      />
+                    </div>
+                  )}
+                  {/* Icon circle */}
+                  <div
+                    className="h-9 w-9 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg relative z-10"
+                    style={{ backgroundColor: step.color }}
+                  >
+                    <StepIcon className="h-4 w-4 text-white" />
+                  </div>
+                  {/* Label */}
+                  <span className="text-[11px] font-bold text-white mt-2 whitespace-nowrap">{step.label}</span>
+                  <span className="text-[10px] text-white/40 whitespace-nowrap">{step.desc}</span>
+                  {/* Glow on hover */}
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-9 h-9 rounded-xl opacity-0 group-hover:opacity-30 blur-md transition-opacity" style={{ backgroundColor: step.color }} />
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Search bar ── */}
+      <div className="max-w-5xl mx-auto px-4">
+        <div className="relative max-w-xl mx-auto mb-8">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9B9B95]" />
           <input
             value={search}
             onChange={e => { setSearch(e.target.value); setActiveCategory(null) }}
             placeholder="Zoek op onderwerp..."
-            className="w-full h-12 pl-11 pr-4 text-[14px] rounded-2xl outline-none transition-shadow focus:ring-2 focus:ring-[#1A535C]/20"
-            style={{ backgroundColor: '#FFFFFF', border: '1px solid #EBEBEB', boxShadow: '0 2px 8px rgba(130,100,60,0.06)' }}
+            className="w-full h-11 pl-11 pr-4 text-[14px] rounded-2xl outline-none transition-shadow focus:ring-2 focus:ring-[#1A535C]/20"
+            style={{ backgroundColor: '#FFFFFF', border: '1px solid #EBEBEB', boxShadow: '0 2px 8px rgba(130,100,60,0.04)' }}
           />
         </div>
-      </div>
 
-      {/* Category pills */}
-      <div className="flex items-center gap-2 flex-wrap justify-center mb-8">
-        <button
-          onClick={() => { setActiveCategory(null); setSearch('') }}
-          className={cn(
-            'h-8 px-4 rounded-full text-[12px] font-semibold transition-all',
-            !activeCategory && !search
-              ? 'text-white shadow-sm'
-              : 'hover:bg-[#F4F2EE]'
-          )}
-          style={!activeCategory && !search
-            ? { backgroundColor: '#1A535C' }
-            : { color: '#6B6B66', border: '1px solid #EBEBEB' }
-          }
-        >
-          Alles
-        </button>
-        {CATEGORIES.map(cat => (
+        {/* ── Category pills ── */}
+        <div className="flex items-center gap-2 flex-wrap justify-center mb-8">
           <button
-            key={cat.id}
-            onClick={() => { setActiveCategory(activeCategory === cat.id ? null : cat.id); setSearch('') }}
+            onClick={() => { setActiveCategory(null); setSearch('') }}
             className={cn(
-              'h-8 px-4 rounded-full text-[12px] font-semibold transition-all inline-flex items-center gap-1.5',
-              activeCategory === cat.id
-                ? 'text-white shadow-sm'
-                : 'hover:bg-[#F4F2EE]'
+              'h-8 px-4 rounded-full text-[12px] font-semibold transition-all duration-200',
+              !activeCategory && !search ? 'text-white shadow-sm' : 'hover:bg-[#F4F2EE]'
             )}
-            style={activeCategory === cat.id
-              ? { backgroundColor: cat.color }
-              : { color: '#6B6B66', border: '1px solid #EBEBEB' }
-            }
+            style={!activeCategory && !search ? { backgroundColor: '#1A535C' } : { color: '#6B6B66', border: '1px solid #EBEBEB' }}
           >
-            <cat.icon className="h-3 w-3" />
-            {cat.label}
+            Alles
           </button>
-        ))}
-      </div>
-
-      {/* Results count */}
-      {(search || activeCategory) && (
-        <p className="text-[12px] font-mono mb-4" style={{ color: '#9B9B95' }}>
-          {filtered.length} {filtered.length === 1 ? 'artikel' : 'artikelen'}
-          {search && <> voor "{search}"</>}
-          {activeCategory && !search && <> in {CATEGORIES.find(c => c.id === activeCategory)?.label}</>}
-        </p>
-      )}
-
-      {/* Articles grid */}
-      {filtered.length === 0 ? (
-        <div className="text-center py-16">
-          <Search className="h-8 w-8 mx-auto mb-3 opacity-20" style={{ color: '#9B9B95' }} />
-          <p className="text-[14px] font-medium" style={{ color: '#6B6B66' }}>Geen artikelen gevonden</p>
-          <button onClick={() => { setSearch(''); setActiveCategory(null) }} className="text-[13px] font-medium mt-2" style={{ color: '#F15025' }}>
-            Toon alles
-          </button>
+          {CATEGORIES.map(cat => (
+            <button
+              key={cat.id}
+              onClick={() => { setActiveCategory(activeCategory === cat.id ? null : cat.id); setSearch('') }}
+              className={cn(
+                'h-8 px-4 rounded-full text-[12px] font-semibold transition-all duration-200 inline-flex items-center gap-1.5',
+                activeCategory === cat.id ? 'text-white shadow-sm' : 'hover:bg-[#F4F2EE]'
+              )}
+              style={activeCategory === cat.id ? { backgroundColor: cat.color } : { color: '#6B6B66', border: '1px solid #EBEBEB' }}
+            >
+              <cat.icon className="h-3 w-3" />
+              {cat.label}
+            </button>
+          ))}
         </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((article, idx) => {
-            const cat = CATEGORIES.find(c => c.id === article.category)
-            return (
-              <button
-                key={article.id}
-                onClick={() => setActiveArticle(article)}
-                className="group text-left bg-white rounded-2xl p-5 transition-all duration-300 hover:-translate-y-[3px] hover:shadow-[0_8px_30px_rgba(130,100,60,0.12)] animate-stagger-item"
-                style={{ border: '1px solid #EBEBEB', animationDelay: `${idx * 40}ms` }}
-              >
-                {/* Icon + category */}
-                <div className="flex items-center gap-2 mb-3">
-                  <div
-                    className="h-8 w-8 rounded-xl flex items-center justify-center transition-transform duration-200 group-hover:scale-110"
-                    style={{ backgroundColor: (cat?.color || '#1A535C') + '12' }}
-                  >
-                    <article.icon className="h-4 w-4" style={{ color: cat?.color || '#1A535C' }} />
+
+        {/* Results count */}
+        {(search || activeCategory) && (
+          <p className="text-[12px] font-mono mb-4" style={{ color: '#9B9B95' }}>
+            {filtered.length} {filtered.length === 1 ? 'artikel' : 'artikelen'}
+            {search && <> voor &ldquo;{search}&rdquo;</>}
+            {activeCategory && !search && <> in {CATEGORIES.find(c => c.id === activeCategory)?.label}</>}
+          </p>
+        )}
+
+        {/* ── Articles grid ── */}
+        {filtered.length === 0 ? (
+          <div className="text-center py-16">
+            <Search className="h-8 w-8 mx-auto mb-3 opacity-20" style={{ color: '#9B9B95' }} />
+            <p className="text-[14px] font-medium" style={{ color: '#6B6B66' }}>Geen artikelen gevonden</p>
+            <button onClick={() => { setSearch(''); setActiveCategory(null) }} className="text-[13px] font-medium mt-2" style={{ color: '#F15025' }}>
+              Toon alles
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filtered.map((article, idx) => {
+              const cat = CATEGORIES.find(c => c.id === article.category)
+              return (
+                <button
+                  key={article.id}
+                  onClick={() => setActiveArticle(article)}
+                  className="group text-left bg-white rounded-2xl p-5 transition-all duration-300 hover:-translate-y-[3px] hover:shadow-[0_8px_30px_rgba(130,100,60,0.12)] animate-stagger-item"
+                  style={{ border: '1px solid #EBEBEB', animationDelay: `${idx * 40}ms` }}
+                >
+                  <div className="flex items-center gap-2 mb-3">
+                    <div
+                      className="h-8 w-8 rounded-xl flex items-center justify-center transition-transform duration-200 group-hover:scale-110"
+                      style={{ backgroundColor: (cat?.color || '#1A535C') + '12' }}
+                    >
+                      <article.icon className="h-4 w-4" style={{ color: cat?.color || '#1A535C' }} />
+                    </div>
+                    {cat && (
+                      <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: cat.color }}>
+                        {cat.label}
+                      </span>
+                    )}
                   </div>
-                  {cat && (
-                    <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: cat.color }}>
-                      {cat.label}
-                    </span>
-                  )}
-                </div>
+                  <h3 className="text-[14px] font-bold leading-snug mb-1 group-hover:text-[#1A535C] transition-colors" style={{ color: '#1A1A1A' }}>
+                    {article.titel}
+                  </h3>
+                  <p className="text-[12px] leading-relaxed line-clamp-2" style={{ color: '#9B9B95' }}>
+                    {article.subtitel}
+                  </p>
+                  <div className="mt-3 flex items-center gap-1 text-[11px] font-semibold opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: '#1A535C' }}>
+                    Lees meer <ChevronRight className="h-3 w-3" />
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        )}
 
-                {/* Title */}
-                <h3 className="text-[14px] font-bold leading-snug mb-1 group-hover:text-[#1A535C] transition-colors" style={{ color: '#1A1A1A' }}>
-                  {article.titel}
-                </h3>
-                <p className="text-[12px] leading-relaxed line-clamp-2" style={{ color: '#9B9B95' }}>
-                  {article.subtitel}
-                </p>
-
-                {/* Arrow */}
-                <div className="mt-3 flex items-center gap-1 text-[11px] font-semibold opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: '#1A535C' }}>
-                  Lees meer <ChevronRight className="h-3 w-3" />
-                </div>
-              </button>
-            )
-          })}
+        {/* Footer */}
+        <div className="text-center mt-16 pb-8">
+          <p className="text-[13px] font-medium" style={{ color: '#9B9B95' }}>
+            Doen<span style={{ color: '#F15025' }}>.</span> — De onderliggende kracht voor doeners
+          </p>
         </div>
-      )}
-
-      {/* Footer */}
-      <div className="text-center mt-16 pb-8">
-        <p className="text-[12px]" style={{ color: '#9B9B95' }}>
-          Doen<span style={{ color: '#F15025' }}>.</span> — Gebouwd voor creatieve maakbedrijven sinds 1983
-        </p>
       </div>
     </div>
   )
