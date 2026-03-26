@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FileText, Download, Loader2, Eye, X } from 'lucide-react'
+import { FileText, Download, Loader2, Eye } from 'lucide-react'
 
 interface PortaalFeedItemTekeningProps {
   item: {
@@ -54,7 +54,6 @@ export function PortaalFeedItemTekening({
 }: PortaalFeedItemTekeningProps) {
   const [loading, setLoading] = useState(false)
   const [confirmAction, setConfirmAction] = useState<'goedkeuren' | 'revisie' | null>(null)
-  const [pdfViewUrl, setPdfViewUrl] = useState<string | null>(null)
   const isAfgehandeld = ['goedgekeurd', 'revisie'].includes(item.status)
   const images = (item.bestanden || []).filter(b => b.mime_type?.startsWith('image/'))
   const pdfFiles = (item.bestanden || []).filter(b => b.mime_type === 'application/pdf' || b.bestandsnaam?.toLowerCase().endsWith('.pdf'))
@@ -146,38 +145,25 @@ export function PortaalFeedItemTekening({
                         {formatFileSize(f.grootte)}
                       </span>
                     )}
-                    <button
-                      onClick={() => setPdfViewUrl(pdfViewUrl === f.url ? null : f.url)}
-                      className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors hover:opacity-80"
-                      style={{ backgroundColor: '#1A535C', color: '#fff' }}
-                    >
-                      <Eye className="w-3 h-3" />
-                      Bekijk
-                    </button>
                     <a
                       href={f.url}
                       target="_blank"
                       rel="noopener noreferrer"
+                      className="flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-colors hover:opacity-80 no-underline"
+                      style={{ backgroundColor: '#1A535C', color: '#fff' }}
+                    >
+                      <Eye className="w-3 h-3" />
+                      Bekijk
+                    </a>
+                    <a
+                      href={f.url}
+                      download={f.bestandsnaam}
                       className="p-1 rounded hover:bg-gray-200 transition-colors"
                       title="Download"
                     >
                       <Download className="w-3.5 h-3.5" style={{ color: '#A0A098' }} />
                     </a>
                   </div>
-                  {pdfViewUrl === f.url && (
-                    <div className="mt-2 rounded-lg overflow-hidden" style={{ border: '0.5px solid #E8E6E1' }}>
-                      <div className="flex items-center justify-between px-3 py-1.5" style={{ backgroundColor: '#F5F5F0' }}>
-                        <span className="text-xs" style={{ color: '#5A5A55' }}>{f.bestandsnaam}</span>
-                        <button onClick={() => setPdfViewUrl(null)} className="hover:opacity-60"><X className="w-3.5 h-3.5" style={{ color: '#A0A098' }} /></button>
-                      </div>
-                      <iframe
-                        src={f.url}
-                        className="w-full border-0"
-                        style={{ height: 500 }}
-                        title={f.bestandsnaam}
-                      />
-                    </div>
-                  )}
                 </div>
               ))}
             </div>
