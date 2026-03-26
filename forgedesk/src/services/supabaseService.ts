@@ -5527,8 +5527,11 @@ export async function getPortaalItems(portaalId: string, alleenZichtbaar = false
     // RPC functie (SECURITY DEFINER) omzeilt RLS op portaal_reacties/bestanden
     try {
       const { data: rpcData, error: rpcError } = await supabase.rpc('get_my_portaal_items', { p_portaal_id: portaalId })
+      console.log('[getPortaalItems] RPC result:', { rpcError: rpcError?.message, dataType: typeof rpcData, isArray: Array.isArray(rpcData), length: Array.isArray(rpcData) ? rpcData.length : 'n/a', raw: rpcData })
       if (!rpcError && rpcData) {
-        const items = (Array.isArray(rpcData) ? rpcData : []) as Record<string, unknown>[]
+        const parsed = typeof rpcData === 'string' ? JSON.parse(rpcData) : rpcData
+        const items = (Array.isArray(parsed) ? parsed : []) as Record<string, unknown>[]
+        console.log('[getPortaalItems] items met reacties:', items.map(i => ({ titel: i.titel, reacties: i.reacties })))
         let result = items.map((item) => ({
           ...item,
           bestanden: (item.bestanden || []) as PortaalBestand[],
@@ -5537,10 +5540,11 @@ export async function getPortaalItems(portaalId: string, alleenZichtbaar = false
         if (alleenZichtbaar) result = result.filter(i => i.zichtbaar_voor_klant)
         return result
       }
-    } catch {
-      // Fallback naar directe query
+      console.warn('[getPortaalItems] RPC failed or no data, falling back to direct query')
+    } catch (rpcErr) {
+      console.warn('[getPortaalItems] RPC exception:', rpcErr)
     }
-    // Fallback: directe query
+    // Fallback: directe query (RLS kan reacties blokkeren)
     let query = supabase
       .from('portaal_items')
       .select('*, portaal_bestanden(*), portaal_reacties(*)')
@@ -5548,6 +5552,7 @@ export async function getPortaalItems(portaalId: string, alleenZichtbaar = false
       .order('created_at', { ascending: false })
     if (alleenZichtbaar) query = query.eq('zichtbaar_voor_klant', true)
     const { data, error } = await query
+    console.log('[getPortaalItems] fallback result:', { error: error?.message, items: data?.length, reactiesPerItem: (data || []).map((i: Record<string, unknown>) => ({ titel: i.titel, reacties: (i.portaal_reacties as unknown[] || []).length })) })
     if (error) throw error
     return (data || []).map((item: Record<string, unknown>) => ({
       ...item,
