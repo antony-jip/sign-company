@@ -540,6 +540,19 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
         </div>
       )}
 
+      {/* DEBUG: reacties per item — verwijder na testen */}
+      <div className="text-xs bg-yellow-50 border border-yellow-200 rounded p-2 mb-2">
+        <strong>DEBUG reacties:</strong>
+        {items.map(i => (
+          <div key={i.id}>
+            {i.titel || i.bericht_tekst?.slice(0, 30) || '(geen titel)'}: <strong>{(i.reacties || []).length} reacties</strong>
+            {(i.reacties || []).map(r => (
+              <span key={r.id} className="ml-2 text-green-700">[{r.type}: {r.bericht?.slice(0, 20) || '(leeg)'}]</span>
+            ))}
+          </div>
+        ))}
+      </div>
+
       {/* Feed */}
       <PortaalFeed
         items={items}

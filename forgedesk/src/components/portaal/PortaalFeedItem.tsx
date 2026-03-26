@@ -53,8 +53,6 @@ export function PortaalFeedItem({
 }: PortaalFeedItemProps) {
   const [showReactieForm, setShowReactieForm] = useState(false)
 
-  console.log('[FeedItem]', item.titel || item.bericht_tekst?.slice(0, 20), 'reacties:', item.reacties)
-
   // Skip internal notes in public view
   if (isPublic && item.bericht_type === 'notitie_intern') return null
 
