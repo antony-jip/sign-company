@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
-import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
@@ -10,15 +9,22 @@ import {
   Loader2,
   ExternalLink,
   AlertTriangle,
+  Users,
+  Plus,
+  ArrowRight,
 } from 'lucide-react'
 
 const FEATURES = [
   'Onbeperkt klanten en projecten',
-  'Offertes en facturen',
-  'Werkbonnen en planning',
+  'Offertes, facturen en werkbonnen',
+  'Montageplanning met drag-and-drop',
+  'Klantportaal',
+  'Email integratie',
   'AI-assistent Daan',
+  'Geen opzetkosten',
   'Geen verborgen kosten',
   'Maandelijks opzegbaar',
+  'Eenvoudig data overzetten',
 ]
 
 export function AbonnementTab() {
@@ -27,7 +33,6 @@ export function AbonnementTab() {
   const [isLoading, setIsLoading] = useState(false)
   const [loadingAction, setLoadingAction] = useState<'activate' | 'portal' | null>(null)
 
-  // Handle return from Stripe
   useEffect(() => {
     const result = searchParams.get('abonnement')
     if (result === 'success') {
@@ -56,9 +61,7 @@ export function AbonnementTab() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Er ging iets mis')
-      if (data.url) {
-        window.location.href = data.url
-      }
+      if (data.url) window.location.href = data.url
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : 'Kon abonnement niet starten')
     } finally {
@@ -82,9 +85,7 @@ export function AbonnementTab() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Er ging iets mis')
-      if (data.url) {
-        window.location.href = data.url
-      }
+      if (data.url) window.location.href = data.url
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : 'Kon portaal niet openen')
     } finally {
@@ -93,110 +94,119 @@ export function AbonnementTab() {
     }
   }
 
+  const isActive = trialStatus === 'actief'
+  const isExpired = trialStatus === 'verlopen' || trialStatus === 'opgezegd'
+
   return (
-    <div className="space-y-6">
-      {/* Page header */}
+    <div className="space-y-8">
+      {/* Header */}
       <div>
-        <h2 className="text-[20px] font-bold tracking-[-0.03em] text-foreground font-display">Abonnement</h2>
-        <p className="text-[13px] text-muted-foreground">Plan, facturatie en gebruikslimieten</p>
+        <h2 className="text-[20px] font-bold tracking-tight" style={{ color: '#1A1A1A' }}>Abonnement</h2>
+        <p className="text-[13px]" style={{ color: '#9B9B95' }}>Plan, facturatie en gebruikers</p>
       </div>
 
-      {/* Status card */}
-      {trialStatus === 'actief' ? (
-        <Card className="rounded-xl overflow-hidden border-border/50">
-          {/* Spectrum gradient strip */}
-          <div className="h-1" style={{ background: 'linear-gradient(90deg, #F15025, #1A535C)' }} />
-          <CardContent className="pt-6 space-y-4">
+      {/* Status banner */}
+      {isActive && (
+        <div className="flex items-center justify-between rounded-xl p-5" style={{ backgroundColor: '#E2F0F0', border: '1px solid #C0DDDD' }}>
+          <div className="flex items-center gap-3">
+            <Check className="h-5 w-5" style={{ color: '#1A535C' }} />
             <div>
-              <h3 className="text-[18px] font-bold font-display tracking-[-0.03em]">Doen. Pro</h3>
-              <div className="flex items-baseline gap-1 mt-1">
-                <span className="text-[24px] font-bold font-mono tabular-nums">EUR 49</span>
-                <span className="text-[13px] text-muted-foreground">/ maand</span>
-              </div>
-              <p className="text-[12px] text-[#A0A098] mt-1">Gewoon doen.</p>
+              <span className="text-[14px] font-bold" style={{ color: '#1A535C' }}>Doen. Pro actief</span>
+              <p className="text-[12px]" style={{ color: '#1A535C', opacity: 0.6 }}>Je hebt volledige toegang tot alle features.</p>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-[13px] text-muted-foreground">Status:</span>
-              <Badge className="bg-[#1A535C]/10 text-[#1A535C] border-[#1A535C]/20 dark:bg-[#2A7A86]/20 dark:text-[#2A7A86]">
-                Actief
-              </Badge>
-            </div>
-            <Button
-              onClick={handleManage}
-              disabled={isLoading}
-              variant="outline"
-              className="border-[#E6E4E0]"
-            >
-              {loadingAction === 'portal' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ExternalLink className="mr-2 h-4 w-4" />}
-              Abonnement beheren
-            </Button>
-          </CardContent>
-        </Card>
-      ) : trialStatus === 'verlopen' || trialStatus === 'opgezegd' ? (
-        <Card className="border-[#F15025]/20 dark:border-[#F15025]/30 rounded-xl overflow-hidden">
-          <div className="h-1" style={{ background: 'linear-gradient(90deg, #F15025, #1A535C)' }} />
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2 mb-2">
-              <AlertTriangle className="w-5 h-5 text-[#F15025]" />
-              <h3 className="text-[18px] font-bold font-display tracking-[-0.03em] text-[#F15025]">
-                {trialStatus === 'verlopen'
-                  ? 'Je proefperiode is verlopen'
-                  : 'Je abonnement is opgezegd'}
-              </h3>
-            </div>
-            <p className="text-[13px] text-muted-foreground">
-              Je data staat veilig — activeer een abonnement om verder te werken.
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card className="rounded-xl overflow-hidden border-border/50">
-          <div className="h-1" style={{ background: 'linear-gradient(90deg, #F15025, #1A535C)' }} />
-          <CardContent className="pt-6">
-            <h3 className="text-[18px] font-bold font-display tracking-[-0.03em]">Proefperiode</h3>
-            <p className="text-[13px] text-muted-foreground mt-1">
-              Je gebruikt momenteel de gratis proefperiode.
-              Nog <strong className="font-mono">{trialDagenOver} dagen</strong> resterend.
-            </p>
-          </CardContent>
-        </Card>
+          </div>
+          <Button onClick={handleManage} disabled={isLoading} variant="outline" className="border-[#1A535C]/20 text-[#1A535C]">
+            {loadingAction === 'portal' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ExternalLink className="mr-2 h-4 w-4" />}
+            Beheren
+          </Button>
+        </div>
       )}
 
-      {/* Plan card (toon bij trial, verlopen of opgezegd) */}
-      {trialStatus !== 'actief' && (
-        <Card className="rounded-xl overflow-hidden border-border/50">
-          <div className="h-1" style={{ background: 'linear-gradient(90deg, #F15025, #1A535C)' }} />
-          <CardContent className="pt-6 space-y-5">
-            <div>
-              <h3 className="text-[18px] font-bold font-display tracking-[-0.03em]">Doen. Pro</h3>
-              <div className="flex items-baseline gap-1 mt-1">
-                <span className="text-[24px] font-bold font-mono tabular-nums">EUR 49</span>
-                <span className="text-[13px] text-muted-foreground">/ maand</span>
-              </div>
-              <p className="text-[12px] text-[#A0A098] mt-2">Gewoon doen.</p>
-            </div>
-            <ul className="space-y-2">
-              {FEATURES.map((feature) => (
-                <li key={feature} className="flex items-center gap-2 text-[13px]">
-                  <Check className="w-4 h-4 text-[#1A535C] dark:text-[#2A7A86] flex-shrink-0" />
-                  {feature}
-                </li>
-              ))}
-            </ul>
-            <Button
-              onClick={handleActivate}
-              disabled={isLoading}
-              size="lg"
-              className="w-full sm:w-auto bg-[#1A535C] hover:bg-[#1A535C]/90 text-white"
-            >
-              {loadingAction === 'activate' ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : null}
-              Abonnement activeren
-            </Button>
-          </CardContent>
-        </Card>
+      {isExpired && (
+        <div className="flex items-center gap-3 rounded-xl p-5" style={{ backgroundColor: '#FDE8E2', border: '1px solid #F0C8BC' }}>
+          <AlertTriangle className="h-5 w-5 flex-shrink-0" style={{ color: '#C03A18' }} />
+          <div>
+            <span className="text-[14px] font-bold" style={{ color: '#C03A18' }}>
+              {trialStatus === 'verlopen' ? 'Je proefperiode is verlopen' : 'Je abonnement is opgezegd'}
+            </span>
+            <p className="text-[12px]" style={{ color: '#C03A18', opacity: 0.7 }}>Je data staat veilig. Activeer een abonnement om verder te werken.</p>
+          </div>
+        </div>
       )}
+
+      {!isActive && !isExpired && trialDagenOver !== undefined && (
+        <div className="flex items-center gap-3 rounded-xl p-5" style={{ backgroundColor: '#F5F2E8', border: '1px solid #E5DCC8' }}>
+          <div className="text-[24px] font-bold font-mono" style={{ color: '#8A7A4A' }}>{trialDagenOver}</div>
+          <div>
+            <span className="text-[14px] font-bold" style={{ color: '#8A7A4A' }}>dagen proefperiode over</span>
+            <p className="text-[12px]" style={{ color: '#8A7A4A', opacity: 0.7 }}>Alle features beschikbaar, geen beperkingen.</p>
+          </div>
+        </div>
+      )}
+
+      {/* Pricing card */}
+      <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid #E6E4E0' }}>
+        <div className="h-1.5" style={{ background: 'linear-gradient(90deg, #F15025, #1A535C)' }} />
+        <div className="p-8">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-8">
+            {/* Left: pricing */}
+            <div>
+              <h3 className="font-heading text-[22px] font-bold tracking-tight" style={{ color: '#1A1A1A' }}>
+                Doen<span style={{ color: '#F15025' }}>.</span> Pro
+              </h3>
+
+              <div className="flex items-baseline gap-1.5 mt-3">
+                <span className="text-[42px] font-bold font-mono tracking-tight" style={{ color: '#1A1A1A' }}>€49</span>
+                <span className="text-[15px]" style={{ color: '#9B9B95' }}>/ maand</span>
+              </div>
+
+              <div className="flex items-center gap-2 mt-2 rounded-lg px-3 py-2" style={{ backgroundColor: '#F8F7F5' }}>
+                <Users className="h-4 w-4" style={{ color: '#1A535C' }} />
+                <span className="text-[13px] font-medium" style={{ color: '#1A1A1A' }}>
+                  <strong>3 gebruikers</strong> inbegrepen
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2 mt-2 rounded-lg px-3 py-2" style={{ backgroundColor: '#F8F7F5' }}>
+                <Plus className="h-4 w-4" style={{ color: '#1A535C' }} />
+                <span className="text-[13px] font-medium" style={{ color: '#1A1A1A' }}>
+                  Extra gebruiker <strong>€10/maand</strong>
+                </span>
+              </div>
+
+              <p className="text-[13px] mt-4" style={{ color: '#9B9B95' }}>
+                Geen opzetkosten. Maandelijks opzegbaar. Eenvoudig data overzetten.
+              </p>
+
+              {!isActive && (
+                <button
+                  onClick={handleActivate}
+                  disabled={isLoading}
+                  className="mt-6 h-12 px-8 text-[15px] font-bold text-white rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 inline-flex items-center gap-2"
+                  style={{ backgroundColor: '#F15025' }}
+                >
+                  {loadingAction === 'activate' && <Loader2 className="h-4 w-4 animate-spin" />}
+                  Abonnement activeren
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+
+            {/* Right: features */}
+            <div className="flex-shrink-0 md:w-[300px]">
+              <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: '#9B9B95' }}>Wat je krijgt</p>
+              <ul className="space-y-2.5">
+                {FEATURES.map(f => (
+                  <li key={f} className="flex items-center gap-2.5 text-[13px]" style={{ color: '#1A1A1A' }}>
+                    <Check className="h-4 w-4 flex-shrink-0" style={{ color: '#1A535C' }} />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
