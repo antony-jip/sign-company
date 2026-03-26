@@ -58,6 +58,11 @@ function AfzenderLabel({ item }: { item: PortaalItem }) {
         {isKlant ? <span className="font-medium text-[#1A1A1A]">{naam}</span> : naam}
         {' '}· {relativeDate(item.created_at)} {formatTime(item.created_at)}
       </span>
+      {!isKlant && item.bekeken_op && (
+        <span className="text-[10px] font-mono text-[#3A7D52] ml-auto">
+          ✓ Bekeken
+        </span>
+      )}
     </div>
   )
 }

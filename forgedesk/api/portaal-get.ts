@@ -132,6 +132,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .order('created_at', { ascending: true }),
     ])
 
+    // Markeer onbekeken items als bekeken + maak notificatie
+    const onbekekenItems = (items || []).filter((i: Record<string, unknown>) => !i.bekeken_op)
+    if (onbekekenItems.length > 0) {
+      const nu = new Date().toISOString()
+      const onbekekenIds = onbekekenItems.map((i: Record<string, unknown>) => i.id as string)
+      await supabaseAdmin
+        .from('portaal_items')
+        .update({ bekeken_op: nu })
+        .in('id', onbekekenIds)
+
+      // Stuur 1 notificatie als er items bekeken worden (niet per item)
+      await supabaseAdmin.from('notificaties').insert({
+        user_id: portaal.user_id,
+        type: 'portaal_bekeken',
+        titel: 'Klant heeft portaal bekeken',
+        bericht: `${onbekekenItems.length} item${onbekekenItems.length !== 1 ? 's' : ''} bekeken`,
+        link: `/projecten/${portaal.project_id}`,
+        project_id: portaal.project_id,
+        gelezen: false,
+      }).then(() => {}, () => {}) // fire-and-forget
+    }
+
     // Haal publiek_tokens op voor gekoppelde offertes
     const offerteIds = (items || [])
       .filter((i: Record<string, unknown>) => i.offerte_id)

@@ -699,7 +699,16 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
                       </div>
                     )}
 
-                    <div className="mt-2.5 text-right">
+                    <div className="mt-2.5 flex items-center justify-between">
+                      {item.bekeken_op ? (
+                        <span className="text-[10px] font-mono" style={{ color: '#3A7D52' }}>
+                          ✓ Bekeken {formatTime(item.bekeken_op)}
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-mono" style={{ color: '#9B9B95' }}>
+                          Nog niet bekeken
+                        </span>
+                      )}
                       <span className="text-[10px]" style={{ color: '#9B9B95', fontFamily: "'DM Mono', monospace" }}>
                         {formatTime(item.created_at)}
                       </span>
