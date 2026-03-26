@@ -93,7 +93,7 @@ export function PortaalFeedItemOfferte({
             <div className="min-w-0">
               <p
                 className="font-semibold truncate"
-                style={{ fontSize: 15, color: '#191919', fontFamily: "'IBM Plex Sans', sans-serif" }}
+                style={{ fontSize: 15, color: '#1A1A1A', fontFamily: "'DM Sans', sans-serif" }}
               >
                 {item.titel}
               </p>
@@ -180,7 +180,7 @@ export function PortaalFeedItemOfferte({
                 <button
                   onClick={() => setConfirmOpen(false)}
                   disabled={loading}
-                  className="px-3 py-2 rounded-lg text-sm transition-colors hover:bg-gray-50"
+                  className="px-3 py-2 rounded-lg text-sm transition-colors hover:bg-[#F8F7F5]"
                   style={{ color: '#5A5A55' }}
                 >
                   Annuleren
@@ -197,7 +197,7 @@ export function PortaalFeedItemOfferte({
                 </button>
                 <button
                   onClick={onVragenStellen}
-                  className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-gray-100"
+                  className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-[#F4F2EE]"
                   style={{ backgroundColor: '#FAF9F7', border: '0.5px solid #E8E6E1', color: '#5A5A55' }}
                 >
                   Vragen stellen

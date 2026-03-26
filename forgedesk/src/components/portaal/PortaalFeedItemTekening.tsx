@@ -158,7 +158,7 @@ export function PortaalFeedItemTekening({
                     <a
                       href={f.url}
                       download={f.bestandsnaam}
-                      className="p-1 rounded hover:bg-gray-200 transition-colors"
+                      className="p-1 rounded hover:bg-[#F4F2EE] transition-colors"
                       title="Download"
                     >
                       <Download className="w-3.5 h-3.5" style={{ color: '#A0A098' }} />
@@ -178,7 +178,7 @@ export function PortaalFeedItemTekening({
                   href={f.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 py-1.5 px-2 rounded-md hover:bg-gray-50 transition-colors"
+                  className="flex items-center gap-2 py-1.5 px-2 rounded-md hover:bg-[#F8F7F5] transition-colors"
                   style={{ fontSize: 13, color: '#1A535C' }}
                 >
                   <FileText className="w-3.5 h-3.5 flex-shrink-0" />
@@ -217,7 +217,7 @@ export function PortaalFeedItemTekening({
                 <button
                   onClick={() => setConfirmAction(null)}
                   disabled={loading}
-                  className="px-3 py-2 rounded-lg text-sm hover:bg-gray-50"
+                  className="px-3 py-2 rounded-lg text-sm hover:bg-[#F8F7F5]"
                   style={{ color: '#5A5A55' }}
                 >
                   Annuleren
@@ -237,7 +237,7 @@ export function PortaalFeedItemTekening({
                     setConfirmAction('revisie')
                     onVragenStellen()
                   }}
-                  className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-100"
+                  className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#F4F2EE]"
                   style={{ backgroundColor: '#FAF9F7', border: '0.5px solid #E8E6E1', color: '#5A5A55' }}
                 >
                   Revisie

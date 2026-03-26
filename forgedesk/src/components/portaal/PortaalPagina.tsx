@@ -202,7 +202,7 @@ export function PortaalPagina() {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#FAF9F7] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+        <Loader2 className="w-8 h-8 animate-spin text-[#9B9B95]" />
       </div>
     )
   }
@@ -211,8 +211,8 @@ export function PortaalPagina() {
     return (
       <div className="min-h-screen bg-[#FAF9F7] flex items-center justify-center p-4">
         <div className="text-center space-y-4">
-          <AlertCircle className="w-12 h-12 text-gray-400 mx-auto" />
-          <p className="text-gray-600">{error || 'Portaal niet gevonden'}</p>
+          <AlertCircle className="w-12 h-12 text-[#9B9B95] mx-auto" />
+          <p className="text-[#6B6B66]">{error || 'Portaal niet gevonden'}</p>
         </div>
       </div>
     )
@@ -252,8 +252,8 @@ export function PortaalPagina() {
     return (
       <div className="min-h-screen bg-[#FAF9F7] flex items-center justify-center p-4">
         <div className="text-center space-y-4">
-          <AlertCircle className="w-12 h-12 text-gray-400 mx-auto" />
-          <p className="text-gray-600">Portaal kon niet geladen worden</p>
+          <AlertCircle className="w-12 h-12 text-[#9B9B95] mx-auto" />
+          <p className="text-[#6B6B66]">Portaal kon niet geladen worden</p>
         </div>
       </div>
     )
