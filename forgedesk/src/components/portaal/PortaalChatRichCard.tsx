@@ -13,7 +13,8 @@ import {
   Download,
 } from 'lucide-react'
 import { getStatusBadgeClass } from '@/utils/statusColors'
-import type { PortaalItem, PortaalReactie } from '@/types'
+import type { PortaalItem } from '@/types'
+import { PortaalKlantReactie } from './PortaalKlantReactie'
 
 interface PortaalChatRichCardProps {
   item: PortaalItem
@@ -40,17 +41,6 @@ const TYPE_ICONS: Record<string, typeof FileText> = {
   bericht: MessageSquare,
 }
 
-const REACTION_COLORS: Record<string, string> = {
-  goedkeuring: 'bg-[#E4F0EA] text-[#2D6B48] border-[#C0DBCC]',
-  revisie: 'bg-[#FDE8E2] text-[#C03A18] border-[#F5C4B4]',
-  bericht: 'bg-gray-50 text-gray-700 border-gray-200',
-}
-
-const REACTION_ICONS: Record<string, typeof CheckCircle2> = {
-  goedkeuring: CheckCircle2,
-  revisie: RotateCcw,
-  bericht: MessageSquare,
-}
 
 function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(amount)
@@ -68,25 +58,6 @@ function isImageFile(mimeType?: string, filename?: string): boolean {
     return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'].includes(ext || '')
   }
   return false
-}
-
-function ReactionBubble({ reactie }: { reactie: PortaalReactie }) {
-  const Icon = REACTION_ICONS[reactie.type] || MessageSquare
-  const colorClass = REACTION_COLORS[reactie.type] || REACTION_COLORS.bericht
-
-  return (
-    <div className={`inline-flex items-start gap-2 rounded-lg border px-3 py-2 text-xs ${colorClass}`}>
-      <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-      <div>
-        {reactie.bericht && <p className="whitespace-pre-wrap">{reactie.bericht}</p>}
-        <div className="mt-1 flex items-center gap-1 opacity-70">
-          {reactie.klant_naam && <span>{reactie.klant_naam}</span>}
-          <span>&middot;</span>
-          <span>{formatTime(reactie.created_at)}</span>
-        </div>
-      </div>
-    </div>
-  )
 }
 
 // Check if item has been approved or revisied
@@ -317,9 +288,17 @@ export function PortaalChatRichCard({
 
       {/* Reactions below the card */}
       {item.reacties && item.reacties.length > 0 && (
-        <div className="mt-2 flex flex-col gap-1.5">
+        <div className="mt-2 flex flex-col gap-2">
           {item.reacties.map((r) => (
-            <ReactionBubble key={r.id} reactie={r} />
+            <PortaalKlantReactie
+              key={r.id}
+              type={r.type}
+              bericht={r.bericht}
+              klantNaam={r.klant_naam}
+              fotoUrl={r.foto_url}
+              createdAt={r.created_at}
+              onImageClick={onImageClick}
+            />
           ))}
         </div>
       )}
