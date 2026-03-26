@@ -69,6 +69,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: 'Kon items niet ophalen' })
     }
 
+    // Debug: log reacties per item
+    console.log('[portaal-items-get]', {
+      portaalId,
+      itemCount: items?.length || 0,
+      reactiesPerItem: (items || []).map((i: Record<string, unknown>) => ({
+        id: i.id,
+        titel: i.titel,
+        reacties: Array.isArray(i.portaal_reacties) ? (i.portaal_reacties as unknown[]).length : i.portaal_reacties,
+      })),
+    })
+
     // Resolve offerte_publiek_token for offerte items
     const offerteIds = (items || [])
       .filter((i: Record<string, unknown>) => i.type === 'offerte' && i.offerte_id)
