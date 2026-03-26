@@ -145,7 +145,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .in('id', offerteIds)
       if (offertes) {
         for (const o of offertes) {
-          if (o.publiek_token) offerteTokenMap[o.id] = o.publiek_token
+          if (o.publiek_token) {
+            offerteTokenMap[o.id] = o.publiek_token
+          } else {
+            // Auto-generate publiek_token for offertes without one
+            const newToken = crypto.randomUUID()
+            await supabaseAdmin
+              .from('offertes')
+              .update({ publiek_token: newToken })
+              .eq('id', o.id)
+            offerteTokenMap[o.id] = newToken
+          }
         }
       }
     }
