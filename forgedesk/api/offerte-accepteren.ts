@@ -119,17 +119,57 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     await supabaseAdmin.from('offertes').update(updateData).eq('id', offerte.id)
 
-    // Maak notificatie aan
-    await supabaseAdmin.from('notificaties').insert({
-      id: crypto.randomUUID(),
-      user_id: offerte.user_id,
-      type: 'offerte_geaccepteerd',
-      titel: 'Offerte geaccepteerd',
-      bericht: `${naam.trim()} heeft offerte ${offerte.nummer} geaccepteerd`,
-      link: `/offertes/${offerte.id}/detail`,
-      gelezen: false,
-      created_at: nu,
-    })
+    // Update gekoppeld portaal item + maak reactie aan
+    const { data: portaalItems } = await supabaseAdmin
+      .from('portaal_items')
+      .select('id, portaal_id')
+      .eq('offerte_id', offerte.id)
+    if (portaalItems && portaalItems.length > 0) {
+      for (const pi of portaalItems) {
+        await supabaseAdmin
+          .from('portaal_items')
+          .update({ status: 'goedgekeurd', updated_at: nu })
+          .eq('id', pi.id)
+        await supabaseAdmin
+          .from('portaal_reacties')
+          .insert({
+            portaal_item_id: pi.id,
+            type: 'goedkeuring',
+            klant_naam: naam.trim(),
+            bericht: null,
+          })
+      }
+    }
+
+    // Maak notificaties aan — offerte + portaal
+    const projectId = portaalItems?.[0]
+      ? (await supabaseAdmin.from('portaal_items').select('project_id').eq('id', portaalItems[0].id).single()).data?.project_id
+      : null
+
+    await supabaseAdmin.from('notificaties').insert([
+      {
+        id: crypto.randomUUID(),
+        user_id: offerte.user_id,
+        type: 'offerte_geaccepteerd',
+        titel: 'Offerte geaccepteerd',
+        bericht: `${naam.trim()} heeft offerte ${offerte.nummer} geaccepteerd`,
+        link: `/offertes/${offerte.id}/detail`,
+        gelezen: false,
+        created_at: nu,
+      },
+      ...(projectId ? [{
+        id: crypto.randomUUID(),
+        user_id: offerte.user_id,
+        type: 'portaal_goedkeuring' as const,
+        titel: `${naam.trim()} heeft goedgekeurd`,
+        bericht: `${offerte.titel || offerte.nummer}`,
+        link: `/projecten/${projectId}`,
+        project_id: projectId,
+        actie_genomen: false,
+        gelezen: false,
+        created_at: nu,
+      }] : []),
+    ])
 
     // Stuur response direct terug — email async (fire-and-forget)
     res.status(200).json({
