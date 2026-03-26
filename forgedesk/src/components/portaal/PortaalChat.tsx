@@ -164,6 +164,12 @@ export function PortaalChat({
       }
     }
 
+    console.log('[DEBUG reacties]', items.map(i => ({
+      titel: i.titel,
+      reacties_count: (i.reacties || []).length,
+      reacties: (i.reacties || []).map(r => ({ id: r.id, bericht: r.bericht, type: r.type }))
+    })))
+
     // Sort chronologically
     entries.sort((a, b) => new Date(a.ts).getTime() - new Date(b.ts).getTime())
 
