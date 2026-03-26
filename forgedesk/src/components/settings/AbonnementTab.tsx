@@ -36,7 +36,7 @@ export function AbonnementTab() {
   useEffect(() => {
     const result = searchParams.get('abonnement')
     if (result === 'success') {
-      toast.success('Abonnement geactiveerd! Welkom bij Doen. Pro.')
+      toast.success('Abonnement geactiveerd! Welkom bij Doen.')
       searchParams.delete('abonnement')
       setSearchParams(searchParams, { replace: true })
     } else if (result === 'canceled') {
@@ -111,7 +111,7 @@ export function AbonnementTab() {
           <div className="flex items-center gap-3">
             <Check className="h-5 w-5" style={{ color: '#1A535C' }} />
             <div>
-              <span className="text-[14px] font-bold" style={{ color: '#1A535C' }}>Doen. Pro actief</span>
+              <span className="text-[14px] font-bold" style={{ color: '#1A535C' }}>Abonnement actief</span>
               <p className="text-[12px]" style={{ color: '#1A535C', opacity: 0.6 }}>Je hebt volledige toegang tot alle features.</p>
             </div>
           </div>
@@ -152,7 +152,7 @@ export function AbonnementTab() {
             {/* Left: pricing */}
             <div>
               <h3 className="font-heading text-[22px] font-bold tracking-tight" style={{ color: '#1A1A1A' }}>
-                Doen<span style={{ color: '#F15025' }}>.</span> Pro
+                Gewoon doen<span style={{ color: '#F15025' }}>.</span>
               </h3>
 
               <div className="flex items-baseline gap-1.5 mt-3">
