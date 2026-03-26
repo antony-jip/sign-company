@@ -385,7 +385,17 @@ function InputBar({
     if (!tekeningFile) return
     await send(async () => {
       const url = await uploadFile(tekeningFile, `${userId}/portaal/${portaal.id}/${Date.now()}_${tekeningFile.name}`)
-      await createPortaalItem({ user_id: userId, project_id: projectId, portaal_id: portaal.id, type: 'tekening', titel: tekeningTitel || tekeningFile.name, bestanden: [url], status: 'verstuurd', zichtbaar_voor_klant: true, volgorde: 0 } as any)
+      const newItem = await createPortaalItem({ user_id: userId, project_id: projectId, portaal_id: portaal.id, type: 'tekening', titel: tekeningTitel || tekeningFile.name, status: 'verstuurd', zichtbaar_voor_klant: true, volgorde: 0 } as any)
+      const { createPortaalBestand } = await import('@/services/supabaseService')
+      await createPortaalBestand({
+        portaal_item_id: newItem.id,
+        bestandsnaam: tekeningFile.name,
+        mime_type: tekeningFile.type,
+        grootte: tekeningFile.size,
+        url,
+        thumbnail_url: tekeningFile.type.startsWith('image/') ? url : undefined,
+        uploaded_by: 'bedrijf',
+      })
       toast.success('Tekening gedeeld'); setTekeningFile(null); setTekeningTitel(''); setTekeningPopoverOpen(false)
       await fetchItems()
       if (notificeerKlant) sendEmailNotification(tekeningTitel || tekeningFile.name, tekeningTitel || tekeningFile.name)
