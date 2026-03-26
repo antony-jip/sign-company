@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import {
   Search, BookOpen, FolderKanban, FileText, Receipt, Users, ClipboardCheck,
   Calendar, CheckCircle, Mail, Globe, PiggyBank, Sparkles, ChevronRight,
-  Wrench, ArrowLeft, Zap, Shield, BarChart3, Palette, Bell,
+  Wrench, ArrowLeft, Zap, Shield, BarChart3, Palette, Bell, Heart, SmilePlus,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
@@ -337,7 +337,7 @@ const FLOW_STEPS = [
   { icon: ClipboardCheck, label: 'Werkbon', desc: 'Geef de opdracht', color: '#9A5A48', category: 'uitvoering' },
   { icon: Calendar, label: 'Planning', desc: 'Plan de montage', color: '#1A535C', category: 'uitvoering' },
   { icon: Receipt, label: 'Factuur', desc: 'Stuur de rekening', color: '#2D6B48', category: 'financieel' },
-  { icon: CheckCircle, label: 'Klaar', desc: 'Klant is blij', color: '#3A7D52', category: 'start' },
+  { icon: Heart, label: 'Blije klant', desc: 'Dat is het doel', color: '#F15025', category: 'start' },
 ]
 
 // ── Component ──
@@ -428,56 +428,83 @@ export function KennisbankPage() {
     <div className="animate-fade-in-up">
       {/* ── Hero with workflow spectrum ── */}
       <div className="relative overflow-hidden rounded-3xl mx-4 mb-10" style={{ background: 'linear-gradient(160deg, #0F3A42 0%, #1A535C 30%, #237580 60%, #1A535C 100%)' }}>
-        {/* Decorative elements */}
+        {/* Decorative bg elements */}
         <div className="absolute top-[-80px] right-[-60px] w-[300px] h-[300px] rounded-full opacity-[0.05] bg-white" />
         <div className="absolute bottom-[-50px] left-[5%] w-[180px] h-[180px] rounded-full opacity-[0.03] bg-white" />
-        <div className="absolute top-[20%] right-[15%] w-[60px] h-[60px] rounded-full opacity-[0.06]" style={{ backgroundColor: '#F15025' }} />
+        {/* Pulsing heart glow — the goal */}
+        <div className="absolute top-[15%] right-[8%] w-[100px] h-[100px] rounded-full animate-pulse" style={{ backgroundColor: '#F15025', opacity: 0.06 }} />
+        <div className="absolute top-[18%] right-[9.5%] w-[60px] h-[60px] rounded-full animate-pulse" style={{ backgroundColor: '#F15025', opacity: 0.08, animationDelay: '0.5s' }} />
 
         <div className="relative px-8 md:px-12 pt-12 pb-10">
-          <div className="max-w-3xl">
-            <h1 className="font-heading text-[44px] md:text-[52px] font-bold tracking-[-2px] leading-[1] text-white mb-4">
-              Doen<span style={{ color: '#F15025' }}>.</span><br />
-              <span className="text-white/50">de kracht achter</span><br />
-              doeners.
-            </h1>
-            <p className="text-[16px] text-white/50 max-w-md leading-relaxed">
-              Van eerste klantcontact tot factuur. Klik op een stap om te ontdekken hoe het werkt.
-            </p>
+          {/* Title + mission */}
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-10">
+            <div className="max-w-2xl">
+              <h1 className="font-heading text-[44px] md:text-[56px] font-bold tracking-[-2.5px] leading-[0.95] text-white mb-4">
+                Doen<span style={{ color: '#F15025' }}>.</span><br />
+                <span className="text-white/40">de kracht achter</span><br />
+                doeners.
+              </h1>
+              <p className="text-[16px] text-white/45 max-w-md leading-relaxed">
+                Eén doel: je klant tevreden houden. Van eerste contact tot oplevering — alles in Doen. is gebouwd rond die missie.
+              </p>
+            </div>
+            {/* The goal — visual anchor */}
+            <div className="hidden md:flex flex-col items-center animate-stagger-item" style={{ animationDelay: '600ms' }}>
+              <div className="h-20 w-20 rounded-3xl flex items-center justify-center relative" style={{ backgroundColor: '#F15025', boxShadow: '0 8px 30px rgba(241,80,37,0.4)' }}>
+                <Heart className="h-9 w-9 text-white" fill="white" />
+              </div>
+              <span className="text-[13px] font-bold text-white mt-3">Blije klant</span>
+              <span className="text-[11px] text-white/35">Dat is het doel</span>
+            </div>
           </div>
 
           {/* ── Flow spectrum ── */}
-          <div className="mt-10">
-            {/* Gradient line underneath */}
-            <div className="h-[3px] rounded-full mb-6 mx-4" style={{ background: `linear-gradient(90deg, ${FLOW_STEPS.map(s => s.color).join(', ')})` }} />
-
-            <div className="grid grid-cols-4 md:grid-cols-8 gap-y-5 gap-x-0">
+          <div>
+            {/* The journey — visual flow */}
+            <div className="flex items-center gap-0 mb-2 overflow-x-auto">
               {FLOW_STEPS.map((step, idx) => {
                 const StepIcon = step.icon
+                const isLast = idx === FLOW_STEPS.length - 1
                 return (
-                  <button
-                    key={step.label}
-                    onClick={() => { setActiveCategory(step.category); setSearch('') }}
-                    className="group flex flex-col items-center text-center relative animate-stagger-item"
-                    style={{ animationDelay: `${idx * 80}ms` }}
-                  >
-                    {/* Icon */}
-                    <div
-                      className="h-12 w-12 rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:shadow-[0_0_20px_rgba(255,255,255,0.2)] relative z-10"
-                      style={{ backgroundColor: step.color, boxShadow: `0 4px 14px ${step.color}50` }}
+                  <div key={step.label} className="flex items-center animate-stagger-item" style={{ animationDelay: `${idx * 80}ms` }}>
+                    <button
+                      onClick={() => { setActiveCategory(step.category); setSearch('') }}
+                      className="group flex flex-col items-center text-center flex-shrink-0 relative"
+                      style={{ minWidth: isLast ? 80 : 0 }}
                     >
-                      <StepIcon className="h-5 w-5 text-white" />
-                    </div>
-                    {/* Step number */}
-                    <div className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-white/10 flex items-center justify-center z-20">
-                      <span className="text-[8px] font-bold text-white/60">{idx + 1}</span>
-                    </div>
-                    {/* Label */}
-                    <span className="text-[12px] font-bold text-white mt-2.5 whitespace-nowrap">{step.label}</span>
-                    <span className="text-[10px] text-white/35 whitespace-nowrap leading-tight">{step.desc}</span>
-                  </button>
+                      {/* Icon */}
+                      <div
+                        className={cn(
+                          "flex items-center justify-center transition-all duration-300 group-hover:scale-110 relative z-10",
+                          isLast ? "h-14 w-14 rounded-2xl" : "h-11 w-11 rounded-xl"
+                        )}
+                        style={{ backgroundColor: step.color, boxShadow: `0 4px 16px ${step.color}40` }}
+                      >
+                        <StepIcon className={cn("text-white", isLast ? "h-6 w-6" : "h-4.5 w-4.5")} fill={isLast ? 'white' : 'none'} />
+                      </div>
+                      {/* Label */}
+                      <span className={cn("font-bold text-white mt-2 whitespace-nowrap", isLast ? "text-[13px]" : "text-[11px]")}>{step.label}</span>
+                      <span className="text-[10px] text-white/30 whitespace-nowrap leading-tight">{step.desc}</span>
+                    </button>
+
+                    {/* Connector arrow */}
+                    {!isLast && (
+                      <div className="flex items-center px-1 md:px-2 flex-shrink-0 -mt-5">
+                        <div className="h-[2px] w-4 md:w-8 rounded-full animate-stagger-item" style={{
+                          background: `linear-gradient(90deg, ${step.color}, ${FLOW_STEPS[idx + 1].color})`,
+                          opacity: 0.5,
+                          animationDelay: `${idx * 80 + 150}ms`,
+                        }} />
+                        <ChevronRight className="h-3 w-3 -ml-1 animate-stagger-item" style={{ color: FLOW_STEPS[idx + 1].color, opacity: 0.4, animationDelay: `${idx * 80 + 200}ms` }} />
+                      </div>
+                    )}
+                  </div>
                 )
               })}
             </div>
+
+            {/* Spectrum bar */}
+            <div className="h-1 rounded-full mt-4 mx-2" style={{ background: `linear-gradient(90deg, #3A6B8C, #1A535C, #F15025, #6A5A8A, #9A5A48, #1A535C, #2D6B48, #F15025)` }} />
           </div>
         </div>
       </div>
