@@ -5536,7 +5536,6 @@ export async function getPortaalItems(portaalId: string, alleenZichtbaar = false
           reacties: (item.reacties || []) as PortaalReactie[],
         })) as PortaalItem[]
         if (alleenZichtbaar) result = result.filter(i => i.zichtbaar_voor_klant)
-        console.log('[CHECK]', result.map(i => ({ titel: i.titel, reacties: i.reacties?.length })))
         return result
       }
     } catch (rpcErr) {
