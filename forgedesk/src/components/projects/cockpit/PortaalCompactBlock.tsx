@@ -615,6 +615,31 @@ export function PortaalCompactBlock({ projectId }: { projectId: string }) {
     return () => { cancelled = true }
   }, [projectId])
 
+  // Realtime subscription for portaal_items and portaal_reacties
+  useEffect(() => {
+    if (!portaal) return
+    let channel: ReturnType<typeof import('@/services/supabaseClient').default extends infer S ? S extends { channel: infer C } ? C : never : never> | undefined
+
+    async function setup() {
+      const { default: supabase } = await import('@/services/supabaseClient')
+      if (!supabase || !portaal) return
+      channel = supabase
+        .channel(`portaal-compact-${portaal.id}`)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'portaal_reacties' }, () => fetchItems())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'portaal_items', filter: `portaal_id=eq.${portaal.id}` }, () => fetchItems())
+        .subscribe()
+    }
+    setup()
+
+    return () => {
+      if (channel) {
+        import('@/services/supabaseClient').then(({ default: supabase }) => {
+          supabase?.removeChannel(channel!)
+        })
+      }
+    }
+  }, [portaal?.id])
+
   useEffect(() => {
     if (!collapsed && feedEndRef.current) feedEndRef.current.scrollIntoView({ behavior: 'smooth' })
   }, [items.length, collapsed])
