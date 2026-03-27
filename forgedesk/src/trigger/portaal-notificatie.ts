@@ -1,7 +1,7 @@
 import { task, logger } from "@trigger.dev/sdk/v3";
 import { getSupabaseAdmin } from "./utils/supabase";
 import { sendEmailForUser } from "./utils/email";
-import { buildPortalEmailHtml } from "./utils/emailTemplate";
+import { sendClientEmail, sendSystemEmail } from "./utils/resend";
 
 /**
  * Task: Send notification to business user when a client reacts on the portaal.
@@ -56,57 +56,32 @@ export const portaalReactieNotificatie = task({
       gelezen: false,
     });
 
-    // Get branding
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("logo_url, bedrijfsnaam")
-      .eq("id", userId)
-      .maybeSingle();
-
-    const { data: docStyle } = await supabase
-      .from("document_styles")
-      .select("primaire_kleur")
-      .eq("user_id", userId)
-      .maybeSingle();
-
-    const appUrl =
-      process.env.VITE_APP_URL ||
-      process.env.APP_URL ||
-      "https://app.doen.team";
+    const appUrl = process.env.VITE_APP_URL || process.env.APP_URL || "https://app.doen.team";
 
     const onderwerp =
       reactieType === "goedkeuring" ? `Goedgekeurd: ${itemTitel} — ${klantNaam}` :
       reactieType === "revisie" ? `Revisie gevraagd: ${itemTitel} — ${klantNaam}` :
       `Nieuw bericht: ${itemTitel} — ${klantNaam}`;
 
-    const plainBody = [
-      `${klantNaam} heeft ${actieLabel}:`,
-      bericht?.trim() ? `\n"${bericht.trim()}"` : "",
-      `\nItem: ${itemTitel}`,
-      `Project: ${projectNaam}`,
-      `\nBekijk: ${appUrl}/projecten/${projectId}`,
-    ].filter(Boolean).join("\n");
+    // Get user email for notification
+    const { data: emailSettings } = await supabase
+      .from("user_email_settings")
+      .select("gmail_address")
+      .eq("user_id", userId)
+      .maybeSingle();
 
-    const htmlBody = buildPortalEmailHtml({
-      heading: `${klantNaam} heeft ${actieLabel}`,
-      itemTitel,
-      beschrijving: `Project: ${projectNaam}`,
-      quote: bericht?.trim() || undefined,
-      ctaLabel: "Bekijk in portaal \u2192",
-      ctaUrl: `${appUrl}/projecten/${projectId}`,
-      bedrijfsnaam: profile?.bedrijfsnaam || undefined,
-      logoUrl: profile?.logo_url || undefined,
-      primaireKleur: docStyle?.primaire_kleur || undefined,
-    });
-
-    // Send email to business user
-    const emailResult = await sendEmailForUser({
-      userId,
-      to: "", // sendEmailForUser uses the user's own email from credentials
-      subject: onderwerp,
-      text: plainBody,
-      html: htmlBody,
-    });
+    // Send system notification to user via Resend
+    const emailResult = emailSettings?.gmail_address
+      ? await sendSystemEmail({
+          to: emailSettings.gmail_address,
+          subject: onderwerp,
+          heading: `${klantNaam} heeft ${actieLabel}`,
+          itemTitel,
+          projectNaam,
+          quote: bericht?.trim() || undefined,
+          ctaUrl: `${appUrl}/projecten/${projectId}`,
+        })
+      : { success: false, error: "No email configured" };
 
     // Log activity
     await supabase.from("portaal_activiteiten").insert({
@@ -164,37 +139,28 @@ export const portaalItemNotificatie = task({
 
     const titel = itemTitel || itemType;
 
-    const onderwerp = `${bedrijfsNaam || "Nieuw item"} — ${titel}`;
+    // Get user's email for reply-to
+    const { data: emailSettings } = await supabase
+      .from("user_email_settings")
+      .select("gmail_address")
+      .eq("user_id", userId)
+      .maybeSingle();
 
-    const plainBody = [
-      `Beste ${klantNaam},`,
-      "",
-      `Er is een nieuw item gedeeld voor project ${projectNaam}.`,
-      "",
-      `Item: ${titel}`,
-      "",
-      `Bekijk het hier: ${portaalLink}`,
-      "",
-      `Met vriendelijke groet,`,
-      bedrijfsNaam || "Het team",
-    ].join("\n");
+    const replyTo = emailSettings?.gmail_address || "";
 
-    const htmlBody = buildPortalEmailHtml({
-      heading: `Er is een nieuw item gedeeld voor project ${projectNaam}.`,
+    // Send to client via Resend (from bedrijfsnaam)
+    const emailResult = await sendClientEmail({
+      to: klantEmail,
+      replyTo,
+      subject: `${bedrijfsNaam || "Nieuw item"} — ${titel}`,
+      bedrijfsnaam: bedrijfsNaam,
+      heading: `Er staat iets klaar voor project ${projectNaam}.`,
       itemTitel: titel,
       beschrijving: `Project: ${projectNaam}`,
       ctaUrl: portaalLink,
-      bedrijfsnaam: bedrijfsNaam,
+      ctaLabel: "Bekijk in portaal →",
       logoUrl,
       primaireKleur,
-    });
-
-    const emailResult = await sendEmailForUser({
-      userId,
-      to: klantEmail,
-      subject: onderwerp,
-      text: plainBody,
-      html: htmlBody,
     });
 
     // Log activity

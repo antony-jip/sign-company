@@ -1,7 +1,7 @@
 import { logger, schedules, metadata } from "@trigger.dev/sdk/v3";
 import { getSupabaseAdmin } from "./utils/supabase";
-import { sendEmailForUser } from "./utils/email";
-import { buildPortalEmailHtml, replaceTemplateVariables } from "./utils/emailTemplate";
+import { sendClientEmail } from "./utils/resend";
+import { replaceTemplateVariables } from "./utils/emailTemplate";
 
 /**
  * Scheduled task: checks all users' active portalen for unanswered items
@@ -221,33 +221,27 @@ async function processUserHerinneringen(params: {
       ? replaceTemplateVariables(template.inhoud, vars)
       : `U heeft nog niet gereageerd op ${item.titel} voor project ${projectNaam}.`;
 
-    const plainBody = [
-      `Beste ${klantNaam},`,
-      "",
-      heading,
-      "",
-      `Bekijk het hier: ${portaalUrl}`,
-      "",
-      `Met vriendelijke groet,`,
-      bedrijfsnaam || "Het team",
-    ].join("\n");
+    // Get user's email for reply-to
+    const { data: emailSettings } = await supabase
+      .from("user_email_settings")
+      .select("gmail_address")
+      .eq("user_id", userId)
+      .maybeSingle();
 
-    const htmlBody = buildPortalEmailHtml({
+    const replyTo = emailSettings?.gmail_address || "";
+
+    const emailResult = await sendClientEmail({
+      to: klant.email,
+      replyTo,
+      subject: onderwerp,
+      bedrijfsnaam,
       heading: template?.inhoud ? heading : `Herinnering: ${item.titel}`,
       itemTitel: item.titel,
       beschrijving: template?.inhoud ? undefined : heading,
       ctaUrl: portaalUrl,
-      bedrijfsnaam,
+      ctaLabel: "Bekijk in portaal →",
       logoUrl,
       primaireKleur,
-    });
-
-    const emailResult = await sendEmailForUser({
-      userId,
-      to: klant.email,
-      subject: onderwerp,
-      text: plainBody,
-      html: htmlBody,
     });
 
     if (emailResult.success) {

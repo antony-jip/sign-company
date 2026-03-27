@@ -12,80 +12,80 @@ const modules = [
     name: 'Projecten',
     color: '#1A535C',
     image: '/images/modules/projecten.jpg',
-    headline: 'Alles in één cockpit.',
-    description: 'Klant vraagt een offerte aan? Maak een project aan. Vanuit de cockpit doe je alles: offertes maken, situatiefoto\'s uploaden, taken toewijzen, bestanden delen via het portaal. De offertetekst wordt 1:1 overgenomen in de werkbon, zodat je monteur exact weet wat er bedoeld wordt.',
-    highlights: ['Cockpit: offertes, taken, bestanden en portaal op één plek', 'Offertetekst wordt 1:1 overgenomen in werkbonnen', 'Situatiefoto\'s uploaden en delen met je klant', 'Klantportaal: bestanden delen en overzicht houden', 'Statusflow: actief → te plannen → gepland → in review → te factureren → afgerond'],
-    detail: 'Het project is de kern van doen. Alles begint hier. Vanuit de cockpit heb je overzicht op de hele flow: van eerste klantvraag tot oplevering. Taken toewijzen, offertes opstellen, werkbonnen klaarzetten, montage plannen. Alles is gekoppeld, niks valt tussen wal en schip. Je monteur ziet exact wat er in de offerte staat, je klant volgt mee via het portaal.',
+    headline: 'Eén cockpit. Alles gedaan.',
+    description: 'Klant belt? Project aanmaken. Offerte, werkbon, montage, factuur. Alles vanuit één cockpit. De offertetekst gaat 1:1 naar de werkbon. Je monteur weet precies wat er bedoeld wordt. Je klant volgt mee via het portaal.',
+    highlights: ['Offertes, taken, bestanden en portaal op één plek', 'Offertetekst 1:1 in de werkbon', 'Situatiefoto\'s delen met je klant', 'Van eerste vraag tot oplevering'],
+    detail: 'Het project is de kern van doen. Hier begint alles en hier komt alles samen. Geen losse documenten, geen vergeten taken. Alles gekoppeld, alles zichtbaar. Jij houdt de regie, je klant volgt mee.',
   },
   {
     id: 'offertes',
     name: 'Offertes',
     color: '#F15025',
     image: '/images/modules/offertes.jpg',
-    headline: 'Professioneel in minuten.',
-    description: 'Maak je eigen calculatie-templates aan voor jouw diensten. Producten zoals wrapfolie voeg je toe als vaste items. De calculator combineert verschillende elementen tot één prijs. Upload een werktekening en die wordt direct opgeslagen als liggende tekening met omschrijving — geen Illustrator nodig.',
-    highlights: ['Calculatie-templates en producten aanmaken', 'Calculator: meerdere elementen → één prijs', 'Werktekening uploaden direct in de offerte', 'Verstuur als PDF per mail of via het portaal', 'Statusflow: concept → verstuurd → bekeken → akkoord → gefactureerd'],
-    detail: 'Geen losse Excel-sheets meer. Bouw je eigen templates voor je meest voorkomende diensten: gevelreclame, autobelettering, lichtreclame. Voeg producten toe als vaste items zodat je ze steeds hergebruikt. Upload een werktekening direct in de offerte — die wordt automatisch opgeslagen als liggende tekening met omschrijving. Meerdere offertes per project, versioning bij wijzigingen, en je klant keurt goed via mail of het portaal.',
+    headline: 'Offerte? Zo gedaan.',
+    description: 'Eigen templates, eigen producten, eigen calculatie. Combineer elementen tot één prijs. Werktekening erbij? Upload en klaar. Wordt automatisch een liggende tekening met omschrijving. Geen Illustrator nodig.',
+    highlights: ['Templates en producten hergebruiken', 'Calculator: elementen → één prijs', 'Werktekening direct in de offerte', 'PDF per mail of akkoord via het portaal'],
+    detail: 'Geen Excel meer. Bouw templates voor gevelreclame, autobelettering, lichtreclame. Producten als vaste items. Meerdere offertes per project. Je klant keurt goed via mail of het portaal. Wijzigingen? Versioning doet de rest.',
   },
   {
     id: 'portaal',
     name: 'Klantportaal',
     color: '#6A5A8A',
     image: '/images/modules/klantportaal.jpg',
-    headline: 'Deel, bespreek, accordeer.',
-    description: 'Open het portaal en je klant ontvangt een unieke link per mail. Geen inloggen nodig. Je klant reageert direct op werktekeningen, visualisaties, offertes en facturen. Meerdere contactpersonen per klant.',
-    highlights: ['Unieke link per project, geen inlog nodig', 'Klant reageert op tekeningen, offertes en facturen', 'Notificaties bij nieuwe items in het portaal', 'Automatische herinneringen (instelbaar + eigen template)', 'Meerdere contactpersonen per klant'],
-    detail: 'Geen eindeloos mailen meer. Je klant krijgt een persoonlijke link en ziet alles op één plek: werktekeningen, visualisaties, offertes, facturen. Ze reageren direct op bestanden — geen losse mailthreads. Reageert de klant niet? Na 3 dagen gaat er automatisch een herinnering uit, met jouw eigen template. Meerdere contactpersonen van dezelfde klant kunnen allemaal mee.',
+    headline: 'Niet mailen. Gewoon delen.',
+    description: 'Je klant krijgt een link. Geen inlog, geen gedoe. Tekeningen bekijken, offertes goedkeuren, reageren op bestanden. Reageert de klant niet? doen. stuurt automatisch een herinnering.',
+    highlights: ['Unieke link, geen inlog nodig', 'Reageren op tekeningen, offertes en facturen', 'Automatische herinneringen met eigen template', 'Meerdere contactpersonen per klant'],
+    detail: 'Geen eindeloze mailthreads meer. Alles op één plek, voor jou én je klant. Ze reageren direct op bestanden. Na 3 dagen geen reactie? doen. herinnert ze. Met jouw eigen tekst.',
   },
   {
     id: 'planning',
     name: 'Planning',
     color: '#9A5A48',
     image: '/images/modules/planning.jpg',
-    headline: 'Sleep je week in elkaar.',
-    description: 'Maak vanuit een project een montage-afspraak aan, of zet het op "te plannen" zodat je monteur het zelf inplant. Weekoverzicht per monteur of per ploeg. Elke afspraak toont tijd, locatie, projectnaam en de gekoppelde werkbon.',
-    highlights: ['Drag-and-drop vanuit "te plannen" naar een dag', 'Plan per monteur of per ploeg', 'Werkbon direct gekoppeld aan de afspraak', 'Weerbericht per dag in de planning', 'Filter op monteur en conflict-detectie'],
-    detail: 'Planning hoeft niet ingewikkeld te zijn. Zet een project op "te plannen" en je monteur pakt het zelf op, of sleep het naar een dag in het weekoverzicht. Elke afspraak toont alles wat je monteur nodig heeft: tijd, locatie, projectnaam en de werkbon. Het weerbericht zit geïntegreerd, zodat je buiten-montages slim plant. Dubbel geboekt? Conflict-detectie waarschuwt je.',
+    headline: 'Sleep. Drop. Gepland.',
+    description: 'Zet een project op "te plannen" of sleep het direct naar een dag. Per monteur, per ploeg. Werkbon zit eraan vast. Weerbericht erbij. Dubbel geboekt? doen. waarschuwt je.',
+    highlights: ['Drag-and-drop naar een dag', 'Per monteur of per ploeg', 'Werkbon gekoppeld aan de afspraak', 'Weerbericht en conflict-detectie'],
+    detail: 'Je monteur pakt het zelf op of jij plant het in. Elke afspraak toont tijd, locatie, project en werkbon. Buiten-montage bij regen? Je ziet het direct. Zo simpel kan het zijn.',
   },
   {
     id: 'werkbonnen',
     name: 'Werkbonnen',
     color: '#1A535C',
     image: '/images/modules/werkbonnen.jpg',
-    headline: 'Digitaal op locatie.',
-    description: 'De werkbon neemt alle regels uit de offerte 1:1 over, of maak er een vanaf scratch. Upload tot 2 afbeeldingen (4:3) als instructie. Je monteur opent de werkbon op zijn telefoon, registreert uren, maakt foto\'s op locatie.',
-    highlights: ['Offerte-regels worden 1:1 overgenomen', 'Afbeeldingen toevoegen als instructie', 'Monteur registreert uren en foto\'s op locatie', 'Werkbon op telefoon of uitprinten', 'Vanaf scratch of vanuit een offerte'],
-    detail: 'De werkbon is het verlengstuk van de offerte. Alle regels worden 1:1 overgenomen, zodat je monteur precies weet wat er bedoeld wordt. Voeg instructiefoto\'s toe zodat er geen twijfel is. Op locatie opent je monteur de werkbon op zijn telefoon: uren registreren, foto\'s maken van het resultaat. Liever papier? Print hem uit. Alles komt automatisch terug in het project.',
+    headline: 'Wat in de offerte staat, doet de monteur.',
+    description: 'Alle offerte-regels 1:1 in de werkbon. Instructiefoto\'s erbij. Je monteur opent het op zijn telefoon, registreert uren, maakt foto\'s. Of print hem uit. Alles komt terug in het project.',
+    highlights: ['Offerte-regels 1:1 overgenomen', 'Instructiefoto\'s toevoegen', 'Uren en foto\'s op locatie', 'Telefoon of uitprinten'],
+    detail: 'Geen misverstanden meer. Wat jij aanbiedt, is wat je monteur uitvoert. De werkbon is het verlengstuk van de offerte. Op locatie: uren tikken, foto maken, klaar.',
   },
   {
     id: 'facturen',
     name: 'Facturen',
     color: '#2D6B48',
     image: '/images/modules/facturen.jpg',
-    headline: 'Verstuurd, herinnerd, betaald.',
-    description: 'Maak een factuur vanuit een goedgekeurde offerte of vanaf scratch. Volledig gecustomized: eigen layout, eigen teksten. Klant betaalt direct via Mollie of ontvangt een losse factuur-PDF.',
-    highlights: ['Factuur vanuit offerte of vanaf scratch', 'Mollie betaallink (iDEAL, creditcard)', 'Automatische herinneringen (zelf instelbaar)', 'Voorschotfacturen en deelfacturen', 'Volledig gecustomized layout en teksten'],
-    detail: 'Factureren zonder gedoe. Met één klik maak je een factuur vanuit een goedgekeurde offerte — alle regels worden overgenomen. Of maak er een vanaf scratch. Je klant betaalt direct via Mollie (iDEAL, creditcard) of ontvangt een PDF. Herinneringen worden automatisch verstuurd vanuit doen., op het moment dat jij instelt. Voorschotfacturen en deelfacturen voor grote projecten.',
+    headline: 'Verstuurd. Herinnerd. Gedaan.',
+    description: 'Eén klik vanuit de offerte of helemaal zelf opbouwen. Je klant betaalt direct via Mollie. Herinneringen? Die doet doen. automatisch. Jij hoeft er niet meer naar om te kijken.',
+    highlights: ['Vanuit offerte of vanaf scratch', 'Mollie betaallink (iDEAL, creditcard)', 'Automatische herinneringen', 'Voorschot- en deelfacturen'],
+    detail: 'Factureren zonder nadenken. Offerte goedgekeurd? Factuur staat klaar. Betaallink erbij via Mollie. Niet betaald? doen. herinnert. Op het moment dat jij instelt.',
   },
   {
     id: 'visualizer',
     name: 'Visualizer',
     color: '#9A5A48',
     image: '/images/modules/visualizer.jpg',
-    headline: 'AI toont het eindresultaat.',
-    description: 'Upload een schets of foto en AI brengt het tot leven. Autobelettering, gevelreclame, lichtreclame — je input wordt verbeterd door Claude Sonnet en gevisualiseerd via Nano Banana.',
-    highlights: ['Upload schets of foto → AI visualiseert het resultaat', 'Input wordt verbeterd door Claude Sonnet', 'Koppel aan project of offerte binnen doen.', '10 credits standaard, bijkopen wanneer je wilt', 'Deel via het portaal met je klant'],
-    detail: 'Laat je klant zien hoe het eindresultaat eruitziet, nog vóór je begint. Upload een schets van de autobelettering of een foto van de gevel. Claude Sonnet verbetert je input en Nano Banana genereert een realistische visualisatie. Koppel het aan een project of offerte en deel het via het portaal. Je begint met 10 credits en koopt bij wanneer je wilt.',
+    headline: 'Laat zien. Niet vertellen.',
+    description: 'Upload een schets, AI doet de rest. Autobelettering, gevelreclame, lichtreclame. Claude verbetert je input, Nano Banana visualiseert het. Koppel aan je project, deel via het portaal.',
+    highlights: ['Schets uploaden → AI visualiseert', 'Claude Sonnet verbetert je input', 'Koppel aan project of offerte', '10 credits, bijkopen wanneer je wilt'],
+    detail: 'Je klant ziet het eindresultaat voordat je begint. Upload een schets of foto. AI brengt het tot leven. Deel het via het portaal. Het beeld doet het verkoopwerk.',
   },
   {
     id: 'ai',
     name: 'AI-assistent',
     color: '#1A535C',
     image: '/images/modules/ai-assistant.jpg',
-    headline: 'Je slimste collega.',
-    description: 'Daan ziet al je data: facturen, projecten, offertes, klanten. Vraag "hoeveel staat er open?" of "welke projecten lopen?" en je hebt antwoord. Selecteer tekst en Daan verbetert of verlengt het.',
-    highlights: ['Ziet al je bedrijfsdata: facturen, projecten, klanten', 'Tekst selecteren → verbeteren of verlengen', 'Mails samenvatten en schrijven', 'Helpt met calculaties en vierkante meters', 'Draait op Claude Sonnet 4.6'],
-    detail: 'Daan is je AI-collega die alles weet van je bedrijf. Vraag hoeveel er openstaat, wie je grootste klant is, of welke projecten vertraging hebben. Selecteer tekst in een offerte of mail en Daan verbetert of verlengt het. Laat Daan je mails samenvatten of een offertetekst schrijven. Moet je vierkante meters uitrekenen voor een calculatie? Daan helpt. Draait op Claude Sonnet 4.6 en wordt steeds slimmer.',
+    headline: 'Daan doet het denkwerk.',
+    description: 'Hoeveel staat er open? Wie is je grootste klant? Daan weet het. Selecteer tekst, Daan verbetert het. Mail binnengekomen? Daan vat samen. Vierkante meters uitrekenen? Daan doet het.',
+    highlights: ['Kent al je bedrijfsdata', 'Tekst verbeteren en verlengen', 'Mails samenvatten en schrijven', 'Draait op Claude Sonnet 4.6'],
+    detail: 'Daan is de collega die nooit vrij neemt. Vraag wat je wilt, wanneer je wilt. Offerteteksten, calculaties, samenvattingen. Hoe meer je vraagt, hoe slimmer Daan wordt.',
   },
 ]
 
@@ -162,45 +162,45 @@ export default function FeaturesContent() {
       <section className="pb-10 md:pb-14">
         <div className="container-site text-center">
           <SectionReveal>
-            <p className="font-mono text-[12px] font-bold tracking-[0.2em] uppercase text-flame mb-4">Alles wat je nodig hebt</p>
+            <p className="font-mono text-[12px] font-bold tracking-[0.2em] uppercase text-flame mb-4">8 modules. Eén systeem.</p>
             <h1 className="font-heading text-[40px] md:text-[56px] font-bold text-petrol tracking-[-2.5px] leading-[0.95] mb-5">
-              Gebouwd voor hoe<br />jij werkt<span className="text-flame">.</span>
+              Niet erover praten<span className="text-flame">.</span><br />
+              <span className="text-petrol/40">Gewoon</span> doen<span className="text-flame">.</span>
             </h1>
             <p className="text-[17px] max-w-lg mx-auto leading-relaxed" style={{ color: '#6B6B66' }}>
-              Geen losse tools aan elkaar knopen. Alles in één systeem, alles verbonden. Klik op een module om te ontdekken wat erin zit.
+              Elke module is gebouwd voor hoe jij werkt. Van eerste klantvraag tot oplevering. Klik op een module en ontdek wat erin zit.
             </p>
           </SectionReveal>
         </div>
       </section>
 
-      {/* Module illustration slider */}
-      <section className="bg-white pt-8 pb-10 md:pb-14">
+      {/* Module thumbnail grid */}
+      <section className="bg-white pt-4 pb-0">
         <div className="container-site">
           <div
             ref={scrollRef}
-            className="flex gap-4 md:gap-5 overflow-x-auto snap-x snap-mandatory pb-4"
-            style={{ scrollbarWidth: 'none' }}
+            className="flex justify-center gap-3 md:gap-4 flex-wrap pb-8"
           >
             {modules.map((m, i) => (
               <button
                 key={m.id}
                 onClick={() => selectModule(i)}
-                className={`flex-shrink-0 snap-center transition-all duration-300 ${
-                  activeModule === i ? 'scale-100 opacity-100' : 'scale-95 opacity-60 hover:opacity-80'
+                className={`transition-all duration-300 ${
+                  activeModule === i ? 'scale-100' : 'scale-[0.97] opacity-50 hover:opacity-75'
                 }`}
               >
-                <div className={`w-[100px] md:w-[120px] rounded-xl overflow-hidden transition-all duration-300`}
-                  style={activeModule === i ? { boxShadow: `0 0 0 2px ${m.color}, 0 4px 20px ${m.color}20` } : {}}
+                <div className="w-[72px] md:w-[88px] rounded-xl overflow-hidden transition-all duration-300"
+                  style={activeModule === i ? { boxShadow: `0 0 0 2px ${m.color}, 0 4px 16px ${m.color}15` } : {}}
                 >
                   <Image
                     src={m.image}
                     alt={m.name}
-                    width={500}
-                    height={500}
+                    width={200}
+                    height={200}
                     className="w-full aspect-square object-cover"
                   />
                 </div>
-                <p className={`text-[11px] md:text-[12px] mt-2 font-semibold transition-colors duration-300 ${
+                <p className={`text-[10px] md:text-[11px] mt-1.5 font-semibold transition-colors duration-300 ${
                   activeModule === i ? '' : 'text-[#9B9B95]'
                 }`} style={activeModule === i ? { color: m.color } : {}}>
                   {m.name}<span style={{ color: m.color }}>.</span>
@@ -208,10 +208,8 @@ export default function FeaturesContent() {
               </button>
             ))}
           </div>
-        </div>
 
-        {/* Divider */}
-        <div className="container-site mt-6">
+          {/* Divider */}
           <div className="h-px" style={{ backgroundColor: '#EBEBEB' }} />
         </div>
       </section>
@@ -245,7 +243,14 @@ export default function FeaturesContent() {
                     {mod.name}
                   </span>
                   <h2 className="font-heading text-[32px] md:text-[40px] font-bold text-petrol tracking-[-1.5px] leading-[1.05] mt-2 mb-5">
-                    {mod.headline}
+                    {mod.headline.split('.').filter(Boolean).map((part, i, arr) => (
+                      <span key={i}>
+                        {part.trim()}
+                        {i < arr.length - 1 && <span className="text-flame">.</span>}
+                        {i < arr.length - 1 && ' '}
+                      </span>
+                    ))}
+                    <span className="text-flame">.</span>
                   </h2>
                   <p className="text-[16px] leading-[1.7] mb-8" style={{ color: '#6B6B66' }}>
                     {mod.description}
@@ -291,7 +296,7 @@ export default function FeaturesContent() {
                     <span className="font-mono text-[13px] font-bold" style={{ color: mod.color }}>i</span>
                   </div>
                   <h3 className="font-heading text-[18px] md:text-[20px] font-bold text-petrol tracking-tight">
-                    Waarom {mod.name.toLowerCase()} in doen<span className="text-flame">.</span>
+                    Zo doe je het met doen<span className="text-flame">.</span>
                   </h3>
                 </div>
                 <p className="text-[15px] leading-[1.8] max-w-3xl" style={{ color: '#6B6B66' }}>
@@ -308,10 +313,10 @@ export default function FeaturesContent() {
         <div className="container-site">
           <SectionReveal>
             <h2 className="font-heading text-[28px] md:text-[36px] font-bold text-petrol tracking-[-1.5px] text-center mb-4">
-              Veelgestelde vragen<span className="text-flame">.</span>
+              Vragen<span className="text-flame">?</span> Gewoon doen<span className="text-flame">.</span>
             </h2>
             <p className="text-[15px] text-center max-w-md mx-auto mb-12" style={{ color: '#6B6B66' }}>
-              Alles wat je wilt weten over doen.
+              Alles wat je wilt weten voordat je begint.
             </p>
           </SectionReveal>
           <div className="max-w-2xl mx-auto space-y-0">
