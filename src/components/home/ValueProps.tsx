@@ -5,44 +5,53 @@ import SectionReveal from '../SectionReveal'
 
 const props = [
   {
-    headline: 'Alles erin. Altijd.',
-    description: 'Projecten, offertes, facturen, planning, klantportaal, AI, email, CRM, voorraad en meer. Mollie, Exact Online, Probo, KVK. Geen add-ons.',
+    headline: 'Tekeningen delen zonder gedoe.',
+    description: 'Geen mails meer die kwijtraken, geen WhatsApp-groepen vol bestanden. Je klant ziet alles in het portaal. Tekeningen, offertes, updates. Overzichtelijk en professioneel.',
     icon: (
-      <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-        <rect x="4" y="4" width="10" height="10" rx="2" className="fill-petrol" />
-        <rect x="18" y="4" width="10" height="10" rx="2" className="fill-petrol/60" />
-        <rect x="4" y="18" width="10" height="10" rx="2" className="fill-petrol/60" />
-        <rect x="18" y="18" width="10" height="10" rx="2" className="fill-flame" />
+      <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+        <rect x="4" y="6" width="28" height="20" rx="3" className="stroke-petrol" strokeWidth="2" fill="none" />
+        <path d="M4 20l8-6 5 4 6-5 9 7" className="stroke-flame" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx="13" cy="14" r="2.5" className="fill-petrol/30" />
       </svg>
     ),
   },
   {
-    headline: 'Morgen aan de slag.',
-    description: 'Geen implementatietraject van weken. Geen cursus. Account aanmaken, gegevens invullen, aan de slag. Zo simpel.',
+    headline: 'Niks schiet er meer doorheen.',
+    description: 'Offerte verstuurd maar geen reactie? De klant krijgt automatisch een herinnering. Factuur verlopen? Je weet het direct. Alle opvolging geregeld, ook als het druk is.',
     icon: (
-      <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-        <circle cx="16" cy="16" r="12" className="stroke-petrol" strokeWidth="2" fill="none" />
-        <path d="M16 8v8l6 4" className="stroke-flame" strokeWidth="2" strokeLinecap="round" />
+      <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+        <circle cx="18" cy="18" r="13" className="stroke-petrol" strokeWidth="2" fill="none" />
+        <path d="M18 10v8l5 3" className="stroke-flame" strokeWidth="2.5" strokeLinecap="round" />
+        <circle cx="18" cy="18" r="2" className="fill-flame" />
       </svg>
     ),
   },
   {
-    headline: 'Jouw data. Altijd.',
-    description: 'Export wanneer je wilt. Geen lock-in, geen gedoe. Jouw bedrijf, jouw gegevens. Wij bewaken ze alleen.',
+    headline: 'Gebouwd door signmakers.',
+    description: 'We kennen het vak omdat we het zelf doen. Uiteenlopende projecten, klein tot groot, en geen enkel softwarepakket dat het echt begreep. Daarom hebben we het zelf gebouwd.',
     icon: (
-      <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-        <rect x="8" y="14" width="16" height="14" rx="2" className="fill-petrol" />
-        <path d="M12 14V10a4 4 0 018 0v4" className="stroke-flame" strokeWidth="2" fill="none" />
+      <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+        <path d="M18 4L6 12v12l12 8 12-8V12L18 4z" className="stroke-petrol" strokeWidth="2" fill="none" />
+        <path d="M18 4v28M6 12l12 8 12-8" className="stroke-petrol/40" strokeWidth="1" />
+        <circle cx="18" cy="20" r="3" className="fill-flame" />
       </svg>
     ),
   },
   {
-    headline: 'Gebouwd vanuit het vak.',
-    description: 'We kennen het vak omdat we het zelf doen. doen. is gemaakt door signmakers die software misten die bij hun werk paste.',
+    headline: 'Klaar voor AI. Nu al.',
+    description: 'Moderne software waar alles samenhangt. Klantdata, projecten, offertes, facturen. Als een orkest. Daardoor kan AI je echt helpen. Niet over 5 jaar, nu.',
     icon: (
-      <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-        <path d="M8 24l4-8 4 4 4-6 4 10H8z" className="fill-petrol/20 stroke-petrol" strokeWidth="2" strokeLinejoin="round" />
-        <circle cx="24" cy="8" r="4" className="fill-flame" />
+      <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+        <circle cx="18" cy="18" r="4" className="fill-petrol" />
+        <circle cx="8" cy="10" r="2.5" className="fill-petrol/40" />
+        <circle cx="28" cy="10" r="2.5" className="fill-petrol/40" />
+        <circle cx="8" cy="26" r="2.5" className="fill-petrol/40" />
+        <circle cx="28" cy="26" r="2.5" className="fill-petrol/40" />
+        <line x1="10" y1="11" x2="15" y2="16" className="stroke-petrol/30" strokeWidth="1.5" />
+        <line x1="26" y1="11" x2="21" y2="16" className="stroke-petrol/30" strokeWidth="1.5" />
+        <line x1="10" y1="25" x2="15" y2="20" className="stroke-petrol/30" strokeWidth="1.5" />
+        <line x1="26" y1="25" x2="21" y2="20" className="stroke-petrol/30" strokeWidth="1.5" />
+        <circle cx="18" cy="18" r="1.5" className="fill-flame" />
       </svg>
     ),
   },
@@ -56,8 +65,8 @@ export default function ValueProps() {
           <h2 className="section-heading font-heading text-petrol text-center mb-4">
             Waarom doen<span className="text-flame">.</span>
           </h2>
-          <p className="text-muted text-center max-w-lg mx-auto mb-16">
-            Goed gedaan begint met goed gereedschap.
+          <p className="text-muted text-center max-w-xl mx-auto mb-16 text-lg">
+            We liepen zelf tegen dezelfde problemen aan. Te druk, te veel losse tools, geen overzicht. Dus bouwden we wat we misten.
           </p>
         </SectionReveal>
 
@@ -70,7 +79,7 @@ export default function ValueProps() {
               transition={{
                 duration: 0.6,
                 delay: i * 0.1,
-                ease: [0.16, 1, 0.3, 1],
+                ease: [0.16, 1, 0.3, 1] as const,
               }}
               viewport={{ once: true, margin: '-60px' }}
               className="group bg-white rounded-2xl p-8 border border-black/[0.05] hover:border-flame/20 transition-all duration-300 hover:shadow-lg hover:shadow-flame/[0.04] hover:-translate-y-[2px]"
