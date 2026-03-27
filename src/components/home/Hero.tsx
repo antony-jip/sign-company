@@ -243,11 +243,8 @@ export default function Hero() {
         </div>
       </div>
 
-      {/* Smooth gradient fade to page bg */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none" style={{ background: 'linear-gradient(180deg, transparent, #F5F4F1)' }} />
-
       {/* ── Ticker ── */}
-      <div className="absolute bottom-6 left-0 right-0 overflow-hidden marquee-fade z-10">
+      <div className="absolute bottom-6 left-0 right-0 overflow-hidden marquee-fade">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

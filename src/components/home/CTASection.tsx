@@ -11,8 +11,6 @@ export default function CTASection() {
 
   return (
     <section id="wachtlijst" className="relative overflow-hidden" ref={ref}>
-      {/* Smooth gradient fade in from page bg */}
-      <div className="h-24" style={{ background: 'linear-gradient(180deg, #F5F4F1, #0F3A42)' }} />
       <div style={{ backgroundColor: '#0F3A42' }}>
         <div className="container-site py-24 md:py-32">
           <div className="max-w-2xl mx-auto text-center relative z-10">

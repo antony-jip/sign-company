@@ -19,8 +19,6 @@ export default function VisualizerSection() {
 
   return (
     <section ref={ref} className="relative overflow-hidden">
-      {/* Smooth transition in */}
-      <div className="h-24" style={{ background: 'linear-gradient(180deg, #F5F4F1, #0F3A42)' }} />
       {/* Full-width dark section */}
       <div style={{ backgroundColor: '#0F3A42' }}>
         <div className="container-site py-24 md:py-36">
@@ -194,8 +192,8 @@ export default function VisualizerSection() {
         </div>
       </div>
 
-      {/* Smooth transition out — gradient fade to page bg */}
-      <div className="h-24" style={{ background: 'linear-gradient(180deg, #0F3A42, #F5F4F1)' }} />
+      {/* Spectrum bar */}
+      <div className="h-1" style={{ background: 'linear-gradient(90deg, #1A535C, #F15025)' }} />
     </section>
   )
 }
