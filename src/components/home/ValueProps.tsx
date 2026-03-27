@@ -7,26 +7,30 @@ import SectionReveal from '../SectionReveal'
 
 const sections = [
   {
-    headline: 'Tekeningen delen zonder gedoe',
-    oneliner: 'Je klant ziet alles in het portaal. Geen mails meer kwijt.',
+    headline: 'Delen',
+    sub: 'gewoon doen',
+    oneliner: 'Tekeningen, offertes, updates. Je klant ziet alles in het portaal. Geen mails kwijt, geen WhatsApp chaos.',
     accent: '#6A5A8A',
     image: '/images/portaal.jpg',
   },
   {
-    headline: 'Niks schiet er doorheen',
-    oneliner: 'Automatische opvolging. Ook als het druk is.',
+    headline: 'Opvolgen',
+    sub: 'laat doen',
+    oneliner: 'Geen reactie op je offerte? Doen. stuurt automatisch een herinnering. Factuur verlopen? Je weet het direct.',
     accent: '#F15025',
     image: '/images/opvolging.png',
   },
   {
-    headline: 'Gebouwd door signmakers',
-    oneliner: 'We kennen het vak. Dus bouwden we wat we misten.',
+    headline: 'Begrijpen',
+    sub: 'zelf gedaan',
+    oneliner: 'Gebouwd door signmakers die geen software konden vinden die bij hun werk paste. Klein project, groot project. Wij snappen het.',
     accent: '#1A535C',
     image: '/images/signmakers.png',
   },
   {
-    headline: 'Klaar voor AI',
-    oneliner: 'Alles hangt samen. Daardoor kan AI je echt helpen.',
+    headline: 'Verbinden',
+    sub: 'slim gedaan',
+    oneliner: 'Klantdata, projecten, offertes, facturen. Alles hangt samen als een orkest. Daardoor kan AI je echt helpen. Nu al.',
     accent: '#1A535C',
     image: '/images/ai-verbonden.png',
   },
@@ -40,47 +44,65 @@ function PropBlock({ section, index }: { section: typeof sections[0]; index: num
   return (
     <motion.div
       ref={ref}
-      className={`grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center ${index > 0 ? 'mt-16 md:mt-28' : ''}`}
+      className={`grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-20 items-center ${index > 0 ? 'mt-20 md:mt-32' : ''}`}
     >
       {/* Text */}
       <motion.div
         className={reversed ? 'md:order-2' : 'md:order-1'}
-        initial={{ opacity: 0, x: reversed ? 30 : -30 }}
-        animate={isInView ? { opacity: 1, x: 0 } : {}}
+        initial={{ opacity: 0, y: 40 }}
+        animate={isInView ? { opacity: 1, y: 0 } : {}}
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
       >
-        <span className="font-mono text-[12px] font-bold tracking-wider" style={{ color: section.accent, opacity: 0.5 }}>
-          0{index + 1}
-        </span>
-        <h3 className="font-heading text-[32px] md:text-[40px] font-bold text-petrol tracking-[-1.5px] leading-[1.05] mt-2 mb-4">
+        {/* Big action word */}
+        <h3 className="font-heading text-[44px] md:text-[56px] font-bold text-petrol tracking-[-2.5px] leading-[0.95] mb-1">
           {section.headline}<span className="text-flame">.</span>
         </h3>
-        <p className="text-[18px] md:text-[20px] leading-relaxed" style={{ color: '#6B6B66' }}>
+        {/* Tagline with doen. wordplay */}
+        <motion.p
+          className="font-heading text-[20px] md:text-[24px] tracking-[-0.5px] mb-6"
+          style={{ color: section.accent, opacity: 0.5 }}
+          initial={{ opacity: 0, x: -10 }}
+          animate={isInView ? { opacity: 0.5, x: 0 } : {}}
+          transition={{ duration: 0.6, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+        >
+          {section.sub}<span className="text-flame">.</span>
+        </motion.p>
+
+        <p className="text-[16px] md:text-[18px] leading-[1.7] max-w-md" style={{ color: '#6B6B66' }}>
           {section.oneliner}
         </p>
+
+        {/* Spectrum accent bar */}
         <motion.div
-          className="h-[3px] rounded-full mt-6 w-16 origin-left"
-          style={{ backgroundColor: section.accent }}
+          className="h-1 rounded-full mt-8 origin-left"
+          style={{ background: `linear-gradient(90deg, ${section.accent}, ${section.accent}20)`, maxWidth: 80 }}
           initial={{ scaleX: 0 }}
           animate={isInView ? { scaleX: 1 } : {}}
-          transition={{ duration: 0.6, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: 0.8, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
         />
       </motion.div>
 
       {/* Illustration */}
       <motion.div
-        className={`${reversed ? 'md:order-1' : 'md:order-2'}`}
-        initial={{ opacity: 0, x: reversed ? -30 : 30, scale: 0.95 }}
-        animate={isInView ? { opacity: 1, x: 0, scale: 1 } : {}}
-        transition={{ duration: 0.8, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+        className={reversed ? 'md:order-1' : 'md:order-2'}
+        initial={{ opacity: 0, scale: 0.92 }}
+        animate={isInView ? { opacity: 1, scale: 1 } : {}}
+        transition={{ duration: 1, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
       >
-        <Image
-          src={section.image}
-          alt={section.headline}
-          width={1200}
-          height={800}
-          className="w-full h-auto rounded-2xl"
-        />
+        <div className="relative group">
+          {/* Colored background shape */}
+          <div
+            className="absolute -inset-3 md:-inset-5 rounded-3xl transition-all duration-700 group-hover:scale-[1.02]"
+            style={{ backgroundColor: section.accent, opacity: 0.04 }}
+          />
+          <Image
+            src={section.image}
+            alt={section.headline}
+            width={1200}
+            height={800}
+            className="relative w-full h-auto rounded-2xl"
+          />
+        </div>
       </motion.div>
     </motion.div>
   )
@@ -88,15 +110,26 @@ function PropBlock({ section, index }: { section: typeof sections[0]; index: num
 
 export default function ValueProps() {
   return (
-    <section className="py-24 md:py-36">
+    <section className="py-24 md:py-40">
       <div className="container-site">
         <SectionReveal>
-          <div className="mb-16 md:mb-24">
-            <h2 className="font-heading text-[36px] md:text-[48px] font-bold text-petrol tracking-[-2px] leading-[1.05] mb-5">
-              Waarom doen<span className="text-flame">.</span>
+          <div className="mb-20 md:mb-28 max-w-2xl">
+            <motion.p
+              className="font-mono text-[12px] font-bold tracking-[0.2em] uppercase mb-4"
+              style={{ color: '#F15025' }}
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              transition={{ duration: 0.5 }}
+              viewport={{ once: true }}
+            >
+              Waarom doen.
+            </motion.p>
+            <h2 className="font-heading text-[40px] md:text-[56px] font-bold text-petrol tracking-[-2.5px] leading-[0.95] mb-6">
+              Niet praten over<span className="text-flame">.</span><br />
+              <span className="text-petrol/40">Gewoon</span> doen<span className="text-flame">.</span>
             </h2>
-            <p className="text-[17px] md:text-[19px] max-w-lg leading-relaxed" style={{ color: '#6B6B66' }}>
-              Te druk, te veel losse tools, geen overzicht. Dus bouwden we wat we misten.
+            <p className="text-[17px] md:text-[19px] leading-relaxed" style={{ color: '#6B6B66' }}>
+              Te druk voor administratie. Te veel losse tools. Geen overzicht. Herkenbaar? Wij ook. Dus bouwden we wat we misten.
             </p>
           </div>
         </SectionReveal>
