@@ -41,7 +41,7 @@ export default function VisualizerSection() {
               </h2>
 
               <p className="text-[17px] md:text-[19px] leading-relaxed mb-5 text-white/50 max-w-lg">
-                Upload een foto van de locatie. AI visualiseert het eindresultaat. Je klant ziet <strong className="text-white/70">direct</strong> hoe het eruit komt te zien. Geen Photoshop, geen uurtje extra.
+                Upload een foto van de locatie. AI visualiseert het eindresultaat. Je klant ziet <strong className="text-white/70">direct</strong> hoe het eruit komt te zien. Koppel de visualisatie aan een <strong className="text-white/70">project of offerte</strong> en deel het via het portaal.
               </p>
 
               {/* How it works — 3 steps */}
@@ -49,7 +49,7 @@ export default function VisualizerSection() {
                 {[
                   { nr: '1', text: 'Upload een foto van de gevel, auto of het interieur' },
                   { nr: '2', text: 'AI genereert een realistische visualisatie' },
-                  { nr: '3', text: 'Deel via het portaal of voeg toe aan je offerte' },
+                  { nr: '3', text: 'Koppel aan je project of offerte, deel via het portaal' },
                 ].map(step => (
                   <motion.div
                     key={step.nr}
@@ -89,7 +89,7 @@ export default function VisualizerSection() {
                   </div>
                   <div>
                     <span className="text-[14px] font-semibold text-white block">Betaal per visualisatie</span>
-                    <span className="text-[13px] text-white/40">Krediet bijkopen wanneer je wilt. Vanaf een paar cent per beeld. Geen abonnement, geen minimum.</span>
+                    <span className="text-[13px] text-white/40">Draait op Nano Banana 2. Krediet bijkopen wanneer je wilt. Vanaf een paar cent per beeld.</span>
                   </div>
                 </div>
               </div>
