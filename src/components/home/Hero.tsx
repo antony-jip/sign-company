@@ -166,8 +166,9 @@ export default function Hero() {
                 <span className="text-[11px] text-white/30 mt-0.5">slim gedaan.</span>
                 {/* Powered by Claude badge */}
                 <div className="flex items-center gap-1.5 mt-3 px-3 py-1.5 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-[#D4A574]">
-                    <path d="M12 2L14.5 8.5L21 9.5L16 14L17.5 21L12 17.5L6.5 21L8 14L3 9.5L9.5 8.5L12 2Z" fill="currentColor" opacity="0.9" />
+                  <svg width="14" height="14" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M109.5 20.3C104.1 7.2 96.7 0 90 0C83.3 0 75.9 7.2 70.5 20.3C65.4 32.7 62 50.3 62 70.3V109.7C62 129.7 65.4 147.3 70.5 159.7C75.9 172.8 83.3 180 90 180C96.7 180 104.1 172.8 109.5 159.7C114.6 147.3 118 129.7 118 109.7V70.3C118 50.3 114.6 32.7 109.5 20.3Z" fill="#D4A27C" />
+                    <path d="M159.7 109.5C172.8 104.1 180 96.7 180 90C180 83.3 172.8 75.9 159.7 70.5C147.3 65.4 129.7 62 109.7 62H70.3C50.3 62 32.7 65.4 20.3 70.5C7.2 75.9 0 83.3 0 90C0 96.7 7.2 104.1 20.3 109.5C32.7 114.6 50.3 118 70.3 118H109.7C129.7 118 147.3 114.6 159.7 109.5Z" fill="#D4A27C" />
                   </svg>
                   <span className="text-[9px] font-medium text-white/35 tracking-wide">AI by Claude</span>
                 </div>
