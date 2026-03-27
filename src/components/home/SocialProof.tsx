@@ -52,7 +52,7 @@ export default function SocialProof() {
                 <p className="font-semibold text-sm text-petrol">{t.name}</p>
                 <p className="text-xs text-muted">{t.company}</p>
               </footer>
-            </blockquote>
+            </motion.blockquote>
           ))}
         </div>
       </div>
