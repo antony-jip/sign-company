@@ -2,12 +2,18 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
 
-const supabase = createClient(
-  process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-)
+function getSupabase() {
+  return createClient(
+    process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '',
+    process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+  )
+}
 
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
+function getResend() {
+  return process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
+}
+
+export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,6 +24,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Opslaan in Supabase
+    const supabase = getSupabase()
     const { error: dbError } = await supabase
       .from('wachtlijst')
       .upsert({ email: email.toLowerCase().trim() }, { onConflict: 'email' })
@@ -28,6 +35,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Confirmatie-email versturen (als Resend is geconfigureerd)
+    const resend = getResend()
     if (resend) {
       try {
         await resend.emails.send({
