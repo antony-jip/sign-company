@@ -3,17 +3,18 @@
 import { motion, useInView } from 'framer-motion'
 import { useRef, useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 const modules = [
-  { label: 'Projecten', href: '/features/projecten', color: '#1A535C', placeholder: '/images/modules/projecten.png' },
-  { label: 'Offertes', href: '/features/offertes', color: '#F15025', placeholder: '/images/modules/offertes.png' },
-  { label: 'Klantportaal', href: '/features/portaal', color: '#6A5A8A', placeholder: '/images/modules/portaal.png' },
-  { label: 'Planning', href: '/features/planning', color: '#9A5A48', placeholder: '/images/modules/planning.png' },
-  { label: 'Werkbonnen', href: '/features/werkbonnen', color: '#1A535C', placeholder: '/images/modules/werkbonnen.png' },
-  { label: 'Facturen', href: '/features/facturen', color: '#2D6B48', placeholder: '/images/modules/facturen.png' },
-  { label: 'Visualizer', href: '/features/visualizer', color: '#9A5A48', placeholder: '/images/modules/visualizer.png' },
-  { label: 'AI-assistent', href: '/features/ai', color: '#1A535C', placeholder: '/images/modules/ai.png' },
+  { label: 'Projecten', href: '/features/projecten', color: '#1A535C', image: '/images/modules/projecten.jpg' },
+  { label: 'Offertes', href: '/features/offertes', color: '#F15025', image: '/images/modules/offertes.jpg' },
+  { label: 'Klantportaal', href: '/features/portaal', color: '#6A5A8A', image: '/images/modules/klantportaal.jpg' },
+  { label: 'Planning', href: '/features/planning', color: '#9A5A48', image: '/images/modules/planning.jpg' },
+  { label: 'Werkbonnen', href: '/features/werkbonnen', color: '#1A535C', image: '/images/modules/werkbonnen.jpg' },
+  { label: 'Facturen', href: '/features/facturen', color: '#2D6B48', image: '/images/modules/facturen.jpg' },
+  { label: 'Visualizer', href: '/features/visualizer', color: '#9A5A48', image: '/images/modules/visualizer.jpg' },
+  { label: 'AI-assistent', href: '/features/ai', color: '#1A535C', image: '/images/modules/ai-assistant.jpg' },
 ]
 
 export default function ModulesCarousel() {
@@ -94,29 +95,14 @@ export default function ModulesCarousel() {
               <div
                 className="relative w-[280px] md:w-[320px] aspect-square rounded-2xl overflow-hidden transition-all duration-500 group-hover:-translate-y-[4px] group-hover:shadow-xl"
               >
-                {/* Placeholder bg with module color */}
-                <div
-                  className="absolute inset-0 transition-transform duration-700 group-hover:scale-105"
-                  style={{ backgroundColor: mod.color + '0C' }}
-                >
-                  {/* Decorative elements as placeholder */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div
-                      className="w-20 h-20 rounded-3xl opacity-10 transition-all duration-500 group-hover:opacity-20 group-hover:scale-110"
-                      style={{ backgroundColor: mod.color }}
-                    />
-                  </div>
-                  {/* Dot pattern */}
-                  <div className="absolute top-6 right-6 grid grid-cols-3 gap-1.5 opacity-[0.07]">
-                    {Array.from({ length: 9 }).map((_, j) => (
-                      <div key={j} className="w-2 h-2 rounded-full" style={{ backgroundColor: mod.color }} />
-                    ))}
-                  </div>
-                  {/* Arc */}
-                  <svg className="absolute bottom-0 left-0 w-32 h-32 opacity-[0.05]" viewBox="0 0 120 120" fill="none">
-                    <path d="M 0 120 A 120 120 0 0 1 120 0" stroke={mod.color} strokeWidth="20" />
-                  </svg>
-                </div>
+                {/* Module illustration */}
+                <Image
+                  src={mod.image}
+                  alt={mod.label}
+                  width={1000}
+                  height={1000}
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                />
 
                 {/* Label pill */}
                 <div className="absolute bottom-5 left-5">
