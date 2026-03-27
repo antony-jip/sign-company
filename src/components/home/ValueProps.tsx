@@ -134,9 +134,37 @@ export default function ValueProps() {
           </div>
         </SectionReveal>
 
-        {sections.map((section, i) => (
-          <PropBlock key={section.headline} section={section} index={i} />
-        ))}
+        <div className="relative">
+          {/* Vertical spectrum line connecting all blocks */}
+          <div className="absolute left-8 md:left-1/2 top-0 bottom-0 w-px md:-translate-x-px pointer-events-none hidden md:block">
+            <motion.div
+              className="w-full h-full origin-top"
+              style={{ background: 'linear-gradient(180deg, #6A5A8A, #F15025, #1A535C, #1A535C)' }}
+              initial={{ scaleY: 0, opacity: 0 }}
+              whileInView={{ scaleY: 1, opacity: 0.12 }}
+              transition={{ duration: 2, ease: [0.16, 1, 0.3, 1] }}
+              viewport={{ once: true, margin: '-100px' }}
+            />
+          </div>
+
+          {/* Dots on the line at each section */}
+          {sections.map((section, i) => (
+            <div key={`dot-${i}`} className="hidden md:block absolute left-1/2 -translate-x-1/2 z-10" style={{ top: `${i * 25 + 5}%` }}>
+              <motion.div
+                className="w-3 h-3 rounded-full"
+                style={{ backgroundColor: section.accent, boxShadow: `0 0 12px ${section.accent}40` }}
+                initial={{ scale: 0 }}
+                whileInView={{ scale: 1 }}
+                transition={{ duration: 0.4, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                viewport={{ once: true }}
+              />
+            </div>
+          ))}
+
+          {sections.map((section, i) => (
+            <PropBlock key={section.headline} section={section} index={i} />
+          ))}
+        </div>
       </div>
     </section>
   )
