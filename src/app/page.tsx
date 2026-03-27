@@ -1,5 +1,6 @@
 import Navbar from '@/components/Navbar'
 import Hero from '@/components/home/Hero'
+import ModulesCarousel from '@/components/home/ModulesCarousel'
 import ValueProps from '@/components/home/ValueProps'
 import VisualizerSection from '@/components/home/VisualizerSection'
 import PricingSection from '@/components/home/PricingSection'
@@ -12,6 +13,7 @@ export default function Home() {
       <Navbar />
       <main id="main-content">
         <Hero />
+        <ModulesCarousel />
         <ValueProps />
         <VisualizerSection />
         <PricingSection />
