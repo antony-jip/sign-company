@@ -4,7 +4,7 @@ import { motion, useInView } from 'framer-motion'
 import { useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ChevronRight } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 
 const modules = [
   { label: 'Projecten', sub: 'Alles in één cockpit', href: '/features/projecten', color: '#1A535C', image: '/images/modules/projecten.jpg' },
@@ -25,7 +25,7 @@ export default function ModulesCarousel() {
     <section className="py-20 md:py-28" ref={ref}>
       <div className="container-site">
         <motion.div
-          className="mb-10"
+          className="flex items-end justify-between mb-12"
           initial={{ opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
@@ -33,48 +33,44 @@ export default function ModulesCarousel() {
           <h2 className="font-heading text-[28px] md:text-[36px] font-bold text-petrol tracking-[-1.5px] leading-[1.1]">
             Ontdek de modules<span className="text-flame">.</span>
           </h2>
+          <Link href="/features" className="hidden md:flex items-center gap-1.5 text-[13px] font-semibold text-petrol hover:text-flame transition-colors">
+            Bekijk alles <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
         </motion.div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-5">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
           {modules.map((mod, i) => (
             <motion.div
               key={mod.label}
-              initial={{ opacity: 0, y: 25 }}
+              initial={{ opacity: 0, y: 20 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.5, delay: i * 0.05, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ duration: 0.5, delay: i * 0.04, ease: [0.16, 1, 0.3, 1] }}
             >
               <Link href={mod.href} className="group block">
-                <div
-                  className="rounded-2xl overflow-hidden bg-white transition-all duration-400 group-hover:-translate-y-[3px]"
-                  style={{ border: '1px solid rgba(0,0,0,0.04)', boxShadow: '0 1px 3px rgba(100,80,40,0.03)' }}
-                >
+                <div className="rounded-2xl overflow-hidden bg-white transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-[0_8px_30px_rgba(26,83,92,0.08)]">
+                  {/* Accent top line */}
+                  <div className="h-[2px]" style={{ background: `linear-gradient(90deg, ${mod.color}40, transparent)` }} />
+
                   {/* Illustration */}
-                  <div className="p-5 pb-3 flex items-center justify-center">
+                  <div className="px-8 pt-6 pb-2 flex items-center justify-center">
                     <Image
                       src={mod.image}
                       alt={mod.label}
                       width={1000}
                       height={1000}
-                      className="w-[85%] h-auto transition-transform duration-500 group-hover:scale-[1.04]"
+                      className="w-[75%] h-auto transition-transform duration-500 group-hover:scale-105"
                     />
                   </div>
 
-                  {/* Label + sub */}
+                  {/* Label */}
                   <div className="px-5 pb-5">
-                    <div className="flex items-center gap-2 mb-1">
-                      <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: mod.color }} />
-                      <span className="text-[15px] font-bold tracking-tight" style={{ color: '#1A1A1A' }}>
-                        {mod.label}
-                      </span>
-                      <ChevronRight className="w-3.5 h-3.5 ml-auto opacity-0 group-hover:opacity-40 transition-opacity duration-300" style={{ color: mod.color }} />
-                    </div>
-                    <p className="text-[12px] pl-[18px]" style={{ color: '#9B9B95' }}>
+                    <h3 className="text-[16px] font-bold tracking-tight mb-0.5" style={{ color: '#1A1A1A' }}>
+                      {mod.label}<span style={{ color: mod.color }}>.</span>
+                    </h3>
+                    <p className="text-[12px]" style={{ color: '#9B9B95' }}>
                       {mod.sub}
                     </p>
                   </div>
-
-                  {/* Accent bar */}
-                  <div className="h-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ background: `linear-gradient(90deg, ${mod.color}, ${mod.color}20)` }} />
                 </div>
               </Link>
             </motion.div>
