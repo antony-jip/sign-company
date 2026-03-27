@@ -50,7 +50,7 @@ export default function ModulesCarousel() {
                 {/* No card border — illustration floats freely */}
                 <div className="transition-all duration-400 group-hover:-translate-y-1">
                   {/* Illustration — big, open, no box */}
-                  <div className="relative mb-4">
+                  <div className="relative mb-4 bg-white rounded-2xl p-4">
                     <Image
                       src={mod.image}
                       alt={mod.label}
