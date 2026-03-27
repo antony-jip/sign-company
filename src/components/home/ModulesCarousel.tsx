@@ -38,53 +38,62 @@ export default function ModulesCarousel() {
           </Link>
         </motion.div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
-          {modules.map((mod, i) => (
-            <motion.div
-              key={mod.label}
-              initial={{ opacity: 0, y: 20 }}
-              animate={isInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.5, delay: i * 0.04, ease: [0.16, 1, 0.3, 1] }}
-            >
-              <Link href={mod.href} className="group block">
-                {/* No card border — illustration floats freely */}
-                <div className="transition-all duration-400 group-hover:-translate-y-1">
-                  {/* Illustration — big, open, no box */}
-                  <div className="relative mb-4">
-                    <Image
-                      src={mod.image}
-                      alt={mod.label}
-                      width={1000}
-                      height={1000}
-                      className="w-full h-auto transition-transform duration-500 group-hover:scale-[1.03]"
-                    />
-                    {/* Subtle teal wash behind illustration on hover */}
-                    <div
-                      className="absolute inset-[10%] -z-10 rounded-[40%] blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"
-                      style={{ backgroundColor: mod.color, opacity: 0 }}
-                    />
-                  </div>
+        {/* Row 1 */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 md:gap-x-10 gap-y-4">
+          {modules.slice(0, 4).map((mod, i) => (
+            <ModuleCard key={mod.label} mod={mod} i={i} isInView={isInView} />
+          ))}
+        </div>
 
-                  {/* Label — clean, no card */}
-                  <div className="px-1">
-                    <h3 className="text-[16px] md:text-[17px] font-bold tracking-tight" style={{ color: '#1A1A1A' }}>
-                      {mod.label}<span style={{ color: mod.color }}>.</span>
-                    </h3>
-                    <p className="text-[12px] md:text-[13px] mt-0.5" style={{ color: '#9B9B95' }}>
-                      {mod.sub}
-                    </p>
-                    {/* Accent line */}
-                    <div
-                      className="h-[2px] w-0 group-hover:w-8 mt-3 rounded-full transition-all duration-500"
-                      style={{ backgroundColor: mod.color }}
-                    />
-                  </div>
-                </div>
-              </Link>
-            </motion.div>
+        {/* Divider */}
+        <div className="my-10 md:my-12 h-px" style={{ background: 'linear-gradient(90deg, transparent, #1A535C10, #F1502515, #1A535C10, transparent)' }} />
+
+        {/* Row 2 */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 md:gap-x-10 gap-y-4">
+          {modules.slice(4).map((mod, i) => (
+            <ModuleCard key={mod.label} mod={mod} i={i + 4} isInView={isInView} />
           ))}
         </div>
       </div>
     </section>
+  )
+}
+
+function ModuleCard({ mod, i, isInView }: { mod: typeof modules[0]; i: number; isInView: boolean }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={isInView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.5, delay: i * 0.04, ease: [0.16, 1, 0.3, 1] }}
+    >
+      <Link href={mod.href} className="group block">
+        <div className="transition-all duration-400 group-hover:-translate-y-1">
+          {/* Fixed-size illustration container */}
+          <div className="aspect-square flex items-center justify-center p-4 md:p-6 mb-4">
+            <Image
+              src={mod.image}
+              alt={mod.label}
+              width={1000}
+              height={1000}
+              className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
+            />
+          </div>
+
+          {/* Label */}
+          <div className="px-1">
+            <h3 className="text-[17px] md:text-[19px] font-bold tracking-tight" style={{ color: '#1A1A1A' }}>
+              {mod.label}<span style={{ color: mod.color }}>.</span>
+            </h3>
+            <p className="text-[13px] md:text-[14px] mt-0.5" style={{ color: '#9B9B95' }}>
+              {mod.sub}
+            </p>
+            <div
+              className="h-[2px] w-0 group-hover:w-10 mt-3 rounded-full transition-all duration-500"
+              style={{ backgroundColor: mod.color }}
+            />
+          </div>
+        </div>
+      </Link>
+    </motion.div>
   )
 }
