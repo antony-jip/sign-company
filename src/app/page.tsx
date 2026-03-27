@@ -3,6 +3,7 @@ import ScrollProgress from '@/components/ScrollProgress'
 import Hero from '@/components/home/Hero'
 import DeGolf from '@/components/brand/DeGolf'
 import ValueProps from '@/components/home/ValueProps'
+import VisualizerSection from '@/components/home/VisualizerSection'
 import FeatureShowcase from '@/components/home/FeatureShowcase'
 import DayScroll from '@/components/home/DayScroll'
 import DarkSection from '@/components/home/DarkSection'
@@ -19,6 +20,7 @@ export default function Home() {
         <Hero />
         <DeGolf className="-mt-1" />
         <ValueProps />
+        <VisualizerSection />
         <FeatureShowcase />
         <DayScroll />
         <DeGolf className="-mb-1" flip />
