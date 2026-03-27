@@ -164,6 +164,13 @@ export default function Hero() {
                   doen<span className="text-flame">.</span>
                 </span>
                 <span className="text-[11px] text-white/30 mt-0.5">slim gedaan.</span>
+                {/* Powered by Claude badge */}
+                <div className="flex items-center gap-1.5 mt-3 px-3 py-1.5 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-[#D4A574]">
+                    <path d="M12 2L14.5 8.5L21 9.5L16 14L17.5 21L12 17.5L6.5 21L8 14L3 9.5L9.5 8.5L12 2Z" fill="currentColor" opacity="0.9" />
+                  </svg>
+                  <span className="text-[9px] font-medium text-white/35 tracking-wide">AI by Claude</span>
+                </div>
               </div>
 
               {/* Circular ring */}
