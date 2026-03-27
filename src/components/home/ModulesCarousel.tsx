@@ -22,7 +22,7 @@ export default function ModulesCarousel() {
   const isInView = useInView(ref, { once: true, margin: '-60px' })
 
   return (
-    <section className="py-20 md:py-28" ref={ref}>
+    <section className="py-20 md:py-28 bg-white" ref={ref}>
       <div className="container-site">
         <motion.div
           className="flex items-end justify-between mb-12"
@@ -50,7 +50,7 @@ export default function ModulesCarousel() {
                 {/* No card border — illustration floats freely */}
                 <div className="transition-all duration-400 group-hover:-translate-y-1">
                   {/* Illustration — big, open, no box */}
-                  <div className="relative mb-4 bg-white rounded-2xl p-4">
+                  <div className="relative mb-4">
                     <Image
                       src={mod.image}
                       alt={mod.label}
