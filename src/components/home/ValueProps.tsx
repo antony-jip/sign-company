@@ -6,52 +6,60 @@ import SectionReveal from '../SectionReveal'
 const props = [
   {
     headline: 'Tekeningen delen zonder gedoe.',
-    description: 'Geen mails meer die kwijtraken, geen WhatsApp-groepen vol bestanden. Je klant ziet alles in het portaal. Tekeningen, offertes, updates. Overzichtelijk en professioneel.',
+    description: 'Geen mails die kwijtraken, geen WhatsApp-groepen vol bestanden. Je klant ziet alles in het portaal. Tekeningen, offertes, updates. Overzichtelijk en professioneel.',
+    color: '#6A5A8A',
     icon: (
-      <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-        <rect x="4" y="6" width="28" height="20" rx="3" className="stroke-petrol" strokeWidth="2" fill="none" />
-        <path d="M4 20l8-6 5 4 6-5 9 7" className="stroke-flame" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        <circle cx="13" cy="14" r="2.5" className="fill-petrol/30" />
+      <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+        <rect x="4" y="6" width="32" height="24" rx="4" fill="#6A5A8A" opacity="0.12" />
+        <rect x="4" y="6" width="32" height="24" rx="4" stroke="#6A5A8A" strokeWidth="1.5" fill="none" />
+        <path d="M4 22l10-7 6 5 7-6 9 8" stroke="#F15025" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx="14" cy="15" r="3" fill="#6A5A8A" opacity="0.3" />
       </svg>
     ),
   },
   {
     headline: 'Niks schiet er meer doorheen.',
     description: 'Offerte verstuurd maar geen reactie? De klant krijgt automatisch een herinnering. Factuur verlopen? Je weet het direct. Alle opvolging geregeld, ook als het druk is.',
+    color: '#F15025',
     icon: (
-      <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-        <circle cx="18" cy="18" r="13" className="stroke-petrol" strokeWidth="2" fill="none" />
-        <path d="M18 10v8l5 3" className="stroke-flame" strokeWidth="2.5" strokeLinecap="round" />
-        <circle cx="18" cy="18" r="2" className="fill-flame" />
+      <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+        <circle cx="20" cy="20" r="15" fill="#F15025" opacity="0.08" />
+        <circle cx="20" cy="20" r="15" stroke="#F15025" strokeWidth="1.5" fill="none" />
+        <path d="M20 10v10l6 4" stroke="#F15025" strokeWidth="2.5" strokeLinecap="round" />
+        <circle cx="20" cy="20" r="2" fill="#F15025" />
       </svg>
     ),
   },
   {
     headline: 'Gebouwd door signmakers.',
     description: 'We kennen het vak omdat we het zelf doen. Uiteenlopende projecten, klein tot groot, en geen enkel softwarepakket dat het echt begreep. Daarom hebben we het zelf gebouwd.',
+    color: '#1A535C',
     icon: (
-      <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-        <path d="M18 4L6 12v12l12 8 12-8V12L18 4z" className="stroke-petrol" strokeWidth="2" fill="none" />
-        <path d="M18 4v28M6 12l12 8 12-8" className="stroke-petrol/40" strokeWidth="1" />
-        <circle cx="18" cy="20" r="3" className="fill-flame" />
+      <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+        <path d="M20 4L6 13v14l14 9 14-9V13L20 4z" fill="#1A535C" opacity="0.08" />
+        <path d="M20 4L6 13v14l14 9 14-9V13L20 4z" stroke="#1A535C" strokeWidth="1.5" fill="none" />
+        <path d="M20 4v32M6 13l14 9 14-9" stroke="#1A535C" strokeWidth="0.8" opacity="0.3" />
+        <circle cx="20" cy="22" r="4" fill="#F15025" />
+        <path d="M18 22l1.5 1.5L23 21" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     ),
   },
   {
     headline: 'Klaar voor AI. Nu al.',
     description: 'Moderne software waar alles samenhangt. Klantdata, projecten, offertes, facturen. Als een orkest. Daardoor kan AI je echt helpen. Niet over 5 jaar, nu.',
+    color: '#1A535C',
     icon: (
-      <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-        <circle cx="18" cy="18" r="4" className="fill-petrol" />
-        <circle cx="8" cy="10" r="2.5" className="fill-petrol/40" />
-        <circle cx="28" cy="10" r="2.5" className="fill-petrol/40" />
-        <circle cx="8" cy="26" r="2.5" className="fill-petrol/40" />
-        <circle cx="28" cy="26" r="2.5" className="fill-petrol/40" />
-        <line x1="10" y1="11" x2="15" y2="16" className="stroke-petrol/30" strokeWidth="1.5" />
-        <line x1="26" y1="11" x2="21" y2="16" className="stroke-petrol/30" strokeWidth="1.5" />
-        <line x1="10" y1="25" x2="15" y2="20" className="stroke-petrol/30" strokeWidth="1.5" />
-        <line x1="26" y1="25" x2="21" y2="20" className="stroke-petrol/30" strokeWidth="1.5" />
-        <circle cx="18" cy="18" r="1.5" className="fill-flame" />
+      <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+        <circle cx="20" cy="20" r="5" fill="#1A535C" />
+        <circle cx="8" cy="10" r="3" fill="#1A535C" opacity="0.25" />
+        <circle cx="32" cy="10" r="3" fill="#1A535C" opacity="0.25" />
+        <circle cx="8" cy="30" r="3" fill="#1A535C" opacity="0.25" />
+        <circle cx="32" cy="30" r="3" fill="#1A535C" opacity="0.25" />
+        <line x1="10.5" y1="11.5" x2="16.5" y2="17.5" stroke="#1A535C" strokeWidth="1" opacity="0.2" />
+        <line x1="29.5" y1="11.5" x2="23.5" y2="17.5" stroke="#1A535C" strokeWidth="1" opacity="0.2" />
+        <line x1="10.5" y1="28.5" x2="16.5" y2="22.5" stroke="#1A535C" strokeWidth="1" opacity="0.2" />
+        <line x1="29.5" y1="28.5" x2="23.5" y2="22.5" stroke="#1A535C" strokeWidth="1" opacity="0.2" />
+        <circle cx="20" cy="20" r="2" fill="#F15025" />
       </svg>
     ),
   },
@@ -59,39 +67,71 @@ const props = [
 
 export default function ValueProps() {
   return (
-    <section className="py-20 md:py-32">
-      <div className="container-site">
+    <section className="py-24 md:py-36 relative overflow-hidden">
+      {/* Subtle background texture */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-[10%] right-[-5%] w-[300px] h-[300px] rounded-full opacity-[0.03]" style={{ backgroundColor: '#1A535C' }} />
+        <div className="absolute bottom-[5%] left-[-3%] w-[200px] h-[200px] rounded-full opacity-[0.02]" style={{ backgroundColor: '#F15025' }} />
+      </div>
+
+      <div className="container-site relative z-10">
         <SectionReveal>
-          <h2 className="section-heading font-heading text-petrol text-center mb-4">
-            Waarom doen<span className="text-flame">.</span>
-          </h2>
-          <p className="text-muted text-center max-w-xl mx-auto mb-16 text-lg">
-            We liepen zelf tegen dezelfde problemen aan. Te druk, te veel losse tools, geen overzicht. Dus bouwden we wat we misten.
-          </p>
+          <div className="text-center mb-20">
+            <h2 className="font-heading text-[40px] md:text-[52px] font-bold text-petrol tracking-[-2px] leading-[1] mb-5">
+              Waarom doen<span className="text-flame">.</span>
+            </h2>
+            <p className="text-muted text-[17px] max-w-xl mx-auto leading-relaxed">
+              We liepen zelf tegen dezelfde problemen aan. Te druk, te veel losse tools, geen overzicht. Dus bouwden we wat we misten.
+            </p>
+          </div>
         </SectionReveal>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 lg:gap-6">
           {props.map((prop, i) => (
             <motion.div
               key={i}
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{
-                duration: 0.6,
-                delay: i * 0.1,
+                duration: 0.7,
+                delay: i * 0.12,
                 ease: [0.16, 1, 0.3, 1] as const,
               }}
-              viewport={{ once: true, margin: '-60px' }}
-              className="group bg-white rounded-2xl p-8 border border-black/[0.05] hover:border-flame/20 transition-all duration-300 hover:shadow-lg hover:shadow-flame/[0.04] hover:-translate-y-[2px]"
-              style={{ boxShadow: '0 1px 3px rgba(100,80,40,0.04)' }}
+              viewport={{ once: true, margin: '-80px' }}
+              className="group relative bg-white rounded-3xl p-8 md:p-10 overflow-hidden transition-all duration-500 hover:-translate-y-[3px]"
+              style={{
+                border: '1px solid rgba(0,0,0,0.04)',
+                boxShadow: '0 1px 4px rgba(100,80,40,0.04)',
+              }}
             >
-              <div className="mb-5">{prop.icon}</div>
-              <h3 className="font-heading text-xl text-petrol mb-2 tracking-tight">
-                {prop.headline}
-              </h3>
-              <p className="text-muted text-sm leading-relaxed">
-                {prop.description}
-              </p>
+              {/* Color accent bar top */}
+              <div
+                className="absolute top-0 left-8 right-8 h-[3px] rounded-b-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                style={{ background: `linear-gradient(90deg, ${prop.color}, ${prop.color}40)` }}
+              />
+
+              {/* Hover glow */}
+              <div
+                className="absolute -top-20 -right-20 w-40 h-40 rounded-full opacity-0 group-hover:opacity-[0.04] transition-opacity duration-500 blur-3xl"
+                style={{ backgroundColor: prop.color }}
+              />
+
+              <div className="relative">
+                {/* Icon in colored circle */}
+                <div
+                  className="w-14 h-14 rounded-2xl flex items-center justify-center mb-6 transition-transform duration-300 group-hover:scale-110"
+                  style={{ backgroundColor: `${prop.color}0A` }}
+                >
+                  {prop.icon}
+                </div>
+
+                <h3 className="font-heading text-[22px] md:text-[24px] text-petrol mb-3 tracking-tight leading-tight">
+                  {prop.headline}
+                </h3>
+                <p className="text-muted text-[15px] leading-[1.7] max-w-md">
+                  {prop.description}
+                </p>
+              </div>
             </motion.div>
           ))}
         </div>
