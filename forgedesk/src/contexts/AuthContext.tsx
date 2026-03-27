@@ -208,6 +208,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (u) {
       setUser({ id: u.id, email: u.email ?? email, user_metadata: u.user_metadata })
       await fetchOrgData(u.id)
+
+      // Trigger onboarding email sequence (fire-and-forget)
+      fetch('/api/trigger-onboarding', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY || ''}`,
+        },
+        body: JSON.stringify({
+          userId: u.id,
+          userEmail: u.email ?? email,
+          userName: metadata?.voornaam || undefined,
+        }),
+      }).catch(() => {}) // Non-blocking
     }
     setSession(data.session)
   }
