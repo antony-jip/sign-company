@@ -6,7 +6,7 @@ const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL |
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
 const EXACT_AUTH_URL = 'https://start.exactonline.nl/api/oauth2/auth'
-const REDIRECT_URI = 'https://forgedesk-ten.vercel.app/api/exact-callback'
+const REDIRECT_URI = 'https://app.doen.team/api/exact-callback'
 
 export function signState(userId: string): string {
   const secret = SUPABASE_SERVICE_KEY || 'fallback-secret'

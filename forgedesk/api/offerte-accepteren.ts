@@ -13,7 +13,7 @@ async function isRateLimited(ip: string, endpoint: string, maxCount: number, win
 }
 
 const ENCRYPTION_KEY = process.env.EMAIL_ENCRYPTION_KEY || ''
-const APP_URL = process.env.VITE_APP_URL || 'https://forgedesk-ten.vercel.app'
+const APP_URL = process.env.VITE_APP_URL || 'https://app.doen.team'
 
 function decrypt(encrypted: string): string {
   if (!ENCRYPTION_KEY) throw new Error('EMAIL_ENCRYPTION_KEY niet geconfigureerd')

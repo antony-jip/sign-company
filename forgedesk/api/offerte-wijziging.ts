@@ -13,7 +13,7 @@ async function isRateLimited(ip: string, endpoint: string, maxCount: number, win
 }
 
 const ENCRYPTION_KEY = process.env.EMAIL_ENCRYPTION_KEY || ''
-const APP_URL = process.env.VITE_APP_URL || 'https://forgedesk-ten.vercel.app'
+const APP_URL = process.env.VITE_APP_URL || 'https://app.doen.team'
 
 // ---- Inline email template (Vercel bundelt geen lokale imports in api/) ----
 function escapeHtml(str: string): string {

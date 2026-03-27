@@ -179,7 +179,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'factuur_id is verplicht' })
     }
 
-    const host = (req.headers['x-forwarded-host'] || req.headers.host || 'forgedesk-ten.vercel.app') as string
+    const host = (req.headers['x-forwarded-host'] || req.headers.host || 'app.doen.team') as string
     const protocol = (req.headers['x-forwarded-proto'] || 'https') as string
 
     // 1. Haal factuur + items op

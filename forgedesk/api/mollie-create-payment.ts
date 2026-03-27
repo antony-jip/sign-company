@@ -5,7 +5,7 @@ const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL |
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
 const MOLLIE_API_URL = 'https://api.mollie.com/v2/payments'
-const DEFAULT_REDIRECT = 'https://forgedesk-ten.vercel.app'
+const DEFAULT_REDIRECT = 'https://app.doen.team'
 
 function isAllowedRedirectUrl(url: string): boolean {
   try {
@@ -109,7 +109,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       : `${DEFAULT_REDIRECT}/betaald?factuur_id=${factuur_id}`
 
     // Webhook URL — Vercel detecteert automatisch de juiste host
-    const host = req.headers['x-forwarded-host'] || req.headers.host || 'forgedesk-ten.vercel.app'
+    const host = req.headers['x-forwarded-host'] || req.headers.host || 'app.doen.team'
     const protocol = req.headers['x-forwarded-proto'] || 'https'
     const webhookUrl = `${protocol}://${host}/api/mollie-webhook`
 
