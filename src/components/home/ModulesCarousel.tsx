@@ -38,7 +38,7 @@ export default function ModulesCarousel() {
           </Link>
         </motion.div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
           {modules.map((mod, i) => (
             <motion.div
               key={mod.label}
@@ -47,29 +47,37 @@ export default function ModulesCarousel() {
               transition={{ duration: 0.5, delay: i * 0.04, ease: [0.16, 1, 0.3, 1] }}
             >
               <Link href={mod.href} className="group block">
-                <div className="rounded-2xl overflow-hidden bg-white transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-[0_8px_30px_rgba(26,83,92,0.08)]">
-                  {/* Accent top line */}
-                  <div className="h-[2px]" style={{ background: `linear-gradient(90deg, ${mod.color}40, transparent)` }} />
-
-                  {/* Illustration */}
-                  <div className="px-8 pt-6 pb-2 flex items-center justify-center">
+                {/* No card border — illustration floats freely */}
+                <div className="transition-all duration-400 group-hover:-translate-y-1">
+                  {/* Illustration — big, open, no box */}
+                  <div className="relative mb-4">
                     <Image
                       src={mod.image}
                       alt={mod.label}
                       width={1000}
                       height={1000}
-                      className="w-[75%] h-auto transition-transform duration-500 group-hover:scale-105"
+                      className="w-full h-auto transition-transform duration-500 group-hover:scale-[1.03]"
+                    />
+                    {/* Subtle teal wash behind illustration on hover */}
+                    <div
+                      className="absolute inset-[10%] -z-10 rounded-[40%] blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"
+                      style={{ backgroundColor: mod.color, opacity: 0 }}
                     />
                   </div>
 
-                  {/* Label */}
-                  <div className="px-5 pb-5">
-                    <h3 className="text-[16px] font-bold tracking-tight mb-0.5" style={{ color: '#1A1A1A' }}>
+                  {/* Label — clean, no card */}
+                  <div className="px-1">
+                    <h3 className="text-[16px] md:text-[17px] font-bold tracking-tight" style={{ color: '#1A1A1A' }}>
                       {mod.label}<span style={{ color: mod.color }}>.</span>
                     </h3>
-                    <p className="text-[12px]" style={{ color: '#9B9B95' }}>
+                    <p className="text-[12px] md:text-[13px] mt-0.5" style={{ color: '#9B9B95' }}>
                       {mod.sub}
                     </p>
+                    {/* Accent line */}
+                    <div
+                      className="h-[2px] w-0 group-hover:w-8 mt-3 rounded-full transition-all duration-500"
+                      style={{ backgroundColor: mod.color }}
+                    />
                   </div>
                 </div>
               </Link>
