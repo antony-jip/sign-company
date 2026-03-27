@@ -1,123 +1,115 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { motion, useInView } from 'framer-motion'
+import { useRef } from 'react'
 import SectionReveal from '../SectionReveal'
 
 const props = [
   {
-    headline: 'Tekeningen delen zonder gedoe.',
-    description: 'Geen mails die kwijtraken, geen WhatsApp-groepen vol bestanden. Je klant ziet alles in het portaal. Tekeningen, offertes, updates.',
-    color: '#6A5A8A',
-    wide: true,
-    icon: (
-      <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
-        <rect x="4" y="6" width="36" height="28" rx="5" stroke="currentColor" strokeWidth="1.5" fill="none" />
-        <path d="M4 26l12-9 7 6 8-7 9 10" stroke="#F15025" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        <circle cx="16" cy="17" r="3.5" fill="currentColor" opacity="0.15" />
-      </svg>
-    ),
+    nummer: '01',
+    headline: 'Tekeningen delen zonder gedoe',
+    description: 'Geen mails die kwijtraken. Geen WhatsApp-groepen vol bestanden. Je klant ziet alles in het portaal. Tekeningen, offertes, updates. Professioneel en overzichtelijk.',
+    accent: '#6A5A8A',
   },
   {
-    headline: 'Niks schiet er doorheen.',
-    description: 'Automatische herinneringen bij openstaande offertes en verlopen facturen. Ook als het druk is.',
-    color: '#F15025',
-    icon: (
-      <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
-        <circle cx="22" cy="22" r="17" stroke="currentColor" strokeWidth="1.5" fill="none" />
-        <path d="M22 12v10l7 4" stroke="#F15025" strokeWidth="2.5" strokeLinecap="round" />
-        <circle cx="22" cy="22" r="2.5" fill="#F15025" />
-      </svg>
-    ),
+    nummer: '02',
+    headline: 'Niks schiet er doorheen',
+    description: 'Offerte verstuurd maar geen reactie? De klant krijgt automatisch een herinnering. Factuur verlopen? Je weet het direct. Alle opvolging geregeld, ook als het druk is.',
+    accent: '#F15025',
   },
   {
-    headline: 'Gebouwd door signmakers.',
-    description: 'We kennen het vak. Uiteenlopende projecten, klein tot groot, en geen software die het begreep. Dus bouwden we het zelf.',
-    color: '#1A535C',
-    icon: (
-      <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
-        <path d="M22 4L6 14v16l16 10 16-10V14L22 4z" stroke="currentColor" strokeWidth="1.5" fill="none" />
-        <circle cx="22" cy="24" r="5" fill="#F15025" />
-        <path d="M19.5 24l2 2L25 22" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    ),
+    nummer: '03',
+    headline: 'Gebouwd door signmakers',
+    description: 'We kennen het vak omdat we het zelf doen. Uiteenlopende projecten, klein tot groot, en geen software die het begreep. Dus bouwden we het zelf.',
+    accent: '#1A535C',
   },
   {
-    headline: 'Klaar voor AI.',
-    description: 'Alles hangt samen als een orkest. Klantdata, projecten, offertes. Daardoor kan AI je echt helpen. Nu al.',
-    color: '#1A535C',
-    icon: (
-      <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
-        <circle cx="22" cy="22" r="6" fill="currentColor" />
-        <circle cx="9" cy="11" r="3.5" fill="currentColor" opacity="0.2" />
-        <circle cx="35" cy="11" r="3.5" fill="currentColor" opacity="0.2" />
-        <circle cx="9" cy="33" r="3.5" fill="currentColor" opacity="0.2" />
-        <circle cx="35" cy="33" r="3.5" fill="currentColor" opacity="0.2" />
-        <line x1="12" y1="13" x2="18" y2="19" stroke="currentColor" strokeWidth="1" opacity="0.15" />
-        <line x1="32" y1="13" x2="26" y2="19" stroke="currentColor" strokeWidth="1" opacity="0.15" />
-        <line x1="12" y1="31" x2="18" y2="25" stroke="currentColor" strokeWidth="1" opacity="0.15" />
-        <line x1="32" y1="31" x2="26" y2="25" stroke="currentColor" strokeWidth="1" opacity="0.15" />
-        <circle cx="22" cy="22" r="2.5" fill="#F15025" />
-      </svg>
-    ),
+    nummer: '04',
+    headline: 'Klaar voor AI',
+    description: 'Alles hangt samen als een orkest. Klantdata, projecten, offertes, facturen. Daardoor kan AI je echt helpen. Niet over vijf jaar. Nu.',
+    accent: '#1A535C',
   },
 ]
+
+function PropRow({ prop, index }: { prop: typeof props[0]; index: number }) {
+  const ref = useRef(null)
+  const isInView = useInView(ref, { once: true, margin: '-100px' })
+  const isEven = index % 2 === 0
+
+  return (
+    <motion.div
+      ref={ref}
+      className="group grid grid-cols-1 md:grid-cols-12 items-center gap-6 md:gap-0 py-12 md:py-16"
+      style={{ borderBottom: index < props.length - 1 ? '1px solid rgba(26,83,92,0.06)' : 'none' }}
+    >
+      {/* Nummer */}
+      <motion.div
+        className={`md:col-span-2 ${isEven ? 'md:order-1' : 'md:order-1'}`}
+        initial={{ opacity: 0, x: -20 }}
+        animate={isInView ? { opacity: 1, x: 0 } : {}}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+      >
+        <span
+          className="font-mono text-[64px] md:text-[80px] font-bold leading-none tracking-tighter select-none"
+          style={{ color: prop.accent, opacity: 0.08 }}
+        >
+          {prop.nummer}
+        </span>
+      </motion.div>
+
+      {/* Headline */}
+      <motion.div
+        className={`md:col-span-4 ${isEven ? 'md:order-2' : 'md:order-3'}`}
+        initial={{ opacity: 0, y: 30 }}
+        animate={isInView ? { opacity: 1, y: 0 } : {}}
+        transition={{ duration: 0.7, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+      >
+        <h3 className="font-heading text-[28px] md:text-[36px] font-bold text-petrol tracking-[-1.5px] leading-[1.1]">
+          {prop.headline}<span className="text-flame">.</span>
+        </h3>
+        {/* Accent line */}
+        <motion.div
+          className="h-[3px] rounded-full mt-4 origin-left"
+          style={{ backgroundColor: prop.accent }}
+          initial={{ scaleX: 0 }}
+          animate={isInView ? { scaleX: 1 } : {}}
+          transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+        />
+      </motion.div>
+
+      {/* Description */}
+      <motion.div
+        className={`md:col-span-5 ${isEven ? 'md:order-3' : 'md:order-2'} md:col-start-8`}
+        initial={{ opacity: 0, y: 20 }}
+        animate={isInView ? { opacity: 1, y: 0 } : {}}
+        transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+      >
+        <p className="text-[16px] md:text-[17px] leading-[1.75] max-w-md" style={{ color: '#6B6B66' }}>
+          {prop.description}
+        </p>
+      </motion.div>
+    </motion.div>
+  )
+}
 
 export default function ValueProps() {
   return (
     <section className="py-24 md:py-36">
       <div className="container-site">
         <SectionReveal>
-          <div className="text-center mb-16 md:mb-20">
+          <div className="mb-16 md:mb-24">
             <h2 className="font-heading text-[36px] md:text-[48px] font-bold text-petrol tracking-[-2px] leading-[1.05] mb-5">
               Waarom doen<span className="text-flame">.</span>
             </h2>
-            <p className="text-muted text-[17px] max-w-lg mx-auto leading-relaxed">
+            <p className="text-[17px] md:text-[19px] max-w-xl leading-relaxed" style={{ color: '#6B6B66' }}>
               We liepen zelf tegen dezelfde problemen aan. Te druk, te veel losse tools, geen overzicht. Dus bouwden we wat we misten.
             </p>
           </div>
         </SectionReveal>
 
-        {/* Bento grid */}
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-4 lg:gap-5">
+        <div>
           {props.map((prop, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{
-                duration: 0.6,
-                delay: i * 0.1,
-                ease: [0.16, 1, 0.3, 1] as const,
-              }}
-              viewport={{ once: true, margin: '-60px' }}
-              className={`group relative rounded-2xl md:rounded-3xl overflow-hidden transition-all duration-500 hover:-translate-y-[2px] ${
-                prop.wide ? 'md:col-span-4' : 'md:col-span-3'
-              } ${i === 3 ? 'md:col-span-3' : ''}`}
-              style={{ backgroundColor: '#FEFDFB', border: '1px solid rgba(0,0,0,0.04)' }}
-            >
-              {/* Top accent line */}
-              <div
-                className="h-[2px] transition-all duration-500 group-hover:h-[3px]"
-                style={{ background: `linear-gradient(90deg, ${prop.color}, ${prop.color}30)` }}
-              />
-
-              <div className="p-7 md:p-9">
-                {/* Icon */}
-                <div
-                  className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5 transition-all duration-300 group-hover:scale-105"
-                  style={{ color: prop.color, backgroundColor: `${prop.color}08` }}
-                >
-                  {prop.icon}
-                </div>
-
-                <h3 className="font-heading text-[20px] md:text-[22px] text-petrol mb-2.5 tracking-tight leading-tight">
-                  {prop.headline}
-                </h3>
-                <p className="text-muted text-[14px] leading-[1.7]">
-                  {prop.description}
-                </p>
-              </div>
-            </motion.div>
+            <PropRow key={prop.nummer} prop={prop} index={i} />
           ))}
         </div>
       </div>
