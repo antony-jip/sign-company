@@ -1,10 +1,10 @@
 'use client'
 
 import { motion, useInView } from 'framer-motion'
-import { useRef, useState } from 'react'
+import { useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
 
 const modules = [
   { label: 'Projecten', href: '/features/projecten', color: '#1A535C', image: '/images/modules/projecten.jpg' },
@@ -19,29 +19,13 @@ const modules = [
 
 export default function ModulesCarousel() {
   const ref = useRef(null)
-  const scrollRef = useRef<HTMLDivElement>(null)
   const isInView = useInView(ref, { once: true, margin: '-60px' })
-  const [canScrollLeft, setCanScrollLeft] = useState(false)
-  const [canScrollRight, setCanScrollRight] = useState(true)
-
-  function updateScroll() {
-    if (!scrollRef.current) return
-    const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current
-    setCanScrollLeft(scrollLeft > 10)
-    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10)
-  }
-
-  function scroll(dir: -1 | 1) {
-    if (!scrollRef.current) return
-    scrollRef.current.scrollBy({ left: dir * 340, behavior: 'smooth' })
-    setTimeout(updateScroll, 400)
-  }
 
   return (
     <section className="py-20 md:py-28" ref={ref}>
-      {/* Header */}
-      <div className="container-site flex items-end justify-between mb-8">
+      <div className="container-site">
         <motion.div
+          className="mb-10"
           initial={{ opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
@@ -51,88 +35,41 @@ export default function ModulesCarousel() {
           </h2>
         </motion.div>
 
-        <motion.div
-          className="flex items-center gap-2"
-          initial={{ opacity: 0 }}
-          animate={isInView ? { opacity: 1 } : {}}
-          transition={{ duration: 0.5, delay: 0.3 }}
-        >
-          <button
-            onClick={() => scroll(-1)}
-            disabled={!canScrollLeft}
-            className="w-10 h-10 rounded-full flex items-center justify-center transition-all disabled:opacity-20"
-            style={{ border: '1px solid #E6E4E0' }}
-          >
-            <ChevronLeft className="w-4 h-4 text-petrol" />
-          </button>
-          <button
-            onClick={() => scroll(1)}
-            disabled={!canScrollRight}
-            className="w-10 h-10 rounded-full flex items-center justify-center transition-all disabled:opacity-20"
-            style={{ backgroundColor: '#1A535C' }}
-          >
-            <ChevronRight className="w-4 h-4 text-white" />
-          </button>
-        </motion.div>
-      </div>
-
-      {/* Carousel */}
-      <div
-        ref={scrollRef}
-        onScroll={updateScroll}
-        className="flex gap-5 overflow-x-auto snap-x snap-mandatory scrollbar-hide pl-[max(1rem,calc((100vw-1200px)/2+1rem))] pr-8"
-        style={{ scrollbarWidth: 'none' }}
-      >
-        {modules.map((mod, i) => (
-          <motion.div
-            key={mod.label}
-            className="flex-shrink-0 snap-start"
-            initial={{ opacity: 0, y: 30 }}
-            animate={isInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.6, delay: i * 0.06, ease: [0.16, 1, 0.3, 1] }}
-          >
-            <Link href={mod.href} className="group block w-[300px] md:w-[340px]">
-              {/* Card */}
-              <div
-                className="rounded-2xl overflow-hidden transition-all duration-500 group-hover:-translate-y-[4px]"
-                style={{ border: '1px solid rgba(0,0,0,0.04)', boxShadow: '0 1px 4px rgba(100,80,40,0.04)' }}
-              >
-                {/* Illustration area with padding */}
-                <div className="bg-white p-6 pb-4">
-                  <Image
-                    src={mod.image}
-                    alt={mod.label}
-                    width={1000}
-                    height={1000}
-                    className="w-full h-auto rounded-xl transition-transform duration-700 group-hover:scale-[1.03]"
-                  />
-                </div>
-
-                {/* Label bar */}
-                <div className="px-6 pb-5 pt-1 bg-white">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: mod.color }} />
-                      <span className="text-[15px] font-bold tracking-tight" style={{ color: '#1A1A1A' }}>
-                        {mod.label}
-                      </span>
-                    </div>
-                    <ChevronRight
-                      className="w-4 h-4 opacity-0 -translate-x-1 group-hover:opacity-50 group-hover:translate-x-0 transition-all duration-300"
-                      style={{ color: mod.color }}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-5">
+          {modules.map((mod, i) => (
+            <motion.div
+              key={mod.label}
+              initial={{ opacity: 0, y: 25 }}
+              animate={isInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.5, delay: i * 0.05, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <Link href={mod.href} className="group block">
+                <div
+                  className="rounded-2xl overflow-hidden transition-all duration-400 group-hover:-translate-y-[3px]"
+                  style={{ border: '1px solid rgba(0,0,0,0.04)', boxShadow: '0 1px 3px rgba(100,80,40,0.03)' }}
+                >
+                  <div className="bg-white p-4">
+                    <Image
+                      src={mod.image}
+                      alt={mod.label}
+                      width={1000}
+                      height={1000}
+                      className="w-full h-auto rounded-xl transition-transform duration-500 group-hover:scale-[1.03]"
                     />
                   </div>
+                  <div className="px-4 pb-4 pt-1 bg-white flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: mod.color }} />
+                      <span className="text-[13px] font-semibold" style={{ color: '#1A1A1A' }}>{mod.label}</span>
+                    </div>
+                    <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-40 transition-opacity duration-300" style={{ color: mod.color }} />
+                  </div>
+                  <div className="h-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ background: `linear-gradient(90deg, ${mod.color}, ${mod.color}20)` }} />
                 </div>
-
-                {/* Accent bar bottom */}
-                <div
-                  className="h-[3px] transition-all duration-300 opacity-0 group-hover:opacity-100"
-                  style={{ background: `linear-gradient(90deg, ${mod.color}, ${mod.color}30)` }}
-                />
-              </div>
-            </Link>
-          </motion.div>
-        ))}
+              </Link>
+            </motion.div>
+          ))}
+        </div>
       </div>
     </section>
   )
