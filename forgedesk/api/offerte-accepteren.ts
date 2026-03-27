@@ -177,50 +177,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       bericht: 'Offerte succesvol geaccepteerd',
     })
 
-    // Email na response — blokkeert de klant niet
+    // Email na response via Resend — blokkeert de klant niet
     try {
-      const [{ data: emailSettings }, { data: profile }] = await Promise.all([
-        supabaseAdmin.from('user_email_settings')
-          .select('gmail_address, encrypted_app_password, smtp_host, smtp_port')
-          .eq('user_id', offerte.user_id).single(),
-        supabaseAdmin.from('profiles')
-          .select('bedrijfsnaam, email, logo_url')
-          .eq('id', offerte.user_id).single(),
-      ])
+      const { data: emailSettings } = await supabaseAdmin.from('user_email_settings')
+        .select('gmail_address')
+        .eq('user_id', offerte.user_id).single()
 
-      if (emailSettings?.gmail_address && emailSettings?.encrypted_app_password) {
-        const password = decrypt(emailSettings.encrypted_app_password)
-        const transporter = createTransport({
-          host: emailSettings.smtp_host || 'smtp.gmail.com',
-          port: emailSettings.smtp_port || 587,
-          secure: emailSettings.smtp_port === 465,
-          auth: { user: emailSettings.gmail_address, pass: password },
-        })
-
-        const deeplink = `${APP_URL}/offertes/${offerte.id}/detail`
-        const bedrijfsnaam = profile?.bedrijfsnaam || ''
-        const fromAddress = bedrijfsnaam
-          ? `"${bedrijfsnaam.replace(/"/g, '')}" <${emailSettings.gmail_address}>`
-          : emailSettings.gmail_address
-
-        const detailsHtml = `<table width="100%" cellpadding="0" cellspacing="0" style="border: 1px solid #E8E8E3; border-radius: 8px; margin: 0 0 8px 0;"><tr><td style="padding: 12px 20px; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: #5A5A55;">Offerte</td><td style="padding: 12px 20px; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; font-weight: 600; color: #1A1A1A;">${escapeHtml(offerte.titel || offerte.nummer)}</td></tr><tr><td style="padding: 12px 20px; border-top: 1px solid #E8E8E3; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: #5A5A55;">Bedrag</td><td style="padding: 12px 20px; border-top: 1px solid #E8E8E3; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; font-weight: 600; color: #1A1A1A;">${formatCurrency(offerte.totaal)}</td></tr><tr><td style="padding: 12px 20px; border-top: 1px solid #E8E8E3; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: #5A5A55;">Geaccepteerd door</td><td style="padding: 12px 20px; border-top: 1px solid #E8E8E3; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; font-weight: 600; color: #1A1A1A;">${escapeHtml(naam.trim())}</td></tr><tr><td style="padding: 12px 20px; border-top: 1px solid #E8E8E3; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: #5A5A55;">Datum</td><td style="padding: 12px 20px; border-top: 1px solid #E8E8E3; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; font-weight: 600; color: #1A1A1A;">${formatDate(new Date())}</td></tr></table>`
-
-        const emailHtml = buildPortalEmailHtml({
-          heading: `Offerte ${offerte.nummer} geaccepteerd`,
-          beschrijving: `${naam.trim()} heeft de offerte geaccepteerd.`,
-          ctaLabel: 'Bekijk offerte in Doen. →',
-          ctaUrl: deeplink,
-          bedrijfsnaam,
-          logoUrl: profile?.logo_url || undefined,
-          primaireKleur: '#16a34a',
-          extraHtml: detailsHtml,
-        })
-
-        await transporter.sendMail({
-          from: fromAddress,
+      if (emailSettings?.gmail_address) {
+        const { sendDoenNotification } = await import('./resend-notify')
+        await sendDoenNotification({
           to: emailSettings.gmail_address,
           subject: `Offerte ${offerte.nummer} geaccepteerd — ${offerte.klant_naam || 'Klant'}`,
-          html: emailHtml,
+          heading: `Offerte ${offerte.nummer} geaccepteerd`,
+          itemTitel: offerte.titel || offerte.nummer,
+          projectNaam: `Geaccepteerd door ${naam.trim()} — ${formatCurrency(offerte.totaal)}`,
+          ctaUrl: `${APP_URL}/offertes/${offerte.id}/detail`,
+          ctaLabel: 'Bekijk offerte in doen. →',
         })
       }
     } catch (emailErr) {

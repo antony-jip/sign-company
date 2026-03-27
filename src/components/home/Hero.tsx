@@ -143,9 +143,12 @@ export default function Hero() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.7, ease: [0.16, 1, 0.3, 1] }}
             >
+              <p className="text-[13px] text-flame font-semibold mb-3 tracking-wide">
+                Binnenkort live. Schrijf je in voor early access.
+              </p>
               <WachtlijstForm />
               <p className="text-xs text-white/25 mt-3">
-                Eerste 30 dagen gratis. Geen creditcard nodig.
+                We mailen je zodra doen. live gaat. Geen spam.
               </p>
             </motion.div>
           </div>

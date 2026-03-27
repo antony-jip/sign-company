@@ -210,38 +210,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         gelezen: false,
       })
 
-      // Stuur email naar gebruiker via user_email_settings (encrypted credentials)
-      const { data: emailSettings, error: emailSettingsError } = await supabaseAdmin
+      // Haal user email op voor notificatie
+      const { data: emailSettings } = await supabaseAdmin
         .from('user_email_settings')
-        .select('gmail_address, encrypted_app_password, smtp_host, smtp_port')
+        .select('gmail_address')
         .eq('user_id', portaal.user_id)
         .maybeSingle()
 
-      console.log('[portaal-reactie] email lookup:', {
-        user_id: portaal.user_id,
-        found: !!emailSettings,
-        has_gmail: !!emailSettings?.gmail_address,
-        has_password: !!emailSettings?.encrypted_app_password,
-        has_encryption_key: !!ENCRYPTION_KEY,
-        error: emailSettingsError?.message || null,
-      })
-
-      // Haal branding info op voor email
-      const { data: profileData } = await supabaseAdmin
-        .from('profiles')
-        .select('logo_url, bedrijfsnaam')
-        .eq('id', portaal.user_id)
-        .maybeSingle()
-
-      const { data: docStyleData } = await supabaseAdmin
-        .from('document_styles')
-        .select('primaire_kleur')
-        .eq('user_id', portaal.user_id)
-        .maybeSingle()
-
-      if (emailSettings?.gmail_address && emailSettings?.encrypted_app_password && ENCRYPTION_KEY) {
-        const password = decrypt(emailSettings.encrypted_app_password)
-
+      const userEmail = emailSettings?.gmail_address
+      if (userEmail) {
         const onderwerp = type === 'goedkeuring'
           ? `Goedgekeurd: ${fullItem?.titel || 'Item'} — ${displayNaam}`
           : type === 'revisie'
@@ -250,50 +227,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         const appUrl = process.env.VITE_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://app.doen.team')
 
-        const emailBody = [
-          `${displayNaam} heeft ${actieLabel}:`,
-          bericht?.trim() ? `\n"${bericht.trim()}"` : '',
-          `\nItem: ${fullItem?.titel || 'Item'}`,
-          `Project: ${project?.naam || 'Project'}`,
-          `\nBekijk: ${appUrl}/projecten/${portaal.project_id}`,
-        ].filter(Boolean).join('\n')
-
-        const emailHtml = buildPortalEmailHtml({
+        // Stuur via Resend (doen. systeem-notificatie)
+        const { sendDoenNotification } = await import('./resend-notify')
+        sendDoenNotification({
+          to: userEmail,
+          subject: onderwerp,
           heading: `${displayNaam} heeft ${actieLabel}`,
           itemTitel: fullItem?.titel || 'Item',
-          beschrijving: `Project: ${project?.naam || 'Project'}`,
+          projectNaam: project?.naam || 'Project',
           quote: bericht?.trim() || undefined,
-          ctaLabel: 'Bekijk in portaal \u2192',
           ctaUrl: `${appUrl}/projecten/${portaal.project_id}`,
-          bedrijfsnaam: profileData?.bedrijfsnaam || undefined,
-          logoUrl: profileData?.logo_url || undefined,
-          primaireKleur: docStyleData?.primaire_kleur || undefined,
-        })
-
-        // Stuur direct via nodemailer
-        const transporter = createTransport({
-          host: emailSettings.smtp_host || 'smtp.gmail.com',
-          port: emailSettings.smtp_port || 587,
-          secure: (emailSettings.smtp_port || 587) === 465,
-          auth: { user: emailSettings.gmail_address, pass: password },
-        })
-
-        const fromAddress = profileData?.bedrijfsnaam
-          ? `"${profileData.bedrijfsnaam.replace(/"/g, '')}" <${emailSettings.gmail_address}>`
-          : emailSettings.gmail_address
-
-        console.log('[portaal-reactie] sending email to:', emailSettings.gmail_address, 'subject:', onderwerp)
-        transporter.sendMail({
-          from: fromAddress,
-          to: emailSettings.gmail_address,
-          subject: onderwerp,
-          text: emailBody,
-          html: emailHtml,
-        }).then(() => {
-          console.log('[portaal-reactie] email sent successfully')
-        }).catch(err => console.warn('[portaal-reactie] email send failed:', err))
-      } else {
-        console.log('[portaal-reactie] skipping email — missing credentials or encryption key')
+        }).catch(err => console.warn('[portaal-reactie] resend notify failed:', err))
       }
     } catch (notifErr) {
       console.error('[portaal-reactie] notificatie/email error:', notifErr)

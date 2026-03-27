@@ -147,74 +147,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         gelezen: false,
       })
 
-      // Stuur email naar gebruiker
-      const { data: emailSettings } = await supabaseAdmin
-        .from('app_settings')
-        .select('email_instellingen')
+      // Stuur email naar gebruiker via Resend
+      const { data: userEmailSettings } = await supabaseAdmin
+        .from('user_email_settings')
+        .select('gmail_address')
         .eq('user_id', gk.user_id)
         .maybeSingle()
 
-      const emailConfig = emailSettings?.email_instellingen as {
-        gmail_address?: string
-        app_password?: string
-        smtp_host?: string
-        smtp_port?: number
-      } | null
-
-      if (emailConfig?.gmail_address && emailConfig?.app_password) {
+      const userEmail = userEmailSettings?.gmail_address
+      if (userEmail) {
         const onderwerp = status === 'goedgekeurd'
           ? `Tekening goedgekeurd door ${klantNaam}`
           : `Revisie gevraagd door ${klantNaam}`
 
-        const appUrl = process.env.VITE_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://forgedesk.nl')
+        const appUrl = process.env.VITE_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://app.doen.team')
 
-        // Haal profiel op voor branding
-        const { data: profile } = await supabaseAdmin
-          .from('profiles')
-          .select('bedrijfsnaam, logo_url')
-          .eq('id', gk.user_id)
-          .maybeSingle()
-
-        const { data: docStyle } = await supabaseAdmin
-          .from('document_styles')
-          .select('primaire_kleur')
-          .eq('user_id', gk.user_id)
-          .maybeSingle()
-
-        const emailBody = [
-          `${klantNaam} heeft de tekening ${actieLabel}:`,
-          status === 'revisie' ? `\nOpmerkingen: "${revisie_opmerkingen!.trim()}"` : '',
-          `\nProject: ${project?.naam || 'Project'}`,
-          gk.revisie_nummer > 1 ? `Revisie nummer: ${gk.revisie_nummer}` : '',
-          `\nBekijk in Doen.: ${appUrl}/projecten/${gk.project_id}`,
-        ].filter(Boolean).join('\n')
-
-        const emailHtml = buildPortalEmailHtml({
+        const { sendDoenNotification } = await import('./resend-notify')
+        sendDoenNotification({
+          to: userEmail,
+          subject: onderwerp,
           heading: `Tekening ${actieLabel} door ${klantNaam}`,
           itemTitel: project?.naam || 'Project',
-          beschrijving: gk.revisie_nummer > 1 ? `Revisie nummer: ${gk.revisie_nummer}` : undefined,
           quote: status === 'revisie' ? revisie_opmerkingen!.trim() : undefined,
-          ctaLabel: 'Bekijk in Doen. →',
           ctaUrl: `${appUrl}/projecten/${gk.project_id}`,
-          bedrijfsnaam: profile?.bedrijfsnaam || undefined,
-          logoUrl: profile?.logo_url || undefined,
-          primaireKleur: docStyle?.primaire_kleur || undefined,
-        })
-
-        fetch(`${appUrl}/api/send-email`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            gmail_address: emailConfig.gmail_address,
-            app_password: emailConfig.app_password,
-            smtp_host: emailConfig.smtp_host,
-            smtp_port: emailConfig.smtp_port,
-            to: emailConfig.gmail_address,
-            subject: onderwerp,
-            body: emailBody,
-            html: emailHtml,
-          }),
-        }).catch(err => console.warn('Email naar gebruiker mislukt:', err))
+        }).catch(err => console.warn('Resend notify mislukt:', err))
       }
     } catch (notifErr) {
       console.warn('Notificatie/email bij goedkeuring mislukt:', notifErr)

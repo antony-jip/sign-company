@@ -13,9 +13,15 @@ export default function WachtlijstForm({ variant = 'default' }: { variant?: 'def
 
     setStatus('loading')
 
-    // Simulate API call, replace with Supabase or API route later
     try {
-      await new Promise((resolve) => setTimeout(resolve, 800))
+      const res = await fetch('/api/wachtlijst', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
+
+      if (!res.ok) throw new Error()
+
       setStatus('success')
       setEmail('')
     } catch {
@@ -40,7 +46,7 @@ export default function WachtlijstForm({ variant = 'default' }: { variant?: 'def
               Goed bezig<span className="text-flame">.</span>
             </p>
             <p className={`text-sm mt-1 ${isDark ? 'text-white/60' : 'text-muted'}`}>
-              We melden ons.
+              Je hoort van ons zodra doen. live gaat.
             </p>
           </motion.div>
         ) : (
@@ -69,7 +75,7 @@ export default function WachtlijstForm({ variant = 'default' }: { variant?: 'def
               disabled={status === 'loading'}
               className="bg-flame text-white font-semibold text-sm px-6 py-3 rounded-lg hover:bg-flame/90 transition-colors duration-200 whitespace-nowrap disabled:opacity-60 min-h-[48px]"
             >
-              {status === 'loading' ? 'Even wachten...' : 'Ik doe mee.'}
+              {status === 'loading' ? 'Even wachten...' : 'Houd me op de hoogte.'}
             </button>
           </motion.form>
         )}

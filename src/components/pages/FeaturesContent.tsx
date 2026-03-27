@@ -13,8 +13,9 @@ const modules = [
     color: '#1A535C',
     image: '/images/modules/projecten.jpg',
     headline: 'Alles in één cockpit.',
-    description: 'Elk project heeft een cockpit. Briefing, taken, offertes, montage-afspraken, bestanden en activiteit. Bovenaan staan quick actions: Taak, Offerte, Werkbon, Montage, Factuur. Eén klik en je bent bezig.',
-    highlights: ['Briefing, taken en bestanden op één plek', 'Quick actions voor elke stap', 'Statusflow: gepland → actief → gefactureerd', 'Situatiefoto\'s en documentbeheer', 'Activiteitfeed per project'],
+    description: 'Klant vraagt een offerte aan? Maak een project aan. Vanuit de cockpit doe je alles: offertes maken, situatiefoto\'s uploaden, taken toewijzen, bestanden delen via het portaal. De offertetekst wordt 1:1 overgenomen in de werkbon, zodat je monteur exact weet wat er bedoeld wordt.',
+    highlights: ['Cockpit: offertes, taken, bestanden en portaal op één plek', 'Offertetekst wordt 1:1 overgenomen in werkbonnen', 'Situatiefoto\'s uploaden en delen met je klant', 'Klantportaal: bestanden delen en overzicht houden', 'Statusflow: actief → te plannen → gepland → in review → te factureren → afgerond'],
+    detail: 'Het project is de kern van doen. Alles begint hier. Vanuit de cockpit heb je overzicht op de hele flow: van eerste klantvraag tot oplevering. Taken toewijzen, offertes opstellen, werkbonnen klaarzetten, montage plannen. Alles is gekoppeld, niks valt tussen wal en schip. Je monteur ziet exact wat er in de offerte staat, je klant volgt mee via het portaal.',
   },
   {
     id: 'offertes',
@@ -22,8 +23,9 @@ const modules = [
     color: '#F15025',
     image: '/images/modules/offertes.jpg',
     headline: 'Professioneel in minuten.',
-    description: 'Selecteer een klant, voeg items toe met je prijscalculatie, verstuur direct per email met PDF. Autosave terwijl je werkt. Versioning als de klant wijzigingen wil. Klant keurt goed via het portaal.',
-    highlights: ['Calculatie-templates voor snellere offertes', 'PDF automatisch als bijlage bij email', 'Versiegeschiedenis bewaard', 'Klant keurt goed via het portaal', 'Kanban pipeline: concept → verstuurd → akkoord'],
+    description: 'Maak je eigen calculatie-templates aan voor jouw diensten. Producten zoals wrapfolie voeg je toe als vaste items. De calculator combineert verschillende elementen tot één prijs. Upload een werktekening en die wordt direct opgeslagen als liggende tekening met omschrijving — geen Illustrator nodig.',
+    highlights: ['Calculatie-templates en producten aanmaken', 'Calculator: meerdere elementen → één prijs', 'Werktekening uploaden direct in de offerte', 'Verstuur als PDF per mail of via het portaal', 'Statusflow: concept → verstuurd → bekeken → akkoord → gefactureerd'],
+    detail: 'Geen losse Excel-sheets meer. Bouw je eigen templates voor je meest voorkomende diensten: gevelreclame, autobelettering, lichtreclame. Voeg producten toe als vaste items zodat je ze steeds hergebruikt. Upload een werktekening direct in de offerte — die wordt automatisch opgeslagen als liggende tekening met omschrijving. Meerdere offertes per project, versioning bij wijzigingen, en je klant keurt goed via mail of het portaal.',
   },
   {
     id: 'portaal',
@@ -31,8 +33,9 @@ const modules = [
     color: '#6A5A8A',
     image: '/images/modules/klantportaal.jpg',
     headline: 'Deel, bespreek, accordeer.',
-    description: 'Activeer het portaal en je klant krijgt een unieke link. Tekeningen bekijken, offertes goedkeuren, berichten sturen, bestanden uploaden. Geen inloggen nodig. Reageert de klant niet? Automatische herinnering.',
-    highlights: ['Unieke link per project', 'Tekeningen goedkeuren met één klik', 'Chat-achtige tijdlijn', 'Automatische herinneringen', 'Eigen branding'],
+    description: 'Open het portaal en je klant ontvangt een unieke link per mail. Geen inloggen nodig. Je klant reageert direct op werktekeningen, visualisaties, offertes en facturen. Meerdere contactpersonen per klant.',
+    highlights: ['Unieke link per project, geen inlog nodig', 'Klant reageert op tekeningen, offertes en facturen', 'Notificaties bij nieuwe items in het portaal', 'Automatische herinneringen (instelbaar + eigen template)', 'Meerdere contactpersonen per klant'],
+    detail: 'Geen eindeloos mailen meer. Je klant krijgt een persoonlijke link en ziet alles op één plek: werktekeningen, visualisaties, offertes, facturen. Ze reageren direct op bestanden — geen losse mailthreads. Reageert de klant niet? Na 3 dagen gaat er automatisch een herinnering uit, met jouw eigen template. Meerdere contactpersonen van dezelfde klant kunnen allemaal mee.',
   },
   {
     id: 'planning',
@@ -40,8 +43,9 @@ const modules = [
     color: '#9A5A48',
     image: '/images/modules/planning.jpg',
     headline: 'Sleep je week in elkaar.',
-    description: 'Weekoverzicht met alle montage-afspraken per dag. Sleep "te plannen" projecten direct naar een dag. Filter op monteur. Weerbericht geïntegreerd. Conflict-detectie als monteurs dubbel gepland staan.',
-    highlights: ['Drag-and-drop montageplanning', 'Weerbericht per dag', 'Per monteur filteren', 'Conflict-detectie', 'Statusflow: gepland → onderweg → afgerond'],
+    description: 'Maak vanuit een project een montage-afspraak aan, of zet het op "te plannen" zodat je monteur het zelf inplant. Weekoverzicht per monteur of per ploeg. Elke afspraak toont tijd, locatie, projectnaam en de gekoppelde werkbon.',
+    highlights: ['Drag-and-drop vanuit "te plannen" naar een dag', 'Plan per monteur of per ploeg', 'Werkbon direct gekoppeld aan de afspraak', 'Weerbericht per dag in de planning', 'Filter op monteur en conflict-detectie'],
+    detail: 'Planning hoeft niet ingewikkeld te zijn. Zet een project op "te plannen" en je monteur pakt het zelf op, of sleep het naar een dag in het weekoverzicht. Elke afspraak toont alles wat je monteur nodig heeft: tijd, locatie, projectnaam en de werkbon. Het weerbericht zit geïntegreerd, zodat je buiten-montages slim plant. Dubbel geboekt? Conflict-detectie waarschuwt je.',
   },
   {
     id: 'werkbonnen',
@@ -49,8 +53,9 @@ const modules = [
     color: '#1A535C',
     image: '/images/modules/werkbonnen.jpg',
     headline: 'Digitaal op locatie.',
-    description: 'Een werkbon is de opdracht voor je monteur. Koppel aan project en offerte, alles wordt overgenomen. Items met beschrijving en afbeeldingen. Monteur registreert uren, uploadt foto\'s, klant tekent digitaal.',
-    highlights: ['Neemt offerte-regels automatisch over', 'Foto\'s uploaden op locatie', 'Digitale klanthandtekening', 'Uren en materiaal registreren', 'PDF werkbon-instructie genereren'],
+    description: 'De werkbon neemt alle regels uit de offerte 1:1 over, of maak er een vanaf scratch. Upload tot 2 afbeeldingen (4:3) als instructie. Je monteur opent de werkbon op zijn telefoon, registreert uren, maakt foto\'s op locatie.',
+    highlights: ['Offerte-regels worden 1:1 overgenomen', 'Afbeeldingen toevoegen als instructie', 'Monteur registreert uren en foto\'s op locatie', 'Werkbon op telefoon of uitprinten', 'Vanaf scratch of vanuit een offerte'],
+    detail: 'De werkbon is het verlengstuk van de offerte. Alle regels worden 1:1 overgenomen, zodat je monteur precies weet wat er bedoeld wordt. Voeg instructiefoto\'s toe zodat er geen twijfel is. Op locatie opent je monteur de werkbon op zijn telefoon: uren registreren, foto\'s maken van het resultaat. Liever papier? Print hem uit. Alles komt automatisch terug in het project.',
   },
   {
     id: 'facturen',
@@ -58,8 +63,9 @@ const modules = [
     color: '#2D6B48',
     image: '/images/modules/facturen.jpg',
     headline: 'Verstuurd, herinnerd, betaald.',
-    description: 'Maak facturen op basis van goedgekeurde offertes. Alle regels worden overgenomen. PDF bijlage bij email. Mollie betaallink zodat klanten direct online betalen. Automatische herinneringen bij verlopen facturen.',
-    highlights: ['Eén klik factuur vanuit offerte', 'Mollie betaallink (iDEAL, creditcard)', 'Automatische herinneringen (7, 14, 21, 30 dagen)', 'Creditnota\'s en voorschotfacturen', 'UBL/e-facturatie export'],
+    description: 'Maak een factuur vanuit een goedgekeurde offerte of vanaf scratch. Volledig gecustomized: eigen layout, eigen teksten. Klant betaalt direct via Mollie of ontvangt een losse factuur-PDF.',
+    highlights: ['Factuur vanuit offerte of vanaf scratch', 'Mollie betaallink (iDEAL, creditcard)', 'Automatische herinneringen (zelf instelbaar)', 'Voorschotfacturen en deelfacturen', 'Volledig gecustomized layout en teksten'],
+    detail: 'Factureren zonder gedoe. Met één klik maak je een factuur vanuit een goedgekeurde offerte — alle regels worden overgenomen. Of maak er een vanaf scratch. Je klant betaalt direct via Mollie (iDEAL, creditcard) of ontvangt een PDF. Herinneringen worden automatisch verstuurd vanuit doen., op het moment dat jij instelt. Voorschotfacturen en deelfacturen voor grote projecten.',
   },
   {
     id: 'visualizer',
@@ -67,8 +73,9 @@ const modules = [
     color: '#9A5A48',
     image: '/images/modules/visualizer.jpg',
     headline: 'AI toont het eindresultaat.',
-    description: 'Upload een foto van de locatie. AI visualiseert het eindresultaat. Gevelreclame, lichtreclame, autobelettering. Koppel aan project of offerte, deel via het portaal. Draait op Nano Banana 2.',
-    highlights: ['Upload foto → AI genereert visualisatie', 'Koppel aan project of offerte', 'Deel via het klantportaal', 'Betaal per visualisatie (krediet bijkopen)', 'Gevelreclame, lichtreclame, autobelettering'],
+    description: 'Upload een schets of foto en AI brengt het tot leven. Autobelettering, gevelreclame, lichtreclame — je input wordt verbeterd door Claude Sonnet en gevisualiseerd via Nano Banana.',
+    highlights: ['Upload schets of foto → AI visualiseert het resultaat', 'Input wordt verbeterd door Claude Sonnet', 'Koppel aan project of offerte binnen doen.', '10 credits standaard, bijkopen wanneer je wilt', 'Deel via het portaal met je klant'],
+    detail: 'Laat je klant zien hoe het eindresultaat eruitziet, nog vóór je begint. Upload een schets van de autobelettering of een foto van de gevel. Claude Sonnet verbetert je input en Nano Banana genereert een realistische visualisatie. Koppel het aan een project of offerte en deel het via het portaal. Je begint met 10 credits en koopt bij wanneer je wilt.',
   },
   {
     id: 'ai',
@@ -76,10 +83,62 @@ const modules = [
     color: '#1A535C',
     image: '/images/modules/ai-assistant.jpg',
     headline: 'Je slimste collega.',
-    description: 'Daan kent je bedrijfsdata. Schrijft offerteteksten, vat projecten samen, beantwoordt vragen. "Hoeveel offertes staan open?" "Wie is mijn grootste klant?" Email schrijfassistent. Wordt steeds slimmer.',
-    highlights: ['AI chatbot die je data kent', 'Offerteteksten genereren en verbeteren', 'Business analytics via chat', 'Email schrijfassistent', 'Powered by Claude'],
+    description: 'Daan ziet al je data: facturen, projecten, offertes, klanten. Vraag "hoeveel staat er open?" of "welke projecten lopen?" en je hebt antwoord. Selecteer tekst en Daan verbetert of verlengt het.',
+    highlights: ['Ziet al je bedrijfsdata: facturen, projecten, klanten', 'Tekst selecteren → verbeteren of verlengen', 'Mails samenvatten en schrijven', 'Helpt met calculaties en vierkante meters', 'Draait op Claude Sonnet 4.6'],
+    detail: 'Daan is je AI-collega die alles weet van je bedrijf. Vraag hoeveel er openstaat, wie je grootste klant is, of welke projecten vertraging hebben. Selecteer tekst in een offerte of mail en Daan verbetert of verlengt het. Laat Daan je mails samenvatten of een offertetekst schrijven. Moet je vierkante meters uitrekenen voor een calculatie? Daan helpt. Draait op Claude Sonnet 4.6 en wordt steeds slimmer.',
   },
 ]
+
+const faq = [
+  { q: 'Kan ik doen. eerst uitproberen?', a: 'Ja, de eerste 30 dagen zijn gratis. Geen creditcard nodig. Je hebt direct toegang tot alle modules.' },
+  { q: 'Hoeveel kost doen. na de proefperiode?', a: '€49 per maand voor 3 gebruikers. Elke extra gebruiker is €10 per maand. Geen opzetkosten, geen verborgen kosten.' },
+  { q: 'Kan ik mijn bestaande data importeren?', a: 'Ja, we helpen je met het importeren van je klanten en producten. Neem contact op via hello@doen.team.' },
+  { q: 'Werkt doen. op mijn telefoon?', a: 'Ja. De planning en werkbonnen zijn geoptimaliseerd voor mobiel. Je monteur opent de werkbon op zijn telefoon en registreert direct uren en foto\'s.' },
+  { q: 'Hoe werkt het klantportaal?', a: 'Je klant ontvangt een unieke link per mail. Geen inlog nodig. Ze bekijken tekeningen, keuren offertes goed en reageren op bestanden. Je stelt zelf in wanneer herinneringen uitgaan.' },
+  { q: 'Wat is de Visualizer?', a: 'Upload een schets of foto en AI genereert een realistische visualisatie van het eindresultaat. Je begint met 10 credits en koopt bij wanneer je wilt.' },
+  { q: 'Zit AI echt overal in?', a: 'Ja. Daan (onze AI-assistent) draait op Claude Sonnet 4.6. Hij kent je bedrijfsdata, schrijft teksten, helpt met calculaties en wordt steeds slimmer.' },
+  { q: 'Kan ik doen. koppelen aan mijn boekhouding?', a: 'We werken aan een koppeling met Exact Online. Mollie (iDEAL, creditcard) is al geïntegreerd voor online betalingen.' },
+]
+
+function FAQItem({ question, answer, index }: { question: string; answer: string; index: number }) {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <div style={{ borderBottom: '1px solid #EBEBEB' }}>
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between py-5 text-left group"
+      >
+        <span className="text-[15px] md:text-[16px] font-semibold text-petrol pr-4">{question}</span>
+        <motion.span
+          className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center"
+          style={{ backgroundColor: open ? '#F15025' : '#F8F7F5' }}
+          animate={{ rotate: open ? 45 : 0 }}
+          transition={{ duration: 0.2 }}
+        >
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path d="M6 2V10M2 6H10" stroke={open ? 'white' : '#9B9B95'} strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+        </motion.span>
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            className="overflow-hidden"
+          >
+            <p className="text-[14px] md:text-[15px] leading-[1.7] pb-5" style={{ color: '#6B6B66' }}>
+              {answer}
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
 
 export default function FeaturesContent() {
   const [activeModule, setActiveModule] = useState(0)
@@ -115,38 +174,45 @@ export default function FeaturesContent() {
       </section>
 
       {/* Module illustration slider */}
-      <section className="pb-6 bg-white">
-        <div
-          ref={scrollRef}
-          className="flex gap-3 overflow-x-auto snap-x snap-mandatory px-[max(1rem,calc((100vw-1200px)/2))] pb-4"
-          style={{ scrollbarWidth: 'none' }}
-        >
-          {modules.map((m, i) => (
-            <button
-              key={m.id}
-              onClick={() => selectModule(i)}
-              className={`flex-shrink-0 snap-center transition-all duration-300 ${
-                activeModule === i ? 'scale-100 opacity-100' : 'scale-95 opacity-50 hover:opacity-75'
-              }`}
-            >
-              <div className={`w-[120px] md:w-[140px] rounded-xl overflow-hidden transition-all duration-300 ${
-                activeModule === i ? 'ring-2 shadow-lg' : ''
-              }`} style={activeModule === i ? { ringColor: m.color, boxShadow: `0 4px 20px ${m.color}20` } : {}}>
-                <Image
-                  src={m.image}
-                  alt={m.name}
-                  width={500}
-                  height={500}
-                  className="w-full aspect-square object-cover"
-                />
-              </div>
-              <p className={`text-[11px] md:text-[12px] mt-2 font-semibold transition-colors duration-300 ${
-                activeModule === i ? '' : 'text-[#9B9B95]'
-              }`} style={activeModule === i ? { color: m.color } : {}}>
-                {m.name}<span style={{ color: m.color }}>.</span>
-              </p>
-            </button>
-          ))}
+      <section className="bg-white pt-8 pb-10 md:pb-14">
+        <div className="container-site">
+          <div
+            ref={scrollRef}
+            className="flex gap-4 md:gap-5 overflow-x-auto snap-x snap-mandatory pb-4"
+            style={{ scrollbarWidth: 'none' }}
+          >
+            {modules.map((m, i) => (
+              <button
+                key={m.id}
+                onClick={() => selectModule(i)}
+                className={`flex-shrink-0 snap-center transition-all duration-300 ${
+                  activeModule === i ? 'scale-100 opacity-100' : 'scale-95 opacity-60 hover:opacity-80'
+                }`}
+              >
+                <div className={`w-[100px] md:w-[120px] rounded-xl overflow-hidden transition-all duration-300`}
+                  style={activeModule === i ? { boxShadow: `0 0 0 2px ${m.color}, 0 4px 20px ${m.color}20` } : {}}
+                >
+                  <Image
+                    src={m.image}
+                    alt={m.name}
+                    width={500}
+                    height={500}
+                    className="w-full aspect-square object-cover"
+                  />
+                </div>
+                <p className={`text-[11px] md:text-[12px] mt-2 font-semibold transition-colors duration-300 ${
+                  activeModule === i ? '' : 'text-[#9B9B95]'
+                }`} style={activeModule === i ? { color: m.color } : {}}>
+                  {m.name}<span style={{ color: m.color }}>.</span>
+                </p>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div className="container-site mt-6">
+          <div className="h-px" style={{ backgroundColor: '#EBEBEB' }} />
         </div>
       </section>
 
@@ -211,35 +277,46 @@ export default function FeaturesContent() {
                   />
                 </div>
               </div>
+
+              {/* Detail section */}
+              <motion.div
+                className="mt-12 md:mt-16 rounded-2xl p-8 md:p-10"
+                style={{ backgroundColor: `${mod.color}08`, border: `1px solid ${mod.color}12` }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${mod.color}15` }}>
+                    <span className="font-mono text-[13px] font-bold" style={{ color: mod.color }}>i</span>
+                  </div>
+                  <h3 className="font-heading text-[18px] md:text-[20px] font-bold text-petrol tracking-tight">
+                    Waarom {mod.name.toLowerCase()} in doen<span className="text-flame">.</span>
+                  </h3>
+                </div>
+                <p className="text-[15px] leading-[1.8] max-w-3xl" style={{ color: '#6B6B66' }}>
+                  {mod.detail}
+                </p>
+              </motion.div>
             </motion.div>
           </AnimatePresence>
         </div>
       </section>
 
-      {/* Integrations */}
+      {/* FAQ */}
       <section className="py-16 md:py-24">
         <div className="container-site">
           <SectionReveal>
             <h2 className="font-heading text-[28px] md:text-[36px] font-bold text-petrol tracking-[-1.5px] text-center mb-4">
-              Koppelingen<span className="text-flame">.</span>
+              Veelgestelde vragen<span className="text-flame">.</span>
             </h2>
             <p className="text-[15px] text-center max-w-md mx-auto mb-12" style={{ color: '#6B6B66' }}>
-              doen. praat met de tools die je al gebruikt.
+              Alles wat je wilt weten over doen.
             </p>
           </SectionReveal>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-3xl mx-auto">
-            {[
-              { name: 'Mollie', desc: 'Je klant betaalt facturen direct online via iDEAL, creditcard of andere methodes.' },
-              { name: 'Exact Online', desc: 'Facturen automatisch synchroniseren met je boekhouding.' },
-              { name: 'Probo', desc: 'Live printprijzen ophalen vanuit de offerte-editor.' },
-              { name: 'KVK', desc: 'Bedrijfsgegevens automatisch ophalen bij het aanmaken van een klant.' },
-              { name: 'Email (IMAP/SMTP)', desc: 'Je eigen email in doen. Versturen, ontvangen, templates.' },
-              { name: 'AI (Claude)', desc: 'Teksten schrijven, verbeteren, samenvatten, analyseren.' },
-            ].map((integ, i) => (
-              <div key={i} className="bg-white rounded-xl p-5" style={{ border: '1px solid rgba(0,0,0,0.04)' }}>
-                <p className="font-mono text-[11px] font-bold text-petrol mb-1.5 tracking-wider">{integ.name}</p>
-                <p className="text-[13px] leading-relaxed" style={{ color: '#6B6B66' }}>{integ.desc}</p>
-              </div>
+          <div className="max-w-2xl mx-auto space-y-0">
+            {faq.map((item, i) => (
+              <FAQItem key={i} question={item.q} answer={item.a} index={i} />
             ))}
           </div>
         </div>
@@ -249,11 +326,12 @@ export default function FeaturesContent() {
       <section className="pb-20 md:pb-32">
         <div className="container-site">
           <div className="rounded-2xl p-10 md:p-14 text-center" style={{ backgroundColor: '#1A535C' }}>
+            <p className="text-[13px] text-flame font-semibold mb-3 tracking-wide">Binnenkort live</p>
             <h2 className="font-heading text-[24px] md:text-[32px] font-bold text-white tracking-tight mb-3">
-              Alles zit erin<span className="text-flame">.</span> Geen add-ons.
+              Schrijf je in voor early access<span className="text-flame">.</span>
             </h2>
             <p className="text-[15px] text-white/40 max-w-md mx-auto mb-8">
-              Bij anderen betaal je extra voor planning, klantportaal of AI. Bij ons zit alles erin.
+              Alles zit erin. Geen add-ons. We mailen je zodra doen. live gaat.
             </p>
             <div className="flex justify-center">
               <WachtlijstForm />

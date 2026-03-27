@@ -69,13 +69,13 @@ function ModuleCard({ mod, i, isInView }: { mod: typeof modules[0]; i: number; i
       <Link href={mod.href} className="group block">
         <div className="transition-all duration-400 group-hover:-translate-y-1">
           {/* Fixed-size illustration container */}
-          <div className="aspect-square flex items-center justify-center p-4 md:p-6 mb-4">
+          <div className="aspect-square flex items-center justify-center p-6 md:p-8 mb-4">
             <Image
               src={mod.image}
               alt={mod.label}
               width={1000}
               height={1000}
-              className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
+              className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-[1.03]"
             />
           </div>
 

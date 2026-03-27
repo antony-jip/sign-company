@@ -20,10 +20,10 @@ export default function CTASection() {
               transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
             >
               <h2 className="font-heading text-[36px] md:text-[52px] font-bold text-white tracking-[-2.5px] leading-[0.95] mb-5">
-                Klaar om te doen<span className="text-flame">.</span>
+                Binnenkort live<span className="text-flame">.</span>
               </h2>
               <p className="text-[17px] md:text-[19px] text-white/40 mb-10 max-w-md mx-auto leading-relaxed">
-                Doe waar je goed in bent. De administratie? Die is slim gedaan.
+                Schrijf je in en wij laten je weten zodra doen. klaar is. Als eerste erbij.
               </p>
             </motion.div>
 
@@ -36,7 +36,7 @@ export default function CTASection() {
                 <WachtlijstForm />
               </div>
               <p className="text-[12px] text-white/20 mt-4">
-                Eerste 30 dagen gratis. Geen creditcard nodig.
+                Geen spam. Alleen een mail als we live gaan.
               </p>
             </motion.div>
           </div>
