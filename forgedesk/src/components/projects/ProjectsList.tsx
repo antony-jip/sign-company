@@ -15,6 +15,7 @@ import {
   Eye,
   CheckCircle2,
   X,
+  Upload,
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -33,6 +34,7 @@ import {
 import { exportCSV, exportExcel } from '@/lib/export'
 import { PaginationControls } from '@/components/ui/pagination-controls'
 import { getProjecten, getKlanten, getOffertes, updateProject, createProjectFoto } from '@/services/supabaseService'
+import { ProjectImportDialog } from './ProjectImportDialog'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Project, Klant, Offerte } from '@/types'
 import { toast } from 'sonner'
@@ -126,6 +128,7 @@ export function ProjectsList() {
   const PAGE_SIZE = 50
   const photoInputRef = React.useRef<HTMLInputElement>(null)
   const [photoUploadProjectId, setPhotoUploadProjectId] = useState<string | null>(null)
+  const [showImportDialog, setShowImportDialog] = useState(false)
   const [photoUploadKlantId, setPhotoUploadKlantId] = useState<string | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [dagenOpenFilter, setDagenOpenFilter] = useState<string>('alle')
@@ -164,30 +167,27 @@ export function ProjectsList() {
     })
   }
 
-  useEffect(() => {
-    let cancelled = false
-    async function fetchData() {
-      try {
-        setIsLoading(true)
-        const [projectenData, klantenData, offertesData] = await Promise.all([
-          getProjecten(),
-          getKlanten(),
-          getOffertes(),
-        ])
-        if (!cancelled) {
-          setProjecten(projectenData)
-          setKlanten(klantenData)
-          setOffertes(offertesData)
-        }
-      } catch (error) {
-        logger.error('Fout bij ophalen data:', error)
-      } finally {
-        if (!cancelled) setIsLoading(false)
-      }
+  const fetchData = React.useCallback(async () => {
+    try {
+      setIsLoading(true)
+      const [projectenData, klantenData, offertesData] = await Promise.all([
+        getProjecten(),
+        getKlanten(),
+        getOffertes(),
+      ])
+      setProjecten(projectenData)
+      setKlanten(klantenData)
+      setOffertes(offertesData)
+    } catch (error) {
+      logger.error('Fout bij ophalen data:', error)
+    } finally {
+      setIsLoading(false)
     }
-    fetchData()
-    return () => { cancelled = true }
   }, [])
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
 
   function getKlantNaam(klantId: string): string {
     const klant = klanten.find((k) => k.id === klantId)
@@ -389,13 +389,22 @@ export function ProjectsList() {
                   <span className="text-[#C0BDB8]">/</span>{projecten.length}
                 </span>
               </div>
-              <Link
-                to="/projecten/nieuw"
-                className="inline-flex items-center gap-2 bg-[#F15025] text-white pl-4 pr-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_2px_8px_rgba(241,80,37,0.25),0_0_0_1px_rgba(241,80,37,0.1)] hover:bg-[#E04520] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35),0_0_0_1px_rgba(241,80,37,0.15)] hover:-translate-y-[1px] active:translate-y-0 active:bg-[#D03A18] transition-all duration-200"
-              >
-                <Plus className="w-4 h-4 opacity-80" />
-                Nieuw project
-              </Link>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowImportDialog(true)}
+                  className="inline-flex items-center gap-2 bg-white text-[#1A535C] pl-3.5 pr-4 py-2.5 rounded-xl text-sm font-semibold border border-[#E0DFDB] shadow-sm hover:bg-[#F8F7F5] hover:border-[#1A535C30] hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200"
+                >
+                  <Upload className="w-4 h-4 opacity-70" />
+                  Importeer
+                </button>
+                <Link
+                  to="/projecten/nieuw"
+                  className="inline-flex items-center gap-2 bg-[#F15025] text-white pl-4 pr-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_2px_8px_rgba(241,80,37,0.25),0_0_0_1px_rgba(241,80,37,0.1)] hover:bg-[#E04520] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35),0_0_0_1px_rgba(241,80,37,0.15)] hover:-translate-y-[1px] active:translate-y-0 active:bg-[#D03A18] transition-all duration-200"
+                >
+                  <Plus className="w-4 h-4 opacity-80" />
+                  Nieuw project
+                </Link>
+              </div>
             </div>
 
             {/* Quick stats — compact inline badges */}
@@ -992,6 +1001,12 @@ export function ProjectsList() {
 
         </div>
       </div>
+
+      <ProjectImportDialog
+        open={showImportDialog}
+        onOpenChange={setShowImportDialog}
+        onImportComplete={fetchData}
+      />
     </div>
   )
 }
