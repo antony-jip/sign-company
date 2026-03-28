@@ -66,7 +66,7 @@ import {
   List,
   Link2,
 } from 'lucide-react'
-import { getKlanten, getProjecten, getOffertes, createOfferte, createOfferteItem, updateKlant, createKlant, getOfferte, getOfferteItems, updateOfferte, deleteOfferteItem, getOfferteVersies, createOfferteVersie, getFactuur, createPortaal, createPortaalItem, getPortaalItems, createProject } from '@/services/supabaseService'
+import { getKlanten, getProjecten, getOffertes, createOfferte, createOfferteItem, updateKlant, createKlant, getOfferte, getOfferteItems, updateOfferte, deleteOfferteItem, getOfferteVersies, createOfferteVersie, getFactuur, createPortaal, createPortaalItem, getPortaalItems, createProject, syncOfferteItems, getRecentOfferteItemSuggesties, getNextOfferteNummer, OfferteConflictError } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import type { Klant, Project, Contactpersoon, Factuur } from '@/types'
@@ -213,6 +213,7 @@ export function QuoteCreation() {
   const hasUnsavedChangesRef = useRef(false)
   const performAutoSaveRef = useRef<() => Promise<void>>(async () => {})
   const saveLockRef = useRef(false) // prevents race between autosave and manual save
+  const lastKnownUpdatedAtRef = useRef<string | null>(null) // optimistic locking: tracks server updated_at
 
   // ── Computed ──
   const selectedKlant = klanten.find((k) => k.id === selectedKlantId)
@@ -450,15 +451,16 @@ export function QuoteCreation() {
   // ── Data fetching ──
   useEffect(() => {
     let cancelled = false
-    Promise.all([getKlanten(), getProjecten(), getOffertes().catch(() => [])])
-      .then(([klantenData, projectenData, offertesData]) => {
+    Promise.all([
+      getKlanten(),
+      getProjecten(),
+      !editOfferteId ? getNextOfferteNummer(offertePrefix).catch(() => null) : Promise.resolve(null),
+    ])
+      .then(([klantenData, projectenData, nummer]) => {
         if (!cancelled) {
           setKlanten(klantenData)
           setProjecten(projectenData)
-          // Don't overwrite nummer in edit mode — it gets set from the loaded offerte
-          if (!editOfferteId) {
-            setOfferteNummer(generateOfferteNummer(offertePrefix, offertesData))
-          }
+          if (nummer) setOfferteNummer(nummer)
         }
       })
       .catch((err) => {
@@ -469,37 +471,16 @@ export function QuoteCreation() {
     return () => { cancelled = true }
   }, [])
 
-  // ── Load suggesties voor item omschrijvingen ──
+  // ── Load suggesties voor item omschrijvingen (single query) ──
   useEffect(() => {
     let cancelled = false
-    async function loadSuggesties() {
-      try {
-        const offertes = await getOffertes()
-        if (cancelled) return
-        // Load items from last 20 offertes to get unique descriptions
-        const recentOffertes = offertes.slice(0, 20)
-        const allItems = await Promise.all(
-          recentOffertes.map((o) => getOfferteItems(o.id).catch(() => []))
-        )
-        if (cancelled) return
-        const beschrijvingMap = new Map<string, OmschrijvingSuggestie>()
-        allItems.flat().forEach((item) => {
-          if (item.beschrijving && item.beschrijving.trim()) {
-            const key = item.beschrijving.trim().toLowerCase()
-            if (!beschrijvingMap.has(key)) {
-              beschrijvingMap.set(key, {
-                beschrijving: item.beschrijving.trim(),
-                laatstePrijs: item.eenheidsprijs,
-              })
-            }
-          }
-        })
-        setOmschrijvingSuggesties(Array.from(beschrijvingMap.values()))
-      } catch {
+    getRecentOfferteItemSuggesties()
+      .then((suggesties) => {
+        if (!cancelled) setOmschrijvingSuggesties(suggesties)
+      })
+      .catch(() => {
         // Silent fail — suggesties zijn optioneel
-      }
-    }
-    loadSuggesties()
+      })
     return () => { cancelled = true }
   }, [])
 
@@ -572,6 +553,8 @@ export function QuoteCreation() {
         if (offerte.uren_correctie) setUrenCorrectie(offerte.uren_correctie)
         // Track status for factureren workflow
         setOfferteStatus(offerte.status)
+        // Optimistic locking: track server timestamp
+        lastKnownUpdatedAtRef.current = offerte.updated_at
         if (offerte.geconverteerd_naar_factuur_id) {
           setGeconverteerdNaarFactuurId(offerte.geconverteerd_naar_factuur_id)
           // Load linked factuur data for the workflow card
@@ -904,6 +887,9 @@ export function QuoteCreation() {
   // ── Autosave logic (debounced) ──
   const performAutoSave = useCallback(async () => {
     if (!user?.id || !selectedKlantId || !offerteTitel.trim() || items.length === 0) return
+    // Geen nieuwe offerte aanmaken zonder nummer — voorkom lege nummers in DB
+    const currentId = editOfferteId || autoSaveIdRef.current
+    if (!currentId && !offerteNummer) return
     if (isSaving || saveLockRef.current) return
 
     saveLockRef.current = true
@@ -928,14 +914,13 @@ export function QuoteCreation() {
       const heeftUrenCorrectie = Object.values(urenCorrectie).some(v => v !== 0)
 
       if (currentId) {
-        // Update existing
-        await updateOfferte(currentId, {
+        // Update existing (met optimistic locking) — geen status meesturen om pipeline wijzigingen niet te overschrijven
+        const saved = await updateOfferte(currentId, {
           klant_id: selectedKlantId,
           klant_naam: klant?.bedrijfsnaam,
           ...(selectedProjectId ? { project_id: selectedProjectId } : {}),
           ...(selectedContactId ? { contactpersoon_id: selectedContactId } : {}),
           titel: offerteTitel,
-          status: 'concept',
           subtotaal: effectiefSub,
           btw_bedrag: effectiefBtw,
           totaal: round2(effectiefSub + effectiefBtw),
@@ -947,44 +932,11 @@ export function QuoteCreation() {
           ...(afrondingskorting !== 0 ? { afrondingskorting_excl_btw: afrondingskorting } : {}),
           ...(heeftUrenCorrectie ? { uren_correctie: urenCorrectie } : {}),
           versie: versieNummer,
-        })
+        }, lastKnownUpdatedAtRef.current || undefined)
+        lastKnownUpdatedAtRef.current = saved.updated_at
 
-        // Delete old items, re-create
-        const oldItems = await getOfferteItems(currentId)
-        await Promise.all(oldItems.map((item) => deleteOfferteItem(item.id)))
-        await Promise.all(
-          items.map((item, index) =>
-            createOfferteItem({
-              user_id: user.id,
-              offerte_id: currentId,
-              beschrijving: item.beschrijving,
-              aantal: item.aantal,
-              eenheidsprijs: item.eenheidsprijs,
-              btw_percentage: item.btw_percentage,
-              korting_percentage: item.korting_percentage,
-              totaal: item.totaal,
-              volgorde: index + 1,
-              soort: item.soort,
-              extra_velden: item.extra_velden,
-              detail_regels: item.detail_regels,
-              calculatie_regels: item.calculatie_regels,
-              heeft_calculatie: item.heeft_calculatie,
-              prijs_varianten: item.prijs_varianten,
-              actieve_variant_id: item.actieve_variant_id,
-              breedte_mm: item.breedte_mm,
-              hoogte_mm: item.hoogte_mm,
-              oppervlakte_m2: item.oppervlakte_m2,
-              afmeting_vrij: item.afmeting_vrij,
-              foto_url: item.foto_url,
-              foto_op_offerte: item.foto_op_offerte,
-              is_optioneel: item.is_optioneel,
-              interne_notitie: item.interne_notitie,
-              bijlage_url: item.bijlage_url,
-              bijlage_type: item.bijlage_type,
-              bijlage_naam: item.bijlage_naam,
-            })
-          )
-        )
+        // Sync items via batch upsert (geen delete-all/recreate-all)
+        await syncOfferteItems(currentId, items as any, user.id)
       } else {
         // Create new as concept
         const newOfferte = await createOfferte({
@@ -1009,6 +961,7 @@ export function QuoteCreation() {
           versie: versieNummer,
         })
         autoSaveIdRef.current = newOfferte.id
+        lastKnownUpdatedAtRef.current = newOfferte.updated_at
 
         await Promise.all(
           items.map((item, index) =>
@@ -1051,6 +1004,14 @@ export function QuoteCreation() {
       // Reset indicator after 3 seconds
       setTimeout(() => setAutoSaveStatus('idle'), 3000)
     } catch (err) {
+      if (err instanceof OfferteConflictError) {
+        setAutoSaveStatus('idle')
+        toast.error('Deze offerte is door iemand anders gewijzigd. Herlaad de pagina.', {
+          duration: 10000,
+          action: { label: 'Herlaad', onClick: () => window.location.reload() },
+        })
+        return // Stop autosave loop bij conflict
+      }
       logger.error('Autosave failed:', err)
       setAutoSaveStatus('idle')
     } finally {
@@ -1079,7 +1040,7 @@ export function QuoteCreation() {
     return () => {
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current)
     }
-  }, [items, offerteTitel, notities, voorwaarden, introTekst, outroTekst, geldigTot, selectedKlantId, selectedProjectId, showKlantSelector])
+  }, [items, offerteTitel, notities, voorwaarden, introTekst, outroTekst, geldigTot, selectedKlantId, selectedProjectId, selectedContactId, showKlantSelector, afrondingskorting, urenCorrectie])
 
   // Save on unmount (navigating away) — fire-and-forget
   useEffect(() => {
@@ -1153,8 +1114,7 @@ export function QuoteCreation() {
     }
     setIsDuplicating(true)
     try {
-      const allOffertes = await getOffertes()
-      const nieuweNummer = generateOfferteNummer(offertePrefix, allOffertes)
+      const nieuweNummer = await getNextOfferteNummer(offertePrefix)
       const klant = klanten.find((k) => k.id === selectedKlantId)
 
       const prijsItemsLocal = items.filter((i) => i.soort === 'prijs')
@@ -1343,7 +1303,7 @@ export function QuoteCreation() {
         const effectiefSubtotaal = round2(subtotaal + afrondingskorting + urenCorrectieBedrag)
         const effectiefBtw = round2(effectiefSubtotaal * (subtotaal > 0 ? btwBedrag / subtotaal : 0.21))
         const heeftUrenCorrectie = Object.values(urenCorrectie).some(v => v !== 0)
-        await updateOfferte(existingId, {
+        const saved = await updateOfferte(existingId, {
           klant_id: selectedKlantId,
           klant_naam: selectedKlant?.bedrijfsnaam,
           ...(selectedProjectId ? { project_id: selectedProjectId } : {}),
@@ -1361,46 +1321,12 @@ export function QuoteCreation() {
           ...(afrondingskorting !== 0 ? { afrondingskorting_excl_btw: afrondingskorting } : {}),
           ...(heeftUrenCorrectie ? { uren_correctie: urenCorrectie } : {}),
           versie: versieNummer,
-        })
+        }, lastKnownUpdatedAtRef.current || undefined)
+        lastKnownUpdatedAtRef.current = saved.updated_at
         savedOfferteId = existingId
 
-        // Delete old items, then re-create
-        const oldItems = await getOfferteItems(existingId)
-        await Promise.all(oldItems.map((item) => deleteOfferteItem(item.id)))
-
-        await Promise.all(
-          items.map((item, index) =>
-            createOfferteItem({
-              user_id: user.id,
-              offerte_id: existingId,
-              beschrijving: item.beschrijving,
-              aantal: item.aantal,
-              eenheidsprijs: item.eenheidsprijs,
-              btw_percentage: item.btw_percentage,
-              korting_percentage: item.korting_percentage,
-              totaal: item.totaal,
-              volgorde: index + 1,
-              soort: item.soort,
-              extra_velden: item.extra_velden,
-              detail_regels: item.detail_regels,
-              calculatie_regels: item.calculatie_regels,
-              heeft_calculatie: item.heeft_calculatie,
-              prijs_varianten: item.prijs_varianten,
-              actieve_variant_id: item.actieve_variant_id,
-              breedte_mm: item.breedte_mm,
-              hoogte_mm: item.hoogte_mm,
-              oppervlakte_m2: item.oppervlakte_m2,
-              afmeting_vrij: item.afmeting_vrij,
-              foto_url: item.foto_url,
-              foto_op_offerte: item.foto_op_offerte,
-              is_optioneel: item.is_optioneel,
-              interne_notitie: item.interne_notitie,
-              bijlage_url: item.bijlage_url,
-              bijlage_type: item.bijlage_type,
-              bijlage_naam: item.bijlage_naam,
-            })
-          )
-        )
+        // Sync items via batch upsert
+        await syncOfferteItems(existingId, items as any, user.id)
       } else {
         // Create new offerte
         const newEffectiefSub = round2(subtotaal + afrondingskorting + urenCorrectieBedrag)
@@ -1555,8 +1481,15 @@ export function QuoteCreation() {
       })
       navigate(`/offertes/${savedOfferteId}/bewerken`, { state: { from: (location.state as { from?: string })?.from || '/offertes' } })
     } catch (err) {
-      logger.error('Failed to save offerte:', err)
-      toast.error('Kon offerte niet opslaan')
+      if (err instanceof OfferteConflictError) {
+        toast.error('Deze offerte is door iemand anders gewijzigd. Herlaad de pagina om de laatste versie te zien.', {
+          duration: 10000,
+          action: { label: 'Herlaad', onClick: () => window.location.reload() },
+        })
+      } else {
+        logger.error('Failed to save offerte:', err)
+        toast.error('Kon offerte niet opslaan')
+      }
     } finally {
       setIsSaving(false)
       saveLockRef.current = false

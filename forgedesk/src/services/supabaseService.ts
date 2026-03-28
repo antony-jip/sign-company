@@ -816,9 +816,54 @@ export async function createOfferte(offerte: Omit<Offerte, 'id' | 'created_at' |
   return newOfferte
 }
 
-export async function updateOfferte(id: string, updates: Partial<Offerte>): Promise<Offerte> {
+/**
+ * Custom error class voor optimistic locking conflicten.
+ * Wordt gegooid als een andere gebruiker de offerte heeft gewijzigd
+ * sinds de huidige gebruiker begon met bewerken.
+ */
+export class OfferteConflictError extends Error {
+  public serverData: Offerte
+  constructor(message: string, serverData: Offerte) {
+    super(message)
+    this.name = 'OfferteConflictError'
+    this.serverData = serverData
+  }
+}
+
+/**
+ * Update een offerte met optimistic locking.
+ * Als `expectedUpdatedAt` is meegegeven, wordt gecontroleerd of de offerte
+ * niet tussentijds door iemand anders is gewijzigd.
+ */
+export async function updateOfferte(id: string, updates: Partial<Offerte>, expectedUpdatedAt?: string): Promise<Offerte> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
+    // Optimistic locking: check of de offerte niet tussentijds is gewijzigd
+    if (expectedUpdatedAt) {
+      const { data: current, error: fetchErr } = await supabase
+        .from('offertes')
+        .select('updated_at')
+        .eq('id', id)
+        .single()
+      if (fetchErr) throw fetchErr
+
+      // Vergelijk timestamps (met 2 seconden tolerantie voor eigen autosave)
+      const serverTime = new Date(current.updated_at).getTime()
+      const expectedTime = new Date(expectedUpdatedAt).getTime()
+      if (Math.abs(serverTime - expectedTime) > 2000) {
+        // Haal volledige offerte op voor conflict melding
+        const { data: fullCurrent } = await supabase
+          .from('offertes')
+          .select('*')
+          .eq('id', id)
+          .single()
+        throw new OfferteConflictError(
+          'Deze offerte is ondertussen door iemand anders gewijzigd. Herlaad de pagina om de laatste versie te zien.',
+          fullCurrent
+        )
+      }
+    }
+
     const { data, error } = await supabase
       .from('offertes')
       .update(sanitizeDates({ ...updates, updated_at: now() }))
@@ -921,6 +966,157 @@ export async function deleteOfferteItem(id: string): Promise<void> {
   }
   const items = getLocalData<OfferteItem>('offerte_items')
   setLocalData('offerte_items', items.filter((i) => i.id !== id))
+}
+
+/**
+ * Batch sync offerte items: verwijdert items die niet meer bestaan,
+ * upsert de rest in één keer. Vervangt de delete-all/recreate-all pattern.
+ */
+export async function syncOfferteItems(
+  offerteId: string,
+  items: Omit<OfferteItem, 'id' | 'created_at'>[],
+  userId: string
+): Promise<OfferteItem[]> {
+  assertId(offerteId, 'offerte_id')
+
+  if (isSupabaseConfigured() && supabase) {
+    // 1. Haal huidige item-ids op
+    const { data: existing, error: fetchErr } = await supabase
+      .from('offerte_items')
+      .select('id')
+      .eq('offerte_id', offerteId)
+    if (fetchErr) throw fetchErr
+
+    const existingIds = new Set((existing || []).map(e => e.id))
+
+    // 2. Batch delete alle bestaande items voor deze offerte
+    if (existingIds.size > 0) {
+      const { error: delErr } = await supabase
+        .from('offerte_items')
+        .delete()
+        .eq('offerte_id', offerteId)
+      if (delErr) throw delErr
+    }
+
+    // 3. Batch insert alle items in één call
+    const insertData = items.map((item, index) => ({
+      user_id: userId,
+      offerte_id: offerteId,
+      beschrijving: item.beschrijving,
+      aantal: item.aantal,
+      eenheidsprijs: item.eenheidsprijs,
+      btw_percentage: item.btw_percentage,
+      korting_percentage: item.korting_percentage,
+      totaal: item.totaal,
+      volgorde: index + 1,
+      soort: item.soort,
+      extra_velden: item.extra_velden,
+      detail_regels: item.detail_regels,
+      calculatie_regels: item.calculatie_regels,
+      heeft_calculatie: item.heeft_calculatie,
+      prijs_varianten: item.prijs_varianten,
+      actieve_variant_id: item.actieve_variant_id,
+      breedte_mm: item.breedte_mm,
+      hoogte_mm: item.hoogte_mm,
+      oppervlakte_m2: item.oppervlakte_m2,
+      afmeting_vrij: item.afmeting_vrij,
+      foto_url: item.foto_url,
+      foto_op_offerte: item.foto_op_offerte,
+      is_optioneel: item.is_optioneel,
+      interne_notitie: item.interne_notitie,
+      bijlage_url: item.bijlage_url,
+      bijlage_type: item.bijlage_type,
+      bijlage_naam: item.bijlage_naam,
+    }))
+
+    const { data: result, error: insertErr } = await supabase
+      .from('offerte_items')
+      .insert(insertData)
+      .select()
+    if (insertErr) throw insertErr
+    return result || []
+  }
+
+  // localStorage fallback
+  const allItems = getLocalData<OfferteItem>('offerte_items')
+  const otherItems = allItems.filter(i => i.offerte_id !== offerteId)
+  const newItems: OfferteItem[] = items.map((item, index) => ({
+    ...item,
+    id: (item as any).id || generateId(),
+    offerte_id: offerteId,
+    user_id: userId,
+    volgorde: index + 1,
+    created_at: now(),
+  } as OfferteItem))
+  setLocalData('offerte_items', [...otherItems, ...newItems])
+  return newItems
+}
+
+/**
+ * Suggesties laden: haalt unieke beschrijvingen uit recente offerte items
+ * in één query (geen N+1).
+ */
+export async function getRecentOfferteItemSuggesties(): Promise<{ beschrijving: string; laatstePrijs: number }[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('offerte_items')
+      .select('beschrijving, eenheidsprijs, created_at')
+      .neq('beschrijving', '')
+      .order('created_at', { ascending: false })
+      .limit(500)
+    if (error) throw error
+
+    const map = new Map<string, { beschrijving: string; laatstePrijs: number }>()
+    for (const item of data || []) {
+      const key = item.beschrijving.trim().toLowerCase()
+      if (!map.has(key)) {
+        map.set(key, { beschrijving: item.beschrijving.trim(), laatstePrijs: item.eenheidsprijs })
+      }
+    }
+    return Array.from(map.values())
+  }
+
+  // localStorage fallback
+  const items = getLocalData<OfferteItem>('offerte_items')
+  const map = new Map<string, { beschrijving: string; laatstePrijs: number }>()
+  for (const item of items.slice(-200)) {
+    if (item.beschrijving?.trim()) {
+      const key = item.beschrijving.trim().toLowerCase()
+      if (!map.has(key)) map.set(key, { beschrijving: item.beschrijving.trim(), laatstePrijs: item.eenheidsprijs })
+    }
+  }
+  return Array.from(map.values())
+}
+
+/**
+ * Genereer volgend offerte nummer server-side (atomisch).
+ * Fallback op client-side als er geen Supabase is.
+ */
+export async function getNextOfferteNummer(prefix: string = 'OFF'): Promise<string> {
+  const year = new Date().getFullYear()
+  const jaarPrefix = `${prefix}-${year}-`
+
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('offertes')
+      .select('nummer')
+      .like('nummer', `${jaarPrefix}%`)
+      .order('nummer', { ascending: false })
+      .limit(1)
+    if (error) throw error
+
+    const maxNr = data?.[0]
+      ? parseInt(data[0].nummer.replace(jaarPrefix, ''), 10) || 0
+      : 0
+    return `${jaarPrefix}${String(maxNr + 1).padStart(3, '0')}`
+  }
+
+  // localStorage fallback
+  const offertes = getLocalData<Offerte>('offertes')
+  const maxNr = offertes
+    .filter(o => o.nummer?.startsWith(jaarPrefix))
+    .reduce((max, o) => Math.max(max, parseInt(o.nummer.replace(jaarPrefix, ''), 10) || 0), 0)
+  return `${jaarPrefix}${String(maxNr + 1).padStart(3, '0')}`
 }
 
 // ============ OFFERTE VERSIES (FIX 12) ============
