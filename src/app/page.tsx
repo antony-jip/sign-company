@@ -1,6 +1,6 @@
 import Navbar from '@/components/Navbar'
 import Hero from '@/components/home/Hero'
-import ProcessFlow from '@/components/home/ProcessFlow'
+import ProcesVisual from '@/components/home/ProcesVisual'
 import ModulesCarousel from '@/components/home/ModulesCarousel'
 import ValueProps from '@/components/home/ValueProps'
 import VisualizerSection from '@/components/home/VisualizerSection'
@@ -14,7 +14,7 @@ export default function Home() {
       <Navbar />
       <main id="main-content">
         <Hero />
-        <ProcessFlow />
+        <ProcesVisual />
         <ModulesCarousel />
         <ValueProps />
         <VisualizerSection />
