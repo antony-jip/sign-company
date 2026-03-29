@@ -85,6 +85,9 @@ import { useSidebarLayout, type SidebarSectionId } from '@/hooks/useSidebarLayou
 import type { CalculatieRegel, InkoopRegel } from '@/types'
 import { logger } from '../../utils/logger'
 import { KlantStatusWarning } from '@/components/shared/KlantStatusWarning'
+import { CustomerSelector } from './CustomerSelector'
+import { QuoteHeader } from './QuoteHeader'
+import { QuoteSidebar } from './QuoteSidebar'
 import { safeSetItem } from '@/utils/localStorageUtils'
 import { useQuoteClipboard } from '@/hooks/useQuoteClipboard'
 import { useQuoteVersioning } from '@/hooks/useQuoteVersioning'
@@ -157,6 +160,7 @@ export function QuoteCreation() {
   const [itemCount, setItemCount] = useState(1)
   const [contactpersoon, setContactpersoon] = useState('')
   const [selectedContactId, setSelectedContactId] = useState('')
+  const selectedKlant = klanten.find((k) => k.id === selectedKlantId)
   const contact = useContactManagement({
     selectedKlant,
     setKlanten,
@@ -205,6 +209,9 @@ export function QuoteCreation() {
   // ── Suggesties voor item omschrijvingen ──
   const [omschrijvingSuggesties, setOmschrijvingSuggesties] = useState<OmschrijvingSuggestie[]>([])
 
+  const autoSaveIdRef = useRef<string | null>(null)
+  const performAutoSaveRef = useRef<() => Promise<void>>(async () => {})
+
   // ── FIX 12: Versie tracking (extracted to hook) ──
   const versioning = useQuoteVersioning({
     userId: user?.id,
@@ -225,14 +232,11 @@ export function QuoteCreation() {
   // ── Autosave state ──
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const autoSaveIdRef = useRef<string | null>(null) // tracks created offerte id for new quotes
   const hasUnsavedChangesRef = useRef(false)
-  const performAutoSaveRef = useRef<() => Promise<void>>(async () => {})
-  const saveLockRef = useRef(false) // prevents race between autosave and manual save
-  const lastKnownUpdatedAtRef = useRef<string | null>(null) // optimistic locking: tracks server updated_at
+  const saveLockRef = useRef(false)
+  const lastKnownUpdatedAtRef = useRef<string | null>(null)
 
   // ── Computed ──
-  const selectedKlant = klanten.find((k) => k.id === selectedKlantId)
   const selectedProject = projecten.find((p) => p.id === selectedProjectId)
   const klantProjecten = useMemo(() =>
     projecten.filter((p) => p.klant_id === selectedKlantId),
@@ -626,7 +630,7 @@ export function QuoteCreation() {
       setSelectedContactId('')
       setContactpersoon(selectedKlant.contactpersoon)
     }
-    setShowNewContact(false)
+    contact.setShowNewContact(false)
   }, [selectedKlant])
 
   // Reset project when klant changes
@@ -1411,21 +1415,21 @@ export function QuoteCreation() {
       : selectedKlant?.contactpersonen?.[0]
     const contactEmail = selectedCp?.email || selectedKlant?.email || ''
     const klantNaam = selectedCp?.naam || selectedKlant?.contactpersoon || selectedKlant?.bedrijfsnaam || ''
-    setEmailTo(contactEmail)
-    setEmailSubject(`Offerte ${offerteNummer} - ${offerteTitel}`)
+    email.setEmailTo(contactEmail)
+    email.setEmailSubject(`Offerte ${offerteNummer} - ${offerteTitel}`)
     const signature = emailHandtekening ? `\n\n${emailHandtekening}` : `\n\nMet vriendelijke groet,\n${bedrijfsnaam || ''}`
-    setEmailBody(
+    email.setEmailBody(
       introTekst
         ? introTekst + signature
         : `Beste ${klantNaam},\n\nHierbij ontvangt u onze offerte ${offerteNummer} voor "${offerteTitel}".\n\nHet totaalbedrag van deze offerte is ${formatCurrency(round2(subtotaal + btwBedrag))} (incl. BTW).\n\nDe offerte is geldig tot ${geldigTot ? new Date(geldigTot).toLocaleDateString('nl-NL') : '-'}.\n\nMocht u vragen hebben of aanvullende informatie wensen, neem dan gerust contact met ons op.${signature}`
     )
-    setEmailBijlagen([{ naam: `${offerteNummer}.pdf`, grootte: 0 }])
-    setEmailScheduled(false)
-    setEmailScheduleDate('')
-    setEmailCc('')
-    setEmailBcc('')
-    setShowEmailCompose(true)
-    setTimeout(() => emailSectionRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
+    email.setEmailBijlagen([{ naam: `${offerteNummer}.pdf`, grootte: 0 }])
+    email.setEmailScheduled(false)
+    email.setEmailScheduleDate('')
+    email.setEmailCc('')
+    email.setEmailBcc('')
+    email.setShowEmailCompose(true)
+    setTimeout(() => email.emailSectionRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
   }
 
   const handleKeuzePortaal = async () => {
@@ -1511,11 +1515,11 @@ export function QuoteCreation() {
   }
 
   const handleSendEmailInline = async () => {
-    if (!emailTo.trim() || !emailSubject.trim()) {
+    if (!email.emailTo.trim() || !email.emailSubject.trim()) {
       toast.error('Vul een ontvanger en onderwerp in')
       return
     }
-    setIsSendingEmail(true)
+    email.setIsSendingEmail(true)
     try {
       // Ensure offerte is saved before sending
       let quoteId = editOfferteId || autoSaveIdRef.current
@@ -1621,26 +1625,26 @@ export function QuoteCreation() {
         }
       }
 
-      await sendEmail(emailTo.trim(), emailSubject.trim(), templateText, { html: templateHtml, attachments })
+      await sendEmail(email.emailTo.trim(), email.emailSubject.trim(), templateText, { html: templateHtml, attachments })
       if (quoteId) {
         await updateOfferte(quoteId, {
           status: 'verzonden',
           verstuurd_op: new Date().toISOString(),
-          verstuurd_naar: emailTo.trim(),
+          verstuurd_naar: email.emailTo.trim(),
           verzendwijze: 'via_email_pdf',
         })
       }
-      if (emailScheduled && emailScheduleDate) {
-        toast.success(`Email ingepland voor ${new Date(emailScheduleDate + 'T' + emailScheduleTime).toLocaleString('nl-NL')}`)
+      if (email.emailScheduled && email.emailScheduleDate) {
+        toast.success(`Email ingepland voor ${new Date(email.emailScheduleDate + 'T' + email.emailScheduleTime).toLocaleString('nl-NL')}`)
       } else {
-        toast.success(`Offerte verstuurd naar ${emailTo.trim()}`)
+        toast.success(`Offerte verstuurd naar ${email.emailTo.trim()}`)
       }
-      setShowEmailCompose(false)
+      email.setShowEmailCompose(false)
     } catch (err) {
       logger.error('Failed to send email:', err)
       toast.error('Kon email niet verzenden')
     } finally {
-      setIsSendingEmail(false)
+      email.setIsSendingEmail(false)
     }
   }
 
@@ -1684,236 +1688,44 @@ export function QuoteCreation() {
   // ────────────────────────────────────────────────────────────────────
   if (showKlantSelector && !isEditMode) {
     return (
-      <div className="relative -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 min-h-full" style={{ backgroundColor: '#F8F7F5' }}>
-        <div className="relative max-w-2xl mx-auto px-4 py-8 md:py-12 animate-fade-in-up">
-          {/* Header */}
-          <div className="flex items-center gap-4 mb-8">
-            <button
-              className="h-10 w-10 rounded-xl flex items-center justify-center transition-colors"
-              style={{ backgroundColor: '#FFFFFF', border: '1px solid #EBEBEB' }}
-              onClick={() => {
-                const from = (location.state as { from?: string })?.from
-                navigate(from || '/offertes')
-              }}
-            >
-              <ArrowLeft className="h-4 w-4" style={{ color: '#6B6B66' }} />
-            </button>
-            <div className="h-12 w-12 rounded-2xl flex items-center justify-center shadow-sm" style={{ backgroundColor: '#F15025' }}>
-              <Receipt className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight" style={{ color: '#1A1A1A' }}>Nieuwe Offerte</h1>
-              <p className="text-[13px]" style={{ color: '#6B6B66' }}>Selecteer een klant en vul de details in</p>
-            </div>
-          </div>
-
-        <div className="space-y-4">
-          {/* Step 1: Klant + Contactpersoon — merged */}
-          <div className="rounded-xl" style={{ backgroundColor: '#FFFFFF', border: '1px solid #EBEBEB' }}>
-            <div className="h-[3px] rounded-t-xl" style={{ background: 'linear-gradient(90deg, #F15025, #F1502560)' }} />
-            <div className="flex items-center gap-3 px-5 pt-4 pb-1">
-              <div className="flex items-center justify-center h-7 w-7 rounded-lg text-white text-[11px] font-bold" style={{ backgroundColor: '#F15025' }}>1</div>
-              <div>
-                <span className="text-[13px] font-semibold" style={{ color: '#1A1A1A' }}>Klant & contactpersoon</span>
-                <p className="text-[11px]" style={{ color: '#9B9B95' }}>Wie is de opdrachtgever?</p>
-              </div>
-            </div>
-            <div className="px-5 pb-5 pt-3 space-y-3">
-              <div className="space-y-2" ref={klantWrapperRef}>
-                {!selectedKlant && (
-                  <div className="relative">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: '#9B9B95' }} />
-                      <Input value={klantSearch} onChange={(e) => { setKlantSearch(e.target.value); setShowKlantResults(true); setShowNieuwBedrijf(false) }} onFocus={() => setShowKlantResults(true)} placeholder="Zoek op bedrijfsnaam, contactpersoon of email..." className="pl-10 h-10 rounded-lg text-[13px]" style={{ backgroundColor: '#F8F7F5', border: '1px solid #EBEBEB' }} />
-                    </div>
-                    {showKlantResults && !showNieuwBedrijf && (
-                      <div className="absolute z-50 w-full mt-1 rounded-lg border bg-[#FEFDFB] shadow-lg max-h-[320px] overflow-y-auto" style={{ border: '1px solid #EBEBEB' }}>
-                        <button className="w-full text-left px-3 py-2.5 flex items-center gap-2 text-[#1A535C] hover:bg-[#E2F0F0]/50 transition-colors border-b" style={{ borderColor: '#EBEBEB' }} onClick={() => { setShowNieuwBedrijf(true); setNbData((p) => ({ ...p, bedrijfsnaam: klantSearch })) }}>
-                          <Plus className="w-4 h-4" /><span className="text-[13px] font-medium">Nieuw bedrijf toevoegen{klantSearch.trim() ? `: "${klantSearch.trim()}"` : ''}</span>
-                        </button>
-                        {filteredKlanten.length === 0 ? (
-                          <div className="py-4 text-center text-[13px]" style={{ color: '#9B9B95' }}>Geen klanten gevonden</div>
-                        ) : filteredKlanten.map((klant) => (
-                          <button key={klant.id} className="w-full text-left px-3 py-2 hover:bg-[#F4F2EE] transition-colors border-b last:border-0" style={{ borderColor: '#EBEBEB' }} onClick={() => { setSelectedKlantId(klant.id); setKlantSearch(''); setShowKlantResults(false) }}>
-                            <p className="text-[13px] font-medium" style={{ color: '#1A1A1A' }}>{klant.bedrijfsnaam}</p>
-                            <div className="flex items-center gap-2">
-                              {klant.contactpersoon && <span className="text-[11px]" style={{ color: '#6B6B66' }}>{klant.contactpersoon}</span>}
-                              {klant.stad && <span className="text-[11px]" style={{ color: '#9B9B95' }}>{klant.stad}</span>}
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                    {showNieuwBedrijf && (
-                      <div className="mt-2 rounded-lg p-4 space-y-3" style={{ border: '1px solid #EBEBEB', backgroundColor: '#F8F7F5' }}>
-                        <div className="flex items-center gap-2 mb-1"><Building2 className="h-4 w-4" style={{ color: '#1A535C' }} /><span className="text-[13px] font-semibold" style={{ color: '#1A1A1A' }}>Nieuw bedrijf</span></div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          <Input value={nbData.bedrijfsnaam} onChange={(e) => setNbData({ ...nbData, bedrijfsnaam: e.target.value })} placeholder="Bedrijfsnaam *" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} autoFocus />
-                          <Input value={nbData.stad} onChange={(e) => setNbData({ ...nbData, stad: e.target.value })} placeholder="Stad" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} />
-                        </div>
-                        <button onClick={() => setShowNbUitgebreid(!showNbUitgebreid)} className="flex items-center gap-1.5 text-[11px] font-medium" style={{ color: '#9B9B95' }}>
-                          {showNbUitgebreid ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}{showNbUitgebreid ? 'Minder gegevens' : 'Meer gegevens (adres, KvK, etc.)'}
-                        </button>
-                        {showNbUitgebreid && (
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            <Input value={nbData.contactpersoon} onChange={(e) => setNbData({ ...nbData, contactpersoon: e.target.value })} placeholder="Contactpersoon" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} />
-                            <Input value={nbData.email} onChange={(e) => setNbData({ ...nbData, email: e.target.value })} placeholder="E-mail" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} />
-                            <Input value={nbData.telefoon} onChange={(e) => setNbData({ ...nbData, telefoon: e.target.value })} placeholder="Telefoon" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} />
-                            <Input value={nbData.adres} onChange={(e) => setNbData({ ...nbData, adres: e.target.value })} placeholder="Adres" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} />
-                            <Input value={nbData.postcode} onChange={(e) => setNbData({ ...nbData, postcode: e.target.value })} placeholder="Postcode" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} />
-                            <Input value={nbData.website} onChange={(e) => setNbData({ ...nbData, website: e.target.value })} placeholder="Website" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} />
-                            <Input value={nbData.kvk_nummer} onChange={(e) => setNbData({ ...nbData, kvk_nummer: e.target.value })} placeholder="KvK-nummer" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} />
-                            <Input value={nbData.btw_nummer} onChange={(e) => setNbData({ ...nbData, btw_nummer: e.target.value })} placeholder="BTW-nummer" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} />
-                          </div>
-                        )}
-                        <div className="flex items-center gap-2 pt-1">
-                          <button onClick={handleCreateNieuwBedrijf} disabled={!nbData.bedrijfsnaam.trim() || nbCreating} className="h-8 px-3 text-[12px] font-semibold rounded-lg text-white transition-all hover:opacity-90 disabled:opacity-50 flex items-center gap-1.5" style={{ backgroundColor: '#1A535C' }}><Plus className="h-3.5 w-3.5" />{nbCreating ? 'Aanmaken...' : 'Bedrijf aanmaken'}</button>
-                          <button onClick={() => { setShowNieuwBedrijf(false); setShowKlantResults(true) }} className="h-8 px-3 text-[12px] font-medium rounded-lg" style={{ color: '#6B6B66' }}>Annuleren</button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-              {selectedKlant && (
-                <div className="rounded-lg p-3" style={{ backgroundColor: '#F8F7F5', border: '1px solid #EBEBEB' }}>
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#8BAFD4] to-[#6B8FB4] flex items-center justify-center flex-shrink-0">
-                      <span className="text-white font-bold text-[10px]">{selectedKlant.bedrijfsnaam[0]?.toUpperCase()}</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-semibold text-[13px] truncate" style={{ color: '#1A1A1A' }}>{selectedKlant.bedrijfsnaam}</h4>
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
-                        {selectedKlant.email && <span className="flex items-center gap-1 text-[11px]" style={{ color: '#6B6B66' }}><Mail className="h-3 w-3" />{selectedKlant.email}</span>}
-                        {selectedKlant.telefoon && <span className="flex items-center gap-1 text-[11px] font-mono" style={{ color: '#6B6B66' }}><Phone className="h-3 w-3" />{selectedKlant.telefoon}</span>}
-                      </div>
-                    </div>
-                    <button className="h-7 w-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors hover:bg-[#F4F2EE]" onClick={() => { setSelectedKlantId(''); setSelectedProjectId(''); setContactpersoon(''); setSelectedContactId('') }}>
-                      <X className="h-3.5 w-3.5" style={{ color: '#9B9B95' }} />
-                    </button>
-                  </div>
-                </div>
-              )}
-              {selectedKlantId && (
-                <div className="space-y-1.5">
-                  <Label className="text-[11px] font-semibold uppercase tracking-wider flex items-center gap-1.5" style={{ color: '#9B9B95' }}>Project <span className="text-[11px] font-normal normal-case tracking-normal">(optioneel)</span></Label>
-                  {klantProjecten.length > 0 ? (
-                    <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
-                      <SelectTrigger className="h-10 rounded-lg text-[13px]" style={{ backgroundColor: '#F8F7F5', border: '1px solid #EBEBEB' }}><SelectValue placeholder="Koppel aan een project..." /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="geen"><span style={{ color: '#9B9B95' }}>Geen project</span></SelectItem>
-                        {klantProjecten.map((project) => (
-                          <SelectItem key={project.id} value={project.id}>
-                            <div className="flex items-center gap-2"><span className="font-medium">{project.naam}</span><Badge variant="outline" className="text-2xs px-1.5 py-0">{project.status}</Badge></div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ) : <p className="text-[11px] py-1" style={{ color: '#9B9B95' }}>Geen projecten gevonden voor deze klant</p>}
-                </div>
-              )}
-              {/* Contactpersoon — inline under klant */}
-              {selectedKlant && (
-                <div className="pt-2 border-t space-y-2" style={{ borderColor: '#EBEBEB' }}>
-                  <Label className="text-[11px] font-semibold uppercase tracking-wider block" style={{ color: '#9B9B95' }}>Contactpersoon</Label>
-                  {(selectedKlant.contactpersonen?.length > 0 || selectedKlant.contactpersoon) && (
-                    <div className="space-y-1.5">
-                      {selectedKlant.contactpersonen?.map((cp) => (
-                        <button key={cp.id} onClick={() => contact.handleSelectContact(cp.id)} className={cn('w-full text-left rounded-lg p-2.5 transition-all')} style={{ border: selectedContactId === cp.id ? '1px solid #1A535C' : '0.5px solid #EBEBEB', backgroundColor: selectedContactId === cp.id ? '#E2F0F0' : 'transparent' }}>
-                          <div className="flex items-center gap-2">
-                            <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold" style={{ backgroundColor: selectedContactId === cp.id ? '#1A535C' : '#EBEBEB', color: selectedContactId === cp.id ? '#FFFFFF' : '#6B6B66' }}>{cp.naam[0]?.toUpperCase()}</div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-[13px] font-medium truncate" style={{ color: '#1A1A1A' }}>{cp.naam}</p>
-                              {cp.functie && <p className="text-[11px] truncate" style={{ color: '#9B9B95' }}>{cp.functie}</p>}
-                            </div>
-                            {cp.is_primair && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: '#E2F0F0', color: '#1A535C' }}>primair</span>}
-                          </div>
-                        </button>
-                      ))}
-                      {(!selectedKlant.contactpersonen || selectedKlant.contactpersonen.length === 0) && selectedKlant.contactpersoon && (
-                        <div className="rounded-lg p-2.5" style={{ border: '1px solid #1A535C', backgroundColor: '#E2F0F0' }}>
-                          <div className="flex items-center gap-2">
-                            <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold" style={{ backgroundColor: '#1A535C', color: '#FFFFFF' }}>{selectedKlant.contactpersoon[0]?.toUpperCase()}</div>
-                            <p className="text-[13px] font-medium" style={{ color: '#1A1A1A' }}>{selectedKlant.contactpersoon}</p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  {!contact.showNewContact ? (
-                    <button onClick={() => contact.setShowNewContact(true)} className="w-full flex items-center gap-2 text-[11px] py-2 px-3 rounded-lg transition-colors hover:bg-[#F8F7F5]" style={{ border: '1px dashed #EBEBEB', color: '#9B9B95' }}>
-                      <UserPlus className="h-3.5 w-3.5" />Nieuwe contactpersoon toevoegen
-                    </button>
-                  ) : (
-                    <div className="rounded-lg p-3.5 space-y-2" style={{ border: '1px solid #EBEBEB', backgroundColor: '#F8F7F5' }}>
-                      <p className="text-[12px] font-semibold flex items-center gap-1.5" style={{ color: '#1A1A1A' }}><UserPlus className="h-3.5 w-3.5" style={{ color: '#1A535C' }} />Nieuwe contactpersoon</p>
-                      <Input value={contact.newContactNaam} onChange={(e) => contact.setNewContactNaam(e.target.value)} placeholder="Naam *" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} autoFocus />
-                      <Input value={contact.newContactFunctie} onChange={(e) => contact.setNewContactFunctie(e.target.value)} placeholder="Functie" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} />
-                      <Input value={contact.newContactEmail} onChange={(e) => contact.setNewContactEmail(e.target.value)} placeholder="E-mailadres" type="email" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} />
-                      <Input value={contact.newContactTelefoon} onChange={(e) => contact.setNewContactTelefoon(e.target.value)} placeholder="Telefoonnummer" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} />
-                      <div className="flex items-center gap-2 pt-1">
-                        <button onClick={contact.handleAddContact} disabled={!contact.newContactNaam.trim()} className="h-7 px-3 text-[11px] font-semibold rounded-lg text-white transition-all hover:opacity-90 disabled:opacity-50 flex items-center gap-1" style={{ backgroundColor: '#1A535C' }}><Plus className="h-3 w-3" />Toevoegen</button>
-                        <button onClick={() => { contact.setShowNewContact(false); contact.setNewContactNaam(''); contact.setNewContactFunctie(''); contact.setNewContactEmail(''); contact.setNewContactTelefoon('') }} className="h-7 px-3 text-[11px] font-medium rounded-lg" style={{ color: '#6B6B66' }}>Annuleren</button>
-                      </div>
-                    </div>
-                  )}
-                  {!contact.showNewContact && (
-                    <div className="space-y-1 pt-2" style={{ borderTop: '0.5px solid #EBEBEB' }}>
-                      <Label className="text-[11px]" style={{ color: '#9B9B95' }}>Of typ een naam</Label>
-                      <Input value={contactpersoon} onChange={(e) => { setContactpersoon(e.target.value); setSelectedContactId('') }} placeholder="Contactpersoon naam..." className="h-9 text-[13px] rounded-lg" style={{ backgroundColor: '#F8F7F5', border: '1px solid #EBEBEB' }} />
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Step 2: Offerte details + items — merged */}
-          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#FFFFFF', border: '1px solid #EBEBEB' }}>
-            <div className="h-[3px]" style={{ background: 'linear-gradient(90deg, #3A6B8C, #3A6B8C60)' }} />
-            <div className="flex items-center gap-3 px-5 pt-4 pb-1">
-              <div className="flex items-center justify-center h-7 w-7 rounded-lg text-white text-[11px] font-bold" style={{ backgroundColor: '#3A6B8C' }}>2</div>
-              <div>
-                <span className="text-[13px] font-semibold" style={{ color: '#1A1A1A' }}>Offerte details</span>
-                <p className="text-[11px]" style={{ color: '#9B9B95' }}>Titel, nummer en geldigheid</p>
-              </div>
-            </div>
-            <div className="px-5 pb-5 pt-3 space-y-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="offerte-titel" className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: '#9B9B95' }}>Titel</Label>
-                <Input id="offerte-titel" value={offerteTitel} onChange={(e) => setOfferteTitel(e.target.value)} placeholder="bijv. Gevelreclame nieuwe locatie, Autobelettering wagenpark..." className="text-[14px] h-10 rounded-lg" style={{ backgroundColor: '#F8F7F5', border: '1px solid #EBEBEB' }} autoFocus />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="offerte-nummer" className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: '#9B9B95' }}>Nummer</Label>
-                  <Input id="offerte-nummer" value={offerteNummer} readOnly className="text-[13px] font-mono h-10 rounded-lg" style={{ backgroundColor: '#EBEBEB', border: '1px solid #EBEBEB', color: '#6B6B66' }} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="geldig-tot" className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: '#9B9B95' }}>Geldig tot</Label>
-                  <Input id="geldig-tot" type="date" value={geldigTot} onChange={(e) => setGeldigTot(e.target.value)} className="text-[13px] font-mono h-10 rounded-lg" style={{ backgroundColor: '#F8F7F5', border: '1px solid #EBEBEB' }} />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Start button with inline item count */}
-          <div className="flex items-center justify-between pt-2">
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: '#9B9B95' }}>Items</span>
-              {ITEM_COUNT_OPTIONS.map((count) => (
-                <button key={count} onClick={() => setItemCount(count)} className="h-8 w-8 rounded-lg text-[13px] font-bold transition-all" style={{ border: itemCount === count ? '2px solid #1A535C' : '0.5px solid #EBEBEB', backgroundColor: itemCount === count ? '#1A535C' : '#F8F7F5', color: itemCount === count ? '#FFFFFF' : '#1A1A1A' }}>
-                  {count}
-                </button>
-              ))}
-            </div>
-            <button onClick={handleStartEditing} disabled={!canStartEditing} className="h-10 px-6 text-[14px] font-bold text-white rounded-lg shadow-sm transition-all hover:opacity-90 disabled:opacity-40 flex items-center gap-2" style={{ backgroundColor: '#F15025' }}>
-              Items toevoegen
-              <ArrowRight className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-        </div>
-      </div>
+      <CustomerSelector
+        locationState={location.state}
+        navigate={navigate}
+        klantSearch={klantSearch}
+        setKlantSearch={setKlantSearch}
+        showKlantResults={showKlantResults}
+        setShowKlantResults={setShowKlantResults}
+        showNieuwBedrijf={showNieuwBedrijf}
+        setShowNieuwBedrijf={setShowNieuwBedrijf}
+        selectedKlantId={selectedKlantId}
+        setSelectedKlantId={setSelectedKlantId}
+        selectedKlant={selectedKlant}
+        klantWrapperRef={klantWrapperRef}
+        filteredKlanten={filteredKlanten}
+        nbData={nbData}
+        setNbData={setNbData}
+        showNbUitgebreid={showNbUitgebreid}
+        setShowNbUitgebreid={setShowNbUitgebreid}
+        nbCreating={nbCreating}
+        handleCreateNieuwBedrijf={handleCreateNieuwBedrijf}
+        selectedProjectId={selectedProjectId}
+        setSelectedProjectId={setSelectedProjectId}
+        klantProjecten={klantProjecten}
+        selectedContactId={selectedContactId}
+        setSelectedContactId={setSelectedContactId}
+        contactpersoon={contactpersoon}
+        setContactpersoon={setContactpersoon}
+        contact={contact}
+        offerteTitel={offerteTitel}
+        setOfferteTitel={setOfferteTitel}
+        offerteNummer={offerteNummer}
+        geldigTot={geldigTot}
+        setGeldigTot={setGeldigTot}
+        itemCount={itemCount}
+        setItemCount={setItemCount}
+        handleStartEditing={handleStartEditing}
+        canStartEditing={!!canStartEditing}
+      />
     )
   }
 
@@ -1924,115 +1736,27 @@ export function QuoteCreation() {
     <div className="relative -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 min-h-full" style={{ backgroundColor: '#F8F7F5' }}>
     <div className="relative pb-6 px-4 md:px-6 pt-0">
       {/* ──── HEADER BAR ──── */}
-      <div className="sticky top-0 z-10 bg-[#F8F7F5]/80 backdrop-blur-sm border-b border-[#EBEBEB] px-6 py-3 mb-6 -mx-4 md:-mx-6">
-        <div className="flex items-center justify-between gap-4 flex-wrap">
-          {/* Left: Title + meta */}
-          <div className="min-w-0">
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <Link to="/offertes" className="text-[#9B9B95] hover:text-[#6B6B66] transition-colors flex-shrink-0"><ArrowLeft className="h-4 w-4" /></Link>
-              <h1 className="text-xl font-bold text-[#1A1A1A] tracking-[-0.3px] truncate">{isEditMode ? 'Offerte bewerken' : 'Nieuwe offerte'}</h1>
-              <span className="text-[13px] font-mono text-[#9B9B95] flex-shrink-0">{offerteNummer}</span>
-              {versioning.versieNummer > 1 && (
-                <button onClick={() => versioning.setShowVersieHistorie(!versioning.showVersieHistorie)} className="text-[11px] font-mono text-[#6A5A8A] hover:underline flex-shrink-0">v{versioning.versieNummer}</button>
-              )}
-              {geldigTot && (() => {
-                const days = Math.floor((new Date(geldigTot).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-                if (days < 0) return <span className="text-xs text-[#C0451A] font-medium flex-shrink-0">Verlopen<span className="text-[#F15025]">.</span></span>
-                if (days < 7) return <span className="text-xs text-[#C0451A] flex-shrink-0">Nog {days}d</span>
-                return <span className="text-xs text-[#9B9B95] flex-shrink-0">t/m <span className="font-mono">{new Date(geldigTot).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}</span></span>
-              })()}
-            </div>
-            <div className="flex items-center gap-2 mt-0.5">
-              {autoSaveStatus === 'saving' && <span className="flex items-center gap-1.5 text-xs text-[#8A7A4A]"><div className="h-1.5 w-1.5 rounded-full bg-[#8A7A4A] animate-pulse" />Opslaan...</span>}
-              {autoSaveStatus === 'saved' && <span className="flex items-center gap-1.5 text-xs text-[#3A7D52]"><Check className="h-3 w-3" />Opgeslagen</span>}
-              {!autoSaveStatus && <p className="text-[13px] text-[#9B9B95]">{isEditMode ? selectedKlant?.bedrijfsnaam || '' : 'Selecteer een klant en vul de details in'}</p>}
-            </div>
-          </div>
-
-          {/* Right: Action buttons */}
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <button onClick={handleDownloadPdf} className="inline-flex items-center gap-1.5 h-8 px-3 text-[12px] font-medium rounded-lg border border-[#EBEBEB] text-[#6B6B66] hover:text-[#1A1A1A] hover:border-[#EBEBEB] hover:bg-[#F8F7F5] transition-colors">
-              <Download className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">PDF</span>
-            </button>
-            <button onClick={() => saveOfferte('concept')} disabled={isSaving} className="inline-flex items-center gap-1.5 h-8 px-4 text-[12px] font-medium rounded-lg bg-[#1A535C] text-white hover:bg-[#164850] transition-colors disabled:opacity-50">
-              <Save className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">{isSaving ? 'Opslaan...' : 'Opslaan'}</span>
-            </button>
-            {/* Verstuur split button */}
-            <div className="relative">
-              <button onClick={handleVerstuurOfferte} disabled={isSaving} className="inline-flex items-center gap-1.5 h-9 px-5 text-sm font-semibold rounded-lg bg-[#F15025] text-white hover:bg-[#D94520] transition-colors disabled:opacity-50">
-                <Send className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Verstuur</span>
-                <ChevronDown className="h-3 w-3 ml-0.5 opacity-70" />
-              </button>
-              {email.showVerstuurKeuze && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => email.setShowVerstuurKeuze(false)} />
-                  <div className="absolute right-0 top-full mt-1.5 z-50 w-72 bg-[#FFFFFF] rounded-xl border border-[#EBEBEB] shadow-[0_4px_20px_rgba(0,0,0,0.12)] overflow-hidden">
-                    <button
-                      onClick={handleKeuzePortaal}
-                      disabled={email.isSendingPortaal || !selectedProjectId}
-                      className="w-full text-left px-4 py-3 hover:bg-[#F8F7F5] transition-colors disabled:opacity-40 disabled:cursor-not-allowed border-b border-[#EBEBEB]/40"
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <div className="h-7 w-7 rounded-md bg-[#1A535C] flex items-center justify-center flex-shrink-0">
-                          <Send className="h-3.5 w-3.5 text-white" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-[#1A1A1A]">Via portaal</p>
-                          <p className="text-[11px] text-[#9B9B95] leading-snug">Klant bekijkt online + email notificatie</p>
-                        </div>
-                      </div>
-                      {!selectedProjectId && <p className="text-[10px] text-[#C0451A] mt-1 ml-9">Koppel eerst een project</p>}
-                      {email.isSendingPortaal && <p className="text-[10px] text-[#1A535C] mt-1 ml-9 flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-[#1A535C] animate-pulse" />Delen...</p>}
-                    </button>
-                    <button
-                      onClick={handleKeuzeEmail}
-                      className="w-full text-left px-4 py-3 hover:bg-[#F8F7F5] transition-colors"
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <div className="h-7 w-7 rounded-md bg-[#F15025] flex items-center justify-center flex-shrink-0">
-                          <Mail className="h-3.5 w-3.5 text-white" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-[#1A1A1A]">Via email</p>
-                          <p className="text-[11px] text-[#9B9B95] leading-snug">PDF bijlage + gepersonaliseerde email</p>
-                        </div>
-                      </div>
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Actions dropdown */}
-            {isEditMode && (
-              <div className="relative">
-                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setShowActionsMenu(!showActionsMenu)}>
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-                {showActionsMenu && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => setShowActionsMenu(false)} />
-                    <div className="absolute right-0 top-full mt-1 z-50 bg-card rounded-lg border border-border dark:border-border shadow-lg py-1 w-48">
-                      <button onClick={() => { handleDupliceerOfferte(); setShowActionsMenu(false) }} disabled={isDuplicating} className="w-full text-left px-3 py-2 text-sm hover:bg-background dark:hover:bg-muted flex items-center gap-2 disabled:opacity-50">
-                        <Copy className="h-3.5 w-3.5" />{isDuplicating ? 'Dupliceren...' : 'Dupliceer offerte'}
-                      </button>
-                      <button onClick={() => { versioning.handleNieuweVersie(); setShowActionsMenu(false) }} disabled={versioning.isSavingVersie} className="w-full text-left px-3 py-2 text-sm hover:bg-background dark:hover:bg-muted flex items-center gap-2 disabled:opacity-50">
-                        <Clock className="h-3.5 w-3.5" />{versioning.isSavingVersie ? 'Opslaan...' : `Nieuwe versie (v${versioning.versieNummer})`}
-                      </button>
-                      <button onClick={() => { setShowKlantSelector(true); setShowActionsMenu(false) }} className="w-full text-left px-3 py-2 text-sm hover:bg-background dark:hover:bg-muted flex items-center gap-2">
-                        <Building2 className="h-3.5 w-3.5" />Klant wijzigen
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+      <QuoteHeader
+        isEditMode={isEditMode}
+        offerteNummer={offerteNummer}
+        geldigTot={geldigTot}
+        autoSaveStatus={autoSaveStatus}
+        selectedKlant={selectedKlant}
+        isSaving={isSaving}
+        selectedProjectId={selectedProjectId}
+        versioning={versioning}
+        email={email}
+        showActionsMenu={showActionsMenu}
+        setShowActionsMenu={setShowActionsMenu}
+        isDuplicating={isDuplicating}
+        handleDownloadPdf={handleDownloadPdf}
+        saveOfferte={saveOfferte}
+        handleVerstuurOfferte={handleVerstuurOfferte}
+        handleKeuzePortaal={handleKeuzePortaal}
+        handleKeuzeEmail={handleKeuzeEmail}
+        handleDupliceerOfferte={handleDupliceerOfferte}
+        setShowKlantSelector={setShowKlantSelector}
+      />
 
       {/* ──── PROJECT KOPPELING ──── */}
       {!selectedProjectId && selectedKlantId && isEditMode && (
@@ -2236,13 +1960,13 @@ export function QuoteCreation() {
           {/* ════════════════════════════════════════════════════════════════ */}
           {/* INLINE EMAIL COMPOSE — bottom of left column                   */}
           {/* ════════════════════════════════════════════════════════════════ */}
-          <div ref={emailSectionRef}>
+          <div ref={email.emailSectionRef}>
             {email.showEmailCompose && (
               <div className="bg-[#FFFFFF] rounded-xl border border-[#EBEBEB] shadow-[0_1px_4px_rgba(0,0,0,0.06)] overflow-hidden">
                 {/* Header */}
                 <div className="flex items-center justify-between px-5 py-3 border-b border-[#EBEBEB]/60">
                   <h3 className="text-sm font-semibold text-[#1A1A1A]">Email versturen</h3>
-                  <button onClick={() => setShowEmailCompose(false)} className="text-[#9B9B95] hover:text-[#1A1A1A] transition-colors"><X className="h-4 w-4" /></button>
+                  <button onClick={() => email.setShowEmailCompose(false)} className="text-[#9B9B95] hover:text-[#1A1A1A] transition-colors"><X className="h-4 w-4" /></button>
                 </div>
 
                 <div className="px-5 py-4 space-y-3">
@@ -2250,20 +1974,20 @@ export function QuoteCreation() {
                   <div className="space-y-2">
                     <div className="flex items-center gap-3">
                       <span className="text-xs font-medium text-[#9B9B95] w-16 flex-shrink-0">Aan</span>
-                      <input value={emailTo} onChange={(e) => setEmailTo(e.target.value)} placeholder="email@voorbeeld.nl" type="email" className="flex-1 text-sm px-3 py-2 border border-[#EBEBEB] rounded-lg bg-[#F8F7F5] focus:outline-none focus:border-[#1A535C]/40 focus:bg-white transition-colors" />
+                      <input value={email.emailTo} onChange={(e) => email.setEmailTo(e.target.value)} placeholder="email@voorbeeld.nl" type="email" className="flex-1 text-sm px-3 py-2 border border-[#EBEBEB] rounded-lg bg-[#F8F7F5] focus:outline-none focus:border-[#1A535C]/40 focus:bg-white transition-colors" />
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="text-xs font-medium text-[#9B9B95] w-16 flex-shrink-0">CC</span>
-                      <input value={emailCc} onChange={(e) => setEmailCc(e.target.value)} placeholder="Optioneel" className="flex-1 text-sm px-3 py-2 border border-[#EBEBEB] rounded-lg bg-[#F8F7F5] focus:outline-none focus:border-[#1A535C]/40 focus:bg-white transition-colors" />
+                      <input value={email.emailCc} onChange={(e) => email.setEmailCc(e.target.value)} placeholder="Optioneel" className="flex-1 text-sm px-3 py-2 border border-[#EBEBEB] rounded-lg bg-[#F8F7F5] focus:outline-none focus:border-[#1A535C]/40 focus:bg-white transition-colors" />
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="text-xs font-medium text-[#9B9B95] w-16 flex-shrink-0">BCC</span>
-                      <input value={emailBcc} onChange={(e) => setEmailBcc(e.target.value)} placeholder="Optioneel" className="flex-1 text-sm px-3 py-2 border border-[#EBEBEB] rounded-lg bg-[#F8F7F5] focus:outline-none focus:border-[#1A535C]/40 focus:bg-white transition-colors" />
+                      <input value={email.emailBcc} onChange={(e) => email.setEmailBcc(e.target.value)} placeholder="Optioneel" className="flex-1 text-sm px-3 py-2 border border-[#EBEBEB] rounded-lg bg-[#F8F7F5] focus:outline-none focus:border-[#1A535C]/40 focus:bg-white transition-colors" />
                     </div>
                   </div>
 
                   {/* Onderwerp */}
-                  <input value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} placeholder="Onderwerp..." className="w-full text-sm font-medium px-3 py-2 border border-[#EBEBEB] rounded-lg focus:outline-none focus:border-[#1A535C]/40 transition-colors" />
+                  <input value={email.emailSubject} onChange={(e) => email.setEmailSubject(e.target.value)} placeholder="Onderwerp..." className="w-full text-sm font-medium px-3 py-2 border border-[#EBEBEB] rounded-lg focus:outline-none focus:border-[#1A535C]/40 transition-colors" />
 
                   {/* Bericht */}
                   <div className="border border-[#EBEBEB] rounded-lg bg-[#F8F7F5] focus-within:border-[#1A535C]/40 focus-within:bg-white transition-colors overflow-hidden">
@@ -2296,8 +2020,8 @@ export function QuoteCreation() {
                       ))}
                     </div>
                     <textarea
-                      value={emailBody}
-                      onChange={(e) => setEmailBody(e.target.value)}
+                      value={email.emailBody}
+                      onChange={(e) => email.setEmailBody(e.target.value)}
                       rows={8}
                       className="w-full text-sm px-3 py-3 bg-transparent focus:outline-none resize-y leading-relaxed border-none"
                       placeholder="Schrijf je bericht..."
@@ -2311,27 +2035,27 @@ export function QuoteCreation() {
 
                   {/* Bijlagen */}
                   <div className="flex items-center gap-2 flex-wrap">
-                    {emailBijlagen.map((bijlage, idx) => (
+                    {email.emailBijlagen.map((bijlage: { naam: string; grootte: number }, idx: number) => (
                       <div key={idx} className="flex items-center gap-2 px-3 py-1.5 bg-[#F8F7F5] rounded-lg text-sm">
                         <FileText className="h-3.5 w-3.5 text-[#C03A18]" />
                         <span className="text-[#1A1A1A] font-mono text-xs">{bijlage.naam}</span>
-                        {idx > 0 && <button onClick={() => setEmailBijlagen((prev) => prev.filter((_, i) => i !== idx))} className="text-[#9B9B95] hover:text-[#C03A18] transition-colors"><X className="h-3 w-3" /></button>}
+                        {idx > 0 && <button onClick={() => email.setEmailBijlagen((prev: { naam: string; grootte: number }[]) => prev.filter((_: { naam: string; grootte: number }, i: number) => i !== idx))} className="text-[#9B9B95] hover:text-[#C03A18] transition-colors"><X className="h-3 w-3" /></button>}
                       </div>
                     ))}
-                    <button onClick={handleAddBijlage} className="flex items-center gap-1 px-2 py-1.5 text-xs text-[#1A535C] hover:underline">
+                    <button onClick={email.handleAddBijlage} className="flex items-center gap-1 px-2 py-1.5 text-xs text-[#1A535C] hover:underline">
                       <Paperclip className="h-3 w-3" />Bijlage
                     </button>
-                    <input ref={fileInputRef} type="file" multiple className="hidden" onChange={handleFileSelect} accept=".pdf,.jpg,.jpeg,.png,.dwg,.dxf,.doc,.docx" />
+                    <input ref={email.fileInputRef} type="file" multiple className="hidden" onChange={email.handleFileSelect} accept=".pdf,.jpg,.jpeg,.png,.dwg,.dxf,.doc,.docx" />
                   </div>
 
                   {/* Inplannen */}
                   <div className="border-t border-[#EBEBEB]/40 pt-3">
                     <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" checked={emailScheduled} onChange={(e) => setEmailScheduled(e.target.checked)} className="h-3.5 w-3.5 rounded border-[#EBEBEB] text-[#1A535C] focus:ring-[#1A535C]/30" />
+                      <input type="checkbox" checked={email.emailScheduled} onChange={(e) => email.setEmailScheduled(e.target.checked)} className="h-3.5 w-3.5 rounded border-[#EBEBEB] text-[#1A535C] focus:ring-[#1A535C]/30" />
                       <CalendarClock className="h-3.5 w-3.5 text-[#9B9B95]" />
                       <span className="text-xs text-[#6B6B66]">Inplannen</span>
                     </label>
-                    {emailScheduled && (
+                    {email.emailScheduled && (
                       <div className="mt-2 flex flex-wrap items-center gap-2 ml-6">
                         {(() => {
                           const morgen = new Date(); morgen.setDate(morgen.getDate() + 1)
@@ -2341,11 +2065,11 @@ export function QuoteCreation() {
                             { label: 'Morgen 10:00', datum: morgenStr, tijd: '10:00' },
                             { label: 'Morgen 14:00', datum: morgenStr, tijd: '14:00' },
                           ].map((opt) => (
-                            <button key={opt.label} onClick={() => { setEmailScheduleDate(opt.datum); setEmailScheduleTime(opt.tijd) }} className="text-xs px-2.5 py-1 border border-[#EBEBEB] rounded-md hover:bg-[#F8F7F5] text-[#6B6B66] transition-colors">{opt.label}</button>
+                            <button key={opt.label} onClick={() => { email.setEmailScheduleDate(opt.datum); email.setEmailScheduleTime(opt.tijd) }} className="text-xs px-2.5 py-1 border border-[#EBEBEB] rounded-md hover:bg-[#F8F7F5] text-[#6B6B66] transition-colors">{opt.label}</button>
                           ))
                         })()}
-                        <input type="date" value={emailScheduleDate} onChange={(e) => setEmailScheduleDate(e.target.value)} className="text-xs px-2 py-1 border border-[#EBEBEB] rounded-md w-32" />
-                        <input type="time" value={emailScheduleTime} onChange={(e) => setEmailScheduleTime(e.target.value)} className="text-xs px-2 py-1 border border-[#EBEBEB] rounded-md w-20" />
+                        <input type="date" value={email.emailScheduleDate} onChange={(e) => email.setEmailScheduleDate(e.target.value)} className="text-xs px-2 py-1 border border-[#EBEBEB] rounded-md w-32" />
+                        <input type="time" value={email.emailScheduleTime} onChange={(e) => email.setEmailScheduleTime(e.target.value)} className="text-xs px-2 py-1 border border-[#EBEBEB] rounded-md w-20" />
                       </div>
                     )}
                   </div>
@@ -2353,14 +2077,14 @@ export function QuoteCreation() {
 
                 {/* Footer */}
                 <div className="flex items-center justify-between px-5 py-3 border-t border-[#EBEBEB]/60 bg-[#F8F7F5]/50">
-                  <button onClick={() => setShowEmailCompose(false)} className="text-sm text-[#9B9B95] hover:text-[#6B6B66] transition-colors">Annuleren</button>
+                  <button onClick={() => email.setShowEmailCompose(false)} className="text-sm text-[#9B9B95] hover:text-[#6B6B66] transition-colors">Annuleren</button>
                   <button
                     onClick={handleSendEmailInline}
-                    disabled={!emailTo.trim() || !emailSubject.trim() || isSendingEmail}
+                    disabled={!email.emailTo.trim() || !email.emailSubject.trim() || email.isSendingEmail}
                     className="inline-flex items-center gap-1.5 px-5 py-2 text-sm font-medium rounded-lg bg-[#F15025] text-white hover:bg-[#D94520] disabled:opacity-40 transition-colors"
                   >
                     <Send className="h-3.5 w-3.5" />
-                    {isSendingEmail ? 'Verzenden...' : emailScheduled ? 'Inplannen' : 'Verstuur'}
+                    {email.isSendingEmail ? 'Verzenden...' : email.emailScheduled ? 'Inplannen' : 'Verstuur'}
                   </button>
                 </div>
               </div>
@@ -2371,520 +2095,63 @@ export function QuoteCreation() {
         {/* ════════════════════════════════════════════════════════════════ */}
         {/* RIGHT SIDEBAR: Configurable order + sticky pin                 */}
         {/* ════════════════════════════════════════════════════════════════ */}
-        <div className="lg:block">
-          <div className="space-y-0">
-
-            {/* ── Mobile collapse toggle ── */}
-            <button
-              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="lg:hidden w-full flex items-center justify-between px-4 py-3 rounded-xl border border-border dark:border-border bg-card mb-4"
-            >
-              <span className="text-sm font-semibold">Klant & Samenvatting</span>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-bold text-primary">{formatCurrency(round2(subtotaal + btwBedrag))}</span>
-                {sidebarCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-              </div>
-            </button>
-
-            <div className={cn('space-y-0', sidebarCollapsed && 'hidden lg:block')}>
-              {/* Render sidebar sections: pinned group (sticky) + unpinned */}
-              {(() => {
-                const showFactureren = isEditMode && (offerteStatus === 'goedgekeurd' || offerteStatus === 'gefactureerd' || !!geconverteerdNaarFactuurId)
-                const isVisible = (id: typeof sidebarLayout.order[number]) => {
-                  if (id === 'factureren' && !showFactureren) return false
-                  if (id === 'inkoop' && !user?.id) return false
-                  return true
-                }
-                const visibleOrder = sidebarLayout.order.filter(isVisible)
-                const pinnedIds = visibleOrder.filter(id => sidebarLayout.pinned.has(id))
-                const unpinnedIds = visibleOrder.filter(id => !sidebarLayout.pinned.has(id))
-
-                const renderSection = (sectionId: typeof sidebarLayout.order[number]) => {
-                  const isPinned = sidebarLayout.pinned.has(sectionId)
-                  const isDragging = sidebarLayout.draggedSection === sectionId
-                  const isDragOver = sidebarLayout.dragOverSection === sectionId
-
-                  return (
-                  <div
-                    key={sectionId}
-                    draggable
-                    onDragStart={(e) => sidebarLayout.handleDragStart(e, sectionId)}
-                    onDragEnd={sidebarLayout.handleDragEnd}
-                    onDragEnter={(e) => sidebarLayout.handleDragEnter(e, sectionId)}
-                    onDragLeave={sidebarLayout.handleDragLeave}
-                    onDragOver={sidebarLayout.handleDragOver}
-                    onDrop={(e) => sidebarLayout.handleDrop(e, sectionId)}
-                    className={cn(
-                      'group/sidebar-section pb-4 transition-all',
-                      isDragging && 'opacity-40',
-                      isDragOver && 'pt-1',
-                    )}
-                  >
-                    {/* Drop indicator */}
-                    {isDragOver && !isDragging && (
-                      <div className="h-1 bg-primary/50 rounded-full mb-2 mx-4 animate-pulse" />
-                    )}
-
-                    {/* Drag handle + pin bar */}
-                    <div className={cn(
-                      'flex items-center gap-1.5 mb-1 transition-opacity',
-                      isPinned
-                        ? 'opacity-100'
-                        : 'opacity-0 group-hover/sidebar-section:opacity-100'
-                    )}>
-                      <div className="cursor-grab active:cursor-grabbing p-1 rounded hover:bg-muted text-muted-foreground/40 hover:text-muted-foreground">
-                        <GripVertical className="h-3.5 w-3.5" />
-                      </div>
-                      <button
-                        onClick={() => sidebarLayout.togglePin(sectionId)}
-                        className={cn(
-                          'p-1 rounded transition-colors',
-                          isPinned
-                            ? 'text-primary bg-primary/15 hover:bg-primary/25'
-                            : 'text-muted-foreground/40 hover:text-muted-foreground hover:bg-muted'
-                        )}
-                        title={isPinned ? 'Losmaken' : 'Vastzetten (sticky)'}
-                      >
-                        <Pin className={cn('h-3.5 w-3.5', isPinned && 'fill-current')} />
-                      </button>
-                      <span className="text-2xs text-muted-foreground/40 ml-0.5">
-                        {sectionId === 'klant' && 'Klant'}
-                        {sectionId === 'factureren' && 'Factureren'}
-                        {sectionId === 'samenvatting' && 'Samenvatting'}
-                        {sectionId === 'inkoop' && 'Inkoop'}
-                      </span>
-                    </div>
-
-                    {/* ── KLANTGEGEVENS ── */}
-                    {sectionId === 'klant' && (
-                      <>
-                        {selectedKlant ? (
-                          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#FFFFFF', border: '1px solid #EBEBEB' }}>
-                            <button onClick={() => setKlantPanelOpen(!klantPanelOpen)} className="w-full flex items-center gap-2.5 px-4 py-2.5 hover:bg-[#F8F7F5] transition-colors" style={{ borderBottom: '0.5px solid #EBEBEB' }}>
-                              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#8BAFD4] to-[#6B8FB4] flex items-center justify-center flex-shrink-0">
-                                <span className="text-white font-bold text-[10px]">{selectedKlant.bedrijfsnaam[0]?.toUpperCase()}</span>
-                              </div>
-                              <div className="flex-1 text-left min-w-0">
-                                <p className="text-[13px] font-semibold truncate" style={{ color: '#1A1A1A' }}>{selectedKlant.bedrijfsnaam}</p>
-                                <p className="text-[11px] truncate" style={{ color: '#9B9B95' }}>{contactpersoon ? `t.a.v. ${contactpersoon}` : 'Geen contactpersoon'}</p>
-                              </div>
-                              {klantPanelOpen ? <ChevronUp className="h-3.5 w-3.5 flex-shrink-0" style={{ color: '#9B9B95' }} /> : <ChevronDown className="h-3.5 w-3.5 flex-shrink-0" style={{ color: '#9B9B95' }} />}
-                            </button>
-
-                            {klantPanelOpen && (
-                              <div className="px-4 py-3 space-y-2.5">
-                                <div className="text-[11px] space-y-0.5" style={{ color: '#6B6B66' }}>
-                                  {selectedKlant.telefoon && <p className="flex items-center gap-1.5 font-mono"><Phone className="h-3 w-3" style={{ color: '#9B9B95' }} />{selectedKlant.telefoon}</p>}
-                                  {selectedKlant.email && <p className="flex items-center gap-1.5"><Mail className="h-3 w-3" style={{ color: '#9B9B95' }} />{selectedKlant.email}</p>}
-                                  {(selectedKlant.adres || selectedKlant.stad) && (
-                                    <p className="flex items-center gap-1.5"><MapPin className="h-3 w-3" style={{ color: '#9B9B95' }} />{[selectedKlant.adres, selectedKlant.postcode, selectedKlant.stad].filter(Boolean).join(', ')}</p>
-                                  )}
-                                </div>
-
-                                <KlantStatusWarning klant={selectedKlant} className="mt-1" />
-
-                                {selectedKlant.contactpersonen?.length > 0 && (
-                                  <div className="space-y-1">
-                                    <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: '#9B9B95' }}>Contactpersoon</label>
-                                    <Select value={selectedContactId} onValueChange={(val) => contact.handleSelectContact(val)}>
-                                      <SelectTrigger className="h-8 text-[12px] rounded-lg" style={{ backgroundColor: '#F8F7F5', border: '1px solid #EBEBEB' }}><SelectValue placeholder="Selecteer..." /></SelectTrigger>
-                                      <SelectContent>
-                                        {selectedKlant.contactpersonen.map((cp) => (
-                                          <SelectItem key={cp.id} value={cp.id}>
-                                            <div className="flex items-center gap-1.5"><span>{cp.naam}</span>{cp.is_primair && <span className="text-[10px]" style={{ color: '#1A535C' }}>(primair)</span>}</div>
-                                          </SelectItem>
-                                        ))}
-                                        <SelectItem value="__new__"><span style={{ color: '#1A535C' }}>+ Nieuw</span></SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                )}
-
-                                {(selectedKlant.kvk_nummer || selectedKlant.btw_nummer) && (
-                                  <div className="text-[11px] font-mono space-y-0.5 pt-2" style={{ color: '#6B6B66', borderTop: '0.5px solid #EBEBEB' }}>
-                                    {selectedKlant.kvk_nummer && <p>KvK: {selectedKlant.kvk_nummer}</p>}
-                                    {selectedKlant.btw_nummer && <p>BTW: {selectedKlant.btw_nummer}</p>}
-                                  </div>
-                                )}
-
-                                <div className="flex flex-wrap gap-1.5 pt-2" style={{ borderTop: '0.5px solid #EBEBEB' }}>
-                                  {selectedKlant.telefoon && <a href={`tel:${selectedKlant.telefoon}`} className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors" style={{ backgroundColor: '#E2F0E8', color: '#2D6B48' }}><Phone className="h-3 w-3" />Bellen</a>}
-                                  {selectedKlant.email && <a href={`mailto:${selectedKlant.email}`} className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors" style={{ backgroundColor: '#E2F0F0', color: '#1A535C' }}><Mail className="h-3 w-3" />Email</a>}
-                                  <Link to={`/klanten/${selectedKlant.id}`} className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors" style={{ backgroundColor: '#EBEBEB', color: '#6B6B66' }}><ExternalLink className="h-3 w-3" />Profiel</Link>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <div className="rounded-xl p-5 text-center" style={{ border: '1.5px dashed #EBEBEB', backgroundColor: '#F8F7F5' }}>
-                            <Building2 className="h-7 w-7 mx-auto mb-1.5" style={{ color: '#9B9B95' }} />
-                            <p className="text-[12px]" style={{ color: '#9B9B95' }}>Geen klant geselecteerd</p>
-                            <button className="mt-2 h-7 px-3 text-[11px] font-semibold rounded-lg text-white transition-all hover:opacity-90" style={{ backgroundColor: '#1A535C' }} onClick={() => setShowKlantSelector(true)}>Klant kiezen</button>
-                          </div>
-                        )}
-                      </>
-                    )}
-
-                    {/* ── FACTUREREN ── */}
-                    {sectionId === 'factureren' && (
-                      <div className="rounded-xl border border-border dark:border-border bg-card overflow-hidden shadow-sm">
-                        {geconverteerdNaarFactuurId ? (
-                          <>
-                            <div className="bg-[#E8F5EC] dark:bg-[#162018] p-4">
-                              <div className="flex items-center gap-2 mb-2">
-                                <CheckCircle2 className="h-4 w-4 text-[#4A9960] dark:text-[#6ACA80]" />
-                                <p className="text-2xs uppercase tracking-label text-[#4A9960]/80 dark:text-[#6ACA80]/80 font-medium">Gefactureerd</p>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <div className="flex-1">
-                                  <p className="text-2xs text-[#4A9960]/60 dark:text-[#6ACA80]/60">Offerte bedrag</p>
-                                  <p className="text-sm font-bold text-[#4A9960] dark:text-[#6ACA80]">{formatCurrency(round2(subtotaal + btwBedrag))}</p>
-                                </div>
-                                <ArrowRight className="h-4 w-4 text-[#4A9960]/40 dark:text-[#6ACA80]/40 flex-shrink-0" />
-                                <div className="flex-1 text-right">
-                                  <p className="text-2xs text-[#4A9960]/60 dark:text-[#6ACA80]/60">Factuur</p>
-                                  <p className="text-sm font-bold text-[#4A9960] dark:text-[#6ACA80]">{linkedFactuur ? formatCurrency(linkedFactuur.totaal) : '...'}</p>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="p-3 space-y-2">
-                              {linkedFactuur && (
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-2">
-                                    <Receipt className="h-3.5 w-3.5 text-muted-foreground" />
-                                    <span className="text-xs font-medium">{linkedFactuur.nummer}</span>
-                                  </div>
-                                  <Badge className={cn('text-2xs',
-                                    linkedFactuur.status === 'betaald' && 'bg-emerald-100 text-emerald-700 border-emerald-200',
-                                    linkedFactuur.status === 'verzonden' && 'bg-blue-100 text-blue-700 border-blue-200',
-                                    linkedFactuur.status === 'concept' && 'bg-muted text-foreground/70 border-border',
-                                    linkedFactuur.status === 'vervallen' && 'bg-red-100 text-red-700 border-red-200',
-                                    linkedFactuur.status === 'gecrediteerd' && 'bg-orange-100 text-orange-700 border-orange-200',
-                                  )}>
-                                    {linkedFactuur.status.charAt(0).toUpperCase() + linkedFactuur.status.slice(1)}
-                                  </Badge>
-                                </div>
-                              )}
-                              {linkedFactuur && linkedFactuur.status !== 'betaald' && linkedFactuur.betaald_bedrag > 0 && (
-                                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                                  <span>Betaald</span>
-                                  <span className="font-medium text-emerald-600">{formatCurrency(linkedFactuur.betaald_bedrag)}</span>
-                                </div>
-                              )}
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="w-full text-xs h-8 gap-1.5 text-emerald-700 border-emerald-200 hover:bg-emerald-50 dark:text-emerald-400 dark:border-emerald-800 dark:hover:bg-emerald-900/30"
-                                onClick={() => navigate(`/facturen/${geconverteerdNaarFactuurId}`)}
-                              >
-                                <Receipt className="h-3.5 w-3.5" />Bekijk factuur
-                              </Button>
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            <div className="bg-gradient-to-br from-amber-500 to-orange-500 p-4">
-                              <div className="flex items-center gap-2 mb-2">
-                                <Receipt className="h-4 w-4 text-white" />
-                                <p className="text-2xs uppercase tracking-label text-white/80 font-medium">Klaar om te factureren</p>
-                              </div>
-                              <p className="text-2xs text-white/60">Offerte bedrag incl BTW</p>
-                              <p className="text-xl font-bold text-white font-mono">{formatCurrency(round2(subtotaal + btwBedrag))}</p>
-                              <div className="flex items-center gap-3 mt-1">
-                                <p className="text-2xs text-white/60"><span className="font-mono">{formatCurrency(subtotaal)}</span> excl BTW</p>
-                                <p className="text-2xs text-white/60">+<span className="font-mono">{formatCurrency(btwBedrag)}</span> BTW</p>
-                              </div>
-                            </div>
-                            <div className="p-3">
-                              <Button
-                                size="sm"
-                                className="w-full h-9 bg-emerald-600 hover:bg-emerald-700 text-white gap-2 font-medium"
-                                onClick={() => {
-                                  const quoteId = editOfferteId || autoSaveIdRef.current
-                                  if (!quoteId) return
-                                  const params = new URLSearchParams({ offerte_id: quoteId, klant_id: selectedKlantId })
-                                  if (offerteTitel) params.set('titel', offerteTitel)
-                                  if (selectedProjectId) params.set('project_id', selectedProjectId)
-                                  navigate(`/facturen/nieuw?${params.toString()}`)
-                                }}
-                              >
-                                <Receipt className="h-4 w-4" />Factuur aanmaken
-                                <ArrowRight className="h-3.5 w-3.5 ml-auto" />
-                              </Button>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    )}
-
-                    {/* ── SAMENVATTING ── */}
-                    {sectionId === 'samenvatting' && (
-                      <div className="rounded-xl border border-border dark:border-border bg-card overflow-hidden shadow-sm">
-                        <div className="bg-mod-klanten-light dark:bg-mod-klanten-light/15 p-4">
-                          <p className="text-2xs uppercase tracking-label text-foreground/70 font-medium">Totaal incl BTW</p>
-                          {isEditingTotaal ? (
-                            <div className="mt-1">
-                              <div className="flex items-center gap-1">
-                                <span className="text-foreground font-bold text-lg">€</span>
-                                <input
-                                  type="number"
-                                  value={gewenstTotaal}
-                                  onChange={(e) => setGewenstTotaal(e.target.value)}
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
-                                      const val = parseFloat(gewenstTotaal)
-                                      if (!isNaN(val) && val > 0) {
-                                        const gemBtw = subtotaal > 0 ? btwBedrag / subtotaal : 0.21
-                                        const kortingExcl = round2((val / (1 + gemBtw)) - subtotaal)
-                                        setAfrondingskorting(kortingExcl)
-                                      }
-                                      setIsEditingTotaal(false)
-                                    }
-                                    if (e.key === 'Escape') setIsEditingTotaal(false)
-                                  }}
-                                  autoFocus
-                                  step={0.01}
-                                  className="bg-foreground/10 text-foreground font-bold text-lg rounded px-2 py-0.5 w-32 border-0 outline-none placeholder:text-foreground/40"
-                                  placeholder={round2(subtotaal + btwBedrag).toFixed(2)}
-                                />
-                              </div>
-                              <p className="text-2xs text-foreground/50 mt-0.5">Enter = bevestig, Esc = annuleer</p>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => {
-                                setGewenstTotaal(round2(subtotaal + btwBedrag + ((afrondingskorting + urenCorrectieBedrag) * (1 + (subtotaal > 0 ? btwBedrag / subtotaal : 0.21)))).toFixed(2))
-                                setIsEditingTotaal(true)
-                              }}
-                              className="text-xl font-bold font-mono text-foreground mt-0.5 hover:underline underline-offset-2 decoration-foreground/40 cursor-pointer text-left"
-                              title="Klik om totaal aan te passen"
-                            >
-                              {formatCurrency(round2(subtotaal + btwBedrag + ((afrondingskorting + urenCorrectieBedrag) * (1 + (subtotaal > 0 ? btwBedrag / subtotaal : 0.21)))))}
-                            </button>
-                          )}
-                          {afrondingskorting !== 0 && (
-                            <div className="flex items-center justify-between mt-1">
-                              <p className="text-2xs text-white/60">Korting: {formatCurrency(afrondingskorting)} excl BTW</p>
-                              <button onClick={() => setAfrondingskorting(0)} className="text-2xs text-white/50 hover:text-white underline">Herstel</button>
-                            </div>
-                          )}
-                          {urenCorrectieBedrag !== 0 && (
-                            <div className="flex items-center justify-between mt-1">
-                              <p className="text-2xs text-white/60">Uren correctie: {urenCorrectieBedrag > 0 ? '+' : ''}{formatCurrency(urenCorrectieBedrag)} excl BTW</p>
-                              <button onClick={() => setUrenCorrectie({})} className="text-2xs text-white/50 hover:text-white underline">Herstel</button>
-                            </div>
-                          )}
-                          {optionelSubtotaal > 0 && (
-                            <p className="text-2xs text-white/60 mt-1">+ {formatCurrency(round2(optionelSubtotaal + optionelBtw))} aan opties</p>
-                          )}
-                        </div>
-
-                        <div className="p-4 space-y-4">
-                          <div className="grid grid-cols-2 gap-2">
-                            <div className="rounded-lg bg-background/80 dark:bg-muted/50 p-2.5">
-                              <p className="text-2xs uppercase tracking-label text-muted-foreground font-medium">Subtotaal</p>
-                              <p className="text-sm font-medium font-mono text-foreground mt-0.5">{formatCurrency(round2(subtotaal + afrondingskorting + urenCorrectieBedrag))}</p>
-                            </div>
-                            <div className="rounded-lg bg-background/80 dark:bg-muted/50 p-2.5">
-                              <p className="text-2xs uppercase tracking-label text-muted-foreground font-medium">BTW</p>
-                              <p className="text-sm font-medium font-mono text-foreground mt-0.5">{formatCurrency(round2(btwBedrag + (afrondingskorting + urenCorrectieBedrag) * (subtotaal > 0 ? btwBedrag / subtotaal : 0.21)))}</p>
-                            </div>
-                          </div>
-                          {afrondingskorting !== 0 && (
-                            <div className="rounded-lg bg-amber-50/80 dark:bg-amber-900/20 p-2.5 border border-amber-200/50 dark:border-amber-800/30">
-                              <p className="text-2xs uppercase tracking-label text-amber-600 font-medium">Afrondingskorting</p>
-                              <p className="text-sm font-medium font-mono text-amber-700 mt-0.5">{formatCurrency(afrondingskorting)}</p>
-                            </div>
-                          )}
-
-                          <Separator className="opacity-50" />
-
-                          <div className="space-y-2">
-                            <p className="text-2xs uppercase tracking-label text-muted-foreground font-medium">Inkoop / Verkoop</p>
-                            <div className="space-y-1.5">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-1.5"><TrendingDown className="h-3.5 w-3.5 text-red-400" /><span className="text-xs text-muted-foreground">Inkoop</span></div>
-                                <span className="text-xs font-medium font-mono text-red-600 dark:text-red-400">{totaalInkoop > 0 ? formatCurrency(totaalInkoop) : '—'}</span>
-                              </div>
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-1.5"><TrendingUp className="h-3.5 w-3.5 text-green-400" /><span className="text-xs text-muted-foreground">Verkoop</span></div>
-                                <span className="text-xs font-medium font-mono text-foreground">{formatCurrency(round2(subtotaal + afrondingskorting + urenCorrectieBedrag))}</span>
-                              </div>
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-1.5"><DollarSign className="h-3.5 w-3.5 text-emerald-500" /><span className="text-xs text-muted-foreground">Winst</span></div>
-                                <span className="text-xs font-medium font-mono text-emerald-600 dark:text-emerald-400">{totaalInkoop > 0 ? formatCurrency(winstExBtw) : '—'}</span>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="space-y-2">
-                            <p className="text-2xs uppercase tracking-label text-muted-foreground font-medium">Marge</p>
-                            <div className={cn('rounded-lg p-3', margeColor.bg)}>
-                              <div className="flex items-center justify-between">
-                                <Percent className={cn('h-4 w-4', margeColor.text)} />
-                                <span className={cn('text-lg font-bold font-mono', margeColor.text)}>{totaalInkoop > 0 ? `${margePercentage.toFixed(1)}%` : '—'}</span>
-                              </div>
-                              {totaalInkoop > 0 && (
-                                <div className="mt-2 h-1.5 rounded-full bg-secondary dark:bg-muted">
-                                  <div className={cn('h-full rounded-full transition-all', margeColor.bar)} style={{ width: `${Math.min(100, Math.max(0, margePercentage))}%` }} />
-                                </div>
-                              )}
-                            </div>
-                          </div>
-
-                          {itemMarges.some(m => m.hasCalc) && (
-                            <>
-                              <Separator className="opacity-50" />
-                              <div className="space-y-2">
-                                <p className="text-2xs uppercase tracking-label text-muted-foreground font-medium">Per item</p>
-                                <div className="space-y-1.5">
-                                  {itemMarges.map((m, idx) => {
-                                    if (!m.hasCalc) return null
-                                    const c = getMargeColorSidebar(m.pct)
-                                    return (
-                                      <div key={idx} className="flex items-center justify-between">
-                                        <span className="text-xs text-muted-foreground truncate max-w-[200px]">{m.beschrijving || `Item ${idx + 1}`}</span>
-                                        <span className={cn('text-xs font-medium font-mono', c.text)}>{m.pct.toFixed(1)}%</span>
-                                      </div>
-                                    )
-                                  })}
-                                </div>
-                              </div>
-                            </>
-                          )}
-
-                          {(totaalUren > 0 || effectieveTotaalUren > 0 || materiaalKosten > 0) && (
-                            <>
-                              <Separator className="opacity-50" />
-                              <div className="space-y-2">
-                                <p className="text-2xs uppercase tracking-label text-muted-foreground font-medium">{materiaalKosten > 0 ? 'Uren & Materiaal' : 'Uren'}</p>
-                                <div className="space-y-1.5">
-                                  {urenVelden.map((veld) => {
-                                    const basisUren = urenPerVeld[veld] || 0
-                                    const correctie = urenCorrectie[veld] || 0
-                                    const effectief = basisUren + correctie
-                                    const tarief = tariefPerVeld[veld] || 0
-                                    if (effectief <= 0 && basisUren <= 0) return null
-                                    return (
-                                      <div key={veld} className="flex items-center justify-between">
-                                        <div className="flex items-center gap-1.5">
-                                          <Clock className="h-3.5 w-3.5 text-purple-500" />
-                                          <span className="text-xs text-muted-foreground">{veld}</span>
-                                        </div>
-                                        <div className="flex items-center gap-1">
-                                          {tarief > 0 && (
-                                            <button
-                                              onClick={() => setUrenCorrectie(prev => ({ ...prev, [veld]: (prev[veld] || 0) - 1 }))}
-                                              disabled={effectief <= 0}
-                                              className="h-5 w-5 rounded flex items-center justify-center bg-purple-100 hover:bg-purple-200 dark:bg-purple-900/40 dark:hover:bg-purple-800/60 text-purple-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                                              title={`-1 uur ${veld} (${formatCurrency(tarief)}/u)`}
-                                            >
-                                              <Minus className="h-3 w-3" />
-                                            </button>
-                                          )}
-                                          <span className={cn('text-xs font-medium font-mono min-w-[3rem] text-right', correctie !== 0 ? 'text-purple-700 dark:text-purple-400' : 'text-purple-600')}>
-                                            {effectief} uur
-                                          </span>
-                                          {tarief > 0 && (
-                                            <button
-                                              onClick={() => setUrenCorrectie(prev => ({ ...prev, [veld]: (prev[veld] || 0) + 1 }))}
-                                              className="h-5 w-5 rounded flex items-center justify-center bg-purple-100 hover:bg-purple-200 dark:bg-purple-900/40 dark:hover:bg-purple-800/60 text-purple-600 transition-colors"
-                                              title={`+1 uur ${veld} (${formatCurrency(tarief)}/u)`}
-                                            >
-                                              <Plus className="h-3 w-3" />
-                                            </button>
-                                          )}
-                                        </div>
-                                      </div>
-                                    )
-                                  })}
-                                  {effectieveTotaalUren > 0 && (
-                                    <div className="flex items-center justify-between pt-1 border-t border-border dark:border-border">
-                                      <div className="flex items-center gap-1.5"><Wrench className="h-3.5 w-3.5 text-amber-500" /><span className="text-xs font-medium text-foreground">Totaal uren</span></div>
-                                      <span className="text-xs font-bold text-amber-600">{effectieveTotaalUren} uur</span>
-                                    </div>
-                                  )}
-                                  {urenCorrectieBedrag !== 0 && (
-                                    <div className="flex items-center justify-between">
-                                      <span className="text-2xs text-muted-foreground">Uren correctie</span>
-                                      <span className={cn('text-2xs font-medium', urenCorrectieBedrag > 0 ? 'text-green-600' : 'text-red-500')}>
-                                        {urenCorrectieBedrag > 0 ? '+' : ''}{formatCurrency(urenCorrectieBedrag)}
-                                      </span>
-                                    </div>
-                                  )}
-                                  {materiaalKosten > 0 && (
-                                    <div className="flex items-center justify-between">
-                                      <div className="flex items-center gap-1.5"><ShoppingCart className="h-3.5 w-3.5 text-blue-500" /><span className="text-xs text-muted-foreground">Materiaal</span></div>
-                                      <span className="text-xs font-medium font-mono text-blue-600">{formatCurrency(materiaalKosten)}</span>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </>
-                          )}
-
-                          <Separator className="opacity-50" />
-                          <div className="flex flex-wrap gap-1.5">
-                            <Button variant="outline" size="sm" className="text-xs h-7 gap-1" onClick={handleVerstuurOfferte}>
-                              <Send className="h-3 w-3" />Verstuur
-                            </Button>
-                            <Button variant="outline" size="sm" className="text-xs h-7 gap-1" onClick={handleDownloadPdf}>
-                              <Download className="h-3 w-3" />PDF
-                            </Button>
-                            <Button variant="outline" size="sm" className="text-xs h-7 gap-1" onClick={() => saveOfferte('concept')} disabled={isSaving}>
-                              <Save className="h-3 w-3" />{isSaving ? '...' : 'Opslaan'}
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* ── INKOOPOFFERTES ── */}
-                    {sectionId === 'inkoop' && (
-                      <div className="rounded-xl border border-border dark:border-border bg-card overflow-hidden shadow-sm">
-                        <button
-                          onClick={() => setInkoopPaneelOpen(!inkoopPaneelOpen)}
-                          className="w-full flex items-center gap-2 px-4 py-3 bg-background/80 dark:bg-muted/50 border-b border-border dark:border-border hover:bg-muted dark:hover:bg-muted transition-colors"
-                        >
-                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center flex-shrink-0">
-                            <ShoppingCart className="h-4 w-4 text-white" />
-                          </div>
-                          <div className="flex-1 text-left min-w-0">
-                            <p className="text-sm font-bold text-foreground">Inkoopoffertes</p>
-                            <p className="text-xs text-muted-foreground">Leveranciersprijzen</p>
-                          </div>
-                          {inkoopPaneelOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground flex-shrink-0" /> : <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
-                        </button>
-                        {inkoopPaneelOpen && (
-                          <div className="p-4">
-                            <InkoopOffertePaneel
-                              userId={user!.id}
-                              offerteId={editOfferteId || autoSaveIdRef.current || undefined}
-                              onRegelToevoegen={handleInkoopRegelToevoegen}
-                              onRegelAlsPrijsvariant={handleInkoopRegelAlsPrijsvariant}
-                            />
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  )
-                }
-
-                return (
-                  <>
-                    {pinnedIds.length > 0 && (
-                      <div className="lg:sticky lg:top-4 z-10 bg-background rounded-xl">
-                        {pinnedIds.map(id => renderSection(id))}
-                      </div>
-                    )}
-                    {unpinnedIds.map(id => renderSection(id))}
-                  </>
-                )
-              })()}
-            </div>
-          </div>
-        </div>{/* end RIGHT SIDEBAR */}
+        <QuoteSidebar
+          sidebarCollapsed={sidebarCollapsed}
+          setSidebarCollapsed={setSidebarCollapsed}
+          subtotaal={subtotaal}
+          btwBedrag={btwBedrag}
+          formatCurrencyFn={formatCurrency}
+          isEditMode={isEditMode}
+          offerteStatus={offerteStatus}
+          geconverteerdNaarFactuurId={geconverteerdNaarFactuurId}
+          userId={user?.id}
+          sidebarLayout={sidebarLayout}
+          selectedKlant={selectedKlant}
+          contactpersoon={contactpersoon}
+          klantPanelOpen={klantPanelOpen}
+          setKlantPanelOpen={setKlantPanelOpen}
+          selectedContactId={selectedContactId}
+          contact={contact}
+          setShowKlantSelector={setShowKlantSelector}
+          linkedFactuur={linkedFactuur}
+          navigate={navigate}
+          editOfferteId={editOfferteId}
+          autoSaveIdRef={autoSaveIdRef}
+          selectedKlantId={selectedKlantId}
+          offerteTitel={offerteTitel}
+          selectedProjectId={selectedProjectId}
+          isEditingTotaal={isEditingTotaal}
+          setIsEditingTotaal={setIsEditingTotaal}
+          gewenstTotaal={gewenstTotaal}
+          setGewenstTotaal={setGewenstTotaal}
+          afrondingskorting={afrondingskorting}
+          setAfrondingskorting={setAfrondingskorting}
+          urenCorrectieBedrag={urenCorrectieBedrag}
+          urenCorrectie={urenCorrectie}
+          setUrenCorrectie={setUrenCorrectie}
+          optionelSubtotaal={optionelSubtotaal}
+          optionelBtw={optionelBtw}
+          totaalInkoop={totaalInkoop}
+          winstExBtw={winstExBtw}
+          margePercentage={margePercentage}
+          margeColor={margeColor}
+          getMargeColorSidebar={getMargeColorSidebar}
+          itemMarges={itemMarges}
+          totaalUren={totaalUren}
+          effectieveTotaalUren={effectieveTotaalUren}
+          materiaalKosten={materiaalKosten}
+          urenVelden={urenVelden}
+          urenPerVeld={urenPerVeld}
+          tariefPerVeld={tariefPerVeld}
+          handleVerstuurOfferte={handleVerstuurOfferte}
+          handleDownloadPdf={handleDownloadPdf}
+          saveOfferte={saveOfferte}
+          isSaving={isSaving}
+          inkoopPaneelOpen={inkoopPaneelOpen}
+          setInkoopPaneelOpen={setInkoopPaneelOpen}
+          handleInkoopRegelToevoegen={handleInkoopRegelToevoegen}
+          handleInkoopRegelAlsPrijsvariant={handleInkoopRegelAlsPrijsvariant}
+        />{/* end RIGHT SIDEBAR */}
       </div>
     </div>
     </div>
