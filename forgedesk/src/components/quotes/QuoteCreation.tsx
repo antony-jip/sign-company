@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { Link, useNavigate, useSearchParams, useParams, useLocation } from 'react-router-dom'
 import { BackButton } from '@/components/shared/BackButton'
 import { useTabDirtyState } from '@/hooks/useTabDirtyState'
+import { useEmailCompose } from '@/hooks/useEmailCompose'
 import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -85,6 +86,9 @@ import type { CalculatieRegel, InkoopRegel } from '@/types'
 import { logger } from '../../utils/logger'
 import { KlantStatusWarning } from '@/components/shared/KlantStatusWarning'
 import { safeSetItem } from '@/utils/localStorageUtils'
+import { useQuoteClipboard } from '@/hooks/useQuoteClipboard'
+import { useQuoteVersioning } from '@/hooks/useQuoteVersioning'
+import { useContactManagement } from '@/hooks/useContactManagement'
 
 const DEFAULT_VOORWAARDEN = `1. Deze offerte is geldig gedurende de aangegeven termijn.
 2. Betaling dient te geschieden binnen 30 dagen na factuurdatum.
@@ -153,11 +157,12 @@ export function QuoteCreation() {
   const [itemCount, setItemCount] = useState(1)
   const [contactpersoon, setContactpersoon] = useState('')
   const [selectedContactId, setSelectedContactId] = useState('')
-  const [showNewContact, setShowNewContact] = useState(false)
-  const [newContactNaam, setNewContactNaam] = useState('')
-  const [newContactFunctie, setNewContactFunctie] = useState('')
-  const [newContactEmail, setNewContactEmail] = useState('')
-  const [newContactTelefoon, setNewContactTelefoon] = useState('')
+  const contact = useContactManagement({
+    selectedKlant,
+    setKlanten,
+    setSelectedContactId,
+    setContactpersoon,
+  })
   const [geldigTot, setGeldigTot] = useState(() => {
     const d = new Date()
     d.setDate(d.getDate() + offerteGeldigheidDagen)
@@ -200,11 +205,22 @@ export function QuoteCreation() {
   // ── Suggesties voor item omschrijvingen ──
   const [omschrijvingSuggesties, setOmschrijvingSuggesties] = useState<OmschrijvingSuggestie[]>([])
 
-  // ── FIX 12: Versie tracking state (must be before performAutoSave) ──
-  const [versieNummer, setVersieNummer] = useState(1)
-  const [isSavingVersie, setIsSavingVersie] = useState(false)
-  const [versieHistorie, setVersieHistorie] = useState<Array<{ id: string; versie_nummer: number; notitie?: string; created_at: string }>>([])
-  const [showVersieHistorie, setShowVersieHistorie] = useState(false)
+  // ── FIX 12: Versie tracking (extracted to hook) ──
+  const versioning = useQuoteVersioning({
+    userId: user?.id,
+    quoteId: editOfferteId || autoSaveIdRef.current,
+    performAutoSave: () => performAutoSaveRef.current(),
+    snapshotData: { offerteTitel, items, notities, voorwaarden, introTekst, outroTekst, geldigTot },
+    restoreSnapshot: (snapshot) => {
+      setOfferteTitel(snapshot.offerteTitel)
+      setItems(snapshot.items)
+      setNotities(snapshot.notities)
+      setVoorwaarden(snapshot.voorwaarden)
+      setIntroTekst(snapshot.introTekst)
+      setOutroTekst(snapshot.outroTekst)
+      setGeldigTot(snapshot.geldigTot)
+    },
+  })
 
   // ── Autosave state ──
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
@@ -546,7 +562,7 @@ export function QuoteCreation() {
         }
 
         // FIX 12: Load versie nummer
-        if (offerte.versie) setVersieNummer(offerte.versie)
+        if (offerte.versie) versioning.setVersieNummer(offerte.versie)
         // FIX 16: Load afrondingskorting
         if (offerte.afrondingskorting_excl_btw) setAfrondingskorting(offerte.afrondingskorting_excl_btw)
         // Load uren correctie
@@ -565,7 +581,7 @@ export function QuoteCreation() {
         // Load versie historie
         getOfferteVersies(editOfferteId).then(versies => {
           if (!cancelled) {
-            setVersieHistorie(versies.map(v => ({ id: v.id, versie_nummer: v.versie_nummer, notitie: v.notitie, created_at: v.created_at })))
+            versioning.setVersieHistorie(versies.map(v => ({ id: v.id, versie_nummer: v.versie_nummer, notitie: v.notitie, created_at: v.created_at })))
           }
         }).catch(() => {/* silent */})
 
@@ -764,74 +780,7 @@ export function QuoteCreation() {
   }
 
   // ── Clipboard helpers ──
-  const CLIPBOARD_KEY = 'doen_clipboard_items'
-
-  const [clipboardCount, setClipboardCount] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem(CLIPBOARD_KEY) || '[]').length
-    } catch (err) { return 0 }
-  })
-
-  const handleCopyItem = useCallback((item: QuoteLineItem) => {
-    try {
-      const existing = JSON.parse(localStorage.getItem(CLIPBOARD_KEY) || '[]')
-      const { id, ...template } = item
-      // Limit clipboard to 50 items to prevent unbounded growth
-      const updated = [...existing.slice(-49), template]
-      if (!safeSetItem(CLIPBOARD_KEY, JSON.stringify(updated))) {
-        toast.error('Onvoldoende opslagruimte voor klembord')
-        return
-      }
-      setClipboardCount(updated.length)
-      toast.success('Item gekopieerd naar klembord')
-    } catch (err) {
-      toast.error('Kon item niet kopiëren')
-    }
-  }, [])
-
-  const handlePasteItems = useCallback(() => {
-    try {
-      const stored = JSON.parse(localStorage.getItem(CLIPBOARD_KEY) || '[]')
-      if (stored.length === 0) return
-
-      const pastedItems: QuoteLineItem[] = stored.map((template: Omit<QuoteLineItem, 'id'>) => ({
-        ...template,
-        id: `new-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-      }))
-
-      setItems(prev => [...prev, ...pastedItems])
-      localStorage.removeItem(CLIPBOARD_KEY)
-      setClipboardCount(0)
-      toast.success(`${pastedItems.length} item${pastedItems.length === 1 ? '' : 's'} geplakt`)
-    } catch (err) {
-      toast.error('Kon items niet plakken')
-    }
-  }, [])
-
-  const handleCopyAllItems = useCallback(() => {
-    try {
-      const pricedItems = items.filter(i => i.soort === 'prijs' && i.beschrijving.trim())
-      if (pricedItems.length === 0) {
-        toast.error('Geen items om te kopiëren')
-        return
-      }
-      const templates = pricedItems.map(({ id, ...rest }) => rest)
-      if (!safeSetItem(CLIPBOARD_KEY, JSON.stringify(templates))) {
-        toast.error('Onvoldoende opslagruimte voor klembord')
-        return
-      }
-      setClipboardCount(templates.length)
-      toast.success(`${templates.length} item${templates.length === 1 ? '' : 's'} gekopieerd naar klembord`)
-    } catch (err) {
-      toast.error('Kon items niet kopiëren')
-    }
-  }, [items])
-
-  const handleClearClipboard = useCallback(() => {
-    localStorage.removeItem(CLIPBOARD_KEY)
-    setClipboardCount(0)
-    toast.success('Klembord geleegd')
-  }, [])
+  const clipboard = useQuoteClipboard(items, setItems)
 
   const handleUpdateItemWithCalculatie = (
     id: string,
@@ -931,7 +880,7 @@ export function QuoteCreation() {
           outro_tekst: outroTekst,
           ...(afrondingskorting !== 0 ? { afrondingskorting_excl_btw: afrondingskorting } : {}),
           ...(heeftUrenCorrectie ? { uren_correctie: urenCorrectie } : {}),
-          versie: versieNummer,
+          versie: versioning.versieNummer,
         }, lastKnownUpdatedAtRef.current || undefined)
         lastKnownUpdatedAtRef.current = saved.updated_at
 
@@ -958,7 +907,7 @@ export function QuoteCreation() {
           outro_tekst: outroTekst,
           ...(afrondingskorting !== 0 ? { afrondingskorting_excl_btw: afrondingskorting } : {}),
           ...(heeftUrenCorrectie ? { uren_correctie: urenCorrectie } : {}),
-          versie: versieNummer,
+          versie: versioning.versieNummer,
         })
         autoSaveIdRef.current = newOfferte.id
         lastKnownUpdatedAtRef.current = newOfferte.updated_at
@@ -1017,7 +966,7 @@ export function QuoteCreation() {
     } finally {
       saveLockRef.current = false
     }
-  }, [user?.id, selectedKlantId, selectedProjectId, selectedContactId, offerteTitel, items, geldigTot, notities, voorwaarden, introTekst, outroTekst, editOfferteId, offerteNummer, isSaving, klanten, afrondingskorting, versieNummer])
+  }, [user?.id, selectedKlantId, selectedProjectId, selectedContactId, offerteTitel, items, geldigTot, notities, voorwaarden, introTekst, outroTekst, editOfferteId, offerteNummer, isSaving, klanten, afrondingskorting, versioning.versieNummer])
 
   // Keep ref in sync so unmount handler can call latest version
   useEffect(() => {
@@ -1052,59 +1001,6 @@ export function QuoteCreation() {
   }, [])
 
 
-  // ── Contactpersoon toevoegen ──
-  const handleAddContact = async () => {
-    if (!selectedKlant || !newContactNaam.trim()) {
-      toast.error('Vul minimaal een naam in')
-      return
-    }
-    const newContact: Contactpersoon = {
-      id: `cp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      naam: newContactNaam.trim(),
-      functie: newContactFunctie.trim(),
-      email: newContactEmail.trim(),
-      telefoon: newContactTelefoon.trim(),
-      is_primair: !selectedKlant.contactpersonen?.length,
-    }
-    const updatedContactpersonen = [...(selectedKlant.contactpersonen || []), newContact]
-    try {
-      await updateKlant(selectedKlant.id, { contactpersonen: updatedContactpersonen })
-      // Update local state
-      setKlanten(prev => prev.map(k =>
-        k.id === selectedKlant.id ? { ...k, contactpersonen: updatedContactpersonen } : k
-      ))
-      setSelectedContactId(newContact.id)
-      setContactpersoon(newContact.naam)
-      setShowNewContact(false)
-      setNewContactNaam('')
-      setNewContactFunctie('')
-      setNewContactEmail('')
-      setNewContactTelefoon('')
-      toast.success(`${newContact.naam} toegevoegd als contactpersoon`)
-    } catch (err) {
-      logger.error('Kon contactpersoon niet opslaan:', err)
-      toast.error('Kon contactpersoon niet opslaan')
-    }
-  }
-
-  const handleSelectContact = (contactId: string) => {
-    if (contactId === '__new__') {
-      setShowNewContact(true)
-      setSelectedContactId('')
-      return
-    }
-    if (contactId === '__manual__') {
-      setSelectedContactId('')
-      setShowNewContact(false)
-      return
-    }
-    const contact = selectedKlant?.contactpersonen?.find(c => c.id === contactId)
-    if (contact) {
-      setSelectedContactId(contact.id)
-      setContactpersoon(contact.naam)
-      setShowNewContact(false)
-    }
-  }
 
   // ── FIX 11: Dupliceer offerte ──
   const [isDuplicating, setIsDuplicating] = useState(false)
@@ -1197,77 +1093,6 @@ export function QuoteCreation() {
     }
   }
 
-  const handleNieuweVersie = async () => {
-    if (!user?.id) return
-    const quoteId = editOfferteId || autoSaveIdRef.current
-    if (!quoteId) {
-      toast.error('Sla de offerte eerst op')
-      return
-    }
-    setIsSavingVersie(true)
-    try {
-      // Save current state first
-      await performAutoSave()
-
-      // Create snapshot
-      const snapshot = JSON.stringify({ offerteTitel, items, notities, voorwaarden, introTekst, outroTekst, geldigTot })
-      await createOfferteVersie({
-        user_id: user.id,
-        offerte_id: quoteId,
-        versie_nummer: versieNummer,
-        snapshot,
-      })
-
-      const newVersie = versieNummer + 1
-      setVersieNummer(newVersie)
-
-      // Update offerte versie
-      await updateOfferte(quoteId, { versie: newVersie })
-
-      // Refresh versie historie
-      const versies = await getOfferteVersies(quoteId)
-      setVersieHistorie(versies.map(v => ({ id: v.id, versie_nummer: v.versie_nummer, notitie: v.notitie, created_at: v.created_at })))
-
-      toast.success(`Versie ${versieNummer} opgeslagen, nu op v${newVersie}`)
-    } catch (err) {
-      logger.error('Nieuwe versie opslaan failed:', err)
-      toast.error('Kon versie niet opslaan')
-    } finally {
-      setIsSavingVersie(false)
-    }
-  }
-
-  const handleHerstelVersie = async (versieId: string) => {
-    const quoteId = editOfferteId || autoSaveIdRef.current
-    if (!quoteId) return
-    try {
-      const versies = await getOfferteVersies(quoteId)
-      const versie = versies.find(v => v.id === versieId)
-      if (!versie) return
-      const snapshot = JSON.parse(versie.snapshot) as {
-        offerteTitel: string
-        items: QuoteLineItem[]
-        notities: string
-        voorwaarden: string
-        introTekst: string
-        outroTekst: string
-        geldigTot: string
-      }
-      setOfferteTitel(snapshot.offerteTitel)
-      setItems(snapshot.items)
-      setNotities(snapshot.notities)
-      setVoorwaarden(snapshot.voorwaarden)
-      setIntroTekst(snapshot.introTekst)
-      setOutroTekst(snapshot.outroTekst)
-      setGeldigTot(snapshot.geldigTot)
-      toast.success(`Versie ${versie.versie_nummer} hersteld`)
-      setShowVersieHistorie(false)
-    } catch (err) {
-      logger.error('Herstel versie failed:', err)
-      toast.error('Kon versie niet herstellen')
-    }
-  }
-
   // ── Start editing: pick klant, then generate items ──
   const canStartEditing = selectedKlantId && offerteTitel.trim().length > 0
 
@@ -1321,7 +1146,7 @@ export function QuoteCreation() {
           outro_tekst: outroTekst,
           ...(afrondingskorting !== 0 ? { afrondingskorting_excl_btw: afrondingskorting } : {}),
           ...(heeftUrenCorrectie ? { uren_correctie: urenCorrectie } : {}),
-          versie: versieNummer,
+          versie: versioning.versieNummer,
         }, lastKnownUpdatedAtRef.current || undefined)
         lastKnownUpdatedAtRef.current = saved.updated_at
         savedOfferteId = existingId
@@ -1353,7 +1178,7 @@ export function QuoteCreation() {
           outro_tekst: outroTekst,
           ...(afrondingskorting !== 0 ? { afrondingskorting_excl_btw: afrondingskorting } : {}),
           ...(newHeeftUrenCorrectie ? { uren_correctie: urenCorrectie } : {}),
-          versie: versieNummer,
+          versie: versioning.versieNummer,
         })
         savedOfferteId = newOfferte.id
 
@@ -1519,7 +1344,7 @@ export function QuoteCreation() {
         geldig_tot: geldigTot,
         notities,
         voorwaarden,
-        versie: versieNummer,
+        versie: versioning.versieNummer,
         ...(afrondingskorting !== 0 ? { afrondingskorting_excl_btw: afrondingskorting } : {}),
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -1560,24 +1385,8 @@ export function QuoteCreation() {
     }
   }
 
-  // ── Verstuur offerte → navigeer naar email compose pagina ──
-  // ── Inline email compose state ──
-  const [showVerstuurKeuze, setShowVerstuurKeuze] = useState(false)
-  const [isSendingPortaal, setIsSendingPortaal] = useState(false)
-  const [showEmailCompose, setShowEmailCompose] = useState(false)
-  const [emailTo, setEmailTo] = useState('')
-  const [emailCc, setEmailCc] = useState('')
-  const [emailBcc, setEmailBcc] = useState('')
-  const [emailSubject, setEmailSubject] = useState('')
-  const [emailBody, setEmailBody] = useState('')
-  const [emailBijlagen, setEmailBijlagen] = useState<{ naam: string; grootte: number }[]>([])
-  const [emailScheduled, setEmailScheduled] = useState(false)
-  const [emailScheduleDate, setEmailScheduleDate] = useState('')
-  const [emailScheduleTime, setEmailScheduleTime] = useState('08:00')
-  const [isSendingEmail, setIsSendingEmail] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-
-  const emailSectionRef = useRef<HTMLDivElement>(null)
+  // ── Email compose (extracted to hook) ──
+  const email = useEmailCompose()
 
   const handleVerstuurOfferte = async () => {
     if (!user?.id || !selectedKlant) {
@@ -1591,11 +1400,11 @@ export function QuoteCreation() {
       await saveOfferte('concept')
     }
     // Toon de keuze dialog
-    setShowVerstuurKeuze(true)
+    email.setShowVerstuurKeuze(true)
   }
 
   const handleKeuzeEmail = () => {
-    setShowVerstuurKeuze(false)
+    email.setShowVerstuurKeuze(false)
     // Pre-fill email fields
     const selectedCp = selectedContactId
       ? selectedKlant?.contactpersonen?.find(c => c.id === selectedContactId)
@@ -1622,12 +1431,12 @@ export function QuoteCreation() {
   const handleKeuzePortaal = async () => {
     if (!user?.id || !selectedKlant || !selectedProjectId) {
       toast.error('Portaal vereist een gekoppeld project')
-      setShowVerstuurKeuze(false)
+      email.setShowVerstuurKeuze(false)
       // Fallback naar email
       handleKeuzeEmail()
       return
     }
-    setIsSendingPortaal(true)
+    email.setIsSendingPortaal(true)
     try {
       const savedQuoteId = editOfferteId || autoSaveIdRef.current
       if (!savedQuoteId) { toast.error('Offerte nog niet opgeslagen'); return }
@@ -1692,12 +1501,12 @@ export function QuoteCreation() {
         toast.success('Offerte gedeeld via portaal')
       }
 
-      setShowVerstuurKeuze(false)
+      email.setShowVerstuurKeuze(false)
     } catch (err) {
       logger.error('Portaal delen mislukt:', err)
       toast.error('Kon offerte niet delen via portaal')
     } finally {
-      setIsSendingPortaal(false)
+      email.setIsSendingPortaal(false)
     }
   }
 
@@ -1835,21 +1644,6 @@ export function QuoteCreation() {
     }
   }
 
-  const handleAddBijlage = () => {
-    fileInputRef.current?.click()
-  }
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files
-    if (files) {
-      const newBijlagen = Array.from(files).map((f) => ({
-        naam: f.name,
-        grootte: f.size,
-      }))
-      setEmailBijlagen((prev) => [...prev, ...newBijlagen])
-    }
-    e.target.value = ''
-  }
 
   // ── Actions dropdown state ──
   const [showActionsMenu, setShowActionsMenu] = useState(false)
@@ -2025,7 +1819,7 @@ export function QuoteCreation() {
                   {(selectedKlant.contactpersonen?.length > 0 || selectedKlant.contactpersoon) && (
                     <div className="space-y-1.5">
                       {selectedKlant.contactpersonen?.map((cp) => (
-                        <button key={cp.id} onClick={() => handleSelectContact(cp.id)} className={cn('w-full text-left rounded-lg p-2.5 transition-all')} style={{ border: selectedContactId === cp.id ? '1px solid #1A535C' : '0.5px solid #EBEBEB', backgroundColor: selectedContactId === cp.id ? '#E2F0F0' : 'transparent' }}>
+                        <button key={cp.id} onClick={() => contact.handleSelectContact(cp.id)} className={cn('w-full text-left rounded-lg p-2.5 transition-all')} style={{ border: selectedContactId === cp.id ? '1px solid #1A535C' : '0.5px solid #EBEBEB', backgroundColor: selectedContactId === cp.id ? '#E2F0F0' : 'transparent' }}>
                           <div className="flex items-center gap-2">
                             <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold" style={{ backgroundColor: selectedContactId === cp.id ? '#1A535C' : '#EBEBEB', color: selectedContactId === cp.id ? '#FFFFFF' : '#6B6B66' }}>{cp.naam[0]?.toUpperCase()}</div>
                             <div className="flex-1 min-w-0">
@@ -2046,24 +1840,24 @@ export function QuoteCreation() {
                       )}
                     </div>
                   )}
-                  {!showNewContact ? (
-                    <button onClick={() => setShowNewContact(true)} className="w-full flex items-center gap-2 text-[11px] py-2 px-3 rounded-lg transition-colors hover:bg-[#F8F7F5]" style={{ border: '1px dashed #EBEBEB', color: '#9B9B95' }}>
+                  {!contact.showNewContact ? (
+                    <button onClick={() => contact.setShowNewContact(true)} className="w-full flex items-center gap-2 text-[11px] py-2 px-3 rounded-lg transition-colors hover:bg-[#F8F7F5]" style={{ border: '1px dashed #EBEBEB', color: '#9B9B95' }}>
                       <UserPlus className="h-3.5 w-3.5" />Nieuwe contactpersoon toevoegen
                     </button>
                   ) : (
                     <div className="rounded-lg p-3.5 space-y-2" style={{ border: '1px solid #EBEBEB', backgroundColor: '#F8F7F5' }}>
                       <p className="text-[12px] font-semibold flex items-center gap-1.5" style={{ color: '#1A1A1A' }}><UserPlus className="h-3.5 w-3.5" style={{ color: '#1A535C' }} />Nieuwe contactpersoon</p>
-                      <Input value={newContactNaam} onChange={(e) => setNewContactNaam(e.target.value)} placeholder="Naam *" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} autoFocus />
-                      <Input value={newContactFunctie} onChange={(e) => setNewContactFunctie(e.target.value)} placeholder="Functie" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} />
-                      <Input value={newContactEmail} onChange={(e) => setNewContactEmail(e.target.value)} placeholder="E-mailadres" type="email" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} />
-                      <Input value={newContactTelefoon} onChange={(e) => setNewContactTelefoon(e.target.value)} placeholder="Telefoonnummer" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} />
+                      <Input value={contact.newContactNaam} onChange={(e) => contact.setNewContactNaam(e.target.value)} placeholder="Naam *" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} autoFocus />
+                      <Input value={contact.newContactFunctie} onChange={(e) => contact.setNewContactFunctie(e.target.value)} placeholder="Functie" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} />
+                      <Input value={contact.newContactEmail} onChange={(e) => contact.setNewContactEmail(e.target.value)} placeholder="E-mailadres" type="email" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} />
+                      <Input value={contact.newContactTelefoon} onChange={(e) => contact.setNewContactTelefoon(e.target.value)} placeholder="Telefoonnummer" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} />
                       <div className="flex items-center gap-2 pt-1">
-                        <button onClick={handleAddContact} disabled={!newContactNaam.trim()} className="h-7 px-3 text-[11px] font-semibold rounded-lg text-white transition-all hover:opacity-90 disabled:opacity-50 flex items-center gap-1" style={{ backgroundColor: '#1A535C' }}><Plus className="h-3 w-3" />Toevoegen</button>
-                        <button onClick={() => { setShowNewContact(false); setNewContactNaam(''); setNewContactFunctie(''); setNewContactEmail(''); setNewContactTelefoon('') }} className="h-7 px-3 text-[11px] font-medium rounded-lg" style={{ color: '#6B6B66' }}>Annuleren</button>
+                        <button onClick={contact.handleAddContact} disabled={!contact.newContactNaam.trim()} className="h-7 px-3 text-[11px] font-semibold rounded-lg text-white transition-all hover:opacity-90 disabled:opacity-50 flex items-center gap-1" style={{ backgroundColor: '#1A535C' }}><Plus className="h-3 w-3" />Toevoegen</button>
+                        <button onClick={() => { contact.setShowNewContact(false); contact.setNewContactNaam(''); contact.setNewContactFunctie(''); contact.setNewContactEmail(''); contact.setNewContactTelefoon('') }} className="h-7 px-3 text-[11px] font-medium rounded-lg" style={{ color: '#6B6B66' }}>Annuleren</button>
                       </div>
                     </div>
                   )}
-                  {!showNewContact && (
+                  {!contact.showNewContact && (
                     <div className="space-y-1 pt-2" style={{ borderTop: '0.5px solid #EBEBEB' }}>
                       <Label className="text-[11px]" style={{ color: '#9B9B95' }}>Of typ een naam</Label>
                       <Input value={contactpersoon} onChange={(e) => { setContactpersoon(e.target.value); setSelectedContactId('') }} placeholder="Contactpersoon naam..." className="h-9 text-[13px] rounded-lg" style={{ backgroundColor: '#F8F7F5', border: '1px solid #EBEBEB' }} />
@@ -2138,8 +1932,8 @@ export function QuoteCreation() {
               <Link to="/offertes" className="text-[#9B9B95] hover:text-[#6B6B66] transition-colors flex-shrink-0"><ArrowLeft className="h-4 w-4" /></Link>
               <h1 className="text-xl font-bold text-[#1A1A1A] tracking-[-0.3px] truncate">{isEditMode ? 'Offerte bewerken' : 'Nieuwe offerte'}</h1>
               <span className="text-[13px] font-mono text-[#9B9B95] flex-shrink-0">{offerteNummer}</span>
-              {versieNummer > 1 && (
-                <button onClick={() => setShowVersieHistorie(!showVersieHistorie)} className="text-[11px] font-mono text-[#6A5A8A] hover:underline flex-shrink-0">v{versieNummer}</button>
+              {versioning.versieNummer > 1 && (
+                <button onClick={() => versioning.setShowVersieHistorie(!versioning.showVersieHistorie)} className="text-[11px] font-mono text-[#6A5A8A] hover:underline flex-shrink-0">v{versioning.versieNummer}</button>
               )}
               {geldigTot && (() => {
                 const days = Math.floor((new Date(geldigTot).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
@@ -2172,13 +1966,13 @@ export function QuoteCreation() {
                 <span className="hidden sm:inline">Verstuur</span>
                 <ChevronDown className="h-3 w-3 ml-0.5 opacity-70" />
               </button>
-              {showVerstuurKeuze && (
+              {email.showVerstuurKeuze && (
                 <>
-                  <div className="fixed inset-0 z-40" onClick={() => setShowVerstuurKeuze(false)} />
+                  <div className="fixed inset-0 z-40" onClick={() => email.setShowVerstuurKeuze(false)} />
                   <div className="absolute right-0 top-full mt-1.5 z-50 w-72 bg-[#FFFFFF] rounded-xl border border-[#EBEBEB] shadow-[0_4px_20px_rgba(0,0,0,0.12)] overflow-hidden">
                     <button
                       onClick={handleKeuzePortaal}
-                      disabled={isSendingPortaal || !selectedProjectId}
+                      disabled={email.isSendingPortaal || !selectedProjectId}
                       className="w-full text-left px-4 py-3 hover:bg-[#F8F7F5] transition-colors disabled:opacity-40 disabled:cursor-not-allowed border-b border-[#EBEBEB]/40"
                     >
                       <div className="flex items-center gap-2.5">
@@ -2191,7 +1985,7 @@ export function QuoteCreation() {
                         </div>
                       </div>
                       {!selectedProjectId && <p className="text-[10px] text-[#C0451A] mt-1 ml-9">Koppel eerst een project</p>}
-                      {isSendingPortaal && <p className="text-[10px] text-[#1A535C] mt-1 ml-9 flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-[#1A535C] animate-pulse" />Delen...</p>}
+                      {email.isSendingPortaal && <p className="text-[10px] text-[#1A535C] mt-1 ml-9 flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-[#1A535C] animate-pulse" />Delen...</p>}
                     </button>
                     <button
                       onClick={handleKeuzeEmail}
@@ -2225,8 +2019,8 @@ export function QuoteCreation() {
                       <button onClick={() => { handleDupliceerOfferte(); setShowActionsMenu(false) }} disabled={isDuplicating} className="w-full text-left px-3 py-2 text-sm hover:bg-background dark:hover:bg-muted flex items-center gap-2 disabled:opacity-50">
                         <Copy className="h-3.5 w-3.5" />{isDuplicating ? 'Dupliceren...' : 'Dupliceer offerte'}
                       </button>
-                      <button onClick={() => { handleNieuweVersie(); setShowActionsMenu(false) }} disabled={isSavingVersie} className="w-full text-left px-3 py-2 text-sm hover:bg-background dark:hover:bg-muted flex items-center gap-2 disabled:opacity-50">
-                        <Clock className="h-3.5 w-3.5" />{isSavingVersie ? 'Opslaan...' : `Nieuwe versie (v${versieNummer})`}
+                      <button onClick={() => { versioning.handleNieuweVersie(); setShowActionsMenu(false) }} disabled={versioning.isSavingVersie} className="w-full text-left px-3 py-2 text-sm hover:bg-background dark:hover:bg-muted flex items-center gap-2 disabled:opacity-50">
+                        <Clock className="h-3.5 w-3.5" />{versioning.isSavingVersie ? 'Opslaan...' : `Nieuwe versie (v${versioning.versieNummer})`}
                       </button>
                       <button onClick={() => { setShowKlantSelector(true); setShowActionsMenu(false) }} className="w-full text-left px-3 py-2 text-sm hover:bg-background dark:hover:bg-muted flex items-center gap-2">
                         <Building2 className="h-3.5 w-3.5" />Klant wijzigen
@@ -2325,24 +2119,24 @@ export function QuoteCreation() {
       )}
 
       {/* ──── VERSIE HISTORIE ──── */}
-      {showVersieHistorie && versieHistorie.length > 0 && (
+      {versioning.showVersieHistorie && versioning.versieHistorie.length > 0 && (
         <div className="mb-6">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2">
                 <Clock className="h-4 w-4 text-purple-500" />Versie historie
-                <Badge variant="outline" className="text-2xs">{versieHistorie.length} versies</Badge>
+                <Badge variant="outline" className="text-2xs">{versioning.versieHistorie.length} versies</Badge>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              {versieHistorie.map((v) => (
+              {versioning.versieHistorie.map((v) => (
                 <div key={v.id} className="flex items-center justify-between rounded-lg border border-border dark:border-border px-3 py-2">
                   <div>
                     <span className="text-sm font-medium">Versie {v.versie_nummer}</span>
                     <span className="text-xs text-muted-foreground ml-2">{new Date(v.created_at).toLocaleString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
                     {v.notitie && <p className="text-xs text-muted-foreground mt-0.5">{v.notitie}</p>}
                   </div>
-                  <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => handleHerstelVersie(v.id)}>Herstel</Button>
+                  <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => versioning.handleHerstelVersie(v.id)}>Herstel</Button>
                 </div>
               ))}
             </CardContent>
@@ -2390,11 +2184,11 @@ export function QuoteCreation() {
                 onUpdateItemWithCalculatie={handleUpdateItemWithCalculatie}
                 onUpdateItemWithVariantCalculatie={handleUpdateItemWithVariantCalculatie}
                 suggesties={omschrijvingSuggesties}
-                onCopyItem={handleCopyItem}
-                onCopyAllItems={handleCopyAllItems}
-                clipboardCount={clipboardCount}
-                onPasteItems={handlePasteItems}
-                onClearClipboard={handleClearClipboard}
+                onCopyItem={clipboard.handleCopyItem}
+                onCopyAllItems={clipboard.handleCopyAllItems}
+                clipboardCount={clipboard.clipboardCount}
+                onPasteItems={clipboard.handlePasteItems}
+                onClearClipboard={clipboard.handleClearClipboard}
                 toonM2={offerteToonM2}
                 projectId={selectedProjectId || undefined}
                 klantId={selectedKlantId || undefined}
@@ -2443,7 +2237,7 @@ export function QuoteCreation() {
           {/* INLINE EMAIL COMPOSE — bottom of left column                   */}
           {/* ════════════════════════════════════════════════════════════════ */}
           <div ref={emailSectionRef}>
-            {showEmailCompose && (
+            {email.showEmailCompose && (
               <div className="bg-[#FFFFFF] rounded-xl border border-[#EBEBEB] shadow-[0_1px_4px_rgba(0,0,0,0.06)] overflow-hidden">
                 {/* Header */}
                 <div className="flex items-center justify-between px-5 py-3 border-b border-[#EBEBEB]/60">
@@ -2692,7 +2486,7 @@ export function QuoteCreation() {
                                 {selectedKlant.contactpersonen?.length > 0 && (
                                   <div className="space-y-1">
                                     <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: '#9B9B95' }}>Contactpersoon</label>
-                                    <Select value={selectedContactId} onValueChange={(val) => handleSelectContact(val)}>
+                                    <Select value={selectedContactId} onValueChange={(val) => contact.handleSelectContact(val)}>
                                       <SelectTrigger className="h-8 text-[12px] rounded-lg" style={{ backgroundColor: '#F8F7F5', border: '1px solid #EBEBEB' }}><SelectValue placeholder="Selecteer..." /></SelectTrigger>
                                       <SelectContent>
                                         {selectedKlant.contactpersonen.map((cp) => (
