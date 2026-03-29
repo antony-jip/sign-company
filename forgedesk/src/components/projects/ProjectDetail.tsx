@@ -350,7 +350,8 @@ export function ProjectDetail() {
       setMontageDialogOpen(false)
       toast.success('Montage ingepland')
       setDirty(false)
-    } catch {
+    } catch (err) {
+      logger.error('Kon montage niet inplannen:', err)
       toast.error('Kon montage niet inplannen')
     } finally {
       setIsSavingMontage(false)
@@ -385,7 +386,8 @@ export function ProjectDetail() {
         goedgekeurd: 'Goedgekeurd', afgewezen: 'Afgewezen', verlopen: 'Verlopen', gefactureerd: 'Gefactureerd',
       }
       toast.success(`Status gewijzigd naar ${statusLabels[newStatus] || newStatus}`)
-    } catch {
+    } catch (err) {
+      logger.error('Kon offerte status niet wijzigen:', err)
       toast.error('Kon status niet wijzigen')
     }
   }
@@ -418,7 +420,9 @@ export function ProjectDetail() {
     try {
       const klanten = await getKlanten()
       setAlleKlanten(klanten)
-    } catch {
+    } catch (err) {
+      logger.error('Kon klanten niet ophalen:', err)
+      toast.error('Kon klanten niet ophalen')
       setAlleKlanten([])
     }
     setKopieDialogOpen(true)
@@ -543,7 +547,8 @@ export function ProjectDetail() {
         })),
       })
       setAiAnalysisResult(result)
-    } catch {
+    } catch (err) {
+      logger.error('AI analyse mislukt:', err)
       setAiAnalysisResult('Kon de analyse niet uitvoeren. Probeer het later opnieuw.')
     } finally {
       setAiAnalysisLoading(false)
@@ -774,7 +779,8 @@ export function ProjectDetail() {
         logWijziging({ userId: user.id, entityType: 'project', entityId: id!, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: oudeStatus, nieuweWaarde: newStatus })
       }
       toast.success(`Status gewijzigd naar ${statusLabels[newStatus] || newStatus}`)
-    } catch {
+    } catch (err) {
+      logger.error('Kon project status niet wijzigen:', err)
       toast.error('Kon status niet wijzigen')
     }
   }
@@ -933,7 +939,7 @@ export function ProjectDetail() {
                   const updated = await updateProject(id!, { status: 'afgerond' })
                   setProject(updated)
                   toast.success('Project gearchiveerd')
-                } catch { toast.error('Kon project niet archiveren') }
+                } catch (err) { logger.error('Kon project niet archiveren:', err); toast.error('Kon project niet archiveren') }
               }}>
                 <CheckCircle2 className="mr-2 h-3.5 w-3.5" />
                 Archiveren
@@ -1031,7 +1037,8 @@ export function ProjectDetail() {
                   const taak = projectTaken.find(t => t.id === taakId)
                   if (taak) toast.success(`"${taak.titel}" afgerond`)
                 }
-              } catch {
+              } catch (err) {
+                logger.error('Kon taak status niet wijzigen:', err)
                 toast.error('Kon status niet wijzigen')
               }
             }}
@@ -1097,7 +1104,8 @@ export function ProjectDetail() {
                   await deleteDocument(docId)
                   toast.success(`"${naam}" verwijderd`)
                   await fetchDocumenten()
-                } catch {
+                } catch (err) {
+                  logger.error('Kon bestand niet verwijderen:', err)
                   toast.error('Kon bestand niet verwijderen')
                 }
               }}
@@ -2025,7 +2033,8 @@ export function ProjectDetail() {
                     setProjectWerkbonnen(prev => [...prev, wb])
                     setMontageWerkbonId(wb.id)
                     toast.success(`Werkbon ${wb.werkbon_nummer} aangemaakt`)
-                  } catch {
+                  } catch (err) {
+                    logger.error('Kon werkbon niet aanmaken:', err)
                     toast.error('Kon werkbon niet aanmaken')
                   }
                 } else {
@@ -2083,7 +2092,8 @@ export function ProjectDetail() {
                         try {
                           const bijlage = await uploadMontageBijlage(file)
                           setMontageBijlagen(prev => [...prev, bijlage])
-                        } catch {
+                        } catch (err) {
+                          logger.error('Kon montage bijlage niet uploaden:', err)
                           toast.error(`Kon ${file.name} niet uploaden`)
                         }
                       }

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react'
+import { logger } from '../../utils/logger'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { BackButton } from '@/components/shared/BackButton'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -203,7 +204,8 @@ export function ClientProfile() {
       const updated = await updateKlant(klant.id, { notities: notitie })
       setKlant(updated)
       toast.success('Notitie opgeslagen')
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij opslaan notitie:', err)
       toast.error('Fout bij opslaan notitie')
     } finally {
       setSavingNotitie(false)
@@ -242,7 +244,8 @@ export function ClientProfile() {
         const updatedKlant = await updateKlant(klant.id, { contactpersonen: updated })
         setKlant(updatedKlant)
         toast.success('Contactpersoon bijgewerkt')
-      } catch {
+      } catch (err) {
+        logger.error('Fout bij bijwerken contactpersoon:', err)
         toast.error('Fout bij bijwerken')
       }
     } else {
@@ -261,7 +264,8 @@ export function ClientProfile() {
         })
         setKlant(updatedKlant)
         toast.success('Contactpersoon toegevoegd')
-      } catch {
+      } catch (err) {
+        logger.error('Fout bij toevoegen contactpersoon:', err)
         toast.error('Fout bij toevoegen')
       }
     }
@@ -278,7 +282,8 @@ export function ClientProfile() {
       const updatedKlant = await updateKlant(klant.id, { contactpersonen: updated })
       setKlant(updatedKlant)
       toast.success('Contactpersoon verwijderd')
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij verwijderen contactpersoon:', err)
       toast.error('Fout bij verwijderen')
     }
   }
@@ -292,7 +297,8 @@ export function ClientProfile() {
     try {
       const allKlanten = await getKlanten()
       setMoveKlanten(allKlanten.filter((k) => k.id !== klant?.id))
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij ophalen bedrijven:', err)
       toast.error('Fout bij ophalen bedrijven')
     }
   }
@@ -314,7 +320,8 @@ export function ClientProfile() {
       setKlant(refreshed)
       toast.success(`${movingContact.naam} verplaatst naar ${selectedMoveKlant.bedrijfsnaam}`)
       setMoveDialogOpen(false)
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij verplaatsen contactpersoon:', err)
       toast.error('Fout bij verplaatsen contactpersoon')
     } finally {
       setMoveLoading(false)
@@ -346,7 +353,8 @@ export function ClientProfile() {
         const updatedKlant = await updateKlant(klant.id, { vestigingen: updated })
         setKlant(updatedKlant)
         toast.success('Vestiging bijgewerkt')
-      } catch {
+      } catch (err) {
+        logger.error('Fout bij bijwerken vestiging:', err)
         toast.error('Fout bij bijwerken')
       }
     } else {
@@ -360,7 +368,8 @@ export function ClientProfile() {
         })
         setKlant(updatedKlant)
         toast.success('Vestiging toegevoegd')
-      } catch {
+      } catch (err) {
+        logger.error('Fout bij toevoegen vestiging:', err)
         toast.error('Fout bij toevoegen')
       }
     }
@@ -376,7 +385,8 @@ export function ClientProfile() {
       const updatedKlant = await updateKlant(klant.id, { vestigingen: updated })
       setKlant(updatedKlant)
       toast.success('Vestiging verwijderd')
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij verwijderen vestiging:', err)
       toast.error('Fout bij verwijderen')
     }
   }
@@ -463,7 +473,8 @@ export function ClientProfile() {
       })
       setKlant(updatedKlant)
       toast.success(`${nieuwContacten.length} contactperso${nieuwContacten.length === 1 ? 'on' : 'nen'} geïmporteerd${skipped > 0 ? ` (${skipped} overgeslagen)` : ''}`)
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij importeren contactpersonen:', err)
       toast.error('Fout bij importeren contactpersonen')
     }
 

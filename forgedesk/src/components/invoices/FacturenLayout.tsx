@@ -366,7 +366,7 @@ export function FacturenLayout() {
           // Sort oldest first
           enriched.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
           if (!cancelled) setTeFacturerenProjecten(enriched)
-        } catch {
+        } catch (err) {
           // Non-critical, continue without te factureren data
         }
       } finally {
@@ -659,7 +659,8 @@ export function FacturenLayout() {
             })
           }
           setFacturen((prev) => [saved, ...prev])
-        } catch {
+        } catch (err) {
+          logger.error('Fout bij opslaan factuur naar database:', err)
           // Fallback: add locally with temporary ID
           const localFactuur: Factuur = {
             ...newFactuur,
@@ -693,13 +694,14 @@ export function FacturenLayout() {
       try {
         const updated = await updateFactuurStatus(factuur.id, updates)
         setFacturen((prev) => prev.map((f) => (f.id === factuur.id ? { ...f, ...updated } : f)))
-      } catch {
+      } catch (err) {
+        logger.error('Fout bij bijwerken factuurstatus:', err)
         toast.error('Kon status niet bijwerken')
         return
       }
       // Update gekoppeld project naar 'gefactureerd'
       if (factuur.project_id) {
-        try { await updateProject(factuur.project_id, { status: 'gefactureerd' }) } catch { /* ignore */ }
+        try { await updateProject(factuur.project_id, { status: 'gefactureerd' }) } catch (err) { /* ignore */ }
       }
       toast.success(`${factuur.nummer} gemarkeerd als betaald`)
     },
@@ -721,7 +723,8 @@ export function FacturenLayout() {
 
       try {
         await updateFactuur(factuur.id, updates)
-      } catch {
+      } catch (err) {
+        logger.error('Fout bij verzenden herinnering:', err)
         toast.error('Kon herinnering niet verzenden')
         return
       }
@@ -769,7 +772,8 @@ export function FacturenLayout() {
     async (factuur: Factuur) => {
       try {
         await deleteFactuur(factuur.id)
-      } catch {
+      } catch (err) {
+        logger.error('Fout bij verwijderen factuur:', err)
         toast.error('Kon factuur niet verwijderen')
         return
       }
@@ -785,7 +789,7 @@ export function FacturenLayout() {
       let items: OfferteItem[] = []
       try {
         items = await getOfferteItems(offerte.id)
-      } catch {
+      } catch (err) {
         // Use empty items if fetch fails
       }
 
@@ -984,7 +988,8 @@ export function FacturenLayout() {
         try {
           const updated = await updateFactuur(factuur.id, updates)
           setFacturen((prev) => prev.map((f) => (f.id === factuur.id ? { ...f, ...updated } : f)))
-        } catch {
+        } catch (err) {
+          logger.error('Fout bij bijwerken factuur in database:', err)
           // Still update locally even if DB update fails
           setFacturen((prev) =>
             prev.map((f) =>
@@ -997,7 +1002,7 @@ export function FacturenLayout() {
 
         // Update gekoppeld project naar 'gefactureerd'
         if (factuur.project_id) {
-          try { await updateProject(factuur.project_id, { status: 'gefactureerd' }) } catch { /* ignore */ }
+          try { await updateProject(factuur.project_id, { status: 'gefactureerd' }) } catch (err) { /* ignore */ }
         }
 
         toast.success(`Factuur ${factuur.nummer} verzonden naar ${klant.email}`)
@@ -1083,7 +1088,8 @@ export function FacturenLayout() {
           betaalUrl: herinneringFactuur.betaal_link || undefined,
         })
         await sendEmail(klant.email, onderwerp, herinneringPreview, { html })
-      } catch {
+      } catch (err) {
+        logger.error('Fout bij verzenden herinnering email:', err)
         toast.warning('Email niet verzonden (SMTP niet geconfigureerd). Herinnering is wel gemarkeerd.')
       }
 
@@ -1162,7 +1168,8 @@ export function FacturenLayout() {
 
       setCreditnotaDialogOpen(false)
       toast.success(`Creditnota ${nummer} aangemaakt`)
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij aanmaken creditnota:', err)
       toast.error('Fout bij aanmaken creditnota')
     } finally {
       setIsSaving(false)
@@ -1222,7 +1229,8 @@ export function FacturenLayout() {
 
       setVoorschotDialogOpen(false)
       toast.success(`Voorschotfactuur ${nummer} aangemaakt (${voorschotPercentage}%)`)
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij aanmaken voorschotfactuur:', err)
       toast.error('Fout bij aanmaken voorschotfactuur')
     } finally {
       setIsSaving(false)
@@ -1299,7 +1307,8 @@ export function FacturenLayout() {
 
       setEindafrekeningDialogOpen(false)
       toast.success(`Eindafrekening ${nummer} aangemaakt — ${formatCurrency(restBedrag)} resterend`)
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij aanmaken eindafrekening:', err)
       toast.error('Fout bij aanmaken eindafrekening')
     } finally {
       setIsSaving(false)
@@ -1922,7 +1931,7 @@ export function FacturenLayout() {
                             <DropdownMenuItem onClick={async () => {
                               const url = factuur.betaal_link!
                               if (navigator.share) {
-                                try { await navigator.share({ title: `Factuur ${factuur.nummer}`, url }) } catch { /* cancelled */ }
+                                try { await navigator.share({ title: `Factuur ${factuur.nummer}`, url }) } catch (err) { /* cancelled */ }
                               } else {
                                 await navigator.clipboard.writeText(url)
                                 toast.success('Link gekopieerd naar klembord')

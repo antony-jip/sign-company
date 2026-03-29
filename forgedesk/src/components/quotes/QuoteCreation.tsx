@@ -262,7 +262,7 @@ export function QuoteCreation() {
       setNbData({ bedrijfsnaam: '', contactpersoon: '', email: '', telefoon: '', adres: '', postcode: '', stad: '', website: '', kvk_nummer: '', btw_nummer: '' })
       setShowNieuwBedrijf(false); setShowKlantResults(false); setShowNbUitgebreid(false)
       toast.success(`Bedrijf "${nieuw.bedrijfsnaam}" aangemaakt`)
-    } catch { toast.error('Fout bij aanmaken bedrijf') }
+    } catch (err) { logger.error('Fout bij aanmaken bedrijf:', err); toast.error('Fout bij aanmaken bedrijf') }
     finally { setNbCreating(false) }
   }
 
@@ -769,7 +769,7 @@ export function QuoteCreation() {
   const [clipboardCount, setClipboardCount] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem(CLIPBOARD_KEY) || '[]').length
-    } catch { return 0 }
+    } catch (err) { return 0 }
   })
 
   const handleCopyItem = useCallback((item: QuoteLineItem) => {
@@ -784,7 +784,7 @@ export function QuoteCreation() {
       }
       setClipboardCount(updated.length)
       toast.success('Item gekopieerd naar klembord')
-    } catch {
+    } catch (err) {
       toast.error('Kon item niet kopiëren')
     }
   }, [])
@@ -803,7 +803,7 @@ export function QuoteCreation() {
       localStorage.removeItem(CLIPBOARD_KEY)
       setClipboardCount(0)
       toast.success(`${pastedItems.length} item${pastedItems.length === 1 ? '' : 's'} geplakt`)
-    } catch {
+    } catch (err) {
       toast.error('Kon items niet plakken')
     }
   }, [])
@@ -822,7 +822,7 @@ export function QuoteCreation() {
       }
       setClipboardCount(templates.length)
       toast.success(`${templates.length} item${templates.length === 1 ? '' : 's'} gekopieerd naar klembord`)
-    } catch {
+    } catch (err) {
       toast.error('Kon items niet kopiëren')
     }
   }, [items])
@@ -1081,7 +1081,8 @@ export function QuoteCreation() {
       setNewContactEmail('')
       setNewContactTelefoon('')
       toast.success(`${newContact.naam} toegevoegd als contactpersoon`)
-    } catch {
+    } catch (err) {
+      logger.error('Kon contactpersoon niet opslaan:', err)
       toast.error('Kon contactpersoon niet opslaan')
     }
   }
@@ -1430,8 +1431,8 @@ export function QuoteCreation() {
                 })
               }
               bekijkUrl = `${window.location.origin}/portaal/${portaal.token}`
-            } catch {
-              // Fallback naar publiek_token
+            } catch (err) {
+              logger.error('Portaal aanmaken mislukt, fallback naar publiek_token:', err)
             }
           }
           if (!bekijkUrl && savedOfferte?.publiek_token) {
@@ -1683,7 +1684,8 @@ export function QuoteCreation() {
           const plainBody = `Beste ${klantNaam},\n\nEr staat een nieuwe offerte voor u klaar: ${offerteTitel}\nBedrag: ${formatCurrency(round2(subtotaal + btwBedrag))}\n\nBekijk het hier: ${portaalUrl}\n\nMet vriendelijke groet,\n${bedrijfsnaam || ''}`
           await sendEmail(contactEmail, `Nieuwe offerte: ${offerteTitel}`, plainBody, { html: htmlBody })
           toast.success(`Offerte gedeeld via portaal · Notificatie verstuurd naar ${contactEmail}`)
-        } catch {
+        } catch (err) {
+          logger.error('Email notificatie mislukt:', err)
           toast.success('Offerte gedeeld via portaal (email notificatie mislukt)')
         }
       } else {
@@ -2286,7 +2288,8 @@ export function QuoteCreation() {
                     }
                     setShowProjectForm(false)
                     toast.success(`Project "${projectNaam.trim()}" aangemaakt en gekoppeld`)
-                  } catch {
+                  } catch (err) {
+                    logger.error('Kon project niet aanmaken:', err)
                     toast.error('Kon project niet aanmaken')
                   } finally {
                     setIsCreatingProject(false)

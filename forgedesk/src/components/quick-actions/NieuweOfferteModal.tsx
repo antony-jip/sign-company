@@ -11,6 +11,7 @@ import type { Klant, OfferteItem, CalculatieTemplate, CalculatieRegel, Medewerke
 import { toast } from 'sonner'
 import { confirm } from '@/components/shared/ConfirmDialog'
 import { round2 } from '@/utils/budgetUtils'
+import { logger } from '../../utils/logger'
 import { Building2, ChevronDown, Plus, X, Send, BookTemplate, Settings, Save, UserCircle, ListTodo, FolderPlus, Calendar, UserPlus, Paperclip, Image } from 'lucide-react'
 
 interface Props {
@@ -174,7 +175,7 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
       setKlanten(prev => [klant, ...prev])
       selectKlant(klant)
       toast.success(`Klant "${klant.bedrijfsnaam}" aangemaakt`)
-    } catch { toast.error('Kon klant niet aanmaken') }
+    } catch (err) { logger.error('Fout bij aanmaken klant:', err); toast.error('Kon klant niet aanmaken') }
     finally { setIsCreatingKlant(false) }
   }
 
@@ -193,7 +194,7 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
       selectKlant(klant)
       setShowNewKlant('none')
       toast.success(`Klant "${klant.bedrijfsnaam}" aangemaakt`)
-    } catch { toast.error('Kon klant niet aanmaken') }
+    } catch (err) { logger.error('Fout bij aanmaken klant:', err); toast.error('Kon klant niet aanmaken') }
     finally { setIsCreatingKlant(false) }
   }
 
@@ -328,8 +329,8 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
             eind_datum: deadline || undefined,
           })
           await updateOfferte(offerte.id, { project_id: project.id })
-        } catch {
-          // Project creation failed, offerte is still created
+        } catch (err) {
+          logger.error('Fout bij aanmaken project:', err)
         }
       }
 
@@ -354,10 +355,10 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
             try {
               const urls = await Promise.all(taakBestanden.map(f => uploadTaakBijlage(taak.id, f)))
               await updateTaak(taak.id, { bijlagen: urls })
-            } catch { /* bijlagen upload failed, taak is already created */ }
+            } catch (err) { /* bijlagen upload failed, taak is already created */ }
           }
-        } catch {
-          // Fallback: try without offerte_id (column may not exist yet)
+        } catch (err) {
+          logger.error('Fout bij aanmaken taak:', err)
           try {
             const taak = await createTaak({
               titel: `Offerte afmaken: ${titel.trim()}`,
@@ -374,9 +375,10 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
               try {
                 const urls = await Promise.all(taakBestanden.map(f => uploadTaakBijlage(taak.id, f)))
                 await updateTaak(taak.id, { bijlagen: urls })
-              } catch { /* bijlagen upload failed */ }
+              } catch (err) { /* bijlagen upload failed */ }
             }
-          } catch {
+          } catch (err) {
+            logger.error('Fout bij aanmaken taak (fallback):', err)
             toast.error('Kon taak niet aanmaken')
           }
         }
@@ -408,8 +410,8 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
           )
           const pdfBase64 = doc.output('datauristring').split(',')[1]
           attachments = [{ filename: `${offerte.nummer || 'offerte'}.pdf`, content: pdfBase64, encoding: 'base64' as const }]
-        } catch {
-          // PDF generation failed, send without attachment
+        } catch (err) {
+          logger.error('Fout bij genereren offerte PDF:', err)
         }
 
         const bodyText = emailTekst.trim() || emailData.text
@@ -421,7 +423,8 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
               : emailData.html,
             attachments,
           })
-        } catch {
+        } catch (err) {
+          logger.error('Fout bij verzenden offerte email:', err)
           toast.error('Email verzenden mislukt, offerte is wel aangemaakt')
         }
 
@@ -444,7 +447,8 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
         onOpenChange(false)
         navigate(`/offertes/${offerte.id}`)
       }
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij aanmaken offerte:', err)
       toast.error('Kon offerte niet aanmaken')
     } finally {
       setSaving(false)
