@@ -48,7 +48,7 @@ async function resolveImageToBase64(urlOrPath: string, timeoutMs = 8000): Promis
       reader.onerror = () => resolve(null)
       reader.readAsDataURL(blob)
     })
-  } catch {
+  } catch (err) {
     return null
   }
 }
@@ -239,7 +239,7 @@ function addHeader(
           doc.addImage(bedrijfsProfiel.logo_url, logoFormat, margins.left, margins.top, logoW, logoH)
           nameX = margins.left + logoW + 5
         }
-      } catch {
+      } catch (err) {
         // Logo loading failed, just show text
       }
     }
@@ -747,7 +747,7 @@ export async function generateOffertePDF(
         }
         doc.addImage(logoBase64ForBijlage, detectImageFormat(logoBase64ForBijlage), bMargin, bMargin, logoW, logoH)
         logoEndX = bMargin + logoW + 5
-      } catch {
+      } catch (err) {
         // Logo loading failed, skip
       }
     }
@@ -835,7 +835,7 @@ export async function generateOffertePDF(
         const imgX = bMargin + (imgMaxW - imgW) / 2
         const format = bijlageItem.bijlage_type === 'image/png' ? 'PNG' : 'JPEG'
         doc.addImage(bijlageBase64, format, imgX, imgY, imgW, imgH, undefined, 'MEDIUM')
-      } catch {
+      } catch (err) {
         // Image decode failed — show filename as fallback
         doc.setFontSize(10)
         doc.setFont(bodyFont, 'normal')
@@ -1455,7 +1455,7 @@ export function generateLeveringsbonPDF(
   if (leveringsbonData.handtekening_data) {
     try {
       doc.addImage(leveringsbonData.handtekening_data, 'PNG', margins.left, endY, 60, 30)
-    } catch {
+    } catch (err) {
       doc.setDrawColor(200, 200, 200)
       doc.rect(margins.left, endY, 80, 30)
     }
@@ -1694,7 +1694,7 @@ export function generateWerkbonPDF(
         doc.setTextColor(100, 100, 100)
         const typeLabel = foto.type === 'voor' ? 'Voor' : foto.type === 'na' ? 'Na' : 'Overig'
         doc.text(typeLabel, x + photoW / 2, y + photoH + 4, { align: 'center' })
-      } catch {
+      } catch (err) {
         // Photo failed to load
       }
 
@@ -1726,7 +1726,7 @@ export function generateWerkbonPDF(
       try {
         doc.addImage(werkbonData.klant_handtekening, 'PNG', margins.left, y, 60, 30)
         y += 33
-      } catch {
+      } catch (err) {
         doc.setDrawColor(200, 200, 200)
         doc.rect(margins.left, y, 80, 30)
         y += 33
@@ -1824,7 +1824,7 @@ export function addVisualisatiePaginasToPdf(
         doc.setTextColor(150, 150, 150)
         doc.text('Mockup afbeelding — zie digitale versie voor hoge kwaliteit', margins.left + imgMaxWidth / 2, y + placeholderH / 2, { align: 'center' })
       }
-    } catch {
+    } catch (err) {
       doc.setFontSize(baseFontSize - 1)
       doc.setTextColor(150, 150, 150)
       doc.text('Afbeelding niet beschikbaar in PDF', margins.left, y)

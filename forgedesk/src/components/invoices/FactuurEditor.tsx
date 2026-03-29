@@ -461,8 +461,8 @@ export function FactuurEditor() {
               })
             )
             if (!cancelled) setTeFacturerenProjecten(enriched)
-          } catch {
-            // Non-critical
+          } catch (err) {
+            logger.error('Fetch te factureren projecten:', err)
           }
 
           // Import from offerte
@@ -1060,7 +1060,7 @@ export function FactuurEditor() {
 
       // Update gekoppeld project naar 'gefactureerd'
       if (existingFactuur.project_id) {
-        try { await updateProject(existingFactuur.project_id, { status: 'gefactureerd' }) } catch { /* ignore */ }
+        try { await updateProject(existingFactuur.project_id, { status: 'gefactureerd' }) } catch (err) { logger.error('Update project status na verzenden:', err) }
       }
 
       setSendDialogOpen(false)
@@ -1092,10 +1092,11 @@ export function FactuurEditor() {
       }
       // Update gekoppeld project naar 'gefactureerd'
       if (existingFactuur.project_id) {
-        try { await updateProject(existingFactuur.project_id, { status: 'gefactureerd' }) } catch { /* ignore */ }
+        try { await updateProject(existingFactuur.project_id, { status: 'gefactureerd' }) } catch (err) { logger.error('Update project status na betaling:', err) }
       }
       toast.success(`${nummer} gemarkeerd als betaald`)
-    } catch {
+    } catch (err) {
+      logger.error('Markeer als betaald:', err)
       toast.error('Kon status niet bijwerken')
     }
   }, [existingFactuur, nummer, user])
@@ -1109,7 +1110,8 @@ export function FactuurEditor() {
       await deleteFactuur(existingFactuur.id)
       toast.success(`${nummer} verwijderd`)
       navigate('/facturen')
-    } catch {
+    } catch (err) {
+      logger.error('Delete factuur:', err)
       toast.error('Kon factuur niet verwijderen')
     }
   }, [existingFactuur, nummer, navigate])
@@ -1161,7 +1163,8 @@ export function FactuurEditor() {
       setCreditnotaDialogOpen(false)
       toast.success(`Creditnota ${cnNummer} aangemaakt`)
       navigate(`/facturen/${saved.id}`)
-    } catch {
+    } catch (err) {
+      logger.error('Aanmaken creditnota:', err)
       toast.error('Fout bij aanmaken creditnota')
     } finally {
       setIsSaving(false)
@@ -1232,7 +1235,8 @@ export function FactuurEditor() {
           betaalUrl: existingFactuur.betaal_link || undefined,
         })
         await sendEmail(selectedKlant.email, onderwerp, herinneringPreview, { html })
-      } catch {
+      } catch (err) {
+        logger.error('Verstuur herinnering email:', err)
         toast.warning('Email niet verzonden (SMTP niet geconfigureerd). Herinnering is wel gemarkeerd.')
       }
 
@@ -1250,7 +1254,8 @@ export function FactuurEditor() {
 
       toast.success(`${template.type === 'aanmaning' ? 'Aanmaning' : 'Herinnering'} verstuurd voor ${existingFactuur.nummer}`)
       setHerinneringDialogOpen(false)
-    } catch {
+    } catch (err) {
+      logger.error('Verstuur herinnering:', err)
       toast.error('Fout bij versturen herinnering')
     } finally {
       setIsSending(false)

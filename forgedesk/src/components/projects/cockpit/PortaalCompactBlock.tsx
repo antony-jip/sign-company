@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { logger } from '@/utils/logger'
 import { useNavigate } from 'react-router-dom'
 import {
   Send, Paperclip, X, ArrowRight, ChevronDown, ChevronRight,
@@ -541,8 +542,8 @@ function InputBar({
         <div className="flex items-center gap-1.5 flex-1">
           {[
             { label: 'Tekening', icon: <FileText className="h-3.5 w-3.5" />, onClick: () => tekeningInputRef.current?.click() },
-            { label: 'Offerte', icon: <Receipt className="h-3.5 w-3.5" />, onClick: async () => { try { setOffertes(await getOffertesByProject(projectId)) } catch { setOffertes([]) }; setActivePopover('offerte') } },
-            { label: 'Factuur', icon: <CreditCard className="h-3.5 w-3.5" />, onClick: async () => { try { setFacturen(await getFacturenByProject(projectId)) } catch { setFacturen([]) }; setActivePopover('factuur') } },
+            { label: 'Offerte', icon: <Receipt className="h-3.5 w-3.5" />, onClick: async () => { try { setOffertes(await getOffertesByProject(projectId)) } catch (err) { logger.error('loadOffertes:', err); setOffertes([]) }; setActivePopover('offerte') } },
+            { label: 'Factuur', icon: <CreditCard className="h-3.5 w-3.5" />, onClick: async () => { try { setFacturen(await getFacturenByProject(projectId)) } catch (err) { logger.error('loadFacturen:', err); setFacturen([]) }; setActivePopover('factuur') } },
             { label: 'Foto', icon: <ImageIcon className="h-3.5 w-3.5" />, onClick: () => fotoInputRef.current?.click() },
           ].map((btn) => (
             <button
@@ -614,14 +615,14 @@ export function PortaalCompactBlock({ projectId }: { projectId: string }) {
   const [loading, setLoading] = useState(true)
   const [isSending, setIsSending] = useState(false)
   const [collapsed, setCollapsed] = useState(() => {
-    try { return localStorage.getItem(STORAGE_KEY) === 'true' } catch { return false }
+    try { return localStorage.getItem(STORAGE_KEY) === 'true' } catch (err) { return false }
   })
   const feedEndRef = useRef<HTMLDivElement>(null)
 
   const toggleCollapsed = () => {
     const next = !collapsed
     setCollapsed(next)
-    try { localStorage.setItem(STORAGE_KEY, String(next)) } catch {}
+    try { localStorage.setItem(STORAGE_KEY, String(next)) } catch (err) {}
   }
 
   const hasKlantReactie = (() => {
@@ -638,7 +639,7 @@ export function PortaalCompactBlock({ projectId }: { projectId: string }) {
       const raw = await getPortaalItems(portaal.id)
       const sorted = [...raw.filter((i: PortaalItem) => i.zichtbaar_voor_klant)].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
       setItems(sorted)
-    } catch { /* silent */ }
+    } catch (err) { logger.error('fetchItems:', err) }
   }
 
   useEffect(() => {
@@ -652,7 +653,7 @@ export function PortaalCompactBlock({ projectId }: { projectId: string }) {
         if (cancelled) return
         const sorted = [...raw.filter((i: PortaalItem) => i.zichtbaar_voor_klant)].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
         setItems(sorted)
-      } catch { /* silent */ }
+      } catch (err) { logger.error('fetchPortaal:', err) }
       finally { if (!cancelled) setLoading(false) }
     }
     fetch()
@@ -706,7 +707,8 @@ export function PortaalCompactBlock({ projectId }: { projectId: string }) {
       setPortaal(nieuwPortaal)
       setCollapsed(false)
       toast.success('Portaal geactiveerd')
-    } catch {
+    } catch (err) {
+      logger.error('activeerPortaal:', err)
       toast.error('Kon portaal niet activeren')
     }
   }

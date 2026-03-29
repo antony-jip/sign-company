@@ -10,6 +10,7 @@ import type { Email, Klant } from '@/types'
 import { getKlanten, createKlant, createOfferte, createProject, createTaak } from '@/services/supabaseService'
 import { extractSenderEmail, formatShortDate } from './emailHelpers'
 import { toast } from 'sonner'
+import { logger } from '@/utils/logger'
 
 // ─── Helper: extract company name from sender ───
 export function extractCompanyName(senderName: string, email: string): string {
@@ -102,7 +103,7 @@ export const CRMSidebar = memo(function CRMSidebar({
           }
         }
         if (!cancelled) setLinkedKlant(match || null)
-      } catch { /* silent */ }
+      } catch (err) { /* silent */ }
       finally { if (!cancelled) setKlantLoading(false) }
     }
     findKlant()
@@ -151,7 +152,7 @@ export const CRMSidebar = memo(function CRMSidebar({
       setLinkedKlant(newKlant)
       setActivePanel('none')
       toast.success('Klant aangemaakt')
-    } catch { toast.error('Klant aanmaken mislukt') }
+    } catch (err) { logger.error('Failed to create klant:', err); toast.error('Klant aanmaken mislukt') }
     finally { setSaving(false) }
   }
 
@@ -172,7 +173,7 @@ export const CRMSidebar = memo(function CRMSidebar({
       toast.success('Offerte aangemaakt', {
         action: { label: 'Openen', onClick: () => navigate(`/offertes/${offerte.id}`) },
       })
-    } catch { toast.error('Offerte aanmaken mislukt') }
+    } catch (err) { logger.error('Failed to create offerte:', err); toast.error('Offerte aanmaken mislukt') }
     finally { setSaving(false) }
   }
 
@@ -190,7 +191,7 @@ export const CRMSidebar = memo(function CRMSidebar({
       toast.success('Project aangemaakt', {
         action: { label: 'Openen', onClick: () => navigate(`/projecten/${project.id}`) },
       })
-    } catch { toast.error('Project aanmaken mislukt') }
+    } catch (err) { logger.error('Failed to create project:', err); toast.error('Project aanmaken mislukt') }
     finally { setSaving(false) }
   }
 
@@ -205,7 +206,7 @@ export const CRMSidebar = memo(function CRMSidebar({
       })
       setActivePanel('none')
       toast.success('Taak aangemaakt')
-    } catch { toast.error('Taak aanmaken mislukt') }
+    } catch (err) { logger.error('Failed to create taak:', err); toast.error('Taak aanmaken mislukt') }
     finally { setSaving(false) }
   }
 
@@ -217,7 +218,7 @@ export const CRMSidebar = memo(function CRMSidebar({
         date: d.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' }),
         time: d.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' }),
       }
-    } catch { return null }
+    } catch (err) { return null }
   }, [email.datum])
 
   // ── Klant search suggestions ──

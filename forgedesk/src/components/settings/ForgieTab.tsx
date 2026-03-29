@@ -39,6 +39,7 @@ import {
   voegCreditsToe,
 } from '@/services/supabaseService'
 import type { VisualizerInstellingen, CreditTransactie, CreditsPakket } from '@/types'
+import { logger } from '../../utils/logger'
 
 const API_BASE = import.meta.env.PROD
   ? ''
@@ -150,21 +151,21 @@ export function ForgieTab() {
 
   const loadImports = useCallback(async () => {
     setLoadingImports(true)
-    try { setImports(await getForgieImports()) } catch { /* ignore */ }
+    try { setImports(await getForgieImports()) } catch (err) { logger.error('Fetch forgie imports:', err) }
     finally { setLoadingImports(false) }
   }, [])
 
   const handleSaveContext = useCallback(async () => {
     setSaving(true)
     try { await updateSettings({ forgie_bedrijfscontext: bedrijfscontext }); toast.success('Opgeslagen.') }
-    catch { toast.error('Opslaan mislukt') }
+    catch (err) { logger.error('Save bedrijfscontext:', err); toast.error('Opslaan mislukt') }
     finally { setSaving(false) }
   }, [bedrijfscontext, updateSettings, settings])
 
   const handleSaveTone = useCallback(async () => {
     setSavingTone(true)
     try { await updateSettings({ ai_tone_of_voice: toneOfVoice }); toast.success('Opgeslagen.') }
-    catch { toast.error('Opslaan mislukt') }
+    catch (err) { logger.error('Save tone of voice:', err); toast.error('Opslaan mislukt') }
     finally { setSavingTone(false) }
   }, [toneOfVoice, updateSettings])
 
@@ -196,7 +197,7 @@ export function ForgieTab() {
 
   const handleDeleteImport = useCallback(async (bestandsnaam: string) => {
     try { await deleteForgieImport(bestandsnaam); toast.success('Import verwijderd'); loadImports() }
-    catch { toast.error('Verwijderen mislukt') }
+    catch (err) { logger.error('Delete forgie import:', err); toast.error('Verwijderen mislukt') }
   }, [loadImports])
 
   const updateVisInstelling = (field: keyof VisualizerInstellingen, value: unknown) => {
@@ -207,7 +208,7 @@ export function ForgieTab() {
     if (!user?.id) return
     setVisSaving(true)
     try { setVisInstellingen(await saveVisualizerInstellingen(user.id, visInstellingen)); toast.success('Opgeslagen.') }
-    catch { toast.error('Opslaan mislukt') }
+    catch (err) { logger.error('Save visualizer instellingen:', err); toast.error('Opslaan mislukt') }
     finally { setVisSaving(false) }
   }, [user?.id, visInstellingen])
 
@@ -222,12 +223,12 @@ export function ForgieTab() {
       const trans = await getCreditTransacties(user.id)
       setTransacties(trans.slice(0, 20))
       toast.success(`${aantal} credits ${aantal > 0 ? 'toegevoegd' : 'verwijderd'}`)
-    } catch { toast.error('Credits toevoegen mislukt') }
+    } catch (err) { logger.error('Credits toevoegen:', err); toast.error('Credits toevoegen mislukt') }
   }, [user?.id, handmatigAantal, handmatigReden])
 
   const handleToggleForgie = useCallback(async (enabled: boolean) => {
     try { await updateSettings({ forgie_enabled: enabled }); toast.success(enabled ? 'Daan ingeschakeld' : 'Daan uitgeschakeld') }
-    catch { toast.error('Instelling opslaan mislukt') }
+    catch (err) { logger.error('Toggle forgie:', err); toast.error('Instelling opslaan mislukt') }
   }, [updateSettings])
 
   const handleStripeCheckout = useCallback(async (pakket: CreditsPakket) => {
@@ -262,7 +263,7 @@ export function ForgieTab() {
       setCreditSaldo(result.saldo)
       setShowCreditsKopen(false); setGeselecteerdPakket(null)
       toast.success(`${pakket.credits} credits toegevoegd!`)
-    } catch { toast.error('Credits toevoegen mislukt') }
+    } catch (err) { logger.error('Demo credits toevoegen:', err); toast.error('Credits toevoegen mislukt') }
   }, [user?.id])
 
   // Credit status indicator

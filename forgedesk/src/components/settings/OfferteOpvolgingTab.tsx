@@ -28,6 +28,7 @@ import {
 } from '@/services/supabaseService'
 import type { OpvolgSchema, OpvolgStap } from '@/types'
 import { toast } from 'sonner'
+import { logger } from '@/utils/logger'
 
 const MERGE_VELDEN = [
   { key: '{klant_naam}', label: 'Bedrijfsnaam klant' },
@@ -86,7 +87,8 @@ export function OfferteOpvolgingTab() {
       const inhoud = replaceMergeFields(stap.inhoud)
       await sendEmail(user.email, `[TEST] ${onderwerp}`, inhoud, {})
       toast.success(`Testmail verstuurd naar ${user.email}`)
-    } catch {
+    } catch (err) {
+      logger.error('sendTestEmail:', err)
       toast.error('Kon testmail niet versturen — controleer je email instellingen')
     } finally {
       setSendingTestId(null)
@@ -139,7 +141,8 @@ export function OfferteOpvolgingTab() {
       const created = updated.find(s => s.id === schema.id)
       setSelectedSchema(created || schema)
       toast.success('Schema aangemaakt')
-    } catch {
+    } catch (err) {
+      logger.error('createSchema:', err)
       toast.error('Kon schema niet aanmaken')
     }
   }
@@ -150,7 +153,8 @@ export function OfferteOpvolgingTab() {
       if (selectedSchema?.id === id) setSelectedSchema(null)
       await loadSchemas()
       toast.success('Schema verwijderd')
-    } catch {
+    } catch (err) {
+      logger.error('deleteSchema:', err)
       toast.error('Kon schema niet verwijderen')
     }
   }
@@ -159,7 +163,8 @@ export function OfferteOpvolgingTab() {
     try {
       await updateOpvolgSchema(schema.id, { actief: !schema.actief })
       await loadSchemas()
-    } catch {
+    } catch (err) {
+      logger.error('toggleActief:', err)
       toast.error('Kon status niet wijzigen')
     }
   }
@@ -168,7 +173,8 @@ export function OfferteOpvolgingTab() {
     try {
       await updateOpvolgSchema(schema.id, { naam })
       await loadSchemas()
-    } catch {
+    } catch (err) {
+      logger.error('schemaNameChange:', err)
       toast.error('Kon naam niet opslaan')
     }
   }
@@ -177,7 +183,8 @@ export function OfferteOpvolgingTab() {
     try {
       await upsertOpvolgStap({ ...stap, ...updates, schema_id: stap.schema_id })
       await loadSchemas()
-    } catch {
+    } catch (err) {
+      logger.error('stapChange:', err)
       toast.error('Kon stap niet opslaan')
     }
   }
@@ -201,7 +208,8 @@ export function OfferteOpvolgingTab() {
       })
       await loadSchemas()
       toast.success('Stap toegevoegd')
-    } catch {
+    } catch (err) {
+      logger.error('addStap:', err)
       toast.error('Kon stap niet toevoegen')
     }
   }
@@ -211,7 +219,8 @@ export function OfferteOpvolgingTab() {
       await deleteOpvolgStap(id)
       await loadSchemas()
       toast.success('Stap verwijderd')
-    } catch {
+    } catch (err) {
+      logger.error('deleteStap:', err)
       toast.error('Kon stap niet verwijderen')
     }
   }

@@ -17,6 +17,7 @@ import {
   createTaak,
 } from '@/services/supabaseService'
 import { Loader2, ArrowLeft, ArrowRight, Layers, Sparkles } from 'lucide-react'
+import { logger } from '../../utils/logger'
 
 // ── Spectrum Progress Strip ─────────────────────────────────────────────
 
@@ -544,13 +545,13 @@ export function OnboardingWizard() {
               const org = await createOrganisatie('Mijn Bedrijf', user.id)
               await updateProfile(user.id, { organisatie_id: org.id, rol: 'admin' } as Parameters<typeof updateProfile>[1])
               orgId = org.id
-            } catch {
-              // createOrganisatie may fail if columns don't exist yet
+            } catch (err) {
+              logger.error('Create organisatie:', err)
             }
           }
           if (!cancelled && orgId) setLocalOrgId(orgId)
-        } catch {
-          // Continue without org
+        } catch (err) {
+          logger.error('Fetch profile voor onboarding:', err)
         }
       }
 
@@ -577,8 +578,8 @@ export function OnboardingWizard() {
           if (org.kvk_nummer) setGegevens(prev => ({ ...prev, kvk_nummer: org.kvk_nummer || '' }))
           if (org.btw_nummer) setGegevens(prev => ({ ...prev, btw_nummer: org.btw_nummer || '' }))
         }
-      } catch {
-        // Continue anyway
+      } catch (err) {
+        logger.error('Fetch organisatie voor onboarding:', err)
       }
       if (!cancelled) setIsLoaded(true)
     }
@@ -597,11 +598,12 @@ export function OnboardingWizard() {
     }
     try {
       await updateOrganisatie(orgId, { onboarding_compleet: true, onboarding_stap: 4 })
-    } catch {
+    } catch (err) {
+      logger.error('Update organisatie onboarding compleet:', err)
       try {
         await updateOrganisatie(orgId, { onboarding_compleet: true })
-      } catch {
-        // Continue to dashboard anyway
+      } catch (err) {
+        logger.error('Update organisatie onboarding fallback:', err)
       }
     }
     navigate('/')
@@ -624,7 +626,8 @@ export function OnboardingWizard() {
           onboarding_stap: 1,
         })
       }
-    } catch {
+    } catch (err) {
+      logger.error('Update organisatie stap 1:', err)
       try {
         if (effectiveOrgId) {
           await updateOrganisatie(effectiveOrgId, {
@@ -637,8 +640,8 @@ export function OnboardingWizard() {
             btw_nummer: gegevens.btw_nummer,
           })
         }
-      } catch {
-        // Continue anyway
+      } catch (err) {
+        logger.error('Update organisatie stap 1 fallback:', err)
       }
     } finally {
       setIsSaving(false)
@@ -758,8 +761,8 @@ export function OnboardingWizard() {
       if (effectiveOrgId) {
         try {
           await updateOrganisatie(effectiveOrgId, { onboarding_stap: 3 })
-        } catch {
-          // Continue
+        } catch (err) {
+          logger.error('Update onboarding stap:', err)
         }
       }
     } catch (error: unknown) {

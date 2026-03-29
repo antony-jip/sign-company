@@ -172,7 +172,7 @@ export function TasksLayout() {
   const [monthOffset, setMonthOffset] = useState(0)
   const [viewMode, setViewMode] = useState<'week' | 'maand'>('week')
   const [hourHeight, setHourHeight] = useState(() => {
-    try { const v = parseInt(localStorage.getItem(ZOOM_STORAGE_KEY) || '', 10); return v >= HOUR_HEIGHT_MIN && v <= HOUR_HEIGHT_MAX ? v : HOUR_HEIGHT_DEFAULT } catch { return HOUR_HEIGHT_DEFAULT }
+    try { const v = parseInt(localStorage.getItem(ZOOM_STORAGE_KEY) || '', 10); return v >= HOUR_HEIGHT_MIN && v <= HOUR_HEIGHT_MAX ? v : HOUR_HEIGHT_DEFAULT } catch (err) { return HOUR_HEIGHT_DEFAULT }
   })
   const HOUR_HEIGHT = hourHeight
   const handleZoom = useCallback((delta: number) => {
@@ -612,7 +612,7 @@ export function TasksLayout() {
           localStorage.setItem(NIET_VERGETEN_KEY, JSON.stringify(stored))
           // Force re-render van NietVergetenStrip
           window.dispatchEvent(new Event('storage'))
-        } catch {}
+        } catch (err) {}
         toast.success(`"${nvTitel}" ingepland`)
       }
       return
@@ -1083,7 +1083,8 @@ export function TasksLayout() {
           try {
             await updateProject(completionPrompt.projectId, { status: status as Project['status'] })
             toast.success(`Project gemarkeerd als ${status}`)
-          } catch {
+          } catch (err) {
+            logger.error('updateProjectStatus:', err)
             toast.error('Kon projectstatus niet bijwerken')
           }
         }}
@@ -1099,17 +1100,17 @@ const NIET_VERGETEN_KEY = 'doen_niet_vergeten'
 
 function NietVergetenStrip() {
   const [items, setItems] = useState<string[]>(() => {
-    try { return JSON.parse(localStorage.getItem(NIET_VERGETEN_KEY) || '[]') } catch { return [] }
+    try { return JSON.parse(localStorage.getItem(NIET_VERGETEN_KEY) || '[]') } catch (err) { return [] }
   })
   const [input, setInput] = useState('')
   const [open, setOpen] = useState(() => {
-    try { return localStorage.getItem('doen_nv_open') !== 'false' } catch { return true }
+    try { return localStorage.getItem('doen_nv_open') !== 'false' } catch (err) { return true }
   })
 
   // Sync met localStorage als een item via drag wordt verwijderd
   useEffect(() => {
     const handler = () => {
-      try { setItems(JSON.parse(localStorage.getItem(NIET_VERGETEN_KEY) || '[]')) } catch {}
+      try { setItems(JSON.parse(localStorage.getItem(NIET_VERGETEN_KEY) || '[]')) } catch (err) {}
     }
     window.addEventListener('storage', handler)
     return () => window.removeEventListener('storage', handler)
@@ -1917,7 +1918,8 @@ function EditTaskDialog({
                       try {
                         const url = await uploadTaakBijlage(editingTaakId, file)
                         setFormData(prev => ({ ...prev, bijlagen: [...prev.bijlagen, url] }))
-                      } catch {
+                      } catch (err) {
+                        logger.error('uploadTaakBijlage:', err)
                         toast.error(`Kon "${file.name}" niet uploaden`)
                       }
                     }

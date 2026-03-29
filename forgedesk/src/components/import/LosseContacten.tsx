@@ -22,6 +22,7 @@ import {
 } from '@/services/supabaseService'
 import type { ContactpersoonRecord, Klant } from '@/types'
 import { toast } from 'sonner'
+import { logger } from '../../utils/logger'
 import { confirm } from '@/components/shared/ConfirmDialog'
 
 interface LosseContactenProps {
@@ -66,8 +67,8 @@ export function LosseContacten({ organisatieId }: LosseContactenProps) {
       setLoading(true)
       const alle = await getContactpersonenDB(organisatieId)
       setContacten(alle.filter((c) => c.klant_id === null && !c.notities.startsWith('[LOS_CONTACT]')))
-    } catch {
-      // Silently fail
+    } catch (err) {
+      logger.error('Fetch contactpersonen:', err)
     } finally {
       setLoading(false)
     }
@@ -135,7 +136,8 @@ export function LosseContacten({ organisatieId }: LosseContactenProps) {
       setContacten((prev) => prev.filter((c) => !selectedIds.has(c.id)))
       toast.success(`${selectedIds.size} contact${selectedIds.size === 1 ? '' : 'en'} opgeslagen als los contact`)
       setSelectedIds(new Set())
-    } catch {
+    } catch (err) {
+      logger.error('Bulk markeer als los contact:', err)
       toast.error('Fout bij opslaan als los contact')
     } finally {
       setBulkLoading(false)
@@ -156,7 +158,8 @@ export function LosseContacten({ organisatieId }: LosseContactenProps) {
       setContacten((prev) => prev.filter((c) => !selectedIds.has(c.id)))
       toast.success(`${selectedIds.size} contact${selectedIds.size === 1 ? '' : 'en'} verwijderd`)
       setSelectedIds(new Set())
-    } catch {
+    } catch (err) {
+      logger.error('Bulk delete contactpersonen:', err)
       toast.error('Fout bij verwijderen')
     } finally {
       setBulkLoading(false)
@@ -177,7 +180,8 @@ export function LosseContacten({ organisatieId }: LosseContactenProps) {
       setContacten([])
       setSelectedIds(new Set())
       toast.success(`Alle ${contacten.length} losse contacten verwijderd`)
-    } catch {
+    } catch (err) {
+      logger.error('Delete alle losse contacten:', err)
       toast.error('Fout bij verwijderen van contacten')
     } finally {
       setBulkLoading(false)
@@ -195,7 +199,8 @@ export function LosseContacten({ organisatieId }: LosseContactenProps) {
     try {
       const allKlanten = await getKlanten()
       setKlanten(allKlanten)
-    } catch {
+    } catch (err) {
+      logger.error('Fetch klanten voor koppeling:', err)
       toast.error('Fout bij ophalen bedrijven')
     }
   }
@@ -209,7 +214,8 @@ export function LosseContacten({ organisatieId }: LosseContactenProps) {
       setSelectedIds((prev) => { const next = new Set(prev); next.delete(selectedContact.id); return next })
       setKoppelDialogOpen(false)
       toast.success(`${selectedContact.voornaam} ${selectedContact.achternaam} gekoppeld aan ${selectedKlant.bedrijfsnaam}`)
-    } catch {
+    } catch (err) {
+      logger.error('Koppel contact aan klant:', err)
       toast.error('Fout bij koppelen')
     } finally {
       setKoppelLoading(false)
@@ -245,7 +251,8 @@ export function LosseContacten({ organisatieId }: LosseContactenProps) {
       setSelectedIds((prev) => { const next = new Set(prev); next.delete(selectedContact.id); return next })
       setKoppelDialogOpen(false)
       toast.success(`Bedrijf "${nieuwBedrijfsnaam.trim()}" aangemaakt en ${selectedContact.voornaam} gekoppeld`)
-    } catch {
+    } catch (err) {
+      logger.error('Create klant en koppel contact:', err)
       toast.error('Fout bij aanmaken bedrijf')
     } finally {
       setKoppelLoading(false)
@@ -283,7 +290,8 @@ export function LosseContacten({ organisatieId }: LosseContactenProps) {
       setContacten((prev) => prev.filter((c) => c.id !== contact.id))
       setSelectedIds((prev) => { const next = new Set(prev); next.delete(contact.id); return next })
       toast.success(`Bedrijf "${bedrijfsnaam}" aangemaakt en ${contact.voornaam} gekoppeld`)
-    } catch {
+    } catch (err) {
+      logger.error('Create nieuw bedrijf vanuit contact:', err)
       toast.error('Fout bij aanmaken bedrijf')
     }
   }

@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { createPortaalItem, getOffertesByProject, getFacturenByProject } from '@/services/supabaseService'
 import { uploadFile } from '@/services/storageService'
 import { currencyFmt } from './PortaalTimelineItems'
+import { logger } from '@/utils/logger'
 import type { ProjectPortaal, Offerte, Factuur } from '@/types'
 
 interface PortaalSidebarActionsProps {
@@ -127,7 +128,7 @@ export function PortaalSidebarActions({
     try {
       const offs = await getOffertesByProject(projectId)
       setOffertes(offs)
-    } catch { setOffertes([]) }
+    } catch (err) { logger.error('Failed to fetch offertes:', err); setOffertes([]) }
     setActivePopover('offerte')
   }
 
@@ -136,7 +137,7 @@ export function PortaalSidebarActions({
     try {
       const facts = await getFacturenByProject(projectId)
       setFacturen(facts)
-    } catch { setFacturen([]) }
+    } catch (err) { logger.error('Failed to fetch facturen:', err); setFacturen([]) }
     setActivePopover('factuur')
   }
 
@@ -165,7 +166,8 @@ export function PortaalSidebarActions({
       setActivePopover(null)
       await fetchItems()
       if (notificeerKlant) sendEmailNotification(`Offerte ${offerte.nummer}`, offerte.titel || `Offerte ${offerte.nummer}`)
-    } catch {
+    } catch (err) {
+      logger.error('Failed to share offerte:', err)
       toast.error('Kon offerte niet delen')
     } finally {
       setIsSending(false)
@@ -193,7 +195,8 @@ export function PortaalSidebarActions({
       setActivePopover(null)
       await fetchItems()
       if (notificeerKlant) sendEmailNotification(`Factuur ${factuur.nummer}`, `Factuur ${factuur.nummer}`)
-    } catch {
+    } catch (err) {
+      logger.error('Failed to share factuur:', err)
       toast.error('Kon factuur niet delen')
     } finally {
       setIsSending(false)
@@ -221,7 +224,8 @@ export function PortaalSidebarActions({
       setBerichtTekstInput('')
       await fetchItems()
       if (notificeerKlant) sendEmailNotification(tekst, 'Bericht')
-    } catch {
+    } catch (err) {
+      logger.error('Failed to send bericht:', err)
       toast.error('Kon bericht niet versturen')
     } finally {
       setIsSending(false)
@@ -250,7 +254,8 @@ export function PortaalSidebarActions({
       toast.success('Afbeelding gedeeld')
       await fetchItems()
       if (notificeerKlant) sendEmailNotification('Nieuwe foto gedeeld', 'Foto')
-    } catch {
+    } catch (err) {
+      logger.error('Failed to upload afbeelding:', err)
       toast.error('Kon afbeelding niet uploaden')
     } finally {
       setIsSending(false)
@@ -281,7 +286,8 @@ export function PortaalSidebarActions({
       setTekeningPopoverOpen(false)
       await fetchItems()
       if (notificeerKlant) sendEmailNotification(titel, titel)
-    } catch {
+    } catch (err) {
+      logger.error('Failed to share tekening:', err)
       toast.error('Kon tekening niet delen')
     } finally {
       setIsSending(false)
