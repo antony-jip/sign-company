@@ -1027,24 +1027,28 @@ export function FacturenLayout() {
     return null
   }, [getDagenVerlopen])
 
+  const replaceHerinneringVars = useCallback((text: string, factuur: Factuur, klant: Klant) => {
+    return text
+      .replace(/{klant_naam}/g, klant.contactpersoon || klant.bedrijfsnaam)
+      .replace(/{factuur_nummer}/g, factuur.nummer)
+      .replace(/{factuur_bedrag}/g, formatCurrency(factuur.totaal))
+      .replace(/{vervaldatum}/g, formatDate(factuur.vervaldatum))
+      .replace(/{dagen_verlopen}/g, String(getDagenVerlopen(factuur)))
+      .replace(/{bedrijfsnaam}/g, bedrijfsnaam || '')
+      .replace(/{betaal_link}/g, factuur.betaal_link || '')
+  }, [getDagenVerlopen, bedrijfsnaam])
+
   const openHerinneringDialog = useCallback((factuur: Factuur) => {
     const type = getVolgendeHerinnering(factuur) || 'herinnering_1'
     const template = herinneringTemplates.find((t) => t.type === type)
     const klant = klanten.find((k) => k.id === factuur.klant_id)
     if (template && klant) {
-      const preview = template.inhoud
-        .replace(/{klant_naam}/g, klant.contactpersoon || klant.bedrijfsnaam)
-        .replace(/{factuur_nummer}/g, factuur.nummer)
-        .replace(/{factuur_bedrag}/g, formatCurrency(factuur.totaal))
-        .replace(/{vervaldatum}/g, formatDate(factuur.vervaldatum))
-        .replace(/{dagen_verlopen}/g, String(getDagenVerlopen(factuur)))
-        .replace(/{bedrijfsnaam}/g, bedrijfsnaam || '')
-      setHerinneringPreview(preview)
+      setHerinneringPreview(replaceHerinneringVars(template.inhoud, factuur, klant))
     }
     setHerinneringFactuur(factuur)
     setHerinneringType(type)
     setHerinneringDialogOpen(true)
-  }, [getVolgendeHerinnering, herinneringTemplates, klanten, getDagenVerlopen, bedrijfsnaam])
+  }, [getVolgendeHerinnering, herinneringTemplates, klanten, replaceHerinneringVars])
 
   const handleVerstuurHerinnering = useCallback(async () => {
     if (!herinneringFactuur) return
@@ -1061,17 +1065,28 @@ export function FacturenLayout() {
     }
 
     try {
-      const onderwerp = template.onderwerp
-        .replace(/{factuur_nummer}/g, herinneringFactuur.nummer)
+      const onderwerp = replaceHerinneringVars(template.onderwerp, herinneringFactuur, klant)
+      const vervalDate = new Date(herinneringFactuur.vervaldatum)
+      const dagenVervallen = Math.max(0, Math.floor((Date.now() - vervalDate.getTime()) / (1000 * 60 * 60 * 24)))
 
-      // Try to send email (may fail if SMTP not configured)
       try {
-        await sendEmail(klant.email, onderwerp, herinneringPreview, {})
+        const { html } = factuurHerinneringTemplate({
+          klantNaam: klant.contactpersoon || klant.bedrijfsnaam,
+          factuurNummer: herinneringFactuur.nummer,
+          factuurTitel: herinneringFactuur.titel,
+          totaalBedrag: formatCurrency(herinneringFactuur.totaal),
+          vervaldatum: formatDate(herinneringFactuur.vervaldatum),
+          dagenVervallen,
+          bedrijfsnaam,
+          primaireKleur,
+          logoUrl: profile?.logo_url || undefined,
+          betaalUrl: herinneringFactuur.betaal_link || undefined,
+        })
+        await sendEmail(klant.email, onderwerp, herinneringPreview, { html })
       } catch {
         toast.warning('Email niet verzonden (SMTP niet geconfigureerd). Herinnering is wel gemarkeerd.')
       }
 
-      // Mark herinnering as sent
       const fieldMap: Record<string, string> = {
         herinnering_1: 'herinnering_1_verstuurd',
         herinnering_2: 'herinnering_2_verstuurd',
@@ -1084,12 +1099,12 @@ export function FacturenLayout() {
       await updateFactuur(herinneringFactuur.id, updates)
       setFacturen((prev) => prev.map((f) => f.id === herinneringFactuur.id ? { ...f, ...updates } : f))
 
-      toast.success(`${template.type === 'aanmaning' ? 'Aanmaning' : 'Herinnering'} gemarkeerd voor ${herinneringFactuur.nummer}`)
+      toast.success(`${template.type === 'aanmaning' ? 'Aanmaning' : 'Herinnering'} verstuurd voor ${herinneringFactuur.nummer}`)
       setHerinneringDialogOpen(false)
     } catch (err) {
       toast.error('Fout bij versturen herinnering')
     }
-  }, [herinneringFactuur, klanten, herinneringTemplates, herinneringType, herinneringPreview])
+  }, [herinneringFactuur, klanten, herinneringTemplates, herinneringType, herinneringPreview, replaceHerinneringVars, bedrijfsnaam, primaireKleur, profile])
 
   // ============ CREDITNOTA / VOORSCHOT LOGIC ============
 
@@ -2753,15 +2768,7 @@ export function FacturenLayout() {
                       const template = herinneringTemplates.find((t) => t.type === type)
                       const klant = klanten.find((k) => k.id === herinneringFactuur?.klant_id)
                       if (template && klant && herinneringFactuur) {
-                        setHerinneringPreview(
-                          template.inhoud
-                            .replace(/{klant_naam}/g, klant.contactpersoon || klant.bedrijfsnaam)
-                            .replace(/{factuur_nummer}/g, herinneringFactuur.nummer)
-                            .replace(/{factuur_bedrag}/g, formatCurrency(herinneringFactuur.totaal))
-                            .replace(/{vervaldatum}/g, formatDate(herinneringFactuur.vervaldatum))
-                            .replace(/{dagen_verlopen}/g, String(getDagenVerlopen(herinneringFactuur)))
-                            .replace(/{bedrijfsnaam}/g, bedrijfsnaam || '')
-                        )
+                        setHerinneringPreview(replaceHerinneringVars(template.inhoud, herinneringFactuur, klant))
                       }
                     }}
                   >

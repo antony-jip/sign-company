@@ -91,7 +91,7 @@ import { generateFactuurPDF } from '@/services/pdfService'
 import { generateUBLInvoice, downloadUBLXml } from '@/services/ublService'
 import { useDocumentStyle } from '@/hooks/useDocumentStyle'
 import { sendEmail } from '@/services/gmailService'
-import { factuurVerzendTemplate } from '@/services/emailTemplateService'
+import { factuurVerzendTemplate, factuurHerinneringTemplate } from '@/services/emailTemplateService'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
 import { logger } from '../../utils/logger'
 import { KlantStatusWarning } from '@/components/shared/KlantStatusWarning'
@@ -1179,23 +1179,28 @@ export function FactuurEditor() {
     return null
   }, [existingFactuur, dagenVervallen])
 
+  const replaceHerinneringVars = useCallback((text: string) => {
+    if (!existingFactuur || !selectedKlant) return text
+    return text
+      .replace(/{klant_naam}/g, selectedKlant.contactpersoon || selectedKlant.bedrijfsnaam)
+      .replace(/{factuur_nummer}/g, existingFactuur.nummer)
+      .replace(/{factuur_bedrag}/g, formatCurrency(existingFactuur.totaal))
+      .replace(/{vervaldatum}/g, formatDate(existingFactuur.vervaldatum))
+      .replace(/{dagen_verlopen}/g, String(dagenVervallen))
+      .replace(/{bedrijfsnaam}/g, bedrijfsnaam || '')
+      .replace(/{betaal_link}/g, existingFactuur.betaal_link || '')
+  }, [existingFactuur, selectedKlant, dagenVervallen, bedrijfsnaam])
+
   const openHerinneringDialog = useCallback(() => {
     if (!existingFactuur || !selectedKlant) return
     const type = getVolgendeHerinnering() || 'herinnering_1'
     const template = herinneringTemplates.find((t) => t.type === type)
     if (template) {
-      const preview = template.inhoud
-        .replace(/{klant_naam}/g, selectedKlant.contactpersoon || selectedKlant.bedrijfsnaam)
-        .replace(/{factuur_nummer}/g, existingFactuur.nummer)
-        .replace(/{factuur_bedrag}/g, formatCurrency(existingFactuur.totaal))
-        .replace(/{vervaldatum}/g, formatDate(existingFactuur.vervaldatum))
-        .replace(/{dagen_verlopen}/g, String(dagenVervallen))
-        .replace(/{bedrijfsnaam}/g, bedrijfsnaam || '')
-      setHerinneringPreview(preview)
+      setHerinneringPreview(replaceHerinneringVars(template.inhoud))
     }
     setHerinneringType(type)
     setHerinneringDialogOpen(true)
-  }, [existingFactuur, selectedKlant, getVolgendeHerinnering, herinneringTemplates, dagenVervallen, bedrijfsnaam])
+  }, [existingFactuur, selectedKlant, getVolgendeHerinnering, herinneringTemplates, replaceHerinneringVars])
 
   const handleVerstuurHerinnering = useCallback(async () => {
     if (!existingFactuur || !selectedKlant?.email) {
@@ -1211,10 +1216,22 @@ export function FactuurEditor() {
 
     try {
       setIsSending(true)
-      const onderwerp = template.onderwerp.replace(/{factuur_nummer}/g, existingFactuur.nummer)
+      const onderwerp = replaceHerinneringVars(template.onderwerp)
 
       try {
-        await sendEmail(selectedKlant.email, onderwerp, herinneringPreview, {})
+        const { html } = factuurHerinneringTemplate({
+          klantNaam: selectedKlant.contactpersoon || selectedKlant.bedrijfsnaam,
+          factuurNummer: existingFactuur.nummer,
+          factuurTitel: existingFactuur.titel,
+          totaalBedrag: formatCurrency(existingFactuur.totaal),
+          vervaldatum: formatDate(existingFactuur.vervaldatum),
+          dagenVervallen,
+          bedrijfsnaam,
+          primaireKleur,
+          logoUrl: profile?.logo_url || undefined,
+          betaalUrl: existingFactuur.betaal_link || undefined,
+        })
+        await sendEmail(selectedKlant.email, onderwerp, herinneringPreview, { html })
       } catch {
         toast.warning('Email niet verzonden (SMTP niet geconfigureerd). Herinnering is wel gemarkeerd.')
       }
@@ -1231,14 +1248,14 @@ export function FactuurEditor() {
       await updateFactuur(existingFactuur.id, updates)
       setExistingFactuur({ ...existingFactuur, ...updates })
 
-      toast.success(`${template.type === 'aanmaning' ? 'Aanmaning' : 'Herinnering'} gemarkeerd voor ${existingFactuur.nummer}`)
+      toast.success(`${template.type === 'aanmaning' ? 'Aanmaning' : 'Herinnering'} verstuurd voor ${existingFactuur.nummer}`)
       setHerinneringDialogOpen(false)
     } catch {
       toast.error('Fout bij versturen herinnering')
     } finally {
       setIsSending(false)
     }
-  }, [existingFactuur, selectedKlant, herinneringTemplates, herinneringType, herinneringPreview])
+  }, [existingFactuur, selectedKlant, herinneringTemplates, herinneringType, herinneringPreview, replaceHerinneringVars, dagenVervallen, bedrijfsnaam, primaireKleur, profile])
 
   // ============ LOADING ============
 

@@ -2205,8 +2205,11 @@ export function getDefaultAppSettings(userId: string): AppSettings {
     creditnota_prefix: 'CN',
     werkbon_prefix: 'WB',
     herinnering_1_tekst: '',
+    herinnering_1_onderwerp: 'Herinnering: Factuur {factuur_nummer}',
     herinnering_2_tekst: '',
+    herinnering_2_onderwerp: '2e herinnering: Factuur {factuur_nummer}',
     aanmaning_tekst: '',
+    aanmaning_onderwerp: 'Aanmaning: Factuur {factuur_nummer}',
     standaard_uurtarief: 75,
     offerte_intro_tekst: '',
     offerte_outro_tekst: '',
@@ -6102,8 +6105,24 @@ export async function deleteOpvolgStap(id: string): Promise<void> {
 }
 
 export async function ensureDefaultOpvolgSchema(organisatieId: string): Promise<OpvolgSchema> {
-  const existing = await getDefaultOpvolgSchema(organisatieId)
-  if (existing) return existing
+  // Check ALL schemas for this org (not just default+actief) to prevent duplicates
+  if (!isSupabaseConfigured() || !supabase) {
+    return { id: '', organisatie_id: organisatieId, naam: 'Standaard', is_default: true, actief: true, created_at: '', stappen: [] }
+  }
+  const { data: allSchemas } = await supabase
+    .from('offerte_opvolg_schemas')
+    .select('*, stappen:offerte_opvolg_stappen(*)')
+    .eq('organisatie_id', organisatieId)
+    .order('created_at', { ascending: true })
+
+  if (allSchemas && allSchemas.length > 0) {
+    // Return the default one, or the first one
+    const defaultOne = allSchemas.find((s: { is_default: boolean; actief: boolean }) => s.is_default && s.actief) || allSchemas[0]
+    return {
+      ...defaultOne,
+      stappen: ((defaultOne as { stappen?: OpvolgStap[] }).stappen || []).sort((a: OpvolgStap, b: OpvolgStap) => a.stap_nummer - b.stap_nummer),
+    }
+  }
 
   const schema = await createOpvolgSchema(organisatieId, 'Standaard', true)
   for (const stap of DEFAULT_OPVOLG_STAPPEN) {

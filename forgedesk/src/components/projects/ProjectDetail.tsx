@@ -32,6 +32,9 @@ import {
   Printer,
   MoreHorizontal,
   ChevronDown,
+  Bell,
+  BellOff,
+  Clock,
 } from 'lucide-react'
 // Card/Badge removed — using DOEN text-based styling
 import { Button } from '@/components/ui/button'
@@ -1261,7 +1264,8 @@ export function ProjectDetail() {
               {projectOffertes.map((offerte) => {
                 const linkedFactuur = offerteFactuurMap[offerte.id]
                 const offerteStatusLabel = offerte.status === 'concept' ? 'Concept' : offerte.status === 'verzonden' ? 'Verzonden' : offerte.status === 'goedgekeurd' ? 'Goedgekeurd' : offerte.status === 'afgewezen' ? 'Afgewezen' : offerte.status === 'gefactureerd' ? 'Gefactureerd' : offerte.status
-                const accentColor = offerte.status === 'goedgekeurd' || offerte.status === 'gefactureerd' ? '#2D6B48' : offerte.status === 'afgewezen' ? '#C0451A' : '#F15025'
+                const isStalled = (offerte.status === 'verzonden' || offerte.status === 'bekeken') && offerte.verstuurd_op && Math.floor((Date.now() - new Date(offerte.verstuurd_op).getTime()) / 86400000) > 14
+                const accentColor = isStalled ? '#D4621A' : offerte.status === 'goedgekeurd' || offerte.status === 'gefactureerd' ? '#2D6B48' : offerte.status === 'afgewezen' ? '#C0451A' : '#F15025'
                 return (
                   <div key={offerte.id} className="bg-[#FFFFFF] rounded-xl overflow-hidden shadow-[0_1px_4px_rgba(0,0,0,0.05)]">
                     <div className="h-1" style={{ backgroundColor: accentColor }} />
@@ -1278,6 +1282,27 @@ export function ProjectDetail() {
                           </span>
                         </div>
                       </div>
+                      {(offerte.status === 'verzonden' || offerte.status === 'bekeken') && offerte.verstuurd_op && (() => {
+                        const days = Math.floor((Date.now() - new Date(offerte.verstuurd_op).getTime()) / 86400000)
+                        return (
+                          <div className={`flex items-center gap-2 mt-2 px-2.5 py-1.5 rounded-lg text-xs ${days > 7 ? 'bg-[#FEF3E8]' : 'bg-[#F8F7F5]'}`}>
+                            <span className="flex items-center gap-1 font-mono font-semibold">
+                              <Clock className="w-3 h-3 text-[#9B9B95]" />
+                              {days}d open
+                            </span>
+                            <span className="text-[#EBEBEB]">·</span>
+                            {offerte.opvolging_actief !== false ? (
+                              <span className="flex items-center gap-1 text-[#2D6B48]">
+                                <Bell className="w-3 h-3" /> Opvolging actief
+                              </span>
+                            ) : (
+                              <span className="flex items-center gap-1 text-[#9B9B95]">
+                                <BellOff className="w-3 h-3" /> Gepauzeerd
+                              </span>
+                            )}
+                          </div>
+                        )
+                      })()}
                       <div className="flex items-center gap-3 mt-3 pt-3 border-t border-[#EBEBEB]/40">
                         <button
                           onClick={() => navigate(`/offertes/${offerte.id}/bewerken`, { state: { from: location.pathname } })}

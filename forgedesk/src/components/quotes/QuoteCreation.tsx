@@ -1656,6 +1656,7 @@ export function QuoteCreation() {
         await updateOfferte(savedQuoteId, {
           status: 'verzonden',
           verstuurd_op: new Date().toISOString(),
+          verzendwijze: 'via_portaal',
         })
       }
 
@@ -1815,6 +1816,7 @@ export function QuoteCreation() {
           status: 'verzonden',
           verstuurd_op: new Date().toISOString(),
           verstuurd_naar: emailTo.trim(),
+          verzendwijze: 'via_email_pdf',
         })
       }
       if (emailScheduled && emailScheduleDate) {

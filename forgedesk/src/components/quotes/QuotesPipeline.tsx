@@ -12,6 +12,7 @@ import {
   LayoutGrid,
   List,
   Bell,
+  BellOff,
   BellRing,
   Phone,
   CalendarPlus,
@@ -462,6 +463,17 @@ export function QuotesPipeline() {
       logger.error('Fout bij registreren contactpoging:', err)
       toast.error('Kon contactpoging niet registreren')
     } finally { setCallingClient(null) }
+  }, [])
+
+  const handleToggleOpvolging = useCallback(async (offerte: Offerte) => {
+    const newVal = offerte.opvolging_actief === false
+    try {
+      const updated = await updateOfferte(offerte.id, { opvolging_actief: newVal })
+      setOffertes(prev => prev.map(o => o.id === offerte.id ? { ...o, ...updated } : o))
+      toast.success(newVal ? 'Opvolging hervat' : 'Opvolging gepauzeerd')
+    } catch {
+      toast.error('Kon opvolging niet wijzigen')
+    }
   }, [])
 
   const handleListSort = useCallback((column: string) => {
@@ -976,6 +988,18 @@ export function QuotesPipeline() {
                                   >
                                     {callingClient === offerte.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Phone className="h-3 w-3" />}
                                     Bel klant
+                                  </button>
+                                  <button
+                                    onClick={e => { e.preventDefault(); e.stopPropagation(); handleToggleOpvolging(offerte) }}
+                                    className={cn(
+                                      'flex items-center justify-center gap-1 py-1.5 px-2 text-[11px] font-medium rounded-lg transition-all',
+                                      offerte.opvolging_actief !== false
+                                        ? 'bg-[#E2F0F0] text-[#1A535C] hover:bg-[#D0E8EA]'
+                                        : 'bg-[#F4F2EE] text-[#9B9B95] hover:bg-[#EBEBEB]'
+                                    )}
+                                    title={offerte.opvolging_actief !== false ? 'Opvolging pauzeren' : 'Opvolging hervatten'}
+                                  >
+                                    {offerte.opvolging_actief !== false ? <Bell className="h-3 w-3" /> : <BellOff className="h-3 w-3" />}
                                   </button>
                                 </div>
                               )}

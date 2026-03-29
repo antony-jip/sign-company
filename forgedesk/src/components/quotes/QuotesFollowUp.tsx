@@ -104,201 +104,6 @@ function sorteerOpUrgentie(a: Offerte, b: Offerte): number {
   return bPogingen - aPogingen
 }
 
-// ── Demo data voor testen ──
-const DEMO_KLANT_ID = 'demo-klant-001'
-const DEMO_KLANT_ID_2 = 'demo-klant-002'
-const DEMO_KLANT_ID_3 = 'demo-klant-003'
-
-function daysAgo(n: number): string {
-  const d = new Date()
-  d.setDate(d.getDate() - n)
-  return d.toISOString()
-}
-
-function daysFromNow(n: number): string {
-  const d = new Date()
-  d.setDate(d.getDate() + n)
-  return d.toISOString().split('T')[0]
-}
-
-const DEMO_OFFERTES: Offerte[] = [
-  {
-    id: 'demo-off-001',
-    klant_id: DEMO_KLANT_ID,
-    klant_naam: 'Bakkerij De Gouden Krakeling',
-    nummer: 'OFF-2026-0042',
-    titel: 'Gevelletters met LED verlichting',
-    status: 'verzonden',
-    subtotaal: 3450,
-    btw_bedrag: 724.50,
-    totaal: 4174.50,
-    geldig_tot: daysFromNow(4),
-    notities: '',
-    voorwaarden: '',
-    verstuurd_op: daysAgo(10),
-    contact_pogingen: 1,
-    laatste_contact: daysAgo(5),
-    follow_up_status: 'gepland',
-    prioriteit: 'hoog',
-    created_at: daysAgo(12),
-    updated_at: daysAgo(5),
-  },
-  {
-    id: 'demo-off-002',
-    klant_id: DEMO_KLANT_ID_2,
-    klant_naam: 'Autobedrijf Van Dijk & Zonen',
-    nummer: 'OFF-2026-0039',
-    titel: 'Autobelettering wagenpark (8 voertuigen)',
-    status: 'bekeken',
-    subtotaal: 6800,
-    btw_bedrag: 1428,
-    totaal: 8228,
-    geldig_tot: daysFromNow(12),
-    notities: '',
-    voorwaarden: '',
-    verstuurd_op: daysAgo(7),
-    bekeken_door_klant: true,
-    eerste_bekeken_op: daysAgo(5),
-    laatst_bekeken_op: daysAgo(2),
-    aantal_keer_bekeken: 3,
-    contact_pogingen: 0,
-    created_at: daysAgo(8),
-    updated_at: daysAgo(2),
-  },
-  {
-    id: 'demo-off-003',
-    klant_id: DEMO_KLANT_ID_3,
-    klant_naam: 'Tandartspraktijk Smile Care',
-    nummer: 'OFF-2026-0035',
-    titel: 'Raambelettering + zuil signing',
-    status: 'verzonden',
-    subtotaal: 1850,
-    btw_bedrag: 388.50,
-    totaal: 2238.50,
-    geldig_tot: daysFromNow(18),
-    notities: '',
-    voorwaarden: '',
-    verstuurd_op: daysAgo(15),
-    contact_pogingen: 2,
-    laatste_contact: daysAgo(3),
-    follow_up_status: 'achterstallig',
-    created_at: daysAgo(16),
-    updated_at: daysAgo(3),
-  },
-  {
-    id: 'demo-off-004',
-    klant_id: DEMO_KLANT_ID,
-    klant_naam: 'Bakkerij De Gouden Krakeling',
-    nummer: 'OFF-2026-0044',
-    titel: 'Lichtreclame uithangbord',
-    status: 'verzonden',
-    subtotaal: 2200,
-    btw_bedrag: 462,
-    totaal: 2662,
-    geldig_tot: daysFromNow(2),
-    notities: '',
-    voorwaarden: '',
-    verstuurd_op: daysAgo(20),
-    contact_pogingen: 0,
-    prioriteit: 'urgent',
-    created_at: daysAgo(21),
-    updated_at: daysAgo(20),
-  },
-  {
-    id: 'demo-off-005',
-    klant_id: DEMO_KLANT_ID_2,
-    klant_naam: 'Autobedrijf Van Dijk & Zonen',
-    nummer: 'OFF-2026-0041',
-    titel: 'Showroom wanddecoratie',
-    status: 'bekeken',
-    subtotaal: 4500,
-    btw_bedrag: 945,
-    totaal: 5445,
-    geldig_tot: daysFromNow(25),
-    notities: '',
-    voorwaarden: '',
-    verstuurd_op: daysAgo(5),
-    bekeken_door_klant: true,
-    eerste_bekeken_op: daysAgo(3),
-    laatst_bekeken_op: daysAgo(1),
-    aantal_keer_bekeken: 5,
-    contact_pogingen: 0,
-    created_at: daysAgo(6),
-    updated_at: daysAgo(1),
-  },
-]
-
-const DEMO_KLANTEN: Klant[] = [
-  {
-    id: DEMO_KLANT_ID,
-    bedrijfsnaam: 'Bakkerij De Gouden Krakeling',
-    contactpersoon: 'Jan de Bakker',
-    email: 'jan@goudenkrakeling.nl',
-    telefoon: '06-12345678',
-    adres: 'Broodstraat 12',
-    postcode: '1234 AB',
-    stad: 'Amsterdam',
-    land: 'Nederland',
-    website: '',
-    kvk_nummer: '',
-    btw_nummer: '',
-    status: 'actief',
-    tags: [],
-    notities: '',
-    contactpersonen: [
-      { id: 'cp-1', naam: 'Jan de Bakker', functie: 'Eigenaar', email: 'jan@goudenkrakeling.nl', telefoon: '06-12345678', is_primair: true },
-    ],
-    vestigingen: [],
-    created_at: daysAgo(90),
-    updated_at: daysAgo(10),
-  },
-  {
-    id: DEMO_KLANT_ID_2,
-    bedrijfsnaam: 'Autobedrijf Van Dijk & Zonen',
-    contactpersoon: 'Peter van Dijk',
-    email: 'peter@vandijkenzonen.nl',
-    telefoon: '06-98765432',
-    adres: 'Autoweg 45',
-    postcode: '5678 CD',
-    stad: 'Rotterdam',
-    land: 'Nederland',
-    website: '',
-    kvk_nummer: '',
-    btw_nummer: '',
-    status: 'actief',
-    tags: [],
-    notities: '',
-    contactpersonen: [
-      { id: 'cp-2', naam: 'Peter van Dijk', functie: 'Directeur', email: 'peter@vandijkenzonen.nl', telefoon: '06-98765432', is_primair: true },
-    ],
-    vestigingen: [],
-    created_at: daysAgo(120),
-    updated_at: daysAgo(7),
-  },
-  {
-    id: DEMO_KLANT_ID_3,
-    bedrijfsnaam: 'Tandartspraktijk Smile Care',
-    contactpersoon: 'Dr. Lisa Molenaar',
-    email: 'info@smilecare.nl',
-    telefoon: '06-55512345',
-    adres: 'Gezondheidslaan 8',
-    postcode: '9012 EF',
-    stad: 'Utrecht',
-    land: 'Nederland',
-    website: '',
-    kvk_nummer: '',
-    btw_nummer: '',
-    status: 'actief',
-    tags: [],
-    notities: '',
-    contactpersonen: [
-      { id: 'cp-3', naam: 'Dr. Lisa Molenaar', functie: 'Praktijkhouder', email: 'info@smilecare.nl', telefoon: '06-55512345', is_primair: true },
-    ],
-    vestigingen: [],
-    created_at: daysAgo(60),
-    updated_at: daysAgo(15),
-  },
-]
 
 export function QuotesFollowUp({ offertes, onRefresh }: QuotesFollowUpProps) {
   const { user } = useAuth()
@@ -326,7 +131,6 @@ export function QuotesFollowUp({ offertes, onRefresh }: QuotesFollowUpProps) {
         ])
         // Merge demo klanten met echte klanten
         const klantenMap = new Map(klantenData.map((k) => [k.id, k]))
-        DEMO_KLANTEN.forEach((k) => klantenMap.set(k.id, k))
         setKlanten(klantenMap)
         setProjecten(new Map(projectenData.map((p) => [p.id, p])))
       } catch (err) {
@@ -340,8 +144,7 @@ export function QuotesFollowUp({ offertes, onRefresh }: QuotesFollowUpProps) {
 
   // Merge demo offertes met echte offertes en filter op follow-up nodig
   const followUpOffertes = useMemo(() => {
-    const alleOffertes = [...offertes, ...DEMO_OFFERTES]
-    return alleOffertes.filter(isFollowUpNodig).sort(sorteerOpUrgentie)
+    return offertes.filter(isFollowUpNodig).sort(sorteerOpUrgentie)
   }, [offertes])
 
   // Apply sub-filter
@@ -358,6 +161,21 @@ export function QuotesFollowUp({ offertes, onRefresh }: QuotesFollowUpProps) {
     }
     return followUpOffertes
   }, [followUpOffertes, filter])
+
+  const gegroepeerd = useMemo(() => {
+    const groups = new Map<string, { project: Project | null; offertes: Offerte[] }>()
+    const noProject: Offerte[] = []
+    for (const offerte of gefilterd) {
+      if (offerte.project_id) {
+        const existing = groups.get(offerte.project_id)
+        if (existing) { existing.offertes.push(offerte) }
+        else { groups.set(offerte.project_id, { project: projecten.get(offerte.project_id) || null, offertes: [offerte] }) }
+      } else {
+        noProject.push(offerte)
+      }
+    }
+    return { groups: Array.from(groups.values()), noProject }
+  }, [gefilterd, projecten])
 
   // Stats
   const stats = useMemo(() => {
@@ -584,6 +402,91 @@ export function QuotesFollowUp({ offertes, onRefresh }: QuotesFollowUpProps) {
     { key: 'bekeken_geen_reactie', label: 'Bekeken, geen reactie', count: stats.bekekenGeenReactie },
   ]
 
+  function renderOfferteCard(offerte: Offerte) {
+    const klant = klanten.get(offerte.klant_id)
+    const dagenOpen = getDagenOpen(offerte)
+    const dagenTotVerlopen = getDagenTotVerlopen(offerte)
+    const isSelected = selectedIds.has(offerte.id)
+
+    return (
+      <div
+        key={offerte.id}
+        className={cn(
+          'rounded-2xl border p-4 sm:p-5 transition-all',
+          isSelected ? 'border-mod-email-border bg-mod-email-light/30' : 'border-border bg-card hover:shadow-md'
+        )}
+      >
+        <div className="flex items-start gap-3">
+          <Checkbox checked={isSelected} onCheckedChange={() => toggleSelect(offerte.id)} className="mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-mono text-sm font-semibold">{offerte.nummer}</span>
+              <span className={cn('inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border', getDagenBadgeClass(dagenOpen))}>
+                {dagenOpen}d open
+              </span>
+              {offerte.opvolging_actief !== false ? (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs text-emerald-700 bg-emerald-50 border border-emerald-200">
+                  <Bell className="w-3 h-3" /> Actief
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs text-orange-600 bg-orange-50 border border-orange-200">
+                  <EyeOff className="w-3 h-3" /> Gepauzeerd
+                </span>
+              )}
+              {dagenTotVerlopen <= 5 && dagenTotVerlopen > 0 && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200">
+                  <AlertTriangle className="w-3 h-3" /> Verloopt in {dagenTotVerlopen}d
+                </span>
+              )}
+            </div>
+
+            <p className="font-semibold mt-1.5 truncate">
+              {klant?.bedrijfsnaam || offerte.klant_naam || 'Onbekende klant'}
+              <span className="font-normal text-muted-foreground"> — {offerte.titel}</span>
+            </p>
+
+            <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground flex-wrap">
+              <span className="font-mono font-medium text-foreground">{formatCurrency(offerte.totaal || 0)}</span>
+              <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {formatDatumKort(offerte.verstuurd_op)}</span>
+              {offerte.geldig_tot && (
+                <span className={cn('flex items-center gap-1', dagenTotVerlopen <= 5 && 'text-red-600 font-medium')}>
+                  Geldig tot: {formatDatumKort(offerte.geldig_tot)}
+                </span>
+              )}
+              <span className="text-xs">Follow-up: {getFollowUpInfo(offerte)}</span>
+            </div>
+
+            <div className="flex items-center gap-2 mt-3 flex-wrap">
+              <Button variant="outline" size="sm" onClick={() => setMailPanelOfferte(offerte)} className="gap-1.5 text-xs">
+                <Mail className="w-3.5 h-3.5" /> Follow-up mail
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => handlePortaalHerinnering(offerte)} disabled={sendingPortaal === offerte.id || !offerte.project_id} className="gap-1.5 text-xs">
+                {sendingPortaal === offerte.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Bell className="w-3.5 h-3.5" />}
+                Portaal herinnering
+              </Button>
+              <Button
+                variant="ghost" size="sm"
+                onClick={async () => {
+                  const newVal = offerte.opvolging_actief === false
+                  await updateOfferte(offerte.id, { opvolging_actief: newVal })
+                  onRefresh()
+                  toast.success(newVal ? 'Opvolging hervat' : 'Opvolging gepauzeerd')
+                }}
+                className="gap-1.5 text-xs"
+              >
+                {offerte.opvolging_actief !== false ? <Bell className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                {offerte.opvolging_actief !== false ? 'Pauzeren' : 'Hervatten'}
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => navigateWithTab({ path: `/offertes/${offerte.id}/bewerken`, label: offerte.nummer || 'Offerte', id: `/offertes/${offerte.id}` })} className="gap-1.5 text-xs ml-auto">
+                <FileText className="w-3.5 h-3.5" /> Details
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-24">
@@ -688,148 +591,36 @@ export function QuotesFollowUp({ offertes, onRefresh }: QuotesFollowUpProps) {
         </div>
       )}
 
-      {/* Offerte cards */}
+      {/* Offerte cards — grouped by project */}
       {gefilterd.length === 0 ? (
         <div className="text-center py-16">
           <Clock className="w-10 h-10 mx-auto text-muted-foreground/40 mb-3" />
           <p className="text-muted-foreground">Geen offertes die opvolging nodig hebben</p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {gefilterd.map((offerte) => {
-            const klant = klanten.get(offerte.klant_id)
-            const project = offerte.project_id ? projecten.get(offerte.project_id) : null
-            const dagenOpen = getDagenOpen(offerte)
-            const dagenTotVerlopen = getDagenTotVerlopen(offerte)
-            const isSelected = selectedIds.has(offerte.id)
-
-            return (
-              <div
-                key={offerte.id}
-                className={cn(
-                  'rounded-2xl border p-4 sm:p-5 transition-all',
-                  isSelected
-                    ? 'border-mod-email-border bg-mod-email-light/30'
-                    : 'border-border bg-card hover:shadow-md'
-                )}
-              >
-                {/* Top row: number, badge, checkbox */}
-                <div className="flex items-start gap-3">
-                  <Checkbox
-                    checked={isSelected}
-                    onCheckedChange={() => toggleSelect(offerte.id)}
-                    className="mt-0.5"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-mono text-sm font-semibold">{offerte.nummer}</span>
-                      <span className={cn(
-                        'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border',
-                        getDagenBadgeClass(dagenOpen)
-                      )}>
-                        {dagenOpen} dagen
-                      </span>
-                      {dagenTotVerlopen <= 5 && dagenTotVerlopen > 0 && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200">
-                          <AlertTriangle className="w-3 h-3" />
-                          Verloopt in {dagenTotVerlopen}d
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Klant + titel */}
-                    <p className="font-semibold mt-1.5 truncate">
-                      {klant?.bedrijfsnaam || offerte.klant_naam || 'Onbekende klant'}
-                      <span className="font-normal text-muted-foreground"> — {offerte.titel}</span>
-                    </p>
-
-                    {/* Project */}
-                    {project && (
-                      <p className="text-sm text-muted-foreground mt-0.5">
-                        Project: {project.naam}
-                      </p>
-                    )}
-
-                    {/* Details row */}
-                    <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground flex-wrap">
-                      <span className="font-mono font-medium text-foreground">
-                        {formatCurrency(offerte.totaal || 0)}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        Verstuurd: {formatDatumKort(offerte.verstuurd_op)}
-                      </span>
-                      {offerte.geldig_tot && (
-                        <span className={cn(
-                          'flex items-center gap-1',
-                          dagenTotVerlopen <= 5 && 'text-red-600 font-medium'
-                        )}>
-                          Geldig tot: {formatDatumKort(offerte.geldig_tot)}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Status + follow-up info */}
-                    <div className="flex items-center gap-3 mt-2 text-sm flex-wrap">
-                      <Badge className={cn(
-                        'text-xs',
-                        offerte.status === 'verzonden' ? 'badge-blauw' : 'badge-grijs'
-                      )}>
-                        {offerte.status === 'verzonden' ? (
-                          <><EyeOff className="w-3 h-3 mr-1" />Verstuurd (niet bekeken)</>
-                        ) : (
-                          <><Eye className="w-3 h-3 mr-1" />Bekeken</>
-                        )}
-                      </Badge>
-                      <span className="text-muted-foreground text-xs">
-                        Vorige follow-up: {getFollowUpInfo(offerte)}
-                      </span>
-                    </div>
-
-                    {/* Action buttons */}
-                    <div className="flex items-center gap-2 mt-3 flex-wrap">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setMailPanelOfferte(offerte)}
-                        className="gap-1.5 text-xs"
-                      >
-                        <Mail className="w-3.5 h-3.5" />
-                        Follow-up mail
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handlePortaalHerinnering(offerte)}
-                        disabled={sendingPortaal === offerte.id || !offerte.project_id}
-                        className="gap-1.5 text-xs"
-                      >
-                        {sendingPortaal === offerte.id ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        ) : (
-                          <Bell className="w-3.5 h-3.5" />
-                        )}
-                        Portaal herinnering
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => navigateWithTab({
-                          path: `/offertes/${offerte.id}/bewerken`,
-                          label: offerte.nummer || offerte.titel || 'Offerte',
-                          id: `/offertes/${offerte.id}`,
-                        })}
-                        className="gap-1.5 text-xs"
-                      >
-                        <FileText className="w-3.5 h-3.5" />
-                        Details
-                      </Button>
-                    </div>
-                  </div>
-                </div>
+        <div className="space-y-5">
+          {gegroepeerd.groups.map(({ project, offertes: groupOffertes }) => (
+            <div key={project?.id || 'unknown'}>
+              <div className="flex items-center gap-2 mb-2 px-1">
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{project?.naam || 'Onbekend project'}</span>
+                <span className="text-xs text-muted-foreground">· {groupOffertes.length} offerte{groupOffertes.length !== 1 ? 's' : ''} · {formatCurrency(groupOffertes.reduce((s, o) => s + (o.totaal || 0), 0))}</span>
               </div>
-            )
-          })}
+              <div className="space-y-2">
+                {groupOffertes.map((offerte) => renderOfferteCard(offerte))}
+              </div>
+            </div>
+          ))}
+          {gegroepeerd.noProject.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-2 px-1">
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Zonder project</span>
+                <span className="text-xs text-muted-foreground">· {gegroepeerd.noProject.length} offerte{gegroepeerd.noProject.length !== 1 ? 's' : ''}</span>
+              </div>
+              <div className="space-y-2">
+                {gegroepeerd.noProject.map((offerte) => renderOfferteCard(offerte))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

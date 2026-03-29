@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
+import { Separator } from '@/components/ui/separator'
 import {
   Select,
   SelectContent,
@@ -12,8 +14,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Plus, Trash2, Eye, ArrowLeft, Copy, Check } from 'lucide-react'
+import { Plus, Trash2, Eye, EyeOff, ArrowLeft, Copy, Check, Send, Loader2, Mail, Bell, Clock, Info } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
+import { sendEmail } from '@/services/gmailService'
 import {
   getOpvolgSchemas,
   createOpvolgSchema,
@@ -27,17 +30,15 @@ import type { OpvolgSchema, OpvolgStap } from '@/types'
 import { toast } from 'sonner'
 
 const MERGE_VELDEN = [
-  '{klant_naam}',
-  '{contactpersoon}',
-  '{offerte_nummer}',
-  '{offerte_bedrag}',
-  '{project_naam}',
-  '{verstuurd_op}',
-  '{dagen_open}',
-  '{bedrijfsnaam}',
-  '{afzender_naam}',
-  '{offerte_link}',
-  '{portaal_link}',
+  { key: '{klant_naam}', label: 'Bedrijfsnaam klant' },
+  { key: '{contactpersoon}', label: 'Contactpersoon' },
+  { key: '{offerte_nummer}', label: 'Offertenummer' },
+  { key: '{offerte_bedrag}', label: 'Totaalbedrag' },
+  { key: '{project_naam}', label: 'Projectnaam' },
+  { key: '{verstuurd_op}', label: 'Verzenddatum' },
+  { key: '{dagen_open}', label: 'Dagen sinds versturen' },
+  { key: '{bedrijfsnaam}', label: 'Uw bedrijfsnaam' },
+  { key: '{offerte_link}', label: 'Link naar offerte (portaal of publiek)' },
 ]
 
 const DUMMY_DATA: Record<string, string> = {
@@ -50,14 +51,14 @@ const DUMMY_DATA: Record<string, string> = {
   '{dagen_open}': '7',
   '{bedrijfsnaam}': 'Sign Company BV',
   '{afzender_naam}': 'Pieter Jansen',
-  '{offerte_link}': 'https://portal.example.com/offerte/042',
-  '{portaal_link}': 'https://portal.example.com/klant/login',
+  '{offerte_link}': 'https://app.doen.team/offerte-bekijken/abc123',
+  '{portaal_link}': 'https://app.doen.team/portaal/abc123',
 }
 
-const ACTIE_LABELS: Record<string, string> = {
-  email_klant: 'Email naar klant',
-  melding_intern: 'Interne melding',
-  email_en_melding: 'Beide',
+const ACTIE_CONFIG: Record<string, { label: string; description: string; icon: typeof Mail }> = {
+  email_klant: { label: 'Email naar klant', description: 'Stuurt een email naar de klant', icon: Mail },
+  melding_intern: { label: 'Interne melding', description: 'Toont een melding in uw dashboard', icon: Bell },
+  email_en_melding: { label: 'Email + melding', description: 'Stuurt een email én toont een melding', icon: Mail },
 }
 
 function replaceMergeFields(text: string): string {
@@ -69,19 +70,48 @@ function replaceMergeFields(text: string): string {
 }
 
 export function OfferteOpvolgingTab() {
-  const { organisatieId } = useAuth()
+  const { organisatieId, user } = useAuth()
   const [schemas, setSchemas] = useState<OpvolgSchema[]>([])
   const [selectedSchema, setSelectedSchema] = useState<OpvolgSchema | null>(null)
   const [loading, setLoading] = useState(true)
-  const [previewStap, setPreviewStap] = useState<OpvolgStap | null>(null)
+  const [previewStapId, setPreviewStapId] = useState<string | null>(null)
   const [copiedField, setCopiedField] = useState<string | null>(null)
+  const [sendingTestId, setSendingTestId] = useState<string | null>(null)
+
+  const handleSendTest = async (stap: OpvolgStap) => {
+    if (!user?.email) return
+    setSendingTestId(stap.id)
+    try {
+      const onderwerp = replaceMergeFields(stap.onderwerp)
+      const inhoud = replaceMergeFields(stap.inhoud)
+      await sendEmail(user.email, `[TEST] ${onderwerp}`, inhoud, {})
+      toast.success(`Testmail verstuurd naar ${user.email}`)
+    } catch {
+      toast.error('Kon testmail niet versturen — controleer je email instellingen')
+    } finally {
+      setSendingTestId(null)
+    }
+  }
 
   const loadSchemas = useCallback(async () => {
     if (!organisatieId) return
     try {
       setLoading(true)
-      await ensureDefaultOpvolgSchema(organisatieId)
-      const data = await getOpvolgSchemas(organisatieId)
+      let data = await getOpvolgSchemas(organisatieId)
+
+      if (data.length === 0) {
+        await ensureDefaultOpvolgSchema(organisatieId)
+        data = await getOpvolgSchemas(organisatieId)
+      }
+
+      // Deduplicate by name
+      const seen = new Set<string>()
+      data = data.filter(s => {
+        if (seen.has(s.naam)) return false
+        seen.add(s.naam)
+        return true
+      })
+
       setSchemas(data)
       if (selectedSchema) {
         const updated = data.find(s => s.id === selectedSchema.id)
@@ -189,14 +219,13 @@ export function OfferteOpvolgingTab() {
   const handleCopy = (field: string) => {
     navigator.clipboard.writeText(field)
     setCopiedField(field)
-    toast.success(`${field} gekopieerd`)
     setTimeout(() => setCopiedField(null), 1500)
   }
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12 text-muted-foreground text-sm">
-        Laden...
+        <Loader2 className="h-4 w-4 animate-spin mr-2" /> Laden...
       </div>
     )
   }
@@ -206,184 +235,186 @@ export function OfferteOpvolgingTab() {
     const stappen = (selectedSchema.stappen || []).sort((a, b) => a.stap_nummer - b.stap_nummer)
 
     return (
-      <div className="space-y-4">
+      <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => { setSelectedSchema(null); setPreviewStap(null) }}>
+          <Button variant="ghost" size="sm" onClick={() => { setSelectedSchema(null); setPreviewStapId(null) }}>
             <ArrowLeft className="h-4 w-4 mr-1" /> Terug
           </Button>
           <div className="flex-1">
             <Input
               defaultValue={selectedSchema.naam}
               onBlur={(e) => handleSchemaNameChange(selectedSchema, e.target.value)}
-              className="text-sm font-semibold h-8 max-w-[240px] bg-[#FAFAF8] border-[#E6E4E0]"
+              className="text-sm font-semibold h-8 max-w-[240px]"
             />
           </div>
           {selectedSchema.is_default && (
-            <Badge variant="outline" className="text-[#1A5C5E] border-[#1A5C5E]/30 text-[11px]">Standaard</Badge>
+            <Badge variant="outline" className="text-[10px]">Standaard</Badge>
           )}
         </div>
 
-        {/* Stappen tabel */}
-        <Card className="border-[#E6E4E0] bg-[#FEFDFB]">
-          <CardHeader className="py-3 px-4">
-            <CardTitle className="text-sm font-semibold">Opvolgstappen</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-[#E6E4E0] bg-[#FAFAF8]">
-                    <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[60px]">Dag</th>
-                    <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[150px]">Actie</th>
-                    <th className="text-left px-3 py-2 font-medium text-muted-foreground">Onderwerp</th>
-                    <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[240px]">Inhoud</th>
-                    <th className="text-center px-2 py-2 font-medium text-muted-foreground w-[80px]">Niet bekeken</th>
-                    <th className="text-center px-2 py-2 font-medium text-muted-foreground w-[80px]">Niet gereageerd</th>
-                    <th className="text-center px-2 py-2 font-medium text-muted-foreground w-[50px]">Actief</th>
-                    <th className="w-[40px]" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {stappen.map((stap) => (
-                    <tr key={stap.id} className="border-b border-[#E6E4E0] last:border-b-0 hover:bg-[#FAFAF8]/50">
-                      <td className="px-3 py-2">
-                        <Input
-                          type="number"
-                          defaultValue={stap.dagen_na_versturen}
-                          onBlur={(e) => handleStapChange(stap, { dagen_na_versturen: parseInt(e.target.value) || 0 })}
-                          className="h-7 w-[52px] text-xs font-mono bg-[#FAFAF8] border-[#E6E4E0] text-center"
-                          style={{ fontFamily: 'DM Mono, monospace' }}
-                        />
-                      </td>
-                      <td className="px-3 py-2">
-                        <Select
-                          defaultValue={stap.actie}
-                          onValueChange={(v) => handleStapChange(stap, { actie: v as OpvolgStap['actie'] })}
-                        >
-                          <SelectTrigger className="h-7 text-xs bg-[#FAFAF8] border-[#E6E4E0]">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="email_klant">Email naar klant</SelectItem>
-                            <SelectItem value="melding_intern">Interne melding</SelectItem>
-                            <SelectItem value="email_en_melding">Beide</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </td>
-                      <td className="px-3 py-2">
-                        <Input
-                          defaultValue={stap.onderwerp}
-                          onBlur={(e) => handleStapChange(stap, { onderwerp: e.target.value })}
-                          className="h-7 text-xs bg-[#FAFAF8] border-[#E6E4E0]"
-                          placeholder="Onderwerp..."
-                        />
-                      </td>
-                      <td className="px-3 py-2">
-                        <Textarea
-                          defaultValue={stap.inhoud}
-                          onBlur={(e) => handleStapChange(stap, { inhoud: e.target.value })}
-                          className="text-xs bg-[#FAFAF8] border-[#E6E4E0] min-h-[60px] resize-none"
-                          rows={3}
-                          placeholder="Inhoud..."
-                        />
-                      </td>
-                      <td className="text-center px-2 py-2">
+        {/* Stappen als kaarten */}
+        <div className="space-y-3">
+          {stappen.map((stap, index) => {
+            const actieConfig = ACTIE_CONFIG[stap.actie] || ACTIE_CONFIG.email_klant
+            const isExpanded = previewStapId === stap.id
+
+            return (
+              <Card key={stap.id} className={`transition-all ${!stap.actief ? 'opacity-50' : ''}`}>
+                <CardContent className="p-4 space-y-3">
+                  {/* Stap header */}
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-center w-7 h-7 rounded-full bg-muted text-xs font-semibold text-muted-foreground shrink-0">
+                      {index + 1}
+                    </div>
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <Clock className="h-3 w-3" />
+                        <span>Na</span>
+                      </div>
+                      <Input
+                        type="number"
+                        defaultValue={stap.dagen_na_versturen}
+                        onBlur={(e) => handleStapChange(stap, { dagen_na_versturen: parseInt(e.target.value) || 0 })}
+                        className="h-7 w-16 text-xs text-center"
+                        min={1}
+                      />
+                      <span className="text-xs text-muted-foreground">dagen</span>
+                      <span className="text-muted-foreground/30 mx-1">·</span>
+                      <Select
+                        defaultValue={stap.actie}
+                        onValueChange={(v) => handleStapChange(stap, { actie: v as OpvolgStap['actie'] })}
+                      >
+                        <SelectTrigger className="h-7 text-xs w-[160px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(ACTIE_CONFIG).map(([value, config]) => (
+                            <SelectItem key={value} value={value}>
+                              {config.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Switch
+                        checked={stap.actief}
+                        onCheckedChange={(v) => handleStapChange(stap, { actief: v })}
+                        className="scale-75"
+                      />
+                      <Button
+                        variant="ghost" size="sm"
+                        className="h-6 w-6 p-0 text-muted-foreground"
+                        onClick={() => setPreviewStapId(isExpanded ? null : stap.id)}
+                        title={isExpanded ? 'Verberg voorbeeld' : 'Toon voorbeeld'}
+                      >
+                        {isExpanded ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                      </Button>
+                      <Button
+                        variant="ghost" size="sm"
+                        className="h-6 w-6 p-0 text-muted-foreground"
+                        disabled={sendingTestId === stap.id}
+                        onClick={() => handleSendTest(stap)}
+                        title="Verstuur testmail naar jezelf"
+                      >
+                        {sendingTestId === stap.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                      </Button>
+                      <Button
+                        variant="ghost" size="sm"
+                        className="h-6 w-6 p-0 text-muted-foreground hover:text-red-500"
+                        onClick={() => handleDeleteStap(stap.id)}
+                        title="Verwijder stap"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Onderwerp + inhoud */}
+                  <div className="pl-10 space-y-2">
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Onderwerp</Label>
+                      <Input
+                        defaultValue={stap.onderwerp}
+                        onBlur={(e) => handleStapChange(stap, { onderwerp: e.target.value })}
+                        className="mt-1 text-xs h-8"
+                        placeholder="Bijv. Offerte {offerte_nummer} — heeft u nog vragen?"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Inhoud</Label>
+                      <Textarea
+                        defaultValue={stap.inhoud}
+                        onBlur={(e) => handleStapChange(stap, { inhoud: e.target.value })}
+                        className="mt-1 text-xs min-h-[80px]"
+                        rows={4}
+                        placeholder="Beste {contactpersoon},&#10;&#10;..."
+                      />
+                    </div>
+
+                    {/* Condities */}
+                    <div className="flex flex-wrap gap-4 pt-1">
+                      <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
                         <Switch
                           checked={stap.alleen_als_niet_bekeken}
                           onCheckedChange={(v) => handleStapChange(stap, { alleen_als_niet_bekeken: v })}
-                          className="scale-75"
+                          className="scale-[0.65]"
                         />
-                      </td>
-                      <td className="text-center px-2 py-2">
+                        Alleen als offerte niet bekeken is
+                      </label>
+                      <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
                         <Switch
                           checked={stap.alleen_als_niet_gereageerd}
                           onCheckedChange={(v) => handleStapChange(stap, { alleen_als_niet_gereageerd: v })}
-                          className="scale-75"
+                          className="scale-[0.65]"
                         />
-                      </td>
-                      <td className="text-center px-2 py-2">
-                        <Switch
-                          checked={stap.actief}
-                          onCheckedChange={(v) => handleStapChange(stap, { actief: v })}
-                          className="scale-75"
-                        />
-                      </td>
-                      <td className="px-2 py-2">
-                        <div className="flex items-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0 text-muted-foreground hover:text-[#1A5C5E]"
-                            onClick={() => setPreviewStap(previewStap?.id === stap.id ? null : stap)}
-                            title="Toon voorbeeld"
-                          >
-                            <Eye className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0 text-muted-foreground hover:text-red-500"
-                            onClick={() => handleDeleteStap(stap.id)}
-                            title="Verwijder stap"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div className="px-4 py-3 border-t border-[#E6E4E0]">
-              <Button variant="outline" size="sm" onClick={handleAddStap} className="text-xs border-[#E6E4E0]">
-                <Plus className="h-3.5 w-3.5 mr-1" /> Stap toevoegen
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+                        Alleen als klant niet gereageerd heeft
+                      </label>
+                    </div>
+                  </div>
 
-        {/* Email preview */}
-        {previewStap && (
-          <Card className="border-[#1A5C5E]/20 bg-[#FAFAF8]">
-            <CardHeader className="py-3 px-4">
-              <CardTitle className="text-sm font-semibold text-[#1A5C5E]">
-                Voorbeeld — Stap {previewStap.stap_nummer} (dag {previewStap.dagen_na_versturen})
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-4 pb-4 space-y-2">
-              <div className="text-xs text-muted-foreground">
-                <span className="font-medium">Actie:</span> {ACTIE_LABELS[previewStap.actie]}
-              </div>
-              <div className="text-xs">
-                <span className="font-medium text-muted-foreground">Onderwerp:</span>{' '}
-                <span className="font-semibold">{replaceMergeFields(previewStap.onderwerp)}</span>
-              </div>
-              <div className="bg-[#FEFDFB] rounded border border-[#E6E4E0] p-3 text-xs whitespace-pre-wrap leading-relaxed">
-                {replaceMergeFields(previewStap.inhoud)}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                  {/* Preview */}
+                  {isExpanded && (
+                    <div className="pl-10 pt-2">
+                      <div className="rounded-lg border bg-muted/30 p-4 space-y-2">
+                        <p className="text-xs font-medium text-muted-foreground">Voorbeeld met dummy data:</p>
+                        <p className="text-xs font-semibold">{replaceMergeFields(stap.onderwerp) || '(geen onderwerp)'}</p>
+                        <Separator />
+                        <p className="text-xs whitespace-pre-wrap leading-relaxed">
+                          {replaceMergeFields(stap.inhoud) || '(geen inhoud)'}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )
+          })}
+
+          <Button variant="outline" size="sm" onClick={handleAddStap} className="text-xs">
+            <Plus className="h-3.5 w-3.5 mr-1" /> Stap toevoegen
+          </Button>
+        </div>
 
         {/* Merge velden */}
-        <Card className="border-[#E6E4E0] bg-[#FEFDFB]">
+        <Card>
           <CardHeader className="py-3 px-4">
-            <CardTitle className="text-xs font-semibold text-muted-foreground">Beschikbare merge-velden</CardTitle>
+            <CardTitle className="text-xs font-medium text-muted-foreground">Beschikbare variabelen</CardTitle>
+            <CardDescription className="text-xs">Klik om te kopiëren, plak in onderwerp of inhoud.</CardDescription>
           </CardHeader>
           <CardContent className="px-4 pb-3">
-            <div className="flex flex-wrap gap-1.5">
-              {MERGE_VELDEN.map((field) => (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+              {MERGE_VELDEN.map(({ key, label }) => (
                 <button
-                  key={field}
-                  onClick={() => handleCopy(field)}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono bg-[#F4F2EE] border border-[#E6E4E0] text-[#1A5C5E] hover:bg-[#1A5C5E]/10 transition-colors cursor-pointer"
-                  style={{ fontFamily: 'DM Mono, monospace' }}
-                  title="Klik om te kopiëren"
+                  key={key}
+                  onClick={() => handleCopy(key)}
+                  className="flex items-center gap-1.5 px-2 py-1 rounded text-left text-[11px] bg-muted/50 border border-border/50 hover:bg-muted transition-colors cursor-pointer group"
                 >
-                  {copiedField === field ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                  {field}
+                  <code className="font-mono text-[10px] text-muted-foreground group-hover:text-foreground shrink-0">
+                    {copiedField === key ? <Check className="h-3 w-3 text-green-600" /> : key}
+                  </code>
+                  <span className="text-muted-foreground truncate">{label}</span>
                 </button>
               ))}
             </div>
@@ -395,72 +426,89 @@ export function OfferteOpvolgingTab() {
 
   // ── Schema overzicht ──
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-sm font-semibold">Offerte opvolging</h3>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Automatische herinneringen en meldingen na het versturen van offertes.
-          </p>
-        </div>
-        <Button size="sm" onClick={handleCreateSchema} className="text-xs bg-[#1A5C5E] hover:bg-[#1A5C5E]/90">
-          <Plus className="h-3.5 w-3.5 mr-1" /> Nieuw schema
-        </Button>
-      </div>
+    <div className="space-y-6">
+      {/* Uitleg bovenaan */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Clock className="h-5 w-5" />
+            Offerte opvolging
+          </CardTitle>
+          <CardDescription>
+            Automatische herinneringen wanneer een klant niet reageert op een verstuurde offerte.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="rounded-lg border bg-muted/30 p-4 space-y-3 text-sm text-muted-foreground">
+            <p className="font-medium text-foreground flex items-center gap-2">
+              <Info className="h-4 w-4" />
+              Hoe werkt het?
+            </p>
+            <div className="space-y-2 text-xs leading-relaxed">
+              <p>
+                Wanneer je een offerte verstuurt (via portaal of als PDF), start de opvolging automatisch.
+                Het systeem checkt elke ochtend om 08:00 of er stappen uitgevoerd moeten worden.
+              </p>
+              <p>
+                Per stap bepaal je <strong>na hoeveel dagen</strong> de actie plaatsvindt, <strong>wat er gebeurt</strong> (email naar klant,
+                interne melding, of beide), en onder welke <strong>voorwaarden</strong> (bijv. alleen als de klant de offerte nog niet bekeken heeft).
+              </p>
+              <p>
+                De link in de email past zich automatisch aan: bij een portaal-offerte linkt het naar het portaal,
+                bij een PDF-offerte naar de publieke offertepagina.
+              </p>
+            </div>
+          </div>
 
-      {schemas.length === 0 ? (
-        <Card className="border-[#E6E4E0]">
-          <CardContent className="py-8 text-center text-sm text-muted-foreground">
-            Geen opvolgschema's gevonden.
+          <div className="flex items-center justify-between pt-2">
+            <span className="text-sm text-muted-foreground">
+              {schemas.length === 0 ? 'Nog geen schema — maak er één aan.' : `${schemas.length} ${schemas.length === 1 ? 'schema' : 'schema\'s'}`}
+            </span>
+            <Button size="sm" onClick={handleCreateSchema} className="text-xs">
+              <Plus className="h-3.5 w-3.5 mr-1" /> Nieuw schema
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Schema lijst */}
+      {schemas.map((schema) => (
+        <Card
+          key={schema.id}
+          className="hover:border-foreground/20 transition-colors cursor-pointer"
+          onClick={() => setSelectedSchema(schema)}
+        >
+          <CardContent className="flex items-center justify-between py-4 px-5">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium truncate">{schema.naam}</span>
+                {schema.is_default && (
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">Standaard</Badge>
+                )}
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {(schema.stappen || []).length} stappen · {schema.actief ? 'Actief' : 'Uitgeschakeld'}
+              </span>
+            </div>
+            <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+              <Switch
+                checked={schema.actief}
+                onCheckedChange={() => handleToggleActief(schema)}
+                className="scale-90"
+              />
+              {!schema.is_default && (
+                <Button
+                  variant="ghost" size="sm"
+                  className="h-7 w-7 p-0 text-muted-foreground hover:text-red-500"
+                  onClick={(e) => { e.stopPropagation(); handleDeleteSchema(schema.id) }}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              )}
+            </div>
           </CardContent>
         </Card>
-      ) : (
-        <div className="space-y-2">
-          {schemas.map((schema) => (
-            <Card
-              key={schema.id}
-              className="border-[#E6E4E0] bg-[#FEFDFB] hover:border-[#1A5C5E]/30 transition-colors cursor-pointer"
-              onClick={() => setSelectedSchema(schema)}
-            >
-              <CardContent className="flex items-center justify-between py-3 px-4">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium truncate">{schema.naam}</span>
-                      {schema.is_default && (
-                        <Badge variant="outline" className="text-[#1A5C5E] border-[#1A5C5E]/30 text-[10px] px-1.5 py-0">
-                          Standaard
-                        </Badge>
-                      )}
-                    </div>
-                    <span className="text-xs text-muted-foreground" style={{ fontFamily: 'DM Mono, monospace' }}>
-                      {(schema.stappen || []).length} stappen
-                    </span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
-                  <Switch
-                    checked={schema.actief}
-                    onCheckedChange={() => handleToggleActief(schema)}
-                    className="scale-90"
-                  />
-                  {!schema.is_default && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 w-7 p-0 text-muted-foreground hover:text-red-500"
-                      onClick={(e) => { e.stopPropagation(); handleDeleteSchema(schema.id) }}
-                      title="Schema verwijderen"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+      ))}
     </div>
   )
 }

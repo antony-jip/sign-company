@@ -572,6 +572,15 @@ export function OfferteDetail() {
               </div>
             )}
           </div>
+          {(offerte.status === 'verzonden' || offerte.status === 'bekeken') && (
+            <Badge variant="outline" className={
+              offerte.opvolging_actief !== false
+                ? 'border-emerald-200 text-emerald-700 bg-emerald-50 text-xs'
+                : 'border-orange-200 text-orange-600 bg-orange-50 text-xs'
+            }>
+              {offerte.opvolging_actief !== false ? 'Opvolging actief' : 'Opvolging gepauzeerd'}
+            </Badge>
+          )}
         </div>
 
         {/* Actions */}
@@ -836,6 +845,14 @@ export function OfferteDetail() {
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Verstuurd op</span>
                 <span className="font-medium text-foreground">{formatDateTime(offerte.verstuurd_op)}</span>
+              </div>
+            )}
+            {offerte.verstuurd_op && (offerte.status === 'verzonden' || offerte.status === 'bekeken') && (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Dagen open</span>
+                <span className="font-medium font-mono text-foreground">
+                  {Math.floor((Date.now() - new Date(offerte.verstuurd_op).getTime()) / 86400000)}
+                </span>
               </div>
             )}
             {offerte.akkoord_op && (

@@ -113,6 +113,36 @@ export const offerteOpvolgingCron = schedules.task({
         (projecten || []).map((p: { id: string; naam: string }) => [p.id, p])
       );
 
+      // Get portaal tokens for portaal-sent offertes
+      const portaalOfferteIds = relevantOffertes
+        .filter((o: OfferteRow) => o.verzendwijze === "via_portaal" && o.project_id)
+        .map((o: OfferteRow) => o.id);
+      const { data: portaalItems } = portaalOfferteIds.length > 0
+        ? await supabase
+            .from("portaal_items")
+            .select("offerte_id, portaal_id")
+            .eq("type", "offerte")
+            .in("offerte_id", portaalOfferteIds)
+        : { data: [] };
+
+      const portaalItemMap = new Map(
+        (portaalItems || []).map((pi: { offerte_id: string; portaal_id: string }) => [pi.offerte_id, pi.portaal_id])
+      );
+
+      // Get portaal tokens
+      const portaalIds = [...new Set((portaalItems || []).map((pi: { portaal_id: string }) => pi.portaal_id))];
+      const { data: portalenData } = portaalIds.length > 0
+        ? await supabase
+            .from("project_portalen")
+            .select("id, token")
+            .in("id", portaalIds)
+            .eq("actief", true)
+        : { data: [] };
+
+      const portaalTokenMap = new Map(
+        (portalenData || []).map((p: { id: string; token: string }) => [p.id, p.token])
+      );
+
       // Get document styles for branding
       const { data: docStyles } = await supabase
         .from("document_styles")
@@ -193,7 +223,20 @@ export const offerteOpvolgingCron = schedules.task({
           const klantEmail = klant?.email || klant?.contactpersonen?.[0]?.email;
           const bedrijfsnaam = profile?.bedrijfsnaam || "";
           const projectNaam = project?.naam || "";
-          const portaalToken = offerte.publiek_token;
+          // Build the correct link based on verzendwijze
+          let offerteLink = "";
+          if (offerte.verzendwijze === "via_portaal") {
+            // Portaal-sent: link to portaal page
+            const portaalId = portaalItemMap.get(offerte.id);
+            const pToken = portaalId ? portaalTokenMap.get(portaalId) : undefined;
+            if (pToken) {
+              offerteLink = `${appUrl}/portaal/${pToken}`;
+            }
+          }
+          // Fallback to publiek_token for PDF-sent or when portaal token not found
+          if (!offerteLink && offerte.publiek_token) {
+            offerteLink = `${appUrl}/offerte-bekijken/${offerte.publiek_token}`;
+          }
 
           const vars: Record<string, string> = {
             klant_naam: klantNaam,
@@ -205,8 +248,8 @@ export const offerteOpvolgingCron = schedules.task({
             dagen_open: String(dagenOpen),
             bedrijfsnaam,
             afzender_naam: bedrijfsnaam,
-            offerte_link: portaalToken ? `${appUrl}/offerte/${portaalToken}` : "",
-            portaal_link: portaalToken ? `${appUrl}/offerte/${portaalToken}` : "",
+            offerte_link: offerteLink,
+            portaal_link: offerteLink,
           };
 
           const onderwerp = replaceTemplateVariables(stap.onderwerp, vars);
@@ -218,8 +261,10 @@ export const offerteOpvolgingCron = schedules.task({
               const plainBody = inhoud;
               const htmlBody = buildPortalEmailHtml({
                 heading: onderwerp,
+                itemTitel: offerte.nummer,
                 beschrijving: inhoud.replace(/\n/g, "<br/>"),
                 ctaUrl: vars.offerte_link || undefined,
+                ctaLabel: "Bekijk offerte →",
                 bedrijfsnaam,
                 logoUrl: profile?.logo_url || undefined,
                 primaireKleur: docStyle?.primaire_kleur || undefined,

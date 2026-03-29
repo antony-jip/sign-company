@@ -68,6 +68,7 @@ import {
   Tag,
   FolderKanban,
   Sparkles,
+  Send,
 } from 'lucide-react'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { useAuth } from '@/contexts/AuthContext'
@@ -76,6 +77,8 @@ import { usePalette, APP_THEMES, ACCENT_PALETTES } from '@/contexts/PaletteConte
 import { useSidebar } from '@/contexts/SidebarContext'
 import { getProfile, updateProfile, getAppSettings, updateAppSettings, getMedewerkers, updateMedewerker, getCalculatieTemplates } from '@/services/supabaseService'
 import { isSupabaseConfigured } from '@/services/supabaseClient'
+import { sendEmail } from '@/services/gmailService'
+import { factuurHerinneringTemplate } from '@/services/emailTemplateService'
 import supabase from '@/services/supabaseClient'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import type { AppSettings, Medewerker, CalculatieTemplate } from '@/types'
@@ -208,7 +211,9 @@ const settingsSections: SettingsSection[] = [
   { id: 'projecten', label: 'Projecten', icon: LayoutGrid, tabs: [
     { id: 'sidebar', label: 'Sidebar', icon: PanelLeft },
   ]},
-  { id: 'facturen', label: 'Facturen', icon: Receipt, tabs: [] },
+  { id: 'facturen', label: 'Facturen', icon: Receipt, tabs: [
+    { id: 'factuur-opvolging', label: 'Opvolging', icon: Bell },
+  ]},
   { id: 'email-settings', label: 'E-mail', icon: Mail, tabs: [
     { id: 'email', label: 'E-mail', icon: Mail },
   ]},
@@ -262,6 +267,7 @@ function renderTabContent(tabId: string) {
     case 'btw-codes': return <VATCodesSettings />
     case 'kortingen': return <DiscountsSettings />
     case 'opvolging': return <OfferteOpvolgingTab />
+    case 'factuur-opvolging': return <EmailTemplatesSubTab />
     case 'kb-artikelen': return <KennisbankTab />
     case 'changelog': return <ChangelogPage />
     default: return null
@@ -938,13 +944,6 @@ function DocumentenTab() {
   const [herinnering2, setHerinnering2] = useState('')
   const [aanmaningTekst, setAanmaningTekst] = useState('')
   const [standaardUurtarief, setStandaardUurtarief] = useState('75')
-  // Offerte herinnering instellingen
-  const [offerteHerinnering1Actief, setOfferteHerinnering1Actief] = useState(true)
-  const [offerteHerinnering1Dagen, setOfferteHerinnering1Dagen] = useState('7')
-  const [offerteHerinnering1Tekst, setOfferteHerinnering1Tekst] = useState('Beste {contactpersoon_naam},\n\nOp {verstuurd_op} hebben wij u offerte {offerte_nummer} toegestuurd ter waarde van {offerte_bedrag}.\n\nGraag vernemen wij of u nog vragen heeft of dat wij de offerte mogen omzetten naar een opdracht.\n\nMet vriendelijke groet,\n{bedrijfsnaam}')
-  const [offerteHerinnering2Actief, setOfferteHerinnering2Actief] = useState(true)
-  const [offerteHerinnering2Dagen, setOfferteHerinnering2Dagen] = useState('14')
-  const [offerteHerinnering2Tekst, setOfferteHerinnering2Tekst] = useState('Beste {contactpersoon_naam},\n\nWij willen u er graag aan herinneren dat offerte {offerte_nummer} van {verstuurd_op} nog openstaat. De offerte vervalt op {vervaldatum}.\n\nMocht u vragen hebben of willen bespreken, dan horen wij het graag.\n\nMet vriendelijke groet,\n{bedrijfsnaam}')
 
   const loadSettings = useCallback(async () => {
     if (!user?.id) return
@@ -1201,61 +1200,10 @@ function DocumentenTab() {
                 <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Wordt automatisch onderaan elke nieuwe factuur geplaatst</p>
               </div>
 
-              <Separator />
-
-              {/* Herinneringen */}
-              <div className="space-y-4">
-                <p className="text-sm font-medium text-foreground dark:text-white">Herinneringsteksten</p>
-                <div className="space-y-2">
-                  <Label htmlFor="herinnering1">Herinnering 1</Label>
-                  <Textarea id="herinnering1" value={herinnering1} onChange={(e) => setHerinnering1(e.target.value)} placeholder="Bijv. Wellicht is het u ontgaan, maar wij hebben nog geen betaling ontvangen voor onderstaande factuur." rows={2} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="herinnering2">Herinnering 2</Label>
-                  <Textarea id="herinnering2" value={herinnering2} onChange={(e) => setHerinnering2(e.target.value)} placeholder="Bijv. Ondanks onze eerdere herinnering hebben wij nog geen betaling ontvangen." rows={2} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="aanmaning">Aanmaning</Label>
-                  <Textarea id="aanmaning" value={aanmaningTekst} onChange={(e) => setAanmaningTekst(e.target.value)} placeholder="Bijv. Indien wij binnen 7 dagen geen betaling ontvangen, zijn wij genoodzaakt verdere stappen te ondernemen." rows={2} />
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Offerte Herinneringen */}
-              <div className="space-y-4">
-                <p className="text-sm font-medium text-foreground dark:text-white">Offerte herinneringen</p>
-                <p className="text-xs text-muted-foreground">Herinneringen voor verstuurde offertes zonder reactie. Merge velden: {'{'}klant_naam{'}'}, {'{'}contactpersoon_naam{'}'}, {'{'}offerte_nummer{'}'}, {'{'}offerte_bedrag{'}'}, {'{'}verstuurd_op{'}'}, {'{'}vervaldatum{'}'}, {'{'}bedrijfsnaam{'}'}</p>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <Label>Herinnering 1</Label>
-                    <label className="flex items-center gap-2 text-xs">
-                      <input type="checkbox" checked={offerteHerinnering1Actief} onChange={(e) => setOfferteHerinnering1Actief(e.target.checked)} className="rounded" />
-                      Actief
-                    </label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Label className="text-xs whitespace-nowrap">Na</Label>
-                    <Input type="number" value={offerteHerinnering1Dagen} onChange={(e) => setOfferteHerinnering1Dagen(e.target.value)} className="w-20 h-8 text-xs" min={1} />
-                    <span className="text-xs text-muted-foreground">dagen na versturen</span>
-                  </div>
-                  <Textarea value={offerteHerinnering1Tekst} onChange={(e) => setOfferteHerinnering1Tekst(e.target.value)} rows={3} className="text-xs" />
-                </div>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <Label>Herinnering 2</Label>
-                    <label className="flex items-center gap-2 text-xs">
-                      <input type="checkbox" checked={offerteHerinnering2Actief} onChange={(e) => setOfferteHerinnering2Actief(e.target.checked)} className="rounded" />
-                      Actief
-                    </label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Label className="text-xs whitespace-nowrap">Na</Label>
-                    <Input type="number" value={offerteHerinnering2Dagen} onChange={(e) => setOfferteHerinnering2Dagen(e.target.value)} className="w-20 h-8 text-xs" min={1} />
-                    <span className="text-xs text-muted-foreground">dagen na versturen</span>
-                  </div>
-                  <Textarea value={offerteHerinnering2Tekst} onChange={(e) => setOfferteHerinnering2Tekst(e.target.value)} rows={3} className="text-xs" />
-                </div>
+              <div className="rounded-md border bg-muted/50 px-3 py-2.5 mt-2">
+                <p className="text-xs text-muted-foreground">
+                  Betalingsherinneringen en offerte opvolging templates beheer je onder <strong>E-mail → Templates</strong> respectievelijk <strong>Offertes → Opvolging</strong>.
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -1332,6 +1280,155 @@ const EMAIL_TABS: SubTab[] = [
   { id: 'verbinding', label: 'Verbinding', icon: Server },
   { id: 'algemeen', label: 'Algemeen', icon: Mail },
 ]
+
+function EmailTemplatesSubTab() {
+  const { user } = useAuth()
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+  const [isSendingTest, setIsSendingTest] = useState<string | null>(null)
+
+  const [herinnering1, setHerinnering1] = useState('')
+  const [herinnering1Onderwerp, setHerinnering1Onderwerp] = useState('Herinnering: Factuur {factuur_nummer}')
+  const [herinnering2, setHerinnering2] = useState('')
+  const [herinnering2Onderwerp, setHerinnering2Onderwerp] = useState('2e herinnering: Factuur {factuur_nummer}')
+  const [aanmaningTekst, setAanmaningTekst] = useState('')
+  const [aanmaningOnderwerp, setAanmaningOnderwerp] = useState('Aanmaning: Factuur {factuur_nummer}')
+
+  useEffect(() => {
+    if (!user?.id) return
+    getAppSettings(user.id).then((data) => {
+      setHerinnering1(data.herinnering_1_tekst || '')
+      setHerinnering1Onderwerp(data.herinnering_1_onderwerp || 'Herinnering: Factuur {factuur_nummer}')
+      setHerinnering2(data.herinnering_2_tekst || '')
+      setHerinnering2Onderwerp(data.herinnering_2_onderwerp || '2e herinnering: Factuur {factuur_nummer}')
+      setAanmaningTekst(data.aanmaning_tekst || '')
+      setAanmaningOnderwerp(data.aanmaning_onderwerp || 'Aanmaning: Factuur {factuur_nummer}')
+      setIsLoading(false)
+    }).catch(() => setIsLoading(false))
+  }, [user?.id])
+
+  const handleSave = async () => {
+    if (!user?.id) return
+    setIsSaving(true)
+    try {
+      await updateAppSettings(user.id, {
+        herinnering_1_tekst: herinnering1,
+        herinnering_1_onderwerp: herinnering1Onderwerp,
+        herinnering_2_tekst: herinnering2,
+        herinnering_2_onderwerp: herinnering2Onderwerp,
+        aanmaning_tekst: aanmaningTekst,
+        aanmaning_onderwerp: aanmaningOnderwerp,
+      })
+      toast.success('Templates opgeslagen.')
+    } catch {
+      toast.error('Kon templates niet opslaan')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleSendTest = async (key: string, onderwerp: string, inhoud: string, placeholder: string) => {
+    if (!user?.id || !user?.email) return
+    setIsSendingTest(key)
+    try {
+      const p = await getProfile(user.id)
+      const vars: Record<string, string> = {
+        klant_naam: 'Jan de Vries',
+        factuur_nummer: 'FAC-2026-0001',
+        factuur_bedrag: '€ 1.250,00',
+        vervaldatum: '15 maart 2026',
+        dagen_verlopen: '7',
+        bedrijfsnaam: p?.bedrijfsnaam || 'Uw Bedrijf',
+        betaal_link: `${window.location.origin}/betalen/test-voorbeeld`,
+      }
+      const replaceVars = (s: string) => Object.entries(vars).reduce((r, [k, v]) => r.replace(new RegExp(`\\{${k}\\}`, 'g'), v), s)
+      const sub = replaceVars(onderwerp)
+      const body = replaceVars(inhoud || placeholder)
+      const { html } = factuurHerinneringTemplate({
+        klantNaam: vars.klant_naam,
+        factuurNummer: vars.factuur_nummer,
+        factuurTitel: 'Voorbeeld factuur',
+        totaalBedrag: vars.factuur_bedrag,
+        vervaldatum: vars.vervaldatum,
+        dagenVervallen: 7,
+        bedrijfsnaam: vars.bedrijfsnaam,
+        logoUrl: p?.logo_url || undefined,
+        betaalUrl: vars.betaal_link,
+      })
+      await sendEmail(user.email, `[TEST] ${sub}`, body, { html })
+      toast.success(`Testmail verstuurd naar ${user.email}`)
+    } catch {
+      toast.error('Kon testmail niet versturen — controleer je email instellingen')
+    } finally {
+      setIsSendingTest(null)
+    }
+  }
+
+  if (isLoading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+
+  const templates = [
+    { key: 'h1', label: 'Herinnering 1', onderwerp: herinnering1Onderwerp, setOnderwerp: setHerinnering1Onderwerp, inhoud: herinnering1, setInhoud: setHerinnering1, placeholder: 'Bijv. Wellicht is het u ontgaan, maar wij hebben nog geen betaling ontvangen voor factuur {factuur_nummer}.' },
+    { key: 'h2', label: 'Herinnering 2', onderwerp: herinnering2Onderwerp, setOnderwerp: setHerinnering2Onderwerp, inhoud: herinnering2, setInhoud: setHerinnering2, placeholder: 'Bijv. Ondanks onze eerdere herinnering hebben wij nog geen betaling ontvangen voor factuur {factuur_nummer}.' },
+    { key: 'aanmaning', label: 'Aanmaning', onderwerp: aanmaningOnderwerp, setOnderwerp: setAanmaningOnderwerp, inhoud: aanmaningTekst, setInhoud: setAanmaningTekst, placeholder: 'Bijv. Indien wij binnen 7 dagen geen betaling ontvangen voor factuur {factuur_nummer}, zijn wij genoodzaakt verdere stappen te ondernemen.' },
+  ] as const
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Mail className="w-5 h-5" />
+            Betalingsherinneringen
+          </CardTitle>
+          <CardDescription>
+            Email templates voor factuur herinneringen en aanmaningen. Verstuurd via je eigen email.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="rounded-md border bg-muted/50 px-3 py-2.5">
+            <p className="text-xs font-medium text-muted-foreground mb-1">Beschikbare variabelen:</p>
+            <div className="flex flex-wrap gap-1.5">
+              {['{klant_naam}', '{factuur_nummer}', '{factuur_bedrag}', '{vervaldatum}', '{dagen_verlopen}', '{bedrijfsnaam}', '{betaal_link}'].map((v) => (
+                <code key={v} className="rounded bg-background px-1.5 py-0.5 text-xs font-mono border">{v}</code>
+              ))}
+            </div>
+          </div>
+          {templates.map((t) => (
+            <div key={t.key} className="space-y-2 p-3 rounded-lg border border-border/50 bg-muted/20">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium">{t.label}</Label>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs gap-1.5 text-muted-foreground hover:text-foreground"
+                  disabled={isSendingTest === t.key}
+                  onClick={() => handleSendTest(t.key, t.onderwerp, t.inhoud, t.placeholder)}
+                >
+                  {isSendingTest === t.key ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
+                  Testmail
+                </Button>
+              </div>
+              <Input value={t.onderwerp} onChange={(e) => t.setOnderwerp(e.target.value)} placeholder="Onderwerp" className="text-xs h-8" />
+              <Textarea value={t.inhoud} onChange={(e) => t.setInhoud(e.target.value)} placeholder={t.placeholder} rows={2} className="text-xs" />
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      <p className="text-xs text-muted-foreground px-1">
+        Offerte opvolging templates worden apart beheerd onder <strong>Offertes → Opvolging</strong>.
+        Portaal email templates staan onder <strong>Integraties → Portaal</strong>.
+      </p>
+
+      <div className="flex justify-end">
+        <Button onClick={handleSave} disabled={isSaving} className="gap-2">
+          <Save className="w-4 h-4" />
+          {isSaving ? 'Opslaan...' : 'Opslaan'}
+        </Button>
+      </div>
+    </div>
+  )
+}
 
 function SignatureImageUpload({
   imageUrl,

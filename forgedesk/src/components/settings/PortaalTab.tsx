@@ -18,11 +18,13 @@ import {
   AlertTriangle,
   ExternalLink,
   Image,
+  Send,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { getPortaalInstellingen, updatePortaalInstellingen, getDefaultPortaalInstellingen, getProfile } from '@/services/supabaseService'
 import type { PortaalInstellingen, PortaalEmailTemplate } from '@/types'
 import { toast } from 'sonner'
+import { sendEmail } from '@/services/gmailService'
 
 const PLACEHOLDERS = ['{{klant_naam}}', '{{project_naam}}', '{{portaal_link}}', '{{bedrijfsnaam}}', '{{item_type}}']
 
@@ -33,6 +35,7 @@ export function PortaalTab() {
   const [saving, setSaving] = useState(false)
   const [emailGekoppeld, setEmailGekoppeld] = useState<boolean | null>(null)
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
+  const [isSendingTest, setIsSendingTest] = useState<string | null>(null)
 
   useEffect(() => {
     if (!user?.id) return
@@ -82,6 +85,29 @@ export function PortaalTab() {
       ...prev,
       [templateKey]: { ...prev[templateKey], [field]: value },
     }))
+  }
+
+  async function sendTestEmail(templateKey: 'template_portaallink' | 'template_nieuw_item' | 'template_herinnering') {
+    if (!user?.email) return
+    setIsSendingTest(templateKey)
+    try {
+      const template = settings[templateKey]
+      const demoVars: Record<string, string> = {
+        '{{klant_naam}}': 'Jan de Vries',
+        '{{project_naam}}': 'Gevelreclame Hoofdkantoor',
+        '{{portaal_link}}': `${window.location.origin}/portaal/test-voorbeeld`,
+        '{{bedrijfsnaam}}': logoUrl ? '' : 'Uw Bedrijf',
+        '{{item_type}}': 'offerte',
+      }
+      const onderwerp = Object.entries(demoVars).reduce((s, [k, v]) => s.replaceAll(k, v), template.onderwerp)
+      const inhoud = Object.entries(demoVars).reduce((s, [k, v]) => s.replaceAll(k, v), template.inhoud)
+      await sendEmail(user.email, `[TEST] ${onderwerp}`, inhoud, {})
+      toast.success(`Testmail verstuurd naar ${user.email}`)
+    } catch {
+      toast.error('Kon testmail niet versturen — controleer je email instellingen')
+    } finally {
+      setIsSendingTest(null)
+    }
   }
 
   if (loading) {
@@ -349,8 +375,16 @@ export function PortaalTab() {
 
             {/* Portaallink template */}
             <div className="space-y-3">
-              <Label className="text-sm font-medium">Portaallink email</Label>
-              <p className="text-xs text-muted-foreground">Verstuurd wanneer u een portaallink deelt met een klant.</p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="text-sm font-medium">Portaallink email</Label>
+                  <p className="text-xs text-muted-foreground">Verstuurd wanneer u een portaallink deelt met een klant.</p>
+                </div>
+                <Button variant="ghost" size="sm" className="h-7 text-xs gap-1.5 text-muted-foreground hover:text-foreground" disabled={isSendingTest === 'template_portaallink'} onClick={() => sendTestEmail('template_portaallink')}>
+                  {isSendingTest === 'template_portaallink' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
+                  Testmail
+                </Button>
+              </div>
               <div>
                 <Label className="text-xs text-muted-foreground">Onderwerp</Label>
                 <Input
@@ -374,8 +408,16 @@ export function PortaalTab() {
 
             {/* Nieuw item template */}
             <div className="space-y-3">
-              <Label className="text-sm font-medium">Nieuw item email</Label>
-              <p className="text-xs text-muted-foreground">Verstuurd wanneer u een nieuw item (offerte, tekening, bericht) deelt.</p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="text-sm font-medium">Nieuw item email</Label>
+                  <p className="text-xs text-muted-foreground">Verstuurd wanneer u een nieuw item (offerte, tekening, bericht) deelt.</p>
+                </div>
+                <Button variant="ghost" size="sm" className="h-7 text-xs gap-1.5 text-muted-foreground hover:text-foreground" disabled={isSendingTest === 'template_nieuw_item'} onClick={() => sendTestEmail('template_nieuw_item')}>
+                  {isSendingTest === 'template_nieuw_item' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
+                  Testmail
+                </Button>
+              </div>
               <div>
                 <Label className="text-xs text-muted-foreground">Onderwerp</Label>
                 <Input
@@ -399,7 +441,13 @@ export function PortaalTab() {
 
             {/* Herinnering template */}
             <div className="space-y-3">
-              <Label className="text-sm font-medium">Herinnering email</Label>
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium">Herinnering email</Label>
+                <Button variant="ghost" size="sm" className="h-7 text-xs gap-1.5 text-muted-foreground hover:text-foreground" disabled={isSendingTest === 'template_herinnering'} onClick={() => sendTestEmail('template_herinnering')}>
+                  {isSendingTest === 'template_herinnering' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
+                  Testmail
+                </Button>
+              </div>
               <p className="text-xs text-muted-foreground">Verstuurd als de klant niet reageert binnen het ingestelde aantal dagen.</p>
               <div>
                 <Label className="text-xs text-muted-foreground">Onderwerp</Label>

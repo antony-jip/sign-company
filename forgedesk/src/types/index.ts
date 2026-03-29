@@ -686,8 +686,11 @@ export interface AppSettings {
   werkbon_klant_handtekening: boolean;
   werkbon_briefpapier: boolean;
   herinnering_1_tekst: string;
+  herinnering_1_onderwerp: string;
   herinnering_2_tekst: string;
+  herinnering_2_onderwerp: string;
   aanmaning_tekst: string;
+  aanmaning_onderwerp: string;
   standaard_uurtarief: number;
   // Offerte teksten
   offerte_intro_tekst: string;
