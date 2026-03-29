@@ -500,7 +500,7 @@ export function TasksLayout() {
           const alleKlaar = projectTaken.length > 0 && projectTaken.every((t) => t.status === 'klaar')
           if (alleKlaar) {
             const project = projecten.find((p) => p.id === taak.project_id)
-            if (project && project.status !== 'afgerond' && project.status !== 'opgeleverd') {
+            if (project && project.status !== 'afgerond') {
               setTimeout(() => setCompletionPrompt({ open: true, projectId: project.id, projectNaam: project.naam }), 500)
             }
           }
@@ -565,7 +565,7 @@ export function TasksLayout() {
       setTaken((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
       // Audit log
       if (user?.id && editingTaak) {
-        const naam = user.voornaam ? `${user.voornaam} ${user.achternaam || ''}`.trim() : user.email || ''
+        const naam = user.user_metadata?.voornaam ? `${user.user_metadata.voornaam} ${user.user_metadata.achternaam || ''}`.trim() : user.email || ''
         if (editingTaak.status !== formData.status) {
           logWijziging({ userId: user.id, entityType: 'taak', entityId: editingTaak.id, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: editingTaak.status, nieuweWaarde: formData.status })
         } else {
@@ -1081,7 +1081,7 @@ export function TasksLayout() {
         onClose={() => setCompletionPrompt((prev) => ({ ...prev, open: false }))}
         onUpdateStatus={async (status) => {
           try {
-            await updateProject(completionPrompt.projectId, { status })
+            await updateProject(completionPrompt.projectId, { status: status as Project['status'] })
             toast.success(`Project gemarkeerd als ${status}`)
           } catch {
             toast.error('Kon projectstatus niet bijwerken')

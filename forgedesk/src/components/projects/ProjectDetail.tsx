@@ -770,7 +770,7 @@ export function ProjectDetail() {
       const updated = await updateProject(id!, { status: newStatus })
       setProject(updated)
       if (user?.id) {
-        const naam = user.voornaam ? `${user.voornaam} ${user.achternaam || ''}`.trim() : user.email || ''
+        const naam = user.user_metadata?.voornaam ? `${user.user_metadata.voornaam} ${user.user_metadata.achternaam || ''}`.trim() : user.email || ''
         logWijziging({ userId: user.id, entityType: 'project', entityId: id!, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: oudeStatus, nieuweWaarde: newStatus })
       }
       toast.success(`Status gewijzigd naar ${statusLabels[newStatus] || newStatus}`)
@@ -2020,6 +2020,7 @@ export function ProjectDetail() {
                       titel: project?.naam || '',
                       datum: new Date().toISOString().split('T')[0],
                       status: 'concept',
+                      toon_briefpapier: false,
                     })
                     setProjectWerkbonnen(prev => [...prev, wb])
                     setMontageWerkbonId(wb.id)

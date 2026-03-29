@@ -96,7 +96,7 @@ function OfferteKaart({ item }: { item: PortaalItem }) {
           </span>
         )}
         {/* Actieknoppen — disabled in interne view */}
-        {item.status !== 'goedgekeurd' && item.status !== 'betaald' && item.status !== 'afgewezen' && (
+        {item.status !== 'goedgekeurd' && item.status !== 'betaald' && (
           <div className="flex gap-2 mt-3 pt-3 border-t border-[#EBEBEB]/40">
             <span className="flex-1 text-center text-sm font-medium py-2 bg-[#F8F7F5] rounded-md text-[#9B9B95] cursor-default" title="Zichtbaar voor klant">Goedkeuren</span>
             <span className="flex-1 text-center text-sm font-medium py-2 bg-[#F8F7F5] rounded-md text-[#9B9B95] cursor-default" title="Zichtbaar voor klant">Vragen stellen</span>

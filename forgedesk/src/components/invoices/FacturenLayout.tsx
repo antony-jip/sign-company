@@ -501,7 +501,7 @@ export function FacturenLayout() {
     if (selectedIds.size === 0) return
     try {
       const updates: Partial<Factuur> = { status: newStatus }
-      if (newStatus === 'betaald') updates.betaald_op = new Date().toISOString()
+      if (newStatus === 'betaald') updates.betaaldatum = new Date().toISOString()
       await Promise.all(
         [...selectedIds].map((id) => updateFactuur(id, updates))
       )
@@ -2019,7 +2019,7 @@ export function FacturenLayout() {
                     variant="secondary"
                     className={cn(
                       'text-[10px] font-semibold px-[10px] py-[3px] rounded-full',
-                      STATUS_CONFIG[viewingFactuur.status].color
+                      STATUS_CONFIG[viewingFactuur.status].bg
                     )}
                   >
                     {STATUS_CONFIG[viewingFactuur.status].label}

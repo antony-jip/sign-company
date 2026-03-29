@@ -2,10 +2,11 @@ import React from 'react'
 import { cn } from '@/lib/utils'
 
 interface ImportPreviewProps {
-  headers: string[]
-  rows: Record<string, string>[]
-  type: 'bedrijfsdata' | 'contactpersonen'
+  headers?: string[]
+  rows?: Record<string, string>[]
+  type?: 'bedrijfsdata' | 'contactpersonen'
   maxRows?: number
+  samenvatting?: import('@/services/universalImportService').ImportSamenvatting
 }
 
 const TYPE_COLORS: Record<string, string> = {
@@ -19,7 +20,37 @@ function getFilledColumns(row: Record<string, string>, headers: string[]): strin
   return headers.filter((h) => (row[h] || '').trim() !== '')
 }
 
-export function ImportPreview({ headers, rows, type, maxRows = 10 }: ImportPreviewProps) {
+export function ImportPreview({ headers = [], rows = [], type, maxRows = 10, samenvatting }: ImportPreviewProps) {
+  if (samenvatting) {
+    return (
+      <div className="space-y-3">
+        <div className="flex flex-wrap gap-2 text-sm">
+          <span className="font-medium">Samenvatting:</span>
+          <span className="px-2 py-0.5 rounded bg-[#1A535C]/10 text-[#1A535C] dark:text-[#4ECDC4] font-medium">
+            {samenvatting.klanten} klanten
+          </span>
+          <span className="text-muted-foreground">·</span>
+          <span className="px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 font-medium">
+            {samenvatting.projecten.total} projecten
+          </span>
+          <span className="text-muted-foreground">·</span>
+          <span className="px-2 py-0.5 rounded bg-[#F15025]/10 text-[#F15025] font-medium">
+            {samenvatting.offertes.total} offertes
+          </span>
+          <span className="text-muted-foreground">·</span>
+          <span className="px-2 py-0.5 rounded bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-medium">
+            {samenvatting.facturen.total} facturen
+          </span>
+        </div>
+        {samenvatting.warnings.length > 0 && (
+          <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-xs text-yellow-800">
+            {samenvatting.warnings.map((w, i) => <p key={i}>{w}</p>)}
+          </div>
+        )}
+      </div>
+    )
+  }
+
   const preview = rows.slice(0, maxRows)
 
   if (type === 'bedrijfsdata') {

@@ -129,7 +129,6 @@ export function QuotesFollowUp({ offertes, onRefresh }: QuotesFollowUpProps) {
           getKlanten(),
           getProjecten(),
         ])
-        // Merge demo klanten met echte klanten
         const klantenMap = new Map(klantenData.map((k) => [k.id, k]))
         setKlanten(klantenMap)
         setProjecten(new Map(projectenData.map((p) => [p.id, p])))
@@ -142,7 +141,6 @@ export function QuotesFollowUp({ offertes, onRefresh }: QuotesFollowUpProps) {
     load()
   }, [])
 
-  // Merge demo offertes met echte offertes en filter op follow-up nodig
   const followUpOffertes = useMemo(() => {
     return offertes.filter(isFollowUpNodig).sort(sorteerOpUrgentie)
   }, [offertes])

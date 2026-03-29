@@ -73,7 +73,7 @@ const STATUS_STYLE: Record<string, { color: string; label: string }> = {
 
 export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabProps) {
   const { user } = useAuth()
-  const { profile } = useAppSettings()
+  const { profile, primaireKleur } = useAppSettings()
   const [portaal, setPortaal] = useState<ProjectPortaal | null>(null)
   const [items, setItems] = useState<PortaalItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -293,7 +293,7 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
         ctaUrl: portaalUrl,
         bedrijfsnaam,
         logoUrl: profile?.logo_url || undefined,
-        primaireKleur: profile?.primaireKleur || undefined,
+        primaireKleur: primaireKleur || undefined,
       })
 
       await sendEmail(klantEmail, onderwerp, plainBody, { html: htmlBody })
@@ -318,7 +318,7 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
           portaal_id: portaal.id,
           type: 'bericht',
           titel: inputType === 'notitie_intern' ? 'Interne notitie' : 'Bericht',
-          bericht_type: inputType,
+          bericht_type: inputType === 'bericht' ? 'tekst' : 'notitie_intern',
           bericht_tekst: inputText.trim(),
           afzender: 'bedrijf',
           status: 'verstuurd',

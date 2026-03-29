@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
+import { ArrowUpDown, ArrowUp, ArrowDown, ClipboardList } from 'lucide-react'
 import { formatDate, getStatusColor, getPriorityColor } from '@/lib/utils'
 import type { Taak } from '@/types'
 import type { SortDirection } from '@/types'

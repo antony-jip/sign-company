@@ -64,7 +64,7 @@ const ACTIE_CONFIG: Record<string, { label: string; description: string; icon: t
 function replaceMergeFields(text: string): string {
   let result = text
   for (const [key, value] of Object.entries(DUMMY_DATA)) {
-    result = result.replaceAll(key, value)
+    result = result.split(key).join(value)
   }
   return result
 }

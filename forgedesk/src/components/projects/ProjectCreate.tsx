@@ -93,7 +93,7 @@ export function ProjectCreate() {
         klant_id: klantId,
         project_nummer: projectNummer,
         naam: naam.trim(),
-        beschrijving: beschrijving.trim() || undefined,
+        beschrijving: beschrijving.trim(),
         status,
         prioriteit: 'medium',
         start_datum: startDatum || undefined,

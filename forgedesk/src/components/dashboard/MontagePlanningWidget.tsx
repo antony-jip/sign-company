@@ -289,10 +289,10 @@ export function MontagePlanningWidget() {
                             {STATUS_LABEL[montage.status]}
                           </Badge>
                           {montage.werkbon_id && (
-                            <ClipboardCheck className="h-3 w-3 text-[#C44830] flex-shrink-0" title={montage.werkbon_nummer || 'Werkbon'} />
+                            <span title={montage.werkbon_nummer || 'Werkbon'}><ClipboardCheck className="h-3 w-3 text-[#C44830] flex-shrink-0" /></span>
                           )}
                           {montage.bijlagen && montage.bijlagen.length > 0 && (
-                            <Paperclip className="h-3 w-3 text-[#5A5A55] flex-shrink-0" title={`${montage.bijlagen.length} bijlage${montage.bijlagen.length !== 1 ? 'n' : ''}`} />
+                            <span title={`${montage.bijlagen.length} bijlage${montage.bijlagen.length !== 1 ? 'n' : ''}`}><Paperclip className="h-3 w-3 text-[#5A5A55] flex-shrink-0" /></span>
                           )}
                         </div>
                         <div className="flex items-center gap-3 mt-0.5">

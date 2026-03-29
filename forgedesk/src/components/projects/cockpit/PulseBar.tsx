@@ -42,7 +42,7 @@ export function PulseBar({ project, offertes, facturen, taken, tijdregistraties,
       : offertes.length > 0 ? offertes[0].totaal || 0 : 0
 
     // Uren
-    const urenGebruikt = tijdregistraties.reduce((sum, t) => sum + ((t as Record<string, unknown>).uren as number || 0), 0)
+    const urenGebruikt = tijdregistraties.reduce((sum, t) => sum + ((t as unknown as Record<string, unknown>).uren as number || 0), 0)
     const urenGepland = taken.reduce((sum, t) => sum + (t.geschatte_tijd || 0), 0)
 
     // Deadline

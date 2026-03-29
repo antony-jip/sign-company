@@ -1087,7 +1087,7 @@ export function FactuurEditor() {
       const updated = await updateFactuurStatus(existingFactuur.id, updates)
       setExistingFactuur({ ...existingFactuur, ...updated, ...updates })
       if (user?.id) {
-        const naam = user.voornaam ? `${user.voornaam} ${user.achternaam || ''}`.trim() : user.email || ''
+        const naam = user.user_metadata?.voornaam ? `${user.user_metadata.voornaam} ${user.user_metadata.achternaam || ''}`.trim() : user.email || ''
         logWijziging({ userId: user.id, entityType: 'factuur', entityId: existingFactuur.id, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: existingFactuur.status, nieuweWaarde: 'betaald' })
       }
       // Update gekoppeld project naar 'gefactureerd'

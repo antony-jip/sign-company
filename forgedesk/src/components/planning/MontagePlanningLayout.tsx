@@ -1199,6 +1199,7 @@ export function MontagePlanningLayout() {
                             titel: formData.titel || "",
                             datum: new Date().toISOString().split("T")[0],
                             status: "concept",
+                            toon_briefpapier: false,
                           });
                           setProjectWerkbonnen((prev) => [...prev, wb]);
                           setFormData((prev) => ({ ...prev, werkbon_id: wb.id }));

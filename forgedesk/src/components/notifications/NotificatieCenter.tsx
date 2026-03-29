@@ -384,7 +384,7 @@ export function NotificatieCenter() {
     const userId = user.id;
 
     const setupChannel = async () => {
-      const channel = supabase
+      const channel = supabase!
         .channel(`notificaties-${userId}`)
         .on(
           'postgres_changes',
@@ -420,7 +420,7 @@ export function NotificatieCenter() {
     setupChannel().then((ch) => { channelRef = ch; });
 
     return () => {
-      if (channelRef) supabase.removeChannel(channelRef);
+      if (channelRef) supabase!.removeChannel(channelRef);
     };
   }, [user?.id]);
 

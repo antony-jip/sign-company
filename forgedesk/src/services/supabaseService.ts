@@ -144,7 +144,7 @@ async function withOrganisatieId<T extends object>(data: T): Promise<T & { organ
 }
 
 // Cache organisatie_id zodat we niet bij elke create het profiel opvragen
-let _cachedOrgId: string | null = null
+let _cachedOrgId: string | undefined = undefined
 async function getOrgId(): Promise<string | undefined> {
   if (_cachedOrgId) return _cachedOrgId
   if (!supabase) return undefined
@@ -157,7 +157,7 @@ async function getOrgId(): Promise<string | undefined> {
 
 // Reset cache bij auth changes
 if (typeof window !== 'undefined') {
-  supabase?.auth.onAuthStateChange(() => { _cachedOrgId = null })
+  supabase?.auth.onAuthStateChange(() => { _cachedOrgId = undefined })
 }
 
 function sanitizeDates<T extends object>(data: T): T {
@@ -354,7 +354,7 @@ export async function createKlant(klant: Omit<Klant, 'id' | 'created_at' | 'upda
       const { data: { user } } = await supabase.auth.getUser()
       user_id = user?.id || ''
     }
-    const orgId = klant.organisatie_id || await getOrgId()
+    const orgId = (klant as Record<string, unknown>).organisatie_id as string || await getOrgId()
     const klantInsert = { ...klant, user_id, organisatie_id: orgId }
     if (!Array.isArray(klantInsert.tags)) klantInsert.tags = []
     if (!Array.isArray(klantInsert.klant_labels)) klantInsert.klant_labels = []
@@ -2234,9 +2234,9 @@ export function getDefaultAppSettings(userId: string): AppSettings {
     werkbon_monteur_uren: true,
     werkbon_monteur_opmerkingen: true,
     werkbon_monteur_fotos: true,
-    werkbon_monteur_handtekening: true,
-    werkbon_monteur_materialen: false,
-    werkbon_toon_km: false,
+    werkbon_klant_handtekening: true,
+    werkbon_briefpapier: true,
+    quick_actions_enabled: true,
     created_at: now(),
     updated_at: now(),
   }
@@ -4263,7 +4263,7 @@ export async function getGedeeldeEmails(limit = 200): Promise<Email[]> {
       .order('datum', { ascending: false })
       .limit(limit)
     if (error) throw error
-    return data || []
+    return (data || []) as unknown as Email[]
   }
   return getLocalData<Email>('emails').filter((e) => e.inbox_type === 'gedeeld')
 }
@@ -4371,6 +4371,7 @@ export async function upsertDocumentStyle(userId: string, style: Partial<Documen
       logo_positie: 'links',
       logo_grootte: 100,
       briefpapier_url: '',
+      vervolgpapier_url: '',
       briefpapier_modus: 'geen',
       toon_header: true,
       toon_footer: true,
@@ -4514,8 +4515,8 @@ export async function createProjectFoto(
   let url: string
 
   if (isSupabaseConfigured() && supabase) {
-    const { error: uploadError } = await supabase.storage
     const _orgId = await getOrgId()
+    const { error: uploadError } = await supabase.storage
       .from(PHOTO_BUCKET)
       .upload(storagePath, file, { cacheControl: '3600', upsert: false })
     if (uploadError) throw uploadError
@@ -4601,7 +4602,7 @@ async function getMaxNummer(table: string, field: string, prefix: string): Promi
       .order(field, { ascending: false })
       .limit(1)
     if (data && data.length > 0) {
-      const nr = parseInt(String(data[0][field]).replace(prefix, ''), 10)
+      const nr = parseInt(String((data[0] as unknown as Record<string, unknown>)[field]).replace(prefix, ''), 10)
       return isNaN(nr) ? 0 : nr
     }
     return 0
@@ -4785,7 +4786,7 @@ export async function convertWerkbonToFactuur(
     } as Omit<FactuurItem, 'id' | 'created_at'>)
   }
   // Update werkbon status
-  await updateWerkbon(werkbonId, { status: 'gefactureerd', factuur_id: factuur.id })
+  await updateWerkbon(werkbonId, { status: 'gefactureerd' } as Partial<Werkbon>)
   return factuur
 }
 
@@ -6319,6 +6320,28 @@ export async function createEmailOpvolging(opvolging: Omit<import('@/types').Ema
 
 // ============ KENNISBANK ============
 
+function createLocalItem<T extends { id?: string; created_at?: string }>(key: string, item: Omit<T, 'id' | 'created_at'>): T {
+  const nieuw = { ...item, id: crypto.randomUUID(), created_at: new Date().toISOString() } as T
+  const items = getLocalData<T>(key)
+  items.push(nieuw)
+  setLocalData(key, items)
+  return nieuw
+}
+
+function updateLocalItem<T extends { id: string }>(key: string, id: string, updates: Partial<T>): T {
+  const items = getLocalData<T>(key)
+  const index = items.findIndex((i) => i.id === id)
+  if (index === -1) throw new Error(`Item ${id} niet gevonden in ${key}`)
+  items[index] = { ...items[index], ...updates, updated_at: new Date().toISOString() } as T
+  setLocalData(key, items)
+  return items[index]
+}
+
+function deleteLocalItem<T extends { id: string }>(key: string, id: string): void {
+  const items = getLocalData<T>(key)
+  setLocalData(key, items.filter((i) => i.id !== id))
+}
+
 export async function getKbCategories(): Promise<import('@/types').KbCategory[]> {
   if (!isSupabaseConfigured() || !supabase) return getLocalData<import('@/types').KbCategory>('kb_categories')
   const { data, error } = await supabase.from('kb_categories').select('*').order('volgorde')
@@ -6374,7 +6397,7 @@ export async function createKbArticle(article: Omit<import('@/types').KbArticle,
 
 export async function updateKbArticle(id: string, updates: Partial<import('@/types').KbArticle>): Promise<import('@/types').KbArticle> {
   const { category_naam: _, ...clean } = updates as Record<string, unknown> & { category_naam?: unknown }
-  if (!isSupabaseConfigured() || !supabase) return updateLocalItem('kb_articles', id, clean)
+  if (!isSupabaseConfigured() || !supabase) return updateLocalItem<import('@/types').KbArticle>('kb_articles', id, clean as Partial<import('@/types').KbArticle>)
   const { data, error } = await supabase.from('kb_articles').update({ ...clean, updated_at: new Date().toISOString() }).eq('id', id).select().single()
   if (error) throw error
   return data

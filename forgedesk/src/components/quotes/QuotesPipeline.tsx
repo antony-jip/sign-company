@@ -675,7 +675,7 @@ export function QuotesPipeline() {
                   </button>
                   <button
                     onClick={() => setViewMode('follow-up')}
-                    className={cn('p-1.5 rounded-md transition-all relative', viewMode === 'follow-up' ? 'bg-white shadow-sm text-[#1A1A1A]' : 'text-[#9B9B95] hover:text-[#6B6B66]')}
+                    className={cn('p-1.5 rounded-md transition-all relative', (viewMode as string) === 'follow-up' ? 'bg-white shadow-sm text-[#1A1A1A]' : 'text-[#9B9B95] hover:text-[#6B6B66]')}
                     title="Follow-up"
                   >
                     <BellRing className="w-3.5 h-3.5" />

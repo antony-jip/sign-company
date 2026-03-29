@@ -141,7 +141,7 @@ export function EmailLayout() {
       starred: e.starred ?? false,
       labels: e.labels ?? [],
       pinned: e.pinned ?? false,
-      gmail_id: e.gmail_id || String((e as Record<string, unknown>).uid || e.id),
+      gmail_id: e.gmail_id || String((e as unknown as Record<string, unknown>).uid || e.id),
     }))
   }
 
@@ -622,7 +622,7 @@ export function EmailLayout() {
             status: 'wachtend',
             gepland_op: geplandOp.toISOString(),
             user_id: user.id,
-            organisatie_id: user.user_metadata?.organisatie_id || '',
+            organisatie_id: (user.user_metadata as Record<string, unknown>)?.organisatie_id as string || '',
             handtekening: emailHandtekening || '',
             message_id: '',
             opvolg_body: data.autoFollowUp.mode === 'handmatig' ? data.autoFollowUp.customTekst : undefined,

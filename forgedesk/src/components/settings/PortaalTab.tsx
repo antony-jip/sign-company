@@ -99,8 +99,8 @@ export function PortaalTab() {
         '{{bedrijfsnaam}}': logoUrl ? '' : 'Uw Bedrijf',
         '{{item_type}}': 'offerte',
       }
-      const onderwerp = Object.entries(demoVars).reduce((s, [k, v]) => s.replaceAll(k, v), template.onderwerp)
-      const inhoud = Object.entries(demoVars).reduce((s, [k, v]) => s.replaceAll(k, v), template.inhoud)
+      const onderwerp = Object.entries(demoVars).reduce((s, [k, v]) => s.split(k).join(v), template.onderwerp)
+      const inhoud = Object.entries(demoVars).reduce((s, [k, v]) => s.split(k).join(v), template.inhoud)
       await sendEmail(user.email, `[TEST] ${onderwerp}`, inhoud, {})
       toast.success(`Testmail verstuurd naar ${user.email}`)
     } catch {

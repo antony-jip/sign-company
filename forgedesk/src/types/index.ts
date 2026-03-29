@@ -208,7 +208,6 @@ export interface KlantHistorie {
   verantwoordelijke: string;
   created_at: string;
   user_id: string;
-  organisatie_id?: string;
   klant?: Klant;
 }
 
@@ -217,7 +216,6 @@ export interface ImportLog {
   id: string;
   organisatie_id: string;
   user_id: string;
-  organisatie_id?: string;
   type: string;
   bestandsnaam: string;
   aantal_rijen: number;
@@ -1080,9 +1078,19 @@ export interface MontageAfspraak {
   status: 'gepland' | 'onderweg' | 'bezig' | 'afgerond' | 'uitgesteld';
   materialen: string[];
   notities: string;
-  werkbon_id?: string;             // link naar gekoppelde werkbon
+  werkbon_id?: string;
+  werkbon_nummer?: string;
+  bijlagen?: MontageBijlage[];
   created_at: string;
   updated_at: string;
+}
+
+export interface MontageBijlage {
+  id: string;
+  naam: string;
+  url: string;
+  type?: string;
+  grootte?: number;
 }
 
 // ============ PROJECT FOTO'S ============

@@ -2149,7 +2149,7 @@ export function QuoteCreation() {
             <div className="flex items-center gap-2 mt-0.5">
               {autoSaveStatus === 'saving' && <span className="flex items-center gap-1.5 text-xs text-[#8A7A4A]"><div className="h-1.5 w-1.5 rounded-full bg-[#8A7A4A] animate-pulse" />Opslaan...</span>}
               {autoSaveStatus === 'saved' && <span className="flex items-center gap-1.5 text-xs text-[#3A7D52]"><Check className="h-3 w-3" />Opgeslagen</span>}
-              {!autoSaveStatus && <p className="text-[13px] text-[#9B9B95]">{isEditMode ? selectedKlantNaam || '' : 'Selecteer een klant en vul de details in'}</p>}
+              {!autoSaveStatus && <p className="text-[13px] text-[#9B9B95]">{isEditMode ? selectedKlant?.bedrijfsnaam || '' : 'Selecteer een klant en vul de details in'}</p>}
             </div>
           </div>
 

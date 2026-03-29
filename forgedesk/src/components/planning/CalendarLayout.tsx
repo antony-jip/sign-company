@@ -1477,7 +1477,7 @@ export function CalendarLayout() {
                     {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
                       <SelectItem key={key} value={key}>
                         <div className="flex items-center gap-2">
-                          <div className={cn('w-2 h-2 rounded-full', cfg.darkBg)} />
+                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: cfg.dot }} />
                           {cfg.label}
                         </div>
                       </SelectItem>

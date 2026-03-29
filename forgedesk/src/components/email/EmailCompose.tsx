@@ -9,14 +9,14 @@ import { getKlanten } from '@/services/supabaseService'
 import { toast } from 'sonner'
 import { cn, getInitials } from '@/lib/utils'
 import type { Klant, Email } from '@/types'
-import { callForgie } from '@/services/forgieService'
+import { callForgie, type ForgieAction } from '@/services/forgieService'
 import { logger } from '../../utils/logger'
 import { AIContentEditableToolbar } from '@/components/ui/AIContentEditableToolbar'
 import type { AutoFollowUp } from './emailTypes'
 
 export interface ComposeActions {
   forgieWrite: () => void
-  forgieRewrite: (action: string, label: string) => void
+  forgieRewrite: (action: ForgieAction, label: string) => void
 }
 
 interface EmailComposeProps {
@@ -192,7 +192,7 @@ export function EmailCompose({
     if (open) {
       autoSaveRef.current = setInterval(() => {
         // Could save to localStorage or Supabase
-        logger.info('Auto-save concept')
+        logger.log('Auto-save concept')
       }, 30000)
       return () => {
         if (autoSaveRef.current) clearInterval(autoSaveRef.current)
@@ -256,7 +256,7 @@ export function EmailCompose({
   }, [subject, to, signatureHtml])
 
   // AI rewrite actions
-  const handleForgieRewrite = useCallback(async (action: string, label: string) => {
+  const handleForgieRewrite = useCallback(async (action: ForgieAction, label: string) => {
     if (!editorRef.current) return
     const currentText = editorRef.current.innerText?.trim()
     if (!currentText || currentText === '--') {

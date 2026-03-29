@@ -690,7 +690,7 @@ export function ClientProfile() {
                 {/* Imported contactpersonen (show up to 2 total) */}
                 {contactpersonen.length < 2 && importedContacts.slice(0, 2 - contactpersonen.length).map((ic) => (
                   <div key={ic.id} className="min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{ic.naam}</p>
+                    <p className="text-sm font-medium text-foreground truncate">{`${ic.voornaam} ${ic.achternaam}`.trim()}</p>
                     <p className="text-xs text-muted-foreground truncate">
                       {ic.email || ic.telefoon || '\u2014'}
                     </p>

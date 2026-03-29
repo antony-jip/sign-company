@@ -50,7 +50,7 @@ export function ClientCard({ klant, projectCount, onEdit, onDelete, selected, on
         "cursor-pointer transition-all duration-200 rounded-xl border-black/[0.06] hover:shadow-lg hover:border-[#8BAFD4]/40 dark:hover:border-[#8BAFD4]/30 group",
         selected && "ring-2 ring-primary border-primary/30"
       )}
-      onClick={() => navigateWithTab({ path: `/klanten/${klant.id}`, label: klant.bedrijfsnaam || klant.voornaam || 'Klant', id: `/klanten/${klant.id}` })}
+      onClick={() => navigateWithTab({ path: `/klanten/${klant.id}`, label: klant.bedrijfsnaam || klant.contactpersoon || 'Klant', id: `/klanten/${klant.id}` })}
     >
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
@@ -137,7 +137,7 @@ export function ClientCard({ klant, projectCount, onEdit, onDelete, selected, on
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-52">
-                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigateWithTab({ path: `/klanten/${klant.id}`, label: klant.bedrijfsnaam || klant.voornaam || 'Klant', id: `/klanten/${klant.id}` }) }}>
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigateWithTab({ path: `/klanten/${klant.id}`, label: klant.bedrijfsnaam || klant.contactpersoon || 'Klant', id: `/klanten/${klant.id}` }) }}>
                   <Eye className="w-3.5 h-3.5 mr-2" />
                   Bekijken
                 </DropdownMenuItem>

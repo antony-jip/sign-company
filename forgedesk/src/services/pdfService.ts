@@ -479,7 +479,7 @@ export async function generateOffertePDF(
   klant: Partial<Klant>,
   bedrijfsProfiel: PdfBedrijfsProfiel,
   docStyle?: DocumentStyle | null
-): jsPDF {
+): Promise<jsPDF> {
   const brand = getBrandColor(bedrijfsProfiel, docStyle)
   const margins = getMargins(docStyle)
   const headingFont = getHeadingFont(docStyle)

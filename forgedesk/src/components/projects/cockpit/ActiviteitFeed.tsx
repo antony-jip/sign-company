@@ -259,7 +259,7 @@ export function ActiviteitFeed({
   // Available filter types (only show filters that have events)
   const availableFilters = useMemo(() => {
     const types = new Set(allEvents.map(e => e.type))
-    return Object.keys(filterLabels).filter(k => k === 'alles' || types.has(k))
+    return Object.keys(filterLabels).filter(k => k === 'alles' || types.has(k as ActivityEvent['type']))
   }, [allEvents])
 
   // Group by date

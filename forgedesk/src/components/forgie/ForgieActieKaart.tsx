@@ -9,7 +9,10 @@ import {
   createOfferte,
   generateOfferteNummer,
 } from '@/services/supabaseService'
-import type { ForgieActie } from '@/services/forgieChatService'
+interface ForgieActie {
+  type: string
+  data: Record<string, unknown>
+}
 
 const MODULE_CONFIG: Record<string, {
   icon: React.ElementType

@@ -20,8 +20,8 @@ import { useParams } from 'react-router-dom'
 // Lazy-loaded page components – prevents TDZ errors in production Rollup
 // bundles caused by 70+ eager imports with complex initialisation order.
 // ---------------------------------------------------------------------------
-const lazy = (importFn: () => Promise<{ [key: string]: React.ComponentType<any> }>, name: string) =>
-  React.lazy(() => importFn().then(m => ({ default: (m as any)[name] })))
+const lazy = (importFn: () => Promise<Record<string, unknown>>, name: string) =>
+  React.lazy(() => importFn().then(m => ({ default: (m as Record<string, unknown>)[name] as React.ComponentType<any> })))
 
 // Auth pages
 const LoginPage = lazy(() => import('@/components/auth/LoginPage'), 'LoginPage')

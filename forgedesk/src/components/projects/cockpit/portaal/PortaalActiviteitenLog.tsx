@@ -14,7 +14,7 @@ export function PortaalActiviteitenLog({ portaalId }: { portaalId: string }) {
   const [items, setItems] = useState<{ actie: string; created_at: string }[]>([])
 
   useEffect(() => {
-    supabase
+    supabase!
       .from('portaal_activiteiten')
       .select('actie, created_at')
       .eq('portaal_id', portaalId)

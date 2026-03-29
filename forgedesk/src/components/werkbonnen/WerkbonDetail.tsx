@@ -518,7 +518,7 @@ export function WerkbonDetail() {
     )
 
     const blobUrl = doc.output('bloburl')
-    const printWindow = window.open(blobUrl as string)
+    const printWindow = window.open(blobUrl as unknown as string)
     if (printWindow) {
       printWindow.onload = () => printWindow.print()
     }

@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react'
+import { Calendar } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { getStatusColor, getPriorityColor, formatDate } from '@/lib/utils'
 import type { Taak } from '@/types'
