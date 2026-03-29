@@ -92,9 +92,9 @@ export const WIDGET_REGISTRY: Record<DashboardWidgetId, WidgetDef> = {
 
 function getSizeClass(size: WidgetSize): string {
   switch (size) {
-    case 4: return 'col-span-2 lg:col-span-4'
-    case 3: return 'col-span-2 lg:col-span-3'
-    case 2: return 'col-span-2 lg:col-span-2'
+    case 4: return 'sm:col-span-2 lg:col-span-4'
+    case 3: return 'sm:col-span-2 lg:col-span-3'
+    case 2: return 'sm:col-span-2 lg:col-span-2'
     default: return ''
   }
 }
@@ -262,7 +262,7 @@ export function FORGEdeskDashboard() {
       <PortaalAlerts />
 
       {/* ── Configurable widget grid — 4 columns on lg+ ── */}
-      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
         {layout.order.map((widgetId, index) => {
           const def = WIDGET_REGISTRY[widgetId]
           if (!def) return null
