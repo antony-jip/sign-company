@@ -116,7 +116,7 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
       const data = await res.json() as { resultaten: typeof kvkSuggesties }
       setKvkSuggesties(data.resultaten || [])
       setKvkDropdownOpen((data.resultaten || []).length > 0)
-    } catch {
+    } catch (err) {
       setKvkSuggesties([])
       setKvkDropdownOpen(false)
     } finally {
@@ -159,7 +159,7 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
         }))
         toast.success(`Gegevens ingevuld van ${result.naam}`, { duration: 2000 })
       }
-    } catch {
+    } catch (err) {
       setFormData((prev: FormData) => ({
         ...prev,
         bedrijfsnaam: result.naam || prev.bedrijfsnaam,

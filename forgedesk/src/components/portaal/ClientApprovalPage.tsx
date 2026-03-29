@@ -138,7 +138,7 @@ export function ClientApprovalPage() {
           if (doc.storage_path) {
             try {
               urls[doc.id] = await downloadFile(doc.storage_path)
-            } catch { /* ignore */ }
+            } catch (err) { /* ignore */ }
           }
         }
         setDocUrls(urls)

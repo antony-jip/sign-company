@@ -104,8 +104,8 @@ export function ProjectPhotoGallery({
           entries.push({ name, data: new Uint8Array(arrayBuf) })
           loaded++
           toast.loading(`Foto's ophalen... ${loaded}/${photos.length}`, { id: 'bulk-download' })
-        } catch {
-          logger.error(`Kon ${photo.omschrijving} niet ophalen`)
+        } catch (err) {
+          logger.error(`Kon ${photo.omschrijving} niet ophalen`, err)
         }
       }
 
@@ -125,7 +125,8 @@ export function ProjectPhotoGallery({
       URL.revokeObjectURL(url)
 
       toast.success(`${entries.length} foto's gedownload als ZIP`, { id: 'bulk-download' })
-    } catch {
+    } catch (err) {
+      logger.error('Download mislukt:', err)
       toast.error('Download mislukt', { id: 'bulk-download' })
     } finally {
       setIsDownloading(false)

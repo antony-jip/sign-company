@@ -12,6 +12,7 @@ import {
   Eye, Plus, Info, AlertTriangle,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { logger } from '../../utils/logger'
 import { useAuth } from '@/contexts/AuthContext'
 import { round2 } from '@/utils/budgetUtils'
 import {
@@ -61,7 +62,7 @@ export function VisualizerTab() {
         setLog(apiLog.slice(0, 20))
         setCreditSaldo(credits.saldo)
         setTransacties(trans.slice(0, 20))
-      } catch { /* ignore */ }
+      } catch (err) { logger.error('Load visualizer settings failed:', err) }
       if (!cancelled) setIsLoading(false)
     }
     load()
@@ -75,7 +76,8 @@ export function VisualizerTab() {
       const saved = await saveVisualizerInstellingen(user.id, instellingen)
       setInstellingen(saved)
       toast.success('Instellingen opgeslagen')
-    } catch {
+    } catch (err) {
+      logger.error('Save visualizer settings failed:', err)
       toast.error('Opslaan mislukt')
     } finally {
       setIsSaving(false)
@@ -109,7 +111,8 @@ export function VisualizerTab() {
       const trans = await getCreditTransacties(user.id)
       setTransacties(trans.slice(0, 20))
       toast.success(`${aantal} credits ${aantal > 0 ? 'toegevoegd' : 'verwijderd'}`)
-    } catch {
+    } catch (err) {
+      logger.error('Add credits failed:', err)
       toast.error('Credits toevoegen mislukt')
     }
   }, [user?.id, handmatigAantal, handmatigReden])

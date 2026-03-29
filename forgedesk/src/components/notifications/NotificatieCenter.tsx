@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { logger } from "@/utils/logger";
 import {
   Bell,
   Eye,
@@ -333,7 +334,8 @@ export function NotificatieCenter() {
         }
         setLaden(false);
       }
-    } catch {
+    } catch (err) {
+      logger.error('Load notificaties failed:', err);
       setLaden(false);
     }
   }, []);
@@ -360,7 +362,8 @@ export function NotificatieCenter() {
           }
           if (!cancelled) setLaden(false);
         }
-      } catch {
+      } catch (err) {
+        logger.error('Load notificaties failed:', err);
         if (!cancelled) setLaden(false);
       }
     };
@@ -406,7 +409,7 @@ export function NotificatieCenter() {
                 'oGAACBhYqFbF1fdH2LkZGMhHpxam51gIuUl5ORiH54cnBze4WOk5KPiIJ7dnR1eoKKkJCOioWAfHl4eXyDiY2NjImFgn98e3t9gIWJi4qIhoOBf39+f4KFiImIh4WDgYB/f3+BhIaHh4aFg4KBgH+AgYOFhoaGhYSDgoGAgIGChIWFhYWEg4KBgYCBgoOEhYWEhIOCgoGBgYGCg4SEhISEg4OCgoGBgYKDg4SEhIODgoKBgYGBgoODhISDg4OCgoKBgYGCgoODg4ODg4KCgoKBgYGCgoODg4ODgoKCgoKBgYGCgoODg4OCgoKCgoKBgQ==');
               audio.volume = 0.3;
               audio.play().catch(() => {});
-            } catch {
+            } catch (err) {
               // Negeer audio fouten
             }
           }

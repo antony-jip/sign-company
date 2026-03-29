@@ -28,7 +28,7 @@ export function VisualizerKostenDashboard({ compact = false }: VisualizerKostenD
           setStats(s)
           setCreditSaldo(credits.saldo)
         }
-      } catch { /* ignore */ }
+      } catch (err) { /* ignore */ }
       if (!cancelled) setIsLoading(false)
     }
     load()

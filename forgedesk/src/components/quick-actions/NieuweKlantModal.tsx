@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { createKlant, getKlanten, updateKlant } from '@/services/supabaseService'
 import type { Klant } from '@/types'
 import { toast } from 'sonner'
+import { logger } from '../../utils/logger'
 import { ChevronDown, Building2 } from 'lucide-react'
 
 interface Props {
@@ -98,7 +99,8 @@ export function NieuweKlantModal({ open, onOpenChange }: Props) {
         toast.success(`Contactpersoon toegevoegd aan ${selectedKlant.bedrijfsnaam}`)
         onOpenChange(false)
         navigate(`/klanten/${selectedKlant.id}`)
-      } catch {
+      } catch (err) {
+        logger.error('Kon contactpersoon niet toevoegen:', err)
         toast.error('Kon contactpersoon niet toevoegen')
       } finally {
         setSaving(false)
@@ -135,7 +137,8 @@ export function NieuweKlantModal({ open, onOpenChange }: Props) {
         toast.success('Klant toegevoegd')
         onOpenChange(false)
         navigate(`/klanten/${klant.id}`)
-      } catch {
+      } catch (err) {
+        logger.error('Kon klant niet toevoegen:', err)
         toast.error('Kon klant niet toevoegen')
       } finally {
         setSaving(false)

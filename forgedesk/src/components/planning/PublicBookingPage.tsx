@@ -21,6 +21,7 @@ import {
 import type { BookingSlot, BookingAfspraak } from '@/types'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import { logger } from '../../utils/logger'
 
 const DAGEN_KORT = ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za']
 
@@ -55,7 +56,7 @@ export function PublicBookingPage() {
       ])
       setSlots((slotsData || []).filter(s => s.actief))
       setBestaandeAfspraken((afsprakenData || []).filter(a => a.status !== 'geannuleerd'))
-    } catch {
+    } catch (err) {
       // silent
     } finally {
       setLoading(false)
@@ -140,7 +141,8 @@ export function PublicBookingPage() {
         status: 'gepland',
       })
       setBevestigd(true)
-    } catch {
+    } catch (err) {
+      logger.error('Kon afspraak niet boeken:', err)
       toast.error('Kon afspraak niet boeken')
     } finally {
       setVerzenden(false)

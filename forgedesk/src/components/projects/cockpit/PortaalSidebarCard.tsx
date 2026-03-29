@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { getPortaalByProject, getPortaalItems, createPortaal } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import { toast } from 'sonner'
+import { logger } from '../../../utils/logger'
 import { Send } from 'lucide-react'
 import type { ProjectPortaal, PortaalItem } from '@/types'
 import { formatTime } from './portaal/PortaalTimelineItems'
@@ -58,7 +59,7 @@ export function PortaalCompactCard({ projectId }: PortaalCompactCardProps) {
       const goedkeurbaar = zichtbaar.filter((i: PortaalItem) => i.type === 'offerte' || i.type === 'tekening')
       const goedgekeurd = goedkeurbaar.filter((i: PortaalItem) => i.status === 'goedgekeurd')
       setVoortgang({ goedgekeurd: goedgekeurd.length, totaal: goedkeurbaar.length })
-    } catch { /* silent */ }
+    } catch (err) { logger.error('Refresh portaal items failed:', err) }
   }
 
   useEffect(() => {
@@ -81,8 +82,8 @@ export function PortaalCompactCard({ projectId }: PortaalCompactCardProps) {
         const goedkeurbaar = zichtbaar.filter((i: PortaalItem) => i.type === 'offerte' || i.type === 'tekening')
         const goedgekeurd = goedkeurbaar.filter((i: PortaalItem) => i.status === 'goedgekeurd')
         setVoortgang({ goedgekeurd: goedgekeurd.length, totaal: goedkeurbaar.length })
-      } catch {
-        // silent
+      } catch (err) {
+        logger.error('Fetch portaal failed:', err)
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -98,7 +99,8 @@ export function PortaalCompactCard({ projectId }: PortaalCompactCardProps) {
       setPortaal(nieuwPortaal)
       setExpanded(true)
       toast.success('Portaal geactiveerd')
-    } catch {
+    } catch (err) {
+      logger.error('Activate portaal failed:', err)
       toast.error('Kon portaal niet activeren')
     }
   }

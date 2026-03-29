@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { logger } from '../../utils/logger'
 import {
   Plus, UserPlus, Loader2, Trash2, Eye, Copy, Link, ExternalLink,
   ToggleLeft, ToggleRight,
@@ -58,7 +59,8 @@ export function LeadCaptureLayout() {
       const updated = await updateLeadFormulier(form.id, { actief: !form.actief })
       setFormulieren((prev) => prev.map((f) => f.id === updated.id ? updated : f))
       toast.success(updated.actief ? 'Formulier geactiveerd' : 'Formulier gedeactiveerd')
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij wijzigen:', err)
       toast.error('Fout bij wijzigen')
     }
   }, [])
@@ -75,7 +77,8 @@ export function LeadCaptureLayout() {
       await deleteLeadFormulier(deleteTarget.id)
       setFormulieren((prev) => prev.filter((f) => f.id !== deleteTarget.id))
       toast.success('Formulier verwijderd')
-    } catch {
+    } catch (err) {
+      logger.error('Kon formulier niet verwijderen:', err)
       toast.error('Kon formulier niet verwijderen')
     }
     setDeleteDialogOpen(false)

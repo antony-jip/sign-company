@@ -17,6 +17,7 @@ import { ImportHulpBanner } from './ImportHulpBanner'
 import { LosseContacten } from './LosseContacten'
 import type { ImportLog } from '@/types'
 import { toast } from 'sonner'
+import { logger } from '../../utils/logger'
 import { confirm } from '@/components/shared/ConfirmDialog'
 
 function formatDate(dateStr: string): string {
@@ -29,7 +30,7 @@ function formatDate(dateStr: string): string {
       hour: '2-digit',
       minute: '2-digit',
     })
-  } catch {
+  } catch (err) {
     return dateStr
   }
 }
@@ -59,7 +60,8 @@ export function DataImportPage() {
       await deleteImportLog(id)
       setLogs((prev) => prev.filter((l) => l.id !== id))
       toast.success('Import log verwijderd')
-    } catch {
+    } catch (err) {
+      logger.error('Delete import log failed:', err)
       toast.error('Fout bij verwijderen van log')
     }
   }
@@ -72,7 +74,8 @@ export function DataImportPage() {
       await deleteAllImportLogs(organisatieId)
       setLogs([])
       toast.success('Import geschiedenis gewist')
-    } catch {
+    } catch (err) {
+      logger.error('Clear import history failed:', err)
       toast.error('Fout bij wissen van geschiedenis')
     }
   }

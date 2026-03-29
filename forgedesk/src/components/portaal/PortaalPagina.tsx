@@ -135,14 +135,14 @@ export function PortaalPagina() {
   const [error, setError] = useState('')
   const [data, setData] = useState<PortaalApiResponse | null>(null)
   const [klantNaam, setKlantNaam] = useState(() => {
-    try { return localStorage.getItem('doen_portaal_klant_naam') || '' } catch { return '' }
+    try { return localStorage.getItem('doen_portaal_klant_naam') || '' } catch (err) { return '' }
   })
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
   const { markBekeken } = useBekekenTracker(token)
 
   useEffect(() => {
     if (klantNaam) {
-      try { localStorage.setItem('doen_portaal_klant_naam', klantNaam) } catch { /* ignore */ }
+      try { localStorage.setItem('doen_portaal_klant_naam', klantNaam) } catch (err) { /* ignore */ }
     }
   }, [klantNaam])
 
@@ -155,7 +155,7 @@ export function PortaalPagina() {
         return
       }
       setData(await response.json())
-    } catch {
+    } catch (err) {
       setError('Verbinding mislukt. Probeer het later opnieuw.')
     } finally {
       setLoading(false)

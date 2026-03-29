@@ -94,7 +94,7 @@ export async function isForgieConfigured(): Promise<boolean> {
       if (data?.configured === false) return false
     }
     return true
-  } catch {
+  } catch (err) {
     return false
   }
 }

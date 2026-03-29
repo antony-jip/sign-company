@@ -137,7 +137,7 @@ export function ProjectImportDialog({ open, onOpenChange, onImportComplete }: Pr
 
       setProjecten(parsed)
       setStap('preview')
-    } catch {
+    } catch (err) {
       setParseError('CSV kon niet worden gelezen. Controleer het bestandsformaat.')
     }
   }, [])

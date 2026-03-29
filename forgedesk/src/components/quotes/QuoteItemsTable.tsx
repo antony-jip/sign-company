@@ -240,7 +240,7 @@ async function saveBijlageToProject(
       gedeeld_met: [],
       beschrijving: itemBeschrijving ? `Bijlage bij: ${itemBeschrijving}` : '',
     })
-  } catch {
+  } catch (err) {
     // Non-critical: don't block the bijlage upload itself
   }
 }
@@ -797,7 +797,7 @@ export function QuoteItemsTable({
           onUpdateItem(itemId, 'beschrijving', data.omschrijving)
         }
       }
-    } catch {
+    } catch (err) {
       // Invalid drag data
     }
   }
@@ -1046,7 +1046,7 @@ export function QuoteItemsTable({
                   onRemove={async () => {
                     // Delete from storage if it's a storage path (not a data URL or http URL)
                     if (item.bijlage_url && !item.bijlage_url.startsWith('data:') && !item.bijlage_url.startsWith('http')) {
-                      try { await deleteFile(item.bijlage_url) } catch { /* silent */ }
+                      try { await deleteFile(item.bijlage_url) } catch (err) { /* silent */ }
                     }
                     onUpdateItem(item.id, 'bijlage_url', '')
                     onUpdateItem(item.id, 'bijlage_type', '' as 'image/jpeg')

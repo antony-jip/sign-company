@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useNavigateWithTab } from '@/hooks/useNavigateWithTab'
 import { toast } from 'sonner'
+import { logger } from '../../utils/logger'
 import {
   Plus, Search, Briefcase, Trash2, Eye, Loader2,
   LayoutGrid, List, ArrowRight, Phone, Mail,
@@ -212,7 +213,8 @@ export function DealsLayout() {
       const updated = await updateDeal(dealId, { fase: newFase, fase_sinds: new Date().toISOString() })
       setDeals((prev) => prev.map((d) => d.id === dealId ? updated : d))
       toast.success(`Deal verplaatst naar ${columns.find((c) => c.key === newFase)?.label || newFase}`)
-    } catch {
+    } catch (err) {
+      logger.error('Move deal failed:', err)
       toast.error('Kon deal niet verplaatsen')
     }
   }, [deals, columns])
@@ -244,7 +246,8 @@ export function DealsLayout() {
       setNewWaarde(0)
       toast.success('Deal aangemaakt')
       navigateWithTab({ path: `/deals/${created.id}`, label: created.titel || 'Deal', id: `/deals/${created.id}` })
-    } catch {
+    } catch (err) {
+      logger.error('Create deal failed:', err)
       toast.error('Fout bij aanmaken')
     } finally {
       setIsSaving(false)
@@ -259,7 +262,8 @@ export function DealsLayout() {
       await deleteDeal(deleteTarget.id)
       setDeals((prev) => prev.filter((d) => d.id !== deleteTarget.id))
       toast.success('Deal verwijderd')
-    } catch {
+    } catch (err) {
+      logger.error('Delete deal failed:', err)
       toast.error('Kon deal niet verwijderen')
     }
     setDeleteDialogOpen(false)

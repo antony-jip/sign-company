@@ -188,7 +188,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
             setFetchedOfferte(updatedWithProject)
             toast.success(`Project "${project.naam}" automatisch aangemaakt`)
           }
-        } catch {
+        } catch (err) {
           // Non-critical: don't block the status update
         }
       }
@@ -296,7 +296,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
           try {
             const resolved = await downloadFile(url)
             if (!cancelled) urls[idx] = resolved
-          } catch { /* skip */ }
+          } catch (err) { /* skip */ }
         }
       }
       if (!cancelled) setBijlageUrls(urls)

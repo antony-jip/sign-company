@@ -471,7 +471,8 @@ export function QuotesPipeline() {
       const updated = await updateOfferte(offerte.id, { opvolging_actief: newVal })
       setOffertes(prev => prev.map(o => o.id === offerte.id ? { ...o, ...updated } : o))
       toast.success(newVal ? 'Opvolging hervat' : 'Opvolging gepauzeerd')
-    } catch {
+    } catch (err) {
+      logger.error('Opvolging wijzigen mislukt:', err)
       toast.error('Kon opvolging niet wijzigen')
     }
   }, [])

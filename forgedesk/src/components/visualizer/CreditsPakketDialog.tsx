@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react'
+import { logger } from '@/utils/logger'
 import {
   Dialog,
   DialogContent,
@@ -111,7 +112,8 @@ export function CreditsPakketDialog({
       onCreditsToegevoegd?.(result.saldo)
       toast.success(`${pakket.credits} credits toegevoegd!`)
       onClose()
-    } catch {
+    } catch (err) {
+      logger.error('Credits toevoegen mislukt:', err)
       toast.error('Credits toevoegen mislukt')
     }
   }, [user?.id, onCreditsToegevoegd, onClose])

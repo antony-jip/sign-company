@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { BackButton } from '@/components/shared/BackButton'
 import { toast } from 'sonner'
+import { logger } from '../../utils/logger'
 import {
   ShoppingCart, Plus, Trash2, Save, ArrowLeft, Loader2,
   Package, Check, FileDown,
@@ -105,7 +106,8 @@ export function BestelbonDetail() {
 
           const regelData = await getBestelbonRegels(bst.id)
           setRegels(regelData)
-        } catch {
+        } catch (err) {
+          logger.error('Load bestelbon failed:', err)
           toast.error('Fout bij laden bestelbon')
           navigate('/bestelbonnen')
         }
@@ -276,7 +278,8 @@ export function BestelbonDetail() {
 
         toast.success(`Bestelbon ${bestelbonNummer} opgeslagen`)
       }
-    } catch {
+    } catch (err) {
+      logger.error('Save bestelbon failed:', err)
       toast.error('Fout bij opslaan')
     } finally {
       setIsSaving(false)
@@ -309,7 +312,8 @@ export function BestelbonDetail() {
       )
       doc.save(`bestelbon-${bestelbonNummer}.pdf`)
       toast.success('PDF gedownload')
-    } catch {
+    } catch (err) {
+      logger.error('Generate bestelbon PDF failed:', err)
       toast.error('Kon PDF niet genereren')
     }
   }, [bestelbonNummer, referentie, besteldOp, verwachteLevering, opmerkingen, berekenTotaal, regels, leveranciers, leverancierId, profile, primaireKleur, documentStyle])

@@ -53,7 +53,7 @@ export function BedrijfsdataUpload() {
       setFouten(validatie.fouten)
       setWaarschuwingen(validatie.waarschuwingen)
       setIsValid(validatie.isValid)
-    } catch {
+    } catch (err) {
       setFouten(['Fout bij het lezen van het bestand.'])
       setIsValid(false)
     }

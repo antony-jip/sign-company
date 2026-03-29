@@ -150,7 +150,7 @@ export function WeatherWidget() {
           }))
           setForecast(days)
         }
-      } catch {
+      } catch (err) {
         if (!cancelled) setError(true)
       } finally {
         if (!cancelled) setLoading(false)

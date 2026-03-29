@@ -792,7 +792,8 @@ function SnelkoppelingenTab() {
       setIsSaving(true)
       await updateSettings({ snelofferte_templates: selected })
       toast.success('Snelkoppelingen opgeslagen')
-    } catch {
+    } catch (err) {
+      logger.error('Snelkoppelingen opslaan mislukt:', err)
       toast.error('Kon snelkoppelingen niet opslaan')
     } finally {
       setIsSaving(false)

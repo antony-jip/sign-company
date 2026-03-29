@@ -10,6 +10,7 @@ import {
 import { cn } from '@/lib/utils'
 import { callForgie } from '@/services/forgieService'
 import { toast } from 'sonner'
+import { logger } from '../../utils/logger'
 
 interface EmailReaderAIToolbarProps {
   /** Ref to the container element with email body */
@@ -131,7 +132,7 @@ export function EmailReaderAIToolbar({ containerRef, disabled }: EmailReaderAITo
         await navigator.clipboard.writeText(selectedText)
         toast.success('Gekopieerd naar klembord')
         hideToolbar()
-      } catch {
+      } catch (err) {
         toast.error('Kopiëren mislukt')
       }
       return
@@ -147,7 +148,8 @@ export function EmailReaderAIToolbar({ containerRef, disabled }: EmailReaderAITo
       if (response?.result) {
         setResult(response.result)
       }
-    } catch {
+    } catch (err) {
+      logger.error('AI toolbar action failed:', err)
       toast.error('Daan kon dit niet verwerken. Probeer het opnieuw.')
       setResult(null)
     } finally {
@@ -221,7 +223,7 @@ export function EmailReaderAIToolbar({ containerRef, disabled }: EmailReaderAITo
               try {
                 await navigator.clipboard.writeText(result)
                 toast.success('Gekopieerd naar klembord')
-              } catch {
+              } catch (err) {
                 toast.error('Kopiëren mislukt')
               }
             }}

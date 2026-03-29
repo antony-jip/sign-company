@@ -364,8 +364,8 @@ export function OfferteDetail() {
 
       try {
         await sendEmail(sendTo, sendSubject || subject, text, { html, attachments })
-      } catch {
-        // Email sending failed (SMTP not configured), continue with status update
+      } catch (err) {
+        logger.error('Email verzenden mislukt:', err)
         toast.warning('Email niet verzonden (SMTP niet geconfigureerd). Status is wel bijgewerkt.')
       }
 
@@ -684,7 +684,7 @@ export function OfferteDetail() {
                     const key = 'doen_clipboard_items'
                     localStorage.setItem(key, JSON.stringify(templates))
                     toast.success(`${templates.length} item${templates.length === 1 ? '' : 's'} gekopieerd — plak in een andere offerte`)
-                  } catch {
+                  } catch (err) {
                     toast.error('Kon items niet kopiëren')
                   }
                 }}

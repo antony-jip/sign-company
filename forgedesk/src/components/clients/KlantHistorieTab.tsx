@@ -39,7 +39,7 @@ function formatDate(dateStr: string): string {
   try {
     const d = new Date(dateStr)
     return d.toLocaleDateString('nl-NL', { year: 'numeric', month: '2-digit', day: '2-digit' })
-  } catch {
+  } catch (err) {
     return dateStr
   }
 }

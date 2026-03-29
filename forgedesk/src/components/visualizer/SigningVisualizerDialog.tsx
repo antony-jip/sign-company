@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react'
+import { logger } from '@/utils/logger'
 import {
   Dialog,
   DialogContent,
@@ -340,7 +341,8 @@ export function SigningVisualizerDialog({
       toast.success('Opgeslagen!')
       onVisualisatieOpgeslagen?.(visualisatie)
       onClose()
-    } catch {
+    } catch (err) {
+      logger.error('Visualisatie opslaan mislukt:', err)
       toast.error('Opslaan mislukt')
     }
   }, [user?.id, resultaat, foto, logoFoto, beschrijving, offerte_id, project_id, klant_id, onVisualisatieOpgeslagen, onClose])

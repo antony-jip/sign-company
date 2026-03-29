@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
+import { logger } from '@/utils/logger'
 import { useNavigate } from 'react-router-dom'
 import { useNavigateWithTab } from '@/hooks/useNavigateWithTab'
 import { toast } from 'sonner'
@@ -112,7 +113,8 @@ export function LeveringsbonnenLayout() {
       await deleteLeveringsbon(deleteTarget.id)
       setLeveringsbonnen((prev) => prev.filter((l) => l.id !== deleteTarget.id))
       toast.success(`${deleteTarget.leveringsbon_nummer} verwijderd`)
-    } catch {
+    } catch (err) {
+      logger.error('Leveringsbon verwijderen mislukt:', err)
       toast.error('Kon leveringsbon niet verwijderen')
     }
     setDeleteDialogOpen(false)

@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { createKlant, updateKlant, getContactpersonenByKlant } from '@/services/supabaseService'
 import type { Klant, Contactpersoon, ContactpersoonRecord } from '@/types'
 import { toast } from 'sonner'
+import { logger } from '../../utils/logger'
 
 interface KlantContactSelectorProps {
   klantId: string
@@ -158,7 +159,8 @@ export function KlantContactSelector({
       setShowUitgebreid(false)
       setShowResults(false)
       toast.success(`Bedrijf "${nieuw.bedrijfsnaam}" aangemaakt`)
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij aanmaken bedrijf:', err)
       toast.error('Fout bij aanmaken bedrijf')
     } finally {
       setCreating(false)
@@ -186,7 +188,8 @@ export function KlantContactSelector({
       setNc({ naam: '', functie: '', email: '', telefoon: '' })
       setShowNieuwContact(false)
       toast.success(`Contactpersoon "${newCp.naam}" toegevoegd`)
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij toevoegen contactpersoon:', err)
       toast.error('Fout bij toevoegen contactpersoon')
     } finally {
       setCreating(false)

@@ -362,7 +362,7 @@ export function AITextGenerator() {
       setCopied(true)
       toast.success('Tekst gekopieerd naar klembord')
       setTimeout(() => setCopied(false), 2000)
-    } catch {
+    } catch (err) {
       toast.error('Kopiëren mislukt')
     }
   }

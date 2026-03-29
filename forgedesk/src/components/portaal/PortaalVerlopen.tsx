@@ -37,7 +37,7 @@ export function PortaalVerlopen({ token, bedrijfsnaam, telefoon, email, logoUrl 
       }
 
       setVerzonden(true)
-    } catch {
+    } catch (err) {
       setFout('Verbinding mislukt. Probeer het later opnieuw.')
     } finally {
       setLoading(false)

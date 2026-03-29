@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { logger } from '@/utils/logger'
 import { useNavigate } from 'react-router-dom'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { createProject, getKlanten } from '@/services/supabaseService'
@@ -72,7 +73,8 @@ export function NieuwProjectModal({ open, onOpenChange }: Props) {
       toast.success('Project aangemaakt')
       onOpenChange(false)
       navigate(`/projecten/${project.id}`)
-    } catch {
+    } catch (err) {
+      logger.error('Project aanmaken mislukt:', err)
       toast.error('Kon project niet aanmaken')
     } finally {
       setSaving(false)

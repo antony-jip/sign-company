@@ -62,14 +62,14 @@ export function safeSetItem(key: string, value: string): boolean {
   try {
     localStorage.setItem(key, value)
     return true
-  } catch {
+  } catch (err) {
     // Quota exceeded — try to free space and retry
     const freed = freeLocalStorageSpace()
     if (freed === 0) return false
     try {
       localStorage.setItem(key, value)
       return true
-    } catch {
+    } catch (err) {
       return false
     }
   }

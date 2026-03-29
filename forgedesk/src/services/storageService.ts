@@ -141,7 +141,7 @@ export async function uploadMontageBijlage(file: File): Promise<{
   let displayUrl = url
   try {
     displayUrl = await downloadFile(url)
-  } catch {
+  } catch (err) {
     // fallback to path
   }
 

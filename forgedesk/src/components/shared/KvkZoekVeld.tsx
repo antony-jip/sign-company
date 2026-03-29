@@ -153,7 +153,7 @@ export function KvkZoekVeld({ kvkNummer, onKvkChange, onResultSelect }: KvkZoekV
         })
         toast.success(`Gegevens ingevuld van ${result.naam}`)
       }
-    } catch {
+    } catch (err) {
       // Fallback bij netwerk error
       onKvkChange(result.kvkNummer)
       onResultSelect({

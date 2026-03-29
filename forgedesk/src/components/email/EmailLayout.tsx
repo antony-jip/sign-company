@@ -77,7 +77,7 @@ export function EmailLayout() {
   const [filter, setFilter] = useState<FilterType>('alle')
   const [fontSize, setFontSize] = useState<FontSize>('medium')
   const [listStyle, setListStyle] = useState<'inline' | 'stacked'>(() => {
-    try { return (localStorage.getItem('email_list_style') as 'inline' | 'stacked') || 'inline' } catch { return 'inline' }
+    try { return (localStorage.getItem('email_list_style') as 'inline' | 'stacked') || 'inline' } catch (err) { return 'inline' }
   })
 
   // ─── Loading state ───
@@ -197,8 +197,8 @@ export function EmailLayout() {
           // Read synced emails from Supabase
           const synced = await readFromSupabase()
           setEmails(synced)
-        } catch {
-          // IMAP also failed — show empty inbox
+        } catch (err) {
+          logger.error('IMAP sync failed:', err)
           setUseIMAP(false)
         }
       } finally {
@@ -460,7 +460,7 @@ export function EmailLayout() {
     try {
       const cached = await readFromSupabase()
       setEmails(cached)
-    } catch { /* keep existing */ }
+    } catch (err) { logger.error('Folder load failed:', err) }
     finally { setIsLoading(false) }
   }, [])
 
@@ -482,7 +482,8 @@ export function EmailLayout() {
         setEmails(fresh)
       }
       setImapTotal(result.total || 0)
-    } catch {
+    } catch (err) {
+      logger.error('Load more emails failed:', err)
       toast.error('Kon meer emails niet laden')
     } finally {
       setIsLoadingMore(false)

@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useNavigateWithTab } from '@/hooks/useNavigateWithTab'
 import { toast } from 'sonner'
+import { logger } from '../../utils/logger'
 import {
   Plus, Search, ShoppingCart, Trash2, Eye,
   Download, Loader2,
@@ -75,7 +76,7 @@ export function BestelbonnenLayout() {
           try {
             const regels = await getBestelbonRegels(bst.id)
             bedragenMap[bst.id] = round2(regels.reduce((sum, r) => sum + round2(r.aantal * r.prijs_per_eenheid), 0))
-          } catch {
+          } catch (err) {
             bedragenMap[bst.id] = bst.totaal || 0
           }
         }
@@ -131,7 +132,8 @@ export function BestelbonnenLayout() {
       await deleteBestelbon(deleteTarget.id)
       setBestelbonnen((prev) => prev.filter((b) => b.id !== deleteTarget.id))
       toast.success(`${deleteTarget.bestelbon_nummer} verwijderd`)
-    } catch {
+    } catch (err) {
+      logger.error('Kon bestelbon niet verwijderen:', err)
       toast.error('Kon bestelbon niet verwijderen')
     }
     setDeleteDialogOpen(false)

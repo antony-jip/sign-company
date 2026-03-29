@@ -22,6 +22,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
+import { logger } from '../../utils/logger'
 import {
   getNotificaties,
   markNotificatieGelezen,
@@ -78,7 +79,7 @@ export function PortaalAlerts() {
         ['portaal_goedkeuring', 'portaal_revisie'].includes(n.type)
       )
       setAlerts(portaalAlerts)
-    } catch {
+    } catch (err) {
       // Stille error
     }
   }, [])
@@ -104,7 +105,8 @@ export function PortaalAlerts() {
       setMontageDatum('')
       setMontageNotitie('')
       setMontageOpen(true)
-    } catch {
+    } catch (err) {
+      logger.error('Kon project gegevens niet ophalen:', err)
       toast.error('Kon project gegevens niet ophalen')
     }
   }

@@ -242,7 +242,7 @@ export async function syncEmailSettingsFromServer(): Promise<boolean> {
       sessionStorage.setItem('doen_email_settings', JSON.stringify(settings))
       return true
     }
-  } catch { /* ignore */ }
+  } catch (err) { /* ignore */ }
   return false
 }
 

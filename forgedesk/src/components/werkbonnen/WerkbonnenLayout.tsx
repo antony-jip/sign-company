@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback, useDeferredValue } fr
 import { useNavigate } from 'react-router-dom'
 import { useNavigateWithTab } from '@/hooks/useNavigateWithTab'
 import { toast } from 'sonner'
+import { logger } from '../../utils/logger'
 import {
   Plus, Search, ClipboardCheck, Trash2, Eye, FileText,
   Download, Loader2
@@ -65,12 +66,13 @@ export function WerkbonnenLayout() {
             const items = await getWerkbonItems(wb.id)
             if (cancelled) return
             counts[wb.id] = items.length
-          } catch {
+          } catch (err) {
             counts[wb.id] = 0
           }
         }
         setItemCounts(counts)
-      } catch {
+      } catch (err) {
+        logger.error('Load werkbonnen failed:', err)
         if (!cancelled) toast.error('Fout bij laden werkbonnen')
       } finally {
         if (!cancelled) setIsLoading(false)
@@ -126,7 +128,8 @@ export function WerkbonnenLayout() {
       await deleteWerkbon(deleteTarget.id)
       setWerkbonnen((prev) => prev.filter((wb) => wb.id !== deleteTarget.id))
       toast.success('Werkbon verwijderd')
-    } catch {
+    } catch (err) {
+      logger.error('Delete werkbon failed:', err)
       toast.error('Fout bij verwijderen werkbon')
     } finally {
       setDeleteDialogOpen(false)

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { logger } from '../../utils/logger'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
@@ -50,7 +51,7 @@ export function PortaalTab() {
       try {
         const parsed = JSON.parse(cached)
         setEmailGekoppeld(!!parsed?.gmail_address)
-      } catch {
+      } catch (err) {
         setEmailGekoppeld(false)
       }
     } else {
@@ -103,7 +104,8 @@ export function PortaalTab() {
       const inhoud = Object.entries(demoVars).reduce((s, [k, v]) => s.split(k).join(v), template.inhoud)
       await sendEmail(user.email, `[TEST] ${onderwerp}`, inhoud, {})
       toast.success(`Testmail verstuurd naar ${user.email}`)
-    } catch {
+    } catch (err) {
+      logger.error('Kon testmail niet versturen:', err)
       toast.error('Kon testmail niet versturen — controleer je email instellingen')
     } finally {
       setIsSendingTest(null)

@@ -87,7 +87,7 @@ export function MeldingenPage() {
     try {
       const data = await getNotificaties()
       setNotificaties(data || [])
-    } catch {
+    } catch (err) {
       // ignore
     } finally {
       setLaden(false)

@@ -77,7 +77,7 @@ function loadTabs(): AppTab[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     return raw ? JSON.parse(raw) : []
-  } catch {
+  } catch (err) {
     return []
   }
 }

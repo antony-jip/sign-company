@@ -119,7 +119,7 @@ async function checkForReply(
     logger.error("IMAP reply check mislukt", {
       error: err instanceof Error ? err.message : String(err),
     });
-    try { await client.logout(); } catch { /* ignore */ }
+    try { await client.logout(); } catch (err) { /* ignore */ }
     return false;
   }
 }

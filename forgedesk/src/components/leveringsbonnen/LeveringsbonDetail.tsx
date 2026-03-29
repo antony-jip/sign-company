@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { BackButton } from '@/components/shared/BackButton'
 import { toast } from 'sonner'
+import { logger } from '../../utils/logger'
 import {
   PackageCheck, Plus, Trash2, Save, ArrowLeft, Loader2,
   Package, FileDown, Pen, RotateCcw,
@@ -117,7 +118,8 @@ export function LeveringsbonDetail() {
 
           const regelData = await getLeveringsbonRegels(lb.id)
           setRegels(regelData)
-        } catch {
+        } catch (err) {
+          logger.error('Load leveringsbon failed:', err)
           toast.error('Fout bij laden leveringsbon')
           navigate('/leveringsbonnen')
         }
@@ -313,7 +315,8 @@ export function LeveringsbonDetail() {
 
         toast.success(`Leveringsbon ${leveringsbonNummer} opgeslagen`)
       }
-    } catch {
+    } catch (err) {
+      logger.error('Save leveringsbon failed:', err)
       toast.error('Fout bij opslaan')
     } finally {
       setIsSaving(false)
@@ -344,7 +347,8 @@ export function LeveringsbonDetail() {
       )
       doc.save(`leveringsbon-${leveringsbonNummer}.pdf`)
       toast.success('PDF gedownload')
-    } catch {
+    } catch (err) {
+      logger.error('Generate leveringsbon PDF failed:', err)
       toast.error('Kon PDF niet genereren')
     }
   }, [leveringsbonNummer, omschrijving, datum, opmerkingenKlant, handtekeningData, regels, klanten, klantId, profile, primaireKleur, documentStyle])

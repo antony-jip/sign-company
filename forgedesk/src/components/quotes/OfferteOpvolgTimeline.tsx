@@ -71,7 +71,8 @@ export function OfferteOpvolgTimeline({ offerteId, verstuurdOp, schemaId: _schem
       await updateOfferte(offerteId, { opvolging_actief: checked })
       setActief(checked)
       toast.success(checked ? 'Opvolging hervat' : 'Opvolging gepauzeerd')
-    } catch {
+    } catch (err) {
+      logger.error('Opvolging wijzigen mislukt:', err)
       toast.error('Kon opvolging niet wijzigen')
     } finally {
       setToggling(false)

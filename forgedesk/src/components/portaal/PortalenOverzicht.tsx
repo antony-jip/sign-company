@@ -40,6 +40,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { toast } from 'sonner'
+import { logger } from '../../utils/logger'
 import {
   getAllPortalen,
   getNotificaties,
@@ -279,7 +280,8 @@ export function PortalenOverzicht() {
       })
       toast.success('Taak aangemaakt')
       setTaakDialogOpen(false)
-    } catch {
+    } catch (err) {
+      logger.error('Kon taak niet aanmaken:', err)
       toast.error('Kon taak niet aanmaken')
     } finally {
       setTaakSaving(false)
@@ -305,7 +307,8 @@ export function PortalenOverzicht() {
       toast.success('Reactie verstuurd')
       setReplyOpenId(null)
       setReplyText('')
-    } catch {
+    } catch (err) {
+      logger.error('Kon reactie niet versturen:', err)
       toast.error('Kon reactie niet versturen')
     } finally {
       setReplySending(false)

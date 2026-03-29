@@ -36,7 +36,7 @@ export function usePortaalHerinnering() {
         if (data?.created_at) {
           setLaatsteHerinnering(data.created_at)
         }
-      } catch {
+      } catch (err) {
         // Table may not exist yet — ignore
       }
     }

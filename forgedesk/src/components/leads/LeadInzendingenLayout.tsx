@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { logger } from '../../utils/logger'
 import {
   ArrowLeft, Loader2, Eye, CheckCircle, Inbox, UserPlus,
 } from 'lucide-react'
@@ -80,7 +81,7 @@ export function LeadInzendingenLayout() {
       try {
         const updated = await updateLeadInzending(inz.id, { status: 'bekeken' })
         setInzendingen((prev) => prev.map((i) => i.id === updated.id ? updated : i))
-      } catch { /* ignore */ }
+      } catch (err) { /* ignore */ }
     }
   }, [])
 
@@ -90,7 +91,8 @@ export function LeadInzendingenLayout() {
       setInzendingen((prev) => prev.map((i) => i.id === updated.id ? updated : i))
       if (selectedInzending?.id === updated.id) setSelectedInzending(updated)
       toast.success('Gemarkeerd als verwerkt')
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij bijwerken:', err)
       toast.error('Fout bij bijwerken')
     }
   }, [selectedInzending])

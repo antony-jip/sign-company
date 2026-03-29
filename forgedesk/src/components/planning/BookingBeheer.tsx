@@ -35,6 +35,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import type { BookingSlot, BookingAfspraak } from '@/types'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import { logger } from '../../utils/logger'
 
 const DAGEN = ['Zondag', 'Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag', 'Zaterdag']
 const DAGEN_KORT = ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za']
@@ -67,7 +68,8 @@ export function BookingBeheer() {
       ])
       setSlots(slotsData || [])
       setAfspraken(afsprakenData || [])
-    } catch {
+    } catch (err) {
+      logger.error('Load booking data failed:', err)
       toast.error('Kon booking gegevens niet laden')
     } finally {
       setLoading(false)
@@ -169,7 +171,7 @@ export function BookingBeheer() {
                             await deleteBookingSlot(slot.id)
                             setSlots(prev => prev.filter(s => s.id !== slot.id))
                             toast.success('Tijdslot verwijderd')
-                          } catch { toast.error('Kon tijdslot niet verwijderen') }
+                          } catch (err) { logger.error('Delete booking slot failed:', err); toast.error('Kon tijdslot niet verwijderen') }
                         }}
                       >
                         <Trash2 className="h-3 w-3" />
@@ -345,7 +347,7 @@ export function BookingBeheer() {
                 setSlots(prev => [...prev, created])
                 setSlotDialogOpen(false)
                 toast.success('Tijdslot toegevoegd')
-              } catch { toast.error('Kon tijdslot niet toevoegen') }
+              } catch (err) { logger.error('Create booking slot failed:', err); toast.error('Kon tijdslot niet toevoegen') }
             }}>Toevoegen</Button>
           </DialogFooter>
         </DialogContent>

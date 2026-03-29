@@ -420,7 +420,7 @@ export async function importeerBedrijfsdata(
       aantal_fouten: resultaat.fouten,
       status: resultaat.fouten > 0 ? 'met_fouten' : 'voltooid',
     })
-  } catch {
+  } catch (err) {
     // Log failure is niet kritiek
   }
 
@@ -551,7 +551,7 @@ export async function importeerContactpersonen(
       aantal_fouten: resultaat.fouten,
       status: resultaat.fouten > 0 ? 'met_fouten' : 'voltooid',
     })
-  } catch {
+  } catch (err) {
     // Log failure is niet kritiek
   }
 

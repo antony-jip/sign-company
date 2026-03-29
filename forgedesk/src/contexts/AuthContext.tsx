@@ -4,6 +4,7 @@ import { signIn, signUp, signOut, getSession, onAuthStateChange, type AuthSessio
 import { getProfile, updateProfile, createOrganisatie, getOrganisatie } from '@/services/supabaseService'
 import { isSupabaseConfigured } from '@/services/supabaseClient'
 import type { TeamRol, Organisatie } from '@/types'
+import { logger } from '@/utils/logger'
 
 interface User {
   id: string
@@ -70,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   try {
     navigate = useNavigate()
     location = useLocation()
-  } catch {
+  } catch (err) {
     // Outside router context — skip navigation
   }
 
@@ -125,8 +126,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         }
       }
-    } catch {
-      // Silently fail — org data is not critical for auth
+    } catch (err) {
+      logger.error('Onboarding redirect failed:', err)
     }
   }
 
@@ -146,8 +147,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         }
       }
-    } catch {
-      // Silently fail
+    } catch (err) {
+      logger.error('Fetch org data failed:', err)
     }
   }
 

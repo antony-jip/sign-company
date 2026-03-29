@@ -1347,7 +1347,8 @@ export function CalendarLayout() {
                       setProjectWerkbonnen(prev => [...prev, wb])
                       setFormData(p => ({ ...p, werkbon_id: wb.id }))
                       toast.success(`Werkbon ${wb.werkbon_nummer} aangemaakt`)
-                    } catch {
+                    } catch (err) {
+                      logger.error('Kon werkbon niet aanmaken:', err)
                       toast.error('Kon werkbon niet aanmaken')
                     }
                   } else {
@@ -1403,7 +1404,8 @@ export function CalendarLayout() {
                         try {
                           const bijlage = await uploadMontageBijlage(file)
                           setFormData(p => ({ ...p, bijlagen: [...p.bijlagen, bijlage] }))
-                        } catch {
+                        } catch (err) {
+                          logger.error(`Kon ${file.name} niet uploaden:`, err)
                           toast.error(`Kon ${file.name} niet uploaden`)
                         }
                       }

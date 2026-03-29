@@ -57,7 +57,7 @@ export function getFontSettings(): { font_family: string; font_size: FontSize } 
         font_size: parsed.font_size || 'normaal',
       }
     }
-  } catch { /* ignore */ }
+  } catch (err) { /* ignore */ }
   return { font_family: DEFAULT_FONT, font_size: 'normaal' }
 }
 
@@ -66,7 +66,7 @@ export function saveFontSettings(data: { font_family?: string; font_size?: FontS
     const current = getFontSettings()
     const updated = { ...current, ...data, updated_at: new Date().toISOString() }
     localStorage.setItem(FONT_STORAGE_KEY, JSON.stringify(updated))
-  } catch { /* ignore */ }
+  } catch (err) { /* ignore */ }
 }
 
 export function applyFontFamily(font: string) {

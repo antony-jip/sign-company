@@ -248,7 +248,8 @@ export function EmailCompose({
       if (response?.result && editorRef.current) {
         editorRef.current.innerHTML = `${response.result.replace(/\n/g, '<br>')}${signatureHtml}`
       }
-    } catch {
+    } catch (err) {
+      logger.error('AI email generation failed:', err)
       toast.error('Daan kon geen email genereren')
     } finally {
       setForgieLoading(false)
@@ -270,7 +271,8 @@ export function EmailCompose({
         editorRef.current.innerHTML = `${response.result.replace(/\n/g, '<br>')}${signatureHtml}`
       }
       toast.success(label)
-    } catch {
+    } catch (err) {
+      logger.error('AI rewrite failed:', err)
       toast.error('Herschrijven mislukt')
     } finally {
       setForgieLoading(false)
@@ -305,7 +307,8 @@ export function EmailCompose({
       await onSend?.({ to, subject, body, html, autoFollowUp: autoFollowUp.enabled ? autoFollowUp : undefined })
       toast.success(autoFollowUp.enabled ? `Email verzonden — opvolging na ${autoFollowUp.dagen} dagen` : 'Email verzonden')
       onOpenChange(false)
-    } catch {
+    } catch (err) {
+      logger.error('Email send failed:', err)
       toast.error('Verzenden mislukt')
     } finally {
       setIsSending(false)
@@ -323,7 +326,8 @@ export function EmailCompose({
       await onSend?.({ to, subject, body, html, scheduledAt, autoFollowUp: autoFollowUp.enabled ? autoFollowUp : undefined })
       toast.success(`Email ingepland: ${label}`)
       onOpenChange(false)
-    } catch {
+    } catch (err) {
+      logger.error('Email schedule failed:', err)
       toast.error('Inplannen mislukt')
     } finally {
       setIsSending(false)

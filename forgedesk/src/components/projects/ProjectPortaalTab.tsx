@@ -114,7 +114,7 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
             !n.gelezen
         )
         setNotificaties(portaalNotifs)
-      } catch { /* ignore */ }
+      } catch (err) { /* ignore */ }
     } catch (err) {
       console.error('Fout bij ophalen portaal:', err)
     } finally {

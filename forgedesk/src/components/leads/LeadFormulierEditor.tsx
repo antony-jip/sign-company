@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { BackButton } from '@/components/shared/BackButton'
 import { toast } from 'sonner'
+import { logger } from '../../utils/logger'
 import {
   UserPlus, ArrowLeft, Save, Plus, Trash2, Loader2,
   GripVertical, Copy, ExternalLink,
@@ -66,7 +67,8 @@ export function LeadFormulierEditor() {
         setEmailNotificatie(form.email_notificatie)
         setAutoDealAanmaken(form.auto_deal_aanmaken)
         setKnopTekst(form.knop_tekst)
-      } catch {
+      } catch (err) {
+        logger.error('Fout bij laden:', err)
         toast.error('Fout bij laden')
         navigate('/leads')
       } finally {
@@ -137,7 +139,8 @@ export function LeadFormulierEditor() {
         })
         toast.success('Formulier opgeslagen')
       }
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij opslaan:', err)
       toast.error('Fout bij opslaan')
     } finally {
       setIsSaving(false)

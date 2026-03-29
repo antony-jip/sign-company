@@ -92,7 +92,7 @@ export function WerkbonAanmaakDialog({ open, onOpenChange, offerte, items, klant
         if (offerteItem.foto_url) {
           let resolvedUrl = offerteItem.foto_url
           if (!resolvedUrl.startsWith('data:') && !resolvedUrl.startsWith('http')) {
-            try { resolvedUrl = await downloadFile(resolvedUrl) } catch { /* skip */ }
+            try { resolvedUrl = await downloadFile(resolvedUrl) } catch (err) { /* skip */ }
           }
           if (resolvedUrl) {
             await createWerkbonAfbeelding({
@@ -106,7 +106,7 @@ export function WerkbonAanmaakDialog({ open, onOpenChange, offerte, items, klant
         if (offerteItem.bijlage_url && offerteItem.bijlage_type?.startsWith('image/')) {
           let resolvedUrl = offerteItem.bijlage_url
           if (!resolvedUrl.startsWith('data:') && !resolvedUrl.startsWith('http')) {
-            try { resolvedUrl = await downloadFile(resolvedUrl) } catch { /* skip */ }
+            try { resolvedUrl = await downloadFile(resolvedUrl) } catch (err) { /* skip */ }
           }
           if (resolvedUrl) {
             await createWerkbonAfbeelding({

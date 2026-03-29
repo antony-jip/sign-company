@@ -46,6 +46,7 @@ import type { Project, Offerte, OfferteItem, Tijdregistratie, Factuur, Uitgave }
 import { cn, formatCurrency } from '@/lib/utils'
 import { exportCSV, exportExcel } from '@/lib/export'
 import { toast } from 'sonner'
+import { logger } from '../../utils/logger'
 
 
 // ============ INTERNAL TYPES ============
@@ -98,7 +99,7 @@ export function NacalculatieLayout() {
             try {
               const items = await getOfferteItems(offerte.id)
               itemsMap[offerte.id] = items
-            } catch {
+            } catch (err) {
               itemsMap[offerte.id] = []
             }
           })
@@ -109,7 +110,8 @@ export function NacalculatieLayout() {
         setAlleOfferteItems(itemsMap)
         setTijdregistraties(tijd)
         setUitgaven(uitg)
-      } catch {
+      } catch (err) {
+        logger.error('Fout bij laden nacalculatie data:', err)
         toast.error('Fout bij laden nacalculatie data')
       } finally {
         setIsLoading(false)

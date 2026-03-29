@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { logger } from '@/utils/logger'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { createTaak, getProjecten } from '@/services/supabaseService'
 import type { Project } from '@/types'
@@ -44,7 +45,8 @@ export function NieuweTaakModal({ open, onOpenChange }: Props) {
       onOpenChange(false)
       setTitel('')
       setProjectId('')
-    } catch {
+    } catch (err) {
+      logger.error('Taak toevoegen mislukt:', err)
       toast.error('Kon taak niet toevoegen')
     } finally {
       setSaving(false)

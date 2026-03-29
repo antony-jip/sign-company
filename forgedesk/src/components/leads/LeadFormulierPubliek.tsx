@@ -11,6 +11,7 @@ import type { LeadFormulier, LeadFormulierVeld } from '@/types'
 import {
   getLeadFormulierByToken, createLeadInzending, createDeal, createKlant,
 } from '@/services/supabaseService'
+import { logger } from '@/utils/logger'
 
 export function LeadFormulierPubliek() {
   const { token } = useParams<{ token: string }>()
@@ -35,7 +36,8 @@ export function LeadFormulierPubliek() {
         const initial: Record<string, string> = {}
         for (const veld of form.velden) initial[veld.id] = ''
         setFormData(initial)
-      } catch {
+      } catch (err) {
+        logger.error('Load lead form failed:', err)
         if (!cancelled) setNotFound(true)
       } finally {
         if (!cancelled) setIsLoading(false)
@@ -119,8 +121,8 @@ export function LeadFormulierPubliek() {
             kans_percentage: 10,
           })
           dealId = deal.id
-        } catch {
-          // Continue even if auto-create fails
+        } catch (err) {
+          logger.error('Auto-create deal failed:', err)
         }
       }
 
@@ -137,8 +139,8 @@ export function LeadFormulierPubliek() {
       })
 
       setIsSubmitted(true)
-    } catch {
-      // Show generic error
+    } catch (err) {
+      logger.error('Submit lead form failed:', err)
       setErrors({ _form: 'Er is een fout opgetreden. Probeer het opnieuw.' })
     } finally {
       setIsSubmitting(false)

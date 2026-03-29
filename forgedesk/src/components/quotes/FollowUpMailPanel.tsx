@@ -175,7 +175,7 @@ ${bedrijf}`
       const result = await generateFollowUpEmail(context)
       setOnderwerp(result.onderwerp)
       setBody(result.body)
-    } catch {
+    } catch (err) {
       // Fallback: genereer contextbewuste template zonder AI
       const fallback = buildFallbackEmail()
       setOnderwerp(fallback.onderwerp)
@@ -236,7 +236,7 @@ ${bedrijf}`
             medewerkerNaam: profile ? `${profile.voornaam} ${profile.achternaam}` : '',
             omschrijving: `Follow-up email verstuurd naar ${to}`,
           })
-        } catch {
+        } catch (err) {
           // Non-critical
         }
       }

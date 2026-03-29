@@ -5,6 +5,7 @@ import {
   Eye, Download, Trash2, Plus, Palette, ImageIcon,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { logger } from '../../utils/logger'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import { round2 } from '@/utils/budgetUtils'
@@ -57,7 +58,8 @@ export function VisualisatieGallery({
         items = await getSigningVisualisaties(user.id)
       }
       setVisualisaties(items)
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij laden visualisaties:', err)
       toast.error('Fout bij laden visualisaties')
     } finally {
       setIsLoading(false)
@@ -77,7 +79,8 @@ export function VisualisatieGallery({
       setVisualisaties(prev => prev.filter(v => v.id !== id))
       setDeleteConfirmId(null)
       toast.success('Visualisatie verwijderd')
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij verwijderen visualisatie:', err)
       toast.error('Verwijderen mislukt')
     }
   }, [user?.id])

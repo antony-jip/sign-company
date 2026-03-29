@@ -165,7 +165,7 @@ export function BetaalPagina() {
             setNotFound(true)
           }
         }
-      } catch {
+      } catch (err) {
         if (!cancelled) setNotFound(true)
       } finally {
         if (!cancelled) setIsLoading(false)
@@ -196,7 +196,7 @@ export function BetaalPagina() {
       if (data.payment_url) {
         window.location.href = data.payment_url
       }
-    } catch {
+    } catch (err) {
       // Fallback: toon bankgegevens als Mollie niet werkt
       setMollieLoading(false)
     }
