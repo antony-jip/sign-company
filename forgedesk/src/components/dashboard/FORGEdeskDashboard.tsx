@@ -92,9 +92,9 @@ export const WIDGET_REGISTRY: Record<DashboardWidgetId, WidgetDef> = {
 
 function getSizeClass(size: WidgetSize): string {
   switch (size) {
-    case 4: return 'md:col-span-2 lg:col-span-4'
-    case 3: return 'md:col-span-2 lg:col-span-3'
-    case 2: return 'md:col-span-2 lg:col-span-2'
+    case 4: return 'col-span-2 lg:col-span-4'
+    case 3: return 'col-span-2 lg:col-span-3'
+    case 2: return 'col-span-2 lg:col-span-2'
     default: return ''
   }
 }
@@ -215,12 +215,12 @@ export function FORGEdeskDashboard() {
   const hiddenWidgets = layout.allWidgets.filter(id => layout.hidden.has(id))
 
   return (
-    <div className="space-y-8 pb-12">
+    <div className="space-y-6 sm:space-y-8 pb-12 overflow-x-hidden">
       {/* ── Hero header ── */}
-      <div className="flex items-end justify-between gap-6">
-        <div>
+      <div className="flex items-end justify-between gap-4 sm:gap-6">
+        <div className="min-w-0">
           <h1
-            className="font-heading text-[28px] font-bold leading-[1.1]"
+            className="font-heading text-[22px] sm:text-[28px] font-bold leading-[1.1] truncate"
             style={{ letterSpacing: '-1.2px', color: 'hsl(25, 15%, 12%)' }}
           >
             {greeting}{userName ? `, ${userName}` : ''}<span className="text-primary">.</span>
@@ -251,8 +251,8 @@ export function FORGEdeskDashboard() {
             <span className="text-sm font-semibold text-[#C03A18]">
               {verlopenFacturen.count} facturen verlopen
             </span>
-            <span className="text-sm text-[#C03A18]/70 ml-2">
-              {formatCurrency(verlopenFacturen.bedrag)} openstaand
+            <span className="text-sm text-[#C03A18]/70 ml-1 sm:ml-2">
+              {formatCurrency(verlopenFacturen.bedrag)}
             </span>
           </div>
           <ArrowRight className="h-4 w-4 text-[#C03A18]/50 flex-shrink-0" />
@@ -262,7 +262,7 @@ export function FORGEdeskDashboard() {
       <PortaalAlerts />
 
       {/* ── Configurable widget grid — 4 columns on lg+ ── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
         {layout.order.map((widgetId, index) => {
           const def = WIDGET_REGISTRY[widgetId]
           if (!def) return null
