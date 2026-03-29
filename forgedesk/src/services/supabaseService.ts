@@ -844,19 +844,18 @@ export async function updateOfferte(id: string, updates: Partial<Offerte>, expec
         .from('offertes')
         .select('updated_at')
         .eq('id', id)
-        .single()
+        .maybeSingle()
       if (fetchErr) throw fetchErr
+      if (!current) throw new Error('Offerte niet gevonden')
 
-      // Vergelijk timestamps (met 2 seconden tolerantie voor eigen autosave)
       const serverTime = new Date(current.updated_at).getTime()
       const expectedTime = new Date(expectedUpdatedAt).getTime()
       if (Math.abs(serverTime - expectedTime) > 2000) {
-        // Haal volledige offerte op voor conflict melding
         const { data: fullCurrent } = await supabase
           .from('offertes')
           .select('*')
           .eq('id', id)
-          .single()
+          .maybeSingle()
         throw new OfferteConflictError(
           'Deze offerte is ondertussen door iemand anders gewijzigd. Herlaad de pagina om de laatste versie te zien.',
           fullCurrent
@@ -2133,8 +2132,9 @@ export async function updateTekeningGoedkeuringByToken(
       .update({ ...updates, updated_at: now() })
       .eq('token', token)
       .select()
-      .single()
+      .maybeSingle()
     if (error) throw error
+    if (!data) throw new Error('Tekening goedkeuring niet gevonden')
     return data
   }
   const items = getLocalData<TekeningGoedkeuring>('tekening_goedkeuringen')
@@ -3971,7 +3971,7 @@ export async function deleteVoorraadMutatie(id: string): Promise<void> {
   // Find the mutatie to reverse it
   let mutatie: VoorraadMutatie | undefined
   if (isSupabaseConfigured() && supabase) {
-    const { data } = await supabase.from('voorraad_mutaties').select('*').eq('id', id).single()
+    const { data } = await supabase.from('voorraad_mutaties').select('*').eq('id', id).maybeSingle()
     mutatie = data || undefined
   } else {
     mutatie = getLocalData<VoorraadMutatie>('voorraad_mutaties').find((m) => m.id === id)
@@ -4335,8 +4335,9 @@ export async function upsertDocumentStyle(userId: string, style: Partial<Documen
         .update({ ...updateFields, updated_at: now() })
         .eq('user_id', userId)
         .select()
-        .single()
+        .maybeSingle()
       if (error) throw error
+      if (!data) throw new Error('Document stijl niet gevonden')
       return data
     } else {
       const { id: _id, ...insertFields } = cleanStyle as any
@@ -4566,7 +4567,7 @@ export async function deleteProjectFoto(id: string): Promise<void> {
   assertId(id, 'id')
   if (isSupabaseConfigured() && supabase) {
     // Get the foto record to find the storage path
-    const { data: foto } = await supabase.from('project_fotos').select('url').eq('id', id).single()
+    const { data: foto } = await supabase.from('project_fotos').select('url').eq('id', id).maybeSingle()
     if (foto?.url) {
       // Try to extract storage path from URL and delete from storage
       try {
@@ -5551,7 +5552,7 @@ export async function getPortaalInstellingen(userId: string): Promise<PortaalIns
       .from('app_settings')
       .select('portaal_instellingen')
       .eq('user_id', userId)
-      .single()
+      .maybeSingle()
     if (data?.portaal_instellingen && typeof data.portaal_instellingen === 'object') {
       return { ...DEFAULT_PORTAAL_INSTELLINGEN, ...(data.portaal_instellingen as Partial<PortaalInstellingen>) }
     }
@@ -5637,7 +5638,7 @@ export async function getPortaalByToken(token: string): Promise<ProjectPortaal |
       .from('project_portalen')
       .select('*')
       .eq('token', token)
-      .single()
+      .maybeSingle()
     if (error) return null
     return data
   }
@@ -6383,8 +6384,8 @@ export async function getKbArticles(): Promise<import('@/types').KbArticle[]> {
 
 export async function getKbArticle(id: string): Promise<import('@/types').KbArticle | null> {
   if (!isSupabaseConfigured() || !supabase) return getLocalData<import('@/types').KbArticle>('kb_articles').find(a => a.id === id) || null
-  const { data, error } = await supabase.from('kb_articles').select('*, kb_categories(naam)').eq('id', id).single()
-  if (error) return null
+  const { data, error } = await supabase.from('kb_articles').select('*, kb_categories(naam)').eq('id', id).maybeSingle()
+  if (error || !data) return null
   return { ...data, bijlagen: data.bijlagen || [], zoek_tags: data.zoek_tags || [], category_naam: (data.kb_categories as Record<string, unknown> | null)?.naam as string | undefined } as import('@/types').KbArticle
 }
 
