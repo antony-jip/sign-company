@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { logger } from '../../utils/logger'
 import { useWeekWeather, getWeatherForDate } from "./WeatherDayStrip";
 import type { DayWeather } from "./WeatherDayStrip";
 import { Button } from "@/components/ui/button";
@@ -238,7 +239,8 @@ export function MontagePlanningLayout() {
       setProjecten(projectData || []);
       setKlanten(klantenData || []);
       setOffertes(offertesData || []);
-    } catch {
+    } catch (err) {
+      logger.error('Kon montageplanning niet laden:', err)
       toast.error('Kon montageplanning niet laden');
     } finally {
       setLoading(false);
@@ -627,7 +629,8 @@ export function MontagePlanningLayout() {
       await deleteMontageAfspraak(afspraakId).catch(() => null);
       setAfspraken((prev) => prev.filter((a) => a.id !== afspraakId));
       toast.success("Montage afspraak verwijderd");
-    } catch {
+    } catch (err) {
+      logger.error('Montage afspraak verwijderen mislukt:', err)
       toast.error("Er ging iets mis bij het verwijderen");
     }
   }
@@ -648,7 +651,8 @@ export function MontagePlanningLayout() {
         )
       );
       toast.success(`Status bijgewerkt naar ${STATUS_CONFIG[newStatus].label}`);
-    } catch {
+    } catch (err) {
+      logger.error('Status bijwerken mislukt:', err)
       toast.error("Kon status niet bijwerken");
     }
   }
@@ -1204,7 +1208,8 @@ export function MontagePlanningLayout() {
                           setProjectWerkbonnen((prev) => [...prev, wb]);
                           setFormData((prev) => ({ ...prev, werkbon_id: wb.id }));
                           toast.success(`Werkbon ${wb.werkbon_nummer} aangemaakt`);
-                        } catch {
+                        } catch (err) {
+                          logger.error('Werkbon aanmaken mislukt:', err)
                           toast.error("Kon werkbon niet aanmaken");
                         }
                       } else {
@@ -1434,7 +1439,8 @@ export function MontagePlanningLayout() {
                           ...prev,
                           bijlagen: [...prev.bijlagen, bijlage],
                         }))
-                      } catch {
+                      } catch (err) {
+                        logger.error('Bijlage uploaden mislukt:', err)
                         toast.error(`Kon ${file.name} niet uploaden`)
                       }
                     }

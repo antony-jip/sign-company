@@ -23,6 +23,7 @@ import {
   getUitgavenByLeverancier,
 } from '@/services/supabaseService'
 import { round2 } from '@/utils/budgetUtils'
+import { logger } from '@/utils/logger'
 
 interface FormData {
   bedrijfsnaam: string
@@ -83,12 +84,14 @@ export function LeveranciersLayout() {
               count: uitgaven.length,
               totaal: round2(uitgaven.reduce((s, u) => s + u.bedrag_incl_btw, 0)),
             }
-          } catch {
+          } catch (err) {
+            logger.error('Fout bij laden uitgaven voor leverancier:', err)
             counts[lev.id] = { count: 0, totaal: 0 }
           }
         }
         setUitgavenCounts(counts)
-      } catch {
+      } catch (err) {
+        logger.error('Fout bij laden leveranciers:', err)
         if (!cancelled) toast.error('Fout bij laden leveranciers')
       } finally {
         if (!cancelled) setIsLoading(false)
@@ -166,7 +169,8 @@ export function LeveranciersLayout() {
         toast.success('Leverancier aangemaakt')
       }
       setDialogOpen(false)
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij opslaan leverancier:', err)
       toast.error('Fout bij opslaan')
     } finally {
       setIsSaving(false)
@@ -179,7 +183,8 @@ export function LeveranciersLayout() {
       await deleteLeverancier(deleteTarget.id)
       setLeveranciers((prev) => prev.filter((l) => l.id !== deleteTarget.id))
       toast.success('Leverancier verwijderd')
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij verwijderen leverancier:', err)
       toast.error('Fout bij verwijderen')
     } finally {
       setDeleteDialogOpen(false)

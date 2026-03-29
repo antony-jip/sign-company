@@ -26,6 +26,7 @@ import {
   getProjecten,
 } from '@/services/supabaseService'
 import { round2 } from '@/utils/budgetUtils'
+import { logger } from '@/utils/logger'
 
 type FilterStatus = 'alle' | 'open' | 'betaald' | 'verlopen'
 type FilterCategorie = 'alle' | Uitgave['categorie']
@@ -123,7 +124,8 @@ export function UitgavenLayout() {
         setUitgaven(uitg)
         setLeveranciers(lev)
         setProjecten(proj)
-      } catch {
+      } catch (err) {
+        logger.error('Fout bij laden uitgaven:', err)
         if (!cancelled) toast.error('Fout bij laden uitgaven')
       } finally {
         if (!cancelled) setIsLoading(false)
@@ -238,7 +240,8 @@ export function UitgavenLayout() {
         toast.success(`Uitgave ${created.uitgave_nummer} aangemaakt`)
       }
       setDialogOpen(false)
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij opslaan uitgave:', err)
       toast.error('Fout bij opslaan uitgave')
     } finally {
       setIsSaving(false)
@@ -251,7 +254,8 @@ export function UitgavenLayout() {
       await deleteUitgave(deleteTarget.id)
       setUitgaven((prev) => prev.filter((u) => u.id !== deleteTarget.id))
       toast.success('Uitgave verwijderd')
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij verwijderen uitgave:', err)
       toast.error('Fout bij verwijderen')
     } finally {
       setDeleteDialogOpen(false)
@@ -272,7 +276,8 @@ export function UitgavenLayout() {
       setNieuweLevDialogOpen(false)
       setNieuweLevNaam('')
       toast.success('Leverancier aangemaakt')
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij aanmaken leverancier:', err)
       toast.error('Fout bij aanmaken leverancier')
     }
   }, [nieuweLevNaam, userId])

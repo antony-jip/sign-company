@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { logger } from "@/utils/logger";
 import {
   Card,
   CardContent,
@@ -209,7 +210,8 @@ export function TijdregistratieLayout() {
       setRegistraties(regData || []);
       setProjecten(projData || []);
       setKlanten(klantData || []);
-    } catch {
+    } catch (err) {
+      logger.error('Kon tijdregistraties niet laden:', err);
       toast.error('Kon tijdregistraties niet laden');
     } finally {
       setLoading(false);
@@ -303,7 +305,8 @@ export function TijdregistratieLayout() {
       await createTijdregistratie(nieuweRegistratie as Tijdregistratie);
       toast.success(`Tijdregistratie opgeslagen: ${formatDuur(duurMinuten)}`);
       loadData();
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij opslaan tijdregistratie:', err);
       const fallbackEntry: Tijdregistratie = {
         id: `timer-${Date.now()}`,
         user_id: "user-1",
@@ -456,7 +459,8 @@ export function TijdregistratieLayout() {
         toast.success("Tijdregistratie aangemaakt");
       }
       loadData();
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij opslaan tijdregistratie:', err);
       if (editingId) {
         setRegistraties((prev) =>
           prev.map((r) =>
@@ -493,7 +497,8 @@ export function TijdregistratieLayout() {
       await deleteTijdregistratie(id);
       toast.success("Tijdregistratie verwijderd");
       loadData();
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij verwijderen tijdregistratie:', err);
       setRegistraties((prev) => prev.filter((r) => r.id !== id));
       toast.success("Tijdregistratie lokaal verwijderd");
     }
@@ -580,7 +585,8 @@ export function TijdregistratieLayout() {
 
       toast.success(`${teFactureren.length} uren gefactureerd over ${perProject.size} project(en)`);
       loadData();
-    } catch {
+    } catch (err) {
+      logger.error('Kon niet alle uren factureren:', err);
       toast.error("Kon niet alle uren factureren");
     } finally {
       setFactureerBezig(false);

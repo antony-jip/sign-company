@@ -25,6 +25,7 @@ import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/comp
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { callForgie } from '@/services/forgieService'
 import { toast } from 'sonner'
+import { logger } from '@/utils/logger'
 import { EmailReaderAIToolbar } from './EmailReaderAIToolbar'
 
 interface EmailReaderProps {
@@ -104,7 +105,8 @@ export function EmailReader({
       const text = email.inhoud?.replace(/<[^>]*>/g, '').slice(0, 2000) || ''
       const response = await callForgie('summarize', text)
       if (response?.result) setSummary(response.result)
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij samenvatten email:', err)
       toast.error('Daan kon dit niet verwerken. Probeer het opnieuw.')
     } finally {
       setSummaryLoading(false)
@@ -153,7 +155,8 @@ export function EmailReader({
       })
       setReplyMode(null)
       toast.success('Email verzonden')
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij verzenden email:', err)
       toast.error('Verzenden mislukt')
     } finally {
       setIsSending(false)
@@ -169,7 +172,8 @@ export function EmailReader({
       if (response?.result && editorRef.current) {
         editorRef.current.innerHTML = `${response.result.replace(/\n/g, '<br>')}${signatureHtml}`
       }
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij genereren antwoord:', err)
       toast.error('Daan kon geen antwoord genereren')
     } finally {
       setForgieLoading(false)
@@ -194,7 +198,8 @@ export function EmailReader({
           }
         }, 100)
       }
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij genereren antwoord vanuit reader:', err)
       toast.error('Daan kon geen antwoord genereren')
     } finally {
       setForgieLoading(false)

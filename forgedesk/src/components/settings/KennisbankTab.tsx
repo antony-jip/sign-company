@@ -116,7 +116,8 @@ export function KennisbankTab() {
       }
       closeEditor()
       await fetchData()
-    } catch {
+    } catch (err) {
+      logger.error('Kon artikel niet opslaan:', err)
       toast.error('Kon artikel niet opslaan')
     } finally {
       setIsSaving(false)
@@ -130,7 +131,8 @@ export function KennisbankTab() {
       await deleteKbArticle(article.id)
       toast.success('Artikel verwijderd')
       await fetchData()
-    } catch {
+    } catch (err) {
+      logger.error('Kon artikel niet verwijderen:', err)
       toast.error('Kon artikel niet verwijderen')
     }
   }
@@ -151,7 +153,8 @@ export function KennisbankTab() {
       setEditingCat(null)
       setShowCatEditor(false)
       await fetchData()
-    } catch {
+    } catch (err) {
+      logger.error('Kon categorie niet opslaan:', err)
       toast.error('Kon categorie niet opslaan')
     }
   }
@@ -164,7 +167,8 @@ export function KennisbankTab() {
       if (activeCategory === cat.id) setActiveCategory(null)
       toast.success('Categorie verwijderd')
       await fetchData()
-    } catch {
+    } catch (err) {
+      logger.error('Kon categorie niet verwijderen:', err)
       toast.error('Kon categorie niet verwijderen')
     }
   }

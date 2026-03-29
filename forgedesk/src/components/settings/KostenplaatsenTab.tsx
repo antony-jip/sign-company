@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
+import { logger } from '../../utils/logger'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -51,7 +52,8 @@ export function KostenplaatsenTab() {
       setLoading(true)
       const data = await getKostenplaatsen()
       setItems(data)
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij ophalen kostenplaatsen:', err)
       toast.error('Fout bij ophalen kostenplaatsen')
     } finally {
       setLoading(false)
@@ -99,7 +101,8 @@ export function KostenplaatsenTab() {
       }
       setDialogOpen(false)
       fetchData()
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij opslaan kostenplaats:', err)
       toast.error('Fout bij opslaan kostenplaats')
     }
   }
@@ -112,7 +115,8 @@ export function KostenplaatsenTab() {
       setDeleteDialogOpen(false)
       setDeletingId(null)
       fetchData()
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij verwijderen kostenplaats:', err)
       toast.error('Fout bij verwijderen kostenplaats')
     }
   }
@@ -121,7 +125,8 @@ export function KostenplaatsenTab() {
     try {
       await updateKostenplaats(item.id, { actief: !item.actief })
       setItems((prev) => prev.map((k) => (k.id === item.id ? { ...k, actief: !k.actief } : k)))
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij bijwerken status:', err)
       toast.error('Fout bij bijwerken status')
     }
   }

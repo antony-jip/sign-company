@@ -95,7 +95,8 @@ export function EmailTemplatesSubTab() {
         aanmaning_onderwerp: aanmaningOnderwerp,
       })
       toast.success('Templates opgeslagen.')
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij opslaan templates:', err)
       toast.error('Kon templates niet opslaan')
     } finally {
       setIsSaving(false)
@@ -132,7 +133,8 @@ export function EmailTemplatesSubTab() {
       })
       await sendEmail(user.email, `[TEST] ${sub}`, body, { html })
       toast.success(`Testmail verstuurd naar ${user.email}`)
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij versturen testmail:', err)
       toast.error('Kon testmail niet versturen — controleer je email instellingen')
     } finally {
       setIsSendingTest(null)
@@ -505,7 +507,7 @@ export function EmailTab() {
             setEmailConnected(true)
           }
         }
-      } catch { /* ignore */ }
+      } catch (err) { /* ignore */ }
 
       // 2. Load from API endpoint (source of truth, handles decryption server-side)
       try {
@@ -914,7 +916,7 @@ function EmailSettingsInline({
         const { deleteEmailSettingsFromDb } = await import('@/services/gmailService')
         await deleteEmailSettingsFromDb()
       }
-    } catch { /* ignore */ }
+    } catch (err) { /* ignore */ }
     sessionStorage.removeItem('doen_email_settings')
     localStorage.removeItem('doen_email_settings')
     setSettings(DEFAULT_EMAIL_SETTINGS)

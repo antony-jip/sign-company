@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
+import { logger } from '../../utils/logger'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -184,7 +185,8 @@ export function TeamledenTab() {
       setInviteRol('medewerker')
       setInviteOpen(false)
       await loadData()
-    } catch {
+    } catch (err) {
+      logger.error('Uitnodiging versturen mislukt:', err)
       toast.error('Er ging iets mis bij het versturen')
     } finally {
       setIsInviting(false)
@@ -212,7 +214,8 @@ export function TeamledenTab() {
       const actionLabels = { update_rol: 'Rol bijgewerkt', deactiveer: 'Teamlid gedeactiveerd', heractiveer: 'Teamlid geheractiveerd' }
       toast.success(actionLabels[action])
       await loadData()
-    } catch {
+    } catch (err) {
+      logger.error('Teamlid beheren mislukt:', err)
       toast.error('Er ging iets mis')
     }
   }
@@ -223,7 +226,8 @@ export function TeamledenTab() {
       await supabase.from('uitnodigingen').update({ status: 'ingetrokken' }).eq('id', uitnodigingId)
       toast.success('Uitnodiging ingetrokken')
       await loadData()
-    } catch {
+    } catch (err) {
+      logger.error('Uitnodiging intrekken mislukt:', err)
       toast.error('Kon uitnodiging niet intrekken')
     }
   }
@@ -355,7 +359,8 @@ export function TeamledenTab() {
                             await uploadAvatar(lid.id, resized)
                             toast.success('Profielfoto bijgewerkt')
                             await loadData()
-                          } catch {
+                          } catch (err) {
+                            logger.error('Profielfoto uploaden mislukt:', err)
                             toast.error('Kon profielfoto niet uploaden')
                           }
                         } : undefined}

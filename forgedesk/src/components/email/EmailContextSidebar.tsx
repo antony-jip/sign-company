@@ -12,6 +12,7 @@ import { chatCompletion } from '@/services/aiService'
 import { getAvatarStyle, extractSenderName } from './emailHelpers'
 import type { AutoFollowUp } from './emailTypes'
 import { toast } from 'sonner'
+import { logger } from '@/utils/logger'
 
 interface EmailContextSidebarProps {
   mode: 'compose' | 'reading' | 'idle'
@@ -129,7 +130,7 @@ export function EmailContextSidebar({
           if (!generic.includes(domain)) match = klanten.find(k => k.email?.toLowerCase().endsWith('@' + domain))
         }
         if (!cancelled) setLinkedKlant(match || null)
-      } catch { /* silent */ }
+      } catch (err) { /* silent */ }
       finally { if (!cancelled) setKlantLoading(false) }
     }
     findKlant()
@@ -198,7 +199,7 @@ export function EmailContextSidebar({
       setLinkedKlant(newKlant)
       setActivePanel('none')
       toast.success('Klant aangemaakt')
-    } catch { toast.error('Klant aanmaken mislukt') }
+    } catch (err) { logger.error('Klant aanmaken mislukt:', err); toast.error('Klant aanmaken mislukt') }
     finally { setSaving(false) }
   }
 
@@ -214,7 +215,7 @@ export function EmailContextSidebar({
       })
       setActivePanel('none')
       toast.success('Project aangemaakt', { action: { label: 'Openen', onClick: () => navigate(`/projecten/${project.id}`) } })
-    } catch { toast.error('Project aanmaken mislukt') }
+    } catch (err) { logger.error('Project aanmaken mislukt:', err); toast.error('Project aanmaken mislukt') }
     finally { setSaving(false) }
   }
 
@@ -229,7 +230,7 @@ export function EmailContextSidebar({
       })
       setActivePanel('none')
       toast.success('Taak aangemaakt')
-    } catch { toast.error('Taak aanmaken mislukt') }
+    } catch (err) { logger.error('Taak aanmaken mislukt:', err); toast.error('Taak aanmaken mislukt') }
     finally { setSaving(false) }
   }
 
@@ -305,7 +306,8 @@ export function EmailContextSidebar({
           }))
         setAnalysisResult(categories)
       }
-    } catch {
+    } catch (err) {
+      logger.error('Analyse mislukt:', err)
       toast.error('Analyse mislukt')
     } finally {
       setAnalysisLoading(false)
@@ -323,7 +325,7 @@ export function EmailContextSidebar({
       setShowIdleTaakForm(false)
       setIdleTaakForm({ titel: '', beschrijving: '' })
       toast.success('Taak aangemaakt')
-    } catch { toast.error('Taak aanmaken mislukt') }
+    } catch (err) { logger.error('Taak aanmaken mislukt:', err); toast.error('Taak aanmaken mislukt') }
     finally { setSavingIdleTaak(false) }
   }
 

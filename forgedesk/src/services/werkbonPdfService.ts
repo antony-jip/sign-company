@@ -30,7 +30,7 @@ function getBrandColor(profiel: PdfBedrijfsProfiel, docStyle?: DocumentStyle | n
 
 function getTextColor(docStyle?: DocumentStyle | null): [number, number, number] {
   if (docStyle?.tekst_kleur) {
-    try { return hexToRgb(docStyle.tekst_kleur) } catch { /* use default */ }
+    try { return hexToRgb(docStyle.tekst_kleur) } catch (err) { /* use default */ }
   }
   return [30, 30, 30]
 }
@@ -46,7 +46,7 @@ function getBodyFont(docStyle?: DocumentStyle | null): string {
 function formatDate(dateString: string): string {
   try {
     return new Date(dateString).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })
-  } catch {
+  } catch (err) {
     return dateString
   }
 }
@@ -99,7 +99,7 @@ export function generateWerkbonInstructiePDF(
         const ratio = naturalW / naturalH
         logoWidth = maxLogoH * ratio
         doc.addImage(bedrijfsProfiel.logo_url, 'JPEG', marginLeft, y + 1, logoWidth, maxLogoH, undefined, 'MEDIUM')
-      } catch {
+      } catch (err) {
         // logo failed
       }
     }
@@ -186,7 +186,7 @@ export function generateWerkbonInstructiePDF(
       doc.setDrawColor(200, 200, 200)
       doc.setLineWidth(0.3)
       doc.rect(x, iy, w, h)
-    } catch {
+    } catch (err) {
       doc.setDrawColor(200, 200, 200)
       doc.setFillColor(245, 245, 245)
       doc.rect(x, iy, w, h, 'FD')
@@ -289,7 +289,7 @@ export function generateWerkbonInstructiePDF(
               doc.setDrawColor(200, 200, 200)
               doc.setLineWidth(0.2)
               doc.rect(thumbX, thumbY, thumbW, thumbH)
-            } catch { /* skip */ }
+            } catch (err) { /* skip */ }
           }
           thumbX += thumbW + 3
           if (thumbX + thumbW > pageWidth - marginRight) {

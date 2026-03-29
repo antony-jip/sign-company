@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { logger } from '@/utils/logger';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -174,7 +175,8 @@ export function TeamLayout() {
       ]);
       setMedewerkers(mwData || []);
       setVerlofLijst(verlofData || []);
-    } catch {
+    } catch (err) {
+      logger.error('Kon teamgegevens niet laden:', err);
       toast.error('Kon teamgegevens niet laden');
     } finally {
       setLoading(false);
@@ -186,7 +188,8 @@ export function TeamLayout() {
     try {
       const data = await getMedewerkers();
       setMedewerkers(data || []);
-    } catch {
+    } catch (err) {
+      logger.error('Kon medewerkers niet laden:', err);
       toast.error('Kon medewerkers niet laden');
     } finally {
       setLoading(false);
@@ -295,7 +298,8 @@ export function TeamLayout() {
         }
       }
       setDialogOpen(false);
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij opslaan medewerker:', err);
       toast.error('Er is iets misgegaan bij het opslaan.');
     } finally {
       setSaving(false);
@@ -305,8 +309,8 @@ export function TeamLayout() {
   async function handleVerwijderen(id: string) {
     try {
       await deleteMedewerker(id);
-    } catch {
-      // continue with local deletion
+    } catch (err) {
+      logger.error('Fout bij verwijderen medewerker:', err);
     }
     setMedewerkers((prev) => prev.filter((m) => m.id !== id));
     toast.success('Medewerker verwijderd.');
@@ -694,7 +698,7 @@ export function TeamLayout() {
                   setVerlofDialogOpen(false);
                   setVerlofForm({ medewerker_id: '', type: 'vakantie', start_datum: new Date().toISOString().split('T')[0], eind_datum: new Date().toISOString().split('T')[0], status: 'aangevraagd', opmerking: '' });
                   loadData();
-                } catch { toast.error('Kon verlof niet aanvragen'); }
+                } catch (err) { logger.error('Kon verlof niet aanvragen:', err); toast.error('Kon verlof niet aanvragen'); }
               }}>Aanvragen</Button>
             </DialogFooter>
           </DialogContent>

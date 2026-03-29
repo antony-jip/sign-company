@@ -17,6 +17,7 @@ import {
   X,
 } from 'lucide-react'
 import { toast, Toaster } from 'sonner'
+import { logger } from '@/utils/logger'
 
 // ============ TYPES ============
 
@@ -257,7 +258,8 @@ export function OffertePubliekPagina() {
         setItems(loadedItems)
         setBedrijf(data.bedrijf)
         setKlant(data.klant)
-      } catch {
+      } catch (err) {
+        logger.error('Fout bij laden offerte:', err)
         setNotFound(true)
       } finally {
         setIsLoading(false)
@@ -305,7 +307,8 @@ export function OffertePubliekPagina() {
       } : prev)
       setShowSuccess(true)
       successTimerRef.current = setTimeout(() => setShowSuccess(false), 4000)
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij accepteren offerte:', err)
       toast.error('Er ging iets mis. Probeer het opnieuw.')
     } finally {
       setAcceptLoading(false)
@@ -335,7 +338,8 @@ export function OffertePubliekPagina() {
         wijziging_ingediend_op: new Date().toISOString(),
       } : prev)
       toast.success('Wijziging aanvraag verstuurd!')
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij wijziging aanvragen:', err)
       toast.error('Er ging iets mis. Probeer het opnieuw.')
     } finally {
       setWijzigingLoading(false)
@@ -445,7 +449,8 @@ export function OffertePubliekPagina() {
       }
 
       doc.save(`Offerte-${offerte.nummer}.pdf`)
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij PDF downloaden:', err)
       toast.error('PDF downloaden mislukt')
     }
   }, [offerte, items, bedrijf, klant])

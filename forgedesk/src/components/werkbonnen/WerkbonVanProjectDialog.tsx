@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
+import { logger } from '../../utils/logger'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { ClipboardList, Loader2, FileText } from 'lucide-react'
@@ -64,7 +65,8 @@ export function WerkbonVanProjectDialog({
       setOfferteItems(items)
       setSelectedIds(new Set(items.map((i) => i.id)))
       setStep('selectie')
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij laden offerte items:', err)
       toast.error('Fout bij laden offerte items')
     } finally {
       setIsLoadingItems(false)
@@ -125,7 +127,7 @@ export function WerkbonVanProjectDialog({
           if (offerteItem.foto_url) {
             let resolvedUrl = offerteItem.foto_url
             if (!resolvedUrl.startsWith('data:') && !resolvedUrl.startsWith('http')) {
-              try { resolvedUrl = await downloadFile(resolvedUrl) } catch { /* skip */ }
+              try { resolvedUrl = await downloadFile(resolvedUrl) } catch (err) { /* skip */ }
             }
             if (resolvedUrl) {
               await createWerkbonAfbeelding({
@@ -139,7 +141,7 @@ export function WerkbonVanProjectDialog({
           if (offerteItem.bijlage_url && offerteItem.bijlage_type?.startsWith('image/')) {
             let resolvedUrl = offerteItem.bijlage_url
             if (!resolvedUrl.startsWith('data:') && !resolvedUrl.startsWith('http')) {
-              try { resolvedUrl = await downloadFile(resolvedUrl) } catch { /* skip */ }
+              try { resolvedUrl = await downloadFile(resolvedUrl) } catch (err) { /* skip */ }
             }
             if (resolvedUrl) {
               await createWerkbonAfbeelding({
@@ -162,7 +164,8 @@ export function WerkbonVanProjectDialog({
         label: werkbon.werkbon_nummer || 'Werkbon',
         id: `/werkbonnen/${werkbon.id}`,
       })
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij aanmaken werkbon:', err)
       toast.error('Fout bij aanmaken werkbon')
     } finally {
       setIsCreating(false)

@@ -180,7 +180,7 @@ function sanitizeDates<T extends object>(data: T): T {
 function safeParseJsonArray(val: unknown): unknown[] {
   if (Array.isArray(val)) return val
   if (typeof val === 'string' && val.trim().startsWith('[')) {
-    try { const parsed = JSON.parse(val); if (Array.isArray(parsed)) return parsed } catch { /* ignore */ }
+    try { const parsed = JSON.parse(val); if (Array.isArray(parsed)) return parsed } catch (err) { /* ignore */ }
   }
   return []
 }
@@ -4576,7 +4576,7 @@ export async function deleteProjectFoto(id: string): Promise<void> {
         if (pathMatch) {
           await supabase.storage.from(PHOTO_BUCKET).remove([pathMatch[1]])
         }
-      } catch {
+      } catch (err) {
         // Storage cleanup is best-effort
       }
     }
@@ -5040,7 +5040,7 @@ export async function getVisualizerInstellingen(user_id: string): Promise<Visual
       const parsed = JSON.parse(stored) as Partial<VisualizerInstellingen>
       return { ...DEFAULT_VISUALIZER_INSTELLINGEN, ...parsed }
     }
-  } catch { /* ignore */ }
+  } catch (err) { /* ignore */ }
   return { ...DEFAULT_VISUALIZER_INSTELLINGEN }
 }
 
@@ -5191,7 +5191,7 @@ export async function getVisualizerCredits(user_id: string): Promise<VisualizerC
   try {
     const stored = localStorage.getItem(key)
     if (stored) return JSON.parse(stored) as VisualizerCredits
-  } catch { /* ignore */ }
+  } catch (err) { /* ignore */ }
   return { user_id, saldo: 0, totaal_gekocht: 0, totaal_gebruikt: 0, laatst_bijgewerkt: now() }
 }
 

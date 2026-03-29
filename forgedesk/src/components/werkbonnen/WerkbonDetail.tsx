@@ -4,6 +4,7 @@ import { BackButton } from '@/components/shared/BackButton'
 import { useTabDirtyState } from '@/hooks/useTabDirtyState'
 import { useDebouncedCallback } from '@/hooks/useDebounce'
 import { toast } from 'sonner'
+import { logger } from '@/utils/logger'
 import {
   ArrowLeft, Save, FileText, Plus, ClipboardCheck, Printer, Share2,
 } from 'lucide-react'
@@ -37,7 +38,7 @@ import { WerkbonMonteurFeedback } from './WerkbonMonteurFeedback'
 // Resolve a URL: if it's a storage path, convert to a signed URL
 async function resolveUrl(url: string): Promise<string> {
   if (!url || url.startsWith('data:') || url.startsWith('http') || url.startsWith('blob:')) return url
-  try { return await getSignedUrl(url) } catch { return url }
+  try { return await getSignedUrl(url) } catch (err) { return url }
 }
 
 // Resize image voor localStorage limiet
@@ -182,7 +183,8 @@ export function WerkbonDetail() {
           setWerkbonItems(wbItems)
           setFotos(wbFotos)
         }
-      } catch {
+      } catch (err) {
+        logger.error('Fout bij laden:', err)
         if (!cancelled) toast.error('Fout bij laden')
       } finally {
         if (!cancelled) setIsLoading(false)
@@ -258,7 +260,8 @@ export function WerkbonDetail() {
         toast.success('Werkbon opgeslagen')
       }
       setDirty(false)
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij opslaan werkbon:', err)
       toast.error('Fout bij opslaan werkbon')
     } finally {
       setIsSaving(false)
@@ -295,7 +298,8 @@ export function WerkbonDetail() {
         setWerkbonNummer(created.werkbon_nummer)
         toast.success(`Werkbon ${created.werkbon_nummer} aangemaakt`)
         navigate(`/werkbonnen/${created.id}`, { replace: true })
-      } catch {
+      } catch (err) {
+        logger.error('Kon werkbon niet opslaan:', err)
         toast.error('Kon werkbon niet opslaan')
         return
       }
@@ -309,7 +313,8 @@ export function WerkbonDetail() {
       })
       setWerkbonItems((prev) => [...prev, newItem])
       setDirty(true)
-    } catch {
+    } catch (err) {
+      logger.error('Kon item niet toevoegen:', err)
       toast.error('Kon item niet toevoegen')
     }
   }, [werkbonId, userId, klantId, projectId, offerteId, titel, datum, status,

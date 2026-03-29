@@ -27,6 +27,7 @@ import {
   getKlanten, getMedewerkers,
 } from '@/services/supabaseService'
 import { round2 } from '@/utils/budgetUtils'
+import { logger } from '@/utils/logger'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 
 // ============ CONSTANTS ============
@@ -108,7 +109,8 @@ export function DealDetail() {
 
         const acts = await getDealActiviteiten(d.id).catch(() => [])
         if (!cancelled) setActiviteiten(acts)
-      } catch {
+      } catch (err) {
+        logger.error('Fout bij laden deal:', err)
         toast.error('Fout bij laden deal')
         navigate('/deals')
       } finally {
@@ -145,7 +147,8 @@ export function DealDetail() {
       })
       setDeal(updated)
       toast.success('Deal opgeslagen')
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij opslaan:', err)
       toast.error('Fout bij opslaan')
     } finally {
       setIsSaving(false)
@@ -169,7 +172,8 @@ export function DealDetail() {
       setActDialogOpen(false)
       setActBeschrijving('')
       toast.success('Activiteit toegevoegd')
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij toevoegen:', err)
       toast.error('Fout bij toevoegen')
     }
   }, [deal, actType, actBeschrijving])
@@ -201,7 +205,8 @@ export function DealDetail() {
       })
       setWonDialogOpen(false)
       toast.success('Deal gemarkeerd als gewonnen!')
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij status wijziging:', err)
       toast.error('Fout bij status wijziging')
     }
   }, [deal, werkelijkeWaarde])
@@ -225,7 +230,8 @@ export function DealDetail() {
       })
       setLostDialogOpen(false)
       toast.success('Deal gemarkeerd als verloren')
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij status wijziging:', err)
       toast.error('Fout bij status wijziging')
     }
   }, [deal, verlorenReden])
@@ -237,7 +243,8 @@ export function DealDetail() {
       const updated = await updateDeal(deal.id, { status: newStatus })
       setDeal(updated)
       toast.success(newStatus === 'on-hold' ? 'Deal on-hold gezet' : 'Deal hervat')
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij status wijziging:', err)
       toast.error('Fout bij status wijziging')
     }
   }, [deal])

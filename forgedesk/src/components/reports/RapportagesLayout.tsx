@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { logger } from '@/utils/logger';
 import {
   Card,
   CardContent,
@@ -144,7 +145,8 @@ export function RapportagesLayout() {
         setTijdregistraties(tijdData);
         setMedewerkers(mwData);
         setVoorraadArtikelen(vaData);
-      } catch {
+      } catch (err) {
+        logger.error('Fout bij het laden van rapportagegegevens:', err);
         toast.error('Fout bij het laden van rapportagegegevens');
       } finally {
         setLoading(false);
@@ -498,7 +500,8 @@ export function RapportagesLayout() {
       );
       doc.save(`omzet-rapport-${new Date().getFullYear()}.pdf`);
       toast.success('PDF gedownload');
-    } catch {
+    } catch (err) {
+      logger.error('Kon omzet PDF niet genereren:', err);
       toast.error('Kon PDF niet genereren');
     }
   }
@@ -532,7 +535,8 @@ export function RapportagesLayout() {
       );
       doc.save(`top-klanten-rapport.pdf`);
       toast.success('PDF gedownload');
-    } catch {
+    } catch (err) {
+      logger.error('Kon klanten PDF niet genereren:', err);
       toast.error('Kon PDF niet genereren');
     }
   }
@@ -567,7 +571,8 @@ export function RapportagesLayout() {
       );
       doc.save(`project-winstgevendheid-rapport.pdf`);
       toast.success('PDF gedownload');
-    } catch {
+    } catch (err) {
+      logger.error('Kon project PDF niet genereren:', err);
       toast.error('Kon PDF niet genereren');
     }
   }
@@ -603,7 +608,8 @@ export function RapportagesLayout() {
       );
       doc.save(`offerte-conversie-rapport.pdf`);
       toast.success('PDF gedownload');
-    } catch {
+    } catch (err) {
+      logger.error('Kon offerte PDF niet genereren:', err);
       toast.error('Kon PDF niet genereren');
     }
   }

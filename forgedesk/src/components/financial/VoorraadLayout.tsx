@@ -25,6 +25,7 @@ import {
   getLeveranciers, getProjecten,
 } from '@/services/supabaseService'
 import { round2 } from '@/utils/budgetUtils'
+import { logger } from '@/utils/logger'
 
 // ============ TYPES ============
 
@@ -228,7 +229,8 @@ export function VoorraadLayout() {
         toast.success(`${created.naam} aangemaakt`)
       }
       setArtikelDialogOpen(false)
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij opslaan artikel:', err)
       toast.error('Fout bij opslaan')
     } finally {
       setIsSaving(false)
@@ -245,7 +247,8 @@ export function VoorraadLayout() {
         setSelectedArtikel(null)
       }
       toast.success(`${deleteTarget.naam} verwijderd`)
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij verwijderen artikel:', err)
       toast.error('Kon artikel niet verwijderen')
     }
     setDeleteDialogOpen(false)
@@ -260,7 +263,8 @@ export function VoorraadLayout() {
     try {
       const m = await getVoorraadMutaties(artikel.id)
       setMutaties(m)
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij laden mutaties:', err)
       setMutaties([])
     }
   }, [])
@@ -306,7 +310,8 @@ export function VoorraadLayout() {
 
       setMutatieDialogOpen(false)
       toast.success(`${MUTATIE_TYPE_CONFIG[mutatieType].label} van ${Math.abs(mutatieAantal)} ${selectedArtikel.eenheid} geregistreerd`)
-    } catch {
+    } catch (err) {
+      logger.error('Fout bij registreren mutatie:', err)
       toast.error('Fout bij registreren mutatie')
     } finally {
       setIsSaving(false)

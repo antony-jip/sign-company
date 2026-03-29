@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
+import { logger } from '../../utils/logger'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Textarea } from '@/components/ui/textarea'
@@ -112,7 +113,7 @@ export function VisualizerLayout() {
     try {
       const items = await getSigningVisualisaties(user.id)
       setVisualisaties(items)
-    } catch { /* ignore */ }
+    } catch (err) { /* ignore */ }
     setIsLoading(false)
   }, [user?.id])
 
@@ -488,7 +489,8 @@ export function VisualizerLayout() {
       }
       toast.success('Visualisatie gedeeld via portaal')
       setShareDropdownId(null)
-    } catch {
+    } catch (err) {
+      logger.error('Delen via portaal mislukt:', err)
       toast.error('Kon niet delen via portaal')
     }
   }, [user?.id])
@@ -512,7 +514,8 @@ export function VisualizerLayout() {
       await sendEmail(shareEmailTo.trim(), shareEmailSubject.trim(), shareEmailBody, { html: bodyHtml })
       toast.success(`Visualisatie verstuurd naar ${shareEmailTo.trim()}`)
       setShareEmailVis(null)
-    } catch {
+    } catch (err) {
+      logger.error('Email versturen mislukt:', err)
       toast.error('Kon email niet versturen')
     } finally {
       setIsSendingShareEmail(false)
@@ -526,7 +529,8 @@ export function VisualizerLayout() {
       setVisualisaties(prev => prev.filter(v => v.id !== id))
       setDeleteConfirmId(null)
       toast.success('Verwijderd')
-    } catch {
+    } catch (err) {
+      logger.error('Visualisatie verwijderen mislukt:', err)
       toast.error('Verwijderen mislukt')
     }
   }, [user?.id])
