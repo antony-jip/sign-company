@@ -136,7 +136,17 @@ export function ForgieTab() {
   useEffect(() => {
     if (!user?.id) return
     let cancelled = false
-    getVisualizerInstellingen(user.id).then(v => { if (!cancelled) setVisInstellingen(v) }).catch(() => {})
+    getVisualizerInstellingen(user.id).then(async (v) => {
+      if (cancelled) return
+      try {
+        const statusRes = await fetch('/api/api-status')
+        if (statusRes.ok) {
+          const status = await statusRes.json()
+          if (status.fal_ai) v.fal_api_key_geconfigureerd = true
+        }
+      } catch { /* ignore */ }
+      setVisInstellingen(v)
+    }).catch(() => {})
     getVisualizerCredits(user.id).then(c => {
       if (cancelled) return
       setCreditSaldo(c.saldo)

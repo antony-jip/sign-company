@@ -32,6 +32,7 @@ const ResetPasswordPage = lazy(() => import('@/components/auth/ResetPasswordPage
 
 // Onboarding
 const WelkomPagina = lazy(() => import('@/components/onboarding/WelkomPagina'), 'WelkomPagina')
+const TeamWelkomPagina = lazy(() => import('@/components/onboarding/TeamWelkomPagina'), 'TeamWelkomPagina')
 const OnboardingWizard = lazy(() => import('@/components/onboarding/OnboardingWizard'), 'OnboardingWizard')
 
 // Dashboard
@@ -187,6 +188,11 @@ function AppContent() {
       <Route path="/welkom" element={
         <ProtectedRoute>
           <WelkomPagina />
+        </ProtectedRoute>
+      } />
+      <Route path="/team-welkom" element={
+        <ProtectedRoute>
+          <TeamWelkomPagina />
         </ProtectedRoute>
       } />
       <Route path="/onboarding" element={

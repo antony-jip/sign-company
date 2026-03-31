@@ -27,36 +27,56 @@ interface ExactSettings {
   exact_btw_nul: string | null
 }
 
-async function getValidToken(
-  user_id: string,
-  host: string,
-  protocol: string
-): Promise<string> {
+async function getValidToken(user_id: string): Promise<string> {
   const { data: tokenData } = await supabaseAdmin
     .from('exact_tokens')
-    .select('access_token, expires_at')
+    .select('access_token, refresh_token, expires_at')
     .eq('user_id', user_id)
-    .single() as { data: { access_token: string; expires_at: string } | null }
+    .single() as { data: { access_token: string; refresh_token: string; expires_at: string } | null }
 
   if (!tokenData) {
     throw new Error('Geen Exact Online tokens gevonden. Verbind opnieuw via Instellingen.')
   }
 
-  // Token verloopt binnen 5 minuten? Ververs.
+  // Token verloopt binnen 5 minuten? Ververs direct.
   const expiresAt = new Date(tokenData.expires_at).getTime()
   if (expiresAt < Date.now() + 5 * 60 * 1000) {
-    const refreshResponse = await fetch(`${protocol}://${host}/api/exact-refresh`, {
+    const { data: settings } = await supabaseAdmin
+      .from('app_settings')
+      .select('exact_online_client_id, exact_online_client_secret')
+      .eq('user_id', user_id)
+      .single()
+
+    if (!settings?.exact_online_client_id || !settings?.exact_online_client_secret) {
+      throw new Error('Exact credentials niet gevonden')
+    }
+
+    const refreshRes = await fetch('https://start.exactonline.nl/api/oauth2/token', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id }),
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        Authorization: `Basic ${Buffer.from(`${settings.exact_online_client_id}:${settings.exact_online_client_secret}`).toString('base64')}`,
+      },
+      body: new URLSearchParams({
+        grant_type: 'refresh_token',
+        refresh_token: tokenData.refresh_token,
+      }),
     })
 
-    if (!refreshResponse.ok) {
+    if (!refreshRes.ok) {
+      await supabaseAdmin.from('app_settings').update({ exact_online_connected: false }).eq('user_id', user_id)
       throw new Error('Token vernieuwen mislukt. Verbind Exact Online opnieuw.')
     }
 
-    const refreshed = await refreshResponse.json() as { access_token: string }
-    return refreshed.access_token
+    const tokens = await refreshRes.json()
+    await supabaseAdmin.from('exact_tokens').update({
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token || tokenData.refresh_token,
+      expires_at: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
+      updated_at: new Date().toISOString(),
+    }).eq('user_id', user_id)
+
+    return tokens.access_token
   }
 
   return tokenData.access_token
@@ -100,9 +120,9 @@ async function exactPost(token: string, division: string, endpoint: string, data
 }
 
 function bepaalBtwCode(btwPercentage: number, settings: ExactSettings): string | null {
-  if (btwPercentage >= 21) return settings.exact_btw_hoog
-  if (btwPercentage >= 9) return settings.exact_btw_laag
-  return settings.exact_btw_nul
+  if (btwPercentage >= 21) return settings.exact_btw_hoog || null
+  if (btwPercentage >= 9) return settings.exact_btw_laag || null
+  return settings.exact_btw_nul || null
 }
 
 // ── Grootboek GUID cache per request ──
@@ -168,6 +188,8 @@ async function findOrCreateKlant(
 // ── Main Handler ──
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  res.setHeader('Access-Control-Allow-Origin', '*')
+  res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type')
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
@@ -206,7 +228,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // 2. Haal geldige access_token op
     let token: string
     try {
-      token = await getValidToken(user_id, host, protocol)
+      token = await getValidToken(user_id)
     } catch {
       return res.status(401).json({
         error: 'Exact Online sessie verlopen. Verbind opnieuw via Instellingen > Integraties.',

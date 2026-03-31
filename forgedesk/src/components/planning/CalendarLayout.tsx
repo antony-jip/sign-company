@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react'
 import {
   format,
+  addDays,
   addWeeks,
   subWeeks,
   startOfWeek,
@@ -285,13 +286,13 @@ export function CalendarLayout() {
   // ---- Week dates ----
   const weekDates = useMemo(() => {
     const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 })
-    const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 })
-    return eachDayOfInterval({ start: weekStart, end: weekEnd })
+    const friday = addDays(weekStart, 4)
+    return eachDayOfInterval({ start: weekStart, end: friday })
   }, [currentDate])
 
   const weekLabel = useMemo(() => {
     const start = weekDates[0]
-    const end = weekDates[6]
+    const end = weekDates[weekDates.length - 1]
     return `${format(start, 'd MMM', { locale: nl })} - ${format(end, 'd MMM yyyy', { locale: nl })}`
   }, [weekDates])
 
@@ -527,7 +528,7 @@ export function CalendarLayout() {
 
   const weekAfspraken = useMemo(() => {
     const weekStart = formatDateYMD(weekDates[0])
-    const weekEnd = formatDateYMD(weekDates[6])
+    const weekEnd = formatDateYMD(weekDates[weekDates.length - 1])
     return filteredAfspraken.filter((a) => a.datum >= weekStart && a.datum <= weekEnd)
   }, [filteredAfspraken, weekDates])
 
@@ -1012,7 +1013,7 @@ export function CalendarLayout() {
                     ).length
                     const weekCount = afspraken.filter((a) => {
                       const wStart = formatDateYMD(weekDates[0])
-                      const wEnd = formatDateYMD(weekDates[6])
+                      const wEnd = formatDateYMD(weekDates[weekDates.length - 1])
                       return a.datum >= wStart && a.datum <= wEnd && a.monteurs.includes(mw.id)
                     }).length
 

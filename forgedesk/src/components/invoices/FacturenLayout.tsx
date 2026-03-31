@@ -265,7 +265,8 @@ export function FacturenLayout() {
   const { navigateWithTab } = useNavigateWithTab()
   const { user } = useAuth()
   // App settings (bedrijfsprofiel for PDF generation)
-  const { profile, primaireKleur, emailHandtekening, bedrijfsnaam, factuurBetaaltermijnDagen, factuurVoorwaarden } = useAppSettings()
+  const { settings, profile, primaireKleur, emailHandtekening, bedrijfsnaam, factuurBetaaltermijnDagen, factuurVoorwaarden } = useAppSettings()
+  const exactConnected = settings.exact_online_connected ?? false
   const documentStyle = useDocumentStyle()
 
   // Data state
@@ -1885,14 +1886,22 @@ export function FacturenLayout() {
                       )}
                     </td>
                     <td className="py-3.5 pr-4 hidden lg:table-cell">
-                      {factuur.online_bekeken ? (
-                        <div className="flex items-center gap-1.5" title={factuur.online_bekeken_op ? `Bekeken op ${new Date(factuur.online_bekeken_op).toLocaleString('nl-NL')}` : 'Online bekeken'}>
-                          <Globe className="h-3.5 w-3.5 text-[#1A535C]" />
-                          <span className="text-[11px] text-[#1A535C] font-semibold">Bekeken</span>
-                        </div>
-                      ) : factuur.betaal_link ? (
-                        <span className="text-[11px] text-[#C0BDB8]">—</span>
-                      ) : null}
+                      <div className="flex items-center gap-2">
+                        {factuur.online_bekeken ? (
+                          <div className="flex items-center gap-1.5" title={factuur.online_bekeken_op ? `Bekeken op ${new Date(factuur.online_bekeken_op).toLocaleString('nl-NL')}` : 'Online bekeken'}>
+                            <Globe className="h-3.5 w-3.5 text-[#1A535C]" />
+                            <span className="text-[11px] text-[#1A535C] font-semibold">Bekeken</span>
+                          </div>
+                        ) : factuur.betaal_link ? (
+                          <span className="text-[11px] text-[#C0BDB8]">—</span>
+                        ) : null}
+                        {exactConnected && (
+                          <span
+                            className={cn('w-2 h-2 rounded-full flex-shrink-0', factuur.exact_synced_at ? 'bg-[#2D6B48]' : 'bg-[#D0D0CC]')}
+                            title={factuur.exact_synced_at ? `Exact: ${new Date(factuur.exact_synced_at).toLocaleDateString('nl-NL')}` : 'Niet gesynchroniseerd met Exact'}
+                          />
+                        )}
+                      </div>
                     </td>
                     <td className="py-3.5 pr-4 hidden md:table-cell">
                       <DropdownMenu>

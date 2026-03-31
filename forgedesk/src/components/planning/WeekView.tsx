@@ -68,8 +68,9 @@ function getEventsForDay(events: CalendarEvent[], day: Date): CalendarEvent[] {
 
 export function WeekView({ currentDate, selectedDate, events, onSelectDate }: WeekViewProps) {
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 })
-  const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 })
-  const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd })
+  const friday = new Date(weekStart)
+  friday.setDate(friday.getDate() + 4)
+  const weekDays = eachDayOfInterval({ start: weekStart, end: friday })
 
   // Current time indicator
   const now = new Date()

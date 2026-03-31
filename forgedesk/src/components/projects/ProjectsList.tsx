@@ -16,6 +16,7 @@ import {
   CheckCircle2,
   X,
   Upload,
+  Trash2,
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -24,6 +25,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { EmptyState } from '@/components/ui/empty-state'
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 import { getFase } from '@/utils/projectFases'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -33,7 +38,7 @@ import {
 } from '@/lib/utils'
 import { exportCSV, exportExcel } from '@/lib/export'
 import { PaginationControls } from '@/components/ui/pagination-controls'
-import { getProjecten, getKlanten, getOffertes, updateProject, createProjectFoto } from '@/services/supabaseService'
+import { getProjecten, getKlanten, getOffertes, updateProject, createProjectFoto, deleteProject } from '@/services/supabaseService'
 import { ProjectImportDialog } from './ProjectImportDialog'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Project, Klant, Offerte } from '@/types'
@@ -132,6 +137,7 @@ export function ProjectsList() {
   const [photoUploadKlantId, setPhotoUploadKlantId] = useState<string | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [dagenOpenFilter, setDagenOpenFilter] = useState<string>('alle')
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false)
 
   const handleQuickPhotoUpload = async (files: FileList) => {
     if (!photoUploadProjectId || !user) return
@@ -318,6 +324,25 @@ export function ProjectsList() {
       logger.error('Fout bij bulk statuswijziging:', error)
       toast.error('Kon status niet wijzigen')
     }
+  }
+
+  async function handleBulkDelete() {
+    if (selectedIds.size === 0) return
+    const ids = [...selectedIds]
+    const results = await Promise.allSettled(ids.map((id) => deleteProject(id)))
+    const succeeded = ids.filter((_, i) => results[i].status === 'fulfilled')
+    const failed = ids.filter((_, i) => results[i].status === 'rejected')
+    if (succeeded.length > 0) {
+      const deletedSet = new Set(succeeded)
+      setProjecten((prev) => prev.filter((p) => !deletedSet.has(p.id)))
+      toast.success(`${succeeded.length} project${succeeded.length === 1 ? '' : 'en'} verwijderd`)
+    }
+    if (failed.length > 0) {
+      const namen = failed.map(id => projecten.find(p => p.id === id)?.naam || id).slice(0, 3).join(', ')
+      toast.error(`${failed.length} project${failed.length === 1 ? '' : 'en'} niet verwijderd (nog gekoppelde offertes/werkbonnen)${failed.length > 3 ? '...' : `: ${namen}`}`)
+    }
+    setSelectedIds(new Set())
+    setBulkDeleteDialogOpen(false)
   }
 
   const stats = useMemo(() => {
@@ -588,6 +613,13 @@ export function ProjectsList() {
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
+              <button
+                onClick={() => setBulkDeleteDialogOpen(true)}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#C03A18] bg-white px-3 py-1.5 rounded-lg shadow-sm hover:shadow transition-all"
+              >
+                <Trash2 className="w-3 h-3" />
+                Verwijderen
+              </button>
               <button
                 onClick={() => setSelectedIds(new Set())}
                 className="text-[#9B9B95] hover:text-[#1A1A1A] transition-colors p-1 rounded-md hover:bg-white/60"
@@ -1007,6 +1039,21 @@ export function ProjectsList() {
         onOpenChange={setShowImportDialog}
         onImportComplete={fetchData}
       />
+
+      <Dialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Projecten verwijderen</DialogTitle>
+            <DialogDescription>
+              Weet je zeker dat je {selectedIds.size} project{selectedIds.size === 1 ? '' : 'en'} wilt verwijderen? Dit kan niet ongedaan worden gemaakt.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkDeleteDialogOpen(false)}>Annuleren</Button>
+            <Button variant="destructive" onClick={handleBulkDelete}>Verwijderen</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

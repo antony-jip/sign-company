@@ -9,6 +9,8 @@ import {
   Receipt,
   Euro,
   FileText,
+  Clock,
+  Loader2,
 } from 'lucide-react'
 import {
   BarChart,
@@ -23,8 +25,8 @@ import {
   Cell,
   Legend,
 } from 'recharts'
-import { getGrootboek, getOffertes } from '@/services/supabaseService'
-import type { Grootboek, Offerte } from '@/types'
+import { getFacturen, getOffertes } from '@/services/supabaseService'
+import type { Factuur, Offerte } from '@/types'
 import { formatCurrency, getStatusColor } from '@/lib/utils'
 import { GeneralLedgerSettings } from './GeneralLedgerSettings'
 import { VATCodesSettings } from './VATCodesSettings'
@@ -32,7 +34,7 @@ import { DiscountsSettings } from './DiscountsSettings'
 
 const MAAND_LABELS = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec']
 
-const PIE_COLORS = ['#3B82F6', '#EF4444']
+const PIE_COLORS = ['#1A535C', '#F15025', '#E8B931', '#9B9B95']
 
 function formatTooltipValue(value: number) {
   return formatCurrency(value)
@@ -40,108 +42,151 @@ function formatTooltipValue(value: number) {
 
 export function FinancialLayout() {
   const [activeTab, setActiveTab] = useState('overzicht')
-  const [grootboek, setGrootboek] = useState<Grootboek[]>([])
+  const [facturen, setFacturen] = useState<Factuur[]>([])
   const [offertes, setOffertes] = useState<Offerte[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     let cancelled = false
-    Promise.all([getGrootboek(), getOffertes()]).then(([gb, off]) => {
+    Promise.all([getFacturen(), getOffertes()]).then(([fac, off]) => {
       if (cancelled) return
-      setGrootboek(gb)
+      setFacturen(fac)
       setOffertes(off)
       setIsLoading(false)
     })
     return () => { cancelled = true }
   }, [])
 
+  // === KPI berekeningen op basis van echte facturen ===
   const totaleOmzet = useMemo(
-    () =>
-      grootboek
-        .filter((g) => g.categorie === 'omzet')
-        .reduce((sum, g) => sum + g.saldo, 0),
-    [grootboek]
+    () => facturen
+      .filter((f) => f.status === 'betaald')
+      .reduce((sum, f) => sum + (f.totaal || 0), 0),
+    [facturen]
   )
 
-  const totaleKosten = useMemo(
-    () =>
-      grootboek
-        .filter((g) => g.categorie === 'kosten')
-        .reduce((sum, g) => sum + g.saldo, 0),
-    [grootboek]
+  const gefactureerd = useMemo(
+    () => facturen
+      .filter((f) => f.status === 'verzonden' || f.status === 'betaald')
+      .reduce((sum, f) => sum + (f.totaal || 0), 0),
+    [facturen]
   )
 
-  const winst = totaleOmzet - totaleKosten
+  const openstaandBedrag = useMemo(
+    () => facturen
+      .filter((f) => f.status === 'verzonden' || f.status === 'vervallen')
+      .reduce((sum, f) => sum + (f.totaal || 0) - (f.betaald_bedrag || 0), 0),
+    [facturen]
+  )
+
+  const vervallenFacturen = useMemo(
+    () => facturen.filter((f) => f.status === 'vervallen'),
+    [facturen]
+  )
 
   const openstaandeOffertes = useMemo(
-    () =>
-      offertes.filter(
-        (o) => o.status === 'verzonden' || o.status === 'bekeken' || o.status === 'concept'
-      ),
+    () => offertes.filter(
+      (o) => o.status === 'verzonden' || o.status === 'bekeken' || o.status === 'concept'
+    ),
     [offertes]
   )
 
-  // Distribute grootboek saldo evenly across months for chart display
-  const maandData = useMemo(() => {
-    if (grootboek.length === 0) return []
-    const omzetPerMaand = totaleOmzet / 12
-    const kostenPerMaand = totaleKosten / 12
-    return MAAND_LABELS.map((maand) => ({
-      maand,
-      omzet: Math.round(omzetPerMaand),
-      kosten: Math.round(kostenPerMaand),
-    }))
-  }, [grootboek, totaleOmzet, totaleKosten])
+  const offerteWaarde = useMemo(
+    () => openstaandeOffertes.reduce((sum, o) => sum + (o.totaal || 0), 0),
+    [openstaandeOffertes]
+  )
 
-  const pieData = [
-    { name: 'Inkomsten', value: totaleOmzet },
-    { name: 'Uitgaven', value: totaleKosten },
-  ]
+  // === Maandelijks overzicht op basis van facturen ===
+  const currentYear = new Date().getFullYear()
+
+  const maandData = useMemo(() => {
+    return MAAND_LABELS.map((maand, i) => {
+      const maandFacturen = facturen.filter((f) => {
+        const d = new Date(f.factuurdatum)
+        return d.getFullYear() === currentYear && d.getMonth() === i
+      })
+      const omzet = maandFacturen
+        .filter((f) => f.status === 'betaald')
+        .reduce((sum, f) => sum + (f.totaal || 0), 0)
+      const gefactureerd = maandFacturen
+        .filter((f) => f.status !== 'concept' && f.status !== 'gecrediteerd')
+        .reduce((sum, f) => sum + (f.totaal || 0), 0)
+      return { maand, omzet: Math.round(omzet), gefactureerd: Math.round(gefactureerd) }
+    })
+  }, [facturen, currentYear])
+
+  const pieData = useMemo(() => {
+    const betaald = facturen.filter((f) => f.status === 'betaald').reduce((s, f) => s + (f.totaal || 0), 0)
+    const openstaand = facturen.filter((f) => f.status === 'verzonden').reduce((s, f) => s + (f.totaal || 0) - (f.betaald_bedrag || 0), 0)
+    const vervallen = facturen.filter((f) => f.status === 'vervallen').reduce((s, f) => s + (f.totaal || 0) - (f.betaald_bedrag || 0), 0)
+    const concept = facturen.filter((f) => f.status === 'concept').reduce((s, f) => s + (f.totaal || 0), 0)
+    return [
+      { name: 'Betaald', value: betaald },
+      { name: 'Openstaand', value: openstaand },
+      { name: 'Vervallen', value: vervallen },
+      { name: 'Concept', value: concept },
+    ].filter((d) => d.value > 0)
+  }, [facturen])
 
   const statCards = [
     {
-      label: 'Totale Omzet',
-      value: formatCurrency(totaleOmzet),
+      label: 'Gefactureerd',
+      value: formatCurrency(gefactureerd),
+      sub: `${facturen.filter((f) => f.status !== 'concept' && f.status !== 'gecrediteerd').length} facturen`,
       icon: TrendingUp,
-      color: 'text-mod-facturen-text',
-      bg: 'bg-mod-facturen-light',
+      color: 'text-[#1A535C]',
+      bg: 'bg-[#E2F0F0]',
     },
     {
-      label: 'Totale Kosten',
-      value: formatCurrency(totaleKosten),
-      icon: TrendingDown,
-      color: 'text-mod-werkbonnen-text',
-      bg: 'bg-mod-werkbonnen-light',
-    },
-    {
-      label: 'Winst',
-      value: formatCurrency(winst),
+      label: 'Ontvangen',
+      value: formatCurrency(totaleOmzet),
+      sub: `${facturen.filter((f) => f.status === 'betaald').length} betaald`,
       icon: Euro,
-      color: winst >= 0 ? 'text-mod-facturen-text' : 'text-mod-werkbonnen-text',
-      bg: winst >= 0 ? 'bg-mod-facturen-light' : 'bg-mod-werkbonnen-light',
+      color: 'text-[#2D6B48]',
+      bg: 'bg-[#E4F0EA]',
     },
     {
-      label: 'Openstaande Offertes',
-      value: String(openstaandeOffertes.length),
+      label: 'Openstaand',
+      value: formatCurrency(openstaandBedrag),
+      sub: vervallenFacturen.length > 0
+        ? `${vervallenFacturen.length} vervallen`
+        : `${facturen.filter((f) => f.status === 'verzonden').length} wachtend`,
+      icon: Clock,
+      color: vervallenFacturen.length > 0 ? 'text-[#C03A18]' : 'text-[#8A7A4A]',
+      bg: vervallenFacturen.length > 0 ? 'bg-[#FDE8E2]' : 'bg-[#F5F2E8]',
+    },
+    {
+      label: 'Offertes open',
+      value: formatCurrency(offerteWaarde),
+      sub: `${openstaandeOffertes.length} offertes`,
       icon: Receipt,
-      color: 'text-accent dark:text-wm-light',
-      bg: 'bg-wm-pale/20 dark:bg-accent/30',
+      color: 'text-[#1A535C]',
+      bg: 'bg-[#E2F0F0]',
     },
   ]
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24">
+        <Loader2 className="w-8 h-8 animate-spin text-[#1A535C] mb-4" />
+        <p className="text-[#9B9B95]">Financieel laden...</p>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6 mod-strip mod-strip-financieel">
       {/* Page Header */}
       <div className="flex items-center gap-3">
-        <div className="p-2 bg-primary/10 dark:bg-primary/20 rounded-lg flex-shrink-0">
-          <PiggyBank className="w-6 h-6 text-accent dark:text-primary" />
+        <div className="p-2 bg-[#1A535C]/10 rounded-lg flex-shrink-0">
+          <PiggyBank className="w-6 h-6 text-[#1A535C]" />
         </div>
         <div className="min-w-0">
-          <h1 className="page-title text-foreground dark:text-white truncate">
-            Financieel Overzicht
+          <h1 className="text-xl font-bold text-[#1A1A1A] tracking-[-0.3px]">
+            Financieel<span className="text-[#F15025]">.</span>
           </h1>
-          <p className="text-sm text-muted-foreground dark:text-muted-foreground/60 truncate">
-            Beheer uw financi&euml;le administratie en instellingen
+          <p className="text-sm text-[#9B9B95]">
+            Overzicht van facturen, omzet en openstaande posten
           </p>
         </div>
       </div>
@@ -162,16 +207,17 @@ export function FinancialLayout() {
             {statCards.map((stat) => {
               const Icon = stat.icon
               return (
-                <Card key={stat.label}>
+                <Card key={stat.label} className="shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
                   <CardContent className="p-5">
                     <div className="flex items-center justify-between">
                       <div className="space-y-1">
-                        <p className="text-sm font-medium text-muted-foreground dark:text-muted-foreground/60">
+                        <p className="text-[13px] font-medium text-[#9B9B95]">
                           {stat.label}
                         </p>
-                        <p className="text-2xl font-bold font-mono text-foreground dark:text-white">
+                        <p className="text-2xl font-bold font-mono text-[#1A1A1A]">
                           {stat.value}
                         </p>
+                        <p className="text-[11px] text-[#B0ADA8]">{stat.sub}</p>
                       </div>
                       <div className={`p-3 rounded-lg ${stat.bg}`}>
                         <Icon className={`w-5 h-5 ${stat.color}`} />
@@ -186,51 +232,42 @@ export function FinancialLayout() {
           {/* Charts */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Bar Chart - Monthly Revenue */}
-            <Card className="lg:col-span-2">
+            <Card className="lg:col-span-2 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
               <CardHeader>
-                <CardTitle className="text-lg">Maandelijks Overzicht</CardTitle>
+                <CardTitle className="text-lg text-[#1A1A1A]">Maandelijks Overzicht {currentYear}</CardTitle>
               </CardHeader>
               <CardContent>
-                {maandData.length === 0 ? (
+                {facturen.length === 0 ? (
                   <div className="h-[350px] flex items-center justify-center">
-                    <p className="text-sm text-muted-foreground dark:text-muted-foreground/60">
-                      Voeg grootboekrekeningen toe om het overzicht te zien
+                    <p className="text-sm text-[#9B9B95]">
+                      Nog geen facturen — maak je eerste factuur aan om het overzicht te zien
                     </p>
                   </div>
                 ) : (
                 <div className="h-[350px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={maandData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" className="stroke-border dark:stroke-border" />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#F0EFEC" />
                       <XAxis
                         dataKey="maand"
-                        tick={{ fontSize: 12 }}
-                        className="text-muted-foreground dark:text-muted-foreground/60"
+                        tick={{ fontSize: 12, fill: '#9B9B95' }}
                       />
                       <YAxis
-                        tick={{ fontSize: 12 }}
-                        tickFormatter={(value) => `€${(value / 1000).toFixed(0)}k`}
-                        className="text-muted-foreground dark:text-muted-foreground/60"
+                        tick={{ fontSize: 12, fill: '#9B9B95' }}
+                        tickFormatter={(value) => value >= 1000 ? `€${(value / 1000).toFixed(0)}k` : `€${value}`}
                       />
-                      <Tooltip
-                        formatter={formatTooltipValue}
-                        contentStyle={{
-                          backgroundColor: 'var(--color-background, #fff)',
-                          border: '1px solid var(--color-border, #e5e7eb)',
-                          borderRadius: '8px',
-                          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                        }}
+                      <Tooltip formatter={formatTooltipValue} />
+                      <Bar
+                        dataKey="gefactureerd"
+                        name="Gefactureerd"
+                        fill="#1A535C"
+                        radius={[4, 4, 0, 0]}
+                        opacity={0.3}
                       />
                       <Bar
                         dataKey="omzet"
-                        name="Omzet"
-                        fill="#3B82F6"
-                        radius={[4, 4, 0, 0]}
-                      />
-                      <Bar
-                        dataKey="kosten"
-                        name="Kosten"
-                        fill="#EF4444"
+                        name="Ontvangen"
+                        fill="#1A535C"
                         radius={[4, 4, 0, 0]}
                       />
                     </BarChart>
@@ -240,13 +277,18 @@ export function FinancialLayout() {
               </CardContent>
             </Card>
 
-            {/* Pie Chart - Income vs Expenses */}
-            <Card>
+            {/* Pie Chart - Factuur status verdeling */}
+            <Card className="shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
               <CardHeader>
-                <CardTitle className="text-lg">Inkomsten vs Uitgaven</CardTitle>
+                <CardTitle className="text-lg text-[#1A1A1A]">Factuurstatus</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="h-[350px]">
+                  {pieData.length === 0 ? (
+                    <div className="h-full flex items-center justify-center">
+                      <p className="text-sm text-[#9B9B95]">Geen factuurdata</p>
+                    </div>
+                  ) : (
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
@@ -274,72 +316,59 @@ export function FinancialLayout() {
                         verticalAlign="bottom"
                         height={36}
                         formatter={(value) => (
-                          <span className="text-sm text-foreground/70 dark:text-muted-foreground/50">
-                            {value}
-                          </span>
+                          <span className="text-sm text-[#6B6B66]">{value}</span>
                         )}
                       />
                     </PieChart>
                   </ResponsiveContainer>
+                  )}
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Recent / Open Offertes Table */}
-          <Card>
+          {/* Openstaande Offertes Table */}
+          <Card className="shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg flex items-center gap-2">
+                <CardTitle className="text-lg flex items-center gap-2 text-[#1A1A1A]">
                   <FileText className="w-5 h-5" />
                   Openstaande Offertes
                 </CardTitle>
-                <Badge variant="secondary">{openstaandeOffertes.length} open</Badge>
+                <Badge variant="secondary" className="bg-[#E2F0F0] text-[#1A535C]">{openstaandeOffertes.length} open</Badge>
               </div>
             </CardHeader>
             <CardContent>
               {openstaandeOffertes.length === 0 ? (
-                <p className="text-sm text-muted-foreground dark:text-muted-foreground/60 text-center py-8">
+                <p className="text-sm text-[#9B9B95] text-center py-8">
                   Geen openstaande offertes
                 </p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-border dark:border-border">
-                        <th className="text-left py-3 px-4 font-medium text-muted-foreground dark:text-muted-foreground/60">
-                          Nummer
-                        </th>
-                        <th className="text-left py-3 px-4 font-medium text-muted-foreground dark:text-muted-foreground/60">
-                          Klant
-                        </th>
-                        <th className="text-left py-3 px-4 font-medium text-muted-foreground dark:text-muted-foreground/60">
-                          Titel
-                        </th>
-                        <th className="text-left py-3 px-4 font-medium text-muted-foreground dark:text-muted-foreground/60">
-                          Status
-                        </th>
-                        <th className="text-right py-3 px-4 font-medium text-muted-foreground dark:text-muted-foreground/60">
-                          Totaal
-                        </th>
-                        <th className="text-left py-3 px-4 font-medium text-muted-foreground dark:text-muted-foreground/60">
-                          Geldig tot
-                        </th>
+                      <tr className="border-b-2 border-[#F0EFEC]">
+                        <th className="text-left py-3 px-4 text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Nummer</th>
+                        <th className="text-left py-3 px-4 text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Klant</th>
+                        <th className="text-left py-3 px-4 text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Titel</th>
+                        <th className="text-left py-3 px-4 text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Status</th>
+                        <th className="text-right py-3 px-4 text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Totaal</th>
+                        <th className="text-left py-3 px-4 text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Geldig tot</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {openstaandeOffertes.map((offerte) => (
+                      {openstaandeOffertes.slice(0, 10).map((offerte) => (
                         <tr
                           key={offerte.id}
-                          className="border-b border-border dark:border-border hover:bg-background dark:hover:bg-muted/50 transition-colors"
+                          className="border-b border-[#F0EFEC] hover:bg-[#F8F7F4] transition-colors"
                         >
-                          <td className="py-3 px-4 font-mono text-xs text-muted-foreground dark:text-muted-foreground/60">
+                          <td className="py-3 px-4 font-mono text-[12px] text-[#9B9B95]">
                             {offerte.nummer}
                           </td>
-                          <td className="py-3 px-4 font-medium text-foreground dark:text-white">
+                          <td className="py-3 px-4 font-medium text-[#1A1A1A] text-[13px]">
                             {offerte.klant_naam}
                           </td>
-                          <td className="py-3 px-4 text-foreground/70 dark:text-muted-foreground/50">
+                          <td className="py-3 px-4 text-[#6B6B66] text-[13px]">
                             {offerte.titel}
                           </td>
                           <td className="py-3 px-4">
@@ -347,16 +376,21 @@ export function FinancialLayout() {
                               {offerte.status.charAt(0).toUpperCase() + offerte.status.slice(1)}
                             </Badge>
                           </td>
-                          <td className="py-3 px-4 text-right font-semibold font-mono text-foreground dark:text-white">
+                          <td className="py-3 px-4 text-right font-semibold font-mono text-[13px] text-[#1A1A1A]">
                             {formatCurrency(offerte.totaal)}
                           </td>
-                          <td className="py-3 px-4 text-muted-foreground dark:text-muted-foreground/60">
-                            {new Date(offerte.geldig_tot).toLocaleDateString('nl-NL')}
+                          <td className="py-3 px-4 text-[#9B9B95] text-[13px]">
+                            {offerte.geldig_tot ? new Date(offerte.geldig_tot).toLocaleDateString('nl-NL') : '—'}
                           </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
+                  {openstaandeOffertes.length > 10 && (
+                    <p className="text-center text-[12px] text-[#9B9B95] py-3">
+                      en {openstaandeOffertes.length - 10} meer...
+                    </p>
+                  )}
                 </div>
               )}
             </CardContent>

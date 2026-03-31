@@ -59,6 +59,7 @@ import {
   FileDown,
   ChevronRight,
   ClipboardList,
+  RefreshCw,
 } from 'lucide-react'
 import {
   getKlanten,
@@ -1346,6 +1347,49 @@ export function FactuurEditor() {
                     <Bell className="h-4 w-4 mr-1" />
                     Herinnering
                   </Button>
+                )}
+
+                {/* Exact Online sync */}
+                {settings.exact_online_connected && existingFactuur && (
+                  existingFactuur.exact_synced_at ? (
+                    <Badge className="bg-[#E4F0EA] text-[#2D6B48] text-xs gap-1">
+                      <CheckCircle2 className="w-3 h-3" />
+                      Exact {new Date(existingFactuur.exact_synced_at).toLocaleDateString('nl-NL')}
+                    </Badge>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-[#1A535C] border-[#1A535C]/20 hover:bg-[#1A535C]/5 gap-1"
+                      onClick={async () => {
+                        if (!existingFactuur) return
+                        const toastId = toast.loading('Synchroniseren met Exact...')
+                        try {
+                          const session = await import('@/services/supabaseClient').then(m => m.default?.auth.getSession())
+                          const token = session?.data?.session?.access_token
+                          if (!token) { toast.error('Niet ingelogd', { id: toastId }); return }
+                          const res = await fetch('/api/exact-sync-factuur', {
+                            method: 'POST',
+                            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ factuur_id: existingFactuur.id }),
+                          })
+                          if (!res.ok) {
+                            const data = await res.json().catch(() => ({}))
+                            throw new Error(data.error || 'Sync mislukt')
+                          }
+                          const data = await res.json()
+                          setExistingFactuur({ ...existingFactuur, exact_entry_id: data.exact_entry_id, exact_synced_at: new Date().toISOString() })
+                          toast.success('Factuur gesynchroniseerd met Exact Online', { id: toastId })
+                        } catch (err: unknown) {
+                          const msg = err instanceof Error ? err.message : 'Sync mislukt'
+                          toast.error(msg, { id: toastId })
+                        }
+                      }}
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      Sync Exact
+                    </Button>
+                  )
                 )}
 
                 {/* More actions dropdown */}

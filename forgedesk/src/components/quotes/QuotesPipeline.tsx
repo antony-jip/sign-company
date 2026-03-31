@@ -43,7 +43,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { getOffertes, updateOfferte, updateAppSettings } from '@/services/supabaseService'
+import { getOffertes, updateOfferte, updateAppSettings, deleteOfferte } from '@/services/supabaseService'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Offerte, PipelineStap } from '@/types'
@@ -54,6 +54,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 import { DagenOpenFilterBar, getDaysOpen, getDaysColor, matchDagenFilter } from '@/components/shared/DagenOpenFilter'
 import type { DagenOpenFilter } from '@/components/shared/DagenOpenFilter'
 import { exportCSV, exportExcel } from '@/lib/export'
@@ -219,6 +223,7 @@ export function QuotesPipeline() {
   const [showClosed, setShowClosed] = useState(false)
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false)
 
   // Pipeline settings panel
   const [showPipelineSettings, setShowPipelineSettings] = useState(false)
@@ -517,6 +522,24 @@ export function QuotesPipeline() {
       logger.error('Fout bij bulk statuswijziging:', err)
       toast.error('Kon status niet wijzigen')
     }
+  }
+
+  async function handleBulkDelete() {
+    if (selectedIds.size === 0) return
+    const ids = [...selectedIds]
+    const results = await Promise.allSettled(ids.map((id) => deleteOfferte(id)))
+    const succeeded = ids.filter((_, i) => results[i].status === 'fulfilled')
+    const failed = ids.filter((_, i) => results[i].status === 'rejected')
+    if (succeeded.length > 0) {
+      const deletedSet = new Set(succeeded)
+      setOffertes((prev) => prev.filter((o) => !deletedSet.has(o.id)))
+      toast.success(`${succeeded.length} offerte${succeeded.length === 1 ? '' : 's'} verwijderd`)
+    }
+    if (failed.length > 0) {
+      toast.error(`${failed.length} offerte${failed.length === 1 ? '' : 's'} kon niet verwijderd worden`)
+    }
+    setSelectedIds(new Set())
+    setBulkDeleteDialogOpen(false)
   }
 
   const sortedListOffertes = useMemo(() => {
@@ -1069,6 +1092,12 @@ export function QuotesPipeline() {
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
+              <button
+                onClick={() => setBulkDeleteDialogOpen(true)}
+                className="flex items-center gap-1.5 h-8 px-3.5 rounded-lg text-xs font-semibold bg-white ring-1 ring-[#C03A18]/20 text-[#C03A18] hover:shadow-sm transition-all"
+              >
+                <Trash2 className="w-3 h-3" /> Verwijderen
+              </button>
               <button onClick={() => setSelectedIds(new Set())} className="p-1.5 rounded-lg text-[#1A535C] hover:bg-white/40 transition-all">
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -1339,6 +1368,21 @@ export function QuotesPipeline() {
           )}
         </div>
       </div>
+
+      <Dialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Offertes verwijderen</DialogTitle>
+            <DialogDescription>
+              Weet je zeker dat je {selectedIds.size} offerte{selectedIds.size === 1 ? '' : 's'} wilt verwijderen? Dit kan niet ongedaan worden gemaakt.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkDeleteDialogOpen(false)}>Annuleren</Button>
+            <Button variant="destructive" onClick={handleBulkDelete}>Verwijderen</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

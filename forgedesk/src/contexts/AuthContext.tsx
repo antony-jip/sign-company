@@ -36,7 +36,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 // Public routes that should not trigger onboarding redirects
-const PUBLIC_ROUTES = ['/login', '/register', '/registreren', '/check-inbox', '/wachtwoord-vergeten', '/wachtwoord-resetten', '/welkom', '/onboarding']
+const PUBLIC_ROUTES = ['/login', '/register', '/registreren', '/check-inbox', '/wachtwoord-vergeten', '/wachtwoord-resetten', '/welkom', '/team-welkom', '/onboarding']
 
 function isPublicRoute(pathname: string): boolean {
   return PUBLIC_ROUTES.some((r) => pathname.startsWith(r)) ||
@@ -121,7 +121,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setTrialDagenOver(computeTrialDagenOver(org.trial_einde))
           setTrialStatus((org.abonnement_status as TrialStatus) || 'trial')
 
-          if (!org.onboarding_compleet) {
+          // Invited team member without profile → team welcome
+          if (profile.uitgenodigd_door && !profile.voornaam) {
+            navigate?.('/team-welkom')
+          } else if (!org.onboarding_compleet) {
             navigate?.('/onboarding')
           }
         }

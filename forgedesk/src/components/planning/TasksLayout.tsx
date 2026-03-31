@@ -300,7 +300,7 @@ export function TasksLayout() {
   const weekDays = useMemo(() => {
     const monday = getMonday(today)
     monday.setDate(monday.getDate() + weekOffset * 7)
-    return Array.from({ length: 7 }, (_, i) => {
+    return Array.from({ length: 5 }, (_, i) => {
       const d = new Date(monday)
       d.setDate(d.getDate() + i)
       return d
@@ -339,7 +339,7 @@ export function TasksLayout() {
     const map = new Map<string, Taak[]>()
     weekDays.forEach((d) => map.set(d.toDateString(), []))
 
-    let activeTaken = showCompleted ? taken : taken.filter((t) => t.status !== 'klaar')
+    let activeTaken = [...taken]
 
     // Apply task type filter
     if (taskFilter === 'project') {
@@ -378,12 +378,12 @@ export function TasksLayout() {
     })
 
     return map
-  }, [taken, weekDays, showCompleted, taskFilter, medewerkerFilter])
+  }, [taken, weekDays, taskFilter, medewerkerFilter])
 
   // Tasks grouped by day for month view
   const allTasksByDay = useMemo(() => {
     const map = new Map<string, Taak[]>()
-    let activeTaken = showCompleted ? taken : taken.filter((t) => t.status !== 'klaar')
+    let activeTaken = [...taken]
     if (taskFilter === 'project') activeTaken = activeTaken.filter((t) => !!t.project_id)
     else if (taskFilter === 'los') activeTaken = activeTaken.filter((t) => !t.project_id)
     if (medewerkerFilter) activeTaken = activeTaken.filter((t) => t.toegewezen_aan === medewerkerFilter)
@@ -396,16 +396,21 @@ export function TasksLayout() {
       map.get(key)!.push(t)
     })
     return map
-  }, [taken, showCompleted, taskFilter, medewerkerFilter])
+  }, [taken, taskFilter, medewerkerFilter])
 
   // Tasks without deadline (ongepland)
   const unscheduledTaken = useMemo(() => {
-    let activeTaken = showCompleted ? taken : taken.filter((t) => t.status !== 'klaar')
+    let activeTaken = [...taken]
     if (taskFilter === 'project') activeTaken = activeTaken.filter((t) => !!t.project_id)
     else if (taskFilter === 'los') activeTaken = activeTaken.filter((t) => !t.project_id)
     if (medewerkerFilter) activeTaken = activeTaken.filter((t) => t.toegewezen_aan === medewerkerFilter)
-    return activeTaken.filter((t) => !t.deadline).sort((a, b) => (PRIORITEIT_ORDER[b.prioriteit] || 0) - (PRIORITEIT_ORDER[a.prioriteit] || 0))
-  }, [taken, showCompleted, taskFilter, medewerkerFilter])
+    return activeTaken.filter((t) => !t.deadline).sort((a, b) => {
+      // Afgeronde taken altijd onderaan
+      if (a.status === 'klaar' && b.status !== 'klaar') return 1
+      if (a.status !== 'klaar' && b.status === 'klaar') return -1
+      return (PRIORITEIT_ORDER[b.prioriteit] || 0) - (PRIORITEIT_ORDER[a.prioriteit] || 0)
+    })
+  }, [taken, taskFilter, medewerkerFilter])
 
   // Montage afspraken grouped by day key
   const montageByDay = useMemo(() => {
@@ -431,7 +436,7 @@ export function TasksLayout() {
   // Week range label
   const weekLabel = useMemo(() => {
     const first = weekDays[0]
-    const last = weekDays[6]
+    const last = weekDays[weekDays.length - 1]
     if (first.getMonth() === last.getMonth()) {
       return `${first.getDate()} – ${last.getDate()} ${MONTH_NAMES[first.getMonth()]}`
     }
@@ -669,14 +674,14 @@ export function TasksLayout() {
     <>
       <div className="flex flex-col h-[calc(100vh-56px)] -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 bg-[#F8F7F5]">
         {/* === Sticky header + toolbar === */}
-        <div className="sticky top-0 z-20 bg-[#FFFFFF] border-b border-[#EBEBEB] shadow-[0_1px_3px_rgba(0,0,0,0.03)] px-6 py-2.5 flex-shrink-0">
+        <div className="sticky top-0 z-20 bg-[#FFFFFF] border-b border-[#F0EFEC] shadow-[0_1px_3px_rgba(0,0,0,0.03)] px-6 py-3 flex-shrink-0">
           {/* Row 1: title + navigation */}
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-2.5">
             <div className="flex items-center gap-3">
-              <h1 className="text-lg font-bold text-[#1A1A1A] tracking-[-0.3px]">
+              <h1 className="text-xl font-bold text-[#1A1A1A] tracking-[-0.3px]">
                 Taken<span className="text-[#F15025]">.</span>
               </h1>
-              <span className="text-[12px] text-[#9B9B95] font-mono tabular-nums">
+              <span className="text-[13px] text-[#9B9B95] font-mono tabular-nums">
                 {klaartaken}/{totalTaken}
               </span>
             </div>
@@ -685,7 +690,7 @@ export function TasksLayout() {
               <div className="inline-flex items-center rounded-md bg-[#F3F2F0] p-0.5 flex-shrink-0">
                 {(['week', 'maand'] as const).map((v) => (
                   <button key={v} onClick={() => setViewMode(v)} className={cn(
-                    'text-[12px] px-3 py-1 rounded-[5px] transition-all font-medium',
+                    'text-[13px] px-3.5 py-1.5 rounded-[5px] transition-all font-medium',
                     viewMode === v ? 'bg-[#FFFFFF] text-[#1A1A1A] shadow-[0_1px_3px_rgba(0,0,0,0.06)]' : 'text-[#9B9B95] hover:text-[#6B6B66]'
                   )}>{v === 'week' ? 'Week' : 'Maand'}</button>
                 ))}
@@ -695,7 +700,7 @@ export function TasksLayout() {
                   <ChevronLeft className="w-4 h-4 text-[#9B9B95]" />
                 </button>
                 <button
-                  className="text-[13px] px-2 py-1 rounded-md font-semibold text-[#1A1A1A] min-w-[140px] text-center"
+                  className="text-[14px] px-2.5 py-1 rounded-md font-semibold text-[#1A1A1A] min-w-[160px] text-center"
                   onClick={() => viewMode === 'week' ? setWeekOffset(0) : setMonthOffset(0)}
                 >
                   {viewMode === 'week' ? weekLabel : monthLabel}
@@ -706,7 +711,7 @@ export function TasksLayout() {
               </div>
               {!(viewMode === 'week' ? isCurrentWeek : monthOffset === 0) && (
                 <button
-                  className="text-[12px] px-2.5 py-1 rounded-md font-medium text-[#1A535C] hover:bg-[#1A535C]/[0.05] transition-all"
+                  className="text-[13px] px-3 py-1.5 rounded-md font-medium text-[#1A535C] hover:bg-[#1A535C]/[0.05] transition-all"
                   onClick={() => viewMode === 'week' ? setWeekOffset(0) : setMonthOffset(0)}
                 >
                   Vandaag
@@ -719,27 +724,23 @@ export function TasksLayout() {
             <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
               {([['alle', 'Alle'], ['project', 'Project'], ['los', 'Los']] as const).map(([key, label]) => (
                 <button key={key} onClick={() => setTaskFilter(key)} className={cn(
-                  'text-[12px] px-2.5 py-1 rounded-md transition-all whitespace-nowrap font-medium',
+                  'text-[13px] px-3 py-1.5 rounded-md transition-all whitespace-nowrap font-medium',
                   taskFilter === key
                     ? 'text-[#1A1A1A] bg-[#FFFFFF] shadow-[0_1px_3px_rgba(0,0,0,0.06)]'
                     : 'text-[#9B9B95] hover:text-[#6B6B66]'
                 )}>{label}</button>
               ))}
               <span className="w-px h-4 bg-[#EBEBEB] mx-1" />
-              <button onClick={() => setShowCompleted(!showCompleted)} className={cn(
-                'text-[12px] px-2.5 py-1 rounded-md transition-all whitespace-nowrap font-medium',
-                showCompleted ? 'text-[#1A1A1A] bg-[#FFFFFF] shadow-[0_1px_3px_rgba(0,0,0,0.06)]' : 'text-[#9B9B95] hover:text-[#6B6B66]'
-              )}>{showCompleted ? 'Afgerond ✓' : 'Afgerond'}</button>
               <button onClick={() => setShowMontage(!showMontage)} className={cn(
-                'text-[12px] px-2.5 py-1 rounded-md transition-all whitespace-nowrap font-medium flex items-center gap-1',
+                'text-[13px] px-3 py-1.5 rounded-md transition-all whitespace-nowrap font-medium flex items-center gap-1.5',
                 showMontage ? 'text-[#1A1A1A] bg-[#FFFFFF] shadow-[0_1px_3px_rgba(0,0,0,0.06)]' : 'text-[#9B9B95] hover:text-[#6B6B66]'
-              )}><Wrench className="w-3 h-3" />Montage</button>
+              )}><Wrench className="w-3.5 h-3.5" />Montage</button>
             </div>
             {medewerkers.length > 0 && (
               <select
                 value={medewerkerFilter}
                 onChange={(e) => setMedewerkerFilter(e.target.value)}
-                className="h-7 text-[12px] rounded-md border border-[#EBEBEB] bg-[#F8F7F5] px-2 max-w-[150px] text-[#6B6B66] focus:outline-none focus:border-[#1A535C]/30"
+                className="h-8 text-[13px] rounded-md border border-[#EBEBEB] bg-[#F8F7F5] px-2.5 max-w-[160px] text-[#6B6B66] focus:outline-none focus:border-[#1A535C]/30"
               >
                 <option value="">Iedereen</option>
                 {medewerkers.filter((m) => m.status === 'actief').map((m) => (
@@ -760,42 +761,11 @@ export function TasksLayout() {
         {/* === NIET VERGETEN — sticky note === */}
         <NietVergetenStrip />
 
-        {/* === ONGEPLAND — taken zonder deadline === */}
-        {unscheduledTaken.length > 0 && (
-          <div className="flex items-center gap-2 px-4 py-2 border-b border-[#EBEBEB] bg-[#FAFAF9]/50">
-            <span className="text-[10px] uppercase tracking-widest font-semibold text-[#9B9B95] flex-shrink-0">Ongepland</span>
-            <span className="text-[10px] font-mono text-[#B0ADA8]">{unscheduledTaken.length}</span>
-            <div className="flex-1 flex items-center gap-1.5 overflow-x-auto scrollbar-none">
-              {unscheduledTaken.map((t) => {
-                const isDone = t.status === 'klaar'
-                return (
-                  <button
-                    key={t.id}
-                    onClick={() => openEditDialog(t)}
-                    className={cn(
-                      'flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[12px] whitespace-nowrap flex-shrink-0 transition-colors',
-                      'border border-[#EBEBEB] hover:border-[#1A535C]/20 hover:bg-[#1A535C]/[0.03]',
-                      isDone && 'opacity-40 line-through',
-                    )}
-                  >
-                    <span
-                      className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: PRIORITEIT_COLORS[t.prioriteit]?.dot || '#9B9B95' }}
-                    />
-                    <span className={cn('text-[#1A1A1A]', isDone && 'text-[#9B9B95]')}>{t.titel}</span>
-                    {t.project_id && projectMap[t.project_id] && (
-                      <span className="text-[10px] text-[#9B9B95]">{projectMap[t.project_id]}</span>
-                    )}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        )}
+        {/* Ongepland verborgen — taken zonder deadline worden niet getoond */}
 
         {/* === DAY HEADERS === */}
-        <div className="flex border-b border-[#EBEBEB] bg-[#FAFAF9] flex-shrink-0">
-          <div className="w-12 flex-shrink-0" />
+        <div className="flex border-b-2 border-[#F0EFEC] bg-[#FAFAF9] flex-shrink-0">
+          <div className="w-14 flex-shrink-0" />
           {weekDays.map((day, i) => {
             const isToday = isSameDay(day, today)
             const dayTasks = tasksByDay.get(day.toDateString()) || []
@@ -804,27 +774,27 @@ export function TasksLayout() {
               <div
                 key={i}
                 className={cn(
-                  'flex-1 min-w-0 text-center py-2 border-l border-[#EBEBEB]/30 transition-colors',
-                  isToday && 'bg-[#1A535C]/[0.03]'
+                  'flex-1 min-w-0 text-center py-3 border-l border-[#EBEBEB]/30 transition-colors',
+                  isToday && 'bg-[#1A535C]/[0.04]'
                 )}
               >
-                <div className="flex items-center justify-center gap-1">
+                <div className="flex items-center justify-center gap-1.5">
                   <span className={cn(
-                    'text-[10px] uppercase tracking-widest font-semibold',
-                    isToday ? 'text-[#1A535C]' : isPast ? 'text-[#EBEBEB]' : 'text-[#9B9B95]'
+                    'text-[11px] uppercase tracking-widest font-semibold',
+                    isToday ? 'text-[#1A535C]' : isPast ? 'text-[#D0D0CC]' : 'text-[#9B9B95]'
                   )}>
                     {DAY_LABELS[i]}
                   </span>
                   <span className={cn(
-                    'text-[13px] font-bold font-mono tabular-nums',
+                    'text-[14px] font-bold font-mono tabular-nums',
                     isToday
-                      ? 'w-7 h-7 rounded-full bg-[#1A535C] text-white inline-flex items-center justify-center text-[12px]'
-                      : isPast ? 'text-[#EBEBEB]' : 'text-[#1A1A1A]'
+                      ? 'w-8 h-8 rounded-full bg-[#1A535C] text-white inline-flex items-center justify-center text-[13px]'
+                      : isPast ? 'text-[#D0D0CC]' : 'text-[#1A1A1A]'
                   )}>
                     {day.getDate()}
                   </span>
                   {dayTasks.length > 0 && !isToday && (
-                    <span className="text-[9px] font-mono text-[#9B9B95]">{dayTasks.length}</span>
+                    <span className="text-[10px] font-mono text-[#9B9B95]">{dayTasks.length}</span>
                   )}
                 </div>
               </div>
@@ -836,10 +806,10 @@ export function TasksLayout() {
         <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden relative bg-[#FFFFFF]">
           <div className="flex" style={{ minHeight: HOURS.length * HOUR_HEIGHT }}>
             {/* Time gutter */}
-            <div className="w-12 flex-shrink-0 relative border-r border-[#EBEBEB]/20">
+            <div className="w-14 flex-shrink-0 relative border-r border-[#F0EFEC]">
               {HOURS.map((hour) => (
                 <div key={hour} style={{ height: HOUR_HEIGHT }} className="relative">
-                  <span className="absolute -top-2 right-2 text-[10px] text-[#9B9B95] font-mono tabular-nums">
+                  <span className="absolute -top-2.5 right-3 text-[11px] text-[#9B9B95] font-mono tabular-nums font-medium">
                     {String(hour).padStart(2, '0')}
                   </span>
                 </div>
@@ -1408,7 +1378,7 @@ function DayColumn({
             {!isDropHere && !isAddingHere && (
               <button
                 onClick={() => { setAddingAtHour(hour); setHourAddTitle(''); setTimeout(() => hourInputRef.current?.focus(), 50) }}
-                className="absolute top-1 right-1 z-20 opacity-0 group-hover/hour:opacity-100 p-1 rounded-lg text-[#B0ADA8]/40 hover:text-[#1A535C] hover:bg-[#1A535C]/10 transition-all duration-200"
+                className="absolute top-1 right-1 z-20 opacity-0 group-hover/hour:opacity-100 p-1 rounded-lg text-[#F15025]/40 hover:text-[#F15025] hover:bg-[#F15025]/10 transition-all duration-200"
               >
                 <Plus className="w-3.5 h-3.5" />
               </button>
@@ -1654,7 +1624,7 @@ function TaskCard({
         scheduled ? 'h-full' : 'rounded-sm',
         !isResizing && 'cursor-grab active:cursor-grabbing',
         'hover:brightness-[0.97] hover:z-10',
-        isDone && 'opacity-35 hover:opacity-55',
+        isDone && 'opacity-45 hover:opacity-70',
         isPast && !isDone && 'opacity-60',
         justCompleted && 'scale-[0.98] opacity-40 transition-all duration-500',
         isResizing && 'ring-2 ring-[#1A535C]/30 z-30'
@@ -1673,12 +1643,12 @@ function TaskCard({
         title={isDone ? 'Ongedaan maken' : 'Markeer als klaar'}
       >
         {isDone ? (
-          <div className="w-3.5 h-3.5 rounded-sm bg-[#1A535C] flex items-center justify-center">
-            <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
+          <div className="w-4 h-4 rounded-sm bg-[#1A535C] flex items-center justify-center">
+            <Check className="w-3 h-3 text-white" strokeWidth={3} />
           </div>
         ) : (
           <div className={cn(
-            'w-3.5 h-3.5 rounded-sm border-[1.5px] transition-all duration-200',
+            'w-4 h-4 rounded-sm border-[1.5px] transition-all duration-200',
             PRIORITEIT_RING_COLORS[taak.prioriteit],
             'hover:border-[#1A535C] hover:bg-[#1A535C]/10'
           )} />
@@ -1692,9 +1662,9 @@ function TaskCard({
             <span className="inline-block w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: pc.dot }} />
           )}
           <p className={cn(
-            'text-[11px] font-semibold leading-tight text-[#1A1A1A] truncate flex-1',
+            'text-[13px] font-semibold leading-tight text-[#1A1A1A] truncate flex-1',
             isDone && 'line-through text-[#9B9B95]',
-            isCompact && 'text-[10px]'
+            isCompact && 'text-[11px]'
           )}>
             {taak.titel}
           </p>
@@ -1706,16 +1676,16 @@ function TaskCard({
         {!isCompact && (
           <div className="flex items-center gap-1.5 mt-0.5 overflow-hidden">
             {projectNaam && (
-              <span className="text-[10px] text-[#9B9B95] truncate max-w-[80px] flex items-center gap-0.5">
+              <span className="text-[11px] text-[#9B9B95] truncate max-w-[100px] flex items-center gap-0.5">
                 <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: getProjectColor(projectNaam) }} />
                 {projectNaam}
               </span>
             )}
             {scheduled && hour !== null && (
-              <span className="text-[10px] text-[#9B9B95] font-mono">{String(hour).padStart(2, '0')}:00</span>
+              <span className="text-[11px] text-[#9B9B95] font-mono">{String(hour).padStart(2, '0')}:00</span>
             )}
             {durationLabel && (
-              <span className="text-[10px] text-[#9B9B95] font-mono">{durationLabel}</span>
+              <span className="text-[11px] text-[#9B9B95] font-mono">{durationLabel}</span>
             )}
           </div>
         )}

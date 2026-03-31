@@ -58,6 +58,14 @@ export function VisualizerTab() {
           getCreditTransacties(user!.id),
         ])
         if (cancelled) return
+        // Auto-detect FAL API key via backend
+        try {
+          const statusRes = await fetch('/api/api-status')
+          if (statusRes.ok) {
+            const status = await statusRes.json()
+            if (status.fal_ai) inst.fal_api_key_geconfigureerd = true
+          }
+        } catch { /* ignore */ }
         setInstellingen(inst)
         setLog(apiLog.slice(0, 20))
         setCreditSaldo(credits.saldo)

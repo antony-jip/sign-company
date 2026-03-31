@@ -780,8 +780,8 @@ tbody tr:hover {
    SIDEBAR — Doen. vertical navigation
    ================================================================ */
 .doen-sidebar {
-  background: linear-gradient(172deg, #1E5D66 0%, #174D56 30%, #113E46 60%, #0C333A 100%);
-  border-right: 0.5px solid rgba(255, 255, 255, 0.06);
+  background: linear-gradient(175deg, #1A535C 0%, #164A52 25%, #113E46 55%, #0D343B 100%);
+  border-right: 0.5px solid rgba(255, 255, 255, 0.08);
   position: relative;
 }
 /* Subtle noise texture overlay */
@@ -810,14 +810,14 @@ tbody tr:hover {
 
 /* Active pill — frosted glass on dark */
 .doen-sidebar-active-pill {
-  background: rgba(255, 255, 255, 0.11);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 0.5px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.09);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 2px 8px rgba(0, 0, 0, 0.15),
-    0 0 20px rgba(241, 80, 37, 0.04);
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 2px 12px rgba(0, 0, 0, 0.2),
+    0 0 24px rgba(241, 80, 37, 0.03);
 }
 
 .dark .doen-sidebar {
@@ -846,11 +846,11 @@ tbody tr:hover {
 /* Section label in sidebar (expanded mode) */
 .doen-sidebar-section {
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 1.5px;
-  color: rgba(255, 255, 255, 0.22);
-  padding: 0 20px 8px;
+  letter-spacing: 2px;
+  color: rgba(255, 255, 255, 0.18);
+  padding: 4px 24px 10px;
   position: relative;
 }
 
@@ -860,21 +860,21 @@ tbody tr:hover {
   left: 0;
   top: 50%;
   transform: translateY(-50%);
-  width: 3px;
-  height: 20px;
-  border-radius: 0 4px 4px 0;
+  width: 2.5px;
+  height: 18px;
+  border-radius: 0 3px 3px 0;
   background: #F15025;
-  box-shadow: 0 0 12px rgba(241, 80, 37, 0.5), 0 0 4px rgba(241, 80, 37, 0.8);
+  box-shadow: 0 0 10px rgba(241, 80, 37, 0.4), 0 0 3px rgba(241, 80, 37, 0.7);
 }
 
 /* Sidebar nav item hover sweep */
 .doen-sidebar-item-hover {
   position: absolute;
   inset: 0;
-  border-radius: 10px;
+  border-radius: 11px;
   opacity: 0;
-  background: linear-gradient(90deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
-  transition: opacity 0.25s ease;
+  background: linear-gradient(90deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.015) 100%);
+  transition: opacity 0.2s ease;
 }
 .group\/nav:hover .doen-sidebar-item-hover,
 .group\/rail:hover .doen-sidebar-item-hover {

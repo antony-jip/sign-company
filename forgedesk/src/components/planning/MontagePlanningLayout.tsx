@@ -114,7 +114,7 @@ function getMondayOfWeek(date: Date): Date {
 }
 
 function getWeekDates(monday: Date): Date[] {
-  return Array.from({ length: 7 }, (_, i) => {
+  return Array.from({ length: 5 }, (_, i) => {
     const d = new Date(monday);
     d.setDate(monday.getDate() + i);
     return d;
@@ -254,7 +254,7 @@ export function MontagePlanningLayout() {
   // All afspraken for this week (unfiltered, needed for conflict detection)
   const weekAfsprakenAll = useMemo(() => {
     const startStr = formatDate(weekDates[0]);
-    const endStr = formatDate(weekDates[6]);
+    const endStr = formatDate(weekDates[weekDates.length - 1]);
     return afspraken.filter((a) => a.datum >= startStr && a.datum <= endStr);
   }, [afspraken, weekDates]);
 

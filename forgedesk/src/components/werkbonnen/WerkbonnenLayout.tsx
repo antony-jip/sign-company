@@ -5,12 +5,13 @@ import { toast } from 'sonner'
 import { logger } from '../../utils/logger'
 import {
   Plus, Search, ClipboardCheck, Trash2, Eye, FileText,
-  Download, Loader2
+  Download, Loader2, X
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from '@/components/ui/dialog'
+import { Checkbox } from '@/components/ui/checkbox'
 import { cn } from '@/lib/utils'
 // ModuleHeader removed — using DOEN inline header
 import { EmptyState } from '@/components/ui/empty-state'
@@ -41,6 +42,8 @@ export function WerkbonnenLayout() {
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('alle')
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<Werkbon | null>(null)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -136,6 +139,41 @@ export function WerkbonnenLayout() {
       setDeleteTarget(null)
     }
   }, [deleteTarget])
+
+  function toggleWerkbonSelection(id: string) {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  function toggleSelectAll() {
+    if (selectedIds.size === gefilterd.length) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(gefilterd.map(wb => wb.id)))
+    }
+  }
+
+  async function handleBulkDelete() {
+    if (selectedIds.size === 0) return
+    const ids = [...selectedIds]
+    const results = await Promise.allSettled(ids.map((id) => deleteWerkbon(id)))
+    const succeeded = ids.filter((_, i) => results[i].status === 'fulfilled')
+    const failed = ids.filter((_, i) => results[i].status === 'rejected')
+    if (succeeded.length > 0) {
+      const deletedSet = new Set(succeeded)
+      setWerkbonnen((prev) => prev.filter((wb) => !deletedSet.has(wb.id)))
+      toast.success(`${succeeded.length} werkbon${succeeded.length === 1 ? '' : 'nen'} verwijderd`)
+    }
+    if (failed.length > 0) {
+      toast.error(`${failed.length} werkbon${failed.length === 1 ? '' : 'nen'} kon niet verwijderd worden`)
+    }
+    setSelectedIds(new Set())
+    setBulkDeleteDialogOpen(false)
+  }
 
   const handleExportCSV = useCallback(() => {
     const header = 'Nummer,Klant,Project,Offerte,Datum,Status,Items\n'
@@ -273,6 +311,35 @@ export function WerkbonnenLayout() {
         </div>
       </div>
 
+      {/* Bulk action bar */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-4 px-5 py-3 bg-[#1A535C]/[0.06] rounded-xl ring-1 ring-[#1A535C]/10">
+          <span className="text-sm text-[#1A1A1A] font-medium">
+            <span className="font-mono font-bold text-[#1A535C]">{selectedIds.size}</span> geselecteerd
+          </span>
+          <button
+            onClick={toggleSelectAll}
+            className="text-xs font-medium text-[#1A535C] hover:underline transition-colors"
+          >
+            {selectedIds.size === gefilterd.length ? 'Deselecteer alles' : 'Selecteer alles'}
+          </button>
+          <div className="flex-1" />
+          <button
+            onClick={() => setBulkDeleteDialogOpen(true)}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#C03A18] bg-white px-3 py-1.5 rounded-lg shadow-sm hover:shadow transition-all"
+          >
+            <Trash2 className="w-3 h-3" />
+            Verwijderen
+          </button>
+          <button
+            onClick={() => setSelectedIds(new Set())}
+            className="text-[#9B9B95] hover:text-[#1A1A1A] transition-colors p-1 rounded-md hover:bg-white/60"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* ── Table ── */}
       {gefilterd.length === 0 ? (
         <div className="bg-white rounded-2xl p-12 ring-1 ring-black/[0.03] text-center">
@@ -287,7 +354,13 @@ export function WerkbonnenLayout() {
             <table className="w-full table-fixed">
               <thead>
                 <tr className="border-b-2 border-[#F0EFEC]">
-                  <th className="text-left py-3.5 pl-5 pr-4">
+                  <th className="w-[44px] py-3.5 pl-5 pr-0">
+                    <Checkbox
+                      checked={gefilterd.length > 0 && selectedIds.size === gefilterd.length}
+                      onCheckedChange={toggleSelectAll}
+                    />
+                  </th>
+                  <th className="text-left py-3.5 pl-2 pr-4">
                     <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Nummer</span>
                   </th>
                   <th className="text-left py-3.5 pr-4 w-[160px]">
@@ -320,11 +393,18 @@ export function WerkbonnenLayout() {
                       className={cn(
                         'doen-row border-b border-[#F0EFEC] last:border-0 cursor-pointer transition-all duration-200 group',
                         'hover:bg-[#F8F7F4]',
+                        selectedIds.has(wb.id) && 'bg-[#1A535C]/[0.03]',
                       )}
                       style={{ animationDelay: `${i * 25}ms` }}
                       onClick={() => navigateWithTab({ path: `/werkbonnen/${wb.id}`, label: wb.werkbon_nummer || 'Werkbon', id: `/werkbonnen/${wb.id}` })}
                     >
-                      <td className="py-3.5 pl-5 pr-4">
+                      <td className="py-3.5 pl-5 pr-0" onClick={(e) => e.stopPropagation()}>
+                        <Checkbox
+                          checked={selectedIds.has(wb.id)}
+                          onCheckedChange={() => toggleWerkbonSelection(wb.id)}
+                        />
+                      </td>
+                      <td className="py-3.5 pl-2 pr-4">
                         <div className="min-w-0">
                           <div className="flex items-baseline gap-2.5">
                             <span className="text-[15px] font-semibold text-[#1A1A1A] group-hover:text-[#1A535C] transition-colors">{wb.werkbon_nummer}</span>
@@ -398,6 +478,22 @@ export function WerkbonnenLayout() {
             </table>
         </div>
       )}
+
+      {/* Bulk delete confirmation */}
+      <Dialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Werkbonnen verwijderen</DialogTitle>
+            <DialogDescription>
+              Weet je zeker dat je {selectedIds.size} werkbon{selectedIds.size === 1 ? '' : 'nen'} wilt verwijderen? Dit kan niet ongedaan worden gemaakt.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkDeleteDialogOpen(false)}>Annuleren</Button>
+            <Button variant="destructive" onClick={handleBulkDelete}>Verwijderen</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete confirmation */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

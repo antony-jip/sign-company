@@ -63,8 +63,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       body: new URLSearchParams({
         grant_type: 'refresh_token',
         refresh_token: tokenData.refresh_token,
-        client_id: settings.exact_online_client_id,
-        client_secret: settings.exact_online_client_secret,
       }).toString(),
     })
 

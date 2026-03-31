@@ -43,6 +43,8 @@ import { logger } from '../../utils/logger'
 import { HuisstijlTab } from './HuisstijlTab'
 import { CalculatieTab } from './CalculatieTab'
 import { ForgieTab } from './ForgieTab'
+import { ExactTab } from './ExactTab'
+import { confirm } from '@/components/shared/ConfirmDialog'
 import { PortaalTab } from './PortaalTab'
 import { SidebarTab } from './SidebarTab'
 import { TeamledenTab } from './TeamledenTab'
@@ -573,3 +575,4 @@ function DocumentenTab() {
     </>
   )
 }
+

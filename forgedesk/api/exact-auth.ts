@@ -28,9 +28,15 @@ export function verifyState(state: string): string | null {
 const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
 async function verifyUser(req: VercelRequest): Promise<string> {
+  // Accept token via Authorization header or query param (for redirects)
+  let token = ''
   const authHeader = req.headers.authorization
-  if (!authHeader?.startsWith('Bearer ')) throw new Error('Niet geautoriseerd')
-  const token = authHeader.split(' ')[1]
+  if (authHeader?.startsWith('Bearer ')) {
+    token = authHeader.split(' ')[1]
+  } else if (typeof req.query.token === 'string') {
+    token = req.query.token
+  }
+  if (!token) throw new Error('Niet geautoriseerd')
   const { data: { user }, error } = await supabaseAdmin.auth.getUser(token)
   if (error || !user) throw new Error('Ongeldige sessie')
   return user.id

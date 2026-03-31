@@ -1,12 +1,12 @@
 import React, { useEffect, useRef, useMemo, useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import {
-  FolderKanban, Users, FileText,
-  Mail, Calendar, Settings, ChevronLeft,
-  ChevronRight, LogOut, Menu, X, CheckCircle,
-  Receipt, ClipboardCheck, Globe, Upload,
-  Moon, Sun, CreditCard, PiggyBank, PanelTop,
-  LayoutDashboard, Sparkles, BookOpen,
+  Hammer, Building2, FileSignature,
+  Send, CalendarRange, SlidersHorizontal, ChevronLeft,
+  ChevronRight, LogOut, Menu, X, ListChecks,
+  Banknote, Wrench, Globe2, ArrowUpFromLine,
+  Moon, Sun, CreditCard, TrendingUp, PanelTop,
+  LayoutDashboard, Wand2, CircleUserRound, BookOpen,
   type LucideIcon
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -30,30 +30,30 @@ interface NavGroup {
 
 // Module colors per the DOEN design system
 const WERK_ITEMS: NavItem[] = [
-  { label: 'Projecten', icon: FolderKanban, path: '/projecten', color: '#1A535C' },
-  { label: 'Offertes', icon: FileText, path: '/offertes', color: '#F15025' },
-  { label: 'Facturen', icon: Receipt, path: '/facturen', color: '#2D6B48' },
-  { label: 'Klanten', icon: Users, path: '/klanten', color: '#3A6B8C' },
-  { label: 'Werkbonnen', icon: ClipboardCheck, path: '/werkbonnen', color: '#C44830' },
+  { label: 'Projecten', icon: Hammer, path: '/projecten', color: '#1A535C' },
+  { label: 'Offertes', icon: FileSignature, path: '/offertes', color: '#F15025' },
+  { label: 'Facturen', icon: Banknote, path: '/facturen', color: '#2D6B48' },
+  { label: 'Klanten', icon: Building2, path: '/klanten', color: '#3A6B8C' },
+  { label: 'Werkbonnen', icon: Wrench, path: '/werkbonnen', color: '#C44830' },
 ]
 
 const PLANNING_ITEMS: NavItem[] = [
-  { label: 'Planning', icon: Calendar, path: '/planning', color: '#9A5A48' },
-  { label: 'Taken', icon: CheckCircle, path: '/taken', color: '#5A5A55' },
+  { label: 'Planning', icon: CalendarRange, path: '/planning', color: '#9A5A48' },
+  { label: 'Taken', icon: ListChecks, path: '/taken', color: '#5A5A55' },
 ]
 
 const COMMUNICATIE_ITEMS: NavItem[] = [
-  { label: 'Email', icon: Mail, path: '/email', color: '#6A5A8A' },
-  { label: 'Portaal', icon: Globe, path: '/portalen', color: '#6A5A8A' },
+  { label: 'Email', icon: Send, path: '/email', color: '#6A5A8A' },
+  { label: 'Portaal', icon: Globe2, path: '/portalen', color: '#6A5A8A' },
 ]
 
 const BEHEER_ITEMS: NavItem[] = [
-  { label: 'Financieel', icon: PiggyBank, path: '/financieel', color: '#2D6B48' },
-  { label: 'Visualizer', icon: Sparkles, path: '/visualizer', color: '#9A5A48' },
+  { label: 'Financieel', icon: TrendingUp, path: '/financieel', color: '#2D6B48' },
+  { label: 'Visualizer', icon: Wand2, path: '/visualizer', color: '#9A5A48' },
 ]
 
-const IMPORTEREN_ITEM: NavItem = { label: 'Importeren', icon: Upload, path: '/importeren', color: '#1A535C' }
-const SETTINGS_ITEM: NavItem = { label: 'Instellingen', icon: Settings, path: '/instellingen', color: '#5A5A55' }
+const IMPORTEREN_ITEM: NavItem = { label: 'Importeren', icon: ArrowUpFromLine, path: '/importeren', color: '#1A535C' }
+const SETTINGS_ITEM: NavItem = { label: 'Instellingen', icon: SlidersHorizontal, path: '/instellingen', color: '#5A5A55' }
 
 const NAV_GROUPS: NavGroup[] = [
   { section: 'WERK', items: WERK_ITEMS },
@@ -198,8 +198,8 @@ export function Sidebar() {
         key={item.path}
         to={item.path}
         className={cn(
-          'relative flex items-center gap-3.5 py-[10px] px-4 mx-2 rounded-[12px] group/nav',
-          isBottom ? 'text-[13px]' : 'text-[14px]',
+          'relative flex items-center gap-3 py-[9px] px-4 mx-2 rounded-[11px] group/nav',
+          isBottom ? 'text-[13px]' : 'text-[13.5px]',
         )}
       >
         {/* Hover sweep background */}
@@ -213,22 +213,27 @@ export function Sidebar() {
         {/* Flame left accent */}
         {active && <div className="doen-sidebar-flame-accent" style={{ left: '-8px' }} />}
 
-        {/* Icon — rounded container with subtle bg */}
+        {/* Icon — rounded container with module color tint */}
         <div
           className={cn(
-            'relative z-10 w-8 h-8 rounded-[9px] flex items-center justify-center flex-shrink-0 transition-all duration-300',
+            'relative z-10 w-[30px] h-[30px] rounded-[8px] flex items-center justify-center flex-shrink-0 transition-all duration-300',
             active
-              ? 'bg-white/[0.15] shadow-[0_0_12px_rgba(255,255,255,0.06)]'
-              : 'bg-white/[0.06] group-hover/nav:bg-white/[0.10]',
+              ? 'shadow-[0_0_12px_rgba(255,255,255,0.05)]'
+              : 'group-hover/nav:brightness-125',
           )}
+          style={{
+            backgroundColor: active
+              ? `${item.color}33`
+              : `${item.color}15`,
+          }}
         >
           <Icon
             className={cn(
-              'w-[19px] h-[19px] transition-all duration-300 ease-out',
+              'w-[17px] h-[17px] transition-all duration-300 ease-out',
               active && 'drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]',
             )}
             style={{ color: iconColor }}
-            strokeWidth={active ? 2 : 1.6}
+            strokeWidth={active ? 2.2 : 1.5}
           />
         </div>
 
@@ -264,11 +269,11 @@ export function Sidebar() {
         >
           {collapsed ? (
             <span className="text-[22px] font-extrabold text-white tracking-tight transition-transform duration-300 group-hover/logo:scale-105">
-              d<span className="text-[#F15025]" style={{ textShadow: '0 0 12px rgba(241, 80, 37, 0.4)' }}>.</span>
+              d<span className="text-[#F15025]" style={{ textShadow: '0 0 14px rgba(241, 80, 37, 0.5)' }}>.</span>
             </span>
           ) : (
-            <span className="text-[24px] font-extrabold text-white tracking-[-0.03em] transition-transform duration-300 group-hover/logo:translate-x-0.5">
-              doen<span className="text-[#F15025]" style={{ textShadow: '0 0 14px rgba(241, 80, 37, 0.5)' }}>.</span>
+            <span className="text-[26px] font-extrabold text-white tracking-[-0.04em] transition-transform duration-300 group-hover/logo:translate-x-0.5">
+              doen<span className="text-[#F15025]" style={{ textShadow: '0 0 16px rgba(241, 80, 37, 0.6)' }}>.</span>
             </span>
           )}
         </NavLink>
@@ -293,9 +298,9 @@ export function Sidebar() {
           ) : (
             <div className="px-0">
               {filteredGroups.map((group, gi) => (
-                <div key={group.section} className={gi > 0 ? 'mt-6' : ''}>
+                <div key={group.section} className={gi > 0 ? 'mt-5' : ''}>
                   <div className="doen-sidebar-section">{group.section}</div>
-                  <div className="space-y-[2px]">
+                  <div className="space-y-[1px]">
                     {group.items.map(item => renderExpandedItem(item))}
                   </div>
                 </div>
@@ -331,10 +336,10 @@ export function Sidebar() {
             ) : (
               <button
                 onClick={toggleSidebar}
-                className="flex items-center justify-center h-8 px-4 mx-2 gap-2 rounded-[10px] text-white/20 hover:text-white/55 hover:bg-white/[0.05] transition-all duration-300 w-auto mt-2"
+                className="flex items-center justify-center h-7 px-4 mx-3 gap-2 rounded-[8px] text-white/15 hover:text-white/45 hover:bg-white/[0.04] transition-all duration-300 w-auto mt-2"
               >
-                <ChevronLeft className="w-3.5 h-3.5" />
-                <span className="text-[11px] font-medium tracking-wide">Inklappen</span>
+                <ChevronLeft className="w-3 h-3" />
+                <span className="text-[10px] font-medium tracking-wider uppercase">Inklappen</span>
               </button>
             )
           )}
@@ -350,10 +355,10 @@ export function Sidebar() {
                 )}
               >
                 <div
-                  className="w-[32px] h-[32px] rounded-full flex items-center justify-center flex-shrink-0 doen-sidebar-avatar"
-                  style={{ background: 'linear-gradient(145deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05))' }}
+                  className="w-[34px] h-[34px] rounded-full flex items-center justify-center flex-shrink-0 doen-sidebar-avatar"
+                  style={{ background: 'linear-gradient(145deg, rgba(255,255,255,0.18), rgba(255,255,255,0.06))' }}
                 >
-                  <span className="text-[12px] font-bold text-white/90">{userInitial}</span>
+                  <span className="text-[13px] font-bold text-white/90">{userInitial}</span>
                 </div>
                 {!collapsed && (
                   <div className="flex-1 min-w-0 text-left">
@@ -388,7 +393,7 @@ export function Sidebar() {
                       onClick={() => { setUserPopoverOpen(false); navigate('/instellingen') }}
                       className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-white/70 hover:text-white hover:bg-white/[0.06] transition-all duration-200"
                     >
-                      <Settings className="w-4 h-4 text-white/40" />
+                      <SlidersHorizontal className="w-4 h-4 text-white/40" />
                       Profiel
                     </button>
                     <button
