@@ -148,8 +148,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setTrialDagenOver(computeTrialDagenOver(org.trial_einde))
           setTrialStatus((org.abonnement_status as TrialStatus) || 'trial')
 
-          // Invited team member without profile → team welcome
+          // Invited team member without voornaam → team welcome + create medewerker
           if (profile.uitgenodigd_door && !profile.voornaam) {
+            try {
+              await createMedewerker({ naam: profile.email || 'Nieuw teamlid', email: profile.email || '', status: 'actief', user_id: userId } as Parameters<typeof createMedewerker>[0])
+            } catch { /* may already exist */ }
             navigate?.('/team-welkom')
           } else if (!org.onboarding_compleet) {
             navigate?.('/onboarding')

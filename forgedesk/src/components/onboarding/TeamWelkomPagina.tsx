@@ -9,7 +9,7 @@ import {
   ListChecks, Send, Loader2, CheckCircle2, Mail,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
-import { updateProfile, getMedewerkers, updateMedewerker } from '@/services/supabaseService'
+import { updateProfile, getMedewerkers, updateMedewerker, createMedewerker } from '@/services/supabaseService'
 import { toast } from 'sonner'
 
 const highlights = [
@@ -51,8 +51,11 @@ export function TeamWelkomPagina() {
       try {
         const medewerkers = await getMedewerkers()
         const match = medewerkers.find(m => m.user_id === user.id || m.email === user.email)
-        if (match) {
+        if (match && !match.id.startsWith('profile-')) {
           await updateMedewerker(match.id, { naam: fullName, telefoon: telefoon.trim(), user_id: user.id })
+        } else if (!match) {
+          // No medewerker record yet — create one
+          await createMedewerker({ naam: fullName, email: user.email || '', telefoon: telefoon.trim(), status: 'actief', user_id: user.id } as Parameters<typeof createMedewerker>[0])
         }
       } catch { /* non-critical */ }
 
