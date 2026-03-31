@@ -156,7 +156,9 @@ export function TeamledenTab() {
   const gedeactiveerd = teamleden.filter(m => m.status === 'gedeactiveerd')
 
   const handleInvite = async () => {
-    if (!inviteEmail.trim() || !organisatieId || !user?.id) return
+    if (!inviteEmail.trim()) { toast.error('Vul een e-mailadres in'); return }
+    if (!organisatieId) { toast.error('Geen organisatie gevonden. Herlaad de pagina.'); return }
+    if (!user?.id) { toast.error('Je bent niet ingelogd'); return }
     setIsInviting(true)
     try {
       const token = await getAuthToken()
