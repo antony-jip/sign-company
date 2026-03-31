@@ -117,9 +117,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setOrganisatieId(inviteOrgId)
           setUserRol(inviteRol as TeamRol)
 
-          // Auto-create medewerker record so they appear in dropdowns
+          // Auto-create medewerker record linked to profile via user_id
           try {
-            await createMedewerker({ naam: userEmail.split('@')[0] || 'Nieuw teamlid', email: userEmail, status: 'actief' } as Parameters<typeof createMedewerker>[0])
+            await createMedewerker({ naam: userEmail.split('@')[0] || 'Nieuw teamlid', email: userEmail, status: 'actief', user_id: userId } as Parameters<typeof createMedewerker>[0])
           } catch { /* may already exist */ }
 
           const org = await getOrganisatie(inviteOrgId)

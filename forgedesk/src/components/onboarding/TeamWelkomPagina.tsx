@@ -47,12 +47,12 @@ export function TeamWelkomPagina() {
         telefoon: telefoon.trim(),
       } as Parameters<typeof updateProfile>[1])
 
-      // Update matching medewerker record with real name
+      // Update matching medewerker record with real name (match on user_id or email)
       try {
         const medewerkers = await getMedewerkers()
-        const match = medewerkers.find(m => m.email === user.email)
+        const match = medewerkers.find(m => m.user_id === user.id || m.email === user.email)
         if (match) {
-          await updateMedewerker(match.id, { naam: fullName, telefoon: telefoon.trim() })
+          await updateMedewerker(match.id, { naam: fullName, telefoon: telefoon.trim(), user_id: user.id })
         }
       } catch { /* non-critical */ }
 
