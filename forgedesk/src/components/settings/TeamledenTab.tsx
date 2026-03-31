@@ -174,9 +174,15 @@ export function TeamledenTab() {
         }),
       })
 
-      const data = await res.json()
+      let data
+      try {
+        data = await res.json()
+      } catch {
+        toast.error(`Server fout (${res.status}). Probeer opnieuw.`)
+        return
+      }
       if (!res.ok) {
-        toast.error(data.error || 'Kon uitnodiging niet versturen')
+        toast.error(data.error || `Kon uitnodiging niet versturen (${res.status})`)
         return
       }
 
