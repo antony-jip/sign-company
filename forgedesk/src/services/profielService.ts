@@ -341,9 +341,41 @@ export async function updateOrganisatie(id: string, updates: Partial<Organisatie
 
 export async function getMedewerkers(): Promise<Medewerker[]> {
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('medewerkers').select('*').order('naam')
-    if (error) throw error
-    return data || []
+    const orgId = await getOrgId()
+    const [mwRes, profRes] = await Promise.all([
+      supabase.from('medewerkers').select('*').order('naam'),
+      orgId ? supabase.from('profiles').select('id, voornaam, achternaam, email, telefoon, functie, avatar_url, organisatie_id, rol, status').eq('organisatie_id', orgId) : null,
+    ])
+    const medewerkers = mwRes.data || []
+    const profiles = profRes?.data || []
+
+    // Add profiles that don't have a matching medewerker record
+    const mwUserIds = new Set(medewerkers.filter(m => m.user_id).map(m => m.user_id))
+    const mwEmails = new Set(medewerkers.map(m => m.email?.toLowerCase()).filter(Boolean))
+
+    for (const p of profiles) {
+      if (mwUserIds.has(p.id) || (p.email && mwEmails.has(p.email.toLowerCase()))) continue
+      const naam = [p.voornaam, p.achternaam].filter(Boolean).join(' ') || p.email || 'Teamlid'
+      medewerkers.push({
+        id: `profile-${p.id}`,
+        user_id: p.id,
+        organisatie_id: p.organisatie_id,
+        naam,
+        email: p.email || '',
+        telefoon: p.telefoon || '',
+        functie: p.functie || '',
+        afdeling: '',
+        avatar_url: p.avatar_url || '',
+        uurtarief: 0,
+        status: (p.status === 'actief' ? 'actief' : 'inactief') as 'actief' | 'inactief',
+        rol: (p.rol || 'medewerker') as Medewerker['rol'],
+        vaardigheden: [],
+        created_at: '',
+        updated_at: '',
+      } as Medewerker)
+    }
+
+    return medewerkers.sort((a, b) => a.naam.localeCompare(b.naam))
   }
   return getLocalData<Medewerker>('medewerkers')
 }
