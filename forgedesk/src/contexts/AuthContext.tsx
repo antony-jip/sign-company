@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { signIn, signUp, signOut, getSession, onAuthStateChange, type AuthSession } from '@/services/authService'
-import { getProfile, updateProfile, createOrganisatie, getOrganisatie } from '@/services/supabaseService'
+import { getProfile, updateProfile, createOrganisatie, getOrganisatie, createMedewerker } from '@/services/supabaseService'
 import { isSupabaseConfigured } from '@/services/supabaseClient'
 import type { TeamRol, Organisatie } from '@/types'
 import { logger } from '@/utils/logger'
@@ -112,9 +112,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (inviteOrgId) {
           // Invited user — join existing org
+          const userEmail = user?.email || meta?.email as string || ''
           await updateProfile(userId, { organisatie_id: inviteOrgId, rol: inviteRol, uitgenodigd_door: invitedBy || null, status: 'actief' } as Parameters<typeof updateProfile>[1])
           setOrganisatieId(inviteOrgId)
           setUserRol(inviteRol as TeamRol)
+
+          // Auto-create medewerker record so they appear in dropdowns
+          try {
+            await createMedewerker({ naam: userEmail.split('@')[0] || 'Nieuw teamlid', email: userEmail, status: 'actief' } as Parameters<typeof createMedewerker>[0])
+          } catch { /* may already exist */ }
+
           const org = await getOrganisatie(inviteOrgId)
           if (org) {
             setOrganisatie(org)

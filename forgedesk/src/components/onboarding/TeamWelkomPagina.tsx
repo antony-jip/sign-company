@@ -9,7 +9,7 @@ import {
   ListChecks, Send, Loader2, CheckCircle2, Mail,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
-import { updateProfile } from '@/services/supabaseService'
+import { updateProfile, getMedewerkers, updateMedewerker } from '@/services/supabaseService'
 import { toast } from 'sonner'
 
 const highlights = [
@@ -39,12 +39,23 @@ export function TeamWelkomPagina() {
     if (!user?.id || !voornaam.trim()) return
     setSaving(true)
     try {
+      const fullName = `${voornaam.trim()} ${achternaam.trim()}`.trim()
       await updateProfile(user.id, {
         voornaam: voornaam.trim(),
         achternaam: achternaam.trim(),
         functie: functie.trim(),
         telefoon: telefoon.trim(),
       } as Parameters<typeof updateProfile>[1])
+
+      // Update matching medewerker record with real name
+      try {
+        const medewerkers = await getMedewerkers()
+        const match = medewerkers.find(m => m.email === user.email)
+        if (match) {
+          await updateMedewerker(match.id, { naam: fullName, telefoon: telefoon.trim() })
+        }
+      } catch { /* non-critical */ }
+
       setStap('email')
     } catch {
       toast.error('Kon profiel niet opslaan')
