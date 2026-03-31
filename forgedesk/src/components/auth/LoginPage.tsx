@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
-import { Mail, Lock, Eye, EyeOff, Loader2, ArrowRight, FileText, CalendarDays, BarChart3 } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, Loader2, ArrowRight } from 'lucide-react'
 
 export function LoginPage() {
   const navigate = useNavigate()
@@ -35,179 +35,132 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex bg-foreground">
-      {/* Left: Branding panel */}
-      <div className="hidden lg:flex flex-col justify-between flex-1 p-12 relative overflow-hidden">
-        <div className="absolute inset-0">
-          <div className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full blur-[120px]" style={{ background: 'hsl(var(--primary) / 0.08)' }} />
-          <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full blur-[100px]" style={{ background: 'hsl(var(--ring) / 0.06)' }} />
-          <div
-            className="absolute inset-0 opacity-[0.02]"
-            style={{
-              backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
-              backgroundSize: '60px 60px',
-            }}
-          />
-        </div>
+    <div className="min-h-screen flex">
+      {/* Left: Petrol brand panel with animated shapes */}
+      <div
+        className="hidden lg:flex flex-col justify-between flex-1 relative overflow-hidden"
+        style={{ background: '#112F35' }}
+      >
+        {/* Animated floating shapes */}
+        <style>{`
+          @keyframes float-1 { 0%, 100% { transform: translate(0, 0) rotate(0deg); } 50% { transform: translate(30px, -40px) rotate(8deg); } }
+          @keyframes float-2 { 0%, 100% { transform: translate(0, 0) rotate(0deg); } 50% { transform: translate(-20px, 30px) rotate(-5deg); } }
+          @keyframes float-3 { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(15px, -20px) scale(1.08); } }
+          @keyframes float-4 { 0%, 100% { transform: translate(0, 0) rotate(0deg); } 50% { transform: translate(-25px, -15px) rotate(12deg); } }
+          @keyframes pulse-glow { 0%, 100% { opacity: 0.4; } 50% { opacity: 0.7; } }
+          .float-1 { animation: float-1 8s ease-in-out infinite; }
+          .float-2 { animation: float-2 10s ease-in-out infinite; }
+          .float-3 { animation: float-3 12s ease-in-out infinite; }
+          .float-4 { animation: float-4 9s ease-in-out infinite; }
+          .pulse-glow { animation: pulse-glow 4s ease-in-out infinite; }
+        `}</style>
 
-        <div className="relative z-10">
-          <Link to="/" className="inline-flex items-center gap-2.5 group">
-            <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center shadow-lg" style={{ boxShadow: '0 4px 14px hsl(var(--primary) / 0.3)' }}>
-              <svg className="w-5 h-5 text-primary-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="2" y="4" width="20" height="12" rx="2" />
-                <path d="M8 20h8" />
-                <path d="M12 16v4" />
-              </svg>
-            </div>
-            <span className="text-lg font-bold text-white tracking-tight" style={{ fontFamily: '"Bricolage Grotesque", sans-serif' }}>doen<span style={{ color: '#F15025' }}>.</span></span>
-          </Link>
-        </div>
+        {/* Large teal gradient blob - top right */}
+        <div className="absolute -top-20 -right-20 w-[500px] h-[500px] rounded-full blur-[100px] float-1" style={{ background: 'radial-gradient(circle, rgba(126, 200, 208, 0.15) 0%, transparent 70%)' }} />
 
-        {/* Visual illustration — tools + digital, pastel */}
-        <div className="relative z-10 flex justify-center mb-8">
-          <svg width="280" height="200" viewBox="0 0 280 200" fill="none" xmlns="http://www.w3.org/2000/svg" className="opacity-80">
-            {/* Desk / workspace base */}
-            <rect x="40" y="130" width="200" height="8" rx="4" fill="#7EB5A6" opacity="0.3" />
-            {/* Monitor */}
-            <rect x="90" y="40" width="100" height="72" rx="8" stroke="#8BAFD4" strokeWidth="2" fill="#8BAFD4" fillOpacity="0.08" />
-            <rect x="96" y="46" width="88" height="56" rx="4" fill="#8BAFD4" fillOpacity="0.06" />
-            {/* Screen content — chart lines */}
-            <polyline points="106,86 118,74 130,80 142,66 154,72 166,58 174,62" fill="none" stroke="#7EB5A6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.6" />
-            <line x1="106" y1="92" x2="174" y2="92" stroke="#8BAFD4" strokeWidth="1" opacity="0.2" />
-            {/* Monitor stand */}
-            <rect x="130" y="112" width="20" height="18" rx="2" fill="#8BAFD4" opacity="0.15" />
-            <rect x="120" y="128" width="40" height="4" rx="2" fill="#8BAFD4" opacity="0.2" />
-            {/* Wrench — left side */}
-            <g transform="translate(32, 70) rotate(-30)">
-              <rect x="0" y="8" width="6" height="40" rx="3" fill="#D4836A" opacity="0.5" />
-              <circle cx="3" cy="6" r="8" stroke="#D4836A" strokeWidth="2" fill="none" opacity="0.4" />
-              <rect x="1" y="0" width="4" height="8" fill="#D4836A" opacity="0.3" />
-            </g>
-            {/* Ruler — right side */}
-            <g transform="translate(220, 55) rotate(15)">
-              <rect x="0" y="0" width="10" height="60" rx="2" fill="#C4A882" opacity="0.35" />
-              {[0, 1, 2, 3, 4, 5].map(i => (
-                <line key={i} x1="0" y1={8 + i * 10} x2={i % 2 === 0 ? 6 : 4} y2={8 + i * 10} stroke="#C4A882" strokeWidth="1" opacity="0.5" />
-              ))}
-            </g>
-            {/* Pen tool — bottom right */}
-            <g transform="translate(210, 105) rotate(35)">
-              <polygon points="0,0 4,-3 35,3 35,7 4,13 0,10" fill="#9B8EC4" opacity="0.4" />
-              <polygon points="35,3 42,5 35,7" fill="#6B5B8A" opacity="0.5" />
-            </g>
-            {/* Document / clipboard — left bottom */}
-            <rect x="48" y="95" width="28" height="36" rx="3" fill="#E8866A" fillOpacity="0.1" stroke="#E8866A" strokeWidth="1.5" opacity="0.4" />
-            <line x1="54" y1="106" x2="70" y2="106" stroke="#E8866A" strokeWidth="1.2" strokeLinecap="round" opacity="0.3" />
-            <line x1="54" y1="112" x2="68" y2="112" stroke="#E8866A" strokeWidth="1.2" strokeLinecap="round" opacity="0.25" />
-            <line x1="54" y1="118" x2="64" y2="118" stroke="#E8866A" strokeWidth="1.2" strokeLinecap="round" opacity="0.2" />
-            {/* Euro coin */}
-            <circle cx="72" cy="150" r="12" stroke="#C4A882" strokeWidth="1.5" opacity="0.35" />
-            <text x="67" y="155" fill="#C4A882" opacity="0.5" fontSize="13" fontWeight="700">€</text>
-            {/* Floating dots — decorative */}
-            <circle cx="190" cy="35" r="3" fill="#9B8EC4" opacity="0.2" />
-            <circle cx="210" cy="45" r="2" fill="#7EB5A6" opacity="0.25" />
-            <circle cx="60" cy="50" r="2.5" fill="#E8866A" opacity="0.2" />
-            <circle cx="250" cy="90" r="2" fill="#8BAFD4" opacity="0.2" />
-          </svg>
-        </div>
+        {/* Orange accent blob - bottom left */}
+        <div className="absolute bottom-10 -left-10 w-[350px] h-[350px] rounded-full blur-[90px] float-2" style={{ background: 'radial-gradient(circle, rgba(241, 80, 37, 0.1) 0%, transparent 70%)' }} />
 
-        <div className="relative z-10 max-w-md">
-          <h2 className="text-4xl font-extrabold text-white leading-tight mb-4" style={{ fontFamily: '"Bricolage Grotesque", sans-serif' }}>
-            Van offerte tot
-            <br />
-            <span className="text-primary-foreground" style={{ color: 'hsl(var(--primary))' }}>
-              montage op locatie.
-            </span>
-          </h2>
-          <p className="text-[15px] text-white/50 leading-relaxed mb-8" style={{ fontFamily: 'Inter, sans-serif' }}>
-            Beheer je sign-projecten, plan montages, stuur offertes en factureer — alles vanuit één werkplek.
-          </p>
-          <div className="flex flex-wrap gap-3">
-            {[
-              { icon: FileText, label: 'Offertes & Facturen' },
-              { icon: CalendarDays, label: 'Planning' },
-              { icon: BarChart3, label: 'Rapportages' },
-            ].map(({ icon: Icon, label }) => (
-              <div key={label} className="flex items-center gap-2 text-sm text-white/50 bg-white/5 border border-white/10 rounded-full px-4 py-2">
-                <Icon className="w-3.5 h-3.5 text-white/40" />
-                {label}
-              </div>
-            ))}
-          </div>
-        </div>
+        {/* Small teal circle */}
+        <div className="absolute top-[30%] left-[15%] w-[200px] h-[200px] rounded-full blur-[60px] float-3" style={{ background: 'rgba(126, 200, 208, 0.08)' }} />
 
-        <p className="relative z-10 text-xs text-white/25" style={{ fontFamily: 'Inter, sans-serif' }}>
-          © {new Date().getFullYear()} doen. Alle rechten voorbehouden.
-        </p>
-      </div>
+        {/* Geometric shapes */}
+        <div className="absolute top-[20%] right-[20%] w-24 h-24 rounded-3xl border border-white/[0.06] float-4" style={{ background: 'rgba(126, 200, 208, 0.04)' }} />
+        <div className="absolute bottom-[30%] left-[25%] w-16 h-16 rounded-2xl border border-white/[0.05] float-1" style={{ background: 'rgba(241, 80, 37, 0.03)', animationDelay: '2s' }} />
+        <div className="absolute top-[55%] right-[12%] w-20 h-20 rounded-full border border-white/[0.04] float-2" style={{ background: 'rgba(126, 200, 208, 0.03)', animationDelay: '4s' }} />
+        <div className="absolute top-[12%] left-[40%] w-3 h-3 rounded-full pulse-glow" style={{ background: '#7EC8D0' }} />
+        <div className="absolute bottom-[20%] right-[30%] w-2 h-2 rounded-full pulse-glow" style={{ background: '#F15025', animationDelay: '2s' }} />
+        <div className="absolute top-[45%] left-[10%] w-2.5 h-2.5 rounded-full pulse-glow" style={{ background: '#7EC8D0', animationDelay: '3s' }} />
 
-      {/* Right: Login form */}
-      <div className="flex items-center justify-center flex-1 p-5 sm:p-8 bg-[#FEFDFB] lg:rounded-l-[2rem]">
-        <div className="w-full max-w-[400px]">
-          <div className="flex items-center gap-2.5 mb-10 lg:hidden">
-            <Link to="/" className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center">
-                <svg className="w-5 h-5 text-primary-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="2" y="4" width="20" height="12" rx="2" />
-                  <path d="M8 20h8" />
-                  <path d="M12 16v4" />
-                </svg>
-              </div>
-              <span className="text-lg font-bold text-foreground" style={{ fontFamily: '"Bricolage Grotesque", sans-serif' }}>doen<span style={{ color: '#F15025' }}>.</span></span>
+        {/* Content */}
+        <div className="relative z-10 flex flex-col justify-between h-full p-12">
+          {/* Logo */}
+          <div>
+            <Link to="/" className="inline-block">
+              <span className="text-[32px] font-extrabold text-white tracking-[-0.04em]">
+                doen<span className="text-[#F15025]" style={{ textShadow: '0 0 20px rgba(241, 80, 37, 0.5)' }}>.</span>
+              </span>
             </Link>
           </div>
 
-          <h1 className="text-2xl font-bold text-foreground mb-1.5" style={{ fontFamily: '"Bricolage Grotesque", sans-serif' }}>
-            Welkom terug
+          {/* Center headline */}
+          <div className="max-w-md">
+            <h2 className="text-[48px] font-extrabold text-white leading-[1.05] tracking-[-0.03em] mb-6">
+              Niet praten,<br />gewoon<br /><span className="text-[#7EC8D0]">doen.</span>
+            </h2>
+            <p className="text-[16px] text-white/50 leading-relaxed max-w-sm">
+              Offertes, facturen, planning en werkbonnen — alles vanuit één plek. Minder gedoe, meer gedaan.
+            </p>
+          </div>
+
+          {/* Footer */}
+          <p className="text-[11px] text-white/20">© {new Date().getFullYear()} doen. Alle rechten voorbehouden.</p>
+        </div>
+      </div>
+
+      {/* Right: Login form */}
+      <div className="flex flex-col items-center justify-center flex-1 p-6 sm:p-10 bg-[#FEFDFB] relative">
+        <div className="absolute top-0 left-0 w-[400px] h-[400px] rounded-full blur-[150px] pointer-events-none" style={{ background: 'rgba(241, 80, 37, 0.03)' }} />
+
+        <div className="w-full max-w-[380px] relative z-10">
+          {/* Mobile logo */}
+          <div className="mb-12 lg:hidden">
+            <Link to="/" className="inline-block">
+              <span className="text-[28px] font-extrabold text-[#1A1A1A] tracking-[-0.04em]">
+                doen<span className="text-[#F15025]">.</span>
+              </span>
+            </Link>
+          </div>
+
+          <h1 className="text-[28px] font-extrabold text-[#1A1A1A] tracking-[-0.03em] leading-tight mb-2">
+            Weer aan de slag
           </h1>
-          <p className="text-[14.5px] text-muted-foreground mb-8" style={{ fontFamily: 'Inter, sans-serif' }}>
-            Log in op je doen. account
+          <p className="text-[15px] text-[#9B9B95] mb-8">
+            Log in en doe waar je goed in bent
           </p>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium text-foreground/70">E-mailadres</Label>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="email" className="text-[13px] font-medium text-[#6B6B66]">E-mailadres</Label>
               <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-[15px] w-[15px] text-[#C0BDB8]" />
                 <Input
                   id="email"
                   type="email"
                   placeholder="naam@bedrijf.nl"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10 h-11 rounded-xl border-border bg-muted/50 focus:bg-card transition-colors"
+                  className="pl-10 h-12 rounded-xl border-[#E6E4E0] bg-white text-[14px] focus:border-[#1A535C] focus:ring-[#1A535C]/20 shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all"
                   disabled={isLoading}
                   autoComplete="email"
+                  autoFocus
                 />
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password" className="text-sm font-medium text-foreground/70">Wachtwoord</Label>
-                <Link
-                  to="/wachtwoord-vergeten"
-                  className="text-xs text-primary hover:underline font-medium"
-                >
+                <Label htmlFor="password" className="text-[13px] font-medium text-[#6B6B66]">Wachtwoord</Label>
+                <Link to="/wachtwoord-vergeten" className="text-[12px] text-[#1A535C] hover:underline font-medium">
                   Vergeten?
                 </Link>
               </div>
               <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-[15px] w-[15px] text-[#C0BDB8]" />
                 <Input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Voer je wachtwoord in"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10 pr-10 h-11 rounded-xl border-border bg-muted/50 focus:bg-card transition-colors"
+                  className="pl-10 pr-10 h-12 rounded-xl border-[#E6E4E0] bg-white text-[14px] focus:border-[#1A535C] focus:ring-[#1A535C]/20 shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all"
                   disabled={isLoading}
                   autoComplete="current-password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#C0BDB8] hover:text-[#6B6B66] transition-colors"
                   tabIndex={-1}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -217,8 +170,7 @@ export function LoginPage() {
 
             <Button
               type="submit"
-              className="w-full h-11 text-white hover:opacity-90 rounded-xl font-semibold text-[14px] transition-all group"
-              style={{ backgroundColor: '#F15025' }}
+              className="w-full h-12 rounded-xl font-semibold text-[15px] transition-all group bg-[#1A535C] hover:bg-[#164A52] text-white mt-3 shadow-[0_2px_8px_rgba(26,83,92,0.25)]"
               disabled={isLoading}
             >
               {isLoading ? (
@@ -229,21 +181,17 @@ export function LoginPage() {
               ) : (
                 <>
                   Inloggen
-                  <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
+                  <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </>
               )}
             </Button>
           </form>
 
-          <p className="text-center text-sm text-muted-foreground mt-8" style={{ fontFamily: 'Inter, sans-serif' }}>
+          <p className="text-center text-[13px] text-[#B0ADA8] mt-8">
             Nog geen account?{' '}
-            <Link to="/registreren" className="text-primary hover:underline font-semibold">
-              Gratis registreren →
+            <Link to="/registreren" className="text-[#F15025] hover:underline font-semibold">
+              Gratis uitproberen
             </Link>
-          </p>
-
-          <p className="text-center text-xs text-muted-foreground/60 mt-6" style={{ fontFamily: 'Inter, sans-serif' }}>
-            Demo: gebruik demo@doen.nl / demo1234
           </p>
         </div>
       </div>
