@@ -118,7 +118,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         rol,
         uitgenodigd_door
       },
-      redirectTo: `${process.env.VITE_APP_URL || 'https://app.doen.team'}/auth/welcome`
+      redirectTo: `${process.env.VITE_APP_URL || 'https://app.doen.team'}/team-welkom`
     })
 
     if (inviteError) {
