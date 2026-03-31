@@ -126,6 +126,53 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: 'Kon uitnodiging niet versturen: ' + inviteError.message })
     }
 
+    // Zorg dat het profiel correct is ingevuld (trigger is onbetrouwbaar)
+    if (inviteData.user?.id) {
+      const newUserId = inviteData.user.id
+      // Wacht even tot trigger het profiel aanmaakt
+      await new Promise(r => setTimeout(r, 500))
+
+      // Update of maak profiel aan met juiste organisatie_id
+      const { data: existingProfile } = await supabaseAdmin
+        .from('profiles')
+        .select('id, organisatie_id')
+        .eq('id', newUserId)
+        .maybeSingle()
+
+      if (existingProfile && !existingProfile.organisatie_id) {
+        await supabaseAdmin.from('profiles').update({
+          organisatie_id,
+          email: email.toLowerCase(),
+          rol,
+          uitgenodigd_door,
+          uitgenodigd_op: new Date().toISOString(),
+          status: 'actief',
+        }).eq('id', newUserId)
+      } else if (!existingProfile) {
+        await supabaseAdmin.from('profiles').insert({
+          id: newUserId,
+          email: email.toLowerCase(),
+          organisatie_id,
+          rol,
+          voornaam: '',
+          achternaam: '',
+          uitgenodigd_door,
+          uitgenodigd_op: new Date().toISOString(),
+          status: 'actief',
+        })
+      }
+
+      // Maak medewerker record aan
+      await supabaseAdmin.from('medewerkers').insert({
+        naam: email.split('@')[0],
+        email: email.toLowerCase(),
+        user_id: newUserId,
+        organisatie_id,
+        status: 'actief',
+        rol,
+      }).select().maybeSingle()
+    }
+
     // Sla uitnodiging op in de database
     const { data: uitnodiging, error: uitnodigingError } = await supabaseAdmin
       .from('uitnodigingen')
