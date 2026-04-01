@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { logger } from '../../utils/logger'
 import { useWeekWeather, getWeatherForDate } from "./WeatherDayStrip";
 import type { DayWeather } from "./WeatherDayStrip";
@@ -69,6 +69,7 @@ import { uploadMontageBijlage } from '@/services/storageService';
 import { WerkbonVanProjectDialog } from "@/components/werkbonnen/WerkbonVanProjectDialog";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { getNederlandseFeestdagen, isFeestdag } from "@/utils/feestdagen";
 import { confirm } from '@/components/shared/ConfirmDialog';
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -207,6 +208,9 @@ export function MontagePlanningLayout() {
   const [draggingAfspraakId, setDraggingAfspraakId] = useState<string | null>(null);
   const [draggingProjectId, setDraggingProjectId] = useState<string | null>(null);
   const [dragOverDate, setDragOverDate] = useState<string | null>(null);
+  const [resizingId, setResizingId] = useState<string | null>(null);
+  const resizeStartY = useRef(0);
+  const resizeStartMinutes = useRef(0);
   const [klanten, setKlanten] = useState<Klant[]>([]);
   const [offertes, setOffertes] = useState<Offerte[]>([]);
   const [werkbonDialogOpen, setWerkbonDialogOpen] = useState(false);
@@ -222,6 +226,7 @@ export function MontagePlanningLayout() {
 
   const todayStr = formatDate(new Date());
   const weather = useWeekWeather(weekDates);
+  const feestdagen = useMemo(() => getNederlandseFeestdagen(year), [year]);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -400,57 +405,64 @@ export function MontagePlanningLayout() {
     });
   }
 
-  function printDagplanning() {
-    const datum = todayStr;
-    const dagLabel = new Date().toLocaleDateString("nl-NL", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    });
-
-    // Get all afspraken for today (or filtered monteur)
-    let dagAfspraken = afspraken
-      .filter((a) => a.datum === datum && a.status !== "afgerond")
-      .sort((a, b) => a.start_tijd.localeCompare(b.start_tijd));
-
-    if (selectedMonteur !== "alle") {
-      dagAfspraken = dagAfspraken.filter((a) => a.monteurs.includes(selectedMonteur));
-    }
-
+  function printWeekplanning() {
+    const werkdagen = weekDates.slice(0, 5);
     const monteurNaam = selectedMonteur !== "alle"
       ? monteurMap[selectedMonteur]?.naam || ""
       : "Alle medewerkers";
 
-    const rows = dagAfspraken
-      .map(
-        (a) =>
-          `<tr>
-            <td style="padding:8px;border:1px solid #ddd;">${a.start_tijd} - ${a.eind_tijd}</td>
-            <td style="padding:8px;border:1px solid #ddd;font-weight:600;">${a.titel}</td>
-            <td style="padding:8px;border:1px solid #ddd;">${a.klant_naam || ""}</td>
-            <td style="padding:8px;border:1px solid #ddd;">${a.locatie}</td>
-            <td style="padding:8px;border:1px solid #ddd;">${a.monteurs.map((id) => monteurMap[id]?.naam || "?").join(", ")}</td>
-            <td style="padding:8px;border:1px solid #ddd;">${a.materialen.join(", ")}</td>
-            <td style="padding:8px;border:1px solid #ddd;font-size:12px;">${a.notities || ""}</td>
-          </tr>`
-      )
-      .join("");
+    const weekLabel = `Week ${weekNumber}, ${year}`;
 
-    const html = `<!DOCTYPE html><html><head><title>Dagplanning ${dagLabel}</title>
-      <style>body{font-family:Arial,sans-serif;padding:20px}table{border-collapse:collapse;width:100%}
-      th{background:#f3f4f6;padding:10px 8px;border:1px solid #ddd;text-align:left;font-size:13px}
-      td{font-size:13px}h1{font-size:20px;margin-bottom:4px}
-      @media print{body{padding:10px}}</style></head>
-      <body>
-      <h1>Dagplanning — ${dagLabel}</h1>
-      <p style="color:#666;margin-bottom:16px;">${monteurNaam} &middot; ${dagAfspraken.length} montage${dagAfspraken.length !== 1 ? "s" : ""}</p>
-      ${dagAfspraken.length === 0
-        ? '<p style="color:#999;font-style:italic;">Geen montages gepland voor vandaag.</p>'
-        : `<table><thead><tr>
-          <th>Tijd</th><th>Titel</th><th>Klant</th><th>Locatie</th><th>Medewerkers</th><th>Materialen</th><th>Notities</th>
-        </tr></thead><tbody>${rows}</tbody></table>`
+    let printAfspraken = weekAfsprakenAll
+      .filter((a) => a.status !== "afgerond")
+      .sort((a, b) => a.datum.localeCompare(b.datum) || a.start_tijd.localeCompare(b.start_tijd));
+
+    if (selectedMonteur !== "alle") {
+      printAfspraken = printAfspraken.filter((a) => a.monteurs.includes(selectedMonteur));
+    }
+
+    const dagSections = werkdagen.map((date) => {
+      const dateStr = formatDate(date);
+      const dagNaam = date.toLocaleDateString("nl-NL", { weekday: "long", day: "numeric", month: "long" });
+      const dagAfspraken = printAfspraken.filter((a) => a.datum === dateStr);
+
+      if (dagAfspraken.length === 0) {
+        return `<h3 style="margin:20px 0 4px;font-size:15px;color:#666;">${dagNaam}</h3>
+          <p style="color:#999;font-style:italic;font-size:12px;margin:0 0 8px;">Geen montages</p>`;
       }
+
+      const rows = dagAfspraken.map((a) =>
+        `<tr>
+          <td style="padding:6px 8px;border:1px solid #ddd;white-space:nowrap;">${a.start_tijd} – ${a.eind_tijd}</td>
+          <td style="padding:6px 8px;border:1px solid #ddd;font-weight:600;">${a.titel}</td>
+          <td style="padding:6px 8px;border:1px solid #ddd;">${a.klant_naam || ""}</td>
+          <td style="padding:6px 8px;border:1px solid #ddd;">${a.locatie}</td>
+          <td style="padding:6px 8px;border:1px solid #ddd;">${a.monteurs.map((id) => monteurMap[id]?.naam || "?").join(", ")}</td>
+          <td style="padding:6px 8px;border:1px solid #ddd;">${a.materialen.join(", ")}</td>
+          <td style="padding:6px 8px;border:1px solid #ddd;font-size:11px;">${a.notities || ""}</td>
+        </tr>`
+      ).join("");
+
+      return `<h3 style="margin:20px 0 4px;font-size:15px;color:#1A1A1A;">${dagNaam} <span style="color:#999;font-weight:normal;font-size:12px;">${dagAfspraken.length} montage${dagAfspraken.length !== 1 ? "s" : ""}</span></h3>
+        <table style="border-collapse:collapse;width:100%;margin-bottom:8px;"><thead><tr>
+          <th style="background:#f3f4f6;padding:6px 8px;border:1px solid #ddd;text-align:left;font-size:11px;">Tijd</th>
+          <th style="background:#f3f4f6;padding:6px 8px;border:1px solid #ddd;text-align:left;font-size:11px;">Titel</th>
+          <th style="background:#f3f4f6;padding:6px 8px;border:1px solid #ddd;text-align:left;font-size:11px;">Klant</th>
+          <th style="background:#f3f4f6;padding:6px 8px;border:1px solid #ddd;text-align:left;font-size:11px;">Locatie</th>
+          <th style="background:#f3f4f6;padding:6px 8px;border:1px solid #ddd;text-align:left;font-size:11px;">Medewerkers</th>
+          <th style="background:#f3f4f6;padding:6px 8px;border:1px solid #ddd;text-align:left;font-size:11px;">Materialen</th>
+          <th style="background:#f3f4f6;padding:6px 8px;border:1px solid #ddd;text-align:left;font-size:11px;">Notities</th>
+        </tr></thead><tbody>${rows}</tbody></table>`;
+    }).join("");
+
+    const html = `<!DOCTYPE html><html><head><title>Weekplanning ${weekLabel}</title>
+      <style>body{font-family:Arial,sans-serif;padding:20px;font-size:13px}
+      h1{font-size:20px;margin-bottom:2px}
+      @media print{body{padding:10px}h3{page-break-inside:avoid}}</style></head>
+      <body>
+      <h1>Weekplanning — ${weekLabel}</h1>
+      <p style="color:#666;margin-bottom:8px;">${monteurNaam} &middot; ${printAfspraken.length} montage${printAfspraken.length !== 1 ? "s" : ""}</p>
+      ${dagSections}
       </body></html>`;
 
     const printWindow = window.open("", "_blank");
@@ -686,6 +698,64 @@ export function MontagePlanningLayout() {
     }
   }
 
+  function timeToMinutes(t: string): number {
+    const [h, m] = t.split(":").map(Number);
+    return h * 60 + m;
+  }
+  function minutesToTime(mins: number): string {
+    const clamped = Math.max(0, Math.min(1439, mins));
+    const h = Math.floor(clamped / 60);
+    const m = clamped % 60;
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  }
+
+  function handleResizeStart(e: React.MouseEvent, afspraak: MontageAfspraak) {
+    e.stopPropagation();
+    e.preventDefault();
+    setResizingId(afspraak.id);
+    resizeStartY.current = e.clientY;
+    resizeStartMinutes.current = timeToMinutes(afspraak.eind_tijd);
+
+    const onMove = (ev: MouseEvent) => {
+      const deltaY = ev.clientY - resizeStartY.current;
+      const deltaMinutes = Math.round(deltaY / 2) * 15;
+      const startMins = timeToMinutes(afspraak.start_tijd);
+      const newEnd = Math.max(startMins + 15, resizeStartMinutes.current + deltaMinutes);
+      const newTime = minutesToTime(newEnd);
+
+      setAfspraken((prev) =>
+        prev.map((a) => a.id === afspraak.id ? { ...a, eind_tijd: newTime } : a)
+      );
+    };
+
+    const onUp = async (ev: MouseEvent) => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+      setResizingId(null);
+
+      const deltaY = ev.clientY - resizeStartY.current;
+      const deltaMinutes = Math.round(deltaY / 2) * 15;
+      const startMins = timeToMinutes(afspraak.start_tijd);
+      const newEnd = Math.max(startMins + 15, resizeStartMinutes.current + deltaMinutes);
+      const finalEnd = minutesToTime(newEnd);
+
+      if (finalEnd === afspraak.eind_tijd) return;
+
+      try {
+        await updateMontageAfspraak(afspraak.id, { eind_tijd: finalEnd });
+        toast.success(`Duur aangepast tot ${finalEnd}`);
+      } catch {
+        setAfspraken((prev) =>
+          prev.map((a) => a.id === afspraak.id ? { ...a, eind_tijd: afspraak.eind_tijd } : a)
+        );
+        toast.error("Kon duur niet aanpassen");
+      }
+    };
+
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  }
+
   function getNextStatusActions(
     status: MontageAfspraak["status"]
   ): { status: MontageAfspraak["status"]; label: string; icon: React.ReactNode }[] {
@@ -865,6 +935,16 @@ export function MontagePlanningLayout() {
             </div>
           )}
         </div>
+        {/* Resize handle */}
+        <div
+          className={cn(
+            "h-1.5 cursor-ns-resize flex items-center justify-center opacity-0 group-hover/card:opacity-100 transition-opacity -mb-1",
+            resizingId === afspraak.id && "opacity-100"
+          )}
+          onMouseDown={(e) => handleResizeStart(e, afspraak)}
+        >
+          <div className="w-8 h-[3px] rounded-full bg-[#C0BDB8]" />
+        </div>
       </div>
     );
   }
@@ -922,7 +1002,7 @@ export function MontagePlanningLayout() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={printDagplanning} className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium text-[#6B6B66] hover:bg-[#F0EFEC] transition-all">
+            <button onClick={printWeekplanning} className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium text-[#6B6B66] hover:bg-[#F0EFEC] transition-all">
               <Printer className="h-3.5 w-3.5" />
               Print
             </button>
@@ -963,32 +1043,38 @@ export function MontagePlanningLayout() {
             const dayIdx = (date.getDay() + 6) % 7;
             const dayAfspraken = viewAfspraken.filter((a) => a.datum === dateStr);
             const afgerond = dayAfspraken.filter((a) => a.status === "afgerond").length;
+            const feestdagInfo = isFeestdag(dateStr, feestdagen);
 
             return (
               <div
                 key={dateStr}
                 className={cn(
                   "text-center py-1.5 border-r last:border-r-0 border-[#F0EFEC]",
-                  isToday ? "bg-[#1A535C]/[0.04]" : "bg-white"
+                  feestdagInfo ? "bg-[#FDE8E2]/40" : isToday ? "bg-[#1A535C]/[0.04]" : "bg-white"
                 )}
               >
                 <div className="flex items-baseline justify-center gap-1.5">
                   <span className={cn(
                     "text-[13px] font-bold",
-                    isToday ? "text-[#1A535C]" : "text-[#1A1A1A]"
+                    feestdagInfo ? "text-[#C03A18]" : isToday ? "text-[#1A535C]" : "text-[#1A1A1A]"
                   )}>
                     {DAG_NAMEN_LANG[dayIdx]}
                   </span>
                   <span className={cn(
                     "text-[11px] font-mono tabular-nums",
-                    isToday ? "text-[#1A535C]" : "text-[#B0ADA8]"
+                    feestdagInfo ? "text-[#C03A18]/70" : isToday ? "text-[#1A535C]" : "text-[#B0ADA8]"
                   )}>
                     {date.getDate()} {date.toLocaleDateString("nl-NL", { month: "short" })}
                   </span>
-                  <span className="text-[10px] text-[#B0ADA8] font-mono tabular-nums">
-                    {afgerond}/{dayAfspraken.length}
-                  </span>
+                  {!feestdagInfo && (
+                    <span className="text-[10px] text-[#B0ADA8] font-mono tabular-nums">
+                      {afgerond}/{dayAfspraken.length}
+                    </span>
+                  )}
                 </div>
+                {feestdagInfo && (
+                  <div className="text-[10px] font-semibold text-[#C03A18] mt-0.5">{feestdagInfo.naam}</div>
+                )}
               </div>
             );
           })}
@@ -999,6 +1085,7 @@ export function MontagePlanningLayout() {
           {werkdagen.map((date) => {
             const dateStr = formatDate(date);
             const isToday = dateStr === todayStr;
+            const feestdagInfo = isFeestdag(dateStr, feestdagen);
             const dayAfspraken = viewAfspraken
               .filter((a) => a.datum === dateStr)
               .sort((a, b) => a.start_tijd.localeCompare(b.start_tijd));
@@ -1008,16 +1095,16 @@ export function MontagePlanningLayout() {
                 key={dateStr}
                 className={cn(
                   "border-r last:border-r-0 border-[#F0EFEC] p-1.5 min-h-[200px] transition-all duration-200",
-                  isToday ? "bg-[#1A535C]/[0.02]" : "bg-[#F8F7F5]/50",
-                  dragOverDate === dateStr && "bg-[#1A535C]/[0.08] ring-2 ring-[#1A535C]/25 ring-inset scale-[1.01]"
+                  feestdagInfo ? "bg-[#FDE8E2]/20" : isToday ? "bg-[#1A535C]/[0.02]" : "bg-[#F8F7F5]/50",
+                  !feestdagInfo && dragOverDate === dateStr && "bg-[#1A535C]/[0.08] ring-2 ring-[#1A535C]/25 ring-inset scale-[1.01]",
+                  feestdagInfo && dragOverDate === dateStr && "ring-2 ring-[#C03A18]/30 ring-inset"
                 )}
                 onDragOver={(e) => {
                   e.preventDefault();
-                  e.dataTransfer.dropEffect = draggingProjectId ? "copy" : "move";
+                  e.dataTransfer.dropEffect = feestdagInfo ? "none" : draggingProjectId ? "copy" : "move";
                   if (dragOverDate !== dateStr) setDragOverDate(dateStr);
                 }}
                 onDragLeave={(e) => {
-                  // Only reset if leaving the column itself, not entering a child
                   if (!e.currentTarget.contains(e.relatedTarget as Node)) {
                     setDragOverDate(null);
                   }
@@ -1025,11 +1112,20 @@ export function MontagePlanningLayout() {
                 onDrop={(e) => {
                   e.preventDefault();
                   setDragOverDate(null);
+                  if (feestdagInfo) {
+                    toast.error(`Kan niet inplannen op ${feestdagInfo.naam}`);
+                    return;
+                  }
                   const id = e.dataTransfer.getData("text/plain");
                   if (id) handleDragDrop(id, dateStr);
                 }}
               >
-                {dayAfspraken.length === 0 ? (
+                {feestdagInfo && dayAfspraken.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-32 text-xs text-[#C03A18]/40 gap-1">
+                    <AlertTriangle className="h-5 w-5" />
+                    <span className="font-medium">Geblokt</span>
+                  </div>
+                ) : dayAfspraken.length === 0 ? (
                   <div className={cn(
                     "flex items-center justify-center h-32 text-xs transition-all duration-200",
                     dragOverDate === dateStr
@@ -1044,6 +1140,202 @@ export function MontagePlanningLayout() {
               </div>
             );
           })}
+        </div>
+      </div>
+    );
+  }
+
+  // === MULTI-MONTEUR TIMELINE (horizontal lanes per monteur) ===
+  function renderMultiMonteurView() {
+    const werkdagen = weekDates.slice(0, 5);
+    const activeMonteurs = monteurs.filter((m) =>
+      weekAfspraken.some((a) => a.monteurs.includes(m.id))
+    );
+    const unassigned = weekAfspraken.filter((a) => a.monteurs.length === 0);
+    const hasUnassigned = unassigned.length > 0;
+
+    return (
+      <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-3 border-b border-[#F0EFEC] bg-white">
+          <div className="flex items-center gap-3">
+            <Users className="h-5 w-5 text-[#9B9B95]" />
+            <span className="text-[15px] font-semibold text-[#1A1A1A]">Team overzicht</span>
+            <div className="flex items-center gap-1 ml-4">
+              <button className="p-1.5 rounded-lg hover:bg-[#F0EFEC] transition-all" onClick={() => navigateWeek(-1)}>
+                <ChevronLeft className="h-4 w-4 text-[#6B6B66]" />
+              </button>
+              <button
+                onClick={goToCurrentWeek}
+                className="text-[13px] font-bold px-3 py-1 rounded-lg hover:bg-[#1A535C]/[0.07] transition-all text-[#1A535C] font-mono tabular-nums"
+              >
+                Week {weekNumber}
+              </button>
+              <button className="p-1.5 rounded-lg hover:bg-[#F0EFEC] transition-all" onClick={() => navigateWeek(1)}>
+                <ChevronRight className="h-4 w-4 text-[#6B6B66]" />
+              </button>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={printWeekplanning} className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium text-[#6B6B66] hover:bg-[#F0EFEC] transition-all">
+              <Printer className="h-3.5 w-3.5" />
+              Print week
+            </button>
+            <button
+              onClick={openNewDialog}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-semibold text-white bg-[#F15025] shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35)] hover:-translate-y-[1px] active:translate-y-0 transition-all"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Nieuw
+            </button>
+          </div>
+        </div>
+
+        {/* Weather strip */}
+        <div className="grid border-b border-[#F0EFEC] bg-[#F8F7F5]" style={{ gridTemplateColumns: '140px repeat(5, 1fr)' }}>
+          <div />
+          {werkdagen.map((date) => {
+            const w = getWeatherForDate(weather, date);
+            return (
+              <div key={formatDate(date)} className="border-l border-[#F0EFEC]">
+                {renderWeatherCell(w)}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Day column headers */}
+        <div className="grid border-b border-[#F0EFEC]" style={{ gridTemplateColumns: '140px repeat(5, 1fr)' }}>
+          <div className="py-1.5 px-3 bg-white">
+            <span className="text-[11px] font-semibold text-[#9B9B95] uppercase tracking-widest">Monteur</span>
+          </div>
+          {werkdagen.map((date) => {
+            const dateStr = formatDate(date);
+            const isToday = dateStr === todayStr;
+            const dayIdx = (date.getDay() + 6) % 7;
+            const feestdagInfo = isFeestdag(dateStr, feestdagen);
+            return (
+              <div
+                key={dateStr}
+                className={cn(
+                  "text-center py-1.5 border-l border-[#F0EFEC]",
+                  feestdagInfo ? "bg-[#FDE8E2]/40" : isToday ? "bg-[#1A535C]/[0.04]" : "bg-white"
+                )}
+              >
+                <div className="flex items-baseline justify-center gap-1.5">
+                  <span className={cn("text-[12px] font-bold", feestdagInfo ? "text-[#C03A18]" : isToday ? "text-[#1A535C]" : "text-[#1A1A1A]")}>
+                    {DAG_NAMEN[dayIdx]}
+                  </span>
+                  <span className={cn("text-[11px] font-mono tabular-nums", feestdagInfo ? "text-[#C03A18]/70" : isToday ? "text-[#1A535C]" : "text-[#B0ADA8]")}>
+                    {date.getDate()}/{date.getMonth() + 1}
+                  </span>
+                </div>
+                {feestdagInfo && (
+                  <div className="text-[9px] font-semibold text-[#C03A18] truncate px-1">{feestdagInfo.naam}</div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Monteur lanes */}
+        <div className="flex-1 overflow-y-auto">
+          {activeMonteurs.map((monteur, idx) => {
+            const monteurAfspraken = weekAfspraken.filter((a) => a.monteurs.includes(monteur.id));
+            return (
+              <div
+                key={monteur.id}
+                className={cn("grid border-b border-[#F0EFEC]", idx % 2 === 1 && "bg-[#FAFAF9]")}
+                style={{ gridTemplateColumns: '140px repeat(5, 1fr)' }}
+              >
+                {/* Monteur label */}
+                <div className="px-3 py-2 flex items-center gap-2 border-r border-[#F0EFEC] sticky left-0 bg-inherit z-10">
+                  <div
+                    className="h-7 w-7 rounded-lg flex items-center justify-center text-[10px] font-bold shrink-0"
+                    style={getAvatarStyle(idx)}
+                  >
+                    {getInitials(monteur.naam)}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[12px] font-semibold text-[#1A1A1A] truncate">{monteur.naam}</div>
+                    <div className="text-[10px] text-[#9B9B95]">{monteurAfspraken.length} deze week</div>
+                  </div>
+                </div>
+                {/* Day cells */}
+                {werkdagen.map((date) => {
+                  const dateStr = formatDate(date);
+                  const isToday = dateStr === todayStr;
+                  const feestdagInfo = isFeestdag(dateStr, feestdagen);
+                  const dayAfspraken = monteurAfspraken
+                    .filter((a) => a.datum === dateStr)
+                    .sort((a, b) => a.start_tijd.localeCompare(b.start_tijd));
+                  const dragKey = `${monteur.id}-${dateStr}`;
+
+                  return (
+                    <div
+                      key={dateStr}
+                      className={cn(
+                        "border-l border-[#F0EFEC] p-1 min-h-[60px] transition-all duration-200",
+                        feestdagInfo ? "bg-[#FDE8E2]/15" : isToday && "bg-[#1A535C]/[0.02]",
+                        !feestdagInfo && dragOverDate === dragKey && "bg-[#1A535C]/[0.08] ring-2 ring-[#1A535C]/25 ring-inset",
+                        feestdagInfo && dragOverDate === dragKey && "ring-2 ring-[#C03A18]/30 ring-inset"
+                      )}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = feestdagInfo ? "none" : draggingProjectId ? "copy" : "move";
+                        if (dragOverDate !== dragKey) setDragOverDate(dragKey);
+                      }}
+                      onDragLeave={(e) => {
+                        if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragOverDate(null);
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        setDragOverDate(null);
+                        if (feestdagInfo) {
+                          toast.error(`Kan niet inplannen op ${feestdagInfo.naam}`);
+                          return;
+                        }
+                        const id = e.dataTransfer.getData("text/plain");
+                        if (id) handleDragDrop(id, dateStr);
+                      }}
+                    >
+                      {dayAfspraken.map((a) => renderMontageCard(a))}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+
+          {/* Unassigned row */}
+          {hasUnassigned && (
+            <div
+              className="grid border-b border-[#F0EFEC] bg-[#FDE8E2]/20"
+              style={{ gridTemplateColumns: '140px repeat(5, 1fr)' }}
+            >
+              <div className="px-3 py-2 flex items-center gap-2 border-r border-[#F0EFEC]">
+                <div className="h-7 w-7 rounded-lg flex items-center justify-center text-[10px] font-bold bg-[#F0EFEC] text-[#9B9B95]">?</div>
+                <span className="text-[12px] text-[#9B9B95] italic">Niet toegewezen</span>
+              </div>
+              {werkdagen.map((date) => {
+                const dateStr = formatDate(date);
+                const dayUnassigned = unassigned
+                  .filter((a) => a.datum === dateStr)
+                  .sort((a, b) => a.start_tijd.localeCompare(b.start_tijd));
+                return (
+                  <div key={dateStr} className="border-l border-[#F0EFEC] p-1 min-h-[60px]">
+                    {dayUnassigned.map((a) => renderMontageCard(a))}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {activeMonteurs.length === 0 && !hasUnassigned && (
+            <div className="flex items-center justify-center py-20 text-sm text-[#9B9B95]">
+              Geen montages deze week
+            </div>
+          )}
         </div>
       </div>
     );
@@ -1135,6 +1427,12 @@ export function MontagePlanningLayout() {
                     setFormData((prev) => ({ ...prev, datum: e.target.value }))
                   }
                 />
+                {formData.datum && isFeestdag(formData.datum, feestdagen) && (
+                  <div className="flex items-center gap-1.5 text-[12px] text-[#C03A18] font-medium bg-[#FDE8E2] rounded-lg px-2.5 py-1.5 mt-1">
+                    <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                    Let op: {isFeestdag(formData.datum, feestdagen)!.naam}
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -1625,7 +1923,7 @@ export function MontagePlanningLayout() {
 
         {/* Main view */}
         <div className="flex-1 overflow-auto">
-          {renderMemberWeekView()}
+          {selectedMonteur === "alle" ? renderMultiMonteurView() : renderMemberWeekView()}
         </div>
       </div>
 

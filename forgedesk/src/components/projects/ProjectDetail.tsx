@@ -36,6 +36,7 @@ import {
   Bell,
   BellOff,
   Clock,
+  Package,
 } from 'lucide-react'
 // Card/Badge removed — using DOEN text-based styling
 import { Button } from '@/components/ui/button'
@@ -115,6 +116,7 @@ import { tekeningGoedkeuringTemplate } from '@/services/emailTemplateService'
 import { ProjectPhotoGallery } from './ProjectPhotoGallery'
 import { VisualisatieGallery } from '@/components/visualizer/VisualisatieGallery'
 import { WerkbonVanProjectDialog } from '@/components/werkbonnen/WerkbonVanProjectDialog'
+import { PakbonVanProjectDialog } from '@/components/leveringsbonnen/PakbonVanProjectDialog'
 // SpectrumBar removed — using text-based phase in header
 import { getFase } from '@/utils/projectFases'
 // ProjectKaart removed — using inline sticky header
@@ -279,6 +281,7 @@ export function ProjectDetail() {
   const [projectToewijzingen, setProjectToewijzingen] = useState<ProjectToewijzing[]>([])
   const [projectWerkbonnen, setProjectWerkbonnen] = useState<Werkbon[]>([])
   const [showWerkbonDialog, setShowWerkbonDialog] = useState(false)
+  const [showPakbonDialog, setShowPakbonDialog] = useState(false)
   const [goedkeuringenOpen, setGoedkeuringenOpen] = useState(false)
   const [projectFotos, setProjectFotos] = useState<ProjectFoto[]>([])
   const [projectMontages, setProjectMontages] = useState<MontageAfspraak[]>([])
@@ -1253,6 +1256,7 @@ export function ProjectDetail() {
                 { label: 'Taak', color: '#1A535C', icon: <Plus className="h-3.5 w-3.5" />, onClick: () => setNieuweTaakOpen(true) },
                 { label: 'Offerte', color: '#F15025', icon: <Receipt className="h-3.5 w-3.5" />, onClick: openNieuweOfferte },
                 { label: 'Werkbon', color: '#6B6B66', icon: <ClipboardCheck className="h-3.5 w-3.5" />, onClick: () => setShowWerkbonDialog(true) },
+                { label: 'Pakbon', color: '#6B6B66', icon: <Package className="h-3.5 w-3.5" />, onClick: () => setShowPakbonDialog(true) },
                 { label: 'Montage', color: '#6B6B66', icon: <Wrench className="h-3.5 w-3.5" />, onClick: handleOpenMontageDialog },
                 { label: 'Factuur', color: '#6B6B66', icon: <CreditCard className="h-3.5 w-3.5" />, onClick: () => {
                   const params = new URLSearchParams({ klant_id: project.klant_id || '', project_id: id || '', titel: project.naam || '' })
@@ -1687,6 +1691,18 @@ export function ProjectDetail() {
         <WerkbonVanProjectDialog
           open={showWerkbonDialog}
           onOpenChange={setShowWerkbonDialog}
+          projectId={project.id}
+          klantId={project.klant_id}
+          klant={klant}
+          offertes={projectOffertes}
+        />
+      )}
+
+      {/* Pakbon aanmaken dialog */}
+      {project && (
+        <PakbonVanProjectDialog
+          open={showPakbonDialog}
+          onOpenChange={setShowPakbonDialog}
           projectId={project.id}
           klantId={project.klant_id}
           klant={klant}

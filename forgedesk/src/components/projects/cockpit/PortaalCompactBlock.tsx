@@ -636,6 +636,7 @@ export function PortaalCompactBlock({ projectId }: { projectId: string }) {
   const [portaal, setPortaal] = useState<ProjectPortaal | null>(null)
   const [items, setItems] = useState<PortaalItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [moduleActief, setModuleActief] = useState<boolean | null>(null)
   const [isSending, setIsSending] = useState(false)
   const [collapsed, setCollapsed] = useState(() => {
     try { return localStorage.getItem(STORAGE_KEY) === 'true' } catch (err) { return false }
@@ -669,6 +670,13 @@ export function PortaalCompactBlock({ projectId }: { projectId: string }) {
     let cancelled = false
     async function fetch() {
       try {
+        if (user?.id) {
+          const { getPortaalInstellingen } = await import('@/services/supabaseService')
+          const instellingen = await getPortaalInstellingen(user.id)
+          if (cancelled) return
+          if (!instellingen.portaal_module_actief) { setModuleActief(false); setLoading(false); return }
+          setModuleActief(true)
+        }
         const p = await getPortaalByProject(projectId)
         if (cancelled || !p) { setLoading(false); return }
         setPortaal(p)
@@ -681,7 +689,9 @@ export function PortaalCompactBlock({ projectId }: { projectId: string }) {
     }
     fetch()
     return () => { cancelled = true }
-  }, [projectId])
+  }, [projectId, user?.id])
+
+  if (moduleActief === false) return null
 
   // Realtime subscription for portaal_items and portaal_reacties
   useEffect(() => {

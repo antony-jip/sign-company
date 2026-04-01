@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react'
+import React, { useState, useMemo, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useNavigateWithTab } from '@/hooks/useNavigateWithTab'
 import {
@@ -17,6 +17,12 @@ import {
   X,
   Upload,
   Trash2,
+  GripVertical,
+  Copy,
+  Archive,
+  ListPlus,
+  UserPlus,
+  Check,
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -28,6 +34,7 @@ import { EmptyState } from '@/components/ui/empty-state'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from '@/components/ui/dialog'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Button } from '@/components/ui/button'
 import { getFase } from '@/utils/projectFases'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -38,10 +45,11 @@ import {
 } from '@/lib/utils'
 import { exportCSV, exportExcel } from '@/lib/export'
 import { PaginationControls } from '@/components/ui/pagination-controls'
-import { getProjecten, getKlanten, getOffertes, updateProject, createProjectFoto, deleteProject } from '@/services/supabaseService'
+import { getProjecten, getKlanten, getOffertes, updateProject, createProjectFoto, deleteProject, getMedewerkers as fetchMedewerkers } from '@/services/supabaseService'
 import { ProjectImportDialog } from './ProjectImportDialog'
 import { useAuth } from '@/contexts/AuthContext'
-import type { Project, Klant, Offerte } from '@/types'
+import type { Project, Klant, Offerte, Medewerker, Taak } from '@/types'
+import { createTaak } from '@/services/projectService'
 import { toast } from 'sonner'
 import { logger } from '../../utils/logger'
 import { SkeletonTable } from '@/components/ui/skeleton'
@@ -138,6 +146,24 @@ export function ProjectsList() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [dagenOpenFilter, setDagenOpenFilter] = useState<string>('alle')
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false)
+  const [medewerkers, setMedewerkers] = useState<Medewerker[]>([])
+  const zoekInputRef = useRef<HTMLInputElement>(null)
+
+  const [leadColumns, setLeadColumns] = useState<['project', 'klant'] | ['klant', 'project']>(() => {
+    const saved = localStorage.getItem('projects_column_order')
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved)
+        if (Array.isArray(parsed) && parsed[0] === 'klant' && parsed[1] === 'project') return ['klant', 'project']
+      } catch { /* use default */ }
+    }
+    return ['project', 'klant']
+  })
+  const dragColRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    localStorage.setItem('projects_column_order', JSON.stringify(leadColumns))
+  }, [leadColumns])
 
   const handleQuickPhotoUpload = async (files: FileList) => {
     if (!photoUploadProjectId || !user) return
@@ -176,14 +202,16 @@ export function ProjectsList() {
   const fetchData = React.useCallback(async () => {
     try {
       setIsLoading(true)
-      const [projectenData, klantenData, offertesData] = await Promise.all([
+      const [projectenData, klantenData, offertesData, medewerkersData] = await Promise.all([
         getProjecten(),
         getKlanten(),
         getOffertes(),
+        fetchMedewerkers(),
       ])
       setProjecten(projectenData)
       setKlanten(klantenData)
       setOffertes(offertesData)
+      setMedewerkers(medewerkersData)
     } catch (error) {
       logger.error('Fout bij ophalen data:', error)
     } finally {
@@ -194,6 +222,77 @@ export function ProjectsList() {
   useEffect(() => {
     fetchData()
   }, [fetchData])
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      const tag = (e.target as HTMLElement).tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
+      if (e.key === 'n' && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault()
+        navigateWithTab({ path: '/projecten/nieuw', label: 'Nieuw project', id: '/projecten/nieuw' })
+      }
+      if (e.key === '/') {
+        e.preventDefault()
+        zoekInputRef.current?.focus()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [navigateWithTab])
+
+  function getMedewerkerNaam(identifier: string): string {
+    const mw = medewerkers.find((m) => m.id === identifier || m.user_id === identifier || m.naam === identifier)
+    return mw?.naam || identifier
+  }
+
+  async function toggleTeamLid(projectId: string, medewerkerNaam: string) {
+    const project = projecten.find((p) => p.id === projectId)
+    if (!project) return
+    const huidige = project.team_leden || []
+    const isLid = huidige.includes(medewerkerNaam)
+    const nieuw = isLid ? huidige.filter((l) => l !== medewerkerNaam) : [...huidige, medewerkerNaam]
+    try {
+      const updated = await updateProject(projectId, { team_leden: nieuw })
+      setProjecten((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
+    } catch {
+      toast.error('Kon teamlid niet wijzigen')
+    }
+  }
+
+  const [quickTaakProjectId, setQuickTaakProjectId] = useState<string | null>(null)
+  const [quickTaakTitel, setQuickTaakTitel] = useState('')
+  const [quickTaakToegewezen, setQuickTaakToegewezen] = useState('')
+  const [quickTaakDeadline, setQuickTaakDeadline] = useState('')
+  const [quickTaakSaving, setQuickTaakSaving] = useState(false)
+  const quickTaakInputRef = useRef<HTMLInputElement>(null)
+
+  async function handleQuickTaakSubmit() {
+    if (!quickTaakProjectId || !quickTaakTitel.trim()) return
+    setQuickTaakSaving(true)
+    try {
+      await createTaak({
+        project_id: quickTaakProjectId,
+        titel: quickTaakTitel.trim(),
+        beschrijving: '',
+        status: 'todo',
+        prioriteit: 'medium',
+        toegewezen_aan: quickTaakToegewezen,
+        deadline: quickTaakDeadline || undefined,
+        geschatte_tijd: 0,
+        bestede_tijd: 0,
+      } as Omit<Taak, 'id' | 'created_at' | 'updated_at'>)
+      const projectNaam = projecten.find((p) => p.id === quickTaakProjectId)?.naam
+      toast.success(`Taak toegevoegd aan ${projectNaam}`)
+      setQuickTaakTitel('')
+      setQuickTaakToegewezen('')
+      setQuickTaakDeadline('')
+      setQuickTaakProjectId(null)
+    } catch {
+      toast.error('Kon taak niet aanmaken')
+    } finally {
+      setQuickTaakSaving(false)
+    }
+  }
 
   function getKlantNaam(klantId: string): string {
     const klant = klanten.find((k) => k.id === klantId)
@@ -468,6 +567,7 @@ export function ProjectsList() {
               <div className="relative max-w-[280px] flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9B9B95]" />
                 <input
+                  ref={zoekInputRef}
                   type="text"
                   placeholder="Zoek project of klant..."
                   value={zoekterm}
@@ -706,22 +806,57 @@ export function ProjectsList() {
                           aria-label="Selecteer alle projecten"
                         />
                       </th>
-                      <th className="text-left py-3.5 pr-4">
-                        <button
-                          onClick={() => handleSort('naam')}
-                          className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95] hover:text-[#6B6B66] transition-colors"
-                        >
-                          Project
-                          {sortField === 'naam' ? (
-                            sortDir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
-                          ) : (
-                            <ArrowUpDown className="w-3 h-3 opacity-30" />
-                          )}
-                        </button>
-                      </th>
-                      <th className="text-left py-3.5 pr-4 w-[160px] hidden lg:table-cell">
-                        <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Klant</span>
-                      </th>
+                      {leadColumns.flatMap((col, idx) => {
+                        const cell = col === 'project' ? (
+                          <th
+                            key="project"
+                            className="text-left py-3.5 pr-2 cursor-grab active:cursor-grabbing"
+                            draggable
+                            onDragStart={() => { dragColRef.current = 'project' }}
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={() => {
+                              if (dragColRef.current && dragColRef.current !== 'project') {
+                                setLeadColumns((prev) => [prev[1], prev[0]])
+                              }
+                              dragColRef.current = null
+                            }}
+                          >
+                            <button
+                              onClick={() => handleSort('naam')}
+                              className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95] hover:text-[#6B6B66] transition-colors"
+                            >
+                              Project
+                              {sortField === 'naam' ? (
+                                sortDir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                              ) : (
+                                <ArrowUpDown className="w-3 h-3 opacity-30" />
+                              )}
+                            </button>
+                          </th>
+                        ) : (
+                          <th
+                            key="klant"
+                            className="text-left py-3.5 pr-4 w-[160px] hidden lg:table-cell cursor-grab active:cursor-grabbing"
+                            draggable
+                            onDragStart={() => { dragColRef.current = 'klant' }}
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={() => {
+                              if (dragColRef.current && dragColRef.current !== 'klant') {
+                                setLeadColumns((prev) => [prev[1], prev[0]])
+                              }
+                              dragColRef.current = null
+                            }}
+                          >
+                            <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Klant</span>
+                          </th>
+                        )
+                        if (idx === 0) {
+                          return [cell, (
+                            <th key="actions" className="w-[52px] py-3.5 px-0" />
+                          )]
+                        }
+                        return [cell]
+                      })}
                       <th className="text-left py-3.5 pr-4 w-[150px]">
                         <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Status</span>
                       </th>
@@ -754,7 +889,9 @@ export function ProjectsList() {
                       <th className="text-right py-3.5 pr-4 w-[70px] hidden xl:table-cell">
                         <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Open</span>
                       </th>
-                      <th className="w-10 py-3.5 pr-4" />
+                      <th className="text-left py-3.5 pr-4 w-[120px] hidden xl:table-cell">
+                        <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Team</span>
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -783,57 +920,149 @@ export function ProjectsList() {
                             />
                           </td>
 
-                          {/* Project naam + nummer */}
-                          <td className="py-3.5 pr-4">
-                            <div className="min-w-0">
-                              <div className="flex items-baseline gap-2.5">
-                                <Link
-                                  to={`/projecten/${project.id}`}
-                                  className="text-[15px] font-semibold text-[#1A1A1A] group-hover:text-[#1A535C] underline-offset-2 decoration-transparent group-hover:decoration-[#1A535C]/20 underline transition-all truncate"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  {project.naam}
-                                </Link>
-                                {project.project_nummer && (
-                                  <span className="text-[10px] text-[#B0ADA8] font-mono flex-shrink-0 tabular-nums bg-[#F8F7F5] px-1.5 py-0.5 rounded">{project.project_nummer}</span>
-                                )}
-                              </div>
-                              {project.beschrijving && (
-                                <p className="text-[11px] text-[#C0BDB8] truncate max-w-[320px] mt-0.5">
-                                  {project.beschrijving}
-                                </p>
-                              )}
-                            </div>
-                          </td>
-
-                          {/* Klant */}
-                          <td className="py-3.5 pr-4 hidden lg:table-cell">
-                            <div className="flex items-center gap-2.5 min-w-0">
-                              {(() => {
-                                const c = klantNaam.charCodeAt(0) % 5
-                                const avatarColors = [
-                                  'bg-[#E8F2EC] text-[#3A7D52]',
-                                  'bg-[#E8EEF9] text-[#3A5A9A]',
-                                  'bg-[#F5F2E8] text-[#8A7A4A]',
-                                  'bg-[#F0EFEC] text-[#6B6B66]',
-                                  'bg-[#EDE8F4] text-[#6A5A8A]',
-                                ]
-                                return (
-                                  <span className={cn('flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold uppercase select-none', avatarColors[c])}>
-                                    {klantNaam.charAt(0)}
-                                  </span>
-                                )
-                              })()}
-                              <div className="min-w-0">
-                                <span className="text-[13px] text-[#4A4A46] truncate block leading-tight">{klantNaam}</span>
-                                {(project.vestiging_naam || contactpersoon) && (
-                                  <span className="text-[11px] text-[#C0BDB8] truncate block">
-                                    {project.vestiging_naam || contactpersoon}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </td>
+                          {leadColumns.flatMap((col, idx) => {
+                            const cell = col === 'project' ? (
+                              <td key="project" className="py-3.5 pr-2">
+                                <div className="min-w-0">
+                                  <div className="flex items-baseline gap-2.5">
+                                    <Link
+                                      to={`/projecten/${project.id}`}
+                                      className="text-[15px] font-semibold text-[#1A1A1A] group-hover:text-[#1A535C] underline-offset-2 decoration-transparent group-hover:decoration-[#1A535C]/20 underline transition-all truncate"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      {project.naam}
+                                    </Link>
+                                    {project.project_nummer && (
+                                      <span className="text-[10px] text-[#B0ADA8] font-mono flex-shrink-0 tabular-nums bg-[#F8F7F5] px-1.5 py-0.5 rounded">{project.project_nummer}</span>
+                                    )}
+                                  </div>
+                                  {project.beschrijving && (
+                                    <p className="text-[11px] text-[#C0BDB8] truncate max-w-[320px] mt-0.5">
+                                      {project.beschrijving}
+                                    </p>
+                                  )}
+                                </div>
+                              </td>
+                            ) : (
+                              <td key="klant" className="py-3.5 pr-4 hidden lg:table-cell">
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                  {(() => {
+                                    const c = klantNaam.charCodeAt(0) % 5
+                                    const avatarColors = [
+                                      'bg-[#E8F2EC] text-[#3A7D52]',
+                                      'bg-[#E8EEF9] text-[#3A5A9A]',
+                                      'bg-[#F5F2E8] text-[#8A7A4A]',
+                                      'bg-[#F0EFEC] text-[#6B6B66]',
+                                      'bg-[#EDE8F4] text-[#6A5A8A]',
+                                    ]
+                                    return (
+                                      <span className={cn('flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold uppercase select-none', avatarColors[c])}>
+                                        {klantNaam.charAt(0)}
+                                      </span>
+                                    )
+                                  })()}
+                                  <div className="min-w-0">
+                                    <span className="text-[13px] text-[#4A4A46] truncate block leading-tight">{klantNaam}</span>
+                                    {(project.vestiging_naam || contactpersoon) && (
+                                      <span className="text-[11px] text-[#C0BDB8] truncate block">
+                                        {project.vestiging_naam || contactpersoon}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </td>
+                            )
+                            if (idx === 0) return [cell, (
+                              <td key="actions" className="py-3.5 px-0 align-middle" onClick={(e) => e.stopPropagation()}>
+                                <div className="flex items-center gap-0.5">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setPhotoUploadProjectId(project.id)
+                                      setPhotoUploadKlantId(project.klant_id)
+                                      photoInputRef.current?.click()
+                                    }}
+                                    className="p-1.5 rounded-lg hover:bg-[#F0EFEC] transition-all opacity-0 group-hover:opacity-100"
+                                    title="Foto's toevoegen"
+                                  >
+                                    <Camera className="w-3.5 h-3.5 text-[#9B9B95]" />
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setQuickTaakProjectId(project.id)
+                                      setTimeout(() => quickTaakInputRef.current?.focus(), 100)
+                                    }}
+                                    className="p-1.5 rounded-lg hover:bg-[#F0EFEC] transition-all opacity-0 group-hover:opacity-100"
+                                    title="Taak toevoegen"
+                                  >
+                                    <ListPlus className="w-3.5 h-3.5 text-[#9B9B95]" />
+                                  </button>
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <button
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="p-1.5 rounded-lg hover:bg-[#F0EFEC] transition-all opacity-0 group-hover:opacity-100"
+                                      >
+                                        <MoreHorizontal className="w-3.5 h-3.5 text-[#9B9B95]" />
+                                      </button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="start" className="w-48">
+                                      <DropdownMenuItem
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          navigateWithTab({ path: `/projecten/${project.id}`, label: project.naam || 'Project', id: `/projecten/${project.id}` })
+                                        }}
+                                      >
+                                        <Eye className="w-3.5 h-3.5 mr-2" />
+                                        Bekijken
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          navigateWithTab({ path: `/projecten/nieuw?kopie=${project.id}`, label: `${project.naam} kopie`, id: `/projecten/nieuw?kopie=${project.id}` })
+                                        }}
+                                      >
+                                        <Copy className="w-3.5 h-3.5 mr-2" />
+                                        Dupliceren
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          setPhotoUploadProjectId(project.id)
+                                          setPhotoUploadKlantId(project.klant_id)
+                                          photoInputRef.current?.click()
+                                        }}
+                                      >
+                                        <Camera className="w-3.5 h-3.5 mr-2" />
+                                        Foto's toevoegen
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          setQuickTaakProjectId(project.id)
+                                          setTimeout(() => quickTaakInputRef.current?.focus(), 100)
+                                        }}
+                                      >
+                                        <ListPlus className="w-3.5 h-3.5 mr-2" />
+                                        Taak toevoegen
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          handleStatusChange(project.id, 'afgerond')
+                                        }}
+                                      >
+                                        <Archive className="w-3.5 h-3.5 mr-2" />
+                                        Archiveren
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </div>
+                              </td>
+                            )]
+                            return [cell]
+                          })}
 
                           {/* Status chip with bg tint + Flame punt */}
                           <td className="py-3.5 pr-4" onClick={(e) => e.stopPropagation()}>
@@ -930,89 +1159,86 @@ export function ProjectsList() {
                             })()}
                           </td>
 
-                          {/* Actions */}
-                          <td className="py-3.5 pr-4">
-                            <div className="flex items-center gap-0.5 justify-end">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setPhotoUploadProjectId(project.id)
-                                  setPhotoUploadKlantId(project.klant_id)
-                                  photoInputRef.current?.click()
-                                }}
-                                className="p-1.5 rounded-lg hover:bg-[#F0EFEC] transition-all opacity-0 group-hover:opacity-100"
-                                title="Foto's toevoegen"
-                              >
-                                <Camera className="w-3.5 h-3.5 text-[#9B9B95]" />
-                              </button>
-
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <button
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="p-1.5 rounded-lg hover:bg-[#F0EFEC] transition-all opacity-0 group-hover:opacity-100"
-                                  >
-                                    <MoreHorizontal className="w-3.5 h-3.5 text-[#9B9B95]" />
-                                  </button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-48">
-                                  <DropdownMenuItem
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      window.location.href = `/projecten/${project.id}`
-                                    }}
-                                  >
-                                    Bekijken
-                                  </DropdownMenuItem>
-                                  {getProjectOffertes(project.id).length > 0 && (
-                                    <DropdownMenuItem
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        const projOffertes = getProjectOffertes(project.id)
-                                        window.location.href = `/offertes/${projOffertes[0].id}/preview`
-                                      }}
-                                    >
-                                      <Eye className="w-3.5 h-3.5 mr-2" />
-                                      Offerte bekijken
-                                    </DropdownMenuItem>
+                          {/* Team */}
+                          <td className="py-3.5 pr-4 hidden xl:table-cell" onClick={(e) => e.stopPropagation()}>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <button className="flex items-center gap-1 group/team rounded-lg px-1 -mx-1 py-0.5 hover:bg-[#F8F7F5] transition-colors">
+                                  {project.team_leden && project.team_leden.length > 0 ? (
+                                    <div className="flex items-center -space-x-1.5">
+                                      {project.team_leden.slice(0, 3).map((lid, j) => {
+                                        const naam = getMedewerkerNaam(lid)
+                                        const c = naam.charCodeAt(0) % 5
+                                        const colors = [
+                                          'bg-[#E8F2EC] text-[#3A7D52] ring-white',
+                                          'bg-[#E8EEF9] text-[#3A5A9A] ring-white',
+                                          'bg-[#F5F2E8] text-[#8A7A4A] ring-white',
+                                          'bg-[#F0EFEC] text-[#6B6B66] ring-white',
+                                          'bg-[#EDE8F4] text-[#6A5A8A] ring-white',
+                                        ]
+                                        return (
+                                          <span
+                                            key={j}
+                                            title={naam}
+                                            className={cn('w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold uppercase ring-2 select-none', colors[c])}
+                                          >
+                                            {naam.charAt(0)}
+                                          </span>
+                                        )
+                                      })}
+                                      {project.team_leden.length > 3 && (
+                                        <span className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-mono font-medium bg-[#F0EFEC] text-[#6B6B66] ring-2 ring-white">
+                                          +{project.team_leden.length - 3}
+                                        </span>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <UserPlus className="w-3.5 h-3.5 text-[#C0BDB8] group-hover/team:text-[#9B9B95] transition-colors" />
                                   )}
-                                  <DropdownMenuItem
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      setPhotoUploadProjectId(project.id)
-                                      setPhotoUploadKlantId(project.klant_id)
-                                      photoInputRef.current?.click()
-                                    }}
-                                  >
-                                    <Camera className="w-3.5 h-3.5 mr-2" />
-                                    Foto's toevoegen
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      const csv = [
-                                        'Project;' + project.naam,
-                                        'Klant;' + klantNaam,
-                                        'Status;' + (statusLabels[project.status] || project.status),
-                                        'Bedrag;' + formatCurrency(getProjectBedrag(project.id)),
-                                        'Start;' + formatDate(project.start_datum ?? ""),
-                                      ].join('\n')
-                                      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-                                      const url = URL.createObjectURL(blob)
-                                      const a = document.createElement('a')
-                                      a.href = url
-                                      a.download = `${project.naam.replace(/\s+/g, '-').toLowerCase()}.csv`
-                                      a.click()
-                                      URL.revokeObjectURL(url)
-                                    }}
-                                  >
-                                    <Download className="w-3.5 h-3.5 mr-2" />
-                                    Export
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </div>
+                                </button>
+                              </PopoverTrigger>
+                              <PopoverContent align="start" className="w-56 p-1.5" onClick={(e) => e.stopPropagation()}>
+                                <div className="px-2 py-1.5 text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Team toewijzen</div>
+                                <div className="max-h-[200px] overflow-y-auto">
+                                  {medewerkers.filter((m) => m.status === 'actief').map((mw) => {
+                                    const isLid = (project.team_leden || []).includes(mw.naam)
+                                    return (
+                                      <button
+                                        key={mw.id}
+                                        onClick={() => toggleTeamLid(project.id, mw.naam)}
+                                        className={cn(
+                                          'flex items-center gap-2.5 w-full px-2 py-1.5 rounded-md text-left text-[13px] transition-colors',
+                                          isLid ? 'bg-[#1A535C]/[0.06] text-[#1A1A1A]' : 'text-[#4A4A46] hover:bg-[#F8F7F5]'
+                                        )}
+                                      >
+                                        {(() => {
+                                          const c = mw.naam.charCodeAt(0) % 5
+                                          const colors = [
+                                            'bg-[#E8F2EC] text-[#3A7D52]',
+                                            'bg-[#E8EEF9] text-[#3A5A9A]',
+                                            'bg-[#F5F2E8] text-[#8A7A4A]',
+                                            'bg-[#F0EFEC] text-[#6B6B66]',
+                                            'bg-[#EDE8F4] text-[#6A5A8A]',
+                                          ]
+                                          return (
+                                            <span className={cn('w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold uppercase flex-shrink-0', colors[c])}>
+                                              {mw.naam.charAt(0)}
+                                            </span>
+                                          )
+                                        })()}
+                                        <div className="min-w-0 flex-1">
+                                          <span className="block truncate font-medium">{mw.naam}</span>
+                                          {mw.functie && <span className="block truncate text-[11px] text-[#9B9B95]">{mw.functie}</span>}
+                                        </div>
+                                        {isLid && <Check className="w-3.5 h-3.5 text-[#1A535C] flex-shrink-0" />}
+                                      </button>
+                                    )
+                                  })}
+                                </div>
+                              </PopoverContent>
+                            </Popover>
                           </td>
+
                         </tr>
                       )
                     })}
@@ -1052,6 +1278,112 @@ export function ProjectsList() {
             <Button variant="outline" onClick={() => setBulkDeleteDialogOpen(false)}>Annuleren</Button>
             <Button variant="destructive" onClick={handleBulkDelete}>Verwijderen</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!quickTaakProjectId} onOpenChange={(open) => { if (!open) { setQuickTaakProjectId(null); setQuickTaakTitel(''); setQuickTaakToegewezen(''); setQuickTaakDeadline('') } }}>
+        <DialogContent className="sm:max-w-[420px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ListPlus className="w-4 h-4 text-[#1A535C]" />
+              Snelle taak
+            </DialogTitle>
+            <DialogDescription>
+              {projecten.find((p) => p.id === quickTaakProjectId)?.naam}
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => { e.preventDefault(); handleQuickTaakSubmit() }}
+            className="space-y-3"
+          >
+            <input
+              ref={quickTaakInputRef}
+              type="text"
+              placeholder="Wat moet er gebeuren?"
+              value={quickTaakTitel}
+              onChange={(e) => setQuickTaakTitel(e.target.value)}
+              className="w-full px-3 py-2.5 text-sm bg-[#F8F7F5] border border-[#EBEBEB] rounded-lg text-[#1A1A1A] placeholder:text-[#9B9B95] focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/10 transition-all"
+              autoFocus
+            />
+            <div>
+              <label className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95] mb-1.5 block">Deadline</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="date"
+                  value={quickTaakDeadline}
+                  onChange={(e) => setQuickTaakDeadline(e.target.value)}
+                  className="flex-1 px-3 py-2 text-sm bg-[#F8F7F5] border border-[#EBEBEB] rounded-lg text-[#1A1A1A] focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/10 transition-all"
+                />
+                <div className="flex gap-1">
+                  {[
+                    { label: 'Vandaag', days: 0 },
+                    { label: 'Morgen', days: 1 },
+                    { label: '+7d', days: 7 },
+                  ].map(({ label, days }) => {
+                    const d = new Date(); d.setDate(d.getDate() + days)
+                    const val = d.toISOString().split('T')[0]
+                    return (
+                      <button
+                        key={days}
+                        type="button"
+                        onClick={() => setQuickTaakDeadline(val)}
+                        className={cn(
+                          'px-2 py-1.5 rounded-md text-[11px] font-medium transition-all',
+                          quickTaakDeadline === val
+                            ? 'bg-[#1A535C]/[0.08] text-[#1A535C] font-semibold'
+                            : 'bg-[#F8F7F5] text-[#6B6B66] hover:bg-[#F0EFEC]'
+                        )}
+                      >
+                        {label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+            <div>
+              <label className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95] mb-1.5 block">Toewijzen aan</label>
+              <div className="flex flex-wrap gap-1.5">
+                {medewerkers.filter((m) => m.status === 'actief').map((mw) => {
+                  const selected = quickTaakToegewezen === mw.naam
+                  const c = mw.naam.charCodeAt(0) % 5
+                  const colors = [
+                    'bg-[#E8F2EC] text-[#3A7D52]',
+                    'bg-[#E8EEF9] text-[#3A5A9A]',
+                    'bg-[#F5F2E8] text-[#8A7A4A]',
+                    'bg-[#F0EFEC] text-[#6B6B66]',
+                    'bg-[#EDE8F4] text-[#6A5A8A]',
+                  ]
+                  return (
+                    <button
+                      key={mw.id}
+                      type="button"
+                      onClick={() => setQuickTaakToegewezen(selected ? '' : mw.naam)}
+                      className={cn(
+                        'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[12px] font-medium transition-all border',
+                        selected
+                          ? 'border-[#1A535C] bg-[#1A535C]/[0.08] text-[#1A535C]'
+                          : 'border-transparent bg-[#F8F7F5] text-[#6B6B66] hover:bg-[#F0EFEC]'
+                      )}
+                    >
+                      <span className={cn('w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold uppercase flex-shrink-0', colors[c])}>
+                        {mw.naam.charAt(0)}
+                      </span>
+                      {mw.naam.split(' ')[0]}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => { setQuickTaakProjectId(null); setQuickTaakTitel(''); setQuickTaakToegewezen(''); setQuickTaakDeadline('') }}>
+                Annuleren
+              </Button>
+              <Button type="submit" disabled={!quickTaakTitel.trim() || quickTaakSaving}>
+                {quickTaakSaving ? 'Opslaan...' : 'Toevoegen'}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>
