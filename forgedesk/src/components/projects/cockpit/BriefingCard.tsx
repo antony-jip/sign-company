@@ -36,20 +36,19 @@ export function BriefingCard({ beschrijving, projectNaam, klantNaam, onSave }: B
     try {
       const result = await chatCompletion(
         [{ role: 'user', content: text.trim() }],
-        `Je bent Daan, de slimme assistent van een reclame/signing bedrijf. Je herschrijft korte notities naar professionele, duidelijke projectbriefings in het Nederlands.
+        `Je bent Daan. Je herschrijft rommelige notities naar een korte, duidelijke projectbriefing voor een reclame/signing bedrijf.
 
-Regels:
-- Schrijf in 3-6 zinnen, zakelijk maar toegankelijk
-- Begin met WAT er gemaakt moet worden
-- Noem WAAR het geplaatst wordt (als bekend)
-- Noem materialen/specificaties (als bekend)
-- Eindig met bijzonderheden of aandachtspunten
-- Gebruik GEEN opsommingstekens, bullets of markdown — alleen lopende tekst
-- Gebruik GEEN aanhalingstekens rond je antwoord
-${projectNaam ? `- Projectnaam: "${projectNaam}"` : ''}
+Stijl:
+- Kort en puntig, geen wollige zinnen
+- Gebruik korte bullets (streepjes) voor de kern: wat, waar, formaat, materiaal, aantal
+- Max 4-6 regels totaal
+- Geen inleiding, geen afsluiting, geen "dienen te worden" taal
+- Gewoon helder Nederlands zoals een projectleider het zou opschrijven
+- Alleen feiten die in de input staan, verzin niets
+${projectNaam ? `- Project: "${projectNaam}"` : ''}
 ${klantNaam ? `- Klant: "${klantNaam}"` : ''}
 
-Antwoord ALLEEN met de briefing tekst, niets anders.`
+Antwoord ALLEEN met de briefing, niets anders.`
       )
       setText(result.trim())
     } catch {
