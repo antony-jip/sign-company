@@ -72,7 +72,9 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import type { Klant, Project, Contactpersoon, Factuur } from '@/types'
 import { round2 } from '@/utils/budgetUtils'
-import { generateOffertePDF } from '@/services/pdfService'
+import { generateOffertePDF, generateOpdrachtbevestigingPDF } from '@/services/pdfService'
+import { WerkbonAanmaakDialog } from '@/components/werkbonnen/WerkbonAanmaakDialog'
+import { PdfPreviewDialog } from '@/components/shared/PdfPreviewDialog'
 import { useDocumentStyle } from '@/hooks/useDocumentStyle'
 import { sendEmail } from '@/services/gmailService'
 import { offerteVerzendTemplate } from '@/services/emailTemplateService'
@@ -1651,6 +1653,8 @@ export function QuoteCreation() {
 
   // ── Actions dropdown state ──
   const [showActionsMenu, setShowActionsMenu] = useState(false)
+  const [showWerkbonDialog, setShowWerkbonDialog] = useState(false)
+  const [showObPreview, setShowObPreview] = useState(false)
 
   // ── Helper: marge color for sidebar (unified: ≥65% green, 50-64% orange, <50% red) ──
   const getMargeColorSidebar = (pct: number) => {
@@ -1756,6 +1760,8 @@ export function QuoteCreation() {
         handleKeuzeEmail={handleKeuzeEmail}
         handleDupliceerOfferte={handleDupliceerOfferte}
         setShowKlantSelector={setShowKlantSelector}
+        onWerkbon={isEditMode ? () => setShowWerkbonDialog(true) : undefined}
+        onOpdrachtbevestiging={isEditMode ? () => setShowObPreview(true) : undefined}
       />
 
       {/* ──── PROJECT KOPPELING ──── */}
@@ -2154,6 +2160,62 @@ export function QuoteCreation() {
         />{/* end RIGHT SIDEBAR */}
       </div>
     </div>
+
+      {/* Werkbon Dialog */}
+      {showWerkbonDialog && editOfferteId && selectedKlant && (
+        <WerkbonAanmaakDialog
+          open={showWerkbonDialog}
+          onOpenChange={setShowWerkbonDialog}
+          offerte={{
+            id: editOfferteId,
+            klant_id: selectedKlantId,
+            klant_naam: selectedKlant.bedrijfsnaam,
+            project_id: selectedProjectId || undefined,
+            nummer: offerteNummer,
+            titel: offerteTitel,
+            status: 'concept',
+            subtotaal,
+            btw_bedrag: btwBedrag,
+            totaal: round2(subtotaal + btwBedrag),
+            geldig_tot: geldigTot,
+            notities: '',
+            voorwaarden: '',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          }}
+          items={items.filter(i => i.soort === 'prijs').map((item, idx) => ({
+            ...item,
+            offerte_id: editOfferteId,
+            volgorde: idx,
+            created_at: new Date().toISOString(),
+          }))}
+          klant={selectedKlant}
+        />
+      )}
+
+      {/* Opdrachtbevestiging Preview */}
+      {showObPreview && editOfferteId && (
+        <PdfPreviewDialog
+          open={showObPreview}
+          onOpenChange={setShowObPreview}
+          title={`Opdrachtbevestiging ${offerteNummer}`}
+          generatePdf={async () => {
+            const [offerte, offerteItems] = await Promise.all([
+              getOfferte(editOfferteId),
+              getOfferteItems(editOfferteId),
+            ])
+            if (!offerte) throw new Error('Offerte niet gevonden')
+            const doc = await generateOpdrachtbevestigingPDF(
+              offerte,
+              offerteItems,
+              selectedKlant || {},
+              { primaireKleur: primaireKleur || '#2563eb' },
+              documentStyle,
+            )
+            return doc.output('blob')
+          }}
+        />
+      )}
     </div>
   )
 }

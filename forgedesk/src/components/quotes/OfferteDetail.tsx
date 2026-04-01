@@ -23,7 +23,7 @@ import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { sendEmail } from '@/services/gmailService'
 import { offerteVerzendTemplate } from '@/services/emailTemplateService'
-import { generateOffertePDF } from '@/services/pdfService'
+import { generateOffertePDF, generateOpdrachtbevestigingPDF } from '@/services/pdfService'
 import { useDocumentStyle } from '@/hooks/useDocumentStyle'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -137,6 +137,7 @@ export function OfferteDetail() {
   const [isSaving, setIsSaving] = useState(false)
   const [showWerkbonDialog, setShowWerkbonDialog] = useState(false)
   const [showPdfPreview, setShowPdfPreview] = useState(false)
+  const [showObPreview, setShowObPreview] = useState(false)
   const [portaalToken, setPortaalToken] = useState<string | null>(null)
 
   // Fetch data
@@ -485,6 +486,42 @@ export function OfferteDetail() {
     navigate(`/facturen/nieuw?${params.toString()}`)
   }, [offerte, navigate])
 
+  const handleVerstuurOpdrachtbevestiging = useCallback(async () => {
+    if (!offerte || !user?.id || !offerte.project_id) {
+      toast.error('Opdrachtbevestiging kan alleen verstuurd worden voor offertes met een project')
+      return
+    }
+    try {
+      const portaal = await createPortaal(offerte.project_id, user.id)
+      const bestaandeItems = await getPortaalItems(portaal.id)
+      const bestaandObItem = bestaandeItems.find(
+        (i) => i.type === 'opdrachtbevestiging' && i.offerte_id === offerte.id
+      )
+      if (bestaandObItem) {
+        toast.info('Opdrachtbevestiging staat al in het portaal')
+        return
+      }
+      await createPortaalItem({
+        user_id: user.id,
+        project_id: offerte.project_id,
+        portaal_id: portaal.id,
+        type: 'opdrachtbevestiging',
+        offerte_id: offerte.id,
+        titel: `Opdrachtbevestiging ${offerte.nummer}`,
+        omschrijving: offerte.titel,
+        label: formatCurrency(offerte.totaal),
+        status: 'verstuurd',
+        zichtbaar_voor_klant: true,
+        bedrag: offerte.totaal,
+        volgorde: 0,
+      })
+      toast.success('Opdrachtbevestiging gedeeld via portaal')
+    } catch (err) {
+      logger.error('Kon opdrachtbevestiging niet delen:', err)
+      toast.error('Kon opdrachtbevestiging niet delen via portaal')
+    }
+  }, [offerte, user])
+
   // Loading
   if (isLoading) {
     return (
@@ -667,6 +704,16 @@ export function OfferteDetail() {
                 <ClipboardList className="h-4 w-4 mr-1" />
                 Werkbon maken
               </Button>
+              <Button size="sm" variant="outline" onClick={() => setShowObPreview(true)}>
+                <FileText className="h-4 w-4 mr-1" />
+                Opdrachtbevestiging
+              </Button>
+              {offerte.project_id && (
+                <Button size="sm" variant="outline" onClick={handleVerstuurOpdrachtbevestiging}>
+                  <Send className="h-4 w-4 mr-1" />
+                  OB → Portaal
+                </Button>
+              )}
               <Button
                 size="sm"
                 variant="outline"
@@ -1292,6 +1339,25 @@ export function OfferteDetail() {
           title={`Offerte ${offerte.nummer}`}
           generatePdf={async () => {
             const doc = await generateOffertePDF(
+              offerte,
+              items,
+              klant || {},
+              { ...profile, primaireKleur: primaireKleur || '#2563eb' },
+              documentStyle,
+            )
+            return doc.output('blob')
+          }}
+        />
+      )}
+
+      {/* Opdrachtbevestiging Preview Dialog */}
+      {offerte && (
+        <PdfPreviewDialog
+          open={showObPreview}
+          onOpenChange={setShowObPreview}
+          title={`Opdrachtbevestiging ${offerte.nummer}`}
+          generatePdf={async () => {
+            const doc = await generateOpdrachtbevestigingPDF(
               offerte,
               items,
               klant || {},

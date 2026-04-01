@@ -254,7 +254,7 @@ export function ActiviteitFeed({
     ? allEvents
     : allEvents.filter(e => e.type === activeFilter)
 
-  const displayEvents = showAll ? filteredEvents : filteredEvents.slice(0, 8)
+  const displayEvents = showAll ? filteredEvents : filteredEvents.slice(0, 3)
 
   // Available filter types (only show filters that have events)
   const availableFilters = useMemo(() => {
@@ -388,7 +388,7 @@ export function ActiviteitFeed({
         </div>
       )}
 
-      {filteredEvents.length > 8 && !showAll && (
+      {filteredEvents.length > 3 && !showAll && (
         <button
           onClick={() => setShowAll(true)}
           className="w-full text-[11px] text-muted-foreground hover:text-foreground mt-2 py-2 rounded-lg hover:bg-[hsl(35,15%,96%)] transition-colors"

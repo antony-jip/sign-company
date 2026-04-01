@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   Send, Paperclip, X, ArrowRight, ChevronDown, ChevronRight,
   ImageIcon, FileText, Receipt, CreditCard, Check, Eye, AlertCircle,
-  Bold, Italic, Underline, List, Link2,
+  Bold, Italic, Underline, List, Link2, FileCheck,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { getPortaalByProject, getPortaalItems, createPortaalItem, getOffertesByProject, getFacturenByProject, createPortaal } from '@/services/supabaseService'
@@ -323,7 +323,7 @@ function InputBar({
 }) {
   const [berichtTekst, setBerichtTekst] = useState('')
   const [notificeerKlant, setNotificeerKlant] = useState(true)
-  const [activePopover, setActivePopover] = useState<'offerte' | 'factuur' | null>(null)
+  const [activePopover, setActivePopover] = useState<'offerte' | 'factuur' | 'opdrachtbevestiging' | null>(null)
   const [offertes, setOffertes] = useState<Offerte[]>([])
   const [facturen, setFacturen] = useState<Factuur[]>([])
   const [tekeningFile, setTekeningFile] = useState<File | null>(null)
@@ -353,12 +353,13 @@ function InputBar({
       const project = await getProject(projectId)
       if (!project?.klant_id || !portaal) return
       const klant = await getKlant(project.klant_id)
-      const klantEmail = klant?.email || klant?.contactpersonen?.[0]?.email
+      const activeCp = project.contactpersoon_id ? klant?.contactpersonen?.find((c: { id: string }) => c.id === project.contactpersoon_id) : null
+      const klantEmail = activeCp?.email || klant?.email || klant?.contactpersonen?.[0]?.email
       if (!klantEmail) { toast.warning('Klant heeft geen email'); return }
       const profile = await getProfile(userId)
       const bedrijfsnaam = profile?.bedrijfsnaam || ''
       const portaalUrl = `${window.location.origin}/portaal/${portaal.token}`
-      const klantNaam = klant?.contactpersoon || klant?.contactpersonen?.[0]?.naam || klant?.bedrijfsnaam || 'klant'
+      const klantNaam = activeCp?.naam || klant?.contactpersoon || klant?.contactpersonen?.[0]?.naam || klant?.bedrijfsnaam || 'klant'
       const instellingen = await getPortaalInstellingen(userId)
       const vars: Record<string, string> = { klant_naam: klantNaam, project_naam: project.naam, portaal_link: portaalUrl, bedrijfsnaam: bedrijfsnaam || '', item_type: titel, projectnaam: project.naam, itemtitel: titel, klantNaam, portaalUrl }
       const onderwerp = instellingen?.template_nieuw_item?.onderwerp ? replaceEmailVariables(instellingen.template_nieuw_item.onderwerp, vars) : `${bedrijfsnaam || 'Nieuw item'} — ${titel}`
@@ -442,6 +443,14 @@ function InputBar({
     })
   }
 
+  async function handleSendOpdrachtbevestiging(offerte: Offerte) {
+    await send(async () => {
+      await createPortaalItem({ user_id: userId, project_id: projectId, portaal_id: portaal.id, type: 'opdrachtbevestiging', titel: `Opdrachtbevestiging ${offerte.nummer}`, offerte_id: offerte.id, omschrijving: offerte.titel, bedrag: offerte.totaal, status: 'verstuurd', zichtbaar_voor_klant: true, volgorde: 0 })
+      toast.success(`Opdrachtbevestiging ${offerte.nummer} gedeeld`); setActivePopover(null); await fetchItems()
+      if (notificeerKlant) sendEmailNotification(`Opdrachtbevestiging ${offerte.nummer}`, offerte.titel || `Opdrachtbevestiging ${offerte.nummer}`)
+    })
+  }
+
   if (!isActief) return null
 
   return (
@@ -481,6 +490,19 @@ function InputBar({
               <button key={f.id} onClick={() => handleSendFactuur(f)} disabled={isSending} className="w-full flex items-center justify-between px-4 py-3 hover:bg-[#F8F7F5] transition-colors text-left">
                 <div className="min-w-0"><p className="text-sm font-medium font-mono text-[#1A1A1A]">{f.nummer}</p><p className="text-[10px] text-[#9B9B95]">{new Date(f.factuurdatum).toLocaleDateString('nl-NL')}</p></div>
                 <span className="text-sm font-semibold font-mono text-[#1A1A1A] ml-3 flex-shrink-0">{currencyFmt.format(f.totaal)}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      {activePopover === 'opdrachtbevestiging' && (
+        <div className="absolute left-3 bottom-full mb-2 w-72 bg-[#FFFFFF] border border-[#EBEBEB] rounded-xl shadow-[0_4px_16px_rgba(0,0,0,0.08)] z-50 overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-[#EBEBEB]"><p className="text-xs font-semibold text-[#1A1A1A]">Opdrachtbevestiging delen</p><button onClick={() => setActivePopover(null)} className="text-[#9B9B95] hover:text-[#1A1A1A]"><X className="h-3.5 w-3.5" /></button></div>
+          <div className="max-h-52 overflow-y-auto py-1">
+            {offertes.length === 0 ? <p className="text-xs text-[#9B9B95] text-center py-6">Geen offertes gevonden</p> : offertes.map((o) => (
+              <button key={o.id} onClick={() => handleSendOpdrachtbevestiging(o)} disabled={isSending} className="w-full flex items-center justify-between px-4 py-3 hover:bg-[#F8F7F5] transition-colors text-left">
+                <div className="min-w-0"><p className="text-sm font-medium text-[#1A1A1A] truncate">{o.titel}</p><p className="text-[10px] text-[#9B9B95] font-mono">{o.nummer}</p></div>
+                <span className="text-sm font-semibold font-mono text-[#1A1A1A] ml-3 flex-shrink-0">{currencyFmt.format(o.totaal)}</span>
               </button>
             ))}
           </div>
@@ -543,6 +565,7 @@ function InputBar({
           {[
             { label: 'Tekening', icon: <FileText className="h-3.5 w-3.5" />, onClick: () => tekeningInputRef.current?.click() },
             { label: 'Offerte', icon: <Receipt className="h-3.5 w-3.5" />, onClick: async () => { try { setOffertes(await getOffertesByProject(projectId)) } catch (err) { logger.error('loadOffertes:', err); setOffertes([]) }; setActivePopover('offerte') } },
+            { label: 'OB', icon: <FileCheck className="h-3.5 w-3.5" />, onClick: async () => { try { setOffertes(await getOffertesByProject(projectId)) } catch (err) { logger.error('loadOffertes:', err); setOffertes([]) }; setActivePopover('opdrachtbevestiging') } },
             { label: 'Factuur', icon: <CreditCard className="h-3.5 w-3.5" />, onClick: async () => { try { setFacturen(await getFacturenByProject(projectId)) } catch (err) { logger.error('loadFacturen:', err); setFacturen([]) }; setActivePopover('factuur') } },
             { label: 'Foto', icon: <ImageIcon className="h-3.5 w-3.5" />, onClick: () => fotoInputRef.current?.click() },
           ].map((btn) => (

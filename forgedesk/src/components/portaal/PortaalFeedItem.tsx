@@ -58,7 +58,9 @@ export function PortaalFeedItem({
 
   const itemType = item.type === 'bericht' || item.bericht_type === 'tekst' || item.bericht_type === 'foto'
     ? 'bericht'
-    : item.type
+    : item.type === 'opdrachtbevestiging'
+      ? 'offerte'
+      : item.type
 
   const handleVragenStellen = () => setShowReactieForm(true)
 

@@ -478,7 +478,8 @@ export async function generateOffertePDF(
   items: OfferteItem[],
   klant: Partial<Klant>,
   bedrijfsProfiel: PdfBedrijfsProfiel,
-  docStyle?: DocumentStyle | null
+  docStyle?: DocumentStyle | null,
+  options?: { documentTitel?: string; referentieNummer?: string }
 ): Promise<jsPDF> {
   const brand = getBrandColor(bedrijfsProfiel, docStyle)
   const margins = getMargins(docStyle)
@@ -487,12 +488,13 @@ export async function generateOffertePDF(
   const baseFontSize = getBaseFontSize(docStyle)
   const textColor = getTextColor(docStyle)
   const doc = new jsPDF()
+  const titel = options?.documentTitel || 'Offerte'
 
   // Spectrum strip at top
   addSpectrumStrip(doc)
 
   // Header
-  let y = addHeader(doc, bedrijfsProfiel, 'Offerte', offerte.nummer, docStyle)
+  let y = addHeader(doc, bedrijfsProfiel, titel, offerte.nummer, docStyle)
 
   // Client info
   y = addClientInfo(doc, klant, y, docStyle)
@@ -510,8 +512,18 @@ export async function generateOffertePDF(
     y += 8
   }
 
-  if (offerte.geldig_tot) {
+  if (offerte.geldig_tot && titel === 'Offerte') {
     doc.text(`Geldig tot: ${formatDate(offerte.geldig_tot)}`, margins.left, y)
+    y += 8
+  }
+
+  if (options?.referentieNummer) {
+    doc.text(`Referentie offerte: ${options.referentieNummer}`, margins.left, y)
+    y += 8
+  }
+
+  if (titel === 'Opdrachtbevestiging') {
+    doc.text(`Datum: ${formatDate(new Date().toISOString())}`, margins.left, y)
     y += 8
   }
 
@@ -855,6 +867,19 @@ export async function generateOffertePDF(
   addFooter(doc, bedrijfsProfiel, docStyle)
 
   return doc
+}
+
+export async function generateOpdrachtbevestigingPDF(
+  offerte: Offerte,
+  items: OfferteItem[],
+  klant: Partial<Klant>,
+  bedrijfsProfiel: PdfBedrijfsProfiel,
+  docStyle?: DocumentStyle | null
+): Promise<jsPDF> {
+  return generateOffertePDF(offerte, items, klant, bedrijfsProfiel, docStyle, {
+    documentTitel: 'Opdrachtbevestiging',
+    referentieNummer: offerte.nummer,
+  })
 }
 
 // ============ FACTUUR PDF ============

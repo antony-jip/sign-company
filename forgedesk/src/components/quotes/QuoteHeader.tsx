@@ -13,6 +13,8 @@ import {
   Clock,
   Copy,
   MoreHorizontal,
+  ClipboardList,
+  FileCheck,
 } from 'lucide-react'
 import type { Klant } from '@/types'
 
@@ -46,6 +48,8 @@ export interface QuoteHeaderProps {
   handleKeuzeEmail: () => void
   handleDupliceerOfferte: () => void
   setShowKlantSelector: (v: boolean) => void
+  onWerkbon?: () => void
+  onOpdrachtbevestiging?: () => void
 }
 
 export function QuoteHeader({
@@ -68,6 +72,8 @@ export function QuoteHeader({
   handleKeuzeEmail,
   handleDupliceerOfferte,
   setShowKlantSelector,
+  onWerkbon,
+  onOpdrachtbevestiging,
 }: QuoteHeaderProps) {
   return (
       <div className="sticky top-0 z-10 bg-[#F8F7F5]/80 backdrop-blur-sm border-b border-[#EBEBEB] px-6 py-3 mb-6 -mx-4 md:-mx-6">
@@ -171,6 +177,16 @@ export function QuoteHeader({
                       <button onClick={() => { setShowKlantSelector(true); setShowActionsMenu(false) }} className="w-full text-left px-3 py-2 text-sm hover:bg-background dark:hover:bg-muted flex items-center gap-2">
                         <Building2 className="h-3.5 w-3.5" />Klant wijzigen
                       </button>
+                      {onWerkbon && (
+                        <button onClick={() => { onWerkbon(); setShowActionsMenu(false) }} className="w-full text-left px-3 py-2 text-sm hover:bg-background dark:hover:bg-muted flex items-center gap-2">
+                          <ClipboardList className="h-3.5 w-3.5" />Werkbon maken
+                        </button>
+                      )}
+                      {onOpdrachtbevestiging && (
+                        <button onClick={() => { onOpdrachtbevestiging(); setShowActionsMenu(false) }} className="w-full text-left px-3 py-2 text-sm hover:bg-background dark:hover:bg-muted flex items-center gap-2">
+                          <FileCheck className="h-3.5 w-3.5" />Opdrachtbevestiging
+                        </button>
+                      )}
                     </div>
                   </>
                 )}

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import {
   Plus,
   FileText,
@@ -8,7 +8,10 @@ import {
   File,
   Trash2,
   Upload,
+  Eye,
 } from 'lucide-react'
+import { getSignedUrl } from '@/services/storageService'
+import { PdfPreviewDialog } from '@/components/shared/PdfPreviewDialog'
 
 function getFileIcon(type: string) {
   const size = 'h-4 w-4'
@@ -44,14 +47,37 @@ function formatDate(dateStr: string) {
 }
 
 interface BestandenSectionProps {
-  documenten: { id: string; naam: string; type: string; grootte: number; created_at: string }[]
+  documenten: { id: string; naam: string; type: string; grootte: number; created_at: string; storage_path: string }[]
   onUpload: () => void
   onDelete: (id: string, naam: string) => void
 }
 
+function isPdf(type: string, naam: string): boolean {
+  return type.includes('pdf') || naam.toLowerCase().endsWith('.pdf')
+}
+
 export function BestandenSection({ documenten, onUpload, onDelete }: BestandenSectionProps) {
   const [showAll, setShowAll] = useState(false)
+  const [pdfPreview, setPdfPreview] = useState<{ naam: string; storagePath: string } | null>(null)
   const displayDocs = showAll ? documenten : documenten.slice(0, 5)
+
+  const handleFileClick = async (doc: BestandenSectionProps['documenten'][0]) => {
+    if (isPdf(doc.type, doc.naam)) {
+      setPdfPreview({ naam: doc.naam, storagePath: doc.storage_path })
+    } else {
+      const url = await getSignedUrl(doc.storage_path)
+      if (url) window.open(url, '_blank')
+    }
+  }
+
+  const generatePdf = useCallback(async () => {
+    if (!pdfPreview) throw new Error('Geen bestand geselecteerd')
+    const url = await getSignedUrl(pdfPreview.storagePath)
+    if (!url) throw new Error('Kon signed URL niet ophalen')
+    const response = await fetch(url)
+    if (!response.ok) throw new Error('Kon PDF niet laden')
+    return await response.blob()
+  }, [pdfPreview])
 
   return (
     <div>
@@ -80,7 +106,8 @@ export function BestandenSection({ documenten, onUpload, onDelete }: BestandenSe
           {displayDocs.map((doc) => (
             <div
               key={doc.id}
-              className="group flex items-center gap-2.5 rounded-lg px-2 py-2 hover:bg-[hsl(35,15%,97%)] transition-colors"
+              className="group flex items-center gap-2.5 rounded-lg px-2 py-2 hover:bg-[hsl(35,15%,97%)] transition-colors cursor-pointer"
+              onClick={() => handleFileClick(doc)}
             >
               <div className={`h-8 w-8 rounded-lg ${getFileIconBg(doc.type)} flex items-center justify-center flex-shrink-0`}>
                 {getFileIcon(doc.type)}
@@ -91,9 +118,10 @@ export function BestandenSection({ documenten, onUpload, onDelete }: BestandenSe
                   {formatFileSize(doc.grootte)} · {formatDate(doc.created_at)}
                 </p>
               </div>
+              <Eye className="h-3 w-3 opacity-0 group-hover:opacity-100 text-muted-foreground/40 transition-all flex-shrink-0" />
               <button
                 className="opacity-0 group-hover:opacity-100 text-muted-foreground/40 hover:text-destructive transition-all p-1 rounded"
-                onClick={() => onDelete(doc.id, doc.naam)}
+                onClick={(e) => { e.stopPropagation(); onDelete(doc.id, doc.naam) }}
               >
                 <Trash2 className="h-3 w-3" />
               </button>
@@ -109,6 +137,13 @@ export function BestandenSection({ documenten, onUpload, onDelete }: BestandenSe
           )}
         </div>
       )}
+
+      <PdfPreviewDialog
+        open={!!pdfPreview}
+        onOpenChange={(open) => { if (!open) setPdfPreview(null) }}
+        title={pdfPreview?.naam ?? ''}
+        generatePdf={generatePdf}
+      />
     </div>
   )
 }

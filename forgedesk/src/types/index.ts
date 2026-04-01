@@ -1721,7 +1721,7 @@ export interface PortaalItem {
   organisatie_id?: string;
   project_id: string;
   portaal_id: string;
-  type: 'offerte' | 'tekening' | 'factuur' | 'bericht' | 'afbeelding';
+  type: 'offerte' | 'tekening' | 'factuur' | 'bericht' | 'afbeelding' | 'opdrachtbevestiging';
   offerte_id?: string;
   factuur_id?: string;
   titel: string;
