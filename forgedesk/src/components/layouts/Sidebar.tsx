@@ -77,7 +77,20 @@ const ICON_BRIGHT: Record<string, string> = {
   '#6A5A8A': '#A896CC',
 }
 
+function useIsDesktop() {
+  const [isDesktop, setIsDesktop] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 768)
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)')
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches)
+    mq.addEventListener('change', handler)
+    setIsDesktop(mq.matches)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
+  return isDesktop
+}
+
 export function Sidebar() {
+  const isDesktop = useIsDesktop()
   const { isCollapsed, toggleSidebar, setLayoutMode } = useSidebar()
   const { user, logout } = useAuth()
   const { theme, toggleTheme } = useTheme()
@@ -469,13 +482,15 @@ export function Sidebar() {
         {sidebarContent(true)}
       </aside>
 
-      {/* Desktop sidebar */}
-      <aside
-        className="hidden md:flex flex-col md:flex-shrink-0 h-screen doen-sidebar transition-[width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden"
-        style={{ width: isCollapsed ? RAIL_WIDTH : EXPANDED_WIDTH }}
-      >
-        {sidebarContent(false)}
-      </aside>
+      {/* Desktop sidebar — only rendered on md+ to prevent mobile layout issues */}
+      {isDesktop && (
+        <aside
+          className="flex flex-col flex-shrink-0 h-screen doen-sidebar transition-[width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden"
+          style={{ width: isCollapsed ? RAIL_WIDTH : EXPANDED_WIDTH }}
+        >
+          {sidebarContent(false)}
+        </aside>
+      )}
     </>
   )
 }
