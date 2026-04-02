@@ -175,6 +175,8 @@ export function QuoteCreation() {
     return d.toISOString().split('T')[0]
   })
   const [offerteNummer, setOfferteNummer] = useState('')
+  const [verstuurdOp, setVerstuurdOp] = useState<string | undefined>()
+  const [verstuurdNaar, setVerstuurdNaar] = useState<string | undefined>()
 
   // ── Offerte status & linked factuur (for factureren workflow) ──
   const [offerteStatus, setOfferteStatus] = useState<string>('concept')
@@ -525,6 +527,8 @@ export function QuoteCreation() {
         if (offerte.contactpersoon_id) setSelectedContactId(offerte.contactpersoon_id)
         setOfferteTitel(offerte.titel)
         setOfferteNummer(offerte.nummer)
+        setVerstuurdOp(offerte.verstuurd_op || undefined)
+        setVerstuurdNaar(offerte.verstuurd_naar || undefined)
         setGeldigTot(offerte.geldig_tot?.split('T')[0] || '')
         setNotities(offerte.notities || '')
         setVoorwaarden(offerte.voorwaarden || DEFAULT_VOORWAARDEN)
@@ -1624,6 +1628,14 @@ export function QuoteCreation() {
           attachments = [{ filename: `${offerteNummer}.pdf`, content: pdfBase64, encoding: 'base64' as const }]
         } catch (pdfErr) {
           logger.error('PDF genereren mislukt, email wordt zonder bijlage verstuurd:', pdfErr)
+          toast.warning('PDF kon niet gegenereerd worden — email wordt zonder bijlage verstuurd')
+        }
+      }
+
+      // Voeg user-uploaded bijlagen toe (naast de PDF)
+      if (email.emailExtraBijlagen && email.emailExtraBijlagen.length > 0) {
+        for (const bijlage of email.emailExtraBijlagen) {
+          attachments.push({ filename: bijlage.naam, content: bijlage.base64, encoding: 'base64' as const })
         }
       }
 
@@ -1635,6 +1647,8 @@ export function QuoteCreation() {
           verstuurd_naar: email.emailTo.trim(),
           verzendwijze: 'via_email_pdf',
         })
+        setVerstuurdOp(new Date().toISOString())
+        setVerstuurdNaar(email.emailTo.trim())
       }
       if (email.emailScheduled && email.emailScheduleDate) {
         toast.success(`Email ingepland voor ${new Date(email.emailScheduleDate + 'T' + email.emailScheduleTime).toLocaleString('nl-NL')}`)
@@ -1748,6 +1762,8 @@ export function QuoteCreation() {
         selectedKlant={selectedKlant}
         isSaving={isSaving}
         selectedProjectId={selectedProjectId}
+        verstuurdOp={verstuurdOp}
+        verstuurdNaar={verstuurdNaar}
         versioning={versioning}
         email={email}
         showActionsMenu={showActionsMenu}

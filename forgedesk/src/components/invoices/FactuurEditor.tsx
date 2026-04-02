@@ -60,6 +60,7 @@ import {
   ChevronRight,
   ClipboardList,
   RefreshCw,
+  ClipboardCheck,
 } from 'lucide-react'
 import {
   getKlanten,
@@ -83,10 +84,11 @@ import {
   getHerinneringTemplates,
   getGrootboek,
   getKostenplaatsen,
+  getWerkbonnenByKlant,
 } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
-import type { Klant, Factuur, FactuurItem, Offerte, OfferteItem, HerinneringTemplate, Project, Grootboek, Kostenplaats } from '@/types'
+import type { Klant, Factuur, FactuurItem, Offerte, OfferteItem, HerinneringTemplate, Project, Grootboek, Kostenplaats, Werkbon } from '@/types'
 import { round2 } from '@/utils/budgetUtils'
 import { generateFactuurPDF } from '@/services/pdfService'
 import { generateUBLInvoice, downloadUBLXml } from '@/services/ublService'
@@ -256,6 +258,10 @@ export function FactuurEditor() {
   const [kostenplaatsId, setKostenplaatsId] = useState('')
   const [kostenplaatsen, setKostenplaatsen] = useState<Kostenplaats[]>([])
 
+  // Werkbon koppeling
+  const [werkbonId, setWerkbonId] = useState('')
+  const [werkbonnen, setWerkbonnen] = useState<Werkbon[]>([])
+
   // Grootboekrekeningen
   const [grootboekrekeningen, setGrootboekrekeningen] = useState<Grootboek[]>([])
 
@@ -341,6 +347,7 @@ export function FactuurEditor() {
               setIntroTekst(factuur.intro_tekst || '')
               setOutroTekst(factuur.outro_tekst || '')
               setKostenplaatsId(factuur.kostenplaats_id || '')
+              setWerkbonId((factuur as any).werkbon_id || '')
 
               // Credit factuur state
               if (factuur.factuur_type === 'creditnota' || factuur.factuur_type === 'credit') {
@@ -594,6 +601,12 @@ export function FactuurEditor() {
     }
   }, [editFactuurId, paramKlantId, paramOfferteId, paramProjectId, paramTitel, paramCreditVoor, factuurPrefix, standaardBtw, factuurBetaaltermijnDagen, factuurVoorwaarden, factuurIntroTekst, factuurOutroTekst])
 
+  // Werkbonnen laden bij klant-selectie
+  useEffect(() => {
+    if (!klantId) { setWerkbonnen([]); return }
+    getWerkbonnenByKlant(klantId).then(setWerkbonnen).catch(() => setWerkbonnen([]))
+  }, [klantId])
+
   // ============ PERCENTAGE EFFECT ============
 
   // Recalculate items when factureerPercentage changes
@@ -742,6 +755,7 @@ export function FactuurEditor() {
           btw_bedrag: btwBedrag,
           totaal,
           kostenplaats_id: kostenplaatsId || undefined,
+          werkbon_id: werkbonId || undefined,
         }
         const updated = await updateFactuur(existingFactuur.id, updates)
         setExistingFactuur({ ...existingFactuur, ...updated })
@@ -777,6 +791,7 @@ export function FactuurEditor() {
           betaal_link: betaalLink,
           factuur_type: isCreditFactuur ? 'creditnota' : 'standaard',
           kostenplaats_id: kostenplaatsId || undefined,
+          werkbon_id: werkbonId || undefined,
           credit_voor_factuur_id: creditVoorFactuurId || undefined,
           gerelateerde_factuur_id: creditVoorFactuurId || undefined,
         })
@@ -1660,6 +1675,30 @@ export function FactuurEditor() {
                       {kostenplaatsen.map((kp) => (
                         <SelectItem key={kp.id} value={kp.id}>
                           {kp.code} - {kp.naam}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              {werkbonnen.length > 0 && (
+                <div>
+                  <Label className="text-xs">Werkbon meesturen</Label>
+                  <Select
+                    value={werkbonId || '_geen'}
+                    onValueChange={(val) => setWerkbonId(val === '_geen' ? '' : val)}
+                  >
+                    <SelectTrigger className="text-sm">
+                      <SelectValue placeholder="Geen werkbon" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="_geen">Geen werkbon</SelectItem>
+                      {werkbonnen.map((wb) => (
+                        <SelectItem key={wb.id} value={wb.id}>
+                          <span className="flex items-center gap-2">
+                            <ClipboardCheck className="h-3 w-3" />
+                            {wb.werkbon_nummer}{wb.titel ? ` — ${wb.titel}` : ''} ({wb.status})
+                          </span>
                         </SelectItem>
                       ))}
                     </SelectContent>

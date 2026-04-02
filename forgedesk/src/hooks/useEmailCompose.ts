@@ -1,5 +1,11 @@
 import { useState, useRef } from 'react'
 
+export interface EmailExtraBijlage {
+  naam: string
+  grootte: number
+  base64: string
+}
+
 interface EmailComposeState {
   showVerstuurKeuze: boolean
   setShowVerstuurKeuze: (v: boolean) => void
@@ -19,6 +25,8 @@ interface EmailComposeState {
   setEmailBody: (v: string) => void
   emailBijlagen: { naam: string; grootte: number }[]
   setEmailBijlagen: React.Dispatch<React.SetStateAction<{ naam: string; grootte: number }[]>>
+  emailExtraBijlagen: EmailExtraBijlage[]
+  setEmailExtraBijlagen: React.Dispatch<React.SetStateAction<EmailExtraBijlage[]>>
   emailScheduled: boolean
   setEmailScheduled: (v: boolean) => void
   emailScheduleDate: string
@@ -44,6 +52,7 @@ export function useEmailCompose(): EmailComposeState {
   const [emailSubject, setEmailSubject] = useState('')
   const [emailBody, setEmailBody] = useState('')
   const [emailBijlagen, setEmailBijlagen] = useState<{ naam: string; grootte: number }[]>([])
+  const [emailExtraBijlagen, setEmailExtraBijlagen] = useState<EmailExtraBijlage[]>([])
   const [emailScheduled, setEmailScheduled] = useState(false)
   const [emailScheduleDate, setEmailScheduleDate] = useState('')
   const [emailScheduleTime, setEmailScheduleTime] = useState('08:00')
@@ -58,11 +67,17 @@ export function useEmailCompose(): EmailComposeState {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (files) {
-      const newBijlagen = Array.from(files).map((f) => ({
-        naam: f.name,
-        grootte: f.size,
-      }))
-      setEmailBijlagen((prev) => [...prev, ...newBijlagen])
+      Array.from(files).forEach((file) => {
+        setEmailBijlagen((prev) => [...prev, { naam: file.name, grootte: file.size }])
+        const reader = new FileReader()
+        reader.onload = () => {
+          const base64 = (reader.result as string).split(',')[1]
+          if (base64) {
+            setEmailExtraBijlagen((prev) => [...prev, { naam: file.name, grootte: file.size, base64 }])
+          }
+        }
+        reader.readAsDataURL(file)
+      })
     }
     e.target.value = ''
   }
@@ -75,6 +90,7 @@ export function useEmailCompose(): EmailComposeState {
     setEmailSubject('')
     setEmailBody('')
     setEmailBijlagen([])
+    setEmailExtraBijlagen([])
     setEmailScheduled(false)
     setEmailScheduleDate('')
     setEmailScheduleTime('08:00')
@@ -90,6 +106,7 @@ export function useEmailCompose(): EmailComposeState {
     emailSubject, setEmailSubject,
     emailBody, setEmailBody,
     emailBijlagen, setEmailBijlagen,
+    emailExtraBijlagen, setEmailExtraBijlagen,
     emailScheduled, setEmailScheduled,
     emailScheduleDate, setEmailScheduleDate,
     emailScheduleTime, setEmailScheduleTime,

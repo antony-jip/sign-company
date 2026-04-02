@@ -26,6 +26,8 @@ export interface QuoteHeaderProps {
   selectedKlant: Klant | undefined
   isSaving: boolean
   selectedProjectId: string
+  verstuurdOp?: string
+  verstuurdNaar?: string
   versioning: {
     versieNummer: number
     showVersieHistorie: boolean
@@ -65,6 +67,8 @@ export function QuoteHeader({
   showActionsMenu,
   setShowActionsMenu,
   isDuplicating,
+  verstuurdOp,
+  verstuurdNaar,
   handleDownloadPdf,
   saveOfferte,
   handleVerstuurOfferte,
@@ -86,6 +90,12 @@ export function QuoteHeader({
               <span className="text-[13px] font-mono text-[#9B9B95] flex-shrink-0">{offerteNummer}</span>
               {versioning.versieNummer > 1 && (
                 <button onClick={() => versioning.setShowVersieHistorie(!versioning.showVersieHistorie)} className="text-[11px] font-mono text-[#6A5A8A] hover:underline flex-shrink-0">v{versioning.versieNummer}</button>
+              )}
+              {verstuurdOp && (
+                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#3A5A9A] bg-[#E8EEF9] px-2 py-0.5 rounded-full flex-shrink-0">
+                  <Mail className="h-2.5 w-2.5" />
+                  Verstuurd{verstuurdNaar ? ` naar ${verstuurdNaar}` : ''} · {new Date(verstuurdOp).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}
+                </span>
               )}
               {geldigTot && (() => {
                 const days = Math.floor((new Date(geldigTot).getTime() - Date.now()) / (1000 * 60 * 60 * 24))

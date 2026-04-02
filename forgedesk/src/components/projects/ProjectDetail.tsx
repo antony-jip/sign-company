@@ -1063,6 +1063,34 @@ export function ProjectDetail() {
             <PortaalCompactBlock projectId={id!} />
           </div>
 
+          {/* Verzonden emails */}
+          {(() => {
+            const verzonden = projectOffertes.filter(o => o.verstuurd_op && o.verstuurd_naar)
+            if (verzonden.length === 0) return null
+            return (
+              <div className="rounded-xl bg-white shadow-[0_1px_3px_rgba(0,0,0,0.03)] p-5">
+                <h3 className="text-[13px] font-bold text-[#1A1A1A] tracking-[-0.2px] mb-3 flex items-center gap-2">
+                  <Send className="h-3.5 w-3.5 text-[#9B9B95]" />
+                  Verzonden
+                  <span className="text-[10px] font-mono text-[#9B9B95] bg-[#F0EFEC] px-1.5 py-0.5 rounded-full">{verzonden.length}</span>
+                </h3>
+                <div className="space-y-2">
+                  {verzonden.slice(0, 5).map((o) => (
+                    <div key={`email-${o.id}`} className="flex items-center gap-3 text-[12px]">
+                      <div className="w-7 h-7 rounded-lg bg-[#E8EEF9] flex items-center justify-center flex-shrink-0">
+                        <Send className="h-3 w-3 text-[#3A5A9A]" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="font-medium text-[#1A1A1A] truncate">Offerte {o.nummer}</div>
+                        <div className="text-[#9B9B95] truncate">{o.verstuurd_naar} · {new Date(o.verstuurd_op!).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+          })()}
+
           {/* "Doen" suggestie */}
           {(() => {
             const allTasksDone = projectTaken.length > 0 && projectTaken.every(t => t.status === 'klaar')

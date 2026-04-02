@@ -349,11 +349,11 @@ export const WerkbonMonteurFeedback = React.memo(function WerkbonMonteurFeedback
 
       {/* Afronden knop — prominent onderaan */}
       {onAfronden && status !== 'afgerond' && !readOnly && (
-        <div className="bg-white rounded-xl border border-[#C5E0D0] p-4">
+        <div className="bg-white rounded-xl border border-[#F0EFEC] p-4">
           <button
             onClick={onAfronden}
             disabled={isSaving}
-            className="w-full py-3.5 rounded-xl text-[15px] font-bold text-white bg-[#2D6B48] hover:bg-[#256040] active:bg-[#1E5035] disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+            className="w-full py-3.5 rounded-xl text-[15px] font-bold text-white bg-[#F15025] hover:bg-[#E04520] active:bg-[#D03A18] disabled:opacity-50 transition-colors flex items-center justify-center gap-2 shadow-[0_2px_8px_rgba(241,80,37,0.25)]"
           >
             <ClipboardCheck className="h-5 w-5" />
             {isSaving ? 'Bezig met opslaan...' : 'Werkbon afronden'}
