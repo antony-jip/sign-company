@@ -471,7 +471,7 @@ export function Sidebar() {
 
       {/* Desktop sidebar */}
       <aside
-        className="hidden md:flex flex-col flex-shrink-0 h-screen doen-sidebar transition-[width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden"
+        className="hidden md:flex flex-col md:flex-shrink-0 h-screen doen-sidebar transition-[width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden"
         style={{ width: isCollapsed ? RAIL_WIDTH : EXPANDED_WIDTH }}
       >
         {sidebarContent(false)}

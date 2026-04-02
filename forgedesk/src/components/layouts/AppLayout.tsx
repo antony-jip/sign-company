@@ -51,7 +51,7 @@ export function AppLayout() {
     <>
       <div className="flex h-[100dvh] overflow-hidden bg-[#F8F7F5]">
         <Sidebar />
-        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <div className="flex-1 flex flex-col min-w-0 w-0 overflow-hidden">
           <OfflineBanner />
           <Header />
           <TabBar />
