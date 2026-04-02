@@ -122,16 +122,22 @@ export function QuoteHeader({
               <span className="hidden sm:inline">{isSaving ? 'Opslaan...' : 'Opslaan'}</span>
             </button>
             {/* Verstuur split button */}
-            <div className="relative">
-              <button onClick={handleVerstuurOfferte} disabled={isSaving} className="inline-flex items-center gap-1.5 h-9 px-5 text-sm font-semibold rounded-lg bg-[#F15025] text-white hover:bg-[#D94520] transition-colors disabled:opacity-50">
+            <div className="relative flex items-center">
+              <button onClick={handleVerstuurOfferte} disabled={isSaving} className="inline-flex items-center gap-1.5 h-9 px-5 text-sm font-semibold rounded-l-lg bg-[#F15025] text-white hover:bg-[#D94520] transition-colors disabled:opacity-50">
                 <Send className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">Verstuur</span>
-                <ChevronDown className="h-3 w-3 ml-0.5 opacity-70" />
+              </button>
+              <button
+                onClick={() => email.setShowVerstuurKeuze(!email.showVerstuurKeuze)}
+                disabled={isSaving}
+                className="inline-flex items-center h-9 px-1.5 text-sm font-semibold rounded-r-lg bg-[#D94520] text-white hover:bg-[#C03A18] transition-colors disabled:opacity-50 border-l border-white/20"
+              >
+                <ChevronDown className="h-3.5 w-3.5" />
               </button>
               {email.showVerstuurKeuze && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => email.setShowVerstuurKeuze(false)} />
-                  <div className="absolute right-0 top-full mt-1.5 z-50 w-72 bg-[#FFFFFF] rounded-xl border border-[#EBEBEB] shadow-[0_4px_20px_rgba(0,0,0,0.12)] overflow-hidden">
+                  <div className="absolute right-0 top-full mt-1.5 z-50 w-64 bg-[#FFFFFF] rounded-xl border border-[#EBEBEB] shadow-[0_4px_20px_rgba(0,0,0,0.12)] overflow-hidden">
                     <button
                       onClick={handleKeuzePortaal}
                       disabled={email.isSendingPortaal || !selectedProjectId}

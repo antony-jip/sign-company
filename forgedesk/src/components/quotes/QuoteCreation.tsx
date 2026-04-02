@@ -1398,24 +1398,7 @@ export function QuoteCreation() {
   // ── Email compose (extracted to hook) ──
   const email = useEmailCompose()
 
-  const handleVerstuurOfferte = async () => {
-    if (!user?.id || !selectedKlant) {
-      toast.error('Selecteer eerst een klant')
-      return
-    }
-    // Save first as concept
-    const quoteId = editOfferteId || autoSaveIdRef.current
-    if (!quoteId) {
-      toast.info('Offerte wordt eerst opgeslagen...')
-      await saveOfferte('concept')
-    }
-    // Toon de keuze dialog
-    email.setShowVerstuurKeuze(true)
-  }
-
-  const handleKeuzeEmail = () => {
-    email.setShowVerstuurKeuze(false)
-    // Pre-fill email fields
+  const openEmailCompose = () => {
     const selectedCp = selectedContactId
       ? selectedKlant?.contactpersonen?.find(c => c.id === selectedContactId)
       : selectedKlant?.contactpersonen?.[0]
@@ -1435,6 +1418,24 @@ export function QuoteCreation() {
     email.setEmailBcc('')
     email.setShowEmailCompose(true)
     setTimeout(() => email.emailSectionRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
+  }
+
+  const handleVerstuurOfferte = async () => {
+    if (!user?.id || !selectedKlant) {
+      toast.error('Selecteer eerst een klant')
+      return
+    }
+    const quoteId = editOfferteId || autoSaveIdRef.current
+    if (!quoteId) {
+      toast.info('Offerte wordt eerst opgeslagen...')
+      await saveOfferte('concept')
+    }
+    openEmailCompose()
+  }
+
+  const handleKeuzeEmail = () => {
+    email.setShowVerstuurKeuze(false)
+    openEmailCompose()
   }
 
   const handleKeuzePortaal = async () => {
