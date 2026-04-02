@@ -1586,6 +1586,7 @@ export function QuoteCreation() {
         handtekeningAfbeeldingGrootte: handtekeningAfbeeldingGrootte || undefined,
         logoUrl: profile?.logo_url || undefined,
         bekijkUrl,
+        customBody: email.emailBody || undefined,
       })
 
       // Genereer PDF bijlage

@@ -21,6 +21,7 @@ interface OfferteEmailData extends EmailTemplateData {
   totaalBedrag: string
   geldigTot: string
   bekijkUrl?: string
+  customBody?: string
 }
 
 interface FactuurEmailData extends EmailTemplateData {
@@ -227,7 +228,24 @@ export function offerteVerzendTemplate(data: OfferteEmailData): EmailResult {
       </p>`
     : ''
 
-  const bodyHtml = `
+  const customParagraphs = data.customBody
+    ? data.customBody.split('\n').filter(l => l.trim()).map(l => `<p style="margin: 0 0 12px 0;">${escapeHtml(l)}</p>`).join('\n    ')
+    : ''
+
+  const bodyHtml = data.customBody
+    ? `
+    ${customParagraphs}
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; margin: 16px 0; border: 1px solid #eeeeee; border-radius: 6px;">
+      <tr>
+        <td style="padding: 16px; font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #555555;">
+          <strong>Totaalbedrag:</strong> ${escapeHtml(data.totaalBedrag)}<br />
+          <strong>Geldig tot:</strong> ${escapeHtml(data.geldigTot)}
+        </td>
+      </tr>
+    </table>
+    ${buttonHtml}
+    ${acceptLinkHtml}`
+    : `
     <p style="margin: 0 0 16px 0;">Beste ${escapeHtml(data.klantNaam)},</p>
     <p style="margin: 0 0 16px 0;">
       Hierbij ontvangt u onze offerte <strong>${escapeHtml(data.offerteNummer)}</strong> voor
