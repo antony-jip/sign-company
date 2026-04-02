@@ -124,8 +124,9 @@ export function getBaseTemplate(data: EmailTemplateData): {
   const bedrijf = data.bedrijfsnaam || DEFAULT_BEDRIJFSNAAM
 
   const wrap = (bodyHtml: string, afmeldUrl?: string): string => {
-    const logoHtml = data.logoUrl
-      ? `<img src="${escapeHtml(data.logoUrl)}" alt="${escapeHtml(bedrijf)}" style="max-height: 48px; margin-bottom: 8px; display: block;" />`
+    const hasLogo = !!(data.logoUrl && data.logoUrl.trim())
+  const logoHtml = hasLogo
+      ? `<img src="${escapeHtml(data.logoUrl!)}" alt="${escapeHtml(bedrijf)}" style="max-height: 48px; margin-bottom: 8px; display: block;" />`
       : ''
 
     const sigImgHeight = data.handtekeningAfbeeldingGrootte ?? 64
@@ -177,7 +178,7 @@ export function getBaseTemplate(data: EmailTemplateData): {
           <tr>
             <td style="background-color: ${kleur}; padding: 24px 32px; text-align: center;">
               ${logoHtml}
-              ${!data.logoUrl ? `<span style="font-family: Arial, Helvetica, sans-serif; font-size: 22px; font-weight: bold; color: #ffffff;">
+              ${!hasLogo ? `<span style="font-family: Arial, Helvetica, sans-serif; font-size: 22px; font-weight: bold; color: #ffffff;">
                 ${escapeHtml(bedrijf)}
               </span>` : ''}
             </td>
