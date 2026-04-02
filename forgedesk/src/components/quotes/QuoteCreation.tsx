@@ -1411,7 +1411,7 @@ export function QuoteCreation() {
         ? introTekst
         : `Beste ${klantNaam},\n\nHierbij ontvangt u onze offerte voor "${offerteTitel}".\n\nMocht u vragen hebben of aanvullende informatie wensen, neem dan gerust contact met ons op.\n\nMet vriendelijke groet,`
     )
-    email.setEmailBijlagen([{ naam: `${offerteNummer}.pdf`, grootte: 0 }])
+    email.setEmailBijlagen([{ naam: `Offerte ${offerteNummer || 'concept'} - ${offerteTitel || 'offerte'}.pdf`, grootte: 0 }])
     email.setEmailScheduled(false)
     email.setEmailScheduleDate('')
     email.setEmailCc('')
@@ -1626,7 +1626,7 @@ export function QuoteCreation() {
             primaireKleur: primaireKleur || '#2563eb',
           }, documentStyle)
           const pdfBase64 = doc.output('datauristring').split(',')[1]
-          attachments = [{ filename: `${offerteNummer}.pdf`, content: pdfBase64, encoding: 'base64' as const }]
+          attachments = [{ filename: `Offerte ${offerteNummer || 'concept'} - ${offerteTitel || 'offerte'}.pdf`, content: pdfBase64, encoding: 'base64' as const }]
         } catch (pdfErr) {
           logger.error('PDF genereren mislukt, email wordt zonder bijlage verstuurd:', pdfErr)
           toast.warning('PDF kon niet gegenereerd worden — email wordt zonder bijlage verstuurd')
