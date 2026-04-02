@@ -174,8 +174,8 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     // Werkbon instellingen
     werkbonMonteurUren: settings.werkbon_monteur_uren ?? true,
     werkbonMonteurOpmerkingen: settings.werkbon_monteur_opmerkingen ?? true,
-    werkbonMonteurFotos: settings.werkbon_monteur_fotos ?? false,
-    werkbonKlantHandtekening: settings.werkbon_klant_handtekening ?? false,
+    werkbonMonteurFotos: settings.werkbon_monteur_fotos ?? true,
+    werkbonKlantHandtekening: settings.werkbon_klant_handtekening ?? true,
     werkbonBriefpapier: settings.werkbon_briefpapier ?? true,
     werkbonPrefix: settings.werkbon_prefix || 'WB',
     // Email

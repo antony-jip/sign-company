@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react'
-import { Camera, X, Pen, RotateCcw, Lock } from 'lucide-react'
+import { Camera, X, Pen, RotateCcw, Lock, Download } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -27,6 +27,7 @@ interface WerkbonMonteurFeedbackProps {
   onKlantNaamChange: (val: string) => void
   onHandtekeningChange: (data: string | undefined) => void
   onLightbox: (url: string) => void
+  onDownloadFotos?: () => void
 }
 
 export const WerkbonMonteurFeedback = React.memo(function WerkbonMonteurFeedback({
@@ -35,7 +36,7 @@ export const WerkbonMonteurFeedback = React.memo(function WerkbonMonteurFeedback
   urenGewerkt, monteurOpmerkingen, fotos,
   klantNaamGetekend, handtekeningData,
   onUrenChange, onOpmerkingenChange, onFotoToevoegen, onFotoVerwijderen,
-  onKlantNaamChange, onHandtekeningChange, onLightbox,
+  onKlantNaamChange, onHandtekeningChange, onLightbox, onDownloadFotos,
 }: WerkbonMonteurFeedbackProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fullscreenCanvasRef = useRef<HTMLCanvasElement>(null)
@@ -157,23 +158,35 @@ export const WerkbonMonteurFeedback = React.memo(function WerkbonMonteurFeedback
       {/* Foto's — prominent voor mobiel */}
       {showFotos && (
         <div className="bg-white rounded-xl border border-[#F0EFEC] p-4 space-y-4" ref={containerRef}>
-          <h3 className="text-[13px] font-bold text-[#1A1A1A] flex items-center gap-2">
-            <Camera className="h-4 w-4" /> Foto's
-            {readOnly && <Lock className="h-3 w-3 text-[#9B9B95]" />}
-          </h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-[13px] font-bold text-[#1A1A1A] flex items-center gap-2">
+              <Camera className="h-4 w-4" /> Foto's
+              {fotos.length > 0 && <span className="text-[11px] font-mono text-[#9B9B95]">{fotos.length}</span>}
+              {readOnly && <Lock className="h-3 w-3 text-[#9B9B95]" />}
+            </h3>
+            {fotos.length > 0 && onDownloadFotos && (
+              <button
+                onClick={onDownloadFotos}
+                className="hidden md:flex items-center gap-1.5 text-[12px] font-medium text-[#6B6B66] hover:text-[#1A1A1A] transition-colors"
+              >
+                <Download className="h-3.5 w-3.5" />
+                Download alle
+              </button>
+            )}
+          </div>
 
           {/* Grote camera knoppen — mobile-first */}
           {!readOnly && (
             <div className="grid grid-cols-2 gap-3">
               <label className="cursor-pointer">
-                <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => onFotoToevoegen(e, 'voor')} />
-                <div className="flex flex-col items-center justify-center gap-2 py-5 rounded-xl border-2 border-dashed border-[#1A535C]/20 bg-[#1A535C]/[0.03] hover:bg-[#1A535C]/[0.06] transition-colors">
+                <input type="file" accept="image/*" capture="environment" multiple className="hidden" onChange={(e) => onFotoToevoegen(e, 'voor')} />
+                <div className="flex flex-col items-center justify-center gap-2 py-5 rounded-xl border-2 border-dashed border-[#1A535C]/20 bg-[#1A535C]/[0.03] hover:bg-[#1A535C]/[0.06] active:bg-[#1A535C]/[0.10] transition-colors">
                   <Camera className="h-6 w-6 text-[#1A535C]" />
                   <span className="text-[13px] font-semibold text-[#1A535C]">Voor foto</span>
                 </div>
               </label>
               <label className="cursor-pointer">
-                <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => onFotoToevoegen(e, 'na')} />
+                <input type="file" accept="image/*" capture="environment" multiple className="hidden" onChange={(e) => onFotoToevoegen(e, 'na')} />
                 <div className="flex flex-col items-center justify-center gap-2 py-5 rounded-xl border-2 border-dashed border-[#F15025]/20 bg-[#F15025]/[0.03] hover:bg-[#F15025]/[0.06] transition-colors">
                   <Camera className="h-6 w-6 text-[#F15025]" />
                   <span className="text-[13px] font-semibold text-[#F15025]">Na foto</span>

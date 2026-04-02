@@ -412,31 +412,34 @@ export function WerkbonDetail() {
   // Foto toevoegen (monteur voor/na)
   const handleFotoToevoegen = useCallback(async (e: React.ChangeEvent<HTMLInputElement>, type: WerkbonFoto['type']) => {
     if (!werkbonId) { toast.error('Sla de werkbon eerst op'); return }
-    const file = e.target.files?.[0]
-    if (!file) return
-    if (!file.type.startsWith('image/')) { toast.error('Alleen afbeeldingen toegestaan'); return }
+    const files = Array.from(e.target.files || []).filter(f => f.type.startsWith('image/'))
+    if (files.length === 0) return
 
-    try {
-      const resized = await resizeImage(file, 1200)
-      const resizedFile = new File([resized], file.name, { type: 'image/jpeg' })
-      const storagePath = `werkbon-fotos/${werkbonId}/${Date.now()}-${file.name}`
-      const uploadedPath = await uploadFile(resizedFile, storagePath)
-      const displayUrl = await resolveUrl(uploadedPath)
+    let uploaded = 0
+    for (const file of files) {
+      try {
+        const resized = await resizeImage(file, 1200)
+        const resizedFile = new File([resized], file.name, { type: 'image/jpeg' })
+        const storagePath = `werkbon-fotos/${werkbonId}/${Date.now()}-${file.name}`
+        const uploadedPath = await uploadFile(resizedFile, storagePath)
+        const displayUrl = await resolveUrl(uploadedPath)
 
-      const foto = await createWerkbonFoto({
-        user_id: userId,
-        werkbon_id: werkbonId,
-        type,
-        url: uploadedPath,
-        omschrijving: file.name,
-      })
-      foto.url = displayUrl
-      setFotos((prev) => [...prev, foto])
-      toast.success('Foto toegevoegd')
-    } catch (err) {
-      console.error('Fout bij uploaden foto:', err)
-      toast.error('Fout bij uploaden foto')
+        const foto = await createWerkbonFoto({
+          user_id: userId,
+          werkbon_id: werkbonId,
+          type,
+          url: uploadedPath,
+          omschrijving: file.name,
+        })
+        foto.url = displayUrl
+        setFotos((prev) => [...prev, foto])
+        uploaded++
+      } catch (err) {
+        console.error('Fout bij uploaden foto:', err)
+      }
     }
+    if (uploaded > 0) toast.success(`${uploaded} foto${uploaded > 1 ? "'s" : ''} toegevoegd`)
+    else toast.error('Fout bij uploaden foto')
     e.target.value = ''
   }, [werkbonId, userId])
 
@@ -446,6 +449,33 @@ export function WerkbonDetail() {
     setFotos((prev) => prev.filter((f) => f.id !== fotoId))
     toast.success('Foto verwijderd')
   }, [])
+
+  const handleDownloadFotos = useCallback(async () => {
+    if (fotos.length === 0) return
+    try {
+      toast.info('Foto\'s worden voorbereid...')
+      const { buildZip } = await import('@/utils/zipBuilder')
+      const entries = await Promise.all(
+        fotos.map(async (foto, i) => {
+          const res = await fetch(foto.url)
+          const blob = await res.blob()
+          const ext = blob.type.includes('png') ? 'png' : 'jpg'
+          const prefix = foto.type === 'voor' ? 'voor' : foto.type === 'na' ? 'na' : 'overig'
+          return { name: `${prefix}-${i + 1}.${ext}`, data: new Uint8Array(await blob.arrayBuffer()) }
+        })
+      )
+      const zip = buildZip(entries)
+      const url = URL.createObjectURL(zip)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `werkbon-${werkbonNummer || 'fotos'}.zip`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      console.error('Fout bij downloaden fotos:', err)
+      toast.error('Kon foto\'s niet downloaden')
+    }
+  }, [fotos, werkbonNummer])
 
   // Monteur field handlers
   const handleUrenChange = useCallback((val: number | undefined) => {
@@ -755,6 +785,7 @@ export function WerkbonDetail() {
             onKlantNaamChange={handleKlantNaamChange}
             onHandtekeningChange={handleHandtekeningChange}
             onLightbox={setLightboxUrl}
+            onDownloadFotos={handleDownloadFotos}
           />
         </div>
       </div>
