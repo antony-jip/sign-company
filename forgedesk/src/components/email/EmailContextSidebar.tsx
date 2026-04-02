@@ -587,7 +587,7 @@ export function EmailContextSidebar({
   // ════════════════════════════════════════════
   return (
     <div className="w-[280px] border-l border-[#EBEBEB] bg-[#F8F7F5] flex-shrink-0 overflow-y-auto hidden xl:flex flex-col">
-      <div className="px-5 py-5 space-y-5 flex-1">
+      <div className="px-5 py-5 space-y-4 flex-1">
 
         {/* ── CONTACT SECTION ── */}
         {klantLoading ? (
@@ -596,47 +596,60 @@ export function EmailContextSidebar({
             <span className="text-[12px] text-[#9B9B95]">Contact zoeken...</span>
           </div>
         ) : linkedKlant ? (
-          /* ── Bekend contact ── */
-          <div>
-            <div className="flex items-start gap-3 mb-3">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-[13px] font-bold"
+          <div className="bg-white rounded-2xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 text-[14px] font-bold"
                 style={{ background: avatarStyle.bg, color: avatarStyle.text }}>
                 {avatarInitial}
               </div>
-              <div className="min-w-0 flex-1 pt-0.5">
+              <div className="min-w-0 flex-1">
                 <button
                   onClick={() => navigate(`/klanten/${linkedKlant.id}`)}
                   className="group flex items-center gap-1"
                 >
-                  <p className="text-[13px] font-semibold text-[#1A1A1A] group-hover:text-[#1A535C] transition-colors duration-150 truncate">
+                  <p className="text-[14px] font-bold text-[#1A1A1A] group-hover:text-[#1A535C] transition-colors truncate">
                     {linkedKlant.bedrijfsnaam || linkedKlant.contactpersoon}
                   </p>
                   <ExternalLink className="h-3 w-3 text-[#9B9B95] opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
                 </button>
                 {linkedKlant.bedrijfsnaam && linkedKlant.contactpersoon && (
-                  <p className="text-[12px] text-[#6B6B66] truncate mt-0.5">{linkedKlant.contactpersoon}</p>
+                  <p className="text-[12px] text-[#6B6B66] truncate">{linkedKlant.contactpersoon}</p>
                 )}
               </div>
             </div>
 
-            <div className="space-y-1.5 pl-[52px]">
-              {linkedKlant.telefoon && (
-                <p className="text-[12px] font-mono text-[#6B6B66]">{linkedKlant.telefoon}</p>
+            <div className="mt-3 pt-3 border-t border-[#F0EFEC] space-y-2">
+              {linkedKlant.email && (
+                <div className="flex items-center gap-2.5">
+                  <Mail className="h-3.5 w-3.5 text-[#9B9B95] flex-shrink-0" />
+                  <p className="text-[12px] text-[#6B6B66] truncate">{linkedKlant.email}</p>
+                </div>
               )}
-              <p className="text-[12px] text-[#9B9B95] truncate">{linkedKlant.email}</p>
+              {linkedKlant.telefoon && (
+                <div className="flex items-center gap-2.5">
+                  <Phone className="h-3.5 w-3.5 text-[#9B9B95] flex-shrink-0" />
+                  <p className="text-[12px] font-mono text-[#6B6B66]">{linkedKlant.telefoon}</p>
+                </div>
+              )}
+              {(linkedKlant.adres || linkedKlant.stad) && (
+                <div className="flex items-start gap-2.5">
+                  <Building2 className="h-3.5 w-3.5 text-[#9B9B95] flex-shrink-0 mt-0.5" />
+                  <p className="text-[12px] text-[#6B6B66]">{[linkedKlant.adres, linkedKlant.postcode, linkedKlant.stad].filter(Boolean).join(', ')}</p>
+                </div>
+              )}
             </div>
 
             {(projectCount > 0 || offerteCount > 0) && (
-              <div className="flex items-center gap-2 mt-3 pl-[52px]">
+              <div className="flex items-center gap-2 mt-3 pt-3 border-t border-[#F0EFEC]">
                 {projectCount > 0 && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] text-[#6B6B66] bg-[#F8F7F5]">
-                    <span className="font-mono font-semibold">{projectCount}</span>
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium text-[#1A535C] bg-[#1A535C]/[0.06]">
+                    <span className="font-mono font-bold">{projectCount}</span>
                     <span>{projectCount === 1 ? 'project' : 'projecten'}</span>
                   </span>
                 )}
                 {offerteCount > 0 && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] text-[#6B6B66] bg-[#F8F7F5]">
-                    <span className="font-mono font-semibold">{offerteCount}</span>
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium text-[#F15025] bg-[#F15025]/[0.06]">
+                    <span className="font-mono font-bold">{offerteCount}</span>
                     <span>{offerteCount === 1 ? 'offerte' : 'offertes'}</span>
                   </span>
                 )}
@@ -675,31 +688,34 @@ export function EmailContextSidebar({
         {/* ── QUICK ACTIONS ── */}
         {activePanel === 'none' && (
           <div>
-            <h3 className="text-[11px] uppercase tracking-wider text-[#9B9B95] font-medium mb-2">Acties</h3>
-            <div className="grid grid-cols-3 gap-1.5">
+            <h3 className="text-[11px] uppercase tracking-widest text-[#9B9B95] font-semibold mb-2.5">Acties</h3>
+            <div className="grid grid-cols-3 gap-2">
               <button
                 onClick={() => openPanel('klant')}
-                className="flex flex-col items-center justify-center gap-1.5 bg-white rounded-xl min-h-[44px] py-3 hover:bg-[#EBEBEB] transition-colors duration-150"
-                style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}
+                className="flex flex-col items-center justify-center gap-1.5 bg-white rounded-xl py-3 hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 border border-[#F0EFEC]"
               >
-                <UserPlus className="h-4 w-4 text-[#6B6B66]" />
-                <span className="text-[10px] text-[#6B6B66]">Klant</span>
+                <div className="w-8 h-8 rounded-lg bg-[#E8EEF9] flex items-center justify-center">
+                  <UserPlus className="h-4 w-4 text-[#3A5A9A]" />
+                </div>
+                <span className="text-[10px] font-medium text-[#6B6B66]">Klant</span>
               </button>
               <button
                 onClick={() => openPanel('project')}
-                className="flex flex-col items-center justify-center gap-1.5 bg-white rounded-xl min-h-[44px] py-3 hover:bg-[#EBEBEB] transition-colors duration-150"
-                style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}
+                className="flex flex-col items-center justify-center gap-1.5 bg-white rounded-xl py-3 hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 border border-[#F0EFEC]"
               >
-                <FolderPlus className="h-4 w-4 text-[#6B6B66]" />
-                <span className="text-[10px] text-[#6B6B66]">Project</span>
+                <div className="w-8 h-8 rounded-lg bg-[#E8F2EC] flex items-center justify-center">
+                  <FolderPlus className="h-4 w-4 text-[#3A7D52]" />
+                </div>
+                <span className="text-[10px] font-medium text-[#6B6B66]">Project</span>
               </button>
               <button
                 onClick={() => openPanel('taak')}
-                className="flex flex-col items-center justify-center gap-1.5 bg-white rounded-xl min-h-[44px] py-3 hover:bg-[#EBEBEB] transition-colors duration-150"
-                style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}
+                className="flex flex-col items-center justify-center gap-1.5 bg-white rounded-xl py-3 hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 border border-[#F0EFEC]"
               >
-                <ListPlus className="h-4 w-4 text-[#6B6B66]" />
-                <span className="text-[10px] text-[#6B6B66]">Taak</span>
+                <div className="w-8 h-8 rounded-lg bg-[#F5F2E8] flex items-center justify-center">
+                  <ListPlus className="h-4 w-4 text-[#8A7A4A]" />
+                </div>
+                <span className="text-[10px] font-medium text-[#6B6B66]">Taak</span>
               </button>
             </div>
           </div>
@@ -710,27 +726,28 @@ export function EmailContextSidebar({
 
         {/* ── HERINNERING ── */}
         <div>
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-[11px] uppercase tracking-wider text-[#9B9B95] font-medium">Herinnering</h3>
+          <div className="flex items-center justify-between mb-2.5">
+            <h3 className="text-[11px] uppercase tracking-widest text-[#9B9B95] font-semibold flex items-center gap-1.5">
+              <Clock className="h-3 w-3" /> Herinnering
+            </h3>
             {activeReminder && (
-              <button onClick={handleClearReminder} className="text-[#9B9B95] hover:text-[#1A1A1A] transition-colors duration-150">
-                <BellOff className="h-3 w-3" />
+              <button onClick={handleClearReminder} className="text-[#9B9B95] hover:text-[#C03A18] transition-colors duration-150">
+                <BellOff className="h-3.5 w-3.5" />
               </button>
             )}
           </div>
           {activeReminder ? (
-            <div className="flex items-center gap-2 bg-white rounded-lg px-3 py-2.5" style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.03)' }}>
-              <Bell className="h-3.5 w-3.5 text-[#1A535C]" />
-              <span className="text-[12px] text-[#1A535C] font-medium">{reminderOptions.find(r => r.value === activeReminder)?.label}</span>
+            <div className="flex items-center gap-2.5 bg-[#1A535C]/[0.06] rounded-xl px-3.5 py-2.5 border border-[#1A535C]/10">
+              <Bell className="h-4 w-4 text-[#1A535C]" />
+              <span className="text-[13px] text-[#1A535C] font-semibold">{reminderOptions.find(r => r.value === activeReminder)?.label}</span>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-1.5">
+            <div className="grid grid-cols-2 gap-2">
               {reminderOptions.map(opt => (
                 <button
                   key={opt.value}
                   onClick={() => handleSetReminder(opt.value)}
-                  className="bg-white rounded-lg min-h-[44px] py-2 text-[11px] text-[#6B6B66] hover:bg-[#EBEBEB] transition-colors duration-150 text-center flex items-center justify-center"
-                  style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}
+                  className="bg-white rounded-xl py-2.5 text-[12px] font-medium text-[#6B6B66] hover:text-[#1A535C] hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 text-center flex items-center justify-center border border-[#F0EFEC]"
                 >
                   {opt.label}
                 </button>
