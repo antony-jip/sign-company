@@ -179,14 +179,14 @@ export const WerkbonMonteurFeedback = React.memo(function WerkbonMonteurFeedback
           {!readOnly && (
             <div className="grid grid-cols-2 gap-3">
               <label className="cursor-pointer">
-                <input type="file" accept="image/*" capture="environment" multiple className="hidden" onChange={(e) => onFotoToevoegen(e, 'voor')} />
+                <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => onFotoToevoegen(e, 'voor')} />
                 <div className="flex flex-col items-center justify-center gap-2 py-5 rounded-xl border-2 border-dashed border-[#1A535C]/20 bg-[#1A535C]/[0.03] hover:bg-[#1A535C]/[0.06] active:bg-[#1A535C]/[0.10] transition-colors">
                   <Camera className="h-6 w-6 text-[#1A535C]" />
                   <span className="text-[13px] font-semibold text-[#1A535C]">Voor foto</span>
                 </div>
               </label>
               <label className="cursor-pointer">
-                <input type="file" accept="image/*" capture="environment" multiple className="hidden" onChange={(e) => onFotoToevoegen(e, 'na')} />
+                <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => onFotoToevoegen(e, 'na')} />
                 <div className="flex flex-col items-center justify-center gap-2 py-5 rounded-xl border-2 border-dashed border-[#F15025]/20 bg-[#F15025]/[0.03] hover:bg-[#F15025]/[0.06] transition-colors">
                   <Camera className="h-6 w-6 text-[#F15025]" />
                   <span className="text-[13px] font-semibold text-[#F15025]">Na foto</span>

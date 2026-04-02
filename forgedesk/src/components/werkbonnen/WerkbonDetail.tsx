@@ -772,7 +772,7 @@ export function WerkbonDetail() {
             showOpmerkingen={werkbonMonteurOpmerkingen}
             showFotos={werkbonMonteurFotos}
             showHandtekening={werkbonKlantHandtekening}
-            readOnly={status !== 'concept'}
+            readOnly={status === 'afgerond'}
             urenGewerkt={urenGewerkt}
             monteurOpmerkingen={monteurOpmerkingen}
             fotos={fotos}
