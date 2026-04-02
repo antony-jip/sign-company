@@ -273,14 +273,12 @@ export async function updateAppSettings(userId: string, updates: Partial<AppSett
       existing = data
     }
 
-    const defaults = getDefaultAppSettings(userId)
-    const merged = { ...(existing || defaults), ...updates, user_id: userId, updated_at: now(), ...(orgId ? { organisatie_id: orgId } : {}) }
+    const writePayload = { ...updates, user_id: userId, updated_at: now(), ...(orgId ? { organisatie_id: orgId } : {}) }
 
-    // Use update if row exists, insert if it doesn't
     if (existing?.id) {
       const { error } = await supabase
         .from('app_settings')
-        .update({ ...updates, updated_at: now(), ...(orgId ? { organisatie_id: orgId } : {}) })
+        .update(writePayload)
         .eq('id', existing.id)
       if (error) {
         console.error('[updateAppSettings] update failed:', error.code, error.message)
@@ -289,13 +287,15 @@ export async function updateAppSettings(userId: string, updates: Partial<AppSett
     } else {
       const { error } = await supabase
         .from('app_settings')
-        .insert(merged)
+        .insert(writePayload)
       if (error) {
         console.error('[updateAppSettings] insert failed:', error.code, error.message)
         throw error
       }
     }
-    return merged as AppSettings
+
+    const defaults = getDefaultAppSettings(userId)
+    return { ...(existing || defaults), ...writePayload } as AppSettings
   }
 
   const settings = getLocalData<AppSettings>('app_settings')
