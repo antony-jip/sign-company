@@ -202,12 +202,28 @@ export function getDefaultAppSettings(userId: string): AppSettings {
 export async function getAppSettings(userId: string): Promise<AppSettings> {
   assertId(userId, 'user_id')
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase
-      .from('app_settings')
-      .select('*')
-      .eq('user_id', userId)
-      .maybeSingle()
-    if (error) throw error
+    const orgId = await getOrgId()
+    let data: AppSettings | null = null
+
+    // Try org-based lookup first (matches RLS policy)
+    if (orgId) {
+      const res = await supabase
+        .from('app_settings')
+        .select('*')
+        .eq('organisatie_id', orgId)
+        .maybeSingle()
+      data = res.data
+    }
+    // Fallback: user_id lookup
+    if (!data) {
+      const res = await supabase
+        .from('app_settings')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle()
+      data = res.data
+    }
+
     return normalizeSidebarItems(data || getDefaultAppSettings(userId))
   }
   const settings = getLocalData<AppSettings>('app_settings')
@@ -235,28 +251,49 @@ function normalizeSidebarItems(settings: AppSettings): AppSettings {
 export async function updateAppSettings(userId: string, updates: Partial<AppSettings>): Promise<AppSettings> {
   assertId(userId, 'user_id')
   if (isSupabaseConfigured() && supabase) {
-    const { data: existing } = await supabase
-      .from('app_settings')
-      .select('*')
-      .eq('user_id', userId)
-      .maybeSingle()
+    const orgId = await getOrgId()
+
+    // First try: select with org filter (matches RLS policy)
+    let existing: AppSettings | null = null
+    if (orgId) {
+      const { data } = await supabase
+        .from('app_settings')
+        .select('*')
+        .eq('organisatie_id', orgId)
+        .maybeSingle()
+      existing = data
+    }
+    // Fallback: select by user_id (for rows not yet migrated to org)
+    if (!existing) {
+      const { data } = await supabase
+        .from('app_settings')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle()
+      existing = data
+    }
 
     const defaults = getDefaultAppSettings(userId)
-    const orgId = await getOrgId()
     const merged = { ...(existing || defaults), ...updates, user_id: userId, updated_at: now(), ...(orgId ? { organisatie_id: orgId } : {}) }
 
-    const { error } = await supabase
-      .from('app_settings')
-      .upsert(merged, { onConflict: 'user_id' })
-    if (error) {
-      console.error('[updateAppSettings] Supabase upsert failed:', {
-        code: error.code,
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        sentFields: Object.keys(merged),
-      })
-      throw error
+    // Use update if row exists, insert if it doesn't
+    if (existing?.id) {
+      const { error } = await supabase
+        .from('app_settings')
+        .update({ ...updates, updated_at: now(), ...(orgId ? { organisatie_id: orgId } : {}) })
+        .eq('id', existing.id)
+      if (error) {
+        console.error('[updateAppSettings] update failed:', error.code, error.message)
+        throw error
+      }
+    } else {
+      const { error } = await supabase
+        .from('app_settings')
+        .insert(merged)
+      if (error) {
+        console.error('[updateAppSettings] insert failed:', error.code, error.message)
+        throw error
+      }
     }
     return merged as AppSettings
   }
