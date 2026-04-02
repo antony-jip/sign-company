@@ -54,7 +54,7 @@ interface EmailResult {
 // Defaults
 // ---------------------------------------------------------------------------
 
-const DEFAULT_KLEUR = '#2941aa'
+const DEFAULT_KLEUR = '#1A535C'
 const DEFAULT_BEDRIJFSNAAM = 'Ons Bedrijf'
 
 // ---------------------------------------------------------------------------
