@@ -11,6 +11,7 @@ async function getDOMPurify() {
   return _DOMPurify
 }
 import { Button } from '@/components/ui/button'
+import { AIContentEditableToolbar } from '@/components/ui/AIContentEditableToolbar'
 import {
   ArrowLeft, Trash2, Star, Archive, MailOpen,
   ChevronUp, ChevronDown, Reply, ReplyAll, Forward,
@@ -426,6 +427,7 @@ export function EmailReader({
                 }
               }}
             />
+            <AIContentEditableToolbar editorRef={editorRef} />
 
             {/* ─── Toolbar (inline, under signature) ─── */}
             <div className="flex items-center justify-between px-5 py-2.5 border-t border-b border-[#F0EFEC] bg-[#F8F7F5]">
@@ -547,13 +549,21 @@ export function EmailReader({
               <span>Samenvatten</span>
             </Button>
             <button
-              className="h-8 px-4 rounded-lg text-[13px] font-semibold text-white bg-[#F15025] shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_12px_rgba(241,80,37,0.35)] transition-all flex items-center gap-1.5 disabled:opacity-50"
+              className="h-8 px-4 rounded-lg text-[13px] font-semibold text-white bg-[#1A535C] shadow-[0_2px_8px_rgba(26,83,92,0.25)] hover:shadow-[0_4px_12px_rgba(26,83,92,0.35)] transition-all flex items-center gap-1.5"
+              onClick={() => handleReply('reply')}
+              title="Beantwoorden"
+            >
+              <Reply className="h-3.5 w-3.5" />
+              <span>Beantwoorden</span>
+            </button>
+            <button
+              className="h-8 px-3 rounded-lg text-[13px] font-medium text-[#F15025] bg-[#FDE8E2] hover:bg-[#FCD5CC] transition-all flex items-center gap-1.5 disabled:opacity-50"
               onClick={handleGenerateReplyFromReader}
               disabled={forgieLoading}
-              title="Antwoord genereren (⌘⇧R)"
+              title="Daan schrijft antwoord (⌘⇧R)"
             >
-              {forgieLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Reply className="h-3.5 w-3.5" />}
-              <span>Beantwoorden</span>
+              {forgieLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+              <span className="hidden sm:inline">Daan</span>
             </button>
             {emailIndex !== undefined && emailTotal !== undefined && (
               <>
