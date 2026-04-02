@@ -85,7 +85,11 @@ import {
   getGrootboek,
   getKostenplaatsen,
   getWerkbonnenByKlant,
+  getWerkbon,
+  getWerkbonItems,
+  getWerkbonFotos,
 } from '@/services/supabaseService'
+import { generateWerkbonInstructiePDF } from '@/services/werkbonPdfService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import type { Klant, Factuur, FactuurItem, Offerte, OfferteItem, HerinneringTemplate, Project, Grootboek, Kostenplaats, Werkbon } from '@/types'
@@ -1069,6 +1073,45 @@ export function FactuurEditor() {
         toast.warning('PDF bijlage kon niet gegenereerd worden — email wordt zonder bijlage verstuurd')
       }
 
+      // Werkbon PDF als extra bijlage (als gekoppeld)
+      if (werkbonId && attachments) {
+        try {
+          const wb = await getWerkbon(werkbonId)
+          const wbItems = await getWerkbonItems(wb.id)
+          const wbFotos = await getWerkbonFotos(wb.id)
+          const project = projecten.find(p => p.id === projectId)
+          const bedrijfsProfiel = { ...profile, primaireKleur }
+          const wbDoc = generateWerkbonInstructiePDF(
+            {
+              werkbon_nummer: wb.werkbon_nummer,
+              titel: wb.titel,
+              datum: wb.datum,
+              locatie_adres: wb.locatie_adres,
+              locatie_stad: wb.locatie_stad,
+              locatie_postcode: wb.locatie_postcode,
+              contact_naam: wb.contact_naam,
+              contact_telefoon: wb.contact_telefoon,
+              toon_briefpapier: wb.toon_briefpapier ?? true,
+              status: wb.status,
+              uren_gewerkt: wb.uren_gewerkt,
+              monteur_opmerkingen: wb.monteur_opmerkingen,
+              klant_handtekening: wb.klant_handtekening,
+              klant_naam_getekend: wb.klant_naam_getekend,
+            },
+            wbItems,
+            selectedKlant,
+            project?.naam || '',
+            bedrijfsProfiel,
+            documentStyle,
+            { fotos: wbFotos }
+          )
+          const wbBase64 = wbDoc.output('datauristring').split(',')[1]
+          attachments.push({ filename: `Werkbon-${wb.werkbon_nummer}.pdf`, content: wbBase64, encoding: 'base64' })
+        } catch (wbErr) {
+          logger.warn('Werkbon PDF bijlage mislukt:', wbErr)
+        }
+      }
+
       await sendEmail(selectedKlant.email, subject, '', { html, attachments })
 
       const updated = await updateFactuur(existingFactuur.id, { status: 'verzonden' })
@@ -1087,7 +1130,7 @@ export function FactuurEditor() {
     } finally {
       setIsSending(false)
     }
-  }, [existingFactuur, selectedKlant, nummer, titel, totaal, vervaldatum, bedrijfsnaam, primaireKleur, emailHandtekening, profile, factuurdatum, subtotaal, btwBedrag, notities, voorwaarden, validItems, isCreditFactuur, documentStyle])
+  }, [existingFactuur, selectedKlant, nummer, titel, totaal, vervaldatum, bedrijfsnaam, primaireKleur, emailHandtekening, profile, factuurdatum, subtotaal, btwBedrag, notities, voorwaarden, validItems, isCreditFactuur, documentStyle, werkbonId, projecten, projectId])
 
   // ============ MARK AS PAID ============
 
@@ -1684,25 +1727,38 @@ export function FactuurEditor() {
               {werkbonnen.length > 0 && (
                 <div>
                   <Label className="text-xs">Werkbon meesturen</Label>
-                  <Select
-                    value={werkbonId || '_geen'}
-                    onValueChange={(val) => setWerkbonId(val === '_geen' ? '' : val)}
-                  >
-                    <SelectTrigger className="text-sm">
-                      <SelectValue placeholder="Geen werkbon" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="_geen">Geen werkbon</SelectItem>
-                      {werkbonnen.map((wb) => (
-                        <SelectItem key={wb.id} value={wb.id}>
-                          <span className="flex items-center gap-2">
-                            <ClipboardCheck className="h-3 w-3" />
-                            {wb.werkbon_nummer}{wb.titel ? ` — ${wb.titel}` : ''} ({wb.status})
-                          </span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="flex items-center gap-2">
+                    <Select
+                      value={werkbonId || '_geen'}
+                      onValueChange={(val) => setWerkbonId(val === '_geen' ? '' : val)}
+                    >
+                      <SelectTrigger className="text-sm flex-1">
+                        <SelectValue placeholder="Geen werkbon" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="_geen">Geen werkbon</SelectItem>
+                        {werkbonnen.map((wb) => (
+                          <SelectItem key={wb.id} value={wb.id}>
+                            <span className="flex items-center gap-2">
+                              <ClipboardCheck className="h-3 w-3" />
+                              {wb.werkbon_nummer}{wb.titel ? ` — ${wb.titel}` : ''} ({wb.status})
+                            </span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {werkbonId && (
+                      <a
+                        href={`/werkbonnen/${werkbonId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-[#1A535C] hover:underline whitespace-nowrap"
+                      >
+                        Bekijk
+                      </a>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-[#9B9B95] mt-1">Werkbon PDF wordt als bijlage meegestuurd bij de factuur email</p>
                 </div>
               )}
               {isCreditFactuur && creditVoorNummer && (
