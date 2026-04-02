@@ -120,9 +120,6 @@ const settingsSections: SettingsSection[] = [
   { id: 'daan-ai', label: 'Daan AI', icon: Sparkles, tabs: [
     { id: 'forgie', label: 'Daan AI', icon: Sparkles },
   ]},
-  { id: 'kennisbank', label: 'Kennisbank', icon: BookOpen, tabs: [
-    { id: 'kb-artikelen', label: 'Artikelen', icon: BookOpen },
-  ]},
   { id: 'whats-new', label: "What's new", icon: Sparkles, tabs: [
     { id: 'changelog', label: "What's new", icon: Sparkles },
   ]},
