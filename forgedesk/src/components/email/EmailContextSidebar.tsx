@@ -727,8 +727,9 @@ export function EmailContextSidebar({
         {/* ── HERINNERING ── */}
         <div>
           <div className="flex items-center justify-between mb-2.5">
-            <h3 className="text-[11px] uppercase tracking-widest text-[#9B9B95] font-semibold flex items-center gap-1.5">
+            <h3 className="text-[11px] uppercase tracking-widest text-[#9B9B95] font-semibold flex items-center gap-1.5" title="Zet een herinnering om later op deze email terug te komen. Je krijgt een melding op het ingestelde moment.">
               <Clock className="h-3 w-3" /> Herinnering
+              <span className="w-3.5 h-3.5 rounded-full bg-[#F0EFEC] text-[#9B9B95] text-[9px] font-bold flex items-center justify-center cursor-help">i</span>
             </h3>
             {activeReminder && (
               <button onClick={handleClearReminder} className="text-[#9B9B95] hover:text-[#C03A18] transition-colors duration-150">
