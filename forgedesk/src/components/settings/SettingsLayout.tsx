@@ -30,6 +30,7 @@ import {
   Tag,
   Sparkles,
   Bell,
+  Building2,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -80,6 +81,7 @@ interface SettingsSection {
 const settingsSections: SettingsSection[] = [
   { id: 'algemeen', label: 'Algemeen', icon: Home, tabs: [
     { id: 'profiel', label: 'Profiel', icon: FileText },
+    { id: 'bedrijf', label: 'Bedrijf', icon: Building2 },
     { id: 'weergave', label: 'Voorkeuren', icon: Sliders },
   ]},
   { id: 'gebruikers', label: 'Gebruikers', icon: Users, tabs: [
