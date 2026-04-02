@@ -1,26 +1,25 @@
-import React, { useState, useCallback, useRef } from 'react'
-import { Camera, X, Pen, RotateCcw, Maximize2 } from 'lucide-react'
+import React, { useState, useCallback, useRef, useEffect } from 'react'
+import { Camera, X, Pen, RotateCcw, Lock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { cn } from '@/lib/utils'
 import type { WerkbonFoto } from '@/types'
 
 interface WerkbonMonteurFeedbackProps {
-  // Visibility toggles
   showUren: boolean
   showOpmerkingen: boolean
   showFotos: boolean
   showHandtekening: boolean
-  // Values
+  readOnly?: boolean
   urenGewerkt: number | undefined
   monteurOpmerkingen: string
   fotos: WerkbonFoto[]
   klantNaamGetekend: string
   handtekeningData: string | undefined
-  // Callbacks
   onUrenChange: (val: number | undefined) => void
   onOpmerkingenChange: (val: string) => void
   onFotoToevoegen: (e: React.ChangeEvent<HTMLInputElement>, type: WerkbonFoto['type']) => void
@@ -32,186 +31,343 @@ interface WerkbonMonteurFeedbackProps {
 
 export const WerkbonMonteurFeedback = React.memo(function WerkbonMonteurFeedback({
   showUren, showOpmerkingen, showFotos, showHandtekening,
+  readOnly = false,
   urenGewerkt, monteurOpmerkingen, fotos,
   klantNaamGetekend, handtekeningData,
   onUrenChange, onOpmerkingenChange, onFotoToevoegen, onFotoVerwijderen,
   onKlantNaamChange, onHandtekeningChange, onLightbox,
 }: WerkbonMonteurFeedbackProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const fullscreenCanvasRef = useRef<HTMLCanvasElement>(null)
   const [isDrawing, setIsDrawing] = useState(false)
   const [isEditingSignature, setIsEditingSignature] = useState(!handtekeningData)
+  const [fullscreenSignature, setFullscreenSignature] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  const getCoords = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>, canvas: HTMLCanvasElement) => {
+    const rect = canvas.getBoundingClientRect()
+    const scaleX = canvas.width / rect.width
+    const scaleY = canvas.height / rect.height
+    if ('touches' in e) {
+      return { x: (e.touches[0].clientX - rect.left) * scaleX, y: (e.touches[0].clientY - rect.top) * scaleY }
+    }
+    return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY }
+  }
 
   const startDraw = useCallback((e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current
-    if (!canvas) return
+    const canvas = e.currentTarget
     setIsDrawing(true)
     const ctx = canvas.getContext('2d')
     if (!ctx) return
-    const rect = canvas.getBoundingClientRect()
-    const x = 'touches' in e ? e.touches[0].clientX - rect.left : e.clientX - rect.left
-    const y = 'touches' in e ? e.touches[0].clientY - rect.top : e.clientY - rect.top
+    const { x, y } = getCoords(e, canvas)
     ctx.beginPath()
     ctx.moveTo(x, y)
   }, [])
 
   const draw = useCallback((e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     if (!isDrawing) return
-    const canvas = canvasRef.current
-    if (!canvas) return
+    const canvas = e.currentTarget
     const ctx = canvas.getContext('2d')
     if (!ctx) return
-    const rect = canvas.getBoundingClientRect()
-    const x = 'touches' in e ? e.touches[0].clientX - rect.left : e.clientX - rect.left
-    const y = 'touches' in e ? e.touches[0].clientY - rect.top : e.clientY - rect.top
-    ctx.lineWidth = 2
+    const { x, y } = getCoords(e, canvas)
+    ctx.lineWidth = 2.5
     ctx.lineCap = 'round'
+    ctx.lineJoin = 'round'
     ctx.strokeStyle = '#000'
     ctx.lineTo(x, y)
     ctx.stroke()
   }, [isDrawing])
 
-  const endDraw = useCallback(() => {
+  const endDraw = useCallback((e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     setIsDrawing(false)
-    const canvas = canvasRef.current
-    if (canvas) onHandtekeningChange(canvas.toDataURL('image/png'))
+    const canvas = e.currentTarget
+    onHandtekeningChange(canvas.toDataURL('image/png'))
   }, [onHandtekeningChange])
 
+  const clearCanvas = useCallback((canvas: HTMLCanvasElement | null) => {
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height)
+  }, [])
+
   const clearSignature = useCallback(() => {
-    const canvas = canvasRef.current
-    if (canvas) {
-      const ctx = canvas.getContext('2d')
-      if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height)
-    }
+    clearCanvas(canvasRef.current)
+    clearCanvas(fullscreenCanvasRef.current)
     onHandtekeningChange(undefined)
     setIsEditingSignature(true)
+  }, [onHandtekeningChange, clearCanvas])
+
+  const handleFullscreenDone = useCallback(() => {
+    const canvas = fullscreenCanvasRef.current
+    if (canvas) {
+      const data = canvas.toDataURL('image/png')
+      onHandtekeningChange(data)
+      setIsEditingSignature(false)
+    }
+    setFullscreenSignature(false)
   }, [onHandtekeningChange])
+
+  useEffect(() => {
+    if (fullscreenSignature && fullscreenCanvasRef.current) {
+      const ctx = fullscreenCanvasRef.current.getContext('2d')
+      if (ctx) ctx.clearRect(0, 0, fullscreenCanvasRef.current.width, fullscreenCanvasRef.current.height)
+    }
+  }, [fullscreenSignature])
 
   if (!showUren && !showOpmerkingen && !showFotos && !showHandtekening) return null
 
+  const voorFotos = fotos.filter(f => f.type === 'voor')
+  const naFotos = fotos.filter(f => f.type === 'na')
+  const overigFotos = fotos.filter(f => f.type === 'overig')
+
   return (
     <>
+      {/* Uren */}
       {showUren && (
-        <Card>
-          <CardHeader><CardTitle className="text-base">Uren gewerkt</CardTitle></CardHeader>
-          <CardContent>
-            <Input
-              type="number"
-              min={0}
-              step={0.25}
-              defaultValue={urenGewerkt ?? ''}
-              onBlur={(e) => onUrenChange(e.target.value ? Number(e.target.value) : undefined)}
-              placeholder="Bijv. 4.5"
-              className="max-w-[200px] font-mono"
-            />
-          </CardContent>
-        </Card>
+        <div className="bg-white rounded-xl border border-[#F0EFEC] p-4">
+          <h3 className="text-[13px] font-bold text-[#1A1A1A] mb-2">Uren gewerkt</h3>
+          <Input
+            type="number"
+            min={0}
+            step={0.25}
+            defaultValue={urenGewerkt ?? ''}
+            onBlur={(e) => onUrenChange(e.target.value ? Number(e.target.value) : undefined)}
+            placeholder="Bijv. 4.5"
+            className="max-w-[200px] font-mono text-base h-11"
+            disabled={readOnly}
+          />
+        </div>
       )}
 
+      {/* Opmerkingen */}
       {showOpmerkingen && (
-        <Card>
-          <CardHeader><CardTitle className="text-base">Opmerkingen monteur</CardTitle></CardHeader>
-          <CardContent>
-            <Textarea
-              defaultValue={monteurOpmerkingen}
-              onBlur={(e) => onOpmerkingenChange(e.target.value)}
-              placeholder="Bijzonderheden, problemen, opmerkingen..."
-              rows={3}
-            />
-          </CardContent>
-        </Card>
+        <div className="bg-white rounded-xl border border-[#F0EFEC] p-4">
+          <h3 className="text-[13px] font-bold text-[#1A1A1A] mb-2">Opmerkingen monteur</h3>
+          <Textarea
+            defaultValue={monteurOpmerkingen}
+            onBlur={(e) => onOpmerkingenChange(e.target.value)}
+            placeholder="Bijzonderheden, problemen, opmerkingen..."
+            rows={3}
+            className="text-base"
+            disabled={readOnly}
+          />
+        </div>
       )}
 
+      {/* Foto's — prominent voor mobiel */}
       {showFotos && (
-        <Card>
-          <CardHeader><CardTitle className="text-base flex items-center gap-2"><Camera className="h-4 w-4" /> Foto's monteur</CardTitle></CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex gap-2">
+        <div className="bg-white rounded-xl border border-[#F0EFEC] p-4 space-y-4" ref={containerRef}>
+          <h3 className="text-[13px] font-bold text-[#1A1A1A] flex items-center gap-2">
+            <Camera className="h-4 w-4" /> Foto's
+            {readOnly && <Lock className="h-3 w-3 text-[#9B9B95]" />}
+          </h3>
+
+          {/* Grote camera knoppen — mobile-first */}
+          {!readOnly && (
+            <div className="grid grid-cols-2 gap-3">
               <label className="cursor-pointer">
-                <input type="file" accept="image/*" className="hidden" onChange={(e) => onFotoToevoegen(e, 'voor')} />
-                <Button variant="outline" size="sm" asChild><span><Camera className="h-4 w-4 mr-1" /> Voor foto</span></Button>
+                <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => onFotoToevoegen(e, 'voor')} />
+                <div className="flex flex-col items-center justify-center gap-2 py-5 rounded-xl border-2 border-dashed border-[#1A535C]/20 bg-[#1A535C]/[0.03] hover:bg-[#1A535C]/[0.06] transition-colors">
+                  <Camera className="h-6 w-6 text-[#1A535C]" />
+                  <span className="text-[13px] font-semibold text-[#1A535C]">Voor foto</span>
+                </div>
               </label>
               <label className="cursor-pointer">
-                <input type="file" accept="image/*" className="hidden" onChange={(e) => onFotoToevoegen(e, 'na')} />
-                <Button variant="outline" size="sm" asChild><span><Camera className="h-4 w-4 mr-1" /> Na foto</span></Button>
+                <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => onFotoToevoegen(e, 'na')} />
+                <div className="flex flex-col items-center justify-center gap-2 py-5 rounded-xl border-2 border-dashed border-[#F15025]/20 bg-[#F15025]/[0.03] hover:bg-[#F15025]/[0.06] transition-colors">
+                  <Camera className="h-6 w-6 text-[#F15025]" />
+                  <span className="text-[13px] font-semibold text-[#F15025]">Na foto</span>
+                </div>
               </label>
             </div>
-            {fotos.length > 0 && (
-              <div className="grid grid-cols-3 gap-2">
-                {fotos.map((foto) => (
-                  <div key={foto.id} className="relative group rounded-lg overflow-hidden border">
+          )}
+
+          {/* Voor foto's */}
+          {voorFotos.length > 0 && (
+            <div>
+              <div className="text-[11px] font-semibold text-[#9B9B95] uppercase tracking-widest mb-2">Voor</div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {voorFotos.map((foto) => (
+                  <div key={foto.id} className="relative group rounded-xl overflow-hidden border border-[#F0EFEC]">
                     <img src={foto.url} alt={foto.omschrijving || ''} className="w-full aspect-[4/3] object-cover cursor-pointer" onClick={() => onLightbox(foto.url)} />
-                    <div className="absolute top-1 left-1">
-                      <Badge variant="secondary" className="text-2xs">{foto.type === 'voor' ? 'Voor' : foto.type === 'na' ? 'Na' : 'Overig'}</Badge>
-                    </div>
-                    <Button
-                      variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100"
-                      onClick={() => onFotoVerwijderen(foto.id)}
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
+                    {!readOnly && (
+                      <button
+                        className="absolute top-1.5 right-1.5 h-7 w-7 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 md:opacity-0 active:opacity-100 transition-opacity"
+                        onClick={() => onFotoVerwijderen(foto.id)}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </div>
+          )}
+
+          {/* Na foto's */}
+          {naFotos.length > 0 && (
+            <div>
+              <div className="text-[11px] font-semibold text-[#9B9B95] uppercase tracking-widest mb-2">Na</div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {naFotos.map((foto) => (
+                  <div key={foto.id} className="relative group rounded-xl overflow-hidden border border-[#F0EFEC]">
+                    <img src={foto.url} alt={foto.omschrijving || ''} className="w-full aspect-[4/3] object-cover cursor-pointer" onClick={() => onLightbox(foto.url)} />
+                    {!readOnly && (
+                      <button
+                        className="absolute top-1.5 right-1.5 h-7 w-7 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 active:opacity-100 transition-opacity"
+                        onClick={() => onFotoVerwijderen(foto.id)}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Overig foto's */}
+          {overigFotos.length > 0 && (
+            <div>
+              <div className="text-[11px] font-semibold text-[#9B9B95] uppercase tracking-widest mb-2">Overig</div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {overigFotos.map((foto) => (
+                  <div key={foto.id} className="relative group rounded-xl overflow-hidden border border-[#F0EFEC]">
+                    <img src={foto.url} alt={foto.omschrijving || ''} className="w-full aspect-[4/3] object-cover cursor-pointer" onClick={() => onLightbox(foto.url)} />
+                    {!readOnly && (
+                      <button
+                        className="absolute top-1.5 right-1.5 h-7 w-7 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 active:opacity-100 transition-opacity"
+                        onClick={() => onFotoVerwijderen(foto.id)}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {fotos.length === 0 && readOnly && (
+            <p className="text-sm text-[#9B9B95] italic">Geen foto's toegevoegd</p>
+          )}
+        </div>
       )}
 
+      {/* Handtekening klant */}
       {showHandtekening && (
-        <Card>
-          <CardHeader><CardTitle className="text-base">Handtekening klant</CardTitle></CardHeader>
-          <CardContent className="space-y-3">
+        <div className="bg-white rounded-xl border border-[#F0EFEC] p-4 space-y-3">
+          <h3 className="text-[13px] font-bold text-[#1A1A1A] flex items-center gap-2">
+            <Pen className="h-4 w-4" /> Handtekening klant
+            {readOnly && <Lock className="h-3 w-3 text-[#9B9B95]" />}
+          </h3>
+
+          <div>
+            <Label className="text-[12px] text-[#6B6B66]">Naam</Label>
+            <Input
+              defaultValue={klantNaamGetekend}
+              onBlur={(e) => onKlantNaamChange(e.target.value)}
+              placeholder="Naam ondertekenaar"
+              className="max-w-full text-base h-11"
+              disabled={readOnly}
+            />
+          </div>
+
+          {readOnly && handtekeningData ? (
             <div>
-              <Label>Naam</Label>
-              <Input
-                defaultValue={klantNaamGetekend}
-                onBlur={(e) => onKlantNaamChange(e.target.value)}
-                placeholder="Naam ondertekenaar"
-                className="max-w-[300px]"
+              <img src={handtekeningData} alt="Handtekening" className="border rounded-xl bg-[#F8F7F5] w-full max-w-[400px]" />
+            </div>
+          ) : readOnly && !handtekeningData ? (
+            <p className="text-sm text-[#9B9B95] italic">Nog niet ondertekend</p>
+          ) : handtekeningData && !isEditingSignature ? (
+            <div className="space-y-2">
+              <img src={handtekeningData} alt="Handtekening" className="border rounded-xl bg-[#F8F7F5] w-full max-w-[400px]" />
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" className="h-10 px-4 text-[13px]" onClick={() => setIsEditingSignature(true)}>
+                  <Pen className="h-3.5 w-3.5 mr-1.5" /> Bewerken
+                </Button>
+                <Button variant="outline" size="sm" className="h-10 px-4 text-[13px]" onClick={clearSignature}>
+                  <RotateCcw className="h-3.5 w-3.5 mr-1.5" /> Wissen
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {/* Inline canvas */}
+              <canvas
+                ref={canvasRef}
+                width={600}
+                height={200}
+                className="border rounded-xl bg-[#F8F7F5] cursor-crosshair touch-none w-full"
+                style={{ maxWidth: '100%', height: 'auto', aspectRatio: '3/1' }}
+                onMouseDown={startDraw}
+                onMouseMove={draw}
+                onMouseUp={endDraw}
+                onMouseLeave={endDraw}
+                onTouchStart={startDraw}
+                onTouchMove={draw}
+                onTouchEnd={endDraw}
+              />
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" className="h-10 px-4 text-[13px]" onClick={clearSignature}>
+                  <RotateCcw className="h-3.5 w-3.5 mr-1.5" /> Wissen
+                </Button>
+                <Button
+                  variant="outline" size="sm" className="h-10 px-4 text-[13px] md:hidden"
+                  onClick={() => setFullscreenSignature(true)}
+                >
+                  Volledig scherm
+                </Button>
+                {handtekeningData && (
+                  <Button variant="default" size="sm" className="h-10 px-4 text-[13px]" onClick={() => setIsEditingSignature(false)}>
+                    Klaar
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Fullscreen signature modal — mobiel */}
+      <Dialog open={fullscreenSignature} onOpenChange={setFullscreenSignature}>
+        <DialogContent className="max-w-[100vw] max-h-[100dvh] w-screen h-[100dvh] p-0 rounded-none border-none">
+          <div className="flex flex-col h-full bg-white">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-[#F0EFEC]">
+              <h3 className="text-[15px] font-bold text-[#1A1A1A]">Ondertekenen</h3>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" className="h-10" onClick={() => {
+                  clearCanvas(fullscreenCanvasRef.current)
+                }}>
+                  <RotateCcw className="h-4 w-4" />
+                </Button>
+                <Button size="sm" className="h-10 px-5" onClick={handleFullscreenDone}>
+                  Klaar
+                </Button>
+              </div>
+            </div>
+            <div className="flex-1 p-4">
+              <canvas
+                ref={fullscreenCanvasRef}
+                width={1200}
+                height={600}
+                className="border-2 border-dashed border-[#C0BDB8] rounded-2xl bg-[#F8F7F5] cursor-crosshair touch-none w-full h-full"
+                style={{ maxWidth: '100%', maxHeight: '100%' }}
+                onMouseDown={startDraw}
+                onMouseMove={draw}
+                onMouseUp={endDraw}
+                onMouseLeave={endDraw}
+                onTouchStart={startDraw}
+                onTouchMove={draw}
+                onTouchEnd={endDraw}
               />
             </div>
-            {handtekeningData && !isEditingSignature ? (
-              <div className="space-y-2">
-                <img src={handtekeningData} alt="Handtekening" className="border rounded-lg bg-card max-w-[300px]" />
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => setIsEditingSignature(true)}>
-                    <Pen className="h-3 w-3 mr-1" /> Bewerken
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={clearSignature}>
-                    <RotateCcw className="h-3 w-3 mr-1" /> Wissen
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <canvas
-                  ref={canvasRef}
-                  width={300}
-                  height={150}
-                  className="border rounded-lg bg-card cursor-crosshair touch-none"
-                  onMouseDown={startDraw}
-                  onMouseMove={draw}
-                  onMouseUp={endDraw}
-                  onMouseLeave={endDraw}
-                  onTouchStart={startDraw}
-                  onTouchMove={draw}
-                  onTouchEnd={endDraw}
-                />
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={clearSignature}>
-                    <RotateCcw className="h-3 w-3 mr-1" /> Wissen
-                  </Button>
-                  {handtekeningData && (
-                    <Button variant="outline" size="sm" onClick={() => setIsEditingSignature(false)}>
-                      Opslaan
-                    </Button>
-                  )}
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
+            <div className="px-4 py-3 border-t border-[#F0EFEC] text-center text-[12px] text-[#9B9B95]">
+              Teken met je vinger op het scherm
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   )
 })

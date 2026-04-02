@@ -6,7 +6,7 @@ import { useDebouncedCallback } from '@/hooks/useDebounce'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
 import {
-  ArrowLeft, Save, FileText, Plus, ClipboardCheck, Printer, Share2,
+  ArrowLeft, Save, FileText, Plus, ClipboardCheck, Printer, Share2, Lock,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -663,6 +663,13 @@ export function WerkbonDetail() {
         </div>
       </div>
 
+      {status !== 'concept' && !isNew && (
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-[#F5F2E8] rounded-xl text-[13px] text-[#8A7A4A] border border-[#E5DCC8]">
+          <Lock className="h-3.5 w-3.5 flex-shrink-0" />
+          <span>Deze werkbon is <strong>{STATUS_CONFIG[status]?.label?.toLowerCase()}</strong> en kan niet meer bewerkt worden. Zet de status terug naar Concept om te bewerken.</span>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Linker kolom: meta info */}
         <WerkbonHeaderForm
@@ -735,6 +742,7 @@ export function WerkbonDetail() {
             showOpmerkingen={werkbonMonteurOpmerkingen}
             showFotos={werkbonMonteurFotos}
             showHandtekening={werkbonKlantHandtekening}
+            readOnly={status !== 'concept'}
             urenGewerkt={urenGewerkt}
             monteurOpmerkingen={monteurOpmerkingen}
             fotos={fotos}
