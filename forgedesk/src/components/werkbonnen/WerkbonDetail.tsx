@@ -273,6 +273,30 @@ export function WerkbonDetail() {
     handtekeningData, klantNaamGetekend, isNew, werkbonId, navigate, setDirty,
   ])
 
+  const handleAfronden = useCallback(async () => {
+    if (!klantId) { toast.error('Selecteer een klant'); return }
+    try {
+      setIsSaving(true)
+      const medewerkerNaam = profile?.naam || user?.email || 'Onbekend'
+      await updateWerkbon(werkbonId, {
+        status: 'afgerond',
+        uren_gewerkt: urenGewerkt,
+        monteur_opmerkingen: monteurOpmerkingen ? `${monteurOpmerkingen}\n\nAfgerond door: ${medewerkerNaam}` : `Afgerond door: ${medewerkerNaam}`,
+        klant_handtekening: handtekeningData,
+        klant_naam_getekend: klantNaamGetekend || undefined,
+        getekend_op: handtekeningData ? new Date().toISOString() : undefined,
+      })
+      setStatus('afgerond')
+      setDirty(false)
+      toast.success('Werkbon afgerond')
+    } catch (err) {
+      logger.error('Fout bij afronden werkbon:', err)
+      toast.error('Kon werkbon niet afronden')
+    } finally {
+      setIsSaving(false)
+    }
+  }, [werkbonId, klantId, urenGewerkt, monteurOpmerkingen, handtekeningData, klantNaamGetekend, profile, user, setDirty])
+
   // Item toevoegen — auto-save werkbon als die nog niet bestaat
   const handleItemToevoegen = useCallback(async () => {
     let currentWerkbonId = werkbonId
@@ -500,23 +524,31 @@ export function WerkbonDetail() {
     const project = projecten.find((p) => p.id === projectId)
     const bedrijfsProfiel = { ...profile, primaireKleur }
 
+    const pdfData = {
+      werkbon_nummer: werkbonNummer,
+      titel,
+      datum,
+      locatie_adres: locatieAdres,
+      locatie_stad: locatieStad,
+      locatie_postcode: locatiePostcode,
+      contact_naam: contactNaam,
+      contact_telefoon: contactTelefoon,
+      toon_briefpapier: toonBriefpapier,
+      status,
+      uren_gewerkt: urenGewerkt,
+      monteur_opmerkingen: monteurOpmerkingen,
+      klant_handtekening: handtekeningData,
+      klant_naam_getekend: klantNaamGetekend,
+    }
+
     const doc = generateWerkbonInstructiePDF(
-      {
-        werkbon_nummer: werkbonNummer,
-        titel,
-        datum,
-        locatie_adres: locatieAdres,
-        locatie_stad: locatieStad,
-        locatie_postcode: locatiePostcode,
-        contact_naam: contactNaam,
-        contact_telefoon: contactTelefoon,
-        toon_briefpapier: toonBriefpapier,
-      },
+      pdfData,
       werkbonItems,
       klant || {},
       project?.naam || '',
       bedrijfsProfiel,
-      documentStyle
+      documentStyle,
+      { fotos }
     )
 
     doc.save(`werkbon-${werkbonNummer || 'nieuw'}.pdf`)
@@ -525,6 +557,7 @@ export function WerkbonDetail() {
     klanten, klantId, projecten, projectId, profile, primaireKleur, documentStyle,
     werkbonNummer, titel, datum, locatieAdres, locatieStad, locatiePostcode,
     contactNaam, contactTelefoon, toonBriefpapier, werkbonItems,
+    status, urenGewerkt, monteurOpmerkingen, handtekeningData, klantNaamGetekend, fotos,
   ])
 
   // Print werkbon (open PDF in nieuw venster met print dialog)
@@ -533,23 +566,31 @@ export function WerkbonDetail() {
     const project = projecten.find((p) => p.id === projectId)
     const bedrijfsProfiel = { ...profile, primaireKleur }
 
+    const pdfData = {
+      werkbon_nummer: werkbonNummer,
+      titel,
+      datum,
+      locatie_adres: locatieAdres,
+      locatie_stad: locatieStad,
+      locatie_postcode: locatiePostcode,
+      contact_naam: contactNaam,
+      contact_telefoon: contactTelefoon,
+      toon_briefpapier: toonBriefpapier,
+      status,
+      uren_gewerkt: urenGewerkt,
+      monteur_opmerkingen: monteurOpmerkingen,
+      klant_handtekening: handtekeningData,
+      klant_naam_getekend: klantNaamGetekend,
+    }
+
     const doc = generateWerkbonInstructiePDF(
-      {
-        werkbon_nummer: werkbonNummer,
-        titel,
-        datum,
-        locatie_adres: locatieAdres,
-        locatie_stad: locatieStad,
-        locatie_postcode: locatiePostcode,
-        contact_naam: contactNaam,
-        contact_telefoon: contactTelefoon,
-        toon_briefpapier: toonBriefpapier,
-      },
+      pdfData,
       werkbonItems,
       klant || {},
       project?.naam || '',
       bedrijfsProfiel,
-      documentStyle
+      documentStyle,
+      { fotos }
     )
 
     const blobUrl = doc.output('bloburl')
@@ -561,6 +602,7 @@ export function WerkbonDetail() {
     klanten, klantId, projecten, projectId, profile, primaireKleur, documentStyle,
     werkbonNummer, titel, datum, locatieAdres, locatieStad, locatiePostcode,
     contactNaam, contactTelefoon, toonBriefpapier, werkbonItems,
+    status, urenGewerkt, monteurOpmerkingen, handtekeningData, klantNaamGetekend, fotos,
   ])
 
   // Deel werkbon PDF via WhatsApp / native share
@@ -682,6 +724,15 @@ export function WerkbonDetail() {
               </Select>
             </>
           )}
+          {status !== 'afgerond' && !isNew && (
+            <button
+              onClick={handleAfronden}
+              disabled={isSaving}
+              className="h-9 px-4 text-[13px] font-semibold text-white rounded-lg transition-all hover:opacity-90 disabled:opacity-50 flex items-center gap-1.5 bg-[#2D6B48]"
+            >
+              <ClipboardCheck className="h-3.5 w-3.5" /> Afronden
+            </button>
+          )}
           <button
             onClick={handleSave}
             disabled={isSaving}
@@ -693,10 +744,10 @@ export function WerkbonDetail() {
         </div>
       </div>
 
-      {status !== 'concept' && !isNew && (
-        <div className="flex items-center gap-2 px-4 py-2.5 bg-[#F5F2E8] rounded-xl text-[13px] text-[#8A7A4A] border border-[#E5DCC8]">
-          <Lock className="h-3.5 w-3.5 flex-shrink-0" />
-          <span>Deze werkbon is <strong>{STATUS_CONFIG[status]?.label?.toLowerCase()}</strong> en kan niet meer bewerkt worden. Zet de status terug naar Concept om te bewerken.</span>
+      {status === 'afgerond' && !isNew && (
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-[#E8F2EC] rounded-xl text-[13px] text-[#2D6B48] border border-[#C5E0D0]">
+          <ClipboardCheck className="h-3.5 w-3.5 flex-shrink-0" />
+          <span>Deze werkbon is <strong>afgerond</strong>. Zet de status terug naar Concept om te bewerken.</span>
         </div>
       )}
 

@@ -1,5 +1,5 @@
 import jsPDF from 'jspdf'
-import type { WerkbonItem, Klant, Profile, DocumentStyle } from '@/types'
+import type { WerkbonItem, WerkbonFoto, Klant, Profile, DocumentStyle } from '@/types'
 import { getJsPdfFontFamily } from '@/lib/documentTemplates'
 
 interface PdfBedrijfsProfiel extends Partial<Profile> {
@@ -16,6 +16,16 @@ interface WerkbonPdfData {
   contact_naam?: string
   contact_telefoon?: string
   toon_briefpapier: boolean
+  status?: string
+  uren_gewerkt?: number
+  monteur_opmerkingen?: string
+  klant_handtekening?: string
+  klant_naam_getekend?: string
+  getekend_op?: string
+}
+
+export interface WerkbonPdfOptions {
+  fotos?: WerkbonFoto[]
 }
 
 function hexToRgb(hex: string): [number, number, number] {
@@ -61,7 +71,8 @@ export function generateWerkbonInstructiePDF(
   klant: Partial<Klant>,
   projectNaam: string,
   bedrijfsProfiel: PdfBedrijfsProfiel,
-  docStyle?: DocumentStyle | null
+  docStyle?: DocumentStyle | null,
+  options?: WerkbonPdfOptions
 ): jsPDF {
   // Landscape A4
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
@@ -354,6 +365,130 @@ export function generateWerkbonInstructiePDF(
       doc.setLineWidth(0.2)
       doc.line(marginLeft, y, pageWidth - marginRight, y)
       y += 5
+    }
+  }
+
+  // ─── Monteur feedback sectie (alleen bij afgeronde werkbonnen) ───
+  const isAfgerond = werkbonData.status === 'afgerond' || werkbonData.status === 'definitief'
+  const hasFeedback = werkbonData.uren_gewerkt || werkbonData.monteur_opmerkingen || werkbonData.klant_handtekening || (options?.fotos && options.fotos.length > 0)
+
+  if (isAfgerond && hasFeedback) {
+    doc.addPage()
+    let fy = marginTop
+
+    // Sectie header
+    doc.setFillColor(...brandColor)
+    doc.rect(marginLeft, fy, pageWidth - marginLeft - marginRight, 8, 'F')
+    doc.setFont(headingFont, 'bold')
+    doc.setFontSize(11)
+    doc.setTextColor(255, 255, 255)
+    doc.text('MONTEUR FEEDBACK', marginLeft + 4, fy + 5.5)
+    fy += 14
+
+    // Uren
+    if (werkbonData.uren_gewerkt) {
+      doc.setFont(bodyFont, 'bold')
+      doc.setFontSize(9)
+      doc.setTextColor(...textColor)
+      doc.text('Uren gewerkt:', marginLeft, fy)
+      doc.setFont(bodyFont, 'normal')
+      doc.text(`${werkbonData.uren_gewerkt} uur`, marginLeft + 35, fy)
+      fy += 7
+    }
+
+    // Opmerkingen
+    if (werkbonData.monteur_opmerkingen) {
+      doc.setFont(bodyFont, 'bold')
+      doc.setFontSize(9)
+      doc.setTextColor(...textColor)
+      doc.text('Opmerkingen:', marginLeft, fy)
+      fy += 5
+      doc.setFont(bodyFont, 'normal')
+      doc.setFontSize(8)
+      const opLines = doc.splitTextToSize(werkbonData.monteur_opmerkingen, pageWidth - marginLeft - marginRight)
+      doc.text(opLines, marginLeft, fy)
+      fy += opLines.length * 4 + 5
+    }
+
+    // Foto's
+    const fotos = options?.fotos || []
+    if (fotos.length > 0) {
+      doc.setFont(bodyFont, 'bold')
+      doc.setFontSize(9)
+      doc.setTextColor(...textColor)
+      doc.text(`Foto's (${fotos.length})`, marginLeft, fy)
+      fy += 6
+
+      const fotoGroepen = [
+        { label: 'Voor', items: fotos.filter(f => f.type === 'voor') },
+        { label: 'Na', items: fotos.filter(f => f.type === 'na') },
+        { label: 'Overig', items: fotos.filter(f => f.type === 'overig') },
+      ]
+
+      for (const groep of fotoGroepen) {
+        if (groep.items.length === 0) continue
+        doc.setFont(bodyFont, 'bold')
+        doc.setFontSize(8)
+        doc.setTextColor(100, 100, 100)
+        doc.text(groep.label, marginLeft, fy)
+        fy += 4
+
+        let fx = marginLeft
+        const fotoW = 50
+        const fotoH = 37.5
+        for (const foto of groep.items) {
+          if (fx + fotoW > pageWidth - marginRight) {
+            fx = marginLeft
+            fy += fotoH + 4
+          }
+          if (fy + fotoH > pageHeight - 15) {
+            doc.addPage()
+            fy = marginTop
+          }
+          try {
+            doc.addImage(foto.url, 'JPEG', fx, fy, fotoW, fotoH)
+          } catch { /* skip broken images */ }
+          fx += fotoW + 4
+        }
+        fy += fotoH + 6
+      }
+    }
+
+    // Handtekening
+    if (werkbonData.klant_handtekening) {
+      if (fy + 50 > pageHeight - 15) {
+        doc.addPage()
+        fy = marginTop
+      }
+
+      doc.setDrawColor(200, 200, 200)
+      doc.setLineWidth(0.3)
+      doc.line(marginLeft, fy, pageWidth - marginRight, fy)
+      fy += 6
+
+      doc.setFont(headingFont, 'bold')
+      doc.setFontSize(10)
+      doc.setTextColor(...textColor)
+      doc.text('Handtekening klant', marginLeft, fy)
+      fy += 6
+
+      try {
+        doc.addImage(werkbonData.klant_handtekening, 'PNG', marginLeft, fy, 60, 30)
+      } catch { /* skip */ }
+      fy += 34
+
+      if (werkbonData.klant_naam_getekend) {
+        doc.setFont(bodyFont, 'normal')
+        doc.setFontSize(9)
+        doc.text(`Naam: ${werkbonData.klant_naam_getekend}`, marginLeft, fy)
+        fy += 5
+      }
+      if (werkbonData.getekend_op) {
+        doc.setFont(bodyFont, 'normal')
+        doc.setFontSize(8)
+        doc.setTextColor(120, 120, 120)
+        doc.text(`Datum: ${formatDate(werkbonData.getekend_op)}`, marginLeft, fy)
+      }
     }
   }
 
