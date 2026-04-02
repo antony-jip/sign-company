@@ -1423,11 +1423,10 @@ export function QuoteCreation() {
     const klantNaam = selectedCp?.naam || selectedKlant?.contactpersoon || selectedKlant?.bedrijfsnaam || ''
     email.setEmailTo(contactEmail)
     email.setEmailSubject(`Offerte ${offerteNummer} - ${offerteTitel}`)
-    const signature = emailHandtekening ? `\n\n${emailHandtekening}` : `\n\nMet vriendelijke groet,\n${bedrijfsnaam || ''}`
     email.setEmailBody(
       introTekst
-        ? introTekst + signature
-        : `Beste ${klantNaam},\n\nHierbij ontvangt u onze offerte ${offerteNummer} voor "${offerteTitel}".\n\nHet totaalbedrag van deze offerte is ${formatCurrency(round2(subtotaal + btwBedrag))} (incl. BTW).\n\nDe offerte is geldig tot ${geldigTot ? new Date(geldigTot).toLocaleDateString('nl-NL') : '-'}.\n\nMocht u vragen hebben of aanvullende informatie wensen, neem dan gerust contact met ons op.${signature}`
+        ? introTekst
+        : `Beste ${klantNaam},\n\nHierbij ontvangt u onze offerte voor "${offerteTitel}".\n\nMocht u vragen hebben of aanvullende informatie wensen, neem dan gerust contact met ons op.\n\nMet vriendelijke groet,`
     )
     email.setEmailBijlagen([{ naam: `${offerteNummer}.pdf`, grootte: 0 }])
     email.setEmailScheduled(false)

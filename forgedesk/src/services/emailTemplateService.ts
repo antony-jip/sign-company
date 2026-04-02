@@ -228,14 +228,28 @@ export function offerteVerzendTemplate(data: OfferteEmailData): EmailResult {
       </p>`
     : ''
 
-  const customParagraphs = data.customBody
-    ? data.customBody.split('\n').filter(l => l.trim()).map(l => `<p style="margin: 0 0 12px 0;">${escapeHtml(l)}</p>`).join('\n    ')
-    : ''
+  // Split body van handtekening: alles na "Met vriendelijke groet," of de hele handtekening is apart
+  function buildCustomBody(raw: string): string {
+    // De body bevat plain text met \n. De handtekening zit via de template er al in.
+    // Splits op regels, render als HTML paragraphs. Bewaar lege regels als spacing.
+    return raw
+      .split('\n')
+      .map(l => l.trim() === '' ? '<br/>' : `<p style="margin: 0 0 8px 0; font-family: Arial, Helvetica, sans-serif; font-size: 15px; color: #333333;">${escapeHtml(l)}</p>`)
+      .join('\n    ')
+  }
+
+  // De handtekening afbeelding apart renderen (niet escapen — is HTML/img)
+  const signatureHtml = data.handtekeningAfbeelding
+    ? `<div style="margin-top: 16px;"><img src="${data.handtekeningAfbeelding}" alt="Handtekening" style="max-width: ${data.handtekeningAfbeeldingGrootte || 200}px; height: auto;" /></div>`
+    : data.handtekening
+      ? `<div style="margin-top: 16px; font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #555555; white-space: pre-line;">${escapeHtml(data.handtekening)}</div>`
+      : ''
 
   const bodyHtml = data.customBody
     ? `
-    ${customParagraphs}
-    <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; margin: 16px 0; border: 1px solid #eeeeee; border-radius: 6px;">
+    ${buildCustomBody(data.customBody)}
+    ${signatureHtml}
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; margin: 24px 0 16px 0; border: 1px solid #eeeeee; border-radius: 6px;">
       <tr>
         <td style="padding: 16px; font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #555555;">
           <strong>Totaalbedrag:</strong> ${escapeHtml(data.totaalBedrag)}<br />
