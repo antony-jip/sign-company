@@ -6,8 +6,8 @@ import {
   FileText, Users, ReceiptText, MailQuestion, Zap,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import type { Email, Klant } from '@/types'
-import { getKlanten, getProjectenByKlant, getOffertesByKlant, createKlant, createProject, createTaak } from '@/services/supabaseService'
+import type { Email, Klant, Medewerker } from '@/types'
+import { getKlanten, getProjectenByKlant, getOffertesByKlant, createKlant, createProject, createTaak, getMedewerkers } from '@/services/supabaseService'
 import { chatCompletion } from '@/services/aiService'
 import { getAvatarStyle, extractSenderName } from './emailHelpers'
 import type { AutoFollowUp } from './emailTypes'
@@ -102,11 +102,13 @@ export function EmailContextSidebar({
   const [klantSearchMode, setKlantSearchMode] = useState(true)
   const [klantForm, setKlantForm] = useState({ bedrijfsnaam: '', contactpersoon: '', email: '', telefoon: '' })
   const [projectForm, setProjectForm] = useState({ naam: '', beschrijving: '' })
-  const [taakForm, setTaakForm] = useState({ titel: '', beschrijving: '' })
+  const [taakForm, setTaakForm] = useState({ titel: '', beschrijving: '', deadline: '', toegewezen_aan: '' })
+  const [addToExistingKlant, setAddToExistingKlant] = useState<Klant | null>(null)
+  const [medewerkers, setMedewerkers] = useState<Medewerker[]>([])
 
-  // ── Reminder ──
-  const [readingReminder, setReadingReminder] = useState<string | null>(null)
-  const activeReminder = mode === 'compose' ? composeReminder : readingReminder
+  useEffect(() => {
+    getMedewerkers().then(m => setMedewerkers(m.filter(mw => mw.status === 'actief'))).catch(() => {})
+  }, [])
 
   const klantDisplayName = linkedKlant?.bedrijfsnaam || linkedKlant?.contactpersoon || companyGuess || personName
 
@@ -152,19 +154,6 @@ export function EmailContextSidebar({
   }, [linkedKlant])
 
   // ── Reminder ──
-  const handleSetReminder = useCallback((value: string) => {
-    if (mode === 'compose') onComposeReminderChange?.(value)
-    else setReadingReminder(value)
-    const labels: Record<string, string> = { '1h': '1 uur', '1d': 'morgen 9:00', '2d': '2 dagen', '1w': '1 week' }
-    toast.success(`Herinnering: ${labels[value]}`)
-  }, [mode, onComposeReminderChange])
-
-  const handleClearReminder = useCallback(() => {
-    if (mode === 'compose') onComposeReminderChange?.(null)
-    else setReadingReminder(null)
-    toast('Herinnering verwijderd')
-  }, [mode, onComposeReminderChange])
-
   // ── Panel openers ──
   function openPanel(panel: 'klant' | 'project' | 'taak') {
     if (panel === 'klant') {
@@ -174,7 +163,7 @@ export function EmailContextSidebar({
     } else if (panel === 'project') {
       setProjectForm({ naam: `${klantDisplayName || 'Project'} - ${email?.onderwerp?.slice(0, 40) || ''}`.trim(), beschrijving: '' })
     } else if (panel === 'taak') {
-      setTaakForm({ titel: email?.onderwerp || 'Opvolging email', beschrijving: `Van: ${contactName} <${contactEmail}>` })
+      setTaakForm({ titel: email?.onderwerp || 'Opvolging email', beschrijving: `Van: ${contactName} <${contactEmail}>`, deadline: '', toegewezen_aan: '' })
     }
     setActivePanel(panel)
   }
@@ -225,12 +214,37 @@ export function EmailContextSidebar({
     try {
       await createTaak({
         titel: taakForm.titel, beschrijving: taakForm.beschrijving,
-        status: 'todo', prioriteit: 'medium', toegewezen_aan: '', geschatte_tijd: 0, bestede_tijd: 0,
+        status: 'todo', prioriteit: 'medium', toegewezen_aan: taakForm.toegewezen_aan, geschatte_tijd: 0, bestede_tijd: 0,
         klant_id: linkedKlant?.id || '',
+        deadline: taakForm.deadline || undefined,
       })
       setActivePanel('none')
-      toast.success('Taak aangemaakt')
+      toast.success(`Taak aangemaakt${taakForm.deadline ? ` — deadline ${new Date(taakForm.deadline).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}` : ''}`)
     } catch (err) { logger.error('Taak aanmaken mislukt:', err); toast.error('Taak aanmaken mislukt') }
+    finally { setSaving(false) }
+  }
+
+  async function handleAddContactToKlant() {
+    if (!addToExistingKlant || !klantForm.contactpersoon.trim()) { toast.error('Naam is verplicht'); return }
+    setSaving(true)
+    try {
+      const { updateKlant } = await import('@/services/supabaseService')
+      const bestaande = addToExistingKlant.contactpersonen || []
+      await updateKlant(addToExistingKlant.id, {
+        contactpersonen: [...bestaande, {
+          id: crypto.randomUUID(),
+          naam: klantForm.contactpersoon,
+          functie: '',
+          email: klantForm.email,
+          telefoon: klantForm.telefoon,
+          is_primair: false,
+        }],
+      })
+      setLinkedKlant({ ...addToExistingKlant, contactpersonen: [...bestaande, { id: crypto.randomUUID(), naam: klantForm.contactpersoon, functie: '', email: klantForm.email, telefoon: klantForm.telefoon, is_primair: false }] })
+      setAddToExistingKlant(null)
+      setActivePanel('none')
+      toast.success(`${klantForm.contactpersoon} toegevoegd aan ${addToExistingKlant.bedrijfsnaam}`)
+    } catch (err) { logger.error('Contact toevoegen mislukt:', err); toast.error('Contact toevoegen mislukt') }
     finally { setSaving(false) }
   }
 
@@ -483,35 +497,65 @@ export function EmailContextSidebar({
                 autoFocus
               />
             </div>
-            <div className="space-y-0.5 max-h-[160px] overflow-y-auto -mx-1">
-              {klantSuggestions.length > 0 ? klantSuggestions.map(k => {
-                const style = getAvatarStyle(k.bedrijfsnaam || k.contactpersoon || '')
-                return (
-                  <button
-                    key={k.id}
-                    onClick={() => handleSelectKlant(k)}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left hover:bg-white transition-colors duration-150 group"
-                  >
-                    <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 text-[11px] font-bold" style={{ background: style.bg, color: style.text }}>
-                      {(k.bedrijfsnaam || k.contactpersoon)?.[0]?.toUpperCase()}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[12px] font-medium text-[#1A1A1A] truncate">{k.bedrijfsnaam || k.contactpersoon}</p>
-                      <p className="text-[11px] text-[#9B9B95] truncate">{k.email}</p>
-                    </div>
-                  </button>
-                )
-              }) : (
-                <p className="text-[11px] text-[#9B9B95] px-3 py-2">Geen resultaten</p>
-              )}
-            </div>
-            <button
-              onClick={() => setKlantSearchMode(false)}
-              className="w-full flex items-center justify-center gap-1.5 py-2 text-[12px] text-[#F15025] hover:underline transition-colors duration-150"
-            >
-              <UserPlus className="h-3 w-3" />
-              Nieuw contact aanmaken
-            </button>
+            {addToExistingKlant ? (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 p-2 bg-[#1A535C]/[0.04] rounded-lg">
+                  <Building2 className="h-3.5 w-3.5 text-[#1A535C]" />
+                  <span className="text-[12px] font-medium text-[#1A535C] truncate">{addToExistingKlant.bedrijfsnaam}</span>
+                  <button onClick={() => setAddToExistingKlant(null)} className="ml-auto text-[#9B9B95] hover:text-[#1A1A1A]"><X className="h-3 w-3" /></button>
+                </div>
+                <input value={klantForm.contactpersoon} onChange={e => setKlantForm(f => ({ ...f, contactpersoon: e.target.value }))}
+                  className={inputCls} placeholder="Naam contactpersoon *" autoFocus />
+                <input value={klantForm.email} onChange={e => setKlantForm(f => ({ ...f, email: e.target.value }))}
+                  className={inputCls} placeholder="Email" />
+                <input value={klantForm.telefoon} onChange={e => setKlantForm(f => ({ ...f, telefoon: e.target.value }))}
+                  className={inputCls} placeholder="Telefoon" />
+                <button onClick={handleAddContactToKlant} disabled={saving}
+                  className="w-full py-2 rounded-lg bg-[#1A535C] text-white text-[12px] font-medium disabled:opacity-50 hover:opacity-90 transition-opacity">
+                  {saving ? 'Toevoegen...' : 'Contactpersoon toevoegen'}
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-0.5 max-h-[180px] overflow-y-auto -mx-1">
+                  {klantSuggestions.length > 0 ? klantSuggestions.map(k => {
+                    const style = getAvatarStyle(k.bedrijfsnaam || k.contactpersoon || '')
+                    return (
+                      <div key={k.id} className="flex items-center gap-1 px-1">
+                        <button
+                          onClick={() => handleSelectKlant(k)}
+                          className="flex-1 flex items-center gap-2.5 px-2 py-2 rounded-lg text-left hover:bg-white transition-colors duration-150"
+                        >
+                          <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 text-[11px] font-bold" style={{ background: style.bg, color: style.text }}>
+                            {(k.bedrijfsnaam || k.contactpersoon)?.[0]?.toUpperCase()}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[12px] font-medium text-[#1A1A1A] truncate">{k.bedrijfsnaam || k.contactpersoon}</p>
+                            <p className="text-[11px] text-[#9B9B95] truncate">{k.email}</p>
+                          </div>
+                        </button>
+                        <button
+                          onClick={() => { setAddToExistingKlant(k); setKlantForm(f => ({ ...f, contactpersoon: personName, email: contactEmail })) }}
+                          className="p-1.5 rounded-lg hover:bg-[#E8F2EC] transition-colors flex-shrink-0"
+                          title={`Contactpersoon toevoegen aan ${k.bedrijfsnaam}`}
+                        >
+                          <UserPlus className="h-3.5 w-3.5 text-[#3A7D52]" />
+                        </button>
+                      </div>
+                    )
+                  }) : (
+                    <p className="text-[11px] text-[#9B9B95] px-3 py-2">Geen resultaten</p>
+                  )}
+                </div>
+                <button
+                  onClick={() => setKlantSearchMode(false)}
+                  className="w-full flex items-center justify-center gap-1.5 py-2 text-[12px] text-[#F15025] hover:underline transition-colors duration-150"
+                >
+                  <UserPlus className="h-3 w-3" />
+                  Nieuw contact aanmaken
+                </button>
+              </>
+            )}
           </>
         ) : (
           <>
@@ -555,6 +599,51 @@ export function EmailContextSidebar({
               className={inputCls} placeholder="Taak titel *" />
             <textarea value={taakForm.beschrijving} onChange={e => setTaakForm(f => ({ ...f, beschrijving: e.target.value }))}
               className={`${inputCls} resize-none h-16`} placeholder="Beschrijving" />
+            <div>
+              <label className="text-[10px] text-[#9B9B95] block mb-1">Inplannen op</label>
+              <input type="date" value={taakForm.deadline} onChange={e => setTaakForm(f => ({ ...f, deadline: e.target.value }))}
+                className={inputCls} />
+              <div className="flex gap-1.5 mt-1.5">
+                {[
+                  { label: 'Vandaag', days: 0 },
+                  { label: 'Morgen', days: 1 },
+                  { label: '+7d', days: 7 },
+                ].map(({ label, days }) => {
+                  const d = new Date(); d.setDate(d.getDate() + days)
+                  const val = d.toISOString().split('T')[0]
+                  return (
+                    <button key={days} type="button" onClick={() => setTaakForm(f => ({ ...f, deadline: val }))}
+                      className={`flex-1 py-1.5 rounded-lg text-[10px] font-medium transition-all ${taakForm.deadline === val ? 'bg-[#1A535C]/[0.08] text-[#1A535C]' : 'bg-[#F8F7F5] text-[#6B6B66] hover:bg-[#F0EFEC]'}`}
+                    >{label}</button>
+                  )
+                })}
+              </div>
+            </div>
+            {medewerkers.length > 0 && (
+              <div>
+                <label className="text-[10px] text-[#9B9B95] block mb-1">Toewijzen aan</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {medewerkers.map((mw) => {
+                    const selected = taakForm.toegewezen_aan === mw.naam
+                    const c = mw.naam.charCodeAt(0) % 5
+                    const colors = ['bg-[#E8F2EC] text-[#3A7D52]', 'bg-[#E8EEF9] text-[#3A5A9A]', 'bg-[#F5F2E8] text-[#8A7A4A]', 'bg-[#F0EFEC] text-[#6B6B66]', 'bg-[#EDE8F4] text-[#6A5A8A]']
+                    return (
+                      <button
+                        key={mw.id}
+                        type="button"
+                        onClick={() => setTaakForm(f => ({ ...f, toegewezen_aan: selected ? '' : mw.naam }))}
+                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium transition-all border ${selected ? 'border-[#1A535C] bg-[#1A535C]/[0.08] text-[#1A535C]' : 'border-transparent bg-[#F8F7F5] text-[#6B6B66] hover:bg-[#F0EFEC]'}`}
+                      >
+                        <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold uppercase ${colors[c]}`}>
+                          {mw.naam.charAt(0)}
+                        </span>
+                        {mw.naam.split(' ')[0]}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
           </>
         ),
       },
@@ -723,39 +812,6 @@ export function EmailContextSidebar({
 
         {/* ── INLINE PANEL ── */}
         {activePanel !== 'none' && renderInlinePanel()}
-
-        {/* ── HERINNERING ── */}
-        <div>
-          <div className="flex items-center justify-between mb-2.5">
-            <h3 className="text-[11px] uppercase tracking-widest text-[#9B9B95] font-semibold flex items-center gap-1.5" title="Zet een herinnering om later op deze email terug te komen. Je krijgt een melding op het ingestelde moment.">
-              <Clock className="h-3 w-3" /> Herinnering
-              <span className="w-3.5 h-3.5 rounded-full bg-[#F0EFEC] text-[#9B9B95] text-[9px] font-bold flex items-center justify-center cursor-help">i</span>
-            </h3>
-            {activeReminder && (
-              <button onClick={handleClearReminder} className="text-[#9B9B95] hover:text-[#C03A18] transition-colors duration-150">
-                <BellOff className="h-3.5 w-3.5" />
-              </button>
-            )}
-          </div>
-          {activeReminder ? (
-            <div className="flex items-center gap-2.5 bg-[#1A535C]/[0.06] rounded-xl px-3.5 py-2.5 border border-[#1A535C]/10">
-              <Bell className="h-4 w-4 text-[#1A535C]" />
-              <span className="text-[13px] text-[#1A535C] font-semibold">{reminderOptions.find(r => r.value === activeReminder)?.label}</span>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-2">
-              {reminderOptions.map(opt => (
-                <button
-                  key={opt.value}
-                  onClick={() => handleSetReminder(opt.value)}
-                  className="bg-white rounded-xl py-2.5 text-[12px] font-medium text-[#6B6B66] hover:text-[#1A535C] hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 text-center flex items-center justify-center border border-[#F0EFEC]"
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
 
         {/* ── AUTO-OPVOLGING (alleen compose) ── */}
         {mode === 'compose' && (
