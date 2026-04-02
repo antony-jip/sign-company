@@ -242,7 +242,8 @@ export async function updateAppSettings(userId: string, updates: Partial<AppSett
       .maybeSingle()
 
     const defaults = getDefaultAppSettings(userId)
-    const merged = { ...(existing || defaults), ...updates, user_id: userId, updated_at: now() }
+    const orgId = await getOrgId()
+    const merged = { ...(existing || defaults), ...updates, user_id: userId, updated_at: now(), ...(orgId ? { organisatie_id: orgId } : {}) }
 
     const { error } = await supabase
       .from('app_settings')
