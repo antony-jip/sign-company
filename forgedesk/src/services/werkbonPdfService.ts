@@ -369,37 +369,41 @@ export function generateWerkbonInstructiePDF(
   }
 
   // ─── Handtekening rechtsonder op laatste pagina ───
-  if (werkbonData.klant_handtekening || werkbonData.klant_naam_getekend) {
-    const sigX = pageWidth - marginRight - 70
-    const sigY = pageHeight - 50
+  const hasSignature = werkbonData.klant_handtekening && werkbonData.klant_handtekening.startsWith('data:')
+  const hasSigneeName = werkbonData.klant_naam_getekend && werkbonData.klant_naam_getekend.trim().length > 0
+  if (hasSignature || hasSigneeName) {
+    try {
+      const sigX = pageWidth - marginRight - 70
+      const sigY = pageHeight - 50
 
-    doc.setDrawColor(200, 200, 200)
-    doc.setLineWidth(0.3)
-    doc.line(sigX, sigY, pageWidth - marginRight, sigY)
+      doc.setDrawColor(200, 200, 200)
+      doc.setLineWidth(0.3)
+      doc.line(sigX, sigY, pageWidth - marginRight, sigY)
 
-    if (werkbonData.klant_handtekening) {
-      try {
-        doc.addImage(werkbonData.klant_handtekening, 'PNG', sigX, sigY + 1, 55, 22)
-      } catch { /* skip broken image */ }
-    }
+      if (hasSignature) {
+        try {
+          doc.addImage(werkbonData.klant_handtekening!, 'PNG', sigX, sigY + 1, 55, 22)
+        } catch { /* skip broken image */ }
+      }
 
-    doc.setFont(bodyFont, 'normal')
-    doc.setFontSize(8)
-    doc.setTextColor(...textColor)
+      doc.setFont(bodyFont, 'normal')
+      doc.setFontSize(8)
+      doc.setTextColor(...textColor)
 
-    if (werkbonData.klant_naam_getekend) {
-      doc.text(werkbonData.klant_naam_getekend, sigX, sigY + 27)
-    }
+      if (hasSigneeName) {
+        doc.text(werkbonData.klant_naam_getekend!, sigX, sigY + 27)
+      }
 
-    doc.setFontSize(7)
-    doc.setTextColor(150, 150, 150)
-    if (werkbonData.getekend_op) {
-      doc.text(formatDate(werkbonData.getekend_op), sigX, sigY + 31)
-    }
+      if (werkbonData.getekend_op) {
+        doc.setFontSize(7)
+        doc.setTextColor(150, 150, 150)
+        doc.text(formatDate(werkbonData.getekend_op), sigX, sigY + 31)
+      }
 
-    doc.setFontSize(7)
-    doc.setTextColor(120, 120, 120)
-    doc.text('Handtekening klant', sigX, sigY - 2)
+      doc.setFontSize(7)
+      doc.setTextColor(120, 120, 120)
+      doc.text('Handtekening klant', sigX, sigY - 2)
+    } catch { /* skip signature section on error */ }
   }
 
   // ─── Monteur feedback sectie (alleen bij afgeronde werkbonnen) ───

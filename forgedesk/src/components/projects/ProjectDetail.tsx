@@ -972,22 +972,25 @@ export function ProjectDetail() {
         {/* TAB BAR — inside sticky header */}
         <div className="flex items-center gap-6 border-b border-[#EBEBEB] mt-2">
         {([
-          { key: 'overzicht' as ProjectTab, label: 'Overzicht' },
-          { key: 'werkbon' as ProjectTab, label: 'Werkbon' },
-          { key: 'financieel' as ProjectTab, label: 'Financieel' },
-          { key: 'notities' as ProjectTab, label: 'Notities' },
+          { key: 'overzicht' as ProjectTab, label: 'Overzicht', count: 0 },
+          { key: 'werkbon' as ProjectTab, label: 'Werkbon', count: projectWerkbonnen.length },
+          { key: 'financieel' as ProjectTab, label: 'Financieel', count: projectFacturen.length },
+          { key: 'notities' as ProjectTab, label: 'Notities', count: 0 },
         ]).map((tab) => (
           <button
             key={tab.key}
             onClick={() => handleTabChange(tab.key)}
             className={cn(
-              'relative py-3.5 text-[14px] transition-colors',
+              'relative py-3.5 text-[14px] transition-colors flex items-center gap-1.5',
               activeTab === tab.key
                 ? 'text-[#1A1A1A] font-bold'
                 : 'text-[#6B6B66] hover:text-[#1A1A1A]'
             )}
           >
             {tab.label}
+            {tab.count > 0 && (
+              <span className="text-[10px] font-mono font-bold bg-[#F0EFEC] text-[#6B6B66] rounded-full px-1.5 py-0.5 min-w-[18px] text-center">{tab.count}</span>
+            )}
             {activeTab === tab.key && (
               <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#1A535C] rounded-t-full" />
             )}

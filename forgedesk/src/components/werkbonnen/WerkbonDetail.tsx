@@ -541,18 +541,22 @@ export function WerkbonDetail() {
       klant_naam_getekend: klantNaamGetekend,
     }
 
-    const doc = generateWerkbonInstructiePDF(
-      pdfData,
-      werkbonItems,
-      klant || {},
-      project?.naam || '',
-      bedrijfsProfiel,
-      documentStyle,
-      { fotos }
-    )
-
-    doc.save(`werkbon-${werkbonNummer || 'nieuw'}.pdf`)
-    toast.success('PDF gedownload')
+    try {
+      const doc = generateWerkbonInstructiePDF(
+        pdfData,
+        werkbonItems,
+        klant || {},
+        project?.naam || '',
+        bedrijfsProfiel,
+        documentStyle,
+        { fotos }
+      )
+      doc.save(`werkbon-${werkbonNummer || 'nieuw'}.pdf`)
+      toast.success('PDF gedownload')
+    } catch (err) {
+      console.error('PDF generatie fout:', err)
+      toast.error('Kon PDF niet genereren')
+    }
   }, [
     klanten, klantId, projecten, projectId, profile, primaireKleur, documentStyle,
     werkbonNummer, titel, datum, locatieAdres, locatieStad, locatiePostcode,
@@ -583,20 +587,24 @@ export function WerkbonDetail() {
       klant_naam_getekend: klantNaamGetekend,
     }
 
-    const doc = generateWerkbonInstructiePDF(
-      pdfData,
-      werkbonItems,
-      klant || {},
-      project?.naam || '',
-      bedrijfsProfiel,
-      documentStyle,
-      { fotos }
-    )
-
-    const blobUrl = doc.output('bloburl')
-    const printWindow = window.open(blobUrl as unknown as string)
-    if (printWindow) {
-      printWindow.onload = () => printWindow.print()
+    try {
+      const doc = generateWerkbonInstructiePDF(
+        pdfData,
+        werkbonItems,
+        klant || {},
+        project?.naam || '',
+        bedrijfsProfiel,
+        documentStyle,
+        { fotos }
+      )
+      const blobUrl = doc.output('bloburl')
+      const printWindow = window.open(blobUrl as unknown as string)
+      if (printWindow) {
+        printWindow.onload = () => printWindow.print()
+      }
+    } catch (err) {
+      console.error('PDF generatie fout:', err)
+      toast.error('Kon PDF niet genereren')
     }
   }, [
     klanten, klantId, projecten, projectId, profile, primaireKleur, documentStyle,
