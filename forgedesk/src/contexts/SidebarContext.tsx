@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react'
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 
 export const RAIL_WIDTH = 88
 export const EXPANDED_WIDTH = 244
@@ -22,9 +22,24 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
   })
 
   const [layoutMode, setLayoutModeState] = useState<LayoutMode>(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 768) return 'topnav'
     const stored = localStorage.getItem('doen_layout_mode')
     return stored === 'topnav' ? 'topnav' : 'sidebar'
   })
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)')
+    const handler = (e: MediaQueryListEvent) => {
+      if (!e.matches) {
+        setLayoutModeState('topnav')
+      } else {
+        const stored = localStorage.getItem('doen_layout_mode')
+        setLayoutModeState(stored === 'topnav' ? 'topnav' : 'sidebar')
+      }
+    }
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
 
   const toggleSidebar = () => {
     setIsCollapsed(prev => {
