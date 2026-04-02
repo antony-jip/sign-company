@@ -415,7 +415,7 @@ export function generateWerkbonInstructiePDF(
     let fy = marginTop
 
     // Sectie header
-    doc.setFillColor(...brandColor)
+    doc.setFillColor(...brand)
     doc.rect(marginLeft, fy, pageWidth - marginLeft - marginRight, 8, 'F')
     doc.setFont(headingFont, 'bold')
     doc.setFontSize(11)
