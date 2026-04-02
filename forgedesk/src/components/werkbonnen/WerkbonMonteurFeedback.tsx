@@ -131,8 +131,8 @@ export const WerkbonMonteurFeedback = React.memo(function WerkbonMonteurFeedback
             type="number"
             min={0}
             step={0.25}
-            defaultValue={urenGewerkt ?? ''}
-            onBlur={(e) => onUrenChange(e.target.value ? Number(e.target.value) : undefined)}
+            value={urenGewerkt ?? ''}
+            onChange={(e) => onUrenChange(e.target.value ? Number(e.target.value) : undefined)}
             placeholder="Bijv. 4.5"
             className="max-w-[200px] font-mono text-base h-11"
             disabled={readOnly}
@@ -145,8 +145,8 @@ export const WerkbonMonteurFeedback = React.memo(function WerkbonMonteurFeedback
         <div className="bg-white rounded-xl border border-[#F0EFEC] p-4">
           <h3 className="text-[13px] font-bold text-[#1A1A1A] mb-2">Opmerkingen monteur</h3>
           <Textarea
-            defaultValue={monteurOpmerkingen}
-            onBlur={(e) => onOpmerkingenChange(e.target.value)}
+            value={monteurOpmerkingen}
+            onChange={(e) => onOpmerkingenChange(e.target.value)}
             placeholder="Bijzonderheden, problemen, opmerkingen..."
             rows={3}
             className="text-base"
@@ -278,8 +278,8 @@ export const WerkbonMonteurFeedback = React.memo(function WerkbonMonteurFeedback
           <div>
             <Label className="text-[12px] text-[#6B6B66]">Naam</Label>
             <Input
-              defaultValue={klantNaamGetekend}
-              onBlur={(e) => onKlantNaamChange(e.target.value)}
+              value={klantNaamGetekend}
+              onChange={(e) => onKlantNaamChange(e.target.value)}
               placeholder="Naam ondertekenaar"
               className="max-w-full text-base h-11"
               disabled={readOnly}
