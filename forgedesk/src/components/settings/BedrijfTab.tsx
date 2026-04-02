@@ -109,7 +109,7 @@ export function BedrijfTab() {
         kvk_nummer: kvkNummer,
         btw_nummer: btwNummer,
         iban,
-        ...(logoPreview ? { logo_url: logoPreview } : {}),
+        logo_url: logoPreview || '',
       })
       await refreshProfile()
       toast.success('Opgeslagen.')
@@ -159,6 +159,16 @@ export function BedrijfTab() {
               <div>
                 <p className="text-sm font-medium text-foreground dark:text-white">Bedrijfslogo</p>
                 <p className="text-xs text-[#A0A098] mt-1">Upload uw bedrijfslogo. PNG of SVG aanbevolen.</p>
+                {logoPreview && (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setLogoPreview('') }}
+                    className="text-xs text-[#C03A18] hover:underline mt-1"
+                  >
+                    Logo verwijderen
+                  </button>
+                )}
+                <p className="text-[10px] text-[#9B9B95] mt-2">Als je een logo hebt, wordt de bedrijfsnaam niet in de email header getoond.</p>
               </div>
             </div>
 

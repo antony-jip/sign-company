@@ -177,9 +177,9 @@ export function getBaseTemplate(data: EmailTemplateData): {
           <tr>
             <td style="background-color: ${kleur}; padding: 24px 32px; text-align: center;">
               ${logoHtml}
-              <span style="font-family: Arial, Helvetica, sans-serif; font-size: 22px; font-weight: bold; color: #ffffff;">
+              ${!data.logoUrl ? `<span style="font-family: Arial, Helvetica, sans-serif; font-size: 22px; font-weight: bold; color: #ffffff;">
                 ${escapeHtml(bedrijf)}
-              </span>
+              </span>` : ''}
             </td>
           </tr>
           <!-- Body -->
