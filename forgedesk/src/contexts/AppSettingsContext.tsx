@@ -152,7 +152,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     emailHandtekening: settings.email_handtekening || '',
     handtekeningAfbeelding: settings.handtekening_afbeelding || '',
     handtekeningAfbeeldingGrootte: settings.handtekening_afbeelding_grootte ?? 64,
-    primaireKleur: settings.primaire_kleur || '#2563eb',
+    primaireKleur: settings.primaire_kleur || '#1A535C',
     secundaireKleur: settings.secundaire_kleur || '#7c3aed',
     toonConversieRate: settings.toon_conversie_rate ?? true,
     toonDagenOpen: settings.toon_dagen_open ?? true,

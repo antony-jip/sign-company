@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label'
 import { Building2, Phone, CreditCard, Upload, Loader2, Trash2 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
-import { getProfile, updateProfile } from '@/services/supabaseService'
+import { getProfile, updateProfile, updateAppSettings } from '@/services/supabaseService'
 import { isSupabaseConfigured } from '@/services/supabaseClient'
 import supabase from '@/services/supabaseClient'
 import { toast } from 'sonner'
@@ -23,8 +23,9 @@ const BEDRIJF_TABS: SubTab[] = [
 
 export function BedrijfTab() {
   const { user } = useAuth()
-  const { refreshProfile } = useAppSettings()
+  const { refreshProfile, primaireKleur: currentKleur, refreshSettings } = useAppSettings()
   const [bedrijfsnaam, setBedrijfsnaam] = useState('')
+  const [emailKleur, setEmailKleur] = useState('#1A535C')
   const [adres, setAdres] = useState('')
   const [postcode, setPostcode] = useState('')
   const [stad, setStad] = useState('')
@@ -54,6 +55,7 @@ export function BedrijfTab() {
         setBtwNummer(profile.btw_nummer || '')
         setIban(profile.iban || '')
         if (profile.logo_url) setLogoPreview(profile.logo_url)
+        setEmailKleur(currentKleur || '#1A535C')
         if (profile.bedrijfs_adres) {
           const adresParts = profile.bedrijfs_adres.split(', ')
           if (adresParts.length >= 3) {
@@ -111,7 +113,9 @@ export function BedrijfTab() {
         iban,
         logo_url: logoPreview || '',
       })
+      await updateAppSettings(user.id, { primaire_kleur: emailKleur })
       await refreshProfile()
+      await refreshSettings()
       toast.success('Opgeslagen.')
     } catch (err: any) {
       logger.error('Fout bij opslaan bedrijfsgegevens:', err)
@@ -178,6 +182,28 @@ export function BedrijfTab() {
               <label htmlFor="bedrijfsnaam" className="text-[11px] text-[#A0A098] block">Bedrijfsnaam</label>
               <Input id="bedrijfsnaam" value={bedrijfsnaam} onChange={(e) => setBedrijfsnaam(e.target.value)} className="bg-[#F4F2EE] dark:bg-muted border-[#E6E4E0] rounded-lg focus-visible:ring-[#1A535C]" />
             </div>
+            <div className="space-y-1.5">
+              <label className="text-[11px] text-[#A0A098] block">E-mail kleur</label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="color"
+                  value={emailKleur}
+                  onChange={(e) => setEmailKleur(e.target.value)}
+                  className="w-10 h-10 rounded-lg border border-[#E6E4E0] cursor-pointer p-0.5"
+                />
+                <Input
+                  value={emailKleur}
+                  onChange={(e) => setEmailKleur(e.target.value)}
+                  className="w-28 font-mono text-sm bg-[#F4F2EE] border-[#E6E4E0] rounded-lg"
+                  placeholder="#1A535C"
+                />
+                <div className="flex-1 h-8 rounded-lg flex items-center justify-center text-xs font-semibold text-white" style={{ backgroundColor: emailKleur }}>
+                  Voorbeeld
+                </div>
+              </div>
+              <p className="text-[10px] text-[#9B9B95]">Kleur voor de email header en knoppen in verzonden emails</p>
+            </div>
+
             <div className="space-y-1.5">
               <label htmlFor="adres" className="text-[11px] text-[#A0A098] block">Adres</label>
               <Input id="adres" value={adres} onChange={(e) => setAdres(e.target.value)} className="bg-[#F4F2EE] dark:bg-muted border-[#E6E4E0] rounded-lg focus-visible:ring-[#1A535C]" />
