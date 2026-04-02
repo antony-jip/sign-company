@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react'
-import { Camera, X, Pen, RotateCcw, Lock, Download } from 'lucide-react'
+import { Camera, X, Pen, RotateCcw, Lock, Download, ClipboardCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -28,6 +28,9 @@ interface WerkbonMonteurFeedbackProps {
   onHandtekeningChange: (data: string | undefined) => void
   onLightbox: (url: string) => void
   onDownloadFotos?: () => void
+  onAfronden?: () => void
+  isSaving?: boolean
+  status?: string
 }
 
 export const WerkbonMonteurFeedback = React.memo(function WerkbonMonteurFeedback({
@@ -36,7 +39,7 @@ export const WerkbonMonteurFeedback = React.memo(function WerkbonMonteurFeedback
   urenGewerkt, monteurOpmerkingen, fotos,
   klantNaamGetekend, handtekeningData,
   onUrenChange, onOpmerkingenChange, onFotoToevoegen, onFotoVerwijderen,
-  onKlantNaamChange, onHandtekeningChange, onLightbox, onDownloadFotos,
+  onKlantNaamChange, onHandtekeningChange, onLightbox, onDownloadFotos, onAfronden, isSaving, status,
 }: WerkbonMonteurFeedbackProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fullscreenCanvasRef = useRef<HTMLCanvasElement>(null)
@@ -331,14 +334,31 @@ export const WerkbonMonteurFeedback = React.memo(function WerkbonMonteurFeedback
                 >
                   Volledig scherm
                 </Button>
-                {handtekeningData && (
-                  <Button variant="default" size="sm" className="h-10 px-4 text-[13px]" onClick={() => setIsEditingSignature(false)}>
-                    Klaar
-                  </Button>
-                )}
+                <Button variant="default" size="sm" className="h-10 px-4 text-[13px]" onClick={() => {
+                  const canvas = canvasRef.current
+                  if (canvas) onHandtekeningChange(canvas.toDataURL('image/png'))
+                  setIsEditingSignature(false)
+                }}>
+                  Klaar
+                </Button>
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Afronden knop — prominent onderaan */}
+      {onAfronden && status !== 'afgerond' && !readOnly && (
+        <div className="bg-white rounded-xl border border-[#C5E0D0] p-4">
+          <button
+            onClick={onAfronden}
+            disabled={isSaving}
+            className="w-full py-3.5 rounded-xl text-[15px] font-bold text-white bg-[#2D6B48] hover:bg-[#256040] active:bg-[#1E5035] disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+          >
+            <ClipboardCheck className="h-5 w-5" />
+            {isSaving ? 'Bezig met opslaan...' : 'Werkbon afronden'}
+          </button>
+          <p className="text-[11px] text-[#9B9B95] text-center mt-2">Slaat alles op inclusief foto's en handtekening</p>
         </div>
       )}
 

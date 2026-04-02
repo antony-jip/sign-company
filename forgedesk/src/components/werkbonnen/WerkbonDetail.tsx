@@ -837,6 +837,9 @@ export function WerkbonDetail() {
             onHandtekeningChange={handleHandtekeningChange}
             onLightbox={setLightboxUrl}
             onDownloadFotos={handleDownloadFotos}
+            onAfronden={handleAfronden}
+            isSaving={isSaving}
+            status={status}
           />
         </div>
       </div>
