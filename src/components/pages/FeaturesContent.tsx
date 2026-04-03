@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
+import Link from 'next/link'
 import SectionReveal from '../SectionReveal'
 import WachtlijstForm from '../WachtlijstForm'
 
@@ -140,14 +141,13 @@ function FAQItem({ question, answer, index }: { question: string; answer: string
   )
 }
 
-export default function FeaturesContent() {
-  const [activeModule, setActiveModule] = useState(0)
+export default function FeaturesContent({ initialModule = 0, moduleSlug }: { initialModule?: number; moduleSlug?: string }) {
+  const [activeModule, setActiveModule] = useState(initialModule)
   const scrollRef = useRef<HTMLDivElement>(null)
   const mod = modules[activeModule]
 
   function selectModule(index: number) {
     setActiveModule(index)
-    // Scroll the thumbnail into view
     if (scrollRef.current) {
       const child = scrollRef.current.children[index] as HTMLElement
       if (child) {
@@ -156,23 +156,285 @@ export default function FeaturesContent() {
     }
   }
 
+  const heroConfigs: Record<string, { label: string; heading: [string, string]; sub: string; image: string; imageW: number; imageH: number; overlays?: { image: string; alt: string; w: number; h: number; label: string; pos: React.CSSProperties; from: { x: number; y: number } }[] }> = {
+    projecten: {
+      label: 'Projecten',
+      heading: ['Eén cockpit', 'Alles gedaan'],
+      sub: 'Klant belt? Project aanmaken. Offerte, werkbon, montage, factuur. Alles vanuit één cockpit.',
+      image: '/images/features/hero-projecten-float.png',
+      imageW: 2400, imageH: 1350,
+      overlays: [
+        { image: '/images/features/portaal-overlay.webp', alt: 'Klantportaal', w: 1024, h: 572, label: 'Klantportaal', pos: { left: '-20%', top: '10%', width: '45%' }, from: { x: -40, y: 20 } },
+        { image: '/images/features/acties-overlay.webp', alt: 'Project acties', w: 1024, h: 572, label: 'Acties', pos: { right: '-16%', top: '2%', width: '38%' }, from: { x: 40, y: 20 } },
+        { image: '/images/features/activiteit-overlay.webp', alt: 'Activiteiten log', w: 1434, h: 1070, label: 'Activiteiten', pos: { right: '-8%', bottom: '8%', width: '35%' }, from: { x: 30, y: 30 } },
+      ],
+    },
+    offertes: {
+      label: 'Offertes',
+      heading: ['Offerte?', 'Zo gedaan'],
+      sub: 'Eigen templates, eigen producten, eigen calculatie. Combineer elementen tot één prijs. Verstuur per mail of laat goedkeuren via het portaal.',
+      image: '/images/features/hero-offertes.webp',
+      imageW: 1536, imageH: 857,
+      overlays: [
+        { image: '/images/features/overzicht-offerte.webp', alt: 'Offerte overzicht', w: 1147, h: 1536, label: 'Overzicht', pos: { right: '-14%', top: '5%', width: '35%' }, from: { x: 40, y: 20 } },
+        { image: '/images/features/offerte-calculatie.webp', alt: 'Offerte calculatie', w: 1536, h: 1350, label: 'Calculatie', pos: { left: '-16%', top: '15%', width: '40%' }, from: { x: -40, y: 20 } },
+      ],
+    },
+  }
+
+  const heroConfig = moduleSlug ? heroConfigs[moduleSlug] : undefined
+  const showHero = !!heroConfig
+
   return (
-    <div className="pt-28 md:pt-36">
-      {/* Header */}
-      <section className="pb-10 md:pb-14">
-        <div className="container-site text-center">
-          <SectionReveal>
-            <p className="font-mono text-[12px] font-bold tracking-[0.2em] uppercase text-flame mb-4">8 modules. Eén systeem.</p>
-            <h1 className="font-heading text-[40px] md:text-[56px] font-bold text-petrol tracking-[-2.5px] leading-[0.95] mb-5">
-              Niet erover praten<span className="text-flame">.</span><br />
-              <span className="text-petrol/40">Gewoon</span> doen<span className="text-flame">.</span>
-            </h1>
-            <p className="text-[17px] max-w-lg mx-auto leading-relaxed" style={{ color: '#6B6B66' }}>
-              Elke module is gebouwd voor hoe jij werkt. Van eerste klantvraag tot oplevering. Klik op een module en ontdek wat erin zit.
-            </p>
-          </SectionReveal>
-        </div>
-      </section>
+    <div className={showHero ? '' : 'pt-28 md:pt-36'}>
+      {showHero ? (
+        <section>
+          {/* Dark hero block — full bleed */}
+          <div className="relative overflow-hidden min-h-[90vh] md:min-h-[100vh] flex flex-col" style={{ background: 'linear-gradient(180deg, #0D2B30 0%, #143F46 25%, #1A535C 50%, #143F46 85%, #0D2B30 100%)' }}>
+
+            {/* Animated glow orbs — flame dominant */}
+            <motion.div
+              className="absolute pointer-events-none"
+              style={{ width: '800px', height: '800px', top: '25%', left: '50%', x: '-50%', background: 'radial-gradient(circle, rgba(241,80,37,0.18) 0%, rgba(241,80,37,0.05) 40%, transparent 70%)', filter: 'blur(80px)' }}
+              animate={{ scale: [1, 1.15, 1], opacity: [0.5, 1, 0.5] }}
+              transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+            />
+            <motion.div
+              className="absolute pointer-events-none"
+              style={{ width: '500px', height: '500px', top: '45%', left: '15%', background: 'radial-gradient(circle, rgba(241,80,37,0.12) 0%, transparent 60%)', filter: 'blur(70px)' }}
+              animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.7, 0.3] }}
+              transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+            />
+            <motion.div
+              className="absolute pointer-events-none"
+              style={{ width: '500px', height: '500px', top: '40%', right: '10%', background: 'radial-gradient(circle, rgba(241,80,37,0.14) 0%, transparent 60%)', filter: 'blur(70px)' }}
+              animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0.8, 0.3] }}
+              transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut', delay: 4 }}
+            />
+            {/* Subtle warm ambient under the laptop */}
+            <div
+              className="absolute pointer-events-none"
+              style={{ width: '100%', height: '400px', bottom: '5%', left: 0, background: 'radial-gradient(ellipse 50% 80% at 50% 100%, rgba(241,80,37,0.08) 0%, transparent 70%)' }}
+            />
+
+            {/* Floating particles */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+              {Array.from({ length: 20 }).map((_, i) => (
+                <motion.div
+                  key={i}
+                  className="absolute rounded-full"
+                  style={{
+                    width: i % 4 === 0 ? 3 : 2,
+                    height: i % 4 === 0 ? 3 : 2,
+                    left: `${(i * 5.3 + 3) % 100}%`,
+                    top: `${(i * 7.1 + 10) % 90}%`,
+                    backgroundColor: i % 3 === 0 ? '#F15025' : 'rgba(255,255,255,0.2)',
+                  }}
+                  animate={{
+                    y: [0, -30, 0],
+                    opacity: [0.2, 0.7, 0.2],
+                  }}
+                  transition={{
+                    duration: 4 + (i % 3) * 2,
+                    repeat: Infinity,
+                    ease: 'easeInOut',
+                    delay: i * 0.3,
+                  }}
+                />
+              ))}
+            </div>
+
+            {/* Grid pattern overlay */}
+            <div
+              className="absolute inset-0 pointer-events-none opacity-[0.03]"
+              style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.3) 1px, transparent 1px)', backgroundSize: '60px 60px' }}
+            />
+
+            {/* Text content */}
+            <div className="container-site text-center pt-40 md:pt-48 relative z-10">
+              <motion.p
+                className="font-mono text-[11px] md:text-[12px] font-bold tracking-[0.3em] uppercase mb-6"
+                style={{ color: '#F15025' }}
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              >
+                {heroConfig!.label}
+              </motion.p>
+              <motion.h1
+                className="font-heading text-[44px] md:text-[64px] lg:text-[76px] font-extrabold tracking-[-3px] leading-[0.9] mb-7 text-white"
+                initial={{ opacity: 0, y: 25 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+              >
+                {heroConfig!.heading[0]}<span className="text-flame">.</span><br />{' '}{heroConfig!.heading[1]}<span className="text-flame">.</span>
+              </motion.h1>
+              <motion.p
+                className="text-[16px] md:text-[19px] max-w-lg mx-auto leading-relaxed mb-10 md:mb-14"
+                style={{ color: 'rgba(255,255,255,0.5)' }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+              >
+                {heroConfig!.sub}
+              </motion.p>
+            </div>
+
+            {/* Laptop — floating with perspective */}
+            <div className="flex-1 flex items-end justify-center relative z-10" style={{ perspective: '1200px' }}>
+              <motion.div
+                className="relative w-full px-4 md:px-0"
+                style={{ maxWidth: '1050px' }}
+                initial={{ opacity: 0, y: 80, rotateX: 8 }}
+                animate={{ opacity: 1, y: 0, rotateX: 0 }}
+                transition={{ duration: 1.2, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              >
+                {/* Screen glow reflection */}
+                <div
+                  className="absolute -inset-8 md:-inset-16 rounded-[40px] pointer-events-none"
+                  style={{ background: 'radial-gradient(ellipse 70% 60% at 50% 40%, rgba(255,255,255,0.04) 0%, transparent 70%)' }}
+                />
+                <Image
+                  src={heroConfig!.image}
+                  alt={`doen. ${heroConfig!.label} op MacBook`}
+                  width={heroConfig!.imageW}
+                  height={heroConfig!.imageH}
+                  priority
+                  className="w-full h-auto relative"
+                  style={{ filter: 'drop-shadow(0 40px 80px rgba(0,0,0,0.5)) drop-shadow(0 15px 40px rgba(241,80,37,0.15)) drop-shadow(0 0 120px rgba(241,80,37,0.08))' }}
+                />
+
+                {/* Dynamic floating overlays */}
+                {heroConfig!.overlays?.map((overlay, i) => (
+                  <motion.div
+                    key={overlay.label}
+                    className="absolute hidden md:block"
+                    style={overlay.pos}
+                    initial={{ opacity: 0, x: overlay.from.x, y: overlay.from.y }}
+                    animate={{ opacity: 1, x: 0, y: 0 }}
+                    transition={{ duration: 0.8, delay: 1 + i * 0.2, ease: [0.16, 1, 0.3, 1] }}
+                  >
+                    <motion.div
+                      animate={{ y: [0, -5 - (i % 2), 0] }}
+                      transition={{ duration: 4.5 + i, repeat: Infinity, ease: 'easeInOut', delay: i }}
+                    >
+                      <div className="relative">
+                        <Image
+                          src={overlay.image}
+                          alt={overlay.alt}
+                          width={overlay.w}
+                          height={overlay.h}
+                          className="w-full h-auto rounded-xl"
+                          style={{ filter: 'drop-shadow(0 25px 60px rgba(0,0,0,0.5)) drop-shadow(0 8px 25px rgba(241,80,37,0.15))' }}
+                        />
+                        <div className="absolute -bottom-3 right-4 px-3 py-1.5 rounded-full" style={{ backgroundColor: '#F15025' }}>
+                          <span className="font-mono text-[9px] font-bold tracking-[0.15em] uppercase text-white">{overlay.label}</span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  </motion.div>
+                ))}
+              </motion.div>
+            </div>
+
+            {/* Bottom fade into page */}
+            <div className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none z-20" style={{ background: 'linear-gradient(to top, #0D2B30 0%, transparent 100%)' }} />
+
+            {/* Spectrum bar */}
+            <div className="absolute bottom-0 left-0 right-0 h-[3px] z-30" style={{ background: 'linear-gradient(90deg, #F15025 0%, #D4453A 18%, #9A4070 38%, #6A5A8A 50%, #3A6B8C 65%, #2D6B48 80%, #1A535C 100%)' }} />
+          </div>
+
+          {/* Three pillars section — only for modules with overlays */}
+          {heroConfig!.overlays && <div style={{ background: '#0D2B30' }}>
+            <div className="container-site py-16 md:py-24">
+              <SectionReveal>
+                <p className="font-mono text-[11px] md:text-[12px] font-bold tracking-[0.3em] uppercase text-center mb-3" style={{ color: '#F15025' }}>
+                  De kern van elk project
+                </p>
+                <h2 className="font-heading text-[28px] md:text-[36px] font-bold text-white tracking-[-1.5px] text-center mb-14 md:mb-20">
+                  Eén project<span className="text-flame">.</span> Drie pijlers<span className="text-flame">.</span>
+                </h2>
+              </SectionReveal>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-10">
+                {[
+                  {
+                    image: '/images/features/acties-overlay.webp',
+                    alt: 'Project acties',
+                    label: 'Acties',
+                    title: 'Alles vanuit het project',
+                    description: 'Offerte, werkbon, factuur, montage, email. Eén klik vanuit het project. Alles blijft gekoppeld — niks zoeken, niks vergeten.',
+                    width: 1024,
+                    height: 572,
+                  },
+                  {
+                    image: '/images/features/portaal-overlay.webp',
+                    alt: 'Klantportaal',
+                    label: 'Klantportaal',
+                    title: 'Je klant doet mee',
+                    description: 'Offerte goedkeuren, tekeningen bekijken, vragen stellen. Alles via één link. Geen inlog. Reageert de klant niet? doen. herinnert automatisch.',
+                    width: 1024,
+                    height: 572,
+                  },
+                  {
+                    image: '/images/features/activiteit-overlay.webp',
+                    alt: 'Activiteiten log',
+                    label: 'Activiteiten',
+                    title: 'Alles wat er gebeurt',
+                    description: 'Offerte verstuurd, klant akkoord, werkbon aangemaakt, montage ingepland. Elke stap zichtbaar in één timeline. Niks missen.',
+                    width: 1434,
+                    height: 1070,
+                  },
+                ].map((item, i) => (
+                  <motion.div
+                    key={item.label}
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: '-60px' }}
+                    transition={{ duration: 0.6, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
+                  >
+                    <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#143F46' }}>
+                      <Image
+                        src={item.image}
+                        alt={item.alt}
+                        width={item.width}
+                        height={item.height}
+                        className="w-full h-auto"
+                      />
+                    </div>
+                    <div className="mt-5">
+                      <p className="font-mono text-[9px] font-bold tracking-[0.25em] uppercase" style={{ color: '#F15025' }}>
+                        {item.label}
+                      </p>
+                      <h3 className="text-[17px] md:text-[19px] font-bold text-white tracking-tight mt-1.5">
+                        {item.title}<span className="text-flame">.</span>
+                      </h3>
+                      <p className="text-[13px] md:text-[14px] leading-[1.7] mt-2" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                        {item.description}
+                      </p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </div>}
+        </section>
+      ) : (
+        <section className="pb-10 md:pb-14">
+          <div className="container-site text-center">
+            <SectionReveal>
+              <p className="font-mono text-[12px] font-bold tracking-[0.2em] uppercase text-flame mb-4">8 modules. Eén systeem.</p>
+              <h1 className="font-heading text-[40px] md:text-[56px] font-bold text-petrol tracking-[-2.5px] leading-[0.95] mb-5">
+                Niet erover praten<span className="text-flame">.</span><br />
+                <span className="text-petrol/40">Gewoon</span> doen<span className="text-flame">.</span>
+              </h1>
+              <p className="text-[17px] max-w-lg mx-auto leading-relaxed" style={{ color: '#6B6B66' }}>
+                Elke module is gebouwd voor hoe jij werkt. Van eerste klantvraag tot oplevering. Klik op een module en ontdek wat erin zit.
+              </p>
+            </SectionReveal>
+          </div>
+        </section>
+      )}
 
       {/* Module thumbnail grid */}
       <section className="bg-white pt-4 pb-0">
@@ -182,9 +444,9 @@ export default function FeaturesContent() {
             className="flex justify-center gap-3 md:gap-4 flex-wrap pb-8"
           >
             {modules.map((m, i) => (
-              <button
+              <Link
                 key={m.id}
-                onClick={() => selectModule(i)}
+                href={`/features/${m.id}`}
                 className={`transition-all duration-300 ${
                   activeModule === i ? 'scale-100' : 'scale-[0.97] opacity-50 hover:opacity-75'
                 }`}
@@ -205,7 +467,7 @@ export default function FeaturesContent() {
                 }`} style={activeModule === i ? { color: m.color } : {}}>
                   {m.name}<span style={{ color: m.color }}>.</span>
                 </p>
-              </button>
+              </Link>
             ))}
           </div>
 
