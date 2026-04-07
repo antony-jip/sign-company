@@ -1689,6 +1689,12 @@ export interface DocumentStyle {
   briefpapier_url: string;
   briefpapier_modus: BriefpapierModus;
   vervolgpapier_url: string;
+  // Briefpapier layout — alleen actief wanneer briefpapier wordt gebruikt
+  briefpapier_safe_zone_boven?: number; // extra mm boven content
+  briefpapier_safe_zone_onder?: number; // extra mm onder content
+  briefpapier_safe_zone_links?: number; // extra mm links (negatief = naar buiten)
+  briefpapier_safe_zone_rechts?: number; // extra mm rechts (negatief = naar buiten)
+  briefpapier_toon_branding?: boolean;  // override auto-hide van logo/naam/footer
   // Header / Footer
   toon_header: boolean;
   toon_footer: boolean;
@@ -1696,6 +1702,7 @@ export interface DocumentStyle {
   // Tabel styling
   tabel_stijl: 'striped' | 'grid' | 'plain';
   tabel_header_kleur: string;
+  tabel_header_tekst_kleur?: string;
   created_at: string;
   updated_at: string;
 }

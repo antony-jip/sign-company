@@ -80,10 +80,49 @@ const HUISSTIJL_TABS: SubTab[] = [
   { id: 'template', label: 'Template & Kleuren', icon: LayoutTemplate },
   { id: 'typografie', label: 'Typografie', icon: Type },
   { id: 'layout', label: 'Layout', icon: Maximize2 },
-  { id: 'briefpapier', label: 'Briefpapier', icon: Image },
 ]
 
 // ============ LIVE PREVIEW COMPONENT ============
+
+function SliderWithInput({ label, unit, min, max, value, onChange }: {
+  label: string
+  unit: string
+  min: number
+  max: number
+  value: number
+  onChange: (value: number) => void
+}) {
+  const clamp = (n: number) => Math.min(max, Math.max(min, n))
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between gap-2">
+        <Label className="text-xs text-muted-foreground dark:text-muted-foreground/60">{label}</Label>
+        <div className="flex items-center gap-1">
+          <input
+            type="number"
+            min={min}
+            max={max}
+            value={value}
+            onChange={(e) => {
+              const n = parseInt(e.target.value)
+              if (!Number.isNaN(n)) onChange(clamp(n))
+            }}
+            className="w-12 h-6 text-[11px] font-mono text-right px-1.5 bg-[#F8F7F5] border border-[#EBEBEB] rounded-md focus:outline-none focus:border-[#1A535C]/40 focus:bg-white transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          />
+          <span className="text-[10px] text-[#9B9B95] font-mono w-4">{unit}</span>
+        </div>
+      </div>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        value={value}
+        onChange={(e) => onChange(parseInt(e.target.value))}
+        className="w-full accent-[#1A535C]"
+      />
+    </div>
+  )
+}
 
 function DocumentPreview({ style, logoUrl, bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer }: {
   style: DocumentStyle
@@ -143,13 +182,30 @@ function DocumentPreview({ style, logoUrl, bedrijfsnaam, bedrijfsAdres, kvkNumme
             />
           )}
 
+          {/* Content-area indicator — alleen wanneer briefpapier actief */}
+          {style.briefpapier_modus !== 'geen' && style.briefpapier_url && (
+            <div
+              className="absolute pointer-events-none border border-dashed border-[#1A535C]/40 rounded-sm"
+              style={{
+                top: `${((style.marge_boven + (style.briefpapier_safe_zone_boven ?? 0)) / 297) * 100}%`,
+                bottom: `${((style.marge_onder + (style.briefpapier_safe_zone_onder ?? 0)) / 297) * 100}%`,
+                left: `${(Math.max(0, style.marge_links + (style.briefpapier_safe_zone_links ?? 0)) / 210) * 100}%`,
+                right: `${(Math.max(0, style.marge_rechts + (style.briefpapier_safe_zone_rechts ?? 0)) / 210) * 100}%`,
+              }}
+            >
+              <span className="absolute -top-3 left-1 text-[8px] uppercase tracking-wider font-medium text-[#1A535C]/70 bg-white/80 px-1 rounded">
+                Content
+              </span>
+            </div>
+          )}
+
           <div
             className="relative h-full flex flex-col"
             style={{
-              paddingTop: `${(style.marge_boven / 297) * 100}%`,
-              paddingBottom: `${(style.marge_onder / 297) * 100}%`,
-              paddingLeft: `${(style.marge_links / 210) * 100}%`,
-              paddingRight: `${(style.marge_rechts / 210) * 100}%`,
+              paddingTop: `${((style.marge_boven + (style.briefpapier_modus !== 'geen' && style.briefpapier_url ? (style.briefpapier_safe_zone_boven ?? 0) : 0)) / 297) * 100}%`,
+              paddingBottom: `${((style.marge_onder + (style.briefpapier_modus !== 'geen' && style.briefpapier_url ? (style.briefpapier_safe_zone_onder ?? 0) : 0)) / 297) * 100}%`,
+              paddingLeft: `${(Math.max(0, style.marge_links + (style.briefpapier_modus !== 'geen' && style.briefpapier_url ? (style.briefpapier_safe_zone_links ?? 0) : 0)) / 210) * 100}%`,
+              paddingRight: `${(Math.max(0, style.marge_rechts + (style.briefpapier_modus !== 'geen' && style.briefpapier_url ? (style.briefpapier_safe_zone_rechts ?? 0) : 0)) / 210) * 100}%`,
             }}
           >
             {/* Header — skip branding als briefpapier actief */}
@@ -261,7 +317,7 @@ function DocumentPreview({ style, logoUrl, bedrijfsnaam, bedrijfsAdres, kvkNumme
                   <tr
                     style={{
                       backgroundColor: style.tabel_header_kleur,
-                      color: style.tekst_kleur,
+                      color: style.tabel_header_tekst_kleur ?? '#FFFFFF',
                       fontFamily: `'${style.body_font}', sans-serif`,
                       fontWeight: 600,
                     }}
@@ -373,10 +429,10 @@ function DocumentPreview({ style, logoUrl, bedrijfsnaam, bedrijfsAdres, kvkNumme
             <div
               className="relative h-full flex flex-col"
               style={{
-                paddingTop: `${(style.marge_boven / 297) * 100}%`,
-                paddingBottom: `${(style.marge_onder / 297) * 100}%`,
-                paddingLeft: `${(style.marge_links / 210) * 100}%`,
-                paddingRight: `${(style.marge_rechts / 210) * 100}%`,
+                paddingTop: `${((style.marge_boven + (style.vervolgpapier_url ? (style.briefpapier_safe_zone_boven ?? 0) : 0)) / 297) * 100}%`,
+                paddingBottom: `${((style.marge_onder + (style.vervolgpapier_url ? (style.briefpapier_safe_zone_onder ?? 0) : 0)) / 297) * 100}%`,
+                paddingLeft: `${(Math.max(0, style.marge_links + (style.vervolgpapier_url ? (style.briefpapier_safe_zone_links ?? 0) : 0)) / 210) * 100}%`,
+                paddingRight: `${(Math.max(0, style.marge_rechts + (style.vervolgpapier_url ? (style.briefpapier_safe_zone_rechts ?? 0) : 0)) / 210) * 100}%`,
               }}
             >
               {/* Vervolg content placeholder */}
@@ -495,7 +551,11 @@ function ColorPicker({ label, value, onChange }: {
 
 // ============ MAIN COMPONENT ============
 
-export function HuisstijlTab() {
+interface HuisstijlTabProps {
+  lockedSubTab?: 'template' | 'typografie' | 'layout' | 'briefpapier'
+}
+
+export function HuisstijlTab({ lockedSubTab }: HuisstijlTabProps = {}) {
   const { user } = useAuth()
   const { profile, logoUrl, bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer } = useAppSettings()
 
@@ -505,7 +565,7 @@ export function HuisstijlTab() {
   const [hasChanges, setHasChanges] = useState(false)
   const [uploadingBriefpapier, setUploadingBriefpapier] = useState(false)
   const [uploadingVervolgpapier, setUploadingVervolgpapier] = useState(false)
-  const [subTab, setSubTab] = useState('template')
+  const [subTab, setSubTab] = useState(lockedSubTab || 'template')
   const briefpapierInputRef = useRef<HTMLInputElement>(null)
   const vervolgpapierInputRef = useRef<HTMLInputElement>(null)
   const savedStyleRef = useRef<DocumentStyle | null>(null)
@@ -653,9 +713,13 @@ export function HuisstijlTab() {
       {/* Header with save/reset */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-foreground dark:text-white">Document Huisstijl</h2>
+          <h2 className="text-lg font-semibold text-foreground dark:text-white">
+            {lockedSubTab === 'briefpapier' ? 'Briefpapier' : 'Document Huisstijl'}
+          </h2>
           <p className="text-sm text-muted-foreground dark:text-muted-foreground/60">
-            Pas de stijl van uw offertes, facturen en andere documenten aan
+            {lockedSubTab === 'briefpapier'
+              ? 'Upload je eigen briefpapier en stel de layout-opties in'
+              : 'Pas de stijl van uw offertes, facturen en andere documenten aan'}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -672,7 +736,7 @@ export function HuisstijlTab() {
         </div>
       </div>
 
-      <SubTabNav tabs={HUISSTIJL_TABS} active={subTab} onChange={setSubTab} />
+      {!lockedSubTab && <SubTabNav tabs={HUISSTIJL_TABS} active={subTab} onChange={setSubTab} />}
 
       {/* Two column layout: editor + preview */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
@@ -725,14 +789,15 @@ export function HuisstijlTab() {
           {/* Kleuren */}
           <Section title="Kleuren" icon={Palette}>
             <div className="grid grid-cols-2 gap-4">
-              <ColorPicker label="Primaire kleur" value={style.primaire_kleur} onChange={(v) => updateStyle({ primaire_kleur: v })} />
-              <ColorPicker label="Secundaire kleur" value={style.secundaire_kleur} onChange={(v) => updateStyle({ secundaire_kleur: v })} />
-              <ColorPicker label="Accent kleur" value={style.accent_kleur} onChange={(v) => updateStyle({ accent_kleur: v })} />
-              <ColorPicker label="Tekst kleur" value={style.tekst_kleur} onChange={(v) => updateStyle({ tekst_kleur: v })} />
-            </div>
-            <Separator />
-            <div className="grid grid-cols-2 gap-4">
-              <ColorPicker label="Tabel header kleur" value={style.tabel_header_kleur} onChange={(v) => updateStyle({ tabel_header_kleur: v })} />
+              <ColorPicker
+                label="Huisstijl kleur"
+                value={style.primaire_kleur}
+                onChange={(v) => updateStyle({
+                  primaire_kleur: v,
+                  secundaire_kleur: v,
+                  accent_kleur: v,
+                })}
+              />
               <div className="space-y-1.5">
                 <Label className="text-xs text-muted-foreground dark:text-muted-foreground/60">Tabel stijl</Label>
                 <Select value={style.tabel_stijl} onValueChange={(v) => updateStyle({ tabel_stijl: v as 'striped' | 'grid' | 'plain' })}>
@@ -816,50 +881,38 @@ export function HuisstijlTab() {
           {/* Marges & Layout */}
           <Section title="Marges & Layout" icon={Maximize2}>
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground dark:text-muted-foreground/60">Boven ({style.marge_boven}mm)</Label>
-                <input
-                  type="range"
-                  min={5}
-                  max={40}
-                  value={style.marge_boven}
-                  onChange={(e) => updateStyle({ marge_boven: parseInt(e.target.value) })}
-                  className="w-full accent-blue-500"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground dark:text-muted-foreground/60">Onder ({style.marge_onder}mm)</Label>
-                <input
-                  type="range"
-                  min={5}
-                  max={40}
-                  value={style.marge_onder}
-                  onChange={(e) => updateStyle({ marge_onder: parseInt(e.target.value) })}
-                  className="w-full accent-blue-500"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground dark:text-muted-foreground/60">Links ({style.marge_links}mm)</Label>
-                <input
-                  type="range"
-                  min={10}
-                  max={40}
-                  value={style.marge_links}
-                  onChange={(e) => updateStyle({ marge_links: parseInt(e.target.value) })}
-                  className="w-full accent-blue-500"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground dark:text-muted-foreground/60">Rechts ({style.marge_rechts}mm)</Label>
-                <input
-                  type="range"
-                  min={10}
-                  max={40}
-                  value={style.marge_rechts}
-                  onChange={(e) => updateStyle({ marge_rechts: parseInt(e.target.value) })}
-                  className="w-full accent-blue-500"
-                />
-              </div>
+              <SliderWithInput
+                label="Boven"
+                unit="mm"
+                min={5}
+                max={40}
+                value={style.marge_boven}
+                onChange={(v) => updateStyle({ marge_boven: v })}
+              />
+              <SliderWithInput
+                label="Onder"
+                unit="mm"
+                min={5}
+                max={40}
+                value={style.marge_onder}
+                onChange={(v) => updateStyle({ marge_onder: v })}
+              />
+              <SliderWithInput
+                label="Links"
+                unit="mm"
+                min={10}
+                max={40}
+                value={style.marge_links}
+                onChange={(v) => updateStyle({ marge_links: v })}
+              />
+              <SliderWithInput
+                label="Rechts"
+                unit="mm"
+                min={10}
+                max={40}
+                value={style.marge_rechts}
+                onChange={(v) => updateStyle({ marge_rechts: v })}
+              />
             </div>
 
             <Separator />
@@ -879,17 +932,14 @@ export function HuisstijlTab() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground dark:text-muted-foreground/60">Logo grootte ({style.logo_grootte}%)</Label>
-                <input
-                  type="range"
-                  min={50}
-                  max={150}
-                  value={style.logo_grootte}
-                  onChange={(e) => updateStyle({ logo_grootte: parseInt(e.target.value) })}
-                  className="w-full accent-blue-500"
-                />
-              </div>
+              <SliderWithInput
+                label="Logo grootte"
+                unit="%"
+                min={50}
+                max={150}
+                value={style.logo_grootte}
+                onChange={(v) => updateStyle({ logo_grootte: v })}
+              />
             </div>
           </Section>
 
@@ -1016,6 +1066,139 @@ export function HuisstijlTab() {
                 </Select>
               </div>
             )}
+
+            {/* Layout-opties — alleen als briefpapier actief */}
+            {style.briefpapier_url && style.briefpapier_modus !== 'geen' && (
+              <div className="space-y-4 pt-5 mt-4 border-t border-[#EBEBEB]">
+                <div>
+                  <p className="text-[11px] font-semibold text-[#6B6B66] uppercase tracking-wider mb-1">Veilige zone</p>
+                  <p className="text-[11px] text-[#9B9B95] mb-3">
+                    Extra ruimte zodat content niet over kop- of voettekst van het briefpapier loopt. Negatieve waarden bij links/rechts trekken de content juist verder naar buiten — handig om uit te lijnen met je logo.
+                  </p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <SliderWithInput
+                      label="Boven"
+                      unit="mm"
+                      min={0}
+                      max={80}
+                      value={style.briefpapier_safe_zone_boven ?? 0}
+                      onChange={(v) => updateStyle({ briefpapier_safe_zone_boven: v })}
+                    />
+                    <SliderWithInput
+                      label="Onder"
+                      unit="mm"
+                      min={0}
+                      max={80}
+                      value={style.briefpapier_safe_zone_onder ?? 0}
+                      onChange={(v) => updateStyle({ briefpapier_safe_zone_onder: v })}
+                    />
+                    <SliderWithInput
+                      label="Links"
+                      unit="mm"
+                      min={-30}
+                      max={80}
+                      value={style.briefpapier_safe_zone_links ?? 0}
+                      onChange={(v) => updateStyle({ briefpapier_safe_zone_links: v })}
+                    />
+                    <SliderWithInput
+                      label="Rechts"
+                      unit="mm"
+                      min={-30}
+                      max={80}
+                      value={style.briefpapier_safe_zone_rechts ?? 0}
+                      onChange={(v) => updateStyle({ briefpapier_safe_zone_rechts: v })}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <Label className="text-[12px] font-medium text-[#1A1A1A]">Eigen branding tonen</Label>
+                    <p className="text-[11px] text-[#9B9B95] mt-0.5">
+                      Standaard worden logo, naam en footer verborgen wanneer briefpapier actief is. Zet aan om ze er toch overheen te tekenen.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={!!style.briefpapier_toon_branding}
+                    onCheckedChange={(checked) => updateStyle({ briefpapier_toon_branding: checked })}
+                  />
+                </div>
+              </div>
+            )}
+          </Section>
+
+          {/* Balkenkleuren — alleen relevant binnen briefpapier-context */}
+          <Section title="Balkenkleuren" icon={Palette}>
+            <p className="text-[11px] text-[#9B9B95] -mt-1 mb-3">
+              Stem de gekleurde balken in het document af op je briefpapier.
+            </p>
+            <div className="grid grid-cols-2 gap-4">
+              <ColorPicker
+                label="Tabel header (achtergrond)"
+                value={style.tabel_header_kleur}
+                onChange={(v) => updateStyle({ tabel_header_kleur: v })}
+              />
+              <ColorPicker
+                label="Tabel header (tekst)"
+                value={style.tabel_header_tekst_kleur ?? '#FFFFFF'}
+                onChange={(v) => updateStyle({ tabel_header_tekst_kleur: v })}
+              />
+              <ColorPicker
+                label="Accent / totaal"
+                value={style.primaire_kleur}
+                onChange={(v) => updateStyle({
+                  primaire_kleur: v,
+                  secundaire_kleur: v,
+                  accent_kleur: v,
+                })}
+              />
+              <ColorPicker
+                label="Bodytekst"
+                value={style.tekst_kleur}
+                onChange={(v) => updateStyle({ tekst_kleur: v })}
+              />
+            </div>
+          </Section>
+
+          {/* Lettertype */}
+          <Section title="Lettertype" icon={Type}>
+            <p className="text-[11px] text-[#9B9B95] -mt-1 mb-3">
+              Kies hoe de tekst eruit ziet op je documenten.
+            </p>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground dark:text-muted-foreground/60">Koptekst</Label>
+                <Select value={style.heading_font} onValueChange={(v) => updateStyle({ heading_font: v })}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {BESCHIKBARE_FONTS.map((f) => (
+                      <SelectItem key={f.naam} value={f.naam}>
+                        <span style={{ fontFamily: `'${f.naam}', ${f.categorie}` }}>{f.label}</span>
+                        <span className="ml-2 text-xs text-muted-foreground/60">({f.categorie})</span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground dark:text-muted-foreground/60">Bodytekst</Label>
+                <Select value={style.body_font} onValueChange={(v) => updateStyle({ body_font: v })}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {BESCHIKBARE_FONTS.map((f) => (
+                      <SelectItem key={f.naam} value={f.naam}>
+                        <span style={{ fontFamily: `'${f.naam}', ${f.categorie}` }}>{f.label}</span>
+                        <span className="ml-2 text-xs text-muted-foreground/60">({f.categorie})</span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </Section>
           </>
           )}

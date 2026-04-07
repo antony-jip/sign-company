@@ -848,7 +848,7 @@ function EmailSettingsInline({
     setIsSaving(true)
     try {
       // Save via API endpoint (server-side encryptie, supabaseAdmin bypass RLS)
-      const { saveEmailSettingsToDb } = await import('@/services/gmailService')
+      const { saveEmailSettingsToDb, clearEmailCache } = await import('@/services/gmailService')
       await saveEmailSettingsToDb({
         gmail_address: settings.gmail_address,
         app_password: settings.app_password,
@@ -857,6 +857,10 @@ function EmailSettingsInline({
         imap_host: settings.imap_host,
         imap_port: settings.imap_port,
       })
+
+      // Wis de cache van de vorige mailbox zodat de inbox-view alleen nog
+      // mails van het zojuist gekoppelde adres toont.
+      await clearEmailCache()
 
       // Cache in sessionStorage for quick loads
       sessionStorage.setItem('doen_email_settings', JSON.stringify(settings))
@@ -913,8 +917,9 @@ function EmailSettingsInline({
   const handleDisconnect = async () => {
     try {
       if (isSupabaseConfigured()) {
-        const { deleteEmailSettingsFromDb } = await import('@/services/gmailService')
+        const { deleteEmailSettingsFromDb, clearEmailCache } = await import('@/services/gmailService')
         await deleteEmailSettingsFromDb()
+        await clearEmailCache()
       }
     } catch (err) { /* ignore */ }
     sessionStorage.removeItem('doen_email_settings')

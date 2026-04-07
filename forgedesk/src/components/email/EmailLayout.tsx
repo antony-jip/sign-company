@@ -603,7 +603,7 @@ export function EmailLayout() {
     })
   }, [handleCompose])
 
-  const handleSendEmail = useCallback(async (data: { to: string; subject: string; body: string; html?: string; scheduledAt?: string; autoFollowUp?: AutoFollowUp }) => {
+  const handleSendEmail = useCallback(async (data: { to: string; subject: string; body: string; html?: string; scheduledAt?: string; autoFollowUp?: AutoFollowUp; attachments?: Array<{ filename: string; content: string; encoding: 'base64' }> }) => {
     try {
       let opvolgingId: string | undefined
 
@@ -639,6 +639,7 @@ export function EmailLayout() {
         html: data.html,
         scheduledAt: data.scheduledAt,
         opvolging_id: opvolgingId,
+        attachments: data.attachments,
       })
 
       // Reset auto-opvolging state na succesvol verzenden
@@ -651,9 +652,9 @@ export function EmailLayout() {
     }
   }, [user, emailHandtekening])
 
-  const handleSendReply = useCallback(async (data: { to: string; subject: string; body: string; html?: string }) => {
+  const handleSendReply = useCallback(async (data: { to: string; subject: string; body: string; html?: string; attachments?: Array<{ filename: string; content: string; encoding: 'base64' }> }) => {
     try {
-      await sendEmailViaApi(data.to, data.subject, data.body, { html: data.html })
+      await sendEmailViaApi(data.to, data.subject, data.body, { html: data.html, attachments: data.attachments })
     } catch (err) {
       logger.error('Reply verzenden mislukt:', err)
       throw err
@@ -965,20 +966,22 @@ export function EmailLayout() {
         </div>
 
         {/* Search bar — always visible */}
-        <div className="flex items-center px-4 h-11 border-b border-[#EBEBEB]">
-          <Search className="h-4 w-4 text-[#B0ADA8] mr-3 flex-shrink-0" />
-          <input
-            type="text"
-            value={searchInput}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            placeholder="Zoek in emails..."
-            className="flex-1 bg-transparent text-[14px] outline-none placeholder:text-[#B0ADA8]"
-          />
-          {searchInput && (
-            <button onClick={() => { setSearchInput(''); setSearchQuery('') }} className="p-1 hover:bg-[#F0EFEC] rounded">
-              <X className="h-4 w-4 text-[#B0ADA8]" />
-            </button>
-          )}
+        <div className="px-4 py-2 border-b border-[#EBEBEB]">
+          <div className="flex items-center gap-2 h-9 px-3 bg-[#F8F7F5] rounded-lg focus-within:ring-2 focus-within:ring-[#1A535C]/20 transition-shadow">
+            <Search className="h-4 w-4 text-[#9B9B95] flex-shrink-0" />
+            <input
+              type="text"
+              value={searchInput}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              placeholder="Zoek in emails..."
+              className="flex-1 bg-transparent text-[14px] text-[#1A1A1A] outline-none placeholder:text-[#9B9B95]"
+            />
+            {searchInput && (
+              <button onClick={() => { setSearchInput(''); setSearchQuery('') }} className="p-1 hover:bg-[#EBEBEB] rounded">
+                <X className="h-3.5 w-3.5 text-[#9B9B95]" />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Email list */}

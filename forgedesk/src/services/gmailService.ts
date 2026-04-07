@@ -382,6 +382,16 @@ export async function deleteEmailSettingsFromDb(): Promise<void> {
   })
 }
 
+// Wis de gecachte emails van de huidige user. Nodig wanneer een gebruiker
+// van mailbox wisselt: anders blijven oude rijen onder hetzelfde user_id staan
+// (cache key in api/fetch-emails.ts is user_id + message_id, niet mailbox-adres).
+export async function clearEmailCache(): Promise<void> {
+  if (!supabase) return
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user?.id) return
+  await supabase.from('emails').delete().eq('user_id', session.user.id)
+}
+
 // Legacy — keep for backward compat
 export async function getEmailSettings(): Promise<{
   gmail_address: string

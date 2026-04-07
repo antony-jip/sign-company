@@ -31,6 +31,7 @@ import {
   Sparkles,
   Bell,
   Building2,
+  Image,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -106,8 +107,8 @@ const settingsSections: SettingsSection[] = [
   { id: 'email-settings', label: 'E-mail', icon: Mail, tabs: [
     { id: 'email', label: 'E-mail', icon: Mail },
   ]},
-  { id: 'producten', label: 'Producten', icon: Package, tabs: [
-    { id: 'huisstijl', label: 'Document stijl', icon: Palette },
+  { id: 'producten', label: 'Documenten', icon: FileText, tabs: [
+    { id: 'briefpapier', label: 'Briefpapier', icon: Image },
     { id: 'documenten', label: 'Documenten', icon: FileText },
   ]},
   { id: 'integraties-all', label: 'Integraties', icon: Puzzle, tabs: [
@@ -137,7 +138,7 @@ function renderTabContent(tabId: string) {
     case 'profiel': return <ProfielTab />
     case 'bedrijf': return <BedrijfTab />
     case 'documenten': return <DocumentenTab />
-    case 'huisstijl': return <HuisstijlTab />
+    case 'briefpapier': return <HuisstijlTab lockedSubTab="briefpapier" />
     case 'calculatie': return <CalculatieTab />
     case 'email': return <EmailTab />
     case 'integraties': return <IntegratiesTab />

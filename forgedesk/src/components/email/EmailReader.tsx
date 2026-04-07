@@ -17,7 +17,7 @@ import {
   ChevronUp, ChevronDown, Reply, ReplyAll, Forward,
   Paperclip, Send, Bold, Italic, Underline,
   List, ListOrdered, Link2, Sparkles, Loader2, Download,
-  Undo2, Redo2,
+  Undo2, Redo2, X,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Email } from '@/types'
@@ -41,7 +41,7 @@ interface EmailReaderProps {
   onArchive?: (email: Email) => void
   onBack?: () => void
   onNavigate?: (direction: 'prev' | 'next') => void
-  onSendReply?: (data: { to: string; subject: string; body: string; html?: string }) => void
+  onSendReply?: (data: { to: string; subject: string; body: string; html?: string; attachments?: Array<{ filename: string; content: string; encoding: 'base64' }> }) => void
   onSelectEmail?: (email: Email) => void
 }
 
@@ -67,8 +67,10 @@ export function EmailReader({
   const [showQuotedText, setShowQuotedText] = useState(false)
   const [isSending, setIsSending] = useState(false)
   const [forgieLoading, setForgieLoading] = useState(false)
+  const [replyAttachments, setReplyAttachments] = useState<File[]>([])
   const editorRef = useRef<HTMLDivElement>(null)
   const emailBodyRef = useRef<HTMLDivElement>(null)
+  const replyFileInputRef = useRef<HTMLInputElement>(null)
 
   // Summary state
   const [summary, setSummary] = useState<string | null>(null)
@@ -117,6 +119,7 @@ export function EmailReader({
   const handleReply = useCallback((mode: 'reply' | 'reply-all' | 'forward') => {
     if (!email) return
     setReplyMode(mode)
+    setReplyAttachments([])
     if (mode === 'forward') {
       setReplyTo('')
     } else {
@@ -148,13 +151,30 @@ export function EmailReader({
       const prefix = replyMode === 'forward' ? 'Fwd: ' : 'Re: '
       const subject = email.onderwerp.startsWith(prefix) ? email.onderwerp : `${prefix}${email.onderwerp}`
       const quotedOriginal = `<br><br><div style="border-left:2px solid #ccc;padding-left:12px;margin-left:0;color:#666;"><p>Op ${formatShortDate(email.datum)} schreef ${extractSenderName(email.van)}:</p>${email.inhoud}</div>`
+
+      const fileToBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(((reader.result as string) || '').split(',')[1] || '')
+        reader.onerror = () => reject(reader.error)
+        reader.readAsDataURL(file)
+      })
+      const attachmentPayload = replyAttachments.length
+        ? await Promise.all(replyAttachments.map(async (file) => ({
+            filename: file.name,
+            content: await fileToBase64(file),
+            encoding: 'base64' as const,
+          })))
+        : undefined
+
       await onSendReply({
         to: replyTo,
         subject,
         body: editorRef.current.innerText,
         html: html + quotedOriginal,
+        attachments: attachmentPayload,
       })
       setReplyMode(null)
+      setReplyAttachments([])
       toast.success('Email verzonden')
     } catch (err) {
       logger.error('Fout bij verzenden email:', err)
@@ -162,7 +182,7 @@ export function EmailReader({
     } finally {
       setIsSending(false)
     }
-  }, [email, replyMode, replyTo, onSendReply])
+  }, [email, replyMode, replyTo, onSendReply, replyAttachments])
 
   const handleForgieWrite = useCallback(async () => {
     if (!email || !editorRef.current) return
@@ -429,6 +449,26 @@ export function EmailReader({
             />
             <AIContentEditableToolbar editorRef={editorRef} />
 
+            {/* ─── Attachments ─── */}
+            {replyAttachments.length > 0 && (
+              <div className="flex flex-wrap gap-2 px-5 py-2.5 border-t border-[#F0EFEC] bg-[#F8F7F5]">
+                {replyAttachments.map((file, i) => (
+                  <div key={i} className="inline-flex items-center gap-2 px-2.5 py-1.5 bg-white rounded-lg border border-[#EBEBEB] text-[12px] text-[#6B6B66]">
+                    <Paperclip className="h-3 w-3 text-[#9B9B95]" />
+                    <span className="max-w-[180px] truncate">{file.name}</span>
+                    <span className="text-[10px] text-[#9B9B95] font-mono">{(file.size / 1024).toFixed(0)}KB</span>
+                    <button
+                      onClick={() => setReplyAttachments(prev => prev.filter((_, idx) => idx !== i))}
+                      className="text-[#9B9B95] hover:text-[#C0451A] transition-colors"
+                      title="Verwijderen"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {/* ─── Toolbar (inline, under signature) ─── */}
             <div className="flex items-center justify-between px-5 py-2.5 border-t border-b border-[#F0EFEC] bg-[#F8F7F5]">
               <div className="flex items-center">
@@ -450,7 +490,18 @@ export function EmailReader({
                 <div className="w-px h-5 bg-[#F0EFEC] mx-1" />
                 <div className="flex items-center gap-px">
                   <button onClick={() => { const url = prompt('URL:'); if (url) execCommand('createLink', url) }} className="h-8 w-8 flex items-center justify-center rounded-md text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC] transition-colors duration-150" title="Link"><Link2 className="h-4 w-4" /></button>
-                  <button className="h-8 w-8 flex items-center justify-center rounded-md text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC] transition-colors duration-150" title="Bijlage"><Paperclip className="h-4 w-4" /></button>
+                  <button onClick={() => replyFileInputRef.current?.click()} className="h-8 w-8 flex items-center justify-center rounded-md text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC] transition-colors duration-150" title="Bijlage"><Paperclip className="h-4 w-4" /></button>
+                  <input
+                    ref={replyFileInputRef}
+                    type="file"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files || [])
+                      if (files.length) setReplyAttachments(prev => [...prev, ...files])
+                      e.target.value = ''
+                    }}
+                  />
                 </div>
               </div>
 

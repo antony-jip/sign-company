@@ -25,7 +25,7 @@ interface EmailComposeProps {
   defaultTo?: string
   defaultSubject?: string
   defaultBody?: string
-  onSend?: (data: { to: string; subject: string; body: string; html?: string; scheduledAt?: string; autoFollowUp?: AutoFollowUp }) => void
+  onSend?: (data: { to: string; subject: string; body: string; html?: string; scheduledAt?: string; autoFollowUp?: AutoFollowUp; attachments?: Array<{ filename: string; content: string; encoding: 'base64' }> }) => void
   allEmails?: Email[]
   onToChange?: (to: string) => void
   onRegisterActions?: (actions: ComposeActions) => void
@@ -291,6 +291,29 @@ export function EmailCompose({
     editorRef.current?.focus()
   }, [])
 
+  const fileToBase64 = useCallback((file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => {
+        const result = reader.result as string
+        resolve(result.split(',')[1] || '')
+      }
+      reader.onerror = () => reject(reader.error)
+      reader.readAsDataURL(file)
+    })
+  }, [])
+
+  const buildAttachmentPayload = useCallback(async () => {
+    if (!attachments.length) return undefined
+    return Promise.all(
+      attachments.map(async (file) => ({
+        filename: file.name,
+        content: await fileToBase64(file),
+        encoding: 'base64' as const,
+      }))
+    )
+  }, [attachments, fileToBase64])
+
   const handleSend = useCallback(async () => {
     if (!to.trim()) {
       toast.error('Vul een ontvanger in')
@@ -304,8 +327,10 @@ export function EmailCompose({
     try {
       const html = editorRef.current?.innerHTML || ''
       const body = editorRef.current?.innerText || ''
-      await onSend?.({ to, subject, body, html, autoFollowUp: autoFollowUp.enabled ? autoFollowUp : undefined })
+      const attachmentPayload = await buildAttachmentPayload()
+      await onSend?.({ to, subject, body, html, autoFollowUp: autoFollowUp.enabled ? autoFollowUp : undefined, attachments: attachmentPayload })
       toast.success(autoFollowUp.enabled ? `Email verzonden — opvolging na ${autoFollowUp.dagen} dagen` : 'Email verzonden')
+      setAttachments([])
       onOpenChange(false)
     } catch (err) {
       logger.error('Email send failed:', err)
@@ -313,7 +338,7 @@ export function EmailCompose({
     } finally {
       setIsSending(false)
     }
-  }, [to, subject, onSend, onOpenChange, autoFollowUp])
+  }, [to, subject, onSend, onOpenChange, autoFollowUp, buildAttachmentPayload])
 
   const handleScheduleSend = useCallback(async (scheduledAt: string, label: string) => {
     if (!to.trim()) { toast.error('Vul een ontvanger in'); return }
@@ -323,8 +348,10 @@ export function EmailCompose({
     try {
       const html = editorRef.current?.innerHTML || ''
       const body = editorRef.current?.innerText || ''
-      await onSend?.({ to, subject, body, html, scheduledAt, autoFollowUp: autoFollowUp.enabled ? autoFollowUp : undefined })
+      const attachmentPayload = await buildAttachmentPayload()
+      await onSend?.({ to, subject, body, html, scheduledAt, autoFollowUp: autoFollowUp.enabled ? autoFollowUp : undefined, attachments: attachmentPayload })
       toast.success(`Email ingepland: ${label}`)
+      setAttachments([])
       onOpenChange(false)
     } catch (err) {
       logger.error('Email schedule failed:', err)
@@ -332,7 +359,7 @@ export function EmailCompose({
     } finally {
       setIsSending(false)
     }
-  }, [to, subject, onSend, onOpenChange, autoFollowUp])
+  }, [to, subject, onSend, onOpenChange, autoFollowUp, buildAttachmentPayload])
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])

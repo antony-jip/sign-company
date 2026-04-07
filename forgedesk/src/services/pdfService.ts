@@ -101,11 +101,20 @@ function getBaseFontSize(docStyle?: DocumentStyle | null): number {
 }
 
 function getMargins(docStyle?: DocumentStyle | null): { top: number; bottom: number; left: number; right: number } {
+  const baseTop = docStyle?.marge_boven ?? 15
+  const baseBottom = docStyle?.marge_onder ?? 20
+  const baseLeft = docStyle?.marge_links ?? 20
+  const baseRight = docStyle?.marge_rechts ?? 20
+  const briefpapierActief = isBriefpapierActief(docStyle)
+  const safeTop = briefpapierActief ? (docStyle?.briefpapier_safe_zone_boven ?? 0) : 0
+  const safeBottom = briefpapierActief ? (docStyle?.briefpapier_safe_zone_onder ?? 0) : 0
+  const safeLeft = briefpapierActief ? (docStyle?.briefpapier_safe_zone_links ?? 0) : 0
+  const safeRight = briefpapierActief ? (docStyle?.briefpapier_safe_zone_rechts ?? 0) : 0
   return {
-    top: docStyle?.marge_boven ?? 15,
-    bottom: docStyle?.marge_onder ?? 20,
-    left: docStyle?.marge_links ?? 20,
-    right: docStyle?.marge_rechts ?? 20,
+    top: baseTop + safeTop,
+    bottom: baseBottom + safeBottom,
+    left: Math.max(0, baseLeft + safeLeft),
+    right: Math.max(0, baseRight + safeRight),
   }
 }
 
@@ -216,9 +225,11 @@ function addHeader(
   }
 
   const hasBriefpapier = isBriefpapierActief(docStyle)
+  const toonBrandingOverBriefpapier = !!docStyle?.briefpapier_toon_branding
 
-  // Als briefpapier actief → skip branding (logo, naam, adres, lijn) want dat staat al op het briefpapier
-  if (!hasBriefpapier) {
+  // Als briefpapier actief → skip branding (logo, naam, adres, lijn) want dat staat al op het briefpapier,
+  // tenzij gebruiker expliciet heeft gekozen om branding ook over briefpapier te tonen.
+  if (!hasBriefpapier || toonBrandingOverBriefpapier) {
     const logoPositie = docStyle?.logo_positie || 'links'
     const logoGrootte = docStyle?.logo_grootte ?? 100
     const logoScale = logoGrootte / 100
@@ -385,7 +396,7 @@ function addFooter(doc: jsPDF, bedrijfsProfiel: Partial<Profile>, docStyle?: Doc
 
   const pageCount = doc.getNumberOfPages()
   const bodyFont = getBodyFont(docStyle)
-  const hasBriefpapier = isBriefpapierActief(docStyle)
+  const hasBriefpapier = isBriefpapierActief(docStyle) && !docStyle?.briefpapier_toon_branding
 
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i)
@@ -449,12 +460,18 @@ function getAutoTableStyles(_brand: [number, number, number], docStyle?: Documen
   const textColor = getTextColor(docStyle)
   const tableTheme = getTableTheme(docStyle)
   const bodyFont = getBodyFont(docStyle)
+  const headerBg: [number, number, number] = docStyle?.tabel_header_kleur
+    ? hexToRgb(docStyle.tabel_header_kleur)
+    : [244, 242, 238]
+  const headerText: [number, number, number] = docStyle?.tabel_header_tekst_kleur
+    ? hexToRgb(docStyle.tabel_header_tekst_kleur)
+    : [160, 160, 152]
 
   return {
     theme: tableTheme,
     headStyles: {
-      fillColor: [244, 242, 238] as [number, number, number],  // #F4F2EE warm bg
-      textColor: [160, 160, 152] as [number, number, number],  // #A0A098 muted
+      fillColor: headerBg,
+      textColor: headerText,
       fontStyle: 'bold' as const,
       fontSize: 9,
       font: bodyFont,

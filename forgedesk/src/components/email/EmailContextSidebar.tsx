@@ -7,8 +7,11 @@ import {
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import type { Email, Klant, Medewerker } from '@/types'
-import { getKlanten, getProjectenByKlant, getOffertesByKlant, createKlant, createProject, createTaak, getMedewerkers } from '@/services/supabaseService'
+import { getKlanten, getProjectenByKlant, getOffertesByKlant, createKlant, createProject, createTaak, getMedewerkers, generateProjectNummer, getAppSettings } from '@/services/supabaseService'
 import { chatCompletion } from '@/services/aiService'
+import { useAuth } from '@/contexts/AuthContext'
+import { KlantContactSelector } from '@/components/shared/KlantContactSelector'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { getAvatarStyle, extractSenderName } from './emailHelpers'
 import type { AutoFollowUp } from './emailTypes'
 import { toast } from 'sonner'
@@ -80,6 +83,7 @@ export function EmailContextSidebar({
   reminderCount = 0,
 }: EmailContextSidebarProps) {
   const navigate = useNavigate()
+  const { user } = useAuth()
 
   // ── Contact info ──
   const contactEmail = mode === 'reading' ? (propSenderEmail || '') : (composeToAddress || '')
@@ -101,7 +105,16 @@ export function EmailContextSidebar({
   const [allKlanten, setAllKlanten] = useState<Klant[]>([])
   const [klantSearchMode, setKlantSearchMode] = useState(true)
   const [klantForm, setKlantForm] = useState({ bedrijfsnaam: '', contactpersoon: '', email: '', telefoon: '' })
-  const [projectForm, setProjectForm] = useState({ naam: '', beschrijving: '' })
+  const [projectForm, setProjectForm] = useState({
+    naam: '',
+    beschrijving: '',
+    klant_id: '',
+    contactpersoon_id: '',
+    vestiging_id: '',
+    status: 'gepland' as 'gepland' | 'actief' | 'in-review' | 'afgerond' | 'on-hold' | 'te-factureren' | 'te-plannen',
+    start_datum: '',
+    eind_datum: '',
+  })
   const [taakForm, setTaakForm] = useState({ titel: '', beschrijving: '', deadline: '', toegewezen_aan: '' })
   const [addToExistingKlant, setAddToExistingKlant] = useState<Klant | null>(null)
   const [medewerkers, setMedewerkers] = useState<Medewerker[]>([])
@@ -161,7 +174,17 @@ export function EmailContextSidebar({
       setKlantSearchMode(true)
       getKlanten(500).then(k => setAllKlanten(k)).catch(() => {})
     } else if (panel === 'project') {
-      setProjectForm({ naam: `${klantDisplayName || 'Project'} - ${email?.onderwerp?.slice(0, 40) || ''}`.trim(), beschrijving: '' })
+      setProjectForm({
+        naam: `${klantDisplayName || 'Project'} - ${email?.onderwerp?.slice(0, 40) || ''}`.trim(),
+        beschrijving: '',
+        klant_id: linkedKlant?.id || '',
+        contactpersoon_id: '',
+        vestiging_id: '',
+        status: 'gepland',
+        start_datum: new Date().toISOString().split('T')[0],
+        eind_datum: '',
+      })
+      getKlanten(500).then(k => setAllKlanten(k)).catch(() => {})
     } else if (panel === 'taak') {
       setTaakForm({ titel: email?.onderwerp || 'Opvolging email', beschrijving: `Van: ${contactName} <${contactEmail}>`, deadline: '', toegewezen_aan: '' })
     }
@@ -193,14 +216,38 @@ export function EmailContextSidebar({
   }
 
   async function handleSaveProject() {
-    if (!projectForm.naam.trim()) { toast.error('Naam is verplicht'); return }
-    if (!linkedKlant) { toast.error('Eerst een klant koppelen'); openPanel('klant'); return }
+    if (!projectForm.naam.trim()) { toast.error('Projectnaam is verplicht'); return }
+    if (!projectForm.klant_id) { toast.error('Selecteer een klant'); return }
+    if (!user) { toast.error('Niet ingelogd'); return }
+    if (projectForm.eind_datum && projectForm.start_datum && projectForm.eind_datum < projectForm.start_datum) {
+      toast.error('Einddatum kan niet voor de startdatum liggen'); return
+    }
     setSaving(true)
     try {
+      const settings = await getAppSettings(user.id)
+      const projectNummer = await generateProjectNummer(settings?.project_prefix || 'P')
+      const geselecteerdeKlant = allKlanten.find(k => k.id === projectForm.klant_id)
+      const vestigingNaam = projectForm.vestiging_id
+        ? geselecteerdeKlant?.vestigingen?.find(v => v.id === projectForm.vestiging_id)?.naam
+        : undefined
+
       const project = await createProject({
-        klant_id: linkedKlant.id, naam: projectForm.naam,
-        beschrijving: projectForm.beschrijving, status: 'gepland',
-        prioriteit: 'medium', budget: 0, besteed: 0, voortgang: 0, team_leden: [],
+        user_id: user.id,
+        klant_id: projectForm.klant_id,
+        project_nummer: projectNummer,
+        naam: projectForm.naam.trim(),
+        beschrijving: projectForm.beschrijving.trim(),
+        status: projectForm.status,
+        prioriteit: 'medium',
+        start_datum: projectForm.start_datum || undefined,
+        eind_datum: projectForm.eind_datum || undefined,
+        budget: 0,
+        besteed: 0,
+        voortgang: 0,
+        team_leden: [],
+        contactpersoon_id: projectForm.contactpersoon_id || undefined,
+        vestiging_id: projectForm.vestiging_id || undefined,
+        vestiging_naam: vestigingNaam,
       })
       setActivePanel('none')
       toast.success('Project aangemaakt', { action: { label: 'Openen', onClick: () => navigate(`/projecten/${project.id}`) } })
@@ -477,7 +524,7 @@ export function EmailContextSidebar({
   // INLINE PANEL
   // ════════════════════════════════════════════
   function renderInlinePanel() {
-    if (activePanel === 'none') return null
+    if (activePanel === 'none' || activePanel === 'project') return null
 
     const inputCls = "w-full px-3 py-2 text-[13px] bg-white rounded-lg outline-none border border-[#EBEBEB] focus:border-[#1A535C] transition-colors duration-150 placeholder:text-[#9B9B95]"
 
@@ -578,18 +625,6 @@ export function EmailContextSidebar({
           </>
         ),
       },
-      project: {
-        title: 'Project aanmaken',
-        onSave: handleSaveProject,
-        content: (
-          <>
-            <input value={projectForm.naam} onChange={e => setProjectForm(f => ({ ...f, naam: e.target.value }))}
-              className={inputCls} placeholder="Projectnaam *" />
-            <textarea value={projectForm.beschrijving} onChange={e => setProjectForm(f => ({ ...f, beschrijving: e.target.value }))}
-              className={`${inputCls} resize-none h-16`} placeholder="Beschrijving" />
-          </>
-        ),
-      },
       taak: {
         title: 'Taak toevoegen',
         onSave: handleSaveTaak,
@@ -649,7 +684,7 @@ export function EmailContextSidebar({
       },
     }
 
-    const cfg = configs[activePanel]
+    const cfg = configs[activePanel as 'klant' | 'taak']
     return (
       <div className="bg-white rounded-xl p-4" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
         <div className="flex items-center justify-between mb-3">
@@ -812,6 +847,116 @@ export function EmailContextSidebar({
 
         {/* ── INLINE PANEL ── */}
         {activePanel !== 'none' && renderInlinePanel()}
+
+        {/* ── PROJECT MODAL ── */}
+        <Dialog open={activePanel === 'project'} onOpenChange={(open) => !open && setActivePanel('none')}>
+          <DialogContent className="max-w-2xl bg-white rounded-2xl p-0">
+            <div className="px-8 pt-7 pb-6">
+              <DialogHeader className="mb-5">
+                <DialogTitle className="text-[22px] font-bold tracking-tight text-[#1A1A1A]">
+                  Nieuw project<span className="text-[#F15025]">.</span>
+                </DialogTitle>
+                <p className="text-[13px] text-[#9B9B95] mt-1">Vul de gegevens in om te starten</p>
+              </DialogHeader>
+
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider text-[#9B9B95]">
+                      Projectnaam *
+                    </label>
+                    <input
+                      value={projectForm.naam}
+                      onChange={e => setProjectForm(f => ({ ...f, naam: e.target.value }))}
+                      placeholder="Bijv. Gevelbelettering Bakkerij Jansen"
+                      className="w-full h-10 px-3 text-[14px] bg-[#FAFAF8] rounded-lg outline-none border border-[#EBEBEB] focus:border-[#1A535C] transition-colors placeholder:text-[#9B9B95]"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider text-[#9B9B95]">
+                      Beschrijving
+                    </label>
+                    <input
+                      value={projectForm.beschrijving}
+                      onChange={e => setProjectForm(f => ({ ...f, beschrijving: e.target.value }))}
+                      placeholder="Korte omschrijving..."
+                      className="w-full h-10 px-3 text-[14px] bg-[#FAFAF8] rounded-lg outline-none border border-[#EBEBEB] focus:border-[#1A535C] transition-colors placeholder:text-[#9B9B95]"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider text-[#9B9B95]">Status</label>
+                    <select
+                      value={projectForm.status}
+                      onChange={e => setProjectForm(f => ({ ...f, status: e.target.value as typeof projectForm.status }))}
+                      className="w-full h-10 px-3 text-[13px] bg-[#FAFAF8] rounded-lg outline-none border border-[#EBEBEB] focus:border-[#1A535C] transition-colors"
+                    >
+                      <option value="gepland">Gepland</option>
+                      <option value="actief">Actief</option>
+                      <option value="in-review">In review</option>
+                      <option value="afgerond">Afgerond</option>
+                      <option value="on-hold">On hold</option>
+                      <option value="te-factureren">Te factureren</option>
+                      <option value="te-plannen">Te plannen</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider text-[#9B9B95]">Startdatum</label>
+                    <input
+                      type="date"
+                      value={projectForm.start_datum}
+                      onChange={e => setProjectForm(f => ({ ...f, start_datum: e.target.value }))}
+                      className="w-full h-10 px-3 text-[13px] font-mono bg-[#FAFAF8] rounded-lg outline-none border border-[#EBEBEB] focus:border-[#1A535C] transition-colors"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider text-[#9B9B95]">Einddatum</label>
+                    <input
+                      type="date"
+                      value={projectForm.eind_datum}
+                      onChange={e => setProjectForm(f => ({ ...f, eind_datum: e.target.value }))}
+                      className="w-full h-10 px-3 text-[13px] font-mono bg-[#FAFAF8] rounded-lg outline-none border border-[#EBEBEB] focus:border-[#1A535C] transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider text-[#9B9B95]">Klant & contact</label>
+                  <KlantContactSelector
+                    klantId={projectForm.klant_id}
+                    onKlantChange={(id) => setProjectForm(f => ({ ...f, klant_id: id, contactpersoon_id: '', vestiging_id: '' }))}
+                    contactpersoonId={projectForm.contactpersoon_id}
+                    onContactpersoonChange={(id) => setProjectForm(f => ({ ...f, contactpersoon_id: id }))}
+                    vestigingId={projectForm.vestiging_id}
+                    onVestigingChange={(id) => setProjectForm(f => ({ ...f, vestiging_id: id }))}
+                    klanten={allKlanten}
+                    onKlantenRefresh={() => getKlanten(500).then(k => setAllKlanten(k)).catch(() => {})}
+                  />
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setActivePanel('none')}
+                    className="h-10 px-5 text-[13px] font-medium rounded-lg border border-[#EBEBEB] text-[#6B6B66] hover:bg-[#F8F7F5] transition-colors"
+                  >
+                    Annuleren
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveProject}
+                    disabled={saving}
+                    className="h-10 px-6 text-[14px] font-bold text-white rounded-lg bg-[#1A535C] hover:opacity-90 transition-opacity disabled:opacity-50"
+                  >
+                    {saving ? 'Opslaan...' : 'Project aanmaken'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* ── AUTO-OPVOLGING (alleen compose) ── */}
         {mode === 'compose' && (
