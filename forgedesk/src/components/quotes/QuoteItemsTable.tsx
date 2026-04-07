@@ -370,7 +370,15 @@ function BijlageDropZone({
             <X className="h-3.5 w-3.5" />
           </button>
         </div>
-      ) : (
+      ) : null}
+
+      {hasBijlage && sectionOpen && (
+        <p className="text-2xs text-muted-foreground/60 dark:text-muted-foreground/60 mt-2">
+          Verschijnt als aparte landscape-pagina achter de offerte, met de item-specs erboven.
+        </p>
+      )}
+
+      {!hasBijlage && sectionOpen && !isUploading && (
         <div
           onDragOver={onDragOver}
           onDragLeave={onDragLeave}
@@ -407,6 +415,9 @@ function BijlageDropZone({
               {isDragOver ? 'Laat los om te uploaden' : 'Sleep, plak of klik om te uploaden'}
             </p>
             <p className="text-2xs text-muted-foreground/60 dark:text-muted-foreground mt-0.5">JPG, PNG of PDF — max 10MB</p>
+            <p className="text-2xs text-muted-foreground/50 dark:text-muted-foreground/60 mt-1 max-w-[260px]">
+              Verschijnt automatisch als aparte landscape-pagina achter de offerte met de item-specs erboven.
+            </p>
           </div>
           <input
             ref={fileInputRef}
@@ -1318,7 +1329,7 @@ export function QuoteItemsTable({
                     <div className="space-y-2">
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs font-bold text-text-tertiary uppercase tracking-label">
-                          Prijsopties — beide op offerte, vink de standaard aan
+                          Prijsopties — beide op offerte, kies welke in het totaal telt
                         </span>
                       </div>
 
@@ -1346,7 +1357,7 @@ export function QuoteItemsTable({
                                     ? 'border-primary bg-primary text-white'
                                     : 'border-border dark:border-border hover:border-primary/50'
                                 )}
-                                title={isActive ? 'Standaard optie (telt mee in offerte-totaal)' : 'Maak dit de standaard optie'}
+                                title={isActive ? 'Telt mee in offerte-totaal' : 'Laat deze optie meetellen in het totaal'}
                               >
                                 {isActive && <Check className="h-3 w-3" />}
                               </button>
@@ -1357,17 +1368,6 @@ export function QuoteItemsTable({
                                 placeholder="Optie naam..."
                                 className="h-7 text-xs font-semibold border-transparent bg-transparent hover:border-border dark:hover:border-border focus-visible:border-border shadow-none flex-1 max-w-[180px]"
                               />
-
-                              {isActive && (
-                                <span className="text-2xs font-medium text-primary bg-primary/10 dark:bg-primary/20 px-1.5 py-0.5 rounded">
-                                  standaard
-                                </span>
-                              )}
-                              {!isActive && (
-                                <span className="text-2xs font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                  meerprijs
-                                </span>
-                              )}
 
                               <span className="text-sm font-bold font-mono text-foreground tabular-nums ml-auto mr-2">
                                 {formatCurrency(variantTotaal)}
@@ -1542,7 +1542,7 @@ export function QuoteItemsTable({
               <Button
                 variant="outline"
                 onClick={onPasteItems}
-                className="gap-2 text-blue-600 dark:text-blue-400 border-blue-300 dark:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                className="gap-2 text-[#1A535C] border-[#1A535C]/30 hover:bg-[#1A535C]/5 hover:border-[#1A535C]/50 hover:text-[#1A535C]"
               >
                 <Clipboard className="h-4 w-4" />
                 Plak items ({clipboardCount})
@@ -1566,7 +1566,7 @@ export function QuoteItemsTable({
           {clipboardCount > 0 && onPasteItems && (
             <button
               onClick={onPasteItems}
-              className="py-3 px-4 rounded-xl border-2 border-dashed border-blue-300 dark:border-blue-600 text-sm font-medium text-blue-600 dark:text-blue-400 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors flex items-center gap-2"
+              className="py-3 px-4 rounded-xl border-2 border-dashed border-[#1A535C]/30 text-sm font-medium text-[#1A535C] hover:border-[#1A535C]/50 hover:bg-[#1A535C]/5 transition-colors flex items-center gap-2"
             >
               <Clipboard className="h-4 w-4" />
               Plak items ({clipboardCount})
@@ -1586,7 +1586,7 @@ export function QuoteItemsTable({
           {onCopyAllItems && items.filter(i => i.soort === 'prijs' && i.beschrijving.trim()).length > 1 && (
             <button
               onClick={onCopyAllItems}
-              className="py-3 px-4 rounded-xl border-2 border-dashed border-indigo-300 dark:border-indigo-600 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:border-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors flex items-center gap-2"
+              className="py-3 px-4 rounded-xl border-2 border-dashed border-[#1A535C]/30 text-sm font-medium text-[#1A535C] hover:border-[#1A535C]/50 hover:bg-[#1A535C]/5 transition-colors flex items-center gap-2"
             >
               <Copy className="h-4 w-4" />
               Kopieer alle items

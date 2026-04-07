@@ -1695,6 +1695,10 @@ export interface DocumentStyle {
   briefpapier_safe_zone_links?: number; // extra mm links (negatief = naar buiten)
   briefpapier_safe_zone_rechts?: number; // extra mm rechts (negatief = naar buiten)
   briefpapier_toon_branding?: boolean;  // override auto-hide van logo/naam/footer
+  // Tekening / bijlage pagina (landscape, achter offerte)
+  tekening_specs_kleur_modus?: 'brand' | 'neutraal' | 'eigen';
+  tekening_specs_eigen_kleur?: string | null;
+  tekening_logo_positie?: 'linksboven' | 'rechtsboven' | 'geen';
   // Header / Footer
   toon_header: boolean;
   toon_footer: boolean;

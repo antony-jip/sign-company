@@ -109,6 +109,7 @@ const settingsSections: SettingsSection[] = [
   ]},
   { id: 'producten', label: 'Documenten', icon: FileText, tabs: [
     { id: 'briefpapier', label: 'Briefpapier', icon: Image },
+    { id: 'tekeningen', label: 'Tekeningen', icon: Image },
     { id: 'documenten', label: 'Documenten', icon: FileText },
   ]},
   { id: 'integraties-all', label: 'Integraties', icon: Puzzle, tabs: [
@@ -139,6 +140,7 @@ function renderTabContent(tabId: string) {
     case 'bedrijf': return <BedrijfTab />
     case 'documenten': return <DocumentenTab />
     case 'briefpapier': return <HuisstijlTab lockedSubTab="briefpapier" />
+    case 'tekeningen': return <HuisstijlTab lockedSubTab="tekeningen" />
     case 'calculatie': return <CalculatieTab />
     case 'email': return <EmailTab />
     case 'integraties': return <IntegratiesTab />

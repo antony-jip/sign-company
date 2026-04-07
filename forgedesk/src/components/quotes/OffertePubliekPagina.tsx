@@ -760,7 +760,7 @@ export function OffertePubliekPagina() {
                               {hasOptionalItems && <td />}
                               <td colSpan={6} className="py-2 pl-2 pr-4">
                                 <div className="flex items-center gap-2 pl-1">
-                                  <span className="text-xs text-gray-500 shrink-0">Kies variant:</span>
+                                  <span className="text-xs text-gray-500 shrink-0">Kies optie:</span>
                                   <select
                                     value={selectedVariants[item.id] || ''}
                                     onChange={(e) => {
@@ -776,7 +776,7 @@ export function OffertePubliekPagina() {
                                     }}
                                     className="text-xs border border-gray-200 rounded-md px-2 py-1.5 bg-white text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 max-w-[300px]"
                                   >
-                                    <option value="">Standaard — {item.aantal} x {formatCurrency(item.eenheidsprijs)}</option>
+                                    <option value="">Basis — {item.aantal} x {formatCurrency(item.eenheidsprijs)}</option>
                                     {item.prijs_varianten.map((v) => (
                                       <option key={v.id} value={v.id}>
                                         {v.label} — {v.aantal} x {formatCurrency(v.eenheidsprijs)}

@@ -124,6 +124,106 @@ function SliderWithInput({ label, unit, min, max, value, onChange }: {
   )
 }
 
+function TekeningPreview({ style, logoUrl }: { style: DocumentStyle; logoUrl: string }) {
+  const logoPositie = style.tekening_logo_positie ?? 'linksboven'
+  const kleurModus = style.tekening_specs_kleur_modus ?? 'brand'
+
+  // Bepaal basiskleur voor specs-balk
+  const baseHex =
+    kleurModus === 'eigen' && style.tekening_specs_eigen_kleur
+      ? style.tekening_specs_eigen_kleur
+      : kleurModus === 'neutraal'
+        ? '#828282'
+        : (style.primaire_kleur || '#1A535C')
+
+  // hex → rgb voor tint berekening
+  const hexToRgb = (hex: string): [number, number, number] => {
+    const m = hex.replace('#', '').match(/.{2}/g)
+    if (!m) return [26, 83, 92]
+    return [parseInt(m[0], 16), parseInt(m[1], 16), parseInt(m[2], 16)]
+  }
+  const [r, g, b] = hexToRgb(baseHex)
+  const tintBg = `rgb(${Math.round(r * 0.08 + 255 * 0.92)}, ${Math.round(g * 0.08 + 255 * 0.92)}, ${Math.round(b * 0.08 + 255 * 0.92)})`
+  const tintBorder = `rgb(${Math.round(r * 0.25 + 255 * 0.75)}, ${Math.round(g * 0.25 + 255 * 0.75)}, ${Math.round(b * 0.25 + 255 * 0.75)})`
+
+  const showLogo = logoPositie !== 'geen' && logoUrl
+  const logoSide = logoPositie === 'rechtsboven' ? 'right' : 'left'
+
+  // Sample velden
+  const sampleVelden = [
+    { label: 'Omschrijving', value: 'Gevelreclame voorzijde' },
+    { label: 'Materiaal', value: 'Folie' },
+    { label: 'Afmeting', value: '2400 × 600 mm' },
+    { label: 'Lay-out', value: 'Conform bijlage' },
+    { label: 'Aantal', value: '1 stuk' },
+    { label: 'Montage', value: 'Door jullie zelf' },
+  ]
+  const leftCol = sampleVelden.filter((_, i) => i % 2 === 0)
+  const rightCol = sampleVelden.filter((_, i) => i % 2 === 1)
+
+  return (
+    <div className="rounded-xl border border-[#EBEBEB] bg-white overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+      {/* Landscape A4 — aspect ratio 297:210 */}
+      <div className="relative bg-white" style={{ aspectRatio: '297 / 210' }}>
+        {/* Logo */}
+        {showLogo && (
+          <div
+            className="absolute top-[3%]"
+            style={{ [logoSide]: '3%', maxWidth: '12%', maxHeight: '10%' }}
+          >
+            <img src={logoUrl} alt="logo" className="w-full h-auto object-contain" />
+          </div>
+        )}
+
+        {/* Specs box */}
+        <div
+          className="absolute top-[3%] rounded"
+          style={{
+            backgroundColor: tintBg,
+            border: `1px solid ${tintBorder}`,
+            left: showLogo && logoSide === 'left' ? '17%' : '3%',
+            right: showLogo && logoSide === 'right' ? '17%' : '3%',
+            padding: '1.5% 2%',
+          }}
+        >
+          <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+            {[leftCol, rightCol].map((col, ci) => (
+              <div key={ci} className="space-y-1">
+                {col.map((spec) => (
+                  <div key={spec.label} className="flex gap-2 items-baseline" style={{ fontSize: '6px', lineHeight: 1.2 }}>
+                    <span className="font-bold uppercase tracking-wide" style={{ color: baseHex, minWidth: '30%' }}>
+                      {spec.label}
+                    </span>
+                    <span className="text-[#1A1A1A]">{spec.value}</span>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Separator */}
+        <div className="absolute left-[3%] right-[3%] h-px bg-[#EBEBEB]" style={{ top: '24%' }} />
+
+        {/* Tekening placeholder */}
+        <div
+          className="absolute left-[3%] right-[3%] bottom-[3%] border border-dashed border-[#D4D4D4] bg-[#FAFAFA] flex items-center justify-center"
+          style={{ top: '27%' }}
+        >
+          <div className="text-center text-[#9B9B95]" style={{ fontSize: '8px' }}>
+            <div className="mb-0.5">📐</div>
+            <div>Hier komt de geüploade tekening</div>
+          </div>
+        </div>
+      </div>
+      <div className="px-3 py-2 border-t border-[#EBEBEB] bg-[#FAFAF8] flex items-center justify-between">
+        <span className="text-[10px] text-[#9B9B95]">Landscape A4 · Tekening-pagina</span>
+        <span className="text-[10px] text-[#9B9B95]">Achter de offerte</span>
+      </div>
+    </div>
+  )
+}
+
 function DocumentPreview({ style, logoUrl, bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer }: {
   style: DocumentStyle
   logoUrl: string
@@ -552,7 +652,7 @@ function ColorPicker({ label, value, onChange }: {
 // ============ MAIN COMPONENT ============
 
 interface HuisstijlTabProps {
-  lockedSubTab?: 'template' | 'typografie' | 'layout' | 'briefpapier'
+  lockedSubTab?: 'template' | 'typografie' | 'layout' | 'briefpapier' | 'tekeningen'
 }
 
 export function HuisstijlTab({ lockedSubTab }: HuisstijlTabProps = {}) {
@@ -566,6 +666,10 @@ export function HuisstijlTab({ lockedSubTab }: HuisstijlTabProps = {}) {
   const [uploadingBriefpapier, setUploadingBriefpapier] = useState(false)
   const [uploadingVervolgpapier, setUploadingVervolgpapier] = useState(false)
   const [subTab, setSubTab] = useState(lockedSubTab || 'template')
+  // Sync subTab als lockedSubTab verandert (component blijft gemount tussen tab-switches)
+  useEffect(() => {
+    if (lockedSubTab) setSubTab(lockedSubTab)
+  }, [lockedSubTab])
   const briefpapierInputRef = useRef<HTMLInputElement>(null)
   const vervolgpapierInputRef = useRef<HTMLInputElement>(null)
   const savedStyleRef = useRef<DocumentStyle | null>(null)
@@ -714,12 +818,18 @@ export function HuisstijlTab({ lockedSubTab }: HuisstijlTabProps = {}) {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold text-foreground dark:text-white">
-            {lockedSubTab === 'briefpapier' ? 'Briefpapier' : 'Document Huisstijl'}
+            {lockedSubTab === 'briefpapier'
+              ? 'Briefpapier'
+              : lockedSubTab === 'tekeningen'
+                ? 'Tekeningen & bijlagen'
+                : 'Document Huisstijl'}
           </h2>
           <p className="text-sm text-muted-foreground dark:text-muted-foreground/60">
             {lockedSubTab === 'briefpapier'
               ? 'Upload je eigen briefpapier en stel de layout-opties in'
-              : 'Pas de stijl van uw offertes, facturen en andere documenten aan'}
+              : lockedSubTab === 'tekeningen'
+                ? 'Hoe tekening-pagina\'s achter de offerte eruitzien'
+                : 'Pas de stijl van uw offertes, facturen en andere documenten aan'}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -983,6 +1093,16 @@ export function HuisstijlTab({ lockedSubTab }: HuisstijlTabProps = {}) {
               Upload je eigen briefpapier als achtergrond voor offertes, facturen en andere documenten. Logo, naam en adres op het briefpapier worden dan niet dubbel getekend.
             </p>
 
+            <div className="mt-3 rounded-lg bg-[#1A535C]/[0.04] border border-[#1A535C]/15 p-3 space-y-1.5">
+              <p className="text-[11px] font-semibold text-[#1A535C] uppercase tracking-wider">Tip voor scherp resultaat</p>
+              <p className="text-[11px] text-[#6B6B66] leading-relaxed">
+                Upload bij voorkeur een <strong>JPG</strong> op <strong>3× de uiteindelijke grootte</strong> — voor A4 betekent dat ongeveer <strong>2480 × 3508 px</strong>. Zo blijft het briefpapier scherp bij printen en zoomen.
+              </p>
+              <p className="text-[11px] text-[#6B6B66] leading-relaxed">
+                <strong>Pagina 1</strong> krijgt het briefpapier met je logo en adres, <strong>Pagina 2+</strong> kan een compactere versie krijgen voor vervolgpagina's.
+              </p>
+            </div>
+
             {/* Twee kolommen: briefpapier + vervolgpapier */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
               {/* Briefpapier (pagina 1) */}
@@ -1008,7 +1128,7 @@ export function HuisstijlTab({ lockedSubTab }: HuisstijlTabProps = {}) {
                   >
                     <Upload className="h-6 w-6 text-[#9B9B95]" />
                     <span className="text-xs text-[#9B9B95]">{uploadingBriefpapier ? 'Uploaden...' : 'Briefpapier uploaden'}</span>
-                    <span className="text-[10px] text-[#9B9B95]/60">JPG, PNG of WebP · max 10MB</span>
+                    <span className="text-[10px] text-[#9B9B95]/60">JPG aanbevolen · max 10MB</span>
                   </button>
                 )}
                 <input ref={briefpapierInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handleBriefpapierUpload} className="hidden" />
@@ -1037,7 +1157,7 @@ export function HuisstijlTab({ lockedSubTab }: HuisstijlTabProps = {}) {
                   >
                     <Upload className="h-6 w-6 text-[#9B9B95]" />
                     <span className="text-xs text-[#9B9B95]">{uploadingVervolgpapier ? 'Uploaden...' : 'Vervolgpapier uploaden'}</span>
-                    <span className="text-[10px] text-[#9B9B95]/60">Compactere header voor vervolg</span>
+                    <span className="text-[10px] text-[#9B9B95]/60">JPG aanbevolen · compactere header</span>
                   </button>
                 )}
                 <input ref={vervolgpapierInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handleVervolgpapierUpload} className="hidden" />
@@ -1125,6 +1245,7 @@ export function HuisstijlTab({ lockedSubTab }: HuisstijlTabProps = {}) {
                 </div>
               </div>
             )}
+
           </Section>
 
           {/* Balkenkleuren — alleen relevant binnen briefpapier-context */}
@@ -1202,6 +1323,63 @@ export function HuisstijlTab({ lockedSubTab }: HuisstijlTabProps = {}) {
           </Section>
           </>
           )}
+
+          {subTab === 'tekeningen' && (
+          <>
+          <Section title="Tekeningen & bijlagen" icon={Image}>
+            <p className="text-xs text-[#9B9B95]">
+              Upload je een afbeelding of PDF bij een offerte-item (via <em>Tekening / Bijlage</em>), dan wordt die automatisch toegevoegd als <strong>aparte landscape A4-pagina</strong> achter de offerte. De pagina krijgt geen briefpapier-achtergrond zodat de tekening volledig zichtbaar blijft.
+            </p>
+
+            <div className="space-y-5 mt-4">
+              {/* Logo positie */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-semibold text-[#6B6B66] uppercase tracking-wider">Logo positie</label>
+                <Select
+                  value={style.tekening_logo_positie ?? 'linksboven'}
+                  onValueChange={(v) => updateStyle({ tekening_logo_positie: v as 'linksboven' | 'rechtsboven' | 'geen' })}
+                >
+                  <SelectTrigger className="h-9 border-[#EBEBEB] bg-[#F8F7F5] focus:bg-white focus:border-[#1A535C]/30">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="linksboven">Linksboven</SelectItem>
+                    <SelectItem value="rechtsboven">Rechtsboven</SelectItem>
+                    <SelectItem value="geen">Geen logo tonen</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Specs-balk kleur modus */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-semibold text-[#6B6B66] uppercase tracking-wider">Specs-balk kleur</label>
+                <Select
+                  value={style.tekening_specs_kleur_modus ?? 'brand'}
+                  onValueChange={(v) => updateStyle({ tekening_specs_kleur_modus: v as 'brand' | 'neutraal' | 'eigen' })}
+                >
+                  <SelectTrigger className="h-9 border-[#EBEBEB] bg-[#F8F7F5] focus:bg-white focus:border-[#1A535C]/30">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="brand">Automatisch (merkkleur)</SelectItem>
+                    <SelectItem value="neutraal">Neutraal grijs</SelectItem>
+                    <SelectItem value="eigen">Eigen kleur</SelectItem>
+                  </SelectContent>
+                </Select>
+                {(style.tekening_specs_kleur_modus ?? 'brand') === 'eigen' && (
+                  <div className="pt-2">
+                    <ColorPicker
+                      label="Eigen kleur"
+                      value={style.tekening_specs_eigen_kleur || '#1A535C'}
+                      onChange={(v) => updateStyle({ tekening_specs_eigen_kleur: v })}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          </Section>
+          </>
+          )}
         </div>
 
         {/* RIGHT: Live Preview */}
@@ -1211,18 +1389,24 @@ export function HuisstijlTab({ lockedSubTab }: HuisstijlTabProps = {}) {
               <h3 className="text-sm font-medium text-foreground/70 dark:text-muted-foreground/50">
                 Live voorbeeld
               </h3>
-              <span className="text-xs text-muted-foreground/60 dark:text-muted-foreground">
-                Klik om te vergroten
-              </span>
+              {subTab !== 'tekeningen' && (
+                <span className="text-xs text-muted-foreground/60 dark:text-muted-foreground">
+                  Klik om te vergroten
+                </span>
+              )}
             </div>
-            <DocumentPreview
-              style={style}
-              logoUrl={logoUrl}
-              bedrijfsnaam={bedrijfsnaam}
-              bedrijfsAdres={bedrijfsAdres}
-              kvkNummer={kvkNummer}
-              btwNummer={btwNummer}
-            />
+            {subTab === 'tekeningen' ? (
+              <TekeningPreview style={style} logoUrl={logoUrl} />
+            ) : (
+              <DocumentPreview
+                style={style}
+                logoUrl={logoUrl}
+                bedrijfsnaam={bedrijfsnaam}
+                bedrijfsAdres={bedrijfsAdres}
+                kvkNummer={kvkNummer}
+                btwNummer={btwNummer}
+              />
+            )}
           </div>
         </div>
       </div>

@@ -1354,6 +1354,8 @@ export function QuoteCreation() {
         geldig_tot: geldigTot,
         notities,
         voorwaarden,
+        intro_tekst: introTekst,
+        outro_tekst: outroTekst,
         versie: versioning.versieNummer,
         ...(afrondingskorting !== 0 ? { afrondingskorting_excl_btw: afrondingskorting } : {}),
         created_at: new Date().toISOString(),
@@ -1372,6 +1374,8 @@ export function QuoteCreation() {
         soort: item.soort,
         extra_velden: item.extra_velden,
         detail_regels: item.detail_regels,
+        prijs_varianten: item.prijs_varianten,
+        actieve_variant_id: item.actieve_variant_id,
         breedte_mm: item.breedte_mm,
         hoogte_mm: item.hoogte_mm,
         oppervlakte_m2: item.oppervlakte_m2,
@@ -1619,6 +1623,8 @@ export function QuoteCreation() {
             soort: item.soort,
             extra_velden: item.extra_velden,
             detail_regels: item.detail_regels,
+            prijs_varianten: item.prijs_varianten,
+            actieve_variant_id: item.actieve_variant_id,
             is_optioneel: item.is_optioneel,
           })) as Parameters<typeof generateOffertePDF>[1]
           const doc = await generateOffertePDF(offerteData, pdfItems, selectedKlant, {
