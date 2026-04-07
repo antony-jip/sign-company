@@ -1,5 +1,5 @@
 import jsPDF, { GState } from 'jspdf'
-import autoTable from 'jspdf-autotable'
+import autoTable, { type RowInput } from 'jspdf-autotable'
 import type { Offerte, OfferteItem, Klant, Profile, DocumentStyle, WerkbonRegel, WerkbonFoto, SigningVisualisatie } from '@/types'
 import { getJsPdfFontFamily } from '@/lib/documentTemplates'
 import { round2 } from '@/utils/budgetUtils'
@@ -207,7 +207,8 @@ function addHeader(
   bedrijfsProfiel: PdfBedrijfsProfiel,
   title: string,
   nummer: string,
-  docStyle?: DocumentStyle | null
+  docStyle?: DocumentStyle | null,
+  options?: { omitMetadata?: boolean }
 ): number {
   const pageWidth = doc.internal.pageSize.getWidth()
   const brand = getBrandColor(bedrijfsProfiel, docStyle)
@@ -315,6 +316,10 @@ function addHeader(
     doc.setTextColor(...brand)
     doc.text(title, margins.left, lineY + 12)
 
+    if (options?.omitMetadata) {
+      return lineY + 20
+    }
+
     doc.setFontSize(baseFontSize)
     doc.setFont(bodyFont, 'normal')
     doc.setTextColor(80, 80, 80)
@@ -331,6 +336,10 @@ function addHeader(
   doc.setFont(headingFont, 'bold')
   doc.setTextColor(...brand)
   doc.text(title, margins.left, contentStartY + 8)
+
+  if (options?.omitMetadata) {
+    return contentStartY + 16
+  }
 
   doc.setFontSize(baseFontSize)
   doc.setFont(bodyFont, 'normal')
@@ -355,14 +364,10 @@ function addClientInfo(
   const textColor = getTextColor(docStyle)
 
   doc.setFontSize(baseFontSize)
-  doc.setFont(bodyFont, 'bold')
-  doc.setTextColor(...textColor)
-  doc.text('Aan:', margins.left, startY)
-
   doc.setFont(bodyFont, 'normal')
   doc.setTextColor(...textColor)
 
-  let y = startY + 6
+  let y = startY
   if (klant.bedrijfsnaam) {
     doc.setFont(bodyFont, 'bold')
     doc.text(klant.bedrijfsnaam, margins.left, y)
@@ -505,100 +510,175 @@ export async function generateOffertePDF(
   const baseFontSize = getBaseFontSize(docStyle)
   const textColor = getTextColor(docStyle)
   const doc = new jsPDF()
+  const pageWidth = doc.internal.pageSize.getWidth()
   const titel = options?.documentTitel || 'Offerte'
 
   // Spectrum strip at top
   addSpectrumStrip(doc)
 
-  // Header
-  let y = addHeader(doc, bedrijfsProfiel, titel, offerte.nummer, docStyle)
+  // Header — nummer/datum staan in het 3-koloms metadata blok hieronder, niet in de header
+  let y = addHeader(doc, bedrijfsProfiel, titel, offerte.nummer, docStyle, { omitMetadata: true })
 
   // Client info
   y = addClientInfo(doc, klant, y, docStyle)
 
-  // Offerte details
+  // Offerte details — clean Onderwerp + 3-koloms metadata blok
   doc.setFontSize(baseFontSize)
   doc.setFont(bodyFont, 'normal')
   doc.setTextColor(...textColor)
 
+  // Onderwerp (label + value op eigen rij)
   if (offerte.titel) {
-    doc.setFont(bodyFont, 'bold')
     const versieText = offerte.versie && offerte.versie > 1 ? ` (v${offerte.versie})` : ''
-    doc.text(`Betreft: ${offerte.titel}${versieText}`, margins.left, y)
+    doc.setFont(bodyFont, 'bold')
+    doc.setFontSize(baseFontSize - 1)
+    doc.text('Onderwerp', margins.left, y)
     doc.setFont(bodyFont, 'normal')
-    y += 8
+    doc.setFontSize(baseFontSize)
+    doc.text(`${offerte.titel}${versieText}`, margins.left, y + 5)
+    y += 12
   }
 
+  // 3-koloms metadata: Offertenummer | Offertedatum | Geldig tot
+  const colWidth = (pageWidth - margins.left - margins.right) / 3
+  const cols = [
+    { label: titel === 'Opdrachtbevestiging' ? 'Bevestigingsnummer' : 'Offertenummer', value: offerte.nummer },
+    { label: titel === 'Opdrachtbevestiging' ? 'Bevestigingsdatum' : 'Offertedatum', value: formatDate(offerte.datum || new Date().toISOString()) },
+  ]
   if (offerte.geldig_tot && titel === 'Offerte') {
-    doc.text(`Geldig tot: ${formatDate(offerte.geldig_tot)}`, margins.left, y)
-    y += 8
+    cols.push({ label: 'Geldig tot', value: formatDate(offerte.geldig_tot) })
   }
-
   if (options?.referentieNummer) {
-    doc.text(`Referentie offerte: ${options.referentieNummer}`, margins.left, y)
-    y += 8
+    cols.push({ label: 'Uw referentie', value: options.referentieNummer })
   }
 
-  if (titel === 'Opdrachtbevestiging') {
-    doc.text(`Datum: ${formatDate(new Date().toISOString())}`, margins.left, y)
-    y += 8
+  doc.setFontSize(baseFontSize - 1)
+  cols.forEach((col, i) => {
+    const x = margins.left + i * colWidth
+    doc.setFont(bodyFont, 'bold')
+    doc.text(col.label, x, y)
+    doc.setFont(bodyFont, 'normal')
+    doc.text(col.value, x, y + 5)
+  })
+  y += 14
+  doc.setFontSize(baseFontSize)
+
+  // Introductietekst (optioneel) — komt onder het metadata blok, boven de items
+  if (offerte.intro_tekst && offerte.intro_tekst.trim()) {
+    doc.setFont(bodyFont, 'normal')
+    doc.setFontSize(baseFontSize)
+    doc.setTextColor(...textColor)
+    const introLines = doc.splitTextToSize(
+      offerte.intro_tekst.trim(),
+      pageWidth - margins.left - margins.right
+    )
+    doc.text(introLines, margins.left, y)
+    y += introLines.length * 5 + 8
   }
 
   // FIX 13: Split verplichte en optionele items
   const verplichteItems = items.filter(i => !i.is_optioneel)
   const optioneleItems = items.filter(i => i.is_optioneel)
 
-  // Build table body helper
-  const buildItemRow = (item: OfferteItem, index: number) => {
-    let beschrijving = item.beschrijving
-    // FIX 9: Append dimension info
+  // Scheidingslijn tussen items — zelfde kleur als de tabel header
+  const separatorColor: [number, number, number] = docStyle?.tabel_header_kleur
+    ? hexToRgb(docStyle.tabel_header_kleur)
+    : brand
+
+  // Build table rows helper — splits item into bold name row + detail rows
+  const buildItemRows = (item: OfferteItem, isFirst: boolean) => {
+    const rows: RowInput[] = []
+    // Eerste rij: bold naam + aantal/prijs/totaal. Niet-eerste items krijgen een
+    // dunne scheidingslijn boven en extra padding zodat items visueel los staan.
+    const nameRowStyles: Record<string, unknown> = { fontStyle: 'bold' }
+    if (!isFirst) {
+      nameRowStyles.cellPadding = { top: 4, bottom: 1.5, left: 4, right: 4 }
+      nameRowStyles.lineWidth = { top: 0.3, right: 0, bottom: 0, left: 0 }
+      nameRowStyles.lineColor = separatorColor
+    }
+    const numberRowStyles: Record<string, unknown> = isFirst ? {} : {
+      cellPadding: { top: 4, bottom: 1.5, left: 4, right: 4 },
+      lineWidth: { top: 0.3, right: 0, bottom: 0, left: 0 },
+      lineColor: separatorColor,
+    }
+    rows.push([
+      { content: item.beschrijving, styles: nameRowStyles },
+      { content: item.aantal.toString(), styles: numberRowStyles },
+      { content: formatCurrency(item.eenheidsprijs), styles: numberRowStyles },
+      { content: formatCurrency(item.totaal), styles: numberRowStyles },
+    ])
+
+    // Verzamel alle detail-regels in één multi-line string voor krappe spatiëring
+    const detailLines: string[] = []
     if (item.breedte_mm && item.hoogte_mm) {
       const m2 = item.oppervlakte_m2 || ((item.breedte_mm / 1000) * (item.hoogte_mm / 1000))
-      beschrijving += `\nAfmeting: ${item.breedte_mm} × ${item.hoogte_mm} mm (${m2.toFixed(2)} m²)`
+      detailLines.push(`Afmeting: ${item.breedte_mm} × ${item.hoogte_mm} mm (${m2.toFixed(2)} m²)`)
     }
-    // Append detail_regels (Materiaal, Lay-out, Montage, Opmerking, etc.)
     if (item.detail_regels?.length) {
       for (const regel of item.detail_regels) {
         if (regel.label && regel.waarde) {
-          beschrijving += `\n${regel.label}: ${regel.waarde}`
+          detailLines.push(`${regel.label}: ${regel.waarde}`)
         }
       }
     }
-    return [
-      (index + 1).toString(),
-      beschrijving,
-      item.aantal.toString(),
-      formatCurrency(item.eenheidsprijs),
-      item.btw_percentage > 0 ? `${item.btw_percentage}%` : '-',
-      item.korting_percentage > 0 ? `${item.korting_percentage}%` : '-',
-      formatCurrency(item.totaal),
-    ]
+    if (detailLines.length > 0) {
+      rows.push([
+        {
+          content: detailLines.join('\n'),
+          styles: {
+            cellPadding: { top: 0.5, bottom: 1.5, left: 4, right: 4 },
+            fontSize: 9,
+          },
+        },
+        '', '', '',
+      ])
+    }
+    return rows
   }
 
   // Items table — verplichte items
-  const tableBody = verplichteItems.map((item, index) => buildItemRow(item, index))
+  const tableBody = verplichteItems.flatMap((item, index) => buildItemRows(item, index === 0))
 
   const tableStyles = getAutoTableStyles(brand, docStyle)
-  const pageWidth = doc.internal.pageSize.getWidth()
+
+  // Header gebruikt de gekozen tabel_header_kleur als fill
+  const cleanHeaderStyles = tableStyles.headStyles
+
+  // Shift table 4mm naar buiten zodat de natuurlijke 4mm cell-padding samenvalt met de pagina-marges
+  const tableMarginLeft = Math.max(0, margins.left - 4)
+  const tableMarginRight = Math.max(0, margins.right - 4)
 
   autoTable(doc, {
     startY: y,
-    head: [['#', 'Omschrijving', 'Aantal', 'Eenheidsprijs', 'BTW', 'Korting', 'Totaal']],
+    head: [[
+      { content: 'Omschrijving', styles: { halign: 'left' } },
+      { content: 'Aantal', styles: { halign: 'center' } },
+      { content: 'Prijs', styles: { halign: 'right' } },
+      { content: 'Totaal', styles: { halign: 'right' } },
+    ]],
     body: tableBody,
-    theme: tableStyles.theme,
-    headStyles: tableStyles.headStyles,
-    bodyStyles: tableStyles.bodyStyles,
-    alternateRowStyles: tableStyles.alternateRowStyles,
+    theme: 'plain',
+    headStyles: cleanHeaderStyles,
+    bodyStyles: { ...tableStyles.bodyStyles, lineWidth: 0 },
     columnStyles: {
-      0: { cellWidth: 12, halign: 'center' },
-      1: { cellWidth: 'auto' },
-      2: { cellWidth: 20, halign: 'center' },
-      3: { cellWidth: 30, halign: 'right', font: 'courier' },
-      4: { cellWidth: 18, halign: 'center' },
-      5: { cellWidth: 20, halign: 'center' },
-      6: { cellWidth: 30, halign: 'right', font: 'courier' },
+      0: { cellWidth: 'auto', halign: 'left' },
+      1: { cellWidth: 22, halign: 'center' },
+      2: { cellWidth: 32, halign: 'right' },
+      3: { cellWidth: 32, halign: 'right' },
     },
-    margin: { left: margins.left, right: margins.right },
+    margin: {
+      left: tableMarginLeft,
+      right: tableMarginRight,
+      top: margins.top,
+      bottom: margins.bottom,
+    },
+    showHead: 'everyPage',
+    didDrawPage: (data) => {
+      // Teken briefpapier op nieuwe pagina's (pagina 1 heeft 'm al via addHeader)
+      if (data.pageNumber > 1) {
+        addBriefpapierBackground(doc, docStyle, data.pageNumber)
+      }
+    },
   })
 
   // Totals
@@ -612,21 +692,16 @@ export async function generateOffertePDF(
 
   doc.setFont(bodyFont, 'normal')
   doc.text('Subtotaal:', totalsX, totalsY)
-  doc.setFont('courier', 'normal')
   doc.text(formatCurrency(offerte.subtotaal), pageWidth - margins.right, totalsY, { align: 'right' })
   totalsY += 7
 
-  doc.setFont(bodyFont, 'normal')
   doc.text('BTW:', totalsX, totalsY)
-  doc.setFont('courier', 'normal')
   doc.text(formatCurrency(offerte.btw_bedrag), pageWidth - margins.right, totalsY, { align: 'right' })
   totalsY += 7
 
   // FIX 16: Afrondingskorting
   if (offerte.afrondingskorting_excl_btw && offerte.afrondingskorting_excl_btw !== 0) {
-    doc.setFont(bodyFont, 'normal')
     doc.text('Afrondingskorting:', totalsX - 15, totalsY)
-    doc.setFont('courier', 'normal')
     doc.text(formatCurrency(offerte.afrondingskorting_excl_btw), pageWidth - margins.right, totalsY, { align: 'right' })
     totalsY += 7
   }
@@ -640,8 +715,6 @@ export async function generateOffertePDF(
   doc.setFontSize(baseFontSize + 2)
   doc.setTextColor(...brand)
   doc.text('Totaal:', totalsX, totalsY + 5)
-  doc.setFont('courier', 'bold')
-  doc.setFontSize(baseFontSize + 2)
   doc.text(formatCurrency(offerte.totaal), pageWidth - margins.right, totalsY + 5, { align: 'right' })
 
   // FIX 13: Optionele items sectie
@@ -659,26 +732,38 @@ export async function generateOffertePDF(
     doc.text('Optioneel:', margins.left, totalsY)
     totalsY += 5
 
-    const optioneleTableBody = optioneleItems.map((item, index) => buildItemRow(item, index))
+    const optioneleTableBody = optioneleItems.flatMap((item, index) => buildItemRows(item, index === 0))
 
     autoTable(doc, {
       startY: totalsY,
-      head: [['#', 'Omschrijving', 'Aantal', 'Eenheidsprijs', 'BTW', 'Korting', 'Totaal']],
+      head: [[
+        { content: 'Omschrijving', styles: { halign: 'left' } },
+        { content: 'Aantal', styles: { halign: 'center' } },
+        { content: 'Prijs', styles: { halign: 'right' } },
+        { content: 'Totaal', styles: { halign: 'right' } },
+      ]],
       body: optioneleTableBody,
-      theme: tableStyles.theme,
-      headStyles: { ...tableStyles.headStyles, fillColor: [180, 160, 80] },
-      bodyStyles: { ...tableStyles.bodyStyles, fontStyle: 'italic' },
-      alternateRowStyles: tableStyles.alternateRowStyles,
+      theme: 'plain',
+      headStyles: cleanHeaderStyles,
+      bodyStyles: { ...tableStyles.bodyStyles, fontStyle: 'italic', lineWidth: 0 },
       columnStyles: {
-        0: { cellWidth: 12, halign: 'center' },
-        1: { cellWidth: 'auto' },
-        2: { cellWidth: 20, halign: 'center' },
-        3: { cellWidth: 30, halign: 'right' },
-        4: { cellWidth: 18, halign: 'center' },
-        5: { cellWidth: 20, halign: 'center' },
-        6: { cellWidth: 30, halign: 'right' },
+        0: { cellWidth: 'auto', halign: 'left' },
+        1: { cellWidth: 22, halign: 'center' },
+        2: { cellWidth: 32, halign: 'right' },
+        3: { cellWidth: 32, halign: 'right' },
       },
-      margin: { left: margins.left, right: margins.right },
+      margin: {
+        left: tableMarginLeft,
+        right: tableMarginRight,
+        top: margins.top,
+        bottom: margins.bottom,
+      },
+      showHead: 'everyPage',
+      didDrawPage: (data) => {
+        if (data.pageNumber > 1) {
+          addBriefpapierBackground(doc, docStyle, data.pageNumber)
+        }
+      },
     })
 
     const optFinalY = (doc as JsPDFWithAutoTable).lastAutoTable?.finalY || totalsY + 20
@@ -699,6 +784,20 @@ export async function generateOffertePDF(
     doc.text(formatCurrency(round2(offerte.totaal + optSubtotaal + optBtw)), pageWidth - margins.right, optTotalsY, { align: 'right' })
 
     totalsY = optTotalsY + 5
+  }
+
+  // Outro tekst (optioneel) — staat na de totalen, voor notities/voorwaarden
+  if (offerte.outro_tekst && offerte.outro_tekst.trim()) {
+    totalsY += 15
+    doc.setFont(bodyFont, 'normal')
+    doc.setFontSize(baseFontSize)
+    doc.setTextColor(...textColor)
+    const outroLines = doc.splitTextToSize(
+      offerte.outro_tekst.trim(),
+      pageWidth - margins.left - margins.right
+    )
+    doc.text(outroLines, margins.left, totalsY)
+    totalsY += outroLines.length * 5
   }
 
   // Notes
