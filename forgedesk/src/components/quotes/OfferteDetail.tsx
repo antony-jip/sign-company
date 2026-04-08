@@ -55,6 +55,7 @@ import {
   Receipt,
   Eye,
   ClipboardList,
+  Clock,
 } from 'lucide-react'
 import { logger } from '../../utils/logger'
 import { KlantStatusBadgeInline, KlantStatusWarning } from '@/components/shared/KlantStatusWarning'
@@ -131,6 +132,10 @@ export function OfferteDetail() {
   const [sendSubject, setSendSubject] = useState('')
   const [sendBody, setSendBody] = useState('')
   const [isSending, setIsSending] = useState(false)
+  const [showScheduleMenu, setShowScheduleMenu] = useState(false)
+  const [showCustomSchedule, setShowCustomSchedule] = useState(false)
+  const [customScheduleDate, setCustomScheduleDate] = useState('')
+  const [customScheduleTime, setCustomScheduleTime] = useState('09:00')
 
   const [isDuplicating, setIsDuplicating] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -282,89 +287,93 @@ export function OfferteDetail() {
     setShowSendDialog(true)
   }, [offerte, klant, bedrijfsnaam])
 
-  // Send offerte
+  // Bereidt portaal/PDF/email-content voor — gebruikt door zowel direct send als plannen
+  const prepareSendPayload = useCallback(async () => {
+    if (!offerte || !user?.id) return null
+
+    let publiekeUrl = ''
+
+    if (offerte.project_id) {
+      const portaal = await createPortaal(offerte.project_id, user.id)
+
+      const bestaandeItems = await getPortaalItems(portaal.id)
+      const bestaandOfferteItem = bestaandeItems.find(
+        (i) => i.type === 'offerte' && i.offerte_id === offerte.id
+      )
+
+      if (!bestaandOfferteItem) {
+        await createPortaalItem({
+          user_id: user.id,
+          project_id: offerte.project_id,
+          portaal_id: portaal.id,
+          type: 'offerte',
+          offerte_id: offerte.id,
+          titel: `Offerte ${offerte.nummer}`,
+          omschrijving: offerte.titel,
+          label: formatCurrency(offerte.totaal),
+          status: 'verstuurd',
+          zichtbaar_voor_klant: true,
+          bedrag: offerte.totaal,
+          volgorde: 0,
+        })
+      }
+
+      publiekeUrl = `${window.location.origin}/portaal/${portaal.token}`
+      setPortaalToken(portaal.token)
+    } else {
+      let publiekToken = offerte.publiek_token
+      if (!publiekToken) {
+        publiekToken = crypto.randomUUID()
+        await updateOfferte(offerte.id, { publiek_token: publiekToken })
+        setOfferte({ ...offerte, publiek_token: publiekToken })
+      }
+      publiekeUrl = `${window.location.origin}/offerte-bekijken/${publiekToken}`
+    }
+
+    const sendCp = offerte.contactpersoon_id
+      ? klant?.contactpersonen?.find(c => c.id === offerte.contactpersoon_id)
+      : null
+    const { subject, html, text } = offerteVerzendTemplate({
+      klantNaam: sendCp?.naam || klant?.contactpersoon || klant?.bedrijfsnaam || '',
+      offerteNummer: offerte.nummer,
+      offerteTitel: offerte.titel,
+      totaalBedrag: formatCurrency(offerte.totaal),
+      geldigTot: formatDate(offerte.geldig_tot),
+      bedrijfsnaam: bedrijfsnaam || 'Uw bedrijf',
+      primaireKleur,
+      handtekening: emailHandtekening || undefined,
+      logoUrl: profile?.logo_url || undefined,
+      bekijkUrl: publiekeUrl,
+    })
+
+    let attachments: Array<{ filename: string; content: string; encoding: 'base64' }> = []
+    try {
+      const doc = await generateOffertePDF(
+        offerte,
+        items,
+        klant || {},
+        { ...profile, primaireKleur: primaireKleur || '#2563eb' },
+        documentStyle,
+      )
+      const pdfBase64 = doc.output('datauristring').split(',')[1]
+      attachments = [{ filename: `${offerte.nummer}.pdf`, content: pdfBase64, encoding: 'base64' as const }]
+    } catch (pdfErr) {
+      logger.error('PDF genereren mislukt, email wordt zonder bijlage verstuurd:', pdfErr)
+    }
+
+    return { subject, html, text, attachments }
+  }, [offerte, klant, items, user, bedrijfsnaam, primaireKleur, emailHandtekening, profile, documentStyle])
+
+  // Send offerte direct
   const handleSend = useCallback(async () => {
     if (!offerte || !user?.id) return
     setIsSending(true)
     try {
-      // Gebruik portaal-systeem als de offerte aan een project gekoppeld is
-      let publiekeUrl = ''
-
-      if (offerte.project_id) {
-        // Maak portaal aan of hergebruik bestaand portaal
-        const portaal = await createPortaal(offerte.project_id, user.id)
-
-        // Check of er al een portaal_item bestaat voor deze offerte
-        const bestaandeItems = await getPortaalItems(portaal.id)
-        const bestaandOfferteItem = bestaandeItems.find(
-          (i) => i.type === 'offerte' && i.offerte_id === offerte.id
-        )
-
-        if (!bestaandOfferteItem) {
-          await createPortaalItem({
-            user_id: user.id,
-            project_id: offerte.project_id,
-            portaal_id: portaal.id,
-            type: 'offerte',
-            offerte_id: offerte.id,
-            titel: `Offerte ${offerte.nummer}`,
-            omschrijving: offerte.titel,
-            label: formatCurrency(offerte.totaal),
-            status: 'verstuurd',
-            zichtbaar_voor_klant: true,
-            bedrag: offerte.totaal,
-            volgorde: 0,
-          })
-        }
-
-        publiekeUrl = `${window.location.origin}/portaal/${portaal.token}`
-        setPortaalToken(portaal.token)
-      } else {
-        // Fallback: offerte zonder project → gebruik oude publieke link
-        let publiekToken = offerte.publiek_token
-        if (!publiekToken) {
-          publiekToken = crypto.randomUUID()
-          await updateOfferte(offerte.id, { publiek_token: publiekToken })
-          setOfferte({ ...offerte, publiek_token: publiekToken })
-        }
-        publiekeUrl = `${window.location.origin}/offerte-bekijken/${publiekToken}`
-      }
-
-      // Actually send the email
-      const sendCp = offerte.contactpersoon_id
-        ? klant?.contactpersonen?.find(c => c.id === offerte.contactpersoon_id)
-        : null
-      const { subject, html, text } = offerteVerzendTemplate({
-        klantNaam: sendCp?.naam || klant?.contactpersoon || klant?.bedrijfsnaam || '',
-        offerteNummer: offerte.nummer,
-        offerteTitel: offerte.titel,
-        totaalBedrag: formatCurrency(offerte.totaal),
-        geldigTot: formatDate(offerte.geldig_tot),
-        bedrijfsnaam: bedrijfsnaam || 'Uw bedrijf',
-        primaireKleur,
-        handtekening: emailHandtekening || undefined,
-        logoUrl: profile?.logo_url || undefined,
-        bekijkUrl: publiekeUrl,
-      })
-
-      // Genereer PDF bijlage
-      let attachments: Array<{ filename: string; content: string; encoding: 'base64' }> = []
-      try {
-        const doc = await generateOffertePDF(
-          offerte,
-          items,
-          klant || {},
-          { ...profile, primaireKleur: primaireKleur || '#2563eb' },
-          documentStyle,
-        )
-        const pdfBase64 = doc.output('datauristring').split(',')[1]
-        attachments = [{ filename: `${offerte.nummer}.pdf`, content: pdfBase64, encoding: 'base64' as const }]
-      } catch (pdfErr) {
-        logger.error('PDF genereren mislukt, email wordt zonder bijlage verstuurd:', pdfErr)
-      }
+      const payload = await prepareSendPayload()
+      if (!payload) return
 
       try {
-        await sendEmail(sendTo, sendSubject || subject, text, { html, attachments })
+        await sendEmail(sendTo, sendSubject || payload.subject, payload.text, { html: payload.html, attachments: payload.attachments })
       } catch (err) {
         logger.error('Email verzenden mislukt:', err)
         toast.warning('Email niet verzonden (SMTP niet geconfigureerd). Status is wel bijgewerkt.')
@@ -392,7 +401,52 @@ export function OfferteDetail() {
     } finally {
       setIsSending(false)
     }
-  }, [offerte, klant, items, sendTo, sendSubject, user, bedrijfsnaam, primaireKleur, emailHandtekening, profile, documentStyle])
+  }, [offerte, sendTo, sendSubject, user, prepareSendPayload])
+
+  // Plan offerte verzending in
+  const handleScheduleSend = useCallback(async (scheduledAt: string, label: string) => {
+    if (!offerte || !user?.id) return
+    if (!sendTo.trim()) { toast.error('Vul een ontvanger in'); return }
+    setIsSending(true)
+    setShowScheduleMenu(false)
+    try {
+      const payload = await prepareSendPayload()
+      if (!payload) return
+
+      await sendEmail(sendTo, sendSubject || payload.subject, payload.text, {
+        html: payload.html,
+        attachments: payload.attachments,
+        scheduledAt,
+        metadata: {
+          type: 'offerte_verzenden',
+          offerte_id: offerte.id,
+          offerte_nummer: offerte.nummer,
+          offerte_titel: offerte.titel,
+          verstuurd_naar: sendTo,
+        },
+      })
+
+      // Voeg "ingepland" activiteit toe — status blijft concept tot daadwerkelijke verzending
+      const now = new Date().toISOString()
+      const ingeplandActivity: OfferteActiviteit = {
+        datum: now,
+        type: 'bewerkt',
+        beschrijving: `Email ingepland voor ${label} naar ${sendTo}`,
+        medewerker: user?.email || undefined,
+      }
+      const updated = await updateOfferte(offerte.id, {
+        activiteiten: [...(offerte.activiteiten || []), ingeplandActivity],
+      })
+      setOfferte(updated)
+      setShowSendDialog(false)
+      toast.success(`Offerte ingepland: ${label}`)
+    } catch (err) {
+      logger.error('Offerte inplannen mislukt:', err)
+      toast.error('Inplannen mislukt')
+    } finally {
+      setIsSending(false)
+    }
+  }, [offerte, sendTo, sendSubject, user, prepareSendPayload])
 
   // Duplicate offerte
   const handleDuplicate = useCallback(async () => {
@@ -1292,6 +1346,85 @@ export function OfferteDetail() {
             <Button variant="outline" onClick={() => setShowSendDialog(false)} disabled={isSending}>
               Annuleren
             </Button>
+            <div className="relative">
+              <Button
+                variant="outline"
+                onClick={() => setShowScheduleMenu(s => !s)}
+                disabled={isSending || !sendTo}
+                title="Inplannen"
+              >
+                <Clock className="h-4 w-4" />
+              </Button>
+              {showScheduleMenu && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => { setShowScheduleMenu(false); setShowCustomSchedule(false) }} />
+                  <div className="absolute bottom-full right-0 mb-2 w-[240px] bg-white rounded-xl shadow-[0_4px_24px_rgba(0,0,0,0.10)] z-50 py-1.5 overflow-hidden border border-[#EBEBEB]">
+                    <p className="px-3.5 py-1.5 text-[11px] uppercase tracking-wider text-[#9B9B95] font-medium">Inplannen</p>
+                    {[
+                      { label: 'Morgen 9:00', getDate: () => { const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(9, 0, 0, 0); return d } },
+                      { label: 'Morgen 14:00', getDate: () => { const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(14, 0, 0, 0); return d } },
+                      { label: 'Maandag 9:00', getDate: () => { const d = new Date(); const day = d.getDay(); const daysUntilMon = day === 0 ? 1 : day === 1 ? 7 : 8 - day; d.setDate(d.getDate() + daysUntilMon); d.setHours(9, 0, 0, 0); return d } },
+                    ].map(opt => (
+                      <button
+                        key={opt.label}
+                        onClick={() => handleScheduleSend(opt.getDate().toISOString(), opt.label)}
+                        className="w-full px-3.5 py-2.5 text-left text-[13px] text-[#1A1A1A] hover:bg-[#F8F7F5] transition-colors duration-150 flex items-center justify-between"
+                      >
+                        <span>{opt.label}</span>
+                        <span className="text-[11px] text-[#9B9B95] font-mono">
+                          {opt.getDate().toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}
+                        </span>
+                      </button>
+                    ))}
+                    <div className="border-t border-[#EBEBEB] mt-1 pt-1">
+                      {!showCustomSchedule ? (
+                        <button
+                          onClick={() => {
+                            setShowCustomSchedule(true)
+                            const tomorrow = new Date()
+                            tomorrow.setDate(tomorrow.getDate() + 1)
+                            setCustomScheduleDate(tomorrow.toISOString().split('T')[0])
+                          }}
+                          className="w-full px-3.5 py-2.5 text-left text-[13px] text-[#1A535C] hover:bg-[#F8F7F5] transition-colors duration-150 flex items-center gap-2"
+                        >
+                          <Clock className="h-3.5 w-3.5" />
+                          Kies datum en tijd...
+                        </button>
+                      ) : (
+                        <div className="px-3.5 py-2.5 space-y-2">
+                          <input
+                            type="date"
+                            value={customScheduleDate}
+                            onChange={e => setCustomScheduleDate(e.target.value)}
+                            min={new Date().toISOString().split('T')[0]}
+                            className="w-full px-2.5 py-1.5 text-[13px] text-[#1A1A1A] bg-[#F8F7F5] rounded-lg border border-[#EBEBEB] outline-none focus:border-[#1A535C] transition-colors font-mono"
+                          />
+                          <input
+                            type="time"
+                            value={customScheduleTime}
+                            onChange={e => setCustomScheduleTime(e.target.value)}
+                            className="w-full px-2.5 py-1.5 text-[13px] text-[#1A1A1A] bg-[#F8F7F5] rounded-lg border border-[#EBEBEB] outline-none focus:border-[#1A535C] transition-colors font-mono"
+                          />
+                          <button
+                            onClick={() => {
+                              if (!customScheduleDate) { toast.error('Kies een datum'); return }
+                              const dt = new Date(`${customScheduleDate}T${customScheduleTime}:00`)
+                              if (dt <= new Date()) { toast.error('Kies een moment in de toekomst'); return }
+                              const label = dt.toLocaleDateString('nl-NL', { weekday: 'short', day: 'numeric', month: 'short' }) + ' ' + customScheduleTime
+                              handleScheduleSend(dt.toISOString(), label)
+                              setShowCustomSchedule(false)
+                            }}
+                            className="w-full py-1.5 rounded-lg bg-[#1A535C] text-white text-[12px] font-medium hover:opacity-90 transition-opacity"
+                          >
+                            Inplannen
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
             <Button onClick={handleSend} disabled={isSending || !sendTo}>
               {isSending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Send className="h-4 w-4 mr-1" />}
               Versturen
