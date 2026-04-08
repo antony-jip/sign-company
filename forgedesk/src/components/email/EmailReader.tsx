@@ -55,6 +55,7 @@ function getAttachmentVisual(filename: string, contentType?: string): { label: s
 
 interface EmailReaderProps {
   email: Email | null
+  threadEmails?: Email[]
   isLoadingBody?: boolean
   emailIndex?: number
   emailTotal?: number
@@ -72,6 +73,7 @@ interface EmailReaderProps {
 
 export function EmailReader({
   email,
+  threadEmails,
   isLoadingBody,
   emailIndex,
   emailTotal,
@@ -770,7 +772,7 @@ export function EmailReader({
 
         {/* Scrollable email content */}
         <div className="flex-1 overflow-y-auto bg-white">
-          <div className="max-w-[880px] mx-auto">
+          <div className="w-full">
             {/* Header: subject + sender + reply actions */}
             <div className="px-8 py-5 border-b border-[#F0EFEC]">
               {/* Subject row */}
@@ -833,6 +835,66 @@ export function EmailReader({
 
             {/* Email body content area */}
             <div className="px-8 py-6">
+              {/* ── Thread navigation strip ──
+                  Toon alle berichten in dezelfde conversatie. De huidige is
+                  gehighlight, klik op een ander bericht om dat te openen. */}
+              {threadEmails && threadEmails.length > 1 && (
+                <div className="mb-6 rounded-xl border border-[#EBEBEB] bg-white overflow-hidden">
+                  <div className="flex items-center justify-between px-4 py-2 border-b border-[#F0EFEC] bg-[#FAFAF8]">
+                    <span className="text-[11px] font-semibold text-[#6B6B66] uppercase tracking-wider">
+                      Gesprek · {threadEmails.length} berichten
+                    </span>
+                  </div>
+                  <div className="divide-y divide-[#F0EFEC]">
+                    {threadEmails.map((tEmail) => {
+                      const isCurrent = tEmail.id === email.id
+                      const senderShort = extractSenderName(tEmail.van)
+                      return (
+                        <button
+                          key={tEmail.id}
+                          type="button"
+                          onClick={() => {
+                            if (!isCurrent && onSelectEmail) onSelectEmail(tEmail)
+                          }}
+                          className={cn(
+                            'w-full flex items-start gap-3 px-4 py-2.5 text-left transition-colors',
+                            isCurrent
+                              ? 'bg-[#1A535C]/[0.06]'
+                              : 'hover:bg-[#F8F7F5] cursor-pointer',
+                          )}
+                        >
+                          <div className="flex-shrink-0 mt-0.5">
+                            {isCurrent ? (
+                              <div className="w-1.5 h-1.5 rounded-full bg-[#1A535C]" />
+                            ) : (
+                              <div className="w-1.5 h-1.5 rounded-full bg-[#D4D2CE]" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className={cn(
+                                'text-[13px] truncate',
+                                isCurrent ? 'font-semibold text-[#1A1A1A]' : 'text-[#3A3A36]',
+                              )}>
+                                {senderShort}
+                              </span>
+                              <span className="text-[11px] text-[#9B9B95] tabular-nums flex-shrink-0">
+                                {formatShortDate(tEmail.datum)}
+                              </span>
+                            </div>
+                            {!isCurrent && tEmail.body_text && (
+                              <p className="text-[12px] text-[#9B9B95] truncate mt-0.5">
+                                {tEmail.body_text.replace(/\s+/g, ' ').slice(0, 120)}
+                              </p>
+                            )}
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
               {/* ── Summary block ── */}
               {(summary || summaryLoading) && (
                 <div className="mb-6 rounded-xl overflow-hidden bg-[#F8F7F5]">
@@ -872,7 +934,22 @@ export function EmailReader({
               ) : (
                 <div ref={emailBodyRef}>
                   <div
-                    className="text-[14px] leading-[1.75] text-[#4A4A46] [&_img]:max-w-full [&_img]:rounded-lg [&_img]:shadow-sm [&_img]:my-3 [&_a]:text-[#1A535C] [&_a]:no-underline [&_a]:hover:underline [&_a]:underline-offset-2 [&_a]:transition-colors [&_table]:w-full [&_blockquote]:border-l-2 [&_blockquote]:border-[#EBEBEB] [&_blockquote]:pl-4 [&_blockquote]:text-[14px] [&_blockquote]:text-[#9B9B95] [&_blockquote]:my-3 [&_p]:mb-2 [&_h1]:text-lg [&_h1]:font-semibold [&_h1]:mb-2 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mb-2 [&_h3]:text-[14px] [&_h3]:font-semibold [&_h3]:mb-1.5 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-2 [&_li]:mb-0.5 [&_.email-sig-dim]:text-[#9B9B95] [&_.email-sig-dim]:text-[13px]"
+                    className="text-left text-[14px] leading-[1.75] text-[#4A4A46]
+                      [&>*:first-child]:!mt-0
+                      [&_body]:!m-0 [&_body]:!p-0
+                      [&_table]:!ml-0 [&_table]:max-w-full
+                      [&_div]:!ml-0
+                      [&_p]:!ml-0 [&_p]:mb-2
+                      [&_img]:max-w-full [&_img]:rounded-lg [&_img]:shadow-sm [&_img]:my-3
+                      [&_a]:text-[#1A535C] [&_a]:no-underline [&_a]:hover:underline [&_a]:underline-offset-2 [&_a]:transition-colors
+                      [&_blockquote]:border-l-2 [&_blockquote]:border-[#EBEBEB] [&_blockquote]:pl-4 [&_blockquote]:text-[14px] [&_blockquote]:text-[#9B9B95] [&_blockquote]:my-3
+                      [&_h1]:text-lg [&_h1]:font-semibold [&_h1]:mb-2 [&_h1]:!ml-0
+                      [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mb-2 [&_h2]:!ml-0
+                      [&_h3]:text-[14px] [&_h3]:font-semibold [&_h3]:mb-1.5 [&_h3]:!ml-0
+                      [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-2 [&_ul]:!ml-0
+                      [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-2 [&_ol]:!ml-0
+                      [&_li]:mb-0.5
+                      [&_.email-sig-dim]:text-[#9B9B95] [&_.email-sig-dim]:text-[13px]"
                     dangerouslySetInnerHTML={{ __html: sanitizedBody }}
                   />
                   <EmailReaderAIToolbar containerRef={emailBodyRef} />

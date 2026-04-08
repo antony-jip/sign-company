@@ -893,24 +893,34 @@ export function EmailLayout() {
       )}
 
       {/* Reader view */}
-      {viewMode === 'reading' && selectedEmail && (
-        <EmailReader
-          email={selectedEmail}
-          isLoadingBody={isLoadingBody}
-          emailIndex={emailIndex}
-          emailTotal={threadedEmails.length}
-          allEmails={emails}
-          imapFolder={IMAP_FOLDER_MAP[selectedFolder] || 'INBOX'}
-          onToggleStar={handleToggleStar}
-          onToggleRead={handleToggleRead}
-          onDelete={handleDeleteAndNavigate}
-          onArchive={handleArchiveAndNavigate}
-          onBack={handleBack}
-          onNavigate={handleNavigate}
-          onSendReply={handleSendReply}
-          onSelectEmail={handleSelectEmail}
-        />
-      )}
+      {viewMode === 'reading' && selectedEmail && (() => {
+        // Bouw thread voor de geselecteerde mail: alle mails met hetzelfde
+        // thread_id, oudste eerst zodat het een natuurlijke conversatie is.
+        const threadEmails = selectedEmail.thread_id
+          ? emails
+              .filter((e) => e.thread_id === selectedEmail.thread_id)
+              .sort((a, b) => Date.parse(a.datum) - Date.parse(b.datum))
+          : []
+        return (
+          <EmailReader
+            email={selectedEmail}
+            threadEmails={threadEmails}
+            isLoadingBody={isLoadingBody}
+            emailIndex={emailIndex}
+            emailTotal={threadedEmails.length}
+            allEmails={emails}
+            imapFolder={IMAP_FOLDER_MAP[selectedFolder] || 'INBOX'}
+            onToggleStar={handleToggleStar}
+            onToggleRead={handleToggleRead}
+            onDelete={handleDeleteAndNavigate}
+            onArchive={handleArchiveAndNavigate}
+            onBack={handleBack}
+            onNavigate={handleNavigate}
+            onSendReply={handleSendReply}
+            onSelectEmail={handleSelectEmail}
+          />
+        )
+      })()}
 
       {/* Email list (idle view) */}
       {viewMode === 'idle' && (<>
