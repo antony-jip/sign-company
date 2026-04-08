@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -7,6 +7,63 @@ const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 const EXACT_TOKEN_URL = 'https://start.exactonline.nl/api/oauth2/token'
 
 const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+
+// ─── Inline org-aware app_settings helpers ───
+// Vercel serverless functions kunnen geen modules delen tussen API routes,
+// dus deze helpers zijn ge-dupliceerd in elke exact-* route.
+async function getOrgIdForUser(supabase: SupabaseClient, userId: string): Promise<string | null> {
+  const { data } = await supabase
+    .from('profiles')
+    .select('organisatie_id')
+    .eq('id', userId)
+    .maybeSingle()
+  return ((data as { organisatie_id?: string } | null)?.organisatie_id) ?? null
+}
+
+async function loadAppSettingsOrgFirst(
+  supabase: SupabaseClient,
+  userId: string,
+  columns: string,
+): Promise<Record<string, unknown> | null> {
+  const orgId = await getOrgIdForUser(supabase, userId)
+  if (orgId) {
+    const { data } = await supabase
+      .from('app_settings')
+      .select(columns)
+      .eq('organisatie_id', orgId)
+      .maybeSingle()
+    if (data) return data as Record<string, unknown>
+  }
+  const { data } = await supabase
+    .from('app_settings')
+    .select(columns)
+    .eq('user_id', userId)
+    .maybeSingle()
+  return (data as Record<string, unknown> | null) ?? null
+}
+
+async function updateAppSettingsOrgFirst(
+  supabase: SupabaseClient,
+  userId: string,
+  updates: Record<string, unknown>,
+): Promise<void> {
+  const orgId = await getOrgIdForUser(supabase, userId)
+  if (orgId) {
+    const { data: existing } = await supabase
+      .from('app_settings')
+      .select('id')
+      .eq('organisatie_id', orgId)
+      .maybeSingle()
+    if (existing) {
+      await supabase
+        .from('app_settings')
+        .update(updates)
+        .eq('id', (existing as { id: string }).id)
+      return
+    }
+  }
+  await supabase.from('app_settings').update(updates).eq('user_id', userId)
+}
 
 async function verifyUser(req: VercelRequest): Promise<string> {
   const authHeader = req.headers.authorization
@@ -39,21 +96,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       })
     }
 
-    // 2. Haal client_id + client_secret op uit app_settings
-    const { data: settings, error: settingsError } = await supabase
-      .from('app_settings')
-      .select('exact_online_client_id, exact_online_client_secret')
-      .eq('user_id', user_id)
-      .single()
+    // 2. Haal client_id + client_secret op uit app_settings (org-first)
+    const settings = await loadAppSettingsOrgFirst(
+      supabase,
+      user_id,
+      'exact_online_client_id, exact_online_client_secret',
+    )
+    const exactClientId = settings?.exact_online_client_id as string | undefined
+    const exactClientSecret = settings?.exact_online_client_secret as string | undefined
 
-    if (settingsError || !settings?.exact_online_client_id || !settings?.exact_online_client_secret) {
+    if (!exactClientId || !exactClientSecret) {
       return res.status(400).json({
         error: 'Exact Online credentials niet gevonden in instellingen.',
       })
     }
 
     // 3. Ververs tokens (Basic auth header is verplicht bij Exact Online)
-    const credentials = Buffer.from(`${settings.exact_online_client_id}:${settings.exact_online_client_secret}`).toString('base64')
+    const credentials = Buffer.from(`${exactClientId}:${exactClientSecret}`).toString('base64')
     const tokenResponse = await fetch(EXACT_TOKEN_URL, {
       method: 'POST',
       headers: {
@@ -72,10 +131,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       // Als refresh token verlopen is, markeer als disconnected
       if (tokenResponse.status === 400 || tokenResponse.status === 401) {
-        await supabase
-          .from('app_settings')
-          .update({ exact_online_connected: false })
-          .eq('user_id', user_id)
+        await updateAppSettingsOrgFirst(supabase, user_id, { exact_online_connected: false })
       }
 
       return res.status(502).json({

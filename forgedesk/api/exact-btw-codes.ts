@@ -1,11 +1,43 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 const EXACT_API_BASE = 'https://start.exactonline.nl/api/v1'
 
 const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+
+// ─── Inline org-aware app_settings helpers (zie profielService.ts) ───
+async function getOrgIdForUser(supabase: SupabaseClient, userId: string): Promise<string | null> {
+  const { data } = await supabase
+    .from('profiles')
+    .select('organisatie_id')
+    .eq('id', userId)
+    .maybeSingle()
+  return ((data as { organisatie_id?: string } | null)?.organisatie_id) ?? null
+}
+
+async function loadAppSettingsOrgFirst(
+  supabase: SupabaseClient,
+  userId: string,
+  columns: string,
+): Promise<Record<string, unknown> | null> {
+  const orgId = await getOrgIdForUser(supabase, userId)
+  if (orgId) {
+    const { data } = await supabase
+      .from('app_settings')
+      .select(columns)
+      .eq('organisatie_id', orgId)
+      .maybeSingle()
+    if (data) return data as Record<string, unknown>
+  }
+  const { data } = await supabase
+    .from('app_settings')
+    .select(columns)
+    .eq('user_id', userId)
+    .maybeSingle()
+  return (data as Record<string, unknown> | null) ?? null
+}
 
 async function verifyUser(req: VercelRequest): Promise<string> {
   const authHeader = req.headers.authorization
@@ -29,13 +61,15 @@ async function getValidToken(userId: string): Promise<{ token: string; division:
     return { token: data.access_token, division: data.division }
   }
 
-  const { data: settings } = await supabaseAdmin
-    .from('app_settings')
-    .select('exact_online_client_id, exact_online_client_secret')
-    .eq('user_id', userId)
-    .single()
+  const settings = await loadAppSettingsOrgFirst(
+    supabaseAdmin,
+    userId,
+    'exact_online_client_id, exact_online_client_secret',
+  )
+  const exactClientId = settings?.exact_online_client_id as string | undefined
+  const exactClientSecret = settings?.exact_online_client_secret as string | undefined
 
-  if (!settings?.exact_online_client_id || !settings?.exact_online_client_secret) {
+  if (!exactClientId || !exactClientSecret) {
     throw new Error('Exact credentials niet gevonden')
   }
 
@@ -43,7 +77,7 @@ async function getValidToken(userId: string): Promise<{ token: string; division:
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
-      Authorization: `Basic ${Buffer.from(`${settings.exact_online_client_id}:${settings.exact_online_client_secret}`).toString('base64')}`,
+      Authorization: `Basic ${Buffer.from(`${exactClientId}:${exactClientSecret}`).toString('base64')}`,
     },
     body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: data.refresh_token }),
   })

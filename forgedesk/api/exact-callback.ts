@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { createHmac } from 'crypto'
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
@@ -26,6 +26,65 @@ function verifyState(state: string): string | null {
   return userId
 }
 
+// ─── Inline org-aware app_settings helpers ───
+// Vercel serverless functions kunnen geen modules delen tussen API routes,
+// dus deze helpers zijn ge-dupliceerd in elke exact-* route. Pakt eerst de
+// organisatie-rij (matcht RLS policy + andere users in dezelfde org), valt
+// terug op de user-eigen rij. Zelfde strategie als profielService.ts.
+async function getOrgIdForUser(supabase: SupabaseClient, userId: string): Promise<string | null> {
+  const { data } = await supabase
+    .from('profiles')
+    .select('organisatie_id')
+    .eq('id', userId)
+    .maybeSingle()
+  return ((data as { organisatie_id?: string } | null)?.organisatie_id) ?? null
+}
+
+async function loadAppSettingsOrgFirst(
+  supabase: SupabaseClient,
+  userId: string,
+  columns: string,
+): Promise<Record<string, unknown> | null> {
+  const orgId = await getOrgIdForUser(supabase, userId)
+  if (orgId) {
+    const { data } = await supabase
+      .from('app_settings')
+      .select(columns)
+      .eq('organisatie_id', orgId)
+      .maybeSingle()
+    if (data) return data as Record<string, unknown>
+  }
+  const { data } = await supabase
+    .from('app_settings')
+    .select(columns)
+    .eq('user_id', userId)
+    .maybeSingle()
+  return (data as Record<string, unknown> | null) ?? null
+}
+
+async function updateAppSettingsOrgFirst(
+  supabase: SupabaseClient,
+  userId: string,
+  updates: Record<string, unknown>,
+): Promise<void> {
+  const orgId = await getOrgIdForUser(supabase, userId)
+  if (orgId) {
+    const { data: existing } = await supabase
+      .from('app_settings')
+      .select('id')
+      .eq('organisatie_id', orgId)
+      .maybeSingle()
+    if (existing) {
+      await supabase
+        .from('app_settings')
+        .update(updates)
+        .eq('id', (existing as { id: string }).id)
+      return
+    }
+  }
+  await supabase.from('app_settings').update(updates).eq('user_id', userId)
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
@@ -45,20 +104,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
-    // 1. Haal client_id + client_secret op uit app_settings
-    const { data: settings, error: settingsError } = await supabase
-      .from('app_settings')
-      .select('exact_online_client_id, exact_online_client_secret')
-      .eq('user_id', user_id)
-      .single()
+    // 1. Haal client_id + client_secret op uit app_settings (org-first)
+    const settings = await loadAppSettingsOrgFirst(
+      supabase,
+      user_id,
+      'exact_online_client_id, exact_online_client_secret',
+    )
+    const exactClientId = settings?.exact_online_client_id as string | undefined
+    const exactClientSecret = settings?.exact_online_client_secret as string | undefined
 
-    if (settingsError || !settings?.exact_online_client_id || !settings?.exact_online_client_secret) {
-      console.error('Exact callback: credentials niet gevonden', settingsError)
+    if (!exactClientId || !exactClientSecret) {
+      console.error('Exact callback: credentials niet gevonden voor user', user_id)
       return res.redirect(302, `${APP_URL}/instellingen?tab=integraties&exact=error&reason=no_credentials`)
     }
 
     // 2. Wissel code in voor tokens (Basic auth header is verplicht bij Exact Online)
-    const credentials = Buffer.from(`${settings.exact_online_client_id}:${settings.exact_online_client_secret}`).toString('base64')
+    const credentials = Buffer.from(`${exactClientId}:${exactClientSecret}`).toString('base64')
     const tokenResponse = await fetch(EXACT_TOKEN_URL, {
       method: 'POST',
       headers: {
@@ -69,8 +130,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         grant_type: 'authorization_code',
         code,
         redirect_uri: REDIRECT_URI,
-        client_id: settings.exact_online_client_id,
-        client_secret: settings.exact_online_client_secret,
+        client_id: exactClientId,
+        client_secret: exactClientSecret,
       }).toString(),
     })
 
@@ -127,10 +188,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       settingsUpdate.exact_administratie_id = String(division)
     }
 
-    await supabase
-      .from('app_settings')
-      .update(settingsUpdate)
-      .eq('user_id', user_id)
+    await updateAppSettingsOrgFirst(supabase, user_id, settingsUpdate)
 
     // 6. Redirect naar instellingen
     return res.redirect(302, `${APP_URL}/instellingen?tab=integraties&exact=connected`)
