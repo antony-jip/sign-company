@@ -1251,7 +1251,10 @@ export function generateFactuurPDF(
   // Override brand color to red for creditnota
   const effectiveBrand: [number, number, number] = isCreditnota ? [200, 50, 50] : brand
 
-  let y = addHeader(doc, bedrijfsProfiel, headerLabel, factuurData.nummer, docStyle)
+  // Header — type + nummer als één titel ("Factuur FAC-2026-010"). De
+  // metadata (datum etc) komt eronder in het 3-koloms blok.
+  const headerTitle = `${headerLabel} ${factuurData.nummer}`
+  let y = addHeader(doc, bedrijfsProfiel, headerTitle, factuurData.nummer, docStyle, { omitMetadata: true })
 
   // Diagonal watermark for creditnota
   if (isCreditnota) {
@@ -1270,16 +1273,20 @@ export function generateFactuurPDF(
   // Client info
   y = addClientInfo(doc, klant, y, docStyle)
 
-  // Invoice details
+  // Invoice details — Onderwerp/toelichting + 2-koloms metadata blok
   doc.setFontSize(baseFontSize)
   doc.setFont(bodyFont, 'normal')
   doc.setTextColor(...textColor)
 
+  // Onderwerp / toelichting (optioneel — extra tekst die de gebruiker kan invullen)
   if (factuurData.titel) {
     doc.setFont(bodyFont, 'bold')
-    doc.text(`Betreft: ${factuurData.titel}`, margins.left, y)
+    doc.setFontSize(baseFontSize - 1)
+    doc.text('Onderwerp', margins.left, y)
     doc.setFont(bodyFont, 'normal')
-    y += 6
+    doc.setFontSize(baseFontSize)
+    doc.text(factuurData.titel, margins.left, y + 5)
+    y += 12
   }
 
   // Referentie naar originele factuur bij creditnota
@@ -1292,10 +1299,23 @@ export function generateFactuurPDF(
     y += 6
   }
 
-  doc.text(`Factuurdatum: ${formatDate(factuurData.datum)}`, margins.left, y)
-  y += 5
-  doc.text(`Vervaldatum: ${formatDate(factuurData.vervaldatum)}`, margins.left, y)
-  y += 8
+  // 2-koloms metadata: Factuurdatum | Vervaldatum (nummer staat al in de titel)
+  const metaColWidth = (pageWidth - margins.left - margins.right) / 2
+  const metaCols = [
+    { label: 'Factuurdatum', value: formatDate(factuurData.datum) },
+    { label: 'Vervaldatum', value: formatDate(factuurData.vervaldatum) },
+  ]
+  doc.setFontSize(baseFontSize - 1)
+  metaCols.forEach((col, i) => {
+    const x = margins.left + i * metaColWidth
+    doc.setFont(bodyFont, 'bold')
+    doc.setTextColor(...textColor)
+    doc.text(col.label, x, y)
+    doc.setFont(bodyFont, 'normal')
+    doc.text(col.value, x, y + 5)
+  })
+  y += 14
+  doc.setFontSize(baseFontSize)
 
   // Items table — hairline separator tussen items + uppercase brand header
   const separatorColor: [number, number, number] = [225, 225, 228]
@@ -1452,7 +1472,8 @@ export function generateFactuurPDF(
   }
 
   // Online betaallink — extra ruimte boven zodat het visueel duidelijk
-  // gescheiden is van de betaalvoorwaarden / notities erboven.
+  // gescheiden is van de betaalvoorwaarden / notities erboven. We tonen
+  // geen lelijke lange URL meer, maar gewoon "Klik hier om direct te betalen".
   if (factuurData.betaal_link) {
     advanceY(20)
     drawSectionHeader('Online betalen:')
@@ -1460,13 +1481,22 @@ export function generateFactuurPDF(
     doc.setFont(bodyFont, 'normal')
     doc.setTextColor(...textColor)
     doc.setFontSize(baseFontSize - 1)
-    doc.text('Betaal direct via de onderstaande link:', margins.left, totalsY)
+    doc.text('Betaal de factuur direct online:', margins.left, totalsY)
     totalsY += 6
 
-    doc.setTextColor(41, 98, 218)
-    doc.textWithLink(factuurData.betaal_link, margins.left, totalsY, {
+    // Link als display tekst, met onderstreping zodat het er klikbaar uitziet
+    doc.setTextColor(...effectiveBrand)
+    doc.setFont(bodyFont, 'bold')
+    const linkLabel = 'Klik hier om direct te betalen →'
+    doc.textWithLink(linkLabel, margins.left, totalsY, {
       url: factuurData.betaal_link,
     })
+    // Underline onder de tekst
+    const linkWidth = doc.getTextWidth(linkLabel)
+    doc.setDrawColor(...effectiveBrand)
+    doc.setLineWidth(0.4)
+    doc.line(margins.left, totalsY + 1, margins.left + linkWidth, totalsY + 1)
+    doc.setFont(bodyFont, 'normal')
   }
 
   // Footer

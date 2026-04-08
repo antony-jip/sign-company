@@ -1391,7 +1391,7 @@ export function FactuurEditor() {
                     className="text-emerald-600 border-emerald-200 hover:bg-emerald-50 dark:text-emerald-400 dark:border-emerald-800 dark:hover:bg-emerald-900/30"
                   >
                     <CheckCircle2 className="h-4 w-4 mr-1" />
-                    Betaald
+                    Markeer als betaald
                   </Button>
                 )}
 
