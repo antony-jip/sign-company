@@ -186,3 +186,24 @@ export async function createEmailOpvolging(opvolging: Omit<import('@/types').Ema
   if (error) throw error
   return data
 }
+
+// ── Ingeplande berichten ──
+export async function getIngeplandeBerichten(): Promise<import('@/types').IngeplandBericht[]> {
+  if (!isSupabaseConfigured() || !supabase) throw new Error('Supabase niet geconfigureerd')
+  const { data, error } = await supabase
+    .from('ingeplande_berichten')
+    .select('*')
+    .order('scheduled_at', { ascending: true })
+  if (error) throw error
+  return (data || []) as import('@/types').IngeplandBericht[]
+}
+
+export async function cancelIngeplandBericht(id: string): Promise<void> {
+  if (!isSupabaseConfigured() || !supabase) throw new Error('Supabase niet geconfigureerd')
+  const { error } = await supabase
+    .from('ingeplande_berichten')
+    .update({ status: 'geannuleerd' })
+    .eq('id', id)
+    .eq('status', 'wachtend')
+  if (error) throw error
+}

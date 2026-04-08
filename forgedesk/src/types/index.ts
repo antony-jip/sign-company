@@ -1947,6 +1947,42 @@ export interface EmailOpvolging {
   created_at: string
 }
 
+// ============ INGEPLANDE BERICHTEN ============
+
+export interface IngeplandBerichtBijlage {
+  filename: string
+  content: string
+  encoding: 'base64'
+}
+
+export interface IngeplandBerichtOfferteMetadata {
+  type: 'offerte_verzenden'
+  offerte_id: string
+  offerte_nummer: string
+  offerte_titel: string
+  verstuurd_naar: string
+}
+
+export type IngeplandBerichtMetadata = IngeplandBerichtOfferteMetadata | Record<string, never>
+
+export interface IngeplandBericht {
+  id: string
+  user_id: string
+  ontvanger: string
+  cc?: string
+  onderwerp: string
+  body?: string
+  html?: string
+  bijlagen: IngeplandBerichtBijlage[]
+  scheduled_at: string
+  status: 'wachtend' | 'verzonden' | 'geannuleerd' | 'mislukt'
+  trigger_run_id?: string
+  foutmelding?: string
+  verzonden_op?: string
+  metadata?: IngeplandBerichtMetadata
+  created_at: string
+}
+
 // ============ KENNISBANK ============
 
 export interface KbCategory {

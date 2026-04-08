@@ -101,6 +101,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       html,
       attachments,
       opvolging_id,
+      scheduledAt,
+      metadata,
     } = req.body as {
       to: string
       cc?: string
@@ -109,10 +111,64 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       html?: string
       attachments?: Array<{ filename: string; content: string; encoding: 'base64' }>
       opvolging_id?: string
+      scheduledAt?: string
+      metadata?: Record<string, unknown>
     }
 
     if (!to || !subject) {
       return res.status(400).json({ error: 'Ontvanger en onderwerp zijn verplicht' })
+    }
+
+    if (scheduledAt) {
+      const verzendDatum = new Date(scheduledAt)
+      if (Number.isNaN(verzendDatum.getTime())) {
+        return res.status(400).json({ error: 'Ongeldige scheduledAt waarde' })
+      }
+      if (verzendDatum.getTime() <= Date.now()) {
+        return res.status(400).json({ error: 'scheduledAt moet in de toekomst liggen' })
+      }
+
+      const { data: ingepland, error: insertError } = await supabaseAdmin
+        .from('ingeplande_berichten')
+        .insert({
+          user_id,
+          ontvanger: to,
+          cc: cc || null,
+          onderwerp: subject,
+          body: body || null,
+          html: html || null,
+          bijlagen: attachments || [],
+          scheduled_at: verzendDatum.toISOString(),
+          status: 'wachtend',
+          metadata: metadata || {},
+        })
+        .select('id')
+        .single()
+
+      if (insertError || !ingepland) {
+        console.error('[send-email] Ingepland bericht aanmaken mislukt:', insertError)
+        return res.status(500).json({ error: 'Email inplannen mislukt' })
+      }
+
+      try {
+        const { tasks } = await import('@trigger.dev/sdk/v3')
+        const handle = await tasks.trigger('verzend-email-gepland', {
+          ingeplandBerichtId: ingepland.id,
+        })
+        await supabaseAdmin
+          .from('ingeplande_berichten')
+          .update({ trigger_run_id: handle.id })
+          .eq('id', ingepland.id)
+        console.log('[send-email] Geplande verzending getriggerd:', ingepland.id, scheduledAt)
+        return res.status(200).json({ success: true, message: 'Email ingepland', id: ingepland.id })
+      } catch (triggerErr) {
+        console.error('[send-email] Trigger.dev geplande task starten mislukt:', triggerErr)
+        await supabaseAdmin
+          .from('ingeplande_berichten')
+          .update({ status: 'mislukt', foutmelding: 'Task starten mislukt' })
+          .eq('id', ingepland.id)
+        return res.status(500).json({ error: 'Email inplannen mislukt' })
+      }
     }
 
     // Haal bedrijfsnaam op voor afzendernaam
