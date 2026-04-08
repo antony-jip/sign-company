@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { Clock, X, AlertCircle, Check, FileText } from 'lucide-react'
+import { Clock, X, AlertCircle, Check } from 'lucide-react'
 import { toast } from 'sonner'
 import { getIngeplandeBerichten, cancelIngeplandBericht } from '@/services/emailService'
 import type { IngeplandBericht } from '@/types'
@@ -118,12 +118,6 @@ export function IngeplandeBerichtenLijst() {
                       Aan: {b.ontvanger}
                     </p>
                     <p className="text-[13px] text-[#6B6B66] truncate">{b.onderwerp}</p>
-                    {b.metadata && 'type' in b.metadata && b.metadata.type === 'offerte_verzenden' && (
-                      <div className="mt-1.5 inline-flex items-center gap-1.5 text-[11px] text-[#1A535C] bg-[#1A535C]/[0.07] px-2 py-0.5 rounded">
-                        <FileText className="h-3 w-3" />
-                        <span>Offerte {b.metadata.offerte_nummer}</span>
-                      </div>
-                    )}
                     {b.foutmelding && (
                       <div className="mt-2 flex items-start gap-1.5 text-[11px] text-red-700">
                         <AlertCircle className="h-3 w-3 flex-shrink-0 mt-0.5" />

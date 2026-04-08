@@ -1955,16 +1955,6 @@ export interface IngeplandBerichtBijlage {
   encoding: 'base64'
 }
 
-export interface IngeplandBerichtOfferteMetadata {
-  type: 'offerte_verzenden'
-  offerte_id: string
-  offerte_nummer: string
-  offerte_titel: string
-  verstuurd_naar: string
-}
-
-export type IngeplandBerichtMetadata = IngeplandBerichtOfferteMetadata | Record<string, never>
-
 export interface IngeplandBericht {
   id: string
   user_id: string
@@ -1978,7 +1968,6 @@ export interface IngeplandBericht {
   status: 'wachtend' | 'verzonden' | 'geannuleerd' | 'mislukt'
   foutmelding?: string
   verzonden_op?: string
-  metadata?: IngeplandBerichtMetadata
   created_at: string
 }
 

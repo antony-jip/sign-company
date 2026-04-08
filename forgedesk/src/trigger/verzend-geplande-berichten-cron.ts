@@ -92,56 +92,13 @@ export const verzendGeplandeBerichtenCron = schedules.task({
 
         await transporter.sendMail(mailOptions);
 
-        const verzondenOp = new Date().toISOString();
-
         await supabase
           .from("ingeplande_berichten")
           .update({
             status: "verzonden",
-            verzonden_op: verzondenOp,
+            verzonden_op: new Date().toISOString(),
           })
           .eq("id", bericht.id);
-
-        // Post-send hook: offerte status bijwerken indien metadata aanwezig
-        const meta = (bericht.metadata || {}) as Record<string, unknown>;
-        if (meta.type === "offerte_verzenden" && typeof meta.offerte_id === "string") {
-          try {
-            const { data: offerte } = await supabase
-              .from("offertes")
-              .select("activiteiten")
-              .eq("id", meta.offerte_id)
-              .single();
-
-            const huidigeActiviteiten = Array.isArray(offerte?.activiteiten)
-              ? offerte.activiteiten
-              : [];
-
-            const verstuurdNaar = typeof meta.verstuurd_naar === "string"
-              ? meta.verstuurd_naar
-              : bericht.ontvanger;
-
-            const nieuweActiviteit = {
-              datum: verzondenOp,
-              type: "verstuurd",
-              beschrijving: `Verstuurd naar ${verstuurdNaar} (ingepland)`,
-            };
-
-            await supabase
-              .from("offertes")
-              .update({
-                status: "verzonden",
-                verstuurd_op: verzondenOp,
-                verstuurd_naar: verstuurdNaar,
-                activiteiten: [...huidigeActiviteiten, nieuweActiviteit],
-              })
-              .eq("id", meta.offerte_id);
-          } catch (offerteErr) {
-            logger.error("Offerte update na verzending mislukt", {
-              error: offerteErr instanceof Error ? offerteErr.message : String(offerteErr),
-              offerteId: meta.offerte_id,
-            });
-          }
-        }
 
         verzonden++;
         logger.info("Bericht verzonden", { id: bericht.id, ontvanger: bericht.ontvanger });

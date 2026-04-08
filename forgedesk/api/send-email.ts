@@ -102,7 +102,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       attachments,
       opvolging_id,
       scheduledAt,
-      metadata,
     } = req.body as {
       to: string
       cc?: string
@@ -112,7 +111,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       attachments?: Array<{ filename: string; content: string; encoding: 'base64' }>
       opvolging_id?: string
       scheduledAt?: string
-      metadata?: Record<string, unknown>
     }
 
     if (!to || !subject) {
@@ -140,7 +138,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           bijlagen: attachments || [],
           scheduled_at: verzendDatum.toISOString(),
           status: 'wachtend',
-          metadata: metadata || {},
         })
         .select('id')
         .single()
