@@ -481,6 +481,8 @@ export interface Email {
   aan: string;
   onderwerp: string;
   inhoud: string;
+  body_text?: string | null;
+  body_html?: string | null;
   datum: string;
   gelezen: boolean;
   starred: boolean;

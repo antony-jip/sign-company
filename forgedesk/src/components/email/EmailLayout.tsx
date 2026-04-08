@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import {
   Search, Pencil, Inbox, Send, FileEdit, Trash2,
-  Loader2, Archive, RefreshCw, CheckCheck, X, Mail,
+  Loader2, Archive, RefreshCw, CheckCheck, X, Mail, MailOpen,
   Rows3, StretchHorizontal,
 } from 'lucide-react'
 import { sendEmail as sendEmailViaApi, fetchEmailsFromIMAP, readEmailFromIMAP } from '@/services/gmailService'
@@ -12,9 +12,9 @@ import { getEmails, getEmailBody, updateEmail, deleteEmail as deleteEmailDb } fr
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { EmailReader } from './EmailReader'
+import { EmailContextSidebar } from './EmailContextSidebar'
 import { EmailCompose } from './EmailCompose'
 import type { ComposeActions } from './EmailCompose'
-import { EmailContextSidebar } from './EmailContextSidebar'
 import { EmailListItem } from './EmailListItem'
 import type { Email } from '@/types'
 import { logger } from '../../utils/logger'
@@ -77,7 +77,7 @@ export function EmailLayout() {
   const [filter, setFilter] = useState<FilterType>('alle')
   const [fontSize, setFontSize] = useState<FontSize>('medium')
   const [listStyle, setListStyle] = useState<'inline' | 'stacked'>(() => {
-    try { return (localStorage.getItem('email_list_style') as 'inline' | 'stacked') || 'inline' } catch (err) { return 'inline' }
+    try { return (localStorage.getItem('email_list_style') as 'inline' | 'stacked') || 'stacked' } catch (err) { return 'stacked' }
   })
 
   // ─── Loading state ───
@@ -116,6 +116,7 @@ export function EmailLayout() {
 
   // ─── Selection state (bulk actions) ───
   const [checkedEmails, setCheckedEmails] = useState<Set<string>>(new Set())
+  const lastCheckedIdRef = useRef<string | null>(null)
 
   // ─── Keyboard state ───
   const [focusedIndex, setFocusedIndex] = useState<number>(-1)
@@ -353,14 +354,32 @@ export function EmailLayout() {
   const allChecked = filteredEmails.length > 0 && checkedEmails.size === filteredEmails.length
   const someChecked = hasChecked && !allChecked
 
-  const toggleCheckEmail = useCallback((id: string) => {
+  const toggleCheckEmail = useCallback((id: string, e?: React.MouseEvent) => {
+    // Shift+klik op een checkbox: range select van laatst gecheckte t/m deze
+    if (e?.shiftKey && lastCheckedIdRef.current && lastCheckedIdRef.current !== id) {
+      const ids = filteredEmails.map((em) => em.id)
+      const startIdx = ids.indexOf(lastCheckedIdRef.current)
+      const endIdx = ids.indexOf(id)
+      if (startIdx >= 0 && endIdx >= 0) {
+        const [from, to] = startIdx < endIdx ? [startIdx, endIdx] : [endIdx, startIdx]
+        const range = ids.slice(from, to + 1)
+        setCheckedEmails((prev) => {
+          const next = new Set(prev)
+          range.forEach((rid) => next.add(rid))
+          return next
+        })
+        lastCheckedIdRef.current = id
+        return
+      }
+    }
     setCheckedEmails((prev) => {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)
       else next.add(id)
       return next
     })
-  }, [])
+    lastCheckedIdRef.current = id
+  }, [filteredEmails])
 
   const toggleCheckAll = useCallback(() => {
     if (allChecked) setCheckedEmails(new Set())
@@ -597,7 +616,12 @@ export function EmailLayout() {
         case '#': e.preventDefault(); if (idx >= 0 && idx < list.length) cb.handleDelete(list[idx]); break
         case 'c': e.preventDefault(); handleCompose(); break
         case '?': e.preventDefault(); setShowShortcuts((prev) => !prev); break
-        case 'Escape': e.preventDefault(); setShowShortcuts(false); break
+        case 'Escape':
+          e.preventDefault()
+          setShowShortcuts(false)
+          // Wis ook actieve checkbox-selectie als die er is
+          if (checkedEmails.size > 0) setCheckedEmails(new Set())
+          break
       }
     }
     document.addEventListener('keydown', handleKeyDown)
@@ -605,9 +629,15 @@ export function EmailLayout() {
   }, [viewMode])
 
   // ─── Handlers ───
-  const handleSelectEmail = useCallback(async (email: Email) => {
-    // Show email immediately with what we have (subject, from, date)
-    setEmails(prev => prev.map(e => e.id === email.id ? { ...e, gelezen: true } : e))
+  const handleSelectEmail = useCallback(async (email: Email, e?: React.MouseEvent) => {
+    // Shift / Cmd / Ctrl klik → toggle checkbox ipv mail openen.
+    // Zo kan je makkelijk meerdere mails selecteren voor bulk acties.
+    if (e && (e.shiftKey || e.metaKey || e.ctrlKey)) {
+      toggleCheckEmail(email.id, e)
+      return
+    }
+    // Normale klik: open de mail
+    setEmails(prev => prev.map(em => em.id === email.id ? { ...em, gelezen: true } : em))
     setSelectedEmail({ ...email, gelezen: true })
     setViewMode('reading')
 
@@ -615,7 +645,7 @@ export function EmailLayout() {
     loadEmailBody(email, selectedFolder).then((withBody) => {
       setSelectedEmail(withBody)
     })
-  }, [loadEmailBody, selectedFolder])
+  }, [loadEmailBody, selectedFolder, toggleCheckEmail])
 
   const handleCompose = useCallback((defaults?: { to?: string; subject?: string; body?: string }) => {
     setComposeDefaults(defaults || {})
@@ -1049,22 +1079,69 @@ export function EmailLayout() {
               </p>
             </div>
           ) : (
-            <div className="divide-y divide-[#EBEBEB]">
-              {threadedEmails.map((email, index) => (
-                <EmailListItem
-                  key={email.id}
-                  email={email}
-                  isActive={selectedEmail?.id === email.id}
-                  isChecked={checkedEmails.has(email.id)}
-                  isFocused={focusedIndex === index}
-                  fontSize={fontSize}
-                  stacked={listStyle === 'stacked'}
-                  onSelect={handleSelectEmail}
-                  onToggleStar={handleToggleStar}
-                  onToggleCheck={toggleCheckEmail}
-                  onPrefetch={prefetchEmailBody}
-                />
-              ))}
+            <div>
+              {(() => {
+                // Datum-groepering: voeg sticky labels in tussen rijen wanneer
+                // de datum-groep verandert (Vandaag, Gisteren, Deze week, etc).
+                const getDateGroup = (dateStr: string): string => {
+                  const d = new Date(dateStr)
+                  if (isNaN(d.getTime())) return 'Eerder'
+                  const now = new Date()
+                  const startOfDay = (date: Date) => {
+                    const x = new Date(date)
+                    x.setHours(0, 0, 0, 0)
+                    return x
+                  }
+                  const today = startOfDay(now)
+                  const target = startOfDay(d)
+                  const diffDays = Math.round((today.getTime() - target.getTime()) / (24 * 60 * 60 * 1000))
+                  if (diffDays <= 0) return 'Vandaag'
+                  if (diffDays === 1) return 'Gisteren'
+                  if (diffDays <= 6) return 'Deze week'
+                  if (diffDays <= 13) return 'Vorige week'
+                  if (target.getMonth() === today.getMonth() && target.getFullYear() === today.getFullYear()) {
+                    return 'Eerder deze maand'
+                  }
+                  if (target.getFullYear() === today.getFullYear()) return 'Eerder dit jaar'
+                  return 'Vorig jaar of ouder'
+                }
+
+                const nodes: React.ReactNode[] = []
+                let lastGroup: string | null = null
+                threadedEmails.forEach((email, index) => {
+                  const group = getDateGroup(email.datum)
+                  if (group !== lastGroup) {
+                    nodes.push(
+                      <div
+                        key={`group-${group}-${index}`}
+                        className="px-4 py-2 text-[10px] uppercase tracking-wider font-semibold text-[#9B9B95] bg-[#FAFAF8] border-y border-[#F0EFEC]/60 sticky top-0 z-[1]"
+                      >
+                        {group}
+                      </div>
+                    )
+                    lastGroup = group
+                  }
+                  nodes.push(
+                    <EmailListItem
+                      key={email.id}
+                      email={email}
+                      isActive={selectedEmail?.id === email.id}
+                      isChecked={checkedEmails.has(email.id)}
+                      isFocused={focusedIndex === index}
+                      fontSize={fontSize}
+                      stacked={listStyle === 'stacked'}
+                      onSelect={handleSelectEmail}
+                      onToggleStar={handleToggleStar}
+                      onToggleCheck={toggleCheckEmail}
+                      onPrefetch={prefetchEmailBody}
+                      onArchive={handleArchive}
+                      onDelete={handleDelete}
+                      onToggleRead={handleToggleRead}
+                    />
+                  )
+                })
+                return nodes
+              })()}
               {isLoadingMore && (
                 <div className="flex items-center justify-center py-5">
                   <Loader2 className="h-4 w-4 animate-spin text-[#1A535C]/40 mr-2" />
@@ -1107,22 +1184,83 @@ export function EmailLayout() {
       </>)}
       </div>
 
-      {/* ─── RIGHT CONTEXT SIDEBAR ─── */}
-      <EmailContextSidebar
-        mode={viewMode === 'composing' ? 'compose' : viewMode === 'reading' ? 'reading' : 'idle'}
-        composeToAddress={composeToAddress}
-        composeReminder={composeReminder}
-        onComposeReminderChange={setComposeReminder}
-        allEmails={emails}
-        email={selectedEmail}
-        senderName={readerSenderName}
-        senderEmail={readerSenderEmail}
-        onSelectEmail={handleSelectEmail}
-        onCompose={() => handleCompose()}
-        autoFollowUp={composeAutoFollowUp}
-        onAutoFollowUpChange={setComposeAutoFollowUp}
-        unreadCount={emails.filter(e => !e.gelezen).length}
-      />
+      {/* Bulk action bar — verschijnt onderaan zodra er emails zijn aangevinkt.
+          Floating, met undo/cancel + de meest gebruikte bulk acties. */}
+      {hasChecked && viewMode === 'idle' && (
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-2 fade-in duration-200">
+          <div className="flex items-center gap-2 bg-[#1A1A1A] text-white rounded-xl shadow-xl px-3 py-2">
+            <span className="text-[12px] font-medium px-2">
+              {checkedEmails.size} geselecteerd
+            </span>
+            <div className="w-px h-5 bg-white/20" />
+            <button
+              type="button"
+              onClick={handleBulkArchive}
+              className="flex items-center gap-1.5 text-[12px] font-medium px-2.5 py-1.5 rounded-md hover:bg-white/10 transition-colors"
+              title="Archiveren"
+            >
+              <Archive className="h-3.5 w-3.5" />
+              Archiveer
+            </button>
+            <button
+              type="button"
+              onClick={handleBulkMarkRead}
+              className="flex items-center gap-1.5 text-[12px] font-medium px-2.5 py-1.5 rounded-md hover:bg-white/10 transition-colors"
+              title="Markeer als gelezen"
+            >
+              <MailOpen className="h-3.5 w-3.5" />
+              Gelezen
+            </button>
+            <button
+              type="button"
+              onClick={handleBulkMarkUnread}
+              className="flex items-center gap-1.5 text-[12px] font-medium px-2.5 py-1.5 rounded-md hover:bg-white/10 transition-colors"
+              title="Markeer als ongelezen"
+            >
+              <Mail className="h-3.5 w-3.5" />
+              Ongelezen
+            </button>
+            <button
+              type="button"
+              onClick={handleBulkDelete}
+              className="flex items-center gap-1.5 text-[12px] font-medium px-2.5 py-1.5 rounded-md hover:bg-[#C0451A]/20 hover:text-[#FDA38C] transition-colors"
+              title="Verwijderen"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Verwijder
+            </button>
+            <div className="w-px h-5 bg-white/20" />
+            <button
+              type="button"
+              onClick={clearChecked}
+              className="flex items-center justify-center h-7 w-7 rounded-md hover:bg-white/10 transition-colors"
+              title="Selectie wissen (Esc)"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Right context sidebar — alleen tijdens lezen of compose, niet in
+          de inbox-idle view zodat de email lijst de volledige breedte krijgt. */}
+      {(viewMode === 'reading' || viewMode === 'composing') && (
+        <EmailContextSidebar
+          mode={viewMode === 'composing' ? 'compose' : 'reading'}
+          composeToAddress={composeToAddress}
+          composeReminder={composeReminder}
+          onComposeReminderChange={setComposeReminder}
+          allEmails={emails}
+          email={selectedEmail}
+          senderName={readerSenderName}
+          senderEmail={readerSenderEmail}
+          onSelectEmail={handleSelectEmail}
+          onCompose={() => handleCompose()}
+          autoFollowUp={composeAutoFollowUp}
+          onAutoFollowUpChange={setComposeAutoFollowUp}
+          unreadCount={emails.filter(e => !e.gelezen).length}
+        />
+      )}
       </div>
     </div>
   )

@@ -1,7 +1,7 @@
 import { memo, useCallback, useMemo, useRef } from 'react'
-import { Star, Paperclip } from 'lucide-react'
+import { Star, Paperclip, Archive, Trash2, MailOpen, Mail } from 'lucide-react'
 import type { Email } from '@/types'
-import { extractSenderName, stripHtml, formatShortDate, fontSizeClasses, getAvatarColor, getAvatarStyle } from './emailHelpers'
+import { extractSenderName, cleanEmailPreview, formatShortDate, fontSizeClasses, getAvatarColor, getAvatarStyle } from './emailHelpers'
 import type { FontSize } from './emailTypes'
 import { cn } from '@/lib/utils'
 
@@ -13,10 +13,14 @@ interface EmailListItemProps {
   compact?: boolean
   stacked?: boolean
   fontSize?: FontSize
-  onSelect: (email: Email) => void
+  onSelect: (email: Email, e?: React.MouseEvent) => void
   onToggleStar: (email: Email) => void
-  onToggleCheck: (id: string) => void
+  onToggleCheck: (id: string, e?: React.MouseEvent) => void
   onPrefetch?: (email: Email) => void
+  // Hover quick actions
+  onArchive?: (email: Email) => void
+  onDelete?: (email: Email) => void
+  onToggleRead?: (email: Email) => void
 }
 
 export const EmailListItem = memo(function EmailListItem({
@@ -31,6 +35,9 @@ export const EmailListItem = memo(function EmailListItem({
   onToggleStar,
   onToggleCheck,
   onPrefetch,
+  onArchive,
+  onDelete,
+  onToggleRead,
 }: EmailListItemProps) {
   const isUnread = !email.gelezen
   const senderName = useMemo(() => extractSenderName(email.van), [email.van])
@@ -38,15 +45,32 @@ export const EmailListItem = memo(function EmailListItem({
   const avatarColor = getAvatarColor(senderName)
   const avatarStyle = getAvatarStyle(senderName)
 
-  // Preview: memoize expensive HTML strip
-  const preview = useMemo(
-    () => email.inhoud ? stripHtml(email.inhoud).slice(0, 140) : '',
-    [email.inhoud],
-  )
+  // Preview: agressieve HTML / CSS / entity / URL stripping zodat de
+  // single-line rij leesbare proza toont en geen lelijke `<p>`, `&nbsp;`,
+  // `{ padding: 0; }` of lange URLs.
+  const preview = useMemo(() => {
+    const raw = email.body_text || email.inhoud || ''
+    return cleanEmailPreview(raw).slice(0, 200)
+  }, [email.body_text, email.inhoud])
 
-  const handleClick = useCallback(() => {
-    onSelect(email)
+  const handleClick = useCallback((e: React.MouseEvent) => {
+    onSelect(email, e)
   }, [email, onSelect])
+
+  const handleArchiveClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation()
+    onArchive?.(email)
+  }, [email, onArchive])
+
+  const handleDeleteClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation()
+    onDelete?.(email)
+  }, [email, onDelete])
+
+  const handleToggleReadClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation()
+    onToggleRead?.(email)
+  }, [email, onToggleRead])
 
   // Prefetch on hover met 150ms debounce zodat snel scrollen niet ALLES prefetcht
   const prefetchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -69,10 +93,10 @@ export const EmailListItem = memo(function EmailListItem({
 
   const handleCheckClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation()
-    onToggleCheck(email.id)
+    onToggleCheck(email.id, e)
   }, [email.id, onToggleCheck])
 
-  // Dense / single-line mode: sender + subject + preview all on one row
+  // Dense / single-line mode: Gmail-stijl tabel-rij
   if (stacked) {
     return (
       <div
@@ -80,113 +104,129 @@ export const EmailListItem = memo(function EmailListItem({
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         className={cn(
-          'group flex items-center gap-3 px-4 py-2 cursor-pointer transition-all duration-150 select-none',
+          'group relative flex items-center gap-3 pl-4 pr-3 py-1.5 cursor-pointer select-none border-b border-[#F0EFEC]/60',
+          'transition-[background-color,transform] duration-100 active:scale-[0.998]',
           isActive
-            ? 'bg-[#1A535C]/[0.05]'
-            : 'hover:bg-[#F0EFEC]/50',
-          isFocused && !isActive && 'bg-[#F0EFEC]/30',
-          isUnread && !isActive && 'bg-white',
+            ? 'bg-[#1A535C]/[0.08]'
+            : isChecked
+              ? 'bg-[#1A535C]/[0.04]'
+              : 'hover:bg-[#F2F1ED]',
+          isFocused && !isActive && 'bg-[#F0EFEC]/40',
         )}
       >
-        {/* Checkbox / avatar */}
-        <div className="relative flex-shrink-0">
-          <div
-            className={cn(
-              'w-7 h-7 rounded-md flex items-center justify-center transition-all duration-150',
-              'group-hover:opacity-0',
-              isChecked && 'opacity-0',
-            )}
-            style={{ backgroundColor: avatarStyle.bg }}
-          >
-            <span className="text-[10px] font-bold leading-none" style={{ color: avatarStyle.text }}>
-              {senderName[0]?.toUpperCase()}
-            </span>
-          </div>
-          <div className={cn(
-            'absolute inset-0 flex items-center justify-center transition-all duration-150',
-            'opacity-0 group-hover:opacity-100',
-            isChecked && '!opacity-100',
-          )}>
-            <input
-              type="checkbox"
-              checked={isChecked}
-              onChange={() => {}}
-              onClick={handleCheckClick}
-              className="h-3.5 w-3.5 rounded border-foreground/20 cursor-pointer accent-[#1A535C]"
-            />
-          </div>
+        {/* Actieve rij krijgt een 3px petrol border-left zodat duidelijk is welke open staat */}
+        {isActive && (
+          <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-[#1A535C]" />
+        )}
+        {/* Checkbox — altijd zichtbaar, Gmail-stijl. Wrap in fixed-height
+            container zodat 'ie netjes centreert tegen de avatar (5x5). */}
+        <div className="flex-shrink-0 h-5 w-4 flex items-center justify-center">
+          <input
+            type="checkbox"
+            checked={isChecked}
+            onChange={() => {}}
+            onClick={handleCheckClick}
+            className="h-3.5 w-3.5 rounded border-[#D4D2CE] cursor-pointer accent-[#1A535C] block"
+          />
         </div>
 
-        {/* Single line: sender | subject — preview | date */}
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          {/* Sender — fixed width */}
+        {/* Sender avatar chip — kleine 5x5 met initiaal, instant sender herkenning */}
+        <div
+          className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0"
+          style={{ backgroundColor: avatarStyle.bg }}
+          aria-hidden
+        >
+          <span className="text-[10px] font-bold leading-none" style={{ color: avatarStyle.text }}>
+            {senderName[0]?.toUpperCase()}
+          </span>
+        </div>
+
+        {/* Sender — fixed width column */}
+        <div className="flex items-center gap-1.5 w-[170px] flex-shrink-0 min-w-0">
           <span className={cn(
-            'w-[140px] flex-shrink-0 truncate leading-snug',
+            'truncate leading-snug',
             sizes.preview,
             isUnread ? 'font-semibold text-[#1A1A1A]' : 'text-[#3A3A36]',
           )}>
             {senderName}
           </span>
-
           {email.threadCount && email.threadCount > 1 && (
-            <span className="text-[9px] text-[#9B9B95] bg-[#F0EFEC] rounded px-1 py-px flex-shrink-0 font-medium">
+            <span className={cn(
+              'text-[10px] tabular-nums flex-shrink-0',
+              isUnread ? 'text-[#1A1A1A] font-semibold' : 'text-[#9B9B95]',
+            )}>
               {email.threadCount}
             </span>
           )}
+        </div>
 
-          {/* Subject + preview */}
-          <div className="flex items-center gap-1.5 flex-1 min-w-0">
-            <span className={cn(
-              'truncate leading-snug flex-shrink-0 max-w-[45%]',
-              sizes.preview,
-              isUnread ? 'font-medium text-[#1A1A1A]' : 'text-[#6B6B66]',
-            )}>
-              {email.onderwerp || '(geen onderwerp)'}
+        {/* Subject + preview als één getrunc'te regel (Gmail-stijl). Beide
+            inline spans onder dezelfde truncate parent, zodat ze samen
+            wegvallen aan de rechterkant. */}
+        <div className={cn('flex-1 min-w-0 truncate leading-snug', sizes.preview)}>
+          <span className={cn(
+            isUnread ? 'font-semibold text-[#1A1A1A]' : 'text-[#3A3A36]',
+          )}>
+            {email.onderwerp || '(geen onderwerp)'}
+          </span>
+          {preview && (
+            <span className="text-[#9B9B95]">
+              {' \u00A0 '}{preview}
             </span>
-            {preview && (
-              <>
-                <span className="text-[#EBEBEB] flex-shrink-0">—</span>
-                <span className={cn('text-[#B0ADA8] truncate', sizes.preview)}>{preview}</span>
-              </>
-            )}
-          </div>
+          )}
+        </div>
 
-          {/* Meta: attachment + date */}
-          <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
+        {/* Right meta — wisselt tussen normale info en hover quick actions.
+            Op hover: archive / read-toggle / delete iconen ipv tijd. */}
+        <div className="flex items-center gap-3 flex-shrink-0 ml-auto pl-3">
+          {/* Default: paperclip + tijd */}
+          <div className="flex items-center gap-3 group-hover:hidden">
             {email.bijlagen > 0 && (
-              <Paperclip className="h-3 w-3 text-[#C5C2BD]" />
+              <Paperclip className="h-3.5 w-3.5 text-[#9B9B95]" />
             )}
             <span className={cn(
-              'text-[#B0ADA8] font-mono tabular-nums',
+              'tabular-nums min-w-[44px] text-right',
               sizes.date,
-              isUnread && 'text-[#6B6B66] font-medium',
+              isUnread ? 'text-[#1A1A1A] font-semibold' : 'text-[#6B6B66]',
             )}>
               {formatShortDate(email.datum)}
             </span>
           </div>
-        </div>
 
-        {/* Star */}
-        <button
-          onClick={handleStarClick}
-          className={cn(
-            'flex-shrink-0 p-0.5 rounded transition-all duration-150',
-            'opacity-0 group-hover:opacity-100',
-            email.starred && '!opacity-100',
-            !email.starred && 'hover:bg-[#F0EFEC]',
-          )}
-        >
-          <Star
-            className={cn(
-              'h-3.5 w-3.5 transition-colors',
-              email.starred ? 'fill-amber-400 text-amber-400' : 'text-[#B0ADA8] hover:text-[#9B9B95]',
+          {/* Hover: quick actions */}
+          <div className="hidden group-hover:flex items-center gap-0.5 -my-1">
+            {onArchive && (
+              <button
+                type="button"
+                onClick={handleArchiveClick}
+                className="h-7 w-7 flex items-center justify-center rounded-md text-[#6B6B66] hover:text-[#1A535C] hover:bg-white transition-colors"
+                title="Archiveren (e)"
+              >
+                <Archive className="h-3.5 w-3.5" />
+              </button>
             )}
-          />
-        </button>
-
-        {isUnread && (
-          <div className="w-[5px] h-[5px] rounded-full bg-[#1A535C] flex-shrink-0" />
-        )}
+            {onToggleRead && (
+              <button
+                type="button"
+                onClick={handleToggleReadClick}
+                className="h-7 w-7 flex items-center justify-center rounded-md text-[#6B6B66] hover:text-[#1A535C] hover:bg-white transition-colors"
+                title={isUnread ? 'Markeer als gelezen' : 'Markeer als ongelezen'}
+              >
+                {isUnread ? <MailOpen className="h-3.5 w-3.5" /> : <Mail className="h-3.5 w-3.5" />}
+              </button>
+            )}
+            {onDelete && (
+              <button
+                type="button"
+                onClick={handleDeleteClick}
+                className="h-7 w-7 flex items-center justify-center rounded-md text-[#6B6B66] hover:text-[#C0451A] hover:bg-white transition-colors"
+                title="Verwijderen (#)"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
       </div>
     )
   }

@@ -14,6 +14,40 @@ export function stripHtml(html: string): string {
   return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim()
 }
 
+// Aggressievere variant voor email previews — ruimt ook CSS, style/script
+// blokken, html entities en URLs op zodat de preview leesbare proza is.
+export function cleanEmailPreview(raw: string): string {
+  if (!raw) return ''
+  let s = raw
+  // Style/script blokken volledig weg
+  s = s.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, ' ')
+  s = s.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, ' ')
+  // HTML comments
+  s = s.replace(/<!--[\s\S]*?-->/g, ' ')
+  // HTML tags
+  s = s.replace(/<[^>]*>/g, ' ')
+  // CSS regel-blokken die soms nog losgeschreven in de body staan
+  s = s.replace(/\{[^{}]*\}/g, ' ')
+  // CSS-achtige selectors / declaraties die overblijven (bv. ".foo:hover")
+  s = s.replace(/[.#][a-z][\w-]*\s*:\s*[^;]+;?/gi, ' ')
+  // URLs vervangen door korte placeholder
+  s = s.replace(/https?:\/\/\S+/gi, '[link]')
+  // HTML entities
+  s = s.replace(/&nbsp;/gi, ' ')
+  s = s.replace(/&amp;/gi, '&')
+  s = s.replace(/&lt;/gi, '<')
+  s = s.replace(/&gt;/gi, '>')
+  s = s.replace(/&quot;/gi, '"')
+  s = s.replace(/&#39;|&apos;/gi, "'")
+  // Numerieke entities (bv &#8217;)
+  s = s.replace(/&#\d+;/g, ' ')
+  s = s.replace(/&[a-z]+;/gi, ' ')
+  // Witregels en tabs naar spaties, dan multiple spaces collapsen
+  s = s.replace(/[\r\n\t]+/g, ' ')
+  s = s.replace(/\s+/g, ' ').trim()
+  return s
+}
+
 const avatarColorCache = new Map<string, string>()
 const AVATAR_COLORS = [
   'bg-primary', 'bg-emerald-500', 'bg-[#4A442D]', 'bg-amber-500',
@@ -66,27 +100,46 @@ export function getAvatarStyle(name: string): { bg: string; text: string } {
 
 export function formatShortDate(dateStr: string): string {
   const date = new Date(dateStr)
+  if (isNaN(date.getTime())) return ''
   const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
 
-  if (diffMs < 0) {
-    const futureDays = Math.ceil(-diffMs / (1000 * 60 * 60 * 24))
-    if (futureDays === 0) return date.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })
-    if (futureDays === 1) return `Morgen ${date.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}`
-    return date.toLocaleDateString('nl-NL', { day: '2-digit', month: 'short' })
+  const startOfDay = (d: Date) => {
+    const x = new Date(d)
+    x.setHours(0, 0, 0, 0)
+    return x
+  }
+  const today = startOfDay(now)
+  const target = startOfDay(date)
+  const diffDays = Math.round((today.getTime() - target.getTime()) / (1000 * 60 * 60 * 24))
+
+  // Toekomst (gepland)
+  if (diffDays < 0) {
+    if (diffDays === -1) return 'Morgen'
+    if (diffDays > -7) return date.toLocaleDateString('nl-NL', { weekday: 'short' })
+    if (date.getFullYear() === now.getFullYear()) return date.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })
+    return date.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: '2-digit' })
   }
 
+  // Vandaag → tijd HH:MM
   if (diffDays === 0) return date.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })
-  if (diffDays === 1) return 'Gisteren'
-  if (diffDays < 7) return date.toLocaleDateString('nl-NL', { weekday: 'short' })
-  return date.toLocaleDateString('nl-NL', { day: '2-digit', month: 'short' })
+  // Gisteren
+  if (diffDays === 1) return 'Gist.'
+  // Deze week → korte weekdag (Ma, Di, Wo, ...)
+  if (diffDays < 7) {
+    return date.toLocaleDateString('nl-NL', { weekday: 'short' }).replace('.', '')
+  }
+  // Dit jaar → "12 jan"
+  if (date.getFullYear() === now.getFullYear()) {
+    return date.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })
+  }
+  // Ouder → "12 jan '24"
+  return date.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: '2-digit' })
 }
 
 export const fontSizeClasses: Record<FontSize, { name: string; subject: string; preview: string; date: string }> = {
-  small: { name: 'text-xs', subject: 'text-xs', preview: 'text-xs', date: 'text-2xs' },
-  medium: { name: 'text-sm', subject: 'text-sm', preview: 'text-xs', date: 'text-xs' },
-  large: { name: 'text-base', subject: 'text-sm', preview: 'text-sm', date: 'text-xs' },
+  small: { name: 'text-sm', subject: 'text-sm', preview: 'text-xs', date: 'text-xs' },
+  medium: { name: 'text-base', subject: 'text-base', preview: 'text-sm', date: 'text-xs' },
+  large: { name: 'text-lg', subject: 'text-base', preview: 'text-base', date: 'text-sm' },
 }
 
 export const labelColors: Record<string, string> = {
