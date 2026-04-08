@@ -11,11 +11,49 @@ const resizeObserverErr = (e: ErrorEvent) => {
 }
 window.addEventListener('error', resizeObserverErr)
 
+// Detecteer Vite chunk-load failures (na een nieuwe Vercel deploy bestaat de
+// oude chunk hash niet meer). Bij eerste optreden: één keer auto-reloaden om
+// de nieuwe bundle binnen te halen. SessionStorage flag voorkomt reload loop.
+const CHUNK_RELOAD_KEY = 'forgedesk_chunk_reload_attempted'
+function isChunkLoadError(message: string): boolean {
+  return (
+    message.includes('Failed to fetch dynamically imported module') ||
+    message.includes('error loading dynamically imported module') ||
+    message.includes('Loading chunk') ||
+    message.includes('Loading CSS chunk') ||
+    message.includes('Importing a module script failed')
+  )
+}
+function tryAutoReloadOnChunkError(message: string): boolean {
+  if (!isChunkLoadError(message)) return false
+  try {
+    if (sessionStorage.getItem(CHUNK_RELOAD_KEY)) return false
+    sessionStorage.setItem(CHUNK_RELOAD_KEY, Date.now().toString())
+  } catch {
+    // sessionStorage faalt → reload alsnog
+  }
+  console.warn('[chunk-reload] Stale bundle gedetecteerd, pagina wordt herladen')
+  window.location.reload()
+  return true
+}
+
 // Global unhandled promise rejection handler
 window.addEventListener('unhandledrejection', (event) => {
   const message = event.reason instanceof Error ? event.reason.message : String(event.reason)
+  if (tryAutoReloadOnChunkError(message)) {
+    event.preventDefault()
+    return
+  }
   if (message.includes('Failed to fetch') || message.includes('NetworkError') || message.includes('AbortError')) return
   console.error('[Unhandled rejection]', message)
+})
+
+// Global error handler — vangt sync errors uit dynamic imports
+window.addEventListener('error', (event) => {
+  const message = event.message || (event.error instanceof Error ? event.error.message : '')
+  if (tryAutoReloadOnChunkError(message)) {
+    event.preventDefault()
+  }
 })
 
 try {
