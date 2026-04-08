@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { createTransport } from 'nodemailer'
+import nodemailer from 'nodemailer'
 import crypto from 'crypto'
 import { createClient } from '@supabase/supabase-js'
 
@@ -96,7 +96,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           throw new Error('Geen email instellingen gevonden voor user')
         }
 
-        const transporter = createTransport({
+        const transporter = nodemailer.createTransport({
           host: creds.smtp_host,
           port: creds.smtp_port,
           secure: creds.smtp_port === 465,
