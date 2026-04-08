@@ -120,6 +120,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // 2. Wissel code in voor tokens (Basic auth header is verplicht bij Exact Online)
     const credentials = Buffer.from(`${exactClientId}:${exactClientSecret}`).toString('base64')
+    console.log('[exact-callback] token exchange', {
+      tokenUrl: EXACT_TOKEN_URL,
+      redirectUri: REDIRECT_URI,
+      clientIdPrefix: `${exactClientId.slice(0, 8)}...`,
+      clientSecretPresent: Boolean(exactClientSecret),
+    })
     const tokenResponse = await fetch(EXACT_TOKEN_URL, {
       method: 'POST',
       headers: {
