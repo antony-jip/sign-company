@@ -1442,7 +1442,7 @@ export function generateFactuurPDF(
 
   // Notes
   if (factuurData.notities) {
-    advanceY(8)
+    advanceY(10)
     drawSectionHeader('Opmerkingen:')
     doc.setFont(bodyFont, 'normal')
     doc.setTextColor(80, 80, 80)
@@ -1451,16 +1451,17 @@ export function generateFactuurPDF(
     totalsY = flowText(splitNotes, margins.left, totalsY, 5)
   }
 
-  // Online betaallink
+  // Online betaallink — extra ruimte boven zodat het visueel duidelijk
+  // gescheiden is van de betaalvoorwaarden / notities erboven.
   if (factuurData.betaal_link) {
-    advanceY(15)
+    advanceY(20)
     drawSectionHeader('Online betalen:')
 
     doc.setFont(bodyFont, 'normal')
     doc.setTextColor(...textColor)
     doc.setFontSize(baseFontSize - 1)
     doc.text('Betaal direct via de onderstaande link:', margins.left, totalsY)
-    totalsY += 5
+    totalsY += 6
 
     doc.setTextColor(41, 98, 218)
     doc.textWithLink(factuurData.betaal_link, margins.left, totalsY, {
