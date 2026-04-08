@@ -20,7 +20,7 @@ import {
   Undo2, Redo2, X,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { Email } from '@/types'
+import type { Email, EmailAttachment } from '@/types'
 import { extractSenderName, extractSenderEmail, formatShortDate, getAvatarColor, getAvatarRingColor, getAvatarStyle } from './emailHelpers'
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -94,6 +94,8 @@ export function EmailReader({
   const [isSending, setIsSending] = useState(false)
   const [forgieLoading, setForgieLoading] = useState(false)
   const [replyAttachments, setReplyAttachments] = useState<File[]>([])
+  // Originele bijlagen die meegestuurd worden bij forward (los van user uploads)
+  const [forwardOriginalAttachments, setForwardOriginalAttachments] = useState<EmailAttachment[]>([])
   const editorRef = useRef<HTMLDivElement>(null)
   const emailBodyRef = useRef<HTMLDivElement>(null)
   const replyFileInputRef = useRef<HTMLInputElement>(null)
@@ -181,6 +183,13 @@ export function EmailReader({
     if (!email) return
     setReplyMode(mode)
     setReplyAttachments([])
+    // Bij forward: alle originele bijlagen meenemen (gebruiker kan ze later
+    // individueel uitzetten). Bij reply: niks meenemen.
+    if (mode === 'forward' && email.attachment_meta && email.attachment_meta.length > 0) {
+      setForwardOriginalAttachments(email.attachment_meta)
+    } else {
+      setForwardOriginalAttachments([])
+    }
     if (mode === 'forward') {
       setReplyTo('')
     } else {
@@ -220,17 +229,17 @@ export function EmailReader({
         reader.readAsDataURL(file)
       })
 
-      // Bij forward: haal de oorspronkelijke bijlagen uit IMAP en voeg ze toe
-      // aan de mail die we verzenden. Bij reply gebeurt dit niet (alleen door
-      // de gebruiker zelf toegevoegde files).
+      // Bij forward: haal de oorspronkelijke bijlagen die de user nog wil
+      // meesturen op uit IMAP. forwardOriginalAttachments wordt door de UI
+      // beheerd zodat de user er individueel kunnen verwijderen.
       let originalAttachments: Array<{ filename: string; content: string; encoding: 'base64' }> = []
-      if (replyMode === 'forward' && email.attachment_meta && email.attachment_meta.length > 0) {
+      if (replyMode === 'forward' && forwardOriginalAttachments.length > 0) {
         const uid = Number(email.gmail_id || email.id)
         if (!Number.isNaN(uid)) {
-          toast.info(`Originele bijlage${email.attachment_meta.length > 1 ? 'n' : ''} ophalen...`)
+          toast.info(`Originele bijlage${forwardOriginalAttachments.length > 1 ? 'n' : ''} ophalen...`)
           try {
             const fetched = await Promise.all(
-              email.attachment_meta.map((att) =>
+              forwardOriginalAttachments.map((att) =>
                 downloadEmailAttachment(uid, imapFolder, att.filename).catch((e) => {
                   logger.warn(`Bijlage "${att.filename}" ophalen mislukt:`, e)
                   return null
@@ -244,8 +253,8 @@ export function EmailReader({
                 content: r.content,
                 encoding: 'base64' as const,
               }))
-            if (originalAttachments.length < email.attachment_meta.length) {
-              toast.warning(`${email.attachment_meta.length - originalAttachments.length} bijlage(n) konden niet worden opgehaald`)
+            if (originalAttachments.length < forwardOriginalAttachments.length) {
+              toast.warning(`${forwardOriginalAttachments.length - originalAttachments.length} bijlage(n) konden niet worden opgehaald`)
             }
           } catch (err) {
             logger.warn('Originele bijlagen ophalen mislukt:', err)
@@ -273,6 +282,7 @@ export function EmailReader({
       })
       setReplyMode(null)
       setReplyAttachments([])
+      setForwardOriginalAttachments([])
       toast.success('Email verzonden')
     } catch (err) {
       logger.error('Fout bij verzenden email:', err)
@@ -280,7 +290,7 @@ export function EmailReader({
     } finally {
       setIsSending(false)
     }
-  }, [email, replyMode, replyTo, onSendReply, replyAttachments, imapFolder])
+  }, [email, replyMode, replyTo, onSendReply, replyAttachments, forwardOriginalAttachments, imapFolder])
 
   const handleForgieWrite = useCallback(async () => {
     if (!email || !editorRef.current) return
@@ -548,8 +558,36 @@ export function EmailReader({
             <AIContentEditableToolbar editorRef={editorRef} />
 
             {/* ─── Attachments ─── */}
-            {replyAttachments.length > 0 && (
+            {(replyAttachments.length > 0 || forwardOriginalAttachments.length > 0) && (
               <div className="flex flex-wrap gap-2 px-5 py-2.5 border-t border-[#F0EFEC] bg-[#F8F7F5]">
+                {/* Doorgestuurde originelen — met visual icon en "doorgestuurd" hint */}
+                {forwardOriginalAttachments.map((att, i) => {
+                  const visual = getAttachmentVisual(att.filename, att.contentType)
+                  return (
+                    <div
+                      key={`fwd-${att.filename}-${i}`}
+                      className="inline-flex items-center gap-2 px-2.5 py-1.5 bg-white rounded-lg border border-[#1A535C]/20 text-[12px] text-[#6B6B66]"
+                      title={`Doorgestuurd: ${att.filename}`}
+                    >
+                      <div className={cn(
+                        'w-5 h-5 rounded text-white text-[8px] font-bold flex items-center justify-center flex-shrink-0',
+                        visual.bg,
+                      )}>
+                        {visual.label}
+                      </div>
+                      <span className="max-w-[180px] truncate">{att.filename}</span>
+                      <span className="text-[10px] text-[#9B9B95] font-mono">{formatFileSize(att.size)}</span>
+                      <button
+                        onClick={() => setForwardOriginalAttachments(prev => prev.filter((_, idx) => idx !== i))}
+                        className="text-[#9B9B95] hover:text-[#C0451A] transition-colors"
+                        title="Verwijderen"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  )
+                })}
+                {/* User uploaded files */}
                 {replyAttachments.map((file, i) => (
                   <div key={i} className="inline-flex items-center gap-2 px-2.5 py-1.5 bg-white rounded-lg border border-[#EBEBEB] text-[12px] text-[#6B6B66]">
                     <Paperclip className="h-3 w-3 text-[#9B9B95]" />
