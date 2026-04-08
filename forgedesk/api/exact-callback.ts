@@ -118,8 +118,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.redirect(302, `${APP_URL}/instellingen?tab=integraties&exact=error&reason=no_credentials`)
     }
 
-    // 2. Wissel code in voor tokens (Basic auth header is verplicht bij Exact Online)
-    const credentials = Buffer.from(`${exactClientId}:${exactClientSecret}`).toString('base64')
+    // 2. Wissel code in voor tokens — client_id en client_secret als
+    // form-encoded body params (standaard Exact Online methode).
     console.log('[exact-callback] token exchange', {
       tokenUrl: EXACT_TOKEN_URL,
       redirectUri: REDIRECT_URI,
@@ -130,7 +130,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
-        'Authorization': `Basic ${credentials}`,
       },
       body: new URLSearchParams({
         grant_type: 'authorization_code',
