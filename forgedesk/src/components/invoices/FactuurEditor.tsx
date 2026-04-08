@@ -1725,43 +1725,6 @@ export function FactuurEditor() {
                   </Select>
                 </div>
               )}
-              {werkbonnen.length > 0 && (
-                <div>
-                  <Label className="text-xs">Werkbon meesturen</Label>
-                  <div className="flex items-center gap-2">
-                    <Select
-                      value={werkbonId || '_geen'}
-                      onValueChange={(val) => setWerkbonId(val === '_geen' ? '' : val)}
-                    >
-                      <SelectTrigger className="text-sm flex-1">
-                        <SelectValue placeholder="Geen werkbon" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="_geen">Geen werkbon</SelectItem>
-                        {werkbonnen.map((wb) => (
-                          <SelectItem key={wb.id} value={wb.id}>
-                            <span className="flex items-center gap-2">
-                              <ClipboardCheck className="h-3 w-3" />
-                              {wb.werkbon_nummer}{wb.titel ? ` — ${wb.titel}` : ''} ({wb.status})
-                            </span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {werkbonId && (
-                      <a
-                        href={`/werkbonnen/${werkbonId}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-[#1A535C] hover:underline whitespace-nowrap"
-                      >
-                        Bekijk
-                      </a>
-                    )}
-                  </div>
-                  <p className="text-[10px] text-[#9B9B95] mt-1">Werkbon PDF wordt als bijlage meegestuurd bij de factuur email</p>
-                </div>
-              )}
               {isCreditFactuur && creditVoorNummer && (
                 <div className="flex items-center gap-2 text-xs text-flame bg-flame-light rounded-lg px-3 py-2">
                   <MinusCircle className="h-3 w-3" />
