@@ -68,7 +68,9 @@ async function getEmailCredentials(userId: string): Promise<EmailCredentials> {
   }
 }
 
-// Folder name mapping
+// Folder name mapping — best effort. Werkt op Gmail-NL out of the box.
+// Voor Gmail-EN, niet-Gmail, of accounts met andere folder-namen valt
+// resolveImapFolder() hieronder terug op de IMAP folder listing.
 const FOLDER_MAP: Record<string, string> = {
   'inbox': 'INBOX',
   'verzonden': '[Gmail]/Verzonden berichten',
@@ -80,6 +82,84 @@ const FOLDER_MAP: Record<string, string> = {
   'spam': '[Gmail]/Spam',
   'alle': '[Gmail]/Alle berichten',
   'all': '[Gmail]/All Mail',
+}
+
+// Special-use flags per logische folder. IMAP servers exposen deze via
+// LIST extension (RFC 6154). Gmail, Outlook, FastMail e.a. ondersteunen het.
+const SPECIAL_USE_MAP: Record<string, string> = {
+  inbox: '\\Inbox',
+  verzonden: '\\Sent',
+  sent: '\\Sent',
+  concepten: '\\Drafts',
+  drafts: '\\Drafts',
+  prullenbak: '\\Trash',
+  trash: '\\Trash',
+  spam: '\\Junk',
+  alle: '\\All',
+  all: '\\All',
+}
+
+// Naam-fallback patterns als special-use ontbreekt
+const NAME_PATTERNS: Record<string, RegExp> = {
+  verzonden: /sent|verzonden|gesendet|envoy/i,
+  sent: /sent|verzonden|gesendet|envoy/i,
+  concepten: /draft|concept|brouillon|entwurf/i,
+  drafts: /draft|concept|brouillon|entwurf/i,
+  prullenbak: /trash|deleted|prullen|corbeille|papierkorb/i,
+  trash: /trash|deleted|prullen|corbeille|papierkorb/i,
+  spam: /spam|junk|ongewenst/i,
+  alle: /all\s*mail|alle\s*berichten|all messages/i,
+  all: /all\s*mail|alle\s*berichten|all messages/i,
+}
+
+interface ImapMailbox {
+  path: string
+  name?: string
+  specialUse?: string
+  flags?: Set<string> | string[]
+}
+
+async function resolveImapFolder(client: ImapFlow, folder: string): Promise<string> {
+  const lower = folder.toLowerCase()
+
+  // 1. INBOX is universeel
+  if (lower === 'inbox') return 'INBOX'
+
+  // 2. Probeer eerst de hardcoded mapping (werkt op Gmail-NL)
+  const mapped = FOLDER_MAP[lower]
+  if (mapped) {
+    try {
+      const status = await client.status(mapped, { messages: true })
+      if (status) return mapped
+    } catch {
+      // mailbox bestaat niet, ga door naar dynamische fallback
+    }
+  }
+
+  // 3. Dynamische fallback: list alle folders en zoek op special-use of naam
+  try {
+    const mailboxes = (await client.list()) as ImapMailbox[]
+    const wantedSpecialUse = SPECIAL_USE_MAP[lower]
+    if (wantedSpecialUse) {
+      const bySpecialUse = mailboxes.find((m) => m.specialUse === wantedSpecialUse)
+      if (bySpecialUse) return bySpecialUse.path
+    }
+    const namePattern = NAME_PATTERNS[lower]
+    if (namePattern) {
+      // Voorkeur voor folders direct onder root (geen sub-folders), exact match eerst
+      const candidates = mailboxes.filter((m) => namePattern.test(m.path) || namePattern.test(m.name || ''))
+      if (candidates.length > 0) {
+        // Voorkeur voor [Gmail]/... varianten als die er zijn
+        const gmailVariant = candidates.find((m) => m.path.startsWith('[Gmail]/'))
+        return (gmailVariant || candidates[0]).path
+      }
+    }
+  } catch (err) {
+    console.error('[fetch-emails] folder list lookup failed:', err)
+  }
+
+  // 4. Last resort: gebruik de input zoals hij is
+  return folder
 }
 
 export const config = { maxDuration: 30 }
@@ -113,7 +193,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    const imapFolder = FOLDER_MAP[folder.toLowerCase()] || folder
     const mapValue = folder.toUpperCase() === 'INBOX' ? 'inbox' : folder.toLowerCase()
 
     // ─── Connect to IMAP ───
@@ -129,6 +208,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     })
 
     await client.connect()
+    // Dynamische folder lookup — werkt voor Gmail-NL/EN, Outlook, FastMail, etc.
+    const imapFolder = await resolveImapFolder(client, folder)
+    console.log('[fetch-emails] folder resolved', { input: folder, imap: imapFolder })
     const mailbox = await client.mailboxOpen(imapFolder)
     const total = mailbox.exists
 
