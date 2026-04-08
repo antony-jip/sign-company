@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo } from 'react'
+import { memo, useCallback, useMemo, useRef } from 'react'
 import { Star, Paperclip } from 'lucide-react'
 import type { Email } from '@/types'
 import { extractSenderName, stripHtml, formatShortDate, fontSizeClasses, getAvatarColor, getAvatarStyle } from './emailHelpers'
@@ -16,6 +16,7 @@ interface EmailListItemProps {
   onSelect: (email: Email) => void
   onToggleStar: (email: Email) => void
   onToggleCheck: (id: string) => void
+  onPrefetch?: (email: Email) => void
 }
 
 export const EmailListItem = memo(function EmailListItem({
@@ -29,6 +30,7 @@ export const EmailListItem = memo(function EmailListItem({
   onSelect,
   onToggleStar,
   onToggleCheck,
+  onPrefetch,
 }: EmailListItemProps) {
   const isUnread = !email.gelezen
   const senderName = useMemo(() => extractSenderName(email.van), [email.van])
@@ -46,6 +48,20 @@ export const EmailListItem = memo(function EmailListItem({
     onSelect(email)
   }, [email, onSelect])
 
+  // Prefetch on hover met 150ms debounce zodat snel scrollen niet ALLES prefetcht
+  const prefetchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const handleMouseEnter = useCallback(() => {
+    if (!onPrefetch) return
+    if (prefetchTimerRef.current) clearTimeout(prefetchTimerRef.current)
+    prefetchTimerRef.current = setTimeout(() => onPrefetch(email), 150)
+  }, [email, onPrefetch])
+  const handleMouseLeave = useCallback(() => {
+    if (prefetchTimerRef.current) {
+      clearTimeout(prefetchTimerRef.current)
+      prefetchTimerRef.current = null
+    }
+  }, [])
+
   const handleStarClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation()
     onToggleStar(email)
@@ -61,6 +77,8 @@ export const EmailListItem = memo(function EmailListItem({
     return (
       <div
         onClick={handleClick}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
         className={cn(
           'group flex items-center gap-3 px-4 py-2 cursor-pointer transition-all duration-150 select-none',
           isActive
@@ -105,7 +123,7 @@ export const EmailListItem = memo(function EmailListItem({
           <span className={cn(
             'w-[140px] flex-shrink-0 truncate leading-snug',
             sizes.preview,
-            isUnread ? 'font-semibold text-[#1A1A1A]' : 'text-[#9B9B95]',
+            isUnread ? 'font-semibold text-[#1A1A1A]' : 'text-[#3A3A36]',
           )}>
             {senderName}
           </span>
@@ -177,6 +195,8 @@ export const EmailListItem = memo(function EmailListItem({
   return (
     <div
       onClick={handleClick}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       className={cn(
         'group flex items-center gap-3 px-4 py-3 cursor-pointer transition-all duration-150 select-none',
         isActive
@@ -225,7 +245,7 @@ export const EmailListItem = memo(function EmailListItem({
             <span className={cn(
               'truncate leading-snug',
               sizes.name,
-              isUnread ? 'font-semibold text-[#1A1A1A]' : 'text-[#9B9B95]',
+              isUnread ? 'font-semibold text-[#1A1A1A]' : 'text-[#3A3A36]',
             )}>
               {senderName}
             </span>
@@ -255,7 +275,7 @@ export const EmailListItem = memo(function EmailListItem({
             'truncate leading-snug',
             compact ? 'max-w-full' : 'max-w-[55%] flex-shrink-0',
             sizes.subject,
-            isUnread ? 'font-medium text-[#1A1A1A]' : 'text-[#9B9B95]',
+            isUnread ? 'font-medium text-[#1A1A1A]' : 'text-[#6B6B66]',
           )}>
             {email.onderwerp || '(geen onderwerp)'}
           </span>

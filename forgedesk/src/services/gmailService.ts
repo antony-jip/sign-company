@@ -301,6 +301,37 @@ export async function readEmailFromIMAP(
   return response.json()
 }
 
+export interface EmailAttachmentDownload {
+  filename: string
+  contentType: string
+  size: number
+  content: string // base64
+}
+
+export async function downloadEmailAttachment(
+  uid: number,
+  folder: string,
+  filename: string,
+): Promise<EmailAttachmentDownload> {
+  const token = await getAuthToken()
+
+  const response = await fetch('/api/email-attachment', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify({ uid, folder, filename }),
+  })
+
+  if (!response.ok) {
+    const error: { error?: string } = await response.json().catch(() => ({}))
+    throw new Error(error?.error || `Bijlage ophalen mislukt: ${response.status}`)
+  }
+
+  return response.json()
+}
+
 // ============ EMAIL SETTINGS (via API endpoint — server-side encryptie) ============
 
 export interface EmailSettingsData {

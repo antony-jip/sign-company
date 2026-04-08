@@ -466,6 +466,12 @@ export interface Document {
   updated_at: string;
 }
 
+export interface EmailAttachment {
+  filename: string;
+  contentType: string;
+  size: number;
+}
+
 export interface Email {
   id: string;
   user_id?: string;
@@ -482,6 +488,7 @@ export interface Email {
   snoozed_until?: string | null;
   labels: string[];
   bijlagen: number;
+  attachment_meta?: EmailAttachment[] | null;
   map: string;
   scheduled_at?: string;
   thread_id?: string;

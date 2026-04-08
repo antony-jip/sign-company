@@ -498,23 +498,6 @@ export function EmailContextSidebar({
             </div>
           </div>
 
-          {/* ── Auto-opvolging (placeholder) ── */}
-          <div>
-            <h3 className="text-[11px] uppercase tracking-wider text-[#9B9B95] font-medium mb-2.5">Automatisering</h3>
-            <div className="bg-white rounded-xl px-3.5 py-3 flex items-center gap-3" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 bg-[#8A7A4A]/10">
-                <Zap className="h-3.5 w-3.5 text-[#8A7A4A]" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-[12px] font-medium text-[#6B6B66]">Auto-opvolging</p>
-                <p className="text-[11px] text-[#9B9B95]">Binnenkort beschikbaar</p>
-              </div>
-              <div className="w-8 h-[18px] rounded-full bg-[#EBEBEB] flex items-center px-0.5 flex-shrink-0">
-                <div className="w-3.5 h-3.5 rounded-full bg-white shadow-sm" />
-              </div>
-            </div>
-          </div>
-
         </div>
       </div>
     )

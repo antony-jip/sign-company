@@ -25,9 +25,33 @@ import { extractSenderName, extractSenderEmail, formatShortDate, getAvatarColor,
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { callForgie } from '@/services/forgieService'
+import { downloadEmailAttachment } from '@/services/gmailService'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
 import { EmailReaderAIToolbar } from './EmailReaderAIToolbar'
+
+// Format file size human-readable
+function formatFileSize(bytes: number): string {
+  if (!bytes || bytes < 1024) return `${bytes || 0} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+// Bepaal label + kleur voor een bijlage op basis van content type / extensie
+function getAttachmentVisual(filename: string, contentType?: string): { label: string; bg: string } {
+  const ext = (filename.split('.').pop() || '').toLowerCase()
+  const ct = (contentType || '').toLowerCase()
+  if (ct.includes('pdf') || ext === 'pdf') return { label: 'PDF', bg: 'bg-red-500/90' }
+  if (ct.includes('image') || ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'heic'].includes(ext))
+    return { label: 'IMG', bg: 'bg-violet-500/90' }
+  if (ct.includes('word') || ['doc', 'docx'].includes(ext)) return { label: 'DOC', bg: 'bg-blue-500/90' }
+  if (ct.includes('sheet') || ct.includes('excel') || ['xls', 'xlsx', 'csv'].includes(ext))
+    return { label: 'XLS', bg: 'bg-emerald-500/90' }
+  if (ct.includes('presentation') || ['ppt', 'pptx'].includes(ext)) return { label: 'PPT', bg: 'bg-orange-500/90' }
+  if (ct.includes('zip') || ['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) return { label: 'ZIP', bg: 'bg-amber-600/90' }
+  if (ct.includes('text') || ['txt', 'md', 'log'].includes(ext)) return { label: 'TXT', bg: 'bg-slate-500/90' }
+  return { label: ext.toUpperCase().slice(0, 3) || 'FILE', bg: 'bg-slate-500/90' }
+}
 
 interface EmailReaderProps {
   email: Email | null
@@ -35,6 +59,7 @@ interface EmailReaderProps {
   emailIndex?: number
   emailTotal?: number
   allEmails?: Email[]
+  imapFolder?: string
   onToggleStar?: (email: Email) => void
   onToggleRead?: (email: Email) => void
   onDelete?: (email: Email) => void
@@ -51,6 +76,7 @@ export function EmailReader({
   emailIndex,
   emailTotal,
   allEmails,
+  imapFolder = 'INBOX',
   onToggleStar,
   onToggleRead,
   onDelete,
@@ -99,6 +125,41 @@ export function EmailReader({
     setSummaryLoading(false)
     setSummaryExpanded(true)
   }, [email?.id])
+
+  // Track per-attachment download state (alleen visueel — losse spinner per bijlage)
+  const [downloadingAttachment, setDownloadingAttachment] = useState<string | null>(null)
+
+  const handleDownloadAttachment = useCallback(async (filename: string) => {
+    if (!email) return
+    const uid = Number(email.gmail_id || email.id)
+    if (Number.isNaN(uid)) {
+      toast.error('Kan deze bijlage niet ophalen — geen geldig email-id')
+      return
+    }
+    setDownloadingAttachment(filename)
+    try {
+      const result = await downloadEmailAttachment(uid, imapFolder, filename)
+      // Convert base64 → Blob → trigger download
+      const binary = atob(result.content)
+      const bytes = new Uint8Array(binary.length)
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+      const blob = new Blob([bytes], { type: result.contentType || 'application/octet-stream' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = result.filename || filename
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      // Iets later cleanup zodat browser de download heeft kunnen verwerken
+      setTimeout(() => URL.revokeObjectURL(url), 1000)
+    } catch (err) {
+      logger.error('Bijlage downloaden mislukt:', err)
+      toast.error(err instanceof Error ? err.message : 'Bijlage downloaden mislukt')
+    } finally {
+      setDownloadingAttachment(null)
+    }
+  }, [email, imapFolder])
 
   const handleSummarize = useCallback(async () => {
     if (!email || summaryLoading) return
@@ -743,24 +804,52 @@ export function EmailReader({
                 </div>
               )}
 
-              {/* Attachments — file cards */}
-              {email.bijlagen > 0 && (
+              {/* Attachments — echte file cards op basis van attachment_meta */}
+              {email.attachment_meta && email.attachment_meta.length > 0 && (
                 <div className="mt-6 pt-5 border-t border-[#F0EFEC]">
                   <div className="flex flex-wrap gap-2.5">
-                    {Array.from({ length: email.bijlagen }).map((_, i) => (
-                      <div
-                        key={i}
-                        className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-[#F8F7F5] hover:bg-[#F0EFEC] transition-colors duration-150 cursor-pointer group/att"
-                      >
-                        <div className="w-8 h-8 rounded-lg bg-red-500/90 text-white text-[9px] font-bold flex items-center justify-center">PDF</div>
-                        <div className="min-w-0">
-                          <span className="text-[13px] text-[#6B6B66] group-hover/att:text-[#4A4A46] transition-colors duration-150 block">bijlage-{i + 1}.pdf</span>
-                          <span className="text-[11px] text-[#9B9B95]">128 KB</span>
-                        </div>
-                        <Download className="h-3.5 w-3.5 text-[#B0ADA8] group-hover/att:text-[#6B6B66] transition-colors duration-150 ml-1" />
-                      </div>
-                    ))}
+                    {email.attachment_meta.map((att, i) => {
+                      const visual = getAttachmentVisual(att.filename, att.contentType)
+                      const isDownloading = downloadingAttachment === att.filename
+                      return (
+                        <button
+                          key={`${att.filename}-${i}`}
+                          type="button"
+                          onClick={() => handleDownloadAttachment(att.filename)}
+                          disabled={isDownloading}
+                          className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-[#F8F7F5] hover:bg-[#F0EFEC] disabled:opacity-60 disabled:cursor-wait transition-colors duration-150 cursor-pointer group/att text-left max-w-[280px]"
+                          title={`Download ${att.filename}`}
+                        >
+                          <div className={cn(
+                            'w-8 h-8 rounded-lg text-white text-[9px] font-bold flex items-center justify-center flex-shrink-0',
+                            visual.bg,
+                          )}>
+                            {visual.label}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <span className="text-[13px] text-[#6B6B66] group-hover/att:text-[#4A4A46] transition-colors duration-150 block truncate">
+                              {att.filename}
+                            </span>
+                            <span className="text-[11px] text-[#9B9B95]">{formatFileSize(att.size)}</span>
+                          </div>
+                          {isDownloading ? (
+                            <Loader2 className="h-3.5 w-3.5 text-[#1A535C]/60 animate-spin ml-1 flex-shrink-0" />
+                          ) : (
+                            <Download className="h-3.5 w-3.5 text-[#B0ADA8] group-hover/att:text-[#6B6B66] transition-colors duration-150 ml-1 flex-shrink-0" />
+                          )}
+                        </button>
+                      )
+                    })}
                   </div>
+                </div>
+              )}
+
+              {/* Fallback: count > 0 maar geen metadata (oude emails of nog niet opgehaald) */}
+              {(!email.attachment_meta || email.attachment_meta.length === 0) && email.bijlagen > 0 && (
+                <div className="mt-6 pt-5 border-t border-[#F0EFEC]">
+                  <p className="text-[12px] text-[#9B9B95]">
+                    Deze e-mail heeft {email.bijlagen} bijlage{email.bijlagen > 1 ? 'n' : ''} — open de e-mail opnieuw om de details te laden.
+                  </p>
                 </div>
               )}
             </div>

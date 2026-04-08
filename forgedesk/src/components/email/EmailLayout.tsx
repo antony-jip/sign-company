@@ -491,37 +491,72 @@ export function EmailLayout() {
   }, [isLoadingMore, emails.length, imapTotal])
 
   // ─── Load email body ───
+  // Track in-flight prefetches om dubbele requests te voorkomen wanneer iemand
+  // hovert, scrollt en opnieuw hovert binnen korte tijd.
+  const inFlightFetches = useRef<Map<string, Promise<string>>>(new Map())
+
+  // Lage-level fetch die ALLEEN de cache vult, geen UI state aanraakt.
+  // Gebruikt voor zowel prefetch (hover) als de echte click flow.
+  const fetchBodyToCache = useCallback(async (email: Email, folder: EmailFolder): Promise<string> => {
+    const cached = bodyCacheRef.current.get(email.id)
+    if (cached !== undefined) return cached
+    if (email.inhoud) {
+      bodyCacheRef.current.set(email.id, email.inhoud)
+      return email.inhoud
+    }
+
+    // Dedupe: als er al een fetch loopt voor deze email, hergebruik die promise
+    const existing = inFlightFetches.current.get(email.id)
+    if (existing) return existing
+
+    const promise = (async () => {
+      try {
+        // Step 1: Supabase eerst (snel)
+        const dbBody = await getEmailBody(email.id).catch(() => null)
+        const body = dbBody?.body_html || dbBody?.body_text || dbBody?.inhoud || ''
+        if (body) {
+          bodyCacheRef.current.set(email.id, body)
+          return body
+        }
+
+        // Step 2: IMAP fallback
+        const uid = Number(email.gmail_id || email.id)
+        if (isNaN(uid)) return ''
+        const detail = await readEmailFromIMAP(uid, IMAP_FOLDER_MAP[folder] || 'INBOX')
+        const imapBody = detail.bodyHtml || detail.bodyText || ''
+        bodyCacheRef.current.set(email.id, imapBody)
+        return imapBody
+      } catch (err: unknown) {
+        logger.error('Email body ophalen mislukt:', err)
+        return ''
+      } finally {
+        inFlightFetches.current.delete(email.id)
+      }
+    })()
+    inFlightFetches.current.set(email.id, promise)
+    return promise
+  }, [])
+
+  // Prefetch on hover — vult cache op de achtergrond, geen UI feedback.
+  const prefetchEmailBody = useCallback((email: Email) => {
+    if (bodyCacheRef.current.has(email.id)) return
+    if (email.inhoud) return
+    void fetchBodyToCache(email, selectedFolder)
+  }, [fetchBodyToCache, selectedFolder])
+
   const loadEmailBody = useCallback(async (email: Email, folder: EmailFolder): Promise<Email> => {
     const cached = bodyCacheRef.current.get(email.id)
-    if (cached) return { ...email, gelezen: true, inhoud: cached }
-    // Already has body content — no need to fetch
+    if (cached !== undefined) return { ...email, gelezen: true, inhoud: cached }
     if (email.inhoud) return { ...email, gelezen: true }
 
     setIsLoadingBody(true)
     try {
-      // Step 1: Try Supabase first (fast, only fetches body columns)
-      const dbBody = await getEmailBody(email.id).catch(() => null)
-      const body = dbBody?.body_html || dbBody?.body_text || dbBody?.inhoud || ''
-      if (body) {
-        bodyCacheRef.current.set(email.id, body)
-        return { ...email, gelezen: true, inhoud: body }
-      }
-
-      // Step 2: Fallback to IMAP if Supabase has no body
-      const uid = Number(email.gmail_id || email.id)
-      if (isNaN(uid)) return email
-      const detail = await readEmailFromIMAP(uid, IMAP_FOLDER_MAP[folder] || 'INBOX')
-      const imapBody = detail.bodyHtml || detail.bodyText || ''
-      bodyCacheRef.current.set(email.id, imapBody)
-      return { ...email, gelezen: true, inhoud: imapBody, aan: detail.to || email.aan }
-    } catch (err: unknown) {
-      logger.error('Email body ophalen mislukt:', err)
-      toast.error('Kon email inhoud niet laden')
-      return email
+      const body = await fetchBodyToCache(email, folder)
+      return { ...email, gelezen: true, inhoud: body }
     } finally {
       setIsLoadingBody(false)
     }
-  }, [])
+  }, [fetchBodyToCache])
 
   // ─── Polling: silent background sync every 3min ───
   // No window focus sync — too aggressive (full IMAP connection each time)
@@ -835,6 +870,7 @@ export function EmailLayout() {
           emailIndex={emailIndex}
           emailTotal={threadedEmails.length}
           allEmails={emails}
+          imapFolder={IMAP_FOLDER_MAP[selectedFolder] || 'INBOX'}
           onToggleStar={handleToggleStar}
           onToggleRead={handleToggleRead}
           onDelete={handleDeleteAndNavigate}
@@ -1026,6 +1062,7 @@ export function EmailLayout() {
                   onSelect={handleSelectEmail}
                   onToggleStar={handleToggleStar}
                   onToggleCheck={toggleCheckEmail}
+                  onPrefetch={prefetchEmailBody}
                 />
               ))}
               {isLoadingMore && (
