@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
-import { verifyState } from './exact-auth'
+import { createHmac } from 'crypto'
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -9,6 +9,22 @@ const EXACT_TOKEN_URL = 'https://start.exactonline.nl/api/oauth2/token'
 const EXACT_API_BASE = 'https://start.exactonline.nl/api/v1'
 const REDIRECT_URI = 'https://app.doen.team/api/exact-callback'
 const APP_URL = 'https://app.doen.team'
+
+// Inline copy van verifyState uit exact-auth.ts. Vercel serverless functions
+// kunnen geen lokale modules importeren — elke route moet standalone zijn.
+// Beide functies (sign + verify) gebruiken hetzelfde HMAC-sha256 secret +
+// 16-char digest schema, dus deze blijft compatibel met state strings die
+// door exact-auth.ts zijn gegenereerd.
+function verifyState(state: string): string | null {
+  const parts = state.split(':')
+  if (parts.length < 2) return null
+  const sig = parts.pop()!
+  const userId = parts.join(':') // UUIDs bevatten geen colons, maar safe split
+  const secret = SUPABASE_SERVICE_KEY || 'fallback-secret'
+  const expected = createHmac('sha256', secret).update(userId).digest('hex').slice(0, 16)
+  if (sig !== expected) return null
+  return userId
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
