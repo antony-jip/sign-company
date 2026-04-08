@@ -150,25 +150,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(500).json({ error: 'Email inplannen mislukt' })
       }
 
-      try {
-        const { tasks } = await import('@trigger.dev/sdk/v3')
-        const handle = await tasks.trigger('verzend-email-gepland', {
-          ingeplandBerichtId: ingepland.id,
-        })
-        await supabaseAdmin
-          .from('ingeplande_berichten')
-          .update({ trigger_run_id: handle.id })
-          .eq('id', ingepland.id)
-        console.log('[send-email] Geplande verzending getriggerd:', ingepland.id, scheduledAt)
-        return res.status(200).json({ success: true, message: 'Email ingepland', id: ingepland.id })
-      } catch (triggerErr) {
-        console.error('[send-email] Trigger.dev geplande task starten mislukt:', triggerErr)
-        await supabaseAdmin
-          .from('ingeplande_berichten')
-          .update({ status: 'mislukt', foutmelding: 'Task starten mislukt' })
-          .eq('id', ingepland.id)
-        return res.status(500).json({ error: 'Email inplannen mislukt' })
-      }
+      console.log('[send-email] Bericht ingepland:', ingepland.id, scheduledAt)
+      return res.status(200).json({ success: true, message: 'Email ingepland', id: ingepland.id })
     }
 
     // Haal bedrijfsnaam op voor afzendernaam
