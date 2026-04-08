@@ -1484,10 +1484,12 @@ export function generateFactuurPDF(
     doc.text('Betaal de factuur direct online:', margins.left, totalsY)
     totalsY += 6
 
-    // Link als display tekst, met onderstreping zodat het er klikbaar uitziet
+    // Link als display tekst, met onderstreping zodat het er klikbaar uitziet.
+    // Geen Unicode pijl (→) — jsPDF default font kent die niet en verminkt
+    // dan de hele string-spacing.
     doc.setTextColor(...effectiveBrand)
     doc.setFont(bodyFont, 'bold')
-    const linkLabel = 'Klik hier om direct te betalen →'
+    const linkLabel = 'Klik hier om direct te betalen'
     doc.textWithLink(linkLabel, margins.left, totalsY, {
       url: factuurData.betaal_link,
     })
