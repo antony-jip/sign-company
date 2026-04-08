@@ -12,6 +12,23 @@ interface State {
   error: Error | null
 }
 
+// Detecteer of de error een Vite chunk-load failure is. Dit gebeurt na een
+// Vercel deploy: de browser heeft een oude bundle vast en probeert chunks
+// op te halen waarvan de hash niet meer bestaat op de server.
+function isChunkLoadError(error: Error | null): boolean {
+  if (!error) return false
+  const msg = error.message || ''
+  return (
+    msg.includes('Failed to fetch dynamically imported module') ||
+    msg.includes('Loading chunk') ||
+    msg.includes('Loading CSS chunk') ||
+    msg.includes('error loading dynamically imported module') ||
+    /ChunkLoadError/i.test(error.name)
+  )
+}
+
+const RELOAD_KEY = 'forgedesk_chunk_reload_attempted'
+
 export class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props)
@@ -24,6 +41,24 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     logger.error('ErrorBoundary caught an error:', error, errorInfo)
+
+    // Bij chunk-load failure: nieuwe deploy actief, oude bundle stale.
+    // Eén keer automatisch reloaden om de nieuwe bundle binnen te halen.
+    // sessionStorage flag voorkomt een reload loop als de echte oorzaak
+    // server-side iets anders is.
+    if (isChunkLoadError(error)) {
+      try {
+        const alreadyReloaded = sessionStorage.getItem(RELOAD_KEY)
+        if (!alreadyReloaded) {
+          sessionStorage.setItem(RELOAD_KEY, Date.now().toString())
+          logger.warn('Chunk-load error gedetecteerd — pagina wordt herladen voor nieuwe bundle')
+          window.location.reload()
+        }
+      } catch {
+        // sessionStorage kan falen (private mode, etc) — gewoon reloaden
+        window.location.reload()
+      }
+    }
   }
 
   handleReset = () => {
