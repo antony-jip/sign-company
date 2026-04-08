@@ -50,6 +50,7 @@ export function IntegratiesTab() {
   const [exactBtwLaag, setExactBtwLaag] = useState('')
   const [exactBtwNul, setExactBtwNul] = useState('')
   const [exactAdvancedOpen, setExactAdvancedOpen] = useState(false)
+  const [exactHelpOpen, setExactHelpOpen] = useState(false)
 
   // KvK API state
   const [kvkApiKey, setKvkApiKey] = useState('')
@@ -266,6 +267,50 @@ export function IntegratiesTab() {
               <p className="text-sm text-muted-foreground">
                 Koppel Exact Online om facturen, relaties en boekingen automatisch te synchroniseren.
               </p>
+
+              {/* Help / instructie sectie */}
+              <div className="border border-border rounded-lg">
+                <button
+                  type="button"
+                  onClick={() => setExactHelpOpen(!exactHelpOpen)}
+                  className="w-full flex items-center justify-between p-3 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <span>Hoe koppel ik Exact Online?</span>
+                  <ArrowRight className={cn('w-4 h-4 transition-transform', exactHelpOpen && 'rotate-90')} />
+                </button>
+                {exactHelpOpen && (
+                  <div className="px-4 pb-4 border-t border-border pt-3 space-y-3">
+                    <ol className="list-decimal list-inside space-y-1.5 text-sm text-muted-foreground">
+                      <li>
+                        Ga naar{' '}
+                        <a
+                          href="https://apps.exactonline.nl"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary underline inline-flex items-center gap-0.5"
+                        >
+                          apps.exactonline.nl <ExternalLink className="w-3 h-3" />
+                        </a>{' '}
+                        en log in
+                      </li>
+                      <li>Klik op &ldquo;Mijn apps beheren&rdquo; → &ldquo;App toevoegen&rdquo;</li>
+                      <li>
+                        Vul in: naam (bijv. &ldquo;doen.&rdquo;), redirect URI:{' '}
+                        <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-foreground">
+                          https://app.doen.team/api/exact-callback
+                        </code>
+                      </li>
+                      <li>Kopieer de Client ID en Client Secret die Exact toont</li>
+                      <li>Plak ze hieronder in de velden en klik op &ldquo;Verbinden&rdquo;</li>
+                      <li>Log in bij Exact wanneer het inlogscherm verschijnt — daarna ben je gekoppeld</li>
+                    </ol>
+                    <p className="text-xs text-muted-foreground pt-1 border-t border-border/50">
+                      Na het verbinden kun je bij elke factuur op &ldquo;Sync naar Exact&rdquo; klikken
+                      om deze automatisch in je boekhouding te zetten.
+                    </p>
+                  </div>
+                )}
+              </div>
 
               <div className="space-y-3">
                 <div className="space-y-2">
