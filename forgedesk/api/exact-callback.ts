@@ -141,16 +141,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }).toString(),
     })
 
+    // Lees response body als text zodat we hem altijd kunnen loggen,
+    // ongeacht success of fout. Body kan maar één keer gelezen worden.
+    const responseText = await tokenResponse.text()
+    console.log('[exact-callback] full response:', tokenResponse.status, responseText)
+
     if (!tokenResponse.ok) {
-      const errorBody = await tokenResponse.text()
-      console.error('Exact token exchange error:', tokenResponse.status, errorBody)
+      console.error('Exact token exchange error:', tokenResponse.status, responseText)
       return res.redirect(302, `${APP_URL}/instellingen?tab=integraties&exact=error&reason=token_exchange`)
     }
 
-    const tokens = await tokenResponse.json() as {
-      access_token: string
-      refresh_token: string
-      expires_in: number
+    let tokens: { access_token: string; refresh_token: string; expires_in: number }
+    try {
+      tokens = JSON.parse(responseText)
+    } catch (parseErr) {
+      console.error('Exact token exchange: JSON parse failed', parseErr, responseText)
+      return res.redirect(302, `${APP_URL}/instellingen?tab=integraties&exact=error&reason=token_parse`)
     }
 
     // 3. Haal division op via /current/Me
