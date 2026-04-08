@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button'
 import {
   Search, Pencil, Inbox, Send, FileEdit, Trash2,
   Loader2, Archive, RefreshCw, CheckCheck, X, Mail, MailOpen,
-  Rows3, StretchHorizontal,
+  Rows3, StretchHorizontal, Clock,
 } from 'lucide-react'
+import { IngeplandeBerichtenLijst } from './IngeplandeBerichtenLijst'
 import { sendEmail as sendEmailViaApi, fetchEmailsFromIMAP, readEmailFromIMAP } from '@/services/gmailService'
 import type { IMAPEmailSummary } from '@/services/gmailService'
 import { getEmails, getEmailBody, updateEmail, deleteEmail as deleteEmailDb } from '@/services/supabaseService'
@@ -717,9 +718,9 @@ export function EmailLayout() {
     }
   }, [user, emailHandtekening])
 
-  const handleSendReply = useCallback(async (data: { to: string; subject: string; body: string; html?: string; attachments?: Array<{ filename: string; content: string; encoding: 'base64' }> }) => {
+  const handleSendReply = useCallback(async (data: { to: string; subject: string; body: string; html?: string; scheduledAt?: string; attachments?: Array<{ filename: string; content: string; encoding: 'base64' }> }) => {
     try {
-      await sendEmailViaApi(data.to, data.subject, data.body, { html: data.html, attachments: data.attachments })
+      await sendEmailViaApi(data.to, data.subject, data.body, { html: data.html, scheduledAt: data.scheduledAt, attachments: data.attachments })
     } catch (err) {
       logger.error('Reply verzenden mislukt:', err)
       throw err
@@ -855,11 +856,16 @@ export function EmailLayout() {
           <div className="my-2 border-t border-[#EBEBEB]/60" />
 
           <button
-            onClick={() => handleFolderChange('gepland' as EmailFolder)}
-            className="w-full h-[40px] flex items-center gap-2.5 px-3 rounded-lg text-[13px] text-[#6B6B66] hover:bg-[#F0EFEC]/60 hover:text-[#4A4A46] transition-all duration-150"
+            onClick={() => handleFolderChange('gepland')}
+            className={cn(
+              'w-full h-[40px] flex items-center gap-2.5 px-3 rounded-lg text-[13px] font-medium transition-all duration-150',
+              selectedFolder === 'gepland'
+                ? 'bg-[#1A535C]/[0.07] text-[#1A535C] font-semibold'
+                : 'text-[#6B6B66] hover:bg-[#F0EFEC]/60 hover:text-[#4A4A46]',
+            )}
           >
-            <Archive className="h-4 w-4 flex-shrink-0" />
-            <span className="flex-1 text-left">Archief</span>
+            <Clock className={cn('h-4 w-4 flex-shrink-0', selectedFolder === 'gepland' && 'text-[#1A535C]')} />
+            <span className="flex-1 text-left">Ingeplande berichten</span>
           </button>
         </nav>
 
@@ -922,8 +928,13 @@ export function EmailLayout() {
         )
       })()}
 
+      {/* Ingeplande berichten lijst (idle + gepland folder) */}
+      {viewMode === 'idle' && selectedFolder === 'gepland' && (
+        <IngeplandeBerichtenLijst />
+      )}
+
       {/* Email list (idle view) */}
-      {viewMode === 'idle' && (<>
+      {viewMode === 'idle' && selectedFolder !== 'gepland' && (<>
         {/* Toolbar */}
         {/* Toolbar */}
         <div className="flex items-center justify-between px-4 h-12 border-b border-[#EBEBEB] flex-shrink-0">

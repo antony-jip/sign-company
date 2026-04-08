@@ -17,7 +17,7 @@ import {
   ChevronUp, ChevronDown, Reply, ReplyAll, Forward,
   Paperclip, Send, Bold, Italic, Underline,
   List, ListOrdered, Link2, Sparkles, Loader2, Download,
-  Undo2, Redo2, X,
+  Undo2, Redo2, X, Clock,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Email, EmailAttachment } from '@/types'
@@ -67,7 +67,7 @@ interface EmailReaderProps {
   onArchive?: (email: Email) => void
   onBack?: () => void
   onNavigate?: (direction: 'prev' | 'next') => void
-  onSendReply?: (data: { to: string; subject: string; body: string; html?: string; attachments?: Array<{ filename: string; content: string; encoding: 'base64' }> }) => void
+  onSendReply?: (data: { to: string; subject: string; body: string; html?: string; scheduledAt?: string; attachments?: Array<{ filename: string; content: string; encoding: 'base64' }> }) => void
   onSelectEmail?: (email: Email) => void
 }
 
@@ -98,6 +98,11 @@ export function EmailReader({
   const [replyAttachments, setReplyAttachments] = useState<File[]>([])
   // Originele bijlagen die meegestuurd worden bij forward (los van user uploads)
   const [forwardOriginalAttachments, setForwardOriginalAttachments] = useState<EmailAttachment[]>([])
+  // Schedule send menu state
+  const [showScheduleMenu, setShowScheduleMenu] = useState(false)
+  const [showCustomSchedule, setShowCustomSchedule] = useState(false)
+  const [customScheduleDate, setCustomScheduleDate] = useState('')
+  const [customScheduleTime, setCustomScheduleTime] = useState('09:00')
   const editorRef = useRef<HTMLDivElement>(null)
   const emailBodyRef = useRef<HTMLDivElement>(null)
   const replyFileInputRef = useRef<HTMLInputElement>(null)
@@ -211,77 +216,84 @@ export function EmailReader({
     }, 50)
   }, [email, signatureHtml])
 
-  const handleSend = useCallback(async () => {
-    if (!email || !editorRef.current || !onSendReply) return
+  const buildReplyPayload = useCallback(async () => {
+    if (!email || !editorRef.current) return null
     const html = editorRef.current.innerHTML
     if (!html.replace(/<[^>]*>/g, '').trim()) {
       toast.error('Bericht is leeg')
-      return
+      return null
     }
-    setIsSending(true)
-    try {
-      const prefix = replyMode === 'forward' ? 'Fwd: ' : 'Re: '
-      const subject = email.onderwerp.startsWith(prefix) ? email.onderwerp : `${prefix}${email.onderwerp}`
-      const quotedOriginal = `<br><br><div style="border-left:2px solid #ccc;padding-left:12px;margin-left:0;color:#666;"><p>Op ${formatShortDate(email.datum)} schreef ${extractSenderName(email.van)}:</p>${email.inhoud}</div>`
+    const prefix = replyMode === 'forward' ? 'Fwd: ' : 'Re: '
+    const subject = email.onderwerp.startsWith(prefix) ? email.onderwerp : `${prefix}${email.onderwerp}`
+    const quotedOriginal = `<br><br><div style="border-left:2px solid #ccc;padding-left:12px;margin-left:0;color:#666;"><p>Op ${formatShortDate(email.datum)} schreef ${extractSenderName(email.van)}:</p>${email.inhoud}</div>`
 
-      const fileToBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
-        const reader = new FileReader()
-        reader.onload = () => resolve(((reader.result as string) || '').split(',')[1] || '')
-        reader.onerror = () => reject(reader.error)
-        reader.readAsDataURL(file)
-      })
+    const fileToBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(((reader.result as string) || '').split(',')[1] || '')
+      reader.onerror = () => reject(reader.error)
+      reader.readAsDataURL(file)
+    })
 
-      // Bij forward: haal de oorspronkelijke bijlagen die de user nog wil
-      // meesturen op uit IMAP. forwardOriginalAttachments wordt door de UI
-      // beheerd zodat de user er individueel kunnen verwijderen.
-      let originalAttachments: Array<{ filename: string; content: string; encoding: 'base64' }> = []
-      if (replyMode === 'forward' && forwardOriginalAttachments.length > 0) {
-        const uid = Number(email.gmail_id || email.id)
-        if (!Number.isNaN(uid)) {
-          toast.info(`Originele bijlage${forwardOriginalAttachments.length > 1 ? 'n' : ''} ophalen...`)
-          try {
-            const fetched = await Promise.all(
-              forwardOriginalAttachments.map((att) =>
-                downloadEmailAttachment(uid, imapFolder, att.filename).catch((e) => {
-                  logger.warn(`Bijlage "${att.filename}" ophalen mislukt:`, e)
-                  return null
-                })
-              )
+    // Bij forward: haal de oorspronkelijke bijlagen die de user nog wil
+    // meesturen op uit IMAP. forwardOriginalAttachments wordt door de UI
+    // beheerd zodat de user er individueel kunnen verwijderen.
+    let originalAttachments: Array<{ filename: string; content: string; encoding: 'base64' }> = []
+    if (replyMode === 'forward' && forwardOriginalAttachments.length > 0) {
+      const uid = Number(email.gmail_id || email.id)
+      if (!Number.isNaN(uid)) {
+        toast.info(`Originele bijlage${forwardOriginalAttachments.length > 1 ? 'n' : ''} ophalen...`)
+        try {
+          const fetched = await Promise.all(
+            forwardOriginalAttachments.map((att) =>
+              downloadEmailAttachment(uid, imapFolder, att.filename).catch((e) => {
+                logger.warn(`Bijlage "${att.filename}" ophalen mislukt:`, e)
+                return null
+              })
             )
-            originalAttachments = fetched
-              .filter((r): r is NonNullable<typeof r> => r !== null && !!r.content)
-              .map((r) => ({
-                filename: r.filename,
-                content: r.content,
-                encoding: 'base64' as const,
-              }))
-            if (originalAttachments.length < forwardOriginalAttachments.length) {
-              toast.warning(`${forwardOriginalAttachments.length - originalAttachments.length} bijlage(n) konden niet worden opgehaald`)
-            }
-          } catch (err) {
-            logger.warn('Originele bijlagen ophalen mislukt:', err)
-            toast.warning('Originele bijlagen niet ingesloten — verzend zonder')
+          )
+          originalAttachments = fetched
+            .filter((r): r is NonNullable<typeof r> => r !== null && !!r.content)
+            .map((r) => ({
+              filename: r.filename,
+              content: r.content,
+              encoding: 'base64' as const,
+            }))
+          if (originalAttachments.length < forwardOriginalAttachments.length) {
+            toast.warning(`${forwardOriginalAttachments.length - originalAttachments.length} bijlage(n) konden niet worden opgehaald`)
           }
+        } catch (err) {
+          logger.warn('Originele bijlagen ophalen mislukt:', err)
+          toast.warning('Originele bijlagen niet ingesloten — verzend zonder')
         }
       }
+    }
 
-      const userAttachments = replyAttachments.length
-        ? await Promise.all(replyAttachments.map(async (file) => ({
-            filename: file.name,
-            content: await fileToBase64(file),
-            encoding: 'base64' as const,
-          })))
-        : []
+    const userAttachments = replyAttachments.length
+      ? await Promise.all(replyAttachments.map(async (file) => ({
+          filename: file.name,
+          content: await fileToBase64(file),
+          encoding: 'base64' as const,
+        })))
+      : []
 
-      const attachmentPayload = [...originalAttachments, ...userAttachments]
+    const attachmentPayload = [...originalAttachments, ...userAttachments]
 
-      await onSendReply({
-        to: replyTo,
-        subject,
-        body: editorRef.current.innerText,
-        html: html + quotedOriginal,
-        attachments: attachmentPayload.length > 0 ? attachmentPayload : undefined,
-      })
+    return {
+      to: replyTo,
+      subject,
+      body: editorRef.current.innerText,
+      html: html + quotedOriginal,
+      attachments: attachmentPayload.length > 0 ? attachmentPayload : undefined,
+    }
+  }, [email, replyMode, replyTo, replyAttachments, forwardOriginalAttachments, imapFolder])
+
+  const handleSend = useCallback(async () => {
+    if (!onSendReply) return
+    setIsSending(true)
+    try {
+      const payload = await buildReplyPayload()
+      if (!payload) return
+      await onSendReply(payload)
       setReplyMode(null)
       setReplyAttachments([])
       setForwardOriginalAttachments([])
@@ -292,7 +304,27 @@ export function EmailReader({
     } finally {
       setIsSending(false)
     }
-  }, [email, replyMode, replyTo, onSendReply, replyAttachments, forwardOriginalAttachments, imapFolder])
+  }, [onSendReply, buildReplyPayload])
+
+  const handleScheduleSend = useCallback(async (scheduledAt: string, label: string) => {
+    if (!onSendReply) return
+    setIsSending(true)
+    setShowScheduleMenu(false)
+    try {
+      const payload = await buildReplyPayload()
+      if (!payload) return
+      await onSendReply({ ...payload, scheduledAt })
+      setReplyMode(null)
+      setReplyAttachments([])
+      setForwardOriginalAttachments([])
+      toast.success(`Email ingepland: ${label}`)
+    } catch (err) {
+      logger.error('Email schedule failed:', err)
+      toast.error('Inplannen mislukt')
+    } finally {
+      setIsSending(false)
+    }
+  }, [onSendReply, buildReplyPayload])
 
   const handleForgieWrite = useCallback(async () => {
     if (!email || !editorRef.current) return
@@ -654,6 +686,86 @@ export function EmailReader({
                 <span className="text-[10px] text-[#B0ADA8] hidden sm:block">
                   {navigator.platform.includes('Mac') ? '\u2318' : 'Ctrl'}+Enter
                 </span>
+                <div className="relative">
+                  <button
+                    className="h-9 w-9 flex items-center justify-center rounded-lg text-[#1A535C] bg-[#1A535C]/[0.08] hover:bg-[#1A535C]/[0.14] transition-colors duration-150 disabled:opacity-50"
+                    onClick={() => setShowScheduleMenu(s => !s)}
+                    disabled={isSending}
+                    title="Inplannen"
+                  >
+                    <Clock className="h-4 w-4" />
+                  </button>
+                  {showScheduleMenu && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => { setShowScheduleMenu(false); setShowCustomSchedule(false) }} />
+                      <div className="absolute bottom-full right-0 mb-2 w-[220px] bg-white rounded-xl shadow-[0_4px_24px_rgba(0,0,0,0.10)] z-50 py-1.5 overflow-hidden">
+                        <p className="px-3.5 py-1.5 text-[11px] uppercase tracking-wider text-[#9B9B95] font-medium">Inplannen</p>
+                        {[
+                          { label: 'Over 1 uur', getDate: () => { const d = new Date(); d.setHours(d.getHours() + 1); return d } },
+                          { label: 'Vanmiddag 14:00', getDate: () => { const d = new Date(); d.setHours(14, 0, 0, 0); if (d <= new Date()) d.setDate(d.getDate() + 1); return d } },
+                          { label: 'Morgen 9:00', getDate: () => { const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(9, 0, 0, 0); return d } },
+                          { label: 'Maandag 9:00', getDate: () => { const d = new Date(); const day = d.getDay(); const daysUntilMon = day === 0 ? 1 : day === 1 ? 7 : 8 - day; d.setDate(d.getDate() + daysUntilMon); d.setHours(9, 0, 0, 0); return d } },
+                        ].map(opt => (
+                          <button
+                            key={opt.label}
+                            onClick={() => handleScheduleSend(opt.getDate().toISOString(), opt.label)}
+                            className="w-full px-3.5 py-2.5 text-left text-[13px] text-[#1A1A1A] hover:bg-[#F8F7F5] transition-colors duration-150 flex items-center justify-between"
+                          >
+                            <span>{opt.label}</span>
+                            <span className="text-[11px] text-[#9B9B95] font-mono">
+                              {opt.getDate().toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </button>
+                        ))}
+                        <div className="border-t border-[#EBEBEB] mt-1 pt-1">
+                          {!showCustomSchedule ? (
+                            <button
+                              onClick={() => {
+                                setShowCustomSchedule(true)
+                                const tomorrow = new Date()
+                                tomorrow.setDate(tomorrow.getDate() + 1)
+                                setCustomScheduleDate(tomorrow.toISOString().split('T')[0])
+                              }}
+                              className="w-full px-3.5 py-2.5 text-left text-[13px] text-[#1A535C] hover:bg-[#F8F7F5] transition-colors duration-150 flex items-center gap-2"
+                            >
+                              <Clock className="h-3.5 w-3.5" />
+                              Kies datum en tijd...
+                            </button>
+                          ) : (
+                            <div className="px-3.5 py-2.5 space-y-2">
+                              <input
+                                type="date"
+                                value={customScheduleDate}
+                                onChange={e => setCustomScheduleDate(e.target.value)}
+                                min={new Date().toISOString().split('T')[0]}
+                                className="w-full px-2.5 py-1.5 text-[13px] text-[#1A1A1A] bg-[#F8F7F5] rounded-lg border border-[#EBEBEB] outline-none focus:border-[#1A535C] transition-colors font-mono"
+                              />
+                              <input
+                                type="time"
+                                value={customScheduleTime}
+                                onChange={e => setCustomScheduleTime(e.target.value)}
+                                className="w-full px-2.5 py-1.5 text-[13px] text-[#1A1A1A] bg-[#F8F7F5] rounded-lg border border-[#EBEBEB] outline-none focus:border-[#1A535C] transition-colors font-mono"
+                              />
+                              <button
+                                onClick={() => {
+                                  if (!customScheduleDate) { toast.error('Kies een datum'); return }
+                                  const dt = new Date(`${customScheduleDate}T${customScheduleTime}:00`)
+                                  if (dt <= new Date()) { toast.error('Kies een moment in de toekomst'); return }
+                                  const label = dt.toLocaleDateString('nl-NL', { weekday: 'short', day: 'numeric', month: 'short' }) + ' ' + customScheduleTime
+                                  handleScheduleSend(dt.toISOString(), label)
+                                  setShowCustomSchedule(false)
+                                }}
+                                className="w-full py-1.5 rounded-lg bg-[#1A535C] text-white text-[12px] font-medium hover:opacity-90 transition-opacity"
+                              >
+                                Inplannen
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
                 <button
                   className="h-9 px-6 rounded-xl text-[13px] font-semibold text-white bg-[#F15025] shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_12px_rgba(241,80,37,0.35)] hover:-translate-y-px active:translate-y-0 transition-all duration-150 flex items-center gap-2 disabled:opacity-50"
                   onClick={handleSend}
