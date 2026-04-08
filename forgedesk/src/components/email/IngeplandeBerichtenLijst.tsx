@@ -31,21 +31,23 @@ export function IngeplandeBerichtenLijst() {
   const [loading, setLoading] = useState(true)
   const [annulerenId, setAnnulerenId] = useState<string | null>(null)
 
-  const laden = useCallback(async () => {
-    setLoading(true)
+  const laden = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true)
     try {
       const data = await getIngeplandeBerichten()
       setBerichten(data)
     } catch (err) {
       logger.error('Ingeplande berichten ophalen mislukt:', err)
-      toast.error('Kon ingeplande berichten niet laden')
+      if (!silent) toast.error('Kon ingeplande berichten niet laden')
     } finally {
-      setLoading(false)
+      if (!silent) setLoading(false)
     }
   }, [])
 
   useEffect(() => {
     void laden()
+    const interval = setInterval(() => { void laden(true) }, 20000)
+    return () => clearInterval(interval)
   }, [laden])
 
   const handleCancel = useCallback(async (id: string) => {
