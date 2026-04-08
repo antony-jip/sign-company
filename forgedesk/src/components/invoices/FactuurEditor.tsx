@@ -168,13 +168,14 @@ function getDefaultVervaldatum(factuurdatum: string, dagen: number = 30): string
   return d.toISOString().split('T')[0]
 }
 
-function generateFactuurNummer(prefix: string, existing: { nummer: string }[]): string {
+function generateFactuurNummer(prefix: string, existing: { nummer: string }[], startNummer = 1): string {
   const year = new Date().getFullYear()
   const jaarPrefix = `${prefix}-${year}-`
   const maxNr = existing
     .filter((f) => f.nummer.startsWith(jaarPrefix))
     .reduce((max, f) => Math.max(max, parseInt(f.nummer.replace(jaarPrefix, ''), 10) || 0), 0)
-  return `${jaarPrefix}${String(maxNr + 1).padStart(3, '0')}`
+  const nextNr = Math.max(maxNr, Math.max(0, startNummer - 1)) + 1
+  return `${jaarPrefix}${String(nextNr).padStart(3, '0')}`
 }
 
 function generateTypedNummer(existing: { nummer: string }[], prefix: string): string {
@@ -208,6 +209,7 @@ export function FactuurEditor() {
     settings,
     standaardBtw,
     factuurPrefix,
+    factuurStartNummer,
     factuurBetaaltermijnDagen,
     factuurVoorwaarden,
     factuurIntroTekst,
@@ -386,7 +388,7 @@ export function FactuurEditor() {
         } else {
           // New factuur: generate nummer
           if (!cancelled) {
-            setNummer(generateFactuurNummer(factuurPrefix, facturenData))
+            setNummer(generateFactuurNummer(factuurPrefix, facturenData, factuurStartNummer))
           }
 
           // Pre-fill from query params

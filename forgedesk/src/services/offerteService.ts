@@ -426,9 +426,13 @@ export async function getRecentOfferteItemSuggesties(): Promise<{ beschrijving: 
   return Array.from(map.values())
 }
 
-export async function getNextOfferteNummer(prefix: string = 'OFF'): Promise<string> {
+export async function getNextOfferteNummer(prefix: string = 'OFF', startNummer = 1): Promise<string> {
   const year = new Date().getFullYear()
   const jaarPrefix = `${prefix}-${year}-`
+
+  // startNummer als floor: bij overstap vanuit een ander systeem kan de
+  // gebruiker doorlopen vanaf een specifiek nummer.
+  const applyFloor = (max: number): number => Math.max(max, Math.max(0, startNummer - 1)) + 1
 
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
@@ -442,7 +446,7 @@ export async function getNextOfferteNummer(prefix: string = 'OFF'): Promise<stri
     const maxNr = data?.[0]
       ? parseInt(data[0].nummer.replace(jaarPrefix, ''), 10) || 0
       : 0
-    return `${jaarPrefix}${String(maxNr + 1).padStart(3, '0')}`
+    return `${jaarPrefix}${String(applyFloor(maxNr)).padStart(3, '0')}`
   }
 
   // localStorage fallback
@@ -450,7 +454,7 @@ export async function getNextOfferteNummer(prefix: string = 'OFF'): Promise<stri
   const maxNr = offertes
     .filter(o => o.nummer?.startsWith(jaarPrefix))
     .reduce((max, o) => Math.max(max, parseInt(o.nummer.replace(jaarPrefix, ''), 10) || 0), 0)
-  return `${jaarPrefix}${String(maxNr + 1).padStart(3, '0')}`
+  return `${jaarPrefix}${String(applyFloor(maxNr)).padStart(3, '0')}`
 }
 
 // ============ OFFERTE VERSIES ============
@@ -865,7 +869,7 @@ export async function updateTekeningGoedkeuringByToken(
 
 // ============ NUMMER GENERATIE ============
 
-export async function generateOfferteNummer(prefix: string = 'OFF'): Promise<string> {
+export async function generateOfferteNummer(prefix: string = 'OFF', startNummer = 1): Promise<string> {
   const jaar = new Date().getFullYear()
   const jaarPrefix = `${prefix}-${jaar}-`
   let maxNr = await getMaxNummer('offertes', 'nummer', jaarPrefix)
@@ -876,5 +880,8 @@ export async function generateOfferteNummer(prefix: string = 'OFF'): Promise<str
       .filter((o) => o.nummer.startsWith(jaarPrefix))
       .reduce((max, o) => Math.max(max, parseInt(o.nummer.replace(jaarPrefix, ''), 10) || 0), 0)
   }
-  return `${jaarPrefix}${String(maxNr + 1).padStart(3, '0')}`
+  // startNummer fungeert als floor: handig bij overstap vanuit een ander
+  // systeem zodat de nummering doorloopt vanaf een specifiek beginpunt.
+  const nextNr = Math.max(maxNr, Math.max(0, startNummer - 1)) + 1
+  return `${jaarPrefix}${String(nextNr).padStart(3, '0')}`
 }

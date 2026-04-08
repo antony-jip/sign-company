@@ -108,13 +108,14 @@ const ITEM_COUNT_OPTIONS = [1, 2, 3, 4, 5] as const
 
 // Steps removed — now a permanent two-column layout
 
-function generateOfferteNummer(prefix: string = 'OFF', existingOffertes: { nummer: string }[] = []): string {
+function generateOfferteNummer(prefix: string = 'OFF', existingOffertes: { nummer: string }[] = [], startNummer = 1): string {
   const year = new Date().getFullYear()
   const jaarPrefix = `${prefix}-${year}-`
   const maxNr = existingOffertes
     .filter((o) => o.nummer.startsWith(jaarPrefix))
     .reduce((max, o) => Math.max(max, parseInt(o.nummer.replace(jaarPrefix, ''), 10) || 0), 0)
-  return `${jaarPrefix}${String(maxNr + 1).padStart(3, '0')}`
+  const nextNr = Math.max(maxNr, Math.max(0, startNummer - 1)) + 1
+  return `${jaarPrefix}${String(nextNr).padStart(3, '0')}`
 }
 
 // ============================================================
@@ -128,7 +129,7 @@ export function QuoteCreation() {
   const [searchParams] = useSearchParams()
   const { id: routeId } = useParams<{ id: string }>()
   const { user } = useAuth()
-  const { settings, offertePrefix, offerteGeldigheidDagen, standaardBtw, bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur, logoUrl, profile, offerteToonM2, emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte } = useAppSettings()
+  const { settings, offertePrefix, offerteStartNummer, offerteGeldigheidDagen, standaardBtw, bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur, logoUrl, profile, offerteToonM2, emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte } = useAppSettings()
   const documentStyle = useDocumentStyle()
   const [showKlantSelector, setShowKlantSelector] = useState(true)
   const [klanten, setKlanten] = useState<Klant[]>([])
@@ -478,7 +479,7 @@ export function QuoteCreation() {
     Promise.all([
       getKlanten(),
       getProjecten(),
-      !editOfferteId ? getNextOfferteNummer(offertePrefix).catch(() => null) : Promise.resolve(null),
+      !editOfferteId ? getNextOfferteNummer(offertePrefix, offerteStartNummer).catch(() => null) : Promise.resolve(null),
     ])
       .then(([klantenData, projectenData, nummer]) => {
         if (!cancelled) {

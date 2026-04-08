@@ -228,16 +228,17 @@ function getTodayString(): string {
   return new Date().toISOString().split('T')[0]
 }
 
-function generateFactuurNummer(existing: Factuur[]): string {
+function generateFactuurNummer(existing: Factuur[], factuurPrefix = 'FAC', startNummer = 1): string {
   const year = new Date().getFullYear()
-  const prefix = `FAC-${year}-`
+  const prefix = `${factuurPrefix}-${year}-`
   const maxNum = existing
     .filter((f) => f.nummer.startsWith(prefix))
     .reduce((max, f) => {
       const num = parseInt(f.nummer.replace(prefix, ''), 10)
       return isNaN(num) ? max : Math.max(max, num)
     }, 0)
-  return `${prefix}${String(maxNum + 1).padStart(3, '0')}`
+  const nextNr = Math.max(maxNum, Math.max(0, startNummer - 1)) + 1
+  return `${prefix}${String(nextNr).padStart(3, '0')}`
 }
 
 function generateTypedNummer(existing: Factuur[], prefix: string): string {
@@ -265,7 +266,7 @@ export function FacturenLayout() {
   const { navigateWithTab } = useNavigateWithTab()
   const { user } = useAuth()
   // App settings (bedrijfsprofiel for PDF generation)
-  const { settings, profile, primaireKleur, emailHandtekening, bedrijfsnaam, factuurBetaaltermijnDagen, factuurVoorwaarden } = useAppSettings()
+  const { settings, profile, primaireKleur, emailHandtekening, bedrijfsnaam, factuurPrefix, factuurStartNummer, factuurBetaaltermijnDagen, factuurVoorwaarden } = useAppSettings()
   const exactConnected = settings.exact_online_connected ?? false
   const documentStyle = useDocumentStyle()
 
@@ -617,7 +618,7 @@ export function FacturenLayout() {
         setFacturen((prev) => prev.map((f) => (f.id === editingFactuur.id ? { ...f, ...updated } : f)))
         toast.success('Factuur bijgewerkt')
       } else {
-        const nummer = generateFactuurNummer(facturen)
+        const nummer = generateFactuurNummer(facturen, factuurPrefix, factuurStartNummer)
         const betaalToken = generateBetaalToken()
         const betaalLink = `${window.location.origin}/betalen/${betaalToken}`
         const newFactuur: Omit<Factuur, 'id' | 'created_at' | 'updated_at'> = {

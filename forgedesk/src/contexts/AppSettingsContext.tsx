@@ -18,6 +18,7 @@ interface AppSettingsContextType {
   valuta: string
   standaardBtw: number
   offertePrefix: string
+  offerteStartNummer: number
   offerteGeldigheidDagen: number
   autoFollowUp: boolean
   followUpDagen: number
@@ -38,6 +39,7 @@ interface AppSettingsContextType {
   anthropicApiKey: string
   // Factuur instellingen
   factuurPrefix: string
+  factuurStartNummer: number
   factuurBetaaltermijnDagen: number
   factuurVoorwaarden: string
   factuurIntroTekst: string
@@ -145,6 +147,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     valuta: settings.valuta || 'EUR',
     standaardBtw: settings.standaard_btw ?? 21,
     offertePrefix: settings.offerte_prefix || 'OFF',
+    offerteStartNummer: settings.offerte_volgnummer ?? 1,
     offerteGeldigheidDagen: settings.offerte_geldigheid_dagen ?? 30,
     autoFollowUp: settings.auto_follow_up ?? true,
     followUpDagen: settings.follow_up_dagen ?? 7,
@@ -165,6 +168,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     anthropicApiKey,
     // Factuur instellingen
     factuurPrefix: settings.factuur_prefix || 'FAC',
+    factuurStartNummer: settings.factuur_volgnummer ?? 1,
     factuurBetaaltermijnDagen: settings.factuur_betaaltermijn_dagen ?? 30,
     factuurVoorwaarden: settings.factuur_voorwaarden || 'Betaling binnen 30 dagen na factuurdatum.',
     factuurIntroTekst: settings.factuur_intro_tekst || '',

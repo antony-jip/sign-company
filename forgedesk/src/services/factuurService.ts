@@ -228,7 +228,7 @@ export async function deleteHerinneringTemplate(id: string): Promise<void> {
 
 // ============ NUMMER GENERATIE ============
 
-export async function generateFactuurNummer(prefix: string = 'FAC'): Promise<string> {
+export async function generateFactuurNummer(prefix: string = 'FAC', startNummer = 1): Promise<string> {
   const jaar = new Date().getFullYear()
   const jaarPrefix = `${prefix}-${jaar}-`
   let maxNr = await getMaxNummer('facturen', 'nummer', jaarPrefix)
@@ -238,7 +238,10 @@ export async function generateFactuurNummer(prefix: string = 'FAC'): Promise<str
       .filter((f) => f.nummer.startsWith(jaarPrefix))
       .reduce((max, f) => Math.max(max, parseInt(f.nummer.replace(jaarPrefix, ''), 10) || 0), 0)
   }
-  return `${jaarPrefix}${String(maxNr + 1).padStart(3, '0')}`
+  // startNummer fungeert als floor: handig bij overstap vanuit een ander
+  // systeem zodat de nummering doorloopt vanaf een specifiek beginpunt.
+  const nextNr = Math.max(maxNr, Math.max(0, startNummer - 1)) + 1
+  return `${jaarPrefix}${String(nextNr).padStart(3, '0')}`
 }
 
 export async function generateCreditnotaNummer(): Promise<string> {

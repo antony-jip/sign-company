@@ -284,6 +284,7 @@ function DocumentenTab() {
   const [subTab, setSubTab] = useState('offertes')
 
   const [offertePrefix, setOffertePrefix] = useState('OFF')
+  const [offerteStartNummer, setOfferteStartNummer] = useState('1')
   const [offerteGeldigheid, setOfferteGeldigheid] = useState('30')
   const [standaardBtw, setStandaardBtw] = useState('21')
   const [offerteIntroTekst, setOfferteIntroTekst] = useState('')
@@ -298,6 +299,7 @@ function DocumentenTab() {
   const [factuurIntroTekst, setFactuurIntroTekst] = useState('')
   const [factuurOutroTekst, setFactuurOutroTekst] = useState('')
   const [factuurPrefix, setFactuurPrefix] = useState('FAC')
+  const [factuurStartNummer, setFactuurStartNummer] = useState('1')
   const [creditnotaPrefix, setCreditnotaPrefix] = useState('CN')
   const [werkbonPrefix, setWerkbonPrefix] = useState('WB')
   const [projectPrefix, setProjectPrefix] = useState('PRJ')
@@ -311,6 +313,7 @@ function DocumentenTab() {
       setIsLoading(true)
       const data = await getAppSettings(user.id)
       setOffertePrefix(data.offerte_prefix || 'OFF')
+      setOfferteStartNummer(String(data.offerte_volgnummer ?? 1))
       setOfferteGeldigheid(String(data.offerte_geldigheid_dagen || 30))
       setStandaardBtw(String(data.standaard_btw || 21))
       setOfferteIntroTekst(data.offerte_intro_tekst || '')
@@ -321,6 +324,7 @@ function DocumentenTab() {
       setWerkbonKlantHandtekening(data.werkbon_klant_handtekening ?? false)
       setWerkbonBriefpapier(data.werkbon_briefpapier ?? true)
       setFactuurPrefix(data.factuur_prefix || 'FAC')
+      setFactuurStartNummer(String(data.factuur_volgnummer ?? 1))
       setCreditnotaPrefix(data.creditnota_prefix || 'CN')
       setWerkbonPrefix(data.werkbon_prefix || 'WB')
       setProjectPrefix(data.project_prefix || 'PRJ')
@@ -347,6 +351,7 @@ function DocumentenTab() {
       setIsSaving(true)
       await updateAppSettings(user.id, {
         offerte_prefix: offertePrefix,
+        offerte_volgnummer: parseInt(offerteStartNummer) || 1,
         offerte_geldigheid_dagen: parseInt(offerteGeldigheid) || 30,
         standaard_btw: parseFloat(standaardBtw) || 21,
         offerte_intro_tekst: offerteIntroTekst,
@@ -357,6 +362,7 @@ function DocumentenTab() {
         werkbon_klant_handtekening: werkbonKlantHandtekening,
         werkbon_briefpapier: werkbonBriefpapier,
         factuur_prefix: factuurPrefix,
+        factuur_volgnummer: parseInt(factuurStartNummer) || 1,
         creditnota_prefix: creditnotaPrefix,
         werkbon_prefix: werkbonPrefix,
         project_prefix: projectPrefix,
@@ -410,11 +416,16 @@ function DocumentenTab() {
               <CardDescription>Nummering, geldigheid en standaardteksten voor offertes</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="offerte-prefix">Offerte prefix</Label>
                   <Input id="offerte-prefix" value={offertePrefix} onChange={(e) => setOffertePrefix(e.target.value.toUpperCase())} placeholder="OFF" maxLength={5} />
-                  <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Voorbeeld: {offertePrefix}-2026-0001</p>
+                  <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Voorbeeld: {offertePrefix}-{new Date().getFullYear()}-{String(parseInt(offerteStartNummer) || 1).padStart(3, '0')}</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="offerte-startnummer">Begin nummer</Label>
+                  <Input id="offerte-startnummer" type="number" min="1" value={offerteStartNummer} onChange={(e) => setOfferteStartNummer(e.target.value)} />
+                  <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Volgende offerte start hier (handig bij overstap)</p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="offerte-geldigheid">Geldigheidsduur (dagen)</Label>
@@ -459,7 +470,12 @@ function DocumentenTab() {
                 <div className="space-y-2">
                   <Label htmlFor="factuur-prefix">Factuur prefix</Label>
                   <Input id="factuur-prefix" value={factuurPrefix} onChange={(e) => setFactuurPrefix(e.target.value.toUpperCase())} placeholder="FAC" maxLength={5} />
-                  <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Voorbeeld: {factuurPrefix}-2026-0001</p>
+                  <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Voorbeeld: {factuurPrefix}-{new Date().getFullYear()}-{String(parseInt(factuurStartNummer) || 1).padStart(3, '0')}</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="factuur-startnummer">Begin nummer</Label>
+                  <Input id="factuur-startnummer" type="number" min="1" value={factuurStartNummer} onChange={(e) => setFactuurStartNummer(e.target.value)} />
+                  <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Volgende factuur start hier (handig bij overstap)</p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="creditnota-prefix">Creditnota prefix</Label>
