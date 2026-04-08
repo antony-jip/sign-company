@@ -120,12 +120,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // 2. Wissel code in voor tokens — client_id en client_secret als
     // form-encoded body params (standaard Exact Online methode).
-    console.log('[exact-callback] token exchange', {
-      tokenUrl: EXACT_TOKEN_URL,
-      redirectUri: REDIRECT_URI,
-      clientIdPrefix: `${exactClientId.slice(0, 8)}...`,
-      clientSecretPresent: Boolean(exactClientSecret),
-    })
     const tokenResponse = await fetch(EXACT_TOKEN_URL, {
       method: 'POST',
       headers: {
@@ -140,10 +134,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }).toString(),
     })
 
-    // Lees response body als text zodat we hem altijd kunnen loggen,
-    // ongeacht success of fout. Body kan maar één keer gelezen worden.
+    // Lees response body als text zodat we hem zowel kunnen loggen bij
+    // fouten als parsen bij success. Body kan maar één keer gelezen worden.
     const responseText = await tokenResponse.text()
-    console.log('[exact-callback] full response:', tokenResponse.status, responseText)
 
     if (!tokenResponse.ok) {
       console.error('Exact token exchange error:', tokenResponse.status, responseText)

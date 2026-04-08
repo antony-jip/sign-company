@@ -39,6 +39,29 @@ async function loadAppSettingsOrgFirst(
   return (data as Record<string, unknown> | null) ?? null
 }
 
+async function updateAppSettingsOrgFirst(
+  supabase: SupabaseClient,
+  userId: string,
+  updates: Record<string, unknown>,
+): Promise<void> {
+  const orgId = await getOrgIdForUser(supabase, userId)
+  if (orgId) {
+    const { data: existing } = await supabase
+      .from('app_settings')
+      .select('id')
+      .eq('organisatie_id', orgId)
+      .maybeSingle()
+    if (existing) {
+      await supabase
+        .from('app_settings')
+        .update(updates)
+        .eq('id', (existing as { id: string }).id)
+      return
+    }
+  }
+  await supabase.from('app_settings').update(updates).eq('user_id', userId)
+}
+
 async function verifyUser(req: VercelRequest): Promise<string> {
   const authHeader = req.headers.authorization
   if (!authHeader?.startsWith('Bearer ')) throw new Error('Niet geautoriseerd')
@@ -78,12 +101,21 @@ async function getValidToken(userId: string): Promise<{ token: string; division:
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
-      Authorization: `Basic ${Buffer.from(`${exactClientId}:${exactClientSecret}`).toString('base64')}`,
     },
-    body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: data.refresh_token }),
+    body: new URLSearchParams({
+      grant_type: 'refresh_token',
+      refresh_token: data.refresh_token,
+      client_id: exactClientId,
+      client_secret: exactClientSecret,
+    }),
   })
 
-  if (!refreshRes.ok) throw new Error('Token refresh mislukt')
+  if (!refreshRes.ok) {
+    if (refreshRes.status === 400 || refreshRes.status === 401) {
+      await updateAppSettingsOrgFirst(supabaseAdmin, userId, { exact_online_connected: false })
+    }
+    throw new Error('Token refresh mislukt. Verbind Exact Online opnieuw via Instellingen.')
+  }
   const tokens = await refreshRes.json()
 
   await supabaseAdmin.from('exact_tokens').update({
