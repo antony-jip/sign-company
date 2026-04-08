@@ -1190,6 +1190,8 @@ export function generateFactuurPDF(
   docStyle?: DocumentStyle | null
 ): jsPDF {
   const doc = new jsPDF()
+  const pageWidth = doc.internal.pageSize.getWidth()
+  const pageHeight = doc.internal.pageSize.getHeight()
 
   // Green strip at top (groen = betaling)
   addColorStrip(doc, [45, 107, 72]) // #2D6B48
@@ -1200,6 +1202,40 @@ export function generateFactuurPDF(
   const bodyFont = getBodyFont(docStyle)
   const baseFontSize = getBaseFontSize(docStyle)
   const textColor = getTextColor(docStyle)
+
+  // Wrap doc.addPage zodat ELKE nieuwe pagina (van autoTable, manual flowText
+  // page-breaks, etc.) automatisch het briefpapier als achtergrond krijgt VÓÓR
+  // de content. Alleen op portrait pagina's.
+  const originalAddPage = doc.addPage.bind(doc)
+  ;(doc as jsPDF).addPage = ((...args: Parameters<typeof originalAddPage>) => {
+    const result = originalAddPage(...args)
+    const pw = doc.internal.pageSize.getWidth()
+    const ph = doc.internal.pageSize.getHeight()
+    if (ph > pw) {
+      addBriefpapierBackground(doc, docStyle, doc.getCurrentPageInfo().pageNumber)
+    }
+    return result
+  }) as typeof doc.addPage
+
+  // flowText: tekent een tekst-blok met automatische page-breaks
+  const flowText = (
+    lines: string[],
+    x: number,
+    startY: number,
+    lineHeight: number,
+  ): number => {
+    let cursorY = startY
+    const bottomLimit = pageHeight - margins.bottom
+    for (const line of lines) {
+      if (cursorY + lineHeight > bottomLimit) {
+        doc.addPage()
+        cursorY = margins.top
+      }
+      doc.text(line, x, cursorY)
+      cursorY += lineHeight
+    }
+    return cursorY
+  }
 
   // Header — adjust label for creditnota/voorschot/eindafrekening
   const typeLabels: Record<string, string> = {
@@ -1261,87 +1297,134 @@ export function generateFactuurPDF(
   doc.text(`Vervaldatum: ${formatDate(factuurData.vervaldatum)}`, margins.left, y)
   y += 8
 
-  // Items table
-  const tableBody = items.map((item, index) => [
-    (index + 1).toString(),
-    item.beschrijving,
-    item.aantal.toString(),
-    formatCurrency(item.eenheidsprijs),
-    item.btw_percentage > 0 ? `${item.btw_percentage}%` : '-',
-    item.korting_percentage > 0 ? `${item.korting_percentage}%` : '-',
-    formatCurrency(item.totaal),
-  ])
+  // Items table — hairline separator tussen items + uppercase brand header
+  const separatorColor: [number, number, number] = [225, 225, 228]
+
+  const tableBody = items.map((item, index) => {
+    const isFirst = index === 0
+    const cellOverride = isFirst ? {} : {
+      lineWidth: { top: 0.2, right: 0, bottom: 0, left: 0 },
+      lineColor: separatorColor,
+    }
+    return [
+      { content: (index + 1).toString(), styles: { ...cellOverride } },
+      { content: item.beschrijving, styles: { fontStyle: 'bold' as const, ...cellOverride } },
+      { content: item.aantal.toString(), styles: { ...cellOverride } },
+      { content: formatCurrency(item.eenheidsprijs), styles: { ...cellOverride } },
+      { content: formatCurrency(item.totaal), styles: { ...cellOverride } },
+    ]
+  })
 
   const tableStyles = getAutoTableStyles(brand, docStyle)
-  const pageWidth = doc.internal.pageSize.getWidth()
+
+  // Schone underline-header zoals in de offerte: transparante achtergrond,
+  // brand kleur tekst, dunne onderlijn in brand. Past bij briefpapier.
+  const cleanHeaderStyles = {
+    ...tableStyles.headStyles,
+    fillColor: false as unknown as [number, number, number],
+    textColor: effectiveBrand,
+    fontSize: 8,
+    fontStyle: 'bold' as const,
+    cellPadding: { top: 2, bottom: 4, left: 4, right: 4 },
+    lineWidth: { top: 0, right: 0, bottom: 0.4, left: 0 },
+    lineColor: effectiveBrand,
+  }
 
   autoTable(doc, {
     startY: y,
-    head: [['#', 'Omschrijving', 'Aantal', 'Eenheidsprijs', 'BTW', 'Korting', 'Totaal']],
+    head: [[
+      { content: '#', styles: { halign: 'center' } },
+      { content: 'OMSCHRIJVING', styles: { halign: 'left' } },
+      { content: 'AANTAL', styles: { halign: 'center' } },
+      { content: 'EENHEIDSPRIJS', styles: { halign: 'right' } },
+      { content: 'TOTAAL', styles: { halign: 'right' } },
+    ]],
     body: tableBody,
-    theme: tableStyles.theme,
-    headStyles: tableStyles.headStyles,
-    bodyStyles: tableStyles.bodyStyles,
-    alternateRowStyles: tableStyles.alternateRowStyles,
-    columnStyles: {
-      0: { cellWidth: 12, halign: 'center' },
-      1: { cellWidth: 'auto' },
-      2: { cellWidth: 20, halign: 'center' },
-      3: { cellWidth: 30, halign: 'right', font: 'courier' },
-      4: { cellWidth: 18, halign: 'center' },
-      5: { cellWidth: 20, halign: 'center' },
-      6: { cellWidth: 30, halign: 'right', font: 'courier' },
+    theme: 'plain',
+    headStyles: cleanHeaderStyles,
+    bodyStyles: {
+      ...tableStyles.bodyStyles,
+      lineWidth: 0,
+      cellPadding: { top: 3, bottom: 3, left: 4, right: 4 },
+      valign: 'middle',
     },
-    margin: { left: margins.left, right: margins.right },
+    columnStyles: {
+      0: { cellWidth: 12, halign: 'center', textColor: [140, 140, 135] },
+      1: { cellWidth: 'auto', halign: 'left' },
+      2: { cellWidth: 22, halign: 'center' },
+      3: { cellWidth: 32, halign: 'right' },
+      4: { cellWidth: 32, halign: 'right' },
+    },
+    margin: { left: margins.left, right: margins.right, top: margins.top, bottom: margins.bottom },
+    showHead: 'everyPage',
   })
 
-  // Totals
+  // Totals — strakker, labels grijs, totaal in brand
   const finalY = (doc as JsPDFWithAutoTable).lastAutoTable?.finalY || y + 20
-  let totalsY = finalY + 10
+  let totalsY = finalY + 8
 
-  const totalsX = pageWidth - margins.right - 50
+  const totalsX = pageWidth - margins.right - 55
 
-  doc.setFontSize(baseFontSize)
+  doc.setFontSize(baseFontSize - 0.5)
+  doc.setFont(bodyFont, 'normal')
+
+  doc.setTextColor(120, 120, 115)
+  doc.text('Subtotaal', totalsX, totalsY)
   doc.setTextColor(...textColor)
-
-  doc.setFont(bodyFont, 'normal')
-  doc.text('Subtotaal:', totalsX, totalsY)
-  doc.setFont('courier', 'normal')
   doc.text(formatCurrency(factuurData.subtotaal), pageWidth - margins.right, totalsY, { align: 'right' })
-  totalsY += 7
+  totalsY += 6
 
-  doc.setFont(bodyFont, 'normal')
-  doc.text('BTW:', totalsX, totalsY)
-  doc.setFont('courier', 'normal')
+  doc.setTextColor(120, 120, 115)
+  doc.text('BTW', totalsX, totalsY)
+  doc.setTextColor(...textColor)
   doc.text(formatCurrency(factuurData.btw_bedrag), pageWidth - margins.right, totalsY, { align: 'right' })
-  totalsY += 7
+  totalsY += 6
 
-  doc.setDrawColor(...effectiveBrand)
-  doc.setLineWidth(0.5)
-  doc.line(totalsX, totalsY - 2, pageWidth - margins.right, totalsY - 2)
+  // Hairline boven het totaal
+  totalsY += 2
+  doc.setDrawColor(225, 225, 228)
+  doc.setLineWidth(0.3)
+  doc.line(totalsX, totalsY, pageWidth - margins.right, totalsY)
+  totalsY += 6
 
+  // Totaal — bold, groter, in brand kleur (of rood bij creditnota)
   doc.setFont(headingFont, 'bold')
-  doc.setFontSize(baseFontSize + 2)
+  doc.setFontSize(baseFontSize + 3)
   doc.setTextColor(...effectiveBrand)
-  doc.text('Totaal:', totalsX, totalsY + 5)
-  doc.setFont('courier', 'bold')
-  doc.setFontSize(baseFontSize + 2)
-  doc.text(formatCurrency(factuurData.totaal), pageWidth - margins.right, totalsY + 5, { align: 'right' })
+  doc.text('Totaal', totalsX, totalsY)
+  doc.text(formatCurrency(factuurData.totaal), pageWidth - margins.right, totalsY, { align: 'right' })
+
+  // Helpers voor onderstaande tekst-secties met auto page-break
+  const advanceY = (delta: number): number => {
+    totalsY += delta
+    if (totalsY > pageHeight - margins.bottom) {
+      doc.addPage()
+      totalsY = margins.top
+    }
+    return totalsY
+  }
+  const drawSectionHeader = (label: string) => {
+    if (totalsY + 8 > pageHeight - margins.bottom) {
+      doc.addPage()
+      totalsY = margins.top
+    }
+    doc.setFontSize(baseFontSize)
+    doc.setFont(headingFont, 'bold')
+    doc.setTextColor(...brand)
+    doc.text(label, margins.left, totalsY)
+    totalsY += 6
+  }
+
+  const contentWidth = pageWidth - margins.left - margins.right
 
   // Payment info
-  totalsY += 20
-
-  doc.setFontSize(baseFontSize)
-  doc.setFont(headingFont, 'bold')
-  doc.setTextColor(...brand)
-  doc.text('Betaalinformatie:', margins.left, totalsY)
-  totalsY += 6
+  advanceY(15)
+  drawSectionHeader('Betaalinformatie:')
 
   doc.setFont(bodyFont, 'normal')
   doc.setTextColor(...textColor)
   doc.setFontSize(baseFontSize - 1)
 
-  // Show IBAN prominently if available
   if (bedrijfsProfiel.iban) {
     doc.text(`IBAN: ${bedrijfsProfiel.iban}`, margins.left, totalsY)
     totalsY += 5
@@ -1354,38 +1437,24 @@ export function generateFactuurPDF(
   const betaalInfo = factuurData.betaalvoorwaarden ||
     `Wij verzoeken u vriendelijk het totaalbedrag van ${formatCurrency(factuurData.totaal)} over te maken voor ${formatDate(factuurData.vervaldatum)} onder vermelding van factuurnummer ${factuurData.nummer}.`
 
-  const splitPayment = doc.splitTextToSize(betaalInfo, pageWidth - margins.left - margins.right)
-  doc.text(splitPayment, margins.left, totalsY)
+  const splitPayment = doc.splitTextToSize(betaalInfo, contentWidth) as string[]
+  totalsY = flowText(splitPayment, margins.left, totalsY, 5)
 
   // Notes
   if (factuurData.notities) {
-    totalsY += splitPayment.length * 5 + 8
-    doc.setFontSize(baseFontSize)
-    doc.setFont(headingFont, 'bold')
-    doc.setTextColor(...brand)
-    doc.text('Opmerkingen:', margins.left, totalsY)
-    totalsY += 6
-
+    advanceY(8)
+    drawSectionHeader('Opmerkingen:')
     doc.setFont(bodyFont, 'normal')
     doc.setTextColor(80, 80, 80)
     doc.setFontSize(baseFontSize - 1)
-    const splitNotes = doc.splitTextToSize(factuurData.notities, pageWidth - margins.left - margins.right)
-    doc.text(splitNotes, margins.left, totalsY)
+    const splitNotes = doc.splitTextToSize(factuurData.notities, contentWidth) as string[]
+    totalsY = flowText(splitNotes, margins.left, totalsY, 5)
   }
 
   // Online betaallink
   if (factuurData.betaal_link) {
-    totalsY += 15
-    if (totalsY > doc.internal.pageSize.getHeight() - 40) {
-      doc.addPage()
-      totalsY = margins.top
-    }
-
-    doc.setFontSize(baseFontSize)
-    doc.setFont(headingFont, 'bold')
-    doc.setTextColor(...brand)
-    doc.text('Online betalen:', margins.left, totalsY)
-    totalsY += 6
+    advanceY(15)
+    drawSectionHeader('Online betalen:')
 
     doc.setFont(bodyFont, 'normal')
     doc.setTextColor(...textColor)
