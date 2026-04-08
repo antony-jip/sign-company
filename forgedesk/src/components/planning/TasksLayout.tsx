@@ -140,17 +140,30 @@ function toDateStr(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
+// Hour kan fractioneel zijn (10.5 = 10:30) zodat je tasks ook op halve uren
+// kunt plannen — anders kunnen twee tasks niet direct onder elkaar staan.
 function toDateTimeStr(d: Date, hour: number): string {
-  return `${toDateStr(d)}T${String(hour).padStart(2, '0')}:00:00`
+  const h = Math.floor(hour)
+  const m = Math.round((hour - h) * 60)
+  return `${toDateStr(d)}T${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`
 }
 
 function getHourFromDeadline(deadline: string | undefined): number | null {
   if (!deadline || !deadline.includes('T')) return null
   const timePart = deadline.split('T')[1]
   if (!timePart) return null
-  const hour = parseInt(timePart.split(':')[0], 10)
+  const [hStr, mStr] = timePart.split(':')
+  const hour = parseInt(hStr, 10)
+  const minute = parseInt(mStr || '0', 10)
   if (isNaN(hour) || hour < 7 || hour > 19) return null
-  return hour
+  return hour + (isNaN(minute) ? 0 : minute / 60)
+}
+
+// Format een fractioneel uur als "HH:MM"
+function formatHourLabel(hour: number): string {
+  const h = Math.floor(hour)
+  const m = Math.round((hour - h) * 60)
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
 }
 
 // === MAIN COMPONENT ===
@@ -628,7 +641,7 @@ export function TasksLayout() {
     try {
       const updated = await updateTaak(taakId, { deadline: newDeadline })
       setTaken((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
-      toast.success(`Verplaatst naar ${DAY_LABELS[dayIndex]} ${String(hour).padStart(2, '0')}:00`)
+      toast.success(`Verplaatst naar ${DAY_LABELS[dayIndex]} ${formatHourLabel(hour)}`)
     } catch (error) {
       logger.error('Fout bij verplaatsen:', error)
       toast.error('Kon taak niet verplaatsen')
@@ -1297,14 +1310,23 @@ function DayColumn({
     return cols
   }, [scheduledTasks])
 
-  function handleDragOver(e: React.DragEvent, hour: number) {
-    e.preventDefault()
-    e.dataTransfer.dropEffect = 'move'
-    onDropTargetChange({ dayIndex, hour })
+  // Bepaal of de cursor in de top- of bottom-half van de hour-cel zit zodat
+  // we kunnen droppen op :00 of :30. Splits op de helft van de cel-hoogte.
+  function getFractionalHour(e: React.DragEvent, hourBase: number): number {
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    const offsetY = e.clientY - rect.top
+    return offsetY > rect.height / 2 ? hourBase + 0.5 : hourBase
   }
 
-  function handleDrop(e: React.DragEvent, hour: number) {
+  function handleDragOver(e: React.DragEvent, hourBase: number) {
     e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    onDropTargetChange({ dayIndex, hour: getFractionalHour(e, hourBase) })
+  }
+
+  function handleDrop(e: React.DragEvent, hourBase: number) {
+    e.preventDefault()
+    const hour = getFractionalHour(e, hourBase)
     const data = e.dataTransfer.getData('text/plain')
     if (data) {
       onDrop(data, dayIndex, hour)
@@ -1328,7 +1350,9 @@ function DayColumn({
     )}>
       {/* Hour grid lines + drop zones */}
       {HOURS.map((hour) => {
-        const isDropHere = dropTarget?.dayIndex === dayIndex && dropTarget?.hour === hour
+        const dropHourInThisCell = dropTarget?.dayIndex === dayIndex && dropTarget?.hour !== undefined && dropTarget.hour >= hour && dropTarget.hour < hour + 1
+        const dropIsBottomHalf = dropHourInThisCell && (dropTarget!.hour - hour) >= 0.5
+        const isDropHere = dropHourInThisCell
         const isAddingHere = addingAtHour === hour
         return (
           <div
@@ -1336,18 +1360,26 @@ function DayColumn({
             style={{ height: HOUR_HEIGHT }}
             className={cn(
               'group/hour border-b border-[#EBEBEB]/30 transition-all duration-200 relative',
-              isDropHere && 'bg-[#1A535C]/[0.06] scale-[1.01]'
+              isDropHere && 'bg-[#1A535C]/[0.06]'
             )}
             onDragOver={(e) => handleDragOver(e, hour)}
             onDrop={(e) => handleDrop(e, hour)}
             onDragLeave={handleDragLeave}
           >
-            {/* Drop indicator */}
+            {/* Drop indicator — alleen op de helft waar de cursor zit */}
             {isDropHere && (
-              <div className="absolute inset-1 pointer-events-none animate-[fadeIn_150ms_ease-out]">
-                <div className="w-full h-full rounded-xl border-2 border-dashed border-[#1A535C]/25 bg-[#1A535C]/[0.04] flex items-center justify-center gap-1.5">
+              <div
+                className="absolute inset-x-1 pointer-events-none animate-[fadeIn_150ms_ease-out]"
+                style={{
+                  top: dropIsBottomHalf ? HOUR_HEIGHT / 2 + 2 : 2,
+                  height: HOUR_HEIGHT / 2 - 4,
+                }}
+              >
+                <div className="w-full h-full rounded-lg border-2 border-dashed border-[#1A535C]/25 bg-[#1A535C]/[0.04] flex items-center justify-center gap-1.5">
                   <Clock className="w-3.5 h-3.5 text-[#1A535C]/40" />
-                  <span className="text-[11px] text-[#1A535C]/50 font-semibold font-mono">{String(hour).padStart(2, '0')}:00</span>
+                  <span className="text-[11px] text-[#1A535C]/50 font-semibold font-mono">
+                    {formatHourLabel(dropTarget!.hour)}
+                  </span>
                 </div>
               </div>
             )}
@@ -1639,7 +1671,7 @@ function TaskCard({
       {/* Checkbox links */}
       <button
         onClick={handleToggle}
-        className={cn('absolute top-1.5 left-1 z-10 transition-all duration-200', isCompact && 'top-1')}
+        className={cn('absolute top-1.5 left-1.5 z-10 transition-all duration-200', isCompact && 'top-1')}
         title={isDone ? 'Ongedaan maken' : 'Markeer als klaar'}
       >
         {isDone ? (
@@ -1655,8 +1687,8 @@ function TaskCard({
         )}
       </button>
 
-      {/* Content */}
-      <div className={cn('h-full', isCompact ? 'pl-5 pr-2 py-1' : 'pl-5 pr-2 py-1.5')}>
+      {/* Content — pl-7 zodat de tekst ademruimte heeft naast de checkbox */}
+      <div className={cn('h-full', isCompact ? 'pl-7 pr-2 py-1' : 'pl-7 pr-2 py-1.5')}>
         <div className="flex items-center gap-1">
           {(taak.prioriteit === 'kritiek' || taak.prioriteit === 'hoog') && !isDone && (
             <span className="inline-block w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: pc.dot }} />
@@ -1682,7 +1714,7 @@ function TaskCard({
               </span>
             )}
             {scheduled && hour !== null && (
-              <span className="text-[11px] text-[#9B9B95] font-mono">{String(hour).padStart(2, '0')}:00</span>
+              <span className="text-[11px] text-[#9B9B95] font-mono">{formatHourLabel(hour)}</span>
             )}
             {durationLabel && (
               <span className="text-[11px] text-[#9B9B95] font-mono">{durationLabel}</span>

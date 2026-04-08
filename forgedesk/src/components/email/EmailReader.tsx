@@ -219,20 +219,57 @@ export function EmailReader({
         reader.onerror = () => reject(reader.error)
         reader.readAsDataURL(file)
       })
-      const attachmentPayload = replyAttachments.length
+
+      // Bij forward: haal de oorspronkelijke bijlagen uit IMAP en voeg ze toe
+      // aan de mail die we verzenden. Bij reply gebeurt dit niet (alleen door
+      // de gebruiker zelf toegevoegde files).
+      let originalAttachments: Array<{ filename: string; content: string; encoding: 'base64' }> = []
+      if (replyMode === 'forward' && email.attachment_meta && email.attachment_meta.length > 0) {
+        const uid = Number(email.gmail_id || email.id)
+        if (!Number.isNaN(uid)) {
+          toast.info(`Originele bijlage${email.attachment_meta.length > 1 ? 'n' : ''} ophalen...`)
+          try {
+            const fetched = await Promise.all(
+              email.attachment_meta.map((att) =>
+                downloadEmailAttachment(uid, imapFolder, att.filename).catch((e) => {
+                  logger.warn(`Bijlage "${att.filename}" ophalen mislukt:`, e)
+                  return null
+                })
+              )
+            )
+            originalAttachments = fetched
+              .filter((r): r is NonNullable<typeof r> => r !== null && !!r.content)
+              .map((r) => ({
+                filename: r.filename,
+                content: r.content,
+                encoding: 'base64' as const,
+              }))
+            if (originalAttachments.length < email.attachment_meta.length) {
+              toast.warning(`${email.attachment_meta.length - originalAttachments.length} bijlage(n) konden niet worden opgehaald`)
+            }
+          } catch (err) {
+            logger.warn('Originele bijlagen ophalen mislukt:', err)
+            toast.warning('Originele bijlagen niet ingesloten — verzend zonder')
+          }
+        }
+      }
+
+      const userAttachments = replyAttachments.length
         ? await Promise.all(replyAttachments.map(async (file) => ({
             filename: file.name,
             content: await fileToBase64(file),
             encoding: 'base64' as const,
           })))
-        : undefined
+        : []
+
+      const attachmentPayload = [...originalAttachments, ...userAttachments]
 
       await onSendReply({
         to: replyTo,
         subject,
         body: editorRef.current.innerText,
         html: html + quotedOriginal,
-        attachments: attachmentPayload,
+        attachments: attachmentPayload.length > 0 ? attachmentPayload : undefined,
       })
       setReplyMode(null)
       setReplyAttachments([])
@@ -243,7 +280,7 @@ export function EmailReader({
     } finally {
       setIsSending(false)
     }
-  }, [email, replyMode, replyTo, onSendReply, replyAttachments])
+  }, [email, replyMode, replyTo, onSendReply, replyAttachments, imapFolder])
 
   const handleForgieWrite = useCallback(async () => {
     if (!email || !editorRef.current) return

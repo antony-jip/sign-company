@@ -76,6 +76,7 @@ import {
   getOfferteItems,
   updateOfferte,
   updateProject,
+  getProject,
   getOffertesByProject,
   getFacturenByProject,
   getProjecten,
@@ -1079,7 +1080,7 @@ export function FactuurEditor() {
           const wb = await getWerkbon(werkbonId)
           const wbItems = await getWerkbonItems(wb.id)
           const wbFotos = await getWerkbonFotos(wb.id)
-          const project = projecten.find(p => p.id === projectId)
+          const project = projectId ? await getProject(projectId).catch(() => null) : null
           const bedrijfsProfiel = { ...profile, primaireKleur }
           const wbDoc = generateWerkbonInstructiePDF(
             {
@@ -1130,7 +1131,7 @@ export function FactuurEditor() {
     } finally {
       setIsSending(false)
     }
-  }, [existingFactuur, selectedKlant, nummer, titel, totaal, vervaldatum, bedrijfsnaam, primaireKleur, emailHandtekening, profile, factuurdatum, subtotaal, btwBedrag, notities, voorwaarden, validItems, isCreditFactuur, documentStyle, werkbonId, projecten, projectId])
+  }, [existingFactuur, selectedKlant, nummer, titel, totaal, vervaldatum, bedrijfsnaam, primaireKleur, emailHandtekening, profile, factuurdatum, subtotaal, btwBedrag, notities, voorwaarden, validItems, isCreditFactuur, documentStyle, werkbonId, projectId])
 
   // ============ MARK AS PAID ============
 
