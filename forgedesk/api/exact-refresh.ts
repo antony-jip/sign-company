@@ -111,17 +111,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       })
     }
 
-    // 3. Ververs tokens (Basic auth header is verplicht bij Exact Online)
-    const credentials = Buffer.from(`${exactClientId}:${exactClientSecret}`).toString('base64')
+    // 3. Ververs tokens — client_id/secret als form-encoded body params
+    // (zelfde aanpak als exact-callback.ts).
     const tokenResponse = await fetch(EXACT_TOKEN_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
-        'Authorization': `Basic ${credentials}`,
       },
       body: new URLSearchParams({
         grant_type: 'refresh_token',
         refresh_token: tokenData.refresh_token,
+        client_id: exactClientId,
+        client_secret: exactClientSecret,
       }).toString(),
     })
 

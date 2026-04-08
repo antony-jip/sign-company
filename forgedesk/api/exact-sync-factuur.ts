@@ -109,15 +109,18 @@ async function getValidToken(user_id: string): Promise<string> {
       throw new Error('Exact credentials niet gevonden')
     }
 
+    // client_id en client_secret als form-encoded body params (standaard
+    // Exact Online methode, zelfde als in exact-callback.ts).
     const refreshRes = await fetch('https://start.exactonline.nl/api/oauth2/token', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
-        Authorization: `Basic ${Buffer.from(`${exactClientId}:${exactClientSecret}`).toString('base64')}`,
       },
       body: new URLSearchParams({
         grant_type: 'refresh_token',
         refresh_token: tokenData.refresh_token,
+        client_id: exactClientId,
+        client_secret: exactClientSecret,
       }),
     })
 
@@ -215,19 +218,22 @@ async function findOrCreateKlant(
   klantEmail?: string,
   klantTelefoon?: string
 ): Promise<string> {
-  // Zoek klant op naam
+  // Zoek alleen onder customer accounts (Status 'C') zodat we geen
+  // leveranciers of prospects matchen die toevallig dezelfde naam hebben.
   const encodedName = klantNaam.replace(/'/g, "''")
   const searchData = await exactGet(
     token,
     division,
-    `crm/Accounts?$filter=Name eq '${encodedName}'&$select=ID`
+    `crm/Accounts?$filter=Name eq '${encodedName}' and Status eq 'C'&$select=ID`
   ) as { d?: { results?: Array<{ ID: string }> } }
 
   const existingId = searchData?.d?.results?.[0]?.ID
   if (existingId) return existingId
 
-  // Klant niet gevonden, maak aan
-  const newAccount: Record<string, string> = { Name: klantNaam }
+  // Klant niet gevonden, maak aan met Status 'C' (Customer) zodat de
+  // latere SalesEntry-sync werkt — Exact accepteert geen SalesEntry voor
+  // een account zonder customer rol.
+  const newAccount: Record<string, string> = { Name: klantNaam, Status: 'C' }
   if (klantEmail) newAccount.Email = klantEmail
   if (klantTelefoon) newAccount.Phone = klantTelefoon
 
