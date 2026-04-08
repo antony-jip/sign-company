@@ -17,6 +17,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { getAppSettings, updateAppSettings } from '@/services/supabaseService'
+import supabase from '@/services/supabaseClient'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { logger } from '../../utils/logger'
@@ -72,6 +73,61 @@ export function IntegratiesTab() {
       setKvkApiKey(s.kvk_api_key ?? '')
     }).catch(() => {})
   }, [user?.id])
+
+  // OAuth callback detectie: ?exact=connected of ?exact=error in URL na
+  // de redirect terug van Exact Online via /api/exact-callback.
+  useEffect(() => {
+    if (!user?.id) return
+    const params = new URLSearchParams(window.location.search)
+    const exactStatus = params.get('exact')
+    if (!exactStatus) return
+
+    if (exactStatus === 'connected') {
+      toast.success('Exact Online succesvol verbonden')
+      // Refresh de settings zodat de badge meteen groen wordt
+      getAppSettings(user.id).then((s) => {
+        setExactConnected(s.exact_online_connected ?? false)
+        setExactAdministratieId(s.exact_administratie_id ?? '')
+      }).catch(() => {})
+      refreshSettings?.()
+    } else if (exactStatus === 'error') {
+      const reason = params.get('reason')
+      const reasonText = reason ? ` (${reason.replace(/_/g, ' ')})` : ''
+      toast.error(`Exact Online verbinden mislukt${reasonText}`)
+    }
+
+    // Schoon de query params op zodat een refresh van de pagina niet
+    // opnieuw de toast triggert
+    const url = new URL(window.location.href)
+    url.searchParams.delete('exact')
+    url.searchParams.delete('reason')
+    window.history.replaceState({}, '', url.toString())
+  }, [user?.id, refreshSettings])
+
+  const handleExactConnect = async () => {
+    if (!user?.id) return
+    setExactSaving(true)
+    try {
+      // Sla eerst eventuele wijzigingen in client_id/secret op zodat de
+      // OAuth flow zeker met de juiste credentials werkt.
+      await updateAppSettings(user.id, {
+        exact_online_client_id: exactClientId,
+        exact_online_client_secret: exactClientSecret,
+      })
+      const { data } = await supabase.auth.getSession()
+      const token = data?.session?.access_token
+      if (!token) {
+        toast.error('Niet ingelogd')
+        return
+      }
+      window.location.href = `/api/exact-auth?token=${encodeURIComponent(token)}`
+    } catch (err) {
+      logger.error('Fout bij starten Exact Online OAuth:', err)
+      toast.error('Kon niet verbinden met Exact Online')
+    } finally {
+      setExactSaving(false)
+    }
+  }
 
   const handleMollieSave = async () => {
     if (!user?.id) return
@@ -302,12 +358,12 @@ export function IntegratiesTab() {
                 </Button>
                 <Button
                   size="sm"
-                  disabled={!exactClientId || !exactClientSecret}
-                  onClick={() => toast.info('Exact Online OAuth koppeling wordt binnenkort ondersteund')}
+                  disabled={!exactClientId || !exactClientSecret || exactSaving}
+                  onClick={handleExactConnect}
                   className="gap-1.5"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
-                  Verbinden
+                  {exactConnected ? 'Opnieuw verbinden' : 'Verbinden'}
                 </Button>
               </div>
             </div>
