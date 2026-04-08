@@ -9,7 +9,7 @@ import { getUserEmailCredentials } from "./utils/email";
  */
 export const verzendGeplandeBerichtenCron = schedules.task({
   id: "verzend-geplande-berichten-cron",
-  cron: "* * * * *",
+  cron: { pattern: "* * * * *", timezone: "Europe/Amsterdam" },
   maxDuration: 300,
   run: async (payload) => {
     const supabase = getSupabaseAdmin();
