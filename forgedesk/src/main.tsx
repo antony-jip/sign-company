@@ -62,6 +62,17 @@ try {
       <App />
     </React.StrictMode>,
   )
+  // Wis de chunk-reload flag zodra de app stabiel draait. Zonder deze cleanup
+  // zou een tweede deploy in dezelfde tab geen auto-reload meer triggeren
+  // omdat de flag uit de eerste reload blijft staan. De delay voorkomt een
+  // reload loop als de app meteen na mount opnieuw crasht.
+  window.setTimeout(() => {
+    try {
+      sessionStorage.removeItem(CHUNK_RELOAD_KEY)
+    } catch {
+      // negeren — sessionStorage kan in private mode falen
+    }
+  }, 3000)
 } catch (err) {
   // Show fatal render errors on screen
   const root = document.getElementById('root')

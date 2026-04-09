@@ -27,6 +27,8 @@ function isChunkLoadError(error: Error | null): boolean {
   )
 }
 
+// Gebruik dezelfde key als de globale handler in main.tsx zodat de cleanup
+// daar ook deze boundary unblockt na een succesvolle mount.
 const RELOAD_KEY = 'forgedesk_chunk_reload_attempted'
 
 export class ErrorBoundary extends Component<Props, State> {
