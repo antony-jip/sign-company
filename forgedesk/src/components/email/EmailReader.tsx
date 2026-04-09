@@ -126,6 +126,12 @@ export function EmailReader({
     return parts.length ? `<br><br>--<br>${parts.join('<br>')}` : ''
   }, [emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte])
 
+  // Track per-attachment download state (alleen visueel — losse spinner per bijlage)
+  const [downloadingAttachment, setDownloadingAttachment] = useState<string | null>(null)
+  const [previewLoading, setPreviewLoading] = useState<string | null>(null)
+  const [downloadingAll, setDownloadingAll] = useState(false)
+  const [previewAtt, setPreviewAtt] = useState<{ filename: string; url: string; contentType: string } | null>(null)
+
   // Reset reply state and summary when email changes
   useEffect(() => {
     setReplyMode(null)
@@ -133,10 +139,11 @@ export function EmailReader({
     setSummary(null)
     setSummaryLoading(false)
     setSummaryExpanded(true)
+    setPreviewAtt((prev) => {
+      if (prev) URL.revokeObjectURL(prev.url)
+      return null
+    })
   }, [email?.id])
-
-  // Track per-attachment download state (alleen visueel — losse spinner per bijlage)
-  const [downloadingAttachment, setDownloadingAttachment] = useState<string | null>(null)
 
   const handleDownloadAttachment = useCallback(async (filename: string) => {
     if (!email) return
@@ -169,6 +176,100 @@ export function EmailReader({
       setDownloadingAttachment(null)
     }
   }, [email, imapFolder])
+
+  const handlePreviewAttachment = useCallback(async (att: EmailAttachment) => {
+    if (!email) return
+    const uid = Number(email.gmail_id || email.id)
+    if (Number.isNaN(uid)) {
+      toast.error('Kan deze bijlage niet ophalen — geen geldig email-id')
+      return
+    }
+    setPreviewLoading(att.filename)
+    try {
+      const result = await downloadEmailAttachment(uid, imapFolder, att.filename)
+      const binary = atob(result.content)
+      const bytes = new Uint8Array(binary.length)
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+      const contentType = result.contentType || att.contentType || 'application/octet-stream'
+      const blob = new Blob([bytes], { type: contentType })
+      const url = URL.createObjectURL(blob)
+      setPreviewAtt((prev) => {
+        if (prev) URL.revokeObjectURL(prev.url)
+        return { filename: result.filename || att.filename, url, contentType }
+      })
+    } catch (err) {
+      logger.error('Preview ophalen mislukt:', err)
+      toast.error(err instanceof Error ? err.message : 'Preview ophalen mislukt')
+    } finally {
+      setPreviewLoading(null)
+    }
+  }, [email, imapFolder])
+
+  const closePreview = useCallback(() => {
+    setPreviewAtt((prev) => {
+      if (prev) URL.revokeObjectURL(prev.url)
+      return null
+    })
+  }, [])
+
+  const handleDownloadAllAttachments = useCallback(async () => {
+    if (!email?.attachment_meta?.length) return
+    const uid = Number(email.gmail_id || email.id)
+    if (Number.isNaN(uid)) {
+      toast.error('Kan deze bijlagen niet ophalen — geen geldig email-id')
+      return
+    }
+    setDownloadingAll(true)
+    let success = 0
+    for (const att of email.attachment_meta) {
+      try {
+        const result = await downloadEmailAttachment(uid, imapFolder, att.filename)
+        const binary = atob(result.content)
+        const bytes = new Uint8Array(binary.length)
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+        const blob = new Blob([bytes], { type: result.contentType || 'application/octet-stream' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = result.filename || att.filename
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        setTimeout(() => URL.revokeObjectURL(url), 1000)
+        success++
+        // Korte pauze zodat de browser elke download apart kan verwerken
+        await new Promise((r) => setTimeout(r, 350))
+      } catch (err) {
+        logger.error(`Download mislukt voor ${att.filename}:`, err)
+      }
+    }
+    setDownloadingAll(false)
+    if (success === email.attachment_meta.length) {
+      toast.success(`${success} bijlage${success > 1 ? 'n' : ''} gedownload`)
+    } else {
+      toast.warning(`${success}/${email.attachment_meta.length} bijlagen gedownload`)
+    }
+  }, [email, imapFolder])
+
+  // ESC sluit preview
+  useEffect(() => {
+    if (!previewAtt) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closePreview()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [previewAtt, closePreview])
+
+  // Cleanup preview URL bij unmount
+  useEffect(() => {
+    return () => {
+      setPreviewAtt((prev) => {
+        if (prev) URL.revokeObjectURL(prev.url)
+        return null
+      })
+    }
+  }, [])
 
   const handleSummarize = useCallback(async () => {
     if (!email || summaryLoading) return
@@ -1071,18 +1172,49 @@ export function EmailReader({
               {/* Attachments — echte file cards op basis van attachment_meta */}
               {email.attachment_meta && email.attachment_meta.length > 0 && (
                 <div className="mt-6 pt-5 border-t border-[#F0EFEC]">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-[12px] text-[#9B9B95]">
+                      {email.attachment_meta.length} bijlage{email.attachment_meta.length > 1 ? 'n' : ''}
+                    </span>
+                    {email.attachment_meta.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={handleDownloadAllAttachments}
+                        disabled={downloadingAll}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] text-[#6B6B66] hover:text-[#4A4A46] hover:bg-[#F0EFEC] disabled:opacity-60 disabled:cursor-wait transition-colors duration-150"
+                        title="Alle bijlagen downloaden"
+                      >
+                        {downloadingAll ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Download className="h-3.5 w-3.5" />
+                        )}
+                        Alles downloaden
+                      </button>
+                    )}
+                  </div>
                   <div className="flex flex-wrap gap-2.5">
                     {email.attachment_meta.map((att, i) => {
                       const visual = getAttachmentVisual(att.filename, att.contentType)
                       const isDownloading = downloadingAttachment === att.filename
+                      const isPreviewing = previewLoading === att.filename
                       return (
-                        <button
+                        <div
                           key={`${att.filename}-${i}`}
-                          type="button"
-                          onClick={() => handleDownloadAttachment(att.filename)}
-                          disabled={isDownloading}
-                          className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-[#F8F7F5] hover:bg-[#F0EFEC] disabled:opacity-60 disabled:cursor-wait transition-colors duration-150 cursor-pointer group/att text-left max-w-[280px]"
-                          title={`Download ${att.filename}`}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => handlePreviewAttachment(att)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault()
+                              handlePreviewAttachment(att)
+                            }
+                          }}
+                          className={cn(
+                            'flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-[#F8F7F5] hover:bg-[#F0EFEC] transition-colors duration-150 cursor-pointer group/att text-left max-w-[280px]',
+                            (isDownloading || isPreviewing) && 'opacity-60 cursor-wait',
+                          )}
+                          title={`Preview ${att.filename}`}
                         >
                           <div className={cn(
                             'w-8 h-8 rounded-lg text-white text-[9px] font-bold flex items-center justify-center flex-shrink-0',
@@ -1096,12 +1228,23 @@ export function EmailReader({
                             </span>
                             <span className="text-[11px] text-[#9B9B95]">{formatFileSize(att.size)}</span>
                           </div>
-                          {isDownloading ? (
+                          {isPreviewing || isDownloading ? (
                             <Loader2 className="h-3.5 w-3.5 text-[#1A535C]/60 animate-spin ml-1 flex-shrink-0" />
                           ) : (
-                            <Download className="h-3.5 w-3.5 text-[#B0ADA8] group-hover/att:text-[#6B6B66] transition-colors duration-150 ml-1 flex-shrink-0" />
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleDownloadAttachment(att.filename)
+                              }}
+                              className="ml-1 p-1 rounded hover:bg-[#E8E7E4] flex-shrink-0"
+                              title={`Download ${att.filename}`}
+                              aria-label={`Download ${att.filename}`}
+                            >
+                              <Download className="h-3.5 w-3.5 text-[#B0ADA8] group-hover/att:text-[#6B6B66] transition-colors duration-150" />
+                            </button>
                           )}
-                        </button>
+                        </div>
                       )
                     })}
                   </div>
@@ -1120,6 +1263,73 @@ export function EmailReader({
 
           </div>
         </div>
+
+        {previewAtt && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6"
+            onClick={closePreview}
+          >
+            <div
+              className="relative max-w-[92vw] max-h-[92vh] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between gap-4 px-5 py-3 border-b border-[#F0EFEC]">
+                <p className="text-[14px] font-medium text-[#4A4A46] truncate min-w-0">
+                  {previewAtt.filename}
+                </p>
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => handleDownloadAttachment(previewAtt.filename)}
+                    className="p-2 rounded-lg hover:bg-[#F0EFEC] transition-colors"
+                    title="Downloaden"
+                    aria-label="Downloaden"
+                  >
+                    <Download className="h-4 w-4 text-[#6B6B66]" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={closePreview}
+                    className="p-2 rounded-lg hover:bg-[#F0EFEC] transition-colors"
+                    title="Sluiten"
+                    aria-label="Sluiten"
+                  >
+                    <X className="h-4 w-4 text-[#6B6B66]" />
+                  </button>
+                </div>
+              </div>
+              <div className="flex-1 overflow-auto bg-[#F8F7F5] flex items-center justify-center min-w-[320px] min-h-[320px]">
+                {previewAtt.contentType.startsWith('image/') ? (
+                  <img
+                    src={previewAtt.url}
+                    alt={previewAtt.filename}
+                    className="max-w-full max-h-[82vh] object-contain"
+                  />
+                ) : previewAtt.contentType.includes('pdf') ? (
+                  <iframe
+                    src={previewAtt.url}
+                    title={previewAtt.filename}
+                    className="w-[82vw] h-[82vh] border-0 bg-white"
+                  />
+                ) : (
+                  <div className="p-10 text-center">
+                    <p className="text-[14px] text-[#6B6B66] mb-4">
+                      Geen preview beschikbaar voor dit bestandstype.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => handleDownloadAttachment(previewAtt.filename)}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#1A535C] text-white text-[13px] hover:bg-[#16454D] transition-colors"
+                    >
+                      <Download className="h-4 w-4" />
+                      Download bestand
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
     </div>
   )
 }
