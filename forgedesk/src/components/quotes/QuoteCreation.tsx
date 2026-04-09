@@ -1325,7 +1325,11 @@ export function QuoteCreation() {
         })
       } else {
         logger.error('Failed to save offerte:', err)
-        const errMsg = err instanceof Error ? err.message : String(err)
+        const errMsg = err instanceof Error
+          ? err.message
+          : (err as { message?: string; details?: string; hint?: string })?.message
+            || (err as { details?: string })?.details
+            || JSON.stringify(err)
         toast.error(`Kon offerte niet opslaan: ${errMsg}`, { duration: 10000 })
       }
     } finally {
