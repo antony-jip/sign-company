@@ -12,9 +12,6 @@ import {
   Sun,
   Sliders,
   Save,
-  Mail,
-  FileText,
-  Users,
   Type,
   Monitor,
   Plus,
@@ -22,7 +19,6 @@ import {
   GripVertical,
   Zap,
   BookTemplate,
-  FolderKanban,
 } from 'lucide-react'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -34,6 +30,7 @@ import { cn } from '@/lib/utils'
 import { logger } from '../../utils/logger'
 import { useDashboardLayout } from '@/hooks/useDashboardLayout'
 import { WIDGET_REGISTRY } from '@/components/dashboard/FORGEdeskDashboard'
+import { QUICK_ACTIONS, type QuickActionsPosition } from '@/components/dashboard/FloatingQuickActions'
 import { useNavigate } from 'react-router-dom'
 import type { CalculatieTemplate } from '@/types'
 import { SubTabNav } from './SubTabNav'
@@ -58,6 +55,7 @@ const ALL_SIDEBAR_ITEMS = [
   { label: 'Email', section: 'Communicatie' },
   { label: 'Portaal', section: 'Communicatie' },
   { label: 'Financieel', section: 'Beheer' },
+  { label: 'Visualizer', section: 'Beheer' },
 ]
 
 const WEERGAVE_TABS: SubTab[] = [
@@ -72,16 +70,15 @@ export function WeergaveTab() {
   const { language, setLanguage } = useLanguage()
   const { settings, updateSettings } = useAppSettings()
   const { appThemeId, setAppThemeId, accentId, setAccentId } = usePalette()
-  // Merge opgeslagen sidebar_items met ALL_SIDEBAR_ITEMS:
-  // - Items die in ALL_SIDEBAR_ITEMS staan maar niet in opgeslagen list → toevoegen (nieuw item = default aan)
-  // - Items die in opgeslagen list staan maar niet in ALL_SIDEBAR_ITEMS → verwijderen (verwijderd item)
+  // Lees opgeslagen sidebar_items en filter items eruit die niet meer bestaan
+  // in ALL_SIDEBAR_ITEMS (bijv. verwijderde tools). Als er nog niets is
+  // opgeslagen → alles staat default aan. Bewust GEEN auto-merge van nieuwe
+  // items: dat triggerde een bug waarbij uitgezette items na opslaan terug
+  // werden gezet, omdat ze als 'nieuw' werden gezien.
   const mergeSidebarItems = useCallback((saved: string[] | undefined) => {
     if (!saved || saved.length === 0) return ALL_SIDEBAR_ITEMS.map((i) => i.label)
     const allLabels = ALL_SIDEBAR_ITEMS.map((i) => i.label)
-    // Behoud opgeslagen items die nog bestaan + voeg nieuwe items toe
-    const existing = saved.filter((s) => allLabels.includes(s))
-    const newItems = allLabels.filter((l) => !saved.includes(l))
-    return [...existing, ...newItems]
+    return saved.filter((s) => allLabels.includes(s))
   }, [])
 
   const [sidebarItems, setSidebarItems] = useState<string[]>(() => mergeSidebarItems(settings.sidebar_items))
@@ -540,7 +537,7 @@ export function WeergaveTab() {
               <Plus className="w-5 h-5" />
               Snelkoppelingen (+)
             </CardTitle>
-            <CardDescription className="mt-1.5">Toon de + knop rechtsonder voor snelle acties</CardDescription>
+            <CardDescription className="mt-1.5">Snelle acties via een floating + knop</CardDescription>
           </div>
           <Switch
             checked={settings.quick_actions_enabled ?? true}
@@ -552,39 +549,95 @@ export function WeergaveTab() {
         </div>
       </CardHeader>
       {(settings.quick_actions_enabled ?? true) && (
-      <CardContent className="space-y-3">
-        {(() => {
-          const activeItems: string[] = Array.isArray(settings.quick_action_items) ? settings.quick_action_items : ['project', 'mail', 'offerte', 'klant']
-          return [
-            { id: 'project', label: 'Nieuw project', icon: FolderKanban, color: '#8BAFD4' },
-            { id: 'mail', label: 'Nieuwe mail', icon: Mail, color: '#7BABC7' },
-            { id: 'offerte', label: 'Nieuwe offerte', icon: FileText, color: '#E8866A' },
-            { id: 'klant', label: 'Nieuwe klant', icon: Users, color: '#6B9FCC' },
-          ].map((item) => {
-            const Icon = item.icon
-            const enabled = activeItems.includes(item.id)
+      <CardContent className="space-y-5">
+        {/* Positie kiezer */}
+        <div>
+          <Label className="text-xs font-bold text-text-tertiary uppercase tracking-label mb-2 block">
+            Positie
+          </Label>
+          {(() => {
+            const currentPos: QuickActionsPosition = settings.quick_actions_position ?? 'bottom-right'
+            const positions: { id: QuickActionsPosition; label: string; desc: string }[] = [
+              { id: 'bottom-right', label: 'Rechtsonder', desc: 'Altijd zichtbaar in de hoek' },
+              { id: 'bottom-right-hover', label: 'Rechtsonder (subtiel)', desc: 'Doorzichtig, vol bij hover' },
+              { id: 'right-edge', label: 'Rechter zijkant', desc: 'Verticaal pinnetje, schuift uit bij hover' },
+              { id: 'hidden', label: 'Verborgen', desc: 'Geen knop tonen' },
+            ]
             return (
-              <div key={item.id} className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${item.color}18` }}>
-                    <Icon className="w-4 h-4" style={{ color: item.color }} />
-                  </div>
-                  <span className="text-sm font-medium text-foreground">{item.label}</span>
-                </div>
-                <Switch
-                  checked={enabled}
-                  onCheckedChange={(checked) => {
-                    const updated = checked
-                      ? [...activeItems, item.id]
-                      : activeItems.filter((i: string) => i !== item.id)
-                    updateSettings({ quick_action_items: updated })
-                    toast.success(checked ? `${item.label} toegevoegd` : `${item.label} verwijderd`)
-                  }}
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {positions.map((p) => {
+                  const isActive = currentPos === p.id
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => {
+                        updateSettings({ quick_actions_position: p.id })
+                        toast.success(`Positie: ${p.label}`)
+                      }}
+                      className={cn(
+                        'text-left rounded-lg border p-3 transition-colors',
+                        isActive
+                          ? 'border-[#1A535C] bg-[#1A535C]/[0.04]'
+                          : 'border-border hover:bg-background',
+                      )}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className={cn('text-sm font-medium', isActive ? 'text-[#1A535C]' : 'text-foreground')}>
+                          {p.label}
+                        </span>
+                        {isActive && <CheckCircle2 className="h-4 w-4 text-[#1A535C]" />}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">{p.desc}</p>
+                    </button>
+                  )
+                })}
               </div>
             )
-          })
-        })()}
+          })()}
+        </div>
+
+        <Separator />
+
+        {/* Items */}
+        <div>
+          <Label className="text-xs font-bold text-text-tertiary uppercase tracking-label mb-2 block">
+            Welke acties tonen
+          </Label>
+          <div className="space-y-2">
+            {(() => {
+              const activeItems: string[] = Array.isArray(settings.quick_action_items)
+                ? settings.quick_action_items
+                : QUICK_ACTIONS.map(a => a.id)
+              return QUICK_ACTIONS.map((item) => {
+                const Icon = item.icon
+                const enabled = activeItems.includes(item.id)
+                return (
+                  <div key={item.id} className="flex items-center justify-between py-1">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${item.color}18` }}>
+                        <Icon className="w-4 h-4" style={{ color: item.color }} />
+                      </div>
+                      <span className="text-sm font-medium text-foreground">{item.label}</span>
+                    </div>
+                    <Switch
+                      checked={enabled}
+                      onCheckedChange={(checked) => {
+                        // Bouw nieuwe lijst op vanuit de master volgorde zodat de
+                        // volgorde stabiel blijft, ongeacht aan/uit-volgorde.
+                        const next = checked
+                          ? QUICK_ACTIONS.map(a => a.id).filter(id => activeItems.includes(id) || id === item.id)
+                          : activeItems.filter(i => i !== item.id)
+                        updateSettings({ quick_action_items: next })
+                        toast.success(checked ? `${item.label} toegevoegd` : `${item.label} verwijderd`)
+                      }}
+                    />
+                  </div>
+                )
+              })
+            })()}
+          </div>
+        </div>
       </CardContent>
       )}
     </Card>

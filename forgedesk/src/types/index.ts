@@ -711,6 +711,7 @@ export interface AppSettings {
   // Quick Actions
   quick_actions_enabled: boolean;
   quick_action_items: string[];
+  quick_actions_position?: 'bottom-right' | 'bottom-right-hover' | 'right-edge' | 'hidden';
   // AI schrijfstijl per gebruiker
   ai_tone_of_voice: string;
   // Mollie betaalintegratie
