@@ -1325,7 +1325,8 @@ export function QuoteCreation() {
         })
       } else {
         logger.error('Failed to save offerte:', err)
-        toast.error('Kon offerte niet opslaan')
+        const errMsg = err instanceof Error ? err.message : String(err)
+        toast.error(`Kon offerte niet opslaan: ${errMsg}`, { duration: 10000 })
       }
     } finally {
       setIsSaving(false)
