@@ -102,6 +102,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       attachments,
       opvolging_id,
       scheduledAt,
+      // Threading: meegegeven door de frontend bij reply/forward
+      in_reply_to,
+      thread_id,
     } = req.body as {
       to: string
       cc?: string
@@ -111,6 +114,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       attachments?: Array<{ filename: string; content: string; encoding: 'base64' }>
       opvolging_id?: string
       scheduledAt?: string
+      in_reply_to?: string
+      thread_id?: string
     }
 
     if (!to || !subject) {
@@ -174,6 +179,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       to,
       subject,
     }
+    // Threading SMTP headers zodat ontvangers de mail correct threaden
+    if (in_reply_to) {
+      mailOptions.inReplyTo = in_reply_to
+      mailOptions.references = in_reply_to
+    }
     // Als er HTML is, gebruik die als primaire content. Plain text alleen als fallback.
     if (html) {
       mailOptions.html = html
@@ -190,9 +200,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }))
     }
 
-    console.log('[send-email] html present:', !!html, 'html length:', html?.length || 0)
+    const sendResult = await transporter.sendMail(mailOptions)
+    const sentMessageId = sendResult.messageId || null
 
-    await transporter.sendMail(mailOptions)
+    // ─── Sla verzonden mail op in Supabase ───
+    // Zo verschijnt ie in de conversatie-thread en is de volledige
+    // heen-en-weer historie zichtbaar.
+    const effectiveThreadId = thread_id || crypto.randomUUID()
+    try {
+      await supabaseAdmin.from('emails').insert({
+        user_id,
+        message_id: sentMessageId,
+        in_reply_to: in_reply_to || null,
+        thread_id: effectiveThreadId,
+        map: 'verzonden',
+        imap_folder: 'SENT',
+        from_address: gmail_address,
+        from_name: profile?.bedrijfsnaam || '',
+        van: fromAddress,
+        aan: to,
+        onderwerp: subject,
+        body_html: html || null,
+        body_text: body || subject,
+        inhoud: html || body || '',
+        datum: new Date().toISOString(),
+        gelezen: true,
+        bijlagen: attachments?.length || 0,
+        has_attachments: (attachments?.length || 0) > 0,
+        gmail_id: '',
+        cached_at: new Date().toISOString(),
+      })
+    } catch (saveErr) {
+      // Niet fataal — de mail IS al verstuurd, log de fout
+      console.error('[send-email] Verzonden mail opslaan mislukt:', saveErr)
+    }
 
     // Trigger auto-opvolging task als opvolging_id meegegeven is
     if (opvolging_id) {

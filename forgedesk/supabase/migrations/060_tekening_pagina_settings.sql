@@ -12,3 +12,6 @@ ALTER TABLE document_styles
 ALTER TABLE document_styles
   ADD COLUMN IF NOT EXISTS tekening_logo_positie TEXT NOT NULL DEFAULT 'linksboven'
     CHECK (tekening_logo_positie IN ('linksboven', 'rechtsboven', 'geen'));
+
+-- Herlaad PostgREST schema cache na DDL wijzigingen
+NOTIFY pgrst, 'reload schema';

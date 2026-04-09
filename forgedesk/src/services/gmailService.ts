@@ -91,7 +91,16 @@ export async function sendEmail(
   to: string,
   subject: string,
   body: string,
-  options?: { cc?: string; html?: string; scheduledAt?: string; attachments?: Array<{ filename: string; content: string; encoding: 'base64' }>; opvolging_id?: string }
+  options?: {
+    cc?: string
+    html?: string
+    scheduledAt?: string
+    attachments?: Array<{ filename: string; content: string; encoding: 'base64' }>
+    opvolging_id?: string
+    // Threading
+    in_reply_to?: string
+    thread_id?: string
+  }
 ): Promise<{ success: boolean; message: string }> {
   const token = await getAuthToken()
 
@@ -110,6 +119,8 @@ export async function sendEmail(
       attachments: options?.attachments,
       opvolging_id: options?.opvolging_id,
       scheduledAt: options?.scheduledAt,
+      in_reply_to: options?.in_reply_to,
+      thread_id: options?.thread_id,
     }),
   })
 

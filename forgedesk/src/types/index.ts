@@ -494,6 +494,8 @@ export interface Email {
   map: string;
   scheduled_at?: string;
   thread_id?: string;
+  message_id?: string;
+  in_reply_to?: string;
   internal_notes?: string;
   follow_up_at?: string | null;
   tracking?: EmailTracking;

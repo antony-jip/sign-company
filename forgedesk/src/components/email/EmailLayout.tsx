@@ -717,12 +717,29 @@ export function EmailLayout() {
 
   const handleSendReply = useCallback(async (data: { to: string; subject: string; body: string; html?: string; scheduledAt?: string; attachments?: Array<{ filename: string; content: string; encoding: 'base64' }> }) => {
     try {
-      await sendEmailViaApi(data.to, data.subject, data.body, { html: data.html, scheduledAt: data.scheduledAt, attachments: data.attachments })
+      // Threading: geef message_id en thread_id mee zodat de verzonden
+      // mail aan dezelfde thread wordt gekoppeld als de originele mail.
+      const replyToMessageId = selectedEmail?.gmail_id
+        ? undefined // gmail_id is een UID, niet een Message-ID
+        : (selectedEmail as Record<string, unknown>)?.message_id as string | undefined
+      const replyThreadId = selectedEmail?.thread_id || undefined
+
+      await sendEmailViaApi(data.to, data.subject, data.body, {
+        html: data.html,
+        scheduledAt: data.scheduledAt,
+        attachments: data.attachments,
+        in_reply_to: replyToMessageId,
+        thread_id: replyThreadId,
+      })
+
+      // Na verzenden: re-fetch de email lijst zodat de verzonden mail
+      // meteen zichtbaar is in de conversatie/thread.
+      handleRefresh(selectedFolder, true)
     } catch (err) {
       logger.error('Reply verzenden mislukt:', err)
       throw err
     }
-  }, [])
+  }, [selectedEmail, selectedFolder, handleRefresh])
 
   const handleFolderChange = useCallback((folder: EmailFolder) => {
     setSelectedFolder(folder)

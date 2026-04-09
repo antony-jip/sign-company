@@ -78,6 +78,24 @@ export async function getEmailBody(id: string): Promise<{ body_html: string | nu
   return found ? { body_html: (found as any).body_html || null, body_text: (found as any).body_text || null, inhoud: found.inhoud || '' } : null
 }
 
+/** Haal alle emails op die tot dezelfde thread behoren, chronologisch gesorteerd */
+export async function getThread(threadId: string): Promise<Email[]> {
+  if (!threadId) return []
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('emails')
+      .select('*')
+      .eq('thread_id', threadId)
+      .order('datum', { ascending: true })
+    if (error) throw error
+    return (data || []) as Email[]
+  }
+  const emails = getLocalData<Email>('emails')
+  return emails
+    .filter((e) => e.thread_id === threadId)
+    .sort((a, b) => Date.parse(a.datum) - Date.parse(b.datum))
+}
+
 export async function createEmail(email: Omit<Email, 'id' | 'created_at'>): Promise<Email> {
   if (isSupabaseConfigured() && supabase) {
     const _orgId = await getOrgId()

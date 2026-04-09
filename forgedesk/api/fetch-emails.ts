@@ -245,12 +245,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }))
 
       const messageId = message.envelope.messageId || ''
+      const inReplyTo = message.envelope.inReplyTo || null
       const hasAttachments = hasAttachmentParts(message.bodyStructure)
 
       newEmails.push({
         user_id,
         uid: message.uid,
         message_id: messageId || null,
+        in_reply_to: inReplyTo,
         imap_folder: imapFolder,
         map: mapValue,
         from_address: from?.address || '',
@@ -271,6 +273,48 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     await client.logout()
     client = null
+
+    // ─── Thread ID berekening ───
+    // Zoek voor elke mail met In-Reply-To of die parent al in de DB zit.
+    // Zo ja → gebruik dezelfde thread_id. Zo niet → maak een nieuwe aan.
+    // Dit zorgt ervoor dat reply-chains automatisch gegroepeerd worden.
+    const inReplyTos = newEmails
+      .filter((e) => e.in_reply_to)
+      .map((e) => e.in_reply_to as string)
+
+    const threadMap = new Map<string, string>() // message_id → thread_id
+
+    if (inReplyTos.length > 0) {
+      const { data: parentRows } = await supabaseAdmin
+        .from('emails')
+        .select('message_id, thread_id')
+        .in('message_id', inReplyTos)
+        .not('thread_id', 'is', null)
+
+      for (const row of parentRows || []) {
+        if (row.message_id && row.thread_id) {
+          threadMap.set(row.message_id, row.thread_id)
+        }
+      }
+    }
+
+    // Wijs thread_id toe aan elke email
+    for (const email of newEmails) {
+      const parentReply = email.in_reply_to as string | null
+      if (parentReply && threadMap.has(parentReply)) {
+        // Parent gevonden in DB → zelfde thread
+        email.thread_id = threadMap.get(parentReply)
+      } else if (!email.thread_id) {
+        // Geen parent → nieuw thread_id
+        email.thread_id = crypto.randomUUID()
+      }
+      // Voeg eigen message_id toe aan threadMap zodat mails binnen dezelfde
+      // batch ook elkaars thread_id kunnen vinden (bv. reply + origineel
+      // worden tegelijk gesyncet).
+      if (email.message_id && email.thread_id) {
+        threadMap.set(email.message_id as string, email.thread_id as string)
+      }
+    }
 
     // ─── Upsert into Supabase ───
     // Strategy: batch upsert first, individual insert fallback on error
