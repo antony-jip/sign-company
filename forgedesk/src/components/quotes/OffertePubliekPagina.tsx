@@ -191,6 +191,7 @@ export function OffertePubliekPagina() {
   const [offerte, setOfferte] = useState<PubliekOfferte | null>(null)
   const [items, setItems] = useState<PubliekItem[]>([])
   const [bedrijf, setBedrijf] = useState<Bedrijf | null>(null)
+  const [docStyle, setDocStyle] = useState<Record<string, unknown> | null>(null)
   const [klant, setKlant] = useState<Klant | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
@@ -257,6 +258,7 @@ export function OffertePubliekPagina() {
         setOfferte(loadedOfferte)
         setItems(loadedItems)
         setBedrijf(data.bedrijf)
+            setDocStyle(data.docStyle || null)
         setKlant(data.klant)
       } catch (err) {
         logger.error('Fout bij laden offerte:', err)
@@ -350,110 +352,76 @@ export function OffertePubliekPagina() {
   const handleDownloadPDF = useCallback(async () => {
     if (!offerte) return
     try {
-      const { jsPDF } = await import('jspdf')
-      const doc = new jsPDF('p', 'mm', 'a4')
-      const pageW = 210
-      let y = 20
+      // Gebruik dezelfde generateOffertePDF als de hoofdapp zodat
+      // briefpapier, huisstijl, brand kleuren en layout consistent zijn.
+      const { generateOffertePDF } = await import('@/services/pdfService')
 
-      // Bedrijfsnaam
-      doc.setFontSize(18)
-      doc.setFont('helvetica', 'bold')
-      doc.text(bedrijf?.bedrijfsnaam || 'Offerte', 14, y)
-      y += 10
-
-      // Offerte info
-      doc.setFontSize(10)
-      doc.setFont('helvetica', 'normal')
-      doc.text(`Offerte: ${offerte.nummer}`, 14, y)
-      doc.text(`Datum: ${formatDate(offerte.created_at)}`, pageW - 14, y, { align: 'right' })
-      y += 5
-      if (offerte.geldig_tot) {
-        doc.text(`Geldig tot: ${formatDate(offerte.geldig_tot)}`, 14, y)
-        y += 5
+      const offerteData = {
+        id: offerte.id || '',
+        user_id: '',
+        klant_id: offerte.klant_id || '',
+        nummer: offerte.nummer,
+        titel: offerte.titel || '',
+        status: offerte.status as 'concept',
+        subtotaal: offerte.subtotaal,
+        btw_bedrag: offerte.btw_bedrag,
+        totaal: offerte.aangepast_totaal ?? offerte.totaal,
+        geldig_tot: offerte.geldig_tot || '',
+        notities: offerte.notities || '',
+        voorwaarden: offerte.voorwaarden || '',
+        intro_tekst: offerte.intro_tekst || '',
+        outro_tekst: offerte.outro_tekst || '',
+        versie: offerte.versie || 1,
+        created_at: offerte.created_at || new Date().toISOString(),
+        updated_at: offerte.updated_at || new Date().toISOString(),
       }
 
-      // Klant
-      if (klant) {
-        y += 3
-        doc.setFont('helvetica', 'bold')
-        doc.text('Aan:', 14, y)
-        doc.setFont('helvetica', 'normal')
-        y += 5
-        if (klant.bedrijfsnaam) { doc.text(klant.bedrijfsnaam, 14, y); y += 4 }
-        if (klant.contactpersoon) { doc.text(`t.a.v. ${klant.contactpersoon}`, 14, y); y += 4 }
-        if (klant.adres) { doc.text(klant.adres, 14, y); y += 4 }
-        if (klant.postcode || klant.stad) { doc.text(`${klant.postcode || ''} ${klant.stad || ''}`.trim(), 14, y); y += 4 }
+      const pdfItems = items.map((item, index) => ({
+        id: item.id || `item-${index}`,
+        offerte_id: offerte.id || '',
+        beschrijving: item.beschrijving,
+        aantal: item.aantal,
+        eenheidsprijs: item.eenheidsprijs,
+        btw_percentage: item.btw_percentage,
+        korting_percentage: item.korting_percentage || 0,
+        totaal: item.totaal,
+        volgorde: index + 1,
+        soort: item.soort,
+        extra_velden: item.extra_velden,
+        detail_regels: item.detail_regels,
+        prijs_varianten: item.prijs_varianten,
+        actieve_variant_id: item.actieve_variant_id,
+        is_optioneel: item.is_optioneel,
+        created_at: new Date().toISOString(),
+      }))
+
+      const bedrijfsProfiel = {
+        bedrijfsnaam: bedrijf?.bedrijfsnaam || '',
+        bedrijfs_adres: bedrijf?.bedrijfs_adres || '',
+        bedrijfs_telefoon: bedrijf?.bedrijfs_telefoon || '',
+        bedrijfs_email: bedrijf?.bedrijfs_email || '',
+        bedrijfs_website: bedrijf?.bedrijfs_website || '',
+        kvk_nummer: bedrijf?.kvk_nummer || '',
+        btw_nummer: bedrijf?.btw_nummer || '',
+        iban: bedrijf?.iban || '',
+        logo_url: bedrijf?.logo_url || '',
+        primaireKleur: (docStyle as Record<string, string> | null)?.primaire_kleur || '#1A535C',
       }
 
-      // Intro
-      if (offerte.intro_tekst) {
-        y += 4
-        doc.setFontSize(9)
-        const introLines = doc.splitTextToSize(offerte.intro_tekst, pageW - 28)
-        doc.text(introLines, 14, y)
-        y += introLines.length * 4 + 2
-      }
-
-      // Items tabel
-      y += 4
-      doc.setFontSize(9)
-      doc.setFont('helvetica', 'bold')
-      doc.text('Omschrijving', 14, y)
-      doc.text('Aantal', 110, y, { align: 'right' })
-      doc.text('Prijs', 140, y, { align: 'right' })
-      doc.text('BTW', 160, y, { align: 'right' })
-      doc.text('Totaal', pageW - 14, y, { align: 'right' })
-      y += 2
-      doc.setDrawColor(200, 200, 200)
-      doc.line(14, y, pageW - 14, y)
-      y += 4
-
-      doc.setFont('helvetica', 'normal')
-      for (const item of items) {
-        if (y > 270) { doc.addPage(); y = 20 }
-        const lines = doc.splitTextToSize(item.beschrijving, 90)
-        doc.text(lines, 14, y)
-        if (item.soort !== 'tekst') {
-          doc.text(String(item.aantal), 110, y, { align: 'right' })
-          doc.text(formatCurrency(item.eenheidsprijs), 140, y, { align: 'right' })
-          doc.text(`${item.btw_percentage}%`, 160, y, { align: 'right' })
-          doc.text(formatCurrency(item.totaal), pageW - 14, y, { align: 'right' })
-        }
-        y += lines.length * 4 + 2
-      }
-
-      // Totalen
-      y += 4
-      doc.line(120, y, pageW - 14, y)
-      y += 5
-      doc.text('Subtotaal', 120, y)
-      doc.text(formatCurrency(offerte.subtotaal), pageW - 14, y, { align: 'right' })
-      y += 5
-      doc.text('BTW', 120, y)
-      doc.text(formatCurrency(offerte.btw_bedrag), pageW - 14, y, { align: 'right' })
-      y += 2
-      doc.line(120, y, pageW - 14, y)
-      y += 5
-      doc.setFont('helvetica', 'bold')
-      doc.setFontSize(11)
-      doc.text('Totaal incl. BTW', 120, y)
-      doc.text(formatCurrency(offerte.aangepast_totaal ?? offerte.totaal), pageW - 14, y, { align: 'right' })
-
-      // Outro
-      if (offerte.outro_tekst) {
-        y += 10
-        doc.setFont('helvetica', 'normal')
-        doc.setFontSize(9)
-        const outroLines = doc.splitTextToSize(offerte.outro_tekst, pageW - 28)
-        doc.text(outroLines, 14, y)
-      }
+      const doc = await generateOffertePDF(
+        offerteData as Parameters<typeof generateOffertePDF>[0],
+        pdfItems as Parameters<typeof generateOffertePDF>[1],
+        klant || {},
+        bedrijfsProfiel as Parameters<typeof generateOffertePDF>[3],
+        (docStyle as Parameters<typeof generateOffertePDF>[4]) || undefined,
+      )
 
       doc.save(`Offerte-${offerte.nummer}.pdf`)
     } catch (err) {
       logger.error('Fout bij PDF downloaden:', err)
       toast.error('PDF downloaden mislukt')
     }
-  }, [offerte, items, bedrijf, klant])
+  }, [offerte, items, bedrijf, klant, docStyle])
 
   // ============ DERIVED STATE (must be before early returns to respect rules of hooks) ============
   const vandaag = useMemo(() => new Date().toISOString().split('T')[0], [])

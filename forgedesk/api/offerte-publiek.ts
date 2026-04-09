@@ -106,6 +106,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .eq('id', offerte.klant_id)
       .single()
 
+    // Haal document style op (voor briefpapier, kleuren, etc. in de PDF)
+    const { data: docStyle } = await supabaseAdmin
+      .from('document_styles')
+      .select('*')
+      .eq('user_id', offerte.user_id)
+      .maybeSingle()
+
     // Merge status update in return data
     const safeOfferte = pick({ ...offerte, ...updates }, OFFERTE_VELDEN)
 
@@ -114,6 +121,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       items,
       bedrijf: profile || null,
       klant: klant || null,
+      docStyle: docStyle || null,
     })
   } catch (error: unknown) {
     console.error('offerte-publiek error:', error)
