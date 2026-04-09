@@ -67,7 +67,7 @@ import {
   List,
   Link2,
 } from 'lucide-react'
-import { getKlanten, getProjecten, getOffertes, createOfferte, createOfferteItem, updateKlant, createKlant, getOfferte, getOfferteItems, updateOfferte, deleteOfferteItem, getOfferteVersies, createOfferteVersie, getFactuur, createPortaal, createPortaalItem, getPortaalItems, createProject, syncOfferteItems, getRecentOfferteItemSuggesties, getNextOfferteNummer, OfferteConflictError } from '@/services/supabaseService'
+import { getKlanten, getProjecten, getOffertes, createOfferte, createOfferteItem, updateKlant, createKlant, getOfferte, getOfferteItems, updateOfferte, deleteOfferteItem, getOfferteVersies, createOfferteVersie, getFactuur, createPortaal, createPortaalItem, getPortaalItems, createProject, syncOfferteItems, getRecentOfferteItemSuggesties, getNextOfferteNummer, OfferteConflictError, createContactpersoonDB, getContactpersonenByKlant } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import type { Klant, Project, Contactpersoon, Factuur } from '@/types'
@@ -108,13 +108,63 @@ const ITEM_COUNT_OPTIONS = [1, 2, 3, 4, 5] as const
 
 // Steps removed — now a permanent two-column layout
 
-// Sommige contactpersonen/projecten hebben een lokaal gegenereerd ID (bv.
+// Sommige contactpersonen hebben een lokaal gegenereerd ID (bv.
 // "cp-1775720212913-sn59y") dat geen geldige UUID is. Supabase weigert die
-// als FK waarde met "invalid input syntax for type uuid". Deze helper
-// filtert ze eruit zodat de save niet faalt.
+// als FK waarde met "invalid input syntax for type uuid".
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+function isValidUUID(id: string | undefined | null): boolean {
+  return !!id && UUID_RE.test(id)
+}
 function uuidOrNull(id: string | undefined | null): string | undefined {
-  return id && UUID_RE.test(id) ? id : undefined
+  return isValidUUID(id) ? id! : undefined
+}
+
+// Auto-migratie: als een contactpersoon een lokaal ID heeft, zoek of 'ie al
+// in Supabase bestaat (op naam+email). Zo ja → gebruik die UUID. Zo niet →
+// maak aan en return de nieuwe UUID. Zo hoeft de gebruiker niks te doen.
+async function ensureContactUUID(
+  contactId: string,
+  klant: { id: string; contactpersonen?: Array<{ id: string; naam: string; email: string; telefoon: string; functie: string }> } | undefined,
+  userId: string,
+): Promise<string | undefined> {
+  if (isValidUUID(contactId)) return contactId
+  if (!klant) return undefined
+
+  // Zoek de embedded contactpersoon data op basis van het lokale ID
+  const embedded = klant.contactpersonen?.find((c) => c.id === contactId)
+  if (!embedded) return undefined
+
+  try {
+    // Check of er al een Supabase record bestaat met dezelfde naam+email
+    if (isValidUUID(klant.id)) {
+      const existing = await getContactpersonenByKlant(klant.id)
+      const match = existing.find((c) => {
+        const fullName = [c.voornaam, c.achternaam].filter(Boolean).join(' ')
+        return (fullName === embedded.naam || c.email === embedded.email) && embedded.email
+      })
+      if (match) return match.id
+    }
+
+    // Niet gevonden → maak aan in Supabase
+    const parts = embedded.naam.split(' ')
+    const voornaam = parts[0] || ''
+    const achternaam = parts.slice(1).join(' ') || ''
+    const created = await createContactpersoonDB({
+      user_id: userId,
+      klant_id: isValidUUID(klant.id) ? klant.id : undefined,
+      voornaam,
+      achternaam,
+      email: embedded.email || '',
+      telefoon: embedded.telefoon || '',
+      functie: embedded.functie || '',
+      notities: '',
+    } as Parameters<typeof createContactpersoonDB>[0])
+    return created.id
+  } catch (err) {
+    // Bij fout: skip de koppeling ipv de hele save te laten falen
+    console.warn('Contact migratie mislukt, skip contactpersoon_id:', err)
+    return undefined
+  }
 }
 
 function generateOfferteNummer(prefix: string = 'OFF', existingOffertes: { nummer: string }[] = [], startNummer = 1): string {
@@ -888,7 +938,7 @@ export function QuoteCreation() {
           klant_id: selectedKlantId,
           klant_naam: klant?.bedrijfsnaam,
           ...(selectedProjectId ? { project_id: selectedProjectId } : {}),
-          ...(uuidOrNull(selectedContactId) ? { contactpersoon_id: uuidOrNull(selectedContactId) } : {}),
+          ...(resolvedContactId ? { contactpersoon_id: resolvedContactId } : {}),
           titel: offerteTitel,
           subtotaal: effectiefSub,
           btw_bedrag: effectiefBtw,
@@ -913,7 +963,7 @@ export function QuoteCreation() {
           klant_id: selectedKlantId,
           klant_naam: klant?.bedrijfsnaam,
           ...(selectedProjectId ? { project_id: selectedProjectId } : {}),
-          ...(uuidOrNull(selectedContactId) ? { contactpersoon_id: uuidOrNull(selectedContactId) } : {}),
+          ...(resolvedContactId ? { contactpersoon_id: resolvedContactId } : {}),
           nummer: offerteNummer,
           titel: offerteTitel,
           status: 'concept',
@@ -1055,7 +1105,7 @@ export function QuoteCreation() {
         klant_id: selectedKlantId,
         klant_naam: klant?.bedrijfsnaam,
         ...(selectedProjectId ? { project_id: selectedProjectId } : {}),
-        ...(uuidOrNull(selectedContactId) ? { contactpersoon_id: uuidOrNull(selectedContactId) } : {}),
+        ...(resolvedContactId ? { contactpersoon_id: resolvedContactId } : {}),
         nummer: nieuweNummer,
         titel: offerteTitel,
         status: 'concept',
@@ -1133,6 +1183,12 @@ export function QuoteCreation() {
       toast.error('Je moet ingelogd zijn om een offerte op te slaan')
       return
     }
+    // Auto-migreer contactpersoon als die een lokaal ID heeft
+    // (eenmalig — na migratie wordt de UUID bewaard en herkend bij volgende saves)
+    const resolvedContactId = selectedContactId && !isValidUUID(selectedContactId)
+      ? await ensureContactUUID(selectedContactId, selectedKlant as Parameters<typeof ensureContactUUID>[1], user.id)
+      : uuidOrNull(selectedContactId)
+
     // Cancel any pending autosave timer
     if (autoSaveTimerRef.current) {
       clearTimeout(autoSaveTimerRef.current)
@@ -1153,7 +1209,7 @@ export function QuoteCreation() {
           klant_id: selectedKlantId,
           klant_naam: selectedKlant?.bedrijfsnaam,
           ...(selectedProjectId ? { project_id: selectedProjectId } : {}),
-          ...(uuidOrNull(selectedContactId) ? { contactpersoon_id: uuidOrNull(selectedContactId) } : {}),
+          ...(resolvedContactId ? { contactpersoon_id: resolvedContactId } : {}),
           titel: offerteTitel,
           status,
           subtotaal: effectiefSubtotaal,
@@ -1183,7 +1239,7 @@ export function QuoteCreation() {
           klant_id: selectedKlantId,
           klant_naam: selectedKlant?.bedrijfsnaam,
           ...(selectedProjectId ? { project_id: selectedProjectId } : {}),
-          ...(uuidOrNull(selectedContactId) ? { contactpersoon_id: uuidOrNull(selectedContactId) } : {}),
+          ...(resolvedContactId ? { contactpersoon_id: resolvedContactId } : {}),
           ...(paramDealId ? { deal_id: paramDealId } : {}),
           nummer: offerteNummer,
           titel: offerteTitel,
