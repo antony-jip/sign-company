@@ -10,6 +10,8 @@ interface FeedItemData {
   bekeken_op?: string | null
   mollie_payment_url?: string | null
   bedrag?: number | null
+  factuur_id?: string | null
+  offerte_id?: string | null
   volgorde?: number
   created_at: string
   bericht_type?: string | null
