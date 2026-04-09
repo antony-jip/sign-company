@@ -480,21 +480,30 @@ export function NotificatieCenter() {
         />
       )}
 
-      <Button
-        variant="ghost"
-        size="icon"
-        className="relative"
-        onClick={() => setOpen((prev) => !prev)}
-        aria-label="Notificaties openen"
-      >
-        <Bell className="h-[18px] w-[18px]" style={{ color: '#5A5A55' }} />
-        {aantalOngelezen > 0 && (
-          <span
-            className="absolute -right-0.5 -top-0.5 rounded-full"
-            style={{ width: '7px', height: '7px', backgroundColor: '#F15025' }}
-          />
-        )}
-      </Button>
+      {aantalOngelezen > 0 ? (
+        <button
+          type="button"
+          onClick={() => setOpen((prev) => !prev)}
+          aria-label={`${aantalOngelezen} nieuwe notificatie${aantalOngelezen === 1 ? '' : 's'} openen`}
+          className="relative inline-flex items-center gap-1.5 rounded-full pl-2 pr-3 py-1.5 transition-all hover:opacity-90"
+          style={{ backgroundColor: '#F15025', color: '#fff' }}
+        >
+          <Bell className="h-[14px] w-[14px]" fill="#fff" />
+          <span className="text-[11px] font-semibold leading-none whitespace-nowrap">
+            {aantalOngelezen} nieuwe notificatie{aantalOngelezen === 1 ? '' : 's'}
+          </span>
+        </button>
+      ) : (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative"
+          onClick={() => setOpen((prev) => !prev)}
+          aria-label="Notificaties openen"
+        >
+          <Bell className="h-[18px] w-[18px]" style={{ color: '#5A5A55' }} />
+        </Button>
+      )}
 
       {open && (
         <div

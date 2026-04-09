@@ -233,43 +233,37 @@ export function PortaalAlerts() {
                   )}
                   <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
                     {isGoedkeuring ? (
+                      alert.project_id && (
+                        <button
+                          onClick={() => navigate(`/projecten/${alert.project_id}`)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-colors hover:opacity-80"
+                          style={{ backgroundColor: '#1A535C', color: '#fff' }}
+                        >
+                          Ga naar project
+                          <ArrowRight className="h-3 w-3" />
+                        </button>
+                      )
+                    ) : (
                       <>
                         <button
-                          onClick={() => handlePlanMontage(alert)}
+                          onClick={() => handleUploadRevisie(alert)}
                           className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors hover:opacity-80"
                           style={{ backgroundColor: '#1A535C', color: '#fff' }}
                         >
-                          <Calendar className="h-3 w-3" />
-                          Plan montage
+                          <Upload className="h-3 w-3" />
+                          Nieuwe versie uploaden
                         </button>
-                        <button
-                          onClick={() => handleMaakTaak(alert)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors hover:bg-gray-100"
-                          style={{ backgroundColor: '#F0EEEA', color: '#5A5A55' }}
-                        >
-                          <ClipboardCheck className="h-3 w-3" />
-                          Maak taak
-                        </button>
+                        {alert.project_id && (
+                          <button
+                            onClick={() => navigate(`/projecten/${alert.project_id}`)}
+                            className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium transition-colors hover:opacity-70"
+                            style={{ color: '#1A535C' }}
+                          >
+                            Bekijk project
+                            <ArrowRight className="h-3 w-3" />
+                          </button>
+                        )}
                       </>
-                    ) : (
-                      <button
-                        onClick={() => handleUploadRevisie(alert)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors hover:opacity-80"
-                        style={{ backgroundColor: '#1A535C', color: '#fff' }}
-                      >
-                        <Upload className="h-3 w-3" />
-                        Nieuwe versie uploaden
-                      </button>
-                    )}
-                    {alert.project_id && (
-                      <button
-                        onClick={() => navigate(`/projecten/${alert.project_id}`)}
-                        className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium transition-colors hover:opacity-70"
-                        style={{ color: '#1A535C' }}
-                      >
-                        Bekijk project
-                        <ArrowRight className="h-3 w-3" />
-                      </button>
                     )}
                   </div>
                 </div>
