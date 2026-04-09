@@ -173,7 +173,6 @@ export const KEYBOARD_SHORTCUTS = [
   { key: 'f', action: 'Doorsturen' },
   { key: 'e', action: 'Archiveren' },
   { key: '#', action: 'Verwijderen' },
-  { key: 's', action: 'Ster aan/uit' },
   { key: 'p', action: 'Vastpinnen' },
   { key: 'z', action: 'Snooze menu' },
   { key: 'c', action: 'Nieuwe email' },

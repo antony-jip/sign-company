@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import {
   Search, Pencil, Inbox, Send, FileEdit, Trash2,
   Loader2, Archive, RefreshCw, CheckCheck, X, Mail, MailOpen,
-  Rows3, StretchHorizontal, Clock,
+  Rows3, StretchHorizontal, Clock, Pin,
 } from 'lucide-react'
 import { IngeplandeBerichtenLijst } from './IngeplandeBerichtenLijst'
 import { sendEmail as sendEmailViaApi, fetchEmailsFromIMAP, readEmailFromIMAP } from '@/services/gmailService'
@@ -36,7 +36,7 @@ const folderTabs: { id: EmailFolder; label: string; icon: React.ElementType }[] 
 const filtersList: { id: FilterType; label: string }[] = [
   { id: 'alle', label: 'Alle' },
   { id: 'ongelezen', label: 'Ongelezen' },
-  { id: 'met-ster', label: 'Met ster' },
+  { id: 'vastgepind', label: 'Vastgepind' },
   { id: 'bijlagen', label: 'Bijlagen' },
 ]
 
@@ -54,7 +54,6 @@ function imapToEmail(msg: IMAPEmailSummary, folder: string, userId: string): Ema
     inhoud: '',
     datum: msg.date,
     gelezen: msg.isRead,
-    starred: false,
     labels: [],
     bijlagen: msg.hasAttachments ? 1 : 0,
     map: folder === 'INBOX' ? 'inbox' : folder.toLowerCase(),
@@ -140,7 +139,6 @@ export function EmailLayout() {
   function normalizeEmails(raw: Email[]): Email[] {
     return raw.map(e => ({
       ...e,
-      starred: e.starred ?? false,
       labels: e.labels ?? [],
       pinned: e.pinned ?? false,
       gmail_id: e.gmail_id || String((e as unknown as Record<string, unknown>).uid || e.id),
@@ -276,7 +274,7 @@ export function EmailLayout() {
       if (operators.has) {
         const has = operators.has.toLowerCase()
         if (has === 'bijlage' || has === 'attachment') filtered = filtered.filter((e) => e.bijlagen > 0)
-        if (has === 'ster' || has === 'star') filtered = filtered.filter((e) => e.starred)
+        if (has === 'pin' || has === 'pinned') filtered = filtered.filter((e) => e.pinned)
       }
       if (operators.label) {
         const label = operators.label.toLowerCase()
@@ -294,7 +292,6 @@ export function EmailLayout() {
 
     switch (filter) {
       case 'ongelezen': filtered = filtered.filter((e) => !e.gelezen); break
-      case 'met-ster': filtered = filtered.filter((e) => e.starred); break
       case 'vastgepind': filtered = filtered.filter((e) => e.pinned); break
       case 'bijlagen': filtered = filtered.filter((e) => e.bijlagen > 0); break
     }
@@ -422,11 +419,11 @@ export function EmailLayout() {
   }, [checkedEmails])
 
   // ─── Email actions (inline from useEmailActions) ───
-  const handleToggleStar = useCallback((email: Email) => {
-    const newStarred = !email.starred
-    setEmails((prev) => prev.map((e) => (e.id === email.id ? { ...e, starred: newStarred } : e)))
-    setSelectedEmail((prev) => prev?.id === email.id ? { ...prev, starred: newStarred } : prev)
-    updateEmail(email.id, { starred: newStarred }).catch(() => {})
+  const handleTogglePin = useCallback((email: Email) => {
+    const newPinned = !email.pinned
+    setEmails((prev) => prev.map((e) => (e.id === email.id ? { ...e, pinned: newPinned } : e)))
+    setSelectedEmail((prev) => prev?.id === email.id ? { ...prev, pinned: newPinned } : prev)
+    updateEmail(email.id, { pinned: newPinned }).catch(() => {})
   }, [])
 
   const handleToggleRead = useCallback((email: Email) => {
@@ -590,8 +587,8 @@ export function EmailLayout() {
   }, [selectedFolder, handleRefresh])
 
   // ─── Keyboard shortcuts (inline from useEmailKeyboard) ───
-  const callbacksRef = useRef({ handleToggleStar, handleArchive, handleDelete })
-  callbacksRef.current = { handleToggleStar, handleArchive, handleDelete }
+  const callbacksRef = useRef({ handleTogglePin, handleArchive, handleDelete })
+  callbacksRef.current = { handleTogglePin, handleArchive, handleDelete }
   const emailsRef = useRef(threadedEmails)
   emailsRef.current = threadedEmails
   const focusedRef = useRef(focusedIndex)
@@ -612,7 +609,7 @@ export function EmailLayout() {
           e.preventDefault()
           if (idx >= 0 && idx < list.length) handleSelectEmail(list[idx])
           break
-        case 's': e.preventDefault(); if (idx >= 0 && idx < list.length) cb.handleToggleStar(list[idx]); break
+        case 'p': e.preventDefault(); if (idx >= 0 && idx < list.length) cb.handleTogglePin(list[idx]); break
         case 'e': e.preventDefault(); if (idx >= 0 && idx < list.length) cb.handleArchive(list[idx]); break
         case '#': e.preventDefault(); if (idx >= 0 && idx < list.length) cb.handleDelete(list[idx]); break
         case 'c': e.preventDefault(); handleCompose(); break
@@ -916,7 +913,7 @@ export function EmailLayout() {
             emailTotal={threadedEmails.length}
             allEmails={emails}
             imapFolder={IMAP_FOLDER_MAP[selectedFolder] || 'INBOX'}
-            onToggleStar={handleToggleStar}
+            onTogglePin={handleTogglePin}
             onToggleRead={handleToggleRead}
             onDelete={handleDeleteAndNavigate}
             onArchive={handleArchiveAndNavigate}
@@ -1129,18 +1126,38 @@ export function EmailLayout() {
 
                 const nodes: React.ReactNode[] = []
                 let lastGroup: string | null = null
+                let inPinnedSection = threadedEmails.length > 0 && !!threadedEmails[0].pinned
+                if (inPinnedSection) {
+                  nodes.push(
+                    <div
+                      key="pinned-header"
+                      className="px-4 py-2 text-[10px] uppercase tracking-wider font-semibold text-[#1A535C] bg-[#1A535C]/[0.04] border-y border-[#1A535C]/10 sticky top-0 z-[1] flex items-center gap-1.5"
+                    >
+                      <Pin className="h-3 w-3 fill-[#1A535C] -rotate-45" />
+                      Vastgepind
+                    </div>
+                  )
+                }
                 threadedEmails.forEach((email, index) => {
-                  const group = getDateGroup(email.datum)
-                  if (group !== lastGroup) {
-                    nodes.push(
-                      <div
-                        key={`group-${group}-${index}`}
-                        className="px-4 py-2 text-[10px] uppercase tracking-wider font-semibold text-[#9B9B95] bg-[#FAFAF8] border-y border-[#F0EFEC]/60 sticky top-0 z-[1]"
-                      >
-                        {group}
-                      </div>
-                    )
-                    lastGroup = group
+                  // Overgang van pinned-sectie naar normale lijst → reset group label
+                  if (inPinnedSection && !email.pinned) {
+                    inPinnedSection = false
+                    lastGroup = null
+                  }
+
+                  if (!inPinnedSection) {
+                    const group = getDateGroup(email.datum)
+                    if (group !== lastGroup) {
+                      nodes.push(
+                        <div
+                          key={`group-${group}-${index}`}
+                          className="px-4 py-2 text-[10px] uppercase tracking-wider font-semibold text-[#9B9B95] bg-[#FAFAF8] border-y border-[#F0EFEC]/60 sticky top-0 z-[1]"
+                        >
+                          {group}
+                        </div>
+                      )
+                      lastGroup = group
+                    }
                   }
                   nodes.push(
                     <EmailListItem
@@ -1152,7 +1169,7 @@ export function EmailLayout() {
                       fontSize={fontSize}
                       stacked={listStyle === 'stacked'}
                       onSelect={handleSelectEmail}
-                      onToggleStar={handleToggleStar}
+                      onTogglePin={handleTogglePin}
                       onToggleCheck={toggleCheckEmail}
                       onPrefetch={prefetchEmailBody}
                       onArchive={handleArchive}

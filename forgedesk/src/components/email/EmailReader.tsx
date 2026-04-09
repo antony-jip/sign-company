@@ -13,7 +13,7 @@ async function getDOMPurify() {
 import { Button } from '@/components/ui/button'
 import { AIContentEditableToolbar } from '@/components/ui/AIContentEditableToolbar'
 import {
-  ArrowLeft, Trash2, Star, Archive, MailOpen,
+  ArrowLeft, Trash2, Pin, Archive, MailOpen,
   ChevronUp, ChevronDown, Reply, ReplyAll, Forward,
   Paperclip, Send, Bold, Italic, Underline,
   List, ListOrdered, Link2, Sparkles, Loader2, Download,
@@ -61,7 +61,7 @@ interface EmailReaderProps {
   emailTotal?: number
   allEmails?: Email[]
   imapFolder?: string
-  onToggleStar?: (email: Email) => void
+  onTogglePin?: (email: Email) => void
   onToggleRead?: (email: Email) => void
   onDelete?: (email: Email) => void
   onArchive?: (email: Email) => void
@@ -79,7 +79,7 @@ export function EmailReader({
   emailTotal,
   allEmails,
   imapFolder = 'INBOX',
-  onToggleStar,
+  onTogglePin,
   onToggleRead,
   onDelete,
   onArchive,
@@ -996,15 +996,16 @@ export function EmailReader({
                 <div className="flex items-center gap-1.5 flex-shrink-0 pt-0.5">
                   <span className="text-[11px] text-[#B0ADA8] font-mono tabular-nums whitespace-nowrap">{formatShortDate(email.datum)}</span>
                   <button
-                    onClick={() => onToggleStar?.(email)}
+                    onClick={() => onTogglePin?.(email)}
+                    title={email.pinned ? 'Losmaken' : 'Vastpinnen'}
                     className={cn(
                       'p-1 rounded-md transition-colors duration-150',
-                      email.starred
-                        ? 'text-amber-400 hover:bg-amber-50'
-                        : 'text-[#B0ADA8] hover:text-[#9B9B95] hover:bg-[#F0EFEC]',
+                      email.pinned
+                        ? 'text-[#1A535C] hover:bg-[#1A535C]/10'
+                        : 'text-[#B0ADA8] hover:text-[#1A535C] hover:bg-[#F0EFEC]',
                     )}
                   >
-                    <Star className={cn('h-3.5 w-3.5', email.starred && 'fill-amber-400')} />
+                    <Pin className={cn('h-3.5 w-3.5', email.pinned && 'fill-[#1A535C] -rotate-45')} />
                   </button>
                 </div>
               </div>

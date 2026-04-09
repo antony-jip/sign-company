@@ -1,5 +1,5 @@
 import { memo, useCallback, useMemo, useRef } from 'react'
-import { Star, Paperclip, Archive, Trash2, MailOpen, Mail } from 'lucide-react'
+import { Pin, Paperclip, Archive, Trash2, MailOpen, Mail } from 'lucide-react'
 import type { Email } from '@/types'
 import { extractSenderName, cleanEmailPreview, formatShortDate, fontSizeClasses, getAvatarColor, getAvatarStyle } from './emailHelpers'
 import type { FontSize } from './emailTypes'
@@ -14,7 +14,7 @@ interface EmailListItemProps {
   stacked?: boolean
   fontSize?: FontSize
   onSelect: (email: Email, e?: React.MouseEvent) => void
-  onToggleStar: (email: Email) => void
+  onTogglePin: (email: Email) => void
   onToggleCheck: (id: string, e?: React.MouseEvent) => void
   onPrefetch?: (email: Email) => void
   // Hover quick actions
@@ -32,7 +32,7 @@ export const EmailListItem = memo(function EmailListItem({
   stacked,
   fontSize = 'medium',
   onSelect,
-  onToggleStar,
+  onTogglePin,
   onToggleCheck,
   onPrefetch,
   onArchive,
@@ -86,10 +86,10 @@ export const EmailListItem = memo(function EmailListItem({
     }
   }, [])
 
-  const handleStarClick = useCallback((e: React.MouseEvent) => {
+  const handlePinClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation()
-    onToggleStar(email)
-  }, [email, onToggleStar])
+    onTogglePin(email)
+  }, [email, onTogglePin])
 
   const handleCheckClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation()
@@ -179,10 +179,13 @@ export const EmailListItem = memo(function EmailListItem({
         {/* Right meta — wisselt tussen normale info en hover quick actions.
             Op hover: archive / read-toggle / delete iconen ipv tijd. */}
         <div className="flex items-center gap-3 flex-shrink-0 ml-auto pl-3">
-          {/* Default: paperclip + tijd */}
+          {/* Default: paperclip + pin indicator + tijd */}
           <div className="flex items-center gap-3 group-hover:hidden">
             {email.bijlagen > 0 && (
               <Paperclip className="h-3.5 w-3.5 text-[#9B9B95]" />
+            )}
+            {email.pinned && (
+              <Pin className="h-3.5 w-3.5 fill-[#1A535C] text-[#1A535C] -rotate-45" />
             )}
             <span className={cn(
               'tabular-nums min-w-[44px] text-right',
@@ -195,6 +198,17 @@ export const EmailListItem = memo(function EmailListItem({
 
           {/* Hover: quick actions */}
           <div className="hidden group-hover:flex items-center gap-0.5 -my-1">
+            <button
+              type="button"
+              onClick={handlePinClick}
+              className={cn(
+                'h-7 w-7 flex items-center justify-center rounded-md hover:bg-white transition-colors',
+                email.pinned ? 'text-[#1A535C]' : 'text-[#6B6B66] hover:text-[#1A535C]',
+              )}
+              title={email.pinned ? 'Losmaken' : 'Vastpinnen'}
+            >
+              <Pin className={cn('h-3.5 w-3.5', email.pinned && 'fill-[#1A535C] -rotate-45')} />
+            </button>
             {onArchive && (
               <button
                 type="button"
@@ -328,20 +342,23 @@ export const EmailListItem = memo(function EmailListItem({
         </div>
       </div>
 
-      {/* Star */}
+      {/* Pin */}
       <button
-        onClick={handleStarClick}
+        onClick={handlePinClick}
+        title={email.pinned ? 'Losmaken' : 'Vastpinnen'}
         className={cn(
           'flex-shrink-0 p-1 rounded transition-all duration-150',
           'opacity-0 group-hover:opacity-100',
-          email.starred && '!opacity-100',
-          !email.starred && 'hover:bg-[#F0EFEC]',
+          email.pinned && '!opacity-100',
+          !email.pinned && 'hover:bg-[#F0EFEC]',
         )}
       >
-        <Star
+        <Pin
           className={cn(
             'h-4 w-4 transition-colors',
-            email.starred ? 'fill-amber-400 text-amber-400' : 'text-[#B0ADA8] hover:text-[#9B9B95]',
+            email.pinned
+              ? 'fill-[#1A535C] text-[#1A535C] -rotate-45'
+              : 'text-[#B0ADA8] hover:text-[#1A535C]',
           )}
         />
       </button>

@@ -130,32 +130,6 @@ export async function markAsRead(messageId: string): Promise<void> {
     .eq('id', messageId)
 }
 
-export async function starEmail(messageId: string): Promise<void> {
-  if (!supabase) return
-
-  const { data, error } = await supabase
-    .from('emails')
-    .select('starred')
-    .eq('id', messageId)
-    .single()
-
-  if (error) {
-    console.error('starEmail: email ophalen mislukt:', error.message)
-    throw new Error(`Email ophalen mislukt: ${error.message}`)
-  }
-
-  if (data) {
-    const { error: updateError } = await supabase
-      .from('emails')
-      .update({ starred: !data.starred })
-      .eq('id', messageId)
-    if (updateError) {
-      console.error('starEmail: update mislukt:', updateError.message)
-      throw new Error(`Email update mislukt: ${updateError.message}`)
-    }
-  }
-}
-
 export async function deleteEmail(messageId: string): Promise<void> {
   if (!supabase) return
 

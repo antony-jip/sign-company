@@ -485,7 +485,7 @@ export interface Email {
   body_html?: string | null;
   datum: string;
   gelezen: boolean;
-  starred: boolean;
+  starred?: boolean;
   pinned?: boolean;
   snoozed_until?: string | null;
   labels: string[];
