@@ -108,6 +108,15 @@ const ITEM_COUNT_OPTIONS = [1, 2, 3, 4, 5] as const
 
 // Steps removed — now a permanent two-column layout
 
+// Sommige contactpersonen/projecten hebben een lokaal gegenereerd ID (bv.
+// "cp-1775720212913-sn59y") dat geen geldige UUID is. Supabase weigert die
+// als FK waarde met "invalid input syntax for type uuid". Deze helper
+// filtert ze eruit zodat de save niet faalt.
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+function uuidOrNull(id: string | undefined | null): string | undefined {
+  return id && UUID_RE.test(id) ? id : undefined
+}
+
 function generateOfferteNummer(prefix: string = 'OFF', existingOffertes: { nummer: string }[] = [], startNummer = 1): string {
   const year = new Date().getFullYear()
   const jaarPrefix = `${prefix}-${year}-`
@@ -879,7 +888,7 @@ export function QuoteCreation() {
           klant_id: selectedKlantId,
           klant_naam: klant?.bedrijfsnaam,
           ...(selectedProjectId ? { project_id: selectedProjectId } : {}),
-          ...(selectedContactId ? { contactpersoon_id: selectedContactId } : {}),
+          ...(uuidOrNull(selectedContactId) ? { contactpersoon_id: uuidOrNull(selectedContactId) } : {}),
           titel: offerteTitel,
           subtotaal: effectiefSub,
           btw_bedrag: effectiefBtw,
@@ -904,7 +913,7 @@ export function QuoteCreation() {
           klant_id: selectedKlantId,
           klant_naam: klant?.bedrijfsnaam,
           ...(selectedProjectId ? { project_id: selectedProjectId } : {}),
-          ...(selectedContactId ? { contactpersoon_id: selectedContactId } : {}),
+          ...(uuidOrNull(selectedContactId) ? { contactpersoon_id: uuidOrNull(selectedContactId) } : {}),
           nummer: offerteNummer,
           titel: offerteTitel,
           status: 'concept',
@@ -1046,7 +1055,7 @@ export function QuoteCreation() {
         klant_id: selectedKlantId,
         klant_naam: klant?.bedrijfsnaam,
         ...(selectedProjectId ? { project_id: selectedProjectId } : {}),
-        ...(selectedContactId ? { contactpersoon_id: selectedContactId } : {}),
+        ...(uuidOrNull(selectedContactId) ? { contactpersoon_id: uuidOrNull(selectedContactId) } : {}),
         nummer: nieuweNummer,
         titel: offerteTitel,
         status: 'concept',
@@ -1144,7 +1153,7 @@ export function QuoteCreation() {
           klant_id: selectedKlantId,
           klant_naam: selectedKlant?.bedrijfsnaam,
           ...(selectedProjectId ? { project_id: selectedProjectId } : {}),
-          ...(selectedContactId ? { contactpersoon_id: selectedContactId } : {}),
+          ...(uuidOrNull(selectedContactId) ? { contactpersoon_id: uuidOrNull(selectedContactId) } : {}),
           titel: offerteTitel,
           status,
           subtotaal: effectiefSubtotaal,
@@ -1174,7 +1183,7 @@ export function QuoteCreation() {
           klant_id: selectedKlantId,
           klant_naam: selectedKlant?.bedrijfsnaam,
           ...(selectedProjectId ? { project_id: selectedProjectId } : {}),
-          ...(selectedContactId ? { contactpersoon_id: selectedContactId } : {}),
+          ...(uuidOrNull(selectedContactId) ? { contactpersoon_id: uuidOrNull(selectedContactId) } : {}),
           ...(paramDealId ? { deal_id: paramDealId } : {}),
           nummer: offerteNummer,
           titel: offerteTitel,
