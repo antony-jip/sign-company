@@ -6,6 +6,8 @@
 interface PortalEmailParams {
   /** Heading text, e.g. "Er is een update voor project X" */
   heading: string
+  /** Klantnaam voor de aanhef, e.g. "Antony Bootsma". Als gevuld wordt "Beste [naam]," getoond */
+  klantNaam?: string
   /** Item title */
   itemTitel?: string
   /** Item description / body text */
@@ -27,9 +29,10 @@ interface PortalEmailParams {
 export function buildPortalEmailHtml(params: PortalEmailParams): string {
   const {
     heading,
+    klantNaam,
     itemTitel,
     beschrijving,
-    ctaLabel = 'Bekijk in portaal \u2192',
+    ctaLabel = 'Bekijk in portaal',
     ctaUrl,
     bedrijfsnaam,
     quote,
@@ -37,55 +40,80 @@ export function buildPortalEmailHtml(params: PortalEmailParams): string {
     primaireKleur,
   } = params
 
+  // Strip eventuele "Beste X," of URL's die per ongeluk in de heading terecht
+  // kwamen (door user-configured templates). De heading moet kort en clean zijn.
+  let cleanHeading = heading
+    .replace(/^Beste\s+[^,]+,\s*/i, '')        // strip "Beste X, " prefix
+    .replace(/https?:\/\/\S+/g, '')             // strip URL's
+    .replace(/Met vriendelijke groet,?\s*/gi, '') // strip groet
+    .replace(bedrijfsnaam || '___NOMATCH___', '') // strip bedrijfsnaam
+    .replace(/\s+/g, ' ')
+    .trim()
+  if (!cleanHeading) cleanHeading = 'Er is een update voor u.'
+
   const accent = primaireKleur || '#1A535C'
-  const accentLight = primaireKleur ? `${primaireKleur}18` : '#E2F0F0'
-  const bgOuter = '#F4F3F0'
+  const accentLight = primaireKleur ? `${primaireKleur}12` : '#E8F4F4'
+  const bgOuter = '#F5F4F1'
   const bgCard = '#FFFFFF'
   const textDark = '#1A1A1A'
-  const textMuted = '#5A5A55'
-  const textLight = '#8A8A85'
-  const borderLight = '#E8E8E3'
+  const textBody = '#3A3A36'
+  const textMuted = '#6B6B66'
+  const textLight = '#9B9B95'
+  const borderLight = '#EBEBEB'
 
+  // ── Aanhef ──
+  const greetingBlock = klantNaam
+    ? `<tr><td style="padding: 0 0 8px 0; font-family: 'DM Sans', Arial, sans-serif; font-size: 15px; color: ${textBody}; line-height: 1.6;">
+        Beste ${escapeHtml(klantNaam)},
+      </td></tr>`
+    : ''
+
+  // ── Item kaart ──
   const itemBlock = itemTitel
-    ? `<tr><td style="padding: 0 0 16px 0;">
-        <table width="100%" cellpadding="0" cellspacing="0" style="border: 1px solid ${borderLight}; border-radius: 8px;">
-          <tr><td style="padding: 16px 20px; font-family: 'DM Sans', Arial, sans-serif; font-size: 15px; font-weight: 600; color: ${textDark};">
-            ${escapeHtml(itemTitel)}
+    ? `<tr><td style="padding: 16px 0;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: ${accentLight}; border-radius: 8px; border-left: 3px solid ${accent};">
+          <tr><td style="padding: 16px 20px;">
+            <span style="font-family: 'DM Sans', Arial, sans-serif; font-size: 15px; font-weight: 600; color: ${textDark};">
+              ${escapeHtml(itemTitel)}
+            </span>
+            ${beschrijving ? `<br/><span style="font-family: 'DM Sans', Arial, sans-serif; font-size: 13px; color: ${textMuted}; line-height: 1.6;">
+              ${escapeHtml(beschrijving)}
+            </span>` : ''}
           </td></tr>
-          ${beschrijving ? `<tr><td style="padding: 0 20px 16px 20px; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: ${textMuted}; line-height: 1.6;">
-            ${escapeHtml(beschrijving)}
-          </td></tr>` : ''}
         </table>
       </td></tr>`
     : ''
 
+  // ── Quote blok ──
   const quoteBlock = quote
-    ? `<tr><td style="padding: 0 0 20px 0;">
-        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: ${primaireKleur ? accentLight : '#E2F0F0'}; border-radius: 8px; border-left: 4px solid ${accent};">
-          <tr><td style="padding: 16px 20px; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: ${textDark}; font-style: italic; line-height: 1.6;">
+    ? `<tr><td style="padding: 0 0 16px 0;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: ${accentLight}; border-radius: 8px; border-left: 3px solid ${accent};">
+          <tr><td style="padding: 14px 20px; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: ${textDark}; font-style: italic; line-height: 1.6;">
             &ldquo;${escapeHtml(quote)}&rdquo;
           </td></tr>
         </table>
       </td></tr>`
     : ''
 
-  const groetBlock = bedrijfsnaam
-    ? `<tr><td style="padding: 16px 0 0 0; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: ${textMuted}; line-height: 1.8;">
-        Met vriendelijke groet,<br/><strong style="color: ${textDark};">${escapeHtml(bedrijfsnaam)}</strong>
-      </td></tr>`
-    : ''
-
+  // ── CTA knop ──
   const ctaBlock = ctaUrl
-    ? `<tr><td style="padding: 8px 0 0 0;" align="center">
-        <a href="${escapeHtml(ctaUrl)}" target="_blank" style="display: inline-block; background-color: ${accent}; color: #FFFFFF; font-family: 'DM Sans', Arial, sans-serif; font-size: 15px; font-weight: 600; text-decoration: none; padding: 14px 32px; border-radius: 8px; line-height: 1;">
+    ? `<tr><td style="padding: 24px 0 8px 0;" align="center">
+        <a href="${escapeHtml(ctaUrl)}" target="_blank" style="display: inline-block; background-color: ${accent}; color: #FFFFFF; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; font-weight: 600; text-decoration: none; padding: 12px 28px; border-radius: 6px; line-height: 1;">
           ${escapeHtml(ctaLabel)}
         </a>
       </td></tr>`
     : ''
 
+  // ── Groet ──
+  const groetBlock = bedrijfsnaam
+    ? `<tr><td style="padding: 24px 0 0 0; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: ${textMuted}; line-height: 1.8;">
+        Met vriendelijke groet,<br/><strong style="color: ${textDark};">${escapeHtml(bedrijfsnaam)}</strong>
+      </td></tr>`
+    : ''
+
   const footerText = bedrijfsnaam
-    ? `Verzonden via Doen. namens ${escapeHtml(bedrijfsnaam)}`
-    : 'Verzonden via Doen.'
+    ? `Verzonden via doen. namens ${escapeHtml(bedrijfsnaam)}`
+    : 'Verzonden via doen.'
 
   return `<!DOCTYPE html>
 <html lang="nl">
@@ -94,34 +122,35 @@ export function buildPortalEmailHtml(params: PortalEmailParams): string {
 <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: ${bgOuter}; padding: 40px 0;">
   <tr><td align="center">
     <!-- Logo -->
-    <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%;">
-      <tr><td style="padding: 0 0 24px 0; text-align: center;">
+    <table width="580" cellpadding="0" cellspacing="0" border="0" style="max-width: 580px; width: 100%;">
+      <tr><td style="padding: 0 0 28px 0; text-align: center;">
         ${logoUrl
-          ? `<img src="${escapeHtml(logoUrl)}" alt="${escapeHtml(bedrijfsnaam || '')}" style="max-height: 48px; max-width: 200px; object-fit: contain;" />`
-          : `<span style="font-family: 'DM Sans', Arial, sans-serif; font-size: 22px; color: ${textDark}; letter-spacing: -0.5px;">
-              <strong>Doen.</strong>
-            </span>`
+          ? `<img src="${escapeHtml(logoUrl)}" alt="${escapeHtml(bedrijfsnaam || '')}" style="max-height: 44px; max-width: 180px; object-fit: contain;" />`
+          : (bedrijfsnaam
+            ? `<span style="font-family: 'DM Sans', Arial, sans-serif; font-size: 20px; font-weight: 700; color: ${textDark}; letter-spacing: -0.5px;">${escapeHtml(bedrijfsnaam)}</span>`
+            : `<span style="font-family: 'DM Sans', Arial, sans-serif; font-size: 20px; font-weight: 700; color: ${textDark}; letter-spacing: -0.5px;">doen<span style="color: ${accent};">.</span></span>`
+          )
         }
       </td></tr>
     </table>
     <!-- Card -->
-    <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%; background-color: ${bgCard}; border-radius: 12px; box-shadow: 0 2px 16px rgba(0,0,0,0.04);">
-      <tr><td style="padding: 40px 40px 36px 40px;">
-        <!-- Heading -->
+    <table width="580" cellpadding="0" cellspacing="0" border="0" style="max-width: 580px; width: 100%; background-color: ${bgCard}; border-radius: 10px; border: 1px solid ${borderLight};">
+      <tr><td style="padding: 36px 36px 32px 36px;">
         <table width="100%" cellpadding="0" cellspacing="0" border="0">
-          <tr><td style="padding: 0 0 24px 0; font-family: 'DM Sans', Arial, sans-serif; font-size: 20px; font-weight: 700; color: ${textDark}; line-height: 1.3;">
-            ${escapeHtml(heading)}
+          ${greetingBlock}
+          <tr><td style="padding: 0 0 4px 0; font-family: 'DM Sans', Arial, sans-serif; font-size: 15px; color: ${textBody}; line-height: 1.6;">
+            ${escapeHtml(cleanHeading)}
           </td></tr>
           ${itemBlock}
           ${quoteBlock}
-          ${groetBlock}
           ${ctaBlock}
+          ${groetBlock}
         </table>
       </td></tr>
     </table>
     <!-- Footer -->
-    <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%;">
-      <tr><td style="padding: 24px 0 0 0; text-align: center; font-family: 'DM Sans', Arial, sans-serif; font-size: 12px; color: ${textLight}; line-height: 1.6;">
+    <table width="580" cellpadding="0" cellspacing="0" border="0" style="max-width: 580px; width: 100%;">
+      <tr><td style="padding: 20px 0 0 0; text-align: center; font-family: 'DM Sans', Arial, sans-serif; font-size: 11px; color: ${textLight}; line-height: 1.6;">
         ${footerText}
       </td></tr>
     </table>

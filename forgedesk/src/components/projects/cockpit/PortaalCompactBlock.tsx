@@ -365,7 +365,7 @@ function InputBar({
       const onderwerp = instellingen?.template_nieuw_item?.onderwerp ? replaceEmailVariables(instellingen.template_nieuw_item.onderwerp, vars) : `${bedrijfsnaam || 'Nieuw item'} — ${titel}`
       const heading = instellingen?.template_nieuw_item?.inhoud ? replaceEmailVariables(instellingen.template_nieuw_item.inhoud, vars) : `Er staat een nieuw item voor u klaar.`
       const plainBody = `${heading} — ${titel} (${project.naam})`
-      const htmlBody = buildPortalEmailHtml({ heading, itemTitel: titel, beschrijving: `Project: ${project.naam}`, ctaLabel: 'Bekijk in portaal →', ctaUrl: portaalUrl, bedrijfsnaam, logoUrl: profile?.logo_url || undefined })
+      const htmlBody = buildPortalEmailHtml({ heading, klantNaam, itemTitel: titel, beschrijving: `Project: ${project.naam}`, ctaLabel: 'Bekijk in portaal', ctaUrl: portaalUrl, bedrijfsnaam, logoUrl: profile?.logo_url || undefined, primaireKleur: undefined })
       await sendEmail(klantEmail, onderwerp, plainBody, { html: htmlBody })
       toast.success(`Email verstuurd naar ${klantEmail}`)
     } catch (err) {

@@ -113,9 +113,10 @@ export async function sendPortaalItemNotificatie(params: {
 
     const htmlBody = buildPortalEmailHtml({
       heading,
+      klantNaam,
       itemTitel: titel,
       beschrijving: `Project: ${projectNaam}`,
-      ctaLabel: 'Bekijk in portaal \u2192',
+      ctaLabel: 'Bekijk in portaal',
       ctaUrl: portaalLink,
       bedrijfsnaam: bedrijfsNaam,
       logoUrl,
