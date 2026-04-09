@@ -287,9 +287,10 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
 
       const htmlBody = buildPortalEmailHtml({
         heading,
+        klantNaam,
         itemTitel: titel,
         beschrijving: `Project: ${projectNaam}`,
-        ctaLabel: 'Bekijk in portaal →',
+        ctaLabel: 'Bekijk in portaal',
         ctaUrl: portaalUrl,
         bedrijfsnaam,
         logoUrl: profile?.logo_url || undefined,

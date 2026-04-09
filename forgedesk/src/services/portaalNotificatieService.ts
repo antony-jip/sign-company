@@ -198,9 +198,10 @@ export async function sendPortaalHerinneringEmail(params: {
 
     const htmlBody = buildPortalEmailHtml({
       heading: templateOverrides?.inhoud ? heading : `Herinnering: ${itemTitel}`,
+      klantNaam,
       itemTitel,
       beschrijving: templateOverrides?.inhoud ? undefined : heading,
-      ctaLabel: 'Bekijk in portaal \u2192',
+      ctaLabel: 'Bekijk in portaal',
       ctaUrl: portaalLink,
       bedrijfsnaam: bedrijfsNaam,
       logoUrl,
@@ -274,7 +275,7 @@ export async function sendPortaalReactieNotificatie(params: {
       itemTitel,
       beschrijving: `Project: ${projectNaam}`,
       quote: bericht?.trim() || undefined,
-      ctaLabel: 'Bekijk in portaal \u2192',
+      ctaLabel: 'Bekijk in portaal',
       ctaUrl: portaalLink || `${appUrl}/projecten/${projectId}`,
       bedrijfsnaam: bedrijfsNaam,
       logoUrl,
