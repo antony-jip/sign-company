@@ -1,5 +1,5 @@
 import React from 'react'
-import { Link } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import {
   ArrowLeft,
@@ -79,13 +79,17 @@ export function QuoteHeader({
   onWerkbon,
   onOpdrachtbevestiging,
 }: QuoteHeaderProps) {
+  const location = useLocation()
+  const navigate = useNavigate()
+  const from = (location.state as { from?: string })?.from
+
   return (
       <div className="sticky top-0 z-10 bg-[#F8F7F5]/80 backdrop-blur-sm border-b border-[#EBEBEB] px-6 py-3 mb-6 -mx-4 md:-mx-6">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           {/* Left: Title + meta */}
           <div className="min-w-0">
             <div className="flex items-center gap-2.5 flex-wrap">
-              <Link to="/offertes" className="text-[#9B9B95] hover:text-[#6B6B66] transition-colors flex-shrink-0"><ArrowLeft className="h-4 w-4" /></Link>
+              <button onClick={() => navigate(from || '/offertes')} className="text-[#9B9B95] hover:text-[#6B6B66] transition-colors flex-shrink-0"><ArrowLeft className="h-4 w-4" /></button>
               <h1 className="text-xl font-bold text-[#1A1A1A] tracking-[-0.3px] truncate">{isEditMode ? 'Offerte bewerken' : 'Nieuwe offerte'}</h1>
               <span className="text-[13px] font-mono text-[#9B9B95] flex-shrink-0">{offerteNummer}</span>
               {versioning.versieNummer > 1 && (
