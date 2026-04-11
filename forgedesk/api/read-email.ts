@@ -263,6 +263,18 @@ async function fetchFromIMAP(opts: {
     size: a.size || 0,
   }))
 
+  let bodyHtml = parsed.html || ''
+  if (bodyHtml && parsed.attachments?.length) {
+    for (const att of parsed.attachments) {
+      if (att.contentId && att.content) {
+        const cid = att.contentId.replace(/^<|>$/g, '')
+        const b64 = att.content.toString('base64')
+        const dataUri = `data:${att.contentType || 'application/octet-stream'};base64,${b64}`
+        bodyHtml = bodyHtml.split(`cid:${cid}`).join(dataUri)
+      }
+    }
+  }
+
   return {
     uid: opts.uid,
     from: parsed.from?.text || '',
@@ -270,7 +282,7 @@ async function fetchFromIMAP(opts: {
     cc: Array.isArray(parsed.cc) ? parsed.cc.map(a => a.text).join(', ') : (parsed.cc?.text || ''),
     subject: parsed.subject || '',
     date: parsed.date?.toISOString() || '',
-    bodyHtml: parsed.html || '',
+    bodyHtml,
     bodyText: parsed.text || '',
     attachments,
     messageId: parsed.messageId || '',

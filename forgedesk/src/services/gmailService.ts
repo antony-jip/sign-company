@@ -93,6 +93,7 @@ export async function sendEmail(
   body: string,
   options?: {
     cc?: string
+    bcc?: string
     html?: string
     scheduledAt?: string
     attachments?: Array<{ filename: string; content: string; encoding: 'base64' }>
@@ -115,6 +116,7 @@ export async function sendEmail(
       subject,
       body,
       cc: options?.cc,
+      bcc: options?.bcc,
       html: options?.html,
       attachments: options?.attachments,
       opvolging_id: options?.opvolging_id,

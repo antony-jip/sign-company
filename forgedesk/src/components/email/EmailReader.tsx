@@ -67,7 +67,7 @@ interface EmailReaderProps {
   onArchive?: (email: Email) => void
   onBack?: () => void
   onNavigate?: (direction: 'prev' | 'next') => void
-  onSendReply?: (data: { to: string; subject: string; body: string; html?: string; scheduledAt?: string; attachments?: Array<{ filename: string; content: string; encoding: 'base64' }> }) => void
+  onSendReply?: (data: { to: string; cc?: string; bcc?: string; subject: string; body: string; html?: string; scheduledAt?: string; attachments?: Array<{ filename: string; content: string; encoding: 'base64' }> }) => void
   onSelectEmail?: (email: Email) => void
 }
 
@@ -92,6 +92,9 @@ export function EmailReader({
 
   const [replyMode, setReplyMode] = useState<'reply' | 'reply-all' | 'forward' | null>(null)
   const [replyTo, setReplyTo] = useState('')
+  const [replyCc, setReplyCc] = useState('')
+  const [replyBcc, setReplyBcc] = useState('')
+  const [showCcBcc, setShowCcBcc] = useState(false)
   const [showQuotedText, setShowQuotedText] = useState(false)
   const [isSending, setIsSending] = useState(false)
   const [forgieLoading, setForgieLoading] = useState(false)
@@ -291,6 +294,9 @@ export function EmailReader({
     if (!email) return
     setReplyMode(mode)
     setReplyAttachments([])
+    setReplyCc('')
+    setReplyBcc('')
+    setShowCcBcc(false)
     // Bij forward: alle originele bijlagen meenemen (gebruiker kan ze later
     // individueel uitzetten). Bij reply: niks meenemen.
     if (mode === 'forward' && email.attachment_meta && email.attachment_meta.length > 0) {
@@ -381,12 +387,14 @@ export function EmailReader({
 
     return {
       to: replyTo,
+      cc: replyCc || undefined,
+      bcc: replyBcc || undefined,
       subject,
       body: editorRef.current.innerText,
       html: html + quotedOriginal,
       attachments: attachmentPayload.length > 0 ? attachmentPayload : undefined,
     }
-  }, [email, replyMode, replyTo, replyAttachments, forwardOriginalAttachments, imapFolder])
+  }, [email, replyMode, replyTo, replyCc, replyBcc, replyAttachments, forwardOriginalAttachments, imapFolder])
 
   const handleSend = useCallback(async () => {
     if (!onSendReply) return
@@ -606,7 +614,15 @@ export function EmailReader({
                   placeholder="ontvanger@voorbeeld.nl"
                 />
               </div>
-              {/* Reply mode switcher */}
+              {/* CC/BCC toggle + Reply mode switcher */}
+              {!showCcBcc && (
+                <button
+                  onClick={() => setShowCcBcc(true)}
+                  className="text-[12px] text-[#9B9B95] hover:text-[#6B6B66] ml-2 flex-shrink-0"
+                >
+                  CC / BCC
+                </button>
+              )}
               <div className="flex items-center gap-1 ml-3 flex-shrink-0">
                 <button
                   onClick={() => {
@@ -649,6 +665,32 @@ export function EmailReader({
                 </button>
               </div>
             </div>
+
+            {/* CC / BCC fields */}
+            {showCcBcc && (
+              <>
+                <div className="flex items-center px-6 py-2.5 border-b border-[#F0EFEC]">
+                  <span className="text-[12px] text-[#9B9B95] w-10 flex-shrink-0">CC</span>
+                  <input
+                    type="text"
+                    value={replyCc}
+                    onChange={(e) => setReplyCc(e.target.value)}
+                    className="flex-1 bg-transparent border-none outline-none text-[14px] text-[#1A1A1A] min-w-0 placeholder:text-[#B0ADA8]"
+                    placeholder="cc@voorbeeld.nl"
+                  />
+                </div>
+                <div className="flex items-center px-6 py-2.5 border-b border-[#F0EFEC]">
+                  <span className="text-[12px] text-[#9B9B95] w-10 flex-shrink-0">BCC</span>
+                  <input
+                    type="text"
+                    value={replyBcc}
+                    onChange={(e) => setReplyBcc(e.target.value)}
+                    className="flex-1 bg-transparent border-none outline-none text-[14px] text-[#1A1A1A] min-w-0 placeholder:text-[#B0ADA8]"
+                    placeholder="bcc@voorbeeld.nl"
+                  />
+                </div>
+              </>
+            )}
 
             {/* Subject */}
             <div className="flex items-center px-6 py-2.5 border-b border-[#F0EFEC]">

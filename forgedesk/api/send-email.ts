@@ -96,6 +96,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const {
       to,
       cc,
+      bcc,
       subject,
       body,
       html,
@@ -108,6 +109,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     } = req.body as {
       to: string
       cc?: string
+      bcc?: string
       subject: string
       body?: string
       html?: string
@@ -193,6 +195,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       mailOptions.text = body
     }
     if (cc) mailOptions.cc = cc
+    if (bcc) mailOptions.bcc = bcc
     if (attachments?.length) {
       mailOptions.attachments = attachments.map((a) => ({
         filename: a.filename,

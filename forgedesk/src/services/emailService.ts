@@ -62,12 +62,12 @@ export async function getEmail(id: string): Promise<Email | null> {
 }
 
 /** Fetch only the body columns for a single email (fast, lightweight) */
-export async function getEmailBody(id: string): Promise<{ body_html: string | null; body_text: string | null; inhoud: string } | null> {
+export async function getEmailBody(id: string): Promise<{ body_html: string | null; body_text: string | null; inhoud: string; attachment_meta?: unknown[] | null } | null> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('emails')
-      .select('body_html, body_text, inhoud')
+      .select('body_html, body_text, inhoud, attachment_meta')
       .eq('id', id)
       .maybeSingle()
     if (error) throw error
@@ -75,7 +75,7 @@ export async function getEmailBody(id: string): Promise<{ body_html: string | nu
   }
   const emails = getLocalData<Email>('emails')
   const found = emails.find((e) => e.id === id)
-  return found ? { body_html: (found as any).body_html || null, body_text: (found as any).body_text || null, inhoud: found.inhoud || '' } : null
+  return found ? { body_html: (found as any).body_html || null, body_text: (found as any).body_text || null, inhoud: found.inhoud || '', attachment_meta: found.attachment_meta } : null
 }
 
 /** Haal alle emails op die tot dezelfde thread behoren, chronologisch gesorteerd */

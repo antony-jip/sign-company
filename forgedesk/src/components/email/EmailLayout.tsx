@@ -17,7 +17,7 @@ import { EmailContextSidebar } from './EmailContextSidebar'
 import { EmailCompose } from './EmailCompose'
 import type { ComposeActions } from './EmailCompose'
 import { EmailListItem } from './EmailListItem'
-import type { Email } from '@/types'
+import type { Email, EmailAttachment } from '@/types'
 import { logger } from '../../utils/logger'
 import type { AutoFollowUp, EmailFolder, FilterType, FontSize, ViewMode } from './emailTypes'
 import { extractSenderEmail, extractSenderName, parseSearchQuery, IMAP_FOLDER_MAP, KEYBOARD_SHORTCUTS, calculateSnoozeDate } from './emailHelpers'
@@ -126,6 +126,7 @@ export function EmailLayout() {
   const emailListRef = useRef<HTMLDivElement>(null)
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const bodyCacheRef = useRef<Map<string, string>>(new Map())
+  const attachmentCacheRef = useRef<Map<string, EmailAttachment[]>>(new Map())
 
   const fetchLimit = emailFetchLimit || 200
 
@@ -347,6 +348,55 @@ export function EmailLayout() {
     }
   }, [emails, selectedFolder])
 
+  // ─── Dag-groepering: map elke email naar zijn datum-groep ───
+  const getDateGroup = useCallback((dateStr: string): string => {
+    const d = new Date(dateStr)
+    if (isNaN(d.getTime())) return 'Eerder'
+    const now = new Date()
+    const startOfDay = (date: Date) => {
+      const x = new Date(date)
+      x.setHours(0, 0, 0, 0)
+      return x
+    }
+    const today = startOfDay(now)
+    const target = startOfDay(d)
+    const diffDays = Math.round((today.getTime() - target.getTime()) / (24 * 60 * 60 * 1000))
+    if (diffDays <= 0) return 'Vandaag'
+    if (diffDays === 1) return 'Gisteren'
+    if (diffDays <= 6) return 'Deze week'
+    if (diffDays <= 13) return 'Vorige week'
+    if (target.getMonth() === today.getMonth() && target.getFullYear() === today.getFullYear()) return 'Eerder deze maand'
+    if (target.getFullYear() === today.getFullYear()) return 'Eerder dit jaar'
+    return 'Vorig jaar of ouder'
+  }, [])
+
+  const emailsByGroup = useMemo(() => {
+    const map = new Map<string, string[]>()
+    for (const email of threadedEmails) {
+      if (email.pinned) continue
+      const group = getDateGroup(email.datum)
+      const ids = map.get(group) || []
+      ids.push(email.id)
+      map.set(group, ids)
+    }
+    return map
+  }, [threadedEmails, getDateGroup])
+
+  const toggleCheckGroup = useCallback((group: string) => {
+    const groupIds = emailsByGroup.get(group) || []
+    if (!groupIds.length) return
+    setCheckedEmails(prev => {
+      const next = new Set(prev)
+      const allSelected = groupIds.every(id => next.has(id))
+      if (allSelected) {
+        groupIds.forEach(id => next.delete(id))
+      } else {
+        groupIds.forEach(id => next.add(id))
+      }
+      return next
+    })
+  }, [emailsByGroup])
+
   // ─── Selection helpers (inline from useEmailSelection) ───
   const hasChecked = checkedEmails.size > 0
   const allChecked = filteredEmails.length > 0 && checkedEmails.size === filteredEmails.length
@@ -533,6 +583,9 @@ export function EmailLayout() {
         const body = dbBody?.body_html || dbBody?.body_text || dbBody?.inhoud || ''
         if (body) {
           bodyCacheRef.current.set(email.id, body)
+          if (dbBody?.attachment_meta && Array.isArray(dbBody.attachment_meta) && dbBody.attachment_meta.length > 0) {
+            attachmentCacheRef.current.set(email.id, dbBody.attachment_meta as EmailAttachment[])
+          }
           return body
         }
 
@@ -542,6 +595,9 @@ export function EmailLayout() {
         const detail = await readEmailFromIMAP(uid, IMAP_FOLDER_MAP[folder] || 'INBOX')
         const imapBody = detail.bodyHtml || detail.bodyText || ''
         bodyCacheRef.current.set(email.id, imapBody)
+        if (detail.attachments?.length) {
+          attachmentCacheRef.current.set(email.id, detail.attachments)
+        }
         return imapBody
       } catch (err: unknown) {
         logger.error('Email body ophalen mislukt:', err)
@@ -562,18 +618,42 @@ export function EmailLayout() {
   }, [fetchBodyToCache, selectedFolder])
 
   const loadEmailBody = useCallback(async (email: Email, folder: EmailFolder): Promise<Email> => {
+    const cachedAtt = attachmentCacheRef.current.get(email.id)
     const cached = bodyCacheRef.current.get(email.id)
-    if (cached !== undefined) return { ...email, gelezen: true, inhoud: cached }
+    if (cached !== undefined) return { ...email, gelezen: true, inhoud: cached, attachment_meta: email.attachment_meta || cachedAtt || undefined }
     if (email.inhoud) return { ...email, gelezen: true }
 
     setIsLoadingBody(true)
     try {
       const body = await fetchBodyToCache(email, folder)
-      return { ...email, gelezen: true, inhoud: body }
+      const att = attachmentCacheRef.current.get(email.id)
+      return { ...email, gelezen: true, inhoud: body, attachment_meta: email.attachment_meta || att || undefined }
     } finally {
       setIsLoadingBody(false)
     }
   }, [fetchBodyToCache])
+
+  // ─── Prefetch top-N email bodies na lijst laden ───
+  // Zodra de lijst beschikbaar is, prefetch de eerste ~8 emails zodat
+  // klikken op een mail instant aanvoelt.
+  const prefetchedRef = useRef(false)
+  useEffect(() => {
+    if (!threadedEmails.length || prefetchedRef.current) return
+    prefetchedRef.current = true
+    const toPrefetch = threadedEmails
+      .filter(e => !e.inhoud && !bodyCacheRef.current.has(e.id))
+      .slice(0, 8)
+    if (!toPrefetch.length) return
+    let i = 0
+    const next = () => {
+      if (i >= toPrefetch.length) return
+      void fetchBodyToCache(toPrefetch[i], selectedFolder).finally(() => {
+        i++
+        setTimeout(next, 150)
+      })
+    }
+    next()
+  }, [threadedEmails, fetchBodyToCache, selectedFolder])
 
   // ─── Polling: silent background sync every 3min ───
   // No window focus sync — too aggressive (full IMAP connection each time)
@@ -715,7 +795,7 @@ export function EmailLayout() {
     }
   }, [user, emailHandtekening])
 
-  const handleSendReply = useCallback(async (data: { to: string; subject: string; body: string; html?: string; scheduledAt?: string; attachments?: Array<{ filename: string; content: string; encoding: 'base64' }> }) => {
+  const handleSendReply = useCallback(async (data: { to: string; cc?: string; bcc?: string; subject: string; body: string; html?: string; scheduledAt?: string; attachments?: Array<{ filename: string; content: string; encoding: 'base64' }> }) => {
     try {
       // Threading: geef message_id en thread_id mee zodat de verzonden
       // mail aan dezelfde thread wordt gekoppeld als de originele mail.
@@ -725,6 +805,8 @@ export function EmailLayout() {
       const replyThreadId = selectedEmail?.thread_id || undefined
 
       await sendEmailViaApi(data.to, data.subject, data.body, {
+        cc: data.cc,
+        bcc: data.bcc,
         html: data.html,
         scheduledAt: data.scheduledAt,
         attachments: data.attachments,
@@ -1116,31 +1198,6 @@ export function EmailLayout() {
           ) : (
             <div>
               {(() => {
-                // Datum-groepering: voeg sticky labels in tussen rijen wanneer
-                // de datum-groep verandert (Vandaag, Gisteren, Deze week, etc).
-                const getDateGroup = (dateStr: string): string => {
-                  const d = new Date(dateStr)
-                  if (isNaN(d.getTime())) return 'Eerder'
-                  const now = new Date()
-                  const startOfDay = (date: Date) => {
-                    const x = new Date(date)
-                    x.setHours(0, 0, 0, 0)
-                    return x
-                  }
-                  const today = startOfDay(now)
-                  const target = startOfDay(d)
-                  const diffDays = Math.round((today.getTime() - target.getTime()) / (24 * 60 * 60 * 1000))
-                  if (diffDays <= 0) return 'Vandaag'
-                  if (diffDays === 1) return 'Gisteren'
-                  if (diffDays <= 6) return 'Deze week'
-                  if (diffDays <= 13) return 'Vorige week'
-                  if (target.getMonth() === today.getMonth() && target.getFullYear() === today.getFullYear()) {
-                    return 'Eerder deze maand'
-                  }
-                  if (target.getFullYear() === today.getFullYear()) return 'Eerder dit jaar'
-                  return 'Vorig jaar of ouder'
-                }
-
                 const nodes: React.ReactNode[] = []
                 let lastGroup: string | null = null
                 let inPinnedSection = threadedEmails.length > 0 && !!threadedEmails[0].pinned
@@ -1156,7 +1213,6 @@ export function EmailLayout() {
                   )
                 }
                 threadedEmails.forEach((email, index) => {
-                  // Overgang van pinned-sectie naar normale lijst → reset group label
                   if (inPinnedSection && !email.pinned) {
                     inPinnedSection = false
                     lastGroup = null
@@ -1165,11 +1221,22 @@ export function EmailLayout() {
                   if (!inPinnedSection) {
                     const group = getDateGroup(email.datum)
                     if (group !== lastGroup) {
+                      const groupIds = emailsByGroup.get(group) || []
+                      const allGroupChecked = groupIds.length > 0 && groupIds.every(id => checkedEmails.has(id))
+                      const someGroupChecked = !allGroupChecked && groupIds.some(id => checkedEmails.has(id))
                       nodes.push(
                         <div
                           key={`group-${group}-${index}`}
-                          className="px-4 py-2 text-[10px] uppercase tracking-wider font-semibold text-[#9B9B95] bg-[#FAFAF8] border-y border-[#F0EFEC]/60 sticky top-0 z-[1]"
+                          className="px-4 py-2 text-[10px] uppercase tracking-wider font-semibold text-[#9B9B95] bg-[#FAFAF8] border-y border-[#F0EFEC]/60 sticky top-0 z-[1] flex items-center gap-2"
                         >
+                          <input
+                            type="checkbox"
+                            checked={allGroupChecked}
+                            ref={(el) => { if (el) el.indeterminate = someGroupChecked }}
+                            onChange={() => toggleCheckGroup(group)}
+                            className="h-3.5 w-3.5 rounded border-foreground/20 cursor-pointer accent-[#1A535C]"
+                            onClick={(e) => e.stopPropagation()}
+                          />
                           {group}
                         </div>
                       )
