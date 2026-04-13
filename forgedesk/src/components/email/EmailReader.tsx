@@ -385,6 +385,21 @@ export function EmailReader({
 
     const attachmentPayload = [...originalAttachments, ...userAttachments]
 
+    // Check totale payload grootte — Vercel serverless heeft een 4.5MB body
+    // limiet. Base64 is ~33% groter dan het origineel, plus de HTML body.
+    // Waarschuw de gebruiker als de totale grootte te groot is.
+    if (attachmentPayload.length > 0) {
+      const totalBytes = attachmentPayload.reduce((sum, a) => sum + (a.content?.length || 0), 0)
+      const totalMB = totalBytes / (1024 * 1024)
+      if (totalMB > 3.5) {
+        toast.error(
+          `Bijlagen zijn te groot (${totalMB.toFixed(1)}MB). Maximum is ca. 3.5MB aan bijlagen per mail. Verwijder een of meer bestanden en probeer opnieuw.`,
+          { duration: 8000 },
+        )
+        return null
+      }
+    }
+
     return {
       to: replyTo,
       cc: replyCc || undefined,

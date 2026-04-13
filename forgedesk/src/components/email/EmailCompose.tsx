@@ -305,6 +305,19 @@ export function EmailCompose({
 
   const buildAttachmentPayload = useCallback(async () => {
     if (!attachments.length) return undefined
+
+    // Pre-check: tel totale grootte van File objecten (in origineel formaat).
+    // Base64 is ~33% groter, Vercel limiet is 4.5MB totaal payload.
+    const totalFileBytes = attachments.reduce((sum, f) => sum + f.size, 0)
+    const estimatedBase64MB = (totalFileBytes * 1.37) / (1024 * 1024) // +37% voor base64 + JSON overhead
+    if (estimatedBase64MB > 3.5) {
+      toast.error(
+        `Bijlagen zijn te groot (${(totalFileBytes / (1024 * 1024)).toFixed(1)}MB). Maximum is ca. 3MB aan bijlagen per mail. Verwijder een of meer bestanden.`,
+        { duration: 8000 },
+      )
+      return undefined
+    }
+
     return Promise.all(
       attachments.map(async (file) => ({
         filename: file.name,
