@@ -1074,15 +1074,21 @@ export function QuoteCreation() {
 
   // ── FIX 11: Dupliceer offerte ──
   const [isDuplicating, setIsDuplicating] = useState(false)
-  const handleDupliceerOfferte = async () => {
-    if (!user?.id || !selectedKlantId) {
+  // Kopieer naar andere klant: state voor de klant-selector
+  const [showKopieerNaarKlant, setShowKopieerNaarKlant] = useState(false)
+  const [kopieerZoek, setKopieerZoek] = useState('')
+
+  const handleDupliceerOfferte = async (targetKlantId?: string) => {
+    const doelKlantId = targetKlantId || selectedKlantId
+    if (!user?.id || !doelKlantId) {
       toast.error('Kan niet dupliceren zonder klant')
       return
     }
     setIsDuplicating(true)
+    setShowKopieerNaarKlant(false)
     try {
-      const nieuweNummer = await getNextOfferteNummer(offertePrefix)
-      const klant = klanten.find((k) => k.id === selectedKlantId)
+      const nieuweNummer = await getNextOfferteNummer(offertePrefix, offerteStartNummer)
+      const klant = klanten.find((k) => k.id === doelKlantId)
 
       const prijsItemsLocal = items.filter((i) => i.soort === 'prijs')
       const sub = round2(prijsItemsLocal.reduce((sum, item) => {
@@ -1102,10 +1108,11 @@ export function QuoteCreation() {
 
       const newOfferte = await createOfferte({
         user_id: user.id,
-        klant_id: selectedKlantId,
+        klant_id: doelKlantId,
         klant_naam: klant?.bedrijfsnaam,
-        ...(selectedProjectId ? { project_id: selectedProjectId } : {}),
-        ...(uuidOrNull(selectedContactId) ? { contactpersoon_id: uuidOrNull(selectedContactId) } : {}),
+        // Geen project/contact koppeling bij kopieer naar andere klant
+        ...(targetKlantId ? {} : selectedProjectId ? { project_id: selectedProjectId } : {}),
+        ...(targetKlantId ? {} : uuidOrNull(selectedContactId) ? { contactpersoon_id: uuidOrNull(selectedContactId) } : {}),
         nummer: nieuweNummer,
         titel: offerteTitel,
         status: 'concept',
@@ -1153,7 +1160,10 @@ export function QuoteCreation() {
         )
       )
 
-      toast.success(`Offerte gedupliceerd als ${nieuweNummer}`)
+      const klantLabel = klant?.bedrijfsnaam || 'klant'
+      toast.success(targetKlantId
+        ? `Offerte gekopieerd naar ${klantLabel} als ${nieuweNummer}`
+        : `Offerte gedupliceerd als ${nieuweNummer}`)
       navigate(`/offertes/${newOfferte.id}/bewerken`)
     } catch (err) {
       logger.error('Dupliceer offerte failed:', err)
@@ -1856,6 +1866,11 @@ export function QuoteCreation() {
         setShowKlantSelector={setShowKlantSelector}
         onWerkbon={isEditMode ? () => setShowWerkbonDialog(true) : undefined}
         onOpdrachtbevestiging={isEditMode ? () => setShowObPreview(true) : undefined}
+        showKopieerNaarKlant={showKopieerNaarKlant}
+        setShowKopieerNaarKlant={setShowKopieerNaarKlant}
+        kopieerZoek={kopieerZoek}
+        setKopieerZoek={setKopieerZoek}
+        klanten={klanten}
       />
 
       {/* ──── PROJECT KOPPELING ──── */}

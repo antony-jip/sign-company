@@ -15,6 +15,9 @@ import {
   MoreHorizontal,
   ClipboardList,
   FileCheck,
+  ArrowRight,
+  Search,
+  X,
 } from 'lucide-react'
 import type { Klant } from '@/types'
 
@@ -48,10 +51,16 @@ export interface QuoteHeaderProps {
   handleVerstuurOfferte: () => void
   handleKeuzePortaal: () => void
   handleKeuzeEmail: () => void
-  handleDupliceerOfferte: () => void
+  handleDupliceerOfferte: (targetKlantId?: string) => void
   setShowKlantSelector: (v: boolean) => void
   onWerkbon?: () => void
   onOpdrachtbevestiging?: () => void
+  // Kopieer naar andere klant
+  showKopieerNaarKlant?: boolean
+  setShowKopieerNaarKlant?: (v: boolean) => void
+  kopieerZoek?: string
+  setKopieerZoek?: (v: string) => void
+  klanten?: Array<{ id: string; bedrijfsnaam?: string }>
 }
 
 export function QuoteHeader({
@@ -78,6 +87,11 @@ export function QuoteHeader({
   setShowKlantSelector,
   onWerkbon,
   onOpdrachtbevestiging,
+  showKopieerNaarKlant,
+  setShowKopieerNaarKlant,
+  kopieerZoek,
+  setKopieerZoek,
+  klanten,
 }: QuoteHeaderProps) {
   const location = useLocation()
   const navigate = useNavigate()
@@ -191,6 +205,9 @@ export function QuoteHeader({
                       <button onClick={() => { handleDupliceerOfferte(); setShowActionsMenu(false) }} disabled={isDuplicating} className="w-full text-left px-3 py-2 text-sm hover:bg-background dark:hover:bg-muted flex items-center gap-2 disabled:opacity-50">
                         <Copy className="h-3.5 w-3.5" />{isDuplicating ? 'Dupliceren...' : 'Dupliceer offerte'}
                       </button>
+                      <button onClick={() => { setShowKopieerNaarKlant?.(true); setShowActionsMenu(false) }} disabled={isDuplicating} className="w-full text-left px-3 py-2 text-sm hover:bg-background dark:hover:bg-muted flex items-center gap-2 disabled:opacity-50">
+                        <ArrowRight className="h-3.5 w-3.5" />Kopieer naar andere klant
+                      </button>
                       <button onClick={() => { versioning.handleNieuweVersie(); setShowActionsMenu(false) }} disabled={versioning.isSavingVersie} className="w-full text-left px-3 py-2 text-sm hover:bg-background dark:hover:bg-muted flex items-center gap-2 disabled:opacity-50">
                         <Clock className="h-3.5 w-3.5" />{versioning.isSavingVersie ? 'Opslaan...' : `Nieuwe versie (v${versioning.versieNummer})`}
                       </button>
@@ -214,6 +231,56 @@ export function QuoteHeader({
             )}
           </div>
         </div>
+
+        {/* Kopieer naar andere klant — klant selector modal */}
+        {showKopieerNaarKlant && klanten && setShowKopieerNaarKlant && setKopieerZoek && (
+          <>
+            <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm" onClick={() => setShowKopieerNaarKlant(false)} />
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+              <div className="pointer-events-auto bg-white rounded-xl shadow-2xl w-full max-w-md border border-[#EBEBEB] animate-in fade-in zoom-in-95 duration-200">
+                <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#EBEBEB]">
+                  <h3 className="text-base font-semibold text-[#1A1A1A]">Kopieer naar andere klant</h3>
+                  <button onClick={() => setShowKopieerNaarKlant(false)} className="h-7 w-7 rounded-md flex items-center justify-center hover:bg-[#F0EFEC] transition-colors">
+                    <X className="h-4 w-4 text-[#6B6B66]" />
+                  </button>
+                </div>
+                <div className="p-4">
+                  <div className="relative mb-3">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9B9B95]" />
+                    <input
+                      type="text"
+                      autoFocus
+                      placeholder="Zoek klant..."
+                      value={kopieerZoek || ''}
+                      onChange={(e) => setKopieerZoek(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2.5 text-sm border border-[#EBEBEB] rounded-lg bg-[#F8F7F5] focus:bg-white focus:border-[#1A535C]/30 outline-none transition-colors"
+                    />
+                  </div>
+                  <div className="max-h-[280px] overflow-y-auto space-y-0.5">
+                    {klanten
+                      .filter((k) => !kopieerZoek || (k.bedrijfsnaam || '').toLowerCase().includes(kopieerZoek.toLowerCase()))
+                      .slice(0, 50)
+                      .map((k) => (
+                        <button
+                          key={k.id}
+                          onClick={() => handleDupliceerOfferte(k.id)}
+                          disabled={isDuplicating}
+                          className="w-full text-left px-3 py-2.5 text-sm rounded-lg hover:bg-[#1A535C]/[0.05] transition-colors disabled:opacity-50 flex items-center gap-2"
+                        >
+                          <Building2 className="h-3.5 w-3.5 text-[#9B9B95] flex-shrink-0" />
+                          <span className="truncate text-[#1A1A1A]">{k.bedrijfsnaam || '(naamloos)'}</span>
+                        </button>
+                      ))
+                    }
+                    {klanten.filter((k) => !kopieerZoek || (k.bedrijfsnaam || '').toLowerCase().includes(kopieerZoek.toLowerCase())).length === 0 && (
+                      <p className="text-center text-sm text-[#9B9B95] py-4">Geen klanten gevonden</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
       </div>
   )
 }
