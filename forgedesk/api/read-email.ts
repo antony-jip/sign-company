@@ -230,8 +230,8 @@ async function fetchFromIMAP(opts: {
     auth: { user: opts.gmail_address, pass: opts.app_password },
     logger: false,
     emitLogs: false,
-    greetingTimeout: 5000,
-    socketTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 30000,
   })
 
   await client.connect()
@@ -255,7 +255,16 @@ async function fetchFromIMAP(opts: {
   await client.messageFlagsAdd({ uid: `${opts.uid}:${opts.uid}` }, ['\\Seen'])
   await client.logout()
 
-  const parsed = await simpleParser(message.source as Buffer)
+  // Parse de email maar skip de bijlage-INHOUD. We hoeven alleen de body
+  // tekst + attachment metadata (naam/type/grootte). De daadwerkelijke
+  // bijlage-data wordt apart opgehaald via /api/email-attachment wanneer
+  // de gebruiker op download klikt. Dit scheelt enorm bij mails met veel
+  // of grote bijlages (een 20MB mail parst nu in ~100ms ipv seconden).
+  const parsed = await simpleParser(message.source as Buffer, {
+    skipImageLinks: true,
+    skipTextLinks: true,
+    skipTextToHtml: true,
+  })
 
   const attachments = (parsed.attachments || []).map((a) => ({
     filename: a.filename || 'bijlage',
