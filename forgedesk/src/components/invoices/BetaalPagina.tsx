@@ -12,6 +12,7 @@ import {
   Copy,
   Calendar,
   Building2,
+  Download,
 } from 'lucide-react'
 import { getFactuurByBetaalToken, markFactuurBekeken, getProfile, getAppSettings } from '@/services/supabaseService'
 import type { Factuur, Profile } from '@/types'
@@ -377,6 +378,59 @@ export function BetaalPagina() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Download PDF — haalt factuur items + docStyle op en genereert in huisstijl */}
+        <div className="flex justify-center">
+          <Button
+            variant="outline"
+            onClick={async () => {
+              try {
+                const resp = await fetch(`/api/factuur-portaal?betaal_token=${encodeURIComponent(token!)}`)
+                if (!resp.ok) throw new Error('Factuur ophalen mislukt')
+                const data = await resp.json()
+                const { generateFactuurPDF } = await import('@/services/pdfService')
+                const doc = generateFactuurPDF(
+                  {
+                    nummer: data.factuur.nummer || '',
+                    titel: data.factuur.titel || '',
+                    datum: data.factuur.factuurdatum || '',
+                    vervaldatum: data.factuur.vervaldatum || '',
+                    subtotaal: data.factuur.subtotaal || 0,
+                    btw_bedrag: data.factuur.btw_bedrag || 0,
+                    totaal: data.factuur.totaal || 0,
+                    notities: data.factuur.notities,
+                    betaalvoorwaarden: data.factuur.betaalvoorwaarden || data.factuur.voorwaarden,
+                    factuur_type: data.factuur.factuur_type,
+                    betaal_link: data.factuur.betaal_link,
+                  },
+                  (data.items || []).map((it: Record<string, unknown>, i: number) => ({
+                    id: (it.id as string) || `item-${i}`,
+                    offerte_id: '',
+                    beschrijving: (it.beschrijving as string) || '',
+                    aantal: (it.aantal as number) || 1,
+                    eenheidsprijs: (it.eenheidsprijs as number) || 0,
+                    btw_percentage: (it.btw_percentage as number) || 21,
+                    korting_percentage: (it.korting_percentage as number) || 0,
+                    totaal: (it.totaal as number) || 0,
+                    volgorde: i + 1,
+                    created_at: new Date().toISOString(),
+                  })),
+                  data.klant || {},
+                  { bedrijfsnaam: data.bedrijf?.bedrijfsnaam || '', logo_url: data.bedrijf?.logo_url || '', primaireKleur: data.docStyle?.primaire_kleur || '#1A535C', iban: data.bedrijf?.iban || '' } as Parameters<typeof generateFactuurPDF>[3],
+                  data.docStyle || undefined,
+                )
+                doc.save(`Factuur-${data.factuur.nummer || 'download'}.pdf`)
+              } catch (err) {
+                console.error('PDF downloaden mislukt:', err)
+                alert('PDF downloaden mislukt. Probeer het opnieuw.')
+              }
+            }}
+            className="gap-2 text-muted-foreground hover:text-foreground"
+          >
+            <Download className="h-4 w-4" />
+            Download factuur als PDF
+          </Button>
+        </div>
 
         {/* Mollie online betaling */}
         {!isBetaald && mollieEnabled && (

@@ -13,55 +13,75 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
   try {
-    const token = req.query.token as string
+    const portaalToken = req.query.token as string
     const factuurId = req.query.factuur_id as string
-    if (!token || !factuurId) {
-      return res.status(400).json({ error: 'token en factuur_id zijn verplicht' })
+    const betaalToken = req.query.betaal_token as string
+
+    // Twee paden: ofwel portaal token + factuur_id, ofwel betaal_token
+    let factuur: Record<string, unknown> | null = null
+    let userId: string | null = null
+
+    if (betaalToken) {
+      // Via betaal-token: zoek factuur direct
+      const { data } = await supabaseAdmin
+        .from('facturen')
+        .select('*')
+        .eq('betaal_token', betaalToken)
+        .maybeSingle()
+      factuur = data
+      userId = factuur?.user_id as string || null
+    } else if (portaalToken && factuurId) {
+      // Via portaal token + factuur_id
+      const { data: portaal } = await supabaseAdmin
+        .from('project_portalen')
+        .select('id, user_id, project_id, actief')
+        .eq('token', portaalToken)
+        .eq('actief', true)
+        .maybeSingle()
+
+      if (!portaal) {
+        return res.status(404).json({ error: 'Portaal niet gevonden of verlopen' })
+      }
+      userId = portaal.user_id
+
+      const { data } = await supabaseAdmin
+        .from('facturen')
+        .select('*')
+        .eq('id', factuurId)
+        .maybeSingle()
+      factuur = data
+    } else {
+      return res.status(400).json({ error: 'token+factuur_id of betaal_token is verplicht' })
     }
-
-    // Verifieer portaal token
-    const { data: portaal } = await supabaseAdmin
-      .from('project_portalen')
-      .select('id, user_id, project_id, actief')
-      .eq('token', token)
-      .eq('actief', true)
-      .maybeSingle()
-
-    if (!portaal) {
-      return res.status(404).json({ error: 'Portaal niet gevonden of verlopen' })
-    }
-
-    // Controleer dat de factuur bestaat en bij dit project hoort
-    const { data: factuur } = await supabaseAdmin
-      .from('facturen')
-      .select('*')
-      .eq('id', factuurId)
-      .maybeSingle()
 
     if (!factuur) {
       return res.status(404).json({ error: 'Factuur niet gevonden' })
     }
+    if (!userId) userId = factuur.user_id as string
+
+    const factuurDbId = factuur.id as string
 
     // Factuur items
     const { data: factuurItems } = await supabaseAdmin
       .from('factuur_items')
       .select('*')
-      .eq('factuur_id', factuurId)
+      .eq('factuur_id', factuurDbId)
       .order('volgorde', { ascending: true })
 
     // Bedrijfsprofiel
     const { data: profile } = await supabaseAdmin
       .from('profiles')
       .select('bedrijfsnaam, bedrijfs_adres, bedrijfs_telefoon, bedrijfs_email, bedrijfs_website, kvk_nummer, btw_nummer, iban, logo_url')
-      .eq('id', portaal.user_id)
+      .eq('id', userId)
       .maybeSingle()
 
     // Klant
-    const { data: klant } = factuur.klant_id
+    const klantId = factuur.klant_id as string | null
+    const { data: klant } = klantId
       ? await supabaseAdmin
           .from('klanten')
           .select('bedrijfsnaam, contactpersoon, email, adres, postcode, stad')
-          .eq('id', factuur.klant_id)
+          .eq('id', klantId)
           .maybeSingle()
       : { data: null }
 
@@ -69,7 +89,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { data: docStyle } = await supabaseAdmin
       .from('document_styles')
       .select('*')
-      .eq('user_id', portaal.user_id)
+      .eq('user_id', userId)
       .maybeSingle()
 
     return res.status(200).json({
