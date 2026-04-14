@@ -18,11 +18,11 @@ import {
   MessageSquare,
   BellRing,
   X,
+  ChevronRight,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   getNotificaties,
   markNotificatieGelezen,
@@ -141,18 +141,21 @@ function formatTijdGeleden(dateString: string): string {
   const diffDays = Math.floor(diffHours / 24);
 
   if (diffSeconds < 60) {
-    return "Zojuist";
+    return "net";
   }
   if (diffMinutes < 60) {
-    return `${diffMinutes} min geleden`;
+    return `${diffMinutes}m`;
   }
   if (diffHours < 24) {
-    return `${diffHours} uur geleden`;
+    return `${diffHours}u`;
   }
   if (diffDays === 1) {
-    return "Gisteren";
+    return "1d";
   }
-  return `${diffDays} dagen geleden`;
+  if (diffDays < 7) {
+    return `${diffDays}d`;
+  }
+  return date.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' });
 }
 
 function minsAgo(minutes: number): string {
@@ -507,86 +510,86 @@ export function NotificatieCenter() {
 
       {open && (
         <div
-          className="absolute right-0 top-full z-50 mt-2 w-96 overflow-hidden"
+          className="absolute right-0 top-full z-[70] mt-2 w-[380px] max-w-[calc(100vw-24px)] overflow-hidden bg-white rounded-xl"
           style={{
-            background: '#FEFDFB',
-            border: '0.5px solid #E6E4E0',
-            borderRadius: '10px',
-            boxShadow: '0 4px 16px rgba(120,90,50,0.10)',
+            border: '0.5px solid #E0DED8',
+            boxShadow: '0 12px 32px rgba(120,90,50,0.12), 0 2px 6px rgba(0,0,0,0.04)',
           }}
         >
-          <div className="flex items-center justify-between px-4 py-3">
-            <h3 className="font-semibold" style={{ fontSize: '13px', color: '#191919' }}>
-              Notificaties
+          {/* Header */}
+          <div className="flex items-center justify-between px-5 py-3.5">
+            <h3 className="text-[14px] font-bold text-[#1A1A1A] tracking-[-0.2px]">
+              Notificaties{aantalOngelezen > 0 && <span className="text-[#F15025]">.</span>}
             </h3>
             {aantalOngelezen > 0 && (
               <button
                 onClick={handleAllesGelezenMarkeren}
-                className="transition-colors hover:opacity-70"
-                style={{ fontSize: '11px', color: '#1A535C' }}
+                className="text-[12px] font-medium text-[#1A535C] hover:text-[#0F3C44] transition-colors"
               >
                 Alles gelezen
               </button>
             )}
           </div>
 
-          <Separator />
+          <div className="h-px bg-[#EBEBEB]" />
 
+          {/* Body */}
           {laden ? (
-            <div className="flex items-center justify-center py-8">
-              <p className="text-sm text-muted-foreground">Laden...</p>
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-4 w-4 animate-spin text-[#9B9B95]" />
             </div>
           ) : notificaties.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-2 py-12">
-              <Bell className="h-10 w-10 text-muted-foreground/40" />
-              <p className="text-sm text-muted-foreground">
-                Geen nieuwe notificaties
-              </p>
+            <div className="flex flex-col items-center justify-center gap-3 py-14">
+              <div className="h-10 w-10 rounded-full bg-[#F8F7F5] flex items-center justify-center">
+                <Bell className="h-4 w-4 text-[#B0ADA8]" />
+              </div>
+              <p className="text-[13px] text-[#9B9B95]">Geen nieuwe notificaties</p>
             </div>
           ) : (
-            <ScrollArea className="max-h-96">
-              <div className="flex flex-col">
+            <div className="max-h-[420px] overflow-y-auto overscroll-contain">
+              <div className="flex flex-col py-1">
                 {notificaties.map((notificatie) => {
                   const config = typeConfig[notificatie.type];
                   const Icon = config.icon;
+                  const isUnread = !notificatie.gelezen;
 
                   return (
                     <button
                       key={notificatie.id}
                       onClick={() => handleNotificatieKlik(notificatie)}
-                      className="flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-[#F4F2EE]"
-                      style={{
-                        backgroundColor: !notificatie.gelezen ? '#FAFAF8' : undefined,
-                        borderBottom: '0.5px solid #E6E4E0',
-                      }}
+                      className={cn(
+                        'group flex w-full items-start gap-3 px-5 py-3 text-left transition-colors',
+                        isUnread && 'bg-[#F15025]/[0.025]',
+                        isUnread ? 'hover:bg-[#F15025]/[0.06]' : 'hover:bg-[#F8F7F5]'
+                      )}
                     >
-                      <div
-                        className={cn(
-                          "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
-                          config.bgClass
-                        )}
-                      >
-                        <Icon className={cn("h-4 w-4", config.colorClass)} />
+                      <div className={cn(
+                        "mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full",
+                        config.bgClass
+                      )}>
+                        <Icon className={cn("h-3.5 w-3.5", config.colorClass)} />
                       </div>
-
                       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="truncate font-medium" style={{ fontSize: '12px', color: '#191919' }}>
+                          <span className={cn(
+                            'truncate flex-1 min-w-0 text-[13px] text-[#1A1A1A]',
+                            isUnread ? 'font-semibold' : 'font-medium'
+                          )}>
                             {notificatie.titel}
                           </span>
-                          <div className="flex shrink-0 items-center gap-2">
-                            <span className="font-mono whitespace-nowrap" style={{ fontSize: '10px', color: '#A0A098' }}>
+                          <div className="flex items-center gap-1.5 flex-shrink-0">
+                            <span className="font-mono whitespace-nowrap text-[11px] text-[#9B9B95] tabular-nums">
                               {formatTijdGeleden(notificatie.created_at)}
                             </span>
-                            {!notificatie.gelezen && (
-                              <span
-                                className="shrink-0 rounded-full"
-                                style={{ width: '7px', height: '7px', backgroundColor: '#F15025' }}
-                              />
+                            {isUnread && (
+                              <span className="w-1.5 h-1.5 rounded-full bg-[#F15025]" />
                             )}
                           </div>
                         </div>
-                        <p className="line-clamp-2" style={{ fontSize: '11px', color: '#5A5A55' }}>
+                        <p className={cn(
+                          'line-clamp-2 text-[12px] leading-snug',
+                          isUnread ? 'text-[#4A4A45]' : 'text-[#6B6B66]'
+                        )}>
                           {notificatie.bericht}
                         </p>
                       </div>
@@ -594,21 +597,21 @@ export function NotificatieCenter() {
                   );
                 })}
               </div>
-            </ScrollArea>
+            </div>
           )}
 
-          <div style={{ borderTop: '0.5px solid #E6E4E0' }}>
-            <button
-              onClick={() => {
-                setOpen(false);
-                navigate("/meldingen");
-              }}
-              className="w-full px-4 py-2.5 text-center font-medium transition-colors hover:bg-[#F4F2EE]"
-              style={{ fontSize: '11px', color: '#1A535C' }}
-            >
-              Alle meldingen bekijken
-            </button>
-          </div>
+          {/* Footer */}
+          <div className="h-px bg-[#EBEBEB]" />
+          <button
+            onClick={() => {
+              setOpen(false);
+              navigate("/meldingen");
+            }}
+            className="w-full px-5 py-3 text-center text-[12px] font-medium text-[#1A535C] hover:bg-[#F8F7F5] transition-colors inline-flex items-center justify-center gap-1"
+          >
+            Alle meldingen bekijken
+            <ChevronRight className="h-3.5 w-3.5" />
+          </button>
         </div>
       )}
     </div>
