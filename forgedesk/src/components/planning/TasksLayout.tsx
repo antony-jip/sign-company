@@ -48,6 +48,7 @@ import {
   Wrench,
   FilePlus,
   Paperclip,
+  Calendar as CalendarIcon,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
@@ -95,7 +96,7 @@ function getProjectColor(name: string): string {
 const DAY_LABELS = ['ma', 'di', 'wo', 'do', 'vr', 'za', 'zo']
 const MONTH_NAMES = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec']
 const HOURS = Array.from({ length: 13 }, (_, i) => i + 7) // 07:00 - 19:00
-const HOUR_HEIGHT_DEFAULT = 52
+const HOUR_HEIGHT_DEFAULT = 44
 const HOUR_HEIGHT_MIN = 36
 const HOUR_HEIGHT_MAX = 80
 const ZOOM_STORAGE_KEY = 'doen_taken_zoom'
@@ -197,6 +198,14 @@ export function TasksLayout() {
   }, [])
   const [showCompleted, setShowCompleted] = useState(false)
   const [medewerkerFilter, setMedewerkerFilter] = useState<string>('')
+  const [expandedPastDays, setExpandedPastDays] = useState<Set<string>>(new Set())
+  const togglePastDay = useCallback((key: string) => {
+    setExpandedPastDays(prev => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key); else next.add(key)
+      return next
+    })
+  }, [])
 
   // FAB state
   const [fabOpen, setFabOpen] = useState(false)
@@ -686,87 +695,94 @@ export function TasksLayout() {
   return (
     <>
       <div className="flex flex-col h-[calc(100vh-56px)] -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 bg-[#F8F7F5]">
-        {/* === Sticky header + toolbar === */}
-        <div className="sticky top-0 z-20 bg-[#FFFFFF] border-b border-[#F0EFEC] shadow-[0_1px_3px_rgba(0,0,0,0.03)] px-6 py-3 flex-shrink-0">
-          {/* Row 1: title + navigation */}
-          <div className="flex items-center justify-between mb-2.5">
-            <div className="flex items-center gap-3">
-              <h1 className="text-xl font-bold text-[#1A1A1A] tracking-[-0.3px]">
-                Taken<span className="text-[#F15025]">.</span>
-              </h1>
-              <span className="text-[13px] text-[#9B9B95] font-mono tabular-nums">
-                {klaartaken}/{totalTaken}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              {/* View toggle */}
-              <div className="inline-flex items-center rounded-md bg-[#F3F2F0] p-0.5 flex-shrink-0">
-                {(['week', 'maand'] as const).map((v) => (
-                  <button key={v} onClick={() => setViewMode(v)} className={cn(
-                    'text-[13px] px-3.5 py-1.5 rounded-[5px] transition-all font-medium',
-                    viewMode === v ? 'bg-[#FFFFFF] text-[#1A1A1A] shadow-[0_1px_3px_rgba(0,0,0,0.06)]' : 'text-[#9B9B95] hover:text-[#6B6B66]'
-                  )}>{v === 'week' ? 'Week' : 'Maand'}</button>
-                ))}
-              </div>
-              <div className="flex items-center gap-1">
-                <button className="p-1 rounded-md hover:bg-[#EBEBEB]/40 transition-all" onClick={() => viewMode === 'week' ? setWeekOffset((w) => w - 1) : setMonthOffset((m) => m - 1)}>
-                  <ChevronLeft className="w-4 h-4 text-[#9B9B95]" />
-                </button>
-                <button
-                  className="text-[14px] px-2.5 py-1 rounded-md font-semibold text-[#1A1A1A] min-w-[160px] text-center"
-                  onClick={() => viewMode === 'week' ? setWeekOffset(0) : setMonthOffset(0)}
-                >
-                  {viewMode === 'week' ? weekLabel : monthLabel}
-                </button>
-                <button className="p-1 rounded-md hover:bg-[#EBEBEB]/40 transition-all" onClick={() => viewMode === 'week' ? setWeekOffset((w) => w + 1) : setMonthOffset((m) => m + 1)}>
-                  <ChevronRight className="w-4 h-4 text-[#9B9B95]" />
-                </button>
-              </div>
-              {!(viewMode === 'week' ? isCurrentWeek : monthOffset === 0) && (
-                <button
-                  className="text-[13px] px-3 py-1.5 rounded-md font-medium text-[#1A535C] hover:bg-[#1A535C]/[0.05] transition-all"
-                  onClick={() => viewMode === 'week' ? setWeekOffset(0) : setMonthOffset(0)}
-                >
-                  Vandaag
-                </button>
-              )}
-            </div>
+        {/* === Sticky toolbar — 1 rij === */}
+        <div className="sticky top-0 z-20 bg-[#FFFFFF] border-b border-[#F0EFEC] shadow-[0_1px_3px_rgba(0,0,0,0.03)] px-6 py-2 flex-shrink-0 flex items-center gap-3 flex-wrap">
+          {/* Titel + counter */}
+          <div className="flex items-baseline gap-2">
+            <h1 className="text-[17px] font-bold text-[#1A1A1A] tracking-[-0.3px]">
+              Taken<span className="text-[#F15025]">.</span>
+            </h1>
+            <span className="text-[12px] text-[#9B9B95] font-mono tabular-nums">
+              {klaartaken}/{totalTaken}
+            </span>
           </div>
-          {/* Row 2: filters */}
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
-              {([['alle', 'Alle'], ['project', 'Project'], ['los', 'Los']] as const).map(([key, label]) => (
-                <button key={key} onClick={() => setTaskFilter(key)} className={cn(
-                  'text-[13px] px-3 py-1.5 rounded-md transition-all whitespace-nowrap font-medium',
-                  taskFilter === key
-                    ? 'text-[#1A1A1A] bg-[#FFFFFF] shadow-[0_1px_3px_rgba(0,0,0,0.06)]'
-                    : 'text-[#9B9B95] hover:text-[#6B6B66]'
-                )}>{label}</button>
+
+          {/* Scheidingsstreep */}
+          <span className="w-px h-5 bg-[#EBEBEB]" />
+
+          {/* Filter pills */}
+          <div className="flex items-center gap-0.5 overflow-x-auto scrollbar-hide">
+            {([['alle', 'Alle'], ['project', 'Project'], ['los', 'Los']] as const).map(([key, label]) => (
+              <button key={key} onClick={() => setTaskFilter(key)} className={cn(
+                'text-[13px] px-2.5 py-1 rounded-md transition-all whitespace-nowrap font-medium',
+                taskFilter === key
+                  ? 'text-[#1A1A1A] bg-[#F3F2F0]'
+                  : 'text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F8F7F5]'
+              )}>{label}</button>
+            ))}
+            <span className="w-px h-4 bg-[#EBEBEB] mx-1" />
+            <button onClick={() => setShowMontage(!showMontage)} className={cn(
+              'text-[13px] px-2.5 py-1 rounded-md transition-all whitespace-nowrap font-medium flex items-center gap-1.5',
+              showMontage ? 'text-[#1A1A1A] bg-[#F3F2F0]' : 'text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F8F7F5]'
+            )}><Wrench className="w-3.5 h-3.5" />Montage</button>
+          </div>
+
+          {/* Spacer */}
+          <div className="flex-1 min-w-0" />
+
+          {/* Medewerker filter */}
+          {medewerkers.length > 0 && (
+            <select
+              value={medewerkerFilter}
+              onChange={(e) => setMedewerkerFilter(e.target.value)}
+              className="h-7 text-[13px] rounded-md border border-[#E0DED8] bg-white px-2 max-w-[140px] text-[#6B6B66] focus:outline-none focus:border-[#1A535C]/40"
+            >
+              <option value="">Iedereen</option>
+              {medewerkers.filter((m) => m.status === 'actief').map((m) => (
+                <option key={m.id} value={m.naam}>{m.naam}</option>
               ))}
-              <span className="w-px h-4 bg-[#EBEBEB] mx-1" />
-              <button onClick={() => setShowMontage(!showMontage)} className={cn(
-                'text-[13px] px-3 py-1.5 rounded-md transition-all whitespace-nowrap font-medium flex items-center gap-1.5',
-                showMontage ? 'text-[#1A1A1A] bg-[#FFFFFF] shadow-[0_1px_3px_rgba(0,0,0,0.06)]' : 'text-[#9B9B95] hover:text-[#6B6B66]'
-              )}><Wrench className="w-3.5 h-3.5" />Montage</button>
-            </div>
-            {medewerkers.length > 0 && (
-              <select
-                value={medewerkerFilter}
-                onChange={(e) => setMedewerkerFilter(e.target.value)}
-                className="h-8 text-[13px] rounded-md border border-[#EBEBEB] bg-[#F8F7F5] px-2.5 max-w-[160px] text-[#6B6B66] focus:outline-none focus:border-[#1A535C]/30"
-              >
-                <option value="">Iedereen</option>
-                {medewerkers.filter((m) => m.status === 'actief').map((m) => (
-                  <option key={m.id} value={m.naam}>{m.naam}</option>
-                ))}
-              </select>
-            )}
-            {/* Zoom */}
-            <div className="flex items-center gap-0.5 border border-[#EBEBEB] rounded-md overflow-hidden">
-              <button onClick={() => handleZoom(-4)} className="px-1.5 py-0.5 text-[12px] text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] transition-colors" title="Kleiner">A</button>
-              <span className="w-px h-4 bg-[#EBEBEB]" />
-              <button onClick={() => handleZoom(4)} className="px-1.5 py-0.5 text-[14px] text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] transition-colors font-medium" title="Groter">A</button>
-            </div>
+            </select>
+          )}
+
+          {/* View toggle */}
+          <div className="inline-flex items-center rounded-md bg-[#F3F2F0] p-0.5 flex-shrink-0">
+            {(['week', 'maand'] as const).map((v) => (
+              <button key={v} onClick={() => setViewMode(v)} className={cn(
+                'text-[12px] px-2.5 py-1 rounded-[4px] transition-all font-medium',
+                viewMode === v ? 'bg-white text-[#1A1A1A] shadow-[0_1px_2px_rgba(0,0,0,0.06)]' : 'text-[#9B9B95] hover:text-[#6B6B66]'
+              )}>{v === 'week' ? 'Week' : 'Maand'}</button>
+            ))}
+          </div>
+
+          {/* Date nav */}
+          <div className="flex items-center gap-0.5">
+            <button className="p-1 rounded-md hover:bg-[#F3F2F0] transition-all" onClick={() => viewMode === 'week' ? setWeekOffset((w) => w - 1) : setMonthOffset((m) => m - 1)}>
+              <ChevronLeft className="w-4 h-4 text-[#9B9B95]" />
+            </button>
+            <button
+              className="text-[13px] px-2 py-1 rounded-md font-semibold text-[#1A1A1A] min-w-[130px] text-center hover:bg-[#F3F2F0] transition-colors"
+              onClick={() => viewMode === 'week' ? setWeekOffset(0) : setMonthOffset(0)}
+            >
+              {viewMode === 'week' ? weekLabel : monthLabel}
+            </button>
+            <button className="p-1 rounded-md hover:bg-[#F3F2F0] transition-all" onClick={() => viewMode === 'week' ? setWeekOffset((w) => w + 1) : setMonthOffset((m) => m + 1)}>
+              <ChevronRight className="w-4 h-4 text-[#9B9B95]" />
+            </button>
+          </div>
+          {!(viewMode === 'week' ? isCurrentWeek : monthOffset === 0) && (
+            <button
+              className="text-[12px] px-2 py-1 rounded-md font-medium text-[#1A535C] hover:bg-[#1A535C]/[0.05] transition-all"
+              onClick={() => viewMode === 'week' ? setWeekOffset(0) : setMonthOffset(0)}
+            >
+              Vandaag
+            </button>
+          )}
+
+          {/* Zoom */}
+          <div className="flex items-center gap-0.5 border border-[#E0DED8] rounded-md overflow-hidden h-7">
+            <button onClick={() => handleZoom(-4)} className="px-1.5 h-full text-[11px] text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] transition-colors" title="Kleiner">A</button>
+            <span className="w-px h-full bg-[#E0DED8]" />
+            <button onClick={() => handleZoom(4)} className="px-1.5 h-full text-[13px] text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] transition-colors font-medium" title="Groter">A</button>
           </div>
         </div>
 
@@ -783,6 +799,8 @@ export function TasksLayout() {
             const isToday = isSameDay(day, today)
             const dayTasks = tasksByDay.get(day.toDateString()) || []
             const isPast = day < today && !isToday
+            const dayKey = day.toDateString()
+            const isExpanded = expandedPastDays.has(dayKey)
             return (
               <div
                 key={i}
@@ -796,18 +814,27 @@ export function TasksLayout() {
                     'text-[11px] uppercase tracking-widest font-semibold',
                     isToday ? 'text-[#1A535C]' : isPast ? 'text-[#D0D0CC]' : 'text-[#9B9B95]'
                   )}>
-                    {DAY_LABELS[i]}
+                    {DAY_LABELS[i]}{isToday && <span className="text-[#F15025]">.</span>}
                   </span>
                   <span className={cn(
                     'text-[14px] font-bold font-mono tabular-nums',
-                    isToday
-                      ? 'w-8 h-8 rounded-full bg-[#1A535C] text-white inline-flex items-center justify-center text-[13px]'
-                      : isPast ? 'text-[#D0D0CC]' : 'text-[#1A1A1A]'
+                    isToday ? 'text-[#1A535C]' : isPast ? 'text-[#D0D0CC]' : 'text-[#1A1A1A]'
                   )}>
                     {day.getDate()}
                   </span>
-                  {dayTasks.length > 0 && !isToday && (
-                    <span className="text-[10px] font-mono text-[#9B9B95]">{dayTasks.length}</span>
+                  {isPast && dayTasks.length > 0 ? (
+                    <button
+                      onClick={() => togglePastDay(dayKey)}
+                      className="inline-flex items-center gap-0.5 text-[10px] font-medium text-[#9B9B95] hover:text-[#1A535C] transition-colors px-1.5 py-0.5 rounded hover:bg-[#1A535C]/[0.06]"
+                      title={isExpanded ? 'Verberg verlopen taken' : 'Toon verlopen taken'}
+                    >
+                      <span className="font-mono">{dayTasks.length}</span>
+                      <ChevronRight className={cn('w-2.5 h-2.5 transition-transform', isExpanded && 'rotate-90')} />
+                    </button>
+                  ) : (
+                    dayTasks.length > 0 && !isToday && (
+                      <span className="text-[10px] font-mono text-[#9B9B95]">{dayTasks.length}</span>
+                    )
                   )}
                 </div>
               </div>
@@ -832,8 +859,11 @@ export function TasksLayout() {
             {/* Day columns */}
             {weekDays.map((day, dayIndex) => {
               const isToday = isSameDay(day, today)
-              const dayTasks = tasksByDay.get(day.toDateString()) || []
+              const dayKey = day.toDateString()
+              const allDayTasks = tasksByDay.get(dayKey) || []
               const isPast = day < today && !isToday
+              const isPastCollapsed = isPast && !expandedPastDays.has(dayKey)
+              const dayTasks = isPastCollapsed ? [] : allDayTasks
 
               return (
                 <DayColumn
@@ -1354,6 +1384,10 @@ function DayColumn({
         const dropIsBottomHalf = dropHourInThisCell && (dropTarget!.hour - hour) >= 0.5
         const isDropHere = dropHourInThisCell
         const isAddingHere = addingAtHour === hour
+        const hasTaskAtHour = scheduledTasks.some((t) => {
+          const h = getHourFromDeadline(t.deadline ?? '')
+          return h !== null && h >= hour && h < hour + 1
+        })
         return (
           <div
             key={hour}
@@ -1406,8 +1440,8 @@ function DayColumn({
               </div>
             )}
 
-            {/* Plus button per hour slot */}
-            {!isDropHere && !isAddingHere && (
+            {/* Plus button per hour slot — hide when the hour is occupied so it doesn't collide with the task's delete */}
+            {!isDropHere && !isAddingHere && !hasTaskAtHour && (
               <button
                 onClick={() => { setAddingAtHour(hour); setHourAddTitle(''); setTimeout(() => hourInputRef.current?.focus(), 50) }}
                 className="absolute top-1 right-1 z-20 opacity-0 group-hover/hour:opacity-100 p-1 rounded-lg text-[#F15025]/40 hover:text-[#F15025] hover:bg-[#F15025]/10 transition-all duration-200"
@@ -1419,15 +1453,15 @@ function DayColumn({
         )
       })}
 
-      {/* Now-line */}
+      {/* Now-line — dun, translucent zodat tekst leesbaar blijft */}
       {nowLineTop !== null && (
         <div
           className="absolute left-0 right-0 z-20 pointer-events-none"
           style={{ top: `${nowLineTop}%` }}
         >
           <div className="flex items-center">
-            <div className="w-2.5 h-2.5 rounded-full bg-[#F15025] -ml-1.5 flex-shrink-0 shadow-sm" />
-            <div className="flex-1 h-[2px] bg-[#F15025]/80" />
+            <div className="w-1.5 h-1.5 rounded-full bg-[#F15025] -ml-1 flex-shrink-0" />
+            <div className="flex-1 h-px bg-[#F15025]/50" />
           </div>
         </div>
       )}
@@ -1625,7 +1659,9 @@ function TaskCard({
 
   function handleDeleteClick(e: React.MouseEvent) {
     e.stopPropagation()
-    onDelete()
+    if (window.confirm(`"${taak.titel}" verwijderen?`)) {
+      onDelete()
+    }
   }
 
   function handleDragStart(e: React.DragEvent) {
@@ -1652,12 +1688,12 @@ function TaskCard({
       onDragStart={handleDragStart}
       onDragEnd={(e) => { const el = e.currentTarget as HTMLElement; el.style.opacity = '1'; el.style.transform = ''; onDragEnd() }}
       className={cn(
-        'group relative border-l-[3px] transition-all duration-200 ease-out select-none',
-        scheduled ? 'h-full' : 'rounded-sm',
+        'group relative border-l-2 rounded-[5px] transition-all duration-200 ease-out select-none',
+        scheduled ? 'h-full' : '',
         !isResizing && 'cursor-grab active:cursor-grabbing',
-        'hover:brightness-[0.97] hover:z-10',
-        isDone && 'opacity-45 hover:opacity-70',
-        isPast && !isDone && 'opacity-60',
+        'hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] hover:z-10',
+        isDone && 'opacity-40 hover:opacity-60',
+        isPast && !isDone && 'opacity-55',
         justCompleted && 'scale-[0.98] opacity-40 transition-all duration-500',
         isResizing && 'ring-2 ring-[#1A535C]/30 z-30'
       )}
@@ -1668,56 +1704,58 @@ function TaskCard({
       }}
       onClick={onEdit}
     >
-      {/* Checkbox links */}
+      {/* Checkbox — Priority Pulse: cirkel met binnen-dot in priority-kleur, groeit bij hover */}
       <button
         onClick={handleToggle}
-        className={cn('absolute top-1.5 left-1.5 z-10 transition-all duration-200', isCompact && 'top-1')}
+        className={cn('group/check absolute top-[6px] left-2 z-10', isCompact && 'top-1')}
         title={isDone ? 'Ongedaan maken' : 'Markeer als klaar'}
       >
         {isDone ? (
-          <div className="w-4 h-4 rounded-sm bg-[#1A535C] flex items-center justify-center">
-            <Check className="w-3 h-3 text-white" strokeWidth={3} />
+          <div className="w-3.5 h-3.5 rounded-full bg-[#1A535C] flex items-center justify-center ring-2 ring-[#1A535C]/15 transition-all duration-200">
+            <Check className="w-2 h-2 text-white" strokeWidth={4} />
           </div>
         ) : (
-          <div className={cn(
-            'w-4 h-4 rounded-sm border-[1.5px] transition-all duration-200',
-            PRIORITEIT_RING_COLORS[taak.prioriteit],
-            'hover:border-[#1A535C] hover:bg-[#1A535C]/10'
-          )} />
+          <div className="w-3.5 h-3.5 rounded-full border-[1.5px] border-[#B0ADA8]/55 flex items-center justify-center transition-[transform,border-color] duration-200 group-hover/check:border-[#1A535C] group-hover/check:scale-110 group-active/check:scale-95">
+            <span
+              className="block rounded-full w-[3px] h-[3px] opacity-55 transition-all duration-200 ease-out group-hover/check:w-[7px] group-hover/check:h-[7px] group-hover/check:opacity-100"
+              style={{ backgroundColor: pc.dot }}
+            />
+          </div>
         )}
       </button>
 
-      {/* Content — pl-7 zodat de tekst ademruimte heeft naast de checkbox */}
-      <div className={cn('h-full', isCompact ? 'pl-7 pr-2 py-1' : 'pl-7 pr-2 py-1.5')}>
-        <div className="flex items-center gap-1">
-          {(taak.prioriteit === 'kritiek' || taak.prioriteit === 'hoog') && !isDone && (
-            <span className="inline-block w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: pc.dot }} />
-          )}
+      {/* Content — pl-7 voor ruimte naast checkbox (iets breder dan voorheen) */}
+      <div className={cn('h-full', isCompact ? 'pl-7 pr-1.5 py-1' : 'pl-7 pr-1.5 py-1.5')}>
+        <div className="flex items-center gap-1.5">
           <p className={cn(
-            'text-[13px] font-semibold leading-tight text-[#1A1A1A] truncate flex-1',
+            'text-[13px] font-medium leading-tight text-[#1A1A1A] truncate flex-1',
             isDone && 'line-through text-[#9B9B95]',
             isCompact && 'text-[11px]'
           )}>
             {taak.titel}
           </p>
-          {/* Delete — hover only */}
-          <button onClick={handleDeleteClick} className="p-0.5 text-transparent group-hover:text-[#9B9B95] hover:!text-[#C03A18] transition-colors flex-shrink-0" title="Verwijderen">
-            <Trash2 className="w-3 h-3" />
+          {/* Delete — hover only, ruimte + grotere hit area */}
+          <button
+            onClick={handleDeleteClick}
+            className="ml-auto p-1.5 -mr-1 rounded-md text-transparent group-hover:text-[#9B9B95] hover:!text-[#C03A18] hover:bg-[#C03A18]/8 transition-all flex-shrink-0"
+            title="Verwijderen"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
         {!isCompact && (
-          <div className="flex items-center gap-1.5 mt-0.5 overflow-hidden">
+          <div className="flex items-center gap-2 mt-1 overflow-hidden">
             {projectNaam && (
-              <span className="text-[11px] text-[#9B9B95] truncate max-w-[100px] flex items-center gap-0.5">
+              <span className="text-[11px] text-[#9B9B95] truncate max-w-[100px] flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: getProjectColor(projectNaam) }} />
                 {projectNaam}
               </span>
             )}
             {scheduled && hour !== null && (
-              <span className="text-[11px] text-[#9B9B95] font-mono">{formatHourLabel(hour)}</span>
+              <span className="text-[11px] text-[#9B9B95] font-mono tabular-nums">{formatHourLabel(hour)}</span>
             )}
             {durationLabel && (
-              <span className="text-[11px] text-[#9B9B95] font-mono">{durationLabel}</span>
+              <span className="text-[11px] text-[#9B9B95] font-mono tabular-nums">{durationLabel}</span>
             )}
           </div>
         )}
@@ -1758,187 +1796,264 @@ function EditTaskDialog({
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
+  const [showMore, setShowMore] = useState(false)
+  const [selectedType, setSelectedType] = useState<'intern' | 'project' | 'klant'>(
+    formData.project_id ? 'project' : formData.klant_id ? 'klant' : 'intern'
+  )
+  const type = selectedType
+  const beschrijvingRef = useRef<HTMLTextAreaElement>(null)
+
+  useEffect(() => {
+    const el = beschrijvingRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight}px`
+  }, [formData.beschrijving, open])
+
+  const displayDeadline = formData.deadline
+    ? new Date(formData.deadline).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })
+    : 'Geen deadline'
+
+  const pillBase = 'h-7 px-2.5 inline-flex items-center gap-1.5 rounded-full border border-[#E0DED8] bg-white text-xs font-medium text-[#1A1A1A] hover:border-[#B0ADA8] hover:bg-[#F8F7F5] transition-colors'
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader><DialogTitle>Taak bewerken</DialogTitle></DialogHeader>
-        <div className="grid gap-4 py-2">
-          <div className="grid gap-2">
-            <Label htmlFor="edit-titel">Titel</Label>
-            <Input id="edit-titel" value={formData.titel} onChange={(e) => updateField('titel', e.target.value)} />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="edit-beschrijving">Beschrijving</Label>
-            <Textarea id="edit-beschrijving" value={formData.beschrijving} onChange={(e) => updateField('beschrijving', e.target.value)} rows={3} placeholder="Optioneel..." />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="grid gap-2">
-              <Label>Prioriteit</Label>
-              <Select value={formData.prioriteit} onValueChange={(v) => updateField('prioriteit', v as TaakPrioriteit)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {(['kritiek', 'hoog', 'medium', 'laag'] as TaakPrioriteit[]).map((p) => (
-                    <SelectItem key={p} value={p}>
-                      <div className="flex items-center gap-2">
-                        <Flag className={`w-3 h-3 ${PRIORITEIT_FLAG_COLORS[p]}`} />
-                        {p.charAt(0).toUpperCase() + p.slice(1)}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="edit-deadline">Deadline</Label>
-              <Input id="edit-deadline" type="date" value={formData.deadline} onChange={(e) => updateField('deadline', e.target.value)} />
-            </div>
-          </div>
-          <div className="grid gap-2">
-            <Label>Type taak</Label>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => { updateField('project_id', ''); updateField('klant_id', '') }}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                  !formData.project_id && !formData.klant_id
-                    ? 'bg-primary/10 text-primary border-primary/30'
-                    : 'bg-muted text-muted-foreground border-transparent'
-                }`}
-              >
-                Intern
-              </button>
-              <button
-                type="button"
-                onClick={() => updateField('klant_id', '')}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                  formData.project_id
-                    ? 'bg-primary/10 text-primary border-primary/30'
-                    : 'bg-muted text-muted-foreground border-transparent'
-                }`}
-              >
-                Projecttaak
-              </button>
-              <button
-                type="button"
-                onClick={() => { updateField('project_id', ''); updateField('klant_id', formData.klant_id || '') }}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                  !formData.project_id && formData.klant_id
-                    ? 'bg-primary/10 text-primary border-primary/30'
-                    : 'bg-muted text-muted-foreground border-transparent'
-                }`}
-              >
-                Losse taak
-              </button>
-            </div>
-          </div>
-          {formData.project_id !== undefined && (
-            <div className="grid gap-2">
-              <Label>Project (optioneel)</Label>
-              <Select value={formData.project_id || 'geen'} onValueChange={(v) => updateField('project_id', v === 'geen' ? '' : v)}>
-                <SelectTrigger><SelectValue placeholder="Geen project" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="geen">Geen project</SelectItem>
-                  {projecten.map((p) => (<SelectItem key={p.id} value={p.id}>{p.naam}</SelectItem>))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-          {!formData.project_id && (
-            <KlantSearchField klanten={klanten} value={formData.klant_id} onChange={(v) => updateField('klant_id', v)} />
-          )}
-          <div className="grid gap-2">
-            <Label htmlFor="edit-locatie">Locatie</Label>
-            <Input id="edit-locatie" value={formData.locatie} onChange={(e) => updateField('locatie', e.target.value)} placeholder="Bijv. Hoofdstraat 1, Amsterdam" />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="edit-toegewezen">Toegewezen aan</Label>
-            {medewerkers.length > 0 ? (
-              <Select value={formData.toegewezen_aan || 'none'} onValueChange={(v) => updateField('toegewezen_aan', v === 'none' ? '' : v)}>
-                <SelectTrigger><SelectValue placeholder="Optioneel..." /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Niet toegewezen</SelectItem>
-                  {medewerkers.filter((m) => m.status === 'actief').map((m) => (
-                    <SelectItem key={m.id} value={m.naam}>{m.naam}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ) : (
-              <Input id="edit-toegewezen" value={formData.toegewezen_aan} onChange={(e) => updateField('toegewezen_aan', e.target.value)} placeholder="Optioneel..." />
-            )}
-          </div>
-          {/* Bijlagen */}
-          <div className="grid gap-2">
-            <Label className="flex items-center gap-1.5"><Paperclip className="h-3.5 w-3.5" />Bijlagen</Label>
-            <div className="flex flex-col gap-2">
-              {formData.bijlagen.map((url, i) => {
-                const isImage = url.startsWith('data:image/') || /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(url)
-                return (
-                  <div key={i} className="flex items-center gap-3 p-2 rounded-lg border border-border bg-muted/20 group hover:bg-muted/40 transition-colors">
-                    {/* Thumbnail / icon */}
-                    {isImage ? (
-                      <a href={url} target="_blank" rel="noopener noreferrer" className="shrink-0">
-                        <img src={url} alt="" className="h-14 w-14 rounded-md object-cover border border-border hover:ring-2 hover:ring-primary/20 transition-all" />
-                      </a>
-                    ) : (
-                      <a href={url} target="_blank" rel="noopener noreferrer" className="shrink-0 h-14 w-14 rounded-md border border-border bg-muted/50 flex items-center justify-center hover:ring-2 hover:ring-primary/20 transition-all">
-                        <Paperclip className="h-5 w-5 text-muted-foreground" />
-                      </a>
-                    )}
-                    {/* Bestandsinfo */}
-                    <div className="flex-1 min-w-0">
-                      <a href={url} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-foreground hover:underline truncate block">
-                        {url.startsWith('data:') ? `Bestand ${i + 1}` : decodeURIComponent(url.split('/').pop()?.split('?')[0] || `Bestand ${i + 1}`).replace(/^\d+_/, '')}
-                      </a>
-                      <span className="text-[10px] text-muted-foreground">
-                        {isImage ? 'Afbeelding' : 'Document'} · Klik om te openen
-                      </span>
-                    </div>
-                    {/* Verwijder knop */}
-                    <button
-                      type="button"
-                      onClick={() => updateField('bijlagen', formData.bijlagen.filter((_, j) => j !== i) as string[])}
-                      className="shrink-0 h-7 w-7 rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
+      <DialogContent className="sm:max-w-[540px] p-0 gap-0 max-h-[85vh] flex flex-col overflow-hidden">
+        <DialogHeader className="sr-only"><DialogTitle>Taak bewerken</DialogTitle></DialogHeader>
+
+        <div className="flex-1 overflow-y-auto">
+        {/* Titel — prominent, echt borderless */}
+        <div className="px-7 pt-7 pb-2">
+          <Input
+            value={formData.titel}
+            onChange={(e) => updateField('titel', e.target.value)}
+            placeholder="Titel van de taak"
+            className="border-0 shadow-none px-0 h-auto py-0 bg-transparent text-[20px] font-bold text-[#1A1A1A] placeholder:text-[#9B9B95] placeholder:font-medium focus-visible:ring-0 tracking-[-0.3px]"
+          />
+        </div>
+
+        {/* Meta-pill rij — alles op 1 lijn, type-segment inline */}
+        <div className="px-7 pb-4 flex items-center gap-1.5 flex-wrap">
+          {/* Prioriteit */}
+          <Select value={formData.prioriteit} onValueChange={(v) => updateField('prioriteit', v as TaakPrioriteit)}>
+            <SelectTrigger className={cn(pillBase, 'w-auto focus:ring-0 [&>svg]:hidden')}>
+              <Flag className={`w-3 h-3 ${PRIORITEIT_FLAG_COLORS[formData.prioriteit]}`} />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {(['kritiek', 'hoog', 'medium', 'laag'] as TaakPrioriteit[]).map((p) => (
+                <SelectItem key={p} value={p}>
+                  <div className="flex items-center gap-2">
+                    <Flag className={`w-3 h-3 ${PRIORITEIT_FLAG_COLORS[p]}`} />
+                    {p.charAt(0).toUpperCase() + p.slice(1)}
                   </div>
-                )
-              })}
-              {/* Upload knop */}
-              <label className="flex items-center justify-center gap-2 h-10 rounded-lg border border-dashed border-border bg-muted/20 cursor-pointer hover:border-primary/30 hover:bg-primary/5 transition-colors text-sm text-muted-foreground hover:text-foreground">
-                <Plus className="h-4 w-4" />
-                <span>Bestand toevoegen</span>
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*,.pdf,.doc,.docx"
-                  className="hidden"
-                  onChange={async (e) => {
-                    const files = Array.from(e.target.files || [])
-                    if (!editingTaakId || files.length === 0) return
-                    for (const file of files) {
-                      try {
-                        const url = await uploadTaakBijlage(editingTaakId, file)
-                        setFormData(prev => ({ ...prev, bijlagen: [...prev.bijlagen, url] }))
-                      } catch (err) {
-                        logger.error('uploadTaakBijlage:', err)
-                        toast.error(`Kon "${file.name}" niet uploaden`)
-                      }
-                    }
-                    e.target.value = ''
-                  }}
-                />
-              </label>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Deadline — native date input, overlay pattern */}
+          <label className={cn(pillBase, 'relative cursor-pointer')}>
+            <CalendarIcon className="w-3 h-3 text-[#6B6B66]" />
+            <span className={cn(!formData.deadline && 'text-[#9B9B95]')}>{displayDeadline}</span>
+            <input
+              type="date"
+              value={formData.deadline}
+              onChange={(e) => updateField('deadline', e.target.value)}
+              className="absolute inset-0 opacity-0 cursor-pointer"
+            />
+          </label>
+
+          {/* Toegewezen */}
+          {medewerkers.length > 0 ? (
+            <Select value={formData.toegewezen_aan || 'none'} onValueChange={(v) => updateField('toegewezen_aan', v === 'none' ? '' : v)}>
+              <SelectTrigger className={cn(pillBase, 'w-auto focus:ring-0 [&>svg]:hidden max-w-[160px]')}>
+                <User2 className="w-3 h-3 text-[#6B6B66]" />
+                <SelectValue placeholder="Niet toegewezen" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Niet toegewezen</SelectItem>
+                {medewerkers.filter((m) => m.status === 'actief').map((m) => (
+                  <SelectItem key={m.id} value={m.naam}>{m.naam}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <div className={cn(pillBase, 'cursor-text')}>
+              <User2 className="w-3 h-3 text-[#6B6B66]" />
+              <input
+                value={formData.toegewezen_aan}
+                onChange={(e) => updateField('toegewezen_aan', e.target.value)}
+                placeholder="Niet toegewezen"
+                className="bg-transparent border-0 outline-none text-xs font-medium text-[#1A1A1A] placeholder:text-[#9B9B95] w-28"
+              />
             </div>
+          )}
+
+          {/* Type-segment — inline in pill rij */}
+          <div className="flex items-center gap-0.5 p-0.5 rounded-full bg-[#F0EFEC] border border-[#E0DED8]">
+            <button
+              type="button"
+              onClick={() => { setSelectedType('intern'); updateField('project_id', ''); updateField('klant_id', '') }}
+              className={cn('px-2.5 h-6 text-[11px] font-medium rounded-full transition-colors', type === 'intern' ? 'bg-white text-[#1A1A1A] shadow-sm' : 'text-[#6B6B66] hover:text-[#1A1A1A]')}
+            >
+              Intern
+            </button>
+            <button
+              type="button"
+              onClick={() => { setSelectedType('project'); updateField('klant_id', '') }}
+              className={cn('px-2.5 h-6 text-[11px] font-medium rounded-full transition-colors', type === 'project' ? 'bg-white text-[#1A1A1A] shadow-sm' : 'text-[#6B6B66] hover:text-[#1A1A1A]')}
+            >
+              Project
+            </button>
+            <button
+              type="button"
+              onClick={() => { setSelectedType('klant'); updateField('project_id', '') }}
+              className={cn('px-2.5 h-6 text-[11px] font-medium rounded-full transition-colors', type === 'klant' ? 'bg-white text-[#1A1A1A] shadow-sm' : 'text-[#6B6B66] hover:text-[#1A1A1A]')}
+            >
+              Klant
+            </button>
           </div>
         </div>
-        {editingTaakId && (
-          <AuditLogPanel entityType="taak" entityId={editingTaakId} />
+
+        {/* Contextuele project/klant selector */}
+        {type === 'project' && (
+          <div className="px-7 pb-3">
+            <Select value={formData.project_id || 'geen'} onValueChange={(v) => updateField('project_id', v === 'geen' ? '' : v)}>
+              <SelectTrigger className="h-9 text-sm border-[#E0DED8] bg-[#F8F7F5]"><SelectValue placeholder="Kies project..." /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="geen">Geen project</SelectItem>
+                {projecten.map((p) => (<SelectItem key={p.id} value={p.id}>{p.naam}</SelectItem>))}
+              </SelectContent>
+            </Select>
+          </div>
         )}
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSaving}>Annuleren</Button>
-          <Button onClick={onSave} disabled={isSaving}>
-            {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Opslaan
+        {type === 'klant' && (
+          <div className="px-7 pb-3">
+            <KlantSearchField klanten={klanten} value={formData.klant_id} onChange={(v) => updateField('klant_id', v)} />
+          </div>
+        )}
+
+        {/* Beschrijving — auto-grow, borderless */}
+        <div className="px-7 pb-5">
+          <Textarea
+            ref={beschrijvingRef}
+            value={formData.beschrijving}
+            onChange={(e) => updateField('beschrijving', e.target.value)}
+            placeholder="Voeg een beschrijving toe..."
+            rows={2}
+            data-gramm="false"
+            className="border-0 shadow-none px-0 py-0 min-h-0 resize-none overflow-hidden bg-transparent text-sm leading-relaxed text-[#1A1A1A] placeholder:text-[#9B9B95] focus-visible:ring-0"
+          />
+        </div>
+
+        {/* Meer details — accordion */}
+        <div className="border-t border-[#EBEBEB]">
+          <button
+            type="button"
+            onClick={() => setShowMore(!showMore)}
+            className="w-full px-7 py-3 flex items-center justify-between text-xs font-medium text-[#6B6B66] hover:text-[#1A1A1A] transition-colors"
+          >
+            <span className="flex items-center gap-1.5">
+              <ChevronRight className={cn('w-3.5 h-3.5 transition-transform duration-200', showMore && 'rotate-90')} />
+              Meer details
+            </span>
+            <span className="flex items-center gap-2.5 text-[11px] text-[#9B9B95]">
+              {formData.locatie && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />Locatie</span>}
+              {formData.bijlagen.length > 0 && <span className="flex items-center gap-1"><Paperclip className="w-3 h-3" />{formData.bijlagen.length}</span>}
+            </span>
+          </button>
+          {showMore && (
+            <div className="px-7 pb-5 space-y-5">
+              {/* Locatie */}
+              <div className="space-y-1.5">
+                <Label className="text-[10px] uppercase tracking-[0.08em] text-[#9B9B95] font-semibold">Locatie</Label>
+                <Input
+                  value={formData.locatie}
+                  onChange={(e) => updateField('locatie', e.target.value)}
+                  placeholder="Bijv. Hoofdstraat 1, Amsterdam"
+                  className="h-9 text-sm border-[#E0DED8] bg-white focus-visible:border-[#1A535C] focus-visible:ring-[#1A535C]/15"
+                />
+              </div>
+
+              {/* Bijlagen — compact grid */}
+              <div className="space-y-1.5">
+                <Label className="text-[10px] uppercase tracking-[0.08em] text-[#9B9B95] font-semibold">Bijlagen</Label>
+                <div className="flex flex-wrap gap-2">
+                  {formData.bijlagen.map((url, i) => {
+                    const isImage = url.startsWith('data:image/') || /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(url)
+                    const filename = url.startsWith('data:')
+                      ? `Bestand ${i + 1}`
+                      : decodeURIComponent(url.split('/').pop()?.split('?')[0] || `Bestand ${i + 1}`).replace(/^\d+_/, '')
+                    return (
+                      <div key={i} className="group relative">
+                        {isImage ? (
+                          <a href={url} target="_blank" rel="noopener noreferrer" title={filename}>
+                            <img src={url} alt="" className="h-14 w-14 rounded-lg object-cover border border-[#E0DED8] hover:border-[#1A535C] transition-colors" />
+                          </a>
+                        ) : (
+                          <a href={url} target="_blank" rel="noopener noreferrer" title={filename} className="h-14 w-14 rounded-lg border border-[#E0DED8] bg-white flex items-center justify-center hover:border-[#1A535C] transition-colors">
+                            <Paperclip className="h-4 w-4 text-[#6B6B66]" />
+                          </a>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => updateField('bijlagen', formData.bijlagen.filter((_, j) => j !== i) as string[])}
+                          className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-white border border-[#E0DED8] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:border-[#C03A18] hover:text-[#C03A18] text-[#6B6B66] shadow-sm"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    )
+                  })}
+                  <label className="group h-14 w-14 rounded-lg border border-dashed border-[#C4C2BD] bg-transparent flex flex-col items-center justify-center cursor-pointer hover:border-[#1A535C] hover:bg-[#1A535C]/[0.03] transition-colors text-[#B0ADA8] hover:text-[#1A535C]">
+                    <Plus className="h-4 w-4 transition-transform group-hover:scale-110" />
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*,.pdf,.doc,.docx"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const files = Array.from(e.target.files || [])
+                        if (!editingTaakId || files.length === 0) return
+                        for (const file of files) {
+                          try {
+                            const url = await uploadTaakBijlage(editingTaakId, file)
+                            setFormData(prev => ({ ...prev, bijlagen: [...prev.bijlagen, url] }))
+                          } catch (err) {
+                            logger.error('uploadTaakBijlage:', err)
+                            toast.error(`Kon "${file.name}" niet uploaden`)
+                          }
+                        }
+                        e.target.value = ''
+                      }}
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {editingTaakId && (
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] uppercase tracking-[0.08em] text-[#9B9B95] font-semibold">Geschiedenis</Label>
+                  <AuditLogPanel entityType="taak" entityId={editingTaakId} />
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+        </div>
+
+        <DialogFooter className="px-7 py-4 border-t border-[#EBEBEB] bg-[#F8F7F5]/60 gap-2 sm:gap-2">
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSaving} size="sm" className="h-9 px-4 border-[#E0DED8] text-[#1A1A1A] hover:bg-white hover:border-[#B0ADA8]">
+            Annuleren
+          </Button>
+          <Button
+            onClick={onSave}
+            disabled={isSaving}
+            size="sm"
+            className="h-9 px-5 bg-[#F15025] hover:bg-[#D8421F] text-white shadow-sm"
+          >
+            {isSaving && <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />}Opslaan
           </Button>
         </DialogFooter>
       </DialogContent>
