@@ -256,15 +256,45 @@ export const offerteOpvolgingCron = schedules.task({
           const inhoud = replaceTemplateVariables(stap.inhoud, vars);
 
           try {
-            // Email naar klant
+            // Email naar klant — via portaal herinnering
             if ((stap.actie === "email_klant" || stap.actie === "email_en_melding") && klantEmail) {
-              const plainBody = inhoud;
+              const portaalLink = vars.portaal_link;
+              if (!portaalLink) {
+                logger.warn("Geen portaal gevonden, email overgeslagen", { offerte: offerte.nummer });
+                await logOpvolgActie(supabase, offerte.id, stap.id, stap.actie, "fout", { error: "Geen portaal gevonden voor dit project" });
+                errors.push(`${offerte.nummer}: Geen portaal gevonden`);
+                // Melding intern mag nog steeds doorgaan
+                if (stap.actie === "email_en_melding") {
+                  await supabase.from("notificaties").insert({
+                    user_id: offerte.user_id,
+                    type: "offerte_opvolging",
+                    titel: onderwerp,
+                    bericht: inhoud.substring(0, 500),
+                    link: `/offertes/${offerte.id}`,
+                    gelezen: false,
+                    actie_genomen: false,
+                  });
+                }
+                continue;
+              }
+
+              const plainBody = [
+                `Beste ${contactpersoon},`,
+                "",
+                inhoud,
+                "",
+                `Bekijk het hier: ${portaalLink}`,
+                "",
+                `Met vriendelijke groet,`,
+                bedrijfsnaam || "Het team",
+              ].join("\n");
+
               const htmlBody = buildPortalEmailHtml({
-                heading: onderwerp,
-                itemTitel: offerte.nummer,
+                heading: `Herinnering: Offerte ${offerte.nummer}`,
+                itemTitel: `Offerte ${offerte.nummer}`,
                 beschrijving: inhoud.replace(/\n/g, "<br/>"),
-                ctaUrl: vars.offerte_link || undefined,
-                ctaLabel: "Bekijk offerte →",
+                ctaUrl: portaalLink,
+                ctaLabel: "Bekijk in portaal",
                 bedrijfsnaam,
                 logoUrl: profile?.logo_url || undefined,
                 primaireKleur: docStyle?.primaire_kleur || undefined,
