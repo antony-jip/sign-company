@@ -225,7 +225,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           ? `Revisie gevraagd: ${fullItem?.titel || 'Item'} — ${displayNaam}`
           : `Nieuw bericht: ${fullItem?.titel || 'Item'} — ${displayNaam}`
 
-        const appUrl = process.env.VITE_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://app.doen.team')
+        const appUrl = process.env.APP_URL || 'https://app.doen.team'
 
         // Stuur via Resend (doen. systeem-notificatie) — inline want Vercel bundelt geen lokale imports
         console.log('[portaal-reactie] sending resend email to:', userEmail, 'subject:', onderwerp)
