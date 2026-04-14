@@ -215,48 +215,40 @@ export function FORGEdeskDashboard() {
   const hiddenWidgets = layout.allWidgets.filter(id => layout.hidden.has(id))
 
   return (
-    <div className="space-y-6 sm:space-y-8 pb-12 overflow-x-hidden">
+    <div className="space-y-8 sm:space-y-10 pb-12 overflow-x-hidden">
       {/* ── Hero header ── */}
-      <div className="flex items-end justify-between gap-4 sm:gap-6">
-        <div className="min-w-0">
-          <h1
-            className="font-heading text-[22px] sm:text-[28px] font-bold leading-[1.1] truncate"
-            style={{ letterSpacing: '-1.2px', color: 'hsl(25, 15%, 12%)' }}
-          >
-            {greeting}{userName ? `, ${userName}` : ''}<span className="text-primary">.</span>
-          </h1>
-          <p className="text-[14px] font-normal mt-1.5" style={{ color: 'hsl(25, 10%, 55%)' }}>
-            {formattedDate}
-          </p>
-        </div>
-        <div className="hidden md:block">
-          <WeekStripWidget />
-        </div>
+      <div className="pt-2">
+        <h1
+          className="font-heading font-bold leading-[1.05] truncate text-[28px] sm:text-[40px]"
+          style={{ letterSpacing: '-1.5px', color: '#1A1A1A' }}
+        >
+          {greeting}{userName ? `, ${userName}` : ''}<span className="text-[#F15025]">.</span>
+        </h1>
+        <p className="text-[13px] font-normal mt-2 text-[#9B9B95]">
+          {formattedDate}
+        </p>
+      </div>
+
+      {/* ── Week strip ── */}
+      <div className="hidden md:block">
+        <WeekStripWidget />
       </div>
 
       {/* ── Alerts ── */}
       {verlopenFacturen.count > 0 && (
-        <div
+        <button
+          type="button"
           onClick={() => navigate('/facturen')}
-          className="flex items-center gap-3 px-5 py-3.5 rounded-2xl cursor-pointer transition-all duration-200 hover:scale-[1.005] active:scale-[0.998]"
-          style={{
-            background: 'linear-gradient(135deg, #FDE8E2 0%, #FEF2EE 100%)',
-            border: '1px solid rgba(241, 80, 37, 0.12)',
-          }}
+          className="w-full flex items-center gap-3 px-5 py-3 rounded-xl bg-[#FDE8E4] hover:bg-[#FBDDD6] transition-colors text-left"
         >
-          <div className="flex items-center justify-center h-9 w-9 rounded-xl bg-[#F15025]/10 flex-shrink-0">
-            <AlertTriangle className="h-4 w-4 text-[#C03A18]" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <span className="text-sm font-semibold text-[#C03A18]">
-              {verlopenFacturen.count} facturen verlopen
-            </span>
-            <span className="text-sm text-[#C03A18]/70 ml-1 sm:ml-2">
-              {formatCurrency(verlopenFacturen.bedrag)}
-            </span>
-          </div>
-          <ArrowRight className="h-4 w-4 text-[#C03A18]/50 flex-shrink-0" />
-        </div>
+          <AlertTriangle className="h-4 w-4 text-[#F15025] flex-shrink-0" />
+          <span className="flex-1 text-sm text-[#1A1A1A]">
+            <span className="font-semibold">{verlopenFacturen.count} facturen verlopen</span>
+            <span className="text-[#6B6B66]"> · </span>
+            <span className="font-mono text-[#6B6B66]">{formatCurrency(verlopenFacturen.bedrag)}</span>
+          </span>
+          <ArrowRight className="h-4 w-4 text-[#6B6B66] flex-shrink-0" />
+        </button>
       )}
 
       <PortaalAlerts />

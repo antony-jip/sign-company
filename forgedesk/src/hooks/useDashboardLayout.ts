@@ -24,18 +24,34 @@ const ALL_WIDGETS: DashboardWidgetId[] = [
 ]
 
 const DEFAULT_ORDER: DashboardWidgetId[] = [
-  'statistieken', 'activiteit', 'planning', 'taken',
-  'offertes', 'kalender', 'te_factureren', 'weer', 'montage', 'visualizer',
+  'statistieken',
+  'planning', 'taken',
+  'montage', 'weer',
+  'te_factureren', 'kalender', 'klok',
+  'activiteit', 'offertes',
 ]
 
 const DEFAULT_HIDDEN: DashboardWidgetId[] = [
-  'klok', 'notities', 'inbox', 'nieuws',
+  'visualizer', 'notities', 'inbox', 'nieuws',
 ]
+
+const DEFAULT_SIZES: Partial<Record<DashboardWidgetId, WidgetSize>> = {
+  statistieken: 4,
+  planning: 2,
+  taken: 2,
+  montage: 3,
+  weer: 1,
+  te_factureren: 2,
+  kalender: 1,
+  klok: 1,
+  activiteit: 2,
+  offertes: 2,
+}
 
 const DEFAULT_STATE: DashboardLayoutState = {
   order: DEFAULT_ORDER,
   hidden: DEFAULT_HIDDEN,
-  sizes: {},
+  sizes: DEFAULT_SIZES,
 }
 
 /** Migrate old string-based sizes ('small'/'medium'/'large') to numeric (1/2/3) */
