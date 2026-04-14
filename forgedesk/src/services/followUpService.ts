@@ -55,6 +55,7 @@ export async function sendFollowUpEmail(params: {
   subject: string
   body: string
   html?: string
+  attachments?: Array<{ filename: string; content: string; encoding: 'base64' }>
 }): Promise<void> {
   const token = await getAuthToken()
 

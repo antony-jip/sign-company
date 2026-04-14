@@ -6,10 +6,29 @@ import { toast } from 'sonner'
 import { X, RefreshCw, Send, Loader2, Paperclip } from 'lucide-react'
 import { generateFollowUpEmail, sendFollowUpEmail } from '@/services/followUpService'
 import type { FollowUpContext, FollowUpEmailResult } from '@/services/followUpService'
-import { updateOfferte, getPortaalByProject } from '@/services/supabaseService'
+import { updateOfferte, getPortaalByProject, getOfferteItems } from '@/services/supabaseService'
+import { offerteVerzendTemplate } from '@/services/emailTemplateService'
+import { generateOffertePDF } from '@/services/pdfService'
+import { useAppSettings } from '@/contexts/AppSettingsContext'
+import { useDocumentStyle } from '@/hooks/useDocumentStyle'
+import { formatCurrency, formatDate } from '@/lib/utils'
 import { logWijziging } from '@/utils/auditLogger'
+import { logger } from '@/utils/logger'
 import { cn } from '@/lib/utils'
-import type { Offerte, Klant, Project } from '@/types'
+import type { Offerte, Klant, Project, OfferteItem } from '@/types'
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const result = reader.result as string
+      const base64 = result.includes(',') ? result.split(',')[1] : result
+      resolve(base64)
+    }
+    reader.onerror = () => reject(reader.error)
+    reader.readAsDataURL(file)
+  })
+}
 
 interface FollowUpMailPanelProps {
   offerte: Offerte
@@ -39,7 +58,21 @@ export function FollowUpMailPanel({
   const [portaalUrl, setPortaalUrl] = useState<string | null>(null)
   const [bijlage, setBijlage] = useState(false)
   const [bijlagen, setBijlagen] = useState<File[]>([])
+  const [items, setItems] = useState<OfferteItem[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const { bedrijfsnaam, primaireKleur, emailHandtekening, profile: appProfile } = useAppSettings()
+  const documentStyle = useDocumentStyle()
+
+  // Laad offerte items (nodig voor PDF bijlage)
+  useEffect(() => {
+    if (offerte.id.startsWith('demo-')) return
+    let cancelled = false
+    getOfferteItems(offerte.id)
+      .then((fetched) => { if (!cancelled) setItems(fetched) })
+      .catch((err) => logger.error('Kon offerte items niet laden:', err))
+    return () => { cancelled = true }
+  }, [offerte.id])
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -211,11 +244,60 @@ ${bedrijf}`
         // Demo modus: simuleer verzending
         await new Promise((r) => setTimeout(r, 800))
       } else {
+        // Bouw branded HTML template met de AI-body als customBody
+        const bekijkUrl = portaalLink && portaalUrl ? portaalUrl : undefined
+        const klantNaam = klant?.contactpersonen?.find((c) => c.is_primair)?.naam
+          || klant?.contactpersoon
+          || klant?.bedrijfsnaam
+          || ''
+        const { html } = offerteVerzendTemplate({
+          klantNaam,
+          offerteNummer: offerte.nummer,
+          offerteTitel: offerte.titel,
+          totaalBedrag: formatCurrency(offerte.totaal || 0),
+          geldigTot: offerte.geldig_tot ? formatDate(offerte.geldig_tot) : '—',
+          bedrijfsnaam: bedrijfsnaam || 'Uw bedrijf',
+          primaireKleur,
+          handtekening: emailHandtekening || undefined,
+          logoUrl: appProfile?.logo_url || undefined,
+          bekijkUrl,
+          customBody: finalBody,
+        })
+
+        // Bouw attachments: PDF van de offerte + door user toegevoegde bestanden
+        const attachments: Array<{ filename: string; content: string; encoding: 'base64' }> = []
+        if (bijlage && items.length > 0) {
+          try {
+            const doc = await generateOffertePDF(
+              offerte,
+              items,
+              klant || {} as Klant,
+              { ...appProfile, primaireKleur: primaireKleur || '#2563eb' },
+              documentStyle,
+            )
+            const pdfBase64 = doc.output('datauristring').split(',')[1]
+            attachments.push({ filename: `Offerte ${offerte.nummer} - ${offerte.titel}.pdf`, content: pdfBase64, encoding: 'base64' })
+          } catch (pdfErr) {
+            logger.error('PDF genereren mislukt, email wordt zonder offerte-PDF verstuurd:', pdfErr)
+          }
+        }
+        for (const file of bijlagen) {
+          try {
+            const b64 = await fileToBase64(file)
+            attachments.push({ filename: file.name, content: b64, encoding: 'base64' })
+          } catch (err) {
+            logger.error(`Kon bijlage "${file.name}" niet inladen:`, err)
+            toast.error(`Bijlage "${file.name}" kon niet worden meegestuurd`)
+          }
+        }
+
         // Send email
         await sendFollowUpEmail({
           to,
           subject: onderwerp,
           body: finalBody,
+          html,
+          attachments: attachments.length > 0 ? attachments : undefined,
         })
 
         // Update offerte
