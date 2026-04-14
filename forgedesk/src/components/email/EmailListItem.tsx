@@ -104,8 +104,8 @@ export const EmailListItem = memo(function EmailListItem({
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         className={cn(
-          'group relative flex items-center gap-3 pl-4 pr-3 py-1.5 cursor-pointer select-none border-b border-[#F0EFEC]/60',
-          'transition-[background-color,transform] duration-100 active:scale-[0.998]',
+          'group relative flex items-center gap-3 pl-4 pr-3 py-1 cursor-pointer select-none border-b border-[#F0EFEC]/50',
+          'transition-[background-color] duration-100',
           isActive
             ? 'bg-[#1A535C]/[0.08]'
             : isChecked
@@ -146,14 +146,14 @@ export const EmailListItem = memo(function EmailListItem({
           <span className={cn(
             'truncate leading-snug',
             sizes.preview,
-            isUnread ? 'font-semibold text-[#1A1A1A]' : 'text-[#3A3A36]',
+            isUnread ? 'font-semibold text-[#1A1A1A]' : 'font-normal text-[#7A7975]',
           )}>
             {senderName}
           </span>
           {email.threadCount && email.threadCount > 1 && (
             <span className={cn(
               'text-[10px] tabular-nums flex-shrink-0',
-              isUnread ? 'text-[#1A1A1A] font-semibold' : 'text-[#9B9B95]',
+              isUnread ? 'text-[#1A1A1A] font-semibold' : 'text-[#B0ADA8]',
             )}>
               {email.threadCount}
             </span>
@@ -165,13 +165,13 @@ export const EmailListItem = memo(function EmailListItem({
             wegvallen aan de rechterkant. */}
         <div className={cn('flex-1 min-w-0 truncate leading-snug', sizes.preview)}>
           <span className={cn(
-            isUnread ? 'font-semibold text-[#1A1A1A]' : 'text-[#3A3A36]',
+            isUnread ? 'font-semibold text-[#1A1A1A]' : 'font-normal text-[#7A7975]',
           )}>
             {email.onderwerp || '(geen onderwerp)'}
           </span>
           {preview && (
-            <span className="text-[#9B9B95]">
-              {' \u00A0 '}{preview}
+            <span className={cn(isUnread ? 'text-[#9B9B95]' : 'text-[#B0ADA8]')}>
+              {' \u00A0\u2014\u00A0 '}{preview}
             </span>
           )}
         </div>
@@ -190,7 +190,7 @@ export const EmailListItem = memo(function EmailListItem({
             <span className={cn(
               'tabular-nums min-w-[44px] text-right',
               sizes.date,
-              isUnread ? 'text-[#1A1A1A] font-semibold' : 'text-[#6B6B66]',
+              isUnread ? 'text-[#1A1A1A] font-semibold' : 'text-[#9B9B95]',
             )}>
               {formatShortDate(email.datum)}
             </span>
@@ -252,7 +252,7 @@ export const EmailListItem = memo(function EmailListItem({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       className={cn(
-        'group flex items-center gap-3 px-4 py-3 cursor-pointer transition-all duration-150 select-none',
+        'group flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors duration-150 select-none',
         isActive
           ? 'bg-[#1A535C]/[0.05]'
           : 'hover:bg-[#F0EFEC]/50',
@@ -299,7 +299,7 @@ export const EmailListItem = memo(function EmailListItem({
             <span className={cn(
               'truncate leading-snug',
               sizes.name,
-              isUnread ? 'font-semibold text-[#1A1A1A]' : 'text-[#3A3A36]',
+              isUnread ? 'font-semibold text-[#1A1A1A]' : 'font-normal text-[#7A7975]',
             )}>
               {senderName}
             </span>
@@ -329,7 +329,7 @@ export const EmailListItem = memo(function EmailListItem({
             'truncate leading-snug',
             compact ? 'max-w-full' : 'max-w-[55%] flex-shrink-0',
             sizes.subject,
-            isUnread ? 'font-medium text-[#1A1A1A]' : 'text-[#6B6B66]',
+            isUnread ? 'font-medium text-[#1A1A1A]' : 'font-normal text-[#9B9B95]',
           )}>
             {email.onderwerp || '(geen onderwerp)'}
           </span>

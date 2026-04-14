@@ -888,26 +888,12 @@ export function EmailLayout() {
   // ─── UNIFIED 3-COLUMN LAYOUT ───
   return (
     <div className={cn('h-full flex flex-col -m-3 sm:-m-4 md:-m-6 overflow-hidden', viewMode === 'idle' ? 'bg-[#F8F7F5]' : 'bg-white')}>
-      {viewMode === 'idle' && (
-        <div className="px-8 pt-8 pb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-baseline gap-4">
-              <h1 className="text-[28px] font-extrabold tracking-[-0.3px] text-[#1A1A1A]">
-                Email<span className="text-[#F15025]">.</span>
-              </h1>
-              <span className="text-[12px] font-mono tabular-nums text-[#B0ADA8] bg-[#F0EFEC] rounded-md px-2 py-0.5">
-                {folderCounts['inbox'] > 0 ? `${folderCounts['inbox']} ongelezen` : 'inbox'}
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
       <div className="flex flex-1 min-h-0 overflow-hidden">
       {/* ─── LEFT SIDEBAR — always visible ─── */}
       <div className="w-[220px] bg-white border-r border-[#EBEBEB] flex flex-col flex-shrink-0">
         <div className="p-3">
           <button
-            className="w-full h-10 rounded-xl flex items-center justify-center gap-2 text-[13px] font-semibold text-white bg-[#F15025] shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_12px_rgba(241,80,37,0.35)] hover:-translate-y-px active:translate-y-0 transition-all"
+            className="w-full h-10 rounded-xl flex items-center justify-center gap-2 text-[13px] font-semibold text-white bg-[#F15025] hover:bg-[#D8421F] shadow-[0_1px_3px_rgba(241,80,37,0.18)] hover:shadow-[0_3px_10px_rgba(241,80,37,0.24)] transition-[background-color,box-shadow] duration-200"
             onClick={() => handleCompose()}
           >
             <Pencil className="h-4 w-4" />
@@ -1087,17 +1073,18 @@ export function EmailLayout() {
             )}
           </div>
 
-          <div className="flex items-center gap-0.5">
-            <div className="flex items-center bg-[#F0EFEC] rounded-xl p-0.5 mr-1">
+          <div className="flex items-center">
+            {/* Font size — 3 plain buttons, alleen actieve krijgt subtle bg */}
+            <div className="flex items-center mr-1">
               {(['small', 'medium', 'large'] as FontSize[]).map((size) => (
                 <button
                   key={size}
                   onClick={() => setFontSize(size)}
                   className={cn(
-                    'px-1.5 py-1 rounded transition-all duration-150',
+                    'h-8 w-7 rounded-md flex items-center justify-center transition-colors duration-150',
                     fontSize === size
-                      ? 'bg-white text-[#1A1A1A] shadow-[0_1px_2px_rgba(0,0,0,0.06)]'
-                      : 'text-[#9B9B95] hover:text-[#6B6B66]',
+                      ? 'text-[#1A1A1A] bg-[#F0EFEC]'
+                      : 'text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC]/60',
                   )}
                   title={size === 'small' ? 'Klein' : size === 'medium' ? 'Normaal' : 'Groot'}
                 >
@@ -1110,14 +1097,19 @@ export function EmailLayout() {
                 </button>
               ))}
             </div>
-            <div className="flex items-center bg-[#F0EFEC] rounded-xl p-0.5 mr-1">
+
+            {/* Subtiele divider */}
+            <span className="w-px h-5 bg-[#EBEBEB] mx-1" />
+
+            {/* List style */}
+            <div className="flex items-center mr-1">
               <button
                 onClick={() => { setListStyle('stacked'); localStorage.setItem('email_list_style', 'stacked') }}
                 className={cn(
-                  'p-1.5 rounded transition-all duration-150',
+                  'h-8 w-8 rounded-md flex items-center justify-center transition-colors duration-150',
                   listStyle === 'stacked'
-                    ? 'bg-white text-[#1A1A1A] shadow-[0_1px_2px_rgba(0,0,0,0.06)]'
-                    : 'text-[#9B9B95] hover:text-[#6B6B66]',
+                    ? 'text-[#1A1A1A] bg-[#F0EFEC]'
+                    : 'text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC]/60',
                 )}
                 title="Compact — alles op één regel"
               >
@@ -1126,20 +1118,23 @@ export function EmailLayout() {
               <button
                 onClick={() => { setListStyle('inline'); localStorage.setItem('email_list_style', 'inline') }}
                 className={cn(
-                  'p-1.5 rounded transition-all duration-150',
+                  'h-8 w-8 rounded-md flex items-center justify-center transition-colors duration-150',
                   listStyle === 'inline'
-                    ? 'bg-white text-[#1A1A1A] shadow-[0_1px_2px_rgba(0,0,0,0.06)]'
-                    : 'text-[#9B9B95] hover:text-[#6B6B66]',
+                    ? 'text-[#1A1A1A] bg-[#F0EFEC]'
+                    : 'text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC]/60',
                 )}
                 title="Standaard — twee regels"
               >
                 <Rows3 className="h-3.5 w-3.5" />
               </button>
             </div>
+
+            <span className="w-px h-5 bg-[#EBEBEB] mx-1" />
+
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC] rounded-lg transition-colors duration-150"
+              className="h-8 w-8 text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC]/60 rounded-md transition-colors duration-150"
               onClick={() => handleRefresh(selectedFolder)}
               disabled={isRefreshing}
             >
@@ -1227,7 +1222,7 @@ export function EmailLayout() {
                       nodes.push(
                         <div
                           key={`group-${group}-${index}`}
-                          className="px-4 py-2 text-[10px] uppercase tracking-wider font-semibold text-[#9B9B95] bg-[#FAFAF8] border-y border-[#F0EFEC]/60 sticky top-0 z-[1] flex items-center gap-2"
+                          className="px-4 pt-4 pb-2 text-[10px] uppercase tracking-[0.08em] font-semibold text-[#B0ADA8] bg-white sticky top-0 z-[1] flex items-center gap-2"
                         >
                           <input
                             type="checkbox"
