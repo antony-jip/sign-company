@@ -21,16 +21,13 @@ import {
   Clock,
   DollarSign,
   BarChart3,
-  Send,
 } from 'lucide-react'
 import { useNavigateWithTab } from '@/hooks/useNavigateWithTab'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
-import { getKlanten, getProjecten, getPortaalByProject, createPortaal, updateOfferte } from '@/services/supabaseService'
-import { sendFollowUpEmail, generateFollowUpEmail } from '@/services/followUpService'
-import type { FollowUpContext } from '@/services/followUpService'
-import { offerteFollowUpTemplate } from '@/services/emailTemplateService'
-import { cn, formatCurrency, formatDate } from '@/lib/utils'
+import { getKlanten, getProjecten, getPortaalByProject, createPortaal, updateOfferte, getPortaalItems, createPortaalItem } from '@/services/supabaseService'
+import { sendPortaalHerinneringEmail } from '@/services/portaalNotificatieService'
+import { cn, formatCurrency } from '@/lib/utils'
 import { round2 } from '@/utils/budgetUtils'
 import type { Offerte, Klant, Project } from '@/types'
 import { FollowUpMailPanel } from './FollowUpMailPanel'
@@ -58,6 +55,41 @@ function formatDatumKort(dateStr: string | undefined): string {
   const d = new Date(dateStr)
   if (isNaN(d.getTime())) return '—'
   return new Intl.DateTimeFormat('nl-NL', { day: 'numeric', month: 'short' }).format(d)
+}
+
+function formatTijdGeleden(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const minuten = Math.floor(diff / 60000)
+  if (minuten < 60) return `${minuten}m geleden`
+  const uren = Math.floor(minuten / 60)
+  if (uren < 24) return `${uren}u geleden`
+  const dagen = Math.floor(uren / 24)
+  return `${dagen}d geleden`
+}
+
+function getPortaalStatusLabel(offerte: Offerte) {
+  if (offerte.laatste_contact && offerte.bekeken_door_klant && (offerte.status === 'verzonden' || offerte.status === 'bekeken')) {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs text-amber-600">
+        <Eye className="w-3 h-3" /> Bekeken, geen reactie
+      </span>
+    )
+  }
+  if (offerte.laatste_contact && !offerte.bekeken_door_klant) {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+        <EyeOff className="w-3 h-3" /> Niet bekeken
+      </span>
+    )
+  }
+  if (offerte.laatste_contact) {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+        <Bell className="w-3 h-3" /> Herinnering {formatTijdGeleden(offerte.laatste_contact)}
+      </span>
+    )
+  }
+  return null
 }
 
 function isFollowUpNodig(offerte: Offerte): boolean {
@@ -207,7 +239,49 @@ export function QuotesFollowUp({ offertes, onRefresh }: QuotesFollowUpProps) {
     }
   }
 
-  // Portaal herinnering
+  // Portaal herinnering — stuur via portaal notificatie service
+  const sendPortaalHerinnering = useCallback(async (offerte: Offerte, portaal: { id: string; token: string }, project: Project | undefined) => {
+    const klant = klanten.get(offerte.klant_id)
+    const klantEmail = klant?.contactpersonen?.find((c) => c.is_primair)?.email || klant?.email || ''
+    if (!klantEmail) throw new Error('Geen email adres gevonden voor deze klant')
+
+    // Zorg dat offerte als item in het portaal staat
+    const items = await getPortaalItems(portaal.id)
+    const heeftOfferteItem = items.some((i) => i.offerte_id === offerte.id)
+    if (!heeftOfferteItem) {
+      await createPortaalItem({
+        user_id: user?.id || '',
+        project_id: offerte.project_id!,
+        portaal_id: portaal.id,
+        type: 'offerte',
+        offerte_id: offerte.id,
+        titel: `${offerte.nummer} — ${offerte.titel}`,
+        status: 'verstuurd',
+        zichtbaar_voor_klant: true,
+        volgorde: items.length,
+        bedrag: offerte.totaal || undefined,
+      })
+    }
+
+    const portaalUrl = `${window.location.origin}/portaal/${portaal.token}`
+    const result = await sendPortaalHerinneringEmail({
+      klantEmail,
+      klantNaam: klant?.contactpersoon || klant?.bedrijfsnaam || '',
+      bedrijfsNaam: profile?.bedrijfsnaam || '',
+      projectNaam: project?.naam || '',
+      portaalLink: portaalUrl,
+      dagenOpen: getDagenOpen(offerte),
+      onbeantwoordeItems: 1,
+      itemTitel: `Offerte ${offerte.nummer}`,
+    })
+    if (!result.success) throw new Error(result.error || 'Herinnering verzenden mislukt')
+
+    await updateOfferte(offerte.id, {
+      contact_pogingen: (offerte.contact_pogingen || 0) + 1,
+      laatste_contact: new Date().toISOString(),
+    })
+  }, [klanten, profile, user])
+
   const handlePortaalHerinnering = useCallback(async (offerte: Offerte) => {
     if (!offerte.project_id) {
       toast.error('Deze offerte is niet aan een project gekoppeld')
@@ -218,42 +292,11 @@ export function QuotesFollowUp({ offertes, onRefresh }: QuotesFollowUpProps) {
     try {
       const portaal = await getPortaalByProject(offerte.project_id)
       if (portaal?.token) {
-        // Portaal bestaat — stuur herinnering
-        const klant = klanten.get(offerte.klant_id)
-        const portaalUrl = `${window.location.origin}/portaal/${portaal.token}`
-        const template = offerteFollowUpTemplate({
-          klantNaam: klant?.contactpersoon || klant?.bedrijfsnaam || '',
-          offerteNummer: offerte.nummer,
-          offerteTitel: offerte.titel,
-          totaalBedrag: formatCurrency(offerte.totaal || 0),
-          geldigTot: offerte.geldig_tot ? formatDate(offerte.geldig_tot) : '',
-          bekijkUrl: portaalUrl,
-          bedrijfsnaam: profile?.bedrijfsnaam || '',
-          handtekening: profile ? `${profile.voornaam} ${profile.achternaam}` : '',
-        })
-
-        const klantEmail = klant?.contactpersonen?.find((c) => c.is_primair)?.email || klant?.email || ''
-        if (!klantEmail) {
-          toast.error('Geen email adres gevonden voor deze klant')
-          return
-        }
-
-        await sendFollowUpEmail({
-          to: klantEmail,
-          subject: template.subject,
-          body: template.text,
-          html: template.html,
-        })
-
-        await updateOfferte(offerte.id, {
-          contact_pogingen: (offerte.contact_pogingen || 0) + 1,
-          laatste_contact: new Date().toISOString(),
-        })
-
-        toast.success('Herinnering verstuurd via portaal')
+        const project = projecten.get(offerte.project_id)
+        await sendPortaalHerinnering(offerte, portaal, project)
+        toast.success('Portaal herinnering verstuurd')
         onRefresh()
       } else {
-        // Geen portaal — toon dialog
         setPortaalDialog(offerte)
       }
     } catch (err) {
@@ -261,7 +304,7 @@ export function QuotesFollowUp({ offertes, onRefresh }: QuotesFollowUpProps) {
     } finally {
       setSendingPortaal(null)
     }
-  }, [klanten, profile, onRefresh])
+  }, [projecten, sendPortaalHerinnering, onRefresh])
 
   // Create portaal + send reminder
   const handleCreatePortaalAndSend = useCallback(async () => {
@@ -271,33 +314,8 @@ export function QuotesFollowUp({ offertes, onRefresh }: QuotesFollowUpProps) {
     setPortaalDialog(null)
     try {
       const portaal = await createPortaal(portaalDialog.project_id, user.id)
-      const klant = klanten.get(portaalDialog.klant_id)
-      const portaalUrl = `${window.location.origin}/portaal/${portaal.token}`
-
-      const template = offerteFollowUpTemplate({
-        klantNaam: klant?.contactpersoon || klant?.bedrijfsnaam || '',
-        offerteNummer: portaalDialog.nummer,
-        offerteTitel: portaalDialog.titel,
-        totaalBedrag: formatCurrency(portaalDialog.totaal || 0),
-        geldigTot: portaalDialog.geldig_tot ? formatDate(portaalDialog.geldig_tot) : '',
-        bekijkUrl: portaalUrl,
-        bedrijfsnaam: profile?.bedrijfsnaam || '',
-        handtekening: profile ? `${profile.voornaam} ${profile.achternaam}` : '',
-      })
-
-      const klantEmail = klant?.contactpersonen?.find((c) => c.is_primair)?.email || klant?.email || ''
-      await sendFollowUpEmail({
-        to: klantEmail,
-        subject: template.subject,
-        body: template.text,
-        html: template.html,
-      })
-
-      await updateOfferte(portaalDialog.id, {
-        contact_pogingen: (portaalDialog.contact_pogingen || 0) + 1,
-        laatste_contact: new Date().toISOString(),
-      })
-
+      const project = projecten.get(portaalDialog.project_id)
+      await sendPortaalHerinnering(portaalDialog, portaal, project)
       toast.success('Portaal aangemaakt en herinnering verstuurd')
       onRefresh()
     } catch (err) {
@@ -305,9 +323,9 @@ export function QuotesFollowUp({ offertes, onRefresh }: QuotesFollowUpProps) {
     } finally {
       setSendingPortaal(null)
     }
-  }, [portaalDialog, user, klanten, profile, onRefresh])
+  }, [portaalDialog, user, projecten, sendPortaalHerinnering, onRefresh])
 
-  // Bulk follow-up
+  // Bulk portaal herinnering
   const handleBulkFollowUp = useCallback(async () => {
     const selected = gefilterd.filter((o) => selectedIds.has(o.id))
     if (selected.length === 0) return
@@ -315,67 +333,43 @@ export function QuotesFollowUp({ offertes, onRefresh }: QuotesFollowUpProps) {
     setBulkSending(true)
     setBulkProgress({ current: 0, total: selected.length })
 
-    let succeeded = 0
+    let verstuurd = 0
+    let portalenAangemaakt = 0
+    let overgeslagen = 0
     for (const offerte of selected) {
       try {
-        const klant = klanten.get(offerte.klant_id)
-        const project = offerte.project_id ? projecten.get(offerte.project_id) : null
-        const contactpersoon = klant?.contactpersonen?.find((c) => c.is_primair)?.naam || klant?.contactpersoon || ''
-        const dagenOpen = getDagenOpen(offerte)
-        const dagenTotVerlopen = getDagenTotVerlopen(offerte)
-
-        const context: FollowUpContext = {
-          klantnaam: klant?.bedrijfsnaam || offerte.klant_naam || '',
-          contactpersoon: contactpersoon.split(' ')[0] || contactpersoon,
-          projectnaam: project?.naam,
-          offerte_nummer: offerte.nummer,
-          offerte_titel: offerte.titel,
-          bedrag: offerte.totaal || 0,
-          dagen_open: dagenOpen,
-          geldig_tot: offerte.geldig_tot || '',
-          dagen_tot_verlopen: dagenTotVerlopen,
-          aantal_eerdere_followups: offerte.contact_pogingen || 0,
-          status: offerte.status,
-          bedrijfsnaam_afzender: profile?.bedrijfsnaam || '',
-          afzender_naam: profile?.voornaam || '',
+        if (!offerte.project_id) {
+          overgeslagen++
+          setBulkProgress((p) => ({ ...p, current: p.current + 1 }))
+          continue
         }
 
-        const email = await generateFollowUpEmail(context)
-        const to = klant?.contactpersonen?.find((c) => c.is_primair)?.email || klant?.email || ''
+        const project = projecten.get(offerte.project_id)
+        let portaal = await getPortaalByProject(offerte.project_id)
 
-        if (to) {
-          // Check portaal link
-          let body = email.body
-          if (offerte.project_id) {
-            const portaal = await getPortaalByProject(offerte.project_id)
-            if (portaal?.token) {
-              const url = `${window.location.origin}/portaal/${portaal.token}`
-              body = body.replace(/\[PORTAAL_LINK\]/g, url)
-            }
-          }
-          body = body.replace(/[^\n]*\[PORTAAL_LINK\][^\n]*/g, '').replace(/\n{3,}/g, '\n\n')
+        if (!portaal && user?.id) {
+          portaal = await createPortaal(offerte.project_id, user.id)
+          portalenAangemaakt++
+        }
 
-          await sendFollowUpEmail({ to, subject: email.onderwerp, body })
-
-          await updateOfferte(offerte.id, {
-            contact_pogingen: (offerte.contact_pogingen || 0) + 1,
-            laatste_contact: new Date().toISOString(),
-            follow_up_datum: new Date().toISOString().split('T')[0],
-            follow_up_status: 'afgerond',
-          })
-          succeeded++
+        if (portaal?.token) {
+          await sendPortaalHerinnering(offerte, portaal, project)
+          verstuurd++
         }
       } catch (err) {
-        console.error(`Bulk follow-up mislukt voor ${offerte.nummer}:`, err)
+        console.error(`Bulk herinnering mislukt voor ${offerte.nummer}:`, err)
       }
       setBulkProgress((p) => ({ ...p, current: p.current + 1 }))
     }
 
     setBulkSending(false)
     setSelectedIds(new Set())
-    toast.success(`${succeeded}/${selected.length} follow-ups verstuurd`)
+    const parts = [`${verstuurd} herinnering${verstuurd !== 1 ? 'en' : ''} verstuurd`]
+    if (portalenAangemaakt > 0) parts.push(`${portalenAangemaakt} portaal${portalenAangemaakt !== 1 ? 'en' : ''} aangemaakt`)
+    if (overgeslagen > 0) parts.push(`${overgeslagen} overgeslagen (geen project)`)
+    toast.success(parts.join(', '))
     onRefresh()
-  }, [gefilterd, selectedIds, klanten, projecten, profile, onRefresh])
+  }, [gefilterd, selectedIds, projecten, user, sendPortaalHerinnering, onRefresh])
 
   // Badge color for days open
   function getDagenBadgeClass(dagen: number): string {
@@ -452,6 +446,7 @@ export function QuotesFollowUp({ offertes, onRefresh }: QuotesFollowUpProps) {
                 </span>
               )}
               <span className="text-xs">Follow-up: {getFollowUpInfo(offerte)}</span>
+              {getPortaalStatusLabel(offerte)}
             </div>
 
             <div className="flex items-center gap-2 mt-3 flex-wrap">
@@ -571,8 +566,8 @@ export function QuotesFollowUp({ offertes, onRefresh }: QuotesFollowUpProps) {
               onClick={handleBulkFollowUp}
               className="gap-1.5 bg-mod-email-text hover:bg-mod-email-text/90 text-white"
             >
-              <Send className="w-3.5 h-3.5" />
-              Bulk follow-up versturen
+              <Bell className="w-3.5 h-3.5" />
+              Bulk portaal herinnering
             </Button>
           )}
         </div>
