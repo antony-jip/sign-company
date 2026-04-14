@@ -171,13 +171,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }] : []),
     ])
 
-    // Stuur response direct terug — email async (fire-and-forget)
-    res.status(200).json({
-      success: true,
-      bericht: 'Offerte succesvol geaccepteerd',
-    })
-
-    // Email na response via Resend — blokkeert de klant niet
+    // Email via Resend — voor response zodat Vercel de function niet killt
     try {
       const { data: emailSettings } = await supabaseAdmin.from('user_email_settings')
         .select('gmail_address')
@@ -206,9 +200,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         console.log('[offerte-accepteren] resend email sent to:', emailSettings.gmail_address)
       }
     } catch (emailErr) {
-      console.error('Email notificatie mislukt (niet blokkerend):', emailErr)
+      console.error('[offerte-accepteren] email notificatie mislukt:', emailErr)
     }
-    return
+
+    return res.status(200).json({
+      success: true,
+      bericht: 'Offerte succesvol geaccepteerd',
+    })
   } catch (error: unknown) {
     console.error('offerte-accepteren error:', error)
     const msg = error instanceof Error ? error.message : 'Er ging iets mis'
