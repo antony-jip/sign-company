@@ -218,6 +218,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .maybeSingle()
 
       const userEmail = emailSettings?.gmail_address
+      console.log('[portaal-reactie] DEBUG email check:', { userEmail, userId: portaal.user_id, hasResendKey: !!process.env.RESEND_API_KEY })
       if (userEmail) {
         const onderwerp = type === 'goedkeuring'
           ? `Goedgekeurd: ${fullItem?.titel || 'Item'} — ${displayNaam}`
@@ -228,6 +229,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const appUrl = process.env.VITE_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://app.doen.team')
 
         // Stuur via Resend (doen. systeem-notificatie)
+        console.log('[portaal-reactie] DEBUG sending resend email to:', userEmail, 'subject:', onderwerp)
         const { sendDoenNotification } = await import('./resend-notify')
         sendDoenNotification({
           to: userEmail,
