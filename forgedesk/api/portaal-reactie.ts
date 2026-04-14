@@ -146,9 +146,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .eq('id', portaal_item_id)
     }
 
-    // Als het een offerte goedkeuring is met opties, sla keuzes op bij de offerte
-    if (type === 'goedkeuring' && item.type === 'offerte' && (gekozen_items || gekozen_varianten)) {
-      // Haal de offerte_id op via het portaal item
+    // Bij offerte goedkeuring: offerte status + keuzes bijwerken
+    let offerteUserId: string | null = null
+    if (type === 'goedkeuring' && item.type === 'offerte') {
       const { data: fullPortaalItem } = await supabaseAdmin
         .from('portaal_items')
         .select('offerte_id')
@@ -156,10 +156,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .single()
 
       if (fullPortaalItem?.offerte_id) {
-        const offerteUpdate: Record<string, unknown> = { updated_at: new Date().toISOString() }
+        const offerteUpdate: Record<string, unknown> = {
+          status: 'goedgekeurd',
+          geaccepteerd_door: klant_naam?.trim() || null,
+          geaccepteerd_op: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }
         if (gekozen_items) offerteUpdate.gekozen_items = gekozen_items
         if (gekozen_varianten) offerteUpdate.gekozen_varianten = gekozen_varianten
         await supabaseAdmin.from('offertes').update(offerteUpdate).eq('id', fullPortaalItem.offerte_id)
+
+        // Haal offerte-eigenaar op voor notificatie (kan verschillen van portaal-aanmaker)
+        const { data: offerte } = await supabaseAdmin
+          .from('offertes')
+          .select('user_id')
+          .eq('id', fullPortaalItem.offerte_id)
+          .single()
+        if (offerte?.user_id && offerte.user_id !== portaal.user_id) {
+          offerteUserId = offerte.user_id
+        }
       }
     }
 
@@ -244,13 +259,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
           const html = `<!DOCTYPE html><html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body style="margin: 0; padding: 0; background-color: #F5F4F1;"><table width="100%" cellpadding="0" cellspacing="0" style="background-color: #F5F4F1; padding: 40px 20px;"><tr><td align="center"><table width="100%" cellpadding="0" cellspacing="0" style="max-width: 520px;"><tr><td style="padding: 0 0 24px 0; text-align: center;"><span style="font-size: 24px; font-weight: 800; color: #1A1A1A; letter-spacing: -0.5px;">doen</span><span style="font-size: 24px; font-weight: 800; color: #F15025;">.</span></td></tr><tr><td><table width="100%" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; box-shadow: 0 2px 16px rgba(0,0,0,0.04);"><tr><td style="padding: 36px 36px 32px 36px;"><table width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding: 0 0 20px 0; font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 20px; font-weight: 700; color: #1A1A1A; line-height: 1.3;">${escapeHtml(notifHeading)}</td></tr>${itemBlock}${quoteBlock}${ctaBlock}</table></td></tr></table></td></tr><tr><td style="padding: 20px 0 0 0; text-align: center;"><div style="height: 3px; border-radius: 2px; background: linear-gradient(90deg, #1A535C, #F15025); margin-bottom: 16px;"></div><span style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 12px; color: #9B9B95;"><span style="font-weight: 700;">doen</span><span style="color: #F15025; font-weight: 700;">.</span> de kracht achter doeners.</span></td></tr></table></td></tr></table></body></html>`
 
-          await resendClient.emails.send({
-            from: 'doen. <noreply@doen.team>',
-            to: userEmail,
-            subject: onderwerp,
-            html,
-          })
-          console.log('[portaal-reactie] resend email sent to:', userEmail)
+          const recipients = [userEmail]
+
+          // Fix 2: ook offerte-eigenaar notificeren als die verschilt van portaal-aanmaker
+          if (offerteUserId) {
+            const { data: ownerEmail } = await supabaseAdmin
+              .from('user_email_settings')
+              .select('gmail_address')
+              .eq('user_id', offerteUserId)
+              .maybeSingle()
+            if (ownerEmail?.gmail_address && ownerEmail.gmail_address !== userEmail) {
+              recipients.push(ownerEmail.gmail_address)
+            }
+            // In-app notificatie voor offerte-eigenaar
+            await supabaseAdmin.from('notificaties').insert({
+              user_id: offerteUserId,
+              type: notifType,
+              titel: `${displayNaam} heeft ${actieLabel}`,
+              bericht: `${notifItemTitel} — ${notifProjectNaam}`,
+              link: `/projecten/${portaal.project_id}`,
+              project_id: portaal.project_id,
+              actie_genomen: false,
+              gelezen: false,
+            })
+          }
+
+          for (const recipient of recipients) {
+            await resendClient.emails.send({
+              from: 'doen. <noreply@doen.team>',
+              to: recipient,
+              subject: onderwerp,
+              html,
+            })
+            console.log('[portaal-reactie] resend email sent to:', recipient)
+          }
         } catch (resendErr) {
           console.warn('[portaal-reactie] resend notify failed:', resendErr)
         }
