@@ -102,7 +102,7 @@ function buildNotificationEmail(params: NotifyParams): string {
         <tr><td style="padding: 20px 0 0 0; text-align: center;">
           <div style="height: 3px; border-radius: 2px; background: linear-gradient(90deg, #1A535C, #F15025); margin-bottom: 16px;"></div>
           <span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 12px; color: #9B9B95;">
-            <span style="font-weight: 700;">doen</span><span style="color: #F15025; font-weight: 700;">.</span> slim gedaan, niet?
+            <span style="font-weight: 700;">doen</span><span style="color: #F15025; font-weight: 700;">.</span> slim gedaan.
           </span>
         </td></tr>
 

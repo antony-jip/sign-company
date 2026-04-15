@@ -270,7 +270,7 @@ function buildDigestHtml(stats: WeeklyStats, dateRange: string): string {
           <div style="height: 3px; border-radius: 2px; background: linear-gradient(90deg, #1A535C, #F15025); margin-bottom: 16px;"></div>
           <table width="100%" cellpadding="0" cellspacing="0">
             <tr><td align="center" style="font-family: ${font}; font-size: 12px; color: #9B9B95; line-height: 1.6;">
-              <span style="font-weight: 700;">doen</span><span style="color: #F15025; font-weight: 700;">.</span> slim gedaan, niet?
+              <span style="font-weight: 700;">doen</span><span style="color: #F15025; font-weight: 700;">.</span> slim gedaan.
             </td></tr>
           </table>
         </td></tr>
