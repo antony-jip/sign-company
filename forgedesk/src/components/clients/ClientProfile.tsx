@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { logger } from '../../utils/logger'
 import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useNavigateWithTab } from '@/hooks/useNavigateWithTab'
 import { BackButton } from '@/components/shared/BackButton'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -122,6 +123,7 @@ const statusLabels: Record<string, string> = {
 export function ClientProfile() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { navigateWithTab } = useNavigateWithTab()
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [contactDialogOpen, setContactDialogOpen] = useState(false)
   const [klant, setKlant] = useState<Klant | null>(null)
@@ -1379,7 +1381,7 @@ export function ClientProfile() {
                             </p>
                             <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
                               {cp.email && (
-                                <a href={`mailto:${cp.email}`} className="flex items-center gap-1 hover:text-blue-600" onClick={(e) => e.stopPropagation()}>
+                                <a href="#" className="flex items-center gap-1 hover:text-blue-600" onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigateWithTab({ path: `/email/compose?to=${encodeURIComponent(cp.email)}`, label: 'Nieuwe email', id: `/email/compose-${cp.email}` }) }}>
                                   <Mail className="w-3 h-3" />
                                   {cp.email}
                                 </a>
@@ -1436,7 +1438,7 @@ export function ClientProfile() {
                               </p>
                               <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
                                 {ic.email && (
-                                  <a href={`mailto:${ic.email}`} className="flex items-center gap-1 hover:text-blue-600" onClick={(e) => e.stopPropagation()}>
+                                  <a href="#" className="flex items-center gap-1 hover:text-blue-600" onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigateWithTab({ path: `/email/compose?to=${encodeURIComponent(ic.email)}`, label: 'Nieuwe email', id: `/email/compose-${ic.email}` }) }}>
                                     <Mail className="w-3 h-3" />
                                     {ic.email}
                                   </a>

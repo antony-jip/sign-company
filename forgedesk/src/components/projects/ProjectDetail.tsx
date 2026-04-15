@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
+import { useNavigateWithTab } from '@/hooks/useNavigateWithTab'
 // BackButton removed — inline back link in header
 import { useTabDirtyState } from '@/hooks/useTabDirtyState'
 import { toast } from 'sonner'
@@ -201,6 +202,7 @@ function formatFileSize(bytes: number): string {
 export function ProjectDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { navigateWithTab } = useNavigateWithTab()
   const { setDirty } = useTabDirtyState()
   const location = useLocation()
   const { user } = useAuth()
@@ -1161,7 +1163,7 @@ export function ProjectDetail() {
                     )}
                     {displayEmail && (
                       <p>
-                        <a href={`mailto:${displayEmail}`} className="hover:text-[#1A535C] transition-colors">{displayEmail}</a>
+                        <a href="#" onClick={(e) => { e.preventDefault(); navigateWithTab({ path: `/email/compose?to=${encodeURIComponent(displayEmail)}`, label: 'Nieuwe email', id: `/email/compose-${displayEmail}` }) }} className="hover:text-[#1A535C] transition-colors cursor-pointer">{displayEmail}</a>
                         {projectCp && klant.email && projectCp.email !== klant.email && (
                           <span className="block text-[10px] text-[#9B9B95] mt-0.5">Bedrijf: {klant.email}</span>
                         )}
@@ -1200,7 +1202,7 @@ export function ProjectDetail() {
                       </select>
                       {activeCp && (activeCp.email || activeCp.telefoon) && (
                         <div className="px-3 py-2 rounded-lg bg-[#E2F0F0]/40 text-[11px] text-[#1A535C] space-y-0.5">
-                          {activeCp.email && <p><a href={`mailto:${activeCp.email}`} className="hover:underline">{activeCp.email}</a></p>}
+                          {activeCp.email && <p><a href="#" onClick={(e) => { e.preventDefault(); navigateWithTab({ path: `/email/compose?to=${encodeURIComponent(activeCp.email)}`, label: 'Nieuwe email', id: `/email/compose-${activeCp.email}` }) }} className="hover:underline cursor-pointer">{activeCp.email}</a></p>}
                           {activeCp.telefoon && <p><a href={`tel:${activeCp.telefoon}`} className="hover:underline">{activeCp.telefoon}</a></p>}
                         </div>
                       )}
@@ -1296,7 +1298,7 @@ export function ProjectDetail() {
                 ...(() => {
                   const cpEmail = project.contactpersoon_id ? klant?.contactpersonen?.find(c => c.id === project.contactpersoon_id)?.email : undefined
                   const emailTo = cpEmail || klant?.email
-                  return emailTo ? [{ label: 'Email', color: '#6B6B66', icon: <Mail className="h-3.5 w-3.5" />, onClick: () => window.location.href = `mailto:${emailTo}` }] : []
+                  return emailTo ? [{ label: 'Email', color: '#6B6B66', icon: <Mail className="h-3.5 w-3.5" />, onClick: () => navigateWithTab({ path: `/email/compose?to=${encodeURIComponent(emailTo)}`, label: 'Nieuwe email', id: `/email/compose-${emailTo}` }) }] : []
                 })(),
               ].map((btn) => (
                 <button

@@ -161,7 +161,7 @@ export function ClientCard({ klant, projectCount, onEdit, onDelete, selected, on
                   Factuur aanmaken
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); window.location.href = `mailto:${klant.email}` }}>
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigateWithTab({ path: `/email/compose?to=${encodeURIComponent(klant.email)}`, label: 'Nieuwe email', id: `/email/compose-${klant.email}` }) }}>
                   <Mail className="w-3.5 h-3.5 mr-2" />
                   Klant mailen
                 </DropdownMenuItem>

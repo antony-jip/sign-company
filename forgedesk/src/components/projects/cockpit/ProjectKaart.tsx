@@ -1,4 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom'
+import { useNavigateWithTab } from '@/hooks/useNavigateWithTab'
 import {
   ArrowLeft,
   FileText,
@@ -105,6 +106,7 @@ export function ProjectKaart({
   onStatusChange,
 }: ProjectKaartProps) {
   const navigate = useNavigate()
+  const { navigateWithTab } = useNavigateWithTab()
 
   const totaalBedrag = offertes.reduce((sum, o) => sum + (o.totaal || 0), 0)
 
@@ -123,7 +125,7 @@ export function ProjectKaart({
 
   const handleMail = () => {
     if (klant?.email) {
-      window.location.href = `mailto:${klant.email}`
+      navigateWithTab({ path: `/email/compose?to=${encodeURIComponent(klant.email)}`, label: 'Nieuwe email', id: `/email/compose-${klant.email}` })
     }
   }
 
