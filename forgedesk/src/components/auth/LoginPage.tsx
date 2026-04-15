@@ -77,9 +77,7 @@ export function LoginPage() {
           {/* Logo */}
           <div>
             <Link to="/" className="inline-block">
-              <span className="text-[32px] font-extrabold text-white tracking-[-0.04em]">
-                doen<span className="text-[#F15025]" style={{ textShadow: '0 0 20px rgba(241, 80, 37, 0.5)' }}>.</span>
-              </span>
+              <img src="/logos/doen-logo-wit.svg" alt="doen." className="h-10" />
             </Link>
           </div>
 
@@ -106,9 +104,7 @@ export function LoginPage() {
           {/* Mobile logo */}
           <div className="mb-12 lg:hidden">
             <Link to="/" className="inline-block">
-              <span className="text-[28px] font-extrabold text-[#1A1A1A] tracking-[-0.04em]">
-                doen<span className="text-[#F15025]">.</span>
-              </span>
+              <img src="/logos/doen-logo.svg" alt="doen." className="h-9" />
             </Link>
           </div>
 

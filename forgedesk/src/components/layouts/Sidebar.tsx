@@ -281,13 +281,9 @@ export function Sidebar() {
           )}
         >
           {collapsed ? (
-            <span className="text-[22px] font-extrabold text-white tracking-tight transition-transform duration-300 group-hover/logo:scale-105">
-              d<span className="text-[#F15025]" style={{ textShadow: '0 0 14px rgba(241, 80, 37, 0.5)' }}>.</span>
-            </span>
+            <img src="/logos/doen-app-icon-wit.svg" alt="doen." className="h-5 w-5 transition-transform duration-300 group-hover/logo:scale-105" />
           ) : (
-            <span className="text-[26px] font-extrabold text-white tracking-[-0.04em] transition-transform duration-300 group-hover/logo:translate-x-0.5">
-              doen<span className="text-[#F15025]" style={{ textShadow: '0 0 16px rgba(241, 80, 37, 0.6)' }}>.</span>
-            </span>
+            <img src="/logos/doen-logo-wit.svg" alt="doen." className="h-6 transition-transform duration-300 group-hover/logo:translate-x-0.5" />
           )}
         </NavLink>
 

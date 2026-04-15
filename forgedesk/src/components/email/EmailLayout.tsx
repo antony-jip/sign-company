@@ -954,7 +954,7 @@ export function EmailLayout() {
         <div className="px-4 py-3 border-t border-[#EBEBEB]">
           <div className="flex items-center gap-2 text-[11px] text-[#B0ADA8]">
             <Mail className="h-3 w-3" />
-            <span>Doen. Mail</span>
+            <span>doen. mail</span>
           </div>
         </div>
       </div>

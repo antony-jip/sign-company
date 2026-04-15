@@ -84,9 +84,7 @@ export function RegisterPage() {
           {/* Logo */}
           <div className="mb-12">
             <Link to="/" className="inline-block">
-              <span className="text-[28px] font-extrabold text-[#1A1A1A] tracking-[-0.04em]">
-                doen<span className="text-[#F15025]" style={{ textShadow: '0 0 20px rgba(241, 80, 37, 0.3)' }}>.</span>
-              </span>
+              <img src="/logos/doen-logo.svg" alt="doen." className="h-9" />
             </Link>
           </div>
 

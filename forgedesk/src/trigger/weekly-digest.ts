@@ -191,7 +191,8 @@ function buildDigestHtml(stats: WeeklyStats, dateRange: string): string {
 
         <!-- Logo -->
         <tr><td style="padding: 0 0 24px 0; text-align: center;">
-          <span style="font-family: ${font}; font-size: 24px; font-weight: 800; color: #1A1A1A; letter-spacing: -0.5px;">doen</span><span style="font-family: ${font}; font-size: 24px; font-weight: 800; color: #F15025;">.</span>
+          <span style="font-family: ${font}; font-size: 24px; font-weight: 800; color: #2b535c; letter-spacing: -0.5px;">doen</span><span style="font-family: ${font}; font-size: 24px; font-weight: 800; color: #df5c36;">.</span>
+          <br/><span style="font-family: ${font}; font-size: 12px; font-weight: 400; color: #8aacb1; letter-spacing: -0.2px;">slim gedaan.</span>
         </td></tr>
 
         <!-- Card -->
@@ -270,7 +271,7 @@ function buildDigestHtml(stats: WeeklyStats, dateRange: string): string {
           <div style="height: 3px; border-radius: 2px; background: linear-gradient(90deg, #1A535C, #F15025); margin-bottom: 16px;"></div>
           <table width="100%" cellpadding="0" cellspacing="0">
             <tr><td align="center" style="font-family: ${font}; font-size: 12px; color: #9B9B95; line-height: 1.6;">
-              <span style="font-weight: 700;">doen</span><span style="color: #F15025; font-weight: 700;">.</span> slim gedaan.
+              <span style="font-weight: 700; color: #2b535c;">doen</span><span style="color: #df5c36; font-weight: 700;">.</span> <span style="color: #8aacb1;">slim gedaan.</span>
             </td></tr>
           </table>
         </td></tr>

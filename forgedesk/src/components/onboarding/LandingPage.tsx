@@ -172,17 +172,7 @@ function Navbar() {
         <div className="max-w-7xl mx-auto px-6 lg:px-10 h-[72px] flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center gap-2.5">
-            <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-white text-sm"
-              style={{
-                background: `linear-gradient(135deg, ${COLORS.coral}, ${COLORS.sage})`,
-              }}
-            >
-              D
-            </div>
-            <span className="font-black text-[#1a1a1a] text-lg tracking-tight">
-              Doen.
-            </span>
+            <img src="/logos/doen-logo.svg" alt="doen." className="h-9" />
           </div>
 
           {/* Desktop nav */}

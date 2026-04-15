@@ -122,7 +122,8 @@ export const databaseBackup = schedules.task({
     <tr><td align="center">
       <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 520px;">
         <tr><td style="padding: 0 0 24px 0; text-align: center;">
-          <span style="font-size: 24px; font-weight: 800; color: #1A1A1A; letter-spacing: -0.5px;">doen</span><span style="font-size: 24px; font-weight: 800; color: #F15025;">.</span>
+          <span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 24px; font-weight: 800; color: #2b535c; letter-spacing: -0.5px;">doen</span><span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 24px; font-weight: 800; color: #df5c36;">.</span>
+          <br/><span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 12px; font-weight: 400; color: #8aacb1; letter-spacing: -0.2px;">slim gedaan.</span>
         </td></tr>
         <tr><td>
           <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; box-shadow: 0 2px 16px rgba(0,0,0,0.04);">
@@ -149,7 +150,7 @@ export const databaseBackup = schedules.task({
           </table>
         </td></tr>
         <tr><td style="padding: 20px 0 0 0; text-align: center;">
-          <span style="font-family: -apple-system, sans-serif; font-size: 11px; color: #9B9B95;">Automatische wekelijkse backup via <span style="font-weight: 700;">doen</span><span style="color: #F15025; font-weight: 700;">.</span></span>
+          <span style="font-family: -apple-system, sans-serif; font-size: 11px; color: #9B9B95;">Automatische wekelijkse backup via <span style="font-weight: 700; color: #2b535c;">doen</span><span style="color: #df5c36; font-weight: 700;">.</span></span>
         </td></tr>
       </table>
     </td></tr>

@@ -91,13 +91,10 @@ export function TopNav() {
   return (
     <header className="flex-shrink-0" style={{ position: 'relative', zIndex: 30 }}>
       {/* ── Row 1: Utility bar ── */}
-      <div className="flex items-center h-12 px-5 md:px-6 bg-[#1A535C]">
+      <div className="flex items-center h-14 px-5 md:px-6 bg-[#1A535C]">
         {/* Logo */}
         <NavLink to="/" className="flex items-center gap-2 mr-5 flex-shrink-0">
-          <div className="w-7 h-7 rounded-md bg-white/15 flex items-center justify-center text-white font-extrabold text-[13px] flex-shrink-0">D</div>
-          <span className="hidden sm:block text-[15px] font-extrabold tracking-[-0.04em] text-white">
-            Doen<span className="text-[#F15025]">.</span>
-          </span>
+          <img src="/logos/doen-logo-wit.svg" alt="doen." className="h-[18px]" />
         </NavLink>
 
         {/* Quick-add button */}

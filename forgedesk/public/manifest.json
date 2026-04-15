@@ -1,0 +1,16 @@
+{
+  "name": "doen.",
+  "short_name": "doen.",
+  "description": "CRM en projectmanagement voor vakmensen",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FAFAF8",
+  "theme_color": "#1A535C",
+  "icons": [
+    {
+      "src": "/logos/doen-app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
