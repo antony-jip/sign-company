@@ -74,7 +74,7 @@ import type { Klant, Project, Contactpersoon, Factuur } from '@/types'
 import { round2 } from '@/utils/budgetUtils'
 import { generateOffertePDF, generateOpdrachtbevestigingPDF } from '@/services/pdfService'
 import { WerkbonAanmaakDialog } from '@/components/werkbonnen/WerkbonAanmaakDialog'
-import { PdfPreviewDialog } from '@/components/shared/PdfPreviewDialog'
+const PdfPreviewDialog = React.lazy(() => import('@/components/shared/PdfPreviewDialog').then(m => ({ default: m.PdfPreviewDialog })))
 import { useDocumentStyle } from '@/hooks/useDocumentStyle'
 import { sendEmail } from '@/services/gmailService'
 import { offerteVerzendTemplate } from '@/services/emailTemplateService'

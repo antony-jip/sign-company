@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, lazy } from 'react'
 import {
   Plus,
   FileText,
@@ -11,7 +11,7 @@ import {
   Eye,
 } from 'lucide-react'
 import { getSignedUrl } from '@/services/storageService'
-import { PdfPreviewDialog } from '@/components/shared/PdfPreviewDialog'
+const PdfPreviewDialog = lazy(() => import('@/components/shared/PdfPreviewDialog').then(m => ({ default: m.PdfPreviewDialog })))
 
 function getFileIcon(type: string) {
   const size = 'h-4 w-4'

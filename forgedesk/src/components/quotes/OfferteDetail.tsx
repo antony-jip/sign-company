@@ -61,7 +61,7 @@ import { KlantStatusBadgeInline, KlantStatusWarning } from '@/components/shared/
 import { AuditLogPanel } from '@/components/shared/AuditLogPanel'
 import { logWijziging } from '@/utils/auditLogger'
 import { WerkbonAanmaakDialog } from '@/components/werkbonnen/WerkbonAanmaakDialog'
-import { PdfPreviewDialog } from '@/components/shared/PdfPreviewDialog'
+const PdfPreviewDialog = React.lazy(() => import('@/components/shared/PdfPreviewDialog').then(m => ({ default: m.PdfPreviewDialog })))
 import { ShareButton } from '@/components/shared/ShareButton'
 import { VisualisatieGallery } from '@/components/visualizer/VisualisatieGallery'
 import { OfferteOpvolgTimeline } from '@/components/quotes/OfferteOpvolgTimeline'

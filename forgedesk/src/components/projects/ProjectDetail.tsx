@@ -130,7 +130,7 @@ import { ProjectFaseBar } from './cockpit/ProjectFaseBar'
 import { MontageSection } from './cockpit/MontageSection'
 import { BestandenSection } from './cockpit/BestandenSection'
 import { ActiviteitFeed } from './cockpit/ActiviteitFeed'
-import { PdfPreviewDialog } from '@/components/shared/PdfPreviewDialog'
+const PdfPreviewDialog = React.lazy(() => import('@/components/shared/PdfPreviewDialog').then(m => ({ default: m.PdfPreviewDialog })))
 import { generateOpdrachtbevestigingPDF } from '@/services/pdfService'
 import { useProjectSidebarConfig } from '@/hooks/useProjectSidebarConfig'
 import type { Taak, Project, Document, Offerte, TekeningGoedkeuring, Klant, Tijdregistratie, Medewerker, ProjectToewijzing, Werkbon, Factuur, Uitgave, MontageAfspraak, MontageBijlage, ProjectFoto } from '@/types'
