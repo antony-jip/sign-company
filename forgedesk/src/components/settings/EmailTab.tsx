@@ -47,7 +47,8 @@ import { logger } from '../../utils/logger'
 import type { Medewerker } from '@/types'
 import { SubTabNav } from './SubTabNav'
 import type { SubTab } from './settingsShared'
-import { EmailSettings, DEFAULT_EMAIL_SETTINGS } from './settingsShared'
+import { EmailSettings, DEFAULT_EMAIL_SETTINGS, EMAIL_PROVIDER_DEFAULTS } from './settingsShared'
+import type { EmailProvider } from './settingsShared'
 
 const EMAIL_TABS: SubTab[] = [
   { id: 'handtekening', label: 'Handtekening', icon: FileText },
@@ -827,6 +828,17 @@ function EmailSettingsInline({
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [provider, setProvider] = useState<EmailProvider>(
+    settings.smtp_host.includes('office365') || settings.smtp_host.includes('outlook') ? 'outlook'
+    : settings.smtp_host.includes('gmail') || !settings.smtp_host ? 'gmail'
+    : 'overig'
+  )
+
+  const handleProviderChange = (p: EmailProvider) => {
+    setProvider(p)
+    const defaults = EMAIL_PROVIDER_DEFAULTS[p]
+    setSettings({ ...settings, ...defaults })
+  }
 
   const handleSave = async () => {
     setError('')
@@ -945,6 +957,24 @@ function EmailSettingsInline({
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
+          {/* Provider keuze */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">E-mail provider</Label>
+            <div className="flex gap-2">
+              {([['gmail', 'Gmail'], ['outlook', 'Outlook / Microsoft 365'], ['overig', 'Overig']] as const).map(([key, label]) => (
+                <button
+                  key={key}
+                  onClick={() => handleProviderChange(key)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${provider === key ? 'bg-[#1A535C] text-white border-[#1A535C]' : 'bg-white text-[#6B6B66] border-[#EBEBEB] hover:border-[#1A535C]/30'}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <Separator />
+
           {/* SMTP Server */}
           <div className="space-y-2">
             <Label htmlFor="smtp_host" className="flex items-center gap-2 text-sm font-medium">
@@ -953,7 +983,7 @@ function EmailSettingsInline({
             </Label>
             <Input
               id="smtp_host"
-              placeholder="smtp.gmail.com"
+              placeholder={provider === 'outlook' ? 'smtp.office365.com' : 'smtp.gmail.com'}
               value={settings.smtp_host}
               onChange={(e) => setSettings({ ...settings, smtp_host: e.target.value })}
             />
@@ -1001,7 +1031,7 @@ function EmailSettingsInline({
             </Label>
             <Input
               id="imap_host"
-              placeholder="imap.gmail.com"
+              placeholder={provider === 'outlook' ? 'outlook.office365.com' : 'imap.gmail.com'}
               value={settings.imap_host}
               onChange={(e) => setSettings({ ...settings, imap_host: e.target.value })}
             />
@@ -1074,29 +1104,46 @@ function EmailSettingsInline({
             />
           </div>
 
-          {/* Gmail App Password info */}
-          <div className="rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 p-3">
-            <div className="flex gap-2">
-              <Info className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-              <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
-                <p className="font-medium">Gmail gebruikers</p>
-                <p>
-                  Gebruik een <strong>App Wachtwoord</strong> in plaats van je gewone wachtwoord.
-                  Ga naar{' '}
-                  <a
-                    href="https://myaccount.google.com/apppasswords"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline inline-flex items-center gap-0.5"
-                  >
-                    Google App Wachtwoorden
-                    <ExternalLink className="w-3 h-3" />
-                  </a>{' '}
-                  om er een aan te maken. 2FA moet ingeschakeld zijn.
-                </p>
+          {/* Provider-specifieke instructies */}
+          {provider === 'gmail' && (
+            <div className="rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 p-3">
+              <div className="flex gap-2">
+                <Info className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
+                  <p className="font-medium">Gmail instellen</p>
+                  <p>
+                    Gebruik een <strong>App Wachtwoord</strong> in plaats van je gewone wachtwoord.
+                    Ga naar{' '}
+                    <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener noreferrer" className="underline inline-flex items-center gap-0.5">
+                      Google App Wachtwoorden <ExternalLink className="w-3 h-3" />
+                    </a>{' '}
+                    om er een aan te maken. 2FA moet ingeschakeld zijn.
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
+          )}
+          {provider === 'outlook' && (
+            <div className="rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 p-3">
+              <div className="flex gap-2">
+                <Info className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
+                  <p className="font-medium">Outlook / Microsoft 365 instellen</p>
+                  <p>
+                    Gebruik een <strong>App Wachtwoord</strong>. Ga naar{' '}
+                    <a href="https://account.live.com/proofs/AppPassword" target="_blank" rel="noopener noreferrer" className="underline inline-flex items-center gap-0.5">
+                      Microsoft App Wachtwoorden <ExternalLink className="w-3 h-3" />
+                    </a>{' '}
+                    om er een aan te maken. 2FA moet ingeschakeld zijn.
+                  </p>
+                  <p>
+                    Voor <strong>Microsoft 365 zakelijk</strong>: je beheerder moet SMTP AUTH inschakelen.
+                    Ga naar Admin Center &rarr; Users &rarr; Mail &rarr; "Authenticated SMTP".
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* SPF Record info */}
           <div className="rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 p-3">
