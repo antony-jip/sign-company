@@ -193,6 +193,7 @@ export function getDefaultAppSettings(userId: string): AppSettings {
     werkbon_monteur_fotos: true,
     werkbon_klant_handtekening: true,
     werkbon_briefpapier: true,
+    email_edge_button: true,
     quick_actions_enabled: true,
     created_at: now(),
     updated_at: now(),

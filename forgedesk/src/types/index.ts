@@ -711,6 +711,7 @@ export interface AppSettings {
   forgie_enabled: boolean;
   forgie_bedrijfscontext: string;
   // Quick Actions
+  email_edge_button: boolean;
   quick_actions_enabled: boolean;
   quick_action_items: string[];
   quick_actions_position?: 'bottom-right' | 'bottom-right-hover' | 'right-edge' | 'hidden';

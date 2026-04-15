@@ -6,6 +6,7 @@ import { TopNav } from './TopNav'
 import { MobileBottomNav } from './MobileBottomNav'
 import { ForgieChatWidget } from '@/components/forgie/ForgieChatWidget'
 import { FloatingQuickActions } from '@/components/dashboard/FloatingQuickActions'
+import { FloatingEmailButton } from '@/components/shared/FloatingEmailButton'
 import { TabBar } from '@/components/layouts/TabBar'
 import { useSidebar } from '@/contexts/SidebarContext'
 import { useTabShortcuts } from '@/hooks/useTabShortcuts'
@@ -42,6 +43,7 @@ export function AppLayout() {
           <MobileBottomNav />
         </div>
         <FloatingQuickActions />
+        <FloatingEmailButton />
         <ForgieChatWidget />
       </>
     )
@@ -64,6 +66,7 @@ export function AppLayout() {
         </div>
       </div>
       <FloatingQuickActions />
+      <FloatingEmailButton />
       <ForgieChatWidget />
     </>
   )

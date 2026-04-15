@@ -19,6 +19,7 @@ import {
   GripVertical,
   Zap,
   BookTemplate,
+  Mail,
 } from 'lucide-react'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -526,6 +527,28 @@ export function WeergaveTab() {
           />
         </div>
       </CardContent>
+    </Card>
+
+    {/* Email knop */}
+    <Card className="mt-4">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Mail className="w-5 h-5" />
+              Email snelknop
+            </CardTitle>
+            <CardDescription className="mt-1.5">Toon een envelopje aan de rechterrand om snel naar je inbox te gaan</CardDescription>
+          </div>
+          <Switch
+            checked={settings.email_edge_button ?? true}
+            onCheckedChange={(checked) => {
+              updateSettings({ email_edge_button: checked })
+              toast.success(checked ? 'Email knop ingeschakeld' : 'Email knop uitgeschakeld')
+            }}
+          />
+        </div>
+      </CardHeader>
     </Card>
 
     {/* Snelkoppelingen */}
