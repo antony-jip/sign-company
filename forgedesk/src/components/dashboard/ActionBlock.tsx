@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -14,17 +14,9 @@ import {
   Loader2,
   CheckCircle2,
 } from 'lucide-react'
-import {
-  getMontageAfspraken,
-  getOffertes,
-  getFacturen,
-  getTaken,
-  getProjecten,
-} from '@/services/supabaseService'
-import type { MontageAfspraak, Offerte, Factuur, Taak, Project } from '@/types'
 import { formatCurrency } from '@/lib/utils'
 import { isToday, isBefore, parseISO, differenceInDays } from 'date-fns'
-import { logger } from '../../utils/logger'
+import { useDashboardData } from '@/contexts/DashboardDataContext'
 
 interface ActionItem {
   id: string
@@ -40,35 +32,7 @@ interface ActionItem {
 
 export function ActionBlock() {
   const navigate = useNavigate()
-  const [loading, setLoading] = useState(true)
-  const [montages, setMontages] = useState<MontageAfspraak[]>([])
-  const [offertes, setOffertes] = useState<Offerte[]>([])
-  const [facturen, setFacturen] = useState<Factuur[]>([])
-  const [taken, setTaken] = useState<Taak[]>([])
-  const [projecten, setProjecten] = useState<Project[]>([])
-
-  useEffect(() => {
-    let cancelled = false
-    Promise.all([
-      getMontageAfspraken(),
-      getOffertes(),
-      getFacturen().catch(() => []),
-      getTaken(),
-      getProjecten(),
-    ])
-      .then(([m, o, f, t, p]) => {
-        if (!cancelled) {
-          setMontages(m)
-          setOffertes(o)
-          setFacturen(f)
-          setTaken(t)
-          setProjecten(p)
-        }
-      })
-      .catch(logger.error)
-      .finally(() => { if (!cancelled) setLoading(false) })
-    return () => { cancelled = true }
-  }, [])
+  const { montages, offertes, facturen, taken, projecten, isLoading: loading } = useDashboardData()
 
   const actions = useMemo(() => {
     const items: ActionItem[] = []

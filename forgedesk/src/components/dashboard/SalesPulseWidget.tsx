@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React from 'react'
 import { Link } from 'react-router-dom'
 import {
   TrendingUp,
@@ -8,10 +8,8 @@ import {
   ArrowRight,
   Loader2,
 } from 'lucide-react'
-import { getOffertes, getFacturen } from '@/services/supabaseService'
 import { formatCurrency } from '@/lib/utils'
-import type { Offerte, Factuur } from '@/types'
-import { logger } from '../../utils/logger'
+import { useDashboardData } from '@/contexts/DashboardDataContext'
 
 interface PulseMetric {
   label: string
@@ -23,23 +21,7 @@ interface PulseMetric {
 }
 
 export function SalesPulseWidget() {
-  const [offertes, setOffertes] = useState<Offerte[]>([])
-  const [facturen, setFacturen] = useState<Factuur[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    let cancelled = false
-    Promise.all([getOffertes(), getFacturen()])
-      .then(([o, f]) => {
-        if (!cancelled) {
-          setOffertes(o)
-          setFacturen(f)
-        }
-      })
-      .catch(logger.error)
-      .finally(() => { if (!cancelled) setLoading(false) })
-    return () => { cancelled = true }
-  }, [])
+  const { offertes, facturen, isLoading: loading } = useDashboardData()
 
   if (loading) {
     return (

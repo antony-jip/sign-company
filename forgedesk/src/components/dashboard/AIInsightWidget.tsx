@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -15,9 +15,7 @@ import {
   Sparkles,
   type LucideIcon,
 } from 'lucide-react'
-import { getProjecten, getOffertes, getKlanten, getTaken } from '@/services/supabaseService'
-import type { Project, Offerte, Klant, Taak } from '@/types'
-import { logger } from '../../utils/logger'
+import { useDashboardData } from '@/contexts/DashboardDataContext'
 
 interface AIInsight {
   id: string
@@ -31,27 +29,7 @@ interface AIInsight {
 
 export function AIInsightWidget() {
   const navigate = useNavigate()
-  const [projecten, setProjecten] = useState<Project[]>([])
-  const [offertes, setOffertes] = useState<Offerte[]>([])
-  const [klanten, setKlanten] = useState<Klant[]>([])
-  const [taken, setTaken] = useState<Taak[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    let cancelled = false
-    Promise.all([getProjecten(), getOffertes(), getKlanten(), getTaken()])
-      .then(([p, o, k, t]) => {
-        if (!cancelled) {
-          setProjecten(p)
-          setOffertes(o)
-          setKlanten(k)
-          setTaken(t)
-        }
-      })
-      .catch(logger.error)
-      .finally(() => { if (!cancelled) setLoading(false) })
-    return () => { cancelled = true }
-  }, [])
+  const { projecten, offertes, klanten, taken, isLoading: loading } = useDashboardData()
 
   const insights = useMemo(() => {
     const items: AIInsight[] = []

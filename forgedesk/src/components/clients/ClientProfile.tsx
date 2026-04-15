@@ -72,19 +72,17 @@ import {
   getKlanten,
   getProjectenByKlant,
   getEmails,
-  getDocumenten,
-  getOffertes,
-  getFacturen,
+  getOffertesByKlant,
+  getFacturenByKlant,
+  getDocumentenByKlant,
   getDealsByKlant,
-  getTijdregistraties,
+  getTijdregistratiesByProject,
   updateKlant,
-} from '@/services/supabaseService'
-import { AddEditClient } from './AddEditClient'
-import { KlantHistorieTab } from './KlantHistorieTab'
-import {
   getContactpersonenByKlant,
   deleteContactpersoonDB,
 } from '@/services/supabaseService'
+import { AddEditClient } from './AddEditClient'
+import { KlantHistorieTab } from './KlantHistorieTab'
 import type { Klant, Project, Email, Document as DocType, Offerte, Contactpersoon, ContactpersoonRecord, Vestiging, Factuur, Deal, Tijdregistratie } from '@/types'
 import { confirm } from '@/components/shared/ConfirmDialog'
 
@@ -163,38 +161,42 @@ export function ClientProfile() {
     Promise.all([
       getKlant(id),
       getProjectenByKlant(id),
-      getEmails(),
-      getDocumenten(),
-      getOffertes(),
-      getFacturen().catch(() => []),
+      getOffertesByKlant(id),
+      getFacturenByKlant(id).catch(() => []),
+      getDocumentenByKlant(id).catch(() => []),
       getDealsByKlant(id).catch(() => []),
-      getTijdregistraties().catch(() => []),
-    ]).then(([klantData, projecten, allEmails, allDocs, allOffertes, allFacturen, deals, allTijd]) => {
+      getContactpersonenByKlant(id).catch(() => []),
+    ]).then(async ([klantData, projecten, offertes, facturen, documenten, deals, contactpersonen]) => {
       if (cancelled) return
       setKlant(klantData)
       setClientProjecten(projecten)
       setNotitie(klantData?.notities || '')
-      if (klantData) {
-        const email = (klantData.email || '').toLowerCase()
-        setClientEmails(
-          allEmails.filter(
-            (e) =>
-              (e.van?.toLowerCase()?.includes(email) ?? false) ||
-              (e.aan?.toLowerCase()?.includes(email) ?? false)
-          )
-        )
-        setClientOffertes(
-          allOffertes.filter((o) => o.klant_id === id)
-        )
-      }
-      setClientDocumenten(allDocs.filter((d) => d.klant_id === id))
-      setClientFacturen(allFacturen.filter((f) => f.klant_id === id))
+      setClientOffertes(offertes)
+      setClientFacturen(facturen)
+      setClientDocumenten(documenten)
       setClientDeals(deals)
-      const projectIds = new Set(projecten.map((p) => p.id))
-      setClientTijdregistraties(allTijd.filter((t) => projectIds.has(t.project_id)))
-      // Load DB contactpersonen
-      getContactpersonenByKlant(id).then(setImportedContacts).catch(() => setImportedContacts([]))
-      setIsLoading(false)
+      setImportedContacts(contactpersonen)
+
+      // Emails filteren op klant email — moet nog via getEmails() want er is geen getEmailsByKlant
+      if (klantData?.email) {
+        const email = klantData.email.toLowerCase()
+        const allEmails = await getEmails().catch(() => [])
+        if (!cancelled) {
+          setClientEmails(allEmails.filter(e =>
+            (e.van?.toLowerCase()?.includes(email) ?? false) ||
+            (e.aan?.toLowerCase()?.includes(email) ?? false)
+          ))
+        }
+      }
+
+      // Tijdregistraties per project
+      const projectIds = projecten.map(p => p.id)
+      if (projectIds.length > 0) {
+        const tijdResults = await Promise.all(projectIds.map(pid => getTijdregistratiesByProject(pid).catch(() => [])))
+        if (!cancelled) setClientTijdregistraties(tijdResults.flat())
+      }
+
+      if (!cancelled) setIsLoading(false)
     })
     return () => { cancelled = true }
   }, [id])

@@ -17,10 +17,8 @@ import {
   Loader2,
   Phone,
 } from 'lucide-react'
-import { getOffertes } from '@/services/supabaseService'
-import type { Offerte } from '@/types'
 import { formatCurrency, formatDate, cn } from '@/lib/utils'
-import { logger } from '../../utils/logger'
+import { useDashboardData } from '@/contexts/DashboardDataContext'
 
 interface FollowUpItem {
   offerte: Offerte
@@ -212,26 +210,8 @@ function EmptyState({ message }: { message: string }) {
 }
 
 export function SalesFollowUpWidget() {
-  const [offertes, setOffertes] = useState<Offerte[]>([])
-  const [loading, setLoading] = useState(true)
+  const { offertes, isLoading: loading } = useDashboardData()
   const [activeTab, setActiveTab] = useState('achterstallig')
-
-  useEffect(() => {
-    let cancelled = false
-    async function loadData() {
-      try {
-        setLoading(true)
-        const data = await getOffertes()
-        if (!cancelled) setOffertes(data)
-      } catch (error) {
-        logger.error('Error loading offertes for follow-up widget:', error)
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    }
-    loadData()
-    return () => { cancelled = true }
-  }, [])
 
   const {
     overdueItems,

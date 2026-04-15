@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
 import {
@@ -8,25 +8,13 @@ import {
   ArrowRight,
   Loader2,
 } from 'lucide-react'
-import { getFacturen } from '@/services/supabaseService'
-import type { Factuur } from '@/types'
 import { formatCurrency } from '@/lib/utils'
 import { differenceInDays, startOfMonth, endOfMonth } from 'date-fns'
-import { logger } from '../../utils/logger'
+import { useDashboardData } from '@/contexts/DashboardDataContext'
 
 export function MoneyBlock() {
   const navigate = useNavigate()
-  const [facturen, setFacturen] = useState<Factuur[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    let cancelled = false
-    getFacturen()
-      .then(f => { if (!cancelled) setFacturen(f) })
-      .catch(logger.error)
-      .finally(() => { if (!cancelled) setLoading(false) })
-    return () => { cancelled = true }
-  }, [])
+  const { facturen, isLoading: loading } = useDashboardData()
 
   const { openstaand, omzetDezeMaand, verlopenFacturen } = useMemo(() => {
     const now = new Date()
