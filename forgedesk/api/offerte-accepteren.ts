@@ -187,8 +187,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const { Resend } = await import('resend')
         const resendClient = new Resend(process.env.RESEND_API_KEY)
 
-        const bedrijf = offerte.klant_naam || ''
-        const beschrijving = bedrijf && bedrijf !== klantNaam
+        let bedrijf = ''
+        if (offerte.klant_id) {
+          const { data: klant } = await supabaseAdmin.from('klanten').select('bedrijfsnaam').eq('id', offerte.klant_id).maybeSingle()
+          bedrijf = klant?.bedrijfsnaam || ''
+        }
+        const beschrijving = bedrijf
           ? `${escapeHtml(bedrijf)} — geaccepteerd door ${escapeHtml(klantNaam)}`
           : `Geaccepteerd door ${escapeHtml(klantNaam)}`
         const itemBlock = `<tr><td style="padding: 0 0 16px 0;"><table width="100%" cellpadding="0" cellspacing="0" style="border: 1px solid #EBEBEB; border-radius: 8px;"><tr><td style="padding: 16px 20px; font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 15px; font-weight: 600; color: #1A1A1A;">${escapeHtml(notifItemTitel)}</td></tr><tr><td style="padding: 0 20px 16px 20px; font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 14px; color: #6B6B66;">${beschrijving}</td></tr></table></td></tr>`
