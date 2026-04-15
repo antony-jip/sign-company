@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Calendar, Clock, Loader2 } from 'lucide-react'
 import {
@@ -12,26 +12,14 @@ import {
   parseISO,
 } from 'date-fns'
 import { nl } from 'date-fns/locale'
-import { getEvents } from '@/services/supabaseService'
-import type { CalendarEvent } from '@/types'
 import { cn } from '@/lib/utils'
-import { logger } from '../../utils/logger'
+import { useDashboardData } from '@/contexts/DashboardDataContext'
 
 const WEEKDAY_LABELS = ['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo']
 
 export function CalendarMiniWidget() {
   const today = new Date()
-  const [events, setEvents] = useState<CalendarEvent[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    let cancelled = false
-    getEvents()
-      .then((data) => { if (!cancelled) setEvents(data) })
-      .catch(logger.error)
-      .finally(() => { if (!cancelled) setLoading(false) })
-    return () => { cancelled = true }
-  }, [])
+  const { events, isLoading: loading } = useDashboardData()
 
   const { daysInMonth, startOffset, eventDates, upcomingEvents } =
     useMemo(() => {

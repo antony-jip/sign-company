@@ -1,29 +1,13 @@
-import React, { useState, useEffect } from 'react'
+import React from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getProjecten, getOffertes, getFacturen } from '@/services/supabaseService'
-import type { Project, Offerte, Factuur } from '@/types'
 import { formatCurrency } from '@/lib/utils'
 import { useCountUp } from '@/hooks/useCountUp'
-import { logger } from '../../utils/logger'
 import { TrendingUp, TrendingDown, ArrowRight, Receipt, FolderOpen, FileText, Wallet, Target } from 'lucide-react'
+import { useDashboardData } from '@/contexts/DashboardDataContext'
 
 export function StatisticsCards() {
   const navigate = useNavigate()
-  const [projecten, setProjecten] = useState<Project[]>([])
-  const [offertes, setOffertes] = useState<Offerte[]>([])
-  const [facturen, setFacturen] = useState<Factuur[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    let cancelled = false
-    Promise.all([getProjecten(), getOffertes(), getFacturen().catch(() => [])])
-      .then(([p, o, f]) => {
-        if (!cancelled) { setProjecten(p); setOffertes(o); setFacturen(f) }
-      })
-      .catch(logger.error)
-      .finally(() => { if (!cancelled) setLoading(false) })
-    return () => { cancelled = true }
-  }, [])
+  const { projecten, offertes, facturen, isLoading: loading } = useDashboardData()
 
   const actieveProjecten = projecten.filter(p => p.status === 'actief' || p.status === 'in-review').length
   const geplande = projecten.filter(p => p.status === 'gepland').length

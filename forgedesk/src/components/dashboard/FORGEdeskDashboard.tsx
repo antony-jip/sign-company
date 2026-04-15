@@ -45,8 +45,7 @@ import {
   ArrowRight,
   type LucideIcon,
 } from 'lucide-react'
-import { getFacturen } from '@/services/supabaseService'
-import type { Factuur } from '@/types'
+import { DashboardDataProvider, useDashboardData } from '@/contexts/DashboardDataContext'
 import { formatCurrency, cn } from '@/lib/utils'
 import { logger } from '../../utils/logger'
 import { useDashboardLayout, type DashboardWidgetId, type WidgetSize } from '@/hooks/useDashboardLayout'
@@ -177,6 +176,14 @@ function WidgetResizeControl({
 // ============ MAIN COMPONENT ============
 
 export function FORGEdeskDashboard() {
+  return (
+    <DashboardDataProvider>
+      <FORGEdeskDashboardInner />
+    </DashboardDataProvider>
+  )
+}
+
+function FORGEdeskDashboardInner() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { profile } = useAppSettings()
@@ -185,25 +192,18 @@ export function FORGEdeskDashboard() {
 
   usePortaalHerinnering()
 
-  const [verlopenFacturen, setVerlopenFacturen] = useState<{ count: number; bedrag: number }>({ count: 0, bedrag: 0 })
+  const { facturen } = useDashboardData()
 
-  useEffect(() => {
-    let cancelled = false
-    getFacturen()
-      .then((facturen: Factuur[]) => {
-        if (cancelled) return
-        const now = new Date()
-        const verlopen = facturen.filter(
-          f => (f.status === 'verzonden' || f.status === 'vervallen') && new Date(f.vervaldatum) < now
-        )
-        setVerlopenFacturen({
-          count: verlopen.length,
-          bedrag: verlopen.reduce((sum, f) => sum + (f.totaal - f.betaald_bedrag), 0),
-        })
-      })
-      .catch(logger.error)
-    return () => { cancelled = true }
-  }, [])
+  const verlopenFacturen = useMemo(() => {
+    const now = new Date()
+    const verlopen = facturen.filter(
+      f => (f.status === 'verzonden' || f.status === 'vervallen') && new Date(f.vervaldatum) < now
+    )
+    return {
+      count: verlopen.length,
+      bedrag: verlopen.reduce((sum, f) => sum + (f.totaal - f.betaald_bedrag), 0),
+    }
+  }, [facturen])
 
   const greeting = useMemo(() => getGreeting(), [])
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -14,13 +14,11 @@ import {
   MapPin,
   Wrench,
 } from 'lucide-react'
-import { getTaken, getProjecten, getEvents, getMontageAfspraken } from '@/services/supabaseService'
-import type { Taak, Project, CalendarEvent, MontageAfspraak } from '@/types'
 import { getPriorityColor } from '@/lib/utils'
 import { MODULE_COLORS } from '@/lib/moduleColors'
 import { format, isToday, isTomorrow, parseISO, isAfter, isBefore, addDays } from 'date-fns'
 import { nl } from 'date-fns/locale'
-import { logger } from '../../utils/logger'
+import { useDashboardData } from '@/contexts/DashboardDataContext'
 
 interface TimelineItem {
   id: string
@@ -37,27 +35,8 @@ interface TimelineItem {
 
 export function TodayPlanningWidget() {
   const navigate = useNavigate()
-  const [taken, setTaken] = useState<Taak[]>([])
-  const [projecten, setProjecten] = useState<Project[]>([])
-  const [events, setEvents] = useState<CalendarEvent[]>([])
-  const [montages, setMontages] = useState<MontageAfspraak[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    let cancelled = false
-    Promise.all([getTaken(), getProjecten(), getEvents(), getMontageAfspraken()])
-      .then(([t, p, e, m]) => {
-        if (!cancelled) {
-          setTaken(t)
-          setProjecten(p)
-          setEvents(e)
-          setMontages(m)
-        }
-      })
-      .catch(logger.error)
-      .finally(() => { if (!cancelled) setLoading(false) })
-    return () => { cancelled = true }
-  }, [])
+  const { taken, projecten, events, montages: montageData, isLoading: loading } = useDashboardData()
+  const montages = montageData
 
   const { todayItems, tomorrowItems, overdueTasks } = useMemo(() => {
     const projectMap = new Map(projecten.map((p) => [p.id, p.naam]))

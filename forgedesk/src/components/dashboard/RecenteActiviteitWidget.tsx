@@ -1,13 +1,11 @@
-import React, { useState, useEffect } from 'react'
+import React, { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
 import { Loader2, Clock } from 'lucide-react'
-import { getOffertes, getFacturen } from '@/services/supabaseService'
-import type { Offerte, Factuur } from '@/types'
 import { formatCurrency } from '@/lib/utils'
-import { logger } from '../../utils/logger'
 import { formatDistanceToNow } from 'date-fns'
 import { nl } from 'date-fns/locale'
+import { useDashboardData } from '@/contexts/DashboardDataContext'
 
 interface ActivityItem {
   id: string
@@ -21,86 +19,32 @@ interface ActivityItem {
 
 export function RecenteActiviteitWidget() {
   const navigate = useNavigate()
-  const [items, setItems] = useState<ActivityItem[]>([])
-  const [loading, setLoading] = useState(true)
+  const { offertes, facturen, isLoading: loading } = useDashboardData()
 
-  useEffect(() => {
-    let cancelled = false
-    Promise.all([getOffertes().catch(() => []), getFacturen().catch(() => [])])
-      .then(([offertes, facturen]: [Offerte[], Factuur[]]) => {
-        if (cancelled) return
-        const activities: ActivityItem[] = []
+  const items = useMemo(() => {
+    const activities: ActivityItem[] = []
 
-        // Goedgekeurde offertes
-        offertes
-          .filter(o => o.status === 'goedgekeurd' && o.akkoord_op)
-          .forEach(o => {
-            activities.push({
-              id: `off-gk-${o.id}`,
-              type: 'offerte',
-              color: 'bg-petrol',
-              text: <>Offerte <strong>{o.nummer}</strong> goedgekeurd — {o.klant_naam || 'Onbekend'}</>,
-              time: formatDistanceToNow(new Date(o.akkoord_op!), { addSuffix: true, locale: nl }),
-              sortDate: new Date(o.akkoord_op!),
-              link: `/offertes/${o.id}`,
-            })
-          })
+    offertes.filter(o => o.status === 'goedgekeurd' && o.akkoord_op).forEach(o => {
+      activities.push({ id: `off-gk-${o.id}`, type: 'offerte', color: 'bg-petrol', text: <>Offerte <strong>{o.nummer}</strong> goedgekeurd — {o.klant_naam || 'Onbekend'}</>, time: formatDistanceToNow(new Date(o.akkoord_op!), { addSuffix: true, locale: nl }), sortDate: new Date(o.akkoord_op!), link: `/offertes/${o.id}` })
+    })
 
-        // Verzonden offertes
-        offertes
-          .filter(o => o.status === 'verzonden' && o.verstuurd_op)
-          .forEach(o => {
-            activities.push({
-              id: `off-vz-${o.id}`,
-              type: 'offerte',
-              color: 'bg-mod-klanten',
-              text: <>Offerte <strong>{o.nummer}</strong> verstuurd — {o.klant_naam || 'Onbekend'}</>,
-              time: formatDistanceToNow(new Date(o.verstuurd_op!), { addSuffix: true, locale: nl }),
-              sortDate: new Date(o.verstuurd_op!),
-              link: `/offertes/${o.id}`,
-            })
-          })
+    offertes.filter(o => o.status === 'verzonden' && o.verstuurd_op).forEach(o => {
+      activities.push({ id: `off-vz-${o.id}`, type: 'offerte', color: 'bg-mod-klanten', text: <>Offerte <strong>{o.nummer}</strong> verstuurd — {o.klant_naam || 'Onbekend'}</>, time: formatDistanceToNow(new Date(o.verstuurd_op!), { addSuffix: true, locale: nl }), sortDate: new Date(o.verstuurd_op!), link: `/offertes/${o.id}` })
+    })
 
-        // Betaalde facturen
-        facturen
-          .filter(f => f.status === 'betaald' && f.betaaldatum)
-          .forEach(f => {
-            activities.push({
-              id: `fac-bt-${f.id}`,
-              type: 'factuur',
-              color: 'bg-mod-facturen',
-              text: <>Factuur <strong>{f.nummer}</strong> betaald — {formatCurrency(f.totaal)}</>,
-              time: formatDistanceToNow(new Date(f.betaaldatum!), { addSuffix: true, locale: nl }),
-              sortDate: new Date(f.betaaldatum!),
-              link: `/facturen/${f.id}`,
-            })
-          })
+    facturen.filter(f => f.status === 'betaald' && f.betaaldatum).forEach(f => {
+      activities.push({ id: `fac-bt-${f.id}`, type: 'factuur', color: 'bg-mod-facturen', text: <>Factuur <strong>{f.nummer}</strong> betaald — {formatCurrency(f.totaal)}</>, time: formatDistanceToNow(new Date(f.betaaldatum!), { addSuffix: true, locale: nl }), sortDate: new Date(f.betaaldatum!), link: `/facturen/${f.id}` })
+    })
 
-        // Vervallen facturen
-        const now = new Date()
-        facturen
-          .filter(f => (f.status === 'verzonden' || f.status === 'vervallen') && new Date(f.vervaldatum) < now)
-          .forEach(f => {
-            const dagen = Math.floor((now.getTime() - new Date(f.vervaldatum).getTime()) / (1000 * 60 * 60 * 24))
-            activities.push({
-              id: `fac-vv-${f.id}`,
-              type: 'factuur',
-              color: 'bg-mod-offertes',
-              text: <>Factuur <strong>{f.nummer}</strong> — {dagen} dag{dagen !== 1 ? 'en' : ''} verlopen</>,
-              time: formatDistanceToNow(new Date(f.vervaldatum), { addSuffix: true, locale: nl }),
-              sortDate: new Date(f.vervaldatum),
-              link: `/facturen/${f.id}`,
-            })
-          })
+    const now = new Date()
+    facturen.filter(f => (f.status === 'verzonden' || f.status === 'vervallen') && new Date(f.vervaldatum) < now).forEach(f => {
+      const dagen = Math.floor((now.getTime() - new Date(f.vervaldatum).getTime()) / (1000 * 60 * 60 * 24))
+      activities.push({ id: `fac-vv-${f.id}`, type: 'factuur', color: 'bg-mod-offertes', text: <>Factuur <strong>{f.nummer}</strong> — {dagen} dag{dagen !== 1 ? 'en' : ''} verlopen</>, time: formatDistanceToNow(new Date(f.vervaldatum), { addSuffix: true, locale: nl }), sortDate: new Date(f.vervaldatum), link: `/facturen/${f.id}` })
+    })
 
-        // Sort by most recent first, take top 5
-        activities.sort((a, b) => b.sortDate.getTime() - a.sortDate.getTime())
-        setItems(activities.slice(0, 5))
-      })
-      .catch(logger.error)
-      .finally(() => { if (!cancelled) setLoading(false) })
-    return () => { cancelled = true }
-  }, [])
+    activities.sort((a, b) => b.sortDate.getTime() - a.sortDate.getTime())
+    return activities.slice(0, 5)
+  }, [offertes, facturen])
 
   return (
     <Card>

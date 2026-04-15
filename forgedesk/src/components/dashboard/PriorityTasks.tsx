@@ -1,12 +1,10 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { ListTodo, CheckCircle2, Loader2 } from 'lucide-react'
-import { getTaken, getProjecten, getKlanten } from '@/services/supabaseService'
-import type { Taak, Project, Klant } from '@/types'
 import { formatDate, getPriorityColor, getStatusColor } from '@/lib/utils'
-import { logger } from '../../utils/logger'
+import { useDashboardData } from '@/contexts/DashboardDataContext'
 
 const priorityOrder: Record<string, number> = {
   kritiek: 0,
@@ -17,25 +15,7 @@ const priorityOrder: Record<string, number> = {
 
 export function PriorityTasks() {
   const navigate = useNavigate()
-  const [taken, setTaken] = useState<Taak[]>([])
-  const [projecten, setProjecten] = useState<Project[]>([])
-  const [klanten, setKlanten] = useState<Klant[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    let cancelled = false
-    Promise.all([getTaken(), getProjecten(), getKlanten()])
-      .then(([t, p, k]) => {
-        if (!cancelled) {
-          setTaken(t)
-          setProjecten(p)
-          setKlanten(k)
-        }
-      })
-      .catch(logger.error)
-      .finally(() => { if (!cancelled) setLoading(false) })
-    return () => { cancelled = true }
-  }, [])
+  const { taken, projecten, klanten, isLoading: loading } = useDashboardData()
 
   const topTasks = useMemo(() => {
     const projectMap = new Map(

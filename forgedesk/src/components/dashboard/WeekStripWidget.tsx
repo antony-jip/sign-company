@@ -1,31 +1,13 @@
-import React, { useState, useEffect, useMemo } from 'react'
-import { getMontageAfspraken, getTaken } from '@/services/supabaseService'
-import type { MontageAfspraak, Taak } from '@/types'
+import React, { useMemo } from 'react'
 import { cn } from '@/lib/utils'
 import { isToday, addDays, format, startOfDay } from 'date-fns'
 import { nl } from 'date-fns/locale'
-import { logger } from '../../utils/logger'
+import { useDashboardData } from '@/contexts/DashboardDataContext'
 
 const DAG_NAMEN = ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za']
 
 export function WeekStripWidget() {
-  const [montages, setMontages] = useState<MontageAfspraak[]>([])
-  const [taken, setTaken] = useState<Taak[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    let cancelled = false
-    Promise.all([getMontageAfspraken(), getTaken()])
-      .then(([m, t]) => {
-        if (!cancelled) {
-          setMontages(m)
-          setTaken(t)
-        }
-      })
-      .catch(logger.error)
-      .finally(() => { if (!cancelled) setLoading(false) })
-    return () => { cancelled = true }
-  }, [])
+  const { montages, taken, isLoading: loading } = useDashboardData()
 
   const days = useMemo(() => {
     const today = startOfDay(new Date())

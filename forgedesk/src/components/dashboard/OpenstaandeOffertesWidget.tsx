@@ -1,11 +1,9 @@
-import React, { useState, useEffect } from 'react'
+import React, { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
 import { Loader2, FileText } from 'lucide-react'
-import { getOffertes } from '@/services/supabaseService'
-import type { Offerte } from '@/types'
 import { formatCurrency } from '@/lib/utils'
-import { logger } from '../../utils/logger'
+import { useDashboardData } from '@/contexts/DashboardDataContext'
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   concept: { label: 'Concept', color: 'text-mod-taken-text' },
@@ -16,25 +14,14 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
 
 export function OpenstaandeOffertesWidget() {
   const navigate = useNavigate()
-  const [offertes, setOffertes] = useState<Offerte[]>([])
-  const [loading, setLoading] = useState(true)
+  const { offertes: allOffertes, isLoading: loading } = useDashboardData()
 
-  useEffect(() => {
-    let cancelled = false
-    getOffertes()
-      .then((data) => {
-        if (!cancelled) {
-          const open = data
-            .filter(o => ['concept', 'verzonden', 'bekeken', 'goedgekeurd'].includes(o.status))
-            .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-            .slice(0, 5)
-          setOffertes(open)
-        }
-      })
-      .catch(logger.error)
-      .finally(() => { if (!cancelled) setLoading(false) })
-    return () => { cancelled = true }
-  }, [])
+  const offertes = useMemo(() =>
+    allOffertes
+      .filter(o => ['concept', 'verzonden', 'bekeken', 'goedgekeurd'].includes(o.status))
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, 5)
+  , [allOffertes])
 
   return (
     <Card>

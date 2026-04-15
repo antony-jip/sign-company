@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -9,47 +9,21 @@ import {
   Loader2,
   CheckCircle2,
 } from 'lucide-react'
-import { getOffertes, getFacturen } from '@/services/supabaseService'
 import { formatCurrency } from '@/lib/utils'
-import type { Offerte, Factuur } from '@/types'
-import { logger } from '../../utils/logger'
+import type { Factuur } from '@/types'
+import { useDashboardData } from '@/contexts/DashboardDataContext'
 
 export function TeFacturerenWidget() {
-  const [offertes, setOffertes] = useState<Offerte[]>([])
-  const [loading, setLoading] = useState(true)
+  const { offertes: allOffertes, facturen: allFacturen, isLoading: loading } = useDashboardData()
 
-  useEffect(() => {
-    let cancelled = false
-    async function loadData() {
-      try {
-        const [allOffertes, allFacturen] = await Promise.all([
-          getOffertes().catch(() => []),
-          getFacturen().catch(() => []),
-        ])
-        if (cancelled) return
-
-        const gefactuurdeOfferteIds = new Set(
-          allFacturen
-            .filter((f: Factuur) => f.offerte_id)
-            .map((f: Factuur) => f.offerte_id)
-        )
-        const teFactureren = allOffertes
-          .filter(
-            (o: Offerte) =>
-              o.status === 'goedgekeurd' && !gefactuurdeOfferteIds.has(o.id)
-          )
-          .sort((a: Offerte, b: Offerte) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-
-        setOffertes(teFactureren)
-      } catch (err) {
-        logger.error('TeFacturerenWidget load error:', err)
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    }
-    loadData()
-    return () => { cancelled = true }
-  }, [])
+  const offertes = useMemo(() => {
+    const gefactuurdeOfferteIds = new Set(
+      allFacturen.filter((f: Factuur) => f.offerte_id).map((f: Factuur) => f.offerte_id)
+    )
+    return allOffertes
+      .filter(o => o.status === 'goedgekeurd' && !gefactuurdeOfferteIds.has(o.id))
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  }, [allOffertes, allFacturen])
 
   if (loading) {
     return (

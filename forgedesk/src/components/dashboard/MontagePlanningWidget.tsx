@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -16,10 +16,9 @@ import {
   ClipboardCheck,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { getMontageAfspraken, getMedewerkers } from '@/services/supabaseService'
-import type { MontageAfspraak, Medewerker } from '@/types'
+import type { MontageAfspraak } from '@/types'
 import { cn } from '@/lib/utils'
-import { logger } from '../../utils/logger'
+import { useDashboardData } from '@/contexts/DashboardDataContext'
 
 const STATUS_BADGE: Record<MontageAfspraak['status'], string> = {
   gepland: 'bg-[#E5ECF6] text-[#2A5580]',
@@ -83,25 +82,9 @@ const AVATAR_COLORS = [
 
 export function MontagePlanningWidget() {
   const navigate = useNavigate()
-  const [montages, setMontages] = useState<MontageAfspraak[]>([])
-  const [medewerkers, setMedewerkers] = useState<Medewerker[]>([])
-  const [loading, setLoading] = useState(true)
+  const { montages, medewerkers, isLoading: loading } = useDashboardData()
   const [weekOffset, setWeekOffset] = useState(0)
   const [selectedMonteur, setSelectedMonteur] = useState<string>('alle')
-
-  useEffect(() => {
-    let cancelled = false
-    Promise.all([getMontageAfspraken(), getMedewerkers()])
-      .then(([m, mw]) => {
-        if (!cancelled) {
-          setMontages(m)
-          setMedewerkers(mw)
-        }
-      })
-      .catch(logger.error)
-      .finally(() => { if (!cancelled) setLoading(false) })
-    return () => { cancelled = true }
-  }, [])
 
   const monday = useMemo(() => {
     const base = getMondayOfWeek(new Date())
