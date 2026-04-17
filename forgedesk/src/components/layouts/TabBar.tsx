@@ -197,11 +197,11 @@ export function TabBar() {
 
         {/* New tab */}
         <button
-          className="flex-shrink-0 p-1 text-muted-foreground/50 hover:text-foreground hover:bg-card/50 rounded-md transition-colors"
+          className="flex-shrink-0 w-5 h-5 rounded bg-[#F15025] text-white hover:bg-[#D94520] flex items-center justify-center transition-colors"
           onClick={newTab}
           title="Nieuw tabblad (Cmd+T)"
         >
-          <Plus className="w-3.5 h-3.5" />
+          <Plus className="w-3 h-3" />
         </button>
       </div>
 

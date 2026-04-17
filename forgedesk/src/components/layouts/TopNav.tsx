@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react'
+import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, FolderKanban, Users, FileText,
@@ -60,6 +60,8 @@ export function TopNav() {
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
   const quickAddRef = useRef<HTMLDivElement>(null)
+  const navRef = useRef<HTMLElement>(null)
+  const indicatorRef = useRef<HTMLDivElement>(null)
 
   const visibleItems = useMemo(() => {
     const sidebarItems = settings?.sidebar_items
@@ -83,6 +85,29 @@ export function TopNav() {
 
   useEffect(() => { setMobileOpen(false) }, [location.pathname])
 
+  const updateIndicator = useCallback(() => {
+    if (!navRef.current || !indicatorRef.current) return
+    const activeLink = navRef.current.querySelector<HTMLElement>('[data-active="true"]')
+    if (activeLink) {
+      const navRect = navRef.current.getBoundingClientRect()
+      const linkRect = activeLink.getBoundingClientRect()
+      indicatorRef.current.style.width = `${linkRect.width}px`
+      indicatorRef.current.style.transform = `translateX(${linkRect.left - navRect.left}px)`
+      indicatorRef.current.style.opacity = '1'
+    } else {
+      indicatorRef.current.style.opacity = '0'
+    }
+  }, [])
+
+  useEffect(() => {
+    updateIndicator()
+  }, [location.pathname, visibleItems, updateIndicator])
+
+  useEffect(() => {
+    window.addEventListener('resize', updateIndicator)
+    return () => window.removeEventListener('resize', updateIndicator)
+  }, [updateIndicator])
+
   const userInitial = (user?.user_metadata?.voornaam?.[0] || user?.email?.[0] || 'U').toUpperCase()
   const userName = user?.user_metadata?.voornaam
     ? `${user.user_metadata.voornaam}${user.user_metadata.achternaam ? ' ' + user.user_metadata.achternaam : ''}`
@@ -91,23 +116,23 @@ export function TopNav() {
   return (
     <header className="flex-shrink-0" style={{ position: 'relative', zIndex: 30 }}>
       {/* ── Row 1: Utility bar ── */}
-      <div className="flex items-center h-14 px-5 md:px-6 bg-[#1A535C]">
+      <div className="flex items-center h-11 px-5 md:px-6" style={{ background: 'linear-gradient(180deg, #1D5A64 0%, #1A535C 100%)' }}>
         {/* Logo */}
-        <NavLink to="/" className="flex items-center gap-2 mr-5 flex-shrink-0">
-          <img src="/logos/doen-logo-wit.svg" alt="doen." className="h-[18px]" />
+        <NavLink to="/" className="flex items-center mr-5 flex-shrink-0 opacity-90 hover:opacity-100 transition-opacity">
+          <img src="/logos/doen-logo-wit.svg" alt="doen." className="h-[15px]" />
         </NavLink>
 
-        {/* Quick-add button */}
-        <div ref={quickAddRef} className="relative" style={{ zIndex: 40 }}>
+        {/* Quick-add — mobile only */}
+        <div className="relative lg:hidden" style={{ zIndex: 40 }}>
           <button
             onClick={() => setQuickAddOpen(!quickAddOpen)}
             className={cn(
-              'h-7 px-2.5 rounded-md flex items-center gap-1.5 transition-all duration-200 text-[12px] font-medium',
-              'bg-[#F15025] text-white hover:bg-[#D94520]',
-              quickAddOpen && 'ring-2 ring-white/20',
+              'h-6 px-2 rounded-md flex items-center gap-1.5 transition-all duration-200 text-[11px] font-medium',
+              'bg-white/12 text-white/80 hover:bg-white/20 hover:text-white',
+              quickAddOpen && 'bg-white/20 text-white',
             )}
           >
-            <Plus className={cn('w-3.5 h-3.5 transition-transform duration-200', quickAddOpen && 'rotate-45')} />
+            <Plus className={cn('w-3 h-3 transition-transform duration-200', quickAddOpen && 'rotate-45')} />
             <span className="hidden sm:inline">Nieuw</span>
           </button>
           {quickAddOpen && (
@@ -133,52 +158,51 @@ export function TopNav() {
           )}
         </div>
 
-        {/* Search — desktop, compact centered */}
-        <div className="hidden md:flex flex-1 justify-center mx-8">
-          <GlobalSearch className="w-full max-w-xs" />
+        {/* Search — desktop */}
+        <div className="hidden md:flex flex-1 justify-center mx-6">
+          <GlobalSearch className="w-full max-w-[280px]" />
         </div>
 
         {/* Mobile search */}
         {mobileSearchOpen && (
-          <div className="absolute inset-x-0 top-0 h-12 z-40 bg-[#1A535C] flex items-center gap-2 px-4 md:hidden">
+          <div className="absolute inset-x-0 top-0 h-11 z-40 bg-[#1A535C] flex items-center gap-2 px-4 md:hidden">
             <GlobalSearch className="flex flex-1" />
-            <button onClick={() => setMobileSearchOpen(false)} className="w-8 h-8 rounded-lg flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10">
+            <button onClick={() => setMobileSearchOpen(false)} className="w-7 h-7 rounded-md flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10">
               <X className="w-4 h-4" />
             </button>
           </div>
         )}
 
         {/* Right actions */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5">
           <button
             onClick={() => setMobileSearchOpen(true)}
-            className="w-8 h-8 rounded-lg md:hidden flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-all"
+            className="w-7 h-7 rounded-md md:hidden flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-all"
           >
-            <Search className="w-4 h-4" />
+            <Search className="w-3.5 h-3.5" />
           </button>
 
           <NotificatieCenter />
 
-          <div className="hidden md:block w-px h-5 bg-white/10 mx-1" />
+          <div className="hidden md:block w-px h-4 bg-white/10 mx-1.5" />
 
           {/* User dropdown — desktop */}
           <div ref={userMenuRef} className="relative hidden md:block">
             <button
               onClick={() => setUserMenuOpen(!userMenuOpen)}
               className={cn(
-                'flex items-center gap-2.5 pl-1.5 pr-2.5 py-1.5 rounded-lg transition-all duration-200',
+                'flex items-center gap-2 pl-1 pr-2 py-1 rounded-lg transition-all duration-200',
                 'hover:bg-white/10',
                 userMenuOpen && 'bg-white/15',
               )}
             >
-              <div className="w-7 h-7 rounded-full bg-white/15 flex items-center justify-center">
-                <span className="text-white text-[10px] font-bold">{userInitial}</span>
+              <div className="w-6 h-6 rounded-full bg-white/15 flex items-center justify-center ring-1 ring-white/10">
+                <span className="text-white text-[9px] font-bold">{userInitial}</span>
               </div>
               <div className="hidden xl:block text-left min-w-0">
-                <p className="text-[12px] font-semibold text-white truncate max-w-[100px] leading-tight">{userName}</p>
-                <p className="text-[10px] text-white/50 truncate max-w-[100px]">{user?.email?.split('@')[0]}</p>
+                <p className="text-[11px] font-medium text-white/90 truncate max-w-[90px] leading-tight">{userName}</p>
               </div>
-              <ChevronDown className={cn('w-3 h-3 text-white/40 transition-transform hidden xl:block', userMenuOpen && 'rotate-180')} />
+              <ChevronDown className={cn('w-2.5 h-2.5 text-white/30 transition-transform hidden xl:block', userMenuOpen && 'rotate-180')} />
             </button>
 
             {userMenuOpen && (
@@ -218,15 +242,25 @@ export function TopNav() {
           </div>
 
           {/* Mobile hamburger */}
-          <Button variant="ghost" size="icon" className="w-8 h-8 rounded-lg text-white/60 hover:text-white hover:bg-white/10 lg:hidden"
+          <Button variant="ghost" size="icon" className="w-7 h-7 rounded-md text-white/50 hover:text-white hover:bg-white/10 lg:hidden"
             onClick={() => setMobileOpen(!mobileOpen)}>
-            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
           </Button>
         </div>
       </div>
 
       {/* ── Row 2: Navigation tabs — desktop ── */}
-      <nav className="hidden lg:flex items-center gap-0.5 h-11 px-5 bg-[#F3F2F0] border-b border-[#EBEBEB] overflow-x-auto scrollbar-none">
+      <nav
+        ref={navRef}
+        className="hidden lg:flex items-stretch relative h-9 px-4 bg-white border-b border-[#ECEAE6] overflow-x-auto scrollbar-none"
+      >
+        {/* Sliding indicator */}
+        <div
+          ref={indicatorRef}
+          className="absolute bottom-0 left-0 h-[2px] rounded-full bg-[#1A535C] transition-all duration-300 ease-out"
+          style={{ opacity: 0 }}
+        />
+
         {visibleItems.map((item) => {
           const isActive = item.path === '/' ? location.pathname === '/' : location.pathname.startsWith(item.path)
           const Icon = item.icon
@@ -235,16 +269,19 @@ export function TopNav() {
               key={item.path}
               to={item.path}
               end={item.path === '/'}
+              data-active={isActive}
               className={cn(
-                'relative flex items-center gap-1.5 px-3 py-1.5 text-[13px] rounded-md transition-all duration-200 whitespace-nowrap flex-shrink-0',
+                'relative flex items-center gap-1.5 px-2.5 text-[12px] transition-all duration-200 whitespace-nowrap flex-shrink-0',
                 isActive
-                  ? 'text-[#1A1A1A] font-semibold bg-[#FFFFFF] shadow-[0_1px_3px_rgba(0,0,0,0.06)]'
-                  : 'text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#FFFFFF]/50',
+                  ? 'text-[#1A1A1A] font-semibold'
+                  : 'text-[#B0ADA8] hover:text-[#6B6B66]',
               )}
             >
-              <Icon className={cn('w-3.5 h-3.5', isActive ? '' : 'opacity-50')} style={isActive ? { color: item.color } : undefined} />
+              <Icon
+                className={cn('w-[13px] h-[13px] transition-all duration-200', isActive ? '' : 'opacity-30')}
+                style={isActive ? { color: item.color } : undefined}
+              />
               <span>{item.label}</span>
-              {isActive && <span className="text-[#F15025] text-[13px] font-semibold -ml-0.5">.</span>}
             </NavLink>
           )
         })}
@@ -253,17 +290,15 @@ export function TopNav() {
         <div className="flex-1" />
         <NavLink
           to="/instellingen"
+          data-active={location.pathname.startsWith('/instellingen')}
           className={cn(
-            'flex items-center gap-1.5 px-3 py-1.5 text-[13px] rounded-md transition-all duration-200 whitespace-nowrap flex-shrink-0',
+            'relative flex items-center px-2.5 text-[12px] transition-all duration-200 whitespace-nowrap flex-shrink-0',
             location.pathname.startsWith('/instellingen')
-              ? 'text-[#1A1A1A] font-semibold bg-[#FFFFFF] shadow-[0_1px_3px_rgba(0,0,0,0.06)]'
-              : 'text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#FFFFFF]/50',
+              ? 'text-[#1A1A1A] font-semibold'
+              : 'text-[#B0ADA8] hover:text-[#6B6B66]',
           )}
         >
-          <Settings className="w-3.5 h-3.5" />
-          {location.pathname.startsWith('/instellingen') && (
-            <div className="absolute bottom-0 left-3 right-3 h-[2.5px] rounded-t-full bg-muted-foreground/40" />
-          )}
+          <Settings className={cn('w-[13px] h-[13px] transition-opacity', location.pathname.startsWith('/instellingen') ? '' : 'opacity-40')} />
         </NavLink>
       </nav>
 
