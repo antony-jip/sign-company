@@ -46,6 +46,24 @@ export async function getEmails(limit = 200): Promise<Email[]> {
   return getLocalData<Email>('emails')
 }
 
+export async function searchEmailsFTS(query: string, limit = 50): Promise<Email[]> {
+  if (!query.trim() || !isSupabaseConfigured() || !supabase) return []
+  const tsQuery = query.trim().split(/\s+/).map(w => `${w}:*`).join(' & ')
+  const { data, error } = await supabase
+    .from('emails')
+    .select('id,user_id,gmail_id,uid,message_id,van,aan,onderwerp,datum,gelezen,starred,labels,bijlagen,map,from_name,from_address,imap_folder,pinned,snoozed_until,thread_id,attachment_meta,has_attachments,body_text,created_at,updated_at,cached_at')
+    .textSearch('fts', tsQuery)
+    .order('datum', { ascending: false })
+    .limit(limit)
+  if (error) throw error
+  return (data || []).map(e => ({
+    ...e,
+    body_text: e.body_text ? String(e.body_text).slice(0, 200) : null,
+    inhoud: '',
+    body_html: null,
+  }))
+}
+
 export async function getEmail(id: string): Promise<Email | null> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
@@ -223,5 +241,61 @@ export async function cancelIngeplandBericht(id: string): Promise<void> {
     .update({ status: 'geannuleerd' })
     .eq('id', id)
     .eq('status', 'wachtend')
+  if (error) throw error
+}
+
+// ============ EMAIL TEMPLATES ============
+
+export interface EmailTemplate {
+  id: string
+  organisatie_id: string
+  naam: string
+  onderwerp: string
+  body: string
+  created_at: string
+  updated_at: string
+}
+
+export async function getEmailTemplates(): Promise<EmailTemplate[]> {
+  if (!isSupabaseConfigured() || !supabase) return []
+  const orgId = await getOrgId()
+  if (!orgId) return []
+  const { data, error } = await supabase
+    .from('email_templates')
+    .select('*')
+    .eq('organisatie_id', orgId)
+    .order('naam')
+  if (error) throw error
+  return data || []
+}
+
+export async function createEmailTemplate(template: { naam: string; onderwerp: string; body: string }): Promise<EmailTemplate> {
+  if (!supabase) throw new Error('Niet geconfigureerd')
+  const orgId = await getOrgId()
+  if (!orgId) throw new Error('Geen organisatie gevonden')
+  const { data, error } = await supabase
+    .from('email_templates')
+    .insert({ ...template, organisatie_id: orgId })
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function updateEmailTemplate(id: string, updates: { naam?: string; onderwerp?: string; body?: string }): Promise<void> {
+  if (!supabase) throw new Error('Niet geconfigureerd')
+  const { error } = await supabase
+    .from('email_templates')
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq('id', id)
+  if (error) throw error
+}
+
+export async function deleteEmailTemplate(id: string): Promise<void> {
+  if (!supabase) throw new Error('Niet geconfigureerd')
+  const { error } = await supabase
+    .from('email_templates')
+    .delete()
+    .eq('id', id)
   if (error) throw error
 }

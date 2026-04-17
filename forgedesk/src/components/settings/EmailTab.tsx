@@ -37,7 +37,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
-import { getProfile, getAppSettings, updateAppSettings, getMedewerkers, updateMedewerker } from '@/services/supabaseService'
+import { getProfile, getAppSettings, updateAppSettings, getMedewerkers, updateMedewerker, getEmailTemplates, createEmailTemplate, updateEmailTemplate, deleteEmailTemplate, type EmailTemplate } from '@/services/supabaseService'
 import { isSupabaseConfigured } from '@/services/supabaseClient'
 import { sendEmail } from '@/services/gmailService'
 import { factuurHerinneringTemplate } from '@/services/emailTemplateService'
@@ -52,6 +52,7 @@ import type { EmailProvider } from './settingsShared'
 
 const EMAIL_TABS: SubTab[] = [
   { id: 'handtekening', label: 'Handtekening', icon: FileText },
+  { id: 'templates', label: 'Templates', icon: Mail },
   { id: 'teamleden', label: 'Team Handtekeningen', icon: Users },
   { id: 'verbinding', label: 'Verbinding', icon: Server },
   { id: 'algemeen', label: 'Algemeen', icon: Mail },
@@ -204,6 +205,209 @@ export function EmailTemplatesSubTab() {
           {isSaving ? 'Opslaan...' : 'Opslaan'}
         </Button>
       </div>
+    </div>
+  )
+}
+
+const STANDAARD_TEMPLATES = [
+  { naam: 'Offerte + tekening', onderwerp: 'Offerte + tekening [projectnaam]', body: 'Beste [naam],\n\nBedankt voor je aanvraag. Hierbij de offerte en tekening voor [projectnaam].\n\nKijk het op je gemak door. Mocht je vragen hebben of willen aanpassen, laat het gerust weten.\n\nHoor graag van je!' },
+  { naam: 'Offerte opvolging', onderwerp: 'Even checken — offerte [projectnaam]', body: 'Hoi [naam],\n\nIk wilde even checken of je de offerte voor [projectnaam] hebt kunnen bekijken.\n\nHeb je nog vragen, of kan ik ergens bij helpen? Laat het gerust weten, dan plan ik het in.\n\nGroet!' },
+  { naam: 'Project update', onderwerp: 'Update [projectnaam]', body: 'Hoi [naam],\n\nEen korte update over [projectnaam]:\n\n- [punt 1]\n- [punt 2]\n\nVolgende stap is [stap 1]. Verwacht dat dit rond [datum] klaar is.\n\nVragen? Laat het weten!' },
+  { naam: 'Bedankt voor opdracht', onderwerp: 'Bedankt voor de opdracht!', body: 'Hoi [naam],\n\nTop, bedankt voor de opdracht! We gaan ermee aan de slag.\n\nDe planning ziet er als volgt uit:\n- Productie: [datum]\n- Montage: [datum]\n\nIk hou je op de hoogte. Mocht je in de tussentijd nog iets hebben, je weet me te vinden.' },
+  { naam: 'Betaalherinnering', onderwerp: 'Herinnering factuur [nummer]', body: 'Hoi [naam],\n\nKleine herinnering — we zien dat de volgende factuur nog openstaat:\n\nFactuurnummer: [nummer]\nBedrag: [bedrag]\nVervaldatum: [vervaldatum]\n\nKan gebeuren natuurlijk. Zou je ernaar willen kijken? Bij vragen hoor ik het graag.' },
+  { naam: 'Montage inplannen', onderwerp: 'Montage inplannen [projectnaam]', body: 'Hoi [naam],\n\nGoed nieuws — [projectnaam] is klaar voor montage!\n\nWe willen graag een datum inplannen. Wanneer zou het uitkomen? Dan stemmen we dat af met ons team.\n\nLaat het even weten!' },
+]
+
+function EmailTemplatesBeheerTab() {
+  const [templates, setTemplates] = useState<EmailTemplate[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [editId, setEditId] = useState<string | null>(null)
+  const [editNaam, setEditNaam] = useState('')
+  const [editOnderwerp, setEditOnderwerp] = useState('')
+  const [editBody, setEditBody] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
+  const [showNew, setShowNew] = useState(false)
+
+  useEffect(() => {
+    async function load() {
+      try {
+        let dbTemplates = await getEmailTemplates()
+        // Seed standaard templates als de tabel nog leeg is
+        if (dbTemplates.length === 0) {
+          const seeded: EmailTemplate[] = []
+          for (const tmpl of STANDAARD_TEMPLATES) {
+            try {
+              const created = await createEmailTemplate(tmpl)
+              seeded.push(created)
+            } catch { /* negeer individuele seed-fouten */ }
+          }
+          dbTemplates = seeded
+        }
+        setTemplates(dbTemplates)
+      } catch { /* negeer */ }
+      setIsLoading(false)
+    }
+    load()
+  }, [])
+
+  const startEdit = (t: EmailTemplate) => {
+    setEditId(t.id)
+    setEditNaam(t.naam)
+    setEditOnderwerp(t.onderwerp)
+    setEditBody(t.body)
+    setShowNew(false)
+  }
+
+  const startNew = () => {
+    setEditId(null)
+    setEditNaam('')
+    setEditOnderwerp('')
+    setEditBody('')
+    setShowNew(true)
+  }
+
+  const handleSave = async () => {
+    if (!editNaam.trim()) { toast.error('Vul een naam in'); return }
+    setIsSaving(true)
+    try {
+      if (editId) {
+        await updateEmailTemplate(editId, { naam: editNaam, onderwerp: editOnderwerp, body: editBody })
+        setTemplates(prev => prev.map(t => t.id === editId ? { ...t, naam: editNaam, onderwerp: editOnderwerp, body: editBody } : t))
+        toast.success('Template bijgewerkt')
+      } else {
+        const created = await createEmailTemplate({ naam: editNaam, onderwerp: editOnderwerp, body: editBody })
+        setTemplates(prev => [...prev, created])
+        toast.success('Template aangemaakt')
+      }
+      setEditId(null)
+      setShowNew(false)
+    } catch {
+      toast.error('Opslaan mislukt')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteEmailTemplate(id)
+      setTemplates(prev => prev.filter(t => t.id !== id))
+      if (editId === id) { setEditId(null); setShowNew(false) }
+      toast.success('Template verwijderd')
+    } catch {
+      toast.error('Verwijderen mislukt')
+    }
+  }
+
+  if (isLoading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+
+  const isEditing = editId || showNew
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Mail className="w-5 h-5" />
+                Email Templates
+              </CardTitle>
+              <CardDescription>
+                Maak en beheer herbruikbare email templates voor je team
+              </CardDescription>
+            </div>
+            {!isEditing && (
+              <Button onClick={startNew} size="sm" className="gap-1.5">
+                <Plus className="w-4 h-4" />
+                Nieuw template
+              </Button>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          {templates.length === 0 && !showNew && (
+            <div className="text-center py-8 text-muted-foreground">
+              <p className="text-sm">Nog geen templates aangemaakt</p>
+              <p className="text-xs mt-1">Klik op "Nieuw template" om te beginnen</p>
+            </div>
+          )}
+
+          {!isEditing && templates.length > 0 && (
+            <div className="space-y-2">
+              {templates.map(t => (
+                <div
+                  key={t.id}
+                  className="flex items-center justify-between p-3 rounded-lg border border-border/50 hover:bg-muted/30 transition-colors group"
+                >
+                  <div className="min-w-0 flex-1 cursor-pointer" onClick={() => startEdit(t)}>
+                    <p className="text-sm font-medium truncate">{t.naam}</p>
+                    <p className="text-xs text-muted-foreground truncate">{t.onderwerp || '(geen onderwerp)'}</p>
+                  </div>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100" onClick={() => startEdit(t)}>
+                      <FileText className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive" onClick={() => handleDelete(t.id)}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {isEditing && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label className="text-xs">Naam</Label>
+                <Input
+                  value={editNaam}
+                  onChange={e => setEditNaam(e.target.value)}
+                  placeholder="Bijv. Offerte + tekening"
+                  className="h-9"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Onderwerp</Label>
+                <Input
+                  value={editOnderwerp}
+                  onChange={e => setEditOnderwerp(e.target.value)}
+                  placeholder="Bijv. Offerte [projectnaam]"
+                  className="h-9"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Inhoud</Label>
+                <Textarea
+                  value={editBody}
+                  onChange={e => setEditBody(e.target.value)}
+                  placeholder="Schrijf je template tekst..."
+                  rows={8}
+                  className="text-sm"
+                />
+              </div>
+              <div className="rounded-md border bg-muted/50 px-3 py-2">
+                <p className="text-[10px] font-medium text-muted-foreground mb-1">Beschikbare velden:</p>
+                <div className="flex flex-wrap gap-1">
+                  {['[naam]', '[bedrijf]', '[datum]', '[projectnaam]', '[offerte_nummer]'].map(v => (
+                    <code key={v} className="rounded bg-background px-1.5 py-0.5 text-[10px] font-mono border">{v}</code>
+                  ))}
+                </div>
+              </div>
+              <div className="flex items-center gap-2 justify-end">
+                <Button variant="ghost" size="sm" onClick={() => { setEditId(null); setShowNew(false) }}>
+                  Annuleren
+                </Button>
+                <Button size="sm" onClick={handleSave} disabled={isSaving} className="gap-1.5">
+                  <Save className="w-3.5 h-3.5" />
+                  {isSaving ? 'Opslaan...' : 'Opslaan'}
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }
@@ -365,7 +569,8 @@ function SignaturePreview({
 export function EmailTab() {
   const { user, isAdmin } = useAuth()
   const { refreshSettings, profile, emailFetchLimit: currentFetchLimit } = useAppSettings()
-  const [subTab, setSubTab] = useState('handtekening')
+  const initialSub = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('sub') || 'handtekening' : 'handtekening'
+  const [subTab, setSubTab] = useState(initialSub)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
 
@@ -614,6 +819,8 @@ export function EmailTab() {
           {saveButton}
         </div>
       )}
+
+      {subTab === 'templates' && <EmailTemplatesBeheerTab />}
 
       {subTab === 'teamleden' && (
         <div className="space-y-6">

@@ -49,8 +49,10 @@ export {
 } from './planningService'
 
 export {
-  getEmails, getEmail, getEmailBody, createEmail, updateEmail, deleteEmail,
+  getEmails, getEmail, getEmailBody, searchEmailsFTS, createEmail, updateEmail, deleteEmail,
   cacheEmailsToSupabase, getCachedEmails,
+  getEmailTemplates, createEmailTemplate, updateEmailTemplate, deleteEmailTemplate,
+  type EmailTemplate,
   getGedeeldeEmails, getGedeeldeEmailsByToewijzing, updateEmailToewijzing,
   updateEmailTicketStatus, addInterneNotitie,
   createEmailOpvolging,

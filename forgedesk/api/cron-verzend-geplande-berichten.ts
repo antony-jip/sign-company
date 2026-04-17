@@ -113,6 +113,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           subject: bericht.onderwerp,
         }
 
+        if (bericht.in_reply_to) {
+          mailOptions.inReplyTo = bericht.in_reply_to
+          mailOptions.references = bericht.in_reply_to
+        }
+
         if (bericht.html) {
           mailOptions.html = bericht.html
           mailOptions.text = bericht.body || bericht.onderwerp
@@ -121,6 +126,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         if (bericht.cc) mailOptions.cc = bericht.cc
+        if (bericht.bcc) mailOptions.bcc = bericht.bcc
 
         const bijlagen = (bericht.bijlagen || []) as Array<{
           filename: string

@@ -155,6 +155,24 @@ export async function uploadMontageBijlage(file: File): Promise<{
   }
 }
 
+export async function uploadEmailBijlage(file: File): Promise<{ filename: string; storagePath: string; size: number }> {
+  if (!isSupabaseConfigured() || !supabase) {
+    throw new Error('Supabase Storage is niet geconfigureerd')
+  }
+  if (file.size > MAX_UPLOAD_SIZE) {
+    throw new Error(`Bestand te groot (max ${MAX_UPLOAD_SIZE / 1024 / 1024}MB)`)
+  }
+  const ext = file.name.split('.').pop()?.toLowerCase() || 'bin'
+  const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+  const storagePath = `email-bijlagen/${id}.${ext}`
+  const { error } = await supabase.storage.from(BUCKET).upload(storagePath, file, {
+    cacheControl: '300',
+    upsert: false,
+  })
+  if (error) throw new Error(`Upload mislukt: ${error.message}`)
+  return { filename: file.name, storagePath, size: file.size }
+}
+
 export async function deleteFile(path: string): Promise<void> {
   if (!isSupabaseConfigured() || !supabase) {
     const stored = JSON.parse(localStorage.getItem('doen_files') || '{}')

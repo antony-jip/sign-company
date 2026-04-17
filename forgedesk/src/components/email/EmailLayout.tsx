@@ -9,7 +9,7 @@ import {
 import { IngeplandeBerichtenLijst } from './IngeplandeBerichtenLijst'
 import { sendEmail as sendEmailViaApi, fetchEmailsFromIMAP, readEmailFromIMAP } from '@/services/gmailService'
 import type { IMAPEmailSummary } from '@/services/gmailService'
-import { getEmails, getEmailBody, updateEmail, deleteEmail as deleteEmailDb } from '@/services/supabaseService'
+import { getEmails, getEmailBody, searchEmailsFTS, updateEmail, deleteEmail as deleteEmailDb } from '@/services/supabaseService'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { EmailReader } from './EmailReader'
@@ -74,8 +74,10 @@ export function EmailLayout() {
   const [searchQuery, setSearchQuery] = useState('')
   const [searchInput, setSearchInput] = useState('')
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [searchResults, setSearchResults] = useState<Email[] | null>(null)
+  const [isSearching, setIsSearching] = useState(false)
   const [filter, setFilter] = useState<FilterType>('alle')
-  const [fontSize, setFontSize] = useState<FontSize>('medium')
+  const fontSize: FontSize = 'medium'
   const [listStyle, setListStyle] = useState<'inline' | 'stacked'>(() => {
     try { return (localStorage.getItem('email_list_style') as 'inline' | 'stacked') || 'stacked' } catch (err) { return 'stacked' }
   })
@@ -211,6 +213,28 @@ export function EmailLayout() {
     init()
   }, [])
 
+  // ─── Server-side full-text search ───
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults(null)
+      return
+    }
+    let cancelled = false
+    setIsSearching(true)
+    searchEmailsFTS(searchQuery).then(results => {
+      if (!cancelled) {
+        setSearchResults(results as Email[])
+        setIsSearching(false)
+      }
+    }).catch(() => {
+      if (!cancelled) {
+        setSearchResults(null)
+        setIsSearching(false)
+      }
+    })
+    return () => { cancelled = true }
+  }, [searchQuery])
+
   // ─── Unsnooze timer ───
   useEffect(() => {
     const interval = setInterval(() => {
@@ -244,11 +268,37 @@ export function EmailLayout() {
   }, [emails])
 
   const filteredEmails = useMemo(() => {
+    // Als er server-side zoekresultaten zijn, gebruik die (alle mappen)
+    if (searchQuery.trim() && searchResults) {
+      let filtered = searchResults as Email[]
+      // Pas alleen client-side operator-filters toe die de server niet afhandelt
+      const { operators } = parseSearchQuery(searchQuery)
+      if (operators.has) {
+        const has = operators.has.toLowerCase()
+        if (has === 'bijlage' || has === 'attachment') filtered = filtered.filter((e) => e.bijlagen > 0)
+        if (has === 'pin' || has === 'pinned') filtered = filtered.filter((e) => e.pinned)
+      }
+      if (operators.label) {
+        const label = operators.label.toLowerCase()
+        filtered = filtered.filter((e) => e.labels.some((l) => l.toLowerCase() === label))
+      }
+      if (operators.before) {
+        const before = new Date(operators.before)
+        if (!isNaN(before.getTime())) filtered = filtered.filter((e) => new Date(e.datum) < before)
+      }
+      if (operators.after) {
+        const after = new Date(operators.after)
+        if (!isNaN(after.getTime())) filtered = filtered.filter((e) => new Date(e.datum) > after)
+      }
+      return filtered
+    }
+
     let filtered = selectedFolder === 'gesnoozed'
       ? emails.filter((e) => e.snoozed_until)
       : emails.filter((e) => e.map === selectedFolder && !e.snoozed_until)
 
-    if (searchQuery.trim()) {
+    // Client-side fallback voor als FTS niet beschikbaar is
+    if (searchQuery.trim() && !searchResults) {
       const { text, operators } = parseSearchQuery(searchQuery)
       if (text) {
         const q = text.toLowerCase()
@@ -1074,33 +1124,6 @@ export function EmailLayout() {
           </div>
 
           <div className="flex items-center">
-            {/* Font size — 3 plain buttons, alleen actieve krijgt subtle bg */}
-            <div className="flex items-center mr-1">
-              {(['small', 'medium', 'large'] as FontSize[]).map((size) => (
-                <button
-                  key={size}
-                  onClick={() => setFontSize(size)}
-                  className={cn(
-                    'h-8 w-7 rounded-md flex items-center justify-center transition-colors duration-150',
-                    fontSize === size
-                      ? 'text-[#1A1A1A] bg-[#F0EFEC]'
-                      : 'text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC]/60',
-                  )}
-                  title={size === 'small' ? 'Klein' : size === 'medium' ? 'Normaal' : 'Groot'}
-                >
-                  <span className={cn(
-                    'font-semibold leading-none',
-                    size === 'small' && 'text-[10px]',
-                    size === 'medium' && 'text-[12px]',
-                    size === 'large' && 'text-[14px]',
-                  )}>A</span>
-                </button>
-              ))}
-            </div>
-
-            {/* Subtiele divider */}
-            <span className="w-px h-5 bg-[#EBEBEB] mx-1" />
-
             {/* List style */}
             <div className="flex items-center mr-1">
               <button
@@ -1200,9 +1223,9 @@ export function EmailLayout() {
                   nodes.push(
                     <div
                       key="pinned-header"
-                      className="px-4 py-2 text-[10px] uppercase tracking-wider font-semibold text-[#1A535C] bg-[#1A535C]/[0.04] border-y border-[#1A535C]/10 sticky top-0 z-[1] flex items-center gap-1.5"
+                      className="px-4 py-2.5 text-[10px] uppercase tracking-[0.1em] font-semibold text-[#1A535C]/70 bg-gradient-to-b from-[#F8F7F5] to-white sticky top-0 z-[1] flex items-center gap-1.5 border-b border-[#F0EFEC]"
                     >
-                      <Pin className="h-3 w-3 fill-[#1A535C] -rotate-45" />
+                      <Pin className="h-2.5 w-2.5 fill-[#1A535C]/70 -rotate-45" />
                       Vastgepind
                     </div>
                   )
@@ -1222,7 +1245,7 @@ export function EmailLayout() {
                       nodes.push(
                         <div
                           key={`group-${group}-${index}`}
-                          className="px-4 pt-4 pb-2 text-[10px] uppercase tracking-[0.08em] font-semibold text-[#B0ADA8] bg-white sticky top-0 z-[1] flex items-center gap-2"
+                          className="px-4 pt-5 pb-2 text-[10px] uppercase tracking-[0.1em] font-semibold text-[#B0ADA8] bg-gradient-to-b from-white to-transparent sticky top-0 z-[1] flex items-center gap-2"
                         >
                           <input
                             type="checkbox"

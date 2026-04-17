@@ -2,10 +2,12 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import {
   Send, Paperclip, Sparkles, ArrowLeft, X, Loader2,
   Bold, Italic, Underline, List, ListOrdered, Link2,
-  ChevronDown, Image, Trash2, Clock,
+  ChevronDown, Image, Trash2, Clock, Settings,
 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
-import { getKlanten } from '@/services/supabaseService'
+import { getKlanten, getEmailTemplates, createEmailTemplate, deleteEmailTemplate, type EmailTemplate } from '@/services/supabaseService'
+import { uploadEmailBijlage } from '@/services/storageService'
 import { toast } from 'sonner'
 import { cn, getInitials } from '@/lib/utils'
 import type { Klant, Email } from '@/types'
@@ -25,33 +27,13 @@ interface EmailComposeProps {
   defaultTo?: string
   defaultSubject?: string
   defaultBody?: string
-  onSend?: (data: { to: string; subject: string; body: string; html?: string; scheduledAt?: string; autoFollowUp?: AutoFollowUp; attachments?: Array<{ filename: string; content: string; encoding: 'base64' }> }) => void
+  onSend?: (data: { to: string; subject: string; body: string; html?: string; scheduledAt?: string; autoFollowUp?: AutoFollowUp; attachments?: Array<{ filename: string; storagePath: string; size: number }> }) => void
   allEmails?: Email[]
   onToChange?: (to: string) => void
   onRegisterActions?: (actions: ComposeActions) => void
   onForgieLoadingChange?: (loading: boolean) => void
   autoFollowUp?: AutoFollowUp
   onAutoFollowUpChange?: (value: AutoFollowUp) => void
-}
-
-const emailTemplates: Record<string, { onderwerp: string; body: string }> = {
-  none: { onderwerp: '', body: '' },
-  'offerte-followup': {
-    onderwerp: 'Opvolging offerte',
-    body: `Beste [naam],\n\nGraag volg ik onze offerte [nummer] op die wij op [datum] hebben verstuurd.\n\nHeeft u de offerte kunnen bekijken? Wij horen graag of u nog vragen heeft of dat we verdere toelichting kunnen geven.\n\nMocht u interesse hebben, dan plannen we graag een afspraak in om de details te bespreken.`,
-  },
-  'project-update': {
-    onderwerp: 'Project update',
-    body: `Beste [naam],\n\nHierbij een update over de voortgang van uw project [projectnaam].\n\nWat is er bereikt:\n- [punt 1]\n- [punt 2]\n\nVolgende stappen:\n- [stap 1]\n\nVerwachte opleverdatum: [datum]`,
-  },
-  welkomstbericht: {
-    onderwerp: 'Welkom bij Sign Company',
-    body: `Beste [naam],\n\nWelkom bij Sign Company! Wij zijn verheugd om met u samen te werken.\n\nUw contactpersoon is [naam contactpersoon], bereikbaar via [telefoonnummer] en [emailadres].\n\nWij kijken uit naar een prettige samenwerking!`,
-  },
-  betaalherinnering: {
-    onderwerp: 'Herinnering: openstaande factuur',
-    body: `Beste [naam],\n\nUit onze administratie blijkt dat de volgende factuur nog niet is voldaan:\n\nFactuurnummer: [nummer]\nVervaldatum: [vervaldatum]\nBedrag: [bedrag]\n\nWij verzoeken u vriendelijk het openstaande bedrag binnen 7 dagen te voldoen.`,
-  },
 }
 
 const mergeFields = [
@@ -61,6 +43,13 @@ const mergeFields = [
   { id: 'projectnaam', label: 'Projectnaam', value: '[projectnaam]' },
   { id: 'offerte_nummer', label: 'Offertenummer', value: '[offerte_nummer]' },
 ]
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+function isValidEmailList(value: string): boolean {
+  if (!value.trim()) return false
+  return value.split(/[,;\s]+/).filter(Boolean).every(e => EMAIL_REGEX.test(e.trim()))
+}
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
@@ -97,8 +86,9 @@ export function EmailCompose({
   autoFollowUp: autoFollowUpProp,
   onAutoFollowUpChange,
 }: EmailComposeProps) {
+  const navigate = useNavigate()
   const autoFollowUp = autoFollowUpProp ?? { enabled: false, dagen: 3, mode: 'auto' as const }
-  const { emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte } = useAppSettings()
+  const { emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, bedrijfsnaam } = useAppSettings()
 
   const [to, setTo] = useState(defaultTo)
   const [cc, setCc] = useState('')
@@ -109,6 +99,9 @@ export function EmailCompose({
   const [template, setTemplate] = useState('none')
   const [showTemplateMenu, setShowTemplateMenu] = useState(false)
   const [showMergeFields, setShowMergeFields] = useState(false)
+  const [dbTemplates, setDbTemplates] = useState<EmailTemplate[]>([])
+  const [showSaveTemplate, setShowSaveTemplate] = useState(false)
+  const [newTemplateName, setNewTemplateName] = useState('')
 
   // Contacts autocomplete
   const [contacts, setContacts] = useState<Klant[]>([])
@@ -149,8 +142,11 @@ export function EmailCompose({
     if (handtekeningAfbeelding) {
       parts.push(`<img src="${handtekeningAfbeelding}" alt="Logo" style="max-height:${imgHeight}px;max-width:${imgMaxWidth}px;object-fit:contain;" />`)
     }
+    if (!parts.length && bedrijfsnaam) {
+      parts.push(bedrijfsnaam)
+    }
     return parts.length ? `<br><br>--<br>${parts.join('<br>')}` : ''
-  }, [emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte])
+  }, [emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, bedrijfsnaam])
 
   // Initialize editor with signature
   useEffect(() => {
@@ -180,10 +176,11 @@ export function EmailCompose({
     setSubject(defaultSubject)
   }, [defaultTo, defaultSubject])
 
-  // Load contacts
+  // Load contacts + templates
   useEffect(() => {
     if (open) {
       getKlanten().then(setContacts).catch(() => {})
+      getEmailTemplates().then(setDbTemplates).catch(() => {})
     }
   }, [open])
 
@@ -222,16 +219,43 @@ export function EmailCompose({
   }, [])
 
   const handleTemplateSelect = useCallback((key: string) => {
-    const tmpl = emailTemplates[key]
+    const tmpl = dbTemplates.find(t => t.id === key)
     if (tmpl && editorRef.current) {
       if (tmpl.onderwerp) setSubject(tmpl.onderwerp)
-      if (tmpl.body) {
-        editorRef.current.innerHTML = `${tmpl.body.replace(/\n/g, '<br>')}${signatureHtml}`
-      }
+      editorRef.current.innerHTML = `${tmpl.body.replace(/\n/g, '<br>')}${signatureHtml}`
     }
     setTemplate(key)
     setShowTemplateMenu(false)
-  }, [signatureHtml])
+  }, [signatureHtml, dbTemplates])
+
+  const handleSaveAsTemplate = useCallback(async () => {
+    if (!newTemplateName.trim()) { toast.error('Vul een naam in'); return }
+    const body = editorRef.current?.innerText || ''
+    if (!body.trim() || body.trim() === '--') { toast.error('Schrijf eerst een bericht'); return }
+    try {
+      const created = await createEmailTemplate({
+        naam: newTemplateName.trim(),
+        onderwerp: subject,
+        body: editorRef.current?.innerHTML?.replace(signatureHtml, '') || body,
+      })
+      setDbTemplates(prev => [...prev, created])
+      setNewTemplateName('')
+      setShowSaveTemplate(false)
+      toast.success('Template opgeslagen')
+    } catch {
+      toast.error('Template opslaan mislukt')
+    }
+  }, [newTemplateName, subject, signatureHtml])
+
+  const handleDeleteTemplate = useCallback(async (id: string) => {
+    try {
+      await deleteEmailTemplate(id)
+      setDbTemplates(prev => prev.filter(t => t.id !== id))
+      toast.success('Template verwijderd')
+    } catch {
+      toast.error('Template verwijderen mislukt')
+    }
+  }, [])
 
   const handleMergeFieldInsert = useCallback((value: string) => {
     document.execCommand('insertText', false, value)
@@ -291,45 +315,46 @@ export function EmailCompose({
     editorRef.current?.focus()
   }, [])
 
-  const fileToBase64 = useCallback((file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onload = () => {
-        const result = reader.result as string
-        resolve(result.split(',')[1] || '')
-      }
-      reader.onerror = () => reject(reader.error)
-      reader.readAsDataURL(file)
-    })
-  }, [])
-
   const buildAttachmentPayload = useCallback(async () => {
     if (!attachments.length) return undefined
 
-    // Pre-check: tel totale grootte van File objecten (in origineel formaat).
-    // Base64 is ~33% groter, Vercel limiet is 4.5MB totaal payload.
     const totalFileBytes = attachments.reduce((sum, f) => sum + f.size, 0)
-    const estimatedBase64MB = (totalFileBytes * 1.37) / (1024 * 1024) // +37% voor base64 + JSON overhead
-    if (estimatedBase64MB > 3.5) {
-      toast.error(
-        `Bijlagen zijn te groot (${(totalFileBytes / (1024 * 1024)).toFixed(1)}MB). Maximum is ca. 3MB aan bijlagen per mail. Verwijder een of meer bestanden.`,
-        { duration: 8000 },
-      )
+    const totalMB = totalFileBytes / (1024 * 1024)
+    if (totalMB > 18) {
+      toast.error(`Bijlagen zijn te groot (${totalMB.toFixed(1)}MB). Maximum is ca. 18MB per mail.`, { duration: 8000 })
       return undefined
     }
 
-    return Promise.all(
-      attachments.map(async (file) => ({
-        filename: file.name,
-        content: await fileToBase64(file),
-        encoding: 'base64' as const,
-      }))
-    )
-  }, [attachments, fileToBase64])
+    // Upload naar Supabase Storage — payload bevat alleen paden
+    try {
+      return await Promise.all(
+        attachments.map(async (file) => {
+          const result = await uploadEmailBijlage(file)
+          return { filename: result.filename, storagePath: result.storagePath, size: result.size }
+        })
+      )
+    } catch (err) {
+      logger.error('Bijlage upload mislukt:', err)
+      toast.error(err instanceof Error ? err.message : 'Bijlage uploaden mislukt')
+      return undefined
+    }
+  }, [attachments])
 
   const handleSend = useCallback(async () => {
     if (!to.trim()) {
       toast.error('Vul een ontvanger in')
+      return
+    }
+    if (!isValidEmailList(to)) {
+      toast.error('Ongeldig emailadres in "Aan"')
+      return
+    }
+    if (cc && !isValidEmailList(cc)) {
+      toast.error('Ongeldig emailadres in "CC"')
+      return
+    }
+    if (bcc && !isValidEmailList(bcc)) {
+      toast.error('Ongeldig emailadres in "BCC"')
       return
     }
     if (!subject.trim()) {
@@ -340,6 +365,7 @@ export function EmailCompose({
     try {
       const html = editorRef.current?.innerHTML || ''
       const body = editorRef.current?.innerText || ''
+
       const attachmentPayload = await buildAttachmentPayload()
       await onSend?.({ to, subject, body, html, autoFollowUp: autoFollowUp.enabled ? autoFollowUp : undefined, attachments: attachmentPayload })
       toast.success(autoFollowUp.enabled ? `Email verzonden — opvolging na ${autoFollowUp.dagen} dagen` : 'Email verzonden')
@@ -494,17 +520,60 @@ export function EmailCompose({
                 </button>
                 {showTemplateMenu && (
                   <>
-                    <div className="fixed inset-0 z-40" onClick={() => setShowTemplateMenu(false)} />
-                    <div className="absolute left-0 top-full mt-2 w-52 bg-white rounded-xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] z-50 py-1.5 overflow-hidden">
-                      {Object.entries(emailTemplates).filter(([k]) => k !== 'none').map(([key, tmpl]) => (
+                    <div className="fixed inset-0 z-40" onClick={() => { setShowTemplateMenu(false); setShowSaveTemplate(false) }} />
+                    <div className="absolute left-0 top-full mt-2 w-64 bg-white rounded-xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] z-50 py-1.5 overflow-hidden max-h-[360px] overflow-y-auto">
+                      {dbTemplates.length > 0 ? (
+                        dbTemplates.map(tmpl => (
+                          <button
+                            key={tmpl.id}
+                            onClick={() => handleTemplateSelect(tmpl.id)}
+                            className="w-full text-left px-4 py-2.5 text-[13px] text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] transition-colors truncate"
+                          >
+                            {tmpl.naam}
+                          </button>
+                        ))
+                      ) : (
+                        <p className="px-4 py-3 text-[12px] text-[#9B9B95]">Geen templates — maak er een aan in Instellingen</p>
+                      )}
+                      <div className="border-t border-[#EBEBEB] mt-1 pt-1">
+                        {!showSaveTemplate ? (
+                          <button
+                            onClick={() => setShowSaveTemplate(true)}
+                            className="w-full text-left px-4 py-2.5 text-[13px] text-[#1A535C] hover:bg-[#F8F7F5] transition-colors"
+                          >
+                            + Huidig bericht opslaan als template
+                          </button>
+                        ) : (
+                          <div className="px-3 py-2 space-y-2">
+                            <input
+                              type="text"
+                              value={newTemplateName}
+                              onChange={e => setNewTemplateName(e.target.value)}
+                              placeholder="Naam van template..."
+                              className="w-full px-2.5 py-1.5 text-[13px] bg-[#F8F7F5] rounded-lg border border-[#EBEBEB] outline-none focus:border-[#1A535C]"
+                              autoFocus
+                              onKeyDown={e => { if (e.key === 'Enter') handleSaveAsTemplate() }}
+                            />
+                            <button
+                              onClick={handleSaveAsTemplate}
+                              className="w-full py-1.5 rounded-lg bg-[#1A535C] text-white text-[12px] font-medium hover:opacity-90"
+                            >
+                              Opslaan
+                            </button>
+                          </div>
+                        )}
                         <button
-                          key={key}
-                          onClick={() => handleTemplateSelect(key)}
-                          className="w-full text-left px-4 py-2.5 text-[13px] text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] transition-colors"
+                          onClick={() => {
+                            setShowTemplateMenu(false)
+                            onOpenChange(false)
+                            navigate('/instellingen?tab=email&sub=templates')
+                          }}
+                          className="w-full text-left px-4 py-2.5 text-[13px] text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F8F7F5] transition-colors flex items-center gap-2"
                         >
-                          {tmpl.onderwerp}
+                          <Settings className="h-3 w-3" />
+                          Templates beheren
                         </button>
-                      ))}
+                      </div>
                     </div>
                   </>
                 )}

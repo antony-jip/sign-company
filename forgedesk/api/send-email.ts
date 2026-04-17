@@ -113,7 +113,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       subject: string
       body?: string
       html?: string
-      attachments?: Array<{ filename: string; content: string; encoding: 'base64' }>
+      attachments?: Array<{ filename: string; content?: string; encoding?: 'base64'; storagePath?: string; size?: number }>
       opvolging_id?: string
       scheduledAt?: string
       in_reply_to?: string
@@ -139,12 +139,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           user_id,
           ontvanger: to,
           cc: cc || null,
+          bcc: bcc || null,
           onderwerp: subject,
           body: body || null,
           html: html || null,
           bijlagen: attachments || [],
           scheduled_at: verzendDatum.toISOString(),
           status: 'wachtend',
+          in_reply_to: in_reply_to || null,
+          thread_id: thread_id || null,
         })
         .select('id')
         .single()
@@ -176,6 +179,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       auth: { user: gmail_address, pass: app_password },
     })
 
+    // Extraheer inline base64 data URIs uit de HTML en converteer ze naar
+    // CID-attachments. Dit maakt de mail RFC-conform (multipart/related) en
+    // voorkomt problemen met SMTP grootte-limieten.
+    let processedHtml = html || ''
+    const inlineAttachments: Array<{ filename: string; content: Buffer; cid: string; contentType: string; contentDisposition: 'inline' }> = []
+
+    if (processedHtml) {
+      let imgIndex = 0
+      processedHtml = processedHtml.replace(
+        /<img([^>]*)src="data:(image\/(png|jpeg|jpg|gif|webp|svg\+xml));base64,([^"]+)"([^>]*)>/gi,
+        (_match, before, mimeType, ext, b64Data, after) => {
+          const cid = `inline-${crypto.randomUUID()}@forgedesk`
+          const extension = ext.replace('+xml', '').replace('jpeg', 'jpg')
+          inlineAttachments.push({
+            filename: `inline-${imgIndex++}.${extension}`,
+            content: Buffer.from(b64Data, 'base64'),
+            cid,
+            contentType: mimeType,
+            contentDisposition: 'inline',
+          })
+          return `<img${before}src="cid:${cid}"${after}>`
+        }
+      )
+    }
+
     const mailOptions: Record<string, unknown> = {
       from: fromAddress,
       to,
@@ -187,8 +215,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       mailOptions.references = in_reply_to
     }
     // Als er HTML is, gebruik die als primaire content. Plain text alleen als fallback.
-    if (html) {
-      mailOptions.html = html
+    if (processedHtml) {
+      mailOptions.html = processedHtml
       // Minimale plain text voor email clients zonder HTML support
       mailOptions.text = body || subject
     } else {
@@ -196,11 +224,34 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     if (cc) mailOptions.cc = cc
     if (bcc) mailOptions.bcc = bcc
+
+    // Verwerk bijlagen: download van Supabase Storage of gebruik base64
+    const storagePaths: string[] = []
+    const fileAttachments: Array<{ filename: string; content: Buffer }> = []
     if (attachments?.length) {
-      mailOptions.attachments = attachments.map((a) => ({
-        filename: a.filename,
-        content: Buffer.from(a.content, 'base64'),
-      }))
+      for (const a of attachments) {
+        if (a.storagePath) {
+          // Download van Supabase Storage
+          const { data, error: dlError } = await supabaseAdmin.storage
+            .from('documenten')
+            .download(a.storagePath)
+          if (dlError || !data) {
+            console.error(`[send-email] Storage download mislukt voor ${a.storagePath}:`, dlError)
+            throw new Error(`Bijlage "${a.filename}" kon niet worden opgehaald`)
+          }
+          const buffer = Buffer.from(await data.arrayBuffer())
+          fileAttachments.push({ filename: a.filename, content: buffer })
+          storagePaths.push(a.storagePath)
+        } else if (a.content) {
+          // Legacy: base64 direct in payload (forward bijlagen)
+          fileAttachments.push({ filename: a.filename, content: Buffer.from(a.content, 'base64') })
+        }
+      }
+    }
+
+    const allAttachments = [...inlineAttachments, ...fileAttachments]
+    if (allAttachments.length) {
+      mailOptions.attachments = allAttachments
     }
 
     const sendResult = await transporter.sendMail(mailOptions)
@@ -236,6 +287,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     } catch (saveErr) {
       // Niet fataal — de mail IS al verstuurd, log de fout
       console.error('[send-email] Verzonden mail opslaan mislukt:', saveErr)
+    }
+
+    // Ruim tijdelijke bestanden op uit Storage
+    if (storagePaths.length > 0) {
+      supabaseAdmin.storage.from('documenten').remove(storagePaths).catch((err) => {
+        console.warn('[send-email] Storage cleanup mislukt:', err)
+      })
     }
 
     // Trigger auto-opvolging task als opvolging_id meegegeven is

@@ -26,9 +26,17 @@ import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/comp
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { callForgie } from '@/services/forgieService'
 import { downloadEmailAttachment } from '@/services/gmailService'
+import { uploadEmailBijlage } from '@/services/storageService'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
 import { EmailReaderAIToolbar } from './EmailReaderAIToolbar'
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+function isValidEmailList(value: string): boolean {
+  if (!value.trim()) return false
+  return value.split(/[,;\s]+/).filter(Boolean).every(e => EMAIL_REGEX.test(e.trim()))
+}
 
 // Format file size human-readable
 function formatFileSize(bytes: number): string {
@@ -67,7 +75,7 @@ interface EmailReaderProps {
   onArchive?: (email: Email) => void
   onBack?: () => void
   onNavigate?: (direction: 'prev' | 'next') => void
-  onSendReply?: (data: { to: string; cc?: string; bcc?: string; subject: string; body: string; html?: string; scheduledAt?: string; attachments?: Array<{ filename: string; content: string; encoding: 'base64' }> }) => void
+  onSendReply?: (data: { to: string; cc?: string; bcc?: string; subject: string; body: string; html?: string; scheduledAt?: string; attachments?: Array<{ filename: string; storagePath?: string; content?: string; encoding?: 'base64'; size?: number }> }) => void
   onSelectEmail?: (email: Email) => void
 }
 
@@ -88,12 +96,13 @@ export function EmailReader({
   onSendReply,
   onSelectEmail,
 }: EmailReaderProps) {
-  const { emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte } = useAppSettings()
+  const { emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, bedrijfsnaam } = useAppSettings()
 
   const [replyMode, setReplyMode] = useState<'reply' | 'reply-all' | 'forward' | null>(null)
   const [replyTo, setReplyTo] = useState('')
   const [replyCc, setReplyCc] = useState('')
   const [replyBcc, setReplyBcc] = useState('')
+  const [replySubject, setReplySubject] = useState('')
   const [showCcBcc, setShowCcBcc] = useState(false)
   const [showQuotedText, setShowQuotedText] = useState(false)
   const [isSending, setIsSending] = useState(false)
@@ -126,8 +135,11 @@ export function EmailReader({
     if (handtekeningAfbeelding) {
       parts.push(`<img src="${handtekeningAfbeelding}" alt="Logo" style="max-height:${imgHeight}px;max-width:${imgMaxWidth}px;object-fit:contain;" />`)
     }
+    if (!parts.length && bedrijfsnaam) {
+      parts.push(bedrijfsnaam)
+    }
     return parts.length ? `<br><br>--<br>${parts.join('<br>')}` : ''
-  }, [emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte])
+  }, [emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, bedrijfsnaam])
 
   // Track per-attachment download state (alleen visueel — losse spinner per bijlage)
   const [downloadingAttachment, setDownloadingAttachment] = useState<string | null>(null)
@@ -135,8 +147,51 @@ export function EmailReader({
   const [downloadingAll, setDownloadingAll] = useState(false)
   const [previewAtt, setPreviewAtt] = useState<{ filename: string; url: string; contentType: string } | null>(null)
 
+  // ─── Draft persistence ───
+  const draftKey = email ? `email-draft-${email.id}` : null
+
+  const saveDraft = useCallback(() => {
+    if (!draftKey || !editorRef.current || !replyMode) return
+    const content = editorRef.current.innerHTML
+    if (!content || content === `<br>${signatureHtml}` || content === '<br>') return
+    try {
+      sessionStorage.setItem(draftKey, JSON.stringify({
+        mode: replyMode,
+        to: replyTo,
+        cc: replyCc,
+        bcc: replyBcc,
+        subject: replySubject,
+        html: content,
+      }))
+    } catch { /* sessionStorage vol — negeer */ }
+  }, [draftKey, replyMode, replyTo, replyCc, replyBcc, replySubject, signatureHtml])
+
+  const clearDraft = useCallback(() => {
+    if (draftKey) sessionStorage.removeItem(draftKey)
+  }, [draftKey])
+
+  const loadDraft = useCallback((emailId: string): { mode: 'reply' | 'reply-all' | 'forward'; to: string; cc: string; bcc: string; subject: string; html: string } | null => {
+    try {
+      const raw = sessionStorage.getItem(`email-draft-${emailId}`)
+      return raw ? JSON.parse(raw) : null
+    } catch { return null }
+  }, [])
+
+  // Sla draft op wanneer de gebruiker wegnavigeet (replyMode sluit)
+  const prevReplyModeRef = useRef(replyMode)
+  useEffect(() => {
+    if (prevReplyModeRef.current && !replyMode) {
+      saveDraft()
+    }
+    prevReplyModeRef.current = replyMode
+  }, [replyMode, saveDraft])
+
   // Reset reply state and summary when email changes
   useEffect(() => {
+    // Sla eventueel lopend concept op voordat we wisselen
+    if (prevReplyModeRef.current && editorRef.current) {
+      saveDraft()
+    }
     setReplyMode(null)
     setShowQuotedText(false)
     setSummary(null)
@@ -292,26 +347,42 @@ export function EmailReader({
 
   const handleReply = useCallback((mode: 'reply' | 'reply-all' | 'forward') => {
     if (!email) return
+
+    // Check of er een opgeslagen concept is voor deze email
+    const draft = loadDraft(email.id)
+    const hasDraft = draft && draft.mode === mode
+
     setReplyMode(mode)
     setReplyAttachments([])
-    setReplyCc('')
-    setReplyBcc('')
     setShowCcBcc(false)
-    // Bij forward: alle originele bijlagen meenemen (gebruiker kan ze later
-    // individueel uitzetten). Bij reply: niks meenemen.
+
+    if (hasDraft) {
+      setReplyTo(draft.to)
+      setReplyCc(draft.cc)
+      setReplyBcc(draft.bcc)
+      setReplySubject(draft.subject)
+      if (draft.cc || draft.bcc) setShowCcBcc(true)
+    } else {
+      setReplyCc('')
+      setReplyBcc('')
+      const subjectPrefix = mode === 'forward' ? 'Fwd: ' : 'Re: '
+      setReplySubject(email.onderwerp.startsWith(subjectPrefix) ? email.onderwerp : `${subjectPrefix}${email.onderwerp}`)
+      if (mode === 'forward') {
+        setReplyTo('')
+      } else {
+        setReplyTo(extractSenderEmail(email.van))
+      }
+    }
+
     if (mode === 'forward' && email.attachment_meta && email.attachment_meta.length > 0) {
       setForwardOriginalAttachments(email.attachment_meta)
     } else {
       setForwardOriginalAttachments([])
     }
-    if (mode === 'forward') {
-      setReplyTo('')
-    } else {
-      setReplyTo(extractSenderEmail(email.van))
-    }
+
     setTimeout(() => {
       if (editorRef.current) {
-        editorRef.current.innerHTML = `<br>${signatureHtml}`
+        editorRef.current.innerHTML = hasDraft ? draft.html : `<br>${signatureHtml}`
         const range = document.createRange()
         const sel = window.getSelection()
         range.setStart(editorRef.current, 0)
@@ -320,30 +391,44 @@ export function EmailReader({
         sel?.addRange(range)
         editorRef.current.focus()
       }
+      if (hasDraft) toast.info('Concept hersteld')
     }, 50)
-  }, [email, signatureHtml])
+  }, [email, signatureHtml, loadDraft])
 
   const buildReplyPayload = useCallback(async () => {
     if (!email || !editorRef.current) return null
+    if (!replyTo.trim()) {
+      toast.error('Vul een ontvanger in')
+      return null
+    }
+    if (!isValidEmailList(replyTo)) {
+      toast.error('Ongeldig emailadres in "Aan"')
+      return null
+    }
+    if (replyCc && !isValidEmailList(replyCc)) {
+      toast.error('Ongeldig emailadres in "CC"')
+      return null
+    }
+    if (replyBcc && !isValidEmailList(replyBcc)) {
+      toast.error('Ongeldig emailadres in "BCC"')
+      return null
+    }
     const html = editorRef.current.innerHTML
     if (!html.replace(/<[^>]*>/g, '').trim()) {
       toast.error('Bericht is leeg')
       return null
     }
-    const prefix = replyMode === 'forward' ? 'Fwd: ' : 'Re: '
-    const subject = email.onderwerp.startsWith(prefix) ? email.onderwerp : `${prefix}${email.onderwerp}`
-    const quotedOriginal = `<br><br><div style="border-left:2px solid #ccc;padding-left:12px;margin-left:0;color:#666;"><p>Op ${formatShortDate(email.datum)} schreef ${extractSenderName(email.van)}:</p>${email.inhoud}</div>`
+    const subject = replySubject || email.onderwerp
+    // Strip base64 data URIs uit de geciteerde tekst zodat de JSON payload
+    // binnen Vercel's 4.5MB limiet blijft. Inline images in het origineel
+    // zijn niet nodig in het antwoord — de ontvanger heeft het origineel al.
+    const inhoudZonderInlineImages = (email.inhoud || '').replace(
+      /<img([^>]*)src="data:image\/[^"]*"([^>]*)>/gi,
+      '<img$1src=""$2 alt="[afbeelding]" style="display:none">'
+    )
+    const quotedOriginal = `<br><br><div style="border-left:2px solid #ccc;padding-left:12px;margin-left:0;color:#666;"><p>Op ${formatShortDate(email.datum)} schreef ${extractSenderName(email.van)}:</p>${inhoudZonderInlineImages}</div>`
 
-    const fileToBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onload = () => resolve(((reader.result as string) || '').split(',')[1] || '')
-      reader.onerror = () => reject(reader.error)
-      reader.readAsDataURL(file)
-    })
-
-    // Bij forward: haal de oorspronkelijke bijlagen die de user nog wil
-    // meesturen op uit IMAP. forwardOriginalAttachments wordt door de UI
-    // beheerd zodat de user er individueel kunnen verwijderen.
+    // Forward: haal originele bijlagen op uit IMAP (base64)
     let originalAttachments: Array<{ filename: string; content: string; encoding: 'base64' }> = []
     if (replyMode === 'forward' && forwardOriginalAttachments.length > 0) {
       const uid = Number(email.gmail_id || email.id)
@@ -375,30 +460,29 @@ export function EmailReader({
       }
     }
 
-    const userAttachments = replyAttachments.length
-      ? await Promise.all(replyAttachments.map(async (file) => ({
-          filename: file.name,
-          content: await fileToBase64(file),
-          encoding: 'base64' as const,
-        })))
-      : []
-
-    const attachmentPayload = [...originalAttachments, ...userAttachments]
-
-    // Check totale payload grootte — Vercel serverless heeft een 4.5MB body
-    // limiet. Base64 is ~33% groter dan het origineel, plus de HTML body.
-    // Waarschuw de gebruiker als de totale grootte te groot is.
-    if (attachmentPayload.length > 0) {
-      const totalBytes = attachmentPayload.reduce((sum, a) => sum + (a.content?.length || 0), 0)
-      const totalMB = totalBytes / (1024 * 1024)
-      if (totalMB > 3.5) {
-        toast.error(
-          `Bijlagen zijn te groot (${totalMB.toFixed(1)}MB). Maximum is ca. 3.5MB aan bijlagen per mail. Verwijder een of meer bestanden en probeer opnieuw.`,
-          { duration: 8000 },
+    // User uploads: via Supabase Storage
+    let userAttachments: Array<{ filename: string; storagePath: string; size: number }> = []
+    if (replyAttachments.length) {
+      const totalSize = replyAttachments.reduce((s, f) => s + f.size, 0)
+      if (totalSize > 18 * 1024 * 1024) {
+        toast.error('Bijlagen zijn te groot (max 18MB).', { duration: 8000 })
+        return null
+      }
+      try {
+        userAttachments = await Promise.all(
+          replyAttachments.map(file => uploadEmailBijlage(file))
         )
+      } catch (err) {
+        logger.error('Bijlage upload mislukt:', err)
+        toast.error(err instanceof Error ? err.message : 'Bijlage uploaden mislukt')
         return null
       }
     }
+
+    const attachmentPayload: Array<{ filename: string; storagePath?: string; content?: string; encoding?: 'base64'; size?: number }> = [
+      ...originalAttachments,
+      ...userAttachments,
+    ]
 
     return {
       to: replyTo,
@@ -409,7 +493,7 @@ export function EmailReader({
       html: html + quotedOriginal,
       attachments: attachmentPayload.length > 0 ? attachmentPayload : undefined,
     }
-  }, [email, replyMode, replyTo, replyCc, replyBcc, replyAttachments, forwardOriginalAttachments, imapFolder])
+  }, [email, replyMode, replySubject, replyTo, replyCc, replyBcc, replyAttachments, forwardOriginalAttachments, imapFolder])
 
   const handleSend = useCallback(async () => {
     if (!onSendReply) return
@@ -418,6 +502,7 @@ export function EmailReader({
       const payload = await buildReplyPayload()
       if (!payload) return
       await onSendReply(payload)
+      clearDraft()
       setReplyMode(null)
       setReplyAttachments([])
       setForwardOriginalAttachments([])
@@ -438,6 +523,7 @@ export function EmailReader({
       const payload = await buildReplyPayload()
       if (!payload) return
       await onSendReply({ ...payload, scheduledAt })
+      clearDraft()
       setReplyMode(null)
       setReplyAttachments([])
       setForwardOriginalAttachments([])
@@ -570,10 +656,6 @@ export function EmailReader({
   // No email body visible — pure focus on writing.
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   if (replyMode) {
-    const replySubject = (() => {
-      const prefix = replyMode === 'forward' ? 'Fwd: ' : 'Re: '
-      return email.onderwerp.startsWith(prefix) ? email.onderwerp : `${prefix}${email.onderwerp}`
-    })()
 
     return (
       <div className="flex flex-col h-full min-w-0">
@@ -708,9 +790,15 @@ export function EmailReader({
             )}
 
             {/* Subject */}
-            <div className="flex items-center px-6 py-2.5 border-b border-[#F0EFEC]">
-              <span className="text-[12px] text-[#9B9B95] w-10 flex-shrink-0" />
-              <span className="text-[14px] text-[#4A4A46] truncate">{replySubject}</span>
+            <div className="flex items-center px-6 py-2.5 border-b border-[#F0EFEC] focus-within:border-[#1A535C] transition-colors duration-150">
+              <span className="text-[12px] text-[#9B9B95] w-10 flex-shrink-0">Ond</span>
+              <input
+                type="text"
+                value={replySubject}
+                onChange={(e) => setReplySubject(e.target.value)}
+                className="flex-1 bg-transparent border-none outline-none text-[14px] text-[#1A1A1A] min-w-0 placeholder:text-[#B0ADA8]"
+                placeholder="Onderwerp..."
+              />
             </div>
 
             {/* Quick tools: AI schrijven */}

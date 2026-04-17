@@ -77,13 +77,18 @@ export function getAvatarRingColor(name: string): string {
   return AVATAR_RING_COLORS[hash % AVATAR_RING_COLORS.length]
 }
 
-// DOEN Design System avatar palette
+// DOEN Design System avatar palette — warm, onderscheidend, professioneel
 const DOEN_AVATAR_PALETTE = [
-  { bg: '#E8F2EC', text: '#3A7D52' },
-  { bg: '#E8EEF9', text: '#3A5A9A' },
-  { bg: '#F5F2E8', text: '#8A7A4A' },
-  { bg: '#F0EFEC', text: '#6B6B66' },
-  { bg: '#EDE8F4', text: '#6A5A8A' },
+  { bg: '#DCF0E4', text: '#2B6E44' },  // groen
+  { bg: '#DBE6F5', text: '#2E5491' },  // blauw
+  { bg: '#F5EDD8', text: '#7D6A2E' },  // goud
+  { bg: '#F2E4EC', text: '#8A3D6E' },  // mauve
+  { bg: '#E2DFF5', text: '#5A4E91' },  // paars
+  { bg: '#FDEADF', text: '#B05C2E' },  // oranje
+  { bg: '#D9F0F0', text: '#2B7A7A' },  // teal
+  { bg: '#F5E0E0', text: '#9A3A3A' },  // rood
+  { bg: '#E8EDDF', text: '#5A6B44' },  // olijf
+  { bg: '#E8E4F0', text: '#6B5A8A' },  // lavendel
 ]
 
 const avatarStyleCache = new Map<string, { bg: string; text: string }>()
