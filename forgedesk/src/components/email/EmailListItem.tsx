@@ -104,7 +104,7 @@ export const EmailListItem = memo(function EmailListItem({
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         className={cn(
-          'group relative flex items-center gap-2.5 pl-3 pr-3 h-[38px] cursor-pointer select-none',
+          'group relative flex items-center gap-2.5 pl-3 pr-3 h-[42px] cursor-pointer select-none',
           'transition-all duration-150 ease-out',
           isActive
             ? 'bg-[#1A535C]/[0.06]'
@@ -118,10 +118,10 @@ export const EmailListItem = memo(function EmailListItem({
       >
         {/* Unread indicator — subtle left accent */}
         {isUnread && !isActive && (
-          <div className="absolute left-0 top-[11px] bottom-[11px] w-[2.5px] rounded-r-full bg-[#1A535C]" />
+          <div className="absolute left-0 top-[13px] bottom-[13px] w-[2.5px] rounded-r-full bg-[#1A535C]" />
         )}
         {isActive && (
-          <div className="absolute left-0 top-[6px] bottom-[6px] w-[2.5px] rounded-r-full bg-[#1A535C]" />
+          <div className="absolute left-0 top-[8px] bottom-[8px] w-[2.5px] rounded-r-full bg-[#1A535C]" />
         )}
 
         {/* Checkbox */}
@@ -135,21 +135,21 @@ export const EmailListItem = memo(function EmailListItem({
           />
         </div>
 
-        {/* Avatar — 24x24 met ronde hoeken */}
+        {/* Avatar — 26x26 met ronde hoeken */}
         <div
-          className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0"
+          className="w-[26px] h-[26px] rounded-md flex items-center justify-center flex-shrink-0"
           style={{ backgroundColor: avatarStyle.bg }}
           aria-hidden
         >
-          <span className="text-[10px] font-bold leading-none" style={{ color: avatarStyle.text }}>
+          <span className="text-[11px] font-bold leading-none" style={{ color: avatarStyle.text }}>
             {senderName[0]?.toUpperCase()}
           </span>
         </div>
 
         {/* Sender */}
-        <div className="flex items-center gap-1.5 w-[160px] flex-shrink-0 min-w-0">
+        <div className="flex items-center gap-1.5 w-[170px] flex-shrink-0 min-w-0">
           <span className={cn(
-            'truncate leading-none text-[13px]',
+            'truncate leading-none text-[14px]',
             isUnread ? 'font-semibold text-[#1A1A1A]' : 'font-normal text-[#6B6B66]',
           )}>
             {senderName}
@@ -162,7 +162,7 @@ export const EmailListItem = memo(function EmailListItem({
         </div>
 
         {/* Subject + preview */}
-        <div className="flex-1 min-w-0 truncate leading-none text-[13px]">
+        <div className="flex-1 min-w-0 truncate leading-none text-[14px]">
           <span className={cn(
             isUnread ? 'font-semibold text-[#1A1A1A]' : 'font-normal text-[#6B6B66]',
           )}>
@@ -189,7 +189,7 @@ export const EmailListItem = memo(function EmailListItem({
               <Pin className="h-3 w-3 fill-[#1A535C] text-[#1A535C] -rotate-45" />
             )}
             <span className={cn(
-              'tabular-nums min-w-[40px] text-right text-[12px]',
+              'tabular-nums min-w-[40px] text-right text-[13px]',
               isUnread ? 'text-[#1A535C] font-medium' : 'text-[#B0ADA8]',
             )}>
               {formatShortDate(email.datum)}
