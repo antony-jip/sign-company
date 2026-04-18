@@ -116,7 +116,7 @@ export function TopNav() {
   return (
     <header className="flex-shrink-0" style={{ position: 'relative', zIndex: 30 }}>
       {/* ── Row 1: Utility bar ── */}
-      <div className="flex items-center h-11 px-5 md:px-6" style={{ background: 'linear-gradient(180deg, #1D5A64 0%, #1A535C 100%)' }}>
+      <div className="flex items-center h-[52px] px-5 md:px-6" style={{ background: 'linear-gradient(180deg, #1D5A64 0%, #1A535C 100%)' }}>
         {/* Logo */}
         <NavLink to="/" className="flex items-center mr-5 flex-shrink-0 opacity-90 hover:opacity-100 transition-opacity">
           <img src="/logos/doen-logo-wit.svg" alt="doen." className="h-[19px]" />
@@ -165,7 +165,7 @@ export function TopNav() {
 
         {/* Mobile search */}
         {mobileSearchOpen && (
-          <div className="absolute inset-x-0 top-0 h-11 z-40 bg-[#1A535C] flex items-center gap-2 px-4 md:hidden">
+          <div className="absolute inset-x-0 top-0 h-[52px] z-40 bg-[#1A535C] flex items-center gap-2 px-4 md:hidden">
             <GlobalSearch className="flex flex-1" />
             <button onClick={() => setMobileSearchOpen(false)} className="w-7 h-7 rounded-md flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10">
               <X className="w-4 h-4" />
