@@ -867,15 +867,15 @@ export function ProjectDetail() {
       </div>
 
       {/* ══════════ STICKY HEADER + TABS ══════════ */}
-      <div className="sticky top-0 z-10 bg-[#F8F7F5]/95 backdrop-blur-md px-8 pt-3 flex-shrink-0">
-        <div className="flex items-start justify-between gap-4">
+      <div className="sticky top-0 z-10 bg-[#F8F7F5]/95 backdrop-blur-md px-8 pt-4 flex-shrink-0">
+        <div className="flex items-start justify-between gap-6">
           <div className="min-w-0 flex-1">
             {/* Row 1: back + name + status + number */}
             <div className="flex items-center gap-3">
-              <Link to="/projecten" className="text-[#9B9B95] hover:text-[#6B6B66] transition-colors flex-shrink-0">
+              <Link to="/projecten" className="text-[#9B9B95] hover:text-[#1A1A1A] transition-colors flex-shrink-0 -ml-1 p-1 rounded-lg hover:bg-[#EBEBEB]/50">
                 <ArrowLeft className="h-4 w-4" />
               </Link>
-              <h1 className="text-[22px] font-extrabold text-[#1A1A1A] truncate tracking-[-0.4px]">{project.naam}</h1>
+              <h1 className="text-[24px] font-extrabold text-[#1A1A1A] truncate tracking-[-0.5px]">{project.naam}</h1>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button className="text-sm text-[#1A1A1A] flex-shrink-0 flex items-center gap-1 cursor-pointer hover:bg-[#EBEBEB]/40 rounded-md px-2 py-0.5 -mx-2 transition-colors group">
@@ -904,24 +904,27 @@ export function ProjectDetail() {
                 <span className="font-mono text-[13px] text-[#9B9B95] flex-shrink-0">{project.project_nummer}</span>
               )}
             </div>
-            {/* Row 2: klant + contactpersoon + bedrag + deadline */}
-            <div className="flex items-center gap-2 ml-7 mt-0.5 text-[13px]">
+            {/* Row 2: klant + bedrag + deadline */}
+            <div className="flex items-center gap-2.5 ml-8 mt-1 text-[13px]">
               {klant && (
-                <Link to={`/klanten/${klant.id}`} className="text-[#6B6B66] hover:text-[#1A1A1A] transition-colors">
+                <Link to={`/klanten/${klant.id}`} className="text-[#6B6B66] hover:text-[#1A1A1A] transition-colors font-medium">
                   {klant.bedrijfsnaam || klant.contactpersoon}
-                  {klant.stad && ` · ${klant.stad}`}
+                  {klant.stad && <span className="text-[#9B9B95] font-normal"> · {klant.stad}</span>}
                 </Link>
               )}
               {totaalBedrag > 0 && (
                 <>
-                  <span className="text-[#EBEBEB]">·</span>
-                  <span className="font-mono text-[#1A1A1A]">{formatCurrency(totaalBedrag)}</span>
+                  <span className="text-[#D4D2CE]">·</span>
+                  <span className="font-mono font-semibold text-[#1A1A1A]">{formatCurrency(totaalBedrag)}</span>
                 </>
               )}
               {isValidDate && daysLeft !== null && (
                 <>
-                  <span className="text-[#EBEBEB]">·</span>
-                  <span className={cn('font-mono', daysLeft < 0 ? 'text-[#C03A18] font-medium' : 'text-[#9B9B95]')}>
+                  <span className="text-[#D4D2CE]">·</span>
+                  <span className={cn(
+                    'font-mono text-[12px] px-1.5 py-0.5 rounded-md',
+                    daysLeft < 0 ? 'text-[#C03A18] bg-[#C03A18]/[0.06] font-semibold' : daysLeft <= 7 ? 'text-[#8A6A00] bg-[#F5EDD8]' : 'text-[#9B9B95]',
+                  )}>
                     {daysLeft < 0 ? `${Math.abs(daysLeft)}d over deadline` : `${daysLeft}d`}
                   </span>
                 </>
@@ -988,13 +991,13 @@ export function ProjectDetail() {
               const activeOfferte = projectOffertes.find(o => !['afgewezen', 'verlopen', 'gefactureerd'].includes(o.status)) || projectOffertes[0]
               if (!activeOfferte) {
                 return (
-                  <button onClick={openNieuweOfferte} className="bg-[#F15025] hover:bg-[#D94520] text-white text-sm font-medium px-5 py-2 rounded-lg transition-colors shadow-sm">
+                  <button onClick={openNieuweOfferte} className="bg-[#F15025] hover:bg-[#D94520] text-white text-[13px] font-semibold px-5 py-2.5 rounded-xl transition-all duration-150 shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_12px_rgba(241,80,37,0.35)] hover:-translate-y-px active:translate-y-0">
                     Offerte maken
                   </button>
                 )
               }
               return (
-                <button onClick={() => navigate(`/offertes/${activeOfferte.id}/bewerken`, { state: { from: location.pathname } })} className="bg-[#F15025] hover:bg-[#D94520] text-white text-sm font-medium px-5 py-2 rounded-lg transition-colors shadow-sm">
+                <button onClick={() => navigate(`/offertes/${activeOfferte.id}/bewerken`, { state: { from: location.pathname } })} className="bg-[#F15025] hover:bg-[#D94520] text-white text-[13px] font-semibold px-5 py-2.5 rounded-xl transition-all duration-150 shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_12px_rgba(241,80,37,0.35)] hover:-translate-y-px active:translate-y-0">
                   Offerte bewerken
                 </button>
               )
@@ -1030,7 +1033,7 @@ export function ProjectDetail() {
         </div>
 
         {/* TAB BAR — inside sticky header */}
-        <div className="flex items-center gap-6 border-b border-[#EBEBEB] mt-2">
+        <div className="flex items-center gap-7 border-b border-[#EBEBEB] mt-3">
         {([
           { key: 'overzicht' as ProjectTab, label: 'Overzicht', count: 0 },
           { key: 'werkbon' as ProjectTab, label: 'Werkbon', count: projectWerkbonnen.length },
@@ -1062,7 +1065,7 @@ export function ProjectDetail() {
       {/* ══════════ OVERZICHT TAB ══════════ */}
       {activeTab === 'overzicht' && (
       <div className="flex-1 overflow-y-auto">
-      <div className="flex flex-col lg:flex-row gap-8 px-8 py-6">
+      <div className="flex flex-col lg:flex-row gap-8 px-8 py-8">
 
         {/* ── Left column (65%) ── */}
         <div className="flex-1 min-w-0 space-y-6">
