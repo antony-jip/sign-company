@@ -113,8 +113,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     try {
       await client.connect()
 
+      const folder = config.gmail_label || 'INBOX'
       try {
-        await client.mailboxOpen(config.gmail_label, { readOnly: true })
+        await client.mailboxOpen(folder, { readOnly: true })
       } catch (mailboxErr: unknown) {
         let beschikbaar = ''
         try {
@@ -127,7 +128,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         await client.logout()
         return res.status(200).json({
           success: false,
-          error: `Label "${config.gmail_label}" niet gevonden.${beschikbaar ? ` Beschikbare labels: ${beschikbaar}` : ' Maak het label aan in Gmail.'}`,
+          error: `Map "${folder}" niet gevonden.${beschikbaar ? ` Beschikbaar: ${beschikbaar}` : ''}`,
           verwerkt: 0,
         })
       }

@@ -82,7 +82,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       imap_host: imap_host || 'imap.gmail.com',
       imap_port: imap_port || 993,
       imap_user,
-      gmail_label: gmail_label || 'doen-inkoop',
+      gmail_label: gmail_label || 'INBOX',
       actief: actief ?? true,
       updated_at: new Date().toISOString(),
     }

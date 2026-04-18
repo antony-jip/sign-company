@@ -26,7 +26,7 @@ export function InkoopfactuurInboxSetup() {
     password_plaintext: '',
     imap_host: 'imap.gmail.com',
     imap_port: 993,
-    gmail_label: 'doen-inkoop',
+    gmail_label: 'INBOX',
     actief: true,
   })
 
