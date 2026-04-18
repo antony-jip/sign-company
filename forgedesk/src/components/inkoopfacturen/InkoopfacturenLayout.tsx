@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search } from 'lucide-react'
+import { Search, RefreshCw } from 'lucide-react'
+import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { EmptyState } from '@/components/ui/empty-state'
 import {
   getInkoopfacturen,
   countWachtendOpReview,
   getInboxConfig,
+  syncInkoopfacturen,
 } from '@/services/inkoopfactuurService'
 import type { InkoopFactuurInboxConfig, InkoopFactuur, InkoopFactuurStatus } from '@/types'
 
@@ -46,6 +48,29 @@ export function InkoopfacturenLayout() {
   const [wachtendCount, setWachtendCount] = useState(0)
   const [searchQuery, setSearchQuery] = useState('')
   const [inboxConfig, setInboxConfig] = useState<InkoopFactuurInboxConfig | null>(null)
+  const [isSyncing, setIsSyncing] = useState(false)
+
+  async function handleSync() {
+    try {
+      setIsSyncing(true)
+      const result = await syncInkoopfacturen()
+      if (result.success) {
+        toast.success(result.verwerkt > 0 ? `${result.verwerkt} factuur${result.verwerkt > 1 ? 'en' : ''} opgehaald` : 'Geen nieuwe facturen gevonden')
+        const [data, count] = await Promise.all([
+          getInkoopfacturen().catch(() => []),
+          countWachtendOpReview().catch(() => 0),
+        ])
+        setFacturen(data)
+        setWachtendCount(count)
+      } else {
+        toast.error(result.error || 'Synchronisatie mislukt')
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Synchronisatie mislukt')
+    } finally {
+      setIsSyncing(false)
+    }
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -115,14 +140,26 @@ export function InkoopfacturenLayout() {
     <div className="space-y-6">
       {/* ── Header + Stats ── */}
       <div className="space-y-4">
-        <div className="flex items-baseline gap-4">
-          <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-[#1A1A1A]">
-            Inkoopfacturen<span className="text-[#F15025]">.</span>
-          </h1>
-          <span className="text-[13px] text-[#9B9B95] font-mono tabular-nums">
-            <span className="font-medium text-[#6B6B66]">{filtered.length}</span>
-            <span className="text-[#C0BDB8]">/</span>{facturen.length}
-          </span>
+        <div className="flex items-center justify-between">
+          <div className="flex items-baseline gap-4">
+            <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-[#1A1A1A]">
+              Inkoopfacturen<span className="text-[#F15025]">.</span>
+            </h1>
+            <span className="text-[13px] text-[#9B9B95] font-mono tabular-nums">
+              <span className="font-medium text-[#6B6B66]">{filtered.length}</span>
+              <span className="text-[#C0BDB8]">/</span>{facturen.length}
+            </span>
+          </div>
+          {inboxConfig && (
+            <button
+              onClick={handleSync}
+              disabled={isSyncing}
+              className="inline-flex items-center gap-2 text-[13px] font-medium text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-white px-3.5 py-2 rounded-xl ring-1 ring-black/[0.06] transition-all disabled:opacity-50"
+            >
+              <RefreshCw className={cn('w-4 h-4', isSyncing && 'animate-spin')} />
+              {isSyncing ? 'Synchroniseren...' : 'Synchroniseer'}
+            </button>
+          )}
         </div>
 
         {/* Quick stats */}

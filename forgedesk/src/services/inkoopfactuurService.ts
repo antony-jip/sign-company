@@ -235,6 +235,29 @@ export async function updateInkoopfactuurRegels(id: string, regels: Omit<InkoopF
   return data || []
 }
 
+// ============ SYNC ============
+
+export async function syncInkoopfacturen(): Promise<{ success: boolean; verwerkt: number; error?: string }> {
+  if (!isSupabaseConfigured() || !supabase) throw new Error('Supabase niet geconfigureerd')
+  const token = (await supabase.auth.getSession()).data.session?.access_token
+  if (!token) throw new Error('Niet ingelogd')
+
+  const res = await fetch('/api/inkoopfactuur-sync', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+  })
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ error: 'Onbekende fout' }))
+    throw new Error(body.error || `HTTP ${res.status}`)
+  }
+
+  return res.json()
+}
+
 // ============ BADGES & QUERIES ============
 
 export async function countWachtendOpReview(): Promise<number> {
