@@ -64,6 +64,26 @@ export function InkoopfactuurDetail() {
             .createSignedUrl(result.factuur.pdf_storage_path, 3600)
           if (data?.signedUrl) setPdfUrl(data.signedUrl)
         }
+
+        // Auto-extract als status nieuw is
+        if (result.factuur.status === 'nieuw' && !cancelled) {
+          setIsExtracting(true)
+          try {
+            const extractResult = await extractInkoopfactuur(factuurId)
+            if (extractResult.success && !cancelled) {
+              const updated = await getInkoopfactuur(factuurId)
+              if (updated && !cancelled) {
+                setFactuur(updated.factuur)
+                setRegels(updated.regels.map(r => ({
+                  volgorde: r.volgorde, omschrijving: r.omschrijving, aantal: r.aantal,
+                  eenheidsprijs: r.eenheidsprijs, btw_tarief: r.btw_tarief, regel_totaal: r.regel_totaal,
+                })))
+              }
+            }
+          } finally {
+            if (!cancelled) setIsExtracting(false)
+          }
+        }
       } finally {
         if (!cancelled) setIsLoading(false)
       }
@@ -197,7 +217,13 @@ export function InkoopfactuurDetail() {
         <h1 className="text-lg font-bold tracking-[-0.3px]">
           {factuur.leverancier_naam || 'Nieuwe factuur'}<span className="text-[#F15025]">.</span>
         </h1>
-        {factuur.extractie_vertrouwen && (
+        {isExtracting && (
+          <span className="flex items-center gap-1.5 text-[12px] font-medium text-[#C44830]">
+            <Sparkles className="w-4 h-4 animate-spin" />
+            Extraheren...
+          </span>
+        )}
+        {factuur.extractie_vertrouwen && !isExtracting && (
           <span className="flex items-center gap-1.5 text-[12px] font-medium" style={{ color: vertrouwenKleur }}>
             <span className="w-2 h-2 rounded-full" style={{ backgroundColor: vertrouwenKleur }} />
             {factuur.extractie_vertrouwen} vertrouwen
