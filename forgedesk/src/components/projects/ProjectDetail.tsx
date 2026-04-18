@@ -934,6 +934,7 @@ export function ProjectDetail() {
             {/* Recente activiteit — compact in header */}
             {recenteActiviteiten.length > 0 && (
               <div className="relative hidden lg:block">
+                <span className="block text-[10px] font-semibold text-[#9B9B95] uppercase tracking-[0.08em] mb-1 ml-1">Activiteit</span>
                 <button
                   onClick={() => setShowActivityDropdown(s => !s)}
                   className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-[#F0EFEC] transition-colors text-left max-w-[280px]"
