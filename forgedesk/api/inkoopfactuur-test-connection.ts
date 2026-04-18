@@ -46,25 +46,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       socketTimeout: 15000,
     })
 
-    await client.connect()
+    try {
+      await client.connect()
 
-    let labelGevonden = false
-    if (gmail_label) {
-      try {
-        const mailbox = await client.mailboxOpen(gmail_label, { readOnly: true })
-        labelGevonden = !!mailbox
-        await client.mailboxClose()
-      } catch {
-        labelGevonden = false
+      let labelGevonden = false
+      if (gmail_label) {
+        try {
+          const mailbox = await client.mailboxOpen(gmail_label, { readOnly: true })
+          labelGevonden = !!mailbox
+          await client.mailboxClose()
+        } catch {
+          labelGevonden = false
+        }
       }
+
+      return res.status(200).json({
+        success: true,
+        label_gevonden: labelGevonden,
+      })
+    } finally {
+      try { await client.logout() } catch { /* cleanup best-effort */ }
     }
-
-    await client.logout()
-
-    return res.status(200).json({
-      success: true,
-      label_gevonden: labelGevonden,
-    })
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Onbekende fout'
     if (message === 'Niet geautoriseerd' || message === 'Ongeldige sessie') {

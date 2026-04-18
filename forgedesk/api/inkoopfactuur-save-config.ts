@@ -49,8 +49,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       actief: boolean
     }
 
-    if (!imap_user || !password_plaintext) {
-      return res.status(400).json({ error: 'imap_user en password_plaintext zijn verplicht' })
+    if (!imap_user) {
+      return res.status(400).json({ error: 'imap_user is verplicht' })
     }
 
     const { data: profile } = await supabase
@@ -63,23 +63,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(403).json({ error: 'Geen organisatie gevonden' })
     }
 
-    const encryptedPassword = encrypt(password_plaintext)
+    const isNewPassword = password_plaintext && password_plaintext !== 'UNCHANGED'
+
+    if (isNewPassword) {
+      const { data: existing } = await supabase
+        .from('inkoopfactuur_inbox_config')
+        .select('id')
+        .eq('organisatie_id', profile.organisatie_id)
+        .maybeSingle()
+
+      if (!existing && !password_plaintext) {
+        return res.status(400).json({ error: 'Wachtwoord is verplicht voor nieuwe configuratie' })
+      }
+    }
+
+    const upsertData: Record<string, unknown> = {
+      organisatie_id: profile.organisatie_id,
+      imap_host: imap_host || 'imap.gmail.com',
+      imap_port: imap_port || 993,
+      imap_user,
+      gmail_label: gmail_label || 'doen-inkoop',
+      actief: actief ?? true,
+      updated_at: new Date().toISOString(),
+    }
+
+    if (isNewPassword) {
+      upsertData.imap_password_encrypted = encrypt(password_plaintext)
+    }
 
     const { data: config, error: upsertError } = await supabase
       .from('inkoopfactuur_inbox_config')
-      .upsert(
-        {
-          organisatie_id: profile.organisatie_id,
-          imap_host: imap_host || 'imap.gmail.com',
-          imap_port: imap_port || 993,
-          imap_user,
-          imap_password_encrypted: encryptedPassword,
-          gmail_label: gmail_label || 'doen-inkoop',
-          actief: actief ?? true,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: 'organisatie_id' }
-      )
+      .upsert(upsertData, { onConflict: 'organisatie_id' })
       .select('id, organisatie_id, imap_host, imap_port, imap_user, gmail_label, actief, laatst_gecheckt_op, laatste_uid, laatste_error, created_at, updated_at')
       .single()
 

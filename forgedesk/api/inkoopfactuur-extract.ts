@@ -48,7 +48,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   try {
-    await verifyUser(req)
+    const userId = await verifyUser(req)
 
     if (!ANTHROPIC_API_KEY) {
       return res.status(500).json({ error: 'ANTHROPIC_API_KEY niet geconfigureerd.' })
@@ -59,10 +59,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'inkoopfactuur_id is verplicht' })
     }
 
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('organisatie_id')
+      .eq('id', userId)
+      .maybeSingle()
+
+    if (!profile?.organisatie_id) {
+      return res.status(403).json({ error: 'Geen organisatie gevonden' })
+    }
+
     const { data: factuur, error: fetchError } = await supabase
       .from('inkoopfacturen')
       .select('id, pdf_storage_path, status')
       .eq('id', inkoopfactuur_id)
+      .eq('organisatie_id', profile.organisatie_id)
       .single()
 
     if (fetchError || !factuur) {

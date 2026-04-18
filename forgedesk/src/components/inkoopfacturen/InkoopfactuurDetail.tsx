@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { useAuth } from '@/contexts/AuthContext'
 import {
   getInkoopfactuur,
   updateInkoopfactuurVelden,
@@ -26,6 +27,7 @@ function createEmptyRegel(): Omit<InkoopFactuurRegel, 'id' | 'inkoopfactuur_id' 
 export function InkoopfactuurDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [factuur, setFactuur] = useState<InkoopFactuur | null>(null)
   const [regels, setRegels] = useState<Omit<InkoopFactuurRegel, 'id' | 'inkoopfactuur_id' | 'created_at'>[]>([])
   const [medewerkers, setMedewerkers] = useState<Medewerker[]>([])
@@ -123,10 +125,10 @@ export function InkoopfactuurDetail() {
   }
 
   async function handleApprove() {
-    if (!factuur || !id) return
+    if (!factuur || !id || !user?.id) return
     try {
       setIsSaving(true)
-      const updated = await approveInkoopfactuur(id, factuur.goedgekeurd_door_id || '')
+      const updated = await approveInkoopfactuur(id, user.id)
       setFactuur(updated)
       toast.success('Inkoopfactuur goedgekeurd en toegevoegd aan uitgaven')
     } catch (err) {

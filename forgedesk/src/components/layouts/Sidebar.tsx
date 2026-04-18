@@ -299,11 +299,11 @@ export function Sidebar() {
             <div className="flex flex-col items-center gap-0">
               {filteredNavItems.filter(i => WERK_ITEMS.some(w => w.path === i.path)).map(renderRailItem)}
               {railDivider('div-1')}
-              {filteredNavItems.filter(i => PLANNING_ITEMS.some(p => p.path === i.path)).map(renderRailItem)}
+              {filteredNavItems.filter(i => FINANCIEEL_ITEMS.some(f => f.path === i.path)).map(renderRailItem)}
               {railDivider('div-2')}
-              {filteredNavItems.filter(i => COMMUNICATIE_ITEMS.some(c => c.path === i.path)).map(renderRailItem)}
+              {filteredNavItems.filter(i => PLANNING_ITEMS.some(p => p.path === i.path)).map(renderRailItem)}
               {railDivider('div-3')}
-              {filteredNavItems.filter(i => BEHEER_ITEMS.some(b => b.path === i.path)).map(renderRailItem)}
+              {filteredNavItems.filter(i => COMMUNICATIE_ITEMS.some(c => c.path === i.path)).map(renderRailItem)}
             </div>
           ) : (
             <div className="px-0">
