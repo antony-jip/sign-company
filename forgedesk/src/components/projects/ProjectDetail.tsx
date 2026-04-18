@@ -1281,6 +1281,20 @@ export function ProjectDetail() {
             </div>
           )}
 
+          {/* Activiteit */}
+          <div className="rounded-xl bg-[#FFFFFF] shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
+            <ActiviteitFeed
+              project={project}
+              offertes={projectOffertes}
+              montageAfspraken={projectMontages}
+              werkbonnen={projectWerkbonnen}
+              facturen={projectFacturen}
+              taken={projectTaken}
+              fotos={projectFotos}
+              medewerkers={alleMedewerkers}
+            />
+          </div>
+
           {/* Acties */}
           <div className="rounded-xl bg-[#FFFFFF] shadow-[0_1px_3px_rgba(0,0,0,0.03)] p-5">
             <h3 className="text-[13px] font-bold text-[#1A1A1A] tracking-[-0.2px] mb-3">Acties</h3>
@@ -1388,19 +1402,6 @@ export function ProjectDetail() {
             </div>
           )}
 
-          {/* Activiteit */}
-          <div>
-            <ActiviteitFeed
-              project={project}
-              offertes={projectOffertes}
-              montageAfspraken={projectMontages}
-              werkbonnen={projectWerkbonnen}
-              facturen={projectFacturen}
-              taken={projectTaken}
-              fotos={projectFotos}
-              medewerkers={alleMedewerkers}
-            />
-          </div>
 
         </div>
       </div>
