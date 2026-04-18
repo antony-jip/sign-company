@@ -167,36 +167,6 @@ export function InkoopfacturenLayout() {
     await refreshData()
   }
 
-  const handleExportCSV = useCallback(() => {
-    const headers = ['Datum', 'Leverancier', 'Nummer', 'Subtotaal', 'BTW', 'Totaal', 'Status']
-    const rows = filtered.map(f => ({
-      Datum: f.factuur_datum || '',
-      Leverancier: f.leverancier_naam || f.email_van || '',
-      Nummer: f.factuur_nummer || '',
-      Subtotaal: f.subtotaal,
-      BTW: f.btw_bedrag,
-      Totaal: f.totaal,
-      Status: STATUS_CONFIG[f.status].label,
-    }))
-    exportCSV('inkoopfacturen', headers, rows)
-    toast.success('CSV gedownload')
-  }, [filtered])
-
-  const handleExportExcel = useCallback(() => {
-    const headers = ['Datum', 'Leverancier', 'Nummer', 'Subtotaal', 'BTW', 'Totaal', 'Status']
-    const rows = filtered.map(f => ({
-      Datum: f.factuur_datum || '',
-      Leverancier: f.leverancier_naam || f.email_van || '',
-      Nummer: f.factuur_nummer || '',
-      Subtotaal: f.subtotaal,
-      BTW: f.btw_bedrag,
-      Totaal: f.totaal,
-      Status: STATUS_CONFIG[f.status].label,
-    }))
-    exportExcel('inkoopfacturen', headers, rows, 'Inkoopfacturen')
-    toast.success('Excel gedownload')
-  }, [filtered])
-
   useEffect(() => {
     let cancelled = false
     async function loadData() {
@@ -243,6 +213,36 @@ export function InkoopfacturenLayout() {
     }
     return result
   }, [facturen, filterStatus, searchQuery])
+
+  const handleExportCSV = useCallback(() => {
+    const headers = ['Datum', 'Leverancier', 'Nummer', 'Subtotaal', 'BTW', 'Totaal', 'Status']
+    const rows = filtered.map(f => ({
+      Datum: f.factuur_datum || '',
+      Leverancier: f.leverancier_naam || f.email_van || '',
+      Nummer: f.factuur_nummer || '',
+      Subtotaal: f.subtotaal,
+      BTW: f.btw_bedrag,
+      Totaal: f.totaal,
+      Status: STATUS_CONFIG[f.status].label,
+    }))
+    exportCSV('inkoopfacturen', headers, rows)
+    toast.success('CSV gedownload')
+  }, [filtered])
+
+  const handleExportExcel = useCallback(() => {
+    const headers = ['Datum', 'Leverancier', 'Nummer', 'Subtotaal', 'BTW', 'Totaal', 'Status']
+    const rows = filtered.map(f => ({
+      Datum: f.factuur_datum || '',
+      Leverancier: f.leverancier_naam || f.email_van || '',
+      Nummer: f.factuur_nummer || '',
+      Subtotaal: f.subtotaal,
+      BTW: f.btw_bedrag,
+      Totaal: f.totaal,
+      Status: STATUS_CONFIG[f.status].label,
+    }))
+    exportExcel('inkoopfacturen', headers, rows, 'Inkoopfacturen')
+    toast.success('Excel gedownload')
+  }, [filtered])
 
   const statistics = useMemo(() => {
     const nieuwCount = facturen.filter(f => f.status === 'nieuw' || f.status === 'verwerkt').length
