@@ -32,6 +32,7 @@ import {
   Bell,
   Building2,
   Image,
+  Upload,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -56,6 +57,11 @@ import { VATCodesSettings } from '../financial/VATCodesSettings'
 import { DiscountsSettings } from '../financial/DiscountsSettings'
 import { KennisbankTab } from './KennisbankTab'
 import { ChangelogPage } from '../changelog/ChangelogPage'
+import { DataImportPage } from '../import/DataImportPage'
+
+function ImportTab() {
+  return <DataImportPage />
+}
 
 // Newly-extracted tab components
 import { ProfielTab } from './ProfielTab'
@@ -118,6 +124,9 @@ const settingsSections: SettingsSection[] = [
   { id: 'apparaten', label: 'Apparaten', icon: Monitor, tabs: [
     { id: 'beveiliging', label: 'Beveiliging', icon: Shield },
   ]},
+  { id: 'importeren', label: 'Importeren', icon: Upload, tabs: [
+    { id: 'import', label: 'Importeren', icon: Upload },
+  ]},
   { id: 'daan-ai', label: 'Daan AI', icon: Sparkles, tabs: [
     { id: 'forgie', label: 'Daan AI', icon: Sparkles },
   ]},
@@ -157,6 +166,7 @@ function renderTabContent(tabId: string) {
     case 'factuur-opvolging': return <EmailTemplatesSubTab />
     case 'kb-artikelen': return <KennisbankTab />
     case 'changelog': return <ChangelogPage />
+    case 'import': return <ImportTab />
     default: return null
   }
 }
