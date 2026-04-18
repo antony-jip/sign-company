@@ -215,6 +215,16 @@ export function InkoopfacturenLayout() {
         (f.email_van || '').toLowerCase().includes(q)
       )
     }
+    // Open facturen eerst, daarna afgerond. Binnen elke groep: nieuwste eerst
+    const afgerond = new Set(['goedgekeurd', 'afgewezen'])
+    result.sort((a, b) => {
+      const aAfgerond = afgerond.has(a.status) ? 1 : 0
+      const bAfgerond = afgerond.has(b.status) ? 1 : 0
+      if (aAfgerond !== bAfgerond) return aAfgerond - bAfgerond
+      const dateA = new Date(a.factuur_datum || a.created_at).getTime()
+      const dateB = new Date(b.factuur_datum || b.created_at).getTime()
+      return dateB - dateA
+    })
     return result
   }, [facturen, filterStatus, searchQuery])
 
@@ -511,11 +521,15 @@ export function InkoopfacturenLayout() {
               ) : (
                 filtered.map((factuur, idx) => {
                   const config = STATUS_CONFIG[factuur.status]
+                  const isDimmed = factuur.status === 'goedgekeurd' || factuur.status === 'afgewezen'
                   return (
                     <tr
                       key={factuur.id}
                       onClick={() => openLightbox(factuur, idx)}
-                      className="border-b border-[#F0EFEC] last:border-0 hover:bg-[#FAFAF8] cursor-pointer transition-colors doen-row"
+                      className={cn(
+                        'border-b border-[#F0EFEC] last:border-0 hover:bg-[#FAFAF8] cursor-pointer transition-colors doen-row',
+                        isDimmed && 'opacity-45'
+                      )}
                     >
                       <td className="py-3.5 pl-5 pr-3 w-10" onClick={e => e.stopPropagation()}>
                         <Checkbox
