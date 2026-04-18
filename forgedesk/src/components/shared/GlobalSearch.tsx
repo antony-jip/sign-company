@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  Search, X, Command, Users, FolderKanban, FileText, Receipt,
+  Search, X, Users, FolderKanban, FileText, Receipt,
   ClipboardCheck, File, Mail, Wrench, ChevronRight, Loader2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -479,10 +479,9 @@ export function GlobalSearch({ className, compact }: GlobalSearchProps) {
             <X className={cn(compact ? 'w-3 h-3' : 'w-3.5 h-3.5')} />
           </button>
         ) : (
-          <div className={cn('flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-muted/60 border border-border/40', compact ? 'mr-2' : 'mr-2.5')}>
-            <Command className="w-3 h-3 text-muted-foreground" />
-            <span className="text-2xs text-muted-foreground font-medium">K</span>
-          </div>
+          <kbd className={cn('inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-mono text-[#9B9B95] border border-[#D4D2CE]/60 bg-white/50', compact ? 'mr-2' : 'mr-2.5')}>
+            <span className="text-[11px]">⌘</span>K
+          </kbd>
         )}
       </div>
 
