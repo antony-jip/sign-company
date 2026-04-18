@@ -70,16 +70,23 @@ export function InkoopfactuurDetail() {
           setIsExtracting(true)
           try {
             const extractResult = await extractInkoopfactuur(factuurId)
-            if (extractResult.success && !cancelled) {
-              const updated = await getInkoopfactuur(factuurId)
-              if (updated && !cancelled) {
-                setFactuur(updated.factuur)
-                setRegels(updated.regels.map(r => ({
-                  volgorde: r.volgorde, omschrijving: r.omschrijving, aantal: r.aantal,
-                  eenheidsprijs: r.eenheidsprijs, btw_tarief: r.btw_tarief, regel_totaal: r.regel_totaal,
-                })))
+            if (!cancelled) {
+              if (extractResult.success) {
+                const updated = await getInkoopfactuur(factuurId)
+                if (updated && !cancelled) {
+                  setFactuur(updated.factuur)
+                  setRegels(updated.regels.map(r => ({
+                    volgorde: r.volgorde, omschrijving: r.omschrijving, aantal: r.aantal,
+                    eenheidsprijs: r.eenheidsprijs, btw_tarief: r.btw_tarief, regel_totaal: r.regel_totaal,
+                  })))
+                  toast.success('Factuur geextraheerd')
+                }
+              } else {
+                toast.error(extractResult.error || 'Extractie mislukt')
               }
             }
+          } catch (err) {
+            if (!cancelled) toast.error(err instanceof Error ? err.message : 'Extractie mislukt')
           } finally {
             if (!cancelled) setIsExtracting(false)
           }

@@ -45,18 +45,18 @@ Bedragen altijd als number, niet string met comma.`
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
+  if (req.method !== 'POST') return res.status(405).json({ success: false, error: 'Method not allowed' })
 
   try {
     const userId = await verifyUser(req)
 
     if (!ANTHROPIC_API_KEY) {
-      return res.status(500).json({ error: 'ANTHROPIC_API_KEY niet geconfigureerd.' })
+      return res.status(200).json({ success: false, error: 'ANTHROPIC_API_KEY niet geconfigureerd op Vercel.' })
     }
 
     const { inkoopfactuur_id } = req.body as { inkoopfactuur_id: string }
     if (!inkoopfactuur_id) {
-      return res.status(400).json({ error: 'inkoopfactuur_id is verplicht' })
+      return res.status(200).json({ success: false, error: 'inkoopfactuur_id ontbreekt' })
     }
 
     const { data: profile } = await supabase
@@ -66,7 +66,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .maybeSingle()
 
     if (!profile?.organisatie_id) {
-      return res.status(403).json({ error: 'Geen organisatie gevonden' })
+      return res.status(200).json({ success: false, error: 'Geen organisatie gevonden' })
     }
 
     const { data: factuur, error: fetchError } = await supabase
@@ -77,7 +77,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .single()
 
     if (fetchError || !factuur) {
-      return res.status(404).json({ error: 'Inkoopfactuur niet gevonden' })
+      return res.status(200).json({ success: false, error: `Factuur niet gevonden: ${fetchError?.message || 'onbekend'}` })
+    }
+
+    if (!factuur.pdf_storage_path) {
+      return res.status(200).json({ success: false, error: 'Geen PDF pad in database' })
     }
 
     const { data: fileData, error: downloadError } = await supabase.storage
@@ -85,11 +89,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .download(factuur.pdf_storage_path)
 
     if (downloadError || !fileData) {
-      return res.status(500).json({ error: 'PDF niet gevonden in storage' })
+      return res.status(200).json({ success: false, error: `PDF download mislukt: ${downloadError?.message || 'bestand niet gevonden'}` })
     }
 
     const arrayBuffer = await fileData.arrayBuffer()
     const base64Data = Buffer.from(arrayBuffer).toString('base64')
+
+    console.log(`[extract] Starting Anthropic call for factuur ${inkoopfactuur_id}, PDF size: ${base64Data.length} chars`)
 
     const anthropicResponse = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -123,11 +129,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (!anthropicResponse.ok) {
       const errBody = await anthropicResponse.text()
-      throw new Error(`Anthropic API fout: ${anthropicResponse.status} ${errBody}`)
+      console.error(`[extract] Anthropic error: ${anthropicResponse.status} ${errBody.slice(0, 500)}`)
+      return res.status(200).json({ success: false, error: `Claude API fout (${anthropicResponse.status}): ${errBody.slice(0, 200)}` })
     }
 
     const anthropicData = await anthropicResponse.json()
     const textContent = anthropicData.content?.find((c: { type: string }) => c.type === 'text')?.text || ''
+
+    console.log(`[extract] Anthropic response length: ${textContent.length}`)
 
     let cleaned = textContent.trim()
     if (cleaned.startsWith('```')) {
@@ -146,12 +155,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         })
         .eq('id', inkoopfactuur_id)
 
-      return res.status(200).json({ success: false, error: 'JSON parse fout', raw: textContent.slice(0, 500) })
+      return res.status(200).json({ success: false, error: 'Claude gaf geen geldige JSON terug', raw: textContent.slice(0, 300) })
     }
 
-    const regels = Array.isArray(parsed.regels) ? parsed.regels : []
+    console.log(`[extract] Parsed: leverancier=${parsed.leverancier_naam}, totaal=${parsed.totaal}`)
 
-    await supabase
+    const { error: updateError } = await supabase
       .from('inkoopfacturen')
       .update({
         leverancier_naam: parsed.leverancier_naam || '',
@@ -170,28 +179,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       })
       .eq('id', inkoopfactuur_id)
 
+    if (updateError) {
+      return res.status(200).json({ success: false, error: `Database update mislukt: ${updateError.message}` })
+    }
+
+    const regels = Array.isArray(parsed.regels) ? parsed.regels : []
     if (regels.length > 0) {
       await supabase.from('inkoopfactuur_regels').delete().eq('inkoopfactuur_id', inkoopfactuur_id)
-
-      const regelRows = regels.map((r: Record<string, unknown>, i: number) => ({
-        inkoopfactuur_id,
-        volgorde: i,
-        omschrijving: (r.omschrijving as string) || '',
-        aantal: (r.aantal as number) || 1,
-        eenheidsprijs: (r.eenheidsprijs as number) || 0,
-        btw_tarief: (r.btw_tarief as number) || 21,
-        regel_totaal: (r.regel_totaal as number) || 0,
-      }))
-
-      await supabase.from('inkoopfactuur_regels').insert(regelRows)
+      await supabase.from('inkoopfactuur_regels').insert(
+        regels.map((r: Record<string, unknown>, i: number) => ({
+          inkoopfactuur_id,
+          volgorde: i,
+          omschrijving: (r.omschrijving as string) || '',
+          aantal: (r.aantal as number) || 1,
+          eenheidsprijs: (r.eenheidsprijs as number) || 0,
+          btw_tarief: (r.btw_tarief as number) || 21,
+          regel_totaal: (r.regel_totaal as number) || 0,
+        }))
+      )
     }
 
     return res.status(200).json({ success: true, vertrouwen: parsed.vertrouwen })
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Onbekende fout'
+    console.error(`[extract] Uncaught error: ${message}`)
     if (message === 'Niet geautoriseerd' || message === 'Ongeldige sessie') {
-      return res.status(401).json({ error: message })
+      return res.status(200).json({ success: false, error: message })
     }
-    return res.status(500).json({ error: message })
+    return res.status(200).json({ success: false, error: message })
   }
 }
