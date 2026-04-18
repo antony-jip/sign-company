@@ -1283,41 +1283,45 @@ export function ProjectDetail() {
 
           {/* Acties */}
           <div className="rounded-xl bg-[#FFFFFF] shadow-[0_1px_3px_rgba(0,0,0,0.03)] p-5">
-            <h3 className="text-[13px] font-bold text-[#1A1A1A] tracking-[-0.2px] mb-4">Acties</h3>
-            <div className="grid grid-cols-3 gap-2">
+            <h3 className="text-[13px] font-bold text-[#1A1A1A] tracking-[-0.2px] mb-3">Acties</h3>
+            <div className="space-y-1">
               {[
-                { label: 'Taak', bg: '#E8F5F6', color: '#1A535C', icon: <Plus className="h-4 w-4" />, onClick: () => setNieuweTaakOpen(true) },
-                { label: 'Offerte', bg: '#FDE8E2', color: '#F15025', icon: <Receipt className="h-4 w-4" />, onClick: openNieuweOfferte },
-                { label: 'Werkbon', bg: '#E8EEF9', color: '#3A5A9A', icon: <ClipboardCheck className="h-4 w-4" />, onClick: () => setShowWerkbonDialog(true) },
-                { label: 'Pakbon', bg: '#F5EDD8', color: '#7D6A2E', icon: <Package className="h-4 w-4" />, onClick: () => setShowPakbonDialog(true) },
-                { label: 'Montage', bg: '#DCF0E4', color: '#2B6E44', icon: <Wrench className="h-4 w-4" />, onClick: handleOpenMontageDialog },
-                { label: 'Factuur', bg: '#F2E4EC', color: '#8A3D6E', icon: <CreditCard className="h-4 w-4" />, onClick: () => {
+                { label: 'Taak aanmaken', bg: '#E8F5F6', color: '#1A535C', icon: <Plus className="h-4 w-4" />, onClick: () => setNieuweTaakOpen(true) },
+                { label: 'Offerte maken', bg: '#FDE8E2', color: '#F15025', icon: <Receipt className="h-4 w-4" />, onClick: openNieuweOfferte },
+                { label: 'Werkbon aanmaken', bg: '#E8EEF9', color: '#3A5A9A', icon: <ClipboardCheck className="h-4 w-4" />, onClick: () => setShowWerkbonDialog(true) },
+                { label: 'Pakbon aanmaken', bg: '#F5EDD8', color: '#7D6A2E', icon: <Package className="h-4 w-4" />, onClick: () => setShowPakbonDialog(true) },
+                { label: 'Montage inplannen', bg: '#DCF0E4', color: '#2B6E44', icon: <Wrench className="h-4 w-4" />, onClick: handleOpenMontageDialog },
+                { label: 'Factuur aanmaken', bg: '#F2E4EC', color: '#8A3D6E', icon: <CreditCard className="h-4 w-4" />, onClick: () => {
                   const params = new URLSearchParams({ klant_id: project.klant_id || '', project_id: id || '', titel: project.naam || '' })
                   navigate(`/facturen/nieuw?${params.toString()}`, { state: { from: location.pathname } })
                 }},
                 ...(() => {
                   const cpEmail = project.contactpersoon_id ? klant?.contactpersonen?.find(c => c.id === project.contactpersoon_id)?.email : undefined
                   const emailTo = cpEmail || klant?.email
-                  return emailTo ? [{ label: 'Email', bg: '#E2DFF5', color: '#5A4E91', icon: <Mail className="h-4 w-4" />, onClick: () => navigateWithTab({ path: `/email/compose?to=${encodeURIComponent(emailTo)}`, label: 'Nieuwe email', id: `/email/compose-${emailTo}` }) }] : []
+                  return emailTo ? [{ label: 'Email versturen', bg: '#E2DFF5', color: '#5A4E91', icon: <Mail className="h-4 w-4" />, onClick: () => navigateWithTab({ path: `/email/compose?to=${encodeURIComponent(emailTo)}`, label: 'Nieuwe email', id: `/email/compose-${emailTo}` }) }] : []
                 })(),
               ].map((btn) => (
                 <button
                   key={btn.label}
                   onClick={btn.onClick}
-                  className="flex flex-col items-center gap-1.5 py-3 rounded-xl hover:scale-[1.04] active:scale-[0.98] transition-all duration-150"
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:brightness-[0.97] active:scale-[0.995] transition-all duration-100"
                   style={{ backgroundColor: btn.bg }}
                 >
-                  <span style={{ color: btn.color }}>{btn.icon}</span>
-                  <span className="text-[11px] font-semibold" style={{ color: btn.color }}>{btn.label}</span>
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 bg-white/60">
+                    <span style={{ color: btn.color }}>{btn.icon}</span>
+                  </div>
+                  <span className="text-[13px] font-semibold" style={{ color: btn.color }}>{btn.label}</span>
                 </button>
               ))}
             </div>
             <div className="mt-3 pt-3 border-t border-[#EBEBEB]/60">
               <button
                 onClick={() => setShowObOfferteSelect(!showObOfferteSelect)}
-                className="w-full flex items-center gap-2.5 px-3 py-2.5 text-[13px] font-semibold rounded-xl text-[#1A535C] bg-[#E8F5F6]/50 hover:bg-[#E8F5F6] transition-colors"
+                className="w-full flex items-center gap-3 px-3 py-2.5 text-[13px] font-semibold rounded-xl text-[#1A535C] bg-[#E8F5F6] hover:brightness-[0.97] transition-all duration-100"
               >
-                <FileCheck className="h-4 w-4" />
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 bg-white/60">
+                  <FileCheck className="h-4 w-4" />
+                </div>
                 Opdrachtbevestiging
                 <ChevronDown className={`h-3.5 w-3.5 ml-auto transition-transform ${showObOfferteSelect ? 'rotate-180' : ''}`} />
               </button>
