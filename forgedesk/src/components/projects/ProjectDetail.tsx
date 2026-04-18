@@ -129,7 +129,7 @@ import { TakenOfferteGrid } from './cockpit/TakenOfferteGrid'
 import { ProjectFaseBar } from './cockpit/ProjectFaseBar'
 import { MontageSection } from './cockpit/MontageSection'
 import { BestandenSection } from './cockpit/BestandenSection'
-import { ActiviteitFeed } from './cockpit/ActiviteitFeed'
+import { ActiviteitFeed, buildActivityFeed, type ActivityEvent } from './cockpit/ActiviteitFeed'
 const PdfPreviewDialog = React.lazy(() => import('@/components/shared/PdfPreviewDialog').then(m => ({ default: m.PdfPreviewDialog })))
 import { generateOpdrachtbevestigingPDF } from '@/services/pdfService'
 import { useProjectSidebarConfig } from '@/hooks/useProjectSidebarConfig'
@@ -237,6 +237,7 @@ export function ProjectDetail() {
   const [goedkeuringen, setGoedkeuringen] = useState<TekeningGoedkeuring[]>([])
   const [obPreviewOfferte, setObPreviewOfferte] = useState<Offerte | null>(null)
   const [showObOfferteSelect, setShowObOfferteSelect] = useState(false)
+  const [showActivityDropdown, setShowActivityDropdown] = useState(false)
   const [showNieuwCp, setShowNieuwCp] = useState(false)
   const [nieuwCpNaam, setNieuwCpNaam] = useState('')
   const [nieuwCpEmail, setNieuwCpEmail] = useState('')
@@ -810,6 +811,11 @@ export function ProjectDetail() {
   const totaalBedrag = projectOffertes.reduce((sum, o) => sum + (o.totaal || 0), 0)
   const fase = getFase(project.status)
 
+  const recenteActiviteiten = useMemo(
+    () => buildActivityFeed(project, projectOffertes, projectMontages, projectWerkbonnen, projectFacturen, projectTaken, projectFotos),
+    [project, projectOffertes, projectMontages, projectWerkbonnen, projectFacturen, projectTaken, projectFotos]
+  )
+
   return (
     <div className="-m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 h-[calc(100vh-56px)] flex flex-col bg-[#F8F7F5]">
 
@@ -923,8 +929,50 @@ export function ProjectDetail() {
             </div>
           </div>
 
-          {/* Right: CTA + menu */}
-          <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Right: Activiteit + CTA + menu */}
+          <div className="flex items-center gap-3 flex-shrink-0">
+            {/* Recente activiteit — compact in header */}
+            {recenteActiviteiten.length > 0 && (
+              <div className="relative hidden lg:block">
+                <button
+                  onClick={() => setShowActivityDropdown(s => !s)}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-[#F0EFEC] transition-colors text-left max-w-[280px]"
+                >
+                  <div className="flex -space-x-1.5">
+                    {recenteActiviteiten.slice(0, 3).map((ev, i) => (
+                      <div key={ev.id} className="w-5 h-5 rounded-full bg-[#E8F5F6] border-2 border-[#F8F7F5] flex items-center justify-center" style={{ zIndex: 3 - i }}>
+                        <span className="text-[7px] font-bold text-[#1A535C]">{ev.type[0].toUpperCase()}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <span className="text-[12px] text-[#6B6B66] truncate">{recenteActiviteiten[0].tekst}</span>
+                  <ChevronDown className="h-3 w-3 text-[#9B9B95] flex-shrink-0" />
+                </button>
+
+                {showActivityDropdown && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowActivityDropdown(false)} />
+                    <div className="absolute right-0 top-full mt-1 w-[340px] bg-white rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.08)] z-50 overflow-hidden border border-[#EBEBEB]">
+                      <div className="px-4 py-3 border-b border-[#F0EFEC] flex items-center justify-between">
+                        <span className="text-[13px] font-bold text-[#1A1A1A]">Activiteit</span>
+                        <span className="text-[11px] text-[#B0ADA8] font-mono">{recenteActiviteiten.length}</span>
+                      </div>
+                      <div className="max-h-[320px] overflow-y-auto py-1">
+                        {recenteActiviteiten.slice(0, 15).map((ev) => (
+                          <div key={ev.id} className="px-4 py-2.5 hover:bg-[#F8F7F5] transition-colors">
+                            <p className="text-[12px] text-[#4A4A46] leading-snug">{ev.tekst}</p>
+                            <span className="text-[10px] text-[#B0ADA8]">
+                              {new Date(ev.datum).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })} · {new Date(ev.datum).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
             {/* Offerte CTA — altijd zichtbaar */}
             {(() => {
               const activeOfferte = projectOffertes.find(o => !['afgewezen', 'verlopen', 'gefactureerd'].includes(o.status)) || projectOffertes[0]
@@ -1280,20 +1328,6 @@ export function ProjectDetail() {
               </div>
             </div>
           )}
-
-          {/* Activiteit */}
-          <div className="rounded-xl bg-[#FFFFFF] shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
-            <ActiviteitFeed
-              project={project}
-              offertes={projectOffertes}
-              montageAfspraken={projectMontages}
-              werkbonnen={projectWerkbonnen}
-              facturen={projectFacturen}
-              taken={projectTaken}
-              fotos={projectFotos}
-              medewerkers={alleMedewerkers}
-            />
-          </div>
 
           {/* Acties */}
           <div className="rounded-xl bg-[#FFFFFF] shadow-[0_1px_3px_rgba(0,0,0,0.03)] p-5">

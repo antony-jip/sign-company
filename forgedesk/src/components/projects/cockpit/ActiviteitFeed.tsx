@@ -7,7 +7,7 @@ import {
 import { getInitials } from '@/lib/utils'
 import type { Project, Offerte, MontageAfspraak, Werkbon, Factuur, Taak, Medewerker, ProjectFoto } from '@/types'
 
-interface ActivityEvent {
+export interface ActivityEvent {
   id: string
   tekst: string
   datum: string
@@ -65,7 +65,7 @@ function avatarColor(name: string): string {
   return colors[Math.abs(hash) % colors.length]
 }
 
-function buildActivityFeed(
+export function buildActivityFeed(
   project: Project,
   offertes: Offerte[],
   montageAfspraken: MontageAfspraak[],
