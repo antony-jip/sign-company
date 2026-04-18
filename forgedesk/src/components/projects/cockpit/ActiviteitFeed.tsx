@@ -284,10 +284,10 @@ export function ActiviteitFeed({
   }
 
   return (
-    <div>
+    <div className="p-5">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-xs font-semibold text-[#1A1A1A] uppercase tracking-wider">Activiteit</h3>
-        <span className="text-[10px] text-muted-foreground/50 font-mono">{allEvents.length}</span>
+        <h3 className="text-[13px] font-bold text-[#1A1A1A] tracking-[-0.2px]">Activiteit</h3>
+        <span className="text-[10px] text-[#B0ADA8] font-mono tabular-nums">{allEvents.length}</span>
       </div>
 
       {/* Filter chips */}
@@ -297,10 +297,10 @@ export function ActiviteitFeed({
             <button
               key={key}
               onClick={() => { setActiveFilter(key); setShowAll(false) }}
-              className={`text-[10px] px-2 py-1 rounded-md transition-all ${
+              className={`text-[10px] px-2.5 py-1 rounded-lg transition-all duration-150 ${
                 activeFilter === key
-                  ? 'bg-foreground text-background font-medium'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-[hsl(35,15%,95%)]'
+                  ? 'bg-[#1A535C] text-white font-medium'
+                  : 'text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC]'
               }`}
             >
               {filterLabels[key]}
@@ -310,21 +310,21 @@ export function ActiviteitFeed({
       )}
 
       {filteredEvents.length === 0 ? (
-        <p className="text-[11px] text-muted-foreground/50 italic py-4 text-center">Nog geen activiteit</p>
+        <p className="text-[12px] text-[#B0ADA8] py-5 text-center">Nog geen activiteit</p>
       ) : (
-        <div className="space-y-0">
+        <div>
           {groupedEvents.map((group) => (
             <div key={group.date}>
               {/* Date header */}
               <div className="flex items-center gap-2 py-2">
-                <span className="text-[10px] font-medium text-muted-foreground/50 uppercase tracking-wider">
+                <span className="text-[10px] font-semibold text-[#B0ADA8] uppercase tracking-[0.08em]">
                   {formatDate(group.events[0].datum)}
                 </span>
-                <div className="flex-1 h-px bg-[hsl(35,15%,92%)]" />
+                <div className="flex-1 h-px bg-[#EBEBEB]" />
               </div>
 
               {/* Events for this date */}
-              <div className="space-y-0">
+              <div>
                 {group.events.map((event) => {
                   const config = typeConfig[event.type]
                   const Icon = config.icon
@@ -333,20 +333,20 @@ export function ActiviteitFeed({
                   return (
                     <div
                       key={event.id}
-                      className="flex items-start gap-2.5 py-2 group hover:bg-[hsl(35,15%,98%)] -mx-1 px-1 rounded-lg transition-colors"
+                      className="flex items-start gap-2.5 py-2 -mx-1.5 px-1.5 rounded-lg hover:bg-[#F8F7F5] transition-colors duration-100"
                     >
                       {/* Icon or Avatar */}
                       <div className="flex-shrink-0 mt-0.5">
                         {med ? (
                           <div
-                            className={`h-6 w-6 rounded-full bg-gradient-to-br ${avatarColor(med.naam)} flex items-center justify-center shadow-sm`}
+                            className={`h-6 w-6 rounded-full bg-gradient-to-br ${avatarColor(med.naam)} flex items-center justify-center`}
                             title={med.naam}
                           >
                             <span className="text-white text-[8px] font-bold">{getInitials(med.naam)}</span>
                           </div>
                         ) : event.medewerker ? (
                           <div
-                            className={`h-6 w-6 rounded-full bg-gradient-to-br ${avatarColor(event.medewerker)} flex items-center justify-center shadow-sm`}
+                            className={`h-6 w-6 rounded-full bg-gradient-to-br ${avatarColor(event.medewerker)} flex items-center justify-center`}
                             title={event.medewerker}
                           >
                             <span className="text-white text-[8px] font-bold">{getInitials(event.medewerker)}</span>
@@ -360,9 +360,9 @@ export function ActiviteitFeed({
 
                       {/* Content */}
                       <div className="min-w-0 flex-1">
-                        <p className="text-[12px] text-foreground/85 leading-snug">
+                        <p className="text-[12px] text-[#4A4A46] leading-snug">
                           {event.medewerker && (
-                            <span className="font-semibold text-foreground">{event.medewerker.split(' ')[0]} </span>
+                            <span className="font-semibold text-[#1A1A1A]">{event.medewerker.split(' ')[0]} </span>
                           )}
                           {event.medewerker
                             ? event.tekst.replace(/^(Taak|Montage)\s/, '').replace(/^"/, '').toLowerCase()
@@ -370,7 +370,7 @@ export function ActiviteitFeed({
                           }
                         </p>
                         <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className="text-[10px] text-muted-foreground/40">{formatTime(event.datum)}</span>
+                          <span className="text-[10px] text-[#B0ADA8]">{formatTime(event.datum)}</span>
                           {!event.medewerker && (
                             <span className={`inline-flex items-center gap-0.5 text-[9px] font-medium px-1.5 py-0 rounded ${config.bg} ${config.color}`}>
                               <Icon className="h-2.5 w-2.5" />
@@ -391,7 +391,7 @@ export function ActiviteitFeed({
       {filteredEvents.length > 3 && !showAll && (
         <button
           onClick={() => setShowAll(true)}
-          className="w-full text-[11px] text-muted-foreground hover:text-foreground mt-2 py-2 rounded-lg hover:bg-[hsl(35,15%,96%)] transition-colors"
+          className="w-full text-[11px] font-medium text-[#1A535C] mt-2 py-2.5 rounded-lg hover:bg-[#E8F5F6] transition-colors duration-150"
         >
           Alle {filteredEvents.length} activiteiten tonen
         </button>
