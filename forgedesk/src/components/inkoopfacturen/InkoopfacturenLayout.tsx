@@ -152,9 +152,9 @@ export function InkoopfacturenLayout() {
     if (selectedIds.size === 0) return
     const ids = Array.from(selectedIds).filter(id => {
       const f = facturen.find(fac => fac.id === id)
-      return f && (f.status === 'verwerkt' || f.status === 'toegewezen')
+      return f && (f.status === 'nieuw' || f.status === 'verwerkt' || f.status === 'toegewezen')
     })
-    if (ids.length === 0) { toast.error('Selecteer facturen met status "Te reviewen"'); return }
+    if (ids.length === 0) { toast.error('Geen goedkeurbare facturen geselecteerd'); return }
     const { approveInkoopfactuur } = await import('@/services/inkoopfactuurService')
     const { supabase } = await import('@/services/supabaseClient')
     const userId = (await supabase?.auth.getUser())?.data?.user?.id
