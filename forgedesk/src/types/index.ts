@@ -1048,6 +1048,7 @@ export interface Medewerker {
   // Email handtekening per medewerker
   email_handtekening?: string;
   handtekening_afbeelding?: string;
+  inkoopfacturen_toegang?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -2011,4 +2012,66 @@ export interface KbArticle {
   updated_at?: string
   // Joined
   category_naam?: string
+}
+
+// ============ INKOOPFACTUREN ============
+
+export type InkoopFactuurStatus = 'nieuw' | 'verwerkt' | 'toegewezen' | 'goedgekeurd' | 'afgewezen'
+export type ExtractieVertrouwen = 'hoog' | 'midden' | 'laag'
+
+export interface InkoopFactuurInboxConfig {
+  id: string
+  organisatie_id: string
+  imap_host: string
+  imap_port: number
+  imap_user: string
+  imap_password_encrypted?: string
+  gmail_label: string
+  actief: boolean
+  laatst_gecheckt_op: string | null
+  laatste_uid: number
+  laatste_error: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface InkoopFactuur {
+  id: string
+  organisatie_id: string
+  toegewezen_aan_id: string | null
+  leverancier_naam: string
+  factuur_nummer: string | null
+  factuur_datum: string | null
+  vervaldatum: string | null
+  subtotaal: number
+  btw_bedrag: number
+  totaal: number
+  valuta: string
+  pdf_storage_path: string
+  email_subject: string | null
+  email_van: string | null
+  email_message_id: string | null
+  email_ontvangen_op: string | null
+  status: InkoopFactuurStatus
+  extractie_vertrouwen: ExtractieVertrouwen | null
+  extractie_opmerkingen: string | null
+  afgewezen_reden: string | null
+  goedgekeurd_door_id: string | null
+  goedgekeurd_op: string | null
+  raw_extractie_json: Record<string, unknown> | null
+  uitgave_id: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface InkoopFactuurRegel {
+  id: string
+  inkoopfactuur_id: string
+  volgorde: number
+  omschrijving: string
+  aantal: number
+  eenheidsprijs: number
+  btw_tarief: number
+  regel_totaal: number
+  created_at: string
 }

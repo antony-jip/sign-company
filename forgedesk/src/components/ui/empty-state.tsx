@@ -1,7 +1,7 @@
 import React from 'react'
 import { cn } from '@/lib/utils'
 
-type EmptyStateModule = 'projecten' | 'offertes' | 'facturen' | 'klanten' | 'werkbonnen' | 'planning' | 'taken' | 'default'
+type EmptyStateModule = 'projecten' | 'offertes' | 'facturen' | 'klanten' | 'werkbonnen' | 'planning' | 'taken' | 'inkoopfacturen' | 'default'
 
 const MODULE_COLORS: Record<EmptyStateModule, string> = {
   projecten: '#2D6B48',
@@ -11,6 +11,7 @@ const MODULE_COLORS: Record<EmptyStateModule, string> = {
   werkbonnen: '#F15025',
   planning: '#1A535C',
   taken: '#3A6B8C',
+  inkoopfacturen: '#C44830',
   default: '#5A5A55',
 }
 

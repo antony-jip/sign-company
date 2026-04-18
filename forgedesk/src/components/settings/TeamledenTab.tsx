@@ -29,7 +29,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Users, UserPlus, MoreHorizontal, Shield, UserCheck, UserX, Mail, Loader2, RefreshCw, Camera } from 'lucide-react'
+import { Users, UserPlus, MoreHorizontal, Shield, UserCheck, UserX, Mail, Loader2, RefreshCw, Camera, Inbox } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { EmptyState } from '@/components/ui/empty-state'
 import supabase, { isSupabaseConfigured } from '@/services/supabaseClient'
@@ -118,6 +118,7 @@ export function TeamledenTab() {
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteRol, setInviteRol] = useState<TeamRol>('medewerker')
   const [isInviting, setIsInviting] = useState(false)
+  const [inkoopToegang, setInkoopToegang] = useState<Record<string, boolean>>({})
 
   const loadData = useCallback(async () => {
     if (!organisatieId || !isSupabaseConfigured() || !supabase) {
@@ -126,7 +127,7 @@ export function TeamledenTab() {
     }
     try {
       setIsLoading(true)
-      const [teamRes, uitnRes] = await Promise.all([
+      const [teamRes, uitnRes, mwRes] = await Promise.all([
         supabase
           .from('profiles')
           .select('*')
@@ -138,10 +139,21 @@ export function TeamledenTab() {
           .eq('organisatie_id', organisatieId)
           .eq('status', 'verstuurd')
           .order('created_at', { ascending: false }),
+        supabase
+          .from('medewerkers')
+          .select('user_id, inkoopfacturen_toegang')
+          .eq('organisatie_id', organisatieId),
       ])
 
       if (teamRes.data) setTeamleden(teamRes.data)
       if (uitnRes.data) setUitnodigingen(uitnRes.data)
+      if (mwRes.data) {
+        const map: Record<string, boolean> = {}
+        for (const mw of mwRes.data) {
+          if (mw.user_id) map[mw.user_id] = mw.inkoopfacturen_toegang ?? false
+        }
+        setInkoopToegang(map)
+      }
     } catch (err) {
       console.error('Error loading team data:', err)
       toast.error('Teamgegevens konden niet geladen worden')
@@ -149,6 +161,22 @@ export function TeamledenTab() {
       setIsLoading(false)
     }
   }, [organisatieId])
+
+  const handleToggleInkoopToegang = async (profileId: string) => {
+    if (!supabase) return
+    const current = inkoopToegang[profileId] ?? false
+    try {
+      const { error } = await supabase
+        .from('medewerkers')
+        .update({ inkoopfacturen_toegang: !current })
+        .eq('user_id', profileId)
+      if (error) throw error
+      setInkoopToegang(prev => ({ ...prev, [profileId]: !current }))
+      toast.success(!current ? 'Inkoopfacturen toegang verleend' : 'Inkoopfacturen toegang ingetrokken')
+    } catch {
+      toast.error('Kon toegang niet wijzigen')
+    }
+  }
 
   useEffect(() => { loadData() }, [loadData])
 
@@ -361,6 +389,8 @@ export function TeamledenTab() {
                         isCurrentUser={lid.id === user?.id}
                         onChangeRol={(rol) => handleManage(lid.id, 'update_rol', rol)}
                         onDeactiveer={() => handleManage(lid.id, 'deactiveer')}
+                        heeftInkoopToegang={inkoopToegang[lid.id] ?? false}
+                        onToggleInkoopToegang={() => handleToggleInkoopToegang(lid.id)}
                         onAvatarUpload={lid.id === user?.id ? async (file: File) => {
                           try {
                             const resized = await resizeImage(file, 200)
@@ -435,9 +465,11 @@ interface TeamlidRowProps {
   onDeactiveer?: () => void
   onHeractiveer?: () => void
   onAvatarUpload?: (file: File) => Promise<void>
+  heeftInkoopToegang?: boolean
+  onToggleInkoopToegang?: () => void
 }
 
-function TeamlidRow({ profile, isCurrentUser, isDeactivated, onChangeRol, onDeactiveer, onHeractiveer, onAvatarUpload }: TeamlidRowProps) {
+function TeamlidRow({ profile, isCurrentUser, isDeactivated, onChangeRol, onDeactiveer, onHeractiveer, onAvatarUpload, heeftInkoopToegang, onToggleInkoopToegang }: TeamlidRowProps) {
   const rol = profile.rol || 'medewerker'
   const initials = getInitials(profile)
   const name = getDisplayName(profile)
@@ -516,6 +548,15 @@ function TeamlidRow({ profile, isCurrentUser, isDeactivated, onChangeRol, onDeac
                     {ROL_LABELS[r]}
                   </DropdownMenuItem>
                 ))}
+                <DropdownMenuSeparator />
+              </>
+            )}
+            {onToggleInkoopToegang && (
+              <>
+                <DropdownMenuItem onClick={onToggleInkoopToegang}>
+                  <Inbox className="w-3.5 h-3.5 mr-2" />
+                  {heeftInkoopToegang ? 'Inkoopfacturen intrekken' : 'Inkoopfacturen toegang'}
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
               </>
             )}

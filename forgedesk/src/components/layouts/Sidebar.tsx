@@ -4,7 +4,7 @@ import {
   Hammer, Building2, FileSignature,
   Send, CalendarRange, SlidersHorizontal, ChevronLeft,
   ChevronRight, LogOut, Menu, X, ListChecks,
-  Banknote, Wrench, Globe2, ArrowUpFromLine,
+  Banknote, Wrench, Globe2, ArrowUpFromLine, Inbox,
   Moon, Sun, CreditCard, TrendingUp, PanelTop,
   LayoutDashboard, Wand2, CircleUserRound, BookOpen,
   type LucideIcon
@@ -32,9 +32,15 @@ interface NavGroup {
 const WERK_ITEMS: NavItem[] = [
   { label: 'Projecten', icon: Hammer, path: '/projecten', color: '#1A535C' },
   { label: 'Offertes', icon: FileSignature, path: '/offertes', color: '#F15025' },
-  { label: 'Facturen', icon: Banknote, path: '/facturen', color: '#2D6B48' },
   { label: 'Klanten', icon: Building2, path: '/klanten', color: '#3A6B8C' },
   { label: 'Werkbonnen', icon: Wrench, path: '/werkbonnen', color: '#C44830' },
+  { label: 'Visualizer', icon: Wand2, path: '/visualizer', color: '#9A5A48' },
+]
+
+const FINANCIEEL_ITEMS: NavItem[] = [
+  { label: 'Facturen', icon: Banknote, path: '/facturen', color: '#2D6B48' },
+  { label: 'Inkoopfacturen', icon: Inbox, path: '/inkoopfacturen', color: '#C44830' },
+  { label: 'Financieel', icon: TrendingUp, path: '/financieel', color: '#2D6B48' },
 ]
 
 const PLANNING_ITEMS: NavItem[] = [
@@ -47,23 +53,18 @@ const COMMUNICATIE_ITEMS: NavItem[] = [
   { label: 'Portaal', icon: Globe2, path: '/portalen', color: '#6A5A8A' },
 ]
 
-const BEHEER_ITEMS: NavItem[] = [
-  { label: 'Financieel', icon: TrendingUp, path: '/financieel', color: '#2D6B48' },
-  { label: 'Visualizer', icon: Wand2, path: '/visualizer', color: '#9A5A48' },
-]
-
 const IMPORTEREN_ITEM: NavItem = { label: 'Importeren', icon: ArrowUpFromLine, path: '/importeren', color: '#1A535C' }
 const SETTINGS_ITEM: NavItem = { label: 'Instellingen', icon: SlidersHorizontal, path: '/instellingen', color: '#5A5A55' }
 
 const NAV_GROUPS: NavGroup[] = [
   { section: 'WERK', items: WERK_ITEMS },
+  { section: 'FINANCIEEL', items: FINANCIEEL_ITEMS },
   { section: 'PLANNING', items: PLANNING_ITEMS },
   { section: 'COMMUNICATIE', items: COMMUNICATIE_ITEMS },
-  { section: 'BEHEER', items: BEHEER_ITEMS },
 ]
 
 // Flat list for rail mode
-const ALL_NAV_ITEMS: NavItem[] = [...WERK_ITEMS, ...PLANNING_ITEMS, ...COMMUNICATIE_ITEMS, ...BEHEER_ITEMS, IMPORTEREN_ITEM]
+const ALL_NAV_ITEMS: NavItem[] = [...WERK_ITEMS, ...FINANCIEEL_ITEMS, ...PLANNING_ITEMS, ...COMMUNICATIE_ITEMS, IMPORTEREN_ITEM]
 
 // Bright icon tints for dark sidebar
 const ICON_BRIGHT: Record<string, string> = {

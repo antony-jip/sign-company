@@ -70,6 +70,7 @@ import { EmailTab, EmailTemplatesSubTab } from './EmailTab'
 import { IntegratiesTab } from './IntegratiesTab'
 import { BeveiligingTab } from './BeveiligingTab'
 import { WeergaveTab } from './WeergaveTab'
+import { InkoopfactuurInboxSetup } from '../inkoopfacturen/InkoopfactuurInboxSetup'
 
 // Shared
 import { SubTabNav } from './SubTabNav'
@@ -111,6 +112,9 @@ const settingsSections: SettingsSection[] = [
   ]},
   { id: 'email-settings', label: 'E-mail', icon: Mail, tabs: [
     { id: 'email', label: 'E-mail', icon: Mail },
+  ]},
+  { id: 'inkoopfacturen-settings', label: 'Inkoopfacturen', icon: Receipt, tabs: [
+    { id: 'inkoopfactuur-inbox', label: 'Inbox Setup', icon: Mail },
   ]},
   { id: 'producten', label: 'Documenten', icon: FileText, tabs: [
     { id: 'briefpapier', label: 'Briefpapier', icon: Image },
@@ -167,6 +171,7 @@ function renderTabContent(tabId: string) {
     case 'kb-artikelen': return <KennisbankTab />
     case 'changelog': return <ChangelogPage />
     case 'import': return <ImportTab />
+    case 'inkoopfactuur-inbox': return <InkoopfactuurInboxSetup />
     default: return null
   }
 }
