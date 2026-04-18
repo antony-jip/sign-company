@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Plus, FilePlus, UserPlus, FolderPlus, CheckSquare, Mail, X, ChevronLeft } from 'lucide-react'
-import { NieuweOfferteModal } from '@/components/quick-actions/NieuweOfferteModal'
 import { NieuweKlantModal } from '@/components/quick-actions/NieuweKlantModal'
 import { NieuwProjectModal } from '@/components/quick-actions/NieuwProjectModal'
 import { NieuweTaakModal } from '@/components/quick-actions/NieuweTaakModal'
@@ -66,6 +65,10 @@ export function FloatingQuickActions() {
       navigate('/email')
       return
     }
+    if (id === 'offerte') {
+      navigate('/offertes/nieuw')
+      return
+    }
     setActiveModal(id as ModalType)
   }
 
@@ -73,7 +76,7 @@ export function FloatingQuickActions() {
   if (!enabled || position === 'hidden' || visibleActions.length === 0) {
     return (
       <>
-        <NieuweOfferteModal open={activeModal === 'offerte'} onOpenChange={open => !open && setActiveModal(null)} />
+
         <NieuweKlantModal open={activeModal === 'klant'} onOpenChange={open => !open && setActiveModal(null)} />
         <NieuwProjectModal open={activeModal === 'project'} onOpenChange={open => !open && setActiveModal(null)} />
         <NieuweTaakModal open={activeModal === 'taak'} onOpenChange={open => !open && setActiveModal(null)} />
