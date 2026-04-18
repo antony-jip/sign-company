@@ -443,7 +443,7 @@ export function GlobalSearch({ className, compact }: GlobalSearchProps) {
       <div
         className={cn(
           'flex items-center w-full border transition-all duration-300',
-          'rounded-md',
+          'rounded-lg',
           focused
             ? 'border-primary/40 bg-background shadow-lg shadow-primary/5 ring-2 ring-primary/10'
             : 'border-[#E6E4E0] bg-[#F4F2EE] hover:bg-[#EDEAE5]'
@@ -467,7 +467,7 @@ export function GlobalSearch({ className, compact }: GlobalSearchProps) {
           onKeyDown={handleKeyDown}
           className={cn(
             'flex-1 bg-transparent border-none outline-none text-foreground placeholder-muted-foreground',
-            compact ? 'text-xs px-2 py-1.5' : 'text-sm px-3 py-2.5'
+            compact ? 'text-xs px-2 py-1.5' : 'text-[13px] px-2.5 py-1.5'
           )}
         />
         {query ? (
