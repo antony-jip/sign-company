@@ -57,8 +57,12 @@ export function InkoopfactuurInboxSetup() {
   }, [])
 
   async function handleTest() {
-    if (!form.imap_user || !form.password_plaintext) {
-      toast.error('Vul email en wachtwoord in')
+    if (!form.imap_user) {
+      toast.error('Vul een email adres in')
+      return
+    }
+    if (!form.password_plaintext && !config) {
+      toast.error('Vul een wachtwoord in')
       return
     }
     try {
@@ -68,8 +72,9 @@ export function InkoopfactuurInboxSetup() {
         imap_host: form.imap_host,
         imap_port: form.imap_port,
         imap_user: form.imap_user,
-        imap_password: form.password_plaintext,
+        imap_password: form.password_plaintext || undefined,
         gmail_label: form.gmail_label,
+        use_stored: !form.password_plaintext && !!config,
       })
       setTestResult(result)
     } catch {
@@ -214,7 +219,7 @@ export function InkoopfactuurInboxSetup() {
           )}
 
           <div className="flex items-center gap-3 pt-2">
-            <Button variant="outline" onClick={handleTest} disabled={isTesting || !form.imap_user || !form.password_plaintext}>
+            <Button variant="outline" onClick={handleTest} disabled={isTesting || !form.imap_user || (!form.password_plaintext && !config)}>
               {isTesting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               Test verbinding
             </Button>

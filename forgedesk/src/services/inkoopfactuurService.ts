@@ -99,8 +99,9 @@ export async function testImapConnection(config: {
   imap_host: string
   imap_port: number
   imap_user: string
-  imap_password: string
+  imap_password?: string
   gmail_label: string
+  use_stored?: boolean
 }): Promise<{ success: boolean; error?: string; label_gevonden?: boolean }> {
   const token = supabase ? (await supabase.auth.getSession()).data.session?.access_token : null
   const res = await fetch('/api/inkoopfactuur-test-connection', {

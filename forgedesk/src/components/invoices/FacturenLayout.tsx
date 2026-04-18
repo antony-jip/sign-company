@@ -87,6 +87,7 @@ import { useDocumentStyle } from '@/hooks/useDocumentStyle'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useNavigateWithTab } from '@/hooks/useNavigateWithTab'
+import { InkoopfacturenLayout } from '@/components/inkoopfacturen/InkoopfacturenLayout'
 import { useAuth } from '@/contexts/AuthContext'
 import { logger } from '../../utils/logger'
 import { SkeletonTable } from '@/components/ui/skeleton'
@@ -324,6 +325,7 @@ export function FacturenLayout() {
 
   // URL params for workflow integration
   const [searchParams, setSearchParams] = useSearchParams()
+  const [topTab, setTopTab] = useState<'facturen' | 'inkoop'>(searchParams.get('tab') === 'inkoop' ? 'inkoop' : 'facturen')
 
   // ============ DATA LOADING ============
 
@@ -1363,6 +1365,26 @@ export function FacturenLayout() {
       <div className="flex-1 min-h-0 overflow-y-auto">
       <div className="px-8 py-8 space-y-6">
 
+      {/* ── Top tabs: Facturen | Inkoopfacturen ── */}
+      <div className="flex items-center gap-1 mb-4">
+        <button
+          onClick={() => { setTopTab('facturen'); setSearchParams({}) }}
+          className={`px-4 py-2 rounded-lg text-[14px] font-semibold transition-all ${topTab === 'facturen' ? 'bg-[#1A535C]/[0.07] text-[#1A535C]' : 'text-[#9B9B95] hover:text-[#6B6B66]'}`}
+        >
+          Facturen
+        </button>
+        <button
+          onClick={() => { setTopTab('inkoop'); setSearchParams({ tab: 'inkoop' }) }}
+          className={`px-4 py-2 rounded-lg text-[14px] font-semibold transition-all ${topTab === 'inkoop' ? 'bg-[#C44830]/[0.07] text-[#C44830]' : 'text-[#9B9B95] hover:text-[#6B6B66]'}`}
+        >
+          Inkoopfacturen
+        </button>
+      </div>
+
+      {topTab === 'inkoop' ? (
+        <InkoopfacturenLayout />
+      ) : (
+      <>
       {/* ── Header + Stats ── */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
@@ -2811,6 +2833,8 @@ export function FacturenLayout() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      </>
+      )}
       </div>
       </div>
     </div>

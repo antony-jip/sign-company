@@ -231,7 +231,7 @@ function AppContent() {
         <Route path="planning" element={<PlanningLayout />} />
         <Route path="kalender" element={<Navigate to="/planning" replace />} />
         <Route path="montage" element={<Navigate to="/planning?modus=montage" replace />} />
-        <Route path="inkoopfacturen" element={<InkoopfacturenLayout />} />
+        <Route path="inkoopfacturen" element={<Navigate to="/facturen?tab=inkoop" replace />} />
         <Route path="inkoopfacturen/:id" element={<InkoopfactuurDetail />} />
         <Route path="financieel" element={<FinancialLayout />} />
         <Route path="taken" element={<TasksLayout />} />
