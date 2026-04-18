@@ -5,7 +5,9 @@ import { EmptyState } from '@/components/ui/empty-state'
 import {
   getInkoopfacturen,
   countWachtendOpReview,
+  getInboxConfig,
 } from '@/services/inkoopfactuurService'
+import type { InkoopFactuurInboxConfig } from '@/types'
 import type { InkoopFactuur, InkoopFactuurStatus } from '@/types'
 
 const STATUS_CONFIG: Record<InkoopFactuurStatus, { label: string; bg: string; text: string; dot: boolean }> = {
@@ -35,19 +37,22 @@ export function InkoopfacturenLayout() {
   const [wachtendCount, setWachtendCount] = useState(0)
   const [searchQuery, setSearchQuery] = useState('')
   const [toewijzingFilter, setToewijzingFilter] = useState<'alle' | 'niet-toegewezen'>('alle')
+  const [inboxConfig, setInboxConfig] = useState<InkoopFactuurInboxConfig | null>(null)
 
   useEffect(() => {
     let cancelled = false
     async function loadData() {
       try {
         setIsLoading(true)
-        const [data, count] = await Promise.all([
+        const [data, count, config] = await Promise.all([
           getInkoopfacturen().catch(() => []),
           countWachtendOpReview().catch(() => 0),
+          getInboxConfig().catch(() => null),
         ])
         if (!cancelled) {
           setFacturen(data)
           setWachtendCount(count)
+          setInboxConfig(config)
         }
       } finally {
         if (!cancelled) setIsLoading(false)
@@ -179,10 +184,12 @@ export function InkoopfacturenLayout() {
           description={
             searchQuery || filterStatus !== 'alle'
               ? 'Probeer een ander filter of zoekterm.'
-              : 'Koppel je factuur@ inbox in Instellingen.'
+              : inboxConfig
+                ? 'Inbox is geconfigureerd. Facturen worden elke 15 minuten opgehaald.'
+                : 'Koppel je factuur@ inbox in Instellingen.'
           }
           action={
-            !searchQuery && filterStatus === 'alle' ? (
+            !searchQuery && filterStatus === 'alle' && !inboxConfig ? (
               <button
                 onClick={() => navigate('/instellingen?tab=inkoopfactuur-inbox')}
                 className="text-[13px] font-medium text-[#C44830] hover:underline"
