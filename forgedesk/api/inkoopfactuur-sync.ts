@@ -84,7 +84,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ success: false, error: 'Geen actieve inbox configuratie', verwerkt: 0 })
     }
 
-    const password = decrypt(config.imap_password_encrypted)
+    let password: string
+    try {
+      password = decrypt(config.imap_password_encrypted)
+    } catch (decryptErr: unknown) {
+      const msg = decryptErr instanceof Error ? decryptErr.message : String(decryptErr)
+      return res.status(200).json({
+        success: false,
+        error: `Wachtwoord decryptie mislukt. Sla het wachtwoord opnieuw op in Instellingen. (${msg})`,
+        verwerkt: 0,
+      })
+    }
 
     const client = new ImapFlow({
       host: config.imap_host,
@@ -102,7 +112,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     try {
       await client.connect()
-      await client.mailboxOpen(config.gmail_label, { readOnly: true })
+
+      try {
+        await client.mailboxOpen(config.gmail_label, { readOnly: true })
+      } catch (mailboxErr: unknown) {
+        const mbMsg = mailboxErr instanceof Error ? mailboxErr.message : String(mailboxErr)
+        await client.logout()
+        return res.status(200).json({
+          success: false,
+          error: `Label "${config.gmail_label}" niet gevonden. Controleer of het Gmail label exact zo heet. Fout: ${mbMsg}`,
+          verwerkt: 0,
+        })
+      }
 
       const searchCriteria: Record<string, unknown> = config.laatste_uid > 0
         ? { uid: `${config.laatste_uid + 1}:*` }
@@ -271,6 +292,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (message === 'Niet geautoriseerd' || message === 'Ongeldige sessie') {
       return res.status(401).json({ error: message })
     }
-    return res.status(500).json({ error: message })
+    return res.status(200).json({ success: false, error: message, verwerkt: 0 })
   }
 }
