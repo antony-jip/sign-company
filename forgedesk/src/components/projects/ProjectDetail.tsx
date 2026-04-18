@@ -765,6 +765,11 @@ export function ProjectDetail() {
     toast.success('Link gekopieerd naar klembord')
   }
 
+  const recenteActiviteiten = useMemo(
+    () => project ? buildActivityFeed(project, projectOffertes, projectMontages, projectWerkbonnen, projectFacturen, projectTaken, projectFotos) : [],
+    [project, projectOffertes, projectMontages, projectWerkbonnen, projectFacturen, projectTaken, projectFotos]
+  )
+
   if (isLoading) {
     return (
       <div className="h-[calc(100vh-56px)] flex flex-col items-center justify-center bg-[#F8F7F5]">
@@ -810,11 +815,6 @@ export function ProjectDetail() {
 
   const totaalBedrag = projectOffertes.reduce((sum, o) => sum + (o.totaal || 0), 0)
   const fase = getFase(project.status)
-
-  const recenteActiviteiten = useMemo(
-    () => buildActivityFeed(project, projectOffertes, projectMontages, projectWerkbonnen, projectFacturen, projectTaken, projectFotos),
-    [project, projectOffertes, projectMontages, projectWerkbonnen, projectFacturen, projectTaken, projectFotos]
-  )
 
   return (
     <div className="-m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 h-[calc(100vh-56px)] flex flex-col bg-[#F8F7F5]">
