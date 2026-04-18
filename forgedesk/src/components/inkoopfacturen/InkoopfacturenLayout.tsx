@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, RefreshCw, Download, FileText, CheckCircle2 } from 'lucide-react'
+import { Search, RefreshCw, Download, FileText, CheckCircle2, FileIcon, X } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -52,6 +54,9 @@ export function InkoopfacturenLayout() {
   const [searchQuery, setSearchQuery] = useState('')
   const [inboxConfig, setInboxConfig] = useState<InkoopFactuurInboxConfig | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [lightbox, setLightbox] = useState<{ factuur: InkoopFactuur; pdfUrl: string } | null>(null)
+  const [lightboxReden, setLightboxReden] = useState('')
+  const [lightboxSaving, setLightboxSaving] = useState(false)
   const [isSyncing, setIsSyncing] = useState(false)
   const [extractProgress, setExtractProgress] = useState<{ current: number; total: number } | null>(null)
 
@@ -213,6 +218,51 @@ export function InkoopfacturenLayout() {
     }
     return result
   }, [facturen, filterStatus, searchQuery])
+
+  async function openLightbox(factuur: InkoopFactuur) {
+    const { supabase } = await import('@/services/supabaseClient')
+    if (!supabase || !factuur.pdf_storage_path) return
+    const { data } = await supabase.storage.from('inkoopfacturen').createSignedUrl(factuur.pdf_storage_path, 3600)
+    if (data?.signedUrl) {
+      setLightbox({ factuur, pdfUrl: data.signedUrl })
+      setLightboxReden('')
+    }
+  }
+
+  async function handleLightboxApprove() {
+    if (!lightbox) return
+    setLightboxSaving(true)
+    try {
+      const { approveInkoopfactuur } = await import('@/services/inkoopfactuurService')
+      const { supabase } = await import('@/services/supabaseClient')
+      const userId = (await supabase?.auth.getUser())?.data?.user?.id
+      if (!userId) { toast.error('Niet ingelogd'); return }
+      await approveInkoopfactuur(lightbox.factuur.id, userId)
+      toast.success('Goedgekeurd')
+      setLightbox(null)
+      await refreshData()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Goedkeuren mislukt')
+    } finally {
+      setLightboxSaving(false)
+    }
+  }
+
+  async function handleLightboxReject() {
+    if (!lightbox || !lightboxReden.trim()) { toast.error('Vul een reden in'); return }
+    setLightboxSaving(true)
+    try {
+      const { rejectInkoopfactuur } = await import('@/services/inkoopfactuurService')
+      await rejectInkoopfactuur(lightbox.factuur.id, lightboxReden)
+      toast.success('Afgewezen')
+      setLightbox(null)
+      await refreshData()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Afwijzen mislukt')
+    } finally {
+      setLightboxSaving(false)
+    }
+  }
 
   const handleExportCSV = useCallback(() => {
     const headers = ['Datum', 'Leverancier', 'Nummer', 'Subtotaal', 'BTW', 'Totaal', 'Status']
@@ -459,9 +509,18 @@ export function InkoopfacturenLayout() {
                         </span>
                       </td>
                       <td className="py-3.5 pr-4">
-                        <span className="text-[13px] font-medium text-[#1A1A1A]">
-                          {factuur.leverancier_naam || factuur.email_van || '-'}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={e => { e.stopPropagation(); openLightbox(factuur) }}
+                            className="flex-shrink-0 w-7 h-7 rounded-lg bg-[#FDE8E2] hover:bg-[#F8D0C6] flex items-center justify-center transition-colors"
+                            title="PDF bekijken"
+                          >
+                            <FileIcon className="w-3.5 h-3.5 text-[#C44830]" />
+                          </button>
+                          <span className="text-[13px] font-medium text-[#1A1A1A]">
+                            {factuur.leverancier_naam || factuur.email_van || '-'}
+                          </span>
+                        </div>
                       </td>
                       <td className="py-3.5 pr-4 hidden md:table-cell">
                         <span className="text-[13px] font-mono text-[#4A4A46]">
@@ -499,6 +558,74 @@ export function InkoopfacturenLayout() {
           </table>
         </div>
       </div>
+      {/* ── PDF Lightbox ── */}
+      {lightbox && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setLightbox(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[#F0EFEC]">
+              <div>
+                <h3 className="text-[15px] font-bold text-[#1A1A1A]">
+                  {lightbox.factuur.leverancier_naam || lightbox.factuur.email_van || 'Factuur'}<span className="text-[#F15025]">.</span>
+                </h3>
+                <div className="flex items-center gap-4 mt-1 text-[12px] text-[#9B9B95]">
+                  {lightbox.factuur.factuur_nummer && <span>Nr: <span className="font-mono text-[#4A4A46]">{lightbox.factuur.factuur_nummer}</span></span>}
+                  {lightbox.factuur.totaal > 0 && <span>Totaal: <span className="font-mono font-semibold text-[#1A1A1A]">{formatCurrency(lightbox.factuur.totaal)}</span></span>}
+                  {lightbox.factuur.factuur_datum && <span>{formatDatum(lightbox.factuur.factuur_datum)}</span>}
+                </div>
+              </div>
+              <button onClick={() => setLightbox(null)} className="w-8 h-8 rounded-lg hover:bg-[#F0EFEC] flex items-center justify-center">
+                <X className="w-4 h-4 text-[#9B9B95]" />
+              </button>
+            </div>
+
+            {/* PDF */}
+            <div className="flex-1 min-h-0">
+              <iframe src={lightbox.pdfUrl} className="w-full h-[60vh]" title="PDF" />
+            </div>
+
+            {/* Actions */}
+            <div className="px-6 py-4 border-t border-[#F0EFEC] space-y-3">
+              {lightbox.factuur.status !== 'goedgekeurd' && lightbox.factuur.status !== 'afgewezen' && (
+                <>
+                  <Textarea
+                    placeholder="Reden voor afwijzing (optioneel)..."
+                    value={lightboxReden}
+                    onChange={e => setLightboxReden(e.target.value)}
+                    rows={2}
+                    className="text-[13px]"
+                  />
+                  <div className="flex items-center gap-3 justify-end">
+                    <Button variant="outline" onClick={() => setLightbox(null)}>Sluiten</Button>
+                    {lightboxReden.trim() && (
+                      <Button
+                        variant="outline"
+                        onClick={handleLightboxReject}
+                        disabled={lightboxSaving}
+                        className="text-[#C03A18] border-[#C03A18] hover:bg-[#FDE8E2]"
+                      >
+                        Afwijzen
+                      </Button>
+                    )}
+                    <Button
+                      onClick={handleLightboxApprove}
+                      disabled={lightboxSaving}
+                      className="bg-[#2D6B48] hover:bg-[#245A3B] text-white"
+                    >
+                      Goedkeuren
+                    </Button>
+                  </div>
+                </>
+              )}
+              {(lightbox.factuur.status === 'goedgekeurd' || lightbox.factuur.status === 'afgewezen') && (
+                <div className="flex justify-end">
+                  <Button variant="outline" onClick={() => setLightbox(null)}>Sluiten</Button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
