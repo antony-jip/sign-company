@@ -346,6 +346,12 @@ export function InkoopfacturenLayout() {
 
   return (
     <div className="space-y-6">
+      <style>{`
+        @keyframes doen-fade-up { from { opacity: 0; transform: translateY(6px) } to { opacity: 1; transform: translateY(0) } }
+        @keyframes doen-pulse-kf { 0%, 100% { opacity: 1 } 50% { opacity: 0.35 } }
+        .doen-pulse { animation: doen-pulse-kf 2.5s ease-in-out infinite }
+        .doen-row { animation: doen-fade-up .35s cubic-bezier(.22,1,.36,1) both }
+      `}</style>
       {/* ── Header + Stats ── */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">

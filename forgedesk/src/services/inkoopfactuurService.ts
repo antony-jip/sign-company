@@ -6,7 +6,7 @@ import {
 import { createUitgave } from './boekhoudingService'
 import type {
   InkoopFactuur, InkoopFactuurRegel, InkoopFactuurInboxConfig,
-  InkoopFactuurStatus, Medewerker,
+  InkoopFactuurStatus,
 } from '@/types'
 
 // ============ INKOOPFACTUREN CRUD ============
@@ -116,22 +116,6 @@ export async function testImapConnection(config: {
 }
 
 // ============ ACTIES ============
-
-export async function assignInkoopfactuur(id: string, medewerkerId: string): Promise<InkoopFactuur> {
-  assertId(id)
-  assertId(medewerkerId, 'medewerkerId')
-  if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase
-      .from('inkoopfacturen')
-      .update({ toegewezen_aan_id: medewerkerId, status: 'toegewezen', updated_at: now() })
-      .eq('id', id)
-      .select()
-      .single()
-    if (error) throw error
-    return data
-  }
-  throw new Error('Supabase vereist voor deze actie')
-}
 
 export async function approveInkoopfactuur(id: string, userId: string): Promise<InkoopFactuur> {
   assertId(id)
@@ -297,15 +281,3 @@ export async function countWachtendOpReview(): Promise<number> {
   return 0
 }
 
-export async function getMedewerkersMetInkoopfactuurToegang(): Promise<Medewerker[]> {
-  if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase
-      .from('medewerkers')
-      .select('*')
-      .eq('inkoopfacturen_toegang', true)
-      .order('naam')
-    if (error) throw error
-    return data || []
-  }
-  return []
-}

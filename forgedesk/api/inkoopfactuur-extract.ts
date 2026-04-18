@@ -100,7 +100,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 120000)
 
-    let anthropicResponse: Response
+    let anthropicResponse: Response | undefined
     try {
       anthropicResponse = await fetch('https://api.anthropic.com/v1/messages', {
         signal: controller.signal,
@@ -146,10 +146,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       clearTimeout(timeout)
     }
 
-    if (!anthropicResponse.ok) {
-      const errBody = await anthropicResponse.text()
-      console.error(`[extract] Anthropic error: ${anthropicResponse.status} ${errBody.slice(0, 500)}`)
-      return res.status(200).json({ success: false, error: `Claude API fout (${anthropicResponse.status}): ${errBody.slice(0, 200)}` })
+    if (!anthropicResponse || !anthropicResponse.ok) {
+      const errBody = anthropicResponse ? await anthropicResponse.text() : 'Geen response'
+      console.error(`[extract] Anthropic error: ${anthropicResponse?.status} ${errBody.slice(0, 500)}`)
+      return res.status(200).json({ success: false, error: `Claude API fout (${anthropicResponse?.status || '?'}): ${errBody.slice(0, 200)}` })
     }
 
     const anthropicData = await anthropicResponse.json()

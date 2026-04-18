@@ -75,9 +75,7 @@ const PublicBookingPage = lazy(() => import('@/components/planning/PublicBooking
 const FinancialLayout = lazy(() => import('@/components/financial/FinancialLayout'), 'FinancialLayout')
 const VoorraadLayout = lazy(() => import('@/components/financial/VoorraadLayout'), 'VoorraadLayout')
 
-// Inkoopfacturen
-const InkoopfacturenLayout = lazy(() => import('@/components/inkoopfacturen/InkoopfacturenLayout'), 'InkoopfacturenLayout')
-const InkoopfactuurDetail = lazy(() => import('@/components/inkoopfacturen/InkoopfactuurDetail'), 'InkoopfactuurDetail')
+// Inkoopfacturen (rendered as tab in FacturenLayout, not standalone)
 
 // Invoices
 const FacturenLayout = lazy(() => import('@/components/invoices/FacturenLayout'), 'FacturenLayout')
@@ -232,7 +230,7 @@ function AppContent() {
         <Route path="kalender" element={<Navigate to="/planning" replace />} />
         <Route path="montage" element={<Navigate to="/planning?modus=montage" replace />} />
         <Route path="inkoopfacturen" element={<Navigate to="/facturen?tab=inkoop" replace />} />
-        <Route path="inkoopfacturen/:id" element={<InkoopfactuurDetail />} />
+        <Route path="inkoopfacturen/:id" element={<Navigate to="/facturen?tab=inkoop" replace />} />
         <Route path="financieel" element={<FinancialLayout />} />
         <Route path="taken" element={<TasksLayout />} />
         <Route path="facturen" element={<FacturenLayout />} />
