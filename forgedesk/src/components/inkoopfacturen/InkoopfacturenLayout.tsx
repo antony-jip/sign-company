@@ -501,27 +501,53 @@ export function InkoopfacturenLayout() {
               {filtered.length === 0 ? (
                 <tr>
                   <td colSpan={6}>
-                    <EmptyState
-                      module="inkoopfacturen"
-                      title="Nog geen inkoopfacturen"
-                      description={
-                        searchQuery || filterStatus !== 'alle'
-                          ? 'Probeer een ander filter of zoekterm.'
-                          : inboxConfig
-                            ? 'Inbox is geconfigureerd. Facturen worden elke 15 minuten opgehaald.'
-                            : 'Koppel je factuur@ inbox in Instellingen.'
-                      }
-                      action={
-                        !searchQuery && filterStatus === 'alle' && !inboxConfig ? (
-                          <button
-                            onClick={() => navigate('/instellingen?tab=inkoopfactuur-inbox')}
-                            className="text-[13px] font-medium text-[#C44830] hover:underline"
-                          >
-                            Inbox instellen
-                          </button>
-                        ) : undefined
-                      }
-                    />
+                    {searchQuery || filterStatus !== 'alle' ? (
+                      <EmptyState
+                        module="inkoopfacturen"
+                        title="Geen resultaten"
+                        description="Probeer een ander filter of zoekterm."
+                      />
+                    ) : (
+                      <div className="py-16 px-8 flex flex-col items-center text-center">
+                        <div className="w-16 h-16 rounded-2xl bg-[#FDE8E2] flex items-center justify-center mb-5">
+                          <FileText className="w-7 h-7 text-[#C44830]" />
+                        </div>
+                        <h3 className="text-[16px] font-bold text-[#1A1A1A] mb-2">
+                          {inboxConfig ? 'Inbox is gekoppeld' : 'Automatisch inkoopfacturen verwerken'}
+                        </h3>
+                        <p className="text-[13px] text-[#9B9B95] max-w-md mb-6">
+                          {inboxConfig
+                            ? 'Je inbox wordt elke 15 minuten gecheckt. Klik op Synchroniseer om nu te checken.'
+                            : 'Koppel een Gmail inbox en ontvang automatisch inkoopfacturen. AI leest de PDF en extraheert alle gegevens — je hoeft alleen nog goed te keuren.'}
+                        </p>
+                        {!inboxConfig && (
+                          <div className="bg-[#FAFAF8] rounded-xl border border-[#F0EFEC] p-5 max-w-sm w-full text-left space-y-3 mb-6">
+                            <div className="flex gap-3 text-[13px]">
+                              <span className="w-6 h-6 rounded-full bg-[#C44830] text-white flex items-center justify-center text-[11px] font-bold shrink-0">1</span>
+                              <span className="text-[#4A4A46]">Maak een Gmail account aan voor je facturen (bijv. factuur@bedrijf.nl)</span>
+                            </div>
+                            <div className="flex gap-3 text-[13px]">
+                              <span className="w-6 h-6 rounded-full bg-[#C44830] text-white flex items-center justify-center text-[11px] font-bold shrink-0">2</span>
+                              <span className="text-[#4A4A46]">Genereer een app-wachtwoord via Google Account instellingen</span>
+                            </div>
+                            <div className="flex gap-3 text-[13px]">
+                              <span className="w-6 h-6 rounded-full bg-[#C44830] text-white flex items-center justify-center text-[11px] font-bold shrink-0">3</span>
+                              <span className="text-[#4A4A46]">Koppel de inbox in Instellingen en druk op Synchroniseer</span>
+                            </div>
+                          </div>
+                        )}
+                        <button
+                          onClick={() => inboxConfig ? handleSync() : navigate('/instellingen?tab=inkoopfactuur-inbox')}
+                          className="inline-flex items-center gap-2 bg-[#C44830] text-white pl-5 pr-6 py-2.5 rounded-xl text-[14px] font-semibold hover:bg-[#A33A26] transition-all"
+                        >
+                          {inboxConfig ? (
+                            <><RefreshCw className="w-4 h-4" /> Synchroniseer</>
+                          ) : (
+                            'Inbox instellen'
+                          )}
+                        </button>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ) : (
