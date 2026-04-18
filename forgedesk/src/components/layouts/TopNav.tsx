@@ -119,7 +119,7 @@ export function TopNav() {
       <div className="flex items-center h-11 px-5 md:px-6" style={{ background: 'linear-gradient(180deg, #1D5A64 0%, #1A535C 100%)' }}>
         {/* Logo */}
         <NavLink to="/" className="flex items-center mr-5 flex-shrink-0 opacity-90 hover:opacity-100 transition-opacity">
-          <img src="/logos/doen-logo-wit.svg" alt="doen." className="h-[15px]" />
+          <img src="/logos/doen-logo-wit.svg" alt="doen." className="h-[19px]" />
         </NavLink>
 
         {/* Quick-add — mobile only */}
@@ -160,7 +160,7 @@ export function TopNav() {
 
         {/* Search — desktop */}
         <div className="hidden md:flex flex-1 justify-center mx-6">
-          <GlobalSearch className="w-full max-w-[280px]" />
+          <GlobalSearch className="w-full max-w-[220px]" />
         </div>
 
         {/* Mobile search */}
