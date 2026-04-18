@@ -220,12 +220,17 @@ export function InkoopfacturenLayout() {
   }, [facturen, filterStatus, searchQuery])
 
   async function openLightbox(factuur: InkoopFactuur) {
-    const { supabase } = await import('@/services/supabaseClient')
-    if (!supabase || !factuur.pdf_storage_path) return
-    const { data } = await supabase.storage.from('inkoopfacturen').createSignedUrl(factuur.pdf_storage_path, 3600)
-    if (data?.signedUrl) {
+    try {
+      const mod = await import('@/services/supabaseClient')
+      const sb = mod.supabase || mod.default
+      if (!sb) { toast.error('Supabase niet beschikbaar'); return }
+      if (!factuur.pdf_storage_path) { toast.error('Geen PDF beschikbaar'); return }
+      const { data, error } = await sb.storage.from('inkoopfacturen').createSignedUrl(factuur.pdf_storage_path, 3600)
+      if (error || !data?.signedUrl) { toast.error('PDF URL ophalen mislukt'); return }
       setLightbox({ factuur, pdfUrl: data.signedUrl })
       setLightboxReden('')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Fout bij openen PDF')
     }
   }
 
