@@ -12,9 +12,7 @@ import {
   getInboxConfig,
   syncInkoopfacturen,
   extractInkoopfactuur,
-  approveInkoopfactuur,
 } from '@/services/inkoopfactuurService'
-import { useAuth } from '@/contexts/AuthContext'
 import type { InkoopFactuurInboxConfig, InkoopFactuur, InkoopFactuurStatus } from '@/types'
 
 const STATUS_CONFIG: Record<InkoopFactuurStatus, { label: string; bg: string; text: string; dot: boolean }> = {
@@ -47,7 +45,6 @@ function formatDatum(d: string | null): string {
 
 export function InkoopfacturenLayout() {
   const navigate = useNavigate()
-  const { user } = useAuth()
   const [facturen, setFacturen] = useState<InkoopFactuur[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('alle')
@@ -148,16 +145,20 @@ export function InkoopfacturenLayout() {
   }
 
   const handleBulkApprove = async () => {
-    if (!user?.id || selectedIds.size === 0) return
+    if (selectedIds.size === 0) return
     const ids = Array.from(selectedIds).filter(id => {
       const f = facturen.find(fac => fac.id === id)
       return f && (f.status === 'verwerkt' || f.status === 'toegewezen')
     })
     if (ids.length === 0) { toast.error('Selecteer facturen met status "Te reviewen"'); return }
+    const { approveInkoopfactuur } = await import('@/services/inkoopfactuurService')
+    const { supabase } = await import('@/services/supabaseClient')
+    const userId = (await supabase?.auth.getUser())?.data?.user?.id
+    if (!userId) { toast.error('Niet ingelogd'); return }
     let gelukt = 0
     for (const id of ids) {
       try {
-        await approveInkoopfactuur(id, user.id)
+        await approveInkoopfactuur(id, userId)
         gelukt++
       } catch { /* doorgaan */ }
     }
