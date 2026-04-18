@@ -1,21 +1,25 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, RefreshCw, Sparkles } from 'lucide-react'
+import { Search, RefreshCw, Download, FileText, CheckCircle2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { EmptyState } from '@/components/ui/empty-state'
+import { Checkbox } from '@/components/ui/checkbox'
+import { exportCSV, exportExcel } from '@/lib/export'
 import {
   getInkoopfacturen,
   countWachtendOpReview,
   getInboxConfig,
   syncInkoopfacturen,
   extractInkoopfactuur,
+  approveInkoopfactuur,
 } from '@/services/inkoopfactuurService'
+import { useAuth } from '@/contexts/AuthContext'
 import type { InkoopFactuurInboxConfig, InkoopFactuur, InkoopFactuurStatus } from '@/types'
 
 const STATUS_CONFIG: Record<InkoopFactuurStatus, { label: string; bg: string; text: string; dot: boolean }> = {
   nieuw: { label: 'Nieuw', bg: '#FDE8E2', text: '#C03A18', dot: true },
-  verwerkt: { label: 'Verwerkt', bg: '#FFF3E0', text: '#D4621A', dot: true },
+  verwerkt: { label: 'Te reviewen', bg: '#FFF3E0', text: '#D4621A', dot: true },
   toegewezen: { label: 'Toegewezen', bg: '#E3F2FD', text: '#2A5580', dot: false },
   goedgekeurd: { label: 'Goedgekeurd', bg: '#E4F0EA', text: '#2D6B48', dot: false },
   afgewezen: { label: 'Afgewezen', bg: '#EEEEED', text: '#5A5A55', dot: false },
@@ -26,7 +30,7 @@ type FilterStatus = 'alle' | InkoopFactuurStatus
 const FILTER_OPTIONS: { value: FilterStatus; label: string }[] = [
   { value: 'alle', label: 'Alle' },
   { value: 'nieuw', label: 'Nieuw' },
-  { value: 'verwerkt', label: 'Verwerkt' },
+  { value: 'verwerkt', label: 'Te reviewen' },
   { value: 'toegewezen', label: 'Toegewezen' },
   { value: 'goedgekeurd', label: 'Goedgekeurd' },
   { value: 'afgewezen', label: 'Afgewezen' },
@@ -43,29 +47,70 @@ function formatDatum(d: string | null): string {
 
 export function InkoopfacturenLayout() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [facturen, setFacturen] = useState<InkoopFactuur[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('alle')
   const [wachtendCount, setWachtendCount] = useState(0)
   const [searchQuery, setSearchQuery] = useState('')
   const [inboxConfig, setInboxConfig] = useState<InkoopFactuurInboxConfig | null>(null)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [isSyncing, setIsSyncing] = useState(false)
-  const [isExtracting, setIsExtracting] = useState(false)
+  const [extractProgress, setExtractProgress] = useState<{ current: number; total: number } | null>(null)
+
+  async function refreshData() {
+    const [data, count, config] = await Promise.all([
+      getInkoopfacturen().catch(() => []),
+      countWachtendOpReview().catch(() => 0),
+      getInboxConfig().catch(() => null),
+    ])
+    setFacturen(data)
+    setWachtendCount(count)
+    setInboxConfig(config)
+  }
+
+  async function extractBatch(ids: string[]) {
+    if (ids.length === 0) return
+    setExtractProgress({ current: 0, total: ids.length })
+    let gelukt = 0
+    let laatsteFout = ''
+    for (let i = 0; i < ids.length; i++) {
+      setExtractProgress({ current: i + 1, total: ids.length })
+      try {
+        const result = await extractInkoopfactuur(ids[i])
+        if (result.success) gelukt++
+        else laatsteFout = result.error || 'Onbekende fout'
+      } catch (err) {
+        laatsteFout = err instanceof Error ? err.message : 'Netwerk fout'
+      }
+    }
+    setExtractProgress(null)
+    if (gelukt > 0) toast.success(`${gelukt} factuur${gelukt > 1 ? 'en' : ''} geextraheerd`)
+    else if (laatsteFout) toast.error(`Extractie mislukt: ${laatsteFout}`)
+    await refreshData()
+  }
 
   async function handleSync() {
     try {
       setIsSyncing(true)
       const result = await syncInkoopfacturen()
-      if (result.success) {
-        toast.success(result.verwerkt > 0 ? `${result.verwerkt} factuur${result.verwerkt > 1 ? 'en' : ''} opgehaald` : 'Geen nieuwe facturen gevonden')
-        const [data, count] = await Promise.all([
-          getInkoopfacturen().catch(() => []),
-          countWachtendOpReview().catch(() => 0),
-        ])
-        setFacturen(data)
-        setWachtendCount(count)
-      } else {
+      if (!result.success) {
         toast.error(result.error || 'Synchronisatie mislukt')
+        return
+      }
+
+      if (result.verwerkt > 0) {
+        toast.success(`${result.verwerkt} factuur${result.verwerkt > 1 ? 'en' : ''} opgehaald`)
+        await refreshData()
+        // Auto-extract de nieuwe facturen
+        await extractBatch(result.nieuwe_ids || [])
+      } else {
+        toast.success('Geen nieuwe facturen gevonden')
+        // Nog niet-geextraheerde facturen? Die ook oppakken
+        const nieuweIds = facturen.filter(f => f.status === 'nieuw').map(f => f.id)
+        if (nieuweIds.length > 0) {
+          await extractBatch(nieuweIds)
+        }
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Synchronisatie mislukt')
@@ -76,40 +121,80 @@ export function InkoopfacturenLayout() {
 
   const nieuwCount = useMemo(() => facturen.filter(f => f.status === 'nieuw').length, [facturen])
 
-  async function handleExtractAll() {
-    const nieuweFacturen = facturen.filter(f => f.status === 'nieuw')
-    if (nieuweFacturen.length === 0) return
-    try {
-      setIsExtracting(true)
-      let gelukt = 0
-      let laatsteFout = ''
-      for (const f of nieuweFacturen) {
-        try {
-          const result = await extractInkoopfactuur(f.id)
-          if (result.success) {
-            gelukt++
-          } else {
-            laatsteFout = result.error || 'Onbekende fout'
-          }
-        } catch (err) {
-          laatsteFout = err instanceof Error ? err.message : 'Netwerk fout'
-        }
-      }
-      if (gelukt > 0) {
-        toast.success(`${gelukt} van ${nieuweFacturen.length} facturen geextraheerd`)
-      } else {
-        toast.error(`Extractie mislukt: ${laatsteFout}`)
-      }
-      const [data, count] = await Promise.all([
-        getInkoopfacturen().catch(() => []),
-        countWachtendOpReview().catch(() => 0),
-      ])
-      setFacturen(data)
-      setWachtendCount(count)
-    } finally {
-      setIsExtracting(false)
+  const maandStats = useMemo(() => {
+    const nu = new Date()
+    const dezeMaand = facturen.filter(f => {
+      const d = new Date(f.factuur_datum || f.created_at)
+      return d.getMonth() === nu.getMonth() && d.getFullYear() === nu.getFullYear()
+    })
+    return {
+      totaalDezeMaand: dezeMaand.reduce((sum, f) => sum + f.totaal, 0),
+      aantalDezeMaand: dezeMaand.length,
     }
+  }, [facturen])
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
   }
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filtered.length) setSelectedIds(new Set())
+    else setSelectedIds(new Set(filtered.map(f => f.id)))
+  }
+
+  const handleBulkApprove = async () => {
+    if (!user?.id || selectedIds.size === 0) return
+    const ids = Array.from(selectedIds).filter(id => {
+      const f = facturen.find(fac => fac.id === id)
+      return f && (f.status === 'verwerkt' || f.status === 'toegewezen')
+    })
+    if (ids.length === 0) { toast.error('Selecteer facturen met status "Te reviewen"'); return }
+    let gelukt = 0
+    for (const id of ids) {
+      try {
+        await approveInkoopfactuur(id, user.id)
+        gelukt++
+      } catch { /* doorgaan */ }
+    }
+    toast.success(`${gelukt} factuur${gelukt > 1 ? 'en' : ''} goedgekeurd`)
+    setSelectedIds(new Set())
+    await refreshData()
+  }
+
+  const handleExportCSV = useCallback(() => {
+    const headers = ['Datum', 'Leverancier', 'Nummer', 'Subtotaal', 'BTW', 'Totaal', 'Status']
+    const rows = filtered.map(f => ({
+      Datum: f.factuur_datum || '',
+      Leverancier: f.leverancier_naam || f.email_van || '',
+      Nummer: f.factuur_nummer || '',
+      Subtotaal: f.subtotaal,
+      BTW: f.btw_bedrag,
+      Totaal: f.totaal,
+      Status: STATUS_CONFIG[f.status].label,
+    }))
+    exportCSV('inkoopfacturen', headers, rows)
+    toast.success('CSV gedownload')
+  }, [filtered])
+
+  const handleExportExcel = useCallback(() => {
+    const headers = ['Datum', 'Leverancier', 'Nummer', 'Subtotaal', 'BTW', 'Totaal', 'Status']
+    const rows = filtered.map(f => ({
+      Datum: f.factuur_datum || '',
+      Leverancier: f.leverancier_naam || f.email_van || '',
+      Nummer: f.factuur_nummer || '',
+      Subtotaal: f.subtotaal,
+      BTW: f.btw_bedrag,
+      Totaal: f.totaal,
+      Status: STATUS_CONFIG[f.status].label,
+    }))
+    exportExcel('inkoopfacturen', headers, rows, 'Inkoopfacturen')
+    toast.success('Excel gedownload')
+  }, [filtered])
 
   useEffect(() => {
     let cancelled = false
@@ -190,24 +275,14 @@ export function InkoopfacturenLayout() {
             </span>
           </div>
           <div className="flex items-center gap-2">
-            {nieuwCount > 0 && (
-              <button
-                onClick={handleExtractAll}
-                disabled={isExtracting}
-                className="inline-flex items-center gap-2 bg-[#C44830] text-white pl-4 pr-5 py-2.5 rounded-xl text-[13px] font-semibold shadow-[0_2px_8px_rgba(196,72,48,0.25)] hover:bg-[#A33A26] disabled:opacity-50 transition-all"
-              >
-                <Sparkles className={cn('w-4 h-4', isExtracting && 'animate-spin')} />
-                {isExtracting ? 'Extraheren...' : `Extraheer ${nieuwCount} facturen`}
-              </button>
-            )}
             {inboxConfig && (
               <button
                 onClick={handleSync}
-                disabled={isSyncing}
+                disabled={isSyncing || !!extractProgress}
                 className="inline-flex items-center gap-2 text-[13px] font-medium text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-white px-3.5 py-2 rounded-xl ring-1 ring-black/[0.06] transition-all disabled:opacity-50"
               >
-                <RefreshCw className={cn('w-4 h-4', isSyncing && 'animate-spin')} />
-                {isSyncing ? 'Synchroniseren...' : 'Synchroniseer'}
+                <RefreshCw className={cn('w-4 h-4', (isSyncing || !!extractProgress) && 'animate-spin')} />
+                {isSyncing ? 'Ophalen...' : extractProgress ? `Extraheren ${extractProgress.current}/${extractProgress.total}...` : 'Synchroniseer'}
               </button>
             )}
           </div>
@@ -233,6 +308,12 @@ export function InkoopfacturenLayout() {
               <span className="font-mono">{statistics.goedgekeurdCount}</span> goedgekeurd
             </span>
           )}
+          {maandStats.totaalDezeMaand > 0 && (
+            <span className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold bg-[#F5F2E8] text-[#8A7A4A]">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#8A7A4A]" />
+              <span className="font-mono">{formatCurrency(maandStats.totaalDezeMaand)}</span> deze maand ({maandStats.aantalDezeMaand})
+            </span>
+          )}
         </div>
       </div>
 
@@ -248,6 +329,25 @@ export function InkoopfacturenLayout() {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-4 py-2 text-sm bg-[#F8F7F5] border border-[#EBEBEB] rounded-lg text-[#1A1A1A] placeholder:text-[#9B9B95] focus:outline-none focus:border-[#C44830] focus:ring-2 focus:ring-[#C44830]/10 transition-all"
             />
+          </div>
+
+          {selectedIds.size > 0 && (
+            <button
+              onClick={handleBulkApprove}
+              className="flex items-center gap-1.5 text-xs font-semibold text-white bg-[#2D6B48] hover:bg-[#245A3B] px-3 py-2 rounded-lg transition-all"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              {selectedIds.size} goedkeuren
+            </button>
+          )}
+
+          <div className="hidden sm:flex items-center gap-1 ml-auto">
+            <button onClick={handleExportCSV} className="flex items-center gap-1.5 text-xs font-medium text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] px-3 py-2 rounded-lg transition-all">
+              <Download className="w-3.5 h-3.5" /> CSV
+            </button>
+            <button onClick={handleExportExcel} className="flex items-center gap-1.5 text-xs font-medium text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] px-3 py-2 rounded-lg transition-all">
+              <FileText className="w-3.5 h-3.5" /> Excel
+            </button>
           </div>
         </div>
 
@@ -284,7 +384,13 @@ export function InkoopfacturenLayout() {
           <table className="w-full">
             <thead>
               <tr className="border-b-2 border-[#F0EFEC]">
-                <th className="text-left py-3.5 pl-5 pr-4">
+                <th className="py-3.5 pl-5 pr-3 w-10">
+                  <Checkbox
+                    checked={filtered.length > 0 && selectedIds.size === filtered.length}
+                    onCheckedChange={toggleSelectAll}
+                  />
+                </th>
+                <th className="text-left py-3.5 pr-4">
                   <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Datum</span>
                 </th>
                 <th className="text-left py-3.5 pr-4">
@@ -307,7 +413,7 @@ export function InkoopfacturenLayout() {
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={6}>
+                  <td colSpan={7}>
                     <EmptyState
                       module="inkoopfacturen"
                       title="Nog geen inkoopfacturen"
@@ -340,7 +446,13 @@ export function InkoopfacturenLayout() {
                       onClick={() => navigate(`/inkoopfacturen/${factuur.id}`)}
                       className="border-b border-[#F0EFEC] last:border-0 hover:bg-[#FAFAF8] cursor-pointer transition-colors doen-row"
                     >
-                      <td className="py-3.5 pl-5 pr-4">
+                      <td className="py-3.5 pl-5 pr-3 w-10" onClick={e => e.stopPropagation()}>
+                        <Checkbox
+                          checked={selectedIds.has(factuur.id)}
+                          onCheckedChange={() => toggleSelect(factuur.id)}
+                        />
+                      </td>
+                      <td className="py-3.5 pr-4">
                         <span className="text-[13px] text-[#4A4A46]">
                           {formatDatum(factuur.factuur_datum || factuur.created_at)}
                         </span>

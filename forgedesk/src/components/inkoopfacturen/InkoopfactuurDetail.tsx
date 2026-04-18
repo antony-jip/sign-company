@@ -175,9 +175,9 @@ export function InkoopfactuurDetail() {
     if (!factuur || !id || !user?.id) return
     try {
       setIsSaving(true)
-      const updated = await approveInkoopfactuur(id, user.id)
-      setFactuur(updated)
+      await approveInkoopfactuur(id, user.id)
       toast.success('Inkoopfactuur goedgekeurd en toegevoegd aan uitgaven')
+      navigate('/facturen?tab=inkoop')
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Goedkeuren mislukt')
     } finally {
@@ -189,10 +189,9 @@ export function InkoopfactuurDetail() {
     if (!id || !afwijsReden.trim()) return
     try {
       setIsSaving(true)
-      const updated = await rejectInkoopfactuur(id, afwijsReden)
-      setFactuur(updated)
-      setShowAfwijsModal(false)
+      await rejectInkoopfactuur(id, afwijsReden)
       toast.success('Inkoopfactuur afgewezen')
+      navigate('/facturen?tab=inkoop')
     } catch (err) {
       toast.error('Afwijzen mislukt')
     } finally {

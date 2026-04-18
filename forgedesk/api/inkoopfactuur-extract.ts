@@ -97,7 +97,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     console.log(`[extract] Starting Anthropic call for factuur ${inkoopfactuur_id}, PDF size: ${base64Data.length} chars`)
 
-    const anthropicResponse = await fetch('https://api.anthropic.com/v1/messages', {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 120000)
+
+    let anthropicResponse: Response
+    try {
+      anthropicResponse = await fetch('https://api.anthropic.com/v1/messages', {
+        signal: controller.signal,
       method: 'POST',
       headers: {
         'x-api-key': ANTHROPIC_API_KEY,
@@ -125,7 +131,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           },
         ],
       }),
-    })
+      })
+    } catch (fetchErr: unknown) {
+      clearTimeout(timeout)
+      const msg = fetchErr instanceof Error ? fetchErr.message : String(fetchErr)
+      const isTimeout = msg.includes('abort')
+      console.error(`[extract] Fetch fout: ${msg}`)
+      await supabase.from('inkoopfacturen').update({
+        extractie_opmerkingen: isTimeout ? 'Timeout bij Claude API (>120s). Probeer opnieuw.' : `API fout: ${msg.slice(0, 300)}`,
+        updated_at: new Date().toISOString(),
+      }).eq('id', inkoopfactuur_id)
+      return res.status(200).json({ success: false, error: isTimeout ? 'Claude API timeout. Probeer opnieuw.' : msg })
+    } finally {
+      clearTimeout(timeout)
+    }
 
     if (!anthropicResponse.ok) {
       const errBody = await anthropicResponse.text()

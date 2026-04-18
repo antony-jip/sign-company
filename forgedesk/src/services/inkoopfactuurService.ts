@@ -262,7 +262,7 @@ export async function extractInkoopfactuur(id: string): Promise<{ success: boole
 
 // ============ SYNC ============
 
-export async function syncInkoopfacturen(): Promise<{ success: boolean; verwerkt: number; error?: string }> {
+export async function syncInkoopfacturen(): Promise<{ success: boolean; verwerkt: number; nieuwe_ids: string[]; error?: string }> {
   if (!isSupabaseConfigured() || !supabase) throw new Error('Supabase niet geconfigureerd')
   const token = (await supabase.auth.getSession()).data.session?.access_token
   if (!token) throw new Error('Niet ingelogd')
