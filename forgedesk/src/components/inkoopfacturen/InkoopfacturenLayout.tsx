@@ -574,162 +574,151 @@ export function InkoopfacturenLayout() {
           </table>
         </div>
       </div>
-      {/* ── PDF Lightbox 70/30 ── */}
+      {/* ── PDF Lightbox ── */}
       {lightbox && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setLightbox(null)}>
-          <div className="bg-[#F8F7F5] rounded-2xl shadow-2xl w-full max-w-[1200px] h-[85vh] flex overflow-hidden" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/70 z-50 flex" onClick={() => setLightbox(null)}>
 
-            {/* Links: PDF 70% */}
-            <div className="w-[70%] bg-[#2A2A2A] flex flex-col">
-              <iframe src={lightbox.pdfUrl} className="w-full flex-1" title="PDF" />
+          {/* PDF area — donkere achtergrond, A4 centered */}
+          <div className="flex-1 flex items-center justify-center p-8" onClick={e => e.stopPropagation()}>
+            <div className="w-full h-full max-w-[800px] bg-white rounded-lg shadow-2xl overflow-hidden">
+              <iframe
+                src={`${lightbox.pdfUrl}#toolbar=0&navpanes=0&scrollbar=1`}
+                className="w-full h-full"
+                title="PDF"
+                style={{ border: 'none' }}
+              />
+            </div>
+          </div>
+
+          {/* Sidebar rechts — 360px vast */}
+          <div className="w-[360px] bg-white flex flex-col shadow-[-4px_0_24px_rgba(0,0,0,0.08)]" onClick={e => e.stopPropagation()}>
+
+            {/* Nav + Close */}
+            <div className="flex items-center justify-between px-6 py-3 border-b border-[#F0EFEC]">
+              <div className="flex items-center gap-2">
+                <button onClick={() => navigateLightbox('prev')} disabled={lightbox.index <= 0} className="w-8 h-8 rounded-lg hover:bg-[#F0EFEC] flex items-center justify-center disabled:opacity-20 transition-colors">
+                  <ChevronLeft className="w-4 h-4 text-[#6B6B66]" />
+                </button>
+                <span className="text-[12px] font-mono text-[#9B9B95] min-w-[32px] text-center">{lightbox.index + 1}/{filtered.length}</span>
+                <button onClick={() => navigateLightbox('next')} disabled={lightbox.index >= filtered.length - 1} className="w-8 h-8 rounded-lg hover:bg-[#F0EFEC] flex items-center justify-center disabled:opacity-20 transition-colors">
+                  <ChevronRight className="w-4 h-4 text-[#6B6B66]" />
+                </button>
+              </div>
+              <button onClick={() => setLightbox(null)} className="w-8 h-8 rounded-lg hover:bg-[#F0EFEC] flex items-center justify-center transition-colors">
+                <X className="w-4 h-4 text-[#9B9B95]" />
+              </button>
             </div>
 
-            {/* Rechts: Details + Acties 30% */}
-            <div className="w-[30%] flex flex-col bg-white">
-              {/* Header */}
-              <div className="px-5 pt-5 pb-4 border-b border-[#F0EFEC]">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="text-[16px] font-bold text-[#1A1A1A]">
-                      {lightbox.factuur.leverancier_naam || lightbox.factuur.email_van || 'Factuur'}<span className="text-[#F15025]">.</span>
-                    </h3>
-                    {lightbox.factuur.factuur_nummer && (
-                      <p className="text-[12px] font-mono text-[#9B9B95] mt-0.5">#{lightbox.factuur.factuur_nummer}</p>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1 -mr-1 -mt-1">
-                    <button
-                      onClick={() => navigateLightbox('prev')}
-                      disabled={lightbox.index <= 0}
-                      className="w-7 h-7 rounded-lg hover:bg-[#F0EFEC] flex items-center justify-center disabled:opacity-30"
-                    >
-                      <ChevronLeft className="w-4 h-4 text-[#9B9B95]" />
-                    </button>
-                    <span className="text-[11px] font-mono text-[#C0BDB8]">{lightbox.index + 1}/{filtered.length}</span>
-                    <button
-                      onClick={() => navigateLightbox('next')}
-                      disabled={lightbox.index >= filtered.length - 1}
-                      className="w-7 h-7 rounded-lg hover:bg-[#F0EFEC] flex items-center justify-center disabled:opacity-30"
-                    >
-                      <ChevronRight className="w-4 h-4 text-[#9B9B95]" />
-                    </button>
-                    <button onClick={() => setLightbox(null)} className="w-7 h-7 rounded-lg hover:bg-[#F0EFEC] flex items-center justify-center ml-1">
-                      <X className="w-4 h-4 text-[#9B9B95]" />
-                    </button>
-                  </div>
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+
+              {/* Leverancier */}
+              <div>
+                <h3 className="text-[18px] font-bold text-[#1A1A1A] leading-tight">
+                  {lightbox.factuur.leverancier_naam || lightbox.factuur.email_van || 'Factuur'}<span className="text-[#F15025]">.</span>
+                </h3>
+                {lightbox.factuur.factuur_nummer && (
+                  <p className="text-[13px] font-mono text-[#9B9B95] mt-1">#{lightbox.factuur.factuur_nummer}</p>
+                )}
+              </div>
+
+              {/* Bedragen card */}
+              <div className="rounded-xl bg-[#FAFAF8] border border-[#F0EFEC] p-4">
+                <div className="flex justify-between text-[13px] text-[#9B9B95]">
+                  <span>Subtotaal</span>
+                  <span className="font-mono text-[#4A4A46]">{formatCurrency(lightbox.factuur.subtotaal)}</span>
+                </div>
+                <div className="flex justify-between text-[13px] text-[#9B9B95] mt-1.5">
+                  <span>BTW</span>
+                  <span className="font-mono text-[#4A4A46]">{formatCurrency(lightbox.factuur.btw_bedrag)}</span>
+                </div>
+                <div className="flex justify-between mt-3 pt-3 border-t border-[#E6E4E0]">
+                  <span className="text-[15px] font-semibold text-[#1A1A1A]">Totaal</span>
+                  <span className="text-[17px] font-bold font-mono text-[#1A1A1A]">{formatCurrency(lightbox.factuur.totaal)}</span>
                 </div>
               </div>
 
-              {/* Details */}
-              <div className="px-5 py-4 space-y-4 flex-1 overflow-y-auto">
-                {/* Bedragen */}
-                <div className="bg-[#F8F7F5] rounded-xl p-4 space-y-2">
+              {/* Meta details */}
+              <div className="space-y-2.5">
+                {lightbox.factuur.factuur_datum && (
                   <div className="flex justify-between text-[13px]">
-                    <span className="text-[#9B9B95]">Subtotaal</span>
-                    <span className="font-mono text-[#4A4A46]">{formatCurrency(lightbox.factuur.subtotaal)}</span>
-                  </div>
-                  <div className="flex justify-between text-[13px]">
-                    <span className="text-[#9B9B95]">BTW</span>
-                    <span className="font-mono text-[#4A4A46]">{formatCurrency(lightbox.factuur.btw_bedrag)}</span>
-                  </div>
-                  <div className="flex justify-between text-[14px] font-semibold pt-2 border-t border-[#E6E4E0]">
-                    <span className="text-[#1A1A1A]">Totaal</span>
-                    <span className="font-mono text-[#1A1A1A]">{formatCurrency(lightbox.factuur.totaal)}</span>
-                  </div>
-                </div>
-
-                {/* Meta */}
-                <div className="space-y-2 text-[12px]">
-                  {lightbox.factuur.factuur_datum && (
-                    <div className="flex justify-between">
-                      <span className="text-[#9B9B95]">Factuurdatum</span>
-                      <span className="text-[#4A4A46]">{formatDatum(lightbox.factuur.factuur_datum)}</span>
-                    </div>
-                  )}
-                  {lightbox.factuur.vervaldatum && (
-                    <div className="flex justify-between">
-                      <span className="text-[#9B9B95]">Vervaldatum</span>
-                      <span className="text-[#4A4A46]">{formatDatum(lightbox.factuur.vervaldatum)}</span>
-                    </div>
-                  )}
-                  {lightbox.factuur.email_van && (
-                    <div className="flex justify-between">
-                      <span className="text-[#9B9B95]">Van</span>
-                      <span className="text-[#4A4A46]">{lightbox.factuur.email_van}</span>
-                    </div>
-                  )}
-                </div>
-
-                {lightbox.factuur.extractie_opmerkingen && (
-                  <div className="text-[12px] p-3 rounded-lg bg-[#FFF8E1] text-[#8B6914] border border-[#FFE082]">
-                    {lightbox.factuur.extractie_opmerkingen}
+                    <span className="text-[#9B9B95]">Factuurdatum</span>
+                    <span className="text-[#4A4A46]">{formatDatum(lightbox.factuur.factuur_datum)}</span>
                   </div>
                 )}
-
-                {/* Status badge */}
-                <div>
-                  <span
-                    className="inline-flex items-center gap-1.5 text-[13px] font-semibold px-2.5 py-1 rounded-lg"
-                    style={{ backgroundColor: STATUS_CONFIG[lightbox.factuur.status].bg, color: STATUS_CONFIG[lightbox.factuur.status].text }}
-                  >
-                    {STATUS_CONFIG[lightbox.factuur.status].dot && <span className="w-1.5 h-1.5 rounded-full bg-current" />}
-                    {STATUS_CONFIG[lightbox.factuur.status].label}<span className="text-[#F15025]">.</span>
-                  </span>
-                </div>
-
-                {/* Notitie / afwijsreden */}
-                {lightbox.factuur.status !== 'goedgekeurd' && lightbox.factuur.status !== 'afgewezen' && (
-                  <div>
-                    <label className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95] mb-1.5 block">Notitie</label>
-                    <Textarea
-                      placeholder="Typ een reden bij afwijzing..."
-                      value={lightboxReden}
-                      onChange={e => setLightboxReden(e.target.value)}
-                      rows={3}
-                      className="text-[13px] bg-[#F8F7F5] border-[#EBEBEB] resize-none"
-                    />
+                {lightbox.factuur.vervaldatum && (
+                  <div className="flex justify-between text-[13px]">
+                    <span className="text-[#9B9B95]">Vervaldatum</span>
+                    <span className="text-[#4A4A46]">{formatDatum(lightbox.factuur.vervaldatum)}</span>
                   </div>
                 )}
-
-                {lightbox.factuur.status === 'afgewezen' && lightbox.factuur.afgewezen_reden && (
-                  <div className="text-[12px] p-3 rounded-lg bg-[#EEEEED] text-[#5A5A55]">
-                    Afgewezen: {lightbox.factuur.afgewezen_reden}
+                {lightbox.factuur.email_van && (
+                  <div className="flex justify-between text-[13px]">
+                    <span className="text-[#9B9B95]">Van</span>
+                    <span className="text-[#4A4A46] truncate ml-4">{lightbox.factuur.email_van}</span>
                   </div>
                 )}
               </div>
 
-              {/* Footer acties */}
+              {/* Status */}
+              <span
+                className="inline-flex items-center gap-1.5 text-[13px] font-semibold px-2.5 py-1 rounded-lg"
+                style={{ backgroundColor: STATUS_CONFIG[lightbox.factuur.status].bg, color: STATUS_CONFIG[lightbox.factuur.status].text }}
+              >
+                {STATUS_CONFIG[lightbox.factuur.status].dot && <span className="w-1.5 h-1.5 rounded-full bg-current" />}
+                {STATUS_CONFIG[lightbox.factuur.status].label}<span className="text-[#F15025]">.</span>
+              </span>
+
+              {lightbox.factuur.extractie_opmerkingen && (
+                <div className="text-[12px] p-3 rounded-xl bg-[#FFF8E1] text-[#8B6914] border border-[#FFE082]">
+                  {lightbox.factuur.extractie_opmerkingen}
+                </div>
+              )}
+
+              {/* Notitie */}
               {lightbox.factuur.status !== 'goedgekeurd' && lightbox.factuur.status !== 'afgewezen' && (
-                <div className="px-5 py-4 border-t border-[#F0EFEC] space-y-2">
-                  <Button
-                    onClick={handleLightboxApprove}
-                    disabled={lightboxSaving}
-                    className="w-full bg-[#2D6B48] hover:bg-[#245A3B] text-white h-10"
-                  >
-                    Goedkeuren
-                  </Button>
-                  {lightboxReden.trim() ? (
-                    <Button
-                      variant="outline"
-                      onClick={handleLightboxReject}
-                      disabled={lightboxSaving}
-                      className="w-full text-[#C03A18] border-[#C03A18] hover:bg-[#FDE8E2] h-10"
-                    >
-                      Afwijzen
-                    </Button>
-                  ) : (
-                    <Button variant="ghost" onClick={() => setLightbox(null)} className="w-full text-[#9B9B95] h-10">
-                      Sluiten
-                    </Button>
-                  )}
+                <div>
+                  <label className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95] mb-2 block">Notitie</label>
+                  <Textarea
+                    placeholder="Reden voor afwijzing..."
+                    value={lightboxReden}
+                    onChange={e => setLightboxReden(e.target.value)}
+                    rows={3}
+                    className="text-[13px] bg-[#FAFAF8] border-[#F0EFEC] resize-none rounded-xl"
+                  />
                 </div>
               )}
-              {(lightbox.factuur.status === 'goedgekeurd' || lightbox.factuur.status === 'afgewezen') && (
-                <div className="px-5 py-4 border-t border-[#F0EFEC]">
-                  <Button variant="outline" onClick={() => setLightbox(null)} className="w-full h-10">Sluiten</Button>
+
+              {lightbox.factuur.status === 'afgewezen' && lightbox.factuur.afgewezen_reden && (
+                <div className="text-[12px] p-3 rounded-xl bg-[#F5F5F3] text-[#5A5A55]">
+                  Afgewezen: {lightbox.factuur.afgewezen_reden}
                 </div>
               )}
             </div>
+
+            {/* Footer */}
+            {lightbox.factuur.status !== 'goedgekeurd' && lightbox.factuur.status !== 'afgewezen' ? (
+              <div className="px-6 py-5 border-t border-[#F0EFEC] space-y-2.5">
+                <Button onClick={handleLightboxApprove} disabled={lightboxSaving} className="w-full bg-[#2D6B48] hover:bg-[#245A3B] text-white h-11 text-[14px] font-semibold rounded-xl">
+                  Goedkeuren
+                </Button>
+                {lightboxReden.trim() ? (
+                  <Button variant="outline" onClick={handleLightboxReject} disabled={lightboxSaving} className="w-full text-[#C03A18] border-[#C03A18]/30 hover:bg-[#FDE8E2] h-11 text-[14px] rounded-xl">
+                    Afwijzen
+                  </Button>
+                ) : (
+                  <button onClick={() => setLightbox(null)} className="w-full text-[13px] text-[#9B9B95] hover:text-[#6B6B66] py-2 transition-colors">
+                    Sluiten
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="px-6 py-5 border-t border-[#F0EFEC]">
+                <button onClick={() => setLightbox(null)} className="w-full text-[13px] text-[#9B9B95] hover:text-[#6B6B66] py-2 transition-colors">
+                  Sluiten
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
