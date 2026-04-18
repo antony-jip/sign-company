@@ -1283,55 +1283,56 @@ export function ProjectDetail() {
 
           {/* Acties */}
           <div className="rounded-xl bg-[#FFFFFF] shadow-[0_1px_3px_rgba(0,0,0,0.03)] p-5">
-            <h3 className="text-[13px] font-bold text-[#1A1A1A] tracking-[-0.2px] mb-3">Acties</h3>
-            <div className="grid grid-cols-3 gap-1">
+            <h3 className="text-[13px] font-bold text-[#1A1A1A] tracking-[-0.2px] mb-4">Acties</h3>
+            <div className="grid grid-cols-3 gap-2">
               {[
-                { label: 'Taak', color: '#1A535C', icon: <Plus className="h-3.5 w-3.5" />, onClick: () => setNieuweTaakOpen(true) },
-                { label: 'Offerte', color: '#F15025', icon: <Receipt className="h-3.5 w-3.5" />, onClick: openNieuweOfferte },
-                { label: 'Werkbon', color: '#6B6B66', icon: <ClipboardCheck className="h-3.5 w-3.5" />, onClick: () => setShowWerkbonDialog(true) },
-                { label: 'Pakbon', color: '#6B6B66', icon: <Package className="h-3.5 w-3.5" />, onClick: () => setShowPakbonDialog(true) },
-                { label: 'Montage', color: '#6B6B66', icon: <Wrench className="h-3.5 w-3.5" />, onClick: handleOpenMontageDialog },
-                { label: 'Factuur', color: '#6B6B66', icon: <CreditCard className="h-3.5 w-3.5" />, onClick: () => {
+                { label: 'Taak', bg: '#E8F5F6', color: '#1A535C', icon: <Plus className="h-4 w-4" />, onClick: () => setNieuweTaakOpen(true) },
+                { label: 'Offerte', bg: '#FDE8E2', color: '#F15025', icon: <Receipt className="h-4 w-4" />, onClick: openNieuweOfferte },
+                { label: 'Werkbon', bg: '#E8EEF9', color: '#3A5A9A', icon: <ClipboardCheck className="h-4 w-4" />, onClick: () => setShowWerkbonDialog(true) },
+                { label: 'Pakbon', bg: '#F5EDD8', color: '#7D6A2E', icon: <Package className="h-4 w-4" />, onClick: () => setShowPakbonDialog(true) },
+                { label: 'Montage', bg: '#DCF0E4', color: '#2B6E44', icon: <Wrench className="h-4 w-4" />, onClick: handleOpenMontageDialog },
+                { label: 'Factuur', bg: '#F2E4EC', color: '#8A3D6E', icon: <CreditCard className="h-4 w-4" />, onClick: () => {
                   const params = new URLSearchParams({ klant_id: project.klant_id || '', project_id: id || '', titel: project.naam || '' })
                   navigate(`/facturen/nieuw?${params.toString()}`, { state: { from: location.pathname } })
                 }},
                 ...(() => {
                   const cpEmail = project.contactpersoon_id ? klant?.contactpersonen?.find(c => c.id === project.contactpersoon_id)?.email : undefined
                   const emailTo = cpEmail || klant?.email
-                  return emailTo ? [{ label: 'Email', color: '#6B6B66', icon: <Mail className="h-3.5 w-3.5" />, onClick: () => navigateWithTab({ path: `/email/compose?to=${encodeURIComponent(emailTo)}`, label: 'Nieuwe email', id: `/email/compose-${emailTo}` }) }] : []
+                  return emailTo ? [{ label: 'Email', bg: '#E2DFF5', color: '#5A4E91', icon: <Mail className="h-4 w-4" />, onClick: () => navigateWithTab({ path: `/email/compose?to=${encodeURIComponent(emailTo)}`, label: 'Nieuwe email', id: `/email/compose-${emailTo}` }) }] : []
                 })(),
               ].map((btn) => (
                 <button
                   key={btn.label}
                   onClick={btn.onClick}
-                  className="flex flex-col items-center gap-1 py-2.5 rounded-lg hover:bg-[#F8F7F5] transition-colors"
+                  className="flex flex-col items-center gap-1.5 py-3 rounded-xl hover:scale-[1.04] active:scale-[0.98] transition-all duration-150"
+                  style={{ backgroundColor: btn.bg }}
                 >
                   <span style={{ color: btn.color }}>{btn.icon}</span>
-                  <span className="text-[10px] font-medium text-[#6B6B66]">{btn.label}</span>
+                  <span className="text-[11px] font-semibold" style={{ color: btn.color }}>{btn.label}</span>
                 </button>
               ))}
             </div>
-            <div className="mt-2 pt-2 border-t border-[#EBEBEB]/60">
+            <div className="mt-3 pt-3 border-t border-[#EBEBEB]/60">
               <button
                 onClick={() => setShowObOfferteSelect(!showObOfferteSelect)}
-                className="w-full flex items-center gap-2 px-3 py-2 text-[12px] font-medium rounded-lg text-[#1A535C] hover:bg-[#E2F0F0]/40 transition-colors"
+                className="w-full flex items-center gap-2.5 px-3 py-2.5 text-[13px] font-semibold rounded-xl text-[#1A535C] bg-[#E8F5F6]/50 hover:bg-[#E8F5F6] transition-colors"
               >
-                <FileCheck className="h-3.5 w-3.5" />
+                <FileCheck className="h-4 w-4" />
                 Opdrachtbevestiging
-                <ChevronDown className={`h-3 w-3 ml-auto transition-transform ${showObOfferteSelect ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`h-3.5 w-3.5 ml-auto transition-transform ${showObOfferteSelect ? 'rotate-180' : ''}`} />
               </button>
               {showObOfferteSelect && (
-                <div className="mt-1 rounded-lg bg-[#F8F7F5] overflow-hidden">
+                <div className="mt-1.5 rounded-xl bg-[#F8F7F5] overflow-hidden border border-[#EBEBEB]/60">
                   {projectOffertes.length === 0 ? (
-                    <p className="text-[11px] text-[#9B9B95] text-center py-4">Maak eerst een offerte</p>
+                    <p className="text-[12px] text-[#9B9B95] text-center py-5">Maak eerst een offerte</p>
                   ) : (
                     projectOffertes.map((o) => (
                       <button
                         key={o.id}
                         onClick={() => { setObPreviewOfferte(o); setShowObOfferteSelect(false) }}
-                        className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-[#F4F2EE] transition-colors text-left"
+                        className="w-full flex items-center justify-between px-3.5 py-3 hover:bg-[#F0EFEC] transition-colors text-left border-b border-[#EBEBEB]/40 last:border-0"
                       >
-                        <span className="text-[12px] font-medium text-[#1A1A1A] truncate">{o.titel || o.nummer}</span>
+                        <span className="text-[13px] font-medium text-[#1A1A1A] truncate">{o.titel || o.nummer}</span>
                         <span className="text-[11px] font-mono text-[#9B9B95] ml-2 flex-shrink-0">{o.nummer}</span>
                       </button>
                     ))
