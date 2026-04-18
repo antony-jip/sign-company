@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { ArrowLeft, Plus, Trash2 } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
@@ -14,11 +14,10 @@ import {
   updateInkoopfactuurRegels,
   approveInkoopfactuur,
   rejectInkoopfactuur,
-  assignInkoopfactuur,
-  getMedewerkersMetInkoopfactuurToegang,
+  extractInkoopfactuur,
 } from '@/services/inkoopfactuurService'
 import { supabase } from '@/services/supabaseClient'
-import type { InkoopFactuur, InkoopFactuurRegel, Medewerker } from '@/types'
+import type { InkoopFactuur, InkoopFactuurRegel } from '@/types'
 
 function createEmptyRegel(): Omit<InkoopFactuurRegel, 'id' | 'inkoopfactuur_id' | 'created_at'> {
   return { volgorde: 0, omschrijving: '', aantal: 1, eenheidsprijs: 0, btw_tarief: 21, regel_totaal: 0 }
@@ -30,9 +29,9 @@ export function InkoopfactuurDetail() {
   const { user } = useAuth()
   const [factuur, setFactuur] = useState<InkoopFactuur | null>(null)
   const [regels, setRegels] = useState<Omit<InkoopFactuurRegel, 'id' | 'inkoopfactuur_id' | 'created_at'>[]>([])
-  const [medewerkers, setMedewerkers] = useState<Medewerker[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [isExtracting, setIsExtracting] = useState(false)
   const [pdfUrl, setPdfUrl] = useState<string | null>(null)
   const [afwijsReden, setAfwijsReden] = useState('')
   const [showAfwijsModal, setShowAfwijsModal] = useState(false)
@@ -44,10 +43,7 @@ export function InkoopfactuurDetail() {
       try {
         setIsLoading(true)
         const factuurId = id as string
-        const [result, mws] = await Promise.all([
-          getInkoopfactuur(factuurId),
-          getMedewerkersMetInkoopfactuurToegang().catch(() => []),
-        ])
+        const result = await getInkoopfactuur(factuurId)
         if (cancelled || !result) {
           if (!cancelled) navigate('/inkoopfacturen')
           return
@@ -61,7 +57,6 @@ export function InkoopfactuurDetail() {
           btw_tarief: r.btw_tarief,
           regel_totaal: r.regel_totaal,
         })))
-        setMedewerkers(mws)
 
         if (supabase && result.factuur.pdf_storage_path) {
           const { data } = await supabase.storage
@@ -124,6 +119,31 @@ export function InkoopfactuurDetail() {
     }
   }
 
+  async function handleExtract() {
+    if (!id) return
+    try {
+      setIsExtracting(true)
+      const result = await extractInkoopfactuur(id)
+      if (result.success) {
+        toast.success('Factuur geextraheerd')
+        const updated = await getInkoopfactuur(id)
+        if (updated) {
+          setFactuur(updated.factuur)
+          setRegels(updated.regels.map(r => ({
+            volgorde: r.volgorde, omschrijving: r.omschrijving, aantal: r.aantal,
+            eenheidsprijs: r.eenheidsprijs, btw_tarief: r.btw_tarief, regel_totaal: r.regel_totaal,
+          })))
+        }
+      } else {
+        toast.error(result.error || 'Extractie mislukt')
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Extractie mislukt')
+    } finally {
+      setIsExtracting(false)
+    }
+  }
+
   async function handleApprove() {
     if (!factuur || !id || !user?.id) return
     try {
@@ -153,16 +173,6 @@ export function InkoopfactuurDetail() {
     }
   }
 
-  async function handleAssign(medewerkerId: string) {
-    if (!id) return
-    try {
-      const updated = await assignInkoopfactuur(id, medewerkerId)
-      setFactuur(updated)
-      toast.success('Toegewezen')
-    } catch (err) {
-      toast.error('Toewijzen mislukt')
-    }
-  }
 
   if (isLoading || !factuur) {
     return (
@@ -251,21 +261,17 @@ export function InkoopfactuurDetail() {
               </div>
             </div>
 
-            {/* Toewijzen */}
-            <div>
-              <Label className="text-[11px]">Toewijzen aan</Label>
-              <select
-                value={factuur.toegewezen_aan_id || ''}
-                onChange={e => e.target.value && handleAssign(e.target.value)}
-                disabled={isAfgerond}
-                className="w-full px-3 py-2 rounded-lg border border-[#E6E4E0] text-[13px] bg-white focus:outline-none focus:ring-1 focus:ring-[#C44830]/30"
+            {/* Extraheer knop voor nieuw status */}
+            {factuur.status === 'nieuw' && (
+              <button
+                onClick={handleExtract}
+                disabled={isExtracting}
+                className="inline-flex items-center gap-2 w-full justify-center py-2.5 rounded-xl text-[13px] font-semibold bg-[#C44830] text-white hover:bg-[#A33A26] disabled:opacity-50 transition-all"
               >
-                <option value="">Niet toegewezen</option>
-                {medewerkers.map(m => (
-                  <option key={m.id} value={m.id}>{m.naam}</option>
-                ))}
-              </select>
-            </div>
+                <Sparkles className={`w-4 h-4 ${isExtracting ? 'animate-spin' : ''}`} />
+                {isExtracting ? 'Extraheren...' : 'AI Extractie starten'}
+              </button>
+            )}
           </div>
 
           {/* Regels */}

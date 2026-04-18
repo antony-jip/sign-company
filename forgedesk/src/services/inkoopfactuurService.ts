@@ -235,6 +235,25 @@ export async function updateInkoopfactuurRegels(id: string, regels: Omit<InkoopF
   return data || []
 }
 
+// ============ EXTRACTIE ============
+
+export async function extractInkoopfactuur(id: string): Promise<{ success: boolean; error?: string }> {
+  if (!isSupabaseConfigured() || !supabase) throw new Error('Supabase niet geconfigureerd')
+  const token = (await supabase.auth.getSession()).data.session?.access_token
+  if (!token) throw new Error('Niet ingelogd')
+
+  const res = await fetch('/api/inkoopfactuur-extract', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ inkoopfactuur_id: id }),
+  })
+
+  return res.json()
+}
+
 // ============ SYNC ============
 
 export async function syncInkoopfacturen(): Promise<{ success: boolean; verwerkt: number; error?: string }> {
