@@ -180,6 +180,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .eq('id', inkoopfactuur_id)
 
     if (updateError) {
+      if (updateError.message.includes('duplicate key') || updateError.message.includes('unique constraint')) {
+        await supabase.from('inkoopfacturen')
+          .update({ status: 'afgewezen', afgewezen_reden: 'Duplicaat factuur — zelfde leverancier en factuurnummer bestaat al', updated_at: new Date().toISOString() })
+          .eq('id', inkoopfactuur_id)
+        return res.status(200).json({ success: true, duplicate: true })
+      }
       return res.status(200).json({ success: false, error: `Database update mislukt: ${updateError.message}` })
     }
 
