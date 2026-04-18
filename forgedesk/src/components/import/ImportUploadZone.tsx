@@ -18,6 +18,20 @@ export function ImportUploadZone({ type, label, icon: Icon, accept, onParsed }: 
   const handleFile = useCallback(async (file: File) => {
     setFileName(file.name)
     setError(null)
+
+    // File size check — max 10MB
+    if (file.size > 10 * 1024 * 1024) {
+      setError(`Bestand is te groot (${(file.size / (1024 * 1024)).toFixed(1)}MB). Maximum is 10MB.`)
+      return
+    }
+
+    // File type check
+    const ext = file.name.split('.').pop()?.toLowerCase()
+    if (!ext || !['csv', 'xlsx', 'xls'].includes(ext)) {
+      setError(`Bestandstype ".${ext || '?'}" wordt niet ondersteund. Gebruik .csv of .xlsx.`)
+      return
+    }
+
     try {
       const { parseImportFile } = await import('@/services/universalImportService')
       const result = await parseImportFile(file, type as 'klanten' | 'projecten' | 'offertes' | 'facturen')
@@ -26,7 +40,7 @@ export function ImportUploadZone({ type, label, icon: Icon, accept, onParsed }: 
       }
       onParsed(result)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Onbekende fout')
+      setError(err instanceof Error ? err.message : 'Onbekende fout bij het lezen van het bestand')
     }
   }, [type, onParsed])
 

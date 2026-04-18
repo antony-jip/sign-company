@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Upload, Download, FileSpreadsheet, AlertCircle, AlertTriangle } from 'lucide-react'
+import { toast } from 'sonner'
 import { useAuth } from '@/contexts/AuthContext'
 import {
   parseCSV,
@@ -38,6 +39,12 @@ export function BedrijfsdataUpload() {
     setWaarschuwingen([])
     setFileName(file.name)
 
+    if (file.size > 10 * 1024 * 1024) {
+      setFouten([`Bestand is te groot (${(file.size / (1024 * 1024)).toFixed(1)}MB). Maximum is 10MB.`])
+      setIsValid(false)
+      return
+    }
+
     try {
       const { headers: h, rows: r } = await parseCSV(file)
       setHeaders(h)
@@ -54,7 +61,7 @@ export function BedrijfsdataUpload() {
       setWaarschuwingen(validatie.waarschuwingen)
       setIsValid(validatie.isValid)
     } catch (err) {
-      setFouten(['Fout bij het lezen van het bestand.'])
+      setFouten([`Fout bij het lezen van het bestand: ${err instanceof Error ? err.message : 'onbekend formaat'}`])
       setIsValid(false)
     }
   }, [])
@@ -67,7 +74,10 @@ export function BedrijfsdataUpload() {
   }, [handleFile])
 
   const handleImport = async () => {
-    if (!organisatieId || !user?.id) return
+    if (!organisatieId || !user?.id) {
+      toast.error('Kan niet importeren — je bent niet ingelogd of je organisatie is niet gevonden. Herlaad de pagina.')
+      return
+    }
     setImporting(true)
     setProgress({ current: 0, total: rows.length })
 

@@ -463,6 +463,8 @@ export async function importeerContactpersonen(
       .map((c: { email: string }) => c.email?.toLowerCase())
       .filter(Boolean)
   )
+  // Dedup op naam voor contacten zonder email
+  const geziendeNamen = new Set<string>()
 
   const totalRows = rows.length
 
@@ -495,6 +497,16 @@ export async function importeerContactpersonen(
       if (email && bestaandeEmails.has(email.toLowerCase())) {
         resultaat.overgeslagen++
         continue
+      }
+
+      // Dedup op naam voor contacten zonder email
+      if (!email) {
+        const naamKey = `${voornaam.toLowerCase()}|${achternaam.toLowerCase()}`
+        if (geziendeNamen.has(naamKey)) {
+          resultaat.overgeslagen++
+          continue
+        }
+        geziendeNamen.add(naamKey)
       }
 
       // Koppel aan klant

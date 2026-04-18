@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { Loader2, CheckCircle2 } from 'lucide-react'
 import type { ImportData, ImportResultaat } from '@/services/universalImportService'
 
@@ -12,25 +12,26 @@ export function ImportProgress({ data, userId, onComplete }: ImportProgressProps
   const [status, setStatus] = useState<'running' | 'done' | 'error'>('running')
   const [result, setResult] = useState<ImportResultaat | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const mountedRef = useRef(true)
 
   useEffect(() => {
-    let cancelled = false
+    mountedRef.current = true
     async function run() {
       try {
         const { importData: runImport } = await import('@/services/universalImportService')
         const res = await runImport(data, userId, () => {})
-        if (cancelled) return
+        if (!mountedRef.current) return
         setResult(res)
         setStatus('done')
         onComplete(res)
       } catch (err) {
-        if (cancelled) return
-        setError(err instanceof Error ? err.message : 'Onbekende fout')
+        if (!mountedRef.current) return
+        setError(err instanceof Error ? err.message : 'Onbekende fout bij importeren')
         setStatus('error')
       }
     }
     run()
-    return () => { cancelled = true }
+    return () => { mountedRef.current = false }
   }, [data, userId, onComplete])
 
   if (status === 'running') {
