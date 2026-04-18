@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, RefreshCw } from 'lucide-react'
+import { Search, RefreshCw, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -9,6 +9,7 @@ import {
   countWachtendOpReview,
   getInboxConfig,
   syncInkoopfacturen,
+  extractInkoopfactuur,
 } from '@/services/inkoopfactuurService'
 import type { InkoopFactuurInboxConfig, InkoopFactuur, InkoopFactuurStatus } from '@/types'
 
@@ -49,6 +50,7 @@ export function InkoopfacturenLayout() {
   const [searchQuery, setSearchQuery] = useState('')
   const [inboxConfig, setInboxConfig] = useState<InkoopFactuurInboxConfig | null>(null)
   const [isSyncing, setIsSyncing] = useState(false)
+  const [isExtracting, setIsExtracting] = useState(false)
 
   async function handleSync() {
     try {
@@ -69,6 +71,32 @@ export function InkoopfacturenLayout() {
       toast.error(err instanceof Error ? err.message : 'Synchronisatie mislukt')
     } finally {
       setIsSyncing(false)
+    }
+  }
+
+  const nieuwCount = useMemo(() => facturen.filter(f => f.status === 'nieuw').length, [facturen])
+
+  async function handleExtractAll() {
+    const nieuweFacturen = facturen.filter(f => f.status === 'nieuw')
+    if (nieuweFacturen.length === 0) return
+    try {
+      setIsExtracting(true)
+      let gelukt = 0
+      for (const f of nieuweFacturen) {
+        try {
+          const result = await extractInkoopfactuur(f.id)
+          if (result.success) gelukt++
+        } catch { /* doorgaan met volgende */ }
+      }
+      toast.success(`${gelukt} van ${nieuweFacturen.length} facturen geextraheerd`)
+      const [data, count] = await Promise.all([
+        getInkoopfacturen().catch(() => []),
+        countWachtendOpReview().catch(() => 0),
+      ])
+      setFacturen(data)
+      setWachtendCount(count)
+    } finally {
+      setIsExtracting(false)
     }
   }
 
@@ -150,16 +178,28 @@ export function InkoopfacturenLayout() {
               <span className="text-[#C0BDB8]">/</span>{facturen.length}
             </span>
           </div>
-          {inboxConfig && (
-            <button
-              onClick={handleSync}
-              disabled={isSyncing}
-              className="inline-flex items-center gap-2 text-[13px] font-medium text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-white px-3.5 py-2 rounded-xl ring-1 ring-black/[0.06] transition-all disabled:opacity-50"
-            >
-              <RefreshCw className={cn('w-4 h-4', isSyncing && 'animate-spin')} />
-              {isSyncing ? 'Synchroniseren...' : 'Synchroniseer'}
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {nieuwCount > 0 && (
+              <button
+                onClick={handleExtractAll}
+                disabled={isExtracting}
+                className="inline-flex items-center gap-2 bg-[#C44830] text-white pl-4 pr-5 py-2.5 rounded-xl text-[13px] font-semibold shadow-[0_2px_8px_rgba(196,72,48,0.25)] hover:bg-[#A33A26] disabled:opacity-50 transition-all"
+              >
+                <Sparkles className={cn('w-4 h-4', isExtracting && 'animate-spin')} />
+                {isExtracting ? 'Extraheren...' : `Extraheer ${nieuwCount} facturen`}
+              </button>
+            )}
+            {inboxConfig && (
+              <button
+                onClick={handleSync}
+                disabled={isSyncing}
+                className="inline-flex items-center gap-2 text-[13px] font-medium text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-white px-3.5 py-2 rounded-xl ring-1 ring-black/[0.06] transition-all disabled:opacity-50"
+              >
+                <RefreshCw className={cn('w-4 h-4', isSyncing && 'animate-spin')} />
+                {isSyncing ? 'Synchroniseren...' : 'Synchroniseer'}
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Quick stats */}
