@@ -578,20 +578,23 @@ export function InkoopfacturenLayout() {
       {lightbox && (
         <div className="fixed inset-0 bg-black/70 z-50 flex" onClick={() => setLightbox(null)}>
 
-          {/* PDF area — donkere achtergrond, A4 centered */}
-          <div className="flex-1 flex items-center justify-center p-8" onClick={e => e.stopPropagation()}>
-            <div className="w-full h-full max-w-[800px] bg-white rounded-lg shadow-2xl overflow-hidden">
-              <iframe
-                src={`${lightbox.pdfUrl}#toolbar=0&navpanes=0&scrollbar=1`}
-                className="w-full h-full"
-                title="PDF"
-                style={{ border: 'none' }}
-              />
-            </div>
-          </div>
+          {/* PDF + Sidebar als één blok */}
+          <div className="flex w-full h-full" onClick={e => e.stopPropagation()}>
 
-          {/* Sidebar rechts — 360px vast */}
-          <div className="w-[360px] bg-white flex flex-col shadow-[-4px_0_24px_rgba(0,0,0,0.08)]" onClick={e => e.stopPropagation()}>
+            {/* PDF area — A4 ratio, past in viewport */}
+            <div className="flex-1 flex items-center justify-center bg-[#1A1A1A] p-6">
+              <div style={{ aspectRatio: '210 / 297', height: 'calc(100vh - 48px)', maxWidth: '100%' }} className="bg-white rounded-lg shadow-[0_8px_40px_rgba(0,0,0,0.4)] overflow-hidden">
+                <iframe
+                  src={`${lightbox.pdfUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+                  className="w-full h-full"
+                  title="PDF"
+                  style={{ border: 'none' }}
+                />
+              </div>
+            </div>
+
+            {/* Sidebar rechts — sluit aan op PDF hoogte */}
+            <div className="w-[360px] bg-white flex flex-col border-l border-[#F0EFEC]">
 
             {/* Nav + Close */}
             <div className="flex items-center justify-between px-6 py-3 border-b border-[#F0EFEC]">
@@ -719,6 +722,7 @@ export function InkoopfacturenLayout() {
                 </button>
               </div>
             )}
+          </div>
           </div>
         </div>
       )}
