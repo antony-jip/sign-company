@@ -133,14 +133,20 @@ export async function assignInkoopfactuur(id: string, medewerkerId: string): Pro
   throw new Error('Supabase vereist voor deze actie')
 }
 
-export async function approveInkoopfactuur(id: string, goedgekeurdDoorId: string): Promise<InkoopFactuur> {
+export async function approveInkoopfactuur(id: string, userId: string): Promise<InkoopFactuur> {
   assertId(id)
-  assertId(goedgekeurdDoorId, 'goedgekeurdDoorId')
   if (!isSupabaseConfigured() || !supabase) throw new Error('Supabase vereist voor deze actie')
 
   const result = await getInkoopfactuur(id)
   if (!result) throw new Error('Inkoopfactuur niet gevonden')
   const { factuur } = result
+
+  // Zoek medewerker ID via auth user ID
+  const { data: medewerker } = await supabase
+    .from('medewerkers')
+    .select('id')
+    .eq('user_id', userId)
+    .maybeSingle()
 
   const uitgave = await createUitgave({
     type: 'inkoopfactuur',
@@ -161,7 +167,7 @@ export async function approveInkoopfactuur(id: string, goedgekeurdDoorId: string
     .from('inkoopfacturen')
     .update({
       status: 'goedgekeurd',
-      goedgekeurd_door_id: goedgekeurdDoorId,
+      goedgekeurd_door_id: medewerker?.id || null,
       goedgekeurd_op: now(),
       uitgave_id: uitgave.id,
       updated_at: now(),

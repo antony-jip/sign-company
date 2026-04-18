@@ -179,7 +179,7 @@ export function InkoopfactuurDetail() {
       setFactuur(updated)
       toast.success('Inkoopfactuur goedgekeurd en toegevoegd aan uitgaven')
     } catch (err) {
-      toast.error('Goedkeuren mislukt')
+      toast.error(err instanceof Error ? err.message : 'Goedkeuren mislukt')
     } finally {
       setIsSaving(false)
     }
