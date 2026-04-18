@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, RefreshCw, Download, FileText, CheckCircle2, X } from 'lucide-react'
+import { Search, RefreshCw, Download, FileText, CheckCircle2, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
@@ -31,7 +31,6 @@ const FILTER_OPTIONS: { value: FilterStatus; label: string }[] = [
   { value: 'alle', label: 'Alle' },
   { value: 'nieuw', label: 'Nieuw' },
   { value: 'verwerkt', label: 'Te reviewen' },
-  { value: 'toegewezen', label: 'Toegewezen' },
   { value: 'goedgekeurd', label: 'Goedgekeurd' },
   { value: 'afgewezen', label: 'Afgewezen' },
 ]
@@ -54,7 +53,7 @@ export function InkoopfacturenLayout() {
   const [searchQuery, setSearchQuery] = useState('')
   const [inboxConfig, setInboxConfig] = useState<InkoopFactuurInboxConfig | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
-  const [lightbox, setLightbox] = useState<{ factuur: InkoopFactuur; pdfUrl: string } | null>(null)
+  const [lightbox, setLightbox] = useState<{ factuur: InkoopFactuur; pdfUrl: string; index: number } | null>(null)
   const [lightboxReden, setLightboxReden] = useState('')
   const [lightboxSaving, setLightboxSaving] = useState(false)
   const [isSyncing, setIsSyncing] = useState(false)
@@ -219,7 +218,7 @@ export function InkoopfacturenLayout() {
     return result
   }, [facturen, filterStatus, searchQuery])
 
-  async function openLightbox(factuur: InkoopFactuur) {
+  async function openLightbox(factuur: InkoopFactuur, index?: number) {
     try {
       const mod = await import('@/services/supabaseClient')
       const sb = mod.supabase || mod.default
@@ -227,10 +226,30 @@ export function InkoopfacturenLayout() {
       if (!factuur.pdf_storage_path) { toast.error('Geen PDF beschikbaar'); return }
       const { data, error } = await sb.storage.from('inkoopfacturen').createSignedUrl(factuur.pdf_storage_path, 3600)
       if (error || !data?.signedUrl) { toast.error('PDF URL ophalen mislukt'); return }
-      setLightbox({ factuur, pdfUrl: data.signedUrl })
+      setLightbox({ factuur, pdfUrl: data.signedUrl, index: index ?? filtered.findIndex(f => f.id === factuur.id) })
       setLightboxReden('')
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Fout bij openen PDF')
+    }
+  }
+
+  function navigateLightbox(direction: 'prev' | 'next') {
+    if (!lightbox) return
+    const newIndex = direction === 'next' ? lightbox.index + 1 : lightbox.index - 1
+    if (newIndex < 0 || newIndex >= filtered.length) return
+    openLightbox(filtered[newIndex], newIndex)
+  }
+
+  async function goToNextOrClose() {
+    if (!lightbox) return
+    await refreshData()
+    const nextIndex = lightbox.index
+    if (nextIndex < filtered.length) {
+      openLightbox(filtered[nextIndex], nextIndex)
+    } else if (nextIndex - 1 >= 0 && nextIndex - 1 < filtered.length) {
+      openLightbox(filtered[nextIndex - 1], nextIndex - 1)
+    } else {
+      setLightbox(null)
     }
   }
 
@@ -239,13 +258,13 @@ export function InkoopfacturenLayout() {
     setLightboxSaving(true)
     try {
       const { approveInkoopfactuur } = await import('@/services/inkoopfactuurService')
-      const { supabase } = await import('@/services/supabaseClient')
-      const userId = (await supabase?.auth.getUser())?.data?.user?.id
+      const mod = await import('@/services/supabaseClient')
+      const sb = mod.supabase || mod.default
+      const userId = (await sb?.auth.getUser())?.data?.user?.id
       if (!userId) { toast.error('Niet ingelogd'); return }
       await approveInkoopfactuur(lightbox.factuur.id, userId)
       toast.success('Goedgekeurd')
-      setLightbox(null)
-      await refreshData()
+      await goToNextOrClose()
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Goedkeuren mislukt')
     } finally {
@@ -260,8 +279,7 @@ export function InkoopfacturenLayout() {
       const { rejectInkoopfactuur } = await import('@/services/inkoopfactuurService')
       await rejectInkoopfactuur(lightbox.factuur.id, lightboxReden)
       toast.success('Afgewezen')
-      setLightbox(null)
-      await refreshData()
+      await goToNextOrClose()
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Afwijzen mislukt')
     } finally {
@@ -461,15 +479,12 @@ export function InkoopfacturenLayout() {
                 <th className="text-left py-3.5 pr-4 w-[150px]">
                   <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Status</span>
                 </th>
-                <th className="text-left py-3.5 pr-4 hidden lg:table-cell">
-                  <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Toegewezen</span>
-                </th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={7}>
+                  <td colSpan={6}>
                     <EmptyState
                       module="inkoopfacturen"
                       title="Nog geen inkoopfacturen"
@@ -494,12 +509,12 @@ export function InkoopfacturenLayout() {
                   </td>
                 </tr>
               ) : (
-                filtered.map((factuur) => {
+                filtered.map((factuur, idx) => {
                   const config = STATUS_CONFIG[factuur.status]
                   return (
                     <tr
                       key={factuur.id}
-                      onClick={() => openLightbox(factuur)}
+                      onClick={() => openLightbox(factuur, idx)}
                       className="border-b border-[#F0EFEC] last:border-0 hover:bg-[#FAFAF8] cursor-pointer transition-colors doen-row"
                     >
                       <td className="py-3.5 pl-5 pr-3 w-10" onClick={e => e.stopPropagation()}>
@@ -537,15 +552,6 @@ export function InkoopfacturenLayout() {
                           {config.label}<span className="text-[#F15025]">.</span>
                         </span>
                       </td>
-                      <td className="py-3.5 pr-4 hidden lg:table-cell">
-                        {factuur.toegewezen_aan_id ? (
-                          <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[#E6E4E0] text-[11px] font-semibold text-[#5A5A55]">
-                            ?
-                          </span>
-                        ) : (
-                          <span className="text-[13px] text-[#C0BDB8]">-</span>
-                        )}
-                      </td>
                     </tr>
                   )
                 })
@@ -577,9 +583,26 @@ export function InkoopfacturenLayout() {
                       <p className="text-[12px] font-mono text-[#9B9B95] mt-0.5">#{lightbox.factuur.factuur_nummer}</p>
                     )}
                   </div>
-                  <button onClick={() => setLightbox(null)} className="w-7 h-7 rounded-lg hover:bg-[#F0EFEC] flex items-center justify-center -mr-1 -mt-1">
-                    <X className="w-4 h-4 text-[#9B9B95]" />
-                  </button>
+                  <div className="flex items-center gap-1 -mr-1 -mt-1">
+                    <button
+                      onClick={() => navigateLightbox('prev')}
+                      disabled={lightbox.index <= 0}
+                      className="w-7 h-7 rounded-lg hover:bg-[#F0EFEC] flex items-center justify-center disabled:opacity-30"
+                    >
+                      <ChevronLeft className="w-4 h-4 text-[#9B9B95]" />
+                    </button>
+                    <span className="text-[11px] font-mono text-[#C0BDB8]">{lightbox.index + 1}/{filtered.length}</span>
+                    <button
+                      onClick={() => navigateLightbox('next')}
+                      disabled={lightbox.index >= filtered.length - 1}
+                      className="w-7 h-7 rounded-lg hover:bg-[#F0EFEC] flex items-center justify-center disabled:opacity-30"
+                    >
+                      <ChevronRight className="w-4 h-4 text-[#9B9B95]" />
+                    </button>
+                    <button onClick={() => setLightbox(null)} className="w-7 h-7 rounded-lg hover:bg-[#F0EFEC] flex items-center justify-center ml-1">
+                      <X className="w-4 h-4 text-[#9B9B95]" />
+                    </button>
+                  </div>
                 </div>
               </div>
 
