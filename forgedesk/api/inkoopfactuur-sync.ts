@@ -116,11 +116,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       try {
         await client.mailboxOpen(config.gmail_label, { readOnly: true })
       } catch (mailboxErr: unknown) {
-        const mbMsg = mailboxErr instanceof Error ? mailboxErr.message : String(mailboxErr)
+        let beschikbaar = ''
+        try {
+          const mailboxes = await client.list()
+          beschikbaar = mailboxes
+            .map((m: { path: string }) => m.path)
+            .filter((p: string) => !p.startsWith('[Gmail]'))
+            .join(', ')
+        } catch { /* ignore */ }
         await client.logout()
         return res.status(200).json({
           success: false,
-          error: `Label "${config.gmail_label}" niet gevonden. Controleer of het Gmail label exact zo heet. Fout: ${mbMsg}`,
+          error: `Label "${config.gmail_label}" niet gevonden.${beschikbaar ? ` Beschikbare labels: ${beschikbaar}` : ' Maak het label aan in Gmail.'}`,
           verwerkt: 0,
         })
       }
