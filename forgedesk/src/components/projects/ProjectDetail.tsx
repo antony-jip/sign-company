@@ -934,39 +934,47 @@ export function ProjectDetail() {
             {/* Recente activiteit — compact in header */}
             {recenteActiviteiten.length > 0 && (
               <div className="relative hidden lg:block">
-                <span className="block text-[10px] font-semibold text-[#9B9B95] uppercase tracking-[0.08em] mb-1 ml-1">Activiteit</span>
                 <button
                   onClick={() => setShowActivityDropdown(s => !s)}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-[#F0EFEC] transition-colors text-left max-w-[280px]"
+                  className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-[#F0EFEC]/60 hover:bg-[#F0EFEC] transition-colors text-left max-w-[320px]"
                 >
-                  <div className="flex -space-x-1.5">
-                    {recenteActiviteiten.slice(0, 3).map((ev, i) => (
-                      <div key={ev.id} className="w-5 h-5 rounded-full bg-[#E8F5F6] border-2 border-[#F8F7F5] flex items-center justify-center" style={{ zIndex: 3 - i }}>
-                        <span className="text-[7px] font-bold text-[#1A535C]">{ev.type[0].toUpperCase()}</span>
-                      </div>
-                    ))}
+                  <div className="w-2 h-2 rounded-full bg-[#1A535C] flex-shrink-0 animate-pulse" />
+                  <div className="min-w-0">
+                    <p className="text-[12px] font-medium text-[#4A4A46] truncate">{recenteActiviteiten[0].tekst}</p>
+                    <p className="text-[10px] text-[#9B9B95]">
+                      {new Date(recenteActiviteiten[0].datum).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })} · {recenteActiviteiten.length} activiteiten
+                    </p>
                   </div>
-                  <span className="text-[12px] text-[#6B6B66] truncate">{recenteActiviteiten[0].tekst}</span>
-                  <ChevronDown className="h-3 w-3 text-[#9B9B95] flex-shrink-0" />
+                  <ChevronDown className={cn('h-3.5 w-3.5 text-[#9B9B95] flex-shrink-0 transition-transform', showActivityDropdown && 'rotate-180')} />
                 </button>
 
                 {showActivityDropdown && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setShowActivityDropdown(false)} />
-                    <div className="absolute right-0 top-full mt-1 w-[340px] bg-white rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.08)] z-50 overflow-hidden border border-[#EBEBEB]">
-                      <div className="px-4 py-3 border-b border-[#F0EFEC] flex items-center justify-between">
-                        <span className="text-[13px] font-bold text-[#1A1A1A]">Activiteit</span>
-                        <span className="text-[11px] text-[#B0ADA8] font-mono">{recenteActiviteiten.length}</span>
+                    <div className="absolute right-0 top-full mt-1.5 w-[360px] bg-white rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.1)] z-50 overflow-hidden border border-[#EBEBEB]">
+                      <div className="px-4 py-3 border-b border-[#F0EFEC] flex items-center justify-between bg-[#FAFAF8]">
+                        <span className="text-[13px] font-bold text-[#1A1A1A]">Projectactiviteit</span>
+                        <span className="text-[10px] text-[#9B9B95] bg-[#F0EFEC] rounded-md px-1.5 py-0.5 font-medium">{recenteActiviteiten.length}</span>
                       </div>
-                      <div className="max-h-[320px] overflow-y-auto py-1">
-                        {recenteActiviteiten.slice(0, 15).map((ev) => (
-                          <div key={ev.id} className="px-4 py-2.5 hover:bg-[#F8F7F5] transition-colors">
-                            <p className="text-[12px] text-[#4A4A46] leading-snug">{ev.tekst}</p>
-                            <span className="text-[10px] text-[#B0ADA8]">
-                              {new Date(ev.datum).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })} · {new Date(ev.datum).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                          </div>
-                        ))}
+                      <div className="max-h-[360px] overflow-y-auto">
+                        {recenteActiviteiten.slice(0, 20).map((ev, i) => {
+                          const typeColors: Record<string, string> = {
+                            project: '#1A535C', offerte: '#F15025', montage: '#2B6E44',
+                            werkbon: '#3A5A9A', factuur: '#8A3D6E', taak: '#7D6A2E',
+                            foto: '#B05C2E', portaal: '#5A4E91',
+                          }
+                          return (
+                            <div key={ev.id} className={cn('flex items-start gap-3 px-4 py-3 hover:bg-[#F8F7F5] transition-colors', i > 0 && 'border-t border-[#F0EFEC]')}>
+                              <div className="w-2 h-2 rounded-full flex-shrink-0 mt-1.5" style={{ backgroundColor: typeColors[ev.type] || '#9B9B95' }} />
+                              <div className="min-w-0 flex-1">
+                                <p className="text-[13px] text-[#1A1A1A] leading-snug">{ev.tekst}</p>
+                                <p className="text-[11px] text-[#9B9B95] mt-0.5">
+                                  {new Date(ev.datum).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })} om {new Date(ev.datum).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}
+                                </p>
+                              </div>
+                            </div>
+                          )
+                        })}
                       </div>
                     </div>
                   </>
