@@ -26,7 +26,8 @@ import {
   Legend,
 } from 'recharts'
 import { getFacturen, getOffertes } from '@/services/supabaseService'
-import type { Factuur, Offerte } from '@/types'
+import { getInkoopfacturen } from '@/services/inkoopfactuurService'
+import type { Factuur, Offerte, InkoopFactuur } from '@/types'
 import { formatCurrency, getStatusColor } from '@/lib/utils'
 import { GeneralLedgerSettings } from './GeneralLedgerSettings'
 import { VATCodesSettings } from './VATCodesSettings'
@@ -44,14 +45,20 @@ export function FinancialLayout() {
   const [activeTab, setActiveTab] = useState('overzicht')
   const [facturen, setFacturen] = useState<Factuur[]>([])
   const [offertes, setOffertes] = useState<Offerte[]>([])
+  const [inkoopfacturen, setInkoopfacturen] = useState<InkoopFactuur[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     let cancelled = false
-    Promise.all([getFacturen(), getOffertes()]).then(([fac, off]) => {
+    Promise.all([
+      getFacturen(),
+      getOffertes(),
+      getInkoopfacturen().catch(() => []),
+    ]).then(([fac, off, inkoop]) => {
       if (cancelled) return
       setFacturen(fac)
       setOffertes(off)
+      setInkoopfacturen(inkoop)
       setIsLoading(false)
     })
     return () => { cancelled = true }
@@ -96,7 +103,30 @@ export function FinancialLayout() {
     [openstaandeOffertes]
   )
 
-  // === Maandelijks overzicht op basis van facturen ===
+  // === Inkoopkosten ===
+  const inkoopGoedgekeurd = useMemo(
+    () => inkoopfacturen.filter(f => f.status === 'goedgekeurd'),
+    [inkoopfacturen]
+  )
+
+  const totaleInkoopkosten = useMemo(
+    () => inkoopGoedgekeurd.reduce((sum, f) => sum + (f.totaal || 0), 0),
+    [inkoopGoedgekeurd]
+  )
+
+  const inkoopOpenstaand = useMemo(
+    () => inkoopfacturen
+      .filter(f => f.status === 'nieuw' || f.status === 'verwerkt')
+      .reduce((sum, f) => sum + (f.totaal || 0), 0),
+    [inkoopfacturen]
+  )
+
+  const nettoResultaat = useMemo(
+    () => totaleOmzet - totaleInkoopkosten,
+    [totaleOmzet, totaleInkoopkosten]
+  )
+
+  // === Maandelijks overzicht op basis van facturen + inkoop ===
   const currentYear = new Date().getFullYear()
 
   const maandData = useMemo(() => {
@@ -111,9 +141,16 @@ export function FinancialLayout() {
       const gefactureerd = maandFacturen
         .filter((f) => f.status !== 'concept' && f.status !== 'gecrediteerd')
         .reduce((sum, f) => sum + (f.totaal || 0), 0)
-      return { maand, omzet: Math.round(omzet), gefactureerd: Math.round(gefactureerd) }
+      const inkoop = inkoopfacturen
+        .filter(f => f.status === 'goedgekeurd' && f.factuur_datum)
+        .filter(f => {
+          const d = new Date(f.factuur_datum!)
+          return d.getFullYear() === currentYear && d.getMonth() === i
+        })
+        .reduce((sum, f) => sum + (f.totaal || 0), 0)
+      return { maand, omzet: Math.round(omzet), gefactureerd: Math.round(gefactureerd), inkoop: Math.round(inkoop) }
     })
-  }, [facturen, currentYear])
+  }, [facturen, inkoopfacturen, currentYear])
 
   const pieData = useMemo(() => {
     const betaald = facturen.filter((f) => f.status === 'betaald').reduce((s, f) => s + (f.totaal || 0), 0)
@@ -156,12 +193,20 @@ export function FinancialLayout() {
       bg: vervallenFacturen.length > 0 ? 'bg-[#FDE8E2]' : 'bg-[#F5F2E8]',
     },
     {
-      label: 'Offertes open',
-      value: formatCurrency(offerteWaarde),
-      sub: `${openstaandeOffertes.length} offertes`,
-      icon: Receipt,
-      color: 'text-[#1A535C]',
-      bg: 'bg-[#E2F0F0]',
+      label: 'Inkoopkosten',
+      value: formatCurrency(totaleInkoopkosten),
+      sub: `${inkoopGoedgekeurd.length} goedgekeurd${inkoopOpenstaand > 0 ? ` · ${formatCurrency(inkoopOpenstaand)} open` : ''}`,
+      icon: TrendingDown,
+      color: 'text-[#C44830]',
+      bg: 'bg-[#FDE8E2]',
+    },
+    {
+      label: 'Netto resultaat',
+      value: formatCurrency(nettoResultaat),
+      sub: 'ontvangen - inkoopkosten',
+      icon: PiggyBank,
+      color: nettoResultaat >= 0 ? 'text-[#2D6B48]' : 'text-[#C03A18]',
+      bg: nettoResultaat >= 0 ? 'bg-[#E4F0EA]' : 'bg-[#FDE8E2]',
     },
   ]
 
@@ -269,6 +314,13 @@ export function FinancialLayout() {
                         name="Ontvangen"
                         fill="#1A535C"
                         radius={[4, 4, 0, 0]}
+                      />
+                      <Bar
+                        dataKey="inkoop"
+                        name="Inkoopkosten"
+                        fill="#C44830"
+                        radius={[4, 4, 0, 0]}
+                        opacity={0.7}
                       />
                     </BarChart>
                   </ResponsiveContainer>
