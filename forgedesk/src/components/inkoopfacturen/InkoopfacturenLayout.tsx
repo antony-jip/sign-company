@@ -82,13 +82,24 @@ export function InkoopfacturenLayout() {
     try {
       setIsExtracting(true)
       let gelukt = 0
+      let laatsteFout = ''
       for (const f of nieuweFacturen) {
         try {
           const result = await extractInkoopfactuur(f.id)
-          if (result.success) gelukt++
-        } catch { /* doorgaan met volgende */ }
+          if (result.success) {
+            gelukt++
+          } else {
+            laatsteFout = result.error || 'Onbekende fout'
+          }
+        } catch (err) {
+          laatsteFout = err instanceof Error ? err.message : 'Netwerk fout'
+        }
       }
-      toast.success(`${gelukt} van ${nieuweFacturen.length} facturen geextraheerd`)
+      if (gelukt > 0) {
+        toast.success(`${gelukt} van ${nieuweFacturen.length} facturen geextraheerd`)
+      } else {
+        toast.error(`Extractie mislukt: ${laatsteFout}`)
+      }
       const [data, count] = await Promise.all([
         getInkoopfacturen().catch(() => []),
         countWachtendOpReview().catch(() => 0),
