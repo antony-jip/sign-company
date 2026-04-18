@@ -245,7 +245,6 @@ export function FloatingQuickActions() {
       )}
 
       {/* Modals */}
-      <NieuweOfferteModal open={activeModal === 'offerte'} onOpenChange={open => !open && setActiveModal(null)} />
       <NieuweKlantModal open={activeModal === 'klant'} onOpenChange={open => !open && setActiveModal(null)} />
       <NieuwProjectModal open={activeModal === 'project'} onOpenChange={open => !open && setActiveModal(null)} />
       <NieuweTaakModal open={activeModal === 'taak'} onOpenChange={open => !open && setActiveModal(null)} />
