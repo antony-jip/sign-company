@@ -1,3 +1,13 @@
+/**
+ * Verstuurt geplande emails uit de queue.
+ *
+ * BEVEILIGD: vereist Authorization: Bearer ${CRON_SECRET} header.
+ * Vercel Cron stuurt deze automatisch mee op basis van vercel.json.
+ *
+ * Handmatig testen (na deploy):
+ * curl -H "Authorization: Bearer $CRON_SECRET" \
+ *   https://app.doen.team/api/cron-verzend-geplande-berichten
+ */
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import nodemailer from 'nodemailer'
 import crypto from 'crypto'
@@ -60,9 +70,13 @@ async function getUserCreds(userId: string): Promise<UserCreds | null> {
 export const config = { maxDuration: 60 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Vercel cron requests komen met een speciale header
   if (req.method !== 'GET' && req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
+  }
+
+  const cronSecret = process.env.CRON_SECRET
+  if (!cronSecret || req.headers.authorization !== `Bearer ${cronSecret}`) {
+    return res.status(401).json({ error: 'Unauthorized' })
   }
 
   try {
