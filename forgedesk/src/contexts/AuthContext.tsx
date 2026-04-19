@@ -75,7 +75,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Outside router context — skip navigation
   }
 
-  const handleOnboardingRedirect = async (userId: string, currentPath: string) => {
+  const triggerOnboarding = (accessToken: string) => {
+    fetch('/api/trigger-onboarding', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+      },
+    })
+      .then(res => { if (!res.ok) console.warn('[onboarding-trigger] HTTP', res.status) })
+      .catch(err => console.warn('[onboarding-trigger]', err.message))
+  }
+
+  const handleOnboardingRedirect = async (userId: string, currentPath: string, accessToken?: string) => {
     // Skip redirect for public/onboarding routes
     if (isPublicRoute(currentPath)) return
 
@@ -138,6 +150,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setOrganisatie(org)
           setTrialDagenOver(30)
           setTrialStatus('trial')
+          if (accessToken) triggerOnboarding(accessToken)
           navigate?.('/welkom')
         }
       } else {
@@ -192,7 +205,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(u)
       if (u?.id) {
         const currentPath = location?.pathname || window.location.pathname
-        handleOnboardingRedirect(u.id, currentPath).then(() => setIsLoading(false))
+        handleOnboardingRedirect(u.id, currentPath, sess?.access_token).then(() => setIsLoading(false))
         // Sync email settings from server to localStorage (fire-and-forget)
         import('@/services/gmailService').then(({ syncEmailSettingsFromServer }) => {
           syncEmailSettingsFromServer().catch(() => {})
@@ -231,7 +244,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const u = data.user
     if (u) {
       setUser({ id: u.id, email: u.email ?? email, user_metadata: u.user_metadata })
-      await handleOnboardingRedirect(u.id, location?.pathname || '/')
+      await handleOnboardingRedirect(u.id, location?.pathname || '/', data.session?.access_token)
     }
     setSession(data.session)
   }
@@ -242,20 +255,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (u) {
       setUser({ id: u.id, email: u.email ?? email, user_metadata: u.user_metadata })
       await fetchOrgData(u.id)
-
-      // Trigger onboarding email sequence (fire-and-forget)
-      fetch('/api/trigger-onboarding', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY || ''}`,
-        },
-        body: JSON.stringify({
-          userId: u.id,
-          userEmail: u.email ?? email,
-          userName: metadata?.voornaam || undefined,
-        }),
-      }).catch(() => {}) // Non-blocking
     }
     setSession(data.session)
   }
