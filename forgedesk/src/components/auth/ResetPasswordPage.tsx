@@ -6,6 +6,9 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 import { Lock, Loader2 } from 'lucide-react'
+import { firstBlockingError } from '@/lib/passwordValidation'
+import { usePasswordCheck } from '@/lib/usePasswordCheck'
+import { PasswordStrengthMeter } from './PasswordStrengthMeter'
 
 export function ResetPasswordPage() {
   const navigate = useNavigate()
@@ -13,9 +16,12 @@ export function ResetPasswordPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
+  const passwordCheck = usePasswordCheck(password)
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (password.length < 8) { toast.error('Wachtwoord moet minimaal 8 tekens zijn'); return }
+    const blocker = firstBlockingError(passwordCheck)
+    if (blocker) { toast.error(blocker); return }
     if (password !== confirmPassword) { toast.error('Wachtwoorden komen niet overeen'); return }
     setIsLoading(true)
     try {
@@ -46,10 +52,11 @@ export function ResetPasswordPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Minimaal 8 tekens"
+              placeholder="Minimaal 10 tekens, sterk"
               className="h-11 rounded-xl border-neutral-200 bg-white text-sm focus:border-black focus:ring-black"
               autoFocus
             />
+            <PasswordStrengthMeter check={passwordCheck} hasInput={password.length > 0} />
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs font-medium text-neutral-700">Bevestig wachtwoord</Label>
