@@ -17,7 +17,7 @@ if (!rlConfigured) {
   console.warn('[ratelimit] UPSTASH env vars missing for ai-chat, requests will not be rate limited')
 }
 const ratelimit = rlConfigured
-  ? new Ratelimit({ redis: Redis.fromEnv(), limiter: Ratelimit.slidingWindow(5, '60 s'), prefix: 'rl:ai-chat' })
+  ? new Ratelimit({ redis: Redis.fromEnv(), limiter: Ratelimit.slidingWindow(20, '60 s'), prefix: 'rl:ai-chat' })
   : null
 
 async function enforceRateLimit(identifier: string, res: VercelResponse): Promise<boolean> {
