@@ -35,7 +35,7 @@ export async function uploadAvatar(userId: string, file: Blob): Promise<string> 
   if (!isSupabaseConfigured() || !supabase) {
     throw new Error('Supabase niet geconfigureerd')
   }
-  const path = `${userId}.jpg`
+  const path = `${userId}/avatar.jpg`
   const { error: uploadError } = await supabase.storage.from('avatars').upload(path, file, {
     cacheControl: '3600',
     upsert: true,
