@@ -1,10 +1,34 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
+import { Ratelimit } from '@upstash/ratelimit'
+import { Redis } from '@upstash/redis'
 
 const supabaseAdmin = createClient(
   process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '',
   process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 )
+
+// ── Rate limiting (inline; Vercel bundelt geen lokale imports in api/) ──
+const rlConfigured = !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
+if (!rlConfigured) {
+  console.warn('[ratelimit] UPSTASH env vars missing for portaal-items-get, requests will not be rate limited')
+}
+const ratelimit = rlConfigured
+  ? new Ratelimit({ redis: Redis.fromEnv(), limiter: Ratelimit.slidingWindow(20, '60 s'), prefix: 'rl:portaal-items-get' })
+  : null
+
+async function enforceRateLimit(identifier: string, res: VercelResponse): Promise<boolean> {
+  if (!ratelimit) return true
+  const { success, limit, remaining, reset } = await ratelimit.limit(identifier)
+  if (success) return true
+  const retryAfter = Math.max(1, Math.ceil((reset - Date.now()) / 1000))
+  console.warn(`[ratelimit-hit] portaal-items-get id=${identifier} limit=${limit}`)
+  res.setHeader('Retry-After', String(retryAfter))
+  res.setHeader('X-RateLimit-Limit', String(limit))
+  res.setHeader('X-RateLimit-Remaining', String(remaining))
+  res.status(429).json({ error: 'Te veel verzoeken. Probeer het later opnieuw.' })
+  return false
+}
 
 /**
  * Authenticated endpoint: haalt portaal items + reacties + bestanden op.
@@ -26,6 +50,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (authError || !user) {
       return res.status(401).json({ error: 'Ongeldige sessie' })
     }
+
+    if (!(await enforceRateLimit(user.id, res))) return
 
     const portaalId = req.query.portaal_id as string
     if (!portaalId) {
