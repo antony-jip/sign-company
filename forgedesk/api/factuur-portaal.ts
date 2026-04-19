@@ -68,6 +68,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .maybeSingle()
       factuur = data
       userId = factuur?.user_id as string || null
+
+      const verloopt = factuur?.betaal_token_verloopt_op as string | null | undefined
+      if (verloopt && new Date(verloopt) < new Date()) {
+        return res.status(410).json({ error: 'Deze betaallink is verlopen' })
+      }
     } else if (portaalToken && factuurId) {
       // Via portaal token + factuur_id
       const { data: portaal } = await supabaseAdmin

@@ -80,12 +80,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Publieke flow: verifieer factuur via betaal_token
       const { data: factuur } = await supabaseAdmin
         .from('facturen')
-        .select('id, user_id')
+        .select('id, user_id, betaal_token_verloopt_op')
         .eq('id', factuur_id)
         .eq('betaal_token', betaal_token)
         .maybeSingle()
       if (!factuur || !factuur.user_id) {
         return res.status(403).json({ error: 'Ongeldige betaallink' })
+      }
+      if (factuur.betaal_token_verloopt_op && new Date(factuur.betaal_token_verloopt_op) < new Date()) {
+        return res.status(410).json({ error: 'Deze betaallink is verlopen' })
       }
       user_id = factuur.user_id
     } else {

@@ -329,6 +329,23 @@ async function handleGoedkeuringToken(supabase: any, token: string, res: VercelR
 
   if (!gk) return null
 
+  if (gk.token_verloopt_op && new Date(gk.token_verloopt_op) < new Date()) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('bedrijfsnaam, bedrijfs_telefoon, bedrijfs_email, logo_url')
+      .eq('id', gk.user_id)
+      .single()
+    return res.status(200).json({
+      status: 'verlopen',
+      token,
+      bedrijfsnaam: profile?.bedrijfsnaam || '',
+      bedrijfs_telefoon: profile?.bedrijfs_telefoon || '',
+      bedrijfs_email: profile?.bedrijfs_email || '',
+      logo_url: profile?.logo_url || '',
+      instellingen: {},
+    })
+  }
+
   // Update bekeken tracking
   const trackingUpdates: Record<string, unknown> = {
     eerste_bekeken_op: gk.eerste_bekeken_op || new Date().toISOString(),
@@ -438,7 +455,7 @@ async function handleGoedkeuringToken(supabase: any, token: string, res: VercelR
     portaal: {
       id: `gk-${gk.id}`,
       instructie_tekst: gk.email_bericht || '',
-      verloopt_op: new Date(Date.now() + 90 * 86400000).toISOString(), // 90 dagen
+      verloopt_op: gk.token_verloopt_op || new Date(Date.now() + 90 * 86400000).toISOString(),
     },
     project: project ? {
       naam: project.naam,

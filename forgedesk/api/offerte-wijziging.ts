@@ -107,6 +107,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(404).json({ error: 'Offerte niet gevonden' })
     }
 
+    if (offerte.publiek_token_verloopt_op && new Date(offerte.publiek_token_verloopt_op) < new Date()) {
+      return res.status(410).json({ error: 'Deze publieke link is verlopen' })
+    }
+
     // Validaties
     if (offerte.status === 'goedgekeurd') {
       return res.status(400).json({ error: 'Deze offerte is al geaccepteerd en kan niet meer gewijzigd worden' })
