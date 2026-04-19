@@ -704,9 +704,10 @@ export async function getOfferteTemplates(): Promise<OfferteTemplate[]> {
 
 export async function createOfferteTemplate(template: Omit<OfferteTemplate, 'id' | 'created_at' | 'updated_at'>): Promise<OfferteTemplate> {
   if (isSupabaseConfigured() && supabase) {
+    const _orgId = await getOrgId()
     const { data, error } = await supabase
       .from('offerte_templates')
-      .insert(await withUserId(template))
+      .insert({ ...await withUserId(template), organisatie_id: _orgId })
       .select()
       .single()
     if (error) throw error

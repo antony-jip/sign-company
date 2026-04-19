@@ -199,9 +199,10 @@ export async function getContactpersonenByKlant(klantId: string): Promise<Contac
 
 export async function createContactpersoonDB(data: Partial<ContactpersoonRecord>): Promise<ContactpersoonRecord> {
   if (!isSupabaseConfigured() || !supabase) throw new Error('Supabase niet geconfigureerd')
+  const _orgId = await getOrgId()
   const { data: result, error } = await supabase
     .from('contactpersonen')
-    .insert(data)
+    .insert({ ...data, organisatie_id: _orgId })
     .select()
     .single()
   if (error) throw error
