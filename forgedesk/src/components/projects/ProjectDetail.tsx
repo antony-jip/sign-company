@@ -110,6 +110,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { uploadFile, uploadMontageBijlage } from '@/services/storageService'
+import { getOrgId } from '@/services/supabaseHelpers'
 import { analyzeProject } from '@/services/aiService'
 import { sendEmail } from '@/services/gmailService'
 import { tekeningGoedkeuringTemplate } from '@/services/emailTemplateService'
@@ -658,9 +659,14 @@ export function ProjectDetail() {
     const fileArray = Array.from(files)
     if (fileArray.length === 0) return
 
+    const orgId = await getOrgId()
+
     for (const file of fileArray) {
       try {
-        const storagePath = `projects/${id}/${file.name}`
+        const ext = file.name.split('.').pop()?.toLowerCase() || 'bin'
+        const storagePath = orgId
+          ? `projects/${orgId}/${id}/${crypto.randomUUID()}.${ext}`
+          : `projects/${id}/${crypto.randomUUID()}.${ext}`
         await uploadFile(file, storagePath)
         await createDocument({
           user_id: user?.id || '',

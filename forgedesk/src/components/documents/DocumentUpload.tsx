@@ -22,6 +22,7 @@ import { Upload, X, FileText, Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createDocument } from '@/services/supabaseService'
 import { uploadFile } from '@/services/storageService'
+import { getOrgId } from '@/services/supabaseHelpers'
 import { useAuth } from '@/contexts/AuthContext'
 import { toast } from 'sonner'
 import { logger } from '../../utils/logger'
@@ -111,8 +112,13 @@ export function DocumentUpload({ open, onOpenChange }: DocumentUploadProps) {
     setIsUploading(true)
 
     try {
+      const orgId = await getOrgId()
+
       for (const file of files) {
-        const storagePath = `/${folder.toLowerCase()}/${Date.now()}_${file.name}`
+        const ext = file.name.split('.').pop()?.toLowerCase() || 'bin'
+        const storagePath = orgId
+          ? `/${folder.toLowerCase()}/${orgId}/${crypto.randomUUID()}.${ext}`
+          : `/${folder.toLowerCase()}/${crypto.randomUUID()}.${ext}`
 
         await uploadFile(file, storagePath)
 
