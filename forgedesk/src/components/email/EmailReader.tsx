@@ -1,15 +1,5 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
-import type DOMPurifyT from 'dompurify'
-
-// Lazy-initialised DOMPurify to avoid TDZ errors – CJS default export can be
-// mis-ordered by Rollup when bundled into a shared chunk.
-let _DOMPurify: typeof DOMPurifyT | null = null
-async function getDOMPurify() {
-  if (!_DOMPurify) {
-    _DOMPurify = (await import('dompurify')).default
-  }
-  return _DOMPurify
-}
+import { sanitizeEmailHTML } from '@/lib/sanitize'
 import { Button } from '@/components/ui/button'
 import { AIContentEditableToolbar } from '@/components/ui/AIContentEditableToolbar'
 import {
@@ -610,36 +600,24 @@ export function EmailReader({
   const avatarRingColor = useMemo(() => getAvatarRingColor(senderName), [senderName])
   const avatarStyle = useMemo(() => getAvatarStyle(senderName), [senderName])
 
-  // Async DOMPurify sanitization — avoids TDZ with CJS module
-  const [sanitizedBody, setSanitizedBody] = useState('')
-  useEffect(() => {
-    if (!email?.inhoud) { setSanitizedBody(''); return }
-    let cancelled = false
-    getDOMPurify().then(purify => {
-      if (!cancelled) {
-        let processed = purify.sanitize(email.inhoud, {
-          ADD_TAGS: ['style'],
-          ADD_ATTR: ['target', 'style'],
-        })
-        // Dim email signatures (after "Met vriendelijke groet", "--", etc.)
-        const sigMarkers = ['Met vriendelijke groet', 'Kind regards', 'Best regards', 'Regards,', 'Groeten,', 'Mvg,', 'Met hartelijke groet']
-        for (const marker of sigMarkers) {
-          const idx = processed.indexOf(marker)
-          if (idx > processed.length * 0.3) {
-            processed = processed.slice(0, idx) + '<div class="email-sig-dim">' + processed.slice(idx) + '</div>'
-            break
-          }
-        }
-        if (!processed.includes('email-sig-dim')) {
-          const dashIdx = processed.indexOf('<br>--<br>')
-          if (dashIdx > processed.length * 0.3) {
-            processed = processed.slice(0, dashIdx) + '<div class="email-sig-dim">' + processed.slice(dashIdx) + '</div>'
-          }
-        }
-        setSanitizedBody(processed)
+  const sanitizedBody = useMemo(() => {
+    if (!email?.inhoud) return ''
+    let processed = sanitizeEmailHTML(email.inhoud)
+    const sigMarkers = ['Met vriendelijke groet', 'Kind regards', 'Best regards', 'Regards,', 'Groeten,', 'Mvg,', 'Met hartelijke groet']
+    for (const marker of sigMarkers) {
+      const idx = processed.indexOf(marker)
+      if (idx > processed.length * 0.3) {
+        processed = processed.slice(0, idx) + '<div class="email-sig-dim">' + processed.slice(idx) + '</div>'
+        break
       }
-    })
-    return () => { cancelled = true }
+    }
+    if (!processed.includes('email-sig-dim')) {
+      const dashIdx = processed.indexOf('<br>--<br>')
+      if (dashIdx > processed.length * 0.3) {
+        processed = processed.slice(0, dashIdx) + '<div class="email-sig-dim">' + processed.slice(dashIdx) + '</div>'
+      }
+    }
+    return processed
   }, [email?.inhoud])
 
   if (!email) {
