@@ -2,14 +2,41 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createTransport } from 'nodemailer'
 import crypto from 'crypto'
 import { createClient } from '@supabase/supabase-js'
+import { Ratelimit } from '@upstash/ratelimit'
+import { Redis } from '@upstash/redis'
 
 const supabaseAdmin = createClient(
   process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '',
   process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 )
-async function isRateLimited(ip: string, endpoint: string, maxCount: number, windowSeconds: number): Promise<boolean> {
-  const { data } = await supabaseAdmin.rpc('check_rate_limit', { p_key: `${endpoint}:${ip}`, p_max_count: maxCount, p_window_seconds: windowSeconds })
-  return data === true
+
+// ── Rate limiting (inline; Vercel bundelt geen lokale imports in api/) ──
+const rlConfigured = !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
+if (!rlConfigured) {
+  console.warn('[ratelimit] UPSTASH env vars missing for offerte-accepteren, requests will not be rate limited')
+}
+const ratelimit = rlConfigured
+  ? new Ratelimit({ redis: Redis.fromEnv(), limiter: Ratelimit.slidingWindow(10, '3600 s'), prefix: 'rl:offerte-accepteren' })
+  : null
+
+async function enforceRateLimit(identifier: string, res: VercelResponse): Promise<boolean> {
+  if (!ratelimit) return true
+  const { success, limit, remaining, reset } = await ratelimit.limit(identifier)
+  if (success) return true
+  const retryAfter = Math.max(1, Math.ceil((reset - Date.now()) / 1000))
+  console.warn(`[ratelimit-hit] offerte-accepteren id=${identifier} limit=${limit}`)
+  res.setHeader('Retry-After', String(retryAfter))
+  res.setHeader('X-RateLimit-Limit', String(limit))
+  res.setHeader('X-RateLimit-Remaining', String(remaining))
+  res.status(429).json({ error: 'Te veel verzoeken. Probeer het later opnieuw.' })
+  return false
+}
+
+function getClientIp(req: VercelRequest): string {
+  const fwd = req.headers['x-forwarded-for']
+  if (typeof fwd === 'string') return fwd.split(',')[0].trim()
+  if (Array.isArray(fwd)) return fwd[0]
+  return 'unknown'
 }
 
 const ENCRYPTION_KEY = process.env.EMAIL_ENCRYPTION_KEY || ''
@@ -65,10 +92,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
-  const clientIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || 'unknown'
-  if (await isRateLimited(clientIp, 'offerte-accepteren', 10, 3600)) {
-    return res.status(429).json({ error: 'Te veel verzoeken. Probeer het later opnieuw.' })
-  }
+  if (!(await enforceRateLimit(getClientIp(req), res))) return
 
   try {
     const { token, naam, gekozen_items, gekozen_varianten } = req.body as {
