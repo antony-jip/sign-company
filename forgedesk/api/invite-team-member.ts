@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import crypto from 'crypto'
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -17,6 +18,45 @@ async function verifyUser(req: VercelRequest): Promise<string> {
   const { data: { user }, error } = await supabaseAdmin.auth.getUser(token)
   if (error || !user) throw new Error('Ongeldige sessie')
   return user.id
+}
+
+function getClientIp(req: VercelRequest): string | null {
+  const fwd = req.headers['x-forwarded-for']
+  if (typeof fwd === 'string') return fwd.split(',')[0].trim() || null
+  if (Array.isArray(fwd)) return fwd[0] || null
+  return null
+}
+
+async function logAuditEvent(
+  supabase: SupabaseClient,
+  event: {
+    organisatie_id?: string | null
+    actor_user_id?: string | null
+    actor_email?: string | null
+    action: string
+    resource_type?: string
+    resource_id?: string
+    metadata?: Record<string, unknown>
+    ip?: string | null
+  },
+): Promise<void> {
+  try {
+    const ipHash = event.ip
+      ? crypto.createHash('sha256').update(event.ip).digest('hex').slice(0, 32)
+      : null
+    await supabase.from('audit_log').insert({
+      organisatie_id: event.organisatie_id ?? null,
+      actor_user_id: event.actor_user_id ?? null,
+      actor_email: event.actor_email ?? null,
+      action: event.action,
+      resource_type: event.resource_type ?? null,
+      resource_id: event.resource_id ?? null,
+      metadata: event.metadata ?? {},
+      ip_hash: ipHash,
+    })
+  } catch (err) {
+    console.warn('[audit] log failed:', err)
+  }
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -54,7 +94,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Verify user belongs to org and is admin
     const { data: requesterProfile } = await supabaseAdmin
       .from('profiles')
-      .select('organisatie_id, rol')
+      .select('organisatie_id, rol, email')
       .eq('id', userId)
       .single()
 
@@ -187,6 +227,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       console.error('invite-team-member db error:', uitnodigingError)
       return res.status(500).json({ error: 'Uitnodiging verstuurd maar kon niet opgeslagen worden' })
     }
+
+    await logAuditEvent(supabaseAdmin, {
+      organisatie_id,
+      actor_user_id: userId,
+      actor_email: requesterProfile.email ?? null,
+      action: 'team.member_invited',
+      resource_type: 'team_member',
+      resource_id: inviteData.user?.id || uitnodiging.id,
+      metadata: { invited_email: email.toLowerCase(), rol },
+      ip: getClientIp(req),
+    })
 
     return res.status(201).json({ uitnodiging, user: inviteData.user })
   } catch (error) {
