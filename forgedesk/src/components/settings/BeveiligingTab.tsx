@@ -1,5 +1,6 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -19,6 +20,9 @@ import { toast } from 'sonner'
 import { logger } from '../../utils/logger'
 import { SubTabNav } from './SubTabNav'
 import type { SubTab } from './settingsShared'
+import { firstBlockingError } from '@/lib/passwordValidation'
+import { usePasswordCheck } from '@/lib/usePasswordCheck'
+import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter'
 
 const BEVEILIGING_TABS: SubTab[] = [
   { id: 'wachtwoord', label: 'Wachtwoord', icon: Lock },
@@ -36,25 +40,17 @@ export function BeveiligingTab() {
   const [isChanging, setIsChanging] = useState(false)
   const { user } = useAuth()
 
+  const userInputs = useMemo(() => (user?.email ? [user.email] : []), [user?.email])
+  const passwordCheck = usePasswordCheck(newPassword, userInputs)
+
   const handleChangePassword = async () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
       toast.error('Vul alle wachtwoordvelden in')
       return
     }
-    if (newPassword.length < 8) {
-      toast.error('Wachtwoord moet minimaal 8 tekens bevatten')
-      return
-    }
-    if (!/[A-Z]/.test(newPassword)) {
-      toast.error('Wachtwoord moet minimaal één hoofdletter bevatten')
-      return
-    }
-    if (!/[a-z]/.test(newPassword)) {
-      toast.error('Wachtwoord moet minimaal één kleine letter bevatten')
-      return
-    }
-    if (!/[0-9]/.test(newPassword)) {
-      toast.error('Wachtwoord moet minimaal één cijfer bevatten')
+    const blocker = firstBlockingError(passwordCheck)
+    if (blocker) {
+      toast.error(blocker)
       return
     }
     if (newPassword !== confirmPassword) {
@@ -124,7 +120,7 @@ export function BeveiligingTab() {
             Wachtwoord Wijzigen
           </CardTitle>
           <CardDescription>
-            Kies een sterk wachtwoord van minimaal 8 tekens met hoofdletters, kleine letters en cijfers
+            Kies een sterk wachtwoord van minimaal 10 tekens met hoofdletters, kleine letters en een cijfer of speciaal teken
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -156,6 +152,7 @@ export function BeveiligingTab() {
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
               />
+              <PasswordStrengthMeter check={passwordCheck} hasInput={newPassword.length > 0} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirm-password">Bevestig Wachtwoord</Label>

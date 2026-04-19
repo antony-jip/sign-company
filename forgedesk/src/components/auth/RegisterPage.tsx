@@ -9,19 +9,9 @@ import {
   Mail, Lock, Eye, EyeOff, Loader2, ArrowRight, Check,
   CheckCircle2,
 } from 'lucide-react'
-
-function getPasswordStrength(password: string): { score: number; label: string; color: string } {
-  let score = 0
-  if (password.length >= 8) score++
-  if (password.length >= 12) score++
-  if (/[A-Z]/.test(password)) score++
-  if (/[0-9]/.test(password)) score++
-  if (/[^A-Za-z0-9]/.test(password)) score++
-
-  if (score <= 1) return { score, label: 'Zwak', color: 'bg-[#C03A18]' }
-  if (score <= 2) return { score, label: 'Matig', color: 'bg-[#E8B931]' }
-  return { score, label: 'Sterk', color: 'bg-[#2D6B48]' }
-}
+import { firstBlockingError } from '@/lib/passwordValidation'
+import { usePasswordCheck } from '@/lib/usePasswordCheck'
+import { PasswordStrengthMeter } from './PasswordStrengthMeter'
 
 export function RegisterPage() {
   const navigate = useNavigate()
@@ -32,7 +22,8 @@ export function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
-  const passwordStrength = useMemo(() => getPasswordStrength(password), [password])
+  const userInputs = useMemo(() => (email ? [email] : []), [email])
+  const passwordCheck = usePasswordCheck(password, userInputs)
   const passwordsMatch = confirmPassword === '' || password === confirmPassword
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -46,8 +37,9 @@ export function RegisterPage() {
       toast.error('Voer een geldig emailadres in')
       return
     }
-    if (password.length < 8) {
-      toast.error('Wachtwoord moet minimaal 8 tekens zijn')
+    const blocker = firstBlockingError(passwordCheck)
+    if (blocker) {
+      toast.error(blocker)
       return
     }
     if (password !== confirmPassword) {
@@ -121,7 +113,7 @@ export function RegisterPage() {
                 <Input
                   id="register-password"
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="Minimaal 8 tekens"
+                  placeholder="Minimaal 10 tekens, sterk"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="pl-10 pr-10 h-12 rounded-xl border-[#E6E4E0] bg-white text-[14px] focus:border-[#1A535C] focus:ring-[#1A535C]/20 shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all"
@@ -137,16 +129,7 @@ export function RegisterPage() {
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
-              {password.length > 0 && (
-                <div className="space-y-1 pt-1">
-                  <div className="flex gap-1">
-                    {[1, 2, 3].map((level) => (
-                      <div key={level} className={`h-1 flex-1 rounded-full transition-all ${level <= passwordStrength.score ? passwordStrength.color : 'bg-[#EEEEED]'}`} />
-                    ))}
-                  </div>
-                  <p className="text-[11px] text-[#9B9B95]">{passwordStrength.label}</p>
-                </div>
-              )}
+              <PasswordStrengthMeter check={passwordCheck} hasInput={password.length > 0} />
             </div>
 
             <div className="space-y-1.5">
