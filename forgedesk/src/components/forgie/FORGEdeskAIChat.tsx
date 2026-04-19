@@ -22,6 +22,7 @@ import {
 import { useKlanten, useProjecten, useTaken, useOffertes } from '@/hooks/useData'
 import * as db from '@/services/supabaseService'
 import { cn } from '@/lib/utils'
+import { sanitizeAIResponse } from '@/lib/sanitize'
 import type { Klant, Project, Taak, Offerte, Factuur } from '@/types'
 
 // ─── Types ───────────────────────────────────────────────────────────
@@ -787,25 +788,27 @@ function MetricCardSmall({ metric }: { key?: React.Key; metric: MetricCard }) {
 }
 
 function FormattedText({ text }: { text: string }) {
+  const lines = text.split('\n')
   return (
     <>
-      {text.split('\n').map((line, i) => (
-        <React.Fragment key={i}>
-          {line.startsWith('•') ? (
-            <div className="flex items-start gap-1.5 ml-1 my-0.5">
-              <span className="mt-[7px] w-1 h-1 rounded-full bg-current flex-shrink-0 opacity-40" />
-              <span dangerouslySetInnerHTML={{
-                __html: line.slice(1).trim().replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-              }} />
-            </div>
-          ) : (
-            <span dangerouslySetInnerHTML={{
-              __html: line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-            }} />
-          )}
-          {i < text.split('\n').length - 1 && <br />}
-        </React.Fragment>
-      ))}
+      {lines.map((line, i) => {
+        const isBullet = line.startsWith('•')
+        const raw = (isBullet ? line.slice(1).trim() : line).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        const safe = sanitizeAIResponse(raw)
+        return (
+          <React.Fragment key={i}>
+            {isBullet ? (
+              <div className="flex items-start gap-1.5 ml-1 my-0.5">
+                <span className="mt-[7px] w-1 h-1 rounded-full bg-current flex-shrink-0 opacity-40" />
+                <span dangerouslySetInnerHTML={{ __html: safe }} />
+              </div>
+            ) : (
+              <span dangerouslySetInnerHTML={{ __html: safe }} />
+            )}
+            {i < lines.length - 1 && <br />}
+          </React.Fragment>
+        )
+      })}
     </>
   )
 }
