@@ -10,6 +10,7 @@ import { toast } from 'sonner'
 import { getPortaalByProject, getPortaalItems, createPortaalItem, getOffertesByProject, getFacturenByProject, createPortaal } from '@/services/supabaseService'
 import { uploadFile } from '@/services/storageService'
 import { useAuth } from '@/contexts/AuthContext'
+import { offerteTokenExpiry } from '@/lib/tokenExpiry'
 import type { ProjectPortaal, PortaalItem, Offerte, Factuur } from '@/types'
 
 // ── Utilities ──
@@ -428,7 +429,7 @@ function InputBar({
 
   async function handleSendOfferte(offerte: Offerte) {
     await send(async () => {
-      if (!offerte.publiek_token) { const { updateOfferte } = await import('@/services/supabaseService'); await updateOfferte(offerte.id, { publiek_token: crypto.randomUUID() }) }
+      if (!offerte.publiek_token) { const { updateOfferte } = await import('@/services/supabaseService'); await updateOfferte(offerte.id, { publiek_token: crypto.randomUUID(), publiek_token_verloopt_op: offerteTokenExpiry() }) }
       await createPortaalItem({ user_id: userId, project_id: projectId, portaal_id: portaal.id, type: 'offerte', titel: offerte.titel || `Offerte ${offerte.nummer}`, offerte_id: offerte.id, bedrag: offerte.totaal, status: 'verstuurd', zichtbaar_voor_klant: true, volgorde: 0 })
       toast.success(`Offerte ${offerte.nummer} gedeeld`); setActivePopover(null); await fetchItems()
       if (notificeerKlant) sendEmailNotification(`Offerte ${offerte.nummer}`, offerte.titel || `Offerte ${offerte.nummer}`)

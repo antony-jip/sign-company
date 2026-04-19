@@ -79,6 +79,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(404).json({ error: 'Goedkeuring niet gevonden' })
     }
 
+    if (gk.token_verloopt_op && new Date(gk.token_verloopt_op) < new Date()) {
+      return res.status(410).json({ error: 'Deze goedkeuringslink is verlopen' })
+    }
+
     // Idempotency: skip als al goedgekeurd
     if (gk.status === 'goedgekeurd' && status === 'goedgekeurd') {
       return res.status(200).json({ success: true, already_approved: true })

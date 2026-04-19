@@ -92,6 +92,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(404).json({ error: 'Offerte niet gevonden' })
     }
 
+    if (offerte.publiek_token_verloopt_op && new Date(offerte.publiek_token_verloopt_op) < new Date()) {
+      return res.status(410).json({ error: 'Deze publieke link is verlopen' })
+    }
+
     // Increment views + zet eerste geopend
     const updates: Record<string, unknown> = {
       publieke_link_views: (offerte.publieke_link_views || 0) + 1,

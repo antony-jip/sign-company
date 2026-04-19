@@ -5,6 +5,7 @@ import {
 import { toast } from 'sonner'
 import { createPortaalItem, getOffertesByProject, getFacturenByProject } from '@/services/supabaseService'
 import { uploadFile } from '@/services/storageService'
+import { offerteTokenExpiry } from '@/lib/tokenExpiry'
 import { currencyFmt } from './PortaalTimelineItems'
 import { logger } from '@/utils/logger'
 import type { ProjectPortaal, Offerte, Factuur } from '@/types'
@@ -149,7 +150,7 @@ export function PortaalSidebarActions({
       if (!offerte.publiek_token) {
         const { updateOfferte } = await import('@/services/supabaseService')
         const publiekToken = crypto.randomUUID()
-        await updateOfferte(offerte.id, { publiek_token: publiekToken })
+        await updateOfferte(offerte.id, { publiek_token: publiekToken, publiek_token_verloopt_op: offerteTokenExpiry() })
       }
       await createPortaalItem({
         user_id: userId,

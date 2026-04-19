@@ -17,6 +17,7 @@ import {
 } from '@/services/supabaseService'
 import type { Offerte, OfferteItem, Klant, OfferteActiviteit } from '@/types'
 import { cn, formatCurrency, formatDate, formatDateTime, getStatusColor } from '@/lib/utils'
+import { offerteTokenExpiry } from '@/lib/tokenExpiry'
 import { getStatusBadgeClass } from '@/utils/statusColors'
 import { round2 } from '@/utils/budgetUtils'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -324,7 +325,7 @@ export function OfferteDetail() {
         let publiekToken = offerte.publiek_token
         if (!publiekToken) {
           publiekToken = crypto.randomUUID()
-          await updateOfferte(offerte.id, { publiek_token: publiekToken })
+          await updateOfferte(offerte.id, { publiek_token: publiekToken, publiek_token_verloopt_op: offerteTokenExpiry() })
           setOfferte({ ...offerte, publiek_token: publiekToken })
         }
         publiekeUrl = `${window.location.origin}/offerte-bekijken/${publiekToken}`

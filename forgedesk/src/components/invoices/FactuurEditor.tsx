@@ -101,6 +101,7 @@ import { useDocumentStyle } from '@/hooks/useDocumentStyle'
 import { sendEmail } from '@/services/gmailService'
 import { factuurVerzendTemplate, factuurHerinneringTemplate } from '@/services/emailTemplateService'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
+import { factuurBetaalTokenExpiry } from '@/lib/tokenExpiry'
 import { logger } from '../../utils/logger'
 import { KlantStatusWarning } from '@/components/shared/KlantStatusWarning'
 import { useUnsavedWarning } from '@/hooks/useUnsavedWarning'
@@ -795,6 +796,7 @@ export function FactuurEditor() {
           bron_offerte_id: offerteId || undefined,
           bron_project_id: projectId || undefined,
           betaal_token: betaalToken,
+          betaal_token_verloopt_op: factuurBetaalTokenExpiry(),
           betaal_link: betaalLink,
           factuur_type: isCreditFactuur ? 'creditnota' : 'standaard',
           kostenplaats_id: kostenplaatsId || undefined,
@@ -1211,6 +1213,7 @@ export function FactuurEditor() {
         voorwaarden: existingFactuur.voorwaarden,
         factuur_type: 'creditnota',
         betaal_token: cnToken,
+        betaal_token_verloopt_op: factuurBetaalTokenExpiry(),
         betaal_link: `${window.location.origin}/betalen/${cnToken}`,
         gerelateerde_factuur_id: existingFactuur.id,
         credit_reden: creditReden,
