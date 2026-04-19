@@ -1,5 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
+import { Ratelimit } from '@upstash/ratelimit'
+import { Redis } from '@upstash/redis'
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL || '',
@@ -8,6 +10,28 @@ const supabase = createClient(
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || ''
 const MONTHLY_LIMIT = 5.0
+
+// ── Rate limiting (inline; Vercel bundelt geen lokale imports in api/) ──
+const rlConfigured = !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
+if (!rlConfigured) {
+  console.warn('[ratelimit] UPSTASH env vars missing for ai-chat, requests will not be rate limited')
+}
+const ratelimit = rlConfigured
+  ? new Ratelimit({ redis: Redis.fromEnv(), limiter: Ratelimit.slidingWindow(5, '60 s'), prefix: 'rl:ai-chat' })
+  : null
+
+async function enforceRateLimit(identifier: string, res: VercelResponse): Promise<boolean> {
+  if (!ratelimit) return true
+  const { success, limit, remaining, reset } = await ratelimit.limit(identifier)
+  if (success) return true
+  const retryAfter = Math.max(1, Math.ceil((reset - Date.now()) / 1000))
+  console.warn(`[ratelimit-hit] ai-chat id=${identifier} limit=${limit}`)
+  res.setHeader('Retry-After', String(retryAfter))
+  res.setHeader('X-RateLimit-Limit', String(limit))
+  res.setHeader('X-RateLimit-Remaining', String(remaining))
+  res.status(429).json({ error: 'Te veel verzoeken. Probeer het later opnieuw.' })
+  return false
+}
 
 async function verifyUser(req: VercelRequest): Promise<string> {
   const authHeader = req.headers.authorization
@@ -238,6 +262,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const userId = await verifyUser(req)
+
+    if (!(await enforceRateLimit(userId, res))) return
 
     if (!ANTHROPIC_API_KEY) {
       return res.status(503).json({ error: 'AI niet geconfigureerd', configured: false })
