@@ -48,6 +48,7 @@ export interface Organisatie {
   abonnement_status?: 'trial' | 'actief' | 'verlopen' | 'opgezegd';
   onboarding_compleet?: boolean;
   onboarding_stap?: number;
+  onboarding_getriggerd_op?: string | null;
   created_at: string;
 }
 
