@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
-import { tasks } from '@trigger.dev/sdk/v3'
+import { tasks } from '@trigger.dev/sdk'
 import type { logPortaalActiviteit } from '../src/trigger/portaal-activiteit-log'
 
 const supabaseAdmin = createClient(
