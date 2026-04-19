@@ -83,6 +83,45 @@ async function loadAppSettingsOrgFirst(
   return (data as Record<string, unknown> | null) ?? null
 }
 
+function getClientIp(req: VercelRequest): string | null {
+  const fwd = req.headers['x-forwarded-for']
+  if (typeof fwd === 'string') return fwd.split(',')[0].trim() || null
+  if (Array.isArray(fwd)) return fwd[0] || null
+  return null
+}
+
+async function logAuditEvent(
+  supabase: SupabaseClient,
+  event: {
+    organisatie_id?: string | null
+    actor_user_id?: string | null
+    actor_email?: string | null
+    action: string
+    resource_type?: string
+    resource_id?: string
+    metadata?: Record<string, unknown>
+    ip?: string | null
+  },
+): Promise<void> {
+  try {
+    const ipHash = event.ip
+      ? crypto.createHash('sha256').update(event.ip).digest('hex').slice(0, 32)
+      : null
+    await supabase.from('audit_log').insert({
+      organisatie_id: event.organisatie_id ?? null,
+      actor_user_id: event.actor_user_id ?? null,
+      actor_email: event.actor_email ?? null,
+      action: event.action,
+      resource_type: event.resource_type ?? null,
+      resource_id: event.resource_id ?? null,
+      metadata: event.metadata ?? {},
+      ip_hash: ipHash,
+    })
+  } catch (err) {
+    console.warn('[audit] log failed:', err)
+  }
+}
+
 async function updateAppSettingsOrgFirst(
   supabase: SupabaseClient,
   userId: string,
@@ -214,6 +253,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     await updateAppSettingsOrgFirst(supabase, user_id, settingsUpdate)
+
+    await logAuditEvent(supabase, {
+      organisatie_id: await getOrgIdForUser(supabase, user_id),
+      actor_user_id: user_id,
+      action: 'integration.exact_connected',
+      resource_type: 'integration',
+      resource_id: 'exact_online',
+      metadata: { division },
+      ip: getClientIp(req),
+    })
 
     // 6. Redirect naar instellingen
     return res.redirect(302, `${APP_URL}/instellingen?tab=integraties&exact=connected`)

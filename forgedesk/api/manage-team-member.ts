@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import crypto from 'crypto'
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -18,6 +19,45 @@ async function verifyUser(req: VercelRequest): Promise<string> {
   const { data: { user }, error } = await supabaseAdmin.auth.getUser(token)
   if (error || !user) throw new Error('Ongeldige sessie')
   return user.id
+}
+
+function getClientIp(req: VercelRequest): string | null {
+  const fwd = req.headers['x-forwarded-for']
+  if (typeof fwd === 'string') return fwd.split(',')[0].trim() || null
+  if (Array.isArray(fwd)) return fwd[0] || null
+  return null
+}
+
+async function logAuditEvent(
+  supabase: SupabaseClient,
+  event: {
+    organisatie_id?: string | null
+    actor_user_id?: string | null
+    actor_email?: string | null
+    action: string
+    resource_type?: string
+    resource_id?: string
+    metadata?: Record<string, unknown>
+    ip?: string | null
+  },
+): Promise<void> {
+  try {
+    const ipHash = event.ip
+      ? crypto.createHash('sha256').update(event.ip).digest('hex').slice(0, 32)
+      : null
+    await supabase.from('audit_log').insert({
+      organisatie_id: event.organisatie_id ?? null,
+      actor_user_id: event.actor_user_id ?? null,
+      actor_email: event.actor_email ?? null,
+      action: event.action,
+      resource_type: event.resource_type ?? null,
+      resource_id: event.resource_id ?? null,
+      metadata: event.metadata ?? {},
+      ip_hash: ipHash,
+    })
+  } catch (err) {
+    console.warn('[audit] log failed:', err)
+  }
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -53,7 +93,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Controleer of de aanvrager een admin is
     const { data: requesterProfile } = await supabaseAdmin
       .from('profiles')
-      .select('organisatie_id, rol')
+      .select('organisatie_id, rol, email')
       .eq('id', userId)
       .single()
 
@@ -64,13 +104,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Controleer of het doelprofiel bij dezelfde organisatie hoort
     const { data: targetProfile } = await supabaseAdmin
       .from('profiles')
-      .select('organisatie_id')
+      .select('organisatie_id, rol, email')
       .eq('id', profile_id)
       .single()
 
     if (!targetProfile || targetProfile.organisatie_id !== requesterProfile.organisatie_id) {
       return res.status(403).json({ error: 'Dit teamlid hoort niet bij jouw organisatie' })
     }
+
+    const auditBase = {
+      organisatie_id: requesterProfile.organisatie_id,
+      actor_user_id: userId,
+      actor_email: requesterProfile.email ?? null,
+      resource_type: 'team_member',
+      resource_id: profile_id,
+      ip: getClientIp(req),
+    } as const
 
     switch (action) {
       case 'update_rol': {
@@ -87,6 +136,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           console.error('manage-team-member update_rol error:', updateError)
           return res.status(500).json({ error: 'Kon rol niet bijwerken' })
         }
+
+        await logAuditEvent(supabaseAdmin, {
+          ...auditBase,
+          action: 'team.role_changed',
+          metadata: {
+            target_email: targetProfile.email ?? null,
+            oude_rol: targetProfile.rol ?? null,
+            nieuwe_rol: rol,
+          },
+        })
 
         return res.status(200).json({ success: true, action: 'update_rol', rol })
       }
@@ -115,6 +174,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           return res.status(500).json({ error: 'Kon gebruiker niet blokkeren' })
         }
 
+        await logAuditEvent(supabaseAdmin, {
+          ...auditBase,
+          action: 'team.member_deactivated',
+          metadata: { target_email: targetProfile.email ?? null },
+        })
+
         return res.status(200).json({ success: true, action: 'deactiveer' })
       }
 
@@ -139,6 +204,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           console.error('manage-team-member heractiveer profile error:', profileError)
           return res.status(500).json({ error: 'Kon profiel niet heractiveren' })
         }
+
+        await logAuditEvent(supabaseAdmin, {
+          ...auditBase,
+          action: 'team.member_reactivated',
+          metadata: { target_email: targetProfile.email ?? null },
+        })
 
         return res.status(200).json({ success: true, action: 'heractiveer' })
       }
