@@ -1,10 +1,32 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import crypto from 'crypto'
 
 const supabaseAdmin = createClient(
   process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '',
   process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 )
+
+// -- Integration credential encryption (copied from api/save-integration-settings.ts) --
+const INT_KEY = process.env.INTEGRATION_ENCRYPTION_KEY || ''
+function encryptSecret(text: string): string {
+  if (!INT_KEY) return text
+  const key = crypto.scryptSync(INT_KEY, 'integration', 32)
+  const iv = crypto.randomBytes(16)
+  const cipher = crypto.createCipheriv('aes-256-cbc', key, iv)
+  return iv.toString('hex') + ':' + cipher.update(text, 'utf8', 'hex') + cipher.final('hex')
+}
+function decryptSecret(text: string): string {
+  if (!text || !text.includes(':') || text.length < 34) return text
+  if (!INT_KEY) { console.warn('[encryption] INTEGRATION_ENCRYPTION_KEY not set'); return text }
+  try {
+    const key = crypto.scryptSync(INT_KEY, 'integration', 32)
+    const [ivHex, enc] = text.split(':')
+    if (!ivHex || ivHex.length !== 32 || !enc) return text
+    const decipher = crypto.createDecipheriv('aes-256-cbc', key, Buffer.from(ivHex, 'hex'))
+    return decipher.update(enc, 'hex', 'utf8') + decipher.final('utf8')
+  } catch { console.warn('[encryption] decrypt failed, treating as plaintext'); return text }
+}
 
 // ─── Inline org-aware app_settings helpers (zie profielService.ts) ───
 async function getOrgIdForUser(supabase: SupabaseClient, userId: string): Promise<string | null> {
@@ -103,7 +125,7 @@ async function getValidToken(user_id: string): Promise<string> {
       'exact_online_client_id, exact_online_client_secret',
     )
     const exactClientId = settings?.exact_online_client_id as string | undefined
-    const exactClientSecret = settings?.exact_online_client_secret as string | undefined
+    const exactClientSecret = settings?.exact_online_client_secret ? decryptSecret(settings.exact_online_client_secret as string) : undefined
 
     if (!exactClientId || !exactClientSecret) {
       throw new Error('Exact credentials niet gevonden')
@@ -118,7 +140,7 @@ async function getValidToken(user_id: string): Promise<string> {
       },
       body: new URLSearchParams({
         grant_type: 'refresh_token',
-        refresh_token: tokenData.refresh_token,
+        refresh_token: decryptSecret(tokenData.refresh_token),
         client_id: exactClientId,
         client_secret: exactClientSecret,
       }),
@@ -131,8 +153,8 @@ async function getValidToken(user_id: string): Promise<string> {
 
     const tokens = await refreshRes.json()
     await supabaseAdmin.from('exact_tokens').update({
-      access_token: tokens.access_token,
-      refresh_token: tokens.refresh_token || tokenData.refresh_token,
+      access_token: encryptSecret(tokens.access_token),
+      refresh_token: encryptSecret(tokens.refresh_token || decryptSecret(tokenData.refresh_token)),
       expires_at: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
       updated_at: new Date().toISOString(),
     }).eq('user_id', user_id)
@@ -140,7 +162,7 @@ async function getValidToken(user_id: string): Promise<string> {
     return tokens.access_token
   }
 
-  return tokenData.access_token
+  return decryptSecret(tokenData.access_token)
 }
 
 async function exactGet(token: string, division: string, endpoint: string): Promise<unknown> {

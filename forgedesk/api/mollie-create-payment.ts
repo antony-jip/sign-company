@@ -1,10 +1,25 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
+import crypto from 'crypto'
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
 const MOLLIE_API_URL = 'https://api.mollie.com/v2/payments'
+
+// -- Integration credential decryption (copied from api/save-integration-settings.ts) --
+const INT_KEY = process.env.INTEGRATION_ENCRYPTION_KEY || ''
+function decryptSecret(text: string): string {
+  if (!text || !text.includes(':') || text.length < 34) return text
+  if (!INT_KEY) { console.warn('[encryption] INTEGRATION_ENCRYPTION_KEY not set'); return text }
+  try {
+    const key = crypto.scryptSync(INT_KEY, 'integration', 32)
+    const [ivHex, enc] = text.split(':')
+    if (!ivHex || ivHex.length !== 32 || !enc) return text
+    const decipher = crypto.createDecipheriv('aes-256-cbc', key, Buffer.from(ivHex, 'hex'))
+    return decipher.update(enc, 'hex', 'utf8') + decipher.final('utf8')
+  } catch { console.warn('[encryption] decrypt failed, treating as plaintext'); return text }
+}
 const DEFAULT_REDIRECT = 'https://app.doen.team'
 
 function isAllowedRedirectUrl(url: string): boolean {
@@ -89,7 +104,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .single()
 
       if (settings?.mollie_enabled && settings?.mollie_api_key) {
-        mollieApiKey = settings.mollie_api_key
+        mollieApiKey = decryptSecret(settings.mollie_api_key)
       }
     }
 

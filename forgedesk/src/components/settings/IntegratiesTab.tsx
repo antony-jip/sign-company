@@ -28,6 +28,21 @@ const INTEGRATIES_TABS: SubTab[] = [
   { id: 'koppelingen', label: 'Koppelingen', icon: Puzzle },
 ]
 
+async function saveIntegrationSettings(settings: Record<string, unknown>): Promise<void> {
+  const { data } = await supabase.auth.getSession()
+  const token = data?.session?.access_token
+  if (!token) throw new Error('Niet ingelogd')
+  const res = await fetch('/api/save-integration-settings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify(settings),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Opslaan mislukt' }))
+    throw new Error(err.error || 'Opslaan mislukt')
+  }
+}
+
 export function IntegratiesTab() {
   const [subTab, setSubTab] = useState('koppelingen')
   const { user } = useAuth()
@@ -58,12 +73,13 @@ export function IntegratiesTab() {
 
   useEffect(() => {
     if (!user?.id) return
+    const isEncrypted = (v: string) => /^[0-9a-f]{32}:/.test(v)
     getAppSettings(user.id).then((s) => {
       setMollieEnabled(s.mollie_enabled ?? false)
-      setMollieApiKey(s.mollie_api_key ?? '')
+      setMollieApiKey(isEncrypted(s.mollie_api_key ?? '') ? '' : (s.mollie_api_key ?? ''))
       setMollieLoaded(true)
       setExactClientId(s.exact_online_client_id ?? '')
-      setExactClientSecret(s.exact_online_client_secret ?? '')
+      setExactClientSecret(isEncrypted(s.exact_online_client_secret ?? '') ? '' : (s.exact_online_client_secret ?? ''))
       setExactConnected(s.exact_online_connected ?? false)
       setExactAdministratieId(s.exact_administratie_id ?? '')
       setExactVerkoopboek(s.exact_verkoopboek ?? '80')
@@ -111,7 +127,7 @@ export function IntegratiesTab() {
     try {
       // Sla eerst eventuele wijzigingen in client_id/secret op zodat de
       // OAuth flow zeker met de juiste credentials werkt.
-      await updateAppSettings(user.id, {
+      await saveIntegrationSettings({
         exact_online_client_id: exactClientId,
         exact_online_client_secret: exactClientSecret,
       })
@@ -134,7 +150,7 @@ export function IntegratiesTab() {
     if (!user?.id) return
     setMollieSaving(true)
     try {
-      await updateAppSettings(user.id, { mollie_enabled: mollieEnabled, mollie_api_key: mollieApiKey })
+      await saveIntegrationSettings({ mollie_enabled: mollieEnabled, mollie_api_key: mollieApiKey })
       toast.success('Opgeslagen.')
     } catch (err) {
       logger.error('Fout bij opslaan Mollie instellingen:', err)
@@ -148,7 +164,7 @@ export function IntegratiesTab() {
     if (!user?.id) return
     setExactSaving(true)
     try {
-      await updateAppSettings(user.id, {
+      await saveIntegrationSettings({
         exact_online_client_id: exactClientId,
         exact_online_client_secret: exactClientSecret,
         exact_administratie_id: exactAdministratieId,

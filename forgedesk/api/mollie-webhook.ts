@@ -8,6 +8,20 @@ const MOLLIE_WEBHOOK_SECRET = process.env.MOLLIE_WEBHOOK_SECRET || ''
 
 const MOLLIE_API_BASE = 'https://api.mollie.com/v2/payments'
 
+// -- Integration credential decryption (copied from api/save-integration-settings.ts) --
+const INT_KEY = process.env.INTEGRATION_ENCRYPTION_KEY || ''
+function decryptSecret(text: string): string {
+  if (!text || !text.includes(':') || text.length < 34) return text
+  if (!INT_KEY) { console.warn('[encryption] INTEGRATION_ENCRYPTION_KEY not set'); return text }
+  try {
+    const key = crypto.scryptSync(INT_KEY, 'integration', 32)
+    const [ivHex, enc] = text.split(':')
+    if (!ivHex || ivHex.length !== 32 || !enc) return text
+    const decipher = crypto.createDecipheriv('aes-256-cbc', key, Buffer.from(ivHex, 'hex'))
+    return decipher.update(enc, 'hex', 'utf8') + decipher.final('utf8')
+  } catch { console.warn('[encryption] decrypt failed, treating as plaintext'); return text }
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
@@ -66,7 +80,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .eq('user_id', factuur.user_id)
         .single()
       if (settings?.mollie_api_key) {
-        mollieApiKey = settings.mollie_api_key
+        mollieApiKey = decryptSecret(settings.mollie_api_key)
       }
     }
 
