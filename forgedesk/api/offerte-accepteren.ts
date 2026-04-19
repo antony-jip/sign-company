@@ -16,20 +16,25 @@ if (!rlConfigured) {
   console.warn('[ratelimit] UPSTASH env vars missing for offerte-accepteren, requests will not be rate limited')
 }
 const ratelimit = rlConfigured
-  ? new Ratelimit({ redis: Redis.fromEnv(), limiter: Ratelimit.slidingWindow(10, '3600 s'), prefix: 'rl:offerte-accepteren' })
+  ? new Ratelimit({ redis: Redis.fromEnv(), limiter: Ratelimit.slidingWindow(10, '3600 s'), prefix: 'rl:offerte-accepteren', timeout: 2000 })
   : null
 
 async function enforceRateLimit(identifier: string, res: VercelResponse): Promise<boolean> {
   if (!ratelimit) return true
-  const { success, limit, remaining, reset } = await ratelimit.limit(identifier)
-  if (success) return true
-  const retryAfter = Math.max(1, Math.ceil((reset - Date.now()) / 1000))
-  console.warn(`[ratelimit-hit] offerte-accepteren id=${identifier} limit=${limit}`)
-  res.setHeader('Retry-After', String(retryAfter))
-  res.setHeader('X-RateLimit-Limit', String(limit))
-  res.setHeader('X-RateLimit-Remaining', String(remaining))
-  res.status(429).json({ error: 'Te veel verzoeken. Probeer het later opnieuw.' })
-  return false
+  try {
+    const { success, limit, remaining, reset } = await ratelimit.limit(identifier)
+    if (success) return true
+    const retryAfter = Math.max(1, Math.ceil((reset - Date.now()) / 1000))
+    console.warn(`[ratelimit-hit] offerte-accepteren id=${identifier} limit=${limit}`)
+    res.setHeader('Retry-After', String(retryAfter))
+    res.setHeader('X-RateLimit-Limit', String(limit))
+    res.setHeader('X-RateLimit-Remaining', String(remaining))
+    res.status(429).json({ error: 'Te veel verzoeken. Probeer het later opnieuw.' })
+    return false
+  } catch (err) {
+    console.warn(`[ratelimit-error] offerte-accepteren id=${identifier} err=${(err as Error).message}`)
+    return true
+  }
 }
 
 function getClientIp(req: VercelRequest): string {
