@@ -16,7 +16,7 @@ if (!rlConfigured) {
   console.warn('[ratelimit] UPSTASH env vars missing for send-email, requests will not be rate limited')
 }
 const ratelimit = rlConfigured
-  ? new Ratelimit({ redis: Redis.fromEnv(), limiter: Ratelimit.slidingWindow(5, '60 s'), prefix: 'rl:send-email' })
+  ? new Ratelimit({ redis: Redis.fromEnv(), limiter: Ratelimit.slidingWindow(20, '60 s'), prefix: 'rl:send-email' })
   : null
 
 async function enforceRateLimit(identifier: string, res: VercelResponse): Promise<boolean> {
