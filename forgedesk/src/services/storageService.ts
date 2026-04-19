@@ -162,9 +162,11 @@ export async function uploadEmailBijlage(file: File): Promise<{ filename: string
   if (file.size > MAX_UPLOAD_SIZE) {
     throw new Error(`Bestand te groot (max ${MAX_UPLOAD_SIZE / 1024 / 1024}MB)`)
   }
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user?.id) throw new Error('Niet ingelogd')
   const ext = file.name.split('.').pop()?.toLowerCase() || 'bin'
   const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-  const storagePath = `email-bijlagen/${id}.${ext}`
+  const storagePath = `email-bijlagen/${session.user.id}/${id}.${ext}`
   const { error } = await supabase.storage.from(BUCKET).upload(storagePath, file, {
     cacheControl: '300',
     upsert: false,
