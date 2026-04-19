@@ -80,6 +80,7 @@ import { cn, formatCurrency, formatDate } from '@/lib/utils'
 import { round2 } from '@/utils/budgetUtils'
 import { toast } from 'sonner'
 import { exportCSV, exportExcel } from '@/lib/export'
+import { factuurBetaalTokenExpiry } from '@/lib/tokenExpiry'
 import { sendEmail } from '@/services/gmailService'
 import { factuurHerinneringTemplate, factuurVerzendTemplate } from '@/services/emailTemplateService'
 import { generateFactuurPDF } from '@/services/pdfService'
@@ -641,6 +642,7 @@ export function FacturenLayout() {
           notities: formData.notities,
           voorwaarden: formData.voorwaarden,
           betaal_token: betaalToken,
+          betaal_token_verloopt_op: factuurBetaalTokenExpiry(),
           betaal_link: betaalLink,
           factuur_type: 'standaard',
         }
@@ -1156,6 +1158,7 @@ export function FacturenLayout() {
         voorwaarden: creditnotaFactuur.voorwaarden,
         factuur_type: 'creditnota',
         betaal_token: cnToken,
+        betaal_token_verloopt_op: factuurBetaalTokenExpiry(),
         betaal_link: `${window.location.origin}/betalen/${cnToken}`,
         gerelateerde_factuur_id: creditnotaFactuur.id,
         credit_reden: creditReden,
@@ -1223,6 +1226,7 @@ export function FacturenLayout() {
         voorwaarden: factuurVoorwaarden || `Betaling binnen ${factuurBetaaltermijnDagen} dagen na factuurdatum.`,
         factuur_type: 'voorschot',
         betaal_token: vsToken,
+        betaal_token_verloopt_op: factuurBetaalTokenExpiry(),
         betaal_link: `${window.location.origin}/betalen/${vsToken}`,
         gerelateerde_factuur_id: undefined,
         voorschot_percentage: voorschotPercentage,
@@ -1291,6 +1295,7 @@ export function FacturenLayout() {
         voorwaarden: eindafrekeningFactuur.voorwaarden,
         factuur_type: 'eindafrekening',
         betaal_token: eaToken,
+        betaal_token_verloopt_op: factuurBetaalTokenExpiry(),
         betaal_link: `${window.location.origin}/betalen/${eaToken}`,
         gerelateerde_factuur_id: eindafrekeningFactuur.id,
         verrekende_voorschot_ids: betaaldeVoorschotten.map((f) => f.id),

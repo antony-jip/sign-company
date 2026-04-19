@@ -323,6 +323,7 @@ export interface Offerte {
   laatst_bekeken_op?: string;
   aantal_keer_bekeken?: number;
   publiek_token?: string;
+  publiek_token_verloopt_op?: string;
   // Sales tracking
   verloopdatum?: string;
   verstuurd_op?: string;
@@ -867,6 +868,7 @@ export interface TekeningGoedkeuring {
   offerte_id?: string;
   // Unieke token voor klant-link (zonder login)
   token: string;
+  token_verloopt_op?: string;
   // Status van de goedkeuring
   status: 'verzonden' | 'bekeken' | 'goedgekeurd' | 'revisie';
   // Email details
@@ -962,6 +964,7 @@ export interface Factuur {
   werkbon_id?: string;
   // Tier 2 Feature 1: Online Betaling
   betaal_token?: string;
+  betaal_token_verloopt_op?: string;
   betaal_link?: string;
   betaal_methode?: 'handmatig' | 'link' | 'qr';
   mollie_payment_id?: string;

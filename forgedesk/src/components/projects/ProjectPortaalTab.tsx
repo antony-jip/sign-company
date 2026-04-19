@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
+import { offerteTokenExpiry } from '@/lib/tokenExpiry'
 import {
   getPortaalByProject,
   getPortaalItems,
@@ -356,7 +357,7 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
         if (!offerte.publiek_token) {
           const { updateOfferte } = await import('@/services/supabaseService')
           const publiekToken = crypto.randomUUID()
-          await updateOfferte(offerte.id, { publiek_token: publiekToken })
+          await updateOfferte(offerte.id, { publiek_token: publiekToken, publiek_token_verloopt_op: offerteTokenExpiry() })
           offerte.publiek_token = publiekToken
         }
 
