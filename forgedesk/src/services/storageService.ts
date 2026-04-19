@@ -1,4 +1,5 @@
 import supabase, { isSupabaseConfigured } from './supabaseClient'
+import { getOrgId } from './supabaseHelpers'
 import { safeSetItem } from '@/utils/localStorageUtils'
 
 const BUCKET = 'documenten'
@@ -133,8 +134,10 @@ export async function uploadMontageBijlage(file: File): Promise<{
   if (ext === 'pdf') type = 'pdf'
   else if (['png', 'jpg', 'jpeg', 'webp'].includes(ext)) type = 'foto'
 
-  const id = `bijlage-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-  const storagePath = `montage-bijlagen/${id}.${ext}`
+  const orgId = await getOrgId()
+  if (!orgId) throw new Error('Organisatie niet gevonden')
+  const fileId = crypto.randomUUID()
+  const storagePath = `montage-bijlagen/${orgId}/${fileId}.${ext || 'bin'}`
   const url = await uploadFile(file, storagePath)
 
   // Get a public/downloadable URL
@@ -146,7 +149,7 @@ export async function uploadMontageBijlage(file: File): Promise<{
   }
 
   return {
-    id,
+    id: fileId,
     naam: file.name,
     type,
     url: displayUrl,
