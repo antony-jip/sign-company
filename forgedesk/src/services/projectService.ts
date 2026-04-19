@@ -201,7 +201,8 @@ export async function createTaak(taak: Omit<Taak, 'id' | 'created_at' | 'updated
 
 export async function uploadTaakBijlage(taakId: string, file: File): Promise<string> {
   if (isSupabaseConfigured() && supabase) {
-    const storagePath = `taken/${taakId}/${Date.now()}_${file.name}`
+    const ext = file.name.split('.').pop()?.toLowerCase() || 'bin'
+    const storagePath = `taken/${taakId}/${crypto.randomUUID()}.${ext}`
     const { error } = await supabase.storage
       .from('project-fotos')
       .upload(storagePath, file, { cacheControl: '3600', upsert: false })
@@ -331,7 +332,8 @@ export async function createProjectFoto(
 ): Promise<ProjectFoto> {
   assertId(foto.user_id, 'user_id')
   assertId(foto.project_id, 'project_id')
-  const storagePath = `${foto.project_id}/${Date.now()}_${file.name}`
+  const ext = file.name.split('.').pop()?.toLowerCase() || 'bin'
+  const storagePath = `${foto.project_id}/${crypto.randomUUID()}.${ext}`
 
   let url: string
 
