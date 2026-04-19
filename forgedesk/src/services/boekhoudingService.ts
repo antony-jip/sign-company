@@ -98,9 +98,10 @@ export async function getKostenplaatsen(): Promise<Kostenplaats[]> {
 
 export async function createKostenplaats(data: Omit<Kostenplaats, 'id' | 'created_at'>): Promise<Kostenplaats> {
   if (isSupabaseConfigured() && supabase) {
+    const _orgId = await getOrgId()
     const { data: result, error } = await supabase
       .from('kostenplaatsen')
-      .insert(data)
+      .insert({ ...data, organisatie_id: _orgId })
       .select()
       .single()
     if (error) throw error
