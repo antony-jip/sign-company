@@ -116,43 +116,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUserRol(profile.rol || null)
 
       if (!profile.organisatie_id) {
-        // Check if user was invited (org info in auth metadata)
-        const meta = user?.user_metadata || (await import('@/services/supabaseClient').then(m => m.default?.auth.getUser())).data?.user?.user_metadata
-        const inviteOrgId = meta?.organisatie_id as string | undefined
-        const inviteRol = (meta?.rol as string) || 'medewerker'
-        const invitedBy = meta?.uitgenodigd_door as string | undefined
-
-        if (inviteOrgId) {
-          // Invited user — join existing org
-          const userEmail = user?.email || meta?.email as string || ''
-          await updateProfile(userId, { organisatie_id: inviteOrgId, rol: inviteRol, uitgenodigd_door: invitedBy || null, status: 'actief' } as Parameters<typeof updateProfile>[1])
-          setOrganisatieId(inviteOrgId)
-          setUserRol(inviteRol as TeamRol)
-
-          // Auto-create medewerker record linked to profile via user_id
-          try {
-            await createMedewerker({ naam: userEmail.split('@')[0] || 'Nieuw teamlid', email: userEmail, status: 'actief', user_id: userId } as Parameters<typeof createMedewerker>[0])
-          } catch { /* may already exist */ }
-
-          const org = await getOrganisatie(inviteOrgId)
-          if (org) {
-            setOrganisatie(org)
-            setTrialDagenOver(computeTrialDagenOver(org.trial_einde))
-            setTrialStatus((org.abonnement_status as TrialStatus) || 'trial')
-          }
-          navigate?.('/team-welkom')
-        } else {
-          // New user without organisation — auto-create
-          const org = await createOrganisatie('Mijn Bedrijf', userId)
-          await updateProfile(userId, { organisatie_id: org.id, rol: 'admin' } as Parameters<typeof updateProfile>[1])
-          setOrganisatieId(org.id)
-          setUserRol('admin')
-          setOrganisatie(org)
-          setTrialDagenOver(30)
-          setTrialStatus('trial')
-          if (accessToken) triggerOnboarding(accessToken)
-          navigate?.('/welkom')
-        }
+        // Trigger handle_new_user heeft de koppeling niet kunnen maken
+        // via uitnodigingen. Dit betekent: legitieme nieuwe user zonder
+        // invite → nieuwe org.
+        const org = await createOrganisatie('Mijn Bedrijf', userId)
+        await updateProfile(userId, { organisatie_id: org.id, rol: 'admin' } as Parameters<typeof updateProfile>[1])
+        setOrganisatieId(org.id)
+        setUserRol('admin')
+        setOrganisatie(org)
+        setTrialDagenOver(30)
+        setTrialStatus('trial')
+        if (accessToken) triggerOnboarding(accessToken)
+        navigate?.('/welkom')
       } else {
         // Existing organisation — check onboarding state
         const org = await getOrganisatie(profile.organisatie_id)
