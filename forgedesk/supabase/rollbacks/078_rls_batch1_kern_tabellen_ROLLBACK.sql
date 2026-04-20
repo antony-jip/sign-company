@@ -1,0 +1,21 @@
+-- ROLLBACK van 078_rls_batch1_kern_tabellen.sql
+-- NIET AUTOMATISCH UITVOEREN — alleen bij problemen na migratie 078
+
+BEGIN;
+
+ALTER TABLE public.klanten DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.offertes DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.offerte_items DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.facturen DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.factuur_items DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.projecten DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.taken DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.montage_afspraken DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.tijdregistraties DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.documenten DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.events DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.medewerkers DISABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Org members manage factuur_items" ON public.factuur_items;
+
+COMMIT;
