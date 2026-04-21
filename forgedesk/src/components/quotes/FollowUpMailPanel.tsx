@@ -119,8 +119,7 @@ export function FollowUpMailPanel({
   const buildFallbackEmail = useCallback((): FollowUpEmailResult => {
     const contactpersoon = klant?.contactpersonen?.find((c) => c.is_primair)?.naam || klant?.contactpersoon || ''
     const voornaam = contactpersoon.split(' ')[0] || contactpersoon
-    const afzender = profile?.voornaam || ''
-    const bedrijf = profile?.bedrijfsnaam || ''
+    const afzender = profile?.bedrijfsnaam || ''
     const bedrag = new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(offerte.totaal || 0)
     const pogingen = offerte.contact_pogingen || 0
 
@@ -137,8 +136,7 @@ ${offerte.geldig_tot ? `De offerte is geldig tot ${new Intl.DateTimeFormat('nl-N
 
 Mocht u nog vragen hebben of iets willen bespreken, dan hoor ik het graag. U kunt de offerte ook direct online bekijken en goedkeuren via deze link: [PORTAAL_LINK]
 
-${afzender}
-${bedrijf}`
+${afzender}`
     } else if (dagenOpen <= 14) {
       // Iets directer
       body = `${aanhef},
@@ -149,8 +147,7 @@ Heeft u de offerte kunnen bekijken? Ik help u graag als er nog vragen zijn over 
 
 Bekijk de offerte direct online: [PORTAAL_LINK]
 
-${afzender}
-${bedrijf}`
+${afzender}`
     } else if (dagenOpen <= 21) {
       // Urgenter
       body = `${aanhef},
@@ -161,8 +158,7 @@ Zijn er nog punten die u tegengehouden hebben? Ik denk graag met u mee over even
 
 U kunt de offerte hier direct bekijken en goedkeuren: [PORTAAL_LINK]
 
-${afzender}
-${bedrijf}`
+${afzender}`
     } else {
       // Laatste poging
       body = `${aanhef},
@@ -171,8 +167,7 @@ ${pogingen > 1 ? `Ik heb u eerder ${pogingen}x benaderd` : 'Ik heb u eerder bena
 
 Ik begrijp dat prioriteiten kunnen verschuiven. Laat me weten of dit project nog actueel is, dan kijken we samen naar de volgende stap. Als de huidige offerte niet meer aansluit, maak ik graag een aangepast voorstel.
 
-${afzender}
-${bedrijf}`
+${afzender}`
     }
 
     return {
@@ -202,7 +197,7 @@ ${bedrijf}`
         aantal_eerdere_followups: offerte.contact_pogingen || 0,
         status: offerte.status,
         bedrijfsnaam_afzender: profile?.bedrijfsnaam || '',
-        afzender_naam: profile?.voornaam || '',
+        afzender_naam: profile?.bedrijfsnaam || '',
       }
 
       const result = await generateFollowUpEmail(context)
