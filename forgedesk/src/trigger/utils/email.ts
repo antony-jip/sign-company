@@ -29,7 +29,27 @@ interface UserEmailCredentials {
   password: string;
   smtp_host: string;
   smtp_port: number;
-  bedrijfsnaam?: string;
+  fromName?: string;
+}
+
+async function loadAfzenderNaam(userId: string, organisatieId: string | null): Promise<string | null> {
+  const supabase = getSupabaseAdmin();
+  if (organisatieId) {
+    const { data } = await supabase
+      .from("app_settings")
+      .select("afzender_naam")
+      .eq("organisatie_id", organisatieId)
+      .maybeSingle();
+    const naam = (data?.afzender_naam || "").trim();
+    if (naam) return naam;
+  }
+  const { data } = await supabase
+    .from("app_settings")
+    .select("afzender_naam")
+    .eq("user_id", userId)
+    .maybeSingle();
+  const naam = (data?.afzender_naam || "").trim();
+  return naam || null;
 }
 
 /**
@@ -50,16 +70,19 @@ export async function getUserEmailCredentials(userId: string): Promise<UserEmail
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("bedrijfsnaam")
+    .select("bedrijfsnaam, organisatie_id")
     .eq("id", userId)
     .maybeSingle();
+
+  const afzenderNaam = await loadAfzenderNaam(userId, profile?.organisatie_id || null);
+  const fromName = afzenderNaam || profile?.bedrijfsnaam?.trim() || undefined;
 
   return {
     gmail_address: settings.gmail_address,
     password: decrypt(settings.encrypted_app_password),
     smtp_host: settings.smtp_host || "smtp.gmail.com",
     smtp_port: settings.smtp_port || 587,
-    bedrijfsnaam: profile?.bedrijfsnaam || undefined,
+    fromName,
   };
 }
 
@@ -86,8 +109,8 @@ export async function sendEmailForUser(params: {
       auth: { user: creds.gmail_address, pass: creds.password },
     });
 
-    const fromAddress = creds.bedrijfsnaam
-      ? `"${creds.bedrijfsnaam.replace(/"/g, "")}" <${creds.gmail_address}>`
+    const fromAddress = creds.fromName
+      ? `"${creds.fromName.replace(/"/g, "")}" <${creds.gmail_address}>`
       : creds.gmail_address;
 
     // If `to` is empty, send to the user's own email (self-notification)

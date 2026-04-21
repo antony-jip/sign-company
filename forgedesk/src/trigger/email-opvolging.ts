@@ -293,8 +293,8 @@ ${volledigeTekst.replace(/\n/g, "<br/>")}
       auth: { user: creds.gmail_address, pass: creds.password },
     });
 
-    const fromAddress = creds.bedrijfsnaam
-      ? `"${creds.bedrijfsnaam.replace(/"/g, "")}" <${creds.gmail_address}>`
+    const fromAddress = creds.fromName
+      ? `"${creds.fromName.replace(/"/g, "")}" <${creds.gmail_address}>`
       : creds.gmail_address;
 
     // Extract bare email for "to"

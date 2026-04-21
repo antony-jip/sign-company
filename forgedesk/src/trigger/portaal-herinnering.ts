@@ -167,7 +167,7 @@ async function processUserHerinneringen(params: {
   // Get branding
   const { data: profile } = await supabase
     .from("profiles")
-    .select("bedrijfsnaam, logo_url")
+    .select("bedrijfsnaam, logo_url, organisatie_id")
     .eq("id", userId)
     .maybeSingle();
 
@@ -180,6 +180,25 @@ async function processUserHerinneringen(params: {
   const bedrijfsnaam = profile?.bedrijfsnaam || "";
   const logoUrl = showLogo ? profile?.logo_url : undefined;
   const primaireKleur = docStyle?.primaire_kleur || undefined;
+
+  let afzenderNaam: string | null = null;
+  if (profile?.organisatie_id) {
+    const { data: orgSettings } = await supabase
+      .from("app_settings")
+      .select("afzender_naam")
+      .eq("organisatie_id", profile.organisatie_id)
+      .maybeSingle();
+    afzenderNaam = (orgSettings?.afzender_naam || "").trim() || null;
+  }
+  if (!afzenderNaam) {
+    const { data: userSettings } = await supabase
+      .from("app_settings")
+      .select("afzender_naam")
+      .eq("user_id", userId)
+      .maybeSingle();
+    afzenderNaam = (userSettings?.afzender_naam || "").trim() || null;
+  }
+  const fromName = afzenderNaam || bedrijfsnaam || undefined;
 
   const appUrl =
     process.env.VITE_APP_URL ||
@@ -235,6 +254,7 @@ async function processUserHerinneringen(params: {
       replyTo,
       subject: onderwerp,
       bedrijfsnaam,
+      fromName,
       heading: template?.inhoud ? heading : `Herinnering: ${item.titel}`,
       itemTitel: item.titel,
       beschrijving: template?.inhoud ? undefined : heading,

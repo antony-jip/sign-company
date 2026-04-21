@@ -194,15 +194,34 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ success: true, message: 'Email ingepland', id: ingepland.id })
     }
 
-    // Haal bedrijfsnaam op voor afzendernaam
+    // Haal afzendernaam op: app_settings.afzender_naam (org-first, dan user) → fallback bedrijfsnaam
     const { data: profile } = await supabaseAdmin
       .from('profiles')
-      .select('bedrijfsnaam')
+      .select('bedrijfsnaam, organisatie_id')
       .eq('id', user_id)
       .maybeSingle()
 
-    const fromAddress = profile?.bedrijfsnaam
-      ? `"${profile.bedrijfsnaam.replace(/"/g, '')}" <${gmail_address}>`
+    let afzenderNaam: string | null = null
+    if (profile?.organisatie_id) {
+      const { data: orgSettings } = await supabaseAdmin
+        .from('app_settings')
+        .select('afzender_naam')
+        .eq('organisatie_id', profile.organisatie_id)
+        .maybeSingle()
+      afzenderNaam = (orgSettings?.afzender_naam || '').trim() || null
+    }
+    if (!afzenderNaam) {
+      const { data: userSettings } = await supabaseAdmin
+        .from('app_settings')
+        .select('afzender_naam')
+        .eq('user_id', user_id)
+        .maybeSingle()
+      afzenderNaam = (userSettings?.afzender_naam || '').trim() || null
+    }
+
+    const fromName = afzenderNaam || profile?.bedrijfsnaam?.trim() || null
+    const fromAddress = fromName
+      ? `"${fromName.replace(/"/g, '')}" <${gmail_address}>`
       : gmail_address
 
     const transporter = createTransport({
@@ -303,7 +322,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         map: 'verzonden',
         imap_folder: 'SENT',
         from_address: gmail_address,
-        from_name: profile?.bedrijfsnaam || '',
+        from_name: fromName || '',
         van: fromAddress,
         aan: to,
         onderwerp: subject,

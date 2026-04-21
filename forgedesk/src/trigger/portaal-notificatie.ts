@@ -148,12 +148,38 @@ export const portaalItemNotificatie = task({
 
     const replyTo = emailSettings?.gmail_address || "";
 
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("organisatie_id")
+      .eq("id", userId)
+      .maybeSingle();
+
+    let afzenderNaam: string | null = null;
+    if (profile?.organisatie_id) {
+      const { data: orgSettings } = await supabase
+        .from("app_settings")
+        .select("afzender_naam")
+        .eq("organisatie_id", profile.organisatie_id)
+        .maybeSingle();
+      afzenderNaam = (orgSettings?.afzender_naam || "").trim() || null;
+    }
+    if (!afzenderNaam) {
+      const { data: userSettings } = await supabase
+        .from("app_settings")
+        .select("afzender_naam")
+        .eq("user_id", userId)
+        .maybeSingle();
+      afzenderNaam = (userSettings?.afzender_naam || "").trim() || null;
+    }
+    const fromName = afzenderNaam || bedrijfsNaam || undefined;
+
     // Send to client via Resend (from bedrijfsnaam)
     const emailResult = await sendClientEmail({
       to: klantEmail,
       replyTo,
       subject: `${bedrijfsNaam || "Nieuw item"} — ${titel}`,
       bedrijfsnaam: bedrijfsNaam,
+      fromName,
       heading: `Er staat iets klaar voor project ${projectNaam}.`,
       itemTitel: titel,
       beschrijving: `Project: ${projectNaam}`,

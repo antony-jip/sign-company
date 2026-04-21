@@ -18,6 +18,7 @@ interface ClientEmailParams {
   replyTo: string
   subject: string
   bedrijfsnaam: string
+  fromName?: string
   heading: string
   itemTitel?: string
   beschrijving?: string
@@ -33,9 +34,10 @@ export async function sendClientEmail(params: ClientEmailParams): Promise<{ succ
   if (!resend) return { success: false, error: 'RESEND_API_KEY not configured' }
 
   try {
-    const fromName = params.bedrijfsnaam || 'doen.'
+    const rawFromName = (params.fromName?.trim() || params.bedrijfsnaam?.trim() || 'doen.')
+    const fromName = rawFromName.replace(/"/g, '')
     await resend.emails.send({
-      from: `${fromName} <noreply@doen.team>`,
+      from: `"${fromName}" <noreply@doen.team>`,
       replyTo: params.replyTo,
       to: params.to,
       subject: params.subject,
