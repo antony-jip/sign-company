@@ -945,13 +945,31 @@ export function EmailTab() {
                   : 'Configureer SMTP en IMAP om e-mails te verzenden en ontvangen vanuit doen.'}
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               {emailConnected && (
-                <div className="flex items-center gap-2 mb-4 p-3 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
                   <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400" />
                   <span className="text-sm text-green-700 dark:text-green-300">E-mail verbinding actief</span>
                 </div>
               )}
+
+              <div className="p-3 rounded-lg border border-[#E6E4E0] dark:border-border bg-[#FAFAF8] dark:bg-muted/30">
+                <div className="flex items-start gap-2">
+                  <UserCircle className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-foreground">Afzender-naam in verzonden e-mails</div>
+                    <div className="mt-1.5 text-sm font-mono text-[#6B6B66] dark:text-muted-foreground break-all">
+                      {profile?.bedrijfsnaam
+                        ? <>&quot;{profile.bedrijfsnaam}&quot; &lt;{emailSettings.gmail_address || 'je@email'}&gt;</>
+                        : <span className="italic">Nog niet ingesteld — ontvangers zien alleen je e-mailadres.</span>
+                      }
+                    </div>
+                    <p className="mt-2 text-xs text-[#9B9B95]">
+                      Dit is wat ontvangers zien als afzender. De naam komt uit <span className="font-medium">Instellingen → Bedrijf → Bedrijfsnaam</span>. Gebruik daar je bedrijfsnaam, geen persoonsnaam.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
           <EmailSettingsInline
