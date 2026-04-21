@@ -313,6 +313,13 @@ export function TasksLayout() {
     return map
   }, [offertes])
 
+  const currentMedewerker = useMemo(() => {
+    if (!user) return null
+    return medewerkers.find((m) => m.user_id === user.id)
+      || medewerkers.find((m) => m.email?.toLowerCase() === user.email?.toLowerCase())
+      || null
+  }, [medewerkers, user])
+
   const today = useMemo(() => {
     const d = new Date()
     d.setHours(0, 0, 0, 0)
@@ -488,7 +495,7 @@ export function TasksLayout() {
         beschrijving: '',
         status: 'todo',
         prioriteit: priority,
-        toegewezen_aan: '',
+        toegewezen_aan: currentMedewerker?.naam ?? '',
         deadline: deadline || undefined,
         geschatte_tijd: 0,
         bestede_tijd: 0,
