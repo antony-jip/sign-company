@@ -7,9 +7,7 @@ import { toast } from 'sonner'
 import {
   updateOrganisatie,
   getOrganisatie,
-  createOrganisatie,
   getProfile,
-  updateProfile,
   createKlant,
   createProject,
   createOfferte,
@@ -541,13 +539,7 @@ export function OnboardingWizard() {
           if (profile?.organisatie_id) {
             orgId = profile.organisatie_id
           } else {
-            try {
-              const org = await createOrganisatie('Mijn Bedrijf', user.id)
-              await updateProfile(user.id, { organisatie_id: org.id, rol: 'admin' } as Parameters<typeof updateProfile>[1])
-              orgId = org.id
-            } catch (err) {
-              logger.error('Create organisatie:', err)
-            }
+            logger.error('Onboarding: profile zonder organisatie_id', { userId: user.id })
           }
           if (!cancelled && orgId) setLocalOrgId(orgId)
         } catch (err) {

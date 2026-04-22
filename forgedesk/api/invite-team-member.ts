@@ -176,6 +176,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(403).json({ error: 'Maximum aantal teamleden (10) bereikt voor deze organisatie' })
     }
 
+    // Sla uitnodiging EERST op zodat handle_new_user hem kan vinden
+    // op email-match bij de volgende inviteUserByEmail-call.
+    const { data: uitnodiging, error: uitnodigingError } = await supabaseAdmin
+      .from('uitnodigingen')
+      .insert({
+        organisatie_id,
+        email: email.toLowerCase(),
+        rol,
+        uitgenodigd_door,
+        status: 'verstuurd'
+      })
+      .select()
+      .single()
+
+    if (uitnodigingError) {
+      console.error('invite-team-member db error:', uitnodigingError)
+      return res.status(500).json({ error: 'Kon uitnodiging niet opslaan' })
+    }
+
     // Stuur uitnodiging via Supabase Auth
     const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
       data: {
@@ -191,7 +210,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: 'Kon uitnodiging niet versturen: ' + inviteError.message })
     }
 
-    // Zorg dat het profiel correct is ingevuld (trigger is onbetrouwbaar)
+    // Defensief vangnet — trigger handle_new_user is primaire bron maar
+    // kan racen met timing van auth.users row en uitnodigingen lookup.
     if (inviteData.user?.id) {
       const newUserId = inviteData.user.id
       // Wacht even tot trigger het profiel aanmaakt
@@ -236,24 +256,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         status: 'actief',
         rol,
       }).select().maybeSingle()
-    }
-
-    // Sla uitnodiging op in de database
-    const { data: uitnodiging, error: uitnodigingError } = await supabaseAdmin
-      .from('uitnodigingen')
-      .insert({
-        organisatie_id,
-        email: email.toLowerCase(),
-        rol,
-        uitgenodigd_door,
-        status: 'verstuurd'
-      })
-      .select()
-      .single()
-
-    if (uitnodigingError) {
-      console.error('invite-team-member db error:', uitnodigingError)
-      return res.status(500).json({ error: 'Uitnodiging verstuurd maar kon niet opgeslagen worden' })
     }
 
     await logAuditEvent(supabaseAdmin, {

@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { signIn, signUp, signOut, getSession, onAuthStateChange, type AuthSession } from '@/services/authService'
-import { getProfile, updateProfile, createOrganisatie, getOrganisatie, createMedewerker } from '@/services/supabaseService'
+import { getProfile, getOrganisatie, createMedewerker } from '@/services/supabaseService'
 import { isSupabaseConfigured } from '@/services/supabaseClient'
 import type { TeamRol, Organisatie } from '@/types'
 import { logger } from '@/utils/logger'
@@ -122,17 +122,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUserRol(profile.rol || null)
 
       if (!profile.organisatie_id) {
-        // Trigger handle_new_user heeft de koppeling niet kunnen maken
-        // via uitnodigingen. Dit betekent: legitieme nieuwe user zonder
-        // invite → nieuwe org.
-        const org = await createOrganisatie('Mijn Bedrijf', userId)
-        await updateProfile(userId, { organisatie_id: org.id, rol: 'admin' } as Parameters<typeof updateProfile>[1])
-        setOrganisatieId(org.id)
-        setUserRol('admin')
-        setOrganisatie(org)
-        setTrialDagenOver(30)
-        setTrialStatus('trial')
-        if (accessToken) triggerOnboarding(accessToken)
+        // Trigger handle_new_user hoort altijd een organisatie_id te zetten
+        // (bestaande org bij invite, nieuwe org bij eigen signup). Als we
+        // hier belanden is er iets mis op DB-niveau.
+        logger.error('Profile zonder organisatie_id na signup', { userId })
         if (!isOnboardingRoute(currentPath)) navigate?.('/welkom')
       } else {
         const org = await getOrganisatie(profile.organisatie_id)
@@ -147,6 +140,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             } catch { /* may already exist */ }
             if (!isOnboardingRoute(currentPath)) navigate?.('/team-welkom')
           } else if (!org.onboarding_compleet) {
+            if (accessToken && !org.onboarding_getriggerd_op) {
+              triggerOnboarding(accessToken)
+            }
             if (!isOnboardingRoute(currentPath)) navigate?.('/onboarding')
           }
         }
