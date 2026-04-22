@@ -49,7 +49,6 @@ import { DashboardDataProvider, useDashboardData } from '@/contexts/DashboardDat
 import { formatCurrency, cn } from '@/lib/utils'
 import { logger } from '../../utils/logger'
 import { useDashboardLayout, type DashboardWidgetId, type WidgetSize } from '@/hooks/useDashboardLayout'
-import { ErrorButton } from '@/components/shared/ErrorButton'
 
 // ============ GREETING ============
 
@@ -217,7 +216,6 @@ function FORGEdeskDashboardInner() {
 
   return (
     <div className="space-y-8 sm:space-y-10 pb-12 overflow-x-hidden">
-      <div className="pt-2"><ErrorButton /></div>
       {/* ── Hero header ── */}
       <div className="pt-2">
         <h1
