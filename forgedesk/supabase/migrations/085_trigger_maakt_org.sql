@@ -24,7 +24,7 @@ BEGIN
   FROM public.uitnodigingen
   WHERE email = NEW.email
     AND status = 'verstuurd'
-    AND expires_at > NOW()
+    AND verloopt_op > NOW()
   ORDER BY created_at DESC
   LIMIT 1;
 
@@ -67,10 +67,10 @@ BEGIN
 
   IF v_uitnodiging.organisatie_id IS NOT NULL THEN
     UPDATE public.uitnodigingen
-    SET status = 'geaccepteerd'
+    SET status = 'geaccepteerd', geaccepteerd_op = NOW()
     WHERE email = NEW.email
       AND status = 'verstuurd'
-      AND expires_at > NOW();
+      AND verloopt_op > NOW();
   END IF;
 
   RETURN NEW;
