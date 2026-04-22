@@ -14,6 +14,8 @@ import {
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useNavigateWithTab } from '@/hooks/useNavigateWithTab'
+import { useTrialGuard } from '@/hooks/useTrialGuard'
+import { TrialGuardDialog } from '@/components/shared/TrialGuardDialog'
 import type { Offerte, OfferteItem, Klant, MontageAfspraak } from '@/types'
 import {
   createWerkbon, createWerkbonItem, createWerkbonAfbeelding,
@@ -35,6 +37,7 @@ export function WerkbonVanProjectDialog({
   open, onOpenChange, projectId, klantId, klant, offertes, montageAfspraak,
 }: Props) {
   const { user } = useAuth()
+  const { isBlocked: isTrialBlocked, showDialog: showTrialDialog, setShowDialog: setShowTrialDialog } = useTrialGuard()
   const { werkbonBriefpapier } = useAppSettings()
   const { navigateWithTab } = useNavigateWithTab()
 
@@ -83,6 +86,11 @@ export function WerkbonVanProjectDialog({
   }, [])
 
   const handleCreate = useCallback(async (metItems: boolean) => {
+    if (isTrialBlocked) {
+      onOpenChange(false)
+      setShowTrialDialog(true)
+      return
+    }
     try {
       setIsCreating(true)
       const userId = user?.id || ''
@@ -173,9 +181,11 @@ export function WerkbonVanProjectDialog({
   }, [
     user, selectedOfferteId, projectId, klantId, klant, montageAfspraak,
     werkbonBriefpapier, selectedIds, offerteItems, onOpenChange, navigateWithTab,
+    isTrialBlocked, setShowTrialDialog,
   ])
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
@@ -283,5 +293,7 @@ export function WerkbonVanProjectDialog({
         )}
       </DialogContent>
     </Dialog>
+    <TrialGuardDialog open={showTrialDialog} onOpenChange={setShowTrialDialog} />
+    </>
   )
 }

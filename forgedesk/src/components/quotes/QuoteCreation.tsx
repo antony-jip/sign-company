@@ -94,6 +94,8 @@ import { safeSetItem } from '@/utils/localStorageUtils'
 import { useQuoteClipboard } from '@/hooks/useQuoteClipboard'
 import { useQuoteVersioning } from '@/hooks/useQuoteVersioning'
 import { useContactManagement } from '@/hooks/useContactManagement'
+import { useTrialGuard } from '@/hooks/useTrialGuard'
+import { TrialGuardDialog } from '@/components/shared/TrialGuardDialog'
 
 const DEFAULT_VOORWAARDEN = `1. Deze offerte is geldig gedurende de aangegeven termijn.
 2. Betaling dient te geschieden binnen 30 dagen na factuurdatum.
@@ -188,6 +190,7 @@ export function QuoteCreation() {
   const [searchParams] = useSearchParams()
   const { id: routeId } = useParams<{ id: string }>()
   const { user } = useAuth()
+  const { isBlocked: isTrialBlocked, showDialog: showTrialDialog, setShowDialog: setShowTrialDialog } = useTrialGuard()
   const { settings, offertePrefix, offerteStartNummer, offerteGeldigheidDagen, standaardBtw, bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur, logoUrl, profile, offerteToonM2, emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte } = useAppSettings()
   const documentStyle = useDocumentStyle()
   const [showKlantSelector, setShowKlantSelector] = useState(true)
@@ -910,6 +913,7 @@ export function QuoteCreation() {
     const currentId = editOfferteId || autoSaveIdRef.current
     if (!currentId && !offerteNummer) return
     if (isSaving || saveLockRef.current) return
+    if (isTrialBlocked) return
 
     saveLockRef.current = true
     setAutoSaveStatus('saving')
@@ -1084,6 +1088,10 @@ export function QuoteCreation() {
       toast.error('Kan niet dupliceren zonder klant')
       return
     }
+    if (isTrialBlocked) {
+      setShowTrialDialog(true)
+      return
+    }
     setIsDuplicating(true)
     setShowKopieerNaarKlant(false)
     try {
@@ -1191,6 +1199,10 @@ export function QuoteCreation() {
     if (isSaving || saveLockRef.current) return
     if (!user?.id) {
       toast.error('Je moet ingelogd zijn om een offerte op te slaan')
+      return
+    }
+    if (isTrialBlocked) {
+      setShowTrialDialog(true)
       return
     }
     // Auto-migreer contactpersoon als die een lokaal ID heeft
@@ -2325,6 +2337,7 @@ export function QuoteCreation() {
           }}
         />
       )}
+      <TrialGuardDialog open={showTrialDialog} onOpenChange={setShowTrialDialog} />
     </div>
   )
 }

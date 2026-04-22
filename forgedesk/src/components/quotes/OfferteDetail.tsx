@@ -22,6 +22,8 @@ import { getStatusBadgeClass } from '@/utils/statusColors'
 import { round2 } from '@/utils/budgetUtils'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useAuth } from '@/contexts/AuthContext'
+import { useTrialGuard } from '@/hooks/useTrialGuard'
+import { TrialGuardDialog } from '@/components/shared/TrialGuardDialog'
 import { sendEmail } from '@/services/gmailService'
 import { offerteVerzendTemplate } from '@/services/emailTemplateService'
 import { generateOffertePDF, generateOpdrachtbevestigingPDF } from '@/services/pdfService'
@@ -109,6 +111,7 @@ export function OfferteDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { user, organisatieId } = useAuth()
+  const { isBlocked: isTrialBlocked, showDialog: showTrialDialog, setShowDialog: setShowTrialDialog } = useTrialGuard()
   const { pipelineStappen, bedrijfsnaam, primaireKleur, emailHandtekening, profile } = useAppSettings()
   const documentStyle = useDocumentStyle()
 
@@ -286,6 +289,11 @@ export function OfferteDetail() {
   // Send offerte
   const handleSend = useCallback(async () => {
     if (!offerte || !user?.id) return
+    if (isTrialBlocked) {
+      setShowSendDialog(false)
+      setShowTrialDialog(true)
+      return
+    }
     setIsSending(true)
     try {
       // Gebruik portaal-systeem als de offerte aan een project gekoppeld is
@@ -393,11 +401,15 @@ export function OfferteDetail() {
     } finally {
       setIsSending(false)
     }
-  }, [offerte, klant, items, sendTo, sendSubject, user, bedrijfsnaam, primaireKleur, emailHandtekening, profile, documentStyle])
+  }, [offerte, klant, items, sendTo, sendSubject, user, bedrijfsnaam, primaireKleur, emailHandtekening, profile, documentStyle, isTrialBlocked, setShowTrialDialog])
 
   // Duplicate offerte
   const handleDuplicate = useCallback(async () => {
     if (!offerte || !user?.id) return
+    if (isTrialBlocked) {
+      setShowTrialDialog(true)
+      return
+    }
     setIsDuplicating(true)
     try {
       const now = new Date().toISOString()
@@ -449,7 +461,7 @@ export function OfferteDetail() {
     } finally {
       setIsDuplicating(false)
     }
-  }, [offerte, items, user, navigate])
+  }, [offerte, items, user, navigate, isTrialBlocked, setShowTrialDialog])
 
   // Delete offerte
   const handleDelete = useCallback(async () => {
@@ -492,6 +504,10 @@ export function OfferteDetail() {
       toast.error('Opdrachtbevestiging kan alleen verstuurd worden voor offertes met een project')
       return
     }
+    if (isTrialBlocked) {
+      setShowTrialDialog(true)
+      return
+    }
     try {
       const portaal = await createPortaal(offerte.project_id, user.id)
       const bestaandeItems = await getPortaalItems(portaal.id)
@@ -521,7 +537,7 @@ export function OfferteDetail() {
       logger.error('Kon opdrachtbevestiging niet delen:', err)
       toast.error('Kon opdrachtbevestiging niet delen via portaal')
     }
-  }, [offerte, user])
+  }, [offerte, user, isTrialBlocked, setShowTrialDialog])
 
   // Loading
   if (isLoading) {
@@ -1369,6 +1385,7 @@ export function OfferteDetail() {
           }}
         />
       )}
+      <TrialGuardDialog open={showTrialDialog} onOpenChange={setShowTrialDialog} />
     </div>
   )
 }

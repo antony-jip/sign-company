@@ -98,6 +98,8 @@ import { PaginationControls } from '@/components/ui/pagination-controls'
 import { DagenOpenFilterBar, getDaysOpen, getDaysColor, matchDagenFilter } from '@/components/shared/DagenOpenFilter'
 import type { DagenOpenFilter } from '@/components/shared/DagenOpenFilter'
 import { berekenDagenOpen, getAgingColor, getAgingBgColor } from '@/utils/spectrumUtils'
+import { useTrialGuard } from '@/hooks/useTrialGuard'
+import { TrialGuardDialog } from '@/components/shared/TrialGuardDialog'
 
 // ============ TYPES ============
 
@@ -267,6 +269,7 @@ export function FacturenLayout() {
   const navigate = useNavigate()
   const { navigateWithTab } = useNavigateWithTab()
   const { user } = useAuth()
+  const { isBlocked: isTrialBlocked, showDialog: showTrialDialog, setShowDialog: setShowTrialDialog } = useTrialGuard()
   // App settings (bedrijfsprofiel for PDF generation)
   const { settings, profile, primaireKleur, emailHandtekening, bedrijfsnaam, factuurPrefix, factuurStartNummer, factuurBetaaltermijnDagen, factuurVoorwaarden } = useAppSettings()
   const exactConnected = settings.exact_online_connected ?? false
@@ -966,6 +969,10 @@ export function FacturenLayout() {
 
   const handleSendFactuur = useCallback(
     async (factuur: Factuur) => {
+      if (isTrialBlocked) {
+        setShowTrialDialog(true)
+        return
+      }
       const klant = klanten.find((k) => k.id === factuur.klant_id)
       if (!klant?.email) {
         toast.error('Geen emailadres gevonden voor deze klant')
@@ -1017,7 +1024,7 @@ export function FacturenLayout() {
         toast.error('Kon factuur niet verzenden')
       }
     },
-    [klanten, bedrijfsnaam, primaireKleur, emailHandtekening]
+    [klanten, bedrijfsnaam, primaireKleur, emailHandtekening, isTrialBlocked, setShowTrialDialog]
   )
 
   // ============ HERINNERING LOGIC ============
@@ -1063,6 +1070,10 @@ export function FacturenLayout() {
 
   const handleVerstuurHerinnering = useCallback(async () => {
     if (!herinneringFactuur) return
+    if (isTrialBlocked) {
+      setShowTrialDialog(true)
+      return
+    }
     const klant = klanten.find((k) => k.id === herinneringFactuur.klant_id)
     if (!klant?.email) {
       toast.error('Geen emailadres gevonden voor deze klant')
@@ -1116,7 +1127,7 @@ export function FacturenLayout() {
     } catch (err) {
       toast.error('Fout bij versturen herinnering')
     }
-  }, [herinneringFactuur, klanten, herinneringTemplates, herinneringType, herinneringPreview, replaceHerinneringVars, bedrijfsnaam, primaireKleur, profile])
+  }, [herinneringFactuur, klanten, herinneringTemplates, herinneringType, herinneringPreview, replaceHerinneringVars, bedrijfsnaam, primaireKleur, profile, isTrialBlocked, setShowTrialDialog])
 
   // ============ CREDITNOTA / VOORSCHOT LOGIC ============
 
@@ -2842,6 +2853,7 @@ export function FacturenLayout() {
       )}
       </div>
       </div>
+      <TrialGuardDialog open={showTrialDialog} onOpenChange={setShowTrialDialog} />
     </div>
   )
 }

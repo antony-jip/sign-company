@@ -93,6 +93,8 @@ import {
 import { generateWerkbonInstructiePDF } from '@/services/werkbonPdfService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
+import { useTrialGuard } from '@/hooks/useTrialGuard'
+import { TrialGuardDialog } from '@/components/shared/TrialGuardDialog'
 import type { Klant, Factuur, FactuurItem, Offerte, OfferteItem, HerinneringTemplate, Project, Grootboek, Kostenplaats, Werkbon } from '@/types'
 import { round2 } from '@/utils/budgetUtils'
 import { generateFactuurPDF } from '@/services/pdfService'
@@ -206,6 +208,7 @@ export function FactuurEditor() {
   const [searchParams] = useSearchParams()
   const { id: routeId } = useParams<{ id: string }>()
   const { user } = useAuth()
+  const { isBlocked: isTrialBlocked, showDialog: showTrialDialog, setShowDialog: setShowTrialDialog } = useTrialGuard()
   const {
     settings,
     standaardBtw,
@@ -732,6 +735,10 @@ export function FactuurEditor() {
   // ============ SAVE ============
 
   const handleSave = useCallback(async () => {
+    if (isTrialBlocked) {
+      setShowTrialDialog(true)
+      return
+    }
     if (!klantId) {
       toast.error('Selecteer een klant')
       return
@@ -921,6 +928,7 @@ export function FactuurEditor() {
     factuurdatum, vervaldatum, voorwaarden, notities, introTekst, outroTekst,
     subtotaal, btwBedrag, totaal, nummer, offerteId, projectId, user, navigate,
     kostenplaatsId, isCreditFactuur, creditVoorFactuurId,
+    isTrialBlocked, setShowTrialDialog,
   ])
 
   // ============ PDF ============
@@ -1184,6 +1192,10 @@ export function FactuurEditor() {
 
   const handleCreateCreditnota = useCallback(async () => {
     if (!existingFactuur) return
+    if (isTrialBlocked) {
+      setShowTrialDialog(true)
+      return
+    }
     if (!creditReden.trim()) {
       toast.error('Vul een reden in voor de creditnota')
       return
@@ -1234,7 +1246,7 @@ export function FactuurEditor() {
     } finally {
       setIsSaving(false)
     }
-  }, [existingFactuur, creditReden, allFacturen, selectedKlant, user, navigate])
+  }, [existingFactuur, creditReden, allFacturen, selectedKlant, user, navigate, isTrialBlocked, setShowTrialDialog])
 
   // ============ HERINNERING ============
 
@@ -2320,6 +2332,7 @@ export function FactuurEditor() {
           <AuditLogPanel entityType="factuur" entityId={existingFactuur.id} />
         </div>
       )}
+      <TrialGuardDialog open={showTrialDialog} onOpenChange={setShowTrialDialog} />
     </div>
   )
 }

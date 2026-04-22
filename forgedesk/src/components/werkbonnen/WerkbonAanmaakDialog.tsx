@@ -10,6 +10,8 @@ import {
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useNavigateWithTab } from '@/hooks/useNavigateWithTab'
+import { useTrialGuard } from '@/hooks/useTrialGuard'
+import { TrialGuardDialog } from '@/components/shared/TrialGuardDialog'
 import type { Offerte, OfferteItem, Klant } from '@/types'
 import {
   createWerkbon, createWerkbonItem, createWerkbonAfbeelding,
@@ -26,6 +28,7 @@ interface Props {
 
 export function WerkbonAanmaakDialog({ open, onOpenChange, offerte, items, klant }: Props) {
   const { user } = useAuth()
+  const { isBlocked: isTrialBlocked, showDialog: showTrialDialog, setShowDialog: setShowTrialDialog } = useTrialGuard()
   const { werkbonBriefpapier } = useAppSettings()
   const { navigateWithTab } = useNavigateWithTab()
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set(items.map((i) => i.id)))
@@ -49,6 +52,11 @@ export function WerkbonAanmaakDialog({ open, onOpenChange, offerte, items, klant
   }, [items, selectedIds.size])
 
   const handleCreate = useCallback(async () => {
+    if (isTrialBlocked) {
+      onOpenChange(false)
+      setShowTrialDialog(true)
+      return
+    }
     if (selectedIds.size === 0) {
       toast.error('Selecteer minstens één item')
       return
@@ -131,9 +139,10 @@ export function WerkbonAanmaakDialog({ open, onOpenChange, offerte, items, klant
     } finally {
       setIsCreating(false)
     }
-  }, [selectedIds, user, offerte, items, klant, werkbonBriefpapier, onOpenChange, navigateWithTab])
+  }, [selectedIds, user, offerte, items, klant, werkbonBriefpapier, onOpenChange, navigateWithTab, isTrialBlocked, setShowTrialDialog])
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
@@ -195,5 +204,7 @@ export function WerkbonAanmaakDialog({ open, onOpenChange, offerte, items, klant
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    <TrialGuardDialog open={showTrialDialog} onOpenChange={setShowTrialDialog} />
+    </>
   )
 }
