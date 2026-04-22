@@ -35,18 +35,23 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-// Public routes that should not trigger onboarding redirects
-const PUBLIC_ROUTES = ['/login', '/register', '/registreren', '/check-inbox', '/wachtwoord-vergeten', '/wachtwoord-resetten', '/welkom', '/team-welkom', '/onboarding']
+const TRULY_PUBLIC_ROUTES = [
+  '/login', '/register', '/registreren', '/check-inbox',
+  '/wachtwoord-vergeten', '/wachtwoord-resetten',
+  '/goedkeuring/', '/boeken/', '/betalen/',
+  '/offerte-bekijken/', '/formulier/', '/portaal/',
+]
+const ONBOARDING_ROUTES = ['/welkom', '/team-welkom', '/onboarding']
 
-function isPublicRoute(pathname: string): boolean {
-  return PUBLIC_ROUTES.some((r) => pathname.startsWith(r)) ||
-    pathname.startsWith('/goedkeuring/') ||
-    pathname.startsWith('/boeken/') ||
-    pathname.startsWith('/betalen/') ||
-    pathname.startsWith('/offerte-bekijken/') ||
-    pathname.startsWith('/formulier/') ||
-    pathname.startsWith('/portaal/')
+function isTrulyPublic(pathname: string): boolean {
+  return TRULY_PUBLIC_ROUTES.some((r) => pathname.startsWith(r))
 }
+
+function isOnboardingRoute(pathname: string): boolean {
+  return ONBOARDING_ROUTES.some((r) => pathname.startsWith(r))
+}
+
+const inFlightRedirects = new Set<string>()
 
 function computeTrialDagenOver(trialEinde?: string): number {
   if (!trialEinde) return 30
@@ -88,10 +93,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const handleOnboardingRedirect = async (userId: string, currentPath: string, accessToken?: string) => {
-    // Skip redirect for public/onboarding routes
-    if (isPublicRoute(currentPath)) return
+    if (isTrulyPublic(currentPath)) return
+    if (inFlightRedirects.has(userId)) return
+    inFlightRedirects.add(userId)
 
-    // Demo mode — skip all redirects
     if (!isSupabaseConfigured()) {
       setOrganisatieId('demo-org')
       setOrganisatie({
@@ -105,6 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
       setTrialDagenOver(30)
       setTrialStatus('trial')
+      inFlightRedirects.delete(userId)
       return
     }
 
@@ -127,28 +133,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setTrialDagenOver(30)
         setTrialStatus('trial')
         if (accessToken) triggerOnboarding(accessToken)
-        navigate?.('/welkom')
+        if (!isOnboardingRoute(currentPath)) navigate?.('/welkom')
       } else {
-        // Existing organisation — check onboarding state
         const org = await getOrganisatie(profile.organisatie_id)
         if (org) {
           setOrganisatie(org)
           setTrialDagenOver(computeTrialDagenOver(org.trial_einde))
           setTrialStatus((org.abonnement_status as TrialStatus) || 'trial')
 
-          // Invited team member without voornaam → team welcome + create medewerker
           if (profile.uitgenodigd_door && !profile.voornaam) {
             try {
               await createMedewerker({ naam: profile.email || 'Nieuw teamlid', email: profile.email || '', status: 'actief', user_id: userId } as Parameters<typeof createMedewerker>[0])
             } catch { /* may already exist */ }
-            navigate?.('/team-welkom')
+            if (!isOnboardingRoute(currentPath)) navigate?.('/team-welkom')
           } else if (!org.onboarding_compleet) {
-            navigate?.('/onboarding')
+            if (!isOnboardingRoute(currentPath)) navigate?.('/onboarding')
           }
         }
       }
     } catch (err) {
       logger.error('Onboarding redirect failed:', err)
+    } finally {
+      inFlightRedirects.delete(userId)
     }
   }
 
@@ -190,13 +196,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }).catch(() => setIsLoading(false))
 
-    // Listen for auth changes
     const { data } = onAuthStateChange((event, sess) => {
       setSession(sess)
       setUser(sess?.user || null)
       if (sess?.user?.id) {
-        fetchOrgData(sess.user.id)
-        // Sync email settings on auth state change
+        if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+          const currentPath = window.location.pathname
+          handleOnboardingRedirect(sess.user.id, currentPath, sess.access_token)
+        } else {
+          fetchOrgData(sess.user.id)
+        }
         import('@/services/gmailService').then(({ syncEmailSettingsFromServer }) => {
           syncEmailSettingsFromServer().catch(() => {})
         }).catch(() => {})
