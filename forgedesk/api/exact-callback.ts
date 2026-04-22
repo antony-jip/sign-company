@@ -1,6 +1,34 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import crypto, { createHmac } from 'crypto'
+import * as Sentry from '@sentry/node'
+
+// ── Sentry init (inline; Vercel bundelt geen lokale modules in api/) ──
+if (process.env.SENTRY_DSN && !Sentry.getClient()) {
+  const SENS = /password|app_password|encrypted_app_password|betaal_token|payment_token|access_token|refresh_token|mollie_api_key|authorization|cookie|secret|api_key|to|cc|bcc|email/i
+  const scrub = (v: unknown, d = 0): unknown => {
+    if (d > 6 || v == null) return v
+    if (Array.isArray(v)) return v.map(x => scrub(x, d + 1))
+    if (typeof v === 'object') {
+      const o: Record<string, unknown> = {}
+      for (const [k, val] of Object.entries(v as Record<string, unknown>)) o[k] = SENS.test(k) ? '[Filtered]' : scrub(val, d + 1)
+      return o
+    }
+    return v
+  }
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    environment: process.env.VERCEL_ENV || process.env.NODE_ENV || 'development',
+    tracesSampleRate: 0.1,
+    sendDefaultPii: false,
+    beforeSend(event) {
+      if (event.request?.headers) for (const k of Object.keys(event.request.headers)) if (/authorization|cookie/i.test(k)) (event.request.headers as Record<string, string>)[k] = '[Filtered]'
+      if (event.request?.data) event.request.data = scrub(event.request.data) as typeof event.request.data
+      if (event.user) { delete event.user.ip_address; delete event.user.email }
+      return event
+    },
+  })
+}
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -269,6 +297,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Onbekende fout'
     console.error('Exact callback error:', message)
+    Sentry.captureException(error)
     return res.redirect(302, `${APP_URL}/instellingen?tab=integraties&exact=error&reason=unknown`)
   }
 }
