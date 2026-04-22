@@ -37,6 +37,10 @@
     {
       "path": "/api/cron-verzend-geplande-berichten",
       "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/cron-trial-expiration",
+      "schedule": "0 3 * * *"
     }
   ]
 }
