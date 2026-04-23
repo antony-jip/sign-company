@@ -46,6 +46,7 @@ type NodeProps = {
   size?: number
   tone?: 'light' | 'dark'
   labelPosition?: 'below' | 'above'
+  floatDelay?: number
 }
 
 function FlowNode({
@@ -58,11 +59,12 @@ function FlowNode({
   size = 58,
   tone = 'light',
   labelPosition = 'below',
+  floatDelay = 0,
 }: NodeProps) {
   const opacity = useTransform(progress, [0, 0.4, 1], [0, 1, 1])
   const scale = useTransform(progress, [0, 0.4, 0.7, 1], [0.7, 1.06, 1, 1])
-  const haloOpacity = useTransform(progress, [0, 0.3, 0.8, 1], [0, 0.5, 0, 0])
-  const haloScale = useTransform(progress, [0, 0.3, 0.9, 1], [0.8, 1.7, 2.2, 2.2])
+  const haloOpacity = useTransform(progress, [0, 0.3, 0.8, 1], [0, 0.55, 0, 0])
+  const haloScale = useTransform(progress, [0, 0.3, 0.9, 1], [0.8, 1.8, 2.3, 2.3])
 
   const bg = tone === 'dark' ? PETROL_DARK : '#FFFFFF'
   const iconColor = tone === 'dark' ? '#FFFFFF' : PETROL
@@ -77,6 +79,8 @@ function FlowNode({
         translateY: '-50%',
         opacity,
       }}
+      animate={{ y: [0, -2.5, 0] }}
+      transition={{ duration: 5 + (floatDelay % 1.5), repeat: Infinity, ease: 'easeInOut', delay: floatDelay }}
     >
       {labelPosition === 'above' && (
         <LabelBlock label={label} subtitle={subtitle} dir="above" />
@@ -86,8 +90,8 @@ function FlowNode({
           aria-hidden
           className="absolute inset-0 rounded-full"
           style={{
-            background: `radial-gradient(circle, ${FLAME}55 0%, ${FLAME}00 70%)`,
-            filter: 'blur(6px)',
+            background: `radial-gradient(circle, ${FLAME}66 0%, ${FLAME}00 70%)`,
+            filter: 'blur(8px)',
             opacity: haloOpacity,
             scale: haloScale,
           }}
@@ -100,8 +104,8 @@ function FlowNode({
             backgroundColor: bg,
             border: tone === 'light' ? `1.5px solid ${PETROL}` : 'none',
             boxShadow: tone === 'dark'
-              ? '0 8px 28px rgba(20,63,70,0.28)'
-              : '0 2px 10px rgba(26,83,92,0.08), 0 10px 24px rgba(26,83,92,0.04)',
+              ? '0 4px 12px rgba(20,63,70,0.2), 0 12px 36px rgba(20,63,70,0.3)'
+              : '0 1px 3px rgba(26,83,92,0.06), 0 3px 10px rgba(26,83,92,0.08), 0 12px 28px rgba(26,83,92,0.05)',
             scale,
           }}
         >
@@ -460,12 +464,19 @@ export default function ProcesVisual() {
                     <stop offset="0%" stopColor={PETROL} stopOpacity={0.5} />
                     <stop offset="100%" stopColor={FLAME} stopOpacity={0.7} />
                   </linearGradient>
+                  <radialGradient id="ambientGlow" cx="50%" cy="50%" r="55%">
+                    <stop offset="0%" stopColor={FLAME} stopOpacity={0.06} />
+                    <stop offset="45%" stopColor={FLAME} stopOpacity={0.03} />
+                    <stop offset="100%" stopColor={FLAME} stopOpacity={0} />
+                  </radialGradient>
                   <pattern id="cardDots" width="28" height="28" patternUnits="userSpaceOnUse">
                     <circle cx="14" cy="14" r="0.7" fill={PETROL} opacity={0.07} />
                   </pattern>
                 </defs>
 
+                {/* Ambient warm glow centered on Portaal — decision-point warmth */}
                 <rect width="1200" height="600" fill="url(#cardDots)" />
+                <ellipse cx={690} cy={300} rx={420} ry={180} fill="url(#ambientGlow)" />
 
                 {/* 1. Klant → Project (flame arrow, emphasized entry) */}
                 <motion.path
@@ -546,25 +557,65 @@ export default function ProcesVisual() {
                   style={{ pathLength: pFactuurGedaanPath }}
                 />
 
-                {/* Ambient glow under Gedaan */}
+                {/* Enhanced Gedaan celebration */}
+                {/* Outer ambient glow — soft warm halo */}
+                <motion.circle
+                  cx={1152}
+                  cy={300}
+                  r={60}
+                  fill={FLAME}
+                  style={{ opacity: useTransform(pGedaan, [0, 1], [0, 0.08]), filter: 'blur(20px)' }}
+                />
+                {/* Mid glow — closer to node */}
                 <motion.ellipse
                   cx={1152}
                   cy={340}
-                  rx={70}
-                  ry={22}
+                  rx={56}
+                  ry={18}
                   fill={FLAME}
                   style={{ opacity: pGedaanGlow, filter: 'blur(10px)' }}
                 />
 
-                {/* Sparkles around Gedaan */}
+                {/* Sparkles — celebration burst with subtle pulse */}
                 <motion.g style={{ opacity: pSparkles }}>
-                  <Sparkle cx={1110} cy={276} size={4} />
-                  <Sparkle cx={1180} cy={276} size={4} />
-                  <Sparkle cx={1115} cy={332} size={2.6} />
-                  <Sparkle cx={1185} cy={332} size={2.6} />
-                  <Sparkle cx={1152} cy={258} size={3} />
-                  <Sparkle cx={1080} cy={300} size={2} />
-                  <Sparkle cx={1216} cy={300} size={2} />
+                  <motion.g animate={{ scale: [1, 1.08, 1] }} transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }} style={{ transformOrigin: '1152px 300px' }}>
+                    <Sparkle cx={1106} cy={266} size={4.5} />
+                    <Sparkle cx={1198} cy={266} size={4.5} />
+                    <Sparkle cx={1108} cy={340} size={3} />
+                    <Sparkle cx={1196} cy={340} size={3} />
+                    <Sparkle cx={1152} cy={248} size={3.5} />
+                    <Sparkle cx={1152} cy={354} size={2.2} />
+                    <Sparkle cx={1072} cy={300} size={2.4} />
+                    <Sparkle cx={1232} cy={300} size={2.4} />
+                    <Sparkle cx={1128} cy={280} size={1.5} />
+                    <Sparkle cx={1176} cy={280} size={1.5} />
+                    <Sparkle cx={1128} cy={320} size={1.5} />
+                    <Sparkle cx={1176} cy={320} size={1.5} />
+                  </motion.g>
+                </motion.g>
+
+                {/* Flowing afterglow dashes — appear after paths are drawn, travel continuously */}
+                {/* Only on primary highways for subtlety */}
+                <motion.g style={{ opacity: useTransform(pBranchPaths, [0.8, 1], [0, 0.55]) }}>
+                  <path d="M 304 270 Q 400 210 466 170" stroke={FLAME} strokeWidth={1.2} fill="none" strokeDasharray="3 18" strokeLinecap="round">
+                    <animate attributeName="stroke-dashoffset" from="0" to="-21" dur="3s" repeatCount="indefinite" />
+                  </path>
+                  <path d="M 304 330 Q 400 390 466 430" stroke={FLAME} strokeWidth={1.2} fill="none" strokeDasharray="3 18" strokeLinecap="round">
+                    <animate attributeName="stroke-dashoffset" from="0" to="-21" dur="3s" repeatCount="indefinite" />
+                  </path>
+                </motion.g>
+                <motion.g style={{ opacity: useTransform(pMergePaths, [0.8, 1], [0, 0.55]) }}>
+                  <path d="M 518 180 Q 610 240 680 280" stroke={FLAME} strokeWidth={1.2} fill="none" strokeDasharray="3 18" strokeLinecap="round">
+                    <animate attributeName="stroke-dashoffset" from="0" to="-21" dur="3s" repeatCount="indefinite" />
+                  </path>
+                  <path d="M 518 420 Q 610 360 680 320" stroke={FLAME} strokeWidth={1.2} fill="none" strokeDasharray="3 18" strokeLinecap="round">
+                    <animate attributeName="stroke-dashoffset" from="0" to="-21" dur="3s" repeatCount="indefinite" />
+                  </path>
+                </motion.g>
+                <motion.g style={{ opacity: useTransform(pFactuurGedaanPath, [0.8, 1], [0, 0.7]) }}>
+                  <path d="M 736 300 L 1130 300" stroke={FLAME} strokeWidth={1.4} fill="none" strokeDasharray="4 20" strokeLinecap="round">
+                    <animate attributeName="stroke-dashoffset" from="0" to="-24" dur="2.2s" repeatCount="indefinite" />
+                  </path>
                 </motion.g>
               </svg>
 
@@ -600,18 +651,18 @@ export default function ProcesVisual() {
                 }}
               />
 
-              {/* Nodes — sequential flow */}
-              <FlowNode xPct={7} yPct={50} icon={User} label="Klant" subtitle="Doet aanvraag" progress={pKlant} />
+              {/* Nodes — sequential flow with staggered idle float */}
+              <FlowNode xPct={7} yPct={50} icon={User} label="Klant" subtitle="Doet aanvraag" progress={pKlant} floatDelay={0} />
               <ProjectNode xPct={22} yPct={50} progress={pProject} blueprintProgress={pProjectBlueprint} />
 
-              <FlowNode xPct={40} yPct={22} icon={ClipboardList} label="Offerte" subtitle="Calculeer en verstuur" progress={pOfferte} labelPosition="above" />
-              <FlowNode xPct={40} yPct={78} icon={ImageIcon} label="Tekening" subtitle="Drukproef en akkoord" progress={pTekening} labelPosition="below" />
+              <FlowNode xPct={40} yPct={22} icon={ClipboardList} label="Offerte" subtitle="Calculeer en verstuur" progress={pOfferte} labelPosition="above" floatDelay={0.6} />
+              <FlowNode xPct={40} yPct={78} icon={ImageIcon} label="Tekening" subtitle="Drukproef en akkoord" progress={pTekening} labelPosition="below" floatDelay={1.0} />
 
               <PortaalNode xPct={57} yPct={50} progress={pPortaal} akkoordProgress={pAkkoord} />
 
-              <FlowNode xPct={73} yPct={50} icon={Calendar} label="Planning" subtitle="Werkbon en montage" progress={pPlanning} />
-              <FlowNode xPct={86} yPct={50} icon={Receipt} label="Factuur" subtitle="Incasseer eenvoudig" progress={pFactuur} />
-              <FlowNode xPct={96} yPct={50} icon={Smile} label="Gedaan" progress={pGedaan} tone="dark" size={64} />
+              <FlowNode xPct={73} yPct={50} icon={Calendar} label="Planning" subtitle="Werkbon en montage" progress={pPlanning} floatDelay={1.4} />
+              <FlowNode xPct={86} yPct={50} icon={Receipt} label="Factuur" subtitle="Incasseer eenvoudig" progress={pFactuur} floatDelay={1.8} />
+              <FlowNode xPct={96} yPct={50} icon={Smile} label="Gedaan" progress={pGedaan} tone="dark" size={64} floatDelay={2.2} />
             </div>
 
             <PhaseCaption index={copyIndex} />
