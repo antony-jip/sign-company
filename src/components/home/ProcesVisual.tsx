@@ -439,12 +439,10 @@ export default function ProcesVisual() {
             </div>
 
             <div
-              className="relative w-full mx-auto rounded-2xl bg-white"
+              className="relative w-full mx-auto"
               style={{
                 aspectRatio: '1200 / 600',
-                maxWidth: 'min(1000px, calc((100vh - 240px) * 2))',
-                border: '1px solid rgba(26,83,92,0.06)',
-                boxShadow: '0 1px 2px rgba(26,83,92,0.04), 0 8px 24px rgba(26,83,92,0.06), 0 24px 60px rgba(26,83,92,0.05)',
+                maxWidth: 'min(1280px, calc((100vh - 200px) * 2.1))',
               }}
             >
               <svg viewBox="0 0 1200 600" className="absolute inset-0 w-full h-full" preserveAspectRatio="xMidYMid meet">
@@ -464,19 +462,7 @@ export default function ProcesVisual() {
                     <stop offset="0%" stopColor={PETROL} stopOpacity={0.5} />
                     <stop offset="100%" stopColor={FLAME} stopOpacity={0.7} />
                   </linearGradient>
-                  <radialGradient id="ambientGlow" cx="50%" cy="50%" r="55%">
-                    <stop offset="0%" stopColor={FLAME} stopOpacity={0.06} />
-                    <stop offset="45%" stopColor={FLAME} stopOpacity={0.03} />
-                    <stop offset="100%" stopColor={FLAME} stopOpacity={0} />
-                  </radialGradient>
-                  <pattern id="cardDots" width="28" height="28" patternUnits="userSpaceOnUse">
-                    <circle cx="14" cy="14" r="0.7" fill={PETROL} opacity={0.07} />
-                  </pattern>
                 </defs>
-
-                {/* Ambient warm glow centered on Portaal — decision-point warmth */}
-                <rect width="1200" height="600" fill="url(#cardDots)" />
-                <ellipse cx={690} cy={300} rx={420} ry={180} fill="url(#ambientGlow)" />
 
                 {/* 1. Klant → Project (flame arrow, emphasized entry) */}
                 <motion.path
