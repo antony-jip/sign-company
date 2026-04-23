@@ -1511,16 +1511,42 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
           )}
         </section>
       ) : (
-        <section className="pb-10 md:pb-14">
-          <div className="container-site text-center">
+        <section className="relative overflow-hidden pb-10 md:pb-14">
+          {/* Boeing flyby — cockpit wink on mount */}
+          <motion.div
+            aria-hidden
+            className="absolute pointer-events-none z-0"
+            style={{ top: '24%', left: 0 }}
+            initial={{ x: '-14vw', y: 40, opacity: 0, rotate: -7 }}
+            animate={{ x: '114vw', y: -80, opacity: [0, 1, 1, 0], rotate: -7 }}
+            transition={{ duration: 7.5, ease: [0.4, 0, 0.2, 1], times: [0, 0.1, 0.88, 1], delay: 0.7 }}
+          >
+            <svg
+              width="58"
+              height="26"
+              viewBox="0 0 64 24"
+              fill="#F15025"
+              style={{ filter: 'drop-shadow(0 6px 14px rgba(241,80,37,0.3))' }}
+            >
+              <path d="M62 12 L55 10 L43 9.5 L41 9.5 L30 2 L27 2 L35 9.5 L20 9.5 L16 9.5 L12 5 L9 5 L11 10 L7 11 L2 11.5 L2 12.5 L7 13 L11 14 L9 19 L12 19 L16 14.5 L20 14.5 L35 14.5 L27 22 L30 22 L41 14.5 L43 14.5 L55 14 L62 12 Z" />
+            </svg>
+          </motion.div>
+
+          <div className="container-site text-center relative z-10">
             <SectionReveal>
-              <p className="font-mono text-[12px] font-bold tracking-[0.2em] uppercase text-flame mb-4">8 modules. Eén systeem.</p>
+              <p className="font-mono text-[12px] font-bold tracking-[0.2em] uppercase text-flame mb-4 inline-flex items-center gap-2.5">
+                <span className="relative inline-flex w-2 h-2 items-center justify-center">
+                  <span className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: '#00C896', opacity: 0.55 }} />
+                  <span className="relative inline-block w-2 h-2 rounded-full" style={{ backgroundColor: '#00C896', boxShadow: '0 0 6px rgba(0,200,150,0.7)' }} />
+                </span>
+                Welkom in de cockpit
+              </p>
               <h1 className="font-heading text-[40px] md:text-[56px] font-bold text-petrol tracking-[-2.5px] leading-[0.95] mb-5">
                 Niet erover praten<span className="text-flame">.</span><br />
                 <span className="text-petrol/40">Gewoon</span> doen<span className="text-flame">.</span>
               </h1>
               <p className="text-[17px] max-w-lg mx-auto leading-relaxed" style={{ color: '#6B6B66' }}>
-                Elke module is gebouwd voor hoe jij werkt. Van eerste klantvraag tot oplevering. Klik op een module en ontdek wat erin zit.
+                Elke module is gebouwd voor hoe jij werkt. Van eerste klantvraag tot oplevering. Klik op een module en stap in.
               </p>
             </SectionReveal>
           </div>
