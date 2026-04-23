@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation'
 import Toast, { useEasterEgg } from './Toast'
 
 const navLinks = [
+  { href: '/hoe-het-werkt', label: 'Hoe het werkt' },
   { href: '/features', label: 'Features' },
   { href: '/prijzen', label: 'Prijzen' },
   { href: '/over', label: 'Waarom doen.' },

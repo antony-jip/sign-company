@@ -49,16 +49,9 @@ export default function DarkSection() {
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.8, delay: 1.2, ease: [0.16, 1, 0.3, 1] }}
           >
-            <div className="flex items-baseline justify-center gap-4 md:gap-8 mb-6">
-              <div className="text-center">
-                <CountUp end={49} prefix="&euro;" className="text-4xl md:text-6xl text-white font-medium" />
-                <p className="text-white/40 text-xs mt-1">tot 3 personen</p>
-              </div>
-              <span className="text-white/20 text-2xl">/</span>
-              <div className="text-center">
-                <CountUp end={69} prefix="&euro;" className="text-4xl md:text-6xl text-white font-medium" />
-                <p className="text-white/40 text-xs mt-1">onbeperkt</p>
-              </div>
+            <div className="flex flex-col items-center mb-6">
+              <CountUp end={79} prefix="&euro;" className="text-4xl md:text-6xl text-white font-medium" />
+              <p className="text-white/40 text-xs mt-1">ex. btw · tot 10 gebruikers · meer? neem contact op</p>
             </div>
             <p className="text-white/70 text-lg md:text-xl max-w-md mx-auto leading-relaxed mb-4">
               Alles erin. Mollie, Exact Online, Probo, AI. Geen per-user pricing. Geen add-ons. Geen modules bijkopen.

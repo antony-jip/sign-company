@@ -92,7 +92,7 @@ const modules = [
 
 const faq = [
   { q: 'Kan ik doen. eerst uitproberen?', a: 'Ja, de eerste 30 dagen zijn gratis. Geen creditcard nodig. Je hebt direct toegang tot alle modules.' },
-  { q: 'Hoeveel kost doen. na de proefperiode?', a: '€49 per maand voor 3 gebruikers. Elke extra gebruiker is €10 per maand. Geen opzetkosten, geen verborgen kosten.' },
+  { q: 'Hoeveel kost doen. na de proefperiode?', a: '€79 per maand ex. btw, tot 10 gebruikers. Meer gebruikers? Neem contact op voor een prijs op maat. Geen opzetkosten, geen verborgen kosten.' },
   { q: 'Kan ik mijn bestaande data importeren?', a: 'Ja, we helpen je met het importeren van je klanten en producten. Neem contact op via hello@doen.team.' },
   { q: 'Werkt doen. op mijn telefoon?', a: 'Ja. De planning en werkbonnen zijn geoptimaliseerd voor mobiel. Je monteur opent de werkbon op zijn telefoon en registreert direct uren en foto\'s.' },
   { q: 'Hoe werkt het klantportaal?', a: 'Je klant ontvangt een unieke link per mail. Geen inlog nodig. Ze bekijken tekeningen, keuren offertes goed en reageren op bestanden. Je stelt zelf in wanneer herinneringen uitgaan.' },

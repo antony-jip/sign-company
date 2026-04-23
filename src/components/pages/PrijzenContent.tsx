@@ -26,7 +26,7 @@ const faqs = [
   { q: 'Welke koppelingen zitten erbij?', a: 'Mollie, Exact Online, Probo, KVK, email (IMAP/SMTP) en AI. Alles standaard, geen extra kosten.' },
   { q: 'Kan ik mijn data exporteren?', a: 'Altijd. CSV, PDF, wat je nodig hebt. Jouw data is van jou.' },
   { q: 'Moet ik een contract tekenen?', a: 'Nee. Maandelijks opzegbaar. Je blijft omdat het werkt.' },
-  { q: 'Hoe verschilt doen. van andere software?', a: 'Gebouwd door signmakers. Alles in één systeem. Klantportaal, AI en planning zitten standaard in je abonnement.' },
+  { q: 'Hoe verschilt doen. van andere software?', a: 'Gebouwd door vakmensen uit de branche. Alles in één systeem. Klantportaal, AI en planning zitten standaard in je abonnement.' },
 ]
 
 export default function PrijzenContent() {
@@ -55,32 +55,8 @@ export default function PrijzenContent() {
         <div className="container-site py-16 md:py-20">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
 
-            {/* Starter */}
+            {/* Team — primary */}
             <SectionReveal>
-              <div className="rounded-2xl p-8 md:p-10 h-full" style={{ backgroundColor: '#FFFFFF', border: '1px solid #EBEBEB' }}>
-                <p className="font-mono text-[11px] font-bold tracking-[0.15em] uppercase mb-6" style={{ color: '#9B9B95' }}>Starter</p>
-                <div className="flex items-baseline gap-1 mb-1">
-                  <span className="font-heading text-[52px] font-bold tracking-[-2px]" style={{ color: '#1A535C' }}>&euro;49</span>
-                </div>
-                <p className="text-[14px] mb-8" style={{ color: '#6B6B66' }}>per maand, tot 3 gebruikers</p>
-
-                <div className="h-px mb-8" style={{ backgroundColor: '#EBEBEB' }} />
-
-                <ul className="space-y-3">
-                  {allFeatures.map((f, i) => (
-                    <li key={i} className="flex items-start gap-3 text-[14px]">
-                      <span className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style={{ backgroundColor: '#1A535C10' }}>
-                        <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#1A535C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                      </span>
-                      <span style={{ color: '#1A1A1A' }}>{f}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </SectionReveal>
-
-            {/* Team */}
-            <SectionReveal delay={0.1}>
               <div className="rounded-2xl p-8 md:p-10 h-full relative" style={{ backgroundColor: '#1A535C' }}>
                 <div className="absolute -top-3 left-8">
                   <span className="text-white text-[10px] font-bold uppercase tracking-[0.15em] px-3 py-1.5 rounded-full" style={{ backgroundColor: '#F15025' }}>
@@ -89,14 +65,14 @@ export default function PrijzenContent() {
                 </div>
                 <p className="font-mono text-[11px] font-bold tracking-[0.15em] uppercase mb-6 text-white/40">Team</p>
                 <div className="flex items-baseline gap-1 mb-1">
-                  <span className="font-heading text-[52px] font-bold tracking-[-2px] text-white">&euro;69</span>
+                  <span className="font-heading text-[52px] font-bold tracking-[-2px] text-white">&euro;79</span>
                 </div>
-                <p className="text-[14px] mb-8 text-white/40">per maand, onbeperkt gebruikers</p>
+                <p className="text-[14px] mb-8 text-white/40">per maand ex. btw, tot 10 gebruikers</p>
 
                 <div className="h-px mb-8" style={{ backgroundColor: 'rgba(255,255,255,0.1)' }} />
 
                 <ul className="space-y-3">
-                  {[...allFeatures, 'Onbeperkt teamleden'].map((f, i) => (
+                  {allFeatures.map((f, i) => (
                     <li key={i} className="flex items-start gap-3 text-[14px]">
                       <span className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style={{ backgroundColor: 'rgba(255,255,255,0.1)' }}>
                         <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#F15025" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
@@ -105,6 +81,31 @@ export default function PrijzenContent() {
                     </li>
                   ))}
                 </ul>
+              </div>
+            </SectionReveal>
+
+            {/* Groter team — op aanvraag */}
+            <SectionReveal delay={0.1}>
+              <div className="rounded-2xl p-8 md:p-10 h-full flex flex-col" style={{ backgroundColor: '#FFFFFF', border: '1px solid #EBEBEB' }}>
+                <p className="font-mono text-[11px] font-bold tracking-[0.15em] uppercase mb-6" style={{ color: '#9B9B95' }}>Groter team</p>
+                <div className="flex items-baseline gap-1 mb-1">
+                  <span className="font-heading text-[52px] font-bold tracking-[-2px]" style={{ color: '#1A535C' }}>Op aanvraag</span>
+                </div>
+                <p className="text-[14px] mb-8" style={{ color: '#6B6B66' }}>meer dan 10 gebruikers</p>
+
+                <div className="h-px mb-8" style={{ backgroundColor: '#EBEBEB' }} />
+
+                <p className="text-[14px] leading-relaxed mb-8" style={{ color: '#1A1A1A' }}>
+                  Werkt je team met meer dan 10 mensen? Neem contact op voor een prijs op maat. Alles uit het Team-plan, geschikt voor grotere organisaties.
+                </p>
+
+                <a
+                  href="/contact"
+                  className="mt-auto inline-flex items-center justify-center gap-2 h-12 px-6 text-[15px] font-bold text-white rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  style={{ backgroundColor: '#1A535C' }}
+                >
+                  Neem contact op
+                </a>
               </div>
             </SectionReveal>
           </div>
@@ -210,7 +211,7 @@ export default function PrijzenContent() {
 function PricingSlider() {
   const [users, setUsers] = useState(5)
   const competitorPrice = users * 20
-  const doenPrice = users <= 3 ? 49 : 69
+  const doenPrice = 79
   const saving = competitorPrice - doenPrice
 
   return (
@@ -223,7 +224,7 @@ function PricingSlider() {
         <input
           type="range"
           min={1}
-          max={15}
+          max={10}
           value={users}
           onChange={(e) => setUsers(Number(e.target.value))}
           className="w-full accent-flame mb-8"

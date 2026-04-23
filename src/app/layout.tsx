@@ -1,18 +1,18 @@
 import type { Metadata } from 'next'
-import { Bricolage_Grotesque, IBM_Plex_Sans, DM_Mono } from 'next/font/google'
+import { Bricolage_Grotesque, DM_Sans, DM_Mono } from 'next/font/google'
 import './globals.css'
 
 const bricolage = Bricolage_Grotesque({
   subsets: ['latin'],
-  weight: ['800'],
+  weight: ['700', '800'],
   variable: '--font-bricolage',
   display: 'swap',
 })
 
-const ibmPlex = IBM_Plex_Sans({
+const dmSans = DM_Sans({
   subsets: ['latin'],
   weight: ['400', '500', '600'],
-  variable: '--font-ibm-plex',
+  variable: '--font-dm-sans',
   display: 'swap',
 })
 
@@ -25,8 +25,8 @@ const dmMono = DM_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://doen.team'),
-  title: 'doen. | Software voor signmakers & creatieve bedrijven',
-  description: 'Van offerte tot factuur. Zo gedaan. Alles-in-een bedrijfssoftware voor €49/maand. Geen kosten per gebruiker.',
+  title: 'doen. | Software voor creatieve maakbedrijven',
+  description: 'Van offerte tot factuur. Zo gedaan. Alles-in-een bedrijfssoftware voor €79/maand ex. btw. Tot 10 gebruikers inbegrepen, meer op aanvraag.',
   keywords: [
     'signmaker software',
     'reclame bedrijf software',
@@ -38,7 +38,7 @@ export const metadata: Metadata = {
   ],
   openGraph: {
     title: 'doen. | Slim gedaan.',
-    description: 'Van offerte tot factuur. Zo gedaan. €49/maand voor je hele team.',
+    description: 'Van offerte tot factuur. Zo gedaan. €79/maand ex. btw, tot 10 gebruikers.',
     url: 'https://doen.team',
     siteName: 'doen.',
     locale: 'nl_NL',
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'doen. | Slim gedaan.',
-    description: 'Van offerte tot factuur. Zo gedaan. €49/maand voor je hele team.',
+    description: 'Van offerte tot factuur. Zo gedaan. €79/maand ex. btw, tot 10 gebruikers.',
   },
   robots: { index: true, follow: true },
 }
@@ -58,7 +58,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="nl" className={`${bricolage.variable} ${ibmPlex.variable} ${dmMono.variable}`}>
+    <html lang="nl" className={`${bricolage.variable} ${dmSans.variable} ${dmMono.variable}`}>
       <head>
         <link rel="canonical" href="https://doen.team" />
       </head>

@@ -10,7 +10,7 @@ const config: Config = {
     extend: {
       fontFamily: {
         heading: ['var(--font-bricolage)', 'system-ui', 'sans-serif'],
-        sans: ['var(--font-ibm-plex)', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-dm-sans)', 'system-ui', 'sans-serif'],
         mono: ['var(--font-dm-mono)', 'monospace'],
       },
       colors: {

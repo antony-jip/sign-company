@@ -22,7 +22,7 @@ const props = [
   {
     headline: 'Door het vak.',
     sub: 'Voor het vak.',
-    text: 'Niet door consultants die het vak googlen. Door signmakers die zelf in de werkplaats staan. Elk scherm is gebouwd voor hoe jij werkt.',
+    text: 'Niet door consultants die het vak googlen. Door vakmensen die zelf in de werkplaats staan. Elk scherm is gebouwd voor hoe jij werkt.',
     accent: '#1A535C',
     image: '/images/signmakers.png',
   },

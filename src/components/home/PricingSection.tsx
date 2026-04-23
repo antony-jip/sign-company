@@ -58,8 +58,8 @@ export default function PricingSection() {
                 </h3>
 
                 <div className="flex items-baseline gap-2 mb-8">
-                  <span className="font-heading text-[64px] md:text-[80px] font-bold text-ink tracking-[-3px] leading-none">€49</span>
-                  <span className="text-[18px]" style={{ color: '#9B9B95' }}>/ maand</span>
+                  <span className="font-heading text-[64px] md:text-[80px] font-bold text-ink tracking-[-3px] leading-none">€79</span>
+                  <span className="text-[18px]" style={{ color: '#9B9B95' }}>/ maand ex. btw</span>
                 </div>
 
                 <div className="space-y-4 mb-8">
@@ -67,14 +67,14 @@ export default function PricingSection() {
                     <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#1A535C10' }}>
                       <Users className="w-4 h-4" style={{ color: '#1A535C' }} />
                     </div>
-                    <span className="text-[15px] text-ink"><strong>3 gebruikers</strong> inbegrepen</span>
+                    <span className="text-[15px] text-ink"><strong>Tot 10 gebruikers</strong> inbegrepen</span>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <a href="/contact" className="flex items-center gap-3 group">
                     <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#1A535C10' }}>
                       <Plus className="w-4 h-4" style={{ color: '#1A535C' }} />
                     </div>
-                    <span className="text-[15px] text-ink">Extra gebruiker <strong>€10/maand</strong></span>
-                  </div>
+                    <span className="text-[15px] text-ink">Meer gebruikers? <strong className="group-hover:text-flame transition-colors">Neem contact op</strong></span>
+                  </a>
                 </div>
 
                 <p className="text-[14px] mb-8" style={{ color: '#9B9B95' }}>

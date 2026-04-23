@@ -347,8 +347,8 @@ export default function OverContent() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 max-w-3xl">
             {[
               { title: 'Alles erin', text: 'Planning, portaal, AI, werkbonnen, facturatie. Geen modules bijkopen.' },
-              { title: '49 euro per maand', text: '3 gebruikers. Elke extra +10 euro. Geen verrassingen, geen opzetkosten.' },
-              { title: 'Door signmakers', text: 'Niet door mensen die het vak googlen. Door mensen die in de werkplaats staan.' },
+              { title: '79 euro per maand', text: 'Ex. btw. Tot 10 gebruikers. Meer? Neem contact op. Geen verrassingen, geen opzetkosten.' },
+              { title: 'Door vakmensen', text: 'Niet door mensen die het vak googlen. Door mensen die in de werkplaats staan.' },
               { title: 'Geen lock-in', text: 'Jouw data is van jou. Maandelijks opzegbaar. Je blijft omdat het werkt.' },
             ].map((item, i) => (
               <SectionReveal key={i} delay={i * 0.08}>
