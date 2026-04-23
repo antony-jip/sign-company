@@ -6,6 +6,7 @@ import {
   useTransform,
   useSpring,
   useReducedMotion,
+  useInView,
   MotionValue,
 } from 'framer-motion'
 import { useRef } from 'react'
@@ -325,6 +326,147 @@ function PhaseCaption({ index }: { index: MotionValue<number> }) {
   )
 }
 
+/* ═════════════════════════════════════════════════════════════
+   Mobile vertical timeline — in-view reveals, no scroll-scrubbing
+   ═════════════════════════════════════════════════════════════ */
+
+type MobileStepData = {
+  nr: string
+  icon: LucideIcon
+  label: string
+  subtitle: string
+  tone?: 'light' | 'dark' | 'portaal'
+  accent?: string
+}
+
+const MOBILE_STEPS: MobileStepData[] = [
+  { nr: '01', icon: User, label: 'Klant', subtitle: 'Doet aanvraag' },
+  { nr: '02', icon: ClipboardList, label: 'Project', subtitle: 'Alles komt samen in één cockpit' },
+  { nr: '03', icon: ClipboardList, label: 'Offerte', subtitle: 'Calculeer en verstuur' },
+  { nr: '04', icon: ImageIcon, label: 'Tekening', subtitle: 'Drukproef en akkoord' },
+  { nr: '05', icon: Check, label: 'Portaal', subtitle: 'Klant geeft akkoord', tone: 'portaal' },
+  { nr: '06', icon: Calendar, label: 'Planning', subtitle: 'Werkbon en montage' },
+  { nr: '07', icon: Receipt, label: 'Factuur', subtitle: 'Incasseer eenvoudig' },
+  { nr: '08', icon: Smile, label: 'Gedaan', subtitle: 'Door naar de volgende', tone: 'dark' },
+]
+
+function MobileStep({ step, index, isLast }: { step: MobileStepData; index: number; isLast: boolean }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const inView = useInView(ref, { once: true, margin: '-80px 0%' })
+  const Icon = step.icon
+  const isDark = step.tone === 'dark'
+  const isPortaal = step.tone === 'portaal'
+
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 24 }}
+      animate={inView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.6, delay: Math.min(index * 0.04, 0.2), ease: [0.16, 1, 0.3, 1] }}
+      className="flex gap-4 relative"
+    >
+      {/* Left: icon + vertical connecting line */}
+      <div className="relative flex flex-col items-center flex-shrink-0" style={{ width: 48 }}>
+        <motion.div
+          initial={{ scale: 0.6 }}
+          animate={inView ? { scale: 1 } : {}}
+          transition={{ duration: 0.5, delay: Math.min(index * 0.04, 0.2) + 0.1, ease: [0.16, 1, 0.3, 1] }}
+          className="relative z-10 rounded-full flex items-center justify-center"
+          style={{
+            width: 48,
+            height: 48,
+            backgroundColor: isDark ? PETROL_DARK : isPortaal ? FLAME : '#FFFFFF',
+            border: !isDark && !isPortaal ? `1.5px solid ${PETROL}` : 'none',
+            boxShadow: isDark
+              ? '0 6px 20px rgba(20,63,70,0.25)'
+              : isPortaal
+              ? '0 4px 14px rgba(241,80,37,0.3)'
+              : '0 2px 10px rgba(26,83,92,0.08), 0 6px 16px rgba(26,83,92,0.05)',
+          }}
+        >
+          <Icon
+            className="w-5 h-5"
+            style={{ color: isDark || isPortaal ? '#FFFFFF' : PETROL }}
+            strokeWidth={1.8}
+          />
+          {/* Sparkle accent on Gedaan */}
+          {isDark && inView && (
+            <motion.span
+              aria-hidden
+              className="absolute inset-0 rounded-full"
+              style={{ border: `2px solid ${FLAME}` }}
+              initial={{ opacity: 0.7, scale: 1 }}
+              animate={{ opacity: 0, scale: 2 }}
+              transition={{ duration: 1.2, ease: 'easeOut', delay: 0.3 }}
+            />
+          )}
+        </motion.div>
+        {!isLast && (
+          <motion.div
+            initial={{ scaleY: 0 }}
+            animate={inView ? { scaleY: 1 } : {}}
+            transition={{ duration: 0.5, delay: Math.min(index * 0.04, 0.2) + 0.3, ease: [0.16, 1, 0.3, 1] }}
+            className="w-px flex-1 mt-1 origin-top"
+            style={{ backgroundColor: 'rgba(26,83,92,0.22)', minHeight: 52 }}
+          />
+        )}
+      </div>
+
+      {/* Right: label + subtitle */}
+      <div className="flex-1 pb-8">
+        <p
+          className="font-mono text-[10px] font-bold tracking-[0.18em]"
+          style={{ color: FLAME }}
+        >
+          {step.nr}
+        </p>
+        <h3
+          className="font-heading text-[19px] font-extrabold tracking-tight leading-tight mt-0.5"
+          style={{ color: PETROL }}
+        >
+          {step.label}
+          <span style={{ color: FLAME }}>.</span>
+        </h3>
+        <p className="text-[13px] mt-1 leading-relaxed" style={{ color: MUTED }}>
+          {step.subtitle}
+        </p>
+      </div>
+    </motion.div>
+  )
+}
+
+function MobileFlow() {
+  return (
+    <div className="py-16 px-6">
+      <div className="text-center mb-10">
+        <p
+          className="font-mono text-[10px] font-bold tracking-[0.2em] uppercase mb-3"
+          style={{ color: FLAME }}
+        >
+          Hoe het werkt
+        </p>
+        <h2
+          className="font-heading text-[28px] font-extrabold tracking-[-1.5px] leading-[1.05]"
+          style={{ color: PETROL }}
+        >
+          Eén project. Alles geregeld<span style={{ color: FLAME }}>.</span>
+        </h2>
+        <p className="text-[14px] mt-3 leading-relaxed" style={{ color: MUTED }}>
+          Van klant tot oplevering. In één cockpit.
+        </p>
+      </div>
+
+      <div className="max-w-md mx-auto">
+        {MOBILE_STEPS.map((step, i) => (
+          <MobileStep key={step.nr} step={step} index={i} isLast={i === MOBILE_STEPS.length - 1} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/* ═════════════════════════════════════════════════════════════ */
+
 export default function ProcesVisual() {
   const sectionRef = useRef<HTMLElement>(null)
   const reduceMotion = useReducedMotion()
@@ -423,7 +565,13 @@ export default function ProcesVisual() {
 
   return (
     <section ref={sectionRef} className="bg-white relative">
-      <div style={{ height: '240vh' }}>
+      {/* Mobile vertical timeline — no sticky scroll-scrubbing */}
+      <div className="md:hidden">
+        <MobileFlow />
+      </div>
+
+      {/* Desktop scroll-scrubbed animation */}
+      <div className="hidden md:block" style={{ height: '240vh' }}>
         <div className="sticky top-0 h-screen flex flex-col items-center justify-center py-4 md:py-6 bg-white overflow-hidden">
           <div className="container-site w-full">
             <div className="text-center mb-4 md:mb-6">
