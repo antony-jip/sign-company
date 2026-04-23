@@ -51,7 +51,7 @@ export default function ModulesCarousel() {
             href="/features"
             className="hidden md:flex items-center gap-1.5 text-[13px] font-semibold text-petrol hover:text-flame transition-colors"
           >
-            Bekijk alles <ArrowRight className="w-3.5 h-3.5" />
+            Naar de cockpit <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </motion.div>
 

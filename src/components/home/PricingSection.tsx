@@ -34,7 +34,7 @@ export default function PricingSection() {
               Eén plan<span className="text-flame">.</span> Alles erin<span className="text-flame">.</span>
             </h2>
             <p className="text-[17px] max-w-md mx-auto leading-relaxed" style={{ color: '#6B6B66' }}>
-              Geen tiers, geen verrassingen. Alle features beschikbaar, geen beperkingen.
+              Geen tiers, geen verrassingen. Alles in de cockpit inbegrepen, geen beperkingen.
             </p>
           </div>
         </SectionReveal>

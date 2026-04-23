@@ -8,7 +8,7 @@ import Toast, { useEasterEgg } from './Toast'
 
 const navLinks = [
   { href: '/hoe-het-werkt', label: 'Hoe het werkt' },
-  { href: '/features', label: 'Features' },
+  { href: '/features', label: 'Cockpit' },
   { href: '/prijzen', label: 'Prijzen' },
   { href: '/over', label: 'Waarom doen.' },
   { href: '/contact', label: 'Contact' },

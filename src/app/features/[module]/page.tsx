@@ -24,7 +24,7 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: { params: { module: string } }): Promise<Metadata> {
-  const name = moduleNames[params.module] || 'Features'
+  const name = moduleNames[params.module] || 'Cockpit'
   return {
     title: `${name} | doen.`,
     description: `Ontdek de ${name} module van doen. — alles-in-één software voor het signbedrijf.`,

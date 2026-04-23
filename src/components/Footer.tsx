@@ -37,7 +37,7 @@ export default function Footer() {
               <h4 className="font-mono text-[11px] font-bold text-white/40 uppercase tracking-[0.15em] mb-4">Product</h4>
               <ul className="space-y-3">
                 {[
-                  { href: '/features', label: 'Features' },
+                  { href: '/features', label: 'Cockpit' },
                   { href: '/prijzen', label: 'Prijzen' },
                 ].map((link) => (
                   <li key={link.href}>

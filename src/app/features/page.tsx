@@ -5,8 +5,8 @@ import Footer from '@/components/Footer'
 import FeaturesContent from '@/components/pages/FeaturesContent'
 
 export const metadata: Metadata = {
-  title: 'Features | doen.',
-  description: 'Tien krachtige modules. Projecten, offertes, facturen, planning, klantportaal, werkbonnen, visualizer, email, taken en Daan AI.',
+  title: 'Cockpit | doen.',
+  description: 'De cockpit van doen. Tien krachtige modules: projecten, offertes, facturen, planning, klantportaal, werkbonnen, visualizer, email, taken en Daan AI.',
 }
 
 export default function FeaturesPage() {
