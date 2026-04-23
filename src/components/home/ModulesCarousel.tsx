@@ -13,17 +13,21 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { ArrowRight } from 'lucide-react'
 
+// Volgorde: Row 1 = chronologische projectflow (klant → uitvoering),
+// Row 2 = ondersteunende modules (finish + tools eromheen)
 const modules = [
-  { label: 'Projecten', sub: 'Alles in één cockpit', href: '/features/projecten', color: '#1A535C', image: '/images/modules/projecten.jpg' },
-  { label: 'Offertes', sub: 'Professioneel in minuten', href: '/features/offertes', color: '#F15025', image: '/images/modules/offertes.jpg' },
-  { label: 'Klantportaal', sub: 'Deel, bespreek, accordeer', href: '/features/portaal', color: '#6A5A8A', image: '/images/modules/klantportaal.jpg' },
-  { label: 'Planning', sub: 'Sleep je week in elkaar', href: '/features/planning', color: '#9A5A48', image: '/images/modules/planning.jpg' },
-  { label: 'Werkbonnen', sub: 'Digitaal op locatie', href: '/features/werkbonnen', color: '#1A535C', image: '/images/modules/werkbonnen.jpg' },
+  // Row 1 — de projectflow
+  { label: 'Projecten', sub: 'Alles in één cockpit', href: '/features/projecten', color: '#1A535C', image: '/images/modules/projecten-transparent.webp' },
+  { label: 'Offertes', sub: 'Professioneel in minuten', href: '/features/offertes', color: '#F15025', image: '/images/modules/offertes-transparent.webp' },
+  { label: 'Klantportaal', sub: 'Deel, bespreek, accordeer', href: '/features/portaal', color: '#6A5A8A', image: '/images/modules/klantportaal-transparent.webp' },
+  { label: 'Planning', sub: 'Sleep je week in elkaar', href: '/features/planning', color: '#9A5A48', image: '/images/modules/planning-transparent.png' },
+  { label: 'Werkbonnen', sub: 'Digitaal op locatie', href: '/features/werkbonnen', color: '#1A535C', image: '/images/modules/werkbonnen-transparent.png' },
+  // Row 2 — eromheen en erna
   { label: 'Facturen', sub: 'Verkoop en inkoop, geregeld', href: '/features/facturen', color: '#2D6B48', image: '/images/modules/facturen.jpg' },
-  { label: 'Visualizer', sub: 'AI toont het eindresultaat', href: '/features/visualizer', color: '#9A5A48', image: '/images/modules/visualizer.jpg' },
-  { label: 'AI-assistent', sub: 'Je slimste collega', href: '/features/ai', color: '#1A535C', image: '/images/modules/ai-assistant.jpg' },
   { label: 'Email', sub: 'Jouw mailbox, slim gekoppeld', href: '/features/email', color: '#3A6B8C', image: '/images/modules/email.webp' },
   { label: 'Taken', sub: 'Alles naast de montage', href: '/features/taken', color: '#F15025', image: '/images/modules/taken.webp' },
+  { label: 'Visualizer', sub: 'AI toont het eindresultaat', href: '/features/visualizer', color: '#9A5A48', image: '/images/modules/visualizer.jpg' },
+  { label: 'AI-assistent', sub: 'Je slimste collega', href: '/features/ai', color: '#1A535C', image: '/images/modules/ai-assistant.jpg' },
 ]
 
 export default function ModulesCarousel() {
