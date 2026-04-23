@@ -314,51 +314,53 @@ export default function ProcesVisual() {
     offset: ['start start', 'end end'],
   })
 
-  const p1Klant = useTransform(scrollYProgress, [0.05, 0.18], [0, 1])
-  const p1Arrow = useTransform(scrollYProgress, [0.14, 0.28], [0, 1])
-  const p2Project = useTransform(scrollYProgress, [0.24, 0.40], [0, 1])
-  const p2Blueprint = useTransform(scrollYProgress, [0.30, 0.44], [0, 1])
-  const p3Paths = useTransform(scrollYProgress, [0.40, 0.56], [0, 1])
-  const p3Offerte = useTransform(scrollYProgress, [0.46, 0.58], [0, 1])
-  const p3Factuur = useTransform(scrollYProgress, [0.48, 0.60], [0, 1])
-  const p3Tekening = useTransform(scrollYProgress, [0.50, 0.62], [0, 1])
-  const p3Planning = useTransform(scrollYProgress, [0.52, 0.64], [0, 1])
-  const p4TekeningPortaal = useTransform(scrollYProgress, [0.60, 0.70], [0, 1])
-  const p4Portaal = useTransform(scrollYProgress, [0.63, 0.73], [0, 1])
-  const p4Akkoord = useTransform(scrollYProgress, [0.72, 0.80], [0, 1])
-  const p5Paths = useTransform(scrollYProgress, [0.78, 0.91], [0, 1])
-  const p5Gedaan = useTransform(scrollYProgress, [0.87, 0.96], [0, 1])
-  const p5Sparkles = useTransform(scrollYProgress, [0.90, 0.98], [0, 1])
+  // Klant + Arrow are visible from the start so the card never feels empty
+  const p1Klant = useTransform(scrollYProgress, [0, 0.05], [0.85, 1])
+  const p1Arrow = useTransform(scrollYProgress, [0, 0.15], [0.4, 1])
+  const p2Project = useTransform(scrollYProgress, [0.10, 0.28], [0, 1])
+  const p2Blueprint = useTransform(scrollYProgress, [0.18, 0.34], [0, 1])
+  const p3Paths = useTransform(scrollYProgress, [0.28, 0.44], [0, 1])
+  const p3Offerte = useTransform(scrollYProgress, [0.34, 0.46], [0, 1])
+  const p3Factuur = useTransform(scrollYProgress, [0.36, 0.48], [0, 1])
+  const p3Tekening = useTransform(scrollYProgress, [0.38, 0.50], [0, 1])
+  const p3Planning = useTransform(scrollYProgress, [0.40, 0.52], [0, 1])
+  const p4TekeningPortaal = useTransform(scrollYProgress, [0.48, 0.58], [0, 1])
+  const p4Portaal = useTransform(scrollYProgress, [0.52, 0.62], [0, 1])
+  const p4Akkoord = useTransform(scrollYProgress, [0.62, 0.72], [0, 1])
+  const p5Paths = useTransform(scrollYProgress, [0.70, 0.85], [0, 1])
+  const p5Gedaan = useTransform(scrollYProgress, [0.82, 0.92], [0, 1])
+  const p5Sparkles = useTransform(scrollYProgress, [0.85, 0.95], [0, 1])
   const p5GedaanGlow = useTransform(p5Gedaan, [0, 1], [0, 0.12])
 
+  // Pulse travels along Klant → Project arrow (earlier, since arrow pre-drawn)
   const pulseLeft = useTransform(
     scrollYProgress,
-    [0.14, 0.18, 0.22, 0.26, 0.28],
+    [0.02, 0.06, 0.10, 0.14, 0.17],
     ['11.5%', '22%', '34%', '46%', '50%']
   )
   const pulseTop = useTransform(
     scrollYProgress,
-    [0.14, 0.18, 0.22, 0.26, 0.28],
+    [0.02, 0.06, 0.10, 0.14, 0.17],
     ['40%', '30%', '24%', '20%', '18%']
   )
-  const pulseOpacity = useTransform(scrollYProgress, [0.14, 0.16, 0.26, 0.28], [0, 1, 1, 0])
+  const pulseOpacity = useTransform(scrollYProgress, [0.02, 0.04, 0.15, 0.17], [0, 1, 1, 0])
   const trailLeft = useTransform(
     scrollYProgress,
-    [0.15, 0.19, 0.23, 0.27, 0.29],
+    [0.03, 0.07, 0.11, 0.15, 0.18],
     ['11.5%', '22%', '34%', '46%', '50%']
   )
   const trailTop = useTransform(
     scrollYProgress,
-    [0.15, 0.19, 0.23, 0.27, 0.29],
+    [0.03, 0.07, 0.11, 0.15, 0.18],
     ['40%', '30%', '24%', '20%', '18%']
   )
-  const trailOpacity = useTransform(scrollYProgress, [0.15, 0.17, 0.27, 0.29], [0, 0.4, 0.4, 0])
+  const trailOpacity = useTransform(scrollYProgress, [0.03, 0.05, 0.16, 0.18], [0, 0.4, 0.4, 0])
 
   const copyIndex = useTransform(scrollYProgress, (v) => {
-    if (v < 0.20) return 0
-    if (v < 0.40) return 1
-    if (v < 0.60) return 2
-    if (v < 0.78) return 3
+    if (v < 0.12) return 0
+    if (v < 0.28) return 1
+    if (v < 0.50) return 2
+    if (v < 0.72) return 3
     return 4
   })
 
@@ -396,8 +398,8 @@ export default function ProcesVisual() {
 
   return (
     <section ref={sectionRef} className="bg-white relative">
-      <div style={{ height: '280vh' }}>
-        <div className="sticky top-0 h-screen flex flex-col items-center justify-center py-8 md:py-10">
+      <div style={{ height: '240vh' }}>
+        <div className="sticky top-0 h-screen flex flex-col items-center justify-center py-8 md:py-10 bg-white overflow-hidden">
           <div className="container-site w-full">
             <div className="text-center mb-6 md:mb-10">
               <p className="font-mono text-[12px] font-bold tracking-[0.2em] uppercase mb-3 md:mb-4" style={{ color: FLAME }}>
