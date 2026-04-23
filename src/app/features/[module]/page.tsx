@@ -4,7 +4,7 @@ import ScrollProgress from '@/components/ScrollProgress'
 import Footer from '@/components/Footer'
 import FeaturesContent from '@/components/pages/FeaturesContent'
 
-const moduleIds = ['projecten', 'offertes', 'portaal', 'planning', 'werkbonnen', 'facturen', 'visualizer', 'ai'] as const
+const moduleIds = ['projecten', 'offertes', 'portaal', 'planning', 'werkbonnen', 'facturen', 'visualizer', 'ai', 'email', 'taken'] as const
 
 const moduleNames: Record<string, string> = {
   projecten: 'Projecten',
@@ -15,6 +15,8 @@ const moduleNames: Record<string, string> = {
   facturen: 'Facturen',
   visualizer: 'Visualizer',
   ai: 'AI-assistent',
+  email: 'Email',
+  taken: 'Taken',
 }
 
 export async function generateStaticParams() {

@@ -295,7 +295,7 @@ export default function Hero() {
             transition={{ duration: 0.8, delay: 0.7 }}
           >
             {[
-              { value: 8, suffix: '', label: 'modules' },
+              { value: 10, suffix: '', label: 'modules' },
               { value: 1, suffix: '', label: 'systeem' },
               { value: 0, suffix: '', label: 'gedoe' },
             ].map((stat, i) => (

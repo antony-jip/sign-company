@@ -12,9 +12,11 @@ const modules = [
   { label: 'Klantportaal', sub: 'Deel, bespreek, accordeer', href: '/features/portaal', color: '#6A5A8A', image: '/images/modules/klantportaal.jpg' },
   { label: 'Planning', sub: 'Sleep je week in elkaar', href: '/features/planning', color: '#9A5A48', image: '/images/modules/planning.jpg' },
   { label: 'Werkbonnen', sub: 'Digitaal op locatie', href: '/features/werkbonnen', color: '#1A535C', image: '/images/modules/werkbonnen.jpg' },
-  { label: 'Facturen', sub: 'Verstuurd, herinnerd, betaald', href: '/features/facturen', color: '#2D6B48', image: '/images/modules/facturen.jpg' },
+  { label: 'Facturen', sub: 'Verkoop en inkoop, geregeld', href: '/features/facturen', color: '#2D6B48', image: '/images/modules/facturen.jpg' },
   { label: 'Visualizer', sub: 'AI toont het eindresultaat', href: '/features/visualizer', color: '#9A5A48', image: '/images/modules/visualizer.jpg' },
   { label: 'AI-assistent', sub: 'Je slimste collega', href: '/features/ai', color: '#1A535C', image: '/images/modules/ai-assistant.jpg' },
+  { label: 'Email', sub: 'Jouw mailbox, slim gekoppeld', href: '/features/email', color: '#3A6B8C', image: '/images/modules/email.webp' },
+  { label: 'Taken', sub: 'Alles naast de montage', href: '/features/taken', color: '#F15025', image: '/images/modules/taken.webp' },
 ]
 
 export default function ModulesCarousel() {
@@ -39,8 +41,8 @@ export default function ModulesCarousel() {
         </motion.div>
 
         {/* Row 1 */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 md:gap-x-10 gap-y-4">
-          {modules.slice(0, 4).map((mod, i) => (
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-x-6 md:gap-x-8 gap-y-4">
+          {modules.slice(0, 5).map((mod, i) => (
             <ModuleCard key={mod.label} mod={mod} i={i} isInView={isInView} />
           ))}
         </div>
@@ -49,9 +51,9 @@ export default function ModulesCarousel() {
         <div className="my-10 md:my-12 h-px" style={{ background: 'linear-gradient(90deg, transparent, #1A535C10, #F1502515, #1A535C10, transparent)' }} />
 
         {/* Row 2 */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 md:gap-x-10 gap-y-4">
-          {modules.slice(4).map((mod, i) => (
-            <ModuleCard key={mod.label} mod={mod} i={i + 4} isInView={isInView} />
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-x-6 md:gap-x-8 gap-y-4">
+          {modules.slice(5).map((mod, i) => (
+            <ModuleCard key={mod.label} mod={mod} i={i + 5} isInView={isInView} />
           ))}
         </div>
       </div>

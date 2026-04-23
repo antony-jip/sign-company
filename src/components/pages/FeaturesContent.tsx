@@ -88,6 +88,26 @@ const modules = [
     highlights: ['Kent al je bedrijfsdata', 'Tekst verbeteren en verlengen', 'Mails samenvatten en schrijven', 'Draait op Claude Sonnet 4.6'],
     detail: 'Daan is de collega die nooit vrij neemt. Vraag wat je wilt, wanneer je wilt. Offerteteksten, calculaties, samenvattingen. Hoe meer je vraagt, hoe slimmer Daan wordt.',
   },
+  {
+    id: 'email',
+    name: 'Email',
+    color: '#3A6B8C',
+    image: '/images/modules/email.webp',
+    headline: 'Jouw mailbox. Slim gekoppeld.',
+    description: 'Iedere gebruiker werkt vanuit zijn eigen persoonlijke mailbox, met IMAP/SMTP direct gekoppeld aan doen. Inkomende en verzonden mails hangen automatisch aan de juiste klant en het juiste project. Jouw mail blijft van jou, maar de projectcontext is zichtbaar voor het team.',
+    highlights: ['Persoonlijke mailbox per gebruiker (IMAP/SMTP)', 'Mails automatisch aan klant en project gekoppeld', 'Projectcommunicatie zichtbaar in de project-timeline', 'Daan vat binnengekomen mails samen'],
+    detail: 'Koppel je eigen zakelijke emailadres aan doen. Je privé-inbox blijft privé. Alleen de mails die bij een klant of project horen worden in de projectcontext zichtbaar voor je team. Stuur vanuit een klant- of projectview en de mail zit meteen in het dossier.',
+  },
+  {
+    id: 'taken',
+    name: 'Taken',
+    color: '#F15025',
+    image: '/images/modules/taken.webp',
+    headline: 'Alles naast de montage.',
+    description: 'Montage inplannen doe je in de planning. Maar er is zoveel meer dat moet gebeuren: offertes opvolgen, inkoop regelen, bestanden opvragen bij de klant, drukproef laten goedkeuren. Daar is Taken voor. Koppel ze aan een project of klant, wijs toe, zet een deadline.',
+    highlights: ['Voor al het werk náást de montage', 'Taken per project of per klant', 'Toewijzen aan teamleden met deadline', 'Notificaties bij wijziging en vervaldatum'],
+    detail: 'Planning is voor de montage. Sleep een project naar een dag, de werkbon hangt eraan. Taken zijn voor alle andere stappen: offerteopvolging, inkoop bij de leverancier, drukproef binnenhalen, bestanden opvragen bij de klant. Elke taak is gekoppeld aan een project of klant, met eigenaar en deadline.',
+  },
 ]
 
 const faq = [

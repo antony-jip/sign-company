@@ -6,7 +6,7 @@ import FeaturesContent from '@/components/pages/FeaturesContent'
 
 export const metadata: Metadata = {
   title: 'Features | doen.',
-  description: 'Zes krachtige modules. Projecten, offertes, facturen, planning, klantportaal en Daan AI.',
+  description: 'Tien krachtige modules. Projecten, offertes, facturen, planning, klantportaal, werkbonnen, visualizer, email, taken en Daan AI.',
 }
 
 export default function FeaturesPage() {
