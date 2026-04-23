@@ -20,6 +20,7 @@ export interface Profile {
   iban?: string;
   taal: 'nl' | 'en';
   theme: 'light' | 'dark';
+  ui_hints_tonen?: boolean;
   organisatie_id?: string;
   rol?: TeamRol;
   status?: TeamStatus;

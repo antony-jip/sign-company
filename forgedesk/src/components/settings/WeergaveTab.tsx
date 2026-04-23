@@ -69,7 +69,7 @@ const WEERGAVE_TABS: SubTab[] = [
 
 export function WeergaveTab() {
   const { language, setLanguage } = useLanguage()
-  const { settings, updateSettings } = useAppSettings()
+  const { settings, updateSettings, profile, updateUserProfile } = useAppSettings()
   const { appThemeId, setAppThemeId, accentId, setAccentId } = usePalette()
   // Lees opgeslagen sidebar_items en filter items eruit die niet meer bestaan
   // in ALL_SIDEBAR_ITEMS (bijv. verwijderde tools). Als er nog niets is
@@ -523,6 +523,35 @@ export function WeergaveTab() {
                   ? 'Compacte modus ingeschakeld'
                   : 'Standaard modus ingeschakeld'
               )
+            }}
+          />
+        </div>
+
+        <Separator />
+
+        {/* UI Hints */}
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-foreground">
+              Toon info-icoontjes bij onderdelen
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Kleine vraagteken-icoontjes naast titels en instellingen die uitleg geven over wat een functie doet.
+            </p>
+          </div>
+          <Switch
+            checked={profile?.ui_hints_tonen ?? false}
+            onCheckedChange={async (checked) => {
+              try {
+                await updateUserProfile({ ui_hints_tonen: checked })
+                toast.success(
+                  checked
+                    ? 'Info-icoontjes ingeschakeld'
+                    : 'Info-icoontjes uitgeschakeld'
+                )
+              } catch (err) {
+                toast.error('Kon voorkeur niet opslaan')
+              }
             }}
           />
         </div>
