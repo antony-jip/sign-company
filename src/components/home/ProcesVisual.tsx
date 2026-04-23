@@ -53,7 +53,7 @@ function FlowNode({
   label,
   subtitle,
   progress,
-  size = 72,
+  size = 64,
   tone = 'light',
 }: NodeProps) {
   const opacity = useTransform(progress, [0, 0.4, 1], [0, 1, 1])
@@ -399,24 +399,25 @@ export default function ProcesVisual() {
   return (
     <section ref={sectionRef} className="bg-white relative">
       <div style={{ height: '240vh' }}>
-        <div className="sticky top-0 h-screen flex flex-col items-center justify-center py-8 md:py-10 bg-white overflow-hidden">
+        <div className="sticky top-0 h-screen flex flex-col items-center justify-center py-4 md:py-6 bg-white overflow-hidden">
           <div className="container-site w-full">
-            <div className="text-center mb-6 md:mb-10">
-              <p className="font-mono text-[12px] font-bold tracking-[0.2em] uppercase mb-3 md:mb-4" style={{ color: FLAME }}>
+            <div className="text-center mb-4 md:mb-6">
+              <p className="font-mono text-[11px] md:text-[12px] font-bold tracking-[0.2em] uppercase mb-2 md:mb-3" style={{ color: FLAME }}>
                 Hoe het werkt
               </p>
-              <h2 className="font-heading text-[26px] md:text-[40px] font-extrabold tracking-[-1.5px] leading-[1.05]" style={{ color: PETROL }}>
+              <h2 className="font-heading text-[24px] md:text-[36px] font-extrabold tracking-[-1.5px] leading-[1.05]" style={{ color: PETROL }}>
                 Eén project. Alles geregeld<span style={{ color: FLAME }}>.</span>
               </h2>
-              <motion.p className="text-[14px] md:text-[17px] mt-2 md:mt-3 leading-relaxed" style={{ color: MUTED }}>
+              <motion.p className="text-[13px] md:text-[15px] mt-2 leading-relaxed" style={{ color: MUTED }}>
                 Van klant tot oplevering. In één cockpit.
               </motion.p>
             </div>
 
             <div
-              className="relative w-full max-w-[1120px] mx-auto rounded-2xl bg-white"
+              className="relative w-full mx-auto rounded-2xl bg-white"
               style={{
                 aspectRatio: '1200 / 800',
+                maxWidth: 'min(860px, calc((100vh - 240px) * 1.5))',
                 border: '1px solid rgba(26,83,92,0.06)',
                 boxShadow: '0 1px 2px rgba(26,83,92,0.04), 0 8px 24px rgba(26,83,92,0.06), 0 24px 60px rgba(26,83,92,0.05)',
               }}
@@ -484,7 +485,7 @@ export default function ProcesVisual() {
               <FlowNode xPct={62.5} yPct={74} icon={ImageIcon} label="Tekening" subtitle="Drukproef en akkoord" progress={p3Tekening} />
               <FlowNode xPct={82.5} yPct={74} icon={Calendar} label="Planning" subtitle="Werkbon en montage" progress={p3Planning} />
               <PortaalNode progress={p4Portaal} akkoordProgress={p4Akkoord} />
-              <FlowNode xPct={50} yPct={87} icon={Smile} label="Gedaan" progress={p5Gedaan} tone="dark" size={80} />
+              <FlowNode xPct={50} yPct={87} icon={Smile} label="Gedaan" progress={p5Gedaan} tone="dark" size={72} />
             </div>
 
             <PhaseCaption index={copyIndex} />
