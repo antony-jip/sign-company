@@ -77,8 +77,7 @@ export default function MagneticButton(props: Props) {
 
   const baseClasses = `inline-flex items-center justify-center gap-2 font-semibold rounded-xl whitespace-nowrap transition-colors duration-200 ${sizeClasses[size]} ${className}`
 
-  // Variant-specific styling
-  const style: React.CSSProperties = {
+  const style = {
     x,
     y,
     ...(variant === 'primary' && {

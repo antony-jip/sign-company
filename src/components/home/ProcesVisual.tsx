@@ -18,6 +18,7 @@ import {
   Calendar,
   Smile,
   Check,
+  type LucideIcon,
 } from 'lucide-react'
 
 const PETROL = '#1A535C'
@@ -27,8 +28,6 @@ const FLAME = '#F15025'
 const LINE_SOFT = '#B8B3A8'
 const MUTED = '#6B6B66'
 const MUTED_SOFT = '#9B9B95'
-
-type LucideIcon = React.ComponentType<{ className?: string; style?: React.CSSProperties; strokeWidth?: number }>
 
 function Sparkle({ cx, cy, size }: { cx: number; cy: number; size: number }) {
   const s = size
@@ -521,7 +520,7 @@ export default function ProcesVisual() {
   const trailOpacity = useTransform(smooth, [0.01, 0.03, 0.12, 0.14], [0, 0.4, 0.4, 0])
 
   // Phase caption index — 6 phases matching PHASE_COPY
-  const copyIndex = useTransform(smooth, (v) => {
+  const copyIndex = useTransform(smooth, (v): number => {
     if (v < 0.14) return 0 // Klant
     if (v < 0.28) return 1 // Project
     if (v < 0.52) return 2 // Offerte/Tekening

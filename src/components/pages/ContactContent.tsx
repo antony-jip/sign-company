@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Mail, MessageCircle, Clock } from 'lucide-react'
+import { Mail, MessageCircle, Clock, type LucideIcon } from 'lucide-react'
 import SectionReveal from '../SectionReveal'
 import WachtlijstForm from '../WachtlijstForm'
 import AnimatedLink from '../AnimatedLink'
@@ -253,8 +253,6 @@ export default function ContactContent() {
 
 /* ═══════════════════════════════════════════════════════════ */
 
-type IconComponent = React.ComponentType<{ className?: string; style?: React.CSSProperties; strokeWidth?: number }>
-
 function ContactCard({
   icon: Icon,
   label,
@@ -262,7 +260,7 @@ function ContactCard({
   subtitle,
   href,
 }: {
-  icon: IconComponent
+  icon: LucideIcon
   label: string
   value: string
   subtitle?: string

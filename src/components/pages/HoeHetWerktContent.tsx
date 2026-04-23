@@ -24,6 +24,7 @@ import {
   Smile,
   Check,
   X,
+  type LucideIcon,
 } from 'lucide-react'
 import SectionReveal from '../SectionReveal'
 import WachtlijstForm from '../WachtlijstForm'
@@ -41,7 +42,7 @@ const INK = '#1A1A1A'
    ═══════════════════════════════════════════════════════════════════ */
 
 type Notification = {
-  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties; strokeWidth?: number }>
+  icon: LucideIcon
   from: string
   text: string
   when: string
@@ -184,7 +185,7 @@ function NotificationCard({
    ═══════════════════════════════════════════════════════════════════ */
 
 type Pain = {
-  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties; strokeWidth?: number }>
+  icon: LucideIcon
   title: string
   body: string
   cost: string
@@ -433,7 +434,7 @@ function OrbIcon({
   spread,
   index,
 }: {
-  Icon: React.ComponentType<{ className?: string; style?: React.CSSProperties; strokeWidth?: number }>
+  Icon: LucideIcon
   baseX: number
   baseY: number
   spread: MotionValue<number>
@@ -489,7 +490,7 @@ function OrbIcon({
 type FlowStep = {
   nr: string
   title: string
-  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties; strokeWidth?: number }>
+  icon: LucideIcon
   when: string
   was: string
   is: string
