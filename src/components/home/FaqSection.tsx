@@ -19,145 +19,145 @@ const faqs: { category: CategoryId; q: string; a: string }[] = [
   {
     category: 'prijs',
     q: 'Kan ik doen. eerst gratis proberen?',
-    a: 'De **eerste 30 dagen zijn gratis**. Geen creditcard nodig, geen verplichtingen. Je hebt **direct toegang tot alle modules**.',
+    a: 'Natuurlijk. De **eerste 30 dagen zijn gratis**, geen creditcard nodig, geen verplichtingen. Je hebt **direct toegang tot alle modules** — niks uitgegrijsd of achter een muur.',
   },
   {
     category: 'prijs',
     q: 'Hoeveel kost doen. na de proefperiode?',
-    a: '**€79 per maand ex. btw**, tot **10 gebruikers**. Groter team? Neem contact op voor een prijs op maat. **Geen opzetkosten, geen verborgen kosten.**',
+    a: '**€79 per maand ex. btw**, tot **10 gebruikers**. Dat is alles. Geen opzetkosten, geen add-ons, geen aparte prijs per gebruiker die later omhoog duikt. Heb je een groter team? Stuur ons een bericht — dan maken we een prijs op maat.',
   },
   {
     category: 'prijs',
     q: 'Moet ik een contract tekenen?',
-    a: 'Nee. **Maandelijks opzegbaar.** Je blijft omdat het werkt, niet omdat je vastzit.',
+    a: 'Nee. **Maandelijks opzegbaar.** Je blijft omdat het werkt, niet omdat je vastzit aan een jaarcontract. Eerlijk gedeal.',
   },
   {
     category: 'prijs',
     q: 'Zijn er opzetkosten of verborgen kosten?',
-    a: 'Nee. **Alles zit in het abonnement**, inclusief toekomstige updates. Geen opzetkosten, geen add-ons, geen premium-tiers.',
+    a: 'Nee. **Alles zit in het abonnement**, inclusief toekomstige updates. Geen opzetkosten, geen premium-tiers, geen "pakket uitbreiden om feature X te gebruiken". Wat je ziet is wat je krijgt.',
   },
   {
     category: 'prijs',
     q: 'Wat als ik meer dan 10 gebruikers heb?',
-    a: 'Neem contact op. We maken een **prijs op maat** voor grotere teams. Alles uit het Team-plan blijft gelden, geschikt voor grotere organisaties.',
+    a: 'Stuur ons een mail, dan maken we een **prijs op maat**. Alles uit het abonnement blijft hetzelfde, we passen alleen de schaal aan. Geen ingewikkelde gesprekken.',
   },
   {
     category: 'prijs',
     q: 'Kan ik gebruikers wisselen in mijn team?',
-    a: 'Ja. Je **voegt gebruikers toe, verwijdert of vervangt** ze binnen je abonnement. Gaat iemand uit dienst? Deactiveer het account en voeg je nieuwe collega toe. Zolang je **binnen de 10 gebruikers** blijft, verandert je prijs niet.',
+    a: 'Ja, wanneer je wilt. **Voeg iemand toe, verwijder of vervang ze** — allemaal binnen je abonnement. Monteur uit dienst? Deactiveer het account en voeg de nieuwe collega toe. Zolang je **binnen de 10 gebruikers** blijft, verandert je prijs niet.',
   },
 
   // ── Product ──────────────────────────────────────────────
   {
     category: 'product',
     q: 'Zit AI echt overal in?',
-    a: 'Ja. **Daan**, onze AI-assistent, draait op **Claude Sonnet 4.6**. Hij kent je bedrijfsdata, schrijft teksten, vat mails samen en helpt met calculaties. **Geen extra kosten.**',
+    a: 'Ja, overal waar het helpt. **Daan** is onze AI-assistent (draait op **Claude Sonnet 4.6**). Hij kent je bedrijfsdata, schrijft offerteteksten, vat binnengekomen mails samen, rekent vierkante meters uit. **Geen extra kosten** — gewoon onderdeel van het abonnement.',
   },
   {
     category: 'product',
     q: 'Wat is het verschil tussen Planning en Taken?',
-    a: '**Planning is voor de montage.** Sleep een project naar een dag, de werkbon hangt eraan. **Taken is voor al het werk eromheen**: offertes opvolgen, inkoop regelen bij de leverancier, drukproeven binnenhalen, bestanden opvragen bij de klant.',
+    a: '**Planning is voor de montage.** Sleep een project naar een dag in de kalender, de werkbon hangt er automatisch aan. **Taken is voor al het werk eromheen**: offertes opvolgen, inkoop regelen, drukproeven binnenhalen, bestanden opvragen bij de klant. Twee aparte modules, want het is twee aparte soorten werk.',
   },
   {
     category: 'product',
     q: 'Hoe werkt het klantportaal?',
-    a: 'Je klant ontvangt een **unieke link per mail**. **Geen inlog nodig**, geen wachtwoord. Ze bekijken tekeningen, keuren offertes goed, tekenen opdrachtbevestigingen en betalen facturen. Jij stelt zelf in wanneer herinneringen uitgaan.',
+    a: 'Je klant krijgt een **unieke link per mail** en ziet direct alles: tekeningen, offertes, opdrachtbevestigingen, facturen, foto\'s van de montage. **Geen inlog, geen wachtwoord**, geen "welk app moet ik downloaden". Hij keurt goed of tekent met één klik. Jij krijgt een notificatie.',
   },
   {
     category: 'product',
     q: 'Wat is de Visualizer en hoe zitten de credits in elkaar?',
-    a: 'Upload een schets of foto en de Visualizer genereert een realistische visualisatie van het eindresultaat: autobelettering, gevelreclame, lichtreclame, belettering. De Visualizer draait op **Nano Banana 2**, Google\'s image-generation model. Je begint met **10 credits inbegrepen** in je abonnement. Daarna **koop je extra credits bij via een credit-pack** wanneer je meer nodig hebt.',
+    a: 'Upload een schets of foto van de locatie, en de Visualizer maakt er een realistische visualisatie van — autobelettering, gevelreclame, lichtreclame, belettering. Draait op **Nano Banana 2** (Google\'s image-model). Je begint met **10 credits inbegrepen**. Daarna **koop je extra credits via een credit-pack** wanneer je ze nodig hebt.',
   },
   {
     category: 'product',
     q: 'Kan ik rollen en rechten per gebruiker instellen?',
-    a: 'Ja. Je bepaalt **per gebruiker wat hij of zij kan zien en doen**: admin, werkvoorbereider of monteur. Zo ziet je monteur wel zijn werkbonnen en planning, maar **niet je marges** en financiële overzichten.',
+    a: 'Ja. Je bepaalt **per gebruiker wat hij of zij kan zien en doen**: admin, werkvoorbereider, monteur. Je monteur ziet wel zijn werkbonnen en planning, maar **niet je marges of financiële overzichten**. Fijn voor iedereen.',
   },
   {
     category: 'product',
     q: 'Werkt doen. op mijn telefoon?',
-    a: 'Ja. **Mobiel-geoptimaliseerd** voor planning en werkbonnen. Je monteur opent de werkbon op zijn telefoon, registreert **direct uren en foto\'s**, en laat de klant **digitaal tekenen**.',
+    a: 'Ja. Planning en werkbonnen zijn **specifiek voor mobiel ontworpen** — niet zomaar een desktop-site op klein scherm gepropt. Je monteur opent de werkbon op zijn telefoon, registreert **uren en foto\'s direct**, laat de klant **digitaal tekenen**. Klaar.',
   },
 
   // ── Security & privacy ───────────────────────────────────
   {
     category: 'security',
     q: 'Waar staat mijn data?',
-    a: 'Jouw data wordt gehost in de **EU op Supabase (AWS Frankfurt)**. **Geen data verlaat Europa.**',
+    a: 'In de **EU**, op Supabase (AWS Frankfurt). **Geen data verlaat Europa.** We slapen allemaal rustiger zo.',
   },
   {
     category: 'security',
     q: 'Is doen. AVG-compliant?',
-    a: 'Ja. doen. is gebouwd volgens de **Europese AVG-richtlijnen**. Jouw klantdata blijft van jou en wordt **nooit gedeeld met derden** voor andere doeleinden dan het leveren van de dienst. We tekenen een **verwerkersovereenkomst op aanvraag**.',
+    a: 'Ja. Gebouwd volgens de **Europese AVG-richtlijnen**. Jouw klantdata blijft van jou en wordt **nooit gedeeld met derden** voor iets anders dan het leveren van de dienst. Heb je een verwerkersovereenkomst nodig voor je klanten? We tekenen er eentje **op aanvraag**.',
   },
   {
     category: 'security',
     q: 'Hoe zit het met backups?',
-    a: '**Dagelijkse automatische backups** met point-in-time recovery. Als er iets misgaat in je data, kunnen we **terug naar een eerder moment**. Je hoeft zelf niets te regelen.',
+    a: '**Dagelijkse automatische backups** met point-in-time recovery. Als er iets misgaat in je data, kunnen we **terug naar een eerder moment**. Jij hoeft hier niks voor te regelen — gewoon ingebakken.',
   },
   {
     category: 'security',
     q: 'Is twee-factor-authenticatie (2FA) mogelijk?',
-    a: 'Ja. Je activeert 2FA via je account-instellingen. We raden het **sterk aan voor alle admin-gebruikers**.',
+    a: 'Ja. Je activeert 2FA in je account-instellingen. We raden het **sterk aan voor alle admin-gebruikers** — één extra stap bij inloggen, een stuk rustiger slapen.',
   },
   {
     category: 'security',
     q: 'Wat gebeurt er met mijn data als ik opzeg?',
-    a: 'Tijdens je opzegperiode **exporteer je al je data** (CSV, PDF) wanneer je wilt. Na afloop bewaren we je data nog **30 dagen** voor het geval je terug wilt. Daarna wordt alles **definitief verwijderd**.',
+    a: 'Tijdens je opzegperiode **exporteer je al je data** (CSV, PDF) wanneer je wilt. Na afloop bewaren we je data nog **30 dagen** — voor het geval je terug wilt. Daarna wordt alles **definitief verwijderd**. Geen hostage-taking.',
   },
 
   // ── Support & onboarding ─────────────────────────────────
   {
     category: 'support',
     q: 'Welke support krijg ik en in welke taal?',
-    a: '**Nederlandse support** via email en chat op **werkdagen**. Reactietijd meestal **binnen een paar uur**. Voor complexe vragen plannen we een scherm-deling-sessie.',
+    a: '**Nederlandse support** van echte mensen via email en chat, op werkdagen. Reactietijd meestal **binnen een paar uur**. Vastgelopen op iets ingewikkelds? Dan plannen we een **scherm-deling-sessie** zodat we het samen oplossen.',
   },
   {
     category: 'support',
     q: 'Hoe lang duurt de implementatie?',
-    a: 'De meeste bedrijven zijn **binnen een week live**. Wij helpen met de basisinrichting: producten, templates, team, eerste klanten. Zodat je meteen productief bent.',
+    a: 'De meeste bedrijven zijn **binnen een week live**. Wij helpen met de basisinrichting: producten, templates, team, eerste klanten importeren. Zodat je niet twee weken rommelt voordat je productief bent.',
   },
   {
     category: 'support',
     q: 'Kan ik overstappen vanuit mijn huidige systeem?',
-    a: 'Ja. We hebben **migratiepaden voor de gangbare pakketten** in de signbranche. Stuur ons een export van je klanten en producten, dan zorgen wij dat alles netjes in doen. staat. Neem contact op via **hello@doen.team** en we bespreken de overstap.',
+    a: 'Ja. We hebben **migratiepaden voor de gangbare pakketten** die maakbedrijven gebruiken. Stuur ons een export van je klanten en producten, dan zetten wij het netjes in doen. Geen handmatig overtypen — dat is 2026-waardig werk. Laat het weten via **hello@doen.team**.',
   },
   {
     category: 'support',
     q: 'Krijg ik uitleg of training?',
-    a: 'Ja. Elke nieuwe klant krijgt een **live onboarding-sessie van ~1 uur** waarin we het systeem doorlopen en jouw inrichting samen opzetten. Daarna blijft onze kennisbank en support beschikbaar.',
+    a: 'Zeker. Elke nieuwe klant krijgt een **live onboarding-sessie van ~1 uur** waarin we het systeem doorlopen en jouw inrichting samen opzetten. Daarna blijven onze kennisbank en support gewoon beschikbaar — je staat er nooit alleen voor.',
   },
   {
     category: 'support',
     q: 'Kan ik een nieuwe feature aanvragen?',
-    a: 'Ja. doen. wordt **gebouwd samen met onze klanten**. Stuur je idee naar **hello@doen.team**. Grote features nemen we op in de **publieke roadmap** zodat je kan zien wat eraan komt.',
+    a: 'Graag zelfs. doen. wordt **gebouwd samen met onze klanten** — hun ideeën zijn al in het product terechtgekomen. Stuur je idee naar **hello@doen.team**. Wordt het een grote feature? Dan nemen we \'m op in de **publieke roadmap** zodat je kunt meekijken.',
   },
 
   // ── Technisch ────────────────────────────────────────────
   {
     category: 'technisch',
     q: 'Kan ik doen. koppelen aan mijn boekhouding?',
-    a: 'Ja. Factuurgegevens **gaan rechtstreeks van doen. naar Exact Online** (one-way), zodat je boekhouder niks dubbel hoeft in te voeren. Voor online betalingen is **Mollie (iDEAL, creditcard)** geïntegreerd. Betaalstatus zet je zelf op **betaald** zodra het geld binnen is. **Inkoopfacturen** ontvang je op een **aparte mailbox** en keurt je team goed in doen.',
+    a: 'Ja. Factuurgegevens **gaan rechtstreeks van doen. naar Exact Online** (one-way), zodat je boekhouder niks dubbel hoeft in te voeren. Voor online betalingen is **Mollie (iDEAL, creditcard)** geïntegreerd. De betaalstatus zet je zelf op **betaald** zodra het geld binnen is. **Inkoopfacturen** ontvang je op een **aparte mailbox** en worden door je team goedgekeurd in doen.',
   },
   {
     category: 'technisch',
     q: 'Hoe werkt de email-koppeling?',
-    a: 'Iedere gebruiker koppelt zijn **eigen zakelijke mailbox via IMAP/SMTP**. Je **privé-inbox blijft privé**. Alleen mails die bij een klant of project horen worden in de projectcontext zichtbaar voor je team.',
+    a: 'Iedere gebruiker koppelt zijn **eigen zakelijke mailbox via IMAP/SMTP**. Je **privé-inbox blijft privé** — niemand ziet je persoonlijke mail. Alleen mails die bij een klant of project horen worden in de projectcontext zichtbaar voor je team. Persoonlijk waar het moet, gedeeld waar het helpt.',
   },
   {
     category: 'technisch',
     q: 'Kan ik mijn data exporteren?',
-    a: '**Altijd.** CSV, PDF, wat je nodig hebt. **Jouw data is van jou.** Geen lock-in, geen barrières.',
+    a: '**Altijd.** CSV, PDF, wat je nodig hebt, wanneer je wilt. **Jouw data is van jou.** Geen lock-in, geen barrières, geen "dit zit niet in je pakket".',
   },
   {
     category: 'technisch',
     q: 'Op welke apparaten werkt doen.?',
-    a: 'doen. draait **in de browser**. Werkt op **desktop, laptop, tablet en telefoon**. Geen installatie, geen updates, geen gedoe met versies. **Chrome, Safari, Firefox, Edge.**',
+    a: 'doen. draait **in de browser** — geen app-store gedoe. Werkt op **desktop, laptop, tablet en telefoon**. Geen installatie, geen updates, geen "welke versie heb jij?". Chrome, Safari, Firefox, Edge — allemaal prima.',
   },
   {
     category: 'technisch',
     q: 'Is er een API beschikbaar?',
-    a: 'We werken aan een **publieke API** voor integraties met je eigen systemen. Heb je specifieke koppelingswensen? Laat het weten via **hello@doen.team**, dan kijken we of het past in de roadmap.',
+    a: 'We werken aan een **publieke API** voor integraties met je eigen systemen. Heb je een specifieke koppelingswens? Laat het weten via **hello@doen.team** — dan kijken we of het in de roadmap past, of direct als maatwerk kan.',
   },
 ]
 

@@ -6,6 +6,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import SectionReveal from '../SectionReveal'
 import WachtlijstForm from '../WachtlijstForm'
+import FaqSection from '../home/FaqSection'
 
 const modules = [
   {
@@ -108,17 +109,6 @@ const modules = [
     highlights: ['Voor al het werk náást de montage', 'Taken per project of per klant', 'Toewijzen aan teamleden met deadline', 'Notificaties bij wijziging en vervaldatum'],
     detail: 'Planning is voor de montage. Sleep een project naar een dag, de werkbon hangt eraan. Taken zijn voor alle andere stappen: offerteopvolging, inkoop bij de leverancier, drukproef binnenhalen, bestanden opvragen bij de klant. Elke taak is gekoppeld aan een project of klant, met eigenaar en deadline.',
   },
-]
-
-const faq = [
-  { q: 'Kan ik doen. eerst uitproberen?', a: 'Ja, de eerste 30 dagen zijn gratis. Geen creditcard nodig. Je hebt direct toegang tot alle modules.' },
-  { q: 'Hoeveel kost doen. na de proefperiode?', a: '€79 per maand ex. btw, tot 10 gebruikers. Meer gebruikers? Neem contact op voor een prijs op maat. Geen opzetkosten, geen verborgen kosten.' },
-  { q: 'Kan ik mijn bestaande data importeren?', a: 'Ja, we helpen je met het importeren van je klanten en producten. Neem contact op via hello@doen.team.' },
-  { q: 'Werkt doen. op mijn telefoon?', a: 'Ja. De planning en werkbonnen zijn geoptimaliseerd voor mobiel. Je monteur opent de werkbon op zijn telefoon en registreert direct uren en foto\'s.' },
-  { q: 'Hoe werkt het klantportaal?', a: 'Je klant ontvangt een unieke link per mail. Geen inlog nodig. Ze bekijken tekeningen, keuren offertes goed en reageren op bestanden. Je stelt zelf in wanneer herinneringen uitgaan.' },
-  { q: 'Wat is de Visualizer?', a: 'Upload een schets of foto en AI genereert een realistische visualisatie van het eindresultaat. Je begint met 10 credits en koopt bij wanneer je wilt.' },
-  { q: 'Zit AI echt overal in?', a: 'Ja. Daan (onze AI-assistent) draait op Claude Sonnet 4.6. Hij kent je bedrijfsdata, schrijft teksten, helpt met calculaties en wordt steeds slimmer.' },
-  { q: 'Kan ik doen. koppelen aan mijn boekhouding?', a: 'We werken aan een koppeling met Exact Online. Mollie (iDEAL, creditcard) is al geïntegreerd voor online betalingen.' },
 ]
 
 function PortaalDemo() {
@@ -456,46 +446,6 @@ function WerktekeningSection() {
           </motion.div>
         </div>
       </div>
-    </div>
-  )
-}
-
-function FAQItem({ question, answer, index }: { question: string; answer: string; index: number }) {
-  const [open, setOpen] = useState(false)
-
-  return (
-    <div style={{ borderBottom: '1px solid #EBEBEB' }}>
-      <button
-        onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between py-5 text-left group"
-      >
-        <span className="text-[15px] md:text-[16px] font-semibold text-petrol pr-4">{question}</span>
-        <motion.span
-          className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center"
-          style={{ backgroundColor: open ? '#F15025' : '#F8F7F5' }}
-          animate={{ rotate: open ? 45 : 0 }}
-          transition={{ duration: 0.2 }}
-        >
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-            <path d="M6 2V10M2 6H10" stroke={open ? 'white' : '#9B9B95'} strokeWidth="1.5" strokeLinecap="round" />
-          </svg>
-        </motion.span>
-      </button>
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className="overflow-hidden"
-          >
-            <p className="text-[14px] md:text-[15px] leading-[1.7] pb-5" style={{ color: '#6B6B66' }}>
-              {answer}
-            </p>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   )
 }
@@ -1712,24 +1662,8 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
         </div>
       </section>
 
-      {/* FAQ */}
-      <section className="py-16 md:py-24">
-        <div className="container-site">
-          <SectionReveal>
-            <h2 className="font-heading text-[28px] md:text-[36px] font-bold text-petrol tracking-[-1.5px] text-center mb-4">
-              Vragen<span className="text-flame">?</span> Gewoon doen<span className="text-flame">.</span>
-            </h2>
-            <p className="text-[15px] text-center max-w-md mx-auto mb-12" style={{ color: '#6B6B66' }}>
-              Alles wat je wilt weten voordat je begint.
-            </p>
-          </SectionReveal>
-          <div className="max-w-2xl mx-auto space-y-0">
-            {faq.map((item, i) => (
-              <FAQItem key={i} question={item.q} answer={item.a} index={i} />
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* FAQ — categorized (Prijs / Product / Security / Support / Technisch) */}
+      <FaqSection />
 
       {/* CTA */}
       <section className="pb-20 md:pb-32">
