@@ -593,7 +593,7 @@ export default function ProcesVisual() {
                 maxWidth: 'min(1280px, calc((100vh - 200px) * 2.1))',
               }}
             >
-              <svg viewBox="0 0 1200 600" className="absolute inset-0 w-full h-full" preserveAspectRatio="xMidYMid meet">
+              <svg viewBox="0 0 1200 600" className="absolute inset-0 w-full h-full" preserveAspectRatio="xMidYMid meet" style={{ overflow: 'visible' }}>
                 <defs>
                   <marker id="procesArrow" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto" markerUnits="userSpaceOnUse">
                     <path d="M 0 0 L 9 4.5 L 0 9 z" fill={FLAME} />
