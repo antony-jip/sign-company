@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/contexts/AuthContext'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -16,36 +17,143 @@ import {
 } from '@/services/supabaseService'
 import { Loader2, ArrowLeft, ArrowRight, Layers, Sparkles } from 'lucide-react'
 import { logger } from '../../utils/logger'
+import { ParticleField } from './ParticleField'
 
-// ── Spectrum Progress Strip ─────────────────────────────────────────────
+const MONO = { fontFamily: '"DM Mono", ui-monospace, monospace' } as const
 
-const SEGMENT_COLORS: [string, string, string][] = [
-  ['#F15025', '#F15025', '#F15025'],               // Stap 1: flame
-  ['#D4453A', '#9A4070', '#6A5A8A'],               // Stap 2: warm midden
-  ['#3A6B8C', '#2D6B48', '#1A535C'],               // Stap 3: tot petrol
-]
+// ── Wordmark ────────────────────────────────────────────────────────────
+
+function Wordmark() {
+  return (
+    <div className="inline-flex items-baseline gap-[1px] font-heading">
+      <span className="text-[17px] font-bold tracking-tight text-ink">doen</span>
+      <motion.span
+        initial={{ opacity: 0, scale: 0.6 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.25, ease: [0.2, 0.8, 0.2, 1] }}
+        className="text-[17px] font-bold text-flame leading-none"
+      >
+        .
+      </motion.span>
+    </div>
+  )
+}
+
+// ── Progress (01 · 02 · 03) ─────────────────────────────────────────────
 
 function OnboardingProgress({ currentStep }: { currentStep: number }) {
   return (
-    <div className="flex gap-1" style={{ padding: '0 2px' }}>
-      {SEGMENT_COLORS.map((colors, idx) => {
-        const isActive = idx <= currentStep
-        const gradient = isActive
-          ? `linear-gradient(90deg, ${colors[0]}, ${colors[1]}, ${colors[2]})`
-          : undefined
-        return (
-          <div
-            key={idx}
-            className="flex-1 transition-all duration-500"
-            style={{
-              height: 5,
-              borderRadius: 3,
-              background: isActive ? gradient : '#E6E4E0',
-            }}
-          />
-        )
-      })}
+    <div
+      className="flex items-center gap-2 text-[11px] uppercase tracking-wider"
+      style={MONO}
+    >
+      {[0, 1, 2].map((idx) => (
+        <span key={idx} className="flex items-center gap-2">
+          <span
+            className={
+              idx === currentStep
+                ? 'text-flame font-semibold'
+                : idx < currentStep
+                  ? 'text-ink/50'
+                  : 'text-muted-hex'
+            }
+          >
+            0{idx + 1}
+          </span>
+          {idx < 2 && <span className="text-muted-hex/50">·</span>}
+        </span>
+      ))}
     </div>
+  )
+}
+
+// ── Shared step-shell ───────────────────────────────────────────────────
+
+const stepTransition = {
+  initial: { opacity: 0, y: 8 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -8 },
+  transition: { duration: 0.2, ease: 'easeOut' as const },
+}
+
+const inputClass =
+  'h-10 rounded-lg bg-white/60 border border-sand text-[13px] focus:ring-0 focus:border-petrol transition-colors'
+
+const labelStyle = {
+  fontSize: 11,
+  fontWeight: 500,
+  color: '#5A5A55',
+  letterSpacing: '0.02em',
+} as const
+
+const stepLabelClass =
+  'text-[11px] uppercase tracking-wider text-muted-hex mb-3 block'
+
+function StepCard({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ maxWidth: 480 }} className="mx-auto w-full">
+      <motion.div
+        {...stepTransition}
+        className="rounded-xl bg-white p-8 shadow-[0_2px_20px_rgba(0,0,0,0.04)]"
+      >
+        {children}
+      </motion.div>
+    </div>
+  )
+}
+
+function StepHeading({
+  label,
+  heading,
+  punctuation,
+  subtitle,
+}: {
+  label: string
+  heading: string
+  punctuation: string
+  subtitle: string
+}) {
+  return (
+    <>
+      <span className={stepLabelClass} style={MONO}>
+        {label}
+      </span>
+      <h2
+        className="font-heading text-ink mb-1"
+        style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.5px', lineHeight: 1.15 }}
+      >
+        {heading}
+        <span className="text-flame">{punctuation}</span>
+      </h2>
+      <p className="text-[13px] text-text-sec mb-6" style={{ lineHeight: 1.55 }}>
+        {subtitle}
+      </p>
+    </>
+  )
+}
+
+function PrimaryButton({
+  onClick,
+  disabled,
+  isSaving,
+  children,
+  className = '',
+}: {
+  onClick: () => void
+  disabled?: boolean
+  isSaving: boolean
+  children: React.ReactNode
+  className?: string
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled || isSaving}
+      className={`h-11 px-5 rounded-lg bg-flame hover:bg-flame-text disabled:opacity-40 text-white font-semibold text-[13px] shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-2 group ${className}`}
+    >
+      {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
+      {children}
+    </button>
   )
 }
 
@@ -78,208 +186,109 @@ function StepBedrijfsgegevens({
   }
 
   return (
-    <div style={{ maxWidth: 480 }} className="mx-auto w-full">
-      <div
-        className="rounded-xl"
-        style={{
-          backgroundColor: '#FFFFFF',
-          border: '0.5px solid #E6E4E0',
-          padding: '28px 32px',
-        }}
-      >
-        {/* Step indicator */}
-        <p
-          className="uppercase"
-          style={{
-            fontSize: 10,
-            fontWeight: 600,
-            letterSpacing: '1.5px',
-            color: '#A0A098',
-            marginBottom: 8,
-          }}
-        >
-          Stap 1 van 3
-        </p>
+    <StepCard>
+      <StepHeading
+        label="Stap 1 van 3"
+        heading="Je bedrijf"
+        punctuation="."
+        subtitle="Vul je bedrijfsgegevens in. Dit komt op je offertes en facturen."
+      />
 
-        {/* Title */}
-        <h2
-          className="font-heading"
-          style={{
-            fontSize: 20,
-            fontWeight: 700,
-            color: '#191919',
-            letterSpacing: '-0.8px',
-            marginBottom: 4,
-          }}
-        >
-          Je bedrijf.
-        </h2>
+      <div className="space-y-4">
+        <div className="space-y-1.5">
+          <Label style={labelStyle}>Bedrijfsnaam</Label>
+          <Input
+            value={gegevens.naam}
+            onChange={(e) => update('naam', e.target.value)}
+            placeholder="Jouw Bedrijf B.V."
+            autoFocus
+            className={inputClass}
+          />
+        </div>
 
-        {/* Subtitle */}
-        <p style={{ fontSize: 13, color: '#5A5A55', marginBottom: 24, lineHeight: 1.5 }}>
-          Vul je bedrijfsgegevens in. Dit komt op je offertes en facturen.
-        </p>
-
-        {/* Fields */}
-        <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
-            <Label style={{ fontSize: 11, fontWeight: 500, color: '#5A5A55' }}>Bedrijfsnaam</Label>
+            <Label style={labelStyle}>
+              KVK-nummer{' '}
+              <span style={{ color: '#A0A098', fontWeight: 400 }}>optioneel</span>
+            </Label>
             <Input
-              value={gegevens.naam}
-              onChange={(e) => update('naam', e.target.value)}
-              placeholder="Jouw Bedrijf B.V."
-              autoFocus
-              className="focus:ring-0"
-              style={{
-                height: 40,
-                borderRadius: 6,
-                backgroundColor: '#FAFAF8',
-                border: '0.5px solid #E6E4E0',
-                fontSize: 13,
-              }}
+              value={gegevens.kvk_nummer}
+              onChange={(e) => update('kvk_nummer', e.target.value)}
+              placeholder="12345678"
+              className={`${inputClass} font-mono`}
             />
           </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label style={{ fontSize: 11, fontWeight: 500, color: '#5A5A55' }}>
-                KVK-nummer <span style={{ color: '#A0A098', fontWeight: 400 }}>optioneel</span>
-              </Label>
-              <Input
-                value={gegevens.kvk_nummer}
-                onChange={(e) => update('kvk_nummer', e.target.value)}
-                placeholder="12345678"
-                className="font-mono focus:ring-0"
-                style={{
-                  height: 40,
-                  borderRadius: 6,
-                  backgroundColor: '#FAFAF8',
-                  border: '0.5px solid #E6E4E0',
-                  fontSize: 13,
-                }}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label style={{ fontSize: 11, fontWeight: 500, color: '#5A5A55' }}>
-                BTW-nummer <span style={{ color: '#A0A098', fontWeight: 400 }}>optioneel</span>
-              </Label>
-              <Input
-                value={gegevens.btw_nummer}
-                onChange={(e) => update('btw_nummer', e.target.value)}
-                placeholder="NL123456789B01"
-                className="font-mono focus:ring-0"
-                style={{
-                  height: 40,
-                  borderRadius: 6,
-                  backgroundColor: '#FAFAF8',
-                  border: '0.5px solid #E6E4E0',
-                  fontSize: 13,
-                }}
-              />
-            </div>
-          </div>
-
           <div className="space-y-1.5">
-            <Label style={{ fontSize: 11, fontWeight: 500, color: '#5A5A55' }}>Adres</Label>
-            <div className="grid grid-cols-3 gap-2">
-              <Input
-                value={gegevens.adres}
-                onChange={(e) => update('adres', e.target.value)}
-                placeholder="Straat + nr"
-                className="focus:ring-0"
-                style={{
-                  height: 40,
-                  borderRadius: 6,
-                  backgroundColor: '#FAFAF8',
-                  border: '0.5px solid #E6E4E0',
-                  fontSize: 13,
-                }}
-              />
-              <Input
-                value={gegevens.postcode}
-                onChange={(e) => update('postcode', e.target.value)}
-                placeholder="1234 AB"
-                className="focus:ring-0"
-                style={{
-                  height: 40,
-                  borderRadius: 6,
-                  backgroundColor: '#FAFAF8',
-                  border: '0.5px solid #E6E4E0',
-                  fontSize: 13,
-                }}
-              />
-              <Input
-                value={gegevens.plaats}
-                onChange={(e) => update('plaats', e.target.value)}
-                placeholder="Plaats"
-                className="focus:ring-0"
-                style={{
-                  height: 40,
-                  borderRadius: 6,
-                  backgroundColor: '#FAFAF8',
-                  border: '0.5px solid #E6E4E0',
-                  fontSize: 13,
-                }}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label style={{ fontSize: 11, fontWeight: 500, color: '#5A5A55' }}>Email</Label>
-              <Input
-                value={gegevens.email}
-                onChange={(e) => update('email', e.target.value)}
-                placeholder="info@jouwbedrijf.nl"
-                className="focus:ring-0"
-                style={{
-                  height: 40,
-                  borderRadius: 6,
-                  backgroundColor: '#FAFAF8',
-                  border: '0.5px solid #E6E4E0',
-                  fontSize: 13,
-                }}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label style={{ fontSize: 11, fontWeight: 500, color: '#5A5A55' }}>Telefoon</Label>
-              <Input
-                value={gegevens.telefoon}
-                onChange={(e) => update('telefoon', e.target.value)}
-                placeholder="06-12345678"
-                className="font-mono focus:ring-0"
-                style={{
-                  height: 40,
-                  borderRadius: 6,
-                  backgroundColor: '#FAFAF8',
-                  border: '0.5px solid #E6E4E0',
-                  fontSize: 13,
-                }}
-              />
-            </div>
+            <Label style={labelStyle}>
+              BTW-nummer{' '}
+              <span style={{ color: '#A0A098', fontWeight: 400 }}>optioneel</span>
+            </Label>
+            <Input
+              value={gegevens.btw_nummer}
+              onChange={(e) => update('btw_nummer', e.target.value)}
+              placeholder="NL123456789B01"
+              className={`${inputClass} font-mono`}
+            />
           </div>
         </div>
 
-        {/* Button */}
-        <button
-          onClick={onNext}
-          disabled={!gegevens.naam.trim() || isSaving}
-          className="w-full flex items-center justify-center gap-2 transition-opacity disabled:opacity-40 hover:opacity-90 active:scale-[0.98] mt-6"
-          style={{
-            height: 42,
-            borderRadius: 6,
-            backgroundColor: '#1A535C',
-            color: '#FFFFFF',
-            fontSize: 13,
-            fontWeight: 600,
-          }}
-        >
-          {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
-          Volgende
-          <ArrowRight className="w-4 h-4" />
-        </button>
+        <div className="space-y-1.5">
+          <Label style={labelStyle}>Adres</Label>
+          <div className="grid grid-cols-3 gap-2">
+            <Input
+              value={gegevens.adres}
+              onChange={(e) => update('adres', e.target.value)}
+              placeholder="Straat + nr"
+              className={inputClass}
+            />
+            <Input
+              value={gegevens.postcode}
+              onChange={(e) => update('postcode', e.target.value)}
+              placeholder="1234 AB"
+              className={inputClass}
+            />
+            <Input
+              value={gegevens.plaats}
+              onChange={(e) => update('plaats', e.target.value)}
+              placeholder="Plaats"
+              className={inputClass}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label style={labelStyle}>Email</Label>
+            <Input
+              value={gegevens.email}
+              onChange={(e) => update('email', e.target.value)}
+              placeholder="info@jouwbedrijf.nl"
+              className={inputClass}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label style={labelStyle}>Telefoon</Label>
+            <Input
+              value={gegevens.telefoon}
+              onChange={(e) => update('telefoon', e.target.value)}
+              placeholder="06-12345678"
+              className={`${inputClass} font-mono`}
+            />
+          </div>
+        </div>
       </div>
-    </div>
+
+      <PrimaryButton
+        onClick={onNext}
+        disabled={!gegevens.naam.trim()}
+        isSaving={isSaving}
+        className="w-full mt-8"
+      >
+        Volgende
+        <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+      </PrimaryButton>
+    </StepCard>
   )
 }
 
@@ -298,137 +307,86 @@ function StepBeginnen({
   onBack: () => void
   isSaving: boolean
 }) {
+  const options = [
+    {
+      id: 'schoon' as const,
+      Icon: Layers,
+      title: 'Schone lei',
+      description: 'Leeg beginnen, alles zelf invoeren',
+    },
+    {
+      id: 'demo' as const,
+      Icon: Sparkles,
+      title: 'Demo data',
+      description: 'Voorbeeldklanten en offertes om te verkennen',
+    },
+  ]
+
   return (
-    <div style={{ maxWidth: 480 }} className="mx-auto w-full">
-      <div
-        className="rounded-xl"
-        style={{
-          backgroundColor: '#FFFFFF',
-          border: '0.5px solid #E6E4E0',
-          padding: '28px 32px',
-        }}
-      >
-        {/* Step indicator */}
-        <p
-          className="uppercase"
-          style={{
-            fontSize: 10,
-            fontWeight: 600,
-            letterSpacing: '1.5px',
-            color: '#A0A098',
-            marginBottom: 8,
-          }}
-        >
-          Stap 2 van 3
-        </p>
+    <StepCard>
+      <StepHeading
+        label="Stap 2 van 3"
+        heading="Hoe wil je beginnen"
+        punctuation="?"
+        subtitle="Je kunt altijd later nog data importeren of verwijderen."
+      />
 
-        <h2
-          className="font-heading"
-          style={{
-            fontSize: 20,
-            fontWeight: 700,
-            color: '#191919',
-            letterSpacing: '-0.8px',
-            marginBottom: 4,
-          }}
-        >
-          Hoe wil je beginnen?
-        </h2>
-
-        <p style={{ fontSize: 13, color: '#5A5A55', marginBottom: 24, lineHeight: 1.5 }}>
-          Je kunt altijd later nog data importeren of verwijderen.
-        </p>
-
-        {/* Option cards */}
-        <div className="space-y-3">
-          <button
-            onClick={() => setKeuze('schoon')}
-            className="w-full text-left rounded-[10px] px-5 py-4 transition-all"
-            style={{
-              backgroundColor: keuze === 'schoon' ? '#E2F0F0' : '#FFFFFF',
-              border: `1.5px solid ${keuze === 'schoon' ? '#1A535C' : '#E6E4E0'}`,
-            }}
-          >
-            <div className="flex items-center gap-3">
-              <Layers className="w-5 h-5 flex-shrink-0" style={{ color: keuze === 'schoon' ? '#1A535C' : '#A0A098' }} />
+      <div className="space-y-2.5">
+        {options.map(({ id, Icon, title, description }) => {
+          const selected = keuze === id
+          return (
+            <button
+              key={id}
+              onClick={() => setKeuze(id)}
+              className={`w-full text-left rounded-lg px-5 py-4 flex items-center gap-3 transition-all ${
+                selected
+                  ? 'bg-petrol-light border-petrol border'
+                  : 'bg-white border border-sand hover:border-petrol/40'
+              }`}
+            >
+              <Icon
+                className={`w-5 h-5 flex-shrink-0 ${selected ? 'text-petrol' : 'text-muted-hex'}`}
+                strokeWidth={1.75}
+              />
               <div>
-                <p style={{ fontSize: 14, fontWeight: 600, color: '#191919' }}>Schone lei</p>
-                <p style={{ fontSize: 12, color: '#5A5A55', marginTop: 2 }}>Leeg beginnen, alles zelf invoeren</p>
+                <p className="text-[14px] font-semibold text-ink">{title}</p>
+                <p className="text-[12px] text-text-sec mt-0.5">{description}</p>
               </div>
-            </div>
-          </button>
-
-          <button
-            onClick={() => setKeuze('demo')}
-            className="w-full text-left rounded-[10px] px-5 py-4 transition-all"
-            style={{
-              backgroundColor: keuze === 'demo' ? '#E2F0F0' : '#FFFFFF',
-              border: `1.5px solid ${keuze === 'demo' ? '#1A535C' : '#E6E4E0'}`,
-            }}
-          >
-            <div className="flex items-center gap-3">
-              <Sparkles className="w-5 h-5 flex-shrink-0" style={{ color: keuze === 'demo' ? '#1A535C' : '#A0A098' }} />
-              <div>
-                <p style={{ fontSize: 14, fontWeight: 600, color: '#191919' }}>Demo data</p>
-                <p style={{ fontSize: 12, color: '#5A5A55', marginTop: 2 }}>Voorbeeldklanten en offertes om te verkennen</p>
-              </div>
-            </div>
-          </button>
-        </div>
-
-        {/* Import link */}
-        <p className="text-center mt-4">
-          <button
-            className="transition-colors hover:opacity-70"
-            style={{ fontSize: 11, color: '#A0A098', textDecoration: 'underline' }}
-            onClick={() => {
-              // Future: open import dialog
-              toast('Importeren is binnenkort beschikbaar.')
-            }}
-          >
-            Ik heb een Excel bestand om te importeren
-          </button>
-        </p>
-
-        {/* Buttons */}
-        <div className="flex gap-3 mt-6">
-          <button
-            onClick={onBack}
-            disabled={isSaving}
-            className="flex-1 flex items-center justify-center gap-2 transition-opacity hover:opacity-70"
-            style={{
-              height: 42,
-              borderRadius: 6,
-              backgroundColor: 'transparent',
-              border: '0.5px solid #E6E4E0',
-              color: '#5A5A55',
-              fontSize: 13,
-              fontWeight: 500,
-            }}
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Terug
-          </button>
-          <button
-            onClick={onNext}
-            disabled={!keuze || isSaving}
-            className="flex-1 flex items-center justify-center gap-2 transition-opacity disabled:opacity-40 hover:opacity-90 active:scale-[0.98]"
-            style={{
-              height: 42,
-              borderRadius: 6,
-              backgroundColor: '#1A535C',
-              color: '#FFFFFF',
-              fontSize: 13,
-              fontWeight: 600,
-            }}
-          >
-            {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
-            Volgende
-            <ArrowRight className="w-4 h-4" />
-          </button>
-        </div>
+            </button>
+          )
+        })}
       </div>
-    </div>
+
+      <p className="text-center mt-4">
+        <button
+          className="text-[11px] uppercase tracking-wider text-muted-hex hover:text-ink transition-colors"
+          style={MONO}
+          onClick={() => toast('Importeren is binnenkort beschikbaar.')}
+        >
+          Ik heb een Excel bestand om te importeren
+        </button>
+      </p>
+
+      <div className="flex gap-3 mt-6">
+        <button
+          onClick={onBack}
+          disabled={isSaving}
+          className="h-11 px-5 flex-1 rounded-lg bg-transparent border border-sand text-text-sec hover:border-text-sec text-[13px] font-medium flex items-center justify-center gap-2 transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Terug
+        </button>
+        <PrimaryButton
+          onClick={onNext}
+          disabled={!keuze}
+          isSaving={isSaving}
+          className="flex-1"
+        >
+          Volgende
+          <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+        </PrimaryButton>
+      </div>
+    </StepCard>
   )
 }
 
@@ -442,65 +400,23 @@ function StepKlaar({
   isSaving: boolean
 }) {
   return (
-    <div style={{ maxWidth: 480 }} className="mx-auto w-full">
-      <div
-        className="rounded-xl"
-        style={{
-          backgroundColor: '#FFFFFF',
-          border: '0.5px solid #E6E4E0',
-          padding: '28px 32px',
-        }}
+    <StepCard>
+      <StepHeading
+        label="Stap 3 van 3"
+        heading="Klaar"
+        punctuation="."
+        subtitle="Je account is ingericht. Begin met je eerste klant of offerte."
+      />
+
+      <PrimaryButton
+        onClick={onFinish}
+        isSaving={isSaving}
+        className="w-full mt-2"
       >
-        {/* Step indicator */}
-        <p
-          className="uppercase"
-          style={{
-            fontSize: 10,
-            fontWeight: 600,
-            letterSpacing: '1.5px',
-            color: '#A0A098',
-            marginBottom: 8,
-          }}
-        >
-          Stap 3 van 3
-        </p>
-
-        <h2
-          className="font-heading"
-          style={{
-            fontSize: 20,
-            fontWeight: 700,
-            color: '#191919',
-            letterSpacing: '-0.8px',
-            marginBottom: 4,
-          }}
-        >
-          Klaar.
-        </h2>
-
-        <p style={{ fontSize: 13, color: '#5A5A55', marginBottom: 24, lineHeight: 1.5 }}>
-          Je account is ingericht. Begin met je eerste klant of offerte.
-        </p>
-
-        <button
-          onClick={onFinish}
-          disabled={isSaving}
-          className="w-full flex items-center justify-center gap-2 transition-opacity disabled:opacity-40 hover:opacity-90 active:scale-[0.98]"
-          style={{
-            height: 42,
-            borderRadius: 6,
-            backgroundColor: '#1A535C',
-            color: '#FFFFFF',
-            fontSize: 13,
-            fontWeight: 600,
-          }}
-        >
-          {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
-          Aan de slag
-          <ArrowRight className="w-4 h-4" />
-        </button>
-      </div>
-    </div>
+        Aan de slag
+        <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+      </PrimaryButton>
+    </StepCard>
   )
 }
 
@@ -555,10 +471,13 @@ export function OnboardingWizard() {
       try {
         const org = await getOrganisatie(orgId)
         if (org && !cancelled) {
-          // Map old 4-step progress to new 3-step:
-          // old 0-1 → new 0, old 2 → new 0, old 3 → new 1
-          if (org.onboarding_stap && org.onboarding_stap >= 3) {
-            setCurrentStep(1) // was on "begin" step → map to step 2
+          const dbStap = org.onboarding_stap ?? 0
+          if (dbStap >= 4 || org.onboarding_compleet) {
+            setCurrentStep(2)
+          } else if (dbStap >= 3) {
+            setCurrentStep(2)
+          } else if (dbStap >= 1) {
+            setCurrentStep(1)
           }
           if (org.naam && org.naam !== 'Mijn Bedrijf') {
             setGegevens(prev => ({ ...prev, naam: org.naam || '' }))
@@ -774,47 +693,55 @@ export function OnboardingWizard() {
 
   if (!isLoaded) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#FAFAF8' }}>
-        <Loader2 className="w-6 h-6 animate-spin" style={{ color: '#A0A098' }} />
+      <div className="relative min-h-screen flex items-center justify-center bg-[#F8F7F5] overflow-hidden">
+        <ParticleField />
+        <Loader2 className="relative z-10 w-6 h-6 animate-spin text-muted-hex" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#FAFAF8' }}>
-      {/* Spectrum progress strip */}
-      <div className="px-5 pt-6 pb-4">
-        <div style={{ maxWidth: 480 }} className="mx-auto">
-          <OnboardingProgress currentStep={currentStep} />
-        </div>
+    <div className="relative min-h-screen flex flex-col bg-[#F8F7F5] overflow-hidden">
+      <ParticleField />
+
+      <div className="relative z-10 flex items-center justify-between px-6 pt-6 pb-4">
+        <Wordmark />
+        <OnboardingProgress currentStep={currentStep} />
       </div>
 
-      {/* Step content */}
-      <div className="flex-1 flex items-center justify-center p-5">
-        <div className="w-full transition-opacity duration-300">
-          {currentStep === 0 && (
-            <StepBedrijfsgegevens
-              gegevens={gegevens}
-              setGegevens={setGegevens}
-              onNext={handleStep1Next}
-              isSaving={isSaving}
-            />
-          )}
-          {currentStep === 1 && (
-            <StepBeginnen
-              keuze={startKeuze}
-              setKeuze={setStartKeuze}
-              onNext={handleStep2Next}
-              onBack={() => setCurrentStep(0)}
-              isSaving={isSaving}
-            />
-          )}
-          {currentStep === 2 && (
-            <StepKlaar
-              onFinish={handleFinish}
-              isSaving={isSaving}
-            />
-          )}
+      <div className="relative z-10 flex-1 flex items-center justify-center p-5">
+        <div className="w-full">
+          <AnimatePresence mode="wait">
+            {currentStep === 0 && (
+              <div key="step-0">
+                <StepBedrijfsgegevens
+                  gegevens={gegevens}
+                  setGegevens={setGegevens}
+                  onNext={handleStep1Next}
+                  isSaving={isSaving}
+                />
+              </div>
+            )}
+            {currentStep === 1 && (
+              <div key="step-1">
+                <StepBeginnen
+                  keuze={startKeuze}
+                  setKeuze={setStartKeuze}
+                  onNext={handleStep2Next}
+                  onBack={() => setCurrentStep(0)}
+                  isSaving={isSaving}
+                />
+              </div>
+            )}
+            {currentStep === 2 && (
+              <div key="step-2">
+                <StepKlaar
+                  onFinish={handleFinish}
+                  isSaving={isSaving}
+                />
+              </div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </div>
