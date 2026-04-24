@@ -119,3 +119,59 @@ die de app al hanteert. Zie commits `4e6bb3a1` (selector intro),
   naar een tiny helper — bv. `toSelectorValue(s)` / `fromSelectorValue(v)`
   in `src/utils/selectorValue.ts`. Kleinere diff-oppervlakte en
   consistentere boundary-handling. Drempel: ~5 call-sites.
+
+## Bewuste afwijkingen van Prompt C (medewerker-selector-standaard)
+
+### 2026-04-24 — Montage-afspraak dialog behoudt avatar-toggle-grid
+
+**Context**: Prompt C standaardiseert medewerker-selector-UIs op
+`MedewerkerSelector` (popover-based). Toegepast in C2 (ProjectsList
+team-kolom, multi-mode, `trigger="avatar-stack"`) en C3
+(NieuweTaakModal toegewezen-aan, single-mode, `trigger="input"`).
+
+**Beslissing**: de Medewerkers-selector in de Montage-afspraak dialog
+(`src/components/planning/MontagePlanningLayout.tsx:1767-1786`, de
+`flex flex-wrap` avatar-toggle-grid) blijft ongewijzigd. Expliciet
+**niet** migreren naar `MedewerkerSelector`.
+
+**Motivatie**:
+
+1. **Conflict-banner-UX is doorslaggevend**. Direct onder het
+   selector-veld leeft een live-overlap-waarschuwing
+   (`MontagePlanningLayout.tsx:1788-1816`) die `formData.monteurs` in
+   real-time leest. Met de avatar-grid ziet de gebruiker toggle +
+   overlap-feedback in één frame — oorzaak en gevolg zijn direct
+   gekoppeld. Een popover-selector dekt die banner af tijdens
+   selectie, waardoor de feedback-loop breekt. Voor een veld wiens
+   bestaansreden "double-booking voorkomen" is, is die gebroken loop
+   onacceptabel.
+2. **Use-case verschilt fundamenteel** van C2/C3. Dit is bulk-toggling
+   van meerdere monteurs binnen een afspraak-context met live
+   conflict-feedback — niet "selector-in-tabelrij" (C2) of
+   "toewijzen-in-form-input" (C3).
+3. **Team-omvang-doel (10 medewerkers) past optimaal bij grid-pattern**.
+   Grid toont alle actieve medewerkers zonder klik of scroll;
+   "recognition over recall" werkt hier beter dan een verborgen lijst.
+   Omslagpunt naar popover ligt bij >15 medewerkers.
+4. **Code-schuld is minimaal**: 20 regels JSX + 8-regel `toggleMonteur`
+   helper (`MontagePlanningLayout.tsx:613`), gebruikmakend van
+   gedeelde helpers uit `utils/medewerkerAvatar.ts`. `MedewerkerSelector`
+   heeft geen always-visible-grid-mode; er is dus geen echte duplicatie
+   met de selector — het zijn verschillende patronen voor verschillende
+   use-cases.
+
+**Onderhoud**: de grid blijft gebonden aan:
+- `getAvatarStyle` uit `src/utils/medewerkerAvatar.ts` — gedeeld met
+  `MedewerkerSelector` en weekview-lanes
+- lokale `getInitials` in `MontagePlanningLayout.tsx:164` — wordt ook
+  gebruikt op regel 889, 1410, 2091 (niet verwijderbaar zonder cascade)
+
+Wijzigingen aan het avatar-palette of initialen-logica moeten
+consistent blijven tussen grid, selector en weekview.
+
+**Herziening-triggers** (revisiteren als één van deze waar wordt):
+- Team-omvang groeit >15 medewerkers (scanbaarheid grid degradeert)
+- `MedewerkerSelector` krijgt conflict-inline-feedback-ondersteuning
+  die de popover-feedback-loop sluit
+- De Montage-dialog krijgt een fundamenteel ander UX-paradigma
+  (bv. full-screen planning-mode)
