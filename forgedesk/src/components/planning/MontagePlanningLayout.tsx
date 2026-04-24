@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef, Fragment } from "react";
 import { logger } from '../../utils/logger'
 import { useWeekWeather, getWeatherForDate } from "./WeatherDayStrip";
 import type { DayWeather } from "./WeatherDayStrip";
@@ -76,6 +76,29 @@ import { useAuth } from "@/contexts/AuthContext";
 const SWIMLANE_COLLAPSED_KEY = 'doen_planning_swimlane_collapsed';
 const SWIMLANE_UNASSIGNED_KEY = '__ongetoewezen__';
 const HIDE_EMPTY_LANES_KEY = 'doen_planning_hide_empty_lanes';
+const LANE_GROUPING_KEY = 'doen_planning_lane_grouping';
+
+type LaneGrouping = 'none' | 'rol';
+
+const ROL_GROUP_ORDER: Array<{ key: string; label: string; rollen: Medewerker['rol'][] }> = [
+  { key: 'monteur', label: 'Monteurs', rollen: ['monteur'] },
+  { key: 'productie', label: 'Productie', rollen: ['productie'] },
+  { key: 'verkoop', label: 'Verkoop', rollen: ['verkoop'] },
+  { key: 'overig', label: 'Overig', rollen: ['admin', 'medewerker'] },
+];
+
+function groupLanesByRol(monteurs: Medewerker[]): Array<{ key: string; label: string; monteurs: Medewerker[] }> {
+  const buckets = new Map<string, Medewerker[]>();
+  monteurs.forEach((m) => {
+    const group = ROL_GROUP_ORDER.find((g) => g.rollen.includes(m.rol));
+    const key = group ? group.key : 'overig';
+    if (!buckets.has(key)) buckets.set(key, []);
+    buckets.get(key)!.push(m);
+  });
+  return ROL_GROUP_ORDER
+    .filter((g) => (buckets.get(g.key)?.length ?? 0) > 0)
+    .map((g) => ({ key: g.key, label: g.label, monteurs: buckets.get(g.key) ?? [] }));
+}
 
 const STATUS_CONFIG: Record<
   MontageAfspraak["status"],
@@ -250,6 +273,18 @@ export function MontagePlanningLayout() {
       try { localStorage.setItem(HIDE_EMPTY_LANES_KEY, next ? '1' : '0'); } catch (err) { /* ignore */ }
       return next;
     });
+  }, []);
+
+  const [laneGrouping, setLaneGrouping] = useState<LaneGrouping>(() => {
+    try {
+      const raw = localStorage.getItem(LANE_GROUPING_KEY);
+      if (raw === 'rol') return 'rol';
+    } catch (err) { /* ignore */ }
+    return 'none';
+  });
+  const handleLaneGroupingChange = useCallback((value: LaneGrouping) => {
+    setLaneGrouping(value);
+    try { localStorage.setItem(LANE_GROUPING_KEY, value); } catch (err) { /* ignore */ }
   }, []);
 
   const weekDates = useMemo(() => getWeekDates(currentMonday), [currentMonday]);
@@ -1188,6 +1223,10 @@ export function MontagePlanningLayout() {
       : monteurs;
     const unassigned = weekAfspraken.filter((a) => a.monteurs.length === 0);
     const hasUnassigned = unassigned.length > 0;
+    const laneGroups = laneGrouping === 'rol'
+      ? groupLanesByRol(activeMonteurs)
+      : [{ key: '__all__', label: '', monteurs: activeMonteurs }];
+    const indexById = new Map(activeMonteurs.map((m, i) => [m.id, i] as const));
 
     return (
       <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
@@ -1212,6 +1251,18 @@ export function MontagePlanningLayout() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Select value={laneGrouping} onValueChange={(v) => handleLaneGroupingChange(v as LaneGrouping)}>
+              <SelectTrigger
+                className="hidden sm:flex h-auto w-auto gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium text-[#6B6B66] border-0 bg-transparent hover:bg-[#F0EFEC] focus:ring-0 focus:ring-offset-0"
+                title="Banen groeperen"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Geen groepering</SelectItem>
+                <SelectItem value="rol">Groeperen op rol</SelectItem>
+              </SelectContent>
+            </Select>
             <button
               onClick={toggleHideEmptyLanes}
               aria-pressed={!hideEmptyLanes}
@@ -1287,18 +1338,60 @@ export function MontagePlanningLayout() {
           })}
         </div>
 
-        {/* Monteur lanes */}
+        {/* Monteur lanes — eventueel gegroepeerd per rol (laneGroups). Wanneer
+            laneGrouping === 'none' bevat laneGroups één sentinel-groep '__all__'
+            zonder header, zodat de output identiek is aan het niet-gegroepeerde
+            gedrag. Group-collapse hergebruikt collapsedLanes met prefix 'group:'. */}
         <div className="flex-1 overflow-y-auto">
-          {activeMonteurs.map((monteur, idx) => {
-            const monteurAfspraken = weekAfspraken.filter((a) => a.monteurs.includes(monteur.id));
-            const isCollapsed = collapsedLanes.has(monteur.id);
-            const laneHasConflict = monteurAfspraken.some((a) => conflictAfspraakIds.has(a.id));
+          {laneGroups.map((group) => {
+            const isGroupedMode = group.key !== '__all__';
+            const groupCollapseKey = `group:${group.key}`;
+            const isGroupCollapsed = isGroupedMode && collapsedLanes.has(groupCollapseKey);
+            const groupAfspraakCount = group.monteurs.reduce(
+              (n, m) => n + weekAfspraken.filter((a) => a.monteurs.includes(m.id)).length, 0
+            );
+            const groupHasConflict = group.monteurs.some((m) =>
+              weekAfspraken.some((a) => a.monteurs.includes(m.id) && conflictAfspraakIds.has(a.id))
+            );
             return (
-              <div
-                key={monteur.id}
-                className={cn("grid border-b border-[#F0EFEC]", idx % 2 === 1 && "bg-[#FAFAF9]")}
-                style={{ gridTemplateColumns: '140px repeat(5, 1fr)' }}
-              >
+              <Fragment key={group.key}>
+                {isGroupedMode && (
+                  <div
+                    className="grid border-b border-[#F0EFEC] bg-[#F3F2F0]/60"
+                    style={{ gridTemplateColumns: '140px repeat(5, 1fr)' }}
+                  >
+                    <div className="flex items-center gap-1.5 px-2 py-1.5 border-r border-[#F0EFEC]">
+                      <button
+                        type="button"
+                        onClick={() => toggleLaneCollapsed(groupCollapseKey)}
+                        aria-expanded={!isGroupCollapsed}
+                        title={isGroupCollapsed ? 'Uitklappen' : 'Inklappen'}
+                        className="p-0.5 rounded hover:bg-white/50 transition-colors shrink-0"
+                      >
+                        <ChevronRight className={cn('h-3 w-3 text-[#6B6B66] transition-transform', !isGroupCollapsed && 'rotate-90')} />
+                      </button>
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-[#6B6B66] truncate flex-1">
+                        {group.label}
+                      </span>
+                      <div className="flex items-center gap-1 shrink-0">
+                        {groupHasConflict && <AlertTriangle className="h-3 w-3 text-[#C03A18]" />}
+                        <span className="text-[10px] font-mono text-[#9B9B95] tabular-nums">{groupAfspraakCount}</span>
+                      </div>
+                    </div>
+                    <div style={{ gridColumn: '2 / -1' }} className="border-l border-[#F0EFEC]" />
+                  </div>
+                )}
+                {!isGroupCollapsed && group.monteurs.map((monteur) => {
+                  const idx = indexById.get(monteur.id) ?? 0;
+                  const monteurAfspraken = weekAfspraken.filter((a) => a.monteurs.includes(monteur.id));
+                  const isCollapsed = collapsedLanes.has(monteur.id);
+                  const laneHasConflict = monteurAfspraken.some((a) => conflictAfspraakIds.has(a.id));
+                  return (
+                    <div
+                      key={monteur.id}
+                      className={cn("grid border-b border-[#F0EFEC]", idx % 2 === 1 && "bg-[#FAFAF9]")}
+                      style={{ gridTemplateColumns: '140px repeat(5, 1fr)' }}
+                    >
                 {/* Monteur label */}
                 <div className={cn(
                   "flex items-center gap-1.5 border-r border-[#F0EFEC] sticky left-0 bg-inherit z-10",
@@ -1387,6 +1480,9 @@ export function MontagePlanningLayout() {
                   );
                 })}
               </div>
+            );
+          })}
+              </Fragment>
             );
           })}
 
