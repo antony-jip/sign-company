@@ -61,6 +61,9 @@ import { AuditLogPanel } from '@/components/shared/AuditLogPanel'
 import { logWijziging } from '@/utils/auditLogger'
 import { CompletionPromptModal } from '@/components/shared/CompletionPromptModal'
 import { updateProject } from '@/services/supabaseService'
+import { isAdminUser } from '@/utils/authHelpers'
+
+const TAKEN_FILTER_OVERRIDE_KEY = 'doen_taken_filter_override'
 
 type TaakStatus = Taak['status']
 type TaakPrioriteit = Taak['prioriteit']
@@ -198,6 +201,12 @@ export function TasksLayout() {
   }, [])
   const [showCompleted, setShowCompleted] = useState(false)
   const [medewerkerFilter, setMedewerkerFilter] = useState<string>('')
+  const [filterInitialized, setFilterInitialized] = useState(false)
+
+  const handleMedewerkerFilterChange = useCallback((value: string) => {
+    setMedewerkerFilter(value)
+    try { localStorage.setItem(TAKEN_FILTER_OVERRIDE_KEY, value) } catch (err) { /* ignore */ }
+  }, [])
   const [expandedPastDays, setExpandedPastDays] = useState<Set<string>>(new Set())
   const togglePastDay = useCallback((key: string) => {
     setExpandedPastDays(prev => {
@@ -319,6 +328,19 @@ export function TasksLayout() {
       || medewerkers.find((m) => m.email?.toLowerCase() === user.email?.toLowerCase())
       || null
   }, [medewerkers, user])
+
+  useEffect(() => {
+    if (filterInitialized) return
+    if (medewerkers.length === 0) return
+    let stored: string | null = null
+    try { stored = localStorage.getItem(TAKEN_FILTER_OVERRIDE_KEY) } catch (err) { /* ignore */ }
+    if (stored !== null) {
+      setMedewerkerFilter(stored)
+    } else if (currentMedewerker && !isAdminUser(currentMedewerker, user)) {
+      setMedewerkerFilter(currentMedewerker.naam)
+    }
+    setFilterInitialized(true)
+  }, [currentMedewerker, medewerkers, user, filterInitialized])
 
   const today = useMemo(() => {
     const d = new Date()
@@ -741,7 +763,7 @@ export function TasksLayout() {
           {medewerkers.length > 0 && (
             <select
               value={medewerkerFilter}
-              onChange={(e) => setMedewerkerFilter(e.target.value)}
+              onChange={(e) => handleMedewerkerFilterChange(e.target.value)}
               className="h-7 text-[13px] rounded-md border border-[#E0DED8] bg-white px-2 max-w-[140px] text-[#6B6B66] focus:outline-none focus:border-[#1A535C]/40"
             >
               <option value="">Iedereen</option>
