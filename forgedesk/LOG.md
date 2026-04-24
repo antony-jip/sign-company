@@ -175,3 +175,37 @@ consistent blijven tussen grid, selector en weekview.
   die de popover-feedback-loop sluit
 - De Montage-dialog krijgt een fundamenteel ander UX-paradigma
   (bv. full-screen planning-mode)
+
+## 2026-04-24 — Prompt C afgesloten
+
+Prompt C (medewerker-selector-standaardisatie) afgerond in **6 commits**
+(plus 1 forward-fix + 1 docs-only).
+
+| Commit | Doel |
+|---|---|
+| `73a945e2` | C0 — avatar-palette gecentraliseerd in `utils/medewerkerAvatar.ts` |
+| `4e6bb3a1` | C1 — `MedewerkerSelector` shared component gebouwd |
+| `fff500cd` | **Forward-fix** na provider-scope-crash: selector prop-based i.p.v. context |
+| `c96d4dd7` | C2 — `ProjectsList` team-kolom multi-select gemigreerd |
+| `f3825686` | C3 — `NieuweTaakModal` single-select gemigreerd |
+| `1650894f` | C4 — `MontagePlanningLayout` dialog **bewust behouden** (zie boven) |
+| `61838364` | C5 — `CalendarLayout` multi-select gemigreerd (eerste `valueKind="id"` consumer) |
+
+**Buiten scope gehouden** (C6-C10 uit oorspronkelijk plan):
+`MedewerkerFilterCombobox`-consolidatie in `TasksLayout`, plus mogelijke
+selector-UIs in `ProjectDetail`, `ProjectTasksTable`, `TaskChecklistView`,
+`PortalenOverzicht`, en diverse single-select dropdowns.
+
+**Reden om te parkeren**: secundaire plekken, geen bewezen gebruikers-
+pijn. Andere prioriteiten (app-brede TZ-sweep, Daan AI tool-calling)
+wegen zwaarder. **Niet proactief consolideren zonder signaal** — pas
+oppakken wanneer een gebruiker een inconsistentie meldt op één van
+deze plekken.
+
+De benodigde infrastructuur voor toekomstige migraties ligt klaar:
+- `MedewerkerSelector` met `single`/`multi` modes, `valueKind="naam"|"id"`,
+  en drie trigger-varianten (`pill`, `input`, `avatar-stack`)
+- `getAvatarStyleForMedewerker` voor stable-across-app kleuren
+- Proces-les vastgelegd: provider-claims met grep verifiëren
+- Convert-helper-drempel gemarkeerd (~5 call-sites) — momenteel 3 consumers,
+  niet urgent
