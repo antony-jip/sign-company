@@ -21,7 +21,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Checkbox } from '@/components/ui/checkbox'
+import { MedewerkerSelector } from '@/components/shared/MedewerkerSelector'
 import {
   ChevronLeft,
   ChevronRight,
@@ -491,16 +491,6 @@ export function CalendarLayout() {
     } else {
       setProjectWerkbonnen([])
     }
-  }
-
-  // Toggle medewerker in form monteurs
-  const toggleFormMonteur = (id: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      monteurs: prev.monteurs.includes(id)
-        ? prev.monteurs.filter((m) => m !== id)
-        : [...prev.monteurs, id],
-    }))
   }
 
   // Switch medewerker filter (single select toggle)
@@ -1225,46 +1215,20 @@ export function CalendarLayout() {
             {/* Medewerker selectie */}
             <div className="grid gap-1.5">
               <Label className="text-xs font-medium text-muted-foreground">Medewerker</Label>
-              {medewerkers.length === 0 ? (
-                <p className="text-xs text-muted-foreground">
-                  Geen medewerkers beschikbaar. Voeg ze toe bij Team.
-                </p>
-              ) : (
-                <div className="border rounded-lg p-2 space-y-1 max-h-40 overflow-y-auto">
-                  {medewerkers.map((mw, idx) => {
-                    const isChecked = formData.monteurs.includes(mw.id)
-                    return (
-                      <label
-                        key={mw.id}
-                        className={cn(
-                          'flex items-center gap-2.5 p-1.5 rounded-lg cursor-pointer transition-colors',
-                          isChecked
-                            ? 'bg-primary/10'
-                            : 'hover:bg-background dark:hover:bg-muted'
-                        )}
-                      >
-                        <Checkbox
-                          checked={isChecked}
-                          onCheckedChange={() => toggleFormMonteur(mw.id)}
-                        />
-                        <div
-                          className="w-6 h-6 rounded-lg flex items-center justify-center text-2xs font-bold"
-                          style={getAvatarStyle(idx)}
-                        >
-                          {getInitials(mw.naam)}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{mw.naam}</p>
-                          <p className="text-2xs text-muted-foreground">{mw.functie || mw.rol}</p>
-                        </div>
-                      </label>
-                    )
-                  })}
-                </div>
-              )}
-              {formData.monteurs.length > 0 && (
+              <MedewerkerSelector
+                mode="multi"
+                medewerkers={medewerkers}
+                value={formData.monteurs}
+                onChange={(next) => setFormData((p) => ({ ...p, monteurs: next }))}
+                valueKind="id"
+                trigger="input"
+                placeholder="Selecteer medewerkers…"
+                popoverAlign="start"
+                popoverWidth={320}
+              />
+              {medewerkers.length === 0 && (
                 <p className="text-2xs text-muted-foreground">
-                  {formData.monteurs.length} medewerker{formData.monteurs.length !== 1 ? 's' : ''} geselecteerd
+                  Geen medewerkers beschikbaar. Voeg ze toe bij Team.
                 </p>
               )}
             </div>
