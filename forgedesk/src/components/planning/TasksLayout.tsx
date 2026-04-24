@@ -63,6 +63,7 @@ import { CompletionPromptModal } from '@/components/shared/CompletionPromptModal
 import { updateProject } from '@/services/supabaseService'
 import { isAdminUser } from '@/utils/authHelpers'
 import { MedewerkerFilterCombobox } from '@/components/shared/MedewerkerFilterCombobox'
+import { Checkbox } from '@/components/ui/checkbox'
 
 const TAKEN_FILTER_OVERRIDE_KEY = 'doen_taken_filter_override'
 const SWIMLANE_COLLAPSED_KEY = 'doen_taken_swimlane_collapsed'
@@ -282,6 +283,35 @@ export function TasksLayout() {
   const [draggingTaakId, setDraggingTaakId] = useState<string | null>(null)
   const [dropTarget, setDropTarget] = useState<{ dayIndex: number; hour: number } | null>(null)
 
+  // Bulk-selectie (alleen actief in swimlane-view)
+  const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set())
+
+  const toggleTaskSelected = useCallback((id: string) => {
+    setSelectedTaskIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id); else next.add(id)
+      return next
+    })
+  }, [])
+
+  const toggleTaskGroupSelected = useCallback((ids: string[]) => {
+    setSelectedTaskIds((prev) => {
+      if (ids.length === 0) return prev
+      const next = new Set(prev)
+      const allSelected = ids.every((id) => next.has(id))
+      if (allSelected) ids.forEach((id) => next.delete(id))
+      else ids.forEach((id) => next.add(id))
+      return next
+    })
+  }, [])
+
+  const clearSelection = useCallback(() => setSelectedTaskIds(new Set()), [])
+
+  const handleBulkMove = useCallback(() => { /* wired in next commit */ }, [])
+  const handleBulkAssign = useCallback(() => { /* wired in next commit */ }, [])
+  const handleBulkStatus = useCallback(() => { /* wired in next commit */ }, [])
+  const handleBulkDelete = useCallback(() => { /* wired in next commit */ }, [])
+
 
   // Now-line timer
   const [nowMinutes, setNowMinutes] = useState(() => {
@@ -363,6 +393,12 @@ export function TasksLayout() {
       || medewerkers.find((m) => m.email?.toLowerCase() === user.email?.toLowerCase())
       || null
   }, [medewerkers, user])
+
+  useEffect(() => {
+    if (viewMode !== 'swimlane' && selectedTaskIds.size > 0) {
+      setSelectedTaskIds(new Set())
+    }
+  }, [viewMode, selectedTaskIds.size])
 
   useEffect(() => {
     if (filterInitialized) return
@@ -892,6 +928,53 @@ export function TasksLayout() {
           </div>
         </div>
 
+        {viewMode === 'swimlane' && selectedTaskIds.size > 0 && (
+          <div className="flex-shrink-0 bg-[#1A535C]/[0.06] ring-1 ring-[#1A535C]/10 px-5 py-2.5 flex items-center gap-3">
+            <div className="flex items-center gap-2.5">
+              <span className="w-7 h-7 rounded-lg bg-[#1A535C] text-white flex items-center justify-center text-xs font-bold">{selectedTaskIds.size}</span>
+              <span className="text-sm font-semibold text-[#1A535C]">
+                {selectedTaskIds.size} taak{selectedTaskIds.size === 1 ? '' : 'en'} geselecteerd
+              </span>
+            </div>
+            <div className="flex-1" />
+            <button
+              onClick={handleBulkMove}
+              disabled
+              className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-semibold bg-white ring-1 ring-[#1A535C]/20 text-[#1A535C] hover:shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <CalendarIcon className="w-3 h-3" />
+              Verplaatsen
+            </button>
+            <button
+              onClick={handleBulkAssign}
+              disabled
+              className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-semibold bg-white ring-1 ring-[#1A535C]/20 text-[#1A535C] hover:shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <User2 className="w-3 h-3" />
+              Toewijzen
+            </button>
+            <button
+              onClick={handleBulkStatus}
+              disabled
+              className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-semibold bg-white ring-1 ring-[#1A535C]/20 text-[#1A535C] hover:shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <CheckCircle2 className="w-3 h-3" />
+              Status
+            </button>
+            <button
+              onClick={handleBulkDelete}
+              disabled
+              className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-semibold bg-white ring-1 ring-[#C03A18]/20 text-[#C03A18] hover:shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Trash2 className="w-3 h-3" />
+              Verwijderen
+            </button>
+            <button onClick={clearSelection} className="p-1.5 rounded-lg text-[#1A535C] hover:bg-white/40 transition-all" title="Deselecteer alles">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
         {viewMode === 'week' && (<>
         {/* === NIET VERGETEN — sticky note === */}
         <NietVergetenStrip />
@@ -1102,6 +1185,10 @@ export function TasksLayout() {
               </div>
               {weekDays.map((day, i) => {
                 const isToday = isSameDay(day, today)
+                const dayKey = day.toDateString()
+                const dayTaskIds = swimlaneLanes.flatMap((l) => (l.tasksByDay.get(dayKey) || []).map((t) => t.id))
+                const hasDayTasks = dayTaskIds.length > 0
+                const allDaySelected = hasDayTasks && dayTaskIds.every((id) => selectedTaskIds.has(id))
                 return (
                   <div
                     key={i}
@@ -1111,6 +1198,14 @@ export function TasksLayout() {
                     )}
                   >
                     <div className="flex items-center justify-center gap-1.5">
+                      {hasDayTasks && (
+                        <Checkbox
+                          checked={allDaySelected}
+                          onCheckedChange={() => toggleTaskGroupSelected(dayTaskIds)}
+                          aria-label={`Selecteer alle taken op ${DAY_LABELS[i]} ${day.getDate()}`}
+                          className="h-3.5 w-3.5"
+                        />
+                      )}
                       <span className={cn(
                         'text-[11px] uppercase tracking-widest font-semibold',
                         isToday ? 'text-[#1A535C]' : 'text-[#9B9B95]'
@@ -1136,36 +1231,47 @@ export function TasksLayout() {
               swimlaneLanes.map((lane, idx) => {
                 const isCollapsed = collapsedAssignees.has(lane.key)
                 const isUnassigned = lane.key === SWIMLANE_UNASSIGNED_KEY
+                const laneTaskIds = [...lane.tasksByDay.values()].flat().map((t) => t.id)
+                const allLaneSelected = laneTaskIds.length > 0 && laneTaskIds.every((id) => selectedTaskIds.has(id))
                 return (
                   <div key={lane.key} className="flex border-b border-[#F0EFEC] hover:bg-[#FAFAF9]/40 transition-colors">
-                    <button
-                      type="button"
-                      onClick={() => toggleAssigneeCollapsed(lane.key)}
-                      className="w-[180px] flex-shrink-0 flex items-center gap-2 px-4 py-3 text-left hover:bg-[#F3F2F0]/50 transition-colors border-r border-[#F0EFEC]"
-                    >
-                      <ChevronRight className={cn('w-3 h-3 text-[#9B9B95] transition-transform flex-shrink-0', !isCollapsed && 'rotate-90')} />
-                      {isUnassigned ? (
-                        <span className="h-6 w-6 rounded-full flex items-center justify-center text-[9px] font-bold bg-[#FDE8E2] text-[#C03A18] flex-shrink-0">
-                          ?
+                    <div className="w-[180px] flex-shrink-0 flex items-center gap-2 px-3 py-3 border-r border-[#F0EFEC]">
+                      <Checkbox
+                        checked={allLaneSelected}
+                        disabled={laneTaskIds.length === 0}
+                        onCheckedChange={() => toggleTaskGroupSelected(laneTaskIds)}
+                        aria-label={`Selecteer alle taken van ${lane.label}`}
+                        className="h-3.5 w-3.5 flex-shrink-0"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => toggleAssigneeCollapsed(lane.key)}
+                        className="flex-1 flex items-center gap-2 text-left min-w-0"
+                      >
+                        <ChevronRight className={cn('w-3 h-3 text-[#9B9B95] transition-transform flex-shrink-0', !isCollapsed && 'rotate-90')} />
+                        {isUnassigned ? (
+                          <span className="h-6 w-6 rounded-full flex items-center justify-center text-[9px] font-bold bg-[#FDE8E2] text-[#C03A18] flex-shrink-0">
+                            ?
+                          </span>
+                        ) : (
+                          <span
+                            className="h-6 w-6 rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0"
+                            style={getLaneAvatarStyle(idx)}
+                          >
+                            {getLaneInitials(lane.label)}
+                          </span>
+                        )}
+                        <span className={cn(
+                          'text-[13px] font-semibold truncate',
+                          isUnassigned ? 'text-[#C03A18]' : 'text-[#1A1A1A]'
+                        )}>
+                          {lane.label}
                         </span>
-                      ) : (
-                        <span
-                          className="h-6 w-6 rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0"
-                          style={getLaneAvatarStyle(idx)}
-                        >
-                          {getLaneInitials(lane.label)}
+                        <span className="ml-auto text-[11px] font-mono text-[#9B9B95] tabular-nums flex-shrink-0">
+                          {lane.total}
                         </span>
-                      )}
-                      <span className={cn(
-                        'text-[13px] font-semibold truncate',
-                        isUnassigned ? 'text-[#C03A18]' : 'text-[#1A1A1A]'
-                      )}>
-                        {lane.label}
-                      </span>
-                      <span className="ml-auto text-[11px] font-mono text-[#9B9B95] tabular-nums flex-shrink-0">
-                        {lane.total}
-                      </span>
-                    </button>
+                      </button>
+                    </div>
                     {weekDays.map((day, dayIdx) => {
                       const dayKey = day.toDateString()
                       const cellTasks = lane.tasksByDay.get(dayKey) || []
@@ -1183,24 +1289,44 @@ export function TasksLayout() {
                               {cellTasks.map((t) => {
                                 const pc = PRIORITEIT_COLORS[t.prioriteit]
                                 const hour = getHourFromDeadline(t.deadline ?? '')
+                                const isSelected = selectedTaskIds.has(t.id)
                                 return (
-                                  <button
+                                  <div
                                     key={t.id}
-                                    onClick={() => openEditDialog(taken.find((tt) => tt.id === t.id) || t)}
                                     className={cn(
-                                      'w-full text-left text-[11px] leading-tight truncate px-1.5 py-1 rounded-md border-l-2 hover:shadow-sm transition-shadow',
-                                      t.status === 'klaar' && 'line-through opacity-50'
+                                      'group relative flex items-start gap-1.5 rounded-md border-l-2 transition-shadow hover:shadow-sm',
+                                      isSelected && 'ring-2 ring-[#1A535C]/40'
                                     )}
-                                    style={{ borderLeftColor: pc.border, backgroundColor: pc.bg, color: pc.text }}
-                                    title={t.titel}
+                                    style={{ borderLeftColor: pc.border, backgroundColor: pc.bg }}
                                   >
-                                    {hour !== null && (
-                                      <span className="font-mono tabular-nums text-[10px] opacity-70 mr-1">
-                                        {formatHourLabel(hour)}
-                                      </span>
-                                    )}
-                                    {t.titel}
-                                  </button>
+                                    <div
+                                      className="pt-1 pl-1.5 flex-shrink-0"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <Checkbox
+                                        checked={isSelected}
+                                        onCheckedChange={() => toggleTaskSelected(t.id)}
+                                        aria-label={`Selecteer ${t.titel}`}
+                                        className="h-3 w-3"
+                                      />
+                                    </div>
+                                    <button
+                                      onClick={() => openEditDialog(taken.find((tt) => tt.id === t.id) || t)}
+                                      className={cn(
+                                        'flex-1 min-w-0 text-left text-[11px] leading-tight truncate pr-1.5 py-1',
+                                        t.status === 'klaar' && 'line-through opacity-50'
+                                      )}
+                                      style={{ color: pc.text }}
+                                      title={t.titel}
+                                    >
+                                      {hour !== null && (
+                                        <span className="font-mono tabular-nums text-[10px] opacity-70 mr-1">
+                                          {formatHourLabel(hour)}
+                                        </span>
+                                      )}
+                                      {t.titel}
+                                    </button>
+                                  </div>
                                 )
                               })}
                             </div>
