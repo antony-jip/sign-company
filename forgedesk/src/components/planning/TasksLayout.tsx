@@ -64,6 +64,7 @@ import { updateProject } from '@/services/supabaseService'
 import { isAdminUser } from '@/utils/authHelpers'
 import { MedewerkerFilterCombobox } from '@/components/shared/MedewerkerFilterCombobox'
 import { Checkbox } from '@/components/ui/checkbox'
+import { TakenBulkActionBar } from '@/components/planning/TakenBulkActionBar'
 
 const TAKEN_FILTER_OVERRIDE_KEY = 'doen_taken_filter_override'
 const SWIMLANE_COLLAPSED_KEY = 'doen_taken_swimlane_collapsed'
@@ -307,10 +308,154 @@ export function TasksLayout() {
 
   const clearSelection = useCallback(() => setSelectedTaskIds(new Set()), [])
 
-  const handleBulkMove = useCallback(() => { /* wired in next commit */ }, [])
-  const handleBulkAssign = useCallback(() => { /* wired in next commit */ }, [])
-  const handleBulkStatus = useCallback(() => { /* wired in next commit */ }, [])
-  const handleBulkDelete = useCallback(() => { /* wired in next commit */ }, [])
+  // Pending deletes: taken worden meteen uit de UI gehaald maar pas na 5s
+  // daadwerkelijk server-side verwijderd. Undo binnen die 5s annuleert de delete.
+  // Bij unmount flushen we alles direct zodat "weg en terug" niets verrast.
+  const pendingDeletesRef = useRef<Map<string, { taak: Taak; timer: ReturnType<typeof setTimeout> }>>(new Map())
+  const [bulkBusy, setBulkBusy] = useState(false)
+
+  const flushPendingDeletes = useCallback(() => {
+    const entries = [...pendingDeletesRef.current.entries()]
+    pendingDeletesRef.current.clear()
+    entries.forEach(([id, { timer }]) => {
+      clearTimeout(timer)
+      deleteTaak(id).catch((err) => logger.error('flush delete:', err))
+    })
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      flushPendingDeletes()
+    }
+  }, [flushPendingDeletes])
+
+  const runBulkUpdate = useCallback(
+    async (
+      mkPatch: (t: Taak) => Partial<Taak>,
+      label: string,
+      revertFields: (keyof Taak)[]
+    ) => {
+      const ids = [...selectedTaskIds]
+      if (ids.length === 0) return
+      const snapshot = taken.filter((t) => selectedTaskIds.has(t.id)).map((t) => ({ ...t }))
+      const patches = new Map<string, Partial<Taak>>()
+      snapshot.forEach((t) => patches.set(t.id, mkPatch(t)))
+
+      setTaken((prev) => prev.map((t) => {
+        const p = patches.get(t.id)
+        return p ? { ...t, ...p } : t
+      }))
+      clearSelection()
+      setBulkBusy(true)
+      try {
+        await Promise.all(ids.map((id) => updateTaak(id, patches.get(id)!)))
+      } catch (err) {
+        logger.error('bulk update:', err)
+        setTaken((prev) => prev.map((t) => snapshot.find((s) => s.id === t.id) || t))
+        toast.error('Kon taken niet bijwerken')
+        setBulkBusy(false)
+        return
+      }
+      setBulkBusy(false)
+
+      toast.success(`${ids.length} ${ids.length === 1 ? 'taak' : 'taken'} ${label}`, {
+        duration: 5000,
+        action: {
+          label: 'Ongedaan maken',
+          onClick: async () => {
+            setTaken((prev) => prev.map((t) => {
+              const s = snapshot.find((x) => x.id === t.id)
+              if (!s) return t
+              const revert: Partial<Taak> = {}
+              revertFields.forEach((f) => { (revert as Record<string, unknown>)[f as string] = s[f] })
+              return { ...t, ...revert }
+            }))
+            try {
+              await Promise.all(snapshot.map((s) => {
+                const revert: Partial<Taak> = {}
+                revertFields.forEach((f) => { (revert as Record<string, unknown>)[f as string] = s[f] })
+                return updateTaak(s.id, revert)
+              }))
+            } catch (err) {
+              logger.error('bulk undo:', err)
+              toast.error('Kon niet ongedaan maken')
+            }
+          },
+        },
+      })
+    },
+    [selectedTaskIds, taken, clearSelection]
+  )
+
+  const handleBulkMove = useCallback(
+    (newDate: string) => {
+      if (!newDate) return
+      return runBulkUpdate(
+        (t) => {
+          const timePart = t.deadline && t.deadline.includes('T') ? t.deadline.split('T')[1] : null
+          const deadline = timePart ? `${newDate}T${timePart}` : newDate
+          return { deadline }
+        },
+        'verplaatst',
+        ['deadline']
+      )
+    },
+    [runBulkUpdate]
+  )
+
+  const handleBulkAssign = useCallback(
+    (naam: string) => {
+      return runBulkUpdate(() => ({ toegewezen_aan: naam }), 'toegewezen', ['toegewezen_aan'])
+    },
+    [runBulkUpdate]
+  )
+
+  const handleBulkStatus = useCallback(
+    (status: TaakStatus) => {
+      return runBulkUpdate(() => ({ status }), 'bijgewerkt', ['status'])
+    },
+    [runBulkUpdate]
+  )
+
+  const handleBulkDelete = useCallback(() => {
+    const ids = [...selectedTaskIds]
+    if (ids.length === 0) return
+    const snapshot = taken.filter((t) => selectedTaskIds.has(t.id)).map((t) => ({ ...t }))
+
+    setTaken((prev) => prev.filter((t) => !selectedTaskIds.has(t.id)))
+    clearSelection()
+
+    ids.forEach((id) => {
+      const taak = snapshot.find((t) => t.id === id)
+      if (!taak) return
+      const timer = setTimeout(() => {
+        pendingDeletesRef.current.delete(id)
+        deleteTaak(id).catch((err) => logger.error('delete:', err))
+      }, 5000)
+      pendingDeletesRef.current.set(id, { taak, timer })
+    })
+
+    toast.success(`${ids.length} ${ids.length === 1 ? 'taak verwijderd' : 'taken verwijderd'}`, {
+      duration: 5000,
+      action: {
+        label: 'Ongedaan maken',
+        onClick: () => {
+          ids.forEach((id) => {
+            const entry = pendingDeletesRef.current.get(id)
+            if (entry) {
+              clearTimeout(entry.timer)
+              pendingDeletesRef.current.delete(id)
+            }
+          })
+          setTaken((prev) => {
+            const existing = new Set(prev.map((t) => t.id))
+            const missing = snapshot.filter((t) => !existing.has(t.id))
+            return missing.length > 0 ? [...prev, ...missing] : prev
+          })
+        },
+      },
+    })
+  }, [selectedTaskIds, taken, clearSelection])
 
 
   // Now-line timer
@@ -929,50 +1074,16 @@ export function TasksLayout() {
         </div>
 
         {viewMode === 'swimlane' && selectedTaskIds.size > 0 && (
-          <div className="flex-shrink-0 bg-[#1A535C]/[0.06] ring-1 ring-[#1A535C]/10 px-5 py-2.5 flex items-center gap-3">
-            <div className="flex items-center gap-2.5">
-              <span className="w-7 h-7 rounded-lg bg-[#1A535C] text-white flex items-center justify-center text-xs font-bold">{selectedTaskIds.size}</span>
-              <span className="text-sm font-semibold text-[#1A535C]">
-                {selectedTaskIds.size} taak{selectedTaskIds.size === 1 ? '' : 'en'} geselecteerd
-              </span>
-            </div>
-            <div className="flex-1" />
-            <button
-              onClick={handleBulkMove}
-              disabled
-              className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-semibold bg-white ring-1 ring-[#1A535C]/20 text-[#1A535C] hover:shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <CalendarIcon className="w-3 h-3" />
-              Verplaatsen
-            </button>
-            <button
-              onClick={handleBulkAssign}
-              disabled
-              className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-semibold bg-white ring-1 ring-[#1A535C]/20 text-[#1A535C] hover:shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <User2 className="w-3 h-3" />
-              Toewijzen
-            </button>
-            <button
-              onClick={handleBulkStatus}
-              disabled
-              className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-semibold bg-white ring-1 ring-[#1A535C]/20 text-[#1A535C] hover:shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <CheckCircle2 className="w-3 h-3" />
-              Status
-            </button>
-            <button
-              onClick={handleBulkDelete}
-              disabled
-              className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-semibold bg-white ring-1 ring-[#C03A18]/20 text-[#C03A18] hover:shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Trash2 className="w-3 h-3" />
-              Verwijderen
-            </button>
-            <button onClick={clearSelection} className="p-1.5 rounded-lg text-[#1A535C] hover:bg-white/40 transition-all" title="Deselecteer alles">
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
+          <TakenBulkActionBar
+            count={selectedTaskIds.size}
+            medewerkers={medewerkers}
+            busy={bulkBusy}
+            onMove={handleBulkMove}
+            onAssign={handleBulkAssign}
+            onStatus={handleBulkStatus}
+            onDelete={handleBulkDelete}
+            onClear={clearSelection}
+          />
         )}
 
         {viewMode === 'week' && (<>
