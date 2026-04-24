@@ -1022,6 +1022,27 @@ export function TasksLayout() {
           {/* Spacer */}
           <div className="flex-1 min-w-0" />
 
+          {/* Mijn-taken snelknop */}
+          {currentMedewerker && medewerkers.length > 0 && (() => {
+            const mijnActief = medewerkerFilter === currentMedewerker.naam
+            return (
+              <button
+                type="button"
+                aria-pressed={mijnActief}
+                onClick={() => handleMedewerkerFilterChange(mijnActief ? '' : currentMedewerker.naam)}
+                title="Mijn taken"
+                className={cn(
+                  'h-7 w-7 rounded-full flex items-center justify-center text-[10px] font-bold transition-colors flex-shrink-0',
+                  mijnActief
+                    ? 'bg-[#1A535C]/[0.12] text-[#1A535C] ring-2 ring-[#1A535C]/30'
+                    : 'border border-[#E0DED8] text-[#6B6B66] hover:border-[#1A535C]/40 hover:text-[#1A535C]'
+                )}
+              >
+                {getLaneInitials(currentMedewerker.naam)}
+              </button>
+            )
+          })()}
+
           {/* Medewerker filter */}
           {medewerkers.length > 0 && (
             <MedewerkerFilterCombobox
