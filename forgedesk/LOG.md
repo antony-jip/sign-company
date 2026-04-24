@@ -109,3 +109,13 @@ al-gefetchte state door. Dit matcht `MedewerkerFilterCombobox` (dat
 nooit context gebruikte) en respecteert de per-route data-boundaries
 die de app al hanteert. Zie commits `4e6bb3a1` (selector intro),
 `c96d4dd7` (eerste consumer → crash) en `fff500cd` (prop-based fix).
+
+### Tech-debt aandachtspunten (niet urgent, wel onthouden)
+
+- **Value-converter `string ↔ string | null` rondom `MedewerkerSelector`**:
+  consumers vertalen aan weerskanten (`value={x || null}` + `onChange={v =>
+  setX(v ?? '')}`). Nu in ProjectsList, NieuweTaakModal, en impliciet in
+  filter-paden. Als dit bij migraties C4-C10 nog 2-3x opduikt, extraheren
+  naar een tiny helper — bv. `toSelectorValue(s)` / `fromSelectorValue(v)`
+  in `src/utils/selectorValue.ts`. Kleinere diff-oppervlakte en
+  consistentere boundary-handling. Drempel: ~5 call-sites.
