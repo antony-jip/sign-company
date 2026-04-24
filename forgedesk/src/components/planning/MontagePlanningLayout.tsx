@@ -75,6 +75,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const SWIMLANE_COLLAPSED_KEY = 'doen_planning_swimlane_collapsed';
 const SWIMLANE_UNASSIGNED_KEY = '__ongetoewezen__';
+const HIDE_EMPTY_LANES_KEY = 'doen_planning_hide_empty_lanes';
 
 const STATUS_CONFIG: Record<
   MontageAfspraak["status"],
@@ -232,6 +233,21 @@ export function MontagePlanningLayout() {
       const next = new Set(prev);
       if (next.has(key)) next.delete(key); else next.add(key);
       try { localStorage.setItem(SWIMLANE_COLLAPSED_KEY, JSON.stringify([...next])); } catch (err) { /* ignore */ }
+      return next;
+    });
+  }, []);
+
+  const [hideEmptyLanes, setHideEmptyLanes] = useState<boolean>(() => {
+    try {
+      const raw = localStorage.getItem(HIDE_EMPTY_LANES_KEY);
+      if (raw !== null) return raw === '1';
+    } catch (err) { /* ignore */ }
+    return true;
+  });
+  const toggleHideEmptyLanes = useCallback(() => {
+    setHideEmptyLanes((prev) => {
+      const next = !prev;
+      try { localStorage.setItem(HIDE_EMPTY_LANES_KEY, next ? '1' : '0'); } catch (err) { /* ignore */ }
       return next;
     });
   }, []);
@@ -1167,9 +1183,9 @@ export function MontagePlanningLayout() {
   // === MULTI-MONTEUR TIMELINE (horizontal lanes per monteur) ===
   function renderMultiMonteurView() {
     const werkdagen = weekDates.slice(0, 5);
-    const activeMonteurs = monteurs.filter((m) =>
-      weekAfspraken.some((a) => a.monteurs.includes(m.id))
-    );
+    const activeMonteurs = hideEmptyLanes
+      ? monteurs.filter((m) => weekAfspraken.some((a) => a.monteurs.includes(m.id)))
+      : monteurs;
     const unassigned = weekAfspraken.filter((a) => a.monteurs.length === 0);
     const hasUnassigned = unassigned.length > 0;
 
@@ -1196,6 +1212,20 @@ export function MontagePlanningLayout() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={toggleHideEmptyLanes}
+              aria-pressed={!hideEmptyLanes}
+              title={hideEmptyLanes ? 'Toon ook medewerkers zonder afspraken deze week' : 'Verberg lege banen deze week'}
+              className={cn(
+                "hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium transition-all",
+                !hideEmptyLanes
+                  ? "text-[#1A535C] bg-[#1A535C]/[0.08] hover:bg-[#1A535C]/[0.12]"
+                  : "text-[#6B6B66] hover:bg-[#F0EFEC]"
+              )}
+            >
+              <Eye className="h-3.5 w-3.5" />
+              Alle banen
+            </button>
             <button onClick={printWeekplanning} className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium text-[#6B6B66] hover:bg-[#F0EFEC] transition-all">
               <Printer className="h-3.5 w-3.5" />
               Print week
