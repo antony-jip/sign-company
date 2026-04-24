@@ -61,12 +61,12 @@ import { AuditLogPanel } from '@/components/shared/AuditLogPanel'
 import { logWijziging } from '@/utils/auditLogger'
 import { CompletionPromptModal } from '@/components/shared/CompletionPromptModal'
 import { updateProject } from '@/services/supabaseService'
-import { isAdminUser } from '@/utils/authHelpers'
 import { MedewerkerFilterCombobox } from '@/components/shared/MedewerkerFilterCombobox'
 import { Checkbox } from '@/components/ui/checkbox'
 import { TakenBulkActionBar } from '@/components/planning/TakenBulkActionBar'
 
 const TAKEN_FILTER_OVERRIDE_KEY = 'doen_taken_filter_override'
+const TAKEN_FILTER_MIGRATION_V2 = 'doen_taken_filter_migration_v2'
 const SWIMLANE_COLLAPSED_KEY = 'doen_taken_swimlane_collapsed'
 const SWIMLANE_UNASSIGNED_KEY = '__ongetoewezen__'
 
@@ -548,12 +548,16 @@ export function TasksLayout() {
   useEffect(() => {
     if (filterInitialized) return
     if (medewerkers.length === 0) return
+    try {
+      if (localStorage.getItem(TAKEN_FILTER_MIGRATION_V2) !== '1') {
+        localStorage.removeItem(TAKEN_FILTER_OVERRIDE_KEY)
+        localStorage.setItem(TAKEN_FILTER_MIGRATION_V2, '1')
+      }
+    } catch (err) { /* ignore */ }
     let stored: string | null = null
     try { stored = localStorage.getItem(TAKEN_FILTER_OVERRIDE_KEY) } catch (err) { /* ignore */ }
     if (stored !== null) {
       setMedewerkerFilter(stored)
-    } else if (currentMedewerker && !isAdminUser(currentMedewerker, user)) {
-      setMedewerkerFilter(currentMedewerker.naam)
     }
     setFilterInitialized(true)
   }, [currentMedewerker, medewerkers, user, filterInitialized])
