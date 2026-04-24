@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState, useEffect } from 'react'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Input } from '@/components/ui/input'
-import { Check, ChevronDown, Search, Users, X } from 'lucide-react'
+import { Check, ChevronDown, Search, UserPlus, Users, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Medewerker } from '@/types'
 import { useDashboardData } from '@/contexts/DashboardDataContext'
@@ -9,7 +9,7 @@ import { getAvatarStyleForMedewerker } from '@/utils/medewerkerAvatar'
 
 type MedewerkerRol = Medewerker['rol']
 type ValueKind = 'id' | 'naam'
-type Trigger = 'pill' | 'input'
+type Trigger = 'pill' | 'input' | 'avatar-stack'
 
 interface CommonProps {
   valueKind?: ValueKind
@@ -255,23 +255,89 @@ export function MedewerkerSelector(props: MedewerkerSelectorProps) {
 
   const contentWidthStyle = popoverWidth ? { width: popoverWidth } : undefined
 
+  const renderAvatarStackContent = () => {
+    if (mode === 'multi') {
+      const totalSelected = selectedMulti.length + orphanMultiValues.length
+      if (totalSelected === 0) {
+        return <UserPlus className="w-3.5 h-3.5 text-[#C0BDB8] group-hover:text-[#9B9B95] transition-colors" />
+      }
+      const avatarSlice = selectedMulti.slice(0, 3)
+      const overflow = totalSelected - avatarSlice.length
+      return (
+        <div className="flex items-center -space-x-1.5">
+          {avatarSlice.map((m) => (
+            <span
+              key={m.id}
+              title={m.naam}
+              className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold uppercase ring-2 ring-white select-none"
+              style={getAvatarStyleForMedewerker(m, pool)}
+            >
+              {getInitials(m.naam)}
+            </span>
+          ))}
+          {overflow > 0 && (
+            <span className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-mono font-medium bg-[#F0EFEC] text-[#6B6B66] ring-2 ring-white">
+              +{overflow}
+            </span>
+          )}
+        </div>
+      )
+    }
+    if (selectedSingle) {
+      return (
+        <span
+          title={selectedSingle.naam}
+          className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold uppercase ring-2 ring-white"
+          style={getAvatarStyleForMedewerker(selectedSingle, pool)}
+        >
+          {getInitials(selectedSingle.naam)}
+        </span>
+      )
+    }
+    if (orphanSingleValue) {
+      return (
+        <span
+          title={`${orphanSingleValue} (niet meer actief)`}
+          className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold bg-[#F0EFEC] text-[#9B9B95] uppercase ring-2 ring-white"
+        >
+          {getInitials(orphanSingleValue)}
+        </span>
+      )
+    }
+    return <UserPlus className="w-3.5 h-3.5 text-[#C0BDB8] group-hover:text-[#9B9B95] transition-colors" />
+  }
+
   return (
     <Popover open={open} onOpenChange={disabled ? undefined : setOpen}>
       <PopoverTrigger asChild>
-        <button
-          id={id}
-          type="button"
-          disabled={disabled}
-          className={cn(
-            'inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:border-[#1A535C]/40 hover:border-[#1A535C]/40 disabled:opacity-60 disabled:cursor-not-allowed',
-            triggerBaseClasses,
-            error && 'border-[#C03A18]/60',
-            className
-          )}
-        >
-          {renderTriggerContent()}
-          <ChevronDown className="h-3 w-3 text-[#9B9B95] shrink-0 ml-auto" />
-        </button>
+        {trigger === 'avatar-stack' ? (
+          <button
+            id={id}
+            type="button"
+            disabled={disabled}
+            className={cn(
+              'flex items-center gap-1 group rounded-lg px-1 py-0.5 hover:bg-[#F8F7F5] transition-colors disabled:opacity-60 disabled:cursor-not-allowed',
+              className
+            )}
+          >
+            {renderAvatarStackContent()}
+          </button>
+        ) : (
+          <button
+            id={id}
+            type="button"
+            disabled={disabled}
+            className={cn(
+              'inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:border-[#1A535C]/40 hover:border-[#1A535C]/40 disabled:opacity-60 disabled:cursor-not-allowed',
+              triggerBaseClasses,
+              error && 'border-[#C03A18]/60',
+              className
+            )}
+          >
+            {renderTriggerContent()}
+            <ChevronDown className="h-3 w-3 text-[#9B9B95] shrink-0 ml-auto" />
+          </button>
+        )}
       </PopoverTrigger>
       <PopoverContent align={popoverAlign} className="w-64 p-2" style={contentWidthStyle}>
         <div className="relative mb-2">

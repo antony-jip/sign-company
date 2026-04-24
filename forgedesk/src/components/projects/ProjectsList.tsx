@@ -21,8 +21,6 @@ import {
   Copy,
   Archive,
   ListPlus,
-  UserPlus,
-  Check,
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -34,7 +32,7 @@ import { EmptyState } from '@/components/ui/empty-state'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from '@/components/ui/dialog'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { MedewerkerSelector } from '@/components/shared/MedewerkerSelector'
 import { Button } from '@/components/ui/button'
 import { getFase } from '@/utils/projectFases'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -240,22 +238,12 @@ export function ProjectsList() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [navigateWithTab])
 
-  function getMedewerkerNaam(identifier: string): string {
-    const mw = medewerkers.find((m) => m.id === identifier || m.user_id === identifier || m.naam === identifier)
-    return mw?.naam || identifier
-  }
-
-  async function toggleTeamLid(projectId: string, medewerkerNaam: string) {
-    const project = projecten.find((p) => p.id === projectId)
-    if (!project) return
-    const huidige = project.team_leden || []
-    const isLid = huidige.includes(medewerkerNaam)
-    const nieuw = isLid ? huidige.filter((l) => l !== medewerkerNaam) : [...huidige, medewerkerNaam]
+  async function setTeamLeden(projectId: string, team_leden: string[]) {
     try {
-      const updated = await updateProject(projectId, { team_leden: nieuw })
+      const updated = await updateProject(projectId, { team_leden })
       setProjecten((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
     } catch {
-      toast.error('Kon teamlid niet wijzigen')
+      toast.error('Kon team niet wijzigen')
     }
   }
 
@@ -1161,82 +1149,14 @@ export function ProjectsList() {
 
                           {/* Team */}
                           <td className="py-3.5 pr-4 hidden xl:table-cell" onClick={(e) => e.stopPropagation()}>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <button className="flex items-center gap-1 group/team rounded-lg px-1 -mx-1 py-0.5 hover:bg-[#F8F7F5] transition-colors">
-                                  {project.team_leden && project.team_leden.length > 0 ? (
-                                    <div className="flex items-center -space-x-1.5">
-                                      {project.team_leden.slice(0, 3).map((lid, j) => {
-                                        const naam = getMedewerkerNaam(lid)
-                                        const c = naam.charCodeAt(0) % 5
-                                        const colors = [
-                                          'bg-[#E8F2EC] text-[#3A7D52] ring-white',
-                                          'bg-[#E8EEF9] text-[#3A5A9A] ring-white',
-                                          'bg-[#F5F2E8] text-[#8A7A4A] ring-white',
-                                          'bg-[#F0EFEC] text-[#6B6B66] ring-white',
-                                          'bg-[#EDE8F4] text-[#6A5A8A] ring-white',
-                                        ]
-                                        return (
-                                          <span
-                                            key={j}
-                                            title={naam}
-                                            className={cn('w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold uppercase ring-2 select-none', colors[c])}
-                                          >
-                                            {naam.charAt(0)}
-                                          </span>
-                                        )
-                                      })}
-                                      {project.team_leden.length > 3 && (
-                                        <span className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-mono font-medium bg-[#F0EFEC] text-[#6B6B66] ring-2 ring-white">
-                                          +{project.team_leden.length - 3}
-                                        </span>
-                                      )}
-                                    </div>
-                                  ) : (
-                                    <UserPlus className="w-3.5 h-3.5 text-[#C0BDB8] group-hover/team:text-[#9B9B95] transition-colors" />
-                                  )}
-                                </button>
-                              </PopoverTrigger>
-                              <PopoverContent align="start" className="w-56 p-1.5" onClick={(e) => e.stopPropagation()}>
-                                <div className="px-2 py-1.5 text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Team toewijzen</div>
-                                <div className="max-h-[200px] overflow-y-auto">
-                                  {medewerkers.filter((m) => m.status === 'actief').map((mw) => {
-                                    const isLid = (project.team_leden || []).includes(mw.naam)
-                                    return (
-                                      <button
-                                        key={mw.id}
-                                        onClick={() => toggleTeamLid(project.id, mw.naam)}
-                                        className={cn(
-                                          'flex items-center gap-2.5 w-full px-2 py-1.5 rounded-md text-left text-[13px] transition-colors',
-                                          isLid ? 'bg-[#1A535C]/[0.06] text-[#1A1A1A]' : 'text-[#4A4A46] hover:bg-[#F8F7F5]'
-                                        )}
-                                      >
-                                        {(() => {
-                                          const c = mw.naam.charCodeAt(0) % 5
-                                          const colors = [
-                                            'bg-[#E8F2EC] text-[#3A7D52]',
-                                            'bg-[#E8EEF9] text-[#3A5A9A]',
-                                            'bg-[#F5F2E8] text-[#8A7A4A]',
-                                            'bg-[#F0EFEC] text-[#6B6B66]',
-                                            'bg-[#EDE8F4] text-[#6A5A8A]',
-                                          ]
-                                          return (
-                                            <span className={cn('w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold uppercase flex-shrink-0', colors[c])}>
-                                              {mw.naam.charAt(0)}
-                                            </span>
-                                          )
-                                        })()}
-                                        <div className="min-w-0 flex-1">
-                                          <span className="block truncate font-medium">{mw.naam}</span>
-                                          {mw.functie && <span className="block truncate text-[11px] text-[#9B9B95]">{mw.functie}</span>}
-                                        </div>
-                                        {isLid && <Check className="w-3.5 h-3.5 text-[#1A535C] flex-shrink-0" />}
-                                      </button>
-                                    )
-                                  })}
-                                </div>
-                              </PopoverContent>
-                            </Popover>
+                            <MedewerkerSelector
+                              mode="multi"
+                              value={project.team_leden || []}
+                              onChange={(next) => setTeamLeden(project.id, next)}
+                              trigger="avatar-stack"
+                              placeholder="Team toewijzen"
+                              popoverAlign="start"
+                            />
                           </td>
 
                         </tr>
