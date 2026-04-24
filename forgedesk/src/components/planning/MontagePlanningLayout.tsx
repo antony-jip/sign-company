@@ -1291,8 +1291,13 @@ export function MontagePlanningLayout() {
           </div>
         </div>
 
+        {/* Weather strip + dag-headers staan buiten de onderstaande overflow-y-auto,
+            dus blijven ze automatisch zichtbaar tijdens verticaal scrollen door lanes.
+            De `sticky top-0` hieronder is een defensieve safety-net voor het geval een
+            toekomstige refactor ze binnen de scroll-container plaatst — dan blijft het
+            gedrag hetzelfde zonder aanvullende wijziging. */}
         {/* Weather strip */}
-        <div className="grid border-b border-[#F0EFEC] bg-[#F8F7F5]" style={{ gridTemplateColumns: '140px repeat(5, 1fr)' }}>
+        <div className="grid sticky top-0 z-10 border-b border-[#F0EFEC] bg-[#F8F7F5]" style={{ gridTemplateColumns: '140px repeat(5, 1fr)' }}>
           <div />
           {werkdagen.map((date) => {
             const w = getWeatherForDate(weather, date);
@@ -1305,7 +1310,7 @@ export function MontagePlanningLayout() {
         </div>
 
         {/* Day column headers */}
-        <div className="grid border-b border-[#F0EFEC]" style={{ gridTemplateColumns: '140px repeat(5, 1fr)' }}>
+        <div className="grid sticky top-0 z-10 bg-white border-b border-[#F0EFEC]" style={{ gridTemplateColumns: '140px repeat(5, 1fr)' }}>
           <div className="py-1.5 px-3 bg-white">
             <span className="text-[11px] font-semibold text-[#9B9B95] uppercase tracking-widest">Monteur</span>
           </div>
