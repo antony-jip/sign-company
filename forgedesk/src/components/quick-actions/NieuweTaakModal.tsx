@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
-import { Calendar, User } from 'lucide-react'
+import { Calendar } from 'lucide-react'
 import { logger } from '@/utils/logger'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { createTaak, getProjecten, getMedewerkers } from '@/services/supabaseService'
 import type { Project, Medewerker } from '@/types'
 import { toast } from 'sonner'
+import { MedewerkerSelector } from '@/components/shared/MedewerkerSelector'
 
 interface Props {
   open: boolean
@@ -87,19 +88,16 @@ export function NieuweTaakModal({ open, onOpenChange }: Props) {
               </select>
             </div>
 
-            <div className="relative">
-              <User className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#9B9B95] pointer-events-none" />
-              <select
-                value={toegewezenAan}
-                onChange={e => setToegewezenAan(e.target.value)}
-                className={`w-full pl-8 ${selectClass}`}
-              >
-                <option value="">Niet toegewezen</option>
-                {medewerkers.map(m => (
-                  <option key={m.id} value={m.naam}>{m.naam}</option>
-                ))}
-              </select>
-            </div>
+            <MedewerkerSelector
+              mode="single"
+              medewerkers={medewerkers}
+              value={toegewezenAan || null}
+              onChange={(v) => setToegewezenAan(v ?? '')}
+              valueKind="naam"
+              trigger="input"
+              allLabel="Niet toegewezen"
+              placeholder="Zoek medewerker…"
+            />
           </div>
 
           <div className="flex items-center gap-3">
