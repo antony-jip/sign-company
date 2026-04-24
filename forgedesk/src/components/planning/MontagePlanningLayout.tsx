@@ -1307,55 +1307,55 @@ export function MontagePlanningLayout() {
                     </div>
                   )}
                 </div>
-                {/* Day cells */}
-                {isCollapsed ? (
-                  <div
-                    style={{ gridColumn: '2 / -1' }}
-                    className="border-l border-[#F0EFEC] min-h-[30px] flex items-center"
-                  />
-                ) : (
-                  werkdagen.map((date) => {
-                    const dateStr = formatDate(date);
-                    const isToday = dateStr === todayStr;
-                    const feestdagInfo = isFeestdag(dateStr, feestdagen);
-                    const dayAfspraken = monteurAfspraken
-                      .filter((a) => a.datum === dateStr)
-                      .sort((a, b) => a.start_tijd.localeCompare(b.start_tijd));
-                    const dragKey = `${monteur.id}-${dateStr}`;
+                {/* Day cells — collapsed keeps compact drop-targets so drop op ingeklapte
+                    baan (Optie B: auto-expand + toast) werkt per dag, net als uitgeklapt. */}
+                {werkdagen.map((date) => {
+                  const dateStr = formatDate(date);
+                  const isToday = dateStr === todayStr;
+                  const feestdagInfo = isFeestdag(dateStr, feestdagen);
+                  const dayAfspraken = monteurAfspraken
+                    .filter((a) => a.datum === dateStr)
+                    .sort((a, b) => a.start_tijd.localeCompare(b.start_tijd));
+                  const dragKey = `${monteur.id}-${dateStr}`;
 
-                    return (
-                      <div
-                        key={dateStr}
-                        className={cn(
-                          "border-l border-[#F0EFEC] p-1 min-h-[60px] transition-all duration-200",
-                          feestdagInfo ? "bg-[#FDE8E2]/15" : isToday && "bg-[#1A535C]/[0.02]",
-                          !feestdagInfo && dragOverDate === dragKey && "bg-[#1A535C]/[0.08] ring-2 ring-[#1A535C]/25 ring-inset",
-                          feestdagInfo && dragOverDate === dragKey && "ring-2 ring-[#C03A18]/30 ring-inset"
-                        )}
-                        onDragOver={(e) => {
-                          e.preventDefault();
-                          e.dataTransfer.dropEffect = feestdagInfo ? "none" : draggingProjectId ? "copy" : "move";
-                          if (dragOverDate !== dragKey) setDragOverDate(dragKey);
-                        }}
-                        onDragLeave={(e) => {
-                          if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragOverDate(null);
-                        }}
-                        onDrop={(e) => {
-                          e.preventDefault();
-                          setDragOverDate(null);
-                          if (feestdagInfo) {
-                            toast.error(`Kan niet inplannen op ${feestdagInfo.naam}`);
-                            return;
-                          }
-                          const id = e.dataTransfer.getData("text/plain");
-                          if (id) handleDragDrop(id, dateStr);
-                        }}
-                      >
-                        {dayAfspraken.map((a) => renderMontageCard(a))}
-                      </div>
-                    );
-                  })
-                )}
+                  return (
+                    <div
+                      key={dateStr}
+                      className={cn(
+                        "border-l border-[#F0EFEC] transition-all duration-200",
+                        isCollapsed ? "min-h-[30px]" : "p-1 min-h-[60px]",
+                        feestdagInfo ? "bg-[#FDE8E2]/15" : isToday && "bg-[#1A535C]/[0.02]",
+                        !feestdagInfo && dragOverDate === dragKey && "bg-[#1A535C]/[0.08] ring-2 ring-[#1A535C]/25 ring-inset",
+                        feestdagInfo && dragOverDate === dragKey && "ring-2 ring-[#C03A18]/30 ring-inset"
+                      )}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = feestdagInfo ? "none" : draggingProjectId ? "copy" : "move";
+                        if (dragOverDate !== dragKey) setDragOverDate(dragKey);
+                      }}
+                      onDragLeave={(e) => {
+                        if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragOverDate(null);
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        setDragOverDate(null);
+                        if (feestdagInfo) {
+                          toast.error(`Kan niet inplannen op ${feestdagInfo.naam}`);
+                          return;
+                        }
+                        const id = e.dataTransfer.getData("text/plain");
+                        if (!id) return;
+                        if (isCollapsed) {
+                          toggleLaneCollapsed(monteur.id);
+                          toast.info(`Baan uitgeklapt: ${monteur.naam}`);
+                        }
+                        handleDragDrop(id, dateStr);
+                      }}
+                    >
+                      {!isCollapsed && dayAfspraken.map((a) => renderMontageCard(a))}
+                    </div>
+                  );
+                })}
               </div>
             );
           })}
