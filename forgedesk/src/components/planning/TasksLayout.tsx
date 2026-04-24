@@ -65,6 +65,25 @@ import { isAdminUser } from '@/utils/authHelpers'
 import { MedewerkerFilterCombobox } from '@/components/shared/MedewerkerFilterCombobox'
 
 const TAKEN_FILTER_OVERRIDE_KEY = 'doen_taken_filter_override'
+const SWIMLANE_COLLAPSED_KEY = 'doen_taken_swimlane_collapsed'
+const SWIMLANE_UNASSIGNED_KEY = '__ongetoewezen__'
+
+const SWIMLANE_AVATAR_PALETTE = [
+  { bg: '#E8F2EC', text: '#3A7D52' },
+  { bg: '#E8EEF9', text: '#3A5A9A' },
+  { bg: '#F5F2E8', text: '#8A7A4A' },
+  { bg: '#F0EFEC', text: '#6B6B66' },
+  { bg: '#EDE8F4', text: '#6A5A8A' },
+]
+
+function getLaneInitials(naam: string): string {
+  return naam.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2)
+}
+
+function getLaneAvatarStyle(index: number) {
+  const p = SWIMLANE_AVATAR_PALETTE[index % SWIMLANE_AVATAR_PALETTE.length]
+  return { backgroundColor: p.bg, color: p.text }
+}
 
 type TaakStatus = Taak['status']
 type TaakPrioriteit = Taak['prioriteit']
@@ -188,7 +207,22 @@ export function TasksLayout() {
 
   const [weekOffset, setWeekOffset] = useState(0)
   const [monthOffset, setMonthOffset] = useState(0)
-  const [viewMode, setViewMode] = useState<'week' | 'maand'>('week')
+  const [viewMode, setViewMode] = useState<'week' | 'maand' | 'swimlane'>('week')
+  const [collapsedAssignees, setCollapsedAssignees] = useState<Set<string>>(() => {
+    try {
+      const raw = localStorage.getItem(SWIMLANE_COLLAPSED_KEY)
+      if (raw) return new Set(JSON.parse(raw))
+    } catch (err) { /* ignore */ }
+    return new Set()
+  })
+  const toggleAssigneeCollapsed = useCallback((key: string) => {
+    setCollapsedAssignees((prev) => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key); else next.add(key)
+      try { localStorage.setItem(SWIMLANE_COLLAPSED_KEY, JSON.stringify([...next])) } catch (err) { /* ignore */ }
+      return next
+    })
+  }, [])
   const [hourHeight, setHourHeight] = useState(() => {
     try { const v = parseInt(localStorage.getItem(ZOOM_STORAGE_KEY) || '', 10); return v >= HOUR_HEIGHT_MIN && v <= HOUR_HEIGHT_MAX ? v : HOUR_HEIGHT_DEFAULT } catch (err) { return HOUR_HEIGHT_DEFAULT }
   })
@@ -386,26 +420,20 @@ export function TasksLayout() {
 
   const monthLabel = `${MONTH_NAMES[monthDate.getMonth()]} ${monthDate.getFullYear()}`
 
+  const filteredTaken = useMemo(() => {
+    let list = taken
+    if (taskFilter === 'project') list = list.filter((t) => !!t.project_id)
+    else if (taskFilter === 'los') list = list.filter((t) => !t.project_id)
+    if (medewerkerFilter) list = list.filter((t) => t.toegewezen_aan === medewerkerFilter)
+    return list
+  }, [taken, taskFilter, medewerkerFilter])
+
   // Tasks grouped by day key
   const tasksByDay = useMemo(() => {
     const map = new Map<string, Taak[]>()
     weekDays.forEach((d) => map.set(d.toDateString(), []))
 
-    let activeTaken = [...taken]
-
-    // Apply task type filter
-    if (taskFilter === 'project') {
-      activeTaken = activeTaken.filter((t) => !!t.project_id)
-    } else if (taskFilter === 'los') {
-      activeTaken = activeTaken.filter((t) => !t.project_id)
-    }
-
-    // Apply medewerker filter
-    if (medewerkerFilter) {
-      activeTaken = activeTaken.filter((t) => t.toegewezen_aan === medewerkerFilter)
-    }
-
-    activeTaken.forEach((t) => {
+    filteredTaken.forEach((t) => {
       if (!t.deadline) return
       const deadline = new Date(t.deadline ?? "")
       deadline.setHours(0, 0, 0, 0)
@@ -420,26 +448,20 @@ export function TasksLayout() {
       tasks.sort((a, b) => {
         const aHour = getHourFromDeadline(a.deadline ?? "")
         const bHour = getHourFromDeadline(b.deadline ?? "")
-        // Scheduled tasks first, sorted by hour
         if (aHour !== null && bHour !== null) return aHour - bHour
         if (aHour !== null) return -1
         if (bHour !== null) return 1
-        // Unscheduled by priority
         return (PRIORITEIT_ORDER[b.prioriteit] || 0) - (PRIORITEIT_ORDER[a.prioriteit] || 0)
       })
     })
 
     return map
-  }, [taken, weekDays, taskFilter, medewerkerFilter])
+  }, [filteredTaken, weekDays])
 
   // Tasks grouped by day for month view
   const allTasksByDay = useMemo(() => {
     const map = new Map<string, Taak[]>()
-    let activeTaken = [...taken]
-    if (taskFilter === 'project') activeTaken = activeTaken.filter((t) => !!t.project_id)
-    else if (taskFilter === 'los') activeTaken = activeTaken.filter((t) => !t.project_id)
-    if (medewerkerFilter) activeTaken = activeTaken.filter((t) => t.toegewezen_aan === medewerkerFilter)
-    activeTaken.forEach((t) => {
+    filteredTaken.forEach((t) => {
       if (!t.deadline) return
       const d = new Date(t.deadline)
       d.setHours(0, 0, 0, 0)
@@ -448,21 +470,76 @@ export function TasksLayout() {
       map.get(key)!.push(t)
     })
     return map
-  }, [taken, taskFilter, medewerkerFilter])
+  }, [filteredTaken])
 
   // Tasks without deadline (ongepland)
   const unscheduledTaken = useMemo(() => {
-    let activeTaken = [...taken]
-    if (taskFilter === 'project') activeTaken = activeTaken.filter((t) => !!t.project_id)
-    else if (taskFilter === 'los') activeTaken = activeTaken.filter((t) => !t.project_id)
-    if (medewerkerFilter) activeTaken = activeTaken.filter((t) => t.toegewezen_aan === medewerkerFilter)
-    return activeTaken.filter((t) => !t.deadline).sort((a, b) => {
-      // Afgeronde taken altijd onderaan
+    return filteredTaken.filter((t) => !t.deadline).sort((a, b) => {
       if (a.status === 'klaar' && b.status !== 'klaar') return 1
       if (a.status !== 'klaar' && b.status === 'klaar') return -1
       return (PRIORITEIT_ORDER[b.prioriteit] || 0) - (PRIORITEIT_ORDER[a.prioriteit] || 0)
     })
-  }, [taken, taskFilter, medewerkerFilter])
+  }, [filteredTaken])
+
+  // Swimlane-view: taken gegroepeerd per toegewezen persoon binnen de huidige week.
+  // v1 bewust zonder drag & drop — die blijft alleen in week/maand-view, omdat een
+  // swimlane-drop 2D is (persoon + dag) en nu niet nodig voor het overzicht/bulk-doel.
+  const swimlaneLanes = useMemo(() => {
+    const lanes: { key: string; label: string; tasksByDay: Map<string, Taak[]>; total: number }[] = []
+    const dayKeys = weekDays.map((d) => d.toDateString())
+
+    const makeEmptyDayMap = () => {
+      const m = new Map<string, Taak[]>()
+      dayKeys.forEach((k) => m.set(k, []))
+      return m
+    }
+
+    const laneKeys: string[] = []
+    if (medewerkerFilter) {
+      laneKeys.push(medewerkerFilter)
+    } else {
+      laneKeys.push(SWIMLANE_UNASSIGNED_KEY)
+      medewerkers.filter((m) => m.status === 'actief').forEach((m) => {
+        if (!laneKeys.includes(m.naam)) laneKeys.push(m.naam)
+      })
+      filteredTaken.forEach((t) => {
+        const key = t.toegewezen_aan?.trim() || SWIMLANE_UNASSIGNED_KEY
+        if (!laneKeys.includes(key)) laneKeys.push(key)
+      })
+    }
+
+    const laneMap = new Map<string, Map<string, Taak[]>>()
+    laneKeys.forEach((k) => laneMap.set(k, makeEmptyDayMap()))
+
+    filteredTaken.forEach((t) => {
+      if (!t.deadline) return
+      const d = new Date(t.deadline)
+      d.setHours(0, 0, 0, 0)
+      const dayKey = d.toDateString()
+      const laneKey = t.toegewezen_aan?.trim() || SWIMLANE_UNASSIGNED_KEY
+      const lane = laneMap.get(laneKey)
+      if (lane && lane.has(dayKey)) lane.get(dayKey)!.push(t)
+    })
+
+    laneKeys.forEach((key) => {
+      const dayMap = laneMap.get(key)!
+      dayMap.forEach((arr) => {
+        arr.sort((a, b) => {
+          const aHour = getHourFromDeadline(a.deadline ?? '')
+          const bHour = getHourFromDeadline(b.deadline ?? '')
+          if (aHour !== null && bHour !== null) return aHour - bHour
+          if (aHour !== null) return -1
+          if (bHour !== null) return 1
+          return (PRIORITEIT_ORDER[b.prioriteit] || 0) - (PRIORITEIT_ORDER[a.prioriteit] || 0)
+        })
+      })
+      const total = [...dayMap.values()].reduce((n, arr) => n + arr.length, 0)
+      const label = key === SWIMLANE_UNASSIGNED_KEY ? 'Ongetoewezen' : key
+      lanes.push({ key, label, tasksByDay: dayMap, total })
+    })
+
+    return lanes
+  }, [filteredTaken, weekDays, medewerkers, medewerkerFilter])
 
   // Montage afspraken grouped by day key
   const montageByDay = useMemo(() => {
@@ -771,33 +848,37 @@ export function TasksLayout() {
 
           {/* View toggle */}
           <div className="inline-flex items-center rounded-md bg-[#F3F2F0] p-0.5 flex-shrink-0">
-            {(['week', 'maand'] as const).map((v) => (
+            {([
+              ['week', 'Week'],
+              ['maand', 'Maand'],
+              ['swimlane', 'Team'],
+            ] as const).map(([v, label]) => (
               <button key={v} onClick={() => setViewMode(v)} className={cn(
                 'text-[12px] px-2.5 py-1 rounded-[4px] transition-all font-medium',
                 viewMode === v ? 'bg-white text-[#1A1A1A] shadow-[0_1px_2px_rgba(0,0,0,0.06)]' : 'text-[#9B9B95] hover:text-[#6B6B66]'
-              )}>{v === 'week' ? 'Week' : 'Maand'}</button>
+              )}>{label}</button>
             ))}
           </div>
 
           {/* Date nav */}
           <div className="flex items-center gap-0.5">
-            <button className="p-1 rounded-md hover:bg-[#F3F2F0] transition-all" onClick={() => viewMode === 'week' ? setWeekOffset((w) => w - 1) : setMonthOffset((m) => m - 1)}>
+            <button className="p-1 rounded-md hover:bg-[#F3F2F0] transition-all" onClick={() => viewMode === 'maand' ? setMonthOffset((m) => m - 1) : setWeekOffset((w) => w - 1)}>
               <ChevronLeft className="w-4 h-4 text-[#9B9B95]" />
             </button>
             <button
               className="text-[13px] px-2 py-1 rounded-md font-semibold text-[#1A1A1A] min-w-[130px] text-center hover:bg-[#F3F2F0] transition-colors"
-              onClick={() => viewMode === 'week' ? setWeekOffset(0) : setMonthOffset(0)}
+              onClick={() => viewMode === 'maand' ? setMonthOffset(0) : setWeekOffset(0)}
             >
-              {viewMode === 'week' ? weekLabel : monthLabel}
+              {viewMode === 'maand' ? monthLabel : weekLabel}
             </button>
-            <button className="p-1 rounded-md hover:bg-[#F3F2F0] transition-all" onClick={() => viewMode === 'week' ? setWeekOffset((w) => w + 1) : setMonthOffset((m) => m + 1)}>
+            <button className="p-1 rounded-md hover:bg-[#F3F2F0] transition-all" onClick={() => viewMode === 'maand' ? setMonthOffset((m) => m + 1) : setWeekOffset((w) => w + 1)}>
               <ChevronRight className="w-4 h-4 text-[#9B9B95]" />
             </button>
           </div>
-          {!(viewMode === 'week' ? isCurrentWeek : monthOffset === 0) && (
+          {!(viewMode === 'maand' ? monthOffset === 0 : isCurrentWeek) && (
             <button
               className="text-[12px] px-2 py-1 rounded-md font-medium text-[#1A535C] hover:bg-[#1A535C]/[0.05] transition-all"
-              onClick={() => viewMode === 'week' ? setWeekOffset(0) : setMonthOffset(0)}
+              onClick={() => viewMode === 'maand' ? setMonthOffset(0) : setWeekOffset(0)}
             >
               Vandaag
             </button>
@@ -811,7 +892,7 @@ export function TasksLayout() {
           </div>
         </div>
 
-        {viewMode === 'week' ? (<>
+        {viewMode === 'week' && (<>
         {/* === NIET VERGETEN — sticky note === */}
         <NietVergetenStrip />
 
@@ -921,7 +1002,8 @@ export function TasksLayout() {
             })}
           </div>
         </div>
-        </>) : (
+        </>)}
+        {viewMode === 'maand' && (
         /* === MONTH VIEW — DOEN === */
         <div className="flex-1 overflow-y-auto px-8 pb-4">
           <div className="grid grid-cols-7 gap-px bg-[#F0EFEC] rounded-2xl overflow-hidden ring-1 ring-black/[0.03] shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)]">
@@ -1003,6 +1085,141 @@ export function TasksLayout() {
                 </div>
               )
             })}
+          </div>
+        </div>
+        )}
+        {viewMode === 'swimlane' && (
+        /* === SWIMLANE VIEW — overzicht per toegewezen persoon voor de week
+           v1: geen drag & drop (week/maand houden D&D); doel is overzicht + bulk-selectie. */
+        <div className="flex-1 overflow-y-auto bg-[#FFFFFF]">
+          <div className="min-w-[720px]">
+            <div
+              className="sticky top-0 z-10 flex border-b-2 border-[#F0EFEC] bg-[#FAFAF9]"
+              style={{ gridTemplateColumns: '180px repeat(5, 1fr)' }}
+            >
+              <div className="w-[180px] flex-shrink-0 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">
+                Medewerker
+              </div>
+              {weekDays.map((day, i) => {
+                const isToday = isSameDay(day, today)
+                return (
+                  <div
+                    key={i}
+                    className={cn(
+                      'flex-1 min-w-0 text-center py-2.5 border-l border-[#EBEBEB]/30',
+                      isToday && 'bg-[#1A535C]/[0.04]'
+                    )}
+                  >
+                    <div className="flex items-center justify-center gap-1.5">
+                      <span className={cn(
+                        'text-[11px] uppercase tracking-widest font-semibold',
+                        isToday ? 'text-[#1A535C]' : 'text-[#9B9B95]'
+                      )}>
+                        {DAY_LABELS[i]}{isToday && <span className="text-[#F15025]">.</span>}
+                      </span>
+                      <span className={cn(
+                        'text-[13px] font-bold font-mono tabular-nums',
+                        isToday ? 'text-[#1A535C]' : 'text-[#1A1A1A]'
+                      )}>
+                        {day.getDate()}
+                      </span>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            {swimlaneLanes.length === 0 ? (
+              <div className="px-6 py-12 text-center text-[13px] text-[#9B9B95]">
+                Geen taken voor deze week.
+              </div>
+            ) : (
+              swimlaneLanes.map((lane, idx) => {
+                const isCollapsed = collapsedAssignees.has(lane.key)
+                const isUnassigned = lane.key === SWIMLANE_UNASSIGNED_KEY
+                return (
+                  <div key={lane.key} className="flex border-b border-[#F0EFEC] hover:bg-[#FAFAF9]/40 transition-colors">
+                    <button
+                      type="button"
+                      onClick={() => toggleAssigneeCollapsed(lane.key)}
+                      className="w-[180px] flex-shrink-0 flex items-center gap-2 px-4 py-3 text-left hover:bg-[#F3F2F0]/50 transition-colors border-r border-[#F0EFEC]"
+                    >
+                      <ChevronRight className={cn('w-3 h-3 text-[#9B9B95] transition-transform flex-shrink-0', !isCollapsed && 'rotate-90')} />
+                      {isUnassigned ? (
+                        <span className="h-6 w-6 rounded-full flex items-center justify-center text-[9px] font-bold bg-[#FDE8E2] text-[#C03A18] flex-shrink-0">
+                          ?
+                        </span>
+                      ) : (
+                        <span
+                          className="h-6 w-6 rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0"
+                          style={getLaneAvatarStyle(idx)}
+                        >
+                          {getLaneInitials(lane.label)}
+                        </span>
+                      )}
+                      <span className={cn(
+                        'text-[13px] font-semibold truncate',
+                        isUnassigned ? 'text-[#C03A18]' : 'text-[#1A1A1A]'
+                      )}>
+                        {lane.label}
+                      </span>
+                      <span className="ml-auto text-[11px] font-mono text-[#9B9B95] tabular-nums flex-shrink-0">
+                        {lane.total}
+                      </span>
+                    </button>
+                    {weekDays.map((day, dayIdx) => {
+                      const dayKey = day.toDateString()
+                      const cellTasks = lane.tasksByDay.get(dayKey) || []
+                      const isToday = isSameDay(day, today)
+                      return (
+                        <div
+                          key={dayIdx}
+                          className={cn(
+                            'flex-1 min-w-0 border-l border-[#EBEBEB]/30 p-1.5 min-h-[56px]',
+                            isToday && 'bg-[#1A535C]/[0.02]'
+                          )}
+                        >
+                          {!isCollapsed && cellTasks.length > 0 && (
+                            <div className="space-y-1">
+                              {cellTasks.map((t) => {
+                                const pc = PRIORITEIT_COLORS[t.prioriteit]
+                                const hour = getHourFromDeadline(t.deadline ?? '')
+                                return (
+                                  <button
+                                    key={t.id}
+                                    onClick={() => openEditDialog(taken.find((tt) => tt.id === t.id) || t)}
+                                    className={cn(
+                                      'w-full text-left text-[11px] leading-tight truncate px-1.5 py-1 rounded-md border-l-2 hover:shadow-sm transition-shadow',
+                                      t.status === 'klaar' && 'line-through opacity-50'
+                                    )}
+                                    style={{ borderLeftColor: pc.border, backgroundColor: pc.bg, color: pc.text }}
+                                    title={t.titel}
+                                  >
+                                    {hour !== null && (
+                                      <span className="font-mono tabular-nums text-[10px] opacity-70 mr-1">
+                                        {formatHourLabel(hour)}
+                                      </span>
+                                    )}
+                                    {t.titel}
+                                  </button>
+                                )
+                              })}
+                            </div>
+                          )}
+                          {!isCollapsed && cellTasks.length === 0 && (
+                            <div className="h-full" />
+                          )}
+                          {isCollapsed && cellTasks.length > 0 && (
+                            <div className="text-[10px] font-mono text-[#B0ADA8] text-center pt-1">
+                              {cellTasks.length}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )
+              })
+            )}
           </div>
         </div>
         )}
