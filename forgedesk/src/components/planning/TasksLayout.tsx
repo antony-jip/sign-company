@@ -62,6 +62,7 @@ import { logWijziging } from '@/utils/auditLogger'
 import { CompletionPromptModal } from '@/components/shared/CompletionPromptModal'
 import { updateProject } from '@/services/supabaseService'
 import { isAdminUser } from '@/utils/authHelpers'
+import { MedewerkerFilterCombobox } from '@/components/shared/MedewerkerFilterCombobox'
 
 const TAKEN_FILTER_OVERRIDE_KEY = 'doen_taken_filter_override'
 
@@ -761,16 +762,11 @@ export function TasksLayout() {
 
           {/* Medewerker filter */}
           {medewerkers.length > 0 && (
-            <select
+            <MedewerkerFilterCombobox
+              medewerkers={medewerkers}
               value={medewerkerFilter}
-              onChange={(e) => handleMedewerkerFilterChange(e.target.value)}
-              className="h-7 text-[13px] rounded-md border border-[#E0DED8] bg-white px-2 max-w-[140px] text-[#6B6B66] focus:outline-none focus:border-[#1A535C]/40"
-            >
-              <option value="">Iedereen</option>
-              {medewerkers.filter((m) => m.status === 'actief').map((m) => (
-                <option key={m.id} value={m.naam}>{m.naam}</option>
-              ))}
-            </select>
+              onChange={handleMedewerkerFilterChange}
+            />
           )}
 
           {/* View toggle */}
