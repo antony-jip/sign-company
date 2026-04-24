@@ -73,6 +73,9 @@ import { getNederlandseFeestdagen, isFeestdag } from "@/utils/feestdagen";
 import { confirm } from '@/components/shared/ConfirmDialog';
 import { useAuth } from "@/contexts/AuthContext";
 
+const SWIMLANE_COLLAPSED_KEY = 'doen_planning_swimlane_collapsed';
+const SWIMLANE_UNASSIGNED_KEY = '__ongetoewezen__';
+
 const STATUS_CONFIG: Record<
   MontageAfspraak["status"],
   { label: string; text: string; bg: string; border: string; dot: string }
@@ -216,6 +219,22 @@ export function MontagePlanningLayout() {
   const [werkbonDialogOpen, setWerkbonDialogOpen] = useState(false);
   const [werkbonMontage, setWerkbonMontage] = useState<MontageAfspraak | null>(null);
   const [projectWerkbonnen, setProjectWerkbonnen] = useState<Werkbon[]>([]);
+
+  const [collapsedLanes, setCollapsedLanes] = useState<Set<string>>(() => {
+    try {
+      const raw = localStorage.getItem(SWIMLANE_COLLAPSED_KEY);
+      if (raw) return new Set(JSON.parse(raw));
+    } catch (err) { /* ignore */ }
+    return new Set();
+  });
+  const toggleLaneCollapsed = useCallback((key: string) => {
+    setCollapsedLanes((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      try { localStorage.setItem(SWIMLANE_COLLAPSED_KEY, JSON.stringify([...next])); } catch (err) { /* ignore */ }
+      return next;
+    });
+  }, []);
 
   const weekDates = useMemo(() => getWeekDates(currentMonday), [currentMonday]);
   const weekNumber = useMemo(
@@ -1242,6 +1261,8 @@ export function MontagePlanningLayout() {
         <div className="flex-1 overflow-y-auto">
           {activeMonteurs.map((monteur, idx) => {
             const monteurAfspraken = weekAfspraken.filter((a) => a.monteurs.includes(monteur.id));
+            const isCollapsed = collapsedLanes.has(monteur.id);
+            const laneHasConflict = monteurAfspraken.some((a) => conflictAfspraakIds.has(a.id));
             return (
               <div
                 key={monteur.id}
@@ -1249,87 +1270,153 @@ export function MontagePlanningLayout() {
                 style={{ gridTemplateColumns: '140px repeat(5, 1fr)' }}
               >
                 {/* Monteur label */}
-                <div className="px-3 py-2 flex items-center gap-2 border-r border-[#F0EFEC] sticky left-0 bg-inherit z-10">
+                <div className={cn(
+                  "flex items-center gap-1.5 border-r border-[#F0EFEC] sticky left-0 bg-inherit z-10",
+                  isCollapsed ? "px-2 py-1" : "px-3 py-2"
+                )}>
+                  <button
+                    type="button"
+                    onClick={() => toggleLaneCollapsed(monteur.id)}
+                    className="p-0.5 rounded hover:bg-[#F0EFEC] transition-colors shrink-0"
+                    title={isCollapsed ? 'Uitklappen' : 'Inklappen'}
+                    aria-expanded={!isCollapsed}
+                  >
+                    <ChevronRight className={cn('h-3 w-3 text-[#9B9B95] transition-transform', !isCollapsed && 'rotate-90')} />
+                  </button>
                   <div
-                    className="h-7 w-7 rounded-lg flex items-center justify-center text-[10px] font-bold shrink-0"
+                    className={cn(
+                      "rounded-lg flex items-center justify-center font-bold shrink-0",
+                      isCollapsed ? "h-5 w-5 text-[9px]" : "h-7 w-7 text-[10px]"
+                    )}
                     style={getAvatarStyle(idx)}
                   >
                     {getInitials(monteur.naam)}
                   </div>
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <div className="text-[12px] font-semibold text-[#1A1A1A] truncate">{monteur.naam}</div>
-                    <div className="text-[10px] text-[#9B9B95]">{monteurAfspraken.length} deze week</div>
+                    {!isCollapsed && (
+                      <div className="text-[10px] text-[#9B9B95]">{monteurAfspraken.length} deze week</div>
+                    )}
                   </div>
+                  {isCollapsed && (
+                    <div className="flex items-center gap-1 shrink-0">
+                      {laneHasConflict && (
+                        <AlertTriangle className="h-3 w-3 text-[#C03A18]" />
+                      )}
+                      <span className="text-[10px] font-mono text-[#9B9B95] tabular-nums">{monteurAfspraken.length}</span>
+                    </div>
+                  )}
                 </div>
                 {/* Day cells */}
-                {werkdagen.map((date) => {
-                  const dateStr = formatDate(date);
-                  const isToday = dateStr === todayStr;
-                  const feestdagInfo = isFeestdag(dateStr, feestdagen);
-                  const dayAfspraken = monteurAfspraken
-                    .filter((a) => a.datum === dateStr)
-                    .sort((a, b) => a.start_tijd.localeCompare(b.start_tijd));
-                  const dragKey = `${monteur.id}-${dateStr}`;
+                {isCollapsed ? (
+                  <div
+                    style={{ gridColumn: '2 / -1' }}
+                    className="border-l border-[#F0EFEC] min-h-[30px] flex items-center"
+                  />
+                ) : (
+                  werkdagen.map((date) => {
+                    const dateStr = formatDate(date);
+                    const isToday = dateStr === todayStr;
+                    const feestdagInfo = isFeestdag(dateStr, feestdagen);
+                    const dayAfspraken = monteurAfspraken
+                      .filter((a) => a.datum === dateStr)
+                      .sort((a, b) => a.start_tijd.localeCompare(b.start_tijd));
+                    const dragKey = `${monteur.id}-${dateStr}`;
 
-                  return (
-                    <div
-                      key={dateStr}
-                      className={cn(
-                        "border-l border-[#F0EFEC] p-1 min-h-[60px] transition-all duration-200",
-                        feestdagInfo ? "bg-[#FDE8E2]/15" : isToday && "bg-[#1A535C]/[0.02]",
-                        !feestdagInfo && dragOverDate === dragKey && "bg-[#1A535C]/[0.08] ring-2 ring-[#1A535C]/25 ring-inset",
-                        feestdagInfo && dragOverDate === dragKey && "ring-2 ring-[#C03A18]/30 ring-inset"
-                      )}
-                      onDragOver={(e) => {
-                        e.preventDefault();
-                        e.dataTransfer.dropEffect = feestdagInfo ? "none" : draggingProjectId ? "copy" : "move";
-                        if (dragOverDate !== dragKey) setDragOverDate(dragKey);
-                      }}
-                      onDragLeave={(e) => {
-                        if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragOverDate(null);
-                      }}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        setDragOverDate(null);
-                        if (feestdagInfo) {
-                          toast.error(`Kan niet inplannen op ${feestdagInfo.naam}`);
-                          return;
-                        }
-                        const id = e.dataTransfer.getData("text/plain");
-                        if (id) handleDragDrop(id, dateStr);
-                      }}
-                    >
-                      {dayAfspraken.map((a) => renderMontageCard(a))}
-                    </div>
-                  );
-                })}
+                    return (
+                      <div
+                        key={dateStr}
+                        className={cn(
+                          "border-l border-[#F0EFEC] p-1 min-h-[60px] transition-all duration-200",
+                          feestdagInfo ? "bg-[#FDE8E2]/15" : isToday && "bg-[#1A535C]/[0.02]",
+                          !feestdagInfo && dragOverDate === dragKey && "bg-[#1A535C]/[0.08] ring-2 ring-[#1A535C]/25 ring-inset",
+                          feestdagInfo && dragOverDate === dragKey && "ring-2 ring-[#C03A18]/30 ring-inset"
+                        )}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          e.dataTransfer.dropEffect = feestdagInfo ? "none" : draggingProjectId ? "copy" : "move";
+                          if (dragOverDate !== dragKey) setDragOverDate(dragKey);
+                        }}
+                        onDragLeave={(e) => {
+                          if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragOverDate(null);
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          setDragOverDate(null);
+                          if (feestdagInfo) {
+                            toast.error(`Kan niet inplannen op ${feestdagInfo.naam}`);
+                            return;
+                          }
+                          const id = e.dataTransfer.getData("text/plain");
+                          if (id) handleDragDrop(id, dateStr);
+                        }}
+                      >
+                        {dayAfspraken.map((a) => renderMontageCard(a))}
+                      </div>
+                    );
+                  })
+                )}
               </div>
             );
           })}
 
           {/* Unassigned row */}
-          {hasUnassigned && (
-            <div
-              className="grid border-b border-[#F0EFEC] bg-[#FDE8E2]/20"
-              style={{ gridTemplateColumns: '140px repeat(5, 1fr)' }}
-            >
-              <div className="px-3 py-2 flex items-center gap-2 border-r border-[#F0EFEC]">
-                <div className="h-7 w-7 rounded-lg flex items-center justify-center text-[10px] font-bold bg-[#F0EFEC] text-[#9B9B95]">?</div>
-                <span className="text-[12px] text-[#9B9B95] italic">Niet toegewezen</span>
+          {hasUnassigned && (() => {
+            const isCollapsed = collapsedLanes.has(SWIMLANE_UNASSIGNED_KEY);
+            const unassignedHasConflict = unassigned.some((a) => conflictAfspraakIds.has(a.id));
+            return (
+              <div
+                className="grid border-b border-[#F0EFEC] bg-[#FDE8E2]/20"
+                style={{ gridTemplateColumns: '140px repeat(5, 1fr)' }}
+              >
+                <div className={cn(
+                  "flex items-center gap-1.5 border-r border-[#F0EFEC]",
+                  isCollapsed ? "px-2 py-1" : "px-3 py-2"
+                )}>
+                  <button
+                    type="button"
+                    onClick={() => toggleLaneCollapsed(SWIMLANE_UNASSIGNED_KEY)}
+                    className="p-0.5 rounded hover:bg-[#F0EFEC] transition-colors shrink-0"
+                    title={isCollapsed ? 'Uitklappen' : 'Inklappen'}
+                    aria-expanded={!isCollapsed}
+                  >
+                    <ChevronRight className={cn('h-3 w-3 text-[#9B9B95] transition-transform', !isCollapsed && 'rotate-90')} />
+                  </button>
+                  <div className={cn(
+                    "rounded-lg flex items-center justify-center font-bold bg-[#F0EFEC] text-[#9B9B95] shrink-0",
+                    isCollapsed ? "h-5 w-5 text-[9px]" : "h-7 w-7 text-[10px]"
+                  )}>?</div>
+                  <span className="text-[12px] text-[#9B9B95] italic truncate flex-1">Niet toegewezen</span>
+                  {isCollapsed && (
+                    <div className="flex items-center gap-1 shrink-0">
+                      {unassignedHasConflict && (
+                        <AlertTriangle className="h-3 w-3 text-[#C03A18]" />
+                      )}
+                      <span className="text-[10px] font-mono text-[#9B9B95] tabular-nums">{unassigned.length}</span>
+                    </div>
+                  )}
+                </div>
+                {isCollapsed ? (
+                  <div
+                    style={{ gridColumn: '2 / -1' }}
+                    className="border-l border-[#F0EFEC] min-h-[30px] flex items-center"
+                  />
+                ) : (
+                  werkdagen.map((date) => {
+                    const dateStr = formatDate(date);
+                    const dayUnassigned = unassigned
+                      .filter((a) => a.datum === dateStr)
+                      .sort((a, b) => a.start_tijd.localeCompare(b.start_tijd));
+                    return (
+                      <div key={dateStr} className="border-l border-[#F0EFEC] p-1 min-h-[60px]">
+                        {dayUnassigned.map((a) => renderMontageCard(a))}
+                      </div>
+                    );
+                  })
+                )}
               </div>
-              {werkdagen.map((date) => {
-                const dateStr = formatDate(date);
-                const dayUnassigned = unassigned
-                  .filter((a) => a.datum === dateStr)
-                  .sort((a, b) => a.start_tijd.localeCompare(b.start_tijd));
-                return (
-                  <div key={dateStr} className="border-l border-[#F0EFEC] p-1 min-h-[60px]">
-                    {dayUnassigned.map((a) => renderMontageCard(a))}
-                  </div>
-                );
-              })}
-            </div>
-          )}
+            );
+          })()}
 
           {activeMonteurs.length === 0 && !hasUnassigned && (
             <div className="flex items-center justify-center py-20 text-sm text-[#9B9B95]">
