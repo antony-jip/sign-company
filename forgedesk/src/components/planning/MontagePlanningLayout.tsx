@@ -1720,7 +1720,7 @@ export function MontagePlanningLayout() {
                             klant_id: formData.klant_id,
                             project_id: formData.project_id,
                             titel: formData.titel || "",
-                            datum: new Date().toISOString().split("T")[0],
+                            datum: formatDate(new Date()),
                             status: "concept",
                             toon_briefpapier: false,
                           });
