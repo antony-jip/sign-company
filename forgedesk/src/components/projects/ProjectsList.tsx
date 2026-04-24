@@ -1151,6 +1151,7 @@ export function ProjectsList() {
                           <td className="py-3.5 pr-4 hidden xl:table-cell" onClick={(e) => e.stopPropagation()}>
                             <MedewerkerSelector
                               mode="multi"
+                              medewerkers={medewerkers}
                               value={project.team_leden || []}
                               onChange={(next) => setTeamLeden(project.id, next)}
                               trigger="avatar-stack"

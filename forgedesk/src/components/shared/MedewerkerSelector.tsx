@@ -4,7 +4,6 @@ import { Input } from '@/components/ui/input'
 import { Check, ChevronDown, Search, UserPlus, Users, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Medewerker } from '@/types'
-import { useDashboardData } from '@/contexts/DashboardDataContext'
 import { getAvatarStyleForMedewerker } from '@/utils/medewerkerAvatar'
 
 type MedewerkerRol = Medewerker['rol']
@@ -12,6 +11,8 @@ type ValueKind = 'id' | 'naam'
 type Trigger = 'pill' | 'input' | 'avatar-stack'
 
 interface CommonProps {
+  medewerkers: Medewerker[]
+  isLoading?: boolean
   valueKind?: ValueKind
   rolFilter?: MedewerkerRol[] | ((m: Medewerker) => boolean)
   includeInactief?: boolean
@@ -71,6 +72,8 @@ function applyRolFilter(
 export function MedewerkerSelector(props: MedewerkerSelectorProps) {
   const {
     mode,
+    medewerkers,
+    isLoading = false,
     valueKind = 'naam',
     rolFilter,
     includeInactief = false,
@@ -84,8 +87,6 @@ export function MedewerkerSelector(props: MedewerkerSelectorProps) {
     className,
     id,
   } = props
-
-  const { medewerkers, isLoading } = useDashboardData()
 
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
