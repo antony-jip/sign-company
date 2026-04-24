@@ -75,3 +75,9 @@ toevoegen.
   `ROL_GROUP_ORDER` in `MontagePlanningLayout.tsx` mee-updaten
 - `collapsedLanes`-Set wordt niet opgeschoond bij deactivering/verwijdering
   van een medewerker; Set groeit traag, acceptabel bij <50 lanes
+- **Planning-module heeft geen unit-tests**. De recente `formatDate`-TZ-bug
+  kwam daardoor pas bij handmatig testen boven. Overwegen: een lichte
+  test-harness (vitest) voor puur-functionele helpers (`formatDate`,
+  `getMondayOfWeek`, `getWeekNumber`, `groupLanesByRol`, conflict-detectie)
+  zodat regressies op deze randgevallen sneller zichtbaar worden. Niet
+  urgent; apart traject.
