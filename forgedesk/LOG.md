@@ -81,3 +81,31 @@ toevoegen.
   `getMondayOfWeek`, `getWeekNumber`, `groupLanesByRol`, conflict-detectie)
   zodat regressies op deze randgevallen sneller zichtbaar worden. Niet
   urgent; apart traject.
+
+### Proces-les (april 2026) — Planner moet provider-claims verifiëren
+
+`MedewerkerSelector` is in eerste instantie gebouwd met
+`useDashboardData()` voor interne data-fetch op basis van een
+Planner-claim: *"DashboardDataContext is app-breed geladen, bevestigd
+door alle module-layouts die useDashboardData al consumeren"*. Die
+claim was fout — de provider zit alleen in `FORGEdeskDashboard.tsx`
+rond de dashboard-index-route. Op elke andere route mount het
+component buiten de provider en crasht `useDashboardData` met
+`"useDashboardData must be used within DashboardDataProvider"`. Een
+grep had dat direct uitgewezen: de enige `useDashboardData`-consumer
+is het dashboard zelf.
+
+**Vaste regel voor toekomstige plans**: elke claim over context-
+scope, provider-wrapping of app-breed beschikbare hooks moet
+**bewezen** worden met een concrete grep-referentie naar de provider-
+plaatsing én de consumer-lijst, niet aangenomen. Zelfde geldt voor
+claims over shared utilities, RLS-policies, of andere "app-breed
+geldige" eigenschappen. Voor reviewers: blokkeer plannen die zulke
+claims maken zonder `bestand:regel`-bewijs.
+
+Fix voor dit specifieke geval: `MedewerkerSelector` neemt
+`medewerkers: Medewerker[]` als prop, consumers geven hun eigen
+al-gefetchte state door. Dit matcht `MedewerkerFilterCombobox` (dat
+nooit context gebruikte) en respecteert de per-route data-boundaries
+die de app al hanteert. Zie commits `4e6bb3a1` (selector intro),
+`c96d4dd7` (eerste consumer → crash) en `fff500cd` (prop-based fix).
