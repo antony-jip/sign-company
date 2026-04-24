@@ -85,6 +85,7 @@ import type { MontageAfspraak, MontageBijlage, Project, Medewerker, Klant, Taak,
 import { logger } from '../../utils/logger'
 import { getNederlandseFeestdagen, isFeestdag } from '@/utils/feestdagen'
 import { confirm } from '@/components/shared/ConfirmDialog'
+import { getAvatarStyle } from '@/utils/medewerkerAvatar'
 
 // ============================================================
 // STATUS CONFIG
@@ -105,21 +106,8 @@ const STATUS_CONFIG: Record<
 // HELPERS
 // ============================================================
 
-const DOEN_AVATAR_PALETTE = [
-  { bg: '#E8F2EC', text: '#3A7D52' },
-  { bg: '#E8EEF9', text: '#3A5A9A' },
-  { bg: '#F5F2E8', text: '#8A7A4A' },
-  { bg: '#F0EFEC', text: '#6B6B66' },
-  { bg: '#EDE8F4', text: '#6A5A8A' },
-]
-
 function getInitials(naam: string): string {
   return naam.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2)
-}
-
-function getAvatarStyle(index: number): { backgroundColor: string; color: string } {
-  const p = DOEN_AVATAR_PALETTE[index % DOEN_AVATAR_PALETTE.length]
-  return { backgroundColor: p.bg, color: p.text }
 }
 
 function formatDateYMD(d: Date): string {

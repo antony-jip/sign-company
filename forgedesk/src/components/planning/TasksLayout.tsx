@@ -64,27 +64,15 @@ import { updateProject } from '@/services/supabaseService'
 import { MedewerkerFilterCombobox } from '@/components/shared/MedewerkerFilterCombobox'
 import { Checkbox } from '@/components/ui/checkbox'
 import { TakenBulkActionBar } from '@/components/planning/TakenBulkActionBar'
+import { getAvatarStyle as getLaneAvatarStyle } from '@/utils/medewerkerAvatar'
 
 const TAKEN_FILTER_OVERRIDE_KEY = 'doen_taken_filter_override'
 const TAKEN_FILTER_MIGRATION_V2 = 'doen_taken_filter_migration_v2'
 const SWIMLANE_COLLAPSED_KEY = 'doen_taken_swimlane_collapsed'
 const SWIMLANE_UNASSIGNED_KEY = '__ongetoewezen__'
 
-const SWIMLANE_AVATAR_PALETTE = [
-  { bg: '#E8F2EC', text: '#3A7D52' },
-  { bg: '#E8EEF9', text: '#3A5A9A' },
-  { bg: '#F5F2E8', text: '#8A7A4A' },
-  { bg: '#F0EFEC', text: '#6B6B66' },
-  { bg: '#EDE8F4', text: '#6A5A8A' },
-]
-
 function getLaneInitials(naam: string): string {
   return naam.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2)
-}
-
-function getLaneAvatarStyle(index: number) {
-  const p = SWIMLANE_AVATAR_PALETTE[index % SWIMLANE_AVATAR_PALETTE.length]
-  return { backgroundColor: p.bg, color: p.text }
 }
 
 type TaakStatus = Taak['status']
