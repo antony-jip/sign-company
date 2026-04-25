@@ -1,6 +1,6 @@
 import type React from 'react'
 
-export type EmailFolder = 'inbox' | 'verzonden' | 'concepten' | 'gepland' | 'gesnoozed' | 'prullenbak'
+export type EmailFolder = 'inbox' | 'verzonden' | 'concepten' | 'gepland' | 'gesnoozed' | 'prullenbak' | 'sales-wacht' | 'sales-beantwoord'
 export type FilterType = 'alle' | 'ongelezen' | 'vastgepind' | 'bijlagen' | 'geen-antwoord'
 export type NoReplyRange = '0-3' | '4-7' | '8-30'
 export type FontSize = 'small' | 'medium' | 'large'

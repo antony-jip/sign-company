@@ -510,6 +510,13 @@ export interface Email {
   prioriteit_inbox?: 'laag' | 'normaal' | 'hoog' | 'urgent';
   categorie_inbox?: 'offerte_aanvraag' | 'klacht' | 'informatie' | 'support' | 'overig';
   contactpersoon_id?: string;
+  // Sales Inbox v1
+  wacht_op_reactie?: boolean;
+  beantwoord?: boolean;
+  beantwoord_door_email_id?: string | null;
+  vervangen_door_email_id?: string | null;
+  wacht_op_reactie_uitgezet_op?: string | null;
+  niet_match_email_ids?: string[];
   created_at: string;
   updated_at?: string;
 }
