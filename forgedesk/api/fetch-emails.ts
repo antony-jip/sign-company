@@ -390,6 +390,56 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
+    // ─── Sales Inbox auto-match ───
+    // Voor elke nieuwe inkomende mail: match op afzender-emailadres tegen
+    // outbound mails waar wacht_op_reactie=true && beantwoord=false en
+    // datum < ontvangen-datum. Bij hit: zet outbound op beantwoord=true en
+    // sla de inkomende mail-id op als beantwoord_door_email_id.
+    // RLS-readiness: service_role omzeilt RLS, dus user_id-filter expliciet.
+    // Idempotent: re-run veroorzaakt geen schade (al-beantwoorde rijen
+    // vallen weg via de beantwoord=false filter).
+    try {
+      const inkomendeMails = newEmails.filter((e) => e.map === 'inbox' && e.from_address && e.message_id)
+
+      for (const inkomend of inkomendeMails) {
+        const { data: storedRow } = await supabaseAdmin
+          .from('emails')
+          .select('id, datum, from_address')
+          .eq('user_id', user_id)
+          .eq('message_id', inkomend.message_id as string)
+          .maybeSingle()
+        if (!storedRow?.id) continue
+
+        const { data: kandidaten } = await supabaseAdmin
+          .from('emails')
+          .select('id, niet_match_email_ids')
+          .eq('user_id', user_id)
+          .eq('wacht_op_reactie', true)
+          .eq('beantwoord', false)
+          .ilike('aan', `%${storedRow.from_address}%`)
+          .lt('datum', storedRow.datum)
+          .order('datum', { ascending: false })
+          .limit(5)
+
+        const match = (kandidaten || []).find(
+          (k) => !((k.niet_match_email_ids as string[] | null) || []).includes(storedRow.id)
+        )
+        if (!match) continue
+
+        const { error: updateErr } = await supabaseAdmin
+          .from('emails')
+          .update({ beantwoord: true, beantwoord_door_email_id: storedRow.id })
+          .eq('id', match.id)
+          .eq('user_id', user_id)
+        if (updateErr) {
+          console.error('[fetch-emails] Sales Inbox auto-match update mislukt:', updateErr)
+        }
+      }
+    } catch (matchErr) {
+      // Niet fataal — fetch-resultaat blijft gewoon staan
+      console.error('[fetch-emails] Sales Inbox auto-match-loop mislukt:', matchErr)
+    }
+
     return res.status(200).json({
       synced,
       total,
