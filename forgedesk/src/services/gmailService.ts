@@ -97,6 +97,8 @@ export async function sendEmail(
     html?: string
     scheduledAt?: string
     attachments?: Array<{ filename: string; content: string; encoding: 'base64' }>
+    // Sales Inbox v1
+    wacht_op_reactie?: boolean
     // Threading
     in_reply_to?: string
     thread_id?: string
@@ -119,6 +121,7 @@ export async function sendEmail(
       html: options?.html,
       attachments: options?.attachments,
       scheduledAt: options?.scheduledAt,
+      wacht_op_reactie: options?.wacht_op_reactie,
       in_reply_to: options?.in_reply_to,
       thread_id: options?.thread_id,
     }),

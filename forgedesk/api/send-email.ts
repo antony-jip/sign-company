@@ -126,6 +126,12 @@ async function getEmailCredentials(userId: string): Promise<EmailCredentials> {
   }
 }
 
+function extractBareEmail(address: string): string {
+  const trimmed = address.trim()
+  const match = trimmed.match(/<([^>]+)>/)
+  return (match?.[1] || trimmed).toLowerCase()
+}
+
 export const config = { maxDuration: 30 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -164,6 +170,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       attachments,
       opvolging_id,
       scheduledAt,
+      wacht_op_reactie = false,
       // Threading: meegegeven door de frontend bij reply/forward
       in_reply_to,
       thread_id,
@@ -177,6 +184,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       attachments?: Array<{ filename: string; content?: string; encoding?: 'base64'; storagePath?: string; size?: number }>
       opvolging_id?: string
       scheduledAt?: string
+      wacht_op_reactie?: boolean
       in_reply_to?: string
       thread_id?: string
     }
@@ -342,28 +350,60 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // heen-en-weer historie zichtbaar.
     const effectiveThreadId = thread_id || crypto.randomUUID()
     try {
-      await supabaseAdmin.from('emails').insert({
-        user_id,
-        message_id: sentMessageId,
-        in_reply_to: in_reply_to || null,
-        thread_id: effectiveThreadId,
-        map: 'verzonden',
-        imap_folder: 'SENT',
-        from_address: gmail_address,
-        from_name: fromName || '',
-        van: fromAddress,
-        aan: to,
-        onderwerp: subject,
-        body_html: html || null,
-        body_text: body || subject,
-        inhoud: html || body || '',
-        datum: new Date().toISOString(),
-        gelezen: true,
-        bijlagen: attachments?.length || 0,
-        has_attachments: (attachments?.length || 0) > 0,
-        gmail_id: '',
-        cached_at: new Date().toISOString(),
-      })
+      const { data: inserted, error: insertErr } = await supabaseAdmin
+        .from('emails')
+        .insert({
+          user_id,
+          message_id: sentMessageId,
+          in_reply_to: in_reply_to || null,
+          thread_id: effectiveThreadId,
+          map: 'verzonden',
+          imap_folder: 'SENT',
+          from_address: gmail_address,
+          from_name: fromName || '',
+          van: fromAddress,
+          aan: to,
+          onderwerp: subject,
+          body_html: html || null,
+          body_text: body || subject,
+          inhoud: html || body || '',
+          datum: new Date().toISOString(),
+          gelezen: true,
+          bijlagen: attachments?.length || 0,
+          has_attachments: (attachments?.length || 0) > 0,
+          gmail_id: '',
+          cached_at: new Date().toISOString(),
+          wacht_op_reactie,
+          beantwoord: false,
+        })
+        .select('id')
+        .single()
+      if (insertErr) throw insertErr
+
+      // ─── Sales Inbox v1: vervangen-niet-stapelen ───
+      // Als deze nieuwe mail wacht_op_reactie=true heeft, sluit eerdere
+      // openstaande wacht-mails naar zelfde adres af zodat ze in de Wacht-tab
+      // niet meer naast deze nieuwe staan. RLS-readiness: service_role
+      // omzeilt RLS, dus user_id-filter expliciet.
+      if (wacht_op_reactie && inserted?.id) {
+        const bareEmail = extractBareEmail(to)
+        if (bareEmail) {
+          const { error: replaceErr } = await supabaseAdmin
+            .from('emails')
+            .update({
+              wacht_op_reactie: false,
+              vervangen_door_email_id: inserted.id,
+            })
+            .eq('user_id', user_id)
+            .eq('wacht_op_reactie', true)
+            .eq('beantwoord', false)
+            .neq('id', inserted.id)
+            .ilike('aan', `%${bareEmail}%`)
+          if (replaceErr) {
+            console.error('[send-email] Sales Inbox replace-logic mislukt:', replaceErr)
+          }
+        }
+      }
     } catch (saveErr) {
       // Niet fataal — de mail IS al verstuurd, log de fout
       console.error('[send-email] Verzonden mail opslaan mislukt:', saveErr)
