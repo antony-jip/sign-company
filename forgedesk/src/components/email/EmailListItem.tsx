@@ -396,7 +396,7 @@ export const EmailListItem = memo(function EmailListItem({
             onClick={(e) => { e.stopPropagation(); onWisWacht(email.id) }}
             className="text-[#9B9B95] hover:text-[#C0451A] hover:underline"
           >
-            Niet meer wachten
+            Niet meer opvolgen
           </button>
         )}
       </div>

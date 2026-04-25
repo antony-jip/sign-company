@@ -29,7 +29,7 @@ import { useAppSettings } from '@/contexts/AppSettingsContext'
 const folderTabs: { id: EmailFolder; label: string; icon: React.ElementType }[] = [
   { id: 'inbox', label: 'Inbox', icon: Inbox },
   { id: 'verzonden', label: 'Verzonden', icon: Send },
-  { id: 'sales-wacht', label: 'Wacht op reactie', icon: Clock },
+  { id: 'sales-wacht', label: 'Opvolgen', icon: Clock },
   { id: 'sales-beantwoord', label: 'Beantwoord', icon: CheckCheck },
   { id: 'concepten', label: 'Concepten', icon: FileEdit },
   { id: 'prullenbak', label: 'Prullenbak', icon: Trash2 },
@@ -605,7 +605,7 @@ export function EmailLayout() {
     setSalesEmails((prev) => prev.filter((e) => e.id !== id))
     try {
       await wisWachtFlag(id)
-      toast.success('Niet meer wachten')
+      toast.success('Niet meer opvolgen')
     } catch (err) {
       logger.error('Sales wis wacht-flag mislukt:', err)
       toast.error('Verwijderen uit Wacht-tab mislukt')
@@ -617,7 +617,7 @@ export function EmailLayout() {
     setSalesEmails((prev) => prev.filter((e) => e.id !== outboundId))
     try {
       await terugZettenNaarWacht(outboundId, inkomendeMailId)
-      toast.success('Teruggezet naar Wacht op reactie')
+      toast.success('Teruggezet naar Opvolgen')
     } catch (err) {
       logger.error('Sales terug-naar-wacht mislukt:', err)
       toast.error('Terugzetten mislukt')
@@ -1257,13 +1257,13 @@ export function EmailLayout() {
             <div>
               {(selectedFolder === 'sales-wacht' || selectedFolder === 'sales-beantwoord') && !salesBannerDismissed && (
                 <div className="mx-4 mt-3 px-4 py-3 bg-amber-50/80 border border-amber-200 rounded-lg text-[12px] text-amber-900 leading-relaxed">
-                  <p className="font-medium mb-1">Hoe werkt Sales Inbox?</p>
+                  <p className="font-medium mb-1">Hoe werkt Opvolgen?</p>
                   <p>
                     "Beantwoord" wordt bepaald op basis van het afzender-emailadres, niet op echte
                     email-threads. Bij koude acquisitie kan een antwoord van een ander adres komen
-                    (zoals info@) — die blijft dan in "Wacht op reactie". Andersom kan een mail over
-                    een ander onderwerp ten onrechte als reactie tellen. Gebruik de per-rij knoppen
-                    om dit te corrigeren.
+                    (zoals info@) — die blijft dan in "Opvolgen". Andersom kan een mail over een
+                    ander onderwerp ten onrechte als reactie tellen. Gebruik de per-rij knoppen om
+                    dit te corrigeren.
                   </p>
                   <button
                     type="button"

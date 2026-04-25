@@ -366,7 +366,7 @@ export function EmailCompose({
 
       const attachmentPayload = await buildAttachmentPayload()
       await onSend?.({ to, subject, body, html, wacht_op_reactie: wachtOpReactie, attachments: attachmentPayload })
-      toast.success(wachtOpReactie ? 'Email verzonden — toegevoegd aan Wacht op reactie' : 'Email verzonden')
+      toast.success(wachtOpReactie ? 'Email verzonden — toegevoegd aan Opvolgen' : 'Email verzonden')
       setAttachments([])
       setWachtOpReactie(false)
       setHintMail(null)
@@ -513,7 +513,7 @@ export function EmailCompose({
               const dagen = Math.max(0, Math.round((Date.now() - Date.parse(hintMail.datum)) / 86400000))
               return (
                 <div className="my-2 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg text-[12px] text-blue-900 dark:text-blue-200 flex flex-wrap items-center gap-x-2 gap-y-1">
-                  <span>Vorige mail naar dit adres wacht nog op reactie ({dagen === 0 ? 'vandaag' : `${dagen} ${dagen === 1 ? 'dag' : 'dagen'} geleden`}).</span>
+                  <span>Vorige mail naar dit adres wordt al opgevolgd ({dagen === 0 ? 'vandaag' : `${dagen} ${dagen === 1 ? 'dag' : 'dagen'} geleden`}).</span>
                   <label className="inline-flex items-center gap-1.5 cursor-pointer">
                     <input
                       type="checkbox"
@@ -521,7 +521,7 @@ export function EmailCompose({
                       onChange={(e) => setWachtOpReactie(e.target.checked)}
                       className="h-3 w-3 rounded border-blue-300 cursor-pointer accent-[#1A535C]"
                     />
-                    <span>Ook deze meenemen in Wacht op reactie?</span>
+                    <span>Ook deze opvolgen?</span>
                   </label>
                 </div>
               )
@@ -713,10 +713,10 @@ export function EmailCompose({
             />
           </div>
           <div className="flex items-center gap-2">
-            {/* Sales Inbox v1: wacht-op-reactie toggle */}
-            <label className="inline-flex items-center gap-1.5 text-[12px] text-[#67645E] cursor-pointer select-none" title="Vlag deze mail in Sales Inbox als wacht op reactie">
+            {/* Sales Inbox v1: opvolg-toggle */}
+            <label className="inline-flex items-center gap-1.5 text-[12px] text-[#67645E] cursor-pointer select-none" title="Vlag deze mail om op te volgen">
               <Switch checked={wachtOpReactie} onCheckedChange={setWachtOpReactie} />
-              <span>Wacht op reactie</span>
+              <span>Opvolgen</span>
             </label>
             <span className="text-[11px] text-[#9B9B95] font-mono hidden sm:block">
               {navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'}+Enter
