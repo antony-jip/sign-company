@@ -32,10 +32,3 @@ export interface SearchOperator {
   description: string
   example: string
 }
-
-export interface AutoFollowUp {
-  enabled: boolean
-  dagen: number
-  mode: 'auto' | 'handmatig'
-  customTekst?: string
-}

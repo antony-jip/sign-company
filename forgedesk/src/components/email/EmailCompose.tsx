@@ -14,7 +14,6 @@ import type { Klant, Email } from '@/types'
 import { callForgie, type ForgieAction } from '@/services/forgieService'
 import { logger } from '../../utils/logger'
 import { AIContentEditableToolbar } from '@/components/ui/AIContentEditableToolbar'
-import type { AutoFollowUp } from './emailTypes'
 
 export interface ComposeActions {
   forgieWrite: () => void
@@ -27,13 +26,11 @@ interface EmailComposeProps {
   defaultTo?: string
   defaultSubject?: string
   defaultBody?: string
-  onSend?: (data: { to: string; subject: string; body: string; html?: string; scheduledAt?: string; autoFollowUp?: AutoFollowUp; attachments?: Array<{ filename: string; storagePath: string; size: number }> }) => void
+  onSend?: (data: { to: string; subject: string; body: string; html?: string; scheduledAt?: string; attachments?: Array<{ filename: string; storagePath: string; size: number }> }) => void
   allEmails?: Email[]
   onToChange?: (to: string) => void
   onRegisterActions?: (actions: ComposeActions) => void
   onForgieLoadingChange?: (loading: boolean) => void
-  autoFollowUp?: AutoFollowUp
-  onAutoFollowUpChange?: (value: AutoFollowUp) => void
 }
 
 const mergeFields = [
@@ -83,11 +80,8 @@ export function EmailCompose({
   onToChange,
   onRegisterActions,
   onForgieLoadingChange,
-  autoFollowUp: autoFollowUpProp,
-  onAutoFollowUpChange,
 }: EmailComposeProps) {
   const navigate = useNavigate()
-  const autoFollowUp = autoFollowUpProp ?? { enabled: false, dagen: 3, mode: 'auto' as const }
   const { emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, bedrijfsnaam } = useAppSettings()
 
   const [to, setTo] = useState(defaultTo)
@@ -125,8 +119,6 @@ export function EmailCompose({
   const [showCustomSchedule, setShowCustomSchedule] = useState(false)
   const [customScheduleDate, setCustomScheduleDate] = useState('')
   const [customScheduleTime, setCustomScheduleTime] = useState('09:00')
-
-  // Auto-opvolging (state managed by parent)
 
   // Auto-save timer
   const autoSaveRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -367,8 +359,8 @@ export function EmailCompose({
       const body = editorRef.current?.innerText || ''
 
       const attachmentPayload = await buildAttachmentPayload()
-      await onSend?.({ to, subject, body, html, autoFollowUp: autoFollowUp.enabled ? autoFollowUp : undefined, attachments: attachmentPayload })
-      toast.success(autoFollowUp.enabled ? `Email verzonden — opvolging na ${autoFollowUp.dagen} dagen` : 'Email verzonden')
+      await onSend?.({ to, subject, body, html, attachments: attachmentPayload })
+      toast.success('Email verzonden')
       setAttachments([])
       onOpenChange(false)
     } catch (err) {
@@ -377,7 +369,7 @@ export function EmailCompose({
     } finally {
       setIsSending(false)
     }
-  }, [to, subject, onSend, onOpenChange, autoFollowUp, buildAttachmentPayload])
+  }, [to, subject, onSend, onOpenChange, buildAttachmentPayload])
 
   const handleScheduleSend = useCallback(async (scheduledAt: string, label: string) => {
     if (!to.trim()) { toast.error('Vul een ontvanger in'); return }
@@ -388,7 +380,7 @@ export function EmailCompose({
       const html = editorRef.current?.innerHTML || ''
       const body = editorRef.current?.innerText || ''
       const attachmentPayload = await buildAttachmentPayload()
-      await onSend?.({ to, subject, body, html, scheduledAt, autoFollowUp: autoFollowUp.enabled ? autoFollowUp : undefined, attachments: attachmentPayload })
+      await onSend?.({ to, subject, body, html, scheduledAt, attachments: attachmentPayload })
       toast.success(`Email ingepland: ${label}`)
       setAttachments([])
       onOpenChange(false)
@@ -398,7 +390,7 @@ export function EmailCompose({
     } finally {
       setIsSending(false)
     }
-  }, [to, subject, onSend, onOpenChange, autoFollowUp, buildAttachmentPayload])
+  }, [to, subject, onSend, onOpenChange, buildAttachmentPayload])
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])

@@ -97,7 +97,6 @@ export async function sendEmail(
     html?: string
     scheduledAt?: string
     attachments?: Array<{ filename: string; content: string; encoding: 'base64' }>
-    opvolging_id?: string
     // Threading
     in_reply_to?: string
     thread_id?: string
@@ -119,7 +118,6 @@ export async function sendEmail(
       bcc: options?.bcc,
       html: options?.html,
       attachments: options?.attachments,
-      opvolging_id: options?.opvolging_id,
       scheduledAt: options?.scheduledAt,
       in_reply_to: options?.in_reply_to,
       thread_id: options?.thread_id,

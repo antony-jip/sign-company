@@ -19,7 +19,7 @@ import type { ComposeActions } from './EmailCompose'
 import { EmailListItem } from './EmailListItem'
 import type { Email, EmailAttachment } from '@/types'
 import { logger } from '../../utils/logger'
-import type { AutoFollowUp, EmailFolder, FilterType, FontSize, ViewMode } from './emailTypes'
+import type { EmailFolder, FilterType, FontSize, ViewMode } from './emailTypes'
 import { extractSenderEmail, extractSenderName, parseSearchQuery, IMAP_FOLDER_MAP, KEYBOARD_SHORTCUTS, calculateSnoozeDate } from './emailHelpers'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -64,7 +64,7 @@ function imapToEmail(msg: IMAPEmailSummary, folder: string, userId: string): Ema
 
 export function EmailLayout() {
   const { user } = useAuth()
-  const { emailFetchLimit, emailHandtekening } = useAppSettings()
+  const { emailFetchLimit } = useAppSettings()
 
   // ─── Core state ───
   const [emails, setEmails] = useState<Email[]>([])
@@ -100,7 +100,6 @@ export function EmailLayout() {
   const [composeReminder, setComposeReminder] = useState<string | null>(null)
   const [composeForgieLoading, setComposeForgieLoading] = useState(false)
   const composeActionsRef = useRef<ComposeActions | null>(null)
-  const [composeAutoFollowUp, setComposeAutoFollowUp] = useState<AutoFollowUp>({ enabled: false, dagen: 3, mode: 'auto' })
 
   // ─── Location-based compose detection ───
   const location = useLocation()
@@ -796,54 +795,18 @@ export function EmailLayout() {
     })
   }, [handleCompose])
 
-  const handleSendEmail = useCallback(async (data: { to: string; subject: string; body: string; html?: string; scheduledAt?: string; autoFollowUp?: AutoFollowUp; attachments?: Array<{ filename: string; content: string; encoding: 'base64' }> }) => {
+  const handleSendEmail = useCallback(async (data: { to: string; subject: string; body: string; html?: string; scheduledAt?: string; attachments?: Array<{ filename: string; content: string; encoding: 'base64' }> }) => {
     try {
-      let opvolgingId: string | undefined
-
-      // Als auto-opvolging aan staat, maak het record aan in Supabase
-      if (data.autoFollowUp?.enabled && user) {
-        try {
-          const { createEmailOpvolging } = await import('@/services/supabaseService')
-          const geplandOp = new Date()
-          geplandOp.setDate(geplandOp.getDate() + data.autoFollowUp.dagen)
-
-          const opvolging = await createEmailOpvolging({
-            email_id: '',
-            ontvanger: data.to,
-            onderwerp: data.subject,
-            oorspronkelijke_body: data.body,
-            dagen: data.autoFollowUp.dagen,
-            status: 'wachtend',
-            gepland_op: geplandOp.toISOString(),
-            user_id: user.id,
-            organisatie_id: (user.user_metadata as Record<string, unknown>)?.organisatie_id as string || '',
-            handtekening: emailHandtekening || '',
-            message_id: '',
-            opvolg_body: data.autoFollowUp.mode === 'handmatig' ? data.autoFollowUp.customTekst : undefined,
-          })
-          opvolgingId = opvolging.id
-        } catch (err) {
-          logger.error('Auto-opvolging record aanmaken mislukt:', err)
-          // Niet fataal, email wordt alsnog verstuurd
-        }
-      }
-
       await sendEmailViaApi(data.to, data.subject, data.body, {
         html: data.html,
         scheduledAt: data.scheduledAt,
-        opvolging_id: opvolgingId,
         attachments: data.attachments,
       })
-
-      // Reset auto-opvolging state na succesvol verzenden
-      if (data.autoFollowUp?.enabled) {
-        setComposeAutoFollowUp({ enabled: false, dagen: 3, mode: 'auto' })
-      }
     } catch (err) {
       logger.error('Email verzenden mislukt:', err)
       throw err
     }
-  }, [user, emailHandtekening])
+  }, [])
 
   const handleSendReply = useCallback(async (data: { to: string; cc?: string; bcc?: string; subject: string; body: string; html?: string; scheduledAt?: string; attachments?: Array<{ filename: string; content: string; encoding: 'base64' }> }) => {
     try {
@@ -1025,8 +988,6 @@ export function EmailLayout() {
           onToChange={setComposeToAddress}
           onRegisterActions={(a) => { composeActionsRef.current = a }}
           onForgieLoadingChange={setComposeForgieLoading}
-          autoFollowUp={composeAutoFollowUp}
-          onAutoFollowUpChange={setComposeAutoFollowUp}
         />
       )}
 
@@ -1396,8 +1357,6 @@ export function EmailLayout() {
           senderEmail={readerSenderEmail}
           onSelectEmail={handleSelectEmail}
           onCompose={() => handleCompose()}
-          autoFollowUp={composeAutoFollowUp}
-          onAutoFollowUpChange={setComposeAutoFollowUp}
           unreadCount={emails.filter(e => !e.gelezen).length}
         />
       )}

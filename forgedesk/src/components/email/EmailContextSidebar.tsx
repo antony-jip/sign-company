@@ -2,8 +2,8 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import {
   UserPlus, FolderPlus, ListPlus, Bell, BellOff, Clock,
   Building2, Phone, Mail, ChevronRight, Loader2, X,
-  ArrowLeft, ExternalLink, Sparkles, Pencil, CheckCircle,
-  FileText, Users, ReceiptText, MailQuestion, Zap,
+  ArrowLeft, ExternalLink, Sparkles, Pencil,
+  FileText, Users, ReceiptText, MailQuestion,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import type { Email, Klant, Medewerker } from '@/types'
@@ -13,7 +13,6 @@ import { useAuth } from '@/contexts/AuthContext'
 import { KlantContactSelector } from '@/components/shared/KlantContactSelector'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { getAvatarStyle, extractSenderName } from './emailHelpers'
-import type { AutoFollowUp } from './emailTypes'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
 
@@ -28,8 +27,6 @@ interface EmailContextSidebarProps {
   senderEmail?: string
   onSelectEmail?: (email: Email) => void
   onCompose?: () => void
-  autoFollowUp?: AutoFollowUp
-  onAutoFollowUpChange?: (value: AutoFollowUp) => void
   unreadCount?: number
   reminderCount?: number
 }
@@ -77,8 +74,6 @@ export function EmailContextSidebar({
   senderEmail: propSenderEmail,
   onSelectEmail,
   onCompose,
-  autoFollowUp,
-  onAutoFollowUpChange,
   unreadCount = 0,
   reminderCount = 0,
 }: EmailContextSidebarProps) {
@@ -940,106 +935,6 @@ export function EmailContextSidebar({
             </div>
           </DialogContent>
         </Dialog>
-
-        {/* ── AUTO-OPVOLGING (alleen compose) ── */}
-        {mode === 'compose' && (
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-[11px] uppercase tracking-wider text-[#9B9B95] font-medium">Auto-opvolging</h3>
-              <button
-                onClick={() => onAutoFollowUpChange?.({ ...autoFollowUp ?? { enabled: false, dagen: 3, mode: 'auto' }, enabled: !(autoFollowUp?.enabled) })}
-                className={`relative w-8 h-[18px] rounded-full transition-colors duration-200 ${autoFollowUp?.enabled ? 'bg-[#1A535C]' : 'bg-[#D4D4D0]'}`}
-              >
-                <div className={`absolute top-[2px] left-[2px] w-[14px] h-[14px] rounded-full bg-white transition-transform duration-200 ${autoFollowUp?.enabled ? 'translate-x-[14px]' : ''}`} style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.12)' }} />
-              </button>
-            </div>
-
-            {autoFollowUp?.enabled && (
-              <div className="space-y-3">
-                {/* Slider */}
-                <div className="bg-white rounded-lg px-3 py-3" style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.03)' }}>
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-1.5">
-                      <Zap className="h-3.5 w-3.5 text-[#F15025]" />
-                      <span className="text-[12px] font-medium text-[#1A1A1A]">Na {autoFollowUp.dagen} {autoFollowUp.dagen === 1 ? 'dag' : 'dagen'}</span>
-                    </div>
-                    <span className="text-[11px] text-[#9B9B95]">{autoFollowUp.dagen === 1 ? 'morgen' : `${autoFollowUp.dagen}d`}</span>
-                  </div>
-                  <input
-                    type="range"
-                    min={1}
-                    max={14}
-                    value={autoFollowUp.dagen}
-                    onChange={(e) => onAutoFollowUpChange?.({ ...autoFollowUp, dagen: parseInt(e.target.value) })}
-                    className="w-full h-1 rounded-full appearance-none cursor-pointer"
-                    style={{
-                      background: `linear-gradient(to right, #1A535C 0%, #1A535C ${((autoFollowUp.dagen - 1) / 13) * 100}%, #EBEBEB ${((autoFollowUp.dagen - 1) / 13) * 100}%, #EBEBEB 100%)`,
-                      WebkitAppearance: 'none',
-                    }}
-                  />
-                </div>
-
-                {/* Mode pills */}
-                <div className="flex gap-1.5">
-                  <button
-                    onClick={() => onAutoFollowUpChange?.({ ...autoFollowUp, mode: 'auto' })}
-                    className={`flex-1 px-3 py-1.5 rounded-full text-[11px] font-medium border transition-colors duration-150 ${
-                      (autoFollowUp.mode ?? 'auto') === 'auto'
-                        ? 'bg-[#1A535C] text-white border-[#1A535C]'
-                        : 'bg-white text-[#6B6B66] border-[#EBEBEB] hover:border-[#D4D4D0]'
-                    }`}
-                  >
-                    Daan schrijft
-                  </button>
-                  <button
-                    onClick={() => onAutoFollowUpChange?.({ ...autoFollowUp, mode: 'handmatig' })}
-                    className={`flex-1 px-3 py-1.5 rounded-full text-[11px] font-medium border transition-colors duration-150 ${
-                      autoFollowUp.mode === 'handmatig'
-                        ? 'bg-[#1A535C] text-white border-[#1A535C]'
-                        : 'bg-white text-[#6B6B66] border-[#EBEBEB] hover:border-[#D4D4D0]'
-                    }`}
-                  >
-                    Zelf schrijven
-                  </button>
-                </div>
-
-                {/* Auto mode description */}
-                {(autoFollowUp.mode ?? 'auto') === 'auto' && (
-                  <div className="bg-[#F8F7F5] rounded-lg px-3 py-2.5">
-                    <p className="text-[11px] text-[#9B9B95] leading-relaxed">
-                      Daan genereert een persoonlijke opvolging op basis van je email als er geen reply binnen {autoFollowUp.dagen} {autoFollowUp.dagen === 1 ? 'dag' : 'dagen'} is.
-                    </p>
-                  </div>
-                )}
-
-                {/* Handmatig mode: editable textarea */}
-                {autoFollowUp.mode === 'handmatig' && (
-                  <div className="space-y-1.5">
-                    <label className="text-[11px] uppercase tracking-wider text-[#9B9B95] font-medium">Opvolg-bericht</label>
-                    <textarea
-                      value={autoFollowUp.customTekst ?? `Hoi${composeToAddress ? ` ${composeToAddress.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}` : ''},\n\nik wilde even checken of je mijn bericht hebt kunnen bekijken. Mocht je nog vragen hebben, hoor ik het graag.`}
-                      onChange={(e) => onAutoFollowUpChange?.({ ...autoFollowUp, customTekst: e.target.value })}
-                      className="w-full bg-white rounded-lg p-3 text-[13px] text-[#1A1A1A] border border-[#EBEBEB] min-h-[100px] resize-y focus:border-[#1A535C] focus:outline-none transition-colors duration-150"
-                      placeholder="Schrijf je opvolg-bericht..."
-                    />
-                    <button
-                      onClick={() => onAutoFollowUpChange?.({ ...autoFollowUp, mode: 'auto', customTekst: undefined })}
-                      className="text-[11px] text-[#F15025] hover:underline"
-                    >
-                      Of laat Daan het automatisch genereren
-                    </button>
-                  </div>
-                )}
-
-                {/* Handtekening bevestiging */}
-                <div className="flex items-center gap-1.5 px-1">
-                  <CheckCircle className="h-3 w-3 text-[#9B9B95]" />
-                  <span className="text-[11px] text-[#9B9B95]">Wordt verzonden met je handtekening</span>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
 
       </div>
     </div>
