@@ -211,6 +211,123 @@ export async function addInterneNotitie(emailId: string, notitie: InternEmailNot
   return updateEmail(emailId, { interne_notities: [...huidigeNotities, notitie] })
 }
 
+// ============ SALES INBOX v1 ============
+// UX-laag op outbound mail. Queries draaien onder anon-key; RLS scope't
+// automatisch op auth.uid() = user_id. Server-side (auto-match in
+// fetch-emails) MOET zelf user_id-filteren want service_role omzeilt RLS.
+
+const SALES_INBOX_SELECT = 'id,user_id,gmail_id,uid,message_id,van,aan,onderwerp,datum,gelezen,starred,labels,bijlagen,map,from_name,from_address,imap_folder,pinned,snoozed_until,thread_id,attachment_meta,has_attachments,body_text,created_at,updated_at,cached_at,wacht_op_reactie,beantwoord,beantwoord_door_email_id,vervangen_door_email_id,wacht_op_reactie_uitgezet_op,niet_match_email_ids'
+
+function extractBareEmail(address: string): string {
+  const trimmed = address.trim()
+  const match = trimmed.match(/<([^>]+)>/)
+  return (match?.[1] || trimmed).toLowerCase()
+}
+
+/** Compose-hint: vind de meest recente openstaande wacht-mail naar dit adres. */
+export async function getWachtendeEmailNaarAdres(toAddress: string): Promise<Email | null> {
+  if (!isSupabaseConfigured() || !supabase) return null
+  const bareEmail = extractBareEmail(toAddress)
+  if (!bareEmail) return null
+  const { data, error } = await supabase
+    .from('emails')
+    .select('id, datum, aan, onderwerp')
+    .eq('wacht_op_reactie', true)
+    .eq('beantwoord', false)
+    .ilike('aan', `%${bareEmail}%`)
+    .order('datum', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  if (error) throw error
+  return data as Email | null
+}
+
+/** Sales Inbox "Wacht op reactie" tab. */
+export async function getSalesInboxWachtend(limit = 100): Promise<Email[]> {
+  if (!isSupabaseConfigured() || !supabase) return []
+  const { data, error } = await supabase
+    .from('emails')
+    .select(SALES_INBOX_SELECT)
+    .eq('wacht_op_reactie', true)
+    .eq('beantwoord', false)
+    .order('datum', { ascending: false })
+    .limit(limit)
+  if (error) throw error
+  return (data || []) as unknown as Email[]
+}
+
+/** Sales Inbox "Beantwoord" tab. UI haalt details van de triggerende inkomende mail
+ *  zelf op via beantwoord_door_email_id — geen self-join hier voor v1. */
+export async function getSalesInboxBeantwoord(limit = 100): Promise<Email[]> {
+  if (!isSupabaseConfigured() || !supabase) return []
+  const { data, error } = await supabase
+    .from('emails')
+    .select(SALES_INBOX_SELECT)
+    .eq('wacht_op_reactie', true)
+    .eq('beantwoord', true)
+    .order('datum', { ascending: false })
+    .limit(limit)
+  if (error) throw error
+  return (data || []) as unknown as Email[]
+}
+
+/** Per-rij actie in Wacht-tab: gebruiker markeert handmatig als beantwoord
+ *  (false-negative correctie). Geen beantwoord_door_email_id want geen
+ *  specifieke inkomende mail bekend. */
+export async function markeerHandmatigBeantwoord(emailId: string): Promise<void> {
+  assertId(emailId, 'email_id')
+  if (!isSupabaseConfigured() || !supabase) throw new Error('Supabase niet geconfigureerd')
+  const { error } = await supabase
+    .from('emails')
+    .update({ beantwoord: true })
+    .eq('id', emailId)
+  if (error) throw error
+}
+
+/** Per-rij actie in Wacht-tab: "Niet meer wachten" — wis flag, registreer datum. */
+export async function wisWachtFlag(emailId: string): Promise<void> {
+  assertId(emailId, 'email_id')
+  if (!isSupabaseConfigured() || !supabase) throw new Error('Supabase niet geconfigureerd')
+  const { error } = await supabase
+    .from('emails')
+    .update({
+      wacht_op_reactie: false,
+      wacht_op_reactie_uitgezet_op: new Date().toISOString(),
+    })
+    .eq('id', emailId)
+  if (error) throw error
+}
+
+/** Per-rij actie in Beantwoord-tab: "Dit was niet de reactie" — outbound terug
+ *  naar Wacht en de inkomende mail uitsluiten van toekomstige auto-match. */
+export async function terugZettenNaarWacht(outboundId: string, inkomendeMailId: string): Promise<void> {
+  assertId(outboundId, 'outbound_id')
+  assertId(inkomendeMailId, 'inkomende_mail_id')
+  if (!isSupabaseConfigured() || !supabase) throw new Error('Supabase niet geconfigureerd')
+
+  const { data: huidig, error: leesError } = await supabase
+    .from('emails')
+    .select('niet_match_email_ids')
+    .eq('id', outboundId)
+    .maybeSingle()
+  if (leesError) throw leesError
+
+  const huidigeIds = (huidig?.niet_match_email_ids || []) as string[]
+  const nieuweIds = huidigeIds.includes(inkomendeMailId)
+    ? huidigeIds
+    : [...huidigeIds, inkomendeMailId]
+
+  const { error } = await supabase
+    .from('emails')
+    .update({
+      beantwoord: false,
+      beantwoord_door_email_id: null,
+      niet_match_email_ids: nieuweIds,
+    })
+    .eq('id', outboundId)
+  if (error) throw error
+}
+
 // ── Email auto-opvolging ──
 export async function createEmailOpvolging(opvolging: Omit<import('@/types').EmailOpvolging, 'id' | 'created_at'>): Promise<import('@/types').EmailOpvolging> {
   if (!isSupabaseConfigured() || !supabase) throw new Error('Supabase niet geconfigureerd')
