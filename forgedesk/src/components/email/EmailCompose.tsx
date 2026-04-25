@@ -14,6 +14,8 @@ import type { Klant, Email } from '@/types'
 import { callForgie, type ForgieAction } from '@/services/forgieService'
 import { logger } from '../../utils/logger'
 import { AIContentEditableToolbar } from '@/components/ui/AIContentEditableToolbar'
+import { Switch } from '@/components/ui/switch'
+import { getWachtendeEmailNaarAdres } from '@/services/emailService'
 
 export interface ComposeActions {
   forgieWrite: () => void
@@ -26,7 +28,7 @@ interface EmailComposeProps {
   defaultTo?: string
   defaultSubject?: string
   defaultBody?: string
-  onSend?: (data: { to: string; subject: string; body: string; html?: string; scheduledAt?: string; attachments?: Array<{ filename: string; storagePath: string; size: number }> }) => void
+  onSend?: (data: { to: string; subject: string; body: string; html?: string; scheduledAt?: string; wacht_op_reactie?: boolean; attachments?: Array<{ filename: string; storagePath: string; size: number }> }) => void
   allEmails?: Email[]
   onToChange?: (to: string) => void
   onRegisterActions?: (actions: ComposeActions) => void
@@ -102,6 +104,10 @@ export function EmailCompose({
   const [suggestions, setSuggestions] = useState<Klant[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
   const toInputRef = useRef<HTMLInputElement>(null)
+
+  // Sales Inbox v1: toggle + compose-hint (skipt bij meer-dan-1 ontvanger)
+  const [wachtOpReactie, setWachtOpReactie] = useState(false)
+  const [hintMail, setHintMail] = useState<{ id: string; datum: string } | null>(null)
 
   // Files
   const [attachments, setAttachments] = useState<File[]>([])
@@ -359,9 +365,11 @@ export function EmailCompose({
       const body = editorRef.current?.innerText || ''
 
       const attachmentPayload = await buildAttachmentPayload()
-      await onSend?.({ to, subject, body, html, attachments: attachmentPayload })
-      toast.success('Email verzonden')
+      await onSend?.({ to, subject, body, html, wacht_op_reactie: wachtOpReactie, attachments: attachmentPayload })
+      toast.success(wachtOpReactie ? 'Email verzonden — toegevoegd aan Wacht op reactie' : 'Email verzonden')
       setAttachments([])
+      setWachtOpReactie(false)
+      setHintMail(null)
       onOpenChange(false)
     } catch (err) {
       logger.error('Email send failed:', err)
@@ -369,7 +377,7 @@ export function EmailCompose({
     } finally {
       setIsSending(false)
     }
-  }, [to, subject, onSend, onOpenChange, buildAttachmentPayload])
+  }, [to, subject, onSend, onOpenChange, buildAttachmentPayload, wachtOpReactie])
 
   const handleScheduleSend = useCallback(async (scheduledAt: string, label: string) => {
     if (!to.trim()) { toast.error('Vul een ontvanger in'); return }
@@ -380,9 +388,11 @@ export function EmailCompose({
       const html = editorRef.current?.innerHTML || ''
       const body = editorRef.current?.innerText || ''
       const attachmentPayload = await buildAttachmentPayload()
-      await onSend?.({ to, subject, body, html, scheduledAt, attachments: attachmentPayload })
+      await onSend?.({ to, subject, body, html, scheduledAt, wacht_op_reactie: wachtOpReactie, attachments: attachmentPayload })
       toast.success(`Email ingepland: ${label}`)
       setAttachments([])
+      setWachtOpReactie(false)
+      setHintMail(null)
       onOpenChange(false)
     } catch (err) {
       logger.error('Email schedule failed:', err)
@@ -390,7 +400,7 @@ export function EmailCompose({
     } finally {
       setIsSending(false)
     }
-  }, [to, subject, onSend, onOpenChange, buildAttachmentPayload])
+  }, [to, subject, onSend, onOpenChange, buildAttachmentPayload, wachtOpReactie])
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
@@ -432,7 +442,14 @@ export function EmailCompose({
                   value={to}
                   onChange={(e) => handleToChange(e.target.value)}
                   onFocus={() => to.length >= 2 && suggestions.length > 0 && setShowSuggestions(true)}
-                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                  onBlur={() => {
+                    setTimeout(() => setShowSuggestions(false), 200)
+                    // Sales Inbox compose-hint: skip bij multi-recipient (cold-acquisitie is 1-op-1).
+                    if (to.includes(',') || !to.trim()) { setHintMail(null); return }
+                    getWachtendeEmailNaarAdres(to)
+                      .then((mail) => setHintMail(mail ? { id: mail.id, datum: mail.datum } : null))
+                      .catch(() => setHintMail(null))
+                  }}
                   className="flex-1 bg-transparent text-[14px] text-[#1A1A1A] outline-none placeholder:text-[#9B9B95] min-w-0"
                   placeholder="Aan..."
                 />
@@ -490,6 +507,25 @@ export function EmailCompose({
                 </div>
               </>
             )}
+
+            {/* Sales Inbox compose-hint */}
+            {hintMail && !wachtOpReactie && (() => {
+              const dagen = Math.max(0, Math.round((Date.now() - Date.parse(hintMail.datum)) / 86400000))
+              return (
+                <div className="my-2 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg text-[12px] text-blue-900 dark:text-blue-200 flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <span>Vorige mail naar dit adres wacht nog op reactie ({dagen === 0 ? 'vandaag' : `${dagen} ${dagen === 1 ? 'dag' : 'dagen'} geleden`}).</span>
+                  <label className="inline-flex items-center gap-1.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={wachtOpReactie}
+                      onChange={(e) => setWachtOpReactie(e.target.checked)}
+                      className="h-3 w-3 rounded border-blue-300 cursor-pointer accent-[#1A535C]"
+                    />
+                    <span>Ook deze meenemen in Wacht op reactie?</span>
+                  </label>
+                </div>
+              )
+            })()}
 
             {/* Onderwerp */}
             <div className="border-b border-[#EBEBEB] py-3 focus-within:border-[#1A535C] transition-colors duration-150">
@@ -677,6 +713,11 @@ export function EmailCompose({
             />
           </div>
           <div className="flex items-center gap-2">
+            {/* Sales Inbox v1: wacht-op-reactie toggle */}
+            <label className="inline-flex items-center gap-1.5 text-[12px] text-[#67645E] cursor-pointer select-none" title="Vlag deze mail in Sales Inbox als wacht op reactie">
+              <Switch checked={wachtOpReactie} onCheckedChange={setWachtOpReactie} />
+              <span>Wacht op reactie</span>
+            </label>
             <span className="text-[11px] text-[#9B9B95] font-mono hidden sm:block">
               {navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'}+Enter
             </span>

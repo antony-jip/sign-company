@@ -21,6 +21,11 @@ interface EmailListItemProps {
   onArchive?: (email: Email) => void
   onDelete?: (email: Email) => void
   onToggleRead?: (email: Email) => void
+  // Sales Inbox v1
+  salesMode?: 'wacht' | 'beantwoord'
+  onMarkeerBeantwoord?: (id: string) => void
+  onWisWacht?: (id: string) => void
+  onTerugNaarWacht?: (outboundId: string, inkomendeMailId: string) => void
 }
 
 export const EmailListItem = memo(function EmailListItem({
@@ -38,6 +43,10 @@ export const EmailListItem = memo(function EmailListItem({
   onArchive,
   onDelete,
   onToggleRead,
+  salesMode,
+  onMarkeerBeantwoord,
+  onWisWacht,
+  onTerugNaarWacht,
 }: EmailListItemProps) {
   const isUnread = !email.gelezen
   const senderName = useMemo(() => extractSenderName(email.van), [email.van])
@@ -247,6 +256,7 @@ export const EmailListItem = memo(function EmailListItem({
 
   // Default two-line mode
   return (
+    <>
     <div
       onClick={handleClick}
       onMouseEnter={handleMouseEnter}
@@ -368,5 +378,42 @@ export const EmailListItem = memo(function EmailListItem({
         <div className="w-[5px] h-[5px] rounded-full bg-[#1A535C] flex-shrink-0" />
       )}
     </div>
+
+    {salesMode === 'wacht' && (onMarkeerBeantwoord || onWisWacht) && (
+      <div className="flex gap-2 px-4 pb-2 -mt-1 text-[11px]">
+        {onMarkeerBeantwoord && (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onMarkeerBeantwoord(email.id) }}
+            className="text-[#1A535C] hover:underline"
+          >
+            Markeer als beantwoord
+          </button>
+        )}
+        {onWisWacht && (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onWisWacht(email.id) }}
+            className="text-[#9B9B95] hover:text-[#C0451A] hover:underline"
+          >
+            Niet meer wachten
+          </button>
+        )}
+      </div>
+    )}
+    {salesMode === 'beantwoord' && email.beantwoord_door_email_id && onTerugNaarWacht && (
+      <div className="flex items-center gap-2 px-4 pb-2 -mt-1 text-[11px] text-[#9B9B95]">
+        <span>Match via inkomende mail</span>
+        <span className="text-[#D4D2CE]">·</span>
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onTerugNaarWacht(email.id, email.beantwoord_door_email_id!) }}
+          className="text-[#9B9B95] hover:text-[#C0451A] hover:underline"
+        >
+          Dit was niet de reactie
+        </button>
+      </div>
+    )}
+    </>
   )
 })

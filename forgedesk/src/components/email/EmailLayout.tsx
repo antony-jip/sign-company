@@ -10,6 +10,7 @@ import { IngeplandeBerichtenLijst } from './IngeplandeBerichtenLijst'
 import { sendEmail as sendEmailViaApi, fetchEmailsFromIMAP, readEmailFromIMAP } from '@/services/gmailService'
 import type { IMAPEmailSummary } from '@/services/gmailService'
 import { getEmails, getEmailBody, searchEmailsFTS, updateEmail, deleteEmail as deleteEmailDb } from '@/services/supabaseService'
+import { getSalesInboxWachtend, getSalesInboxBeantwoord, markeerHandmatigBeantwoord, wisWachtFlag, terugZettenNaarWacht } from '@/services/emailService'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { EmailReader } from './EmailReader'
@@ -28,6 +29,8 @@ import { useAppSettings } from '@/contexts/AppSettingsContext'
 const folderTabs: { id: EmailFolder; label: string; icon: React.ElementType }[] = [
   { id: 'inbox', label: 'Inbox', icon: Inbox },
   { id: 'verzonden', label: 'Verzonden', icon: Send },
+  { id: 'sales-wacht', label: 'Wacht op reactie', icon: Clock },
+  { id: 'sales-beantwoord', label: 'Beantwoord', icon: CheckCheck },
   { id: 'concepten', label: 'Concepten', icon: FileEdit },
   { id: 'prullenbak', label: 'Prullenbak', icon: Trash2 },
 ]
@@ -40,7 +43,7 @@ const filtersList: { id: FilterType; label: string }[] = [
   { id: 'bijlagen', label: 'Bijlagen' },
 ]
 
-const folderIds: EmailFolder[] = ['inbox', 'verzonden', 'concepten', 'gepland', 'gesnoozed', 'prullenbak']
+const folderIds: EmailFolder[] = ['inbox', 'verzonden', 'concepten', 'gepland', 'gesnoozed', 'prullenbak', 'sales-wacht', 'sales-beantwoord']
 
 // ─── Helper: convert IMAP message to Email ───
 function imapToEmail(msg: IMAPEmailSummary, folder: string, userId: string): Email {
@@ -100,6 +103,12 @@ export function EmailLayout() {
   const [composeReminder, setComposeReminder] = useState<string | null>(null)
   const [composeForgieLoading, setComposeForgieLoading] = useState(false)
   const composeActionsRef = useRef<ComposeActions | null>(null)
+
+  // ─── Sales Inbox v1: aparte data-bron voor de twee sales-tabs ───
+  const [salesEmails, setSalesEmails] = useState<Email[]>([])
+  const [salesBannerDismissed, setSalesBannerDismissed] = useState<boolean>(() => {
+    try { return localStorage.getItem('doen_email_sales_inbox_banner_v1') === 'dismissed' } catch { return false }
+  })
 
   // ─── Location-based compose detection ───
   const location = useLocation()
@@ -212,6 +221,28 @@ export function EmailLayout() {
     init()
   }, [])
 
+  // ─── Sales Inbox v1: laad data wanneer een sales-tab wordt geopend ───
+  // RLS scope't automatisch op de huidige user via de anon-client.
+  const loadSalesEmails = useCallback(async (folder: EmailFolder) => {
+    try {
+      const data = folder === 'sales-wacht'
+        ? await getSalesInboxWachtend()
+        : folder === 'sales-beantwoord'
+          ? await getSalesInboxBeantwoord()
+          : []
+      setSalesEmails(data)
+    } catch (err) {
+      logger.error('Sales Inbox laden mislukt:', err)
+      setSalesEmails([])
+    }
+  }, [])
+
+  useEffect(() => {
+    if (selectedFolder === 'sales-wacht' || selectedFolder === 'sales-beantwoord') {
+      loadSalesEmails(selectedFolder)
+    }
+  }, [selectedFolder, loadSalesEmails])
+
   // ─── Server-side full-text search ───
   useEffect(() => {
     if (!searchQuery.trim()) {
@@ -292,9 +323,14 @@ export function EmailLayout() {
       return filtered
     }
 
-    let filtered = selectedFolder === 'gesnoozed'
-      ? emails.filter((e) => e.snoozed_until)
-      : emails.filter((e) => e.map === selectedFolder && !e.snoozed_until)
+    let filtered: Email[]
+    if (selectedFolder === 'sales-wacht' || selectedFolder === 'sales-beantwoord') {
+      filtered = salesEmails
+    } else if (selectedFolder === 'gesnoozed') {
+      filtered = emails.filter((e) => e.snoozed_until)
+    } else {
+      filtered = emails.filter((e) => e.map === selectedFolder && !e.snoozed_until)
+    }
 
     // Client-side fallback voor als FTS niet beschikbaar is
     if (searchQuery.trim() && !searchResults) {
@@ -354,7 +390,7 @@ export function EmailLayout() {
       return b.ts - a.ts
     })
     return withTs.map(x => x.e)
-  }, [emails, selectedFolder, searchQuery, filter])
+  }, [emails, salesEmails, selectedFolder, searchQuery, filter])
 
   // Thread grouping
   const threadedEmails = useMemo(() => {
@@ -550,6 +586,48 @@ export function EmailLayout() {
     setSelectedEmail(null)
     setViewMode('idle')
     toast.success('Email verwijderd')
+  }, [])
+
+  // ─── Sales Inbox v1: per-rij correctie-acties ───
+  const handleSalesMarkeerBeantwoord = useCallback(async (id: string) => {
+    setSalesEmails((prev) => prev.filter((e) => e.id !== id))
+    try {
+      await markeerHandmatigBeantwoord(id)
+      toast.success('Gemarkeerd als beantwoord')
+    } catch (err) {
+      logger.error('Sales markeer mislukt:', err)
+      toast.error('Markeren mislukt')
+      if (selectedFolder === 'sales-wacht') loadSalesEmails(selectedFolder)
+    }
+  }, [selectedFolder, loadSalesEmails])
+
+  const handleSalesWisWacht = useCallback(async (id: string) => {
+    setSalesEmails((prev) => prev.filter((e) => e.id !== id))
+    try {
+      await wisWachtFlag(id)
+      toast.success('Niet meer wachten')
+    } catch (err) {
+      logger.error('Sales wis wacht-flag mislukt:', err)
+      toast.error('Verwijderen uit Wacht-tab mislukt')
+      if (selectedFolder === 'sales-wacht') loadSalesEmails(selectedFolder)
+    }
+  }, [selectedFolder, loadSalesEmails])
+
+  const handleSalesTerugNaarWacht = useCallback(async (outboundId: string, inkomendeMailId: string) => {
+    setSalesEmails((prev) => prev.filter((e) => e.id !== outboundId))
+    try {
+      await terugZettenNaarWacht(outboundId, inkomendeMailId)
+      toast.success('Teruggezet naar Wacht op reactie')
+    } catch (err) {
+      logger.error('Sales terug-naar-wacht mislukt:', err)
+      toast.error('Terugzetten mislukt')
+      if (selectedFolder === 'sales-beantwoord') loadSalesEmails(selectedFolder)
+    }
+  }, [selectedFolder, loadSalesEmails])
+
+  const dismissSalesBanner = useCallback(() => {
+    setSalesBannerDismissed(true)
+    try { localStorage.setItem('doen_email_sales_inbox_banner_v1', 'dismissed') } catch { /* ignore */ }
   }, [])
 
   // ─── Refresh: IMAP sync in background, re-read from Supabase ───
@@ -795,11 +873,12 @@ export function EmailLayout() {
     })
   }, [handleCompose])
 
-  const handleSendEmail = useCallback(async (data: { to: string; subject: string; body: string; html?: string; scheduledAt?: string; attachments?: Array<{ filename: string; content: string; encoding: 'base64' }> }) => {
+  const handleSendEmail = useCallback(async (data: { to: string; subject: string; body: string; html?: string; scheduledAt?: string; wacht_op_reactie?: boolean; attachments?: Array<{ filename: string; content: string; encoding: 'base64' }> }) => {
     try {
       await sendEmailViaApi(data.to, data.subject, data.body, {
         html: data.html,
         scheduledAt: data.scheduledAt,
+        wacht_op_reactie: data.wacht_op_reactie,
         attachments: data.attachments,
       })
     } catch (err) {
@@ -1176,6 +1255,25 @@ export function EmailLayout() {
             </div>
           ) : (
             <div>
+              {(selectedFolder === 'sales-wacht' || selectedFolder === 'sales-beantwoord') && !salesBannerDismissed && (
+                <div className="mx-4 mt-3 px-4 py-3 bg-amber-50/80 border border-amber-200 rounded-lg text-[12px] text-amber-900 leading-relaxed">
+                  <p className="font-medium mb-1">Hoe werkt Sales Inbox?</p>
+                  <p>
+                    "Beantwoord" wordt bepaald op basis van het afzender-emailadres, niet op echte
+                    email-threads. Bij koude acquisitie kan een antwoord van een ander adres komen
+                    (zoals info@) — die blijft dan in "Wacht op reactie". Andersom kan een mail over
+                    een ander onderwerp ten onrechte als reactie tellen. Gebruik de per-rij knoppen
+                    om dit te corrigeren.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={dismissSalesBanner}
+                    className="mt-2 text-amber-700 hover:text-amber-900 underline text-[11px]"
+                  >
+                    Begrepen, niet meer tonen
+                  </button>
+                </div>
+              )}
               {(() => {
                 const nodes: React.ReactNode[] = []
                 let lastGroup: string | null = null
@@ -1238,6 +1336,10 @@ export function EmailLayout() {
                       onArchive={handleArchive}
                       onDelete={handleDelete}
                       onToggleRead={handleToggleRead}
+                      salesMode={selectedFolder === 'sales-wacht' ? 'wacht' : selectedFolder === 'sales-beantwoord' ? 'beantwoord' : undefined}
+                      onMarkeerBeantwoord={selectedFolder === 'sales-wacht' ? handleSalesMarkeerBeantwoord : undefined}
+                      onWisWacht={selectedFolder === 'sales-wacht' ? handleSalesWisWacht : undefined}
+                      onTerugNaarWacht={selectedFolder === 'sales-beantwoord' ? handleSalesTerugNaarWacht : undefined}
                     />
                   )
                 })
