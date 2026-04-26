@@ -20,6 +20,7 @@ import {
   X,
   ChevronRight,
   Loader2,
+  Settings,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -536,14 +537,24 @@ export function NotificatieCenter() {
             <h3 className="text-[14px] font-bold text-[#1A1A1A] tracking-[-0.2px]">
               Notificaties{aantalOngelezen > 0 && <span className="text-[#F15025]">.</span>}
             </h3>
-            {aantalOngelezen > 0 && (
+            <div className="flex items-center gap-2">
+              {aantalOngelezen > 0 && (
+                <button
+                  onClick={handleAllesGelezenMarkeren}
+                  className="text-[12px] font-medium text-[#1A535C] hover:text-[#0F3C44] transition-colors"
+                >
+                  Alles gelezen
+                </button>
+              )}
               <button
-                onClick={handleAllesGelezenMarkeren}
-                className="text-[12px] font-medium text-[#1A535C] hover:text-[#0F3C44] transition-colors"
+                type="button"
+                onClick={() => { setOpen(false); navigate('/instellingen') }}
+                aria-label="Instellingen"
+                className="w-7 h-7 rounded-md flex items-center justify-center text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] transition-colors"
               >
-                Alles gelezen
+                <Settings className="h-3.5 w-3.5" />
               </button>
-            )}
+            </div>
           </div>
 
           <div className="h-px bg-[#EBEBEB]" />
@@ -573,16 +584,17 @@ export function NotificatieCenter() {
                       key={notificatie.id}
                       onClick={() => handleNotificatieKlik(notificatie)}
                       className={cn(
-                        'group flex w-full items-start gap-3 px-5 py-3 text-left transition-colors',
-                        isUnread && 'bg-[#F15025]/[0.025]',
-                        isUnread ? 'hover:bg-[#F15025]/[0.06]' : 'hover:bg-[#F8F7F5]'
+                        'group flex w-full items-start gap-3 px-5 py-3.5 text-left transition-colors border-l-2',
+                        isUnread
+                          ? 'bg-[#F15025]/[0.05] hover:bg-[#F15025]/[0.08] border-[#F15025]'
+                          : 'hover:bg-[#F8F7F5] border-transparent',
                       )}
                     >
                       <div className={cn(
-                        "mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full",
+                        "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
                         config.bgClass
                       )}>
-                        <Icon className={cn("h-3.5 w-3.5", config.colorClass)} />
+                        <Icon className={cn("h-4 w-4", config.colorClass)} />
                       </div>
                       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                         <div className="flex items-center justify-between gap-2">
@@ -593,7 +605,10 @@ export function NotificatieCenter() {
                             {notificatie.titel}
                           </span>
                           <div className="flex items-center gap-1.5 flex-shrink-0">
-                            <span className="font-mono whitespace-nowrap text-[11px] text-[#9B9B95] tabular-nums">
+                            <span className={cn(
+                              'whitespace-nowrap text-[11px] tabular-nums',
+                              isUnread ? 'text-[#6B6B66]' : 'text-[#B0ADA8]',
+                            )}>
                               {formatTijdGeleden(notificatie.created_at)}
                             </span>
                             {isUnread && (
