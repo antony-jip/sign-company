@@ -1092,6 +1092,20 @@ export function EmailLayout() {
         document.body,
       )}
 
+      {/* Mobile sticky compose CTA — pinned above MobileBottomNav while
+          viewing the inbox. Portaled to body to escape main's stacking context. */}
+      {viewMode === 'idle' && createPortal(
+        <button
+          type="button"
+          onClick={() => handleCompose()}
+          className="md:hidden fixed bottom-[calc(3.5rem+env(safe-area-inset-bottom))] left-0 right-0 z-40 h-12 flex items-center justify-center gap-2 text-[14px] font-semibold text-white bg-[#F15025] hover:bg-[#D8421F] shadow-[0_-2px_8px_rgba(0,0,0,0.08)] transition-colors duration-150"
+        >
+          <Pencil className="h-4 w-4" />
+          Nieuw bericht
+        </button>,
+        document.body,
+      )}
+
       {/* ─── MIDDLE: content area ─── */}
       <div className="flex-1 bg-white flex flex-col min-w-0">
 
