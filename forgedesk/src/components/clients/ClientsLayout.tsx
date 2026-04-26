@@ -313,7 +313,7 @@ export function ClientsLayout() {
 
       {/* Content */}
       <div className="flex-1 min-h-0 overflow-y-auto">
-      <div className="px-8 py-8 space-y-6">
+      <div className="px-4 py-4 md:px-8 md:py-8 space-y-6">
 
       {/* ── Header + Stats ── */}
       <div className="space-y-4">
@@ -329,10 +329,10 @@ export function ClientsLayout() {
           </div>
           <Button
             onClick={() => { setEditingKlant(undefined); setAddDialogOpen(true) }}
-            className="inline-flex items-center gap-2 bg-[#F15025] text-white pl-4 pr-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_2px_8px_rgba(241,80,37,0.25),0_0_0_1px_rgba(241,80,37,0.1)] hover:bg-[#E04520] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35),0_0_0_1px_rgba(241,80,37,0.15)] hover:-translate-y-[1px] active:translate-y-0 active:bg-[#D03A18] transition-all duration-200"
+            className="inline-flex items-center gap-2 bg-[#F15025] text-white px-3 md:pl-4 md:pr-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_2px_8px_rgba(241,80,37,0.25),0_0_0_1px_rgba(241,80,37,0.1)] hover:bg-[#E04520] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35),0_0_0_1px_rgba(241,80,37,0.15)] hover:-translate-y-[1px] active:translate-y-0 active:bg-[#D03A18] transition-all duration-200"
           >
             <UserPlus className="w-4 h-4 opacity-80" />
-            Nieuwe klant
+            <span className="hidden md:inline">Nieuwe klant</span>
           </Button>
         </div>
 
@@ -447,7 +447,7 @@ export function ClientsLayout() {
 
         {/* Filter tabs */}
         <div className="flex items-center gap-6 mt-4 pt-4 border-t border-[#F0EFEC]">
-          <div className="flex items-center gap-1 flex-wrap flex-1">
+          <div className="flex items-center gap-1 flex-1 flex-nowrap md:flex-wrap overflow-x-auto">
             {(['alle', 'actief', 'inactief', 'prospect'] as StatusFilter[]).map((f) => {
               const labels: Record<StatusFilter, string> = {
                 alle: 'Alle',
@@ -483,7 +483,7 @@ export function ClientsLayout() {
         </div>
 
         {/* Label filter row */}
-        <div className="flex items-center gap-1 mt-3 flex-wrap">
+        <div className="flex items-center gap-1 mt-3 flex-nowrap md:flex-wrap overflow-x-auto">
           {[
             { value: 'alle', label: 'Alle labels' },
             { value: 'vooruit_betalen', label: 'Vooruit betalen' },
@@ -509,7 +509,7 @@ export function ClientsLayout() {
         </div>
 
         {/* Klant status filter row */}
-        <div className="flex items-center gap-1 mt-2 flex-wrap">
+        <div className="flex items-center gap-1 mt-2 flex-nowrap md:flex-wrap overflow-x-auto">
           {[
             { value: 'alle', label: 'Alle statussen', color: undefined },
             ...Object.entries(klantStatusConfig).map(([key, cfg]) => ({
