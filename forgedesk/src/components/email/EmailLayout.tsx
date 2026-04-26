@@ -22,7 +22,7 @@ import { EmailListItem } from './EmailListItem'
 import type { Email, EmailAttachment } from '@/types'
 import { logger } from '../../utils/logger'
 import type { EmailFolder, FilterType, FontSize, ViewMode } from './emailTypes'
-import { extractSenderEmail, extractSenderName, parseSearchQuery, IMAP_FOLDER_MAP, KEYBOARD_SHORTCUTS, calculateSnoozeDate } from './emailHelpers'
+import { extractSenderEmail, extractSenderName, parseSearchQuery, IMAP_FOLDER_MAP, KEYBOARD_SHORTCUTS, calculateSnoozeDate, getAvatarStyle } from './emailHelpers'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 
@@ -45,6 +45,9 @@ const filtersList: { id: FilterType; label: string }[] = [
 ]
 
 const folderIds: EmailFolder[] = ['inbox', 'verzonden', 'concepten', 'gepland', 'gesnoozed', 'prullenbak', 'sales-wacht', 'sales-beantwoord']
+
+// Mobile drawer surfaces these two as primary; the rest sits below a divider.
+const PRIMARY_FOLDER_IDS = new Set<EmailFolder>(['inbox', 'sales-wacht'])
 
 // ─── Helper: convert IMAP message to Email ───
 function imapToEmail(msg: IMAPEmailSummary, folder: string, userId: string): Email {
@@ -987,9 +990,63 @@ export function EmailLayout() {
   const readerSenderEmail = selectedEmail ? extractSenderEmail(selectedEmail.van) : ''
   // Avatar helpers kept in emailHelpers for EmailReader usage
 
+  // Mobile drawer account header — same fallback pattern as TopNav/Sidebar.
+  const userInitial = (user?.user_metadata?.voornaam?.[0] || user?.email?.[0] || 'U').toUpperCase()
+  const userName = user?.user_metadata?.voornaam
+    ? `${user.user_metadata.voornaam}${user.user_metadata.achternaam ? ' ' + user.user_metadata.achternaam : ''}`
+    : user?.email?.split('@')[0] || 'Gebruiker'
+  const userAvatarStyle = getAvatarStyle(userName)
+
+  const renderMobileFolderBtn = (folder: { id: EmailFolder; label: string; icon: React.ElementType }) => {
+    const isActive = selectedFolder === folder.id
+    const count = folderCounts[folder.id]
+    const Icon = folder.icon
+    return (
+      <button
+        key={folder.id}
+        onClick={() => handleFolderChange(folder.id)}
+        className={cn(
+          'w-full py-3 px-4 flex items-center gap-2.5 rounded-lg text-[13px] font-medium transition-colors',
+          isActive
+            ? 'bg-[#1A535C]/[0.08] text-[#1A535C] font-medium'
+            : 'text-[#6B6B66] hover:bg-[#F8F7F5] hover:text-[#1A1A1A]',
+        )}
+      >
+        <Icon className={cn('h-4 w-4 flex-shrink-0', isActive && 'text-[#1A535C]')} />
+        <span className="flex-1 text-left">{folder.label}</span>
+        {count > 0 && (
+          <span className={cn(
+            'text-[11px] font-mono px-1.5 py-0.5 rounded-full min-w-[20px] text-center',
+            folder.id === 'inbox' && isActive
+              ? 'bg-[#1A535C] text-white'
+              : folder.id === 'inbox'
+                ? 'bg-[#1A535C]/10 text-[#1A535C]'
+                : 'text-[#9B9B95]',
+          )}>
+            {count}
+          </span>
+        )}
+      </button>
+    )
+  }
+
   // Shared between the inline desktop sidebar and the portaled mobile drawer.
   const sidebarInner = (
     <>
+      {/* Mobile-only account header */}
+      <div className="md:hidden flex items-center gap-3 px-4 py-4 border-b border-[#EBEBEB]">
+        <div
+          className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+          style={{ backgroundColor: userAvatarStyle.bg, color: userAvatarStyle.text }}
+        >
+          <span className="text-[14px] font-bold">{userInitial}</span>
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-[14px] font-semibold text-[#1A1A1A] truncate">{userName}</p>
+          <p className="text-[12px] text-[#6B6B66] truncate">{user?.email}</p>
+        </div>
+      </div>
+
       <div className="p-3">
         <button
           className="w-full h-10 rounded-xl flex items-center justify-center gap-2 text-[13px] font-semibold text-white bg-[#F15025] hover:bg-[#D8421F] shadow-[0_1px_3px_rgba(241,80,37,0.18)] hover:shadow-[0_3px_10px_rgba(241,80,37,0.24)] transition-[background-color,box-shadow] duration-200"
@@ -1000,58 +1057,80 @@ export function EmailLayout() {
         </button>
       </div>
 
-      <nav className="flex-1 px-2 space-y-0.5">
-        {folderTabs.map(folder => {
-          const isActive = selectedFolder === folder.id
-          const count = folderCounts[folder.id]
-          const Icon = folder.icon
-          return (
-            <button
-              key={folder.id}
-              onClick={() => handleFolderChange(folder.id)}
-              className={cn(
-                'w-full h-[40px] flex items-center gap-2.5 px-3 rounded-lg text-[13px] font-medium transition-all duration-150',
-                isActive
-                  ? 'bg-[#1A535C]/[0.07] text-[#1A535C] font-semibold'
-                  : 'text-[#6B6B66] hover:bg-[#F0EFEC]/60 hover:text-[#4A4A46]',
-              )}
-            >
-              <Icon className={cn('h-4 w-4 flex-shrink-0', isActive && 'text-[#1A535C]')} />
-              <span className="flex-1 text-left">{folder.label}</span>
-              {count > 0 && (
-                <span className={cn(
-                  'text-[11px] font-mono px-1.5 py-0.5 rounded-full min-w-[20px] text-center',
-                  folder.id === 'inbox' && isActive
-                    ? 'bg-[#1A535C] text-white'
-                    : folder.id === 'inbox'
-                      ? 'bg-[#1A535C]/10 text-[#1A535C]'
-                      : 'text-[#9B9B95]',
-                )}>
-                  {count}
-                </span>
-              )}
-            </button>
-          )
-        })}
+      <nav className="flex-1 overflow-y-auto px-2">
+        {/* Mobile: primary group → divider → secondary group (incl gepland) */}
+        <div className="md:hidden space-y-0">
+          {folderTabs.filter(f => PRIMARY_FOLDER_IDS.has(f.id)).map(renderMobileFolderBtn)}
+          <div className="my-2 border-t border-[#EBEBEB]/60" />
+          {folderTabs.filter(f => !PRIMARY_FOLDER_IDS.has(f.id)).map(renderMobileFolderBtn)}
+          <button
+            onClick={() => handleFolderChange('gepland')}
+            className={cn(
+              'w-full py-3 px-4 flex items-center gap-2.5 rounded-lg text-[13px] font-medium transition-colors',
+              selectedFolder === 'gepland'
+                ? 'bg-[#1A535C]/[0.08] text-[#1A535C] font-medium'
+                : 'text-[#6B6B66] hover:bg-[#F8F7F5] hover:text-[#1A1A1A]',
+            )}
+          >
+            <Clock className={cn('h-4 w-4 flex-shrink-0', selectedFolder === 'gepland' && 'text-[#1A535C]')} />
+            <span className="flex-1 text-left">Ingeplande berichten</span>
+          </button>
+        </div>
 
-        <div className="my-2 border-t border-[#EBEBEB]/60" />
+        {/* Desktop: existing layout, untouched */}
+        <div className="hidden md:block space-y-0.5">
+          {folderTabs.map(folder => {
+            const isActive = selectedFolder === folder.id
+            const count = folderCounts[folder.id]
+            const Icon = folder.icon
+            return (
+              <button
+                key={folder.id}
+                onClick={() => handleFolderChange(folder.id)}
+                className={cn(
+                  'w-full h-[40px] flex items-center gap-2.5 px-3 rounded-lg text-[13px] font-medium transition-all duration-150',
+                  isActive
+                    ? 'bg-[#1A535C]/[0.07] text-[#1A535C] font-semibold'
+                    : 'text-[#6B6B66] hover:bg-[#F0EFEC]/60 hover:text-[#4A4A46]',
+                )}
+              >
+                <Icon className={cn('h-4 w-4 flex-shrink-0', isActive && 'text-[#1A535C]')} />
+                <span className="flex-1 text-left">{folder.label}</span>
+                {count > 0 && (
+                  <span className={cn(
+                    'text-[11px] font-mono px-1.5 py-0.5 rounded-full min-w-[20px] text-center',
+                    folder.id === 'inbox' && isActive
+                      ? 'bg-[#1A535C] text-white'
+                      : folder.id === 'inbox'
+                        ? 'bg-[#1A535C]/10 text-[#1A535C]'
+                        : 'text-[#9B9B95]',
+                  )}>
+                    {count}
+                  </span>
+                )}
+              </button>
+            )
+          })}
 
-        <button
-          onClick={() => { setFolderDrawerOpen(false); handleFolderChange('gepland') }}
-          className={cn(
-            'w-full h-[40px] flex items-center gap-2.5 px-3 rounded-lg text-[13px] font-medium transition-all duration-150',
-            selectedFolder === 'gepland'
-              ? 'bg-[#1A535C]/[0.07] text-[#1A535C] font-semibold'
-              : 'text-[#6B6B66] hover:bg-[#F0EFEC]/60 hover:text-[#4A4A46]',
-          )}
-        >
-          <Clock className={cn('h-4 w-4 flex-shrink-0', selectedFolder === 'gepland' && 'text-[#1A535C]')} />
-          <span className="flex-1 text-left">Ingeplande berichten</span>
-        </button>
+          <div className="my-2 border-t border-[#EBEBEB]/60" />
+
+          <button
+            onClick={() => { setFolderDrawerOpen(false); handleFolderChange('gepland') }}
+            className={cn(
+              'w-full h-[40px] flex items-center gap-2.5 px-3 rounded-lg text-[13px] font-medium transition-all duration-150',
+              selectedFolder === 'gepland'
+                ? 'bg-[#1A535C]/[0.07] text-[#1A535C] font-semibold'
+                : 'text-[#6B6B66] hover:bg-[#F0EFEC]/60 hover:text-[#4A4A46]',
+            )}
+          >
+            <Clock className={cn('h-4 w-4 flex-shrink-0', selectedFolder === 'gepland' && 'text-[#1A535C]')} />
+            <span className="flex-1 text-left">Ingeplande berichten</span>
+          </button>
+        </div>
       </nav>
 
-      <div className="px-4 py-3 border-t border-[#EBEBEB]">
-        <div className="flex items-center gap-2 text-[11px] text-[#B0ADA8]">
+      <div className="p-4 md:px-4 md:py-3 border-t border-[#EBEBEB]">
+        <div className="flex items-center gap-2 text-[12px] md:text-[11px] text-[#9B9B95] md:text-[#B0ADA8]">
           <Mail className="h-3 w-3" />
           <span>doen. mail</span>
         </div>
