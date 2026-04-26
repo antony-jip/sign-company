@@ -638,7 +638,7 @@ export function EmailReader({
     return (
       <div className="flex flex-col h-full min-w-0">
           {/* Top action bar — sticky */}
-          <div className="flex items-center justify-between px-5 h-12 border-b border-[#F0EFEC] flex-shrink-0 bg-white sticky top-0 z-10">
+          <div className="flex items-center justify-between px-3 md:px-5 h-12 border-b border-[#F0EFEC] flex-shrink-0 bg-white sticky top-0 z-10">
             <div className="flex items-center gap-1">
               <Button
                 variant="ghost"
@@ -647,7 +647,7 @@ export function EmailReader({
                 onClick={onBack}
               >
                 <ArrowLeft className="h-4 w-4" />
-                <span className="text-[14px]">Terug</span>
+                <span className="text-[14px] hidden md:inline">Terug</span>
               </Button>
               <div className="w-px h-5 bg-[#F0EFEC] mx-1.5" />
               <Button variant="ghost" size="icon" className="h-8 w-8 text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F0EFEC] transition-colors duration-150" onClick={() => email && onArchive?.(email)} title="Archiveren">
@@ -660,7 +660,7 @@ export function EmailReader({
                 <MailOpen className="h-4 w-4" />
               </Button>
             </div>
-            <div className="flex items-center gap-1 text-[14px] text-[#B0ADA8]">
+            <div className="hidden md:flex items-center gap-1 text-[14px] text-[#B0ADA8]">
               {emailIndex !== undefined && emailTotal !== undefined && (
                 <>
                   <span className="tabular-nums">{emailIndex + 1}/{emailTotal}</span>
@@ -864,7 +864,7 @@ export function EmailReader({
             )}
 
             {/* ─── Toolbar (inline, under signature) ─── */}
-            <div className="flex items-center justify-between px-5 py-2.5 border-t border-b border-[#F0EFEC] bg-[#F8F7F5]">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-2 md:gap-0 px-3 md:px-5 py-2.5 border-t border-b border-[#F0EFEC] bg-[#F8F7F5]">
               <div className="flex items-center">
                 <div className="flex items-center gap-px mr-2">
                   <button onClick={() => execCommand('undo')} className="h-8 w-8 flex items-center justify-center rounded-md text-[#B0ADA8] hover:text-[#6B6B66] hover:bg-[#F0EFEC] transition-colors duration-150" title="Ongedaan maken"><Undo2 className="h-4 w-4" /></button>
@@ -899,7 +899,7 @@ export function EmailReader({
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 w-full md:w-auto justify-end md:justify-start">
                 <button
                   onClick={() => setReplyMode(null)}
                   className="h-8 w-8 flex items-center justify-center rounded-md text-[#B0ADA8] hover:text-[#C0451A] hover:bg-[#C0451A]/[0.06] transition-colors duration-150"
