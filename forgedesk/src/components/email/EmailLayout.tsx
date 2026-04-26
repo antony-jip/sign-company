@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import { useLocation } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import {
@@ -986,97 +987,110 @@ export function EmailLayout() {
   const readerSenderEmail = selectedEmail ? extractSenderEmail(selectedEmail.van) : ''
   // Avatar helpers kept in emailHelpers for EmailReader usage
 
+  // Shared between the inline desktop sidebar and the portaled mobile drawer.
+  const sidebarInner = (
+    <>
+      <div className="p-3">
+        <button
+          className="w-full h-10 rounded-xl flex items-center justify-center gap-2 text-[13px] font-semibold text-white bg-[#F15025] hover:bg-[#D8421F] shadow-[0_1px_3px_rgba(241,80,37,0.18)] hover:shadow-[0_3px_10px_rgba(241,80,37,0.24)] transition-[background-color,box-shadow] duration-200"
+          onClick={() => { setFolderDrawerOpen(false); handleCompose() }}
+        >
+          <Pencil className="h-4 w-4" />
+          Nieuw bericht
+        </button>
+      </div>
+
+      <nav className="flex-1 px-2 space-y-0.5">
+        {folderTabs.map(folder => {
+          const isActive = selectedFolder === folder.id
+          const count = folderCounts[folder.id]
+          const Icon = folder.icon
+          return (
+            <button
+              key={folder.id}
+              onClick={() => handleFolderChange(folder.id)}
+              className={cn(
+                'w-full h-[40px] flex items-center gap-2.5 px-3 rounded-lg text-[13px] font-medium transition-all duration-150',
+                isActive
+                  ? 'bg-[#1A535C]/[0.07] text-[#1A535C] font-semibold'
+                  : 'text-[#6B6B66] hover:bg-[#F0EFEC]/60 hover:text-[#4A4A46]',
+              )}
+            >
+              <Icon className={cn('h-4 w-4 flex-shrink-0', isActive && 'text-[#1A535C]')} />
+              <span className="flex-1 text-left">{folder.label}</span>
+              {count > 0 && (
+                <span className={cn(
+                  'text-[11px] font-mono px-1.5 py-0.5 rounded-full min-w-[20px] text-center',
+                  folder.id === 'inbox' && isActive
+                    ? 'bg-[#1A535C] text-white'
+                    : folder.id === 'inbox'
+                      ? 'bg-[#1A535C]/10 text-[#1A535C]'
+                      : 'text-[#9B9B95]',
+                )}>
+                  {count}
+                </span>
+              )}
+            </button>
+          )
+        })}
+
+        <div className="my-2 border-t border-[#EBEBEB]/60" />
+
+        <button
+          onClick={() => { setFolderDrawerOpen(false); handleFolderChange('gepland') }}
+          className={cn(
+            'w-full h-[40px] flex items-center gap-2.5 px-3 rounded-lg text-[13px] font-medium transition-all duration-150',
+            selectedFolder === 'gepland'
+              ? 'bg-[#1A535C]/[0.07] text-[#1A535C] font-semibold'
+              : 'text-[#6B6B66] hover:bg-[#F0EFEC]/60 hover:text-[#4A4A46]',
+          )}
+        >
+          <Clock className={cn('h-4 w-4 flex-shrink-0', selectedFolder === 'gepland' && 'text-[#1A535C]')} />
+          <span className="flex-1 text-left">Ingeplande berichten</span>
+        </button>
+      </nav>
+
+      <div className="px-4 py-3 border-t border-[#EBEBEB]">
+        <div className="flex items-center gap-2 text-[11px] text-[#B0ADA8]">
+          <Mail className="h-3 w-3" />
+          <span>doen. mail</span>
+        </div>
+      </div>
+    </>
+  )
+
   // ─── UNIFIED 3-COLUMN LAYOUT ───
   return (
     <div className={cn('h-full flex flex-col -m-3 sm:-m-4 md:-m-6 overflow-hidden', viewMode === 'idle' ? 'bg-[#F8F7F5]' : 'bg-white')}>
       <div className="flex flex-1 min-h-0 overflow-hidden">
-      {/* Mobile drawer backdrop */}
-      {folderDrawerOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/40 md:hidden"
-          onClick={() => setFolderDrawerOpen(false)}
-          aria-hidden="true"
-        />
-      )}
+      {/* Desktop sidebar — inline column */}
+      <div className="hidden md:flex w-[220px] bg-white border-r border-[#EBEBEB] flex-col flex-shrink-0">
+        {sidebarInner}
+      </div>
 
-      {/* ─── LEFT SIDEBAR — desktop: column; mobile: hamburger drawer ─── */}
-      <div
-        className={cn(
-          'w-[220px] bg-white border-r border-[#EBEBEB] flex flex-col flex-shrink-0',
-          // Mobile drawer: slide-over from left, ~80vw wide.
-          // md:!w-[220px] needs the ! to override the mobile w-[80vw] on the same element.
-          'md:relative md:translate-x-0 md:!w-[220px]',
-          'fixed inset-y-0 left-0 z-50 w-[80vw] max-w-[300px] transform transition-transform duration-300 ease-in-out',
-          folderDrawerOpen ? 'translate-x-0' : '-translate-x-full',
-        )}
-      >
-        <div className="p-3">
-          <button
-            className="w-full h-10 rounded-xl flex items-center justify-center gap-2 text-[13px] font-semibold text-white bg-[#F15025] hover:bg-[#D8421F] shadow-[0_1px_3px_rgba(241,80,37,0.18)] hover:shadow-[0_3px_10px_rgba(241,80,37,0.24)] transition-[background-color,box-shadow] duration-200"
-            onClick={() => handleCompose()}
-          >
-            <Pencil className="h-4 w-4" />
-            Nieuw bericht
-          </button>
-        </div>
-
-        <nav className="flex-1 px-2 space-y-0.5">
-          {folderTabs.map(folder => {
-            const isActive = selectedFolder === folder.id
-            const count = folderCounts[folder.id]
-            const Icon = folder.icon
-            return (
-              <button
-                key={folder.id}
-                onClick={() => handleFolderChange(folder.id)}
-                className={cn(
-                  'w-full h-[40px] flex items-center gap-2.5 px-3 rounded-lg text-[13px] font-medium transition-all duration-150',
-                  isActive
-                    ? 'bg-[#1A535C]/[0.07] text-[#1A535C] font-semibold'
-                    : 'text-[#6B6B66] hover:bg-[#F0EFEC]/60 hover:text-[#4A4A46]',
-                )}
-              >
-                <Icon className={cn('h-4 w-4 flex-shrink-0', isActive && 'text-[#1A535C]')} />
-                <span className="flex-1 text-left">{folder.label}</span>
-                {count > 0 && (
-                  <span className={cn(
-                    'text-[11px] font-mono px-1.5 py-0.5 rounded-full min-w-[20px] text-center',
-                    folder.id === 'inbox' && isActive
-                      ? 'bg-[#1A535C] text-white'
-                      : folder.id === 'inbox'
-                        ? 'bg-[#1A535C]/10 text-[#1A535C]'
-                        : 'text-[#9B9B95]',
-                  )}>
-                    {count}
-                  </span>
-                )}
-              </button>
-            )
-          })}
-
-          <div className="my-2 border-t border-[#EBEBEB]/60" />
-
-          <button
-            onClick={() => { setFolderDrawerOpen(false); handleFolderChange('gepland') }}
+      {/* Mobile drawer + backdrop — portaled to body so the slide-over escapes
+          the parent's stacking context (main carries zIndex:0 in topnav layout,
+          which would otherwise hide the drawer's top behind the global header). */}
+      {createPortal(
+        <>
+          {folderDrawerOpen && (
+            <div
+              className="fixed inset-0 z-40 bg-black/40 md:hidden"
+              onClick={() => setFolderDrawerOpen(false)}
+              aria-hidden="true"
+            />
+          )}
+          <div
             className={cn(
-              'w-full h-[40px] flex items-center gap-2.5 px-3 rounded-lg text-[13px] font-medium transition-all duration-150',
-              selectedFolder === 'gepland'
-                ? 'bg-[#1A535C]/[0.07] text-[#1A535C] font-semibold'
-                : 'text-[#6B6B66] hover:bg-[#F0EFEC]/60 hover:text-[#4A4A46]',
+              'md:hidden fixed inset-y-0 left-0 z-50 w-[80vw] max-w-[300px] bg-white border-r border-[#EBEBEB] flex flex-col transform transition-transform duration-300 ease-in-out',
+              folderDrawerOpen ? 'translate-x-0' : '-translate-x-full',
             )}
           >
-            <Clock className={cn('h-4 w-4 flex-shrink-0', selectedFolder === 'gepland' && 'text-[#1A535C]')} />
-            <span className="flex-1 text-left">Ingeplande berichten</span>
-          </button>
-        </nav>
-
-        <div className="px-4 py-3 border-t border-[#EBEBEB]">
-          <div className="flex items-center gap-2 text-[11px] text-[#B0ADA8]">
-            <Mail className="h-3 w-3" />
-            <span>doen. mail</span>
+            {sidebarInner}
           </div>
-        </div>
-      </div>
+        </>,
+        document.body,
+      )}
 
       {/* ─── MIDDLE: content area ─── */}
       <div className="flex-1 bg-white flex flex-col min-w-0">
