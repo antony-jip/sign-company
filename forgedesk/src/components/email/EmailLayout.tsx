@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import {
   Search, Pencil, Inbox, Send, FileEdit, Trash2,
   Loader2, Archive, RefreshCw, CheckCheck, X, Mail, MailOpen,
-  Rows3, StretchHorizontal, Clock, Pin,
+  Rows3, StretchHorizontal, Clock, Pin, Menu,
 } from 'lucide-react'
 import { IngeplandeBerichtenLijst } from './IngeplandeBerichtenLijst'
 import { sendEmail as sendEmailViaApi, fetchEmailsFromIMAP, readEmailFromIMAP } from '@/services/gmailService'
@@ -84,6 +84,7 @@ export function EmailLayout() {
   const [listStyle, setListStyle] = useState<'inline' | 'stacked'>(() => {
     try { return (localStorage.getItem('email_list_style') as 'inline' | 'stacked') || 'stacked' } catch (err) { return 'stacked' }
   })
+  const [folderDrawerOpen, setFolderDrawerOpen] = useState(false)
 
   // ─── Loading state ───
   const [isLoading, setIsLoading] = useState(true)
@@ -923,8 +924,16 @@ export function EmailLayout() {
     setSearchQuery('')
     setSearchInput('')
     clearChecked()
+    setFolderDrawerOpen(false)
     handleFolderLoad(folder)
   }, [clearChecked, handleFolderLoad])
+
+  useEffect(() => {
+    if (!folderDrawerOpen) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setFolderDrawerOpen(false) }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [folderDrawerOpen])
 
   const handleSearchChange = useCallback((value: string) => {
     setSearchInput(value)
@@ -981,8 +990,26 @@ export function EmailLayout() {
   return (
     <div className={cn('h-full flex flex-col -m-3 sm:-m-4 md:-m-6 overflow-hidden', viewMode === 'idle' ? 'bg-[#F8F7F5]' : 'bg-white')}>
       <div className="flex flex-1 min-h-0 overflow-hidden">
-      {/* ─── LEFT SIDEBAR — always visible ─── */}
-      <div className="w-[220px] bg-white border-r border-[#EBEBEB] flex flex-col flex-shrink-0">
+      {/* Mobile drawer backdrop */}
+      {folderDrawerOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/40 md:hidden"
+          onClick={() => setFolderDrawerOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* ─── LEFT SIDEBAR — desktop: column; mobile: hamburger drawer ─── */}
+      <div
+        className={cn(
+          'w-[220px] bg-white border-r border-[#EBEBEB] flex flex-col flex-shrink-0',
+          // Mobile drawer: slide-over from left, ~80vw wide.
+          // md:!w-[220px] needs the ! to override the mobile w-[80vw] on the same element.
+          'md:relative md:translate-x-0 md:!w-[220px]',
+          'fixed inset-y-0 left-0 z-50 w-[80vw] max-w-[300px] transform transition-transform duration-300 ease-in-out',
+          folderDrawerOpen ? 'translate-x-0' : '-translate-x-full',
+        )}
+      >
         <div className="p-3">
           <button
             className="w-full h-10 rounded-xl flex items-center justify-center gap-2 text-[13px] font-semibold text-white bg-[#F15025] hover:bg-[#D8421F] shadow-[0_1px_3px_rgba(241,80,37,0.18)] hover:shadow-[0_3px_10px_rgba(241,80,37,0.24)] transition-[background-color,box-shadow] duration-200"
@@ -1030,7 +1057,7 @@ export function EmailLayout() {
           <div className="my-2 border-t border-[#EBEBEB]/60" />
 
           <button
-            onClick={() => handleFolderChange('gepland')}
+            onClick={() => { setFolderDrawerOpen(false); handleFolderChange('gepland') }}
             className={cn(
               'w-full h-[40px] flex items-center gap-2.5 px-3 rounded-lg text-[13px] font-medium transition-all duration-150',
               selectedFolder === 'gepland'
@@ -1111,6 +1138,14 @@ export function EmailLayout() {
         {/* Toolbar */}
         <div className="flex items-center justify-between px-4 h-12 border-b border-[#EBEBEB] flex-shrink-0">
           <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setFolderDrawerOpen(true)}
+              className="md:hidden h-8 w-8 -ml-1 flex items-center justify-center rounded-md text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F0EFEC]/60"
+              aria-label="Open mappen"
+            >
+              <Menu className="h-4 w-4" />
+            </button>
             <input
               type="checkbox"
               checked={allChecked}
