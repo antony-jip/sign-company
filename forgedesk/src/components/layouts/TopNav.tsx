@@ -175,7 +175,7 @@ export function TopNav() {
         )}
 
         {/* Right actions */}
-        <div className="flex items-center gap-0.5">
+        <div className="flex items-center gap-0.5 ml-auto md:ml-0">
           <button
             onClick={() => setMobileSearchOpen(true)}
             className="w-7 h-7 rounded-md md:hidden flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-all"
@@ -183,7 +183,9 @@ export function TopNav() {
             <Search className="w-3.5 h-3.5" />
           </button>
 
-          <NotificatieCenter />
+          <div className="order-3 md:order-none">
+            <NotificatieCenter />
+          </div>
 
           <div className="hidden md:block w-px h-4 bg-white/10 mx-1.5" />
 
@@ -243,7 +245,7 @@ export function TopNav() {
           </div>
 
           {/* Mobile hamburger */}
-          <Button variant="ghost" size="icon" className="w-7 h-7 rounded-md text-white/50 hover:text-white hover:bg-white/10 lg:hidden"
+          <Button variant="ghost" size="icon" className="w-7 h-7 rounded-md text-white/50 hover:text-white hover:bg-white/10 lg:hidden order-2 md:order-none"
             onClick={() => setMobileOpen(!mobileOpen)}>
             {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
           </Button>

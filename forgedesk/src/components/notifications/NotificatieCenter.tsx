@@ -525,7 +525,7 @@ export function NotificatieCenter() {
 
       {open && (
         <div
-          className="absolute right-0 top-full z-[70] mt-2 w-[380px] max-w-[calc(100vw-24px)] overflow-hidden bg-white rounded-xl"
+          className="fixed left-2 right-2 top-[60px] md:absolute md:left-auto md:right-0 md:top-full md:mt-2 md:w-[380px] md:max-w-[calc(100vw-24px)] z-[70] overflow-hidden bg-white rounded-xl"
           style={{
             border: '0.5px solid #E0DED8',
             boxShadow: '0 12px 32px rgba(120,90,50,0.12), 0 2px 6px rgba(0,0,0,0.04)',
