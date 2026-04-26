@@ -484,18 +484,33 @@ export function NotificatieCenter() {
       )}
 
       {aantalOngelezen > 0 ? (
-        <button
-          type="button"
-          onClick={() => setOpen((prev) => !prev)}
-          aria-label={`${aantalOngelezen} nieuwe notificatie${aantalOngelezen === 1 ? '' : 's'} openen`}
-          className="relative inline-flex items-center gap-1.5 rounded-full pl-2 pr-3 py-1.5 transition-all hover:opacity-90"
-          style={{ backgroundColor: '#F15025', color: '#fff' }}
-        >
-          <Bell className="h-[14px] w-[14px]" fill="#fff" />
-          <span className="text-[11px] font-semibold leading-none whitespace-nowrap">
-            {aantalOngelezen} nieuwe notificatie{aantalOngelezen === 1 ? '' : 's'}
-          </span>
-        </button>
+        <>
+          {/* Desktop: full pill with text */}
+          <button
+            type="button"
+            onClick={() => setOpen((prev) => !prev)}
+            aria-label={`${aantalOngelezen} nieuwe notificatie${aantalOngelezen === 1 ? '' : 's'} openen`}
+            className="hidden md:inline-flex relative items-center gap-1.5 rounded-full pl-2 pr-3 py-1.5 transition-all hover:opacity-90"
+            style={{ backgroundColor: '#F15025', color: '#fff' }}
+          >
+            <Bell className="h-[14px] w-[14px]" fill="#fff" />
+            <span className="text-[11px] font-semibold leading-none whitespace-nowrap">
+              {aantalOngelezen} nieuwe notificatie{aantalOngelezen === 1 ? '' : 's'}
+            </span>
+          </button>
+          {/* Mobile: icon button with count bubble */}
+          <button
+            type="button"
+            onClick={() => setOpen((prev) => !prev)}
+            aria-label={`${aantalOngelezen} nieuwe notificatie${aantalOngelezen === 1 ? '' : 's'} openen`}
+            className="md:hidden relative inline-flex items-center justify-center w-9 h-9 rounded-full hover:bg-[#F0EFEC]/60 transition-colors"
+          >
+            <Bell className="h-[18px] w-[18px]" style={{ color: '#5A5A55' }} />
+            <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] rounded-full bg-[#F15025] text-white text-[10px] font-bold leading-none flex items-center justify-center px-1">
+              {aantalOngelezen > 99 ? '99+' : aantalOngelezen}
+            </span>
+          </button>
+        </>
       ) : (
         <Button
           variant="ghost"

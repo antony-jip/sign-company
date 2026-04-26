@@ -1185,20 +1185,6 @@ export function EmailLayout() {
         document.body,
       )}
 
-      {/* Mobile floating hamburger — always visible on mobile, sits under the
-          drawer's z-50 so the backdrop covers it when the drawer is open. */}
-      {createPortal(
-        <button
-          type="button"
-          onClick={() => setFolderDrawerOpen(true)}
-          className="md:hidden fixed top-3 left-3 z-30 w-10 h-10 rounded-full bg-white/80 backdrop-blur-md shadow-sm flex items-center justify-center text-[#1A1A1A]"
-          aria-label="Open mappen"
-        >
-          <Menu className="h-5 w-5" />
-        </button>,
-        document.body,
-      )}
-
       {/* ─── MIDDLE: content area ─── */}
       <div className="flex-1 bg-white flex flex-col min-w-0">
 
@@ -1257,8 +1243,16 @@ export function EmailLayout() {
       {viewMode === 'idle' && selectedFolder !== 'gepland' && (<>
         {/* Toolbar */}
         {/* Toolbar */}
-        <div className="flex items-center justify-between px-4 h-12 border-b border-[#EBEBEB] flex-shrink-0">
+        <div className="sticky top-0 z-20 bg-white flex items-center justify-between px-4 h-12 border-b border-[#EBEBEB] flex-shrink-0">
           <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setFolderDrawerOpen(true)}
+              className="md:hidden h-8 w-8 -ml-1 flex items-center justify-center rounded-md text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F0EFEC]/60"
+              aria-label="Open mappen"
+            >
+              <Menu className="h-4 w-4" />
+            </button>
             <input
               type="checkbox"
               checked={allChecked}
