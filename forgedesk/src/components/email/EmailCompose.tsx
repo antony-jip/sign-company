@@ -691,7 +691,7 @@ export function EmailCompose({
         </div>
 
         {/* Bottom bar — formatting + send */}
-        <div className="flex items-center justify-between px-6 py-2.5 border-t border-[#EBEBEB] flex-shrink-0">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-2 md:gap-0 px-3 md:px-6 py-2.5 border-t border-[#EBEBEB] flex-shrink-0">
           <div className="flex items-center gap-0.5">
             <button className="h-8 w-8 flex items-center justify-center rounded-md text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F0EFEC] transition-colors duration-150" onClick={() => execCommand('bold')} title="Vet"><Bold className="h-4 w-4" /></button>
             <button className="h-8 w-8 flex items-center justify-center rounded-md text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F0EFEC] transition-colors duration-150" onClick={() => execCommand('italic')} title="Cursief"><Italic className="h-4 w-4" /></button>
@@ -712,7 +712,7 @@ export function EmailCompose({
               accept=".pdf,.jpg,.jpeg,.png,.dwg,.dxf,.doc,.docx"
             />
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full md:w-auto justify-end md:justify-start">
             {/* Sales Inbox v1: opvolg-toggle */}
             <label className="inline-flex items-center gap-1.5 text-[12px] text-[#67645E] cursor-pointer select-none" title="Vlag deze mail om op te volgen">
               <Switch checked={wachtOpReactie} onCheckedChange={setWachtOpReactie} />
