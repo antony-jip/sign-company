@@ -390,54 +390,101 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    // ─── Sales Inbox auto-match ───
-    // Voor elke nieuwe inkomende mail: match op afzender-emailadres tegen
-    // outbound mails waar wacht_op_reactie=true && beantwoord=false en
-    // datum < ontvangen-datum. Bij hit: zet outbound op beantwoord=true en
-    // sla de inkomende mail-id op als beantwoord_door_email_id.
-    // RLS-readiness: service_role omzeilt RLS, dus user_id-filter expliciet.
-    // Idempotent: re-run veroorzaakt geen schade (al-beantwoorde rijen
-    // vallen weg via de beantwoord=false filter).
+    // ─── Sales Inbox auto-match v2 ───
+    // Retroactieve sweep: alle inkomende mails uit laatste 72u tegen alle
+    // wachtende outbounds van laatste 60d, in 2 parallel SELECTs + N UPDATEs.
+    // Vervangt v1's per-newcomer storedRow-lookup (2N queries) — de net-
+    // toegevoegde rijen uit deze fetch zitten al in de DB en vallen binnen
+    // het 72u-venster van de sweep. 72u dekt weekend-patroon (gebruiker
+    // niet actief za/zo, refresht maandag, weekend-replies blijven matchen).
+    //
+    // Soft deadline (10s) voorkomt dat een grote inbox de hele endpoint
+    // laat timeouten — was de oorzaak van 504s in productie. RLS-readiness:
+    // service_role omzeilt RLS, dus user_id-filter expliciet op alle queries
+    // en updates.
+    //
+    // Idempotent: outbound.beantwoord=false-filter sluit reeds-gematchte
+    // uit (incl. handmatig gemarkeerde via UI); UPDATE WHERE bevat
+    // race-guard op beantwoord=false; in-memory alreadyMatched Set
+    // voorkomt dubbele match in dezelfde sweep; niet_match_email_ids
+    // sluit user-gecorrigeerde uit.
+    //
+    // Out of scope v2: thread-match via in_reply_to/references — natuurlijke
+    // upgrade die false-positives reduceert, eigen feature later.
+    const matchStartedAt = Date.now()
+    const MATCH_DEADLINE_MS = 10_000
+    const INBOX_WINDOW_HOURS = 72
+    const OUTBOUND_WINDOW_DAYS = 60
+
     try {
-      const inkomendeMails = newEmails.filter((e) => e.map === 'inbox' && e.from_address && e.message_id)
+      const inkomendeWindow = new Date(Date.now() - INBOX_WINDOW_HOURS * 60 * 60 * 1000).toISOString()
+      const outboundWindow = new Date(Date.now() - OUTBOUND_WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString()
 
-      for (const inkomend of inkomendeMails) {
-        const { data: storedRow } = await supabaseAdmin
+      const [inkomendeQ, kandidatenQ] = await Promise.all([
+        supabaseAdmin
           .from('emails')
-          .select('id, datum, from_address')
+          .select('id, from_address, datum')
           .eq('user_id', user_id)
-          .eq('message_id', inkomend.message_id as string)
-          .maybeSingle()
-        if (!storedRow?.id) continue
-
-        const { data: kandidaten } = await supabaseAdmin
+          .eq('map', 'inbox')
+          .gte('datum', inkomendeWindow)
+          .not('from_address', 'is', null)
+          .order('datum', { ascending: false })
+          .limit(500),
+        supabaseAdmin
           .from('emails')
-          .select('id, niet_match_email_ids')
+          .select('id, aan, datum, niet_match_email_ids')
           .eq('user_id', user_id)
           .eq('wacht_op_reactie', true)
           .eq('beantwoord', false)
-          .ilike('aan', `%${storedRow.from_address}%`)
-          .lt('datum', storedRow.datum)
+          .gte('datum', outboundWindow)
           .order('datum', { ascending: false })
-          .limit(5)
+          .limit(200),
+      ])
 
-        const match = (kandidaten || []).find(
-          (k) => !((k.niet_match_email_ids as string[] | null) || []).includes(storedRow.id)
-        )
-        if (!match) continue
+      const inkomendeRecent = inkomendeQ.data || []
+      const kandidatenAll = kandidatenQ.data || []
+      const alreadyMatched = new Set<string>()
 
-        const { error: updateErr } = await supabaseAdmin
-          .from('emails')
-          .update({ beantwoord: true, beantwoord_door_email_id: storedRow.id })
-          .eq('id', match.id)
-          .eq('user_id', user_id)
-        if (updateErr) {
-          console.error('[fetch-emails] Sales Inbox auto-match update mislukt:', updateErr)
+      if (kandidatenAll.length > 0 && inkomendeRecent.length > 0) {
+        for (let i = 0; i < inkomendeRecent.length; i++) {
+          if (Date.now() - matchStartedAt > MATCH_DEADLINE_MS) {
+            console.warn('[fetch-emails] auto-match: soft deadline reached', {
+              processed: i,
+              total: inkomendeRecent.length,
+            })
+            break
+          }
+          const inkomend = inkomendeRecent[i]
+          const fromLower = (inkomend.from_address as string).toLowerCase()
+          const inkomendDatum = inkomend.datum as string
+
+          const matches = kandidatenAll.filter((k) =>
+            !alreadyMatched.has(k.id as string) &&
+            (k.aan as string).toLowerCase().includes(fromLower) &&
+            (k.datum as string) < inkomendDatum &&
+            !((k.niet_match_email_ids as string[] | null) || []).includes(inkomend.id as string)
+          )
+          if (matches.length === 0) continue
+
+          // kandidatenAll is al gesorteerd op datum DESC → matches[0] = nieuwste
+          const match = matches[0]
+
+          const { error: updateErr } = await supabaseAdmin
+            .from('emails')
+            .update({ beantwoord: true, beantwoord_door_email_id: inkomend.id })
+            .eq('id', match.id)
+            .eq('user_id', user_id)
+            .eq('beantwoord', false)
+          if (updateErr) {
+            console.error('[fetch-emails] auto-match update mislukt:', updateErr)
+          } else {
+            alreadyMatched.add(match.id as string)
+          }
         }
       }
     } catch (matchErr) {
       // Niet fataal — fetch-resultaat blijft gewoon staan
-      console.error('[fetch-emails] Sales Inbox auto-match-loop mislukt:', matchErr)
+      console.error('[fetch-emails] auto-match-loop mislukt:', matchErr)
     }
 
     return res.status(200).json({
