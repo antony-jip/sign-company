@@ -209,3 +209,126 @@ De benodigde infrastructuur voor toekomstige migraties ligt klaar:
 - Proces-les vastgelegd: provider-claims met grep verifiëren
 - Convert-helper-drempel gemarkeerd (~5 call-sites) — momenteel 3 consumers,
   niet urgent
+
+## April 2026 — Sales Inbox v1 (afgerond)
+
+UX-laag op `/email` voor cold-acquisitie outbound mail: per-mail "Opvolgen"-
+flag, Sales Inbox tabs, auto-match van replies, eerlijke UX over de
+beperkingen van afzender-match. **Geen pipeline-CRM** — bewust een filter
+op bestaande email-functionaliteit, geen aparte entiteit.
+
+| Commit | Doel |
+|---|---|
+| `3fb8b07a` | refactor — auto-opvolging UI uit composer (vervangen door Sales Inbox) |
+| `208542d7` | migration 087 + types — 6 nieuwe kolommen op `emails` + 2 partial indexes |
+| `2d732ce8` | service-laag — 6 helpers in `emailService.ts` |
+| `881a60aa` | api/send-email — `wacht_op_reactie`-flag + replace-not-stack-logic |
+| `31feb0e7` | api/fetch-emails — auto-match v1 (per-newcomer) |
+| `d9938e38` | UI — toggle, compose-hint, tabs, banner, per-rij acties |
+| `bac24f54` | refactor — UI copy "Wacht op reactie" → "Opvolgen" |
+| `bceb0911` | **fix** — auto-match v2 (retroactive sweep + soft deadline) |
+
+### Nieuwe patterns
+
+- **Email-tabel als feature-flag dragger.** Geen aparte sales-table; 6
+  kolommen (`wacht_op_reactie`, `beantwoord`, `beantwoord_door_email_id`,
+  `vervangen_door_email_id`, `wacht_op_reactie_uitgezet_op`,
+  `niet_match_email_ids`) op `emails`. UX-laag, geen entiteit.
+- **Partial indexes voor hot path.** `idx_emails_wacht_open` op
+  `(user_id, datum DESC) WHERE wacht=true AND beantwoord=false` —
+  Opvolgen-tab + auto-match query landen sub-millisecond.
+- **Optimistic-remove + rollback in service-laag-callers.** Per-rij
+  acties (markeer/wis/terug) verwijderen rij optimistic, herladen tab
+  bij fout. Matcht bestaand archive/delete-pattern.
+- **Schema/code-naam vs UI-copy ontkoppeling.** DB-kolom blijft
+  `wacht_op_reactie`; UI heet "Opvolgen". Bij twijfel kiezen we de
+  actieve user-georiënteerde label, niet de toestand-omschrijving.
+- **Retroactive sweep i.p.v. per-newcomer-loop in serverless function.**
+  2 parallel SELECTs + N updates voor matches gevonden. Met soft
+  deadline (`Date.now() - startedAt > MS`) als guard tegen runaway.
+  Idempotent: filters + race-guards + in-memory `alreadyMatched: Set`.
+- **`extractBareEmail`-helper inline in API-routes.** Vercel serverless
+  kan geen src/-imports doen → twee identieke kopieën in
+  `api/send-email.ts` en `src/services/emailService.ts`. Aanvaard
+  duplicate; één plek niet haalbaar.
+
+### Productkeuzes
+
+- **"Opvolgen" boven "Wacht op reactie".** Gebruiker is actief de
+  bewaker, niet passief afwachter. UI-rename in aparte commit ná
+  feature-shipping (`bac24f54`); tabel-naam `wacht_op_reactie` blijft.
+- **72u inbox-sweep window** (niet 24u). Dekt weekend-pattern: gebruiker
+  niet actief za/zo, refresht maandag, weekend-replies blijven matchen.
+- **Pure afzender-match v1.** Threading-kolommen (`in_reply_to`,
+  `references`) bestaan al sinds migratie 062 maar worden bewust niet
+  gebruikt. Eerlijke UX-banner waarschuwt over false positives.
+- **Vervangen-niet-stapelen.** Opvolg-mail naar zelfde adres met flag
+  aan → oude rij krijgt `vervangen_door_email_id`; max 1 openstaande
+  per adres in Opvolgen-tab.
+- **Compose-hint skipt bij multi-recipient** (`to.includes(',')`).
+  Cold-acquisitie is 1-op-1 per spec; multi-mail krijgt geen nudge.
+- **Sales-acties alleen in default (two-line) row-mode.** Stacked
+  (dense) modus heeft fixed 42px hoogte; gebruiker schakelt naar
+  default voor correcties.
+- **Geen RLS-policies in migratie 087.** Bestaande user-scoped policy
+  (`auth.uid() = user_id`) op `emails` dekt alle nieuwe kolommen.
+
+### Auto-match v1 → v2 (de bug)
+
+v1 (commit `31feb0e7`) walked `newEmails` per-mail met 2 queries elk
+(storedRow lookup + candidates). Bij ~50 inbox-mails: 100+ extra
+round-trips bovenop IMAP-fetch + upsert + thread-resolution → 504
+timeouts (`POST /api/fetch-emails` >30s).
+
+Plus: "newcomer-only" blind spot — een inkomende mail die in een
+getimeoutte fetch in DB belandde maar de match-loop miste, kreeg nooit
+een tweede kans. Concreet bewezen in productie: outbound `8eeee48b...`
+naar `info@kunstdoekje.nl` + reply `33c0cf1e...` 65 sec later — match
+faalde, handmatige SQL gaf wel resultaat.
+
+v2 (commit `bceb0911`) vervangt door retroactive sweep over DB:
+2 parallel SELECTs (inbox 72u, candidates 60d) + N updates voor
+matches. Soft deadline 10s (~1/3 maxDuration=30) cap't sweep zodat
+hij nooit de hele endpoint laat timeouten. Idempotent via
+`.eq('beantwoord', false)`-filter + race-guard + in-memory dedup-Set.
+
+Stranded case automatisch opgelost bij eerstvolgende fetch na deploy.
+
+### Technische schuld
+
+- **Server-side auto-opvolging cleanup.** UI is weg sinds `3fb8b07a`,
+  maar `email_opvolgingen`-tabel, `email-opvolging.ts` Trigger task,
+  `api/annuleer-opvolging.ts` en `createEmailOpvolging`-helper blijven
+  staan zonder huidige callers. 0 rijen geverifieerd. Latere
+  opruim-sprint.
+- **Batch-upsert fallback in `api/fetch-emails.ts`** (regels 345-389):
+  bij batch-failure draait per-mail-fallback met 2 queries × 50 mails.
+  100+ queries voor één fetch — kan secundair bijdragen aan timeouts
+  bij grote inboxen. Out of scope commit 7; flag voor performance-sprint.
+- **`createEmail()` in `emailService.ts:117`** doet `.insert({ ...,
+  organisatie_id })` maar `emails`-tabel heeft die kolom niet. Dood pad
+  (uitvoer gaat via `api/send-email.ts`); cleanup latere sprint.
+- **PAT in `git remote -v` cleartext.** GitHub Personal Access Token
+  van `antony-jip` zit in remote URL. Aanbevolen: roteren via
+  github.com/settings/tokens, `git remote set-url origin
+  https://github.com/antony-jip/sign-company.git`,
+  `git config --global credential.helper osxkeychain`.
+
+### Buiten scope (v2-roadmap)
+
+- **Thread-aware matching via `in_reply_to`/`references`.** Kolommen
+  worden al gevuld bij IMAP-fetch sinds migratie 062, niet geconsulteerd.
+  Natuurlijke upgrade die false-positives drastisch reduceert (geen
+  verkeerde-matches uit info@-replies of mails-over-ander-onderwerp).
+  Eigen feature, eigen sprint.
+- **Auto-match naar Trigger.dev task.** Als de 10s soft deadline ooit
+  hit blijft worden, verplaats sweep naar background task. v1 inline
+  is fine voor solo-founder volume.
+- **Statistieken / response-rates / dashboard.** Bewust uit v1 gehouden;
+  mocht gebruiker ernaar vragen, eigen feature.
+- **Bulk-acties** (alles afvinken, alles uit Opvolgen).
+- **Koppeling klant/project/offerte op email-niveau.** doen. is geen
+  pipeline-CRM — bewuste keuze.
+- **`alreadyMatched.add()` bij race-loss.** Edge case bij meerdere
+  concurrent tabs — verloren matching-kans voor latere inkomende in
+  zelfde sweep. Niet relevant bij solo-founder use case.
