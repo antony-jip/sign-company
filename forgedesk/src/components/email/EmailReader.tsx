@@ -1027,7 +1027,7 @@ export function EmailReader({
     <div className="flex flex-col h-full min-w-0">
         {/* Top action bar — sticky, grouped */}
         <TooltipProvider delayDuration={300}>
-        <div className="flex items-center justify-between px-5 h-12 border-b border-[#F0EFEC] flex-shrink-0 bg-white sticky top-0 z-10">
+        <div className="flex items-center justify-between px-3 md:px-5 h-12 border-b border-[#F0EFEC] flex-shrink-0 bg-white sticky top-0 z-10">
           {/* Left: Back */}
           <div className="flex items-center gap-1">
             <Button
@@ -1037,7 +1037,7 @@ export function EmailReader({
               onClick={onBack}
             >
               <ArrowLeft className="h-4 w-4" />
-              <span className="text-[14px]">Terug</span>
+              <span className="text-[14px] hidden md:inline">Terug</span>
             </Button>
           </div>
 
@@ -1071,7 +1071,7 @@ export function EmailReader({
               title="Samenvatten (⌘⇧S)"
             >
               {summaryLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-              <span>Samenvatten</span>
+              <span className="hidden md:inline">Samenvatten</span>
             </Button>
             <Button
               variant="ghost"
@@ -1087,13 +1087,13 @@ export function EmailReader({
             <button
               onClick={() => handleReply('reply')}
               title="Beantwoorden (r)"
-              className="ml-1 h-8 px-3.5 rounded-md bg-[#1A535C] hover:bg-[#0F3C44] text-white text-[13px] font-semibold transition-colors duration-150 flex items-center gap-1.5"
+              className="ml-1 h-8 px-2.5 md:px-3.5 rounded-md bg-[#1A535C] hover:bg-[#0F3C44] text-white text-[13px] font-semibold transition-colors duration-150 flex items-center gap-1.5"
             >
               <Reply className="h-3.5 w-3.5" />
               <span>Beantwoorden</span>
             </button>
             {emailIndex !== undefined && emailTotal !== undefined && (
-              <>
+              <span className="hidden md:contents">
                 <div className="w-px h-5 bg-[#EBEBEB] mx-2" />
                 <span className="text-[12px] text-[#9B9B95] font-mono tabular-nums">{emailIndex + 1}/{emailTotal}</span>
                 <Button variant="ghost" size="icon" className="h-7 w-7 text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F0EFEC]/60 rounded-md" onClick={() => onNavigate?.('prev')} disabled={emailIndex <= 0}>
@@ -1102,7 +1102,7 @@ export function EmailReader({
                 <Button variant="ghost" size="icon" className="h-7 w-7 text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F0EFEC]/60 rounded-md" onClick={() => onNavigate?.('next')} disabled={emailIndex >= emailTotal - 1}>
                   <ChevronDown className="h-3.5 w-3.5" />
                 </Button>
-              </>
+              </span>
             )}
           </div>
         </div>
