@@ -156,7 +156,7 @@ export const EmailListItem = memo(function EmailListItem({
         </div>
 
         {/* Sender */}
-        <div className="flex items-center gap-1.5 w-[170px] flex-shrink-0 min-w-0">
+        <div className="flex items-center gap-1.5 w-[120px] md:w-[170px] flex-shrink-0 min-w-0">
           <span className={cn(
             'truncate leading-none text-[14px]',
             isUnread ? 'font-semibold text-[#1A1A1A]' : 'font-normal text-[#6B6B66]',
@@ -179,7 +179,7 @@ export const EmailListItem = memo(function EmailListItem({
           </span>
           {preview && (
             <span className={cn(
-              'font-normal',
+              'font-normal hidden md:inline',
               isUnread ? 'text-[#9B9B95]' : 'text-[#C5C2BD]',
             )}>
               {' \u2014 '}{preview}
@@ -324,7 +324,7 @@ export const EmailListItem = memo(function EmailListItem({
               <Paperclip className="h-3.5 w-3.5 text-[#C5C2BD]" />
             )}
             <span className={cn(
-              'text-[#B0ADA8] font-mono tabular-nums',
+              'text-[#B0ADA8] tabular-nums md:font-mono',
               sizes.date,
               isUnread && 'text-[#6B6B66] font-medium',
             )}>
@@ -337,17 +337,17 @@ export const EmailListItem = memo(function EmailListItem({
         <div className="flex items-center gap-1.5">
           <span className={cn(
             'truncate leading-snug',
-            compact ? 'max-w-full' : 'max-w-[55%] flex-shrink-0',
+            compact ? 'max-w-full' : 'max-w-full md:max-w-[55%] md:flex-shrink-0',
             sizes.subject,
             isUnread ? 'font-medium text-[#1A1A1A]' : 'font-normal text-[#9B9B95]',
           )}>
             {email.onderwerp || '(geen onderwerp)'}
           </span>
           {!compact && preview && (
-            <>
+            <span className="hidden md:contents">
               <span className="text-[#EBEBEB] flex-shrink-0">&mdash;</span>
               <span className={cn('text-[#B0ADA8] truncate', sizes.preview)}>{preview}</span>
-            </>
+            </span>
           )}
         </div>
       </div>
