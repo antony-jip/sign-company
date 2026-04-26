@@ -332,3 +332,66 @@ Stranded case automatisch opgelost bij eerstvolgende fetch na deploy.
 - **`alreadyMatched.add()` bij race-loss.** Edge case bij meerdere
   concurrent tabs — verloren matching-kans voor latere inkomende in
   zelfde sweep. Niet relevant bij solo-founder use case.
+
+## 2026-04-26 — Mobile email module fixes (afgerond)
+
+**Commits:** 70a61a07, ac0b2e69, 0df33fc5, d2b6384f, d3de7f05, 3da3a806, a6f401b7, 7549ba4b
+
+Mini-sprint om de email-module bruikbaar te maken op 375px. Geen
+herontwerp — alleen Tailwind responsive prefixes en één React-portal
+om een stacking-context bug op te lossen. Desktop ≥768px is
+byte-identical.
+
+### Patterns toegepast
+- `md:hidden` + `hidden md:flex/inline/contents` voor mobile-only
+  show/hide zonder desktop-styling weg te halen.
+- `md:!w-[220px]` (important-modifier) om mobile `w-[80vw]` te overrulen
+  op één element — alternatief was twee `<aside>`-elementen, zoals
+  `Sidebar.tsx` doet. Single-element + `!` is kleinere diff.
+- `flex-col md:flex-row` met `w-full md:w-auto justify-end md:justify-start`
+  op de actions-cluster om compose/reply bottom-bars te stacken op mobile,
+  Send-knop right-aligned (Gmail/Apple Mail patroon).
+- **`createPortal(..., document.body)` voor mobile drawer + sticky CTA.**
+  AppLayout's `<main>` heeft `style={{ position: 'relative', zIndex: 0 }}`
+  in topnav-mode (regel 40). Dat creëert een stacking context die `fixed
+  z-50` kinderen vangt → globale Header (z-30 in parent context)
+  overschreef drawer-top. Portal naar body ontsnapt aan die trap.
+- Sticky bottom-CTA boven `MobileBottomNav` met
+  `bottom-[calc(3.5rem+env(safe-area-inset-bottom))]` voor iOS notch.
+
+### Buiten scope (parked, vereist eigen sprint)
+
+- **Mobile email sidebar polish — needs design pass before
+  implementation.** De drawer functioneert maar voelt amateuristisch:
+  spacing, hiërarchie tussen primary/secondary folders, branding-strip
+  onderaan, knop-plaatsing. Geen responsive-prefix werk meer — vereist
+  design-denken vóór code. Aparte sprint.
+- **Toolbar overflow op email-list (375px).** `RefreshCw` en list-style
+  toggle vallen buiten viewport, was al pre-existing voor deze sprint.
+  Plus `overflow-x-auto` op filter-pills. Niet als one-liner op te
+  lossen → bewust uit scope gehouden.
+- **Bulk-select op touch ontbreekt.** Checkboxes onthuld op `:hover` in
+  EmailListItem — touch heeft geen hover. Long-press → selection-mode
+  is iOS-conventie. Eigen feature.
+- **Swipe-acties (archive/delete/read).** Standaard mobile mail-pattern,
+  niet aanwezig. Library-vrij te bouwen met touch events.
+  Premium-upgrade.
+- **Bottom-content overlap.** Email-list heeft geen `pb-` om
+  MobileBottomNav + sticky CTA te clearen — laatste rijen vallen achter
+  de chrome. Polish-sprint.
+- **Header-creep op mobile.** Top-header + tab-pillrow + email-toolbar +
+  search-bar = ~30% screen weg vóór content. Tab-pillrow met "Email ×"
+  is dubbelop met bottom-tabbar. Navigatie-gesprek dat boven email
+  uitstijgt.
+- **Dubbele "Projecten" tab.** In screenshot na openen reply-mode
+  verscheen "Projecten Projecten Email ×" ipv enkel "Email ×". Mogelijk
+  regressie in tabbar-systeem. Niet onderzocht.
+
+### Tech-debt aandachtspunten
+- `EmailReader.tsx` (1462 regels) en `EmailLayout.tsx` (~1520 na deze
+  sprint) zijn groot. Reply-mode + reading-mode in één bestand maakt
+  navigatie traag. Splitsen in `EmailReaderReadingMode.tsx` /
+  `EmailReaderReplyMode.tsx` zou helpen — niet urgent.
+- `EmailContextSidebar` is `hidden xl:flex` (1280px+) — onzichtbaar op
+  iPad-portrait (~810px). Bewust of regressie? Niet onderzocht in deze
+  sprint.
