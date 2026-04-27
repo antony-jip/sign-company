@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { Button } from '@/components/ui/button'
 import {
   Search, Pencil, Inbox, Send, FileEdit, Trash2,
@@ -119,6 +120,9 @@ export function EmailLayout() {
   // ─── Location-based compose detection ───
   const location = useLocation()
   const navigate = useNavigate()
+  // Mobile always uses the spacious two-line row layout regardless of the
+  // user's persisted listStyle preference (which only governs desktop).
+  const isDesktop = useMediaQuery('(min-width: 768px)')
   useEffect(() => {
     if (location.pathname.endsWith('/email/compose')) {
       const params = new URLSearchParams(location.search)
@@ -1496,7 +1500,7 @@ export function EmailLayout() {
                       isChecked={checkedEmails.has(email.id)}
                       isFocused={focusedIndex === index}
                       fontSize={fontSize}
-                      stacked={listStyle === 'stacked'}
+                      stacked={isDesktop && listStyle === 'stacked'}
                       onSelect={handleSelectEmail}
                       onTogglePin={handleTogglePin}
                       onToggleCheck={toggleCheckEmail}

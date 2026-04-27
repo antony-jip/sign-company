@@ -262,26 +262,31 @@ export const EmailListItem = memo(function EmailListItem({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       className={cn(
-        'group flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors duration-150 select-none',
+        'group relative flex items-center gap-3 px-4 py-3 md:py-2.5 cursor-pointer transition-colors duration-150 select-none',
         isActive
           ? 'bg-[#1A535C]/[0.05]'
           : 'hover:bg-[#F0EFEC]/50',
         isFocused && !isActive && 'bg-[#F0EFEC]/30',
         isUnread && !isActive && 'bg-white',
+        !isUnread && !isActive && 'bg-[#FAFAF8] md:bg-transparent',
       )}
     >
+      {/* Mobile-only Flame strip on unread rows */}
+      {isUnread && !isActive && (
+        <div className="md:hidden absolute left-0 top-0 bottom-0 w-[3px] bg-[#F15025]" />
+      )}
       {/* Checkbox — overlays the avatar on hover */}
       <div className="relative flex-shrink-0">
         {/* Avatar */}
         <div
           className={cn(
-            'w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-150',
+            'w-[38px] h-[38px] md:w-9 md:h-9 rounded-full md:rounded-lg flex items-center justify-center transition-all duration-150',
             'group-hover:opacity-0',
             isChecked && 'opacity-0',
           )}
           style={{ backgroundColor: avatarStyle.bg }}
         >
-          <span className="text-xs font-bold leading-none" style={{ color: avatarStyle.text }}>
+          <span className="text-[14px] md:text-xs font-bold leading-none" style={{ color: avatarStyle.text }}>
             {senderName[0]?.toUpperCase()}
           </span>
         </div>
@@ -324,9 +329,11 @@ export const EmailListItem = memo(function EmailListItem({
               <Paperclip className="h-3.5 w-3.5 text-[#C5C2BD]" />
             )}
             <span className={cn(
-              'text-[#B0ADA8] tabular-nums md:font-mono',
+              'tabular-nums md:font-mono',
               sizes.date,
-              isUnread && 'text-[#6B6B66] font-medium',
+              isUnread
+                ? 'text-[#1A535C] md:text-[#6B6B66] font-medium'
+                : 'text-[#B0ADA8]',
             )}>
               {formatShortDate(email.datum)}
             </span>
@@ -350,6 +357,12 @@ export const EmailListItem = memo(function EmailListItem({
             </span>
           )}
         </div>
+        {/* Mobile-only third line: preview text below subject */}
+        {!compact && preview && (
+          <p className={cn('md:hidden truncate mt-0.5 text-[13px]', isUnread ? 'text-[#9B9B95]' : 'text-[#B0ADA8]')}>
+            {preview}
+          </p>
+        )}
       </div>
 
       {/* Pin */}
@@ -373,9 +386,9 @@ export const EmailListItem = memo(function EmailListItem({
         />
       </button>
 
-      {/* Unread indicator dot */}
+      {/* Unread indicator dot — desktop only; mobile uses the Flame strip */}
       {isUnread && (
-        <div className="w-[5px] h-[5px] rounded-full bg-[#1A535C] flex-shrink-0" />
+        <div className="hidden md:block w-[5px] h-[5px] rounded-full bg-[#1A535C] flex-shrink-0" />
       )}
     </div>
 
