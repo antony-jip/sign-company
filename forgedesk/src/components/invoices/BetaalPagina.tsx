@@ -15,6 +15,8 @@ import {
   Download,
 } from 'lucide-react'
 import { getFactuurByBetaalToken, markFactuurBekeken, getProfile, getAppSettings } from '@/services/supabaseService'
+import { logger } from '@/utils/logger'
+import { toast, Toaster } from 'sonner'
 import type { Factuur, Profile } from '@/types'
 
 // ============ EPC QR CODE GENERATOR (inline, no external lib) ============
@@ -150,17 +152,24 @@ export function BetaalPagina() {
         if (!cancelled) {
           if (data) {
             setFactuur(data)
-            // Mark as bekeken
-            markFactuurBekeken(token).catch(() => {})
+            // Mark as bekeken — background telemetry, niet zichtbaar voor klant
+            markFactuurBekeken(token).catch((err) => {
+              logger.error('[BetaalPagina] markFactuurBekeken faalde:', err)
+            })
             // Load company profile for IBAN and bedrijfsnaam
+            // Bij failure toont de UI al een fallback ("Neem contact op...") als IBAN ontbreekt
             getProfile(data.user_id!).then((p) => {
               if (!cancelled && p) setCompanyProfile(p)
-            }).catch(() => {})
-            // Check of Mollie ingeschakeld is voor deze gebruiker
+            }).catch((err) => {
+              logger.error('[BetaalPagina] getProfile faalde:', err)
+            })
+            // Check of Mollie ingeschakeld is voor deze gebruiker — default-deny bij failure
             if (data.user_id) {
               getAppSettings(data.user_id).then((s) => {
                 if (!cancelled) setMollieEnabled(s.mollie_enabled ?? false)
-              }).catch(() => {})
+              }).catch((err) => {
+                logger.error('[BetaalPagina] getAppSettings faalde:', err)
+              })
             }
           } else {
             setNotFound(true)
@@ -198,7 +207,8 @@ export function BetaalPagina() {
         window.location.href = data.payment_url
       }
     } catch (err) {
-      // Fallback: toon bankgegevens als Mollie niet werkt
+      logger.error('[BetaalPagina] Mollie payment-create faalde:', err)
+      toast.error('Online betaling kon niet worden gestart. Gebruik de bankgegevens hieronder.')
       setMollieLoading(false)
     }
   }
@@ -207,7 +217,9 @@ export function BetaalPagina() {
     navigator.clipboard.writeText(iban.replace(/\s/g, '')).then(() => {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
-    }).catch(() => {})
+    }).catch((err) => {
+      logger.warn('[BetaalPagina] IBAN clipboard copy faalde:', err)
+    })
   }, [])
 
   // Loading
@@ -259,6 +271,7 @@ export function BetaalPagina() {
 
   return (
     <div className="min-h-screen bg-[#FEFDFB] p-4 md:p-8">
+      <Toaster position="top-center" richColors />
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
