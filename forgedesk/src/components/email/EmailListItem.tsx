@@ -5,6 +5,12 @@ import { extractSenderName, cleanEmailPreview, formatShortDate, fontSizeClasses,
 import type { FontSize } from './emailTypes'
 import { cn } from '@/lib/utils'
 
+const desktopSizeClasses: Record<FontSize, { name: string; subject: string; preview: string; date: string }> = {
+  small: { name: 'md:text-base', subject: 'md:text-base', preview: 'md:text-sm', date: 'md:text-xs' },
+  medium: { name: 'md:text-lg', subject: 'md:text-lg', preview: 'md:text-base', date: 'md:text-sm' },
+  large: { name: 'md:text-xl', subject: 'md:text-lg', preview: 'md:text-lg', date: 'md:text-base' },
+}
+
 interface EmailListItemProps {
   email: Email & { threadCount?: number }
   isActive: boolean
@@ -51,6 +57,7 @@ export const EmailListItem = memo(function EmailListItem({
   const isUnread = !email.gelezen
   const senderName = useMemo(() => extractSenderName(email.van), [email.van])
   const sizes = fontSizeClasses[fontSize]
+  const mdSizes = desktopSizeClasses[fontSize]
   const avatarColor = getAvatarColor(senderName)
   const avatarStyle = getAvatarStyle(senderName)
 
@@ -262,10 +269,11 @@ export const EmailListItem = memo(function EmailListItem({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       className={cn(
-        'group relative flex items-center gap-3 px-4 py-3 md:py-2.5 cursor-pointer transition-colors duration-150 select-none',
+        'group relative flex items-center gap-3 px-4 py-3.5 md:py-2.5 cursor-pointer transition-colors duration-100 md:duration-150 select-none',
+        'border-b border-[#EBEBEB]/40 last:border-b-0 md:border-b-0',
         isActive
           ? 'bg-[#1A535C]/[0.05]'
-          : 'hover:bg-[#F0EFEC]/50',
+          : 'hover:bg-[#F0EFEC]/50 active:bg-[#F0EFEC]/60 md:active:bg-transparent',
         isFocused && !isActive && 'bg-[#F0EFEC]/30',
         isUnread && !isActive && 'bg-white',
         !isUnread && !isActive && 'bg-[#FAFAF8] md:bg-transparent',
@@ -273,20 +281,20 @@ export const EmailListItem = memo(function EmailListItem({
     >
       {/* Mobile-only Flame strip on unread rows */}
       {isUnread && !isActive && (
-        <div className="md:hidden absolute left-0 top-0 bottom-0 w-[3px] bg-[#F15025]" />
+        <div className="md:hidden absolute left-0 top-[20%] bottom-[20%] w-[2px] rounded-full bg-[#F15025]/90" />
       )}
       {/* Checkbox — overlays the avatar on hover */}
       <div className="relative flex-shrink-0">
         {/* Avatar */}
         <div
           className={cn(
-            'w-[38px] h-[38px] md:w-9 md:h-9 rounded-full md:rounded-lg flex items-center justify-center transition-all duration-150',
+            'w-9 h-9 rounded-full md:rounded-lg flex items-center justify-center transition-all duration-150',
             'group-hover:opacity-0',
             isChecked && 'opacity-0',
           )}
           style={{ backgroundColor: avatarStyle.bg }}
         >
-          <span className="text-[14px] md:text-xs font-bold leading-none" style={{ color: avatarStyle.text }}>
+          <span className="text-[13px] md:text-xs font-medium md:font-bold leading-none" style={{ color: avatarStyle.text }}>
             {senderName[0]?.toUpperCase()}
           </span>
         </div>
@@ -312,8 +320,8 @@ export const EmailListItem = memo(function EmailListItem({
         <div className="flex items-center justify-between gap-2 mb-0.5">
           <div className="flex items-center gap-2 min-w-0">
             <span className={cn(
-              'truncate leading-snug',
-              sizes.name,
+              'truncate leading-snug text-[14.5px]',
+              mdSizes.name,
               isUnread ? 'font-semibold text-[#1A1A1A]' : 'font-normal text-[#7A7975]',
             )}>
               {senderName}
@@ -329,11 +337,11 @@ export const EmailListItem = memo(function EmailListItem({
               <Paperclip className="h-3.5 w-3.5 text-[#C5C2BD]" />
             )}
             <span className={cn(
-              'tabular-nums md:font-mono',
-              sizes.date,
+              'tabular-nums font-mono text-[12px]',
+              mdSizes.date,
               isUnread
-                ? 'text-[#1A535C] md:text-[#6B6B66] font-medium'
-                : 'text-[#B0ADA8]',
+                ? 'text-[#9B9B95] md:text-[#6B6B66] md:font-medium'
+                : 'text-[#9B9B95] md:text-[#B0ADA8]',
             )}>
               {formatShortDate(email.datum)}
             </span>
@@ -343,10 +351,12 @@ export const EmailListItem = memo(function EmailListItem({
         {/* Line 2: subject + preview */}
         <div className="flex items-center gap-1.5">
           <span className={cn(
-            'truncate leading-snug',
+            'truncate leading-snug text-[14px]',
+            mdSizes.subject,
             compact ? 'max-w-full' : 'max-w-full md:max-w-[55%] md:flex-shrink-0',
-            sizes.subject,
-            isUnread ? 'font-medium text-[#1A1A1A]' : 'font-normal text-[#9B9B95]',
+            isUnread
+              ? 'font-semibold md:font-medium text-[#1A1A1A]'
+              : 'font-normal text-[#1A1A1A]/85 md:text-[#9B9B95]',
           )}>
             {email.onderwerp || '(geen onderwerp)'}
           </span>
@@ -359,7 +369,7 @@ export const EmailListItem = memo(function EmailListItem({
         </div>
         {/* Mobile-only third line: preview text below subject */}
         {!compact && preview && (
-          <p className={cn('md:hidden truncate mt-0.5 text-[13px]', isUnread ? 'text-[#9B9B95]' : 'text-[#B0ADA8]')}>
+          <p className="md:hidden truncate mt-0.5 text-[13px] font-normal text-[#9B9B95]">
             {preview}
           </p>
         )}
