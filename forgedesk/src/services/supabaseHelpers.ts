@@ -95,12 +95,15 @@ export function sanitizeDates<T extends object>(data: T): T {
 
 export async function getMaxNummer(table: string, field: string, prefix: string): Promise<number> {
   if (isSupabaseConfigured() && supabase) {
-    const { data } = await supabase
+    const orgId = await getOrgId()
+    let query = supabase
       .from(table)
       .select(field)
       .like(field, `${prefix}%`)
       .order(field, { ascending: false })
       .limit(1)
+    if (orgId) query = query.eq('organisatie_id', orgId)
+    const { data } = await query
     if (data && data.length > 0) {
       const nr = parseInt(String((data[0] as unknown as Record<string, unknown>)[field]).replace(prefix, ''), 10)
       return isNaN(nr) ? 0 : nr
