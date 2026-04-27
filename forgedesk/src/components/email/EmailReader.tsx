@@ -1027,16 +1027,16 @@ export function EmailReader({
     <div className="flex flex-col h-full min-w-0">
         {/* Top action bar — sticky, grouped */}
         <TooltipProvider delayDuration={300}>
-        <div className="flex items-center justify-between px-3 md:px-5 h-12 border-b border-[#F0EFEC] flex-shrink-0 bg-white sticky top-0 z-10">
+        <div className="flex items-center justify-between px-2 md:px-5 h-12 border-b border-[#F0EFEC] flex-shrink-0 bg-white sticky top-0 z-10">
           {/* Left: Back */}
           <div className="flex items-center gap-1">
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 gap-1.5 text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F0EFEC]"
+              className="h-10 md:h-8 w-10 md:w-auto px-0 md:px-3 gap-1.5 text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F0EFEC]"
               onClick={onBack}
             >
-              <ArrowLeft className="h-4 w-4" />
+              <ArrowLeft className="h-5 w-5 md:h-4 md:w-4" />
               <span className="text-[14px] hidden md:inline">Terug</span>
             </Button>
           </div>
@@ -1044,18 +1044,18 @@ export function EmailReader({
           {/* Center: Action buttons with tooltips */}
           <div className="flex items-center gap-0.5">
             <Tooltip><TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC] transition-colors duration-150" onClick={() => email && onArchive?.(email)}>
-                <Archive className="h-4 w-4" />
+              <Button variant="ghost" size="icon" className="h-10 w-10 md:h-8 md:w-8 text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC] transition-colors duration-150" onClick={() => email && onArchive?.(email)}>
+                <Archive className="h-[18px] w-[18px] md:h-4 md:w-4" />
               </Button>
             </TooltipTrigger><TooltipContent side="bottom" className="text-[12px]">Archiveren</TooltipContent></Tooltip>
             <Tooltip><TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-[#9B9B95] hover:text-[#C0451A] hover:bg-[#C0451A]/[0.06] transition-colors duration-150" onClick={() => email && onDelete?.(email)}>
-                <Trash2 className="h-4 w-4" />
+              <Button variant="ghost" size="icon" className="h-10 w-10 md:h-8 md:w-8 text-[#9B9B95] hover:text-[#C0451A] hover:bg-[#C0451A]/[0.06] transition-colors duration-150" onClick={() => email && onDelete?.(email)}>
+                <Trash2 className="h-[18px] w-[18px] md:h-4 md:w-4" />
               </Button>
             </TooltipTrigger><TooltipContent side="bottom" className="text-[12px]">Verwijderen</TooltipContent></Tooltip>
             <Tooltip><TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC] transition-colors duration-150" onClick={() => email && onToggleRead?.(email)}>
-                <MailOpen className="h-4 w-4" />
+              <Button variant="ghost" size="icon" className="h-10 w-10 md:h-8 md:w-8 text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC] transition-colors duration-150" onClick={() => email && onToggleRead?.(email)}>
+                <MailOpen className="h-[18px] w-[18px] md:h-4 md:w-4" />
               </Button>
             </TooltipTrigger><TooltipContent side="bottom" className="text-[12px]">Markeer als ongelezen</TooltipContent></Tooltip>
           </div>
@@ -1065,32 +1065,32 @@ export function EmailReader({
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 gap-1.5 text-[13px] text-[#6B6B66] hover:text-[#1A535C] hover:bg-[#1A535C]/[0.06] rounded-md transition-colors duration-150"
+              className="h-10 w-10 md:h-8 md:w-auto px-0 md:px-3 gap-1.5 text-[13px] text-[#6B6B66] hover:text-[#1A535C] hover:bg-[#1A535C]/[0.06] rounded-md transition-colors duration-150"
               onClick={handleSummarize}
               disabled={summaryLoading}
               title="Samenvatten (⌘⇧S)"
             >
-              {summaryLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+              {summaryLoading ? <Loader2 className="h-[18px] w-[18px] md:h-3.5 md:w-3.5 animate-spin" /> : <Sparkles className="h-[18px] w-[18px] md:h-3.5 md:w-3.5" />}
               <span className="hidden md:inline">Samenvatten</span>
             </Button>
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 gap-1.5 text-[13px] text-[#6B6B66] hover:text-[#F15025] hover:bg-[#F15025]/[0.06] rounded-md transition-colors duration-150 disabled:opacity-50"
+              className="h-10 md:h-8 px-2.5 md:px-3 gap-1.5 text-[13px] text-[#6B6B66] hover:text-[#F15025] hover:bg-[#F15025]/[0.06] rounded-md transition-colors duration-150 disabled:opacity-50"
               onClick={handleGenerateReplyFromReader}
               disabled={forgieLoading}
               title="Daan schrijft antwoord (⌘⇧R)"
             >
-              {forgieLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+              {forgieLoading ? <Loader2 className="h-[18px] w-[18px] md:h-3.5 md:w-3.5 animate-spin" /> : <Sparkles className="h-[18px] w-[18px] md:h-3.5 md:w-3.5" />}
               <span>Daan</span>
             </Button>
             <button
               onClick={() => handleReply('reply')}
               title="Beantwoorden (r)"
-              className="ml-1 h-8 px-2.5 md:px-3.5 rounded-md bg-[#1A535C] hover:bg-[#0F3C44] text-white text-[13px] font-semibold transition-colors duration-150 flex items-center gap-1.5"
+              className="ml-1 h-10 w-10 md:h-8 md:w-auto md:px-3.5 rounded-md bg-[#1A535C] hover:bg-[#0F3C44] text-white text-[13px] font-semibold transition-colors duration-150 flex items-center justify-center gap-1.5"
             >
-              <Reply className="h-3.5 w-3.5" />
-              <span>Beantwoorden</span>
+              <Reply className="h-[18px] w-[18px] md:h-3.5 md:w-3.5" />
+              <span className="hidden md:inline">Beantwoorden</span>
             </button>
             {emailIndex !== undefined && emailTotal !== undefined && (
               <span className="hidden md:contents">
@@ -1112,10 +1112,10 @@ export function EmailReader({
         <div className="flex-1 overflow-y-auto bg-white">
           <div className="w-full">
             {/* Header: subject + sender + reply actions */}
-            <div className="px-8 py-5 border-b border-[#F0EFEC]">
+            <div className="px-4 md:px-8 py-5 border-b border-[#F0EFEC]">
               {/* Subject row */}
               <div className="flex items-start justify-between gap-4 mb-4">
-                <h1 className="text-lg font-bold text-[#1A1A1A] leading-snug tracking-[-0.3px]">
+                <h1 className="text-[20px] md:text-lg font-bold text-[#1A1A1A] leading-snug tracking-[-0.3px]">
                   {email.onderwerp || '(geen onderwerp)'}
                 </h1>
                 <div className="flex items-center gap-1.5 flex-shrink-0 pt-0.5">
@@ -1141,39 +1141,41 @@ export function EmailReader({
                   <span className="text-[14px] font-bold leading-none" style={{ color: avatarStyle.text }}>{senderName[0]?.toUpperCase()}</span>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-[14px] font-semibold text-[#1A1A1A] leading-none">{senderName}</span>
-                    <span className="text-[12px] text-[#9B9B95] truncate leading-none">&lt;{senderEmail}&gt;</span>
+                  <div className="flex flex-col md:flex-row md:items-baseline md:gap-2 min-w-0">
+                    <span className="text-[14px] font-semibold text-[#1A1A1A] leading-snug truncate">{senderName}</span>
+                    <span className="text-[12px] text-[#9B9B95] truncate leading-snug">{senderEmail}</span>
                   </div>
-                  <div className="text-[11px] text-[#9B9B95] mt-0.5">aan {email.aan}</div>
+                  <div className="text-[11px] text-[#9B9B95] mt-0.5 truncate">aan {email.aan}</div>
                 </div>
               </div>
 
-              {/* Reply/Forward — ghost style, subtle */}
-              <div className="flex items-center gap-1.5">
+              {/* Reply/Forward — primary on mobile is dominant, secondaries flank */}
+              <div className="flex items-stretch md:items-center gap-2 md:gap-1.5">
                 <button onClick={() => handleReply('reply')}
-                  className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-[13px] font-semibold text-[#1A535C] bg-[#1A535C]/[0.06] hover:bg-[#1A535C]/[0.12] transition-colors duration-150"
+                  className="flex-1 md:flex-none flex items-center justify-center gap-1.5 h-10 md:h-8 px-3 rounded-lg text-[14px] md:text-[13px] font-semibold text-[#1A535C] bg-[#1A535C]/[0.08] md:bg-[#1A535C]/[0.06] hover:bg-[#1A535C]/[0.12] transition-colors duration-150"
                   title="Beantwoorden (r)">
-                  <Reply className="h-3.5 w-3.5" />
+                  <Reply className="h-4 w-4 md:h-3.5 md:w-3.5" />
                   <span>Beantwoorden</span>
                 </button>
                 <button onClick={() => handleReply('reply-all')}
-                  className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-medium text-[#9B9B95] hover:text-[#4A4A46] hover:bg-[#F0EFEC] transition-colors duration-150"
-                  title="Allen beantwoorden">
-                  <ReplyAll className="h-3.5 w-3.5" />
-                  <span>Allen</span>
+                  className="flex items-center justify-center gap-1.5 h-10 md:h-8 w-10 md:w-auto md:px-3 rounded-lg text-[12px] font-medium text-[#9B9B95] hover:text-[#4A4A46] hover:bg-[#F0EFEC] transition-colors duration-150"
+                  title="Allen beantwoorden"
+                  aria-label="Allen beantwoorden">
+                  <ReplyAll className="h-4 w-4 md:h-3.5 md:w-3.5" />
+                  <span className="hidden md:inline">Allen</span>
                 </button>
                 <button onClick={() => handleReply('forward')}
-                  className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-medium text-[#9B9B95] hover:text-[#4A4A46] hover:bg-[#F0EFEC] transition-colors duration-150"
-                  title="Doorsturen (f)">
-                  <Forward className="h-3.5 w-3.5" />
-                  <span>Doorsturen</span>
+                  className="flex items-center justify-center gap-1.5 h-10 md:h-8 w-10 md:w-auto md:px-3 rounded-lg text-[12px] font-medium text-[#9B9B95] hover:text-[#4A4A46] hover:bg-[#F0EFEC] transition-colors duration-150"
+                  title="Doorsturen (f)"
+                  aria-label="Doorsturen">
+                  <Forward className="h-4 w-4 md:h-3.5 md:w-3.5" />
+                  <span className="hidden md:inline">Doorsturen</span>
                 </button>
               </div>
             </div>
 
             {/* Email body content area */}
-            <div className="px-8 py-6">
+            <div className="px-4 md:px-8 py-6">
               {/* ── Thread navigation strip ──
                   Toon alle berichten in dezelfde conversatie. De huidige is
                   gehighlight, klik op een ander bericht om dat te openen. */}
