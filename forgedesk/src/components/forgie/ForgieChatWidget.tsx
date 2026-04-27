@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { useLocation } from 'react-router-dom'
 import { MessageSquare, Send, X, RotateCcw, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
@@ -20,8 +19,6 @@ const SUGGESTIE_CHIPS = [
 
 export function ForgieChatWidget() {
   const { forgieEnabled } = useAppSettings()
-  const location = useLocation()
-  const hideOnMobile = location.pathname.startsWith('/email')
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<ForgieChatMessage[]>([])
   const [input, setInput] = useState('')
@@ -123,7 +120,7 @@ export function ForgieChatWidget() {
           ref={panelRef}
           className={cn(
             'fixed z-[9999] flex flex-col animate-in slide-in-from-bottom-4 fade-in duration-200',
-            hideOnMobile && 'hidden md:flex',
+            'hidden md:flex',
           )}
           style={{
             right: 16,
@@ -373,7 +370,7 @@ export function ForgieChatWidget() {
         onClick={() => setIsOpen(prev => !prev)}
         className={cn(
           'fixed z-[9999] flex items-center justify-center transition-all duration-200',
-          hideOnMobile && 'hidden md:flex',
+          'hidden md:flex',
         )}
         style={{
           right: 16,

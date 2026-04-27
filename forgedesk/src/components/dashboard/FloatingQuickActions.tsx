@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { Plus, FilePlus, UserPlus, FolderPlus, CheckSquare, Mail, X, ChevronLeft } from 'lucide-react'
 import { NieuweKlantModal } from '@/components/quick-actions/NieuweKlantModal'
 import { NieuwProjectModal } from '@/components/quick-actions/NieuwProjectModal'
@@ -33,14 +33,12 @@ const DEFAULT_ITEMS: QuickActionId[] = ['project', 'klant', 'offerte', 'taak']
 
 export function FloatingQuickActions() {
   const navigate = useNavigate()
-  const location = useLocation()
   const { settings } = useAppSettings()
   const [isOpen, setIsOpen] = useState(false)
   const [activeModal, setActiveModal] = useState<ModalType>(null)
 
   const enabled = settings.quick_actions_enabled ?? true
   const position: QuickActionsPosition = settings.quick_actions_position ?? 'bottom-right'
-  const hideOnMobile = location.pathname.startsWith('/email')
 
   // Filter de master-lijst op de items die in settings aanstaan.
   // Behoud de volgorde uit QUICK_ACTIONS zodat het visueel consistent is.
@@ -105,8 +103,7 @@ export function FloatingQuickActions() {
         // gestapeld en altijd zichtbaar zodra de strip geopend is.
         <div
           className={cn(
-            'fixed z-[9998] right-0 top-1/2 -translate-y-1/2 group/fab',
-            hideOnMobile && 'hidden md:block',
+            'fixed z-[9998] right-0 top-1/2 -translate-y-1/2 group/fab hidden md:block',
           )}
           onMouseLeave={() => setIsOpen(false)}
         >
@@ -170,9 +167,8 @@ export function FloatingQuickActions() {
         // ─── Bottom-right posities (klassiek + hover-corner) ───
         <div
           className={cn(
-            'fixed z-[9998] flex flex-col-reverse items-end gap-2 transition-opacity duration-200',
+            'fixed z-[9998] flex-col-reverse items-end gap-2 transition-opacity duration-200 hidden md:flex',
             isHoverCorner && !isOpen && 'opacity-30 hover:opacity-100',
-            hideOnMobile && 'hidden md:flex',
           )}
           style={{ right: 16, bottom: 76 }}
         >
