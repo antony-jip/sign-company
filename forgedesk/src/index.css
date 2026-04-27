@@ -2026,6 +2026,56 @@ button, a, [role="button"], summary, label, input[type="checkbox"], input[type="
   }
 }
 
+/* View Transitions API — iOS-style push/pop between email list ↔ reader.
+   Driven by data-vt-direction on <html>, set by utils/viewTransition.ts.
+   Mobile-only; desktop and reduced-motion get instant updates. */
+@media (max-width: 767px) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 260ms;
+    animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+    animation-fill-mode: both;
+    mix-blend-mode: normal;
+  }
+  html[data-vt-direction="forward"]::view-transition-old(root) {
+    animation-name: vt-push-out;
+  }
+  html[data-vt-direction="forward"]::view-transition-new(root) {
+    animation-name: vt-push-in;
+  }
+  html[data-vt-direction="back"]::view-transition-old(root) {
+    animation-name: vt-pop-out;
+  }
+  html[data-vt-direction="back"]::view-transition-new(root) {
+    animation-name: vt-pop-in;
+  }
+}
+
+@keyframes vt-push-out {
+  from { transform: translateX(0); opacity: 1; }
+  to   { transform: translateX(-22%); opacity: 0.6; }
+}
+@keyframes vt-push-in {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+@keyframes vt-pop-out {
+  from { transform: translateX(0); }
+  to   { transform: translateX(100%); }
+}
+@keyframes vt-pop-in {
+  from { transform: translateX(-22%); opacity: 0.6; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+
+/* Disable view-transition crossfade on desktop (panels are side-by-side anyway) */
+@media (min-width: 768px) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+}
+
 /* Typewriter cursor blink */
 @keyframes blink {
   0%, 50% { opacity: 1; }

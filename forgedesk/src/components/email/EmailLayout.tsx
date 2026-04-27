@@ -28,6 +28,7 @@ import { extractSenderEmail, extractSenderName, parseSearchQuery, IMAP_FOLDER_MA
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { hapticLight } from '@/utils/haptic'
+import { viewTransition } from '@/utils/viewTransition'
 
 // Folder config
 const folderTabs: { id: EmailFolder; label: string; icon: React.ElementType }[] = [
@@ -581,22 +582,29 @@ export function EmailLayout() {
   }, [])
 
   const handleArchive = useCallback((email: Email) => {
-    setEmails((prev) => prev.filter((e) => e.id !== email.id))
-    setSelectedEmail(null)
-    setViewMode('idle')
+    viewTransition(() => {
+      setEmails((prev) => prev.filter((e) => e.id !== email.id))
+      setSelectedEmail(null)
+      setViewMode('idle')
+    }, 'back')
     toast.success('Email gearchiveerd')
   }, [])
 
   const handleDelete = useCallback((email: Email) => {
+    viewTransition(() => {
+      if (email.map === 'prullenbak') {
+        setEmails((prev) => prev.filter((e) => e.id !== email.id))
+      } else {
+        setEmails((prev) => prev.map((e) => e.id === email.id ? { ...e, map: 'prullenbak', labels: ['prullenbak'] } : e))
+      }
+      setSelectedEmail(null)
+      setViewMode('idle')
+    }, 'back')
     if (email.map === 'prullenbak') {
-      setEmails((prev) => prev.filter((e) => e.id !== email.id))
       deleteEmailDb(email.id).catch(() => {})
     } else {
-      setEmails((prev) => prev.map((e) => e.id === email.id ? { ...e, map: 'prullenbak', labels: ['prullenbak'] } : e))
       updateEmail(email.id, { map: 'prullenbak', labels: ['prullenbak'] }).catch(() => {})
     }
-    setSelectedEmail(null)
-    setViewMode('idle')
     toast.success('Email verwijderd')
   }, [])
 
@@ -854,9 +862,11 @@ export function EmailLayout() {
       return
     }
     // Normale klik: open de mail
-    setEmails(prev => prev.map(em => em.id === email.id ? { ...em, gelezen: true } : em))
-    setSelectedEmail({ ...email, gelezen: true })
-    setViewMode('reading')
+    viewTransition(() => {
+      setEmails(prev => prev.map(em => em.id === email.id ? { ...em, gelezen: true } : em))
+      setSelectedEmail({ ...email, gelezen: true })
+      setViewMode('reading')
+    }, 'forward')
 
     // Load body in background (async)
     loadEmailBody(email, selectedFolder).then((withBody) => {
@@ -865,9 +875,11 @@ export function EmailLayout() {
   }, [loadEmailBody, selectedFolder, toggleCheckEmail])
 
   const handleCompose = useCallback((defaults?: { to?: string; subject?: string; body?: string }) => {
-    setComposeDefaults(defaults || {})
-    setViewMode('composing')
-    setSelectedEmail(null)
+    viewTransition(() => {
+      setComposeDefaults(defaults || {})
+      setViewMode('composing')
+      setSelectedEmail(null)
+    }, 'forward')
   }, [])
 
   const handleReply = useCallback((email: Email) => {
@@ -953,8 +965,10 @@ export function EmailLayout() {
   }, [])
 
   const handleBack = useCallback(() => {
-    setSelectedEmail(null)
-    setViewMode('idle')
+    viewTransition(() => {
+      setSelectedEmail(null)
+      setViewMode('idle')
+    }, 'back')
   }, [])
 
   const handleNavigate = useCallback((direction: 'prev' | 'next') => {
