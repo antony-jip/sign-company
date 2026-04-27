@@ -638,26 +638,26 @@ export function EmailReader({
     return (
       <div className="flex flex-col h-full min-w-0">
           {/* Top action bar — sticky */}
-          <div className="flex items-center justify-between px-3 md:px-5 h-12 border-b border-[#F0EFEC] flex-shrink-0 bg-white sticky top-0 z-10">
+          <div className="flex items-center justify-between px-2 md:px-5 h-12 border-b border-[#F0EFEC] flex-shrink-0 bg-white sticky top-0 z-10">
             <div className="flex items-center gap-1">
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 gap-1.5 text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F0EFEC]"
+                className="h-10 md:h-8 w-10 md:w-auto px-0 md:px-3 gap-1.5 text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F0EFEC]"
                 onClick={onBack}
               >
-                <ArrowLeft className="h-4 w-4" />
+                <ArrowLeft className="h-5 w-5 md:h-4 md:w-4" />
                 <span className="text-[14px] hidden md:inline">Terug</span>
               </Button>
-              <div className="w-px h-5 bg-[#F0EFEC] mx-1.5" />
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F0EFEC] transition-colors duration-150" onClick={() => email && onArchive?.(email)} title="Archiveren">
-                <Archive className="h-4 w-4" />
+              <div className="w-px h-5 bg-[#F0EFEC] mx-1.5 hidden md:block" />
+              <Button variant="ghost" size="icon" className="h-10 w-10 md:h-8 md:w-8 text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F0EFEC] transition-colors duration-150" onClick={() => email && onArchive?.(email)} title="Archiveren">
+                <Archive className="h-[18px] w-[18px] md:h-4 md:w-4" />
               </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-[#9B9B95] hover:text-[#C0451A] hover:bg-[#C0451A]/[0.06] transition-colors duration-150" onClick={() => email && onDelete?.(email)} title="Verwijderen">
-                <Trash2 className="h-4 w-4" />
+              <Button variant="ghost" size="icon" className="h-10 w-10 md:h-8 md:w-8 text-[#9B9B95] hover:text-[#C0451A] hover:bg-[#C0451A]/[0.06] transition-colors duration-150" onClick={() => email && onDelete?.(email)} title="Verwijderen">
+                <Trash2 className="h-[18px] w-[18px] md:h-4 md:w-4" />
               </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F0EFEC] transition-colors duration-150" onClick={() => email && onToggleRead?.(email)} title="Markeer als ongelezen">
-                <MailOpen className="h-4 w-4" />
+              <Button variant="ghost" size="icon" className="h-10 w-10 md:h-8 md:w-8 text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F0EFEC] transition-colors duration-150" onClick={() => email && onToggleRead?.(email)} title="Markeer als ongelezen">
+                <MailOpen className="h-[18px] w-[18px] md:h-4 md:w-4" />
               </Button>
             </div>
             <div className="hidden md:flex items-center gap-1 text-[14px] text-[#B0ADA8]">
@@ -678,7 +678,7 @@ export function EmailReader({
           {/* ─── Compose fields ─── */}
           <div className="border-b border-[#F0EFEC] bg-white flex-shrink-0">
             {/* Aan field */}
-            <div className="flex items-center px-6 py-2.5 border-b border-[#F0EFEC]">
+            <div className="flex items-center px-4 md:px-6 py-3 md:py-2.5 border-b border-[#F0EFEC]">
               <span className="text-[12px] text-[#9B9B95] w-10 flex-shrink-0">Aan</span>
               <div className="flex-1 flex items-center gap-2 min-w-0">
                 <input
@@ -689,7 +689,7 @@ export function EmailReader({
                   placeholder="ontvanger@voorbeeld.nl"
                 />
               </div>
-              {/* CC/BCC toggle + Reply mode switcher */}
+              {/* CC/BCC toggle + Reply mode switcher (desktop only — mobile uses Back to switch) */}
               {!showCcBcc && (
                 <button
                   onClick={() => setShowCcBcc(true)}
@@ -698,7 +698,7 @@ export function EmailReader({
                   CC / BCC
                 </button>
               )}
-              <div className="flex items-center gap-1 ml-3 flex-shrink-0">
+              <div className="hidden md:flex items-center gap-1 ml-3 flex-shrink-0">
                 <button
                   onClick={() => {
                     setReplyMode('reply')
@@ -744,7 +744,7 @@ export function EmailReader({
             {/* CC / BCC fields */}
             {showCcBcc && (
               <>
-                <div className="flex items-center px-6 py-2.5 border-b border-[#F0EFEC]">
+                <div className="flex items-center px-4 md:px-6 py-3 md:py-2.5 border-b border-[#F0EFEC]">
                   <span className="text-[12px] text-[#9B9B95] w-10 flex-shrink-0">CC</span>
                   <input
                     type="text"
@@ -754,7 +754,7 @@ export function EmailReader({
                     placeholder="cc@voorbeeld.nl"
                   />
                 </div>
-                <div className="flex items-center px-6 py-2.5 border-b border-[#F0EFEC]">
+                <div className="flex items-center px-4 md:px-6 py-3 md:py-2.5 border-b border-[#F0EFEC]">
                   <span className="text-[12px] text-[#9B9B95] w-10 flex-shrink-0">BCC</span>
                   <input
                     type="text"
@@ -768,7 +768,7 @@ export function EmailReader({
             )}
 
             {/* Subject */}
-            <div className="flex items-center px-6 py-2.5 border-b border-[#F0EFEC] focus-within:border-[#1A535C] transition-colors duration-150">
+            <div className="flex items-center px-4 md:px-6 py-3 md:py-2.5 border-b border-[#F0EFEC] focus-within:border-[#1A535C] transition-colors duration-150">
               <span className="text-[12px] text-[#9B9B95] w-10 flex-shrink-0">Ond</span>
               <input
                 type="text"
@@ -780,7 +780,7 @@ export function EmailReader({
             </div>
 
             {/* Quick tools: AI schrijven */}
-            <div className="flex items-center gap-3 px-6 py-2">
+            <div className="flex items-center gap-3 px-4 md:px-6 py-2">
               <button
                 onClick={handleForgieWrite}
                 disabled={forgieLoading}
@@ -804,7 +804,7 @@ export function EmailReader({
               ref={editorRef}
               contentEditable
               suppressContentEditableWarning
-              className="min-h-[180px] py-5 px-6 text-[15px] leading-[1.7] text-[#1A1A1A] outline-none [&_img]:max-w-[400px] empty:before:content-[attr(data-placeholder)] empty:before:text-[#B0ADA8] empty:before:pointer-events-none"
+              className="min-h-[180px] py-5 px-4 md:px-6 text-[15px] leading-[1.7] text-[#1A1A1A] outline-none [&_img]:max-w-[400px] empty:before:content-[attr(data-placeholder)] empty:before:text-[#B0ADA8] empty:before:pointer-events-none"
               data-placeholder="Schrijf je antwoord..."
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
@@ -817,7 +817,7 @@ export function EmailReader({
 
             {/* ─── Attachments ─── */}
             {(replyAttachments.length > 0 || forwardOriginalAttachments.length > 0) && (
-              <div className="flex flex-wrap gap-2 px-5 py-2.5 border-t border-[#F0EFEC] bg-[#F8F7F5]">
+              <div className="flex flex-wrap gap-2 px-4 md:px-5 py-2.5 border-t border-[#F0EFEC] bg-[#F8F7F5]">
                 {/* Doorgestuurde originelen — met visual icon en "doorgestuurd" hint */}
                 {forwardOriginalAttachments.map((att, i) => {
                   const visual = getAttachmentVisual(att.filename, att.contentType)
@@ -899,25 +899,25 @@ export function EmailReader({
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 w-full md:w-auto justify-end md:justify-start">
+              <div className="flex items-center gap-2 md:gap-3 w-full md:w-auto justify-end md:justify-start">
                 <button
                   onClick={() => setReplyMode(null)}
-                  className="h-8 w-8 flex items-center justify-center rounded-md text-[#B0ADA8] hover:text-[#C0451A] hover:bg-[#C0451A]/[0.06] transition-colors duration-150"
+                  className="h-10 w-10 md:h-8 md:w-8 flex items-center justify-center rounded-md text-[#B0ADA8] hover:text-[#C0451A] hover:bg-[#C0451A]/[0.06] transition-colors duration-150"
                   title="Annuleren"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-[18px] w-[18px] md:h-4 md:w-4" />
                 </button>
-                <span className="text-[10px] text-[#B0ADA8] hidden sm:block">
+                <span className="text-[10px] text-[#B0ADA8] hidden md:block">
                   {navigator.platform.includes('Mac') ? '\u2318' : 'Ctrl'}+Enter
                 </span>
                 <div className="relative">
                   <button
-                    className="h-9 w-9 flex items-center justify-center rounded-lg text-[#1A535C] bg-[#1A535C]/[0.08] hover:bg-[#1A535C]/[0.14] transition-colors duration-150 disabled:opacity-50"
+                    className="h-10 w-10 md:h-9 md:w-9 flex items-center justify-center rounded-lg text-[#1A535C] bg-[#1A535C]/[0.08] hover:bg-[#1A535C]/[0.14] transition-colors duration-150 disabled:opacity-50"
                     onClick={() => setShowScheduleMenu(s => !s)}
                     disabled={isSending}
                     title="Inplannen"
                   >
-                    <Clock className="h-4 w-4" />
+                    <Clock className="h-[18px] w-[18px] md:h-4 md:w-4" />
                   </button>
                   {showScheduleMenu && (
                     <>
@@ -991,11 +991,11 @@ export function EmailReader({
                   )}
                 </div>
                 <button
-                  className="h-9 px-6 rounded-xl text-[13px] font-semibold text-white bg-[#F15025] shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_12px_rgba(241,80,37,0.35)] hover:-translate-y-px active:translate-y-0 transition-all duration-150 flex items-center gap-2 disabled:opacity-50"
+                  className="h-10 md:h-9 px-5 md:px-6 rounded-xl text-[14px] md:text-[13px] font-semibold text-white bg-[#F15025] shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_12px_rgba(241,80,37,0.35)] hover:-translate-y-px active:translate-y-0 transition-all duration-150 flex items-center gap-2 disabled:opacity-50"
                   onClick={handleSend}
                   disabled={isSending}
                 >
-                  <Send className="h-3.5 w-3.5" />
+                  <Send className="h-4 w-4 md:h-3.5 md:w-3.5" />
                   {isSending ? 'Verzenden...' : 'Verzenden'}
                 </button>
               </div>
@@ -1003,7 +1003,7 @@ export function EmailReader({
 
             {/* ─── Original email shown below toolbar ─── */}
             {sanitizedBody && (
-              <div className="mx-6 py-5">
+              <div className="mx-4 md:mx-6 py-5">
                 <div className="pl-4 border-l-2 border-[#EBEBEB]">
                   <div className="flex items-center gap-2 mb-3 text-[12px] text-[#B0ADA8]">
                     <span>Op {formatShortDate(email.datum)} schreef {senderName}:</span>
