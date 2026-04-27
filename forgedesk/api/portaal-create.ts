@@ -37,12 +37,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: 'Server configuratie onvolledig' })
     }
 
-    // Verify user owns this project
+    // Resolve requester organisatie_id; service_role bypasst RLS dus de filter
+    // moet hier op app-laag staan. Geen org → fail-closed.
+    const { data: requesterProfile } = await supabaseAdmin
+      .from('profiles')
+      .select('organisatie_id')
+      .eq('id', userId)
+      .maybeSingle()
+    const orgId = requesterProfile?.organisatie_id as string | undefined
+    if (!orgId) {
+      return res.status(403).json({ error: 'Geen organisatie gekoppeld aan account' })
+    }
+
+    // Verify user owns this project within the same organisation
     const { data: project } = await supabaseAdmin
       .from('projecten')
       .select('id')
       .eq('id', project_id)
       .eq('user_id', userId)
+      .eq('organisatie_id', orgId)
       .maybeSingle()
 
     if (!project) {
@@ -81,6 +94,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .from('project_portalen')
       .insert({
         user_id: userId,
+        organisatie_id: orgId,
         project_id,
         token,
         actief: true,
