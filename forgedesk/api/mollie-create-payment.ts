@@ -163,7 +163,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Sla mollie_payment_id en betaal_link op in factuur
     if (SUPABASE_URL && SUPABASE_SERVICE_KEY) {
       const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
-      await supabase
+      const { error: updateError } = await supabase
         .from('facturen')
         .update({
           mollie_payment_id: payment.id,
@@ -171,6 +171,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         })
         .eq('id', factuur_id)
         .eq('user_id', user_id)
+      if (updateError) {
+        // Mollie payment is aangemaakt, maar mollie_payment_id niet opgeslagen → webhook
+        // kan niet matchen. Beter de user 500 geven dan een payment_url die tot een
+        // "verloren" betaling leidt; Mollie rolt unsubmitted payments zelf op.
+        console.error('[mollie-create-payment] DB update failed for payment.id=', payment.id, updateError)
+        return res.status(500).json({ error: 'Kon betaling niet opslaan. Probeer opnieuw.' })
+      }
     }
 
     return res.status(200).json({
