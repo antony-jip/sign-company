@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/select'
 import { KlantContactSelector } from '@/components/shared/KlantContactSelector'
 import { logger } from '../../utils/logger'
+import { hapticLight, hapticMedium } from '@/utils/haptic'
 
 export function ProjectCreate() {
   const navigate = useNavigate()
@@ -119,22 +120,23 @@ export function ProjectCreate() {
 
   return (
     <div className="relative -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 min-h-full bg-[#F8F7F5]">
-      <div className="relative max-w-2xl mx-auto px-4 py-8 md:py-12 animate-fade-in-up">
+      <div className="relative max-w-2xl mx-auto px-4 pt-5 md:pt-12 pb-28 md:pb-12 animate-fade-in-up">
       {/* Header */}
-      <div className="flex items-center gap-4 mb-6">
+      <div className="flex items-center gap-3 md:gap-4 mb-5 md:mb-6">
         <button
-          onClick={() => navigate('/projecten')}
-          className="h-10 w-10 rounded-xl flex items-center justify-center transition-colors"
+          onClick={() => { hapticLight(); navigate('/projecten') }}
+          className="tap-press h-10 w-10 rounded-xl flex items-center justify-center transition-colors flex-shrink-0"
           style={{ backgroundColor: '#FFFFFE', border: '0.5px solid #E6E4E0' }}
+          aria-label="Terug"
         >
           <ArrowLeft className="h-4 w-4" style={{ color: '#5A5A55' }} />
         </button>
-        <div className="h-12 w-12 rounded-2xl flex items-center justify-center shadow-sm" style={{ backgroundColor: '#1A535C' }}>
+        <div className="hidden md:flex h-12 w-12 rounded-2xl items-center justify-center shadow-sm flex-shrink-0" style={{ backgroundColor: '#1A535C' }}>
           <FolderKanban className="h-5 w-5 text-white" />
         </div>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight" style={{ color: '#191919' }}>Nieuw project</h1>
-          <p className="text-sm" style={{ color: '#5A5A55' }}>Vul de gegevens in om te starten</p>
+        <div className="min-w-0">
+          <h1 className="text-xl md:text-2xl font-bold tracking-tight" style={{ color: '#191919' }}>Nieuw project</h1>
+          <p className="text-[13px] md:text-sm" style={{ color: '#5A5A55' }}>Vul de gegevens in om te starten</p>
         </div>
       </div>
 
@@ -142,14 +144,14 @@ export function ProjectCreate() {
         {/* Section 1: Project + Planning — merged */}
         <div className="rounded-xl" style={{ backgroundColor: '#FFFFFE', border: '0.5px solid #E6E4E0' }}>
           <div className="h-[3px] rounded-t-xl" style={{ background: 'linear-gradient(90deg, #F15025, #F1502560)' }} />
-          <div className="flex items-center gap-3 px-5 pt-4 pb-1">
+          <div className="flex items-center gap-3 px-4 md:px-5 pt-4 pb-1">
             <div className="flex items-center justify-center h-7 w-7 rounded-lg text-white text-[11px] font-bold" style={{ backgroundColor: '#F15025' }}>1</div>
             <div>
               <span className="text-[13px] font-semibold" style={{ color: '#191919' }}>Projectgegevens</span>
               <p className="text-[11px]" style={{ color: '#A0A098' }}>Naam, planning en status</p>
             </div>
           </div>
-          <div className="px-5 pb-5 pt-3 space-y-3">
+          <div className="px-4 md:px-5 pb-5 pt-3 space-y-3">
             {/* Naam + Beschrijving inline */}
             <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr] gap-3">
               <div>
@@ -182,7 +184,7 @@ export function ProjectCreate() {
             </div>
 
             {/* Status + Dates row */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <Label className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider" style={{ color: '#A0A098' }}>Status</Label>
                 <Select value={status} onValueChange={(value: typeof status) => setStatus(value)}>
@@ -226,14 +228,14 @@ export function ProjectCreate() {
         {/* Section 2: Klant & Contact */}
         <div className="rounded-xl relative" style={{ backgroundColor: '#FFFFFE', border: '0.5px solid #E6E4E0' }}>
           <div className="h-[3px] rounded-t-xl" style={{ background: 'linear-gradient(90deg, #9A4070, #9A407060)' }} />
-          <div className="flex items-center gap-3 px-5 pt-4 pb-1">
+          <div className="flex items-center gap-3 px-4 md:px-5 pt-4 pb-1">
             <div className="flex items-center justify-center h-7 w-7 rounded-lg text-white text-[11px] font-bold" style={{ backgroundColor: '#9A4070' }}>2</div>
             <div>
               <span className="text-[13px] font-semibold" style={{ color: '#191919' }}>Klant & Contact</span>
               <p className="text-[11px]" style={{ color: '#A0A098' }}>Koppel aan een klant</p>
             </div>
           </div>
-          <div className="px-5 pb-5 pt-3">
+          <div className="px-4 md:px-5 pb-5 pt-3">
             <KlantContactSelector
               klantId={klantId}
               onKlantChange={(id) => setKlantId(id)}
@@ -247,12 +249,12 @@ export function ProjectCreate() {
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center justify-end gap-3 pt-2">
+        {/* Actions — desktop inline */}
+        <div className="hidden md:flex items-center justify-end gap-3 pt-2">
           <button
             type="button"
             onClick={() => navigate('/projecten')}
-            className="h-9 px-5 text-[13px] font-medium rounded-lg transition-colors"
+            className="tap-press h-9 px-5 text-[13px] font-medium rounded-lg transition-colors"
             style={{ color: '#5A5A55', border: '0.5px solid #E6E4E0' }}
           >
             Annuleren
@@ -260,7 +262,8 @@ export function ProjectCreate() {
           <button
             type="submit"
             disabled={loading}
-            className="h-10 px-6 text-[14px] font-bold text-white rounded-lg shadow-sm hover:opacity-90 transition-all flex items-center gap-2 disabled:opacity-50"
+            onClick={() => hapticMedium()}
+            className="tap-press h-10 px-6 text-[14px] font-bold text-white rounded-lg shadow-sm hover:opacity-90 transition-all flex items-center gap-2 disabled:opacity-50"
             style={{ backgroundColor: '#1A535C' }}
           >
             <Save className="h-4 w-4" />
@@ -268,6 +271,37 @@ export function ProjectCreate() {
           </button>
         </div>
       </form>
+      </div>
+
+      {/* Sticky bottom action bar — mobile only */}
+      <div
+        className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur-xl border-t border-[#EBEBEB] px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] flex items-center gap-2"
+        style={{ boxShadow: '0 -4px 16px rgba(0,0,0,0.04)' }}
+      >
+        <button
+          type="button"
+          onClick={() => { hapticLight(); navigate('/projecten') }}
+          className="tap-press h-11 px-4 text-[14px] font-medium rounded-lg transition-colors flex-shrink-0"
+          style={{ color: '#5A5A55', border: '0.5px solid #E6E4E0' }}
+        >
+          Annuleren
+        </button>
+        <button
+          type="submit"
+          disabled={loading}
+          onClick={(e) => {
+            const form = (e.currentTarget as HTMLButtonElement).closest('form')
+            if (form) {
+              hapticMedium()
+              form.requestSubmit()
+            }
+          }}
+          className="tap-press flex-1 h-11 px-4 text-[14px] font-semibold text-white rounded-lg shadow-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+          style={{ backgroundColor: '#1A535C' }}
+        >
+          <Save className="h-4 w-4" />
+          {loading ? 'Opslaan...' : 'Project aanmaken'}
+        </button>
       </div>
     </div>
   )

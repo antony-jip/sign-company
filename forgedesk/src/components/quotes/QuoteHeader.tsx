@@ -20,6 +20,7 @@ import {
   X,
 } from 'lucide-react'
 import type { Klant } from '@/types'
+import { hapticLight, hapticMedium } from '@/utils/haptic'
 
 export interface QuoteHeaderProps {
   isEditMode: boolean
@@ -98,19 +99,19 @@ export function QuoteHeader({
   const from = (location.state as { from?: string })?.from
 
   return (
-      <div className="sticky top-0 z-10 bg-[#F8F7F5]/80 backdrop-blur-sm border-b border-[#EBEBEB] px-6 py-3 mb-6 -mx-4 md:-mx-6">
-        <div className="flex items-center justify-between gap-4 flex-wrap">
+      <div className="sticky top-0 z-10 bg-[#F8F7F5]/80 backdrop-blur-sm border-b border-[#EBEBEB] px-4 md:px-6 py-3 mb-6 -mx-4 md:-mx-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4">
           {/* Left: Title + meta */}
           <div className="min-w-0">
             <div className="flex items-center gap-2.5 flex-wrap">
-              <button onClick={() => navigate(from || '/offertes')} className="text-[#9B9B95] hover:text-[#6B6B66] transition-colors flex-shrink-0"><ArrowLeft className="h-4 w-4" /></button>
-              <h1 className="text-xl font-bold text-[#1A1A1A] tracking-[-0.3px] truncate">{isEditMode ? 'Offerte bewerken' : 'Nieuwe offerte'}</h1>
+              <button onClick={() => { hapticLight(); navigate(from || '/offertes') }} className="tap-press text-[#9B9B95] hover:text-[#6B6B66] transition-colors flex-shrink-0 -ml-1 p-1" aria-label="Terug"><ArrowLeft className="h-5 w-5 md:h-4 md:w-4" /></button>
+              <h1 className="text-lg md:text-xl font-bold text-[#1A1A1A] tracking-[-0.3px] truncate">{isEditMode ? 'Offerte bewerken' : 'Nieuwe offerte'}</h1>
               <span className="text-[13px] font-mono text-[#9B9B95] flex-shrink-0">{offerteNummer}</span>
               {versioning.versieNummer > 1 && (
                 <button onClick={() => versioning.setShowVersieHistorie(!versioning.showVersieHistorie)} className="text-[11px] font-mono text-[#6A5A8A] hover:underline flex-shrink-0">v{versioning.versieNummer}</button>
               )}
               {verstuurdOp && (
-                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#3A5A9A] bg-[#E8EEF9] px-2 py-0.5 rounded-full flex-shrink-0">
+                <span className="hidden md:inline-flex items-center gap-1 text-[11px] font-semibold text-[#3A5A9A] bg-[#E8EEF9] px-2 py-0.5 rounded-full flex-shrink-0">
                   <Mail className="h-2.5 w-2.5" />
                   Verstuurd{verstuurdNaar ? ` naar ${verstuurdNaar}` : ''} · {new Date(verstuurdOp).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}
                 </span>
@@ -119,38 +120,39 @@ export function QuoteHeader({
                 const days = Math.floor((new Date(geldigTot).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
                 if (days < 0) return <span className="text-xs text-[#C0451A] font-medium flex-shrink-0">Verlopen<span className="text-[#F15025]">.</span></span>
                 if (days < 7) return <span className="text-xs text-[#C0451A] flex-shrink-0">Nog {days}d</span>
-                return <span className="text-xs text-[#9B9B95] flex-shrink-0">t/m <span className="font-mono">{new Date(geldigTot).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}</span></span>
+                return <span className="hidden md:inline text-xs text-[#9B9B95] flex-shrink-0">t/m <span className="font-mono">{new Date(geldigTot).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}</span></span>
               })()}
             </div>
             <div className="flex items-center gap-2 mt-0.5">
               {autoSaveStatus === 'saving' && <span className="flex items-center gap-1.5 text-xs text-[#8A7A4A]"><div className="h-1.5 w-1.5 rounded-full bg-[#8A7A4A] animate-pulse" />Opslaan...</span>}
               {autoSaveStatus === 'saved' && <span className="flex items-center gap-1.5 text-xs text-[#3A7D52]"><Check className="h-3 w-3" />Opgeslagen</span>}
-              {!autoSaveStatus && <p className="text-[13px] text-[#9B9B95]">{isEditMode ? selectedKlant?.bedrijfsnaam || '' : 'Selecteer een klant en vul de details in'}</p>}
+              {!autoSaveStatus && <p className="text-[13px] text-[#9B9B95] truncate">{isEditMode ? selectedKlant?.bedrijfsnaam || '' : 'Selecteer een klant en vul de details in'}</p>}
             </div>
           </div>
 
-          {/* Right: Action buttons */}
+          {/* Right: Action buttons — full row on mobile, inline on desktop */}
           <div className="flex items-center gap-2 flex-shrink-0">
-            <button onClick={handleDownloadPdf} className="inline-flex items-center gap-1.5 h-8 px-3 text-[12px] font-medium rounded-lg border border-[#EBEBEB] text-[#6B6B66] hover:text-[#1A1A1A] hover:border-[#EBEBEB] hover:bg-[#F8F7F5] transition-colors">
-              <Download className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">PDF</span>
+            <button onClick={() => { hapticLight(); handleDownloadPdf() }} className="tap-press inline-flex items-center justify-center gap-1.5 h-10 md:h-8 w-10 md:w-auto md:px-3 text-[12px] font-medium rounded-lg border border-[#EBEBEB] text-[#6B6B66] hover:text-[#1A1A1A] hover:border-[#EBEBEB] hover:bg-[#F8F7F5] transition-colors" aria-label="PDF downloaden">
+              <Download className="h-4 w-4 md:h-3.5 md:w-3.5" />
+              <span className="hidden md:inline">PDF</span>
             </button>
-            <button onClick={() => saveOfferte('concept')} disabled={isSaving} className="inline-flex items-center gap-1.5 h-8 px-4 text-[12px] font-medium rounded-lg bg-[#1A535C] text-white hover:bg-[#164850] transition-colors disabled:opacity-50">
-              <Save className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">{isSaving ? 'Opslaan...' : 'Opslaan'}</span>
+            <button onClick={() => { hapticLight(); saveOfferte('concept') }} disabled={isSaving} className="tap-press inline-flex items-center justify-center gap-1.5 h-10 md:h-8 w-10 md:w-auto md:px-4 text-[12px] font-medium rounded-lg bg-[#1A535C] text-white hover:bg-[#164850] transition-colors disabled:opacity-50" aria-label="Opslaan">
+              <Save className="h-4 w-4 md:h-3.5 md:w-3.5" />
+              <span className="hidden md:inline">{isSaving ? 'Opslaan...' : 'Opslaan'}</span>
             </button>
             {/* Verstuur split button */}
-            <div className="relative flex items-center">
-              <button onClick={handleVerstuurOfferte} disabled={isSaving} className="inline-flex items-center gap-1.5 h-9 px-5 text-sm font-semibold rounded-l-lg bg-[#F15025] text-white hover:bg-[#D94520] transition-colors disabled:opacity-50">
-                <Send className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Verstuur</span>
+            <div className="relative flex items-center flex-1 md:flex-none">
+              <button onClick={() => { hapticMedium(); handleVerstuurOfferte() }} disabled={isSaving} className="tap-press inline-flex items-center justify-center gap-1.5 flex-1 md:flex-none h-10 md:h-9 px-4 md:px-5 text-[14px] md:text-sm font-semibold rounded-l-lg bg-[#F15025] text-white hover:bg-[#D94520] transition-colors disabled:opacity-50">
+                <Send className="h-4 w-4 md:h-3.5 md:w-3.5" />
+                <span>Verstuur</span>
               </button>
               <button
-                onClick={() => email.setShowVerstuurKeuze(!email.showVerstuurKeuze)}
+                onClick={() => { hapticLight(); email.setShowVerstuurKeuze(!email.showVerstuurKeuze) }}
                 disabled={isSaving}
-                className="inline-flex items-center h-9 px-1.5 text-sm font-semibold rounded-r-lg bg-[#D94520] text-white hover:bg-[#C03A18] transition-colors disabled:opacity-50 border-l border-white/20"
+                className="tap-press inline-flex items-center h-10 md:h-9 px-2 md:px-1.5 text-sm font-semibold rounded-r-lg bg-[#D94520] text-white hover:bg-[#C03A18] transition-colors disabled:opacity-50 border-l border-white/20"
+                aria-label="Versturen via..."
               >
-                <ChevronDown className="h-3.5 w-3.5" />
+                <ChevronDown className="h-4 w-4 md:h-3.5 md:w-3.5" />
               </button>
               {email.showVerstuurKeuze && (
                 <>
@@ -195,7 +197,7 @@ export function QuoteHeader({
             {/* Actions dropdown */}
             {isEditMode && (
               <div className="relative">
-                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setShowActionsMenu(!showActionsMenu)}>
+                <Button variant="outline" size="icon" className="tap-press h-10 w-10 md:h-8 md:w-8" onClick={() => { hapticLight(); setShowActionsMenu(!showActionsMenu) }} aria-label="Meer acties">
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
                 {showActionsMenu && (
