@@ -1,5 +1,6 @@
 import React from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { Sidebar } from './Sidebar'
 import { Header } from './Header'
 import { TopNav } from './TopNav'
@@ -27,6 +28,10 @@ function OfflineBanner() {
 
 export function AppLayout() {
   const { layoutMode } = useSidebar()
+  const location = useLocation()
+  const isDesktop = useMediaQuery('(min-width: 768px)')
+  // /email renders its own pill topbar on mobile — skip the global TopNav there.
+  const hideTopNav = !isDesktop && location.pathname.startsWith('/email')
   useTabShortcuts()
 
   if (layoutMode === 'topnav') {
@@ -35,7 +40,7 @@ export function AppLayout() {
         <div className="flex flex-col h-[100dvh] overflow-hidden bg-[#F8F7F5]">
           <OfflineBanner />
           <TrialBanner />
-          <TopNav />
+          {!hideTopNav && <TopNav />}
           <TabBar />
           <main className="flex-1 overflow-y-auto overflow-x-hidden" style={{ position: 'relative', zIndex: 0 }}>
             <div className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-8 py-3 sm:py-4 md:py-6 pb-20 md:pb-6 w-full max-w-full overflow-hidden page-content-enter">

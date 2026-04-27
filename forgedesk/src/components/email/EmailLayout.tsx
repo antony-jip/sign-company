@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 import { createPortal } from 'react-dom'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import {
   Search, Pencil, Inbox, Send, FileEdit, Trash2,
@@ -19,6 +19,7 @@ import { EmailContextSidebar } from './EmailContextSidebar'
 import { EmailCompose } from './EmailCompose'
 import type { ComposeActions } from './EmailCompose'
 import { EmailListItem } from './EmailListItem'
+import { EmailMobileTopBar } from './EmailMobileTopBar'
 import type { Email, EmailAttachment } from '@/types'
 import { logger } from '../../utils/logger'
 import type { EmailFolder, FilterType, FontSize, ViewMode } from './emailTypes'
@@ -117,6 +118,7 @@ export function EmailLayout() {
 
   // ─── Location-based compose detection ───
   const location = useLocation()
+  const navigate = useNavigate()
   useEffect(() => {
     if (location.pathname.endsWith('/email/compose')) {
       const params = new URLSearchParams(location.search)
@@ -1138,9 +1140,35 @@ export function EmailLayout() {
     </>
   )
 
+  // Mobile-only inbox-context counter: today's unread mails in current folder.
+  const todayUnreadCount = useMemo(() => {
+    const start = new Date()
+    start.setHours(0, 0, 0, 0)
+    return emails.filter((e) =>
+      e.map === selectedFolder
+      && !e.gelezen
+      && new Date(e.datum).getTime() >= start.getTime()
+    ).length
+  }, [emails, selectedFolder])
+
+  const selectedFolderLabel = (folderTabs.find((f) => f.id === selectedFolder)?.label
+    ?? (selectedFolder === 'gepland' ? 'Ingeplande berichten' : selectedFolder)).toUpperCase()
+
   // ─── UNIFIED 3-COLUMN LAYOUT ───
   return (
     <div className={cn('h-full flex flex-col -m-3 sm:-m-4 md:-m-6 overflow-hidden', viewMode === 'idle' ? 'bg-[#F8F7F5]' : 'bg-white')}>
+      {viewMode === 'idle' && (
+        <EmailMobileTopBar
+          onOpenDrawer={() => setFolderDrawerOpen(true)}
+          searchInput={searchInput}
+          onSearchChange={handleSearchChange}
+          selectedFolder={selectedFolder}
+          selectedFolderLabel={selectedFolderLabel}
+          todayUnreadCount={todayUnreadCount}
+          userInitial={userInitial}
+          onOpenAI={() => navigate('/forgie')}
+        />
+      )}
       <div className="flex flex-1 min-h-0 overflow-hidden">
       {/* Desktop sidebar — inline column */}
       <div className="hidden md:flex w-[220px] bg-white border-r border-[#EBEBEB] flex-col flex-shrink-0">
@@ -1243,16 +1271,8 @@ export function EmailLayout() {
       {viewMode === 'idle' && selectedFolder !== 'gepland' && (<>
         {/* Toolbar */}
         {/* Toolbar */}
-        <div className="sticky top-0 z-20 bg-white flex items-center justify-between px-4 h-12 border-b border-[#EBEBEB] flex-shrink-0">
+        <div className="sticky top-0 z-20 bg-white hidden md:flex items-center justify-between px-4 h-12 border-b border-[#EBEBEB] flex-shrink-0">
           <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setFolderDrawerOpen(true)}
-              className="md:hidden h-8 w-8 -ml-1 flex items-center justify-center rounded-md text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F0EFEC]/60"
-              aria-label="Open mappen"
-            >
-              <Menu className="h-4 w-4" />
-            </button>
             <input
               type="checkbox"
               checked={allChecked}
@@ -1348,8 +1368,8 @@ export function EmailLayout() {
           </div>
         </div>
 
-        {/* Search bar — always visible */}
-        <div className="px-4 py-2 border-b border-[#EBEBEB]">
+        {/* Search bar — desktop only; mobile uses the topbar pill */}
+        <div className="hidden md:block px-4 py-2 border-b border-[#EBEBEB]">
           <div className="flex items-center gap-2 h-9 px-3 bg-[#F8F7F5] rounded-lg focus-within:ring-2 focus-within:ring-[#1A535C]/20 transition-shadow">
             <Search className="h-4 w-4 text-[#9B9B95] flex-shrink-0" />
             <input

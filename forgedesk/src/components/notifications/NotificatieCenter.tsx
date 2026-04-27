@@ -308,7 +308,12 @@ function NotificatieToast({
   );
 }
 
-export function NotificatieCenter() {
+interface NotificatieCenterProps {
+  variant?: 'bell' | 'avatar'
+  userInitial?: string
+}
+
+export function NotificatieCenter({ variant = 'bell', userInitial }: NotificatieCenterProps = {}) {
   const { user } = useAuth();
   const [notificaties, setNotificaties] = useState<Notificatie[]>([]);
   const [open, setOpen] = useState(false);
@@ -484,7 +489,23 @@ export function NotificatieCenter() {
         />
       )}
 
-      {aantalOngelezen > 0 ? (
+      {variant === 'avatar' ? (
+        <button
+          type="button"
+          onClick={() => setOpen((prev) => !prev)}
+          aria-label={aantalOngelezen > 0
+            ? `${aantalOngelezen} nieuwe notificatie${aantalOngelezen === 1 ? '' : 's'} openen`
+            : 'Notificaties openen'}
+          className="relative inline-flex items-center justify-center w-[34px] h-[34px] rounded-full bg-[#1A535C] text-white flex-shrink-0"
+        >
+          <span className="text-[13px] font-bold leading-none">{userInitial ?? '·'}</span>
+          {aantalOngelezen > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] rounded-full bg-[#F15025] text-white text-[9px] font-bold leading-none flex items-center justify-center px-1 ring-2 ring-[#F0EFEC]">
+              {aantalOngelezen > 99 ? '99+' : aantalOngelezen}
+            </span>
+          )}
+        </button>
+      ) : aantalOngelezen > 0 ? (
         <>
           {/* Desktop: full pill with text */}
           <button
