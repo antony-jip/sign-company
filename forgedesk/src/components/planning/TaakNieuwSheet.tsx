@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -27,14 +27,12 @@ export function TaakNieuwSheet({ open, onClose, defaultDate, toegewezenAan, onCr
   const [datum, setDatum] = useState(() => toDateInputValue(defaultDate))
   const [tijd, setTijd] = useState('')
   const [saving, setSaving] = useState(false)
-  const titelRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (open) {
       setTitel('')
       setDatum(toDateInputValue(defaultDate))
       setTijd('')
-      setTimeout(() => titelRef.current?.focus(), 150)
     }
   }, [open, defaultDate])
 
@@ -99,7 +97,7 @@ export function TaakNieuwSheet({ open, onClose, defaultDate, toegewezenAan, onCr
           <button
             type="button"
             onClick={onClose}
-            className="h-8 w-8 -mr-1 flex items-center justify-center rounded-full text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F0EFEC]/60 transition-colors"
+            className="h-10 w-10 -mr-2 flex items-center justify-center rounded-full text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F0EFEC] active:bg-[#E6E5E1] transition-colors"
             aria-label="Sluiten"
           >
             <X className="h-4 w-4" />
@@ -107,7 +105,6 @@ export function TaakNieuwSheet({ open, onClose, defaultDate, toegewezenAan, onCr
         </div>
         <form onSubmit={handleSubmit} className="space-y-3">
           <input
-            ref={titelRef}
             required
             value={titel}
             onChange={(e) => setTitel(e.target.value)}
