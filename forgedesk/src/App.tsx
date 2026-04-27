@@ -14,6 +14,7 @@ import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
 import { CommandPalette } from '@/components/shared/CommandPalette'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { useDataInit } from '@/hooks/useDataInit'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { useParams } from 'react-router-dom'
 
 // ---------------------------------------------------------------------------
@@ -68,6 +69,12 @@ const EmailComposePage = lazy(() => import('@/components/email/EmailComposePage'
 // Planning
 const PlanningLayout = lazy(() => import('@/components/planning/PlanningLayout'), 'PlanningLayout')
 const TasksLayout = lazy(() => import('@/components/planning/TasksLayout'), 'TasksLayout')
+const TasksLayoutMobile = lazy(() => import('@/components/planning/TasksLayoutMobile'), 'TasksLayoutMobile')
+
+function TakenRoute() {
+  const isDesktop = useMediaQuery('(min-width: 768px)')
+  return isDesktop ? <TasksLayout /> : <TasksLayoutMobile />
+}
 const BookingBeheer = lazy(() => import('@/components/planning/BookingBeheer'), 'BookingBeheer')
 const PublicBookingPage = lazy(() => import('@/components/planning/PublicBookingPage'), 'PublicBookingPage')
 
@@ -232,7 +239,7 @@ function AppContent() {
         <Route path="inkoopfacturen" element={<Navigate to="/facturen?tab=inkoop" replace />} />
         <Route path="inkoopfacturen/:id" element={<Navigate to="/facturen?tab=inkoop" replace />} />
         <Route path="financieel" element={<FinancialLayout />} />
-        <Route path="taken" element={<TasksLayout />} />
+        <Route path="taken" element={<TakenRoute />} />
         <Route path="facturen" element={<FacturenLayout />} />
         <Route path="facturen/nieuw" element={<FactuurEditor />} />
         <Route path="facturen/:id" element={<FactuurEditor />} />
