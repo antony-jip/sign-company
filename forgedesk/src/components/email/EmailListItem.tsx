@@ -1,5 +1,5 @@
 import { memo, useCallback, useMemo, useRef } from 'react'
-import { Pin, Paperclip, Archive, Trash2, MailOpen, Mail } from 'lucide-react'
+import { Pin, Star, Paperclip, Archive, Trash2, MailOpen, Mail } from 'lucide-react'
 import type { Email } from '@/types'
 import { extractSenderName, cleanEmailPreview, formatShortDate, fontSizeClasses, getAvatarColor, getAvatarStyle } from './emailHelpers'
 import type { FontSize } from './emailTypes'
@@ -195,7 +195,7 @@ export const EmailListItem = memo(function EmailListItem({
               <Paperclip className="h-3 w-3 text-[#C5C2BD]" />
             )}
             {email.pinned && (
-              <Pin className="h-3 w-3 fill-[#1A535C] text-[#1A535C] -rotate-45" />
+              <Star className="h-3.5 w-3.5 fill-[#F15025] text-[#F15025]" />
             )}
             <span className={cn(
               'tabular-nums min-w-[40px] text-right text-[13px]',
@@ -363,12 +363,12 @@ export const EmailListItem = memo(function EmailListItem({
           !email.pinned && 'hover:bg-[#F0EFEC]',
         )}
       >
-        <Pin
+        <Star
           className={cn(
             'h-4 w-4 transition-colors',
             email.pinned
-              ? 'fill-[#1A535C] text-[#1A535C] -rotate-45'
-              : 'text-[#B0ADA8] hover:text-[#1A535C]',
+              ? 'fill-[#F15025] text-[#F15025]'
+              : 'text-[#B0ADA8] hover:text-[#F15025]',
           )}
         />
       </button>

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import {
   Search, Pencil, Inbox, Send, FileEdit, Trash2,
   Loader2, Archive, RefreshCw, CheckCheck, X, Mail, MailOpen,
-  Rows3, StretchHorizontal, Clock, Pin, Menu,
+  Rows3, StretchHorizontal, Clock, Pin, Menu, Edit3,
 } from 'lucide-react'
 import { IngeplandeBerichtenLijst } from './IngeplandeBerichtenLijst'
 import { sendEmail as sendEmailViaApi, fetchEmailsFromIMAP, readEmailFromIMAP } from '@/services/gmailService'
@@ -1199,16 +1199,17 @@ export function EmailLayout() {
         document.body,
       )}
 
-      {/* Mobile sticky compose CTA — pinned above MobileBottomNav while
-          viewing the inbox. Portaled to body to escape main's stacking context. */}
+      {/* Mobile floating "Opstellen" pill — bottom-right above MobileBottomNav.
+          Portaled to body to escape main's stacking context. */}
       {viewMode === 'idle' && createPortal(
         <button
           type="button"
           onClick={() => handleCompose()}
-          className="md:hidden fixed bottom-[calc(3.5rem+env(safe-area-inset-bottom))] left-0 right-0 z-40 h-12 flex items-center justify-center gap-2 text-[14px] font-semibold text-white bg-[#F15025]/85 hover:bg-[#F15025] backdrop-blur-md shadow-[0_-2px_8px_rgba(0,0,0,0.08)] transition-colors duration-150"
+          aria-label="Nieuw bericht opstellen"
+          className="md:hidden fixed right-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-40 inline-flex items-center gap-2 px-5 py-3 rounded-full text-white text-[14px] font-medium bg-[#F15025]/[0.94] backdrop-blur-xl shadow-[0_8px_24px_rgba(241,80,37,0.32)] active:scale-[0.97] transition-transform"
         >
-          <Pencil className="h-4 w-4" />
-          Nieuw bericht
+          <Edit3 className="h-[17px] w-[17px]" />
+          Opstellen
         </button>,
         document.body,
       )}
@@ -1476,7 +1477,12 @@ export function EmailLayout() {
                             className="h-3.5 w-3.5 rounded border-foreground/20 cursor-pointer accent-[#1A535C]"
                             onClick={(e) => e.stopPropagation()}
                           />
-                          {group}
+                          {group === 'Vandaag' ? (
+                            <>
+                              <span className="md:hidden">Eerder vandaag</span>
+                              <span className="hidden md:inline">{group}</span>
+                            </>
+                          ) : group}
                         </div>
                       )
                       lastGroup = group
