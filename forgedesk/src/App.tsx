@@ -107,6 +107,12 @@ const TeamLayout = lazy(() => import('@/components/settings/TeamLayout'), 'TeamL
 
 // Werkbonnen
 const WerkbonnenLayout = lazy(() => import('@/components/werkbonnen/WerkbonnenLayout'), 'WerkbonnenLayout')
+const WerkbonnenLayoutMobile = lazy(() => import('@/components/werkbonnen/WerkbonnenLayoutMobile'), 'WerkbonnenLayoutMobile')
+
+function WerkbonnenRoute() {
+  const isDesktop = useMediaQuery('(min-width: 768px)')
+  return isDesktop ? <WerkbonnenLayout /> : <WerkbonnenLayoutMobile />
+}
 const WerkbonDetail = lazy(() => import('@/components/werkbonnen/WerkbonDetail'), 'WerkbonDetail')
 
 // Kennisbank + Changelog
@@ -260,7 +266,7 @@ function AppContent() {
         <Route path="forgie" element={<ForgieChatPage />} />
         <Route path="kennisbank" element={<KennisbankPage />} />
         <Route path="changelog" element={<ChangelogPage />} />
-        <Route path="werkbonnen" element={<WerkbonnenLayout />} />
+        <Route path="werkbonnen" element={<WerkbonnenRoute />} />
         <Route path="werkbonnen/:id" element={<WerkbonDetail />} />
         <Route path="bestelbonnen" element={<BestelbonnenLayout />} />
         <Route path="bestelbonnen/:id" element={<BestelbonDetail />} />
