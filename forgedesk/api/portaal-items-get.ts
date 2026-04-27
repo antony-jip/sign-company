@@ -74,8 +74,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(404).json({ error: 'Portaal niet gevonden' })
     }
 
+    // Fail-closed bij legacy portalen zonder organisatie_id: zonder org-binding
+    // is er geen sluitende toegangscheck mogelijk in een service-role context.
+    if (!portaal.organisatie_id) {
+      console.warn('[portaal-items-get] portaal zonder organisatie_id geweigerd:', portaalId)
+      return res.status(403).json({ error: 'Geen toegang tot dit portaal' })
+    }
+
     let hasAccess = portaal.user_id === user.id
-    if (!hasAccess && portaal.organisatie_id) {
+    if (!hasAccess) {
       const { data: membership } = await supabaseAdmin
         .from('profiles')
         .select('organisatie_id')
