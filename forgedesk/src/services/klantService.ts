@@ -42,10 +42,13 @@ function normalizeKlant(raw: unknown): Klant {
 
 export async function getAllKlantLabels(userId: string): Promise<string[]> {
   if (isSupabaseConfigured() && supabase) {
-    const { data } = await supabase
+    const orgId = await getOrgId()
+    let query = supabase
       .from('klanten')
       .select('labels')
       .eq('user_id', userId)
+    if (orgId) query = query.eq('organisatie_id', orgId)
+    const { data } = await query
     if (data) {
       const allLabels = new Set<string>()
       for (const row of data) {
