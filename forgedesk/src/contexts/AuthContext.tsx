@@ -51,7 +51,7 @@ function isOnboardingRoute(pathname: string): boolean {
   return ONBOARDING_ROUTES.some((r) => pathname.startsWith(r))
 }
 
-const inFlightRedirects = new Set<string>()
+const inFlightRedirects = new Map<string, Promise<void>>()
 
 function computeTrialDagenOver(trialEinde?: string): number {
   if (!trialEinde) return 30
@@ -92,66 +92,69 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .catch(err => console.warn('[onboarding-trigger]', err.message))
   }
 
-  const handleOnboardingRedirect = async (userId: string, currentPath: string, accessToken?: string) => {
-    if (isTrulyPublic(currentPath)) return
-    if (inFlightRedirects.has(userId)) return
-    inFlightRedirects.add(userId)
+  const handleOnboardingRedirect = (userId: string, currentPath: string, accessToken?: string): Promise<void> => {
+    if (isTrulyPublic(currentPath)) return Promise.resolve()
+    const existing = inFlightRedirects.get(userId)
+    if (existing) return existing
 
-    if (!isSupabaseConfigured()) {
-      setOrganisatieId('demo-org')
-      setOrganisatie({
-        id: 'demo-org',
-        naam: 'Demo Bedrijf',
-        eigenaar_id: userId,
-        abonnement_status: 'trial',
-        onboarding_compleet: true,
-        onboarding_stap: 4,
-        created_at: new Date().toISOString(),
-      })
-      setTrialDagenOver(30)
-      setTrialStatus('trial')
-      inFlightRedirects.delete(userId)
-      return
-    }
+    const work = (async () => {
+      if (!isSupabaseConfigured()) {
+        setOrganisatieId('demo-org')
+        setOrganisatie({
+          id: 'demo-org',
+          naam: 'Demo Bedrijf',
+          eigenaar_id: userId,
+          abonnement_status: 'trial',
+          onboarding_compleet: true,
+          onboarding_stap: 4,
+          created_at: new Date().toISOString(),
+        })
+        setTrialDagenOver(30)
+        setTrialStatus('trial')
+        return
+      }
 
-    try {
-      const profile = await getProfile(userId)
-      if (!profile) return
+      try {
+        const profile = await getProfile(userId)
+        if (!profile) return
 
-      setOrganisatieId(profile.organisatie_id || null)
-      setUserRol(profile.rol || null)
+        setOrganisatieId(profile.organisatie_id || null)
+        setUserRol(profile.rol || null)
 
-      if (!profile.organisatie_id) {
-        // Trigger handle_new_user hoort altijd een organisatie_id te zetten
-        // (bestaande org bij invite, nieuwe org bij eigen signup). Als we
-        // hier belanden is er iets mis op DB-niveau.
-        logger.error('Profile zonder organisatie_id na signup', { userId })
-        if (!isOnboardingRoute(currentPath)) navigate?.('/welkom')
-      } else {
-        const org = await getOrganisatie(profile.organisatie_id)
-        if (org) {
-          setOrganisatie(org)
-          setTrialDagenOver(computeTrialDagenOver(org.trial_einde))
-          setTrialStatus((org.abonnement_status as TrialStatus) || 'trial')
+        if (!profile.organisatie_id) {
+          // Trigger handle_new_user hoort altijd een organisatie_id te zetten
+          // (bestaande org bij invite, nieuwe org bij eigen signup). Als we
+          // hier belanden is er iets mis op DB-niveau.
+          logger.error('Profile zonder organisatie_id na signup', { userId })
+          if (!isOnboardingRoute(currentPath)) navigate?.('/welkom')
+        } else {
+          const org = await getOrganisatie(profile.organisatie_id)
+          if (org) {
+            setOrganisatie(org)
+            setTrialDagenOver(computeTrialDagenOver(org.trial_einde))
+            setTrialStatus((org.abonnement_status as TrialStatus) || 'trial')
 
-          if (profile.uitgenodigd_door && !profile.voornaam) {
-            try {
-              await createMedewerker({ naam: profile.email || 'Nieuw teamlid', email: profile.email || '', status: 'actief', user_id: userId } as Parameters<typeof createMedewerker>[0])
-            } catch { /* may already exist */ }
-            if (!isOnboardingRoute(currentPath)) navigate?.('/team-welkom')
-          } else if (!org.onboarding_compleet) {
-            if (accessToken && !org.onboarding_getriggerd_op) {
-              triggerOnboarding(accessToken)
+            if (profile.uitgenodigd_door && !profile.voornaam) {
+              try {
+                await createMedewerker({ naam: profile.email || 'Nieuw teamlid', email: profile.email || '', status: 'actief', user_id: userId } as Parameters<typeof createMedewerker>[0])
+              } catch { /* may already exist */ }
+              if (!isOnboardingRoute(currentPath)) navigate?.('/team-welkom')
+            } else if (!org.onboarding_compleet) {
+              if (accessToken && !org.onboarding_getriggerd_op) {
+                triggerOnboarding(accessToken)
+              }
+              if (!isOnboardingRoute(currentPath)) navigate?.('/onboarding')
             }
-            if (!isOnboardingRoute(currentPath)) navigate?.('/onboarding')
           }
         }
+      } catch (err) {
+        logger.error('Onboarding redirect failed:', err)
       }
-    } catch (err) {
-      logger.error('Onboarding redirect failed:', err)
-    } finally {
-      inFlightRedirects.delete(userId)
-    }
+    })()
+
+    const tracked = work.finally(() => { inFlightRedirects.delete(userId) })
+    inFlightRedirects.set(userId, tracked)
+    return tracked
   }
 
   const fetchOrgData = async (userId: string) => {
@@ -202,8 +205,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
           const currentPath = window.location.pathname
           handleOnboardingRedirect(sess.user.id, currentPath, sess.access_token)
+            .finally(() => setIsLoading(false))
         } else {
-          fetchOrgData(sess.user.id)
+          fetchOrgData(sess.user.id).finally(() => setIsLoading(false))
         }
         import('@/services/gmailService').then(({ syncEmailSettingsFromServer }) => {
           syncEmailSettingsFromServer().catch(err => logger.warn('[gmail-sync]', err))
@@ -212,8 +216,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setOrganisatieId(null)
         setUserRol(null)
         setOrganisatie(null)
+        setIsLoading(false)
       }
-      setIsLoading(false)
     })
 
     return () => {
