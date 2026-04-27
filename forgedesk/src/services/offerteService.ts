@@ -19,11 +19,14 @@ import type {
 export async function getOffertes(limit = 5000): Promise<Offerte[]> {
   if (isSupabaseConfigured() && supabase) {
     try {
-      const { data, error } = await supabase
+      const orgId = await getOrgId()
+      let query = supabase
         .from('offertes')
         .select('*, klanten(bedrijfsnaam)')
         .order('created_at', { ascending: false })
         .limit(limit)
+      if (orgId) query = query.eq('organisatie_id', orgId)
+      const { data, error } = await query
       if (error) throw error
       return (data || []).map((o: Offerte & { klanten?: { bedrijfsnaam?: string } }) => ({
         ...o,
@@ -44,11 +47,13 @@ export async function getOffertes(limit = 5000): Promise<Offerte[]> {
 export async function getOfferte(id: string): Promise<Offerte | null> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase
+    const orgId = await getOrgId()
+    let query = supabase
       .from('offertes')
       .select('*, klanten(bedrijfsnaam)')
       .eq('id', id)
-      .maybeSingle()
+    if (orgId) query = query.eq('organisatie_id', orgId)
+    const { data, error } = await query.maybeSingle()
     if (error) throw error
     return data ? { ...data, klant_naam: data.klanten?.bedrijfsnaam || '' } : null
   }
@@ -62,11 +67,14 @@ export async function getOfferte(id: string): Promise<Offerte | null> {
 export async function getOffertesByProject(projectId: string): Promise<Offerte[]> {
   assertId(projectId, 'project_id')
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase
+    const orgId = await getOrgId()
+    let query = supabase
       .from('offertes')
       .select('*, klanten(bedrijfsnaam)')
       .eq('project_id', projectId)
       .order('created_at', { ascending: false })
+    if (orgId) query = query.eq('organisatie_id', orgId)
+    const { data, error } = await query
     if (error) throw error
     return (data || []).map((o: Offerte & { klanten?: { bedrijfsnaam?: string } }) => ({
       ...o,
@@ -86,11 +94,14 @@ export async function getOffertesByProject(projectId: string): Promise<Offerte[]
 export async function getOffertesByKlant(klantId: string): Promise<Offerte[]> {
   assertId(klantId, 'klant_id')
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase
+    const orgId = await getOrgId()
+    let query = supabase
       .from('offertes')
       .select('*')
       .eq('klant_id', klantId)
       .order('created_at', { ascending: false })
+    if (orgId) query = query.eq('organisatie_id', orgId)
+    const { data, error } = await query
     if (error) throw error
     return data || []
   }
@@ -248,11 +259,14 @@ export async function deleteOfferte(id: string): Promise<void> {
 export async function getOfferteItems(offerteId: string): Promise<OfferteItem[]> {
   assertId(offerteId, 'offerte_id')
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase
+    const orgId = await getOrgId()
+    let query = supabase
       .from('offerte_items')
       .select('*')
       .eq('offerte_id', offerteId)
       .order('volgorde')
+    if (orgId) query = query.eq('organisatie_id', orgId)
+    const { data, error } = await query
     if (error) throw error
     return data || []
   }
@@ -462,11 +476,14 @@ export async function getNextOfferteNummer(prefix: string = 'OFF', startNummer =
 export async function getOfferteVersies(offerteId: string): Promise<OfferteVersie[]> {
   assertId(offerteId)
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase
+    const orgId = await getOrgId()
+    let query = supabase
       .from('offerte_versies')
       .select('*')
       .eq('offerte_id', offerteId)
       .order('versie_nummer', { ascending: false })
+    if (orgId) query = query.eq('organisatie_id', orgId)
+    const { data, error } = await query
     if (error) throw error
     return data || []
   }
@@ -679,10 +696,13 @@ const DEFAULT_OFFERTE_TEMPLATES: Omit<OfferteTemplate, 'id' | 'user_id' | 'creat
 
 export async function getOfferteTemplates(): Promise<OfferteTemplate[]> {
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase
+    const orgId = await getOrgId()
+    let query = supabase
       .from('offerte_templates')
       .select('*')
       .order('naam')
+    if (orgId) query = query.eq('organisatie_id', orgId)
+    const { data, error } = await query
     if (error) throw error
     return data || []
   }
