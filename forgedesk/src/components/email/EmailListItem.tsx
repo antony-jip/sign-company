@@ -275,8 +275,7 @@ export const EmailListItem = memo(function EmailListItem({
           ? 'bg-[#1A535C]/[0.05]'
           : 'hover:bg-[#F0EFEC]/50 active:bg-[#F0EFEC]/60 md:active:bg-transparent',
         isFocused && !isActive && 'bg-[#F0EFEC]/30',
-        isUnread && !isActive && 'bg-white',
-        !isUnread && !isActive && 'bg-[#FAFAF8] md:bg-transparent',
+        !isActive && (isUnread ? 'bg-white' : 'bg-white md:bg-transparent'),
       )}
     >
       {/* Mobile-only Flame strip on unread rows */}

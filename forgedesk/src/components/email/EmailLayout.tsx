@@ -1471,7 +1471,7 @@ export function EmailLayout() {
                       nodes.push(
                         <div
                           key={`group-${group}-${index}`}
-                          className="px-4 pt-5 pb-2 text-[10px] uppercase tracking-[0.1em] font-semibold text-[#B0ADA8] bg-gradient-to-b from-white to-transparent sticky top-0 z-[1] flex items-center gap-2"
+                          className="px-4 pt-5 pb-2 text-[11px] md:text-[10px] font-medium md:font-semibold md:uppercase md:tracking-[0.1em] text-[#B0ADA8] bg-gradient-to-b from-white to-transparent sticky top-0 z-[1] flex items-center gap-2"
                         >
                           <input
                             type="checkbox"
