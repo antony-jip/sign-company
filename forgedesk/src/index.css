@@ -2010,6 +2010,22 @@ html {
   scroll-behavior: smooth;
 }
 
+/* App-feel: kill 300ms tap delay residuals + double-tap zoom on tappables */
+button, a, [role="button"], summary, label, input[type="checkbox"], input[type="radio"] {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Native-style tap press — opt-in via `tap-press` class on mobile-tappable elements */
+.tap-press {
+  transition: transform 100ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+@media (hover: none) and (pointer: coarse) {
+  .tap-press:active {
+    transform: scale(0.97);
+  }
+}
+
 /* Typewriter cursor blink */
 @keyframes blink {
   0%, 50% { opacity: 1; }

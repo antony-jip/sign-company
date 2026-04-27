@@ -24,13 +24,13 @@ export function EmailMobileTopBar({
   onOpenAI,
 }: EmailMobileTopBarProps) {
   return (
-    <div className="md:hidden px-3 pt-3 pb-1 bg-[#F8F7F5]">
+    <div className="md:hidden px-3 pb-1 bg-[#F8F7F5] pt-[calc(env(safe-area-inset-top)+0.75rem)]">
       <div className="flex items-center gap-2 h-11 rounded-full bg-[#F0EFEC] pl-1 pr-1">
         <button
           type="button"
           onClick={onOpenDrawer}
           aria-label="Open mappen"
-          className="flex items-center justify-center w-9 h-9 rounded-full text-[#5F5E5A] hover:bg-white/60 active:bg-white/80 transition-colors flex-shrink-0"
+          className="tap-press flex items-center justify-center w-9 h-9 rounded-full text-[#5F5E5A] hover:bg-white/60 active:bg-white/80 transition-colors flex-shrink-0"
         >
           <Menu className="h-5 w-5" />
         </button>
@@ -52,7 +52,7 @@ export function EmailMobileTopBar({
           type="button"
           onClick={onOpenAI}
           aria-label="Open Daan"
-          className="flex items-center justify-center w-[34px] h-[34px] rounded-full text-white flex-shrink-0"
+          className="tap-press flex items-center justify-center w-[34px] h-[34px] rounded-full text-white flex-shrink-0"
           style={{ background: 'linear-gradient(135deg, #1A535C 0%, #2A6B75 100%)' }}
         >
           <Sparkles className="h-4 w-4" />

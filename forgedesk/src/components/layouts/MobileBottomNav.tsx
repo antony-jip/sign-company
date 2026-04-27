@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
+import { hapticLight } from '@/utils/haptic'
 
 interface MobileNavItem {
   label: string
@@ -59,9 +60,9 @@ export function MobileBottomNav() {
                 <NavLink
                   key={item.path}
                   to={item.path}
-                  onClick={() => setMoreOpen(false)}
+                  onClick={() => { hapticLight(); setMoreOpen(false) }}
                   className={cn(
-                    'flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors',
+                    'tap-press flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors',
                     isActive
                       ? 'text-primary bg-primary/5'
                       : 'text-foreground/70 hover:bg-muted/50'
@@ -90,18 +91,26 @@ export function MobileBottomNav() {
               <NavLink
                 key={item.path}
                 to={item.path}
-                className="flex flex-col items-center justify-center gap-0.5 flex-1 py-1"
+                onClick={hapticLight}
+                className="tap-press flex flex-col items-center justify-center gap-0.5 flex-1 py-1"
               >
-                <Icon
-                  className={cn(
-                    'w-5 h-5 transition-colors',
-                    isActive ? 'text-primary' : 'text-muted-foreground'
-                  )}
-                />
                 <span
                   className={cn(
-                    'text-2xs font-medium transition-colors',
-                    isActive ? 'text-primary' : 'text-muted-foreground'
+                    'flex items-center justify-center rounded-full transition-all duration-200 ease-out',
+                    isActive ? 'bg-primary/10 px-3 py-0.5 scale-105' : 'px-3 py-0.5',
+                  )}
+                >
+                  <Icon
+                    className={cn(
+                      'w-5 h-5 transition-colors duration-200',
+                      isActive ? 'text-primary' : 'text-muted-foreground'
+                    )}
+                  />
+                </span>
+                <span
+                  className={cn(
+                    'text-2xs transition-all duration-200',
+                    isActive ? 'text-primary font-semibold' : 'text-muted-foreground font-medium'
                   )}
                 >
                   {item.label}
@@ -112,19 +121,26 @@ export function MobileBottomNav() {
 
           {/* More button */}
           <button
-            onClick={() => setMoreOpen(!moreOpen)}
-            className="flex flex-col items-center justify-center gap-0.5 flex-1 py-1"
+            onClick={() => { hapticLight(); setMoreOpen(!moreOpen) }}
+            className="tap-press flex flex-col items-center justify-center gap-0.5 flex-1 py-1"
           >
-            <MoreHorizontal
-              className={cn(
-                'w-5 h-5 transition-colors',
-                isMoreActive || moreOpen ? 'text-primary' : 'text-muted-foreground'
-              )}
-            />
             <span
               className={cn(
-                'text-2xs font-medium transition-colors',
-                isMoreActive || moreOpen ? 'text-primary' : 'text-muted-foreground'
+                'flex items-center justify-center rounded-full transition-all duration-200 ease-out',
+                isMoreActive || moreOpen ? 'bg-primary/10 px-3 py-0.5 scale-105' : 'px-3 py-0.5',
+              )}
+            >
+              <MoreHorizontal
+                className={cn(
+                  'w-5 h-5 transition-colors duration-200',
+                  isMoreActive || moreOpen ? 'text-primary' : 'text-muted-foreground'
+                )}
+              />
+            </span>
+            <span
+              className={cn(
+                'text-2xs transition-all duration-200',
+                isMoreActive || moreOpen ? 'text-primary font-semibold' : 'text-muted-foreground font-medium'
               )}
             >
               Meer

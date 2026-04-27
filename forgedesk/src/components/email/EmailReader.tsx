@@ -12,6 +12,7 @@ import {
 import { cn } from '@/lib/utils'
 import type { Email, EmailAttachment } from '@/types'
 import { extractSenderName, extractSenderEmail, formatShortDate, getAvatarColor, getAvatarRingColor, getAvatarStyle } from './emailHelpers'
+import { hapticLight, hapticMedium } from '@/utils/haptic'
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { callForgie } from '@/services/forgieService'
@@ -643,20 +644,20 @@ export function EmailReader({
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-10 md:h-8 w-10 md:w-auto px-0 md:px-3 gap-1.5 text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F0EFEC]"
-                onClick={onBack}
+                className="tap-press h-10 md:h-8 w-10 md:w-auto px-0 md:px-3 gap-1.5 text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F0EFEC]"
+                onClick={() => { hapticLight(); onBack?.() }}
               >
                 <ArrowLeft className="h-5 w-5 md:h-4 md:w-4" />
                 <span className="text-[14px] hidden md:inline">Terug</span>
               </Button>
               <div className="w-px h-5 bg-[#F0EFEC] mx-1.5 hidden md:block" />
-              <Button variant="ghost" size="icon" className="h-10 w-10 md:h-8 md:w-8 text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F0EFEC] transition-colors duration-150" onClick={() => email && onArchive?.(email)} title="Archiveren">
+              <Button variant="ghost" size="icon" className="tap-press h-10 w-10 md:h-8 md:w-8 text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F0EFEC] transition-colors duration-150" onClick={() => { hapticLight(); if (email) onArchive?.(email) }} title="Archiveren">
                 <Archive className="h-[18px] w-[18px] md:h-4 md:w-4" />
               </Button>
-              <Button variant="ghost" size="icon" className="h-10 w-10 md:h-8 md:w-8 text-[#9B9B95] hover:text-[#C0451A] hover:bg-[#C0451A]/[0.06] transition-colors duration-150" onClick={() => email && onDelete?.(email)} title="Verwijderen">
+              <Button variant="ghost" size="icon" className="tap-press h-10 w-10 md:h-8 md:w-8 text-[#9B9B95] hover:text-[#C0451A] hover:bg-[#C0451A]/[0.06] transition-colors duration-150" onClick={() => { hapticMedium(); if (email) onDelete?.(email) }} title="Verwijderen">
                 <Trash2 className="h-[18px] w-[18px] md:h-4 md:w-4" />
               </Button>
-              <Button variant="ghost" size="icon" className="h-10 w-10 md:h-8 md:w-8 text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F0EFEC] transition-colors duration-150" onClick={() => email && onToggleRead?.(email)} title="Markeer als ongelezen">
+              <Button variant="ghost" size="icon" className="tap-press h-10 w-10 md:h-8 md:w-8 text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F0EFEC] transition-colors duration-150" onClick={() => { hapticLight(); if (email) onToggleRead?.(email) }} title="Markeer als ongelezen">
                 <MailOpen className="h-[18px] w-[18px] md:h-4 md:w-4" />
               </Button>
             </div>
@@ -991,8 +992,8 @@ export function EmailReader({
                   )}
                 </div>
                 <button
-                  className="h-10 md:h-9 px-5 md:px-6 rounded-xl text-[14px] md:text-[13px] font-semibold text-white bg-[#F15025] shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_12px_rgba(241,80,37,0.35)] hover:-translate-y-px active:translate-y-0 transition-all duration-150 flex items-center gap-2 disabled:opacity-50"
-                  onClick={handleSend}
+                  className="tap-press h-10 md:h-9 px-5 md:px-6 rounded-xl text-[14px] md:text-[13px] font-semibold text-white bg-[#F15025] shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_12px_rgba(241,80,37,0.35)] hover:-translate-y-px active:translate-y-0 transition-all duration-150 flex items-center gap-2 disabled:opacity-50"
+                  onClick={() => { hapticMedium(); handleSend() }}
                   disabled={isSending}
                 >
                   <Send className="h-4 w-4 md:h-3.5 md:w-3.5" />
@@ -1033,8 +1034,8 @@ export function EmailReader({
             <Button
               variant="ghost"
               size="sm"
-              className="h-10 md:h-8 w-10 md:w-auto px-0 md:px-3 gap-1.5 text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F0EFEC]"
-              onClick={onBack}
+              className="tap-press h-10 md:h-8 w-10 md:w-auto px-0 md:px-3 gap-1.5 text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F0EFEC]"
+              onClick={() => { hapticLight(); onBack?.() }}
             >
               <ArrowLeft className="h-5 w-5 md:h-4 md:w-4" />
               <span className="text-[14px] hidden md:inline">Terug</span>
@@ -1044,17 +1045,17 @@ export function EmailReader({
           {/* Center: Action buttons with tooltips */}
           <div className="flex items-center gap-0.5">
             <Tooltip><TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-10 w-10 md:h-8 md:w-8 text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC] transition-colors duration-150" onClick={() => email && onArchive?.(email)}>
+              <Button variant="ghost" size="icon" className="tap-press h-10 w-10 md:h-8 md:w-8 text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC] transition-colors duration-150" onClick={() => { hapticLight(); if (email) onArchive?.(email) }}>
                 <Archive className="h-[18px] w-[18px] md:h-4 md:w-4" />
               </Button>
             </TooltipTrigger><TooltipContent side="bottom" className="text-[12px]">Archiveren</TooltipContent></Tooltip>
             <Tooltip><TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-10 w-10 md:h-8 md:w-8 text-[#9B9B95] hover:text-[#C0451A] hover:bg-[#C0451A]/[0.06] transition-colors duration-150" onClick={() => email && onDelete?.(email)}>
+              <Button variant="ghost" size="icon" className="tap-press h-10 w-10 md:h-8 md:w-8 text-[#9B9B95] hover:text-[#C0451A] hover:bg-[#C0451A]/[0.06] transition-colors duration-150" onClick={() => { hapticMedium(); if (email) onDelete?.(email) }}>
                 <Trash2 className="h-[18px] w-[18px] md:h-4 md:w-4" />
               </Button>
             </TooltipTrigger><TooltipContent side="bottom" className="text-[12px]">Verwijderen</TooltipContent></Tooltip>
             <Tooltip><TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-10 w-10 md:h-8 md:w-8 text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC] transition-colors duration-150" onClick={() => email && onToggleRead?.(email)}>
+              <Button variant="ghost" size="icon" className="tap-press h-10 w-10 md:h-8 md:w-8 text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC] transition-colors duration-150" onClick={() => { hapticLight(); if (email) onToggleRead?.(email) }}>
                 <MailOpen className="h-[18px] w-[18px] md:h-4 md:w-4" />
               </Button>
             </TooltipTrigger><TooltipContent side="bottom" className="text-[12px]">Markeer als ongelezen</TooltipContent></Tooltip>
@@ -1085,9 +1086,9 @@ export function EmailReader({
               <span>Daan</span>
             </Button>
             <button
-              onClick={() => handleReply('reply')}
+              onClick={() => { hapticLight(); handleReply('reply') }}
               title="Beantwoorden (r)"
-              className="ml-1 h-10 w-10 md:h-8 md:w-auto md:px-3.5 rounded-md bg-[#1A535C] hover:bg-[#0F3C44] text-white text-[13px] font-semibold transition-colors duration-150 flex items-center justify-center gap-1.5"
+              className="tap-press ml-1 h-10 w-10 md:h-8 md:w-auto md:px-3.5 rounded-md bg-[#1A535C] hover:bg-[#0F3C44] text-white text-[13px] font-semibold transition-colors duration-150 flex items-center justify-center gap-1.5"
             >
               <Reply className="h-[18px] w-[18px] md:h-3.5 md:w-3.5" />
               <span className="hidden md:inline">Beantwoorden</span>
@@ -1151,21 +1152,21 @@ export function EmailReader({
 
               {/* Reply/Forward — primary on mobile is dominant, secondaries flank */}
               <div className="flex items-stretch md:items-center gap-2 md:gap-1.5">
-                <button onClick={() => handleReply('reply')}
-                  className="flex-1 md:flex-none flex items-center justify-center gap-1.5 h-10 md:h-8 px-3 rounded-lg text-[14px] md:text-[13px] font-semibold text-[#1A535C] bg-[#1A535C]/[0.08] md:bg-[#1A535C]/[0.06] hover:bg-[#1A535C]/[0.12] transition-colors duration-150"
+                <button onClick={() => { hapticLight(); handleReply('reply') }}
+                  className="tap-press flex-1 md:flex-none flex items-center justify-center gap-1.5 h-10 md:h-8 px-3 rounded-lg text-[14px] md:text-[13px] font-semibold text-[#1A535C] bg-[#1A535C]/[0.08] md:bg-[#1A535C]/[0.06] hover:bg-[#1A535C]/[0.12] transition-colors duration-150"
                   title="Beantwoorden (r)">
                   <Reply className="h-4 w-4 md:h-3.5 md:w-3.5" />
                   <span>Beantwoorden</span>
                 </button>
-                <button onClick={() => handleReply('reply-all')}
-                  className="flex items-center justify-center gap-1.5 h-10 md:h-8 w-10 md:w-auto md:px-3 rounded-lg text-[12px] font-medium text-[#9B9B95] hover:text-[#4A4A46] hover:bg-[#F0EFEC] transition-colors duration-150"
+                <button onClick={() => { hapticLight(); handleReply('reply-all') }}
+                  className="tap-press flex items-center justify-center gap-1.5 h-10 md:h-8 w-10 md:w-auto md:px-3 rounded-lg text-[12px] font-medium text-[#9B9B95] hover:text-[#4A4A46] hover:bg-[#F0EFEC] transition-colors duration-150"
                   title="Allen beantwoorden"
                   aria-label="Allen beantwoorden">
                   <ReplyAll className="h-4 w-4 md:h-3.5 md:w-3.5" />
                   <span className="hidden md:inline">Allen</span>
                 </button>
-                <button onClick={() => handleReply('forward')}
-                  className="flex items-center justify-center gap-1.5 h-10 md:h-8 w-10 md:w-auto md:px-3 rounded-lg text-[12px] font-medium text-[#9B9B95] hover:text-[#4A4A46] hover:bg-[#F0EFEC] transition-colors duration-150"
+                <button onClick={() => { hapticLight(); handleReply('forward') }}
+                  className="tap-press flex items-center justify-center gap-1.5 h-10 md:h-8 w-10 md:w-auto md:px-3 rounded-lg text-[12px] font-medium text-[#9B9B95] hover:text-[#4A4A46] hover:bg-[#F0EFEC] transition-colors duration-150"
                   title="Doorsturen (f)"
                   aria-label="Doorsturen">
                   <Forward className="h-4 w-4 md:h-3.5 md:w-3.5" />

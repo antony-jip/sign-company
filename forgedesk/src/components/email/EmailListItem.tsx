@@ -4,6 +4,7 @@ import type { Email } from '@/types'
 import { extractSenderName, cleanEmailPreview, formatShortDate, fontSizeClasses, getAvatarColor, getAvatarStyle } from './emailHelpers'
 import type { FontSize } from './emailTypes'
 import { cn } from '@/lib/utils'
+import { hapticLight } from '@/utils/haptic'
 
 const desktopSizeClasses: Record<FontSize, { name: string; subject: string; preview: string; date: string }> = {
   small: { name: 'md:text-base', subject: 'md:text-base', preview: 'md:text-sm', date: 'md:text-xs' },
@@ -70,6 +71,7 @@ export const EmailListItem = memo(function EmailListItem({
   }, [email.body_text, email.inhoud])
 
   const handleClick = useCallback((e: React.MouseEvent) => {
+    hapticLight()
     onSelect(email, e)
   }, [email, onSelect])
 
@@ -277,6 +279,7 @@ export const EmailListItem = memo(function EmailListItem({
         isFocused && !isActive && 'bg-[#F0EFEC]/30',
         !isActive && (isUnread ? 'bg-white' : 'bg-white md:bg-transparent'),
       )}
+      style={{ WebkitTapHighlightColor: 'transparent' }}
     >
       {/* Mobile-only Flame strip on unread rows */}
       {isUnread && !isActive && (

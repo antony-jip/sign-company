@@ -27,6 +27,7 @@ import type { EmailFolder, FilterType, FontSize, ViewMode } from './emailTypes'
 import { extractSenderEmail, extractSenderName, parseSearchQuery, IMAP_FOLDER_MAP, KEYBOARD_SHORTCUTS, calculateSnoozeDate, getAvatarStyle } from './emailHelpers'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
+import { hapticLight } from '@/utils/haptic'
 
 // Folder config
 const folderTabs: { id: EmailFolder; label: string; icon: React.ElementType }[] = [
@@ -1208,9 +1209,9 @@ export function EmailLayout() {
       {viewMode === 'idle' && createPortal(
         <button
           type="button"
-          onClick={() => handleCompose()}
+          onClick={() => { hapticLight(); handleCompose() }}
           aria-label="Nieuw bericht opstellen"
-          className="md:hidden fixed right-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-40 inline-flex items-center gap-2 px-5 py-3 rounded-full text-white text-[14px] font-medium bg-[#F15025]/[0.94] backdrop-blur-xl shadow-[0_8px_24px_rgba(241,80,37,0.32)] active:scale-[0.97] transition-transform"
+          className="md:hidden fixed right-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-40 inline-flex items-center gap-2 px-5 py-3 rounded-full text-white text-[14px] font-medium bg-[#F15025]/[0.94] backdrop-blur-xl shadow-[0_8px_24px_rgba(241,80,37,0.32)] active:scale-[0.94] transition-transform duration-100"
         >
           <Edit3 className="h-[17px] w-[17px]" />
           Opstellen
@@ -1471,7 +1472,7 @@ export function EmailLayout() {
                       nodes.push(
                         <div
                           key={`group-${group}-${index}`}
-                          className="px-4 pt-5 pb-2 text-[11px] md:text-[10px] font-medium md:font-semibold md:uppercase md:tracking-[0.1em] text-[#B0ADA8] bg-gradient-to-b from-white to-transparent sticky top-0 z-[1] flex items-center gap-2"
+                          className="px-4 pt-5 pb-2 text-[11px] md:text-[10px] font-medium md:font-semibold md:uppercase md:tracking-[0.1em] text-[#B0ADA8] bg-white/85 md:bg-gradient-to-b md:from-white md:to-transparent backdrop-blur-md md:backdrop-blur-none sticky top-0 z-[1] flex items-center gap-2"
                         >
                           <input
                             type="checkbox"
