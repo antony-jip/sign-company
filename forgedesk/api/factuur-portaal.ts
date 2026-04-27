@@ -77,7 +77,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Via portaal token + factuur_id
       const { data: portaal } = await supabaseAdmin
         .from('project_portalen')
-        .select('id, user_id, project_id, actief')
+        .select('id, user_id, project_id, organisatie_id, actief')
         .eq('token', portaalToken)
         .eq('actief', true)
         .maybeSingle()
@@ -87,10 +87,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
       userId = portaal.user_id
 
+      // Resolve org via portaal; voor legacy portalen vóór migratie 047 zonder
+      // organisatie_id valt terug op de owner-profile lookup. Geen org → 403.
+      let portaalOrgId = (portaal.organisatie_id as string | null) ?? null
+      if (!portaalOrgId) {
+        const { data: ownerProfile } = await supabaseAdmin
+          .from('profiles')
+          .select('organisatie_id')
+          .eq('id', portaal.user_id)
+          .maybeSingle()
+        portaalOrgId = (ownerProfile?.organisatie_id as string | null) ?? null
+      }
+      if (!portaalOrgId) {
+        return res.status(403).json({ error: 'Portaal organisatie kan niet vastgesteld worden' })
+      }
+
       const { data } = await supabaseAdmin
         .from('facturen')
         .select('*')
         .eq('id', factuurId)
+        .eq('organisatie_id', portaalOrgId)
+        .eq('project_id', portaal.project_id)
         .maybeSingle()
       factuur = data
     } else {
