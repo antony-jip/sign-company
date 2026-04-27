@@ -409,10 +409,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       console.error('[send-email] Verzonden mail opslaan mislukt:', saveErr)
     }
 
-    // Ruim tijdelijke bestanden op uit Storage
+    // Ruim tijdelijke bestanden op uit Storage. Email is al verzonden, dus niet
+    // fataal — maar wel error-niveau, want hangende bijlagen lekken storage.
     if (storagePaths.length > 0) {
       supabaseAdmin.storage.from('documenten').remove(storagePaths).catch((err) => {
-        console.warn('[send-email] Storage cleanup mislukt:', err)
+        console.error('[send-email] Storage cleanup mislukt:', err)
+        Sentry.captureException(err, { tags: { phase: 'storage-cleanup' } })
       })
     }
 
@@ -423,8 +425,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         await tasks.trigger("email-opvolging", { opvolgingId: opvolging_id })
         console.log('[send-email] Auto-opvolging task getriggerd:', opvolging_id)
       } catch (triggerErr) {
-        // Niet fataal — email is al verstuurd, log de fout
+        // Niet fataal — email is al verstuurd, log de fout en rapporteer naar Sentry
         console.error('[send-email] Trigger.dev task starten mislukt:', triggerErr)
+        Sentry.captureException(triggerErr, { tags: { phase: 'trigger-dev' } })
       }
     }
 
