@@ -209,7 +209,7 @@ export function WerkbonnenLayout() {
       `}</style>
 
       <div className="flex-1 min-h-0 overflow-y-auto">
-      <div className="px-8 py-8 space-y-6">
+      <div className="px-4 py-4 md:px-8 md:py-8 space-y-6">
 
       {/* ── Header + Stats ── */}
       <div className="space-y-4">
@@ -225,10 +225,10 @@ export function WerkbonnenLayout() {
           </div>
           <button
             onClick={() => navigate('/werkbonnen/nieuw')}
-            className="inline-flex items-center gap-2 bg-[#F15025] text-white pl-4 pr-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_2px_8px_rgba(241,80,37,0.25),0_0_0_1px_rgba(241,80,37,0.1)] hover:bg-[#E04520] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35),0_0_0_1px_rgba(241,80,37,0.15)] hover:-translate-y-[1px] active:translate-y-0 active:bg-[#D03A18] transition-all duration-200"
+            className="inline-flex items-center gap-2 bg-[#F15025] text-white px-3 md:pl-4 md:pr-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_2px_8px_rgba(241,80,37,0.25),0_0_0_1px_rgba(241,80,37,0.1)] hover:bg-[#E04520] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35),0_0_0_1px_rgba(241,80,37,0.15)] hover:-translate-y-[1px] active:translate-y-0 active:bg-[#D03A18] transition-all duration-200"
           >
             <Plus className="w-4 h-4 opacity-80" />
-            Nieuwe werkbon
+            <span className="hidden md:inline">Nieuwe werkbon</span>
           </button>
         </div>
 
@@ -285,7 +285,7 @@ export function WerkbonnenLayout() {
 
         {/* Filter tabs */}
         <div className="flex items-center gap-6 mt-4 pt-4 border-t border-[#F0EFEC]">
-          <div className="flex items-center gap-1 flex-wrap flex-1">
+          <div className="flex items-center gap-1 flex-1 flex-nowrap md:flex-wrap overflow-x-auto">
             {(['alle', 'concept', 'definitief', 'afgerond'] as const).map((status) => {
               const labels: Record<string, string> = { alle: 'Alle', concept: 'Open', definitief: 'In uitvoering', afgerond: 'Afgetekend' }
               const count = statusCounts[status] || 0

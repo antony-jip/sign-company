@@ -711,15 +711,17 @@ export function WerkbonDetail() {
         <div className="flex items-center gap-1.5">
           {!isNew && (
             <>
-              <button onClick={handlePrint} className="h-9 w-9 rounded-lg flex items-center justify-center transition-colors hover:bg-[#F4F2EE]" style={{ border: '1px solid #EBEBEB' }} title="Printen">
-                <Printer className="h-4 w-4 text-[#6B6B66]" />
-              </button>
-              <button onClick={handleDownloadPDF} className="h-9 w-9 rounded-lg flex items-center justify-center transition-colors hover:bg-[#F4F2EE]" style={{ border: '1px solid #EBEBEB' }} title="Download PDF">
-                <FileText className="h-4 w-4 text-[#6B6B66]" />
-              </button>
-              <button onClick={handleShare} className="h-9 w-9 rounded-lg flex items-center justify-center transition-colors hover:bg-[#F4F2EE]" style={{ border: '1px solid #EBEBEB' }} title="Deel via WhatsApp">
-                <Share2 className="h-3.5 w-3.5 text-[#6B6B66]" />
-              </button>
+              <div className="hidden md:contents">
+                <button onClick={handlePrint} className="h-9 w-9 rounded-lg flex items-center justify-center transition-colors hover:bg-[#F4F2EE]" style={{ border: '1px solid #EBEBEB' }} title="Printen">
+                  <Printer className="h-4 w-4 text-[#6B6B66]" />
+                </button>
+                <button onClick={handleDownloadPDF} className="h-9 w-9 rounded-lg flex items-center justify-center transition-colors hover:bg-[#F4F2EE]" style={{ border: '1px solid #EBEBEB' }} title="Download PDF">
+                  <FileText className="h-4 w-4 text-[#6B6B66]" />
+                </button>
+                <button onClick={handleShare} className="h-9 w-9 rounded-lg flex items-center justify-center transition-colors hover:bg-[#F4F2EE]" style={{ border: '1px solid #EBEBEB' }} title="Deel via WhatsApp">
+                  <Share2 className="h-3.5 w-3.5 text-[#6B6B66]" />
+                </button>
+              </div>
               <Select value={status} onValueChange={(v) => { setStatus(v as Werkbon['status']); setDirty(true) }}>
                 <SelectTrigger className="w-[120px] h-8 text-[12px] rounded-lg" style={{ border: '1px solid #EBEBEB' }}>
                   <SelectValue />

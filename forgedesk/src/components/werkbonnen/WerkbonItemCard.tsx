@@ -67,13 +67,13 @@ export const WerkbonItemCard = React.memo(function WerkbonItemCard({
             <Badge variant="outline" className="text-xs font-mono">#{index + 1}</Badge>
           </div>
           <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onMove(item.id, 'up')} disabled={index === 0}>
+            <Button variant="ghost" size="icon" className="h-9 w-9 md:h-7 md:w-7" onClick={() => onMove(item.id, 'up')} disabled={index === 0}>
               <ChevronUp className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onMove(item.id, 'down')} disabled={index === totalItems - 1}>
+            <Button variant="ghost" size="icon" className="h-9 w-9 md:h-7 md:w-7" onClick={() => onMove(item.id, 'down')} disabled={index === totalItems - 1}>
               <ChevronDown className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => onDelete(item.id)}>
+            <Button variant="ghost" size="icon" className="h-9 w-9 md:h-7 md:w-7 text-destructive" onClick={() => onDelete(item.id)}>
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>
@@ -148,7 +148,7 @@ export const WerkbonItemCard = React.memo(function WerkbonItemCard({
                     className="w-full aspect-[4/3] object-cover cursor-pointer"
                     onClick={() => onLightbox(afb.url)}
                   />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100">
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 active:opacity-100">
                     <Button variant="secondary" size="icon" className="h-7 w-7" onClick={() => onLightbox(afb.url)}>
                       <Maximize2 className="h-3 w-3" />
                     </Button>
