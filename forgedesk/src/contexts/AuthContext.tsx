@@ -185,12 +185,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         handleOnboardingRedirect(u.id, currentPath, sess?.access_token).then(() => setIsLoading(false))
         // Sync email settings from server to localStorage (fire-and-forget)
         import('@/services/gmailService').then(({ syncEmailSettingsFromServer }) => {
-          syncEmailSettingsFromServer().catch(() => {})
-        }).catch(() => {})
+          syncEmailSettingsFromServer().catch(err => logger.warn('[gmail-sync]', err))
+        }).catch(err => logger.warn('[gmail-sync-import]', err))
       } else {
         setIsLoading(false)
       }
-    }).catch(() => setIsLoading(false))
+    }).catch(err => {
+      logger.warn('[get-session]', err)
+      setIsLoading(false)
+    })
 
     const { data } = onAuthStateChange((event, sess) => {
       setSession(sess)
@@ -203,8 +206,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           fetchOrgData(sess.user.id)
         }
         import('@/services/gmailService').then(({ syncEmailSettingsFromServer }) => {
-          syncEmailSettingsFromServer().catch(() => {})
-        }).catch(() => {})
+          syncEmailSettingsFromServer().catch(err => logger.warn('[gmail-sync]', err))
+        }).catch(err => logger.warn('[gmail-sync-import]', err))
       } else {
         setOrganisatieId(null)
         setUserRol(null)
