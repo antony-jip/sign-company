@@ -68,6 +68,12 @@ const EmailLayout = lazy(() => import('@/components/email/EmailLayout'), 'EmailL
 const EmailComposePage = lazy(() => import('@/components/email/EmailComposePage'), 'EmailComposePage')
 // Planning
 const PlanningLayout = lazy(() => import('@/components/planning/PlanningLayout'), 'PlanningLayout')
+const MontagePlanningLayoutMobile = lazy(() => import('@/components/planning/MontagePlanningLayoutMobile'), 'MontagePlanningLayoutMobile')
+
+function PlanningRoute() {
+  const isDesktop = useMediaQuery('(min-width: 768px)')
+  return isDesktop ? <PlanningLayout /> : <MontagePlanningLayoutMobile />
+}
 const TasksLayout = lazy(() => import('@/components/planning/TasksLayout'), 'TasksLayout')
 const TasksLayoutMobile = lazy(() => import('@/components/planning/TasksLayoutMobile'), 'TasksLayoutMobile')
 
@@ -233,7 +239,7 @@ function AppContent() {
         <Route path="documenten" element={<DocumentsLayout />} />
         <Route path="email" element={<EmailLayout />} />
         <Route path="email/compose" element={<EmailLayout />} />
-        <Route path="planning" element={<PlanningLayout />} />
+        <Route path="planning" element={<PlanningRoute />} />
         <Route path="kalender" element={<Navigate to="/planning" replace />} />
         <Route path="montage" element={<Navigate to="/planning?modus=montage" replace />} />
         <Route path="inkoopfacturen" element={<Navigate to="/facturen?tab=inkoop" replace />} />
