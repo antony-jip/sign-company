@@ -120,7 +120,7 @@ export function ProjectCreate() {
 
   return (
     <div className="relative -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 min-h-full bg-[#F8F7F5]">
-      <div className="relative max-w-2xl mx-auto px-4 pt-5 md:pt-12 pb-28 md:pb-12 animate-fade-in-up">
+      <div className="relative max-w-2xl mx-auto px-4 pt-5 md:pt-12 pb-[calc(8.5rem+env(safe-area-inset-bottom))] md:pb-12 animate-fade-in-up">
       {/* Header */}
       <div className="flex items-center gap-3 md:gap-4 mb-5 md:mb-6">
         <button
@@ -140,7 +140,7 @@ export function ProjectCreate() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form id="project-create-form" onSubmit={handleSubmit} className="space-y-4">
         {/* Section 1: Project + Planning — merged */}
         <div className="rounded-xl" style={{ backgroundColor: '#FFFFFE', border: '0.5px solid #E6E4E0' }}>
           <div className="h-[3px] rounded-t-xl" style={{ background: 'linear-gradient(90deg, #F15025, #F1502560)' }} />
@@ -273,9 +273,9 @@ export function ProjectCreate() {
       </form>
       </div>
 
-      {/* Sticky bottom action bar — mobile only */}
+      {/* Sticky bottom action bar — mobile only, sits above MobileBottomNav (h-14 + safe-area) */}
       <div
-        className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur-xl border-t border-[#EBEBEB] px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] flex items-center gap-2"
+        className="md:hidden fixed inset-x-0 z-30 bg-white/95 backdrop-blur-xl border-t border-[#EBEBEB] px-4 py-3 flex items-center gap-2 bottom-[calc(3.5rem+env(safe-area-inset-bottom))]"
         style={{ boxShadow: '0 -4px 16px rgba(0,0,0,0.04)' }}
       >
         <button
@@ -288,14 +288,9 @@ export function ProjectCreate() {
         </button>
         <button
           type="submit"
+          form="project-create-form"
           disabled={loading}
-          onClick={(e) => {
-            const form = (e.currentTarget as HTMLButtonElement).closest('form')
-            if (form) {
-              hapticMedium()
-              form.requestSubmit()
-            }
-          }}
+          onClick={() => hapticMedium()}
           className="tap-press flex-1 h-11 px-4 text-[14px] font-semibold text-white rounded-lg shadow-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50"
           style={{ backgroundColor: '#1A535C' }}
         >

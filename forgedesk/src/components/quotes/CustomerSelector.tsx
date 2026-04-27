@@ -25,6 +25,7 @@ import {
 } from 'lucide-react'
 import type { Klant, Project } from '@/types'
 import { cn } from '@/lib/utils'
+import { hapticLight, hapticMedium } from '@/utils/haptic'
 
 const ITEM_COUNT_OPTIONS = [1, 2, 3, 4, 5] as const
 
@@ -333,17 +334,27 @@ export function CustomerSelector({
             </div>
           </div>
 
-          {/* Start button with inline item count */}
-          <div className="flex items-center justify-between pt-2">
-            <div className="flex items-center gap-2">
+          {/* Start button with inline item count — stack on mobile */}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-0 pt-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: '#9B9B95' }}>Items</span>
               {ITEM_COUNT_OPTIONS.map((count) => (
-                <button key={count} onClick={() => setItemCount(count)} className="h-8 w-8 rounded-lg text-[13px] font-bold transition-all" style={{ border: itemCount === count ? '2px solid #1A535C' : '0.5px solid #EBEBEB', backgroundColor: itemCount === count ? '#1A535C' : '#F8F7F5', color: itemCount === count ? '#FFFFFF' : '#1A1A1A' }}>
+                <button
+                  key={count}
+                  onClick={() => { hapticLight(); setItemCount(count) }}
+                  className="tap-press h-9 w-9 md:h-8 md:w-8 rounded-lg text-[13px] font-bold transition-all"
+                  style={{ border: itemCount === count ? '2px solid #1A535C' : '0.5px solid #EBEBEB', backgroundColor: itemCount === count ? '#1A535C' : '#F8F7F5', color: itemCount === count ? '#FFFFFF' : '#1A1A1A' }}
+                >
                   {count}
                 </button>
               ))}
             </div>
-            <button onClick={handleStartEditing} disabled={!canStartEditing} className="h-10 px-6 text-[14px] font-bold text-white rounded-lg shadow-sm transition-all hover:opacity-90 disabled:opacity-40 flex items-center gap-2" style={{ backgroundColor: '#F15025' }}>
+            <button
+              onClick={() => { hapticMedium(); handleStartEditing() }}
+              disabled={!canStartEditing}
+              className="tap-press w-full md:w-auto h-11 md:h-10 px-6 text-[14px] font-bold text-white rounded-lg shadow-sm transition-all hover:opacity-90 disabled:opacity-40 flex items-center justify-center gap-2 whitespace-nowrap"
+              style={{ backgroundColor: '#F15025' }}
+            >
               Items toevoegen
               <ArrowRight className="h-4 w-4" />
             </button>
