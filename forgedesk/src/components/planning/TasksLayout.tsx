@@ -49,6 +49,7 @@ import {
   FilePlus,
   Paperclip,
   Calendar as CalendarIcon,
+  ExternalLink,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
@@ -184,6 +185,11 @@ function formatHourLabel(hour: number): string {
 
 export function TasksLayout() {
   const { user } = useAuth()
+  const medewerkerNaam = user
+    ? (user.user_metadata?.voornaam
+        ? `${user.user_metadata.voornaam} ${user.user_metadata.achternaam || ''}`.trim()
+        : (user.email || ''))
+    : ''
 
   const [taken, setTaken] = useState<Taak[]>([])
   const [projecten, setProjecten] = useState<Project[]>([])
@@ -344,6 +350,19 @@ export function TasksLayout() {
         setBulkBusy(false)
         return
       }
+      if (user?.id) {
+        for (const id of ids) {
+          const patch = patches.get(id)
+          const oude = snapshot.find((s) => s.id === id)
+          if (!patch || !oude) continue
+          if (patch.status && patch.status !== oude.status) {
+            logWijziging({ userId: user.id, entityType: 'taak', entityId: id, actie: 'status_gewijzigd', medewerkerNaam, veld: 'status', oudeWaarde: oude.status, nieuweWaarde: patch.status })
+          }
+          if (patch.toegewezen_aan !== undefined && patch.toegewezen_aan !== oude.toegewezen_aan) {
+            logWijziging({ userId: user.id, entityType: 'taak', entityId: id, actie: 'gewijzigd', medewerkerNaam, veld: 'toewijzing', oudeWaarde: oude.toegewezen_aan || undefined, nieuweWaarde: patch.toegewezen_aan || undefined })
+          }
+        }
+      }
       setBulkBusy(false)
 
       toast.success(`${ids.length} ${ids.length === 1 ? 'taak' : 'taken'} ${label}`, {
@@ -372,7 +391,7 @@ export function TasksLayout() {
         },
       })
     },
-    [selectedTaskIds, taken, clearSelection]
+    [selectedTaskIds, taken, clearSelection, user, medewerkerNaam]
   )
 
   const handleBulkMove = useCallback(
@@ -775,6 +794,12 @@ export function TasksLayout() {
         project_id: projectId || '',
       })
       setTaken((prev) => [newTaak, ...prev])
+      if (user?.id) {
+        logWijziging({ userId: user.id, entityType: 'taak', entityId: newTaak.id, actie: 'aangemaakt', medewerkerNaam })
+        if (newTaak.toegewezen_aan) {
+          logWijziging({ userId: user.id, entityType: 'taak', entityId: newTaak.id, actie: 'gewijzigd', veld: 'toewijzing', medewerkerNaam, nieuweWaarde: newTaak.toegewezen_aan })
+        }
+      }
       toast.success('Taak aangemaakt')
       return true
     } catch (error) {
@@ -799,6 +824,9 @@ export function TasksLayout() {
     const newStatus: TaakStatus = taak.status === 'klaar' ? 'todo' : 'klaar'
     try {
       const updated = await updateTaak(taak.id, { status: newStatus })
+      if (user?.id) {
+        logWijziging({ userId: user.id, entityType: 'taak', entityId: taak.id, actie: 'status_gewijzigd', medewerkerNaam, veld: 'status', oudeWaarde: taak.status, nieuweWaarde: newStatus })
+      }
       setTaken((prev) => {
         const next = prev.map((t) => (t.id === updated.id ? updated : t))
         // Check: als alle taken van dit project nu 'klaar' zijn → prompt
@@ -870,13 +898,13 @@ export function TasksLayout() {
         bijlagen: formData.bijlagen,
       })
       setTaken((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
-      // Audit log
       if (user?.id && editingTaak) {
-        const naam = user.user_metadata?.voornaam ? `${user.user_metadata.voornaam} ${user.user_metadata.achternaam || ''}`.trim() : user.email || ''
         if (editingTaak.status !== formData.status) {
-          logWijziging({ userId: user.id, entityType: 'taak', entityId: editingTaak.id, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: editingTaak.status, nieuweWaarde: formData.status })
-        } else {
-          logWijziging({ userId: user.id, entityType: 'taak', entityId: editingTaak.id, actie: 'gewijzigd', medewerkerNaam: naam })
+          logWijziging({ userId: user.id, entityType: 'taak', entityId: editingTaak.id, actie: 'status_gewijzigd', medewerkerNaam, veld: 'status', oudeWaarde: editingTaak.status, nieuweWaarde: formData.status })
+        }
+        const nieuweToewijzing = formData.toegewezen_aan.trim()
+        if (editingTaak.toegewezen_aan !== nieuweToewijzing) {
+          logWijziging({ userId: user.id, entityType: 'taak', entityId: editingTaak.id, actie: 'gewijzigd', medewerkerNaam, veld: 'toewijzing', oudeWaarde: editingTaak.toegewezen_aan || undefined, nieuweWaarde: nieuweToewijzing || undefined })
         }
       }
       toast.success('Taak bijgewerkt')
@@ -2294,6 +2322,7 @@ function EditTaskDialog({
   )
   const type = selectedType
   const beschrijvingRef = useRef<HTMLTextAreaElement>(null)
+  const navigate = useNavigate()
 
   useEffect(() => {
     const el = beschrijvingRef.current
@@ -2410,7 +2439,7 @@ function EditTaskDialog({
 
         {/* Contextuele project/klant selector */}
         {type === 'project' && (
-          <div className="px-7 pb-3">
+          <div className="px-7 pb-3 space-y-1.5">
             <Select value={formData.project_id || 'geen'} onValueChange={(v) => updateField('project_id', v === 'geen' ? '' : v)}>
               <SelectTrigger className="h-9 text-sm border-[#E0DED8] bg-[#F8F7F5]"><SelectValue placeholder="Kies project..." /></SelectTrigger>
               <SelectContent>
@@ -2418,6 +2447,16 @@ function EditTaskDialog({
                 {projecten.map((p) => (<SelectItem key={p.id} value={p.id}>{p.naam}</SelectItem>))}
               </SelectContent>
             </Select>
+            {formData.project_id && (
+              <button
+                type="button"
+                onClick={() => { onOpenChange(false); navigate(`/projecten/${formData.project_id}`) }}
+                className="inline-flex items-center gap-1 text-xs text-[#1A535C] hover:text-[#0F3A40] transition-colors"
+              >
+                <ExternalLink className="w-3 h-3" />
+                Open project
+              </button>
+            )}
           </div>
         )}
         {type === 'klant' && (

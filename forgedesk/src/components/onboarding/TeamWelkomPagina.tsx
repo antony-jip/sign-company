@@ -11,6 +11,7 @@ import { usePasswordCheck } from '@/lib/usePasswordCheck'
 import { firstBlockingError } from '@/lib/passwordValidation'
 import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter'
 import { ParticleField } from './ParticleField'
+import { normaliseerNaam } from '@/utils/naamNormalisatie'
 import { toast } from 'sonner'
 
 const MONO = { fontFamily: '"DM Mono", ui-monospace, monospace' } as const
@@ -68,7 +69,7 @@ export function TeamWelkomPagina() {
     if (!user?.id || !voornaam.trim()) return
     setSaving(true)
     try {
-      const fullName = `${voornaam.trim()} ${achternaam.trim()}`.trim()
+      const fullName = normaliseerNaam(`${voornaam} ${achternaam}`)
       await updateProfile(user.id, {
         voornaam: voornaam.trim(),
         achternaam: achternaam.trim(),
