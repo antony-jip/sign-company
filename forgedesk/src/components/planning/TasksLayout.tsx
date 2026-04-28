@@ -43,7 +43,6 @@ import {
   GripVertical,
   Clock,
   Check,
-  MapPin,
   User2,
   Wrench,
   FilePlus,
@@ -185,11 +184,6 @@ function formatHourLabel(hour: number): string {
 
 export function TasksLayout() {
   const { user } = useAuth()
-  const medewerkerNaam = user
-    ? (user.user_metadata?.voornaam
-        ? `${user.user_metadata.voornaam} ${user.user_metadata.achternaam || ''}`.trim()
-        : (user.email || ''))
-    : ''
 
   const [taken, setTaken] = useState<Taak[]>([])
   const [projecten, setProjecten] = useState<Project[]>([])
@@ -197,6 +191,17 @@ export function TasksLayout() {
   const [offertes, setOffertes] = useState<Offerte[]>([])
   const [montageAfspraken, setMontageAfspraken] = useState<MontageAfspraak[]>([])
   const [medewerkers, setMedewerkers] = useState<Medewerker[]>([])
+
+  const medewerkerNaam = (() => {
+    if (!user) return ''
+    const matched = medewerkers.find((m) => m.user_id === user.id)
+    if (matched?.naam) return matched.naam
+    if (user.user_metadata?.voornaam) {
+      return `${user.user_metadata.voornaam} ${user.user_metadata.achternaam || ''}`.trim()
+    }
+    return user.email || ''
+  })()
+
   const [showMontage, setShowMontage] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [taskFilter, setTaskFilter] = useState<'alle' | 'project' | 'los'>('alle')
@@ -2316,7 +2321,6 @@ function EditTaskDialog({
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
-  const [showMore, setShowMore] = useState(false)
   const [selectedType, setSelectedType] = useState<'intern' | 'project' | 'klant'>(
     formData.project_id ? 'project' : formData.klant_id ? 'klant' : 'intern'
   )
@@ -2465,52 +2469,25 @@ function EditTaskDialog({
           </div>
         )}
 
-        {/* Beschrijving — auto-grow, borderless */}
+        {/* Beschrijving — subtle field, auto-grow */}
         <div className="px-7 pb-5">
           <Textarea
             ref={beschrijvingRef}
             value={formData.beschrijving}
             onChange={(e) => updateField('beschrijving', e.target.value)}
-            placeholder="Voeg een beschrijving toe..."
+            placeholder="Beschrijving toevoegen"
             rows={2}
             data-gramm="false"
-            className="border-0 shadow-none px-0 py-0 min-h-0 resize-none overflow-hidden bg-transparent text-sm leading-relaxed text-[#1A1A1A] placeholder:text-[#9B9B95] focus-visible:ring-0"
+            className="border-0 shadow-none px-3 py-2.5 min-h-[44px] resize-none overflow-hidden bg-[#F8F7F5] hover:bg-[#F0EFEC] focus:bg-white rounded-lg text-sm leading-relaxed text-[#1A1A1A] placeholder:text-[#6B6B66] focus-visible:ring-1 focus-visible:ring-[#1A535C]/20 transition-colors"
           />
         </div>
 
-        {/* Meer details — accordion */}
-        <div className="border-t border-[#EBEBEB]">
-          <button
-            type="button"
-            onClick={() => setShowMore(!showMore)}
-            className="w-full px-7 py-3 flex items-center justify-between text-xs font-medium text-[#6B6B66] hover:text-[#1A1A1A] transition-colors"
-          >
-            <span className="flex items-center gap-1.5">
-              <ChevronRight className={cn('w-3.5 h-3.5 transition-transform duration-200', showMore && 'rotate-90')} />
-              Meer details
-            </span>
-            <span className="flex items-center gap-2.5 text-[11px] text-[#9B9B95]">
-              {formData.locatie && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />Locatie</span>}
-              {formData.bijlagen.length > 0 && <span className="flex items-center gap-1"><Paperclip className="w-3 h-3" />{formData.bijlagen.length}</span>}
-            </span>
-          </button>
-          {showMore && (
-            <div className="px-7 pb-5 space-y-5">
-              {/* Locatie */}
-              <div className="space-y-1.5">
-                <Label className="text-[10px] uppercase tracking-[0.08em] text-[#9B9B95] font-semibold">Locatie</Label>
-                <Input
-                  value={formData.locatie}
-                  onChange={(e) => updateField('locatie', e.target.value)}
-                  placeholder="Bijv. Hoofdstraat 1, Amsterdam"
-                  className="h-9 text-sm border-[#E0DED8] bg-white focus-visible:border-[#1A535C] focus-visible:ring-[#1A535C]/15"
-                />
-              </div>
-
-              {/* Bijlagen — compact grid */}
-              <div className="space-y-1.5">
-                <Label className="text-[10px] uppercase tracking-[0.08em] text-[#9B9B95] font-semibold">Bijlagen</Label>
-                <div className="flex flex-wrap gap-2">
+        {/* Bijlagen + Geschiedenis — inline */}
+        <div className="border-t border-[#EBEBEB] px-7 pt-4 pb-5 space-y-5">
+          {/* Bijlagen — compact grid */}
+          <div className="space-y-1.5">
+            <Label className="text-[10px] uppercase tracking-[0.08em] text-[#9B9B95] font-semibold">Bijlagen</Label>
+            <div className="flex flex-wrap gap-2">
                   {formData.bijlagen.map((url, i) => {
                     const isImage = url.startsWith('data:image/') || /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(url)
                     const filename = url.startsWith('data:')
@@ -2563,21 +2540,13 @@ function EditTaskDialog({
                 </div>
               </div>
 
-              {editingTaakId && (
-                <div className="space-y-1.5">
-                  <Label className="text-[10px] uppercase tracking-[0.08em] text-[#9B9B95] font-semibold">Geschiedenis</Label>
-                  <AuditLogPanel entityType="taak" entityId={editingTaakId} />
-                </div>
-              )}
-            </div>
+          {editingTaakId && (
+            <AuditLogPanel entityType="taak" entityId={editingTaakId} />
           )}
         </div>
         </div>
 
-        <DialogFooter className="px-7 py-4 border-t border-[#EBEBEB] bg-[#F8F7F5]/60 gap-2 sm:gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSaving} size="sm" className="h-9 px-4 border-[#E0DED8] text-[#1A1A1A] hover:bg-white hover:border-[#B0ADA8]">
-            Annuleren
-          </Button>
+        <DialogFooter className="px-7 py-4 border-t border-[#EBEBEB] bg-[#F8F7F5]/60">
           <Button
             onClick={onSave}
             disabled={isSaving}
