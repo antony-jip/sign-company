@@ -1899,7 +1899,8 @@ export interface OpvolgLogEntry {
 
 export interface AuditLogEntry {
   id: string;
-  user_id: string;
+  user_id?: string;
+  medewerker_id?: string;
   organisatie_id?: string;
   entity_type: 'taak' | 'project' | 'offerte' | 'factuur' | 'klant' | 'werkbon';
   entity_id: string;

@@ -584,11 +584,31 @@ export async function getAuditLog(
   entityId: string,
   limit = 50
 ): Promise<AuditLogEntry[]> {
-  return []
+  if (!isSupabaseConfigured() || !supabase) return []
+  const { data, error } = await supabase
+    .from('audit_log_feature')
+    .select('*')
+    .eq('entity_type', entityType)
+    .eq('entity_id', entityId)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  if (error) throw error
+  return (data as AuditLogEntry[]) || []
 }
 
 export async function createAuditLogEntry(
   entry: Omit<AuditLogEntry, 'id' | 'created_at'>
 ): Promise<void> {
-  // audit_log tabel bestaat nog niet — no-op
+  if (!isSupabaseConfigured() || !supabase) return
+  try {
+    const orgId = entry.organisatie_id || (await getOrgId())
+    if (!orgId) return
+    const { error } = await supabase.from('audit_log_feature').insert({
+      ...entry,
+      organisatie_id: orgId,
+    })
+    if (error) console.warn('[audit_log_feature] insert failed:', error.message)
+  } catch (err) {
+    console.warn('[audit_log_feature] insert exception:', err)
+  }
 }
