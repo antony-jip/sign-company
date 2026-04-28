@@ -49,6 +49,7 @@ import {
   FilePlus,
   Paperclip,
   Calendar as CalendarIcon,
+  ExternalLink,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
@@ -2321,6 +2322,7 @@ function EditTaskDialog({
   )
   const type = selectedType
   const beschrijvingRef = useRef<HTMLTextAreaElement>(null)
+  const navigate = useNavigate()
 
   useEffect(() => {
     const el = beschrijvingRef.current
@@ -2437,7 +2439,7 @@ function EditTaskDialog({
 
         {/* Contextuele project/klant selector */}
         {type === 'project' && (
-          <div className="px-7 pb-3">
+          <div className="px-7 pb-3 space-y-1.5">
             <Select value={formData.project_id || 'geen'} onValueChange={(v) => updateField('project_id', v === 'geen' ? '' : v)}>
               <SelectTrigger className="h-9 text-sm border-[#E0DED8] bg-[#F8F7F5]"><SelectValue placeholder="Kies project..." /></SelectTrigger>
               <SelectContent>
@@ -2445,6 +2447,16 @@ function EditTaskDialog({
                 {projecten.map((p) => (<SelectItem key={p.id} value={p.id}>{p.naam}</SelectItem>))}
               </SelectContent>
             </Select>
+            {formData.project_id && (
+              <button
+                type="button"
+                onClick={() => { onOpenChange(false); navigate(`/projecten/${formData.project_id}`) }}
+                className="inline-flex items-center gap-1 text-xs text-[#1A535C] hover:text-[#0F3A40] transition-colors"
+              >
+                <ExternalLink className="w-3 h-3" />
+                Open project
+              </button>
+            )}
           </div>
         )}
         {type === 'klant' && (
