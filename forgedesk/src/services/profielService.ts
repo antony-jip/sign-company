@@ -423,7 +423,40 @@ export async function createMedewerker(mw: Omit<Medewerker, 'id' | 'created_at' 
   const newMw: Medewerker = { ...mw, id: generateId(), created_at: now(), updated_at: now() } as Medewerker
   if (isSupabaseConfigured() && supabase) {
     const _orgId = await getOrgId()
-    const { data, error } = await supabase.from('medewerkers').insert({ ...await withUserId(newMw), organisatie_id: _orgId }).select().single()
+    const payload = { ...await withUserId(newMw), organisatie_id: _orgId }
+
+    // Claim-pad dekt alleen path B (AuthContext na invite-signup) en path C
+    // (TeamWelkomPagina). Path A (api/invite-team-member.ts) heeft eigen
+    // server-side insert-logica en valt buiten scope van deze check.
+    const claimEmail = (mw.email || '').trim()
+    if (claimEmail) {
+      const { data: bestaand } = await supabase
+        .from('medewerkers')
+        .select('*')
+        .eq('organisatie_id', _orgId)
+        .ilike('email', claimEmail)
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .maybeSingle()
+      if (bestaand) {
+        const { data: updated, error: updErr } = await supabase
+          .from('medewerkers')
+          .update({ ...payload, id: bestaand.id, created_at: bestaand.created_at, updated_at: now() })
+          .eq('id', bestaand.id)
+          .select()
+          .single()
+        if (updErr) throw updErr
+        console.log('[medewerker-claim]', {
+          medewerkerId: bestaand.id,
+          oldUserId: bestaand.user_id,
+          newUserId: payload.user_id,
+          email: claimEmail,
+        })
+        return updated
+      }
+    }
+
+    const { data, error } = await supabase.from('medewerkers').insert(payload).select().single()
     if (error) throw error
     return data
   }
