@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { updateProfile, getMedewerkers, updateMedewerker, createMedewerker } from '@/services/supabaseService'
+import { normaliseerNaam } from '@/utils/naamNormalisatie'
 import { toast } from 'sonner'
 
 const highlights = [
@@ -39,7 +40,7 @@ export function TeamWelkomPagina() {
     if (!user?.id || !voornaam.trim()) return
     setSaving(true)
     try {
-      const fullName = `${voornaam.trim()} ${achternaam.trim()}`.trim()
+      const fullName = normaliseerNaam(`${voornaam} ${achternaam}`)
       await updateProfile(user.id, {
         voornaam: voornaam.trim(),
         achternaam: achternaam.trim(),

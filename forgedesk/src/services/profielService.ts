@@ -4,6 +4,7 @@ import {
   withUserId, getOrgId,
 } from './supabaseHelpers'
 import { safeSetItem } from '@/utils/localStorageUtils'
+import { normaliseerNaam } from '@/utils/naamNormalisatie'
 import type {
   Profile,
   AppSettings,
@@ -52,8 +53,27 @@ export async function uploadAvatar(userId: string, file: Blob): Promise<string> 
   return avatarUrl
 }
 
+async function syncMedewerkerNaam(userId: string, voornaam: string, achternaam: string): Promise<void> {
+  if (!supabase) return
+  const naam = normaliseerNaam(`${voornaam || ''} ${achternaam || ''}`)
+  if (!naam) return
+  const orgId = await getOrgId()
+  if (!orgId) return
+  const { error } = await supabase
+    .from('medewerkers')
+    .update({ naam, updated_at: now() })
+    .eq('user_id', userId)
+    .eq('organisatie_id', orgId)
+  if (error) console.warn('[syncMedewerkerNaam] update faalde:', error.message)
+}
+
 export async function updateProfile(userId: string, updates: Partial<Profile>): Promise<Profile> {
   assertId(userId, 'user_id')
+  const naamGewijzigd = updates.voornaam !== undefined || updates.achternaam !== undefined
+  const genormaliseerd: Partial<Profile> = { ...updates }
+  if (updates.voornaam !== undefined) genormaliseerd.voornaam = normaliseerNaam(updates.voornaam)
+  if (updates.achternaam !== undefined) genormaliseerd.achternaam = normaliseerNaam(updates.achternaam)
+
   if (isSupabaseConfigured() && supabase) {
     const { data: existing } = await supabase
       .from('profiles')
@@ -62,13 +82,17 @@ export async function updateProfile(userId: string, updates: Partial<Profile>): 
       .maybeSingle()
 
     const merged = existing
-      ? { ...existing, ...updates, updated_at: now() }
-      : { id: userId, ...updates, created_at: now(), updated_at: now() }
+      ? { ...existing, ...genormaliseerd, updated_at: now() }
+      : { id: userId, ...genormaliseerd, created_at: now(), updated_at: now() }
 
     const { error } = await supabase
       .from('profiles')
       .upsert(merged, { onConflict: 'id' })
     if (error) throw error
+
+    if (naamGewijzigd) {
+      await syncMedewerkerNaam(userId, merged.voornaam || '', merged.achternaam || '')
+    }
     return merged as Profile
   }
   const profiles = getLocalData<Profile>('profiles')
@@ -91,13 +115,13 @@ export async function updateProfile(userId: string, updates: Partial<Profile>): 
       theme: 'light',
       created_at: now(),
       updated_at: now(),
-      ...updates,
+      ...genormaliseerd,
     }
     profiles.push(newProfile)
     setLocalData('profiles', profiles)
     return newProfile
   }
-  profiles[index] = { ...profiles[index], ...updates, updated_at: now() }
+  profiles[index] = { ...profiles[index], ...genormaliseerd, updated_at: now() }
   setLocalData('profiles', profiles)
   return profiles[index]
 }
