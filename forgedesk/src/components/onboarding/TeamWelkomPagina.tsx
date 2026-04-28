@@ -6,10 +6,14 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 import {
   ArrowRight, Hammer, FileSignature, Banknote,
-  ListChecks, Send, Loader2, CheckCircle2, Mail,
+  ListChecks, Loader2, CheckCircle2, Mail, Lock,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { updateProfile, getMedewerkers, updateMedewerker, createMedewerker } from '@/services/supabaseService'
+import { updatePassword } from '@/services/authService'
+import { usePasswordCheck } from '@/lib/usePasswordCheck'
+import { firstBlockingError } from '@/lib/passwordValidation'
+import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter'
 import { toast } from 'sonner'
 
 const highlights = [
@@ -17,23 +21,46 @@ const highlights = [
   { icon: FileSignature, label: 'Offertes', desc: 'Maak en verstuur offertes' },
   { icon: Banknote, label: 'Facturen', desc: 'Factureer klanten' },
   { icon: ListChecks, label: 'Taken', desc: 'Beheer je taken en planning' },
-  { icon: Send, label: 'Email', desc: 'Stuur emails vanuit doen.' },
 ]
 
 export function TeamWelkomPagina() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const [stap, setStap] = useState<'intro' | 'profiel' | 'email'>('intro')
+  const [stap, setStap] = useState<'intro' | 'wachtwoord' | 'profiel' | 'email'>('intro')
   const [voornaam, setVoornaam] = useState('')
   const [achternaam, setAchternaam] = useState('')
   const [functie, setFunctie] = useState('')
   const [telefoon, setTelefoon] = useState('')
+
+  // Wachtwoord setup
+  const [wachtwoord, setWachtwoord] = useState('')
+  const [wachtwoordBevestiging, setWachtwoordBevestiging] = useState('')
+  const [wachtwoordSaving, setWachtwoordSaving] = useState(false)
+  const passwordCheck = usePasswordCheck(wachtwoord)
 
   // Email setup
   const [emailAdres, setEmailAdres] = useState('')
   const [emailWachtwoord, setEmailWachtwoord] = useState('')
   const [saving, setSaving] = useState(false)
   const [emailSaving, setEmailSaving] = useState(false)
+
+  const handleSaveWachtwoord = async () => {
+    const blocker = firstBlockingError(passwordCheck)
+    if (blocker) { toast.error(blocker); return }
+    if (wachtwoord !== wachtwoordBevestiging) {
+      toast.error('Wachtwoorden komen niet overeen')
+      return
+    }
+    setWachtwoordSaving(true)
+    try {
+      await updatePassword(wachtwoord)
+      setStap('profiel')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Wachtwoord instellen mislukt')
+    } finally {
+      setWachtwoordSaving(false)
+    }
+  }
 
   const handleSaveProfile = async () => {
     if (!user?.id || !voornaam.trim()) return
@@ -134,7 +161,7 @@ export function TeamWelkomPagina() {
             </div>
 
             <Button
-              onClick={() => setStap('profiel')}
+              onClick={() => setStap('wachtwoord')}
               className="h-11 px-8 rounded-xl font-semibold text-[14px] bg-[#1A535C] hover:bg-[#1A535C]/90 text-white gap-2 group"
             >
               Aan de slag
@@ -143,7 +170,58 @@ export function TeamWelkomPagina() {
           </div>
         )}
 
-        {/* ── Stap 2: Profiel ── */}
+        {/* ── Stap 2: Wachtwoord ── */}
+        {stap === 'wachtwoord' && (
+          <div>
+            <div className="text-center mb-6">
+              <div className="w-12 h-12 rounded-full bg-[#1A535C]/10 flex items-center justify-center mx-auto mb-4">
+                <Lock className="w-6 h-6 text-[#1A535C]" />
+              </div>
+              <h2 className="text-xl font-bold text-[#1A1A1A] mb-1">Kies een wachtwoord</h2>
+              <p className="text-sm text-[#9B9B95]">Je gebruikt dit straks om in te loggen bij doen.</p>
+            </div>
+
+            <Card className="shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+              <CardContent className="p-5 space-y-4">
+                <div className="space-y-1.5">
+                  <Label className="text-[13px] font-medium">Wachtwoord</Label>
+                  <Input
+                    type="password"
+                    value={wachtwoord}
+                    onChange={(e) => setWachtwoord(e.target.value)}
+                    placeholder="Kies een sterk wachtwoord"
+                    autoFocus
+                  />
+                  <PasswordStrengthMeter check={passwordCheck} hasInput={wachtwoord.length > 0} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[13px] font-medium">Wachtwoord bevestigen</Label>
+                  <Input
+                    type="password"
+                    value={wachtwoordBevestiging}
+                    onChange={(e) => setWachtwoordBevestiging(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleSaveWachtwoord() }}
+                    placeholder="Herhaal je wachtwoord"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="flex justify-end mt-4">
+              <Button
+                onClick={handleSaveWachtwoord}
+                disabled={wachtwoordSaving || !wachtwoord || !wachtwoordBevestiging}
+                className="h-11 px-6 rounded-xl font-semibold text-[14px] bg-[#1A535C] hover:bg-[#1A535C]/90 text-white gap-2"
+              >
+                {wachtwoordSaving && <Loader2 className="w-4 h-4 animate-spin" />}
+                Doorgaan
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Stap 3: Profiel ── */}
         {stap === 'profiel' && (
           <div>
             <div className="text-center mb-6">
@@ -210,7 +288,7 @@ export function TeamWelkomPagina() {
           </div>
         )}
 
-        {/* ── Stap 3: E-mail koppelen ── */}
+        {/* ── Stap 4: E-mail koppelen ── */}
         {stap === 'email' && (
           <div>
             <div className="text-center mb-6">
