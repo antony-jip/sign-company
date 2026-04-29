@@ -53,6 +53,7 @@ import type {
 } from '@/types';
 import { cn, formatCurrency } from '@/lib/utils';
 import { round2 } from '@/utils/budgetUtils';
+import { berekenMarkupPercentage } from '@/utils/margeBerekening';
 import { toast } from 'sonner';
 import { exportCSV, exportExcel } from '@/lib/export';
 import { generateRapportPDF } from '@/services/pdfService';
@@ -282,10 +283,7 @@ export function RapportagesLayout() {
   const projectWinstgevendheid = useMemo(
     () =>
       projecten.map((p) => {
-        const marge =
-          p.budget > 0
-            ? Math.round(((p.budget - p.besteed) / p.budget) * 100)
-            : 0;
+        const marge = Math.round(berekenMarkupPercentage(p.besteed, p.budget));
         return { ...p, marge };
       }),
     [projecten],

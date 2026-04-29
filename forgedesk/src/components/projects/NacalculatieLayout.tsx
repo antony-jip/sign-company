@@ -42,6 +42,7 @@ import {
   getUitgaven,
 } from '@/services/supabaseService'
 import { round2 } from '@/utils/budgetUtils'
+import { berekenMarkupPercentage } from '@/utils/margeBerekening'
 import type { Project, Offerte, OfferteItem, Tijdregistratie, Factuur, Uitgave } from '@/types'
 import { cn, formatCurrency } from '@/lib/utils'
 import { exportCSV, exportExcel } from '@/lib/export'
@@ -140,8 +141,7 @@ export function NacalculatieLayout() {
       const materiaalKosten = round2(Math.max(0, werkelijkeKosten - tijdKosten - uitgavenKosten))
 
       const verschil = round2(offerteTotaal - werkelijkeKosten)
-      const margePercentage =
-        offerteTotaal > 0 ? round2((verschil / offerteTotaal) * 100) : 0
+      const margePercentage = round2(berekenMarkupPercentage(werkelijkeKosten, offerteTotaal))
 
       return {
         projectId: project.id,
@@ -184,7 +184,7 @@ export function NacalculatieLayout() {
   }, [nacalculatieData, detailProjectId])
 
   function getStatusIndicator(margePercentage: number) {
-    if (margePercentage >= 15) {
+    if (margePercentage >= 30) {
       return {
         kleur: 'bg-green-500',
         tekstKleur: 'text-green-700 dark:text-green-400',
@@ -193,7 +193,7 @@ export function NacalculatieLayout() {
         icon: TrendingUp,
       }
     }
-    if (margePercentage >= 0) {
+    if (margePercentage >= 10) {
       return {
         kleur: 'bg-orange-500',
         tekstKleur: 'text-orange-700 dark:text-orange-400',

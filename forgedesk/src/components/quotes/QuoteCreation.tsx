@@ -72,6 +72,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import type { Klant, Project, Contactpersoon, Factuur } from '@/types'
 import { round2 } from '@/utils/budgetUtils'
+import { berekenMarkupPercentage } from '@/utils/margeBerekening'
 import { generateOffertePDF, generateOpdrachtbevestigingPDF } from '@/services/pdfService'
 import { WerkbonAanmaakDialog } from '@/components/werkbonnen/WerkbonAanmaakDialog'
 import { PdfPreviewDialog } from '@/components/shared/PdfPreviewDialog'
@@ -415,7 +416,7 @@ export function QuoteCreation() {
   }, [verplichtePrijsItems])
 
   const winstExBtw = round2(subtotaal - totaalInkoop)
-  const margePercentage = subtotaal > 0 ? Math.round(((winstExBtw / subtotaal) * 100) * 10) / 10 : 0
+  const margePercentage = Math.round(berekenMarkupPercentage(totaalInkoop, subtotaal) * 10) / 10
 
   // ── Uren overzicht per configureerbaar veld + materiaalkosten ──
   // Haalt uren uit twee bronnen:
@@ -1758,10 +1759,10 @@ export function QuoteCreation() {
   const [showWerkbonDialog, setShowWerkbonDialog] = useState(false)
   const [showObPreview, setShowObPreview] = useState(false)
 
-  // ── Helper: marge color for sidebar (unified: ≥65% green, 50-64% orange, <50% red) ──
+  // ── Helper: markup color for sidebar (≥90% green, 60-89% orange, <60% red) ──
   const getMargeColorSidebar = (pct: number) => {
-    if (pct >= 65) return { text: 'text-green-600 dark:text-green-400', bg: 'bg-green-50 dark:bg-green-900/20', bar: 'bg-green-500' }
-    if (pct >= 50) return { text: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/20', bar: 'bg-amber-500' }
+    if (pct >= 90) return { text: 'text-green-600 dark:text-green-400', bg: 'bg-green-50 dark:bg-green-900/20', bar: 'bg-green-500' }
+    if (pct >= 60) return { text: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/20', bar: 'bg-amber-500' }
     return { text: 'text-red-600 dark:text-red-400', bg: 'bg-red-50 dark:bg-red-900/20', bar: 'bg-red-500' }
   }
 
@@ -1775,7 +1776,7 @@ export function QuoteCreation() {
       const bruto = data.aantal * data.eenheidsprijs
       const verkoop = round2(bruto - bruto * (data.korting_percentage / 100))
       const marge = round2(verkoop - inkoop)
-      const pct = verkoop > 0 ? Math.round(((marge / verkoop) * 100) * 10) / 10 : 0
+      const pct = Math.round(berekenMarkupPercentage(inkoop, verkoop) * 10) / 10
       return { beschrijving: item.beschrijving, inkoop: round2(inkoop), verkoop, marge, pct, hasCalc: (data.calculatie_regels || []).length > 0 }
     })
   }, [verplichtePrijsItems])

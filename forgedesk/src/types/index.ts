@@ -664,7 +664,7 @@ export interface AppSettings {
   // Calculatie instellingen
   calculatie_categorieen: string[];            // Product categorieën (bijv. "Materiaal", "Arbeid")
   calculatie_eenheden: string[];               // Eenheden (bijv. "m²", "stuks", "uur")
-  calculatie_standaard_marge: number;          // Standaard marge % voor nieuwe regels
+  calculatie_standaard_marge: number;          // Markup als percentage van inkoop: (verkoop - inkoop) / inkoop * 100
   calculatie_toon_inkoop_in_offerte: boolean;  // Toon inkoopprijs in offerte (normaal niet!)
   // Uren overzicht velden — welke productnamen/categorieën tellen als "uren" in de sidebar?
   // Bijv. ["Montage", "Voorbereiding", "Ontwerp & DTP", "Applicatie"]
@@ -758,7 +758,7 @@ export interface CalculatieProduct {
   eenheid: string;                 // Bijv. "m²", "stuks", "uur", "meter"
   inkoop_prijs: number;            // Wat je zelf betaalt (inkoopprijs)
   verkoop_prijs: number;           // Wat je de klant rekent (verkoopprijs)
-  standaard_marge: number;         // Standaard marge in % (bijv. 35)
+  standaard_marge: number;         // Markup als percentage van inkoop: (verkoop - inkoop) / inkoop * 100
   btw_percentage: number;          // BTW tarief (21, 9, of 0)
   actief: boolean;                 // Staat het product actief in je catalogus?
   notitie: string;                 // Eventuele toelichting
@@ -779,7 +779,7 @@ export interface CalculatieRegel {
   aantal: number;                  // Hoeveel stuks/m²/uren
   inkoop_prijs: number;            // Inkoopprijs per eenheid
   verkoop_prijs: number;           // Verkoopprijs per eenheid
-  marge_percentage: number;        // Marge % (automatisch berekend of handmatig)
+  marge_percentage: number;        // Markup als percentage van inkoop: (verkoop - inkoop) / inkoop * 100
   korting_percentage: number;      // Korting % die je aan de klant geeft
   nacalculatie: boolean;           // Markeer voor nacalculatie (achteraf verrekenen)
   btw_percentage: number;          // BTW tarief
@@ -812,7 +812,7 @@ export interface OfferteItemCalculatie {
   totaal_inkoop: number;
   totaal_verkoop: number;
   totaal_marge_bedrag: number;
-  totaal_marge_percentage: number;
+  totaal_marge_percentage: number;  // Markup als percentage van inkoop: (verkoop - inkoop) / inkoop * 100
   notities: string;
 }
 
