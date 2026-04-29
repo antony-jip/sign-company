@@ -11,6 +11,7 @@ import { firstBlockingError } from '@/lib/passwordValidation'
 import { usePasswordCheck } from '@/lib/usePasswordCheck'
 import { PasswordStrengthMeter } from './PasswordStrengthMeter'
 import { ParticleField } from '../onboarding/ParticleField'
+import { AuthProcesVisual } from './AuthProcesVisual'
 
 const container = {
   hidden: { opacity: 0 },
@@ -89,7 +90,7 @@ export function RegisterPage() {
         </p>
       } />
 
-      <main className="relative z-10 flex-1 max-w-[1200px] w-full mx-auto px-6 sm:px-10 pt-8 sm:pt-12 pb-12 grid lg:grid-cols-12 gap-10 lg:gap-12 items-start">
+      <main id="aanmelden" className="relative z-10 max-w-[1200px] w-full mx-auto px-6 sm:px-10 pt-8 sm:pt-12 pb-10 grid lg:grid-cols-12 gap-10 lg:gap-12 items-start">
         <motion.section
           variants={container}
           initial="hidden"
@@ -107,10 +108,10 @@ export function RegisterPage() {
             style={{ lineHeight: 1.02 }}
           >
             <span className="block text-[40px] sm:text-[52px] lg:text-[60px] xl:text-[68px]">
-              Eerst even
+              Eén project.
             </span>
             <span className="block text-[40px] sm:text-[52px] lg:text-[60px] xl:text-[68px]">
-              dit formulier
+              Alles geregeld
               <DropInDot delay={0.55} />
             </span>
           </motion.h1>
@@ -119,11 +120,8 @@ export function RegisterPage() {
             variants={item}
             className="mt-6 text-[16px] sm:text-[17px] text-[#5A5A55] leading-[1.6] max-w-[460px]"
           >
-            Daarna ben je los van Excel, losse mapjes en post-its. En aan
-            het{' '}
-            <span className="text-[#191919] font-semibold">
-              doen<span style={{ color: '#F15025' }}>.</span>
-            </span>
+            Klant, offerte, planning, factuur. Alles op één plek.
+            Geen losse mapjes, geen WhatsApp-chaos, geen vrijdagavond admin.
           </motion.p>
 
           <motion.div variants={item} className="mt-8 max-w-[460px]">
@@ -141,7 +139,7 @@ export function RegisterPage() {
               geen creditcard
             </p>
             <p className="mt-1.5 text-[12px] text-[#9B9B95]">
-              Meer gebruikers? Staffel op maat — even mailen, dan regelen we het.
+              Meer gebruikers? Staffel op maat. Even mailen, dan regelen we het.
             </p>
           </motion.div>
 
@@ -273,8 +271,227 @@ export function RegisterPage() {
         </motion.section>
       </main>
 
+      {/* CONVERSION SECTION 1 — Workflow proof: see the product before you sign up */}
+      <section className="relative z-10 max-w-[1280px] w-full mx-auto px-6 sm:px-10 py-16 sm:py-24">
+        <div className="text-center mb-10 sm:mb-14">
+          <p
+            className="font-mono text-[11px] font-bold tracking-[0.22em] uppercase mb-3 text-[#F15025]"
+            style={{ fontFamily: '"DM Mono", ui-monospace, monospace' }}
+          >
+            Hoe het werkt
+          </p>
+          <h2 className="font-heading text-[28px] sm:text-[36px] lg:text-[44px] font-extrabold tracking-[-0.03em] leading-[1.05] text-[#191919]">
+            Klant tot factuur. In één flow<span style={{ color: '#F15025' }}>.</span>
+          </h2>
+          <p className="mt-3 text-[15px] sm:text-[16px] text-[#5A5A55] max-w-[520px] mx-auto leading-[1.6]">
+            Niets meer overtypen tussen 8 systemen. Eén klant, één project, één plek waar alles samenkomt.
+          </p>
+        </div>
+
+        <AuthProcesVisual />
+      </section>
+
+      {/* CONVERSION SECTION 2 — Why doen: anchored pricing + risk reversal + transition help */}
+      <section className="relative z-10 max-w-[1200px] w-full mx-auto px-6 sm:px-10 py-12 sm:py-16">
+        <div className="text-center mb-10 sm:mb-12">
+          <p
+            className="font-mono text-[11px] font-bold tracking-[0.22em] uppercase mb-3 text-[#F15025]"
+            style={{ fontFamily: '"DM Mono", ui-monospace, monospace' }}
+          >
+            Waarom doen
+          </p>
+          <h2 className="font-heading text-[26px] sm:text-[32px] lg:text-[38px] font-extrabold tracking-[-0.025em] leading-[1.1] text-[#191919]">
+            Drie redenen om vandaag te beginnen<span style={{ color: '#F15025' }}>.</span>
+          </h2>
+        </div>
+
+        <div className="grid sm:grid-cols-2 gap-4 sm:gap-5 max-w-[820px] mx-auto">
+          <ConversionCard
+            kicker="01 · Prijs"
+            title="€79 per maand."
+            body="Minder dan 1 uur monteurstijd per week. Goedkoper dan de tijd die je nu kwijt bent aan losse Excel- en WhatsApp-werk."
+          />
+          <ConversionCard
+            kicker="02 · Geen risico"
+            title="Maandelijks opzegbaar."
+            body="Geen contract. Geen sales-call. Geen automatische verlenging. Wij vragen je actief om door te gaan na de proefperiode."
+            highlight
+          />
+        </div>
+      </section>
+
+      {/* CONVERSION SECTION 2.5 — Migration deep-dive: kill the switching-cost objection */}
+      <section className="relative z-10 max-w-[1200px] w-full mx-auto px-6 sm:px-10 py-12 sm:py-16">
+        <div className="text-center mb-10 sm:mb-12">
+          <p
+            className="font-mono text-[11px] font-bold tracking-[0.22em] uppercase mb-3 text-[#F15025]"
+            style={{ fontFamily: '"DM Mono", ui-monospace, monospace' }}
+          >
+            Overstappen
+          </p>
+          <h2 className="font-heading text-[26px] sm:text-[32px] lg:text-[38px] font-extrabold tracking-[-0.025em] leading-[1.1] text-[#191919]">
+            Eenvoudig overzetten uit ieder pakket<span style={{ color: '#F15025' }}>.</span>
+          </h2>
+          <p className="mt-3 text-[14px] sm:text-[15px] text-[#5A5A55] max-w-[520px] mx-auto leading-[1.6]">
+            Werk je nu met een ander pakket of in Excel? Twee opties. Kies wat bij je past. Je data komt netjes mee.
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-4 sm:gap-5 max-w-[920px] mx-auto">
+          <MigrationOption
+            kicker="Doe het zelf"
+            badge="~ 30–60 minuten"
+            title="Helder stappenplan. Geen technische kennis nodig."
+            steps={[
+              'Klanten, producten en prijslijsten exporteren uit je huidige pakket (CSV).',
+              'Uploaden in doen. via de import-wizard.',
+              'Stapsgewijze begeleiding. Je ziet direct of het klopt.',
+              'Klaar. Begin meteen met je eerste offerte.',
+            ]}
+          />
+          <MigrationOption
+            kicker="Of laat ons het doen"
+            badge="Geen extra kosten"
+            title="Stuur ons je export. Wij zetten alles netjes klaar."
+            steps={[
+              'Stuur je export-bestand uit je huidige pakket of Excel.',
+              'Wij mappen klanten, producten, prijslijsten en categorieën.',
+              'Je krijgt een ingerichte werkomgeving terug. Controleer en ga.',
+              'Inbegrepen bij je proefperiode. Geen rekening achteraf.',
+            ]}
+            highlight
+          />
+        </div>
+
+        <p className="mt-8 text-center text-[12px] text-[#9B9B95]">
+          Onbekend exportformaat? Mail{' '}
+          <a href="mailto:hello@doen.team" className="text-[#1A535C] font-semibold hover:underline underline-offset-4">
+            hello@doen.team
+          </a>
+          . We kijken samen wat het beste werkt.
+        </p>
+      </section>
+
+      {/* CONVERSION SECTION 3 — Final close: zero-risk reframe + scroll back to form */}
+      <section className="relative z-10 max-w-[820px] w-full mx-auto px-6 sm:px-10 py-12 sm:py-16 text-center">
+        <h2 className="font-heading text-[30px] sm:text-[42px] lg:text-[52px] font-extrabold tracking-[-0.03em] leading-[1.05] text-[#191919]">
+          Beginnen kost je niks<span style={{ color: '#F15025' }}>.</span>
+        </h2>
+        <p className="mt-5 text-[15px] sm:text-[17px] text-[#5A5A55] leading-[1.6] max-w-[560px] mx-auto">
+          30 dagen volledig gratis. Geen creditcard. Geen verplichting na de proef.
+          Past het niet? Stoppen kan altijd, in 1 klik.
+        </p>
+        <a
+          href="#aanmelden"
+          className="inline-flex items-center justify-center gap-2 mt-8 h-12 px-7 rounded-xl font-semibold text-[15px] bg-[#F15025] hover:bg-[#D94520] text-white transition-all group shadow-[0_8px_28px_-10px_rgba(241,80,37,0.6)]"
+        >
+          Begin gratis
+          <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+        </a>
+        <p className="mt-4 text-[12px] text-[#9B9B95] uppercase tracking-[0.14em]">
+          30 dagen gratis · Geen creditcard · Maandelijks opzegbaar
+        </p>
+      </section>
+
       <DoenAuthFooter />
     </DoenAuthShell>
+  )
+}
+
+function MigrationOption({
+  kicker,
+  badge,
+  title,
+  steps,
+  highlight = false,
+}: {
+  kicker: string
+  badge: string
+  title: string
+  steps: string[]
+  highlight?: boolean
+}) {
+  return (
+    <div
+      className={`relative bg-white rounded-2xl p-7 sm:p-8 border ${
+        highlight ? 'border-[#1A535C]/30' : 'border-[#EBEBEB]'
+      } shadow-[0_2px_24px_-8px_rgba(26,83,92,0.08)] flex flex-col`}
+    >
+      <div className="flex items-start justify-between gap-3 mb-4">
+        <p
+          className="font-mono text-[11px] font-bold tracking-[0.18em] uppercase text-[#9B9B95]"
+          style={{ fontFamily: '"DM Mono", ui-monospace, monospace' }}
+        >
+          {kicker}
+        </p>
+        <span
+          className={`text-[10px] font-bold uppercase tracking-[0.12em] px-2.5 py-1 rounded-full whitespace-nowrap ${
+            highlight ? 'text-white' : 'text-[#1A535C]'
+          }`}
+          style={{
+            background: highlight ? '#1A535C' : '#1A535C14',
+            fontFamily: '"DM Mono", ui-monospace, monospace',
+          }}
+        >
+          {badge}
+        </span>
+      </div>
+      <h3 className="font-heading text-[18px] sm:text-[20px] font-extrabold tracking-tight text-[#191919] leading-[1.25] mb-5">
+        {title}
+      </h3>
+      <ul className="space-y-3">
+        {steps.map((step, i) => (
+          <li key={i} className="flex gap-3 text-[13.5px] text-[#5A5A55] leading-[1.55]">
+            <span
+              className="shrink-0 inline-flex items-center justify-center w-5 h-5 rounded-full mt-0.5 text-white text-[10px] font-bold"
+              style={{ background: highlight ? '#1A535C' : '#1A535C99', fontFamily: '"DM Mono", ui-monospace, monospace' }}
+            >
+              {i + 1}
+            </span>
+            <span>{step}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+function ConversionCard({
+  kicker,
+  title,
+  body,
+  highlight = false,
+}: {
+  kicker: string
+  title: string
+  body: string
+  highlight?: boolean
+}) {
+  return (
+    <div
+      className={`relative bg-white rounded-2xl p-6 sm:p-7 border ${
+        highlight ? 'border-[#F15025]/30' : 'border-[#EBEBEB]'
+      } shadow-[0_2px_24px_-8px_rgba(26,83,92,0.08)]`}
+    >
+      {highlight && (
+        <span
+          className="absolute -top-2 right-5 text-[10px] font-bold uppercase tracking-[0.14em] px-2 py-1 rounded-full text-white"
+          style={{ background: '#F15025', fontFamily: '"DM Mono", ui-monospace, monospace' }}
+        >
+          Belangrijkste
+        </span>
+      )}
+      <p
+        className="font-mono text-[10px] font-bold tracking-[0.18em] uppercase mb-3 text-[#9B9B95]"
+        style={{ fontFamily: '"DM Mono", ui-monospace, monospace' }}
+      >
+        {kicker}
+      </p>
+      <h3 className="font-heading text-[20px] sm:text-[22px] font-extrabold tracking-tight text-[#191919] leading-tight">
+        {title}
+      </h3>
+      <p className="mt-3 text-[14px] text-[#5A5A55] leading-[1.55]">{body}</p>
+    </div>
   )
 }
 
@@ -448,7 +665,7 @@ export function DoenAuthFooter() {
     <footer className="relative z-10 max-w-[1200px] w-full mx-auto px-6 sm:px-10 pb-7 pt-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <p className="text-[11px] text-[#9B9B95]">
-          © {new Date().getFullYear()} doen<span style={{ color: '#F15025' }}>.</span> — gemaakt voor doeners.
+          © {new Date().getFullYear()} doen<span style={{ color: '#F15025' }}>.</span> Gemaakt voor doeners.
         </p>
         <p className="text-[11px] text-[#9B9B95] tracking-[0.12em] uppercase">
           Slim gedaan<span style={{ color: '#F15025' }}>.</span>
