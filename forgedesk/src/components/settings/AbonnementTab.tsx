@@ -156,21 +156,21 @@ export function AbonnementTab() {
               </h3>
 
               <div className="flex items-baseline gap-1.5 mt-3">
-                <span className="text-[42px] font-bold font-mono tracking-tight" style={{ color: '#1A1A1A' }}>€49</span>
+                <span className="text-[42px] font-bold font-mono tracking-tight" style={{ color: '#1A1A1A' }}>€79</span>
                 <span className="text-[15px]" style={{ color: '#9B9B95' }}>/ maand</span>
               </div>
 
               <div className="flex items-center gap-2 mt-2 rounded-lg px-3 py-2" style={{ backgroundColor: '#F8F7F5' }}>
                 <Users className="h-4 w-4" style={{ color: '#1A535C' }} />
                 <span className="text-[13px] font-medium" style={{ color: '#1A1A1A' }}>
-                  <strong>3 gebruikers</strong> inbegrepen
+                  Tot <strong>10 gebruikers</strong> inbegrepen
                 </span>
               </div>
 
               <div className="flex items-center gap-2 mt-2 rounded-lg px-3 py-2" style={{ backgroundColor: '#F8F7F5' }}>
                 <Plus className="h-4 w-4" style={{ color: '#1A535C' }} />
                 <span className="text-[13px] font-medium" style={{ color: '#1A1A1A' }}>
-                  Extra gebruiker <strong>€10/maand</strong>
+                  Meer gebruikers? <strong>Staffel op maat</strong>
                 </span>
               </div>
 

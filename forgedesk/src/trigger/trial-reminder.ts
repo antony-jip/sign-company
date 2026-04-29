@@ -31,7 +31,7 @@ function buildReminder(dagenOver: number, voornaam: string): ReminderConfig | nu
     return {
       subject: "Je proefperiode is vandaag afgelopen",
       heading: `Hey ${naam}, je proefperiode van doen. is vandaag afgelopen. Je data blijft bewaard — activeer je abonnement om weer verder te kunnen werken.`,
-      ctaLabel: "Activeer abonnement — €49/maand",
+      ctaLabel: "Activeer abonnement — €79/maand",
     };
   }
   return null;

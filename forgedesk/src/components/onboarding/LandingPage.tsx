@@ -125,7 +125,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'Wat kost Doen. na de proefperiode?',
-    a: 'Doen. kost €49 per maand per bedrijf. Geen kosten per gebruiker — je kunt onbeperkt medewerkers toevoegen. Alle features zijn inbegrepen, inclusief AI-tools.',
+    a: 'Doen. kost €79 per maand per bedrijf. Tot 10 gebruikers zijn inbegrepen — meer nodig? Dan maken we een staffel op maat. Alle features zijn inbegrepen, inclusief AI-tools.',
   },
   {
     q: 'Kan ik mijn data importeren?',
@@ -814,13 +814,13 @@ function StatsSection() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// PRICING — Single plan, €49/maand
+// PRICING — Single plan, €79/maand
 // ═══════════════════════════════════════════════════════════
 
 function PricingSection() {
   const fadeRef = useFadeUp()
   const { ref: priceRef, isVisible: priceVisible } = useInView(0.3)
-  const priceValue = useCountUp(49, 1500, priceVisible)
+  const priceValue = useCountUp(79, 1500, priceVisible)
 
   return (
     <section id="prijzen" className="lf-section bg-[#FAFAF8] py-24 md:py-36" ref={fadeRef}>
@@ -845,7 +845,7 @@ function PricingSection() {
             <span className="text-[20px] text-[#999] font-medium">/maand</span>
           </div>
           <p className="text-[#777] text-base mt-2">
-            Per bedrijf. Onbeperkt medewerkers.
+            Per bedrijf. Tot 10 gebruikers inbegrepen.
           </p>
 
           {/* Divider */}
