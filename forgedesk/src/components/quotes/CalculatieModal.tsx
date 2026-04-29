@@ -41,6 +41,7 @@ import {
 } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import { round2 } from '@/utils/budgetUtils'
+import { berekenMarkupPercentage, berekenVerkoopVanMarkup } from '@/utils/margeBerekening'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { getCalculatieProducten, getCalculatieTemplates } from '@/services/supabaseService'
 import type { CalculatieRegel, CalculatieProduct, CalculatieTemplate } from '@/types'
@@ -89,15 +90,12 @@ function createEmptyRegel(defaults?: { marge: number; btw: number }): Calculatie
 }
 
 
-/** Bereken verkoopprijs op basis van inkoop + marge */
 function berekenVerkoopVanInkoop(inkoop: number, margePerc: number): number {
-  return round2(inkoop * (1 + margePerc / 100))
+  return round2(berekenVerkoopVanMarkup(inkoop, margePerc))
 }
 
-/** Bereken marge% op basis van inkoop en verkoop */
 function berekenMarge(inkoop: number, verkoop: number): number {
-  if (inkoop === 0) return 0
-  return Math.round(((verkoop - inkoop) / inkoop) * 1000) / 10
+  return Math.round(berekenMarkupPercentage(inkoop, verkoop) * 10) / 10
 }
 
 export function CalculatieModal({
@@ -229,7 +227,7 @@ export function CalculatieModal({
     totaalKorting = round2(totaalKorting)
 
     const margeBedrag = round2(totaalVerkoop - totaalInkoop)
-    const margePercentage = totaalInkoop > 0 ? Math.round((margeBedrag / totaalInkoop) * 1000) / 10 : 0
+    const margePercentage = Math.round(berekenMarkupPercentage(totaalInkoop, totaalVerkoop) * 10) / 10
 
     return {
       totaalInkoop,
@@ -435,7 +433,7 @@ export function CalculatieModal({
                           <HelpCircle className="h-3 w-3 text-muted-foreground/60" />
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>Je winstmarge in procenten.<br />Pas dit aan om de verkoopprijs te wijzigen,<br />of wijzig de verkoopprijs om de marge te zien.</p>
+                          <p>Markup = winst t.o.v. inkoop.<br />Voorbeeld: inkoop &euro;100, verkoop &euro;200 &rarr; 100% markup.</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -691,7 +689,7 @@ export function CalculatieModal({
             </h4>
             <ul className="text-xs text-[#1A5C5E] dark:text-[#5BB5B5] space-y-1.5">
               <li><strong>Inkoop:</strong> Wat jij betaalt (ziet de klant niet)</li>
-              <li><strong>Marge:</strong> Je winstopslag in %. Pas dit aan of wijzig de verkoopprijs direct</li>
+              <li><strong>Marge:</strong> Markup = winst t.o.v. inkoop. Voorbeeld: inkoop &euro;100, verkoop &euro;200 &rarr; 100% markup.</li>
               <li><strong>Verkoop:</strong> Wat de klant betaalt. Wordt de eenheidsprijs op de offerte</li>
               <li><strong>Nacalc.:</strong> Vink aan als kosten achteraf worden verrekend</li>
             </ul>

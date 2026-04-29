@@ -11,6 +11,7 @@ import type { Klant, OfferteItem, CalculatieTemplate, CalculatieRegel, Medewerke
 import { toast } from 'sonner'
 import { confirm } from '@/components/shared/ConfirmDialog'
 import { round2 } from '@/utils/budgetUtils'
+import { berekenMarkupPercentage, berekenVerkoopVanMarkup } from '@/utils/margeBerekening'
 import { logger } from '../../utils/logger'
 import { Building2, ChevronDown, Plus, X, Send, BookTemplate, Settings, Save, UserCircle, ListTodo, FolderPlus, Calendar, UserPlus, Paperclip, Image } from 'lucide-react'
 
@@ -40,12 +41,11 @@ function formatEuro(n: number): string {
 }
 
 function berekenVerkoopVanInkoop(inkoop: number, margePerc: number): number {
-  return round2(inkoop * (1 + margePerc / 100))
+  return round2(berekenVerkoopVanMarkup(inkoop, margePerc))
 }
 
 function berekenMarge(inkoop: number, verkoop: number): number {
-  if (inkoop === 0) return 0
-  return Math.round(((verkoop - inkoop) / inkoop) * 1000) / 10
+  return Math.round(berekenMarkupPercentage(inkoop, verkoop) * 10) / 10
 }
 
 function makeId(): string {
@@ -141,7 +141,7 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
       totaalVerkoop += round2(r.aantal * parseNum(r.verkoop))
     })
     const margeBedrag = round2(totaalVerkoop - totaalInkoop)
-    const margePerc = totaalInkoop > 0 ? Math.round((margeBedrag / totaalInkoop) * 1000) / 10 : 0
+    const margePerc = Math.round(berekenMarkupPercentage(totaalInkoop, totaalVerkoop) * 10) / 10
     return { totaalInkoop, totaalVerkoop, margeBedrag, margePerc }
   }, [regels])
 

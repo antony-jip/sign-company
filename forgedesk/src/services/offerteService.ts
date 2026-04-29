@@ -12,7 +12,9 @@ import type {
   CalculatieProduct,
   CalculatieTemplate,
   TekeningGoedkeuring,
+  CalculatieRegel,
 } from '@/types'
+import { berekenMarkupPercentage } from '@/utils/margeBerekening'
 
 // ============ OFFERTES ============
 
@@ -256,6 +258,25 @@ export async function deleteOfferte(id: string): Promise<void> {
 
 // ============ OFFERTE ITEMS ============
 
+function herberekenRegelMarkup(regels?: CalculatieRegel[]): CalculatieRegel[] | undefined {
+  if (!regels || regels.length === 0) return regels
+  return regels.map((r) => ({
+    ...r,
+    marge_percentage: berekenMarkupPercentage(r.inkoop_prijs, r.verkoop_prijs),
+  }))
+}
+
+function herberekenItemMarkup(item: OfferteItem): OfferteItem {
+  return {
+    ...item,
+    calculatie_regels: herberekenRegelMarkup(item.calculatie_regels),
+    prijs_varianten: item.prijs_varianten?.map((v) => ({
+      ...v,
+      calculatie_regels: herberekenRegelMarkup(v.calculatie_regels),
+    })),
+  }
+}
+
 export async function getOfferteItems(offerteId: string): Promise<OfferteItem[]> {
   assertId(offerteId, 'offerte_id')
   if (isSupabaseConfigured() && supabase) {
@@ -268,12 +289,13 @@ export async function getOfferteItems(offerteId: string): Promise<OfferteItem[]>
     if (orgId) query = query.eq('organisatie_id', orgId)
     const { data, error } = await query
     if (error) throw error
-    return data || []
+    return (data || []).map(herberekenItemMarkup)
   }
   const items = getLocalData<OfferteItem>('offerte_items')
   return items
     .filter((i) => i.offerte_id === offerteId)
     .sort((a, b) => a.volgorde - b.volgorde)
+    .map(herberekenItemMarkup)
 }
 
 export async function createOfferteItem(item: Omit<OfferteItem, 'id' | 'created_at'>): Promise<OfferteItem> {
