@@ -2,7 +2,6 @@
 
 import { motion, useMotionValue, useTransform, useSpring, useScroll, AnimatePresence } from 'framer-motion'
 import { useRef, useState, useEffect, useCallback } from 'react'
-import WachtlijstForm from '../WachtlijstForm'
 
 const FLOW = [
   { label: 'Klant', color: '#3A6B8C' },
@@ -254,7 +253,7 @@ export default function Hero() {
             style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}
           >
             <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: '#F15025' }} />
-            <span className="text-[12px] font-medium text-white/50">Binnenkort live. Schrijf je in voor early access.</span>
+            <span className="text-[12px] font-medium text-white/50">Nu beschikbaar. Eerste 30 dagen gratis.</span>
           </motion.div>
 
           {/* Headline with scramble */}
@@ -313,10 +312,20 @@ export default function Hero() {
             initial={{ opacity: 0, y: 20, filter: 'blur(8px)' }}
             animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
             transition={{ duration: 0.8, delay: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="max-w-md mx-auto"
+            className="max-w-md mx-auto flex flex-col items-center gap-4"
           >
-            <WachtlijstForm />
-            <p className="text-[12px] text-white/20 mt-3">
+            <a
+              href="https://app.doen.team/register"
+              className="inline-flex items-center justify-center gap-2 font-semibold text-[15px] text-white px-8 h-[56px] rounded-xl whitespace-nowrap transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+              style={{
+                backgroundColor: '#F15025',
+                boxShadow: '0 4px 14px rgba(241,80,37,0.3)',
+              }}
+            >
+              <span>Start gratis</span>
+              <span aria-hidden>→</span>
+            </a>
+            <p className="text-[12px] text-white/20">
               Eerste 30 dagen gratis. Geen creditcard nodig.
             </p>
           </motion.div>

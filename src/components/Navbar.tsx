@@ -75,13 +75,19 @@ export default function Navbar() {
                 </Link>
               )
             })}
-            <Link
-              href="/#wachtlijst"
-              className="ml-3 text-white text-[14px] font-semibold px-5 py-2.5 rounded-lg transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+            <a
+              href="https://app.doen.team/login"
+              className="ml-3 text-[14px] font-medium px-3 py-2 rounded-lg transition-all duration-200 text-[#6B6B66] hover:text-petrol hover:bg-black/[0.03]"
+            >
+              Inloggen
+            </a>
+            <a
+              href="https://app.doen.team/register"
+              className="ml-1 text-white text-[14px] font-semibold px-5 py-2.5 rounded-lg transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
               style={{ backgroundColor: '#F15025' }}
             >
-              Schrijf je in
-            </Link>
+              Start gratis
+            </a>
           </div>
 
           {/* Mobile hamburger */}
@@ -132,16 +138,23 @@ export default function Navbar() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.35, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                className="mt-4"
+                className="mt-4 flex flex-col items-center gap-3"
               >
-                <Link
-                  href="/#wachtlijst"
+                <a
+                  href="https://app.doen.team/register"
                   onClick={() => setIsMobileOpen(false)}
                   className="text-white font-semibold text-[17px] px-8 py-4 rounded-xl inline-block"
                   style={{ backgroundColor: '#F15025' }}
                 >
-                  Schrijf je in
-                </Link>
+                  Start gratis
+                </a>
+                <a
+                  href="https://app.doen.team/login"
+                  onClick={() => setIsMobileOpen(false)}
+                  className="text-[15px] font-medium text-[#6B6B66]"
+                >
+                  Inloggen
+                </a>
               </motion.div>
             </nav>
           </motion.div>

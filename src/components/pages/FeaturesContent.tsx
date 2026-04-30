@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
 import SectionReveal from '../SectionReveal'
-import WachtlijstForm from '../WachtlijstForm'
 import FaqSection from '../home/FaqSection'
 
 const modules = [
@@ -132,11 +131,11 @@ function PortaalDemo() {
               Je klant opent de link en ziet alles in chronologische volgorde. Tekeningen, offertes, opdrachtbevestigingen, facturen en foto's. Reageren kan direct. Geen inlog, geen app, geen gedoe.
             </p>
             <a
-              href="/aanmelden"
+              href="https://app.doen.team/register"
               className="inline-flex items-center gap-2 text-white font-semibold text-[14px] px-7 py-3.5 rounded-full transition-all duration-200 hover:scale-[1.03] active:scale-[0.98] mt-8"
               style={{ backgroundColor: '#F15025' }}
             >
-              Schrijf je in
+              Start gratis
               <span className="text-[16px]">→</span>
             </a>
           </motion.div>
@@ -296,11 +295,11 @@ function WerktekeningSection() {
               Sleep je werktekening in de offerte. De omschrijving van de offerteregel wordt automatisch overgenomen als titel. Je klant ziet een professionele tekening met uitleg. Geen Illustrator nodig.
             </p>
             <a
-              href="/aanmelden"
+              href="https://app.doen.team/register"
               className="inline-flex items-center gap-2 text-white font-semibold text-[14px] px-7 py-3.5 rounded-full transition-all duration-200 hover:scale-[1.03] active:scale-[0.98] mt-8"
               style={{ backgroundColor: '#F15025' }}
             >
-              Schrijf je in
+              Start gratis
               <span className="text-[16px]">→</span>
             </a>
           </motion.div>
@@ -1360,11 +1359,11 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
                 transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
               >
                 <a
-                  href="/aanmelden"
+                  href="https://app.doen.team/register"
                   className="inline-flex items-center gap-2 text-white font-semibold text-[14px] px-7 py-3.5 rounded-full transition-all duration-200 hover:scale-[1.03] active:scale-[0.98]"
                   style={{ backgroundColor: '#F15025' }}
                 >
-                  Schrijf je in
+                  Start gratis
                   <span className="text-[16px]">→</span>
                 </a>
                 <p className="text-[12px] mt-3" style={{ color: 'rgba(255,255,255,0.35)' }}>
@@ -1495,11 +1494,11 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
                   transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
                 >
                   <a
-                    href="/aanmelden"
+                    href="https://app.doen.team/register"
                     className="inline-flex items-center gap-2 text-white font-semibold text-[14px] px-7 py-3.5 rounded-full transition-all duration-200 hover:scale-[1.03] active:scale-[0.98]"
                     style={{ backgroundColor: '#F15025' }}
                   >
-                    Schrijf je in
+                    Start gratis
                     <span className="text-[16px]">→</span>
                   </a>
                   <p className="text-[12px] mt-3" style={{ color: 'rgba(255,255,255,0.35)' }}>
@@ -1653,11 +1652,11 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
 
                   {/* CTA */}
                   <a
-                    href="/aanmelden"
+                    href="https://app.doen.team/register"
                     className="inline-flex items-center gap-2 font-semibold text-[14px] px-6 py-3 rounded-full transition-all duration-200 hover:scale-[1.03] active:scale-[0.98] mt-8 text-white"
                     style={{ backgroundColor: mod.color }}
                   >
-                    Schrijf je in
+                    Start gratis
                     <span className="text-[16px]">→</span>
                   </a>
                 </div>
@@ -1695,15 +1694,25 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
       <section className="pb-20 md:pb-32">
         <div className="container-site">
           <div className="rounded-2xl p-10 md:p-14 text-center" style={{ backgroundColor: '#1A535C' }}>
-            <p className="text-[13px] text-flame font-semibold mb-3 tracking-wide">Binnenkort live</p>
+            <p className="text-[13px] text-flame font-semibold mb-3 tracking-wide">Nu beschikbaar</p>
             <h2 className="font-heading text-[24px] md:text-[32px] font-bold text-white tracking-tight mb-3">
-              Schrijf je in voor early access<span className="text-flame">.</span>
+              Start vandaag<span className="text-flame">.</span>
             </h2>
             <p className="text-[15px] text-white/40 max-w-md mx-auto mb-8">
-              Alles zit erin. Geen add-ons. We mailen je zodra doen. live gaat.
+              Alles zit erin. Geen add-ons. Eerste 30 dagen gratis.
             </p>
             <div className="flex justify-center">
-              <WachtlijstForm />
+              <a
+                href="https://app.doen.team/register"
+                className="inline-flex items-center justify-center gap-2 font-semibold text-[15px] text-white px-8 h-[56px] rounded-xl whitespace-nowrap transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                style={{
+                  backgroundColor: '#F15025',
+                  boxShadow: '0 4px 14px rgba(241,80,37,0.3)',
+                }}
+              >
+                <span>Start gratis</span>
+                <span aria-hidden>→</span>
+              </a>
             </div>
           </div>
         </div>

@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import SectionReveal from '../SectionReveal'
-import WachtlijstForm from '../WachtlijstForm'
 
 const allFeatures = [
   'Onbeperkt projecten, offertes en facturen',
@@ -191,15 +190,25 @@ export default function PrijzenContent() {
       <section className="pt-4 pb-20 md:pb-32">
         <div className="container-site">
           <div className="rounded-2xl p-12 md:p-16 text-center" style={{ backgroundColor: '#1A535C' }}>
-            <p className="text-[13px] text-flame font-semibold mb-3 tracking-wide">Binnenkort live</p>
+            <p className="text-[13px] text-flame font-semibold mb-3 tracking-wide">Nu beschikbaar</p>
             <h2 className="font-heading text-[24px] md:text-[32px] font-bold text-white tracking-tight mb-3">
               Klaar om te beginnen<span className="text-flame">?</span>
             </h2>
             <p className="text-[15px] text-white/40 max-w-md mx-auto mb-8">
-              Schrijf je in. We mailen je zodra doen. live gaat.
+              Start vandaag. Eerste 30 dagen gratis. Geen creditcard nodig.
             </p>
             <div className="flex justify-center">
-              <WachtlijstForm />
+              <a
+                href="https://app.doen.team/register"
+                className="inline-flex items-center justify-center gap-2 font-semibold text-[15px] text-white px-8 h-[56px] rounded-xl whitespace-nowrap transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                style={{
+                  backgroundColor: '#F15025',
+                  boxShadow: '0 4px 14px rgba(241,80,37,0.3)',
+                }}
+              >
+                <span>Start gratis</span>
+                <span aria-hidden>→</span>
+              </a>
             </div>
           </div>
         </div>

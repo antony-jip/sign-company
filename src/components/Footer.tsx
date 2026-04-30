@@ -20,14 +20,14 @@ export default function Footer() {
               </p>
             </div>
             <div>
-              <Link
-                href="/#wachtlijst"
+              <a
+                href="https://app.doen.team/register"
                 className="inline-flex items-center gap-2 text-[14px] font-semibold text-white px-6 py-3 rounded-lg transition-all duration-200 hover:scale-[1.02]"
                 style={{ backgroundColor: '#F15025' }}
               >
-                Schrijf je in voor early access
+                Start gratis
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7h8M8 4l3 3-3 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-              </Link>
+              </a>
             </div>
           </div>
 

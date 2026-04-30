@@ -27,7 +27,6 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import SectionReveal from '../SectionReveal'
-import WachtlijstForm from '../WachtlijstForm'
 
 const PETROL = '#1A535C'
 const PETROL_DARK = '#143F46'
@@ -1127,17 +1126,27 @@ function Act5CTA() {
             />
             <div className="relative">
               <p className="font-mono text-[11px] md:text-[12px] font-bold tracking-[0.2em] uppercase mb-5" style={{ color: FLAME }}>
-                Binnenkort live
+                Nu beschikbaar
               </p>
               <h2 className="font-heading text-[32px] md:text-[48px] font-extrabold tracking-[-1.5px] leading-tight mb-5 text-white">
                 Klaar om het anders te doen
                 <span style={{ color: FLAME }}>?</span>
               </h2>
               <p className="text-[15px] md:text-[17px] max-w-lg mx-auto mb-10" style={{ color: 'rgba(255,255,255,0.55)' }}>
-                Schrijf je in voor de early access. Als doen. live gaat, hoor jij het als eerste.
+                Maak een account en draai vandaag je eerste offerte erdoorheen.
               </p>
               <div className="flex justify-center">
-                <WachtlijstForm />
+                <a
+                  href="https://app.doen.team/register"
+                  className="inline-flex items-center justify-center gap-2 font-semibold text-[15px] text-white px-8 h-[56px] rounded-xl whitespace-nowrap transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                  style={{
+                    backgroundColor: FLAME,
+                    boxShadow: '0 4px 14px rgba(241,80,37,0.3)',
+                  }}
+                >
+                  <span>Start gratis</span>
+                  <span aria-hidden>→</span>
+                </a>
               </div>
               <p className="text-[12px] mt-5" style={{ color: 'rgba(255,255,255,0.35)' }}>
                 30 dagen gratis. Geen creditcard. Geen lock-in.

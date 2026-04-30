@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Mail, MessageCircle, Clock, type LucideIcon } from 'lucide-react'
 import SectionReveal from '../SectionReveal'
-import WachtlijstForm from '../WachtlijstForm'
 import AnimatedLink from '../AnimatedLink'
 
 const PETROL = '#1A535C'
@@ -87,7 +86,7 @@ export default function ContactContent() {
                 </div>
               </SectionReveal>
 
-              {/* Wachtlijst inline CTA */}
+              {/* Inline register CTA */}
               <SectionReveal delay={0.25}>
                 <div
                   className="mt-10 rounded-2xl p-6"
@@ -100,9 +99,19 @@ export default function ContactContent() {
                     Liever direct beginnen<span style={{ color: FLAME }}>?</span>
                   </p>
                   <p className="text-[13px] mb-4" style={{ color: MUTED }}>
-                    Schrijf je in voor early access — we mailen zodra doen. live gaat.
+                    Maak een account en zet je eerste offerte vandaag de deur uit.
                   </p>
-                  <WachtlijstForm />
+                  <a
+                    href="https://app.doen.team/register"
+                    className="inline-flex items-center justify-center gap-2 font-semibold text-[14px] text-white px-6 h-[48px] rounded-xl whitespace-nowrap transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                    style={{
+                      backgroundColor: FLAME,
+                      boxShadow: '0 4px 14px rgba(241,80,37,0.3)',
+                    }}
+                  >
+                    <span>Start gratis</span>
+                    <span aria-hidden>→</span>
+                  </a>
                 </div>
               </SectionReveal>
             </div>
