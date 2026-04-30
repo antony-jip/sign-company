@@ -31,6 +31,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>
   register: (email: string, password: string, metadata?: { voornaam?: string; achternaam?: string }) => Promise<void>
   logout: () => Promise<void>
+  refreshOrganisatie: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -246,6 +247,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(data.session)
   }
 
+  const refreshOrganisatie = async () => {
+    if (user?.id) await fetchOrgData(user.id)
+  }
+
   const logout = async () => {
     try {
       await signOut()
@@ -273,6 +278,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       register,
       logout,
+      refreshOrganisatie,
     }}>
       {children}
     </AuthContext.Provider>

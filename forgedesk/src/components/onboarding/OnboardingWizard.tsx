@@ -9,6 +9,8 @@ import {
   updateOrganisatie,
   getOrganisatie,
   getProfile,
+  updateProfile,
+  createMedewerker,
   createKlant,
   createProject,
   createOfferte,
@@ -160,6 +162,8 @@ function PrimaryButton({
 // ── Step 1: Bedrijfsgegevens ────────────────────────────────────────────
 
 interface BedrijfsgegevensState {
+  voornaam: string
+  achternaam: string
   naam: string
   kvk_nummer: string
   btw_nummer: string
@@ -195,13 +199,37 @@ function StepBedrijfsgegevens({
       />
 
       <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label style={labelStyle}>Voornaam</Label>
+            <Input
+              value={gegevens.voornaam}
+              onChange={(e) => update('voornaam', e.target.value)}
+              placeholder="Anna"
+              autoFocus
+              className={inputClass}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label style={labelStyle}>
+              Achternaam{' '}
+              <span style={{ color: '#A0A098', fontWeight: 400 }}>optioneel</span>
+            </Label>
+            <Input
+              value={gegevens.achternaam}
+              onChange={(e) => update('achternaam', e.target.value)}
+              placeholder="de Vries"
+              className={inputClass}
+            />
+          </div>
+        </div>
+
         <div className="space-y-1.5">
           <Label style={labelStyle}>Bedrijfsnaam</Label>
           <Input
             value={gegevens.naam}
             onChange={(e) => update('naam', e.target.value)}
             placeholder="Jouw Bedrijf B.V."
-            autoFocus
             className={inputClass}
           />
         </div>
@@ -281,7 +309,7 @@ function StepBedrijfsgegevens({
 
       <PrimaryButton
         onClick={onNext}
-        disabled={!gegevens.naam.trim()}
+        disabled={!gegevens.naam.trim() || !gegevens.voornaam.trim()}
         isSaving={isSaving}
         className="w-full mt-8"
       >
@@ -424,7 +452,7 @@ function StepKlaar({
 
 export function OnboardingWizard() {
   const navigate = useNavigate()
-  const { organisatieId, user } = useAuth()
+  const { organisatieId, user, refreshOrganisatie } = useAuth()
   const [localOrgId, setLocalOrgId] = useState<string | null>(organisatieId)
   const [currentStep, setCurrentStep] = useState(0)
   const [isSaving, setIsSaving] = useState(false)
@@ -432,6 +460,7 @@ export function OnboardingWizard() {
 
   // Step 1 state
   const [gegevens, setGegevens] = useState<BedrijfsgegevensState>({
+    voornaam: '', achternaam: '',
     naam: '', kvk_nummer: '', btw_nummer: '', adres: '', postcode: '', plaats: '', email: '', telefoon: '',
   })
 
@@ -449,15 +478,21 @@ export function OnboardingWizard() {
     const init = async () => {
       let orgId = organisatieId
 
-      if (!orgId && user?.id) {
+      if (user?.id) {
         try {
           const profile = await getProfile(user.id)
-          if (profile?.organisatie_id) {
-            orgId = profile.organisatie_id
-          } else {
-            logger.error('Onboarding: profile zonder organisatie_id', { userId: user.id })
+          if (profile && !cancelled) {
+            if (profile.voornaam) setGegevens(prev => ({ ...prev, voornaam: profile.voornaam || '' }))
+            if (profile.achternaam) setGegevens(prev => ({ ...prev, achternaam: profile.achternaam || '' }))
           }
-          if (!cancelled && orgId) setLocalOrgId(orgId)
+          if (!orgId) {
+            if (profile?.organisatie_id) {
+              orgId = profile.organisatie_id
+            } else {
+              logger.error('Onboarding: profile zonder organisatie_id', { userId: user.id })
+            }
+            if (!cancelled && orgId) setLocalOrgId(orgId)
+          }
         } catch (err) {
           logger.error('Fetch profile voor onboarding:', err)
         }
@@ -504,25 +539,49 @@ export function OnboardingWizard() {
   const finishOnboarding = useCallback(async () => {
     const orgId = localOrgId || organisatieId
     if (!orgId) {
-      navigate('/')
+      navigate('/', { replace: true })
       return
     }
     try {
-      await updateOrganisatie(orgId, { onboarding_compleet: true, onboarding_stap: 4 })
-    } catch (err) {
-      logger.error('Update organisatie onboarding compleet:', err)
       try {
-        await updateOrganisatie(orgId, { onboarding_compleet: true })
+        await updateOrganisatie(orgId, { onboarding_compleet: true, onboarding_stap: 4 })
       } catch (err) {
-        logger.error('Update organisatie onboarding fallback:', err)
+        logger.error('Update organisatie onboarding compleet:', err)
+        await updateOrganisatie(orgId, { onboarding_compleet: true })
       }
+
+      if (user?.id) {
+        const samengesteldeNaam = [gegevens.voornaam, gegevens.achternaam]
+          .map(s => s.trim())
+          .filter(Boolean)
+          .join(' ')
+        try {
+          await createMedewerker({
+            user_id: user.id,
+            naam: samengesteldeNaam || user.email || 'Eigenaar',
+            email: user.email || '',
+            telefoon: gegevens.telefoon || '',
+            status: 'actief',
+            rol: 'admin',
+            app_rol: 'admin',
+          } as Parameters<typeof createMedewerker>[0])
+        } catch (err) {
+          logger.error('createMedewerker eigenaar:', err)
+          toast.error('Account opgezet, maar je teamlid-record kon niet aangemaakt worden.')
+        }
+      }
+
+      await refreshOrganisatie()
+      navigate('/', { replace: true })
+    } catch (err) {
+      logger.error('Onboarding finish:', err)
+      toast.error(err instanceof Error ? err.message : 'Afronden mislukt. Probeer opnieuw.')
     }
-    navigate('/')
-  }, [localOrgId, organisatieId, navigate])
+  }, [localOrgId, organisatieId, navigate, user, gegevens, refreshOrganisatie])
 
   // Step 1 → save bedrijfsgegevens and go to step 2
   const handleStep1Next = async () => {
-    if (!gegevens.naam.trim()) return
+    if (!gegevens.naam.trim() || !gegevens.voornaam.trim()) return
     setIsSaving(true)
     try {
       if (effectiveOrgId) {
@@ -554,10 +613,23 @@ export function OnboardingWizard() {
       } catch (err) {
         logger.error('Update organisatie stap 1 fallback:', err)
       }
-    } finally {
-      setIsSaving(false)
-      setCurrentStep(1)
     }
+
+    if (user?.id) {
+      try {
+        await updateProfile(user.id, {
+          voornaam: gegevens.voornaam.trim(),
+          achternaam: gegevens.achternaam.trim(),
+          bedrijfsnaam: gegevens.naam.trim(),
+        } as Parameters<typeof updateProfile>[1])
+      } catch (err) {
+        logger.error('Update profiel stap 1:', err)
+        toast.error(err instanceof Error ? err.message : 'Persoonlijke gegevens konden niet opgeslagen worden.')
+      }
+    }
+
+    setIsSaving(false)
+    setCurrentStep(1)
   }
 
   // Step 2 → load demo data if chosen, then go to step 3
