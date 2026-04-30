@@ -82,15 +82,15 @@ export default function PricingSection() {
                 </p>
 
                 <a
-                  href="#wachtlijst"
+                  href="https://app.doen.team/register"
                   className="inline-flex items-center gap-2 h-14 px-8 text-[16px] font-bold text-white rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98]"
                   style={{ backgroundColor: '#F15025', boxShadow: '0 4px 16px rgba(241,80,37,0.3)' }}
                 >
-                  Schrijf je in voor early access
+                  Start gratis
                   <ArrowRight className="w-5 h-5" />
                 </a>
                 <p className="text-[12px] mt-3" style={{ color: '#9B9B95' }}>
-                  Binnenkort live. Eerste 30 dagen gratis.
+                  Eerste 30 dagen gratis. Geen creditcard nodig.
                 </p>
               </div>
 

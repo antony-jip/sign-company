@@ -4,7 +4,6 @@ import { motion, useInView, useMotionValue, useTransform, animate } from 'framer
 import { useRef, useEffect, useState } from 'react'
 import Image from 'next/image'
 import SectionReveal from '../SectionReveal'
-import WachtlijstForm from '../WachtlijstForm'
 
 const pains = [
   { nr: '01', before: 'Offertes in Word of een systeem uit 2015', after: 'Calculator met templates. Klant keurt goed via het portaal.' },
@@ -402,17 +401,27 @@ export default function OverContent() {
           <div className="max-w-2xl mx-auto text-center">
             <SectionReveal>
               <p className="font-mono text-[12px] font-bold tracking-[0.3em] uppercase text-flame mb-6">
-                Binnenkort live
+                Nu beschikbaar
               </p>
               <h2 className="font-heading text-[28px] md:text-[44px] font-bold text-petrol tracking-[-2px] leading-[1] mb-6">
                 Stop met rommelen<span className="text-flame">.</span><br />
                 Begin met doen<span className="text-flame">.</span>
               </h2>
               <p className="text-[16px] mb-10 max-w-md mx-auto" style={{ color: '#9B9B95' }}>
-                We mailen je zodra het zover is. Als eerste erbij.
+                Eerste 30 dagen gratis. Geen creditcard. Maandelijks opzegbaar.
               </p>
               <div className="flex justify-center">
-                <WachtlijstForm />
+                <a
+                  href="https://app.doen.team/register"
+                  className="inline-flex items-center justify-center gap-2 font-semibold text-[15px] text-white px-8 h-[56px] rounded-xl whitespace-nowrap transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                  style={{
+                    backgroundColor: '#F15025',
+                    boxShadow: '0 4px 14px rgba(241,80,37,0.3)',
+                  }}
+                >
+                  <span>Start gratis</span>
+                  <span aria-hidden>→</span>
+                </a>
               </div>
             </SectionReveal>
           </div>

@@ -21,6 +21,7 @@ import { RecenteActiviteitWidget } from './RecenteActiviteitWidget'
 import { TodayPlanningWidget } from './TodayPlanningWidget'
 import { PriorityTasks } from './PriorityTasks'
 import { OpenstaandeOffertesWidget } from './OpenstaandeOffertesWidget'
+import { AanDeSlagSectie } from './AanDeSlagSectie'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   AlertTriangle,
@@ -228,6 +229,9 @@ function FORGEdeskDashboardInner() {
           {formattedDate}
         </p>
       </div>
+
+      {/* ── Aan de slag (alleen voor nieuwe gebruikers) ── */}
+      <AanDeSlagSectie />
 
       {/* ── Week strip ── */}
       <div className="hidden md:block">
