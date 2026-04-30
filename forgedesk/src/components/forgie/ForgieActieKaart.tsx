@@ -196,6 +196,7 @@ export function ForgieActieKaart({
           geschatte_tijd: 0,
           bestede_tijd: 0,
         })
+        logCreate({ user, entityType: 'taak', entityId: result.id })
         createdId = result.id
       }
 

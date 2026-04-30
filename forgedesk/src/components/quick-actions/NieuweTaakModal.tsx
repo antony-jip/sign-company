@@ -6,6 +6,8 @@ import { createTaak, getProjecten, getMedewerkers } from '@/services/supabaseSer
 import type { Project, Medewerker } from '@/types'
 import { toast } from 'sonner'
 import { MedewerkerSelector } from '@/components/shared/MedewerkerSelector'
+import { useAuth } from '@/contexts/AuthContext'
+import { logCreate } from '@/utils/auditLogger'
 
 interface Props {
   open: boolean
@@ -13,6 +15,7 @@ interface Props {
 }
 
 export function NieuweTaakModal({ open, onOpenChange }: Props) {
+  const { user } = useAuth()
   const [projecten, setProjecten] = useState<Project[]>([])
   const [medewerkers, setMedewerkers] = useState<Medewerker[]>([])
   const [titel, setTitel] = useState('')
@@ -34,7 +37,7 @@ export function NieuweTaakModal({ open, onOpenChange }: Props) {
 
     setSaving(true)
     try {
-      await createTaak({
+      const taak = await createTaak({
         titel: titel.trim(),
         beschrijving: '',
         project_id: projectId || undefined,
@@ -45,6 +48,7 @@ export function NieuweTaakModal({ open, onOpenChange }: Props) {
         geschatte_tijd: 0,
         bestede_tijd: 0,
       })
+      logCreate({ user, medewerkers, entityType: 'taak', entityId: taak.id })
       toast.success('Taak toegevoegd')
       onOpenChange(false)
       setTitel('')

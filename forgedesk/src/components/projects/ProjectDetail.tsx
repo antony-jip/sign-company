@@ -480,7 +480,7 @@ export function ProjectDetail() {
 
       // Kopieer taken (zonder datums / bestede tijd)
       for (const taak of projectTaken) {
-        await createTaak({
+        const newTaak = await createTaak({
           user_id: user.id,
           project_id: newProject.id,
           titel: taak.titel,
@@ -492,6 +492,7 @@ export function ProjectDetail() {
           geschatte_tijd: taak.geschatte_tijd,
           bestede_tijd: 0,
         })
+        logCreate({ user, medewerkers: alleMedewerkers, entityType: 'taak', entityId: newTaak.id })
       }
 
       toast.success(`Project "${kopieNaam}" aangemaakt met ${projectTaken.length} taken`)
@@ -1951,7 +1952,7 @@ export function ProjectDetail() {
               disabled={!nieuweTaakTitel.trim()}
               onClick={async () => {
                 try {
-                  await createTaak({
+                  const newTaak = await createTaak({
                     user_id: user?.id || '',
                     project_id: id!,
                     titel: nieuweTaakTitel.trim(),
@@ -1963,6 +1964,7 @@ export function ProjectDetail() {
                     geschatte_tijd: 0,
                     bestede_tijd: 0,
                   })
+                  logCreate({ user, medewerkers: alleMedewerkers, entityType: 'taak', entityId: newTaak.id })
                   toast.success(`Taak "${nieuweTaakTitel}" toegevoegd`)
                   setNieuweTaakOpen(false)
                   setNieuweTaakTitel('')

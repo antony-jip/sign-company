@@ -32,6 +32,7 @@ import {
 } from '@/services/supabaseService'
 import type { Notificatie } from '@/types'
 import { useAuth } from '@/contexts/AuthContext'
+import { logCreate } from '@/utils/auditLogger'
 
 const MAX_ALERTS = 3
 
@@ -155,7 +156,7 @@ export function PortaalAlerts() {
     if (!taakTitel.trim() || !user?.id) return
     setSavingTaak(true)
     try {
-      await createTaak({
+      const taak = await createTaak({
         user_id: user.id,
         titel: taakTitel,
         beschrijving: taakBeschrijving,
@@ -169,6 +170,7 @@ export function PortaalAlerts() {
         klant_id: taakKlantId,
         locatie: '',
       })
+      logCreate({ user, entityType: 'taak', entityId: taak.id })
       toast.success('Taak aangemaakt')
       setTaakOpen(false)
       await handleDismiss(taakNotifId)

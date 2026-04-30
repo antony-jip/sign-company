@@ -204,11 +204,12 @@ export const CRMSidebar = memo(function CRMSidebar({
     if (!taakForm.titel.trim()) { toast.error('Titel is verplicht'); return }
     setSaving(true)
     try {
-      await createTaak({
+      const taak = await createTaak({
         titel: taakForm.titel, beschrijving: taakForm.beschrijving,
         status: 'todo', prioriteit: 'medium', toegewezen_aan: '', geschatte_tijd: 0, bestede_tijd: 0,
         klant_id: linkedKlant?.id || '',
       })
+      logCreate({ user, entityType: 'taak', entityId: taak.id })
       setActivePanel('none')
       toast.success('Taak aangemaakt')
     } catch (err) { logger.error('Failed to create taak:', err); toast.error('Taak aanmaken mislukt') }

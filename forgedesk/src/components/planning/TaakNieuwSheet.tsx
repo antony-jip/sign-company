@@ -5,6 +5,8 @@ import { cn } from '@/lib/utils'
 import { createTaak } from '@/services/supabaseService'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
+import { useAuth } from '@/contexts/AuthContext'
+import { logCreate } from '@/utils/auditLogger'
 import type { Taak } from '@/types'
 
 interface TaakNieuwSheetProps {
@@ -23,6 +25,7 @@ function toDateInputValue(d: Date): string {
 }
 
 export function TaakNieuwSheet({ open, onClose, defaultDate, toegewezenAan, onCreated }: TaakNieuwSheetProps) {
+  const { user } = useAuth()
   const [titel, setTitel] = useState('')
   const [datum, setDatum] = useState(() => toDateInputValue(defaultDate))
   const [tijd, setTijd] = useState('')
@@ -60,6 +63,7 @@ export function TaakNieuwSheet({ open, onClose, defaultDate, toegewezenAan, onCr
         geschatte_tijd: 0,
         bestede_tijd: 0,
       })
+      logCreate({ user, entityType: 'taak', entityId: created.id })
       toast.success('Taak toegevoegd')
       onCreated(created)
       onClose()

@@ -256,12 +256,13 @@ export function EmailContextSidebar({
     if (!taakForm.titel.trim()) { toast.error('Titel is verplicht'); return }
     setSaving(true)
     try {
-      await createTaak({
+      const taak = await createTaak({
         titel: taakForm.titel, beschrijving: taakForm.beschrijving,
         status: 'todo', prioriteit: 'medium', toegewezen_aan: taakForm.toegewezen_aan, geschatte_tijd: 0, bestede_tijd: 0,
         klant_id: linkedKlant?.id || '',
         deadline: taakForm.deadline || undefined,
       })
+      logCreate({ user, medewerkers, entityType: 'taak', entityId: taak.id })
       setActivePanel('none')
       toast.success(`Taak aangemaakt${taakForm.deadline ? ` — deadline ${new Date(taakForm.deadline).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}` : ''}`)
     } catch (err) { logger.error('Taak aanmaken mislukt:', err); toast.error('Taak aanmaken mislukt') }
@@ -376,10 +377,11 @@ export function EmailContextSidebar({
     if (!idleTaakForm.titel.trim()) { toast.error('Titel is verplicht'); return }
     setSavingIdleTaak(true)
     try {
-      await createTaak({
+      const taak = await createTaak({
         titel: idleTaakForm.titel, beschrijving: idleTaakForm.beschrijving,
         status: 'todo', prioriteit: 'medium', toegewezen_aan: '', geschatte_tijd: 0, bestede_tijd: 0, klant_id: '',
       })
+      logCreate({ user, medewerkers, entityType: 'taak', entityId: taak.id })
       setShowIdleTaakForm(false)
       setIdleTaakForm({ titel: '', beschrijving: '' })
       toast.success('Taak aangemaakt')

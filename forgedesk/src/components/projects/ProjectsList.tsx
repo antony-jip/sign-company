@@ -46,7 +46,7 @@ import { PaginationControls } from '@/components/ui/pagination-controls'
 import { getProjecten, getKlanten, getOffertes, updateProject, createProjectFoto, deleteProject, getMedewerkers as fetchMedewerkers } from '@/services/supabaseService'
 import { ProjectImportDialog } from './ProjectImportDialog'
 import { useAuth } from '@/contexts/AuthContext'
-import { logWijziging } from '@/utils/auditLogger'
+import { logWijziging, logCreate } from '@/utils/auditLogger'
 import type { Project, Klant, Offerte, Medewerker, Taak } from '@/types'
 import { createTaak } from '@/services/projectService'
 import { toast } from 'sonner'
@@ -259,7 +259,7 @@ export function ProjectsList() {
     if (!quickTaakProjectId || !quickTaakTitel.trim()) return
     setQuickTaakSaving(true)
     try {
-      await createTaak({
+      const taak = await createTaak({
         project_id: quickTaakProjectId,
         titel: quickTaakTitel.trim(),
         beschrijving: '',
@@ -270,6 +270,7 @@ export function ProjectsList() {
         geschatte_tijd: 0,
         bestede_tijd: 0,
       } as Omit<Taak, 'id' | 'created_at' | 'updated_at'>)
+      logCreate({ user, entityType: 'taak', entityId: taak.id })
       const projectNaam = projecten.find((p) => p.id === quickTaakProjectId)?.naam
       toast.success(`Taak toegevoegd aan ${projectNaam}`)
       setQuickTaakTitel('')

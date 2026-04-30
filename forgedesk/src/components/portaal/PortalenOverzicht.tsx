@@ -49,6 +49,7 @@ import {
   getMedewerkers,
 } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
+import { logCreate } from '@/utils/auditLogger'
 import type { ProjectPortaal, PortaalItem, Notificatie, Medewerker } from '@/types'
 import { formatDate } from '@/lib/utils'
 import { usePortaalHerinnering } from '@/hooks/usePortaalHerinnering'
@@ -265,7 +266,7 @@ export function PortalenOverzicht() {
     if (!taakTitel.trim()) { toast.error('Titel is verplicht'); return }
     setTaakSaving(true)
     try {
-      await createTaak({
+      const taak = await createTaak({
         user_id: user?.id,
         project_id: taakProjectId || undefined,
         klant_id: taakKlantId || undefined,
@@ -278,6 +279,7 @@ export function PortalenOverzicht() {
         geschatte_tijd: 0,
         bestede_tijd: 0,
       })
+      logCreate({ user, entityType: 'taak', entityId: taak.id })
       toast.success('Taak aangemaakt')
       setTaakDialogOpen(false)
     } catch (err) {

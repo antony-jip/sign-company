@@ -355,6 +355,7 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
             geschatte_tijd: 0,
             bestede_tijd: 0,
           })
+          logCreate({ user, medewerkers, entityType: 'taak', entityId: taak.id })
           // Upload bijlagen
           if (taakBestanden.length > 0) {
             try {
@@ -376,6 +377,7 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
               geschatte_tijd: 0,
               bestede_tijd: 0,
             })
+            logCreate({ user, medewerkers, entityType: 'taak', entityId: taak.id })
             if (taakBestanden.length > 0) {
               try {
                 const urls = await Promise.all(taakBestanden.map(f => uploadTaakBijlage(taak.id, f)))
