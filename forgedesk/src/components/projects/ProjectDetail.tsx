@@ -139,6 +139,7 @@ import { berekenBudgetStatus } from '@/utils/budgetUtils'
 import { logger } from '../../utils/logger'
 import { logWijziging, logCreate } from '@/utils/auditLogger'
 import { getAuditLogForProject } from '@/services/supabaseService'
+import { useMedewerkers } from '@/contexts/MedewerkersContext'
 
 const statusLabels: Record<string, string> = {
   gepland: 'Gepland',
@@ -208,6 +209,7 @@ export function ProjectDetail() {
   const { setDirty } = useTabDirtyState()
   const location = useLocation()
   const { user } = useAuth()
+  const { medewerkers } = useMedewerkers()
   const { offertePrefix, offerteGeldigheidDagen, standaardBtw, bedrijfsnaam, primaireKleur, emailHandtekening } = useAppSettings()
   const { config: sidebarConfig } = useProjectSidebarConfig()
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -834,7 +836,7 @@ export function ProjectDetail() {
       const updated = await updateProject(id!, { status: newStatus })
       setProject(updated)
       if (user?.id) {
-        const naam = user.user_metadata?.voornaam ? `${user.user_metadata.voornaam} ${user.user_metadata.achternaam || ''}`.trim() : user.email || ''
+        const naam = medewerkers.find(m => m.user_id === user.id)?.naam ?? user.email ?? ''
         logWijziging({ userId: user.id, entityType: 'project', entityId: id!, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: oudeStatus, nieuweWaarde: newStatus })
       }
       toast.success(`Status gewijzigd naar ${statusLabels[newStatus] || newStatus}`)
@@ -1060,8 +1062,13 @@ export function ProjectDetail() {
               </DropdownMenuItem>
               <DropdownMenuItem onClick={async () => {
                 try {
+                  const oudeStatus = project.status
                   const updated = await updateProject(id!, { status: 'afgerond' })
                   setProject(updated)
+                  if (user?.id) {
+                    const naam = medewerkers.find(m => m.user_id === user.id)?.naam ?? user.email ?? ''
+                    logWijziging({ userId: user.id, entityType: 'project', entityId: id!, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: oudeStatus, nieuweWaarde: 'afgerond' })
+                  }
                   toast.success('Project gearchiveerd')
                 } catch (err) { logger.error('Kon project niet archiveren:', err); toast.error('Kon project niet archiveren') }
               }}>
@@ -1116,8 +1123,13 @@ export function ProjectDetail() {
             status={project.status}
             onStatusChange={async (newStatus) => {
               try {
+                const oudeStatus = project.status
                 const updated = await updateProject(id!, { status: newStatus })
                 setProject(updated)
+                if (user?.id) {
+                  const naam = medewerkers.find(m => m.user_id === user.id)?.naam ?? user.email ?? ''
+                  logWijziging({ userId: user.id, entityType: 'project', entityId: id!, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: oudeStatus, nieuweWaarde: newStatus })
+                }
                 toast.success(`Status: ${statusLabels[newStatus] || newStatus}`)
               } catch (err) {
                 logger.error('Kon status niet wijzigen:', err)

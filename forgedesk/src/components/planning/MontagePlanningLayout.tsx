@@ -72,7 +72,7 @@ import { toast } from "sonner";
 import { getNederlandseFeestdagen, isFeestdag } from "@/utils/feestdagen";
 import { confirm } from '@/components/shared/ConfirmDialog';
 import { useAuth } from "@/contexts/AuthContext";
-import { logCreate } from "@/utils/auditLogger";
+import { logCreate, logWijziging } from "@/utils/auditLogger";
 import { getAvatarStyle } from "@/utils/medewerkerAvatar";
 
 const SWIMLANE_COLLAPSED_KEY = 'doen_planning_swimlane_collapsed';
@@ -682,6 +682,10 @@ export function MontagePlanningLayout() {
           const project = projecten.find((p) => p.id === formData.project_id);
           if (project && project.status === "te-plannen") {
             await updateProject(project.id, { status: "gepland" }).catch(() => null);
+            if (user?.id) {
+              const naam = medewerkers.find(m => m.user_id === user.id)?.naam ?? user.email ?? ''
+              logWijziging({ userId: user.id, entityType: 'project', entityId: project.id, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: 'te-plannen', nieuweWaarde: 'gepland' })
+            }
             setProjecten((prev) =>
               prev.map((p) => p.id === project.id ? { ...p, status: "gepland" as const } : p)
             );

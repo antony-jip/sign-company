@@ -113,6 +113,17 @@ interface AuditLookups {
   taakMap: Map<string, Taak>
 }
 
+// Whitelist van omschrijvingen die we wel aan de feed-tekst plakken.
+// Anders sluipt interne metadata (zoals "Backfill: ...") de UI binnen.
+function userVisibleOmschrijving(omschrijving: string | undefined): string {
+  if (!omschrijving) return ''
+  if (omschrijving.startsWith('Creditnota')) return omschrijving
+  if (omschrijving === 'Voorschotfactuur') return omschrijving
+  if (omschrijving === 'Eindafrekening') return omschrijving
+  if (omschrijving.startsWith('Aangemaakt via Daan')) return omschrijving
+  return ''
+}
+
 // Genereer een ActivityEvent uit een audit-rij. Tekst heeft lowercase
 // verb-vorm zodat 'm achter "<Naam> heeft" gerenderd kan worden.
 function auditToEvent(entry: AuditLogEntry, lookups: AuditLookups): ActivityEvent | null {
@@ -137,7 +148,8 @@ function auditToEvent(entry: AuditLogEntry, lookups: AuditLookups): ActivityEven
       const nummer = lookups.offerteMap.get(entry.entity_id)?.nummer
       const label = nummer ? ` ${nummer}` : ''
       if (entry.actie === 'aangemaakt') {
-        const sub = entry.omschrijving ? ` (${entry.omschrijving})` : ''
+        const visibleOms = userVisibleOmschrijving(entry.omschrijving)
+        const sub = visibleOms ? ` (${visibleOms})` : ''
         return { id: eventId, type: 'offerte', tekst: `offerte${label} aangemaakt${sub}`, datum, medewerker, bron: 'audit' }
       }
       if (entry.actie === 'verstuurd' || (entry.actie === 'status_gewijzigd' && entry.nieuwe_waarde === 'verzonden')) {
@@ -169,7 +181,8 @@ function auditToEvent(entry: AuditLogEntry, lookups: AuditLookups): ActivityEven
       const nummer = lookups.factuurMap.get(entry.entity_id)?.nummer
       const label = nummer ? ` ${nummer}` : ''
       if (entry.actie === 'aangemaakt') {
-        const sub = entry.omschrijving ? ` (${entry.omschrijving})` : ''
+        const visibleOms = userVisibleOmschrijving(entry.omschrijving)
+        const sub = visibleOms ? ` (${visibleOms})` : ''
         return { id: eventId, type: 'factuur', tekst: `factuur${label} aangemaakt${sub}`, datum, medewerker, bron: 'audit' }
       }
       if (entry.actie === 'status_gewijzigd') {

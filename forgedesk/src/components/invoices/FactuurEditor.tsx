@@ -110,6 +110,7 @@ import { useUnsavedWarning } from '@/hooks/useUnsavedWarning'
 import { AuditLogPanel } from '@/components/shared/AuditLogPanel'
 import { confirm } from '@/components/shared/ConfirmDialog'
 import { logWijziging, logCreate } from '@/utils/auditLogger'
+import { useMedewerkers } from '@/contexts/MedewerkersContext'
 
 // ============ TYPES ============
 
@@ -208,6 +209,7 @@ export function FactuurEditor() {
   const [searchParams] = useSearchParams()
   const { id: routeId } = useParams<{ id: string }>()
   const { user } = useAuth()
+  const { medewerkers } = useMedewerkers()
   const { isBlocked: isTrialBlocked, showDialog: showTrialDialog, setShowDialog: setShowTrialDialog } = useTrialGuard()
   const {
     settings,
@@ -862,7 +864,12 @@ export function FactuurEditor() {
                 (o) => o.id === offerteId ? true : o.status === 'gefactureerd'
               )
               if (alleGefactureerd) {
+                const huidigProject = await getProject(projectId).catch(() => null)
                 await updateProject(projectId, { status: 'afgerond' })
+                if (user?.id && huidigProject?.status) {
+                  const naam = medewerkers.find(m => m.user_id === user.id)?.naam ?? user.email ?? ''
+                  logWijziging({ userId: user.id, entityType: 'project', entityId: projectId, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: huidigProject.status, nieuweWaarde: 'afgerond' })
+                }
                 toast.info('Project status bijgewerkt naar afgerond')
               }
             } catch (err) {
@@ -886,7 +893,12 @@ export function FactuurEditor() {
                 .reduce((sum, f) => sum + f.totaal, 0) + totaal
             )
             if (offerteTotaal > 0 && gefactureerdTotaal >= offerteTotaal) {
+              const huidigProject = await getProject(projectId).catch(() => null)
               await updateProject(projectId, { status: 'gefactureerd' })
+              if (user?.id && huidigProject?.status) {
+                const naam = medewerkers.find(m => m.user_id === user.id)?.naam ?? user.email ?? ''
+                logWijziging({ userId: user.id, entityType: 'project', entityId: projectId, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: huidigProject.status, nieuweWaarde: 'gefactureerd' })
+              }
               toast.info('Project status bijgewerkt naar gefactureerd')
             }
           } catch (err) {
@@ -1133,7 +1145,14 @@ export function FactuurEditor() {
 
       // Update gekoppeld project naar 'gefactureerd'
       if (existingFactuur.project_id) {
-        try { await updateProject(existingFactuur.project_id, { status: 'gefactureerd' }) } catch (err) { logger.error('Update project status na verzenden:', err) }
+        try {
+          const huidigProject = await getProject(existingFactuur.project_id).catch(() => null)
+          await updateProject(existingFactuur.project_id, { status: 'gefactureerd' })
+          if (user?.id && huidigProject?.status) {
+            const naam = medewerkers.find(m => m.user_id === user.id)?.naam ?? user.email ?? ''
+            logWijziging({ userId: user.id, entityType: 'project', entityId: existingFactuur.project_id, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: huidigProject.status, nieuweWaarde: 'gefactureerd' })
+          }
+        } catch (err) { logger.error('Update project status na verzenden:', err) }
       }
 
       setSendDialogOpen(false)
@@ -1165,7 +1184,14 @@ export function FactuurEditor() {
       }
       // Update gekoppeld project naar 'gefactureerd'
       if (existingFactuur.project_id) {
-        try { await updateProject(existingFactuur.project_id, { status: 'gefactureerd' }) } catch (err) { logger.error('Update project status na betaling:', err) }
+        try {
+          const huidigProject = await getProject(existingFactuur.project_id).catch(() => null)
+          await updateProject(existingFactuur.project_id, { status: 'gefactureerd' })
+          if (user?.id && huidigProject?.status) {
+            const naam = medewerkers.find(m => m.user_id === user.id)?.naam ?? user.email ?? ''
+            logWijziging({ userId: user.id, entityType: 'project', entityId: existingFactuur.project_id, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: huidigProject.status, nieuweWaarde: 'gefactureerd' })
+          }
+        } catch (err) { logger.error('Update project status na betaling:', err) }
       }
       toast.success(`${nummer} gemarkeerd als betaald`)
     } catch (err) {

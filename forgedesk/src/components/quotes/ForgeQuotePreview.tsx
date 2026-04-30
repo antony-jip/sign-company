@@ -15,7 +15,8 @@ import type { PrijsVariant } from './QuoteItemsTable'
 import { round2 } from '@/utils/budgetUtils'
 import { logger } from '../../utils/logger'
 import { useAuth } from '@/contexts/AuthContext'
-import { logCreate } from '@/utils/auditLogger'
+import { useMedewerkers } from '@/contexts/MedewerkersContext'
+import { logCreate, logWijziging } from '@/utils/auditLogger'
 
 interface PreviewItem {
   beschrijving: string
@@ -53,6 +54,7 @@ function calculateLineTotaal(item: { aantal: number; eenheidsprijs: number; kort
 
 export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: ForgeQuotePreviewProps) {
   const { user } = useAuth()
+  const { medewerkers } = useMedewerkers()
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const location = useLocation()
@@ -165,6 +167,10 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
             const project = await getProject(fetchedOfferte.project_id)
             if (project && project.status === 'gepland') {
               await updateProject(project.id, { status: 'actief' })
+              if (user?.id) {
+                const naam = medewerkers.find(m => m.user_id === user.id)?.naam ?? user.email ?? ''
+                logWijziging({ userId: user.id, entityType: 'project', entityId: project.id, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: 'gepland', nieuweWaarde: 'actief' })
+              }
               toast.success(`Project "${project.naam}" is nu actief`)
             }
           } else {

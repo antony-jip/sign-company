@@ -60,7 +60,7 @@ import { logger } from '../../utils/logger'
 import { AuditLogPanel } from '@/components/shared/AuditLogPanel'
 import { logWijziging } from '@/utils/auditLogger'
 import { CompletionPromptModal } from '@/components/shared/CompletionPromptModal'
-import { updateProject } from '@/services/supabaseService'
+import { updateProject, getProject } from '@/services/supabaseService'
 import { MedewerkerFilterCombobox } from '@/components/shared/MedewerkerFilterCombobox'
 import { Checkbox } from '@/components/ui/checkbox'
 import { TakenBulkActionBar } from '@/components/planning/TakenBulkActionBar'
@@ -1619,7 +1619,12 @@ export function TasksLayout() {
         onClose={() => setCompletionPrompt((prev) => ({ ...prev, open: false }))}
         onUpdateStatus={async (status) => {
           try {
+            const huidigProject = await getProject(completionPrompt.projectId).catch(() => null)
             await updateProject(completionPrompt.projectId, { status: status as Project['status'] })
+            if (user?.id && huidigProject?.status) {
+              const naam = medewerkers.find(m => m.user_id === user.id)?.naam ?? user.email ?? ''
+              logWijziging({ userId: user.id, entityType: 'project', entityId: completionPrompt.projectId, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: huidigProject.status, nieuweWaarde: status })
+            }
             toast.success(`Project gemarkeerd als ${status}`)
           } catch (err) {
             logger.error('updateProjectStatus:', err)

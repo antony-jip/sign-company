@@ -46,6 +46,7 @@ import { PaginationControls } from '@/components/ui/pagination-controls'
 import { getProjecten, getKlanten, getOffertes, updateProject, createProjectFoto, deleteProject, getMedewerkers as fetchMedewerkers } from '@/services/supabaseService'
 import { ProjectImportDialog } from './ProjectImportDialog'
 import { useAuth } from '@/contexts/AuthContext'
+import { logWijziging } from '@/utils/auditLogger'
 import type { Project, Klant, Offerte, Medewerker, Taak } from '@/types'
 import { createTaak } from '@/services/projectService'
 import { toast } from 'sonner'
@@ -376,8 +377,13 @@ export function ProjectsList() {
 
   async function handleStatusChange(projectId: string, newStatus: Project['status']) {
     try {
+      const oudeStatus = projecten.find(p => p.id === projectId)?.status
       const updated = await updateProject(projectId, { status: newStatus })
       setProjecten((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
+      if (user?.id && oudeStatus) {
+        const naam = medewerkers.find(m => m.user_id === user.id)?.naam ?? user.email ?? ''
+        logWijziging({ userId: user.id, entityType: 'project', entityId: projectId, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: oudeStatus, nieuweWaarde: newStatus })
+      }
       toast.success(`Status gewijzigd naar ${statusLabels[newStatus]}`)
     } catch (error) {
       logger.error('Fout bij statuswijziging:', error)
@@ -396,8 +402,19 @@ export function ProjectsList() {
   async function handleBulkStatusChange(newStatus: Project['status']) {
     if (selectedIds.size === 0) return
     try {
+      const ids = [...selectedIds]
+      const naam = user?.id
+        ? (medewerkers.find(m => m.user_id === user.id)?.naam ?? user.email ?? '')
+        : ''
       const updates = await Promise.all(
-        [...selectedIds].map((id) => updateProject(id, { status: newStatus }))
+        ids.map(async (id) => {
+          const oudeStatus = projecten.find(p => p.id === id)?.status
+          const updated = await updateProject(id, { status: newStatus })
+          if (user?.id && oudeStatus) {
+            logWijziging({ userId: user.id, entityType: 'project', entityId: id, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: oudeStatus, nieuweWaarde: newStatus })
+          }
+          return updated
+        })
       )
       setProjecten((prev) =>
         prev.map((p) => {
