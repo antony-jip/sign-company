@@ -1,5 +1,24 @@
-import type { AuditLogEntry } from '@/types'
+import type { AuditLogEntry, Medewerker } from '@/types'
 import { createAuditLogEntry } from '@/services/supabaseService'
+
+interface ActorUser {
+  id: string
+  email?: string | null
+  user_metadata?: Record<string, unknown>
+}
+
+export function resolveMedewerkerNaam(
+  user: ActorUser | null | undefined,
+  medewerkers: Medewerker[]
+): string {
+  if (!user) return ''
+  const matched = medewerkers.find((m) => m.user_id === user.id)
+  if (matched?.naam) return matched.naam
+  const voornaam = user.user_metadata?.voornaam as string | undefined
+  const achternaam = user.user_metadata?.achternaam as string | undefined
+  if (voornaam) return `${voornaam} ${achternaam || ''}`.trim()
+  return user.email || ''
+}
 
 // Fire-and-forget logger — mag NOOIT de hoofdoperatie blokkeren of laten falen
 export async function logWijziging(params: {
@@ -57,4 +76,22 @@ export async function logObjectWijziging<T extends Record<string, unknown>>(para
       })
     }
   }
+}
+
+export async function logCreate(params: {
+  user: ActorUser | null | undefined
+  medewerkers: Medewerker[]
+  entityType: AuditLogEntry['entity_type']
+  entityId: string
+  omschrijving?: string
+}): Promise<void> {
+  if (!params.user?.id) return
+  return logWijziging({
+    userId: params.user.id,
+    entityType: params.entityType,
+    entityId: params.entityId,
+    actie: 'aangemaakt',
+    medewerkerNaam: resolveMedewerkerNaam(params.user, params.medewerkers),
+    omschrijving: params.omschrijving,
+  })
 }
