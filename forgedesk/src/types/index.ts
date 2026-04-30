@@ -21,6 +21,7 @@ export interface Profile {
   taal: 'nl' | 'en';
   theme: 'light' | 'dark';
   ui_hints_tonen?: boolean;
+  dashboard_aan_de_slag_verborgen?: boolean;
   organisatie_id?: string;
   rol?: TeamRol;
   status?: TeamStatus;
