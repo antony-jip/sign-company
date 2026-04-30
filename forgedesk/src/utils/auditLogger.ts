@@ -15,8 +15,31 @@ interface ActorUser {
 // i.p.v. de JWT-fallback.
 let medewerkersSnapshot: Medewerker[] = []
 
+let medewerkersReadyDone = false
+let medewerkersReadyResolve: (() => void) | null = null
+const medewerkersReady = new Promise<void>((resolve) => {
+  medewerkersReadyResolve = resolve
+})
+let waitPromise: Promise<void> | null = null
+const MEDEWERKERS_READY_TIMEOUT_MS = 5000
+
 export function setMedewerkersSnapshot(medewerkers: Medewerker[]): void {
   medewerkersSnapshot = medewerkers
+  if (medewerkers.length > 0 && !medewerkersReadyDone) {
+    medewerkersReadyDone = true
+    medewerkersReadyResolve?.()
+  }
+}
+
+async function waitForMedewerkers(): Promise<void> {
+  if (medewerkersReadyDone) return
+  if (!waitPromise) {
+    waitPromise = Promise.race([
+      medewerkersReady,
+      new Promise<void>((resolve) => setTimeout(resolve, MEDEWERKERS_READY_TIMEOUT_MS)),
+    ])
+  }
+  await waitPromise
 }
 
 export function resolveMedewerkerNaam(
@@ -26,6 +49,7 @@ export function resolveMedewerkerNaam(
   if (!user) return ''
   const matched = medewerkers.find((m) => m.user_id === user.id)
   if (matched?.naam) return matched.naam
+  if (medewerkers.length === 0) return user.email || ''
   const voornaam = user.user_metadata?.voornaam as string | undefined
   const achternaam = user.user_metadata?.achternaam as string | undefined
   if (voornaam) return `${voornaam} ${achternaam || ''}`.trim()
@@ -98,6 +122,9 @@ export async function logCreate(params: {
   omschrijving?: string
 }): Promise<void> {
   if (!params.user?.id) return
+  if (!params.medewerkers) {
+    await waitForMedewerkers()
+  }
   return logWijziging({
     userId: params.user.id,
     entityType: params.entityType,
