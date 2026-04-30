@@ -11,6 +11,8 @@ import { getKlanten, createKlant, createOfferte, createProject, createTaak } fro
 import { extractSenderEmail, formatShortDate } from './emailHelpers'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
+import { useAuth } from '@/contexts/AuthContext'
+import { logCreate } from '@/utils/auditLogger'
 
 // ─── Helper: extract company name from sender ───
 export function extractCompanyName(senderName: string, email: string): string {
@@ -60,6 +62,7 @@ export const CRMSidebar = memo(function CRMSidebar({
   onSelectEmail?: (email: Email) => void
 }) {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [activePanel, setActivePanel] = useState<InlinePanel>('none')
   const [saving, setSaving] = useState(false)
   const [linkedKlant, setLinkedKlant] = useState<Klant | null>(null)
@@ -169,6 +172,7 @@ export const CRMSidebar = memo(function CRMSidebar({
         geldig_tot: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
         notities: offerteForm.notities, voorwaarden: '',
       })
+      logCreate({ user, entityType: 'offerte', entityId: offerte.id })
       setActivePanel('none')
       toast.success('Offerte aangemaakt', {
         action: { label: 'Openen', onClick: () => navigate(`/offertes/${offerte.id}`) },
@@ -187,6 +191,7 @@ export const CRMSidebar = memo(function CRMSidebar({
         beschrijving: projectForm.beschrijving, status: 'gepland',
         prioriteit: 'medium', budget: 0, besteed: 0, voortgang: 0, team_leden: [],
       })
+      logCreate({ user, entityType: 'project', entityId: project.id })
       setActivePanel('none')
       toast.success('Project aangemaakt', {
         action: { label: 'Openen', onClick: () => navigate(`/projecten/${project.id}`) },

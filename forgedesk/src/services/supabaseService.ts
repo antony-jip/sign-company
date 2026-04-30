@@ -102,7 +102,7 @@ export {
   getMedewerkers, createMedewerker, updateMedewerker, deleteMedewerker,
   getNotificaties, createNotificatie, markNotificatieGelezen, markAlleNotificatiesGelezen,
   deleteNotificatie,
-  getAuditLog, createAuditLogEntry,
+  getAuditLog, createAuditLogEntry, getAuditLogForProject,
 } from './profielService'
 
 export {

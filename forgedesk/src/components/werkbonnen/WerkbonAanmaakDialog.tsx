@@ -17,6 +17,7 @@ import {
   createWerkbon, createWerkbonItem, createWerkbonAfbeelding,
 } from '@/services/supabaseService'
 import { downloadFile } from '@/services/storageService'
+import { logCreate } from '@/utils/auditLogger'
 
 interface Props {
   open: boolean
@@ -80,6 +81,7 @@ export function WerkbonAanmaakDialog({ open, onOpenChange, offerte, items, klant
         locatie_postcode: klant?.postcode || undefined,
         toon_briefpapier: werkbonBriefpapier,
       })
+      logCreate({ user, entityType: 'werkbon', entityId: werkbon.id })
 
       // Maak items aan vanuit geselecteerde offerte-items (GEEN prijzen)
       const selectedItems = items.filter((i) => selectedIds.has(i.id))

@@ -5,7 +5,7 @@ import {
   Filter
 } from 'lucide-react'
 import { getInitials } from '@/lib/utils'
-import type { Project, Offerte, MontageAfspraak, Werkbon, Factuur, Taak, Medewerker, ProjectFoto } from '@/types'
+import type { Project, Offerte, MontageAfspraak, Werkbon, Factuur, Taak, Medewerker, ProjectFoto, AuditLogEntry } from '@/types'
 
 export interface ActivityEvent {
   id: string
@@ -13,6 +13,7 @@ export interface ActivityEvent {
   datum: string
   type: 'project' | 'offerte' | 'montage' | 'werkbon' | 'factuur' | 'taak' | 'foto' | 'portaal'
   medewerker?: string
+  bron?: 'audit' | 'derived'
 }
 
 const typeConfig: Record<ActivityEvent['type'], { icon: typeof Send; color: string; bg: string }> = {
@@ -65,6 +66,139 @@ function avatarColor(name: string): string {
   return colors[Math.abs(hash) % colors.length]
 }
 
+// Map een audit_log_feature rij naar de derived-event id die 'm onderdrukt
+// (zodat we niet een 'aangemaakt' event én een audit-event voor dezelfde
+// entity krijgen). Returns null voor audit-acties zonder derived counterpart
+// — die worden los toegevoegd aan de feed.
+function derivedIdForAudit(entry: AuditLogEntry): string | null {
+  const id = entry.entity_id
+  switch (entry.entity_type) {
+    case 'project':
+      if (entry.actie === 'aangemaakt') return `project-${id}`
+      if (entry.actie === 'status_gewijzigd' && entry.nieuwe_waarde === 'afgerond') return `project-afgerond-${id}`
+      return null
+    case 'offerte':
+      if (entry.actie === 'aangemaakt') return `offerte-create-${id}`
+      if (entry.actie === 'verstuurd') return `offerte-send-${id}`
+      if (entry.actie === 'goedgekeurd') return `offerte-akkoord-${id}`
+      if (entry.actie === 'status_gewijzigd') {
+        if (entry.nieuwe_waarde === 'verzonden') return `offerte-send-${id}`
+        if (entry.nieuwe_waarde === 'goedgekeurd') return `offerte-akkoord-${id}`
+      }
+      return null
+    case 'werkbon':
+      if (entry.actie === 'aangemaakt') return `werkbon-${id}`
+      if (entry.actie === 'status_gewijzigd' && entry.nieuwe_waarde === 'afgerond') return `werkbon-done-${id}`
+      return null
+    case 'factuur':
+      if (entry.actie === 'aangemaakt') return `factuur-${id}`
+      if (entry.actie === 'status_gewijzigd') {
+        if (entry.nieuwe_waarde === 'verzonden') return `factuur-send-${id}`
+        if (entry.nieuwe_waarde === 'betaald') return `factuur-paid-${id}`
+      }
+      return null
+    case 'taak':
+      if (entry.actie === 'aangemaakt') return `taak-create-${id}`
+      if (entry.actie === 'status_gewijzigd' && entry.nieuwe_waarde === 'klaar') return `taak-done-${id}`
+      return null
+    default:
+      return null
+  }
+}
+
+interface AuditLookups {
+  offerteMap: Map<string, Offerte>
+  werkbonMap: Map<string, Werkbon>
+  factuurMap: Map<string, Factuur>
+  taakMap: Map<string, Taak>
+}
+
+// Genereer een ActivityEvent uit een audit-rij. Tekst heeft lowercase
+// verb-vorm zodat 'm achter "<Naam> heeft" gerenderd kan worden.
+function auditToEvent(entry: AuditLogEntry, lookups: AuditLookups): ActivityEvent | null {
+  const datum = entry.created_at
+  const medewerker = entry.medewerker_naam || undefined
+  const eventId = `audit-${entry.id}`
+
+  switch (entry.entity_type) {
+    case 'project': {
+      if (entry.actie === 'aangemaakt') {
+        return { id: eventId, type: 'project', tekst: 'project aangemaakt', datum, medewerker, bron: 'audit' }
+      }
+      if (entry.actie === 'status_gewijzigd') {
+        if (entry.nieuwe_waarde === 'afgerond') {
+          return { id: eventId, type: 'project', tekst: 'project afgerond', datum, medewerker, bron: 'audit' }
+        }
+        return { id: eventId, type: 'project', tekst: `project status gewijzigd naar ${entry.nieuwe_waarde}`, datum, medewerker, bron: 'audit' }
+      }
+      return null
+    }
+    case 'offerte': {
+      const nummer = lookups.offerteMap.get(entry.entity_id)?.nummer
+      const label = nummer ? ` ${nummer}` : ''
+      if (entry.actie === 'aangemaakt') {
+        const sub = entry.omschrijving ? ` (${entry.omschrijving})` : ''
+        return { id: eventId, type: 'offerte', tekst: `offerte${label} aangemaakt${sub}`, datum, medewerker, bron: 'audit' }
+      }
+      if (entry.actie === 'verstuurd' || (entry.actie === 'status_gewijzigd' && entry.nieuwe_waarde === 'verzonden')) {
+        return { id: eventId, type: 'offerte', tekst: `offerte${label} verstuurd naar klant`, datum, medewerker, bron: 'audit' }
+      }
+      if (entry.actie === 'goedgekeurd' || (entry.actie === 'status_gewijzigd' && entry.nieuwe_waarde === 'goedgekeurd')) {
+        return { id: eventId, type: 'offerte', tekst: `offerte${label} goedgekeurd door klant`, datum, medewerker, bron: 'audit' }
+      }
+      if (entry.actie === 'status_gewijzigd') {
+        return { id: eventId, type: 'offerte', tekst: `offerte${label} status gewijzigd naar ${entry.nieuwe_waarde}`, datum, medewerker, bron: 'audit' }
+      }
+      return null
+    }
+    case 'werkbon': {
+      const nummer = lookups.werkbonMap.get(entry.entity_id)?.werkbon_nummer
+      const label = nummer ? ` ${nummer}` : ''
+      if (entry.actie === 'aangemaakt') {
+        return { id: eventId, type: 'werkbon', tekst: `werkbon${label} aangemaakt`, datum, medewerker, bron: 'audit' }
+      }
+      if (entry.actie === 'status_gewijzigd' && entry.nieuwe_waarde === 'afgerond') {
+        return { id: eventId, type: 'werkbon', tekst: `werkbon${label} afgerond`, datum, medewerker, bron: 'audit' }
+      }
+      if (entry.actie === 'status_gewijzigd') {
+        return { id: eventId, type: 'werkbon', tekst: `werkbon${label} status gewijzigd naar ${entry.nieuwe_waarde}`, datum, medewerker, bron: 'audit' }
+      }
+      return null
+    }
+    case 'factuur': {
+      const nummer = lookups.factuurMap.get(entry.entity_id)?.nummer
+      const label = nummer ? ` ${nummer}` : ''
+      if (entry.actie === 'aangemaakt') {
+        const sub = entry.omschrijving ? ` (${entry.omschrijving})` : ''
+        return { id: eventId, type: 'factuur', tekst: `factuur${label} aangemaakt${sub}`, datum, medewerker, bron: 'audit' }
+      }
+      if (entry.actie === 'status_gewijzigd') {
+        if (entry.nieuwe_waarde === 'verzonden') {
+          return { id: eventId, type: 'factuur', tekst: `factuur${label} verstuurd`, datum, medewerker, bron: 'audit' }
+        }
+        if (entry.nieuwe_waarde === 'betaald') {
+          return { id: eventId, type: 'factuur', tekst: `factuur${label} betaald`, datum, medewerker, bron: 'audit' }
+        }
+        return { id: eventId, type: 'factuur', tekst: `factuur${label} status gewijzigd naar ${entry.nieuwe_waarde}`, datum, medewerker, bron: 'audit' }
+      }
+      return null
+    }
+    case 'taak': {
+      const titel = lookups.taakMap.get(entry.entity_id)?.titel
+      const label = titel ? ` "${titel}"` : ''
+      if (entry.actie === 'aangemaakt') {
+        return { id: eventId, type: 'taak', tekst: `taak${label} aangemaakt`, datum, medewerker, bron: 'audit' }
+      }
+      if (entry.actie === 'status_gewijzigd' && entry.nieuwe_waarde === 'klaar') {
+        return { id: eventId, type: 'taak', tekst: `taak${label} afgerond`, datum, medewerker, bron: 'audit' }
+      }
+      return null
+    }
+    default:
+      return null
+  }
+}
+
 export function buildActivityFeed(
   project: Project,
   offertes: Offerte[],
@@ -73,6 +207,7 @@ export function buildActivityFeed(
   facturen: Factuur[],
   taken: Taak[],
   fotos: ProjectFoto[],
+  auditEntries: AuditLogEntry[] = [],
 ): ActivityEvent[] {
   const events: ActivityEvent[] = []
 
@@ -215,7 +350,29 @@ export function buildActivityFeed(
     })
   }
 
-  return events
+  // Audit-events mergen: derived event onderdrukken als er een audit-rij is
+  // voor dezelfde entity-actie (audit wint omdat 'ie de "wie" heeft).
+  const lookups: AuditLookups = {
+    offerteMap: new Map(offertes.map(o => [o.id, o])),
+    werkbonMap: new Map(werkbonnen.map(w => [w.id, w])),
+    factuurMap: new Map(facturen.map(f => [f.id, f])),
+    taakMap: new Map(taken.map(t => [t.id, t])),
+  }
+  const auditEvents: ActivityEvent[] = []
+  const suppressKeys = new Set<string>()
+  for (const entry of auditEntries) {
+    const ae = auditToEvent(entry, lookups)
+    if (!ae) continue
+    auditEvents.push(ae)
+    const dk = derivedIdForAudit(entry)
+    if (dk) suppressKeys.add(dk)
+  }
+
+  const filteredDerived = events
+    .filter(e => !suppressKeys.has(e.id))
+    .map(e => ({ ...e, bron: e.bron ?? ('derived' as const) }))
+
+  return [...filteredDerived, ...auditEvents]
     .filter(e => e.datum)
     .sort((a, b) => new Date(b.datum).getTime() - new Date(a.datum).getTime())
 }
@@ -229,6 +386,7 @@ interface ActiviteitFeedProps {
   taken?: Taak[]
   fotos?: ProjectFoto[]
   medewerkers?: Medewerker[]
+  auditEntries?: AuditLogEntry[]
 }
 
 export function ActiviteitFeed({
@@ -240,13 +398,14 @@ export function ActiviteitFeed({
   taken = [],
   fotos = [],
   medewerkers = [],
+  auditEntries = [],
 }: ActiviteitFeedProps) {
   const [showAll, setShowAll] = useState(false)
   const [activeFilter, setActiveFilter] = useState<string>('alles')
 
   const allEvents = useMemo(
-    () => buildActivityFeed(project, offertes, montageAfspraken, werkbonnen, facturen, taken, fotos),
-    [project, offertes, montageAfspraken, werkbonnen, facturen, taken, fotos]
+    () => buildActivityFeed(project, offertes, montageAfspraken, werkbonnen, facturen, taken, fotos, auditEntries),
+    [project, offertes, montageAfspraken, werkbonnen, facturen, taken, fotos, auditEntries]
   )
 
   // Filter events
@@ -365,7 +524,9 @@ export function ActiviteitFeed({
                             <span className="font-semibold text-[#1A1A1A]">{event.medewerker.split(' ')[0]} </span>
                           )}
                           {event.medewerker
-                            ? event.tekst.replace(/^(Taak|Montage)\s/, '').replace(/^"/, '').toLowerCase()
+                            ? event.bron === 'audit'
+                              ? <>heeft {event.tekst}</>
+                              : event.tekst.replace(/^(Taak|Montage)\s/, '').replace(/^"/, '').toLowerCase()
                             : event.tekst
                           }
                         </p>

@@ -72,6 +72,7 @@ import { toast } from "sonner";
 import { getNederlandseFeestdagen, isFeestdag } from "@/utils/feestdagen";
 import { confirm } from '@/components/shared/ConfirmDialog';
 import { useAuth } from "@/contexts/AuthContext";
+import { logCreate } from "@/utils/auditLogger";
 import { getAvatarStyle } from "@/utils/medewerkerAvatar";
 
 const SWIMLANE_COLLAPSED_KEY = 'doen_planning_swimlane_collapsed';
@@ -1712,6 +1713,7 @@ export function MontagePlanningLayout() {
                             status: "concept",
                             toon_briefpapier: false,
                           });
+                          logCreate({ user, entityType: 'werkbon', entityId: wb.id });
                           setProjectWerkbonnen((prev) => [...prev, wb]);
                           setFormData((prev) => ({ ...prev, werkbon_id: wb.id }));
                           toast.success(`Werkbon ${wb.werkbon_nummer} aangemaakt`);

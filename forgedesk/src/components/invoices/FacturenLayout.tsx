@@ -90,6 +90,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useNavigateWithTab } from '@/hooks/useNavigateWithTab'
 import { InkoopfacturenLayout } from '@/components/inkoopfacturen/InkoopfacturenLayout'
 import { useAuth } from '@/contexts/AuthContext'
+import { logCreate } from '@/utils/auditLogger'
 import { logger } from '../../utils/logger'
 import { SkeletonTable } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -652,6 +653,7 @@ export function FacturenLayout() {
 
         try {
           const saved = await createFactuur(newFactuur)
+          logCreate({ user, entityType: 'factuur', entityId: saved.id })
           // Create line items
           for (let i = 0; i < validItems.length; i++) {
             const item = validItems[i]
@@ -1176,6 +1178,7 @@ export function FacturenLayout() {
       }
 
       const saved = await createFactuur(creditnota)
+      logCreate({ user, entityType: 'factuur', entityId: saved.id, omschrijving: `Creditnota op factuur ${creditnotaFactuur.nummer}` })
 
       // Mark original as gecrediteerd
       await updateFactuur(creditnotaFactuur.id, { status: 'gecrediteerd' })
@@ -1244,6 +1247,7 @@ export function FacturenLayout() {
       }
 
       const saved = await createFactuur(voorschotFactuur)
+      logCreate({ user, entityType: 'factuur', entityId: saved.id, omschrijving: 'Voorschotfactuur' })
       setFacturen((prev) => [saved, ...prev])
 
       setVoorschotDialogOpen(false)
@@ -1313,6 +1317,7 @@ export function FacturenLayout() {
       }
 
       const saved = await createFactuur(eindafrekening)
+      logCreate({ user, entityType: 'factuur', entityId: saved.id, omschrijving: 'Eindafrekening' })
 
       // Mark voorschotten as verrekend
       for (const vs of betaaldeVoorschotten) {

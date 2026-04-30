@@ -17,6 +17,7 @@ import {
 import { KlantContactSelector } from '@/components/shared/KlantContactSelector'
 import { logger } from '../../utils/logger'
 import { hapticLight, hapticMedium } from '@/utils/haptic'
+import { logCreate } from '@/utils/auditLogger'
 
 export function ProjectCreate() {
   const navigate = useNavigate()
@@ -107,6 +108,8 @@ export function ProjectCreate() {
         vestiging_id: vestigingId || undefined,
         vestiging_naam: vestigingId ? vestigingen.find((v) => v.id === vestigingId)?.naam : undefined,
       })
+
+      logCreate({ user, entityType: 'project', entityId: nieuwProject.id })
 
       toast.success('Project succesvol aangemaakt')
       navigate(`/projecten/${nieuwProject.id}`)

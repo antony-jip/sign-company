@@ -69,6 +69,7 @@ import {
 } from 'lucide-react'
 import { getKlanten, getProjecten, getOffertes, createOfferte, createOfferteItem, updateKlant, createKlant, getOfferte, getOfferteItems, updateOfferte, deleteOfferteItem, getOfferteVersies, createOfferteVersie, getFactuur, createPortaal, createPortaalItem, getPortaalItems, createProject, syncOfferteItems, getRecentOfferteItemSuggesties, getNextOfferteNummer, OfferteConflictError, createContactpersoonDB, getContactpersonenByKlant } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
+import { logCreate } from '@/utils/auditLogger'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import type { Klant, Project, Contactpersoon, Factuur } from '@/types'
 import { round2 } from '@/utils/budgetUtils'
@@ -986,6 +987,7 @@ export function QuoteCreation() {
         })
         autoSaveIdRef.current = newOfferte.id
         lastKnownUpdatedAtRef.current = newOfferte.updated_at
+        logCreate({ user, entityType: 'offerte', entityId: newOfferte.id })
 
         await Promise.all(
           items.map((item, index) =>
@@ -1134,6 +1136,7 @@ export function QuoteCreation() {
         intro_tekst: introTekst,
         outro_tekst: outroTekst,
       })
+      logCreate({ user, entityType: 'offerte', entityId: newOfferte.id })
 
       await Promise.all(
         items.map((item, index) =>
@@ -1280,6 +1283,7 @@ export function QuoteCreation() {
           versie: versioning.versieNummer,
         })
         savedOfferteId = newOfferte.id
+        logCreate({ user, entityType: 'offerte', entityId: newOfferte.id })
 
         await Promise.all(
           items.map((item, index) =>
@@ -1928,6 +1932,7 @@ export function QuoteCreation() {
                       bron_offerte_id: editOfferteId || undefined,
                       eind_datum: geldigTot || undefined,
                     })
+                    logCreate({ user, entityType: 'project', entityId: project.id })
                     setSelectedProjectId(project.id)
                     if (editOfferteId) {
                       await updateOfferte(editOfferteId, { project_id: project.id })

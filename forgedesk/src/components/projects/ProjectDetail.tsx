@@ -134,10 +134,11 @@ import { ActiviteitFeed, buildActivityFeed, type ActivityEvent } from './cockpit
 const PdfPreviewDialog = React.lazy(() => import('@/components/shared/PdfPreviewDialog').then(m => ({ default: m.PdfPreviewDialog })))
 import { generateOpdrachtbevestigingPDF } from '@/services/pdfService'
 import { useProjectSidebarConfig } from '@/hooks/useProjectSidebarConfig'
-import type { Taak, Project, Document, Offerte, TekeningGoedkeuring, Klant, Tijdregistratie, Medewerker, ProjectToewijzing, Werkbon, Factuur, Uitgave, MontageAfspraak, MontageBijlage, ProjectFoto } from '@/types'
+import type { Taak, Project, Document, Offerte, TekeningGoedkeuring, Klant, Tijdregistratie, Medewerker, ProjectToewijzing, Werkbon, Factuur, Uitgave, MontageAfspraak, MontageBijlage, ProjectFoto, AuditLogEntry } from '@/types'
 import { berekenBudgetStatus } from '@/utils/budgetUtils'
 import { logger } from '../../utils/logger'
-import { logWijziging } from '@/utils/auditLogger'
+import { logWijziging, logCreate } from '@/utils/auditLogger'
+import { getAuditLogForProject } from '@/services/supabaseService'
 
 const statusLabels: Record<string, string> = {
   gepland: 'Gepland',
@@ -231,6 +232,7 @@ export function ProjectDetail() {
 
   const [project, setProject] = useState<Project | null>(null)
   const [klant, setKlant] = useState<Klant | null>(null)
+  const [auditEntries, setAuditEntries] = useState<AuditLogEntry[]>([])
   const [projectTaken, setProjectTaken] = useState<Taak[]>([])
   const [projectDocumenten, setProjectDocumenten] = useState<Document[]>([])
   const [projectOffertes, setProjectOffertes] = useState<Offerte[]>([])
@@ -471,6 +473,8 @@ export function ProjectDetail() {
         budget_waarschuwing_pct: project.budget_waarschuwing_pct,
         bron_project_id: project.id,
       })
+
+      logCreate({ user, medewerkers: alleMedewerkers, entityType: 'project', entityId: newProject.id })
 
       // Kopieer taken (zonder datums / bestede tijd)
       for (const taak of projectTaken) {
@@ -772,9 +776,30 @@ export function ProjectDetail() {
   }
 
   const recenteActiviteiten = useMemo(
-    () => project ? buildActivityFeed(project, projectOffertes, projectMontages, projectWerkbonnen, projectFacturen, projectTaken, projectFotos) : [],
-    [project, projectOffertes, projectMontages, projectWerkbonnen, projectFacturen, projectTaken, projectFotos]
+    () => project ? buildActivityFeed(project, projectOffertes, projectMontages, projectWerkbonnen, projectFacturen, projectTaken, projectFotos, auditEntries) : [],
+    [project, projectOffertes, projectMontages, projectWerkbonnen, projectFacturen, projectTaken, projectFotos, auditEntries]
   )
+
+  // Audit-events laden ná de initiële page-load. Stable deps via .join(',')
+  // op de id-arrays zodat we niet refetchen bij elke React-rerender — alleen
+  // wanneer er een entity is bijgekomen of weggegaan.
+  const offerteIdsKey = useMemo(() => projectOffertes.map(o => o.id).join(','), [projectOffertes])
+  const werkbonIdsKey = useMemo(() => projectWerkbonnen.map(w => w.id).join(','), [projectWerkbonnen])
+  const factuurIdsKey = useMemo(() => projectFacturen.map(f => f.id).join(','), [projectFacturen])
+  const taakIdsKey = useMemo(() => projectTaken.map(t => t.id).join(','), [projectTaken])
+
+  useEffect(() => {
+    if (!id || isLoading) return
+    let cancelled = false
+    const offerteIds = offerteIdsKey ? offerteIdsKey.split(',') : []
+    const werkbonIds = werkbonIdsKey ? werkbonIdsKey.split(',') : []
+    const factuurIds = factuurIdsKey ? factuurIdsKey.split(',') : []
+    const taakIds = taakIdsKey ? taakIdsKey.split(',') : []
+    getAuditLogForProject(id, { offerteIds, werkbonIds, factuurIds, taakIds })
+      .then((entries) => { if (!cancelled) setAuditEntries(entries) })
+      .catch(() => { /* fire-and-forget — feed valt terug op derived events */ })
+    return () => { cancelled = true }
+  }, [id, isLoading, offerteIdsKey, werkbonIdsKey, factuurIdsKey, taakIdsKey])
 
   if (isLoading) {
     return (
@@ -950,7 +975,11 @@ export function ProjectDetail() {
                 >
                   <div className="w-2 h-2 rounded-full bg-[#1A535C] flex-shrink-0 animate-pulse" />
                   <div className="min-w-0">
-                    <p className="text-[12px] font-medium text-[#4A4A46] truncate">{recenteActiviteiten[0].tekst}</p>
+                    <p className="text-[12px] font-medium text-[#4A4A46] truncate">
+                      {recenteActiviteiten[0].medewerker && recenteActiviteiten[0].bron === 'audit'
+                        ? `${recenteActiviteiten[0].medewerker.split(' ')[0]} heeft ${recenteActiviteiten[0].tekst}`
+                        : recenteActiviteiten[0].tekst}
+                    </p>
                     <p className="text-[10px] text-[#9B9B95]">
                       {new Date(recenteActiviteiten[0].datum).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })} · {recenteActiviteiten.length} activiteiten
                     </p>
@@ -977,7 +1006,13 @@ export function ProjectDetail() {
                             <div key={ev.id} className={cn('flex items-start gap-3 px-4 py-3 hover:bg-[#F8F7F5] transition-colors', i > 0 && 'border-t border-[#F0EFEC]')}>
                               <div className="w-2 h-2 rounded-full flex-shrink-0 mt-1.5" style={{ backgroundColor: typeColors[ev.type] || '#9B9B95' }} />
                               <div className="min-w-0 flex-1">
-                                <p className="text-[13px] text-[#1A1A1A] leading-snug">{ev.tekst}</p>
+                                <p className="text-[13px] text-[#1A1A1A] leading-snug">
+                                  {ev.medewerker && ev.bron === 'audit' ? (
+                                    <><span className="font-semibold">{ev.medewerker.split(' ')[0]}</span> heeft {ev.tekst}</>
+                                  ) : (
+                                    ev.tekst
+                                  )}
+                                </p>
                                 <p className="text-[11px] text-[#9B9B95] mt-0.5">
                                   {new Date(ev.datum).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })} om {new Date(ev.datum).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}
                                 </p>
@@ -2358,6 +2393,7 @@ export function ProjectDetail() {
                     })
                     setProjectWerkbonnen(prev => [...prev, wb])
                     setMontageWerkbonId(wb.id)
+                    logCreate({ user, medewerkers: alleMedewerkers, entityType: 'werkbon', entityId: wb.id })
                     toast.success(`Werkbon ${wb.werkbon_nummer} aangemaakt`)
                   } catch (err) {
                     logger.error('Kon werkbon niet aanmaken:', err)

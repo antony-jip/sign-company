@@ -14,6 +14,8 @@ import type { Offerte, OfferteItem, Klant } from '@/types'
 import type { PrijsVariant } from './QuoteItemsTable'
 import { round2 } from '@/utils/budgetUtils'
 import { logger } from '../../utils/logger'
+import { useAuth } from '@/contexts/AuthContext'
+import { logCreate } from '@/utils/auditLogger'
 
 interface PreviewItem {
   beschrijving: string
@@ -50,6 +52,7 @@ function calculateLineTotaal(item: { aantal: number; eenheidsprijs: number; kort
 }
 
 export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: ForgeQuotePreviewProps) {
+  const { user } = useAuth()
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const location = useLocation()
@@ -181,6 +184,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
               team_leden: [],
               bron_offerte_id: fetchedOfferte.id,
             })
+            logCreate({ user, entityType: 'project', entityId: project.id, omschrijving: 'Aangemaakt via Daan' })
             const updatedWithProject = await updateOfferte(fetchedOfferte.id, {
               project_id: project.id,
               geconverteerd_naar_project_id: project.id,
@@ -217,6 +221,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
         team_leden: [],
         bron_offerte_id: fetchedOfferte.id,
       })
+      logCreate({ user, entityType: 'project', entityId: project.id, omschrijving: 'Aangemaakt via Daan' })
 
       // Update offerte met project link
       const updatedOfferte = await updateOfferte(fetchedOfferte.id, {

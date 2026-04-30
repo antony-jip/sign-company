@@ -62,7 +62,7 @@ import {
 import { logger } from '../../utils/logger'
 import { KlantStatusBadgeInline, KlantStatusWarning } from '@/components/shared/KlantStatusWarning'
 import { AuditLogPanel } from '@/components/shared/AuditLogPanel'
-import { logWijziging } from '@/utils/auditLogger'
+import { logWijziging, logCreate } from '@/utils/auditLogger'
 import { WerkbonAanmaakDialog } from '@/components/werkbonnen/WerkbonAanmaakDialog'
 const PdfPreviewDialog = React.lazy(() => import('@/components/shared/PdfPreviewDialog').then(m => ({ default: m.PdfPreviewDialog })))
 import { ShareButton } from '@/components/shared/ShareButton'
@@ -437,6 +437,8 @@ export function OfferteDetail() {
         outro_tekst: offerte.outro_tekst,
         activiteiten: [newActivity],
       })
+
+      logCreate({ user, entityType: 'offerte', entityId: newOfferte.id })
 
       // Copy items
       for (const item of items) {

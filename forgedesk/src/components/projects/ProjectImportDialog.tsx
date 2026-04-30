@@ -7,6 +7,7 @@ import { Upload, FileText, CheckCircle2, AlertTriangle, Loader2, X } from 'lucid
 import { parseCSV } from '@/services/importService'
 import { getKlanten, createKlant, createProject } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
+import { logCreate } from '@/utils/auditLogger'
 import { toast } from 'sonner'
 import type { Klant } from '@/types'
 
@@ -206,7 +207,7 @@ export function ProjectImportDialog({ open, onOpenChange, onImportComplete }: Pr
         if (p.pm) notitieRegels.push(`PM: ${p.pm}`)
 
         // 3. Project aanmaken
-        await createProject({
+        const created = await createProject({
           klant_id: klantId,
           naam: p.naam,
           beschrijving: '',
@@ -219,6 +220,7 @@ export function ProjectImportDialog({ open, onOpenChange, onImportComplete }: Pr
           ...(p.datumAangemaakt ? { start_datum: p.datumAangemaakt } : {}),
           ...(p.deadline ? { eind_datum: p.deadline } : {}),
         } as Parameters<typeof createProject>[0])
+        logCreate({ user, entityType: 'project', entityId: created.id })
 
         result.projecten++
       } catch (err) {

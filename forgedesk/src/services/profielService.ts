@@ -5,6 +5,10 @@ import {
 } from './supabaseHelpers'
 import { safeSetItem } from '@/utils/localStorageUtils'
 import { normaliseerNaam } from '@/utils/naamNormalisatie'
+import { getOffertesByProject } from './offerteService'
+import { getWerkbonnenByProject } from './werkbonService'
+import { getFacturenByProject } from './factuurService'
+import { getTakenByProject } from './projectService'
 import type {
   Profile,
   AppSettings,
@@ -611,4 +615,88 @@ export async function createAuditLogEntry(
   } catch (err) {
     console.warn('[audit_log_feature] insert exception:', err)
   }
+}
+
+// Bulk-fetch audit events voor een project: het project zelf + alle
+// gerelateerde offertes/werkbonnen/facturen/taken in één audit-query.
+// RLS op audit_log_feature (organisatie_id = current user's org) houdt
+// cross-tenant data automatisch buiten de resultaten — ID-collectie via
+// project-filtered fetchers is ook RLS-protected, dus de IN-arrays bevatten
+// alleen entity_ids uit de eigen organisatie.
+//
+// Callers die de related entity-arrays al hebben (zoals ProjectDetail
+// dat ze toch al laadt voor de cockpit) kunnen die meegeven via options
+// — dan slaat de helper de Promise.all over en wordt het 1 round-trip
+// in plaats van 2.
+export async function getAuditLogForProject(
+  projectId: string,
+  options?: {
+    offerteIds?: string[]
+    werkbonIds?: string[]
+    factuurIds?: string[]
+    taakIds?: string[]
+    limit?: number
+  }
+): Promise<AuditLogEntry[]> {
+  assertId(projectId, 'project_id')
+  if (!isSupabaseConfigured() || !supabase) return []
+
+  const limit = options?.limit ?? 200
+
+  let offerteIds: string[]
+  let werkbonIds: string[]
+  let factuurIds: string[]
+  let taakIds: string[]
+
+  // Pre-loaded check per type: undefined = niet meegegeven, fetch zelf;
+  // [] = bewust leeg meegegeven (caller weet dat er geen offertes zijn),
+  // skip de fetch.
+  if (
+    options?.offerteIds !== undefined &&
+    options?.werkbonIds !== undefined &&
+    options?.factuurIds !== undefined &&
+    options?.taakIds !== undefined
+  ) {
+    offerteIds = options.offerteIds
+    werkbonIds = options.werkbonIds
+    factuurIds = options.factuurIds
+    taakIds = options.taakIds
+  } else {
+    const [offertes, werkbonnen, facturen, taken] = await Promise.all([
+      getOffertesByProject(projectId).catch(() => []),
+      getWerkbonnenByProject(projectId).catch(() => []),
+      getFacturenByProject(projectId).catch(() => []),
+      getTakenByProject(projectId).catch(() => []),
+    ])
+    offerteIds = options?.offerteIds ?? offertes.map(o => o.id)
+    werkbonIds = options?.werkbonIds ?? werkbonnen.map(w => w.id)
+    factuurIds = options?.factuurIds ?? facturen.map(f => f.id)
+    taakIds = options?.taakIds ?? taken.map(t => t.id)
+  }
+
+  const orClauses: string[] = [
+    `and(entity_type.eq.project,entity_id.eq.${projectId})`,
+  ]
+  if (offerteIds.length > 0) {
+    orClauses.push(`and(entity_type.eq.offerte,entity_id.in.(${offerteIds.join(',')}))`)
+  }
+  if (werkbonIds.length > 0) {
+    orClauses.push(`and(entity_type.eq.werkbon,entity_id.in.(${werkbonIds.join(',')}))`)
+  }
+  if (factuurIds.length > 0) {
+    orClauses.push(`and(entity_type.eq.factuur,entity_id.in.(${factuurIds.join(',')}))`)
+  }
+  if (taakIds.length > 0) {
+    orClauses.push(`and(entity_type.eq.taak,entity_id.in.(${taakIds.join(',')}))`)
+  }
+
+  const { data, error } = await supabase
+    .from('audit_log_feature')
+    .select('*')
+    .or(orClauses.join(','))
+    .order('created_at', { ascending: false })
+    .limit(limit)
+
+  if (error) throw error
+  return (data as AuditLogEntry[]) || []
 }
