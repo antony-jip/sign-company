@@ -676,6 +676,7 @@ export function MontagePlanningLayout() {
         toast.success("Montage afspraak bijgewerkt");
       } else {
         const created = await createMontageAfspraak(payload);
+        logCreate({ user, medewerkers, entityType: 'montage', entityId: created.id });
         setAfspraken((prev) => [...prev, created]);
         // Auto-update project from "te-plannen" to "gepland"
         if (formData.project_id) {

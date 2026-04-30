@@ -372,6 +372,7 @@ export function ProjectDetail() {
         bijlagen: montageBijlagen.length > 0 ? montageBijlagen : undefined,
         status: 'gepland',
       })
+      logCreate({ user, medewerkers: alleMedewerkers, entityType: 'montage', entityId: newMontage.id })
       setProjectMontages(prev => [...prev, newMontage])
       setMontageDialogOpen(false)
       toast.success('Montage ingepland')

@@ -116,7 +116,7 @@ export function PortaalAlerts() {
     if (!montageDatum || !user?.id) return
     setSavingMontage(true)
     try {
-      await createMontageAfspraak({
+      const created = await createMontageAfspraak({
         user_id: user.id,
         project_id: montagePrefill.projectId,
         klant_id: '',
@@ -132,6 +132,7 @@ export function PortaalAlerts() {
         notities: montageNotitie,
         status: 'gepland',
       })
+      logCreate({ user, entityType: 'montage', entityId: created.id })
       toast.success('Montage ingepland')
       setMontageOpen(false)
       await handleDismiss(activeNotifId)

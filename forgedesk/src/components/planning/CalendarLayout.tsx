@@ -435,7 +435,8 @@ export function CalendarLayout() {
         await updateMontageAfspraak(editingId, payload)
         toast.success('Planning bijgewerkt')
       } else {
-        await createMontageAfspraak(payload)
+        const created = await createMontageAfspraak(payload)
+        logCreate({ user, entityType: 'montage', entityId: created.id })
         toast.success('Taak ingepland')
       }
 
