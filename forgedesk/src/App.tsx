@@ -8,6 +8,7 @@ import { LanguageProvider } from '@/contexts/LanguageContext'
 import { SidebarProvider } from '@/contexts/SidebarContext'
 import { TabsProvider } from '@/contexts/TabsContext'
 import { AppSettingsProvider } from '@/contexts/AppSettingsContext'
+import { MedewerkersProvider } from '@/contexts/MedewerkersContext'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { AppLayout } from '@/components/layouts/AppLayout'
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
@@ -299,9 +300,10 @@ function App() {
         <PaletteProvider>
           <LanguageProvider>
             <AuthProvider>
-              <AppSettingsProvider>
-                <SidebarProvider>
-                  <TabsProvider>
+              <MedewerkersProvider>
+                <AppSettingsProvider>
+                  <SidebarProvider>
+                    <TabsProvider>
                     <ErrorBoundary>
                       <Toaster
                         position="top-right"
@@ -326,9 +328,10 @@ function App() {
                       <ConfirmDialog />
                       <AppContent />
                     </ErrorBoundary>
-                  </TabsProvider>
-                </SidebarProvider>
-              </AppSettingsProvider>
+                    </TabsProvider>
+                  </SidebarProvider>
+                </AppSettingsProvider>
+              </MedewerkersProvider>
             </AuthProvider>
           </LanguageProvider>
         </PaletteProvider>

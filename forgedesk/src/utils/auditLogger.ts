@@ -10,6 +10,15 @@ interface ActorUser {
   user_metadata?: Record<string, unknown>
 }
 
+// Module-level snapshot — gevuld door MedewerkersProvider zodat callers
+// zonder lokale medewerkers-state alsnog de medewerker.naam krijgen
+// i.p.v. de JWT-fallback.
+let medewerkersSnapshot: Medewerker[] = []
+
+export function setMedewerkersSnapshot(medewerkers: Medewerker[]): void {
+  medewerkersSnapshot = medewerkers
+}
+
 export function resolveMedewerkerNaam(
   user: ActorUser | null | undefined,
   medewerkers: Medewerker[]
@@ -94,7 +103,7 @@ export async function logCreate(params: {
     entityType: params.entityType,
     entityId: params.entityId,
     actie: 'aangemaakt',
-    medewerkerNaam: resolveMedewerkerNaam(params.user, params.medewerkers ?? []),
+    medewerkerNaam: resolveMedewerkerNaam(params.user, params.medewerkers ?? medewerkersSnapshot),
     omschrijving: params.omschrijving,
   })
 }
