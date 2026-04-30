@@ -19,6 +19,7 @@ import {
 } from '@/services/supabaseService'
 import { Loader2, ArrowLeft, ArrowRight, Layers, Sparkles } from 'lucide-react'
 import { logger } from '../../utils/logger'
+import { logCreate } from '@/utils/auditLogger'
 import { ParticleField } from './ParticleField'
 
 const MONO = { fontFamily: '"DM Mono", ui-monospace, monospace' } as const
@@ -676,7 +677,7 @@ export function OnboardingWizard() {
           is_demo_data: true,
         } as Parameters<typeof createKlant>[0])
 
-        await createProject({
+        const demoProject = await createProject({
           user_id: user.id,
           klant_id: klant1.id,
           naam: 'Gevelreclame Bakkerij',
@@ -689,6 +690,7 @@ export function OnboardingWizard() {
           team_leden: [],
           is_demo_data: true,
         } as Parameters<typeof createProject>[0])
+        logCreate({ user, entityType: 'project', entityId: demoProject.id })
 
         const offerte = await createOfferte({
           user_id: user.id,
@@ -705,6 +707,7 @@ export function OnboardingWizard() {
           voorwaarden: '',
           is_demo_data: true,
         } as Parameters<typeof createOfferte>[0])
+        logCreate({ user, entityType: 'offerte', entityId: offerte.id })
 
         await createOfferteItem({
           user_id: user.id,

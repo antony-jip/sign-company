@@ -22,6 +22,7 @@ import {
   getOfferteItems, updateMontageAfspraak,
 } from '@/services/supabaseService'
 import { downloadFile } from '@/services/storageService'
+import { logCreate } from '@/utils/auditLogger'
 
 interface Props {
   open: boolean
@@ -109,6 +110,7 @@ export function WerkbonVanProjectDialog({
         locatie_postcode: klant?.postcode || undefined,
         toon_briefpapier: werkbonBriefpapier,
       })
+      logCreate({ user, entityType: 'werkbon', entityId: werkbon.id })
 
       // Koppel werkbon aan montage afspraak (bidirectioneel)
       if (montageAfspraak?.id) {

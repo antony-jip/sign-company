@@ -13,6 +13,8 @@ import { confirm } from '@/components/shared/ConfirmDialog'
 import { round2 } from '@/utils/budgetUtils'
 import { berekenMarkupPercentage, berekenVerkoopVanMarkup } from '@/utils/margeBerekening'
 import { logger } from '../../utils/logger'
+import { useAuth } from '@/contexts/AuthContext'
+import { logCreate } from '@/utils/auditLogger'
 import { Building2, ChevronDown, Plus, X, Send, BookTemplate, Settings, Save, UserCircle, ListTodo, FolderPlus, Calendar, UserPlus, Paperclip, Image } from 'lucide-react'
 
 interface Props {
@@ -53,6 +55,7 @@ function makeId(): string {
 }
 
 export function NieuweOfferteModal({ open, onOpenChange }: Props) {
+  const { user } = useAuth()
   const navigate = useNavigate()
   const { settings, bedrijfsnaam, primaireKleur, emailHandtekening, profile } = useAppSettings()
   const documentStyle = useDocumentStyle()
@@ -276,6 +279,7 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
         notities: notitie.trim(),
         voorwaarden: '',
       })
+      logCreate({ user, medewerkers, entityType: 'offerte', entityId: offerte.id })
 
       // 2. Create ONE offerte item with all regels as calculatie_regels
       let createdItem: OfferteItem | null = null
@@ -328,6 +332,7 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
             bron_offerte_id: offerte.id,
             eind_datum: deadline || undefined,
           })
+          logCreate({ user, medewerkers, entityType: 'project', entityId: project.id })
           await updateOfferte(offerte.id, { project_id: project.id })
         } catch (err) {
           logger.error('Fout bij aanmaken project:', err)

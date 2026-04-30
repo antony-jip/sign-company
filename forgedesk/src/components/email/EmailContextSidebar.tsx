@@ -10,6 +10,7 @@ import type { Email, Klant, Medewerker } from '@/types'
 import { getKlanten, getProjectenByKlant, getOffertesByKlant, createKlant, createProject, createTaak, getMedewerkers, generateProjectNummer, getAppSettings } from '@/services/supabaseService'
 import { chatCompletion } from '@/services/aiService'
 import { useAuth } from '@/contexts/AuthContext'
+import { logCreate } from '@/utils/auditLogger'
 import { KlantContactSelector } from '@/components/shared/KlantContactSelector'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { getAvatarStyle, extractSenderName } from './emailHelpers'
@@ -244,6 +245,7 @@ export function EmailContextSidebar({
         vestiging_id: projectForm.vestiging_id || undefined,
         vestiging_naam: vestigingNaam,
       })
+      logCreate({ user, medewerkers, entityType: 'project', entityId: project.id })
       setActivePanel('none')
       toast.success('Project aangemaakt', { action: { label: 'Openen', onClick: () => navigate(`/projecten/${project.id}`) } })
     } catch (err) { logger.error('Project aanmaken mislukt:', err); toast.error('Project aanmaken mislukt') }

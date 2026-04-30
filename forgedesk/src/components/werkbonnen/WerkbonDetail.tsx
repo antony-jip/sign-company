@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
+import { logCreate } from '@/utils/auditLogger'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useDocumentStyle } from '@/hooks/useDocumentStyle'
 import type { Werkbon, WerkbonItem, WerkbonFoto, Klant, Project, Offerte } from '@/types'
@@ -251,6 +252,7 @@ export function WerkbonDetail() {
 
       if (isNew) {
         const created = await createWerkbon(data as Parameters<typeof createWerkbon>[0])
+        logCreate({ user, entityType: 'werkbon', entityId: created.id })
         setWerkbonId(created.id)
         setWerkbonNummer(created.werkbon_nummer)
         toast.success(`Werkbon ${created.werkbon_nummer} aangemaakt`)
@@ -317,6 +319,7 @@ export function WerkbonDetail() {
           status,
           toon_briefpapier: toonBriefpapier,
         } as Parameters<typeof createWerkbon>[0])
+        logCreate({ user, entityType: 'werkbon', entityId: created.id })
         currentWerkbonId = created.id
         setWerkbonId(created.id)
         setWerkbonNummer(created.werkbon_nummer)

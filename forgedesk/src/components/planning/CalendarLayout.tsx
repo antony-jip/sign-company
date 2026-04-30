@@ -63,6 +63,7 @@ import {
   createWerkbon,
 } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
+import { logCreate } from '@/utils/auditLogger'
 import { toast } from 'sonner'
 import {
   Dialog,
@@ -1297,6 +1298,7 @@ export function CalendarLayout() {
                         datum: new Date().toISOString().split('T')[0],
                         status: 'concept',
                       } as Parameters<typeof createWerkbon>[0])
+                      logCreate({ user, entityType: 'werkbon', entityId: wb.id })
                       setProjectWerkbonnen(prev => [...prev, wb])
                       setFormData(p => ({ ...p, werkbon_id: wb.id }))
                       toast.success(`Werkbon ${wb.werkbon_nummer} aangemaakt`)

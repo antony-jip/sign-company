@@ -1,6 +1,9 @@
 import type { AuditLogEntry, Medewerker } from '@/types'
 import { createAuditLogEntry } from '@/services/supabaseService'
 
+// TODO: TasksLayout.tsx:195-203 dupliceert resolveMedewerkerNaam logica.
+// Vervangen in aparte refactor-PR — niet in deze feature.
+
 interface ActorUser {
   id: string
   email?: string | null
@@ -80,7 +83,7 @@ export async function logObjectWijziging<T extends Record<string, unknown>>(para
 
 export async function logCreate(params: {
   user: ActorUser | null | undefined
-  medewerkers: Medewerker[]
+  medewerkers?: Medewerker[]
   entityType: AuditLogEntry['entity_type']
   entityId: string
   omschrijving?: string
@@ -91,7 +94,7 @@ export async function logCreate(params: {
     entityType: params.entityType,
     entityId: params.entityId,
     actie: 'aangemaakt',
-    medewerkerNaam: resolveMedewerkerNaam(params.user, params.medewerkers),
+    medewerkerNaam: resolveMedewerkerNaam(params.user, params.medewerkers ?? []),
     omschrijving: params.omschrijving,
   })
 }

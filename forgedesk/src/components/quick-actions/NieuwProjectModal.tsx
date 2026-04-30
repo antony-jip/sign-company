@@ -3,6 +3,8 @@ import { logger } from '@/utils/logger'
 import { useNavigate } from 'react-router-dom'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { createProject, getKlanten } from '@/services/supabaseService'
+import { useAuth } from '@/contexts/AuthContext'
+import { logCreate } from '@/utils/auditLogger'
 import type { Klant } from '@/types'
 import { toast } from 'sonner'
 import { Building2 } from 'lucide-react'
@@ -15,6 +17,7 @@ interface Props {
 const inputClass = 'w-full h-9 px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-petrol/20 focus:border-petrol'
 
 export function NieuwProjectModal({ open, onOpenChange }: Props) {
+  const { user } = useAuth()
   const navigate = useNavigate()
   const [klanten, setKlanten] = useState<Klant[]>([])
   const [klantQuery, setKlantQuery] = useState('')
@@ -70,6 +73,7 @@ export function NieuwProjectModal({ open, onOpenChange }: Props) {
         team_leden: [],
         eind_datum: deadline || undefined,
       })
+      logCreate({ user, entityType: 'project', entityId: project.id })
       toast.success('Project aangemaakt')
       onOpenChange(false)
       navigate(`/projecten/${project.id}`)

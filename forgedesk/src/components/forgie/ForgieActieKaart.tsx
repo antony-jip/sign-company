@@ -9,6 +9,8 @@ import {
   createOfferte,
   generateOfferteNummer,
 } from '@/services/supabaseService'
+import { useAuth } from '@/contexts/AuthContext'
+import { logCreate } from '@/utils/auditLogger'
 interface ForgieActie {
   type: string
   data: Record<string, unknown>
@@ -95,6 +97,7 @@ export function ForgieActieKaart({
   pendingKlantId,
   pendingProjectId,
 }: ForgieActieKaartProps) {
+  const { user } = useAuth()
   const [editedData, setEditedData] = useState<Record<string, unknown>>({ ...actie.data })
   const [editingField, setEditingField] = useState<string | null>(null)
   const [status, setStatus] = useState<'idle' | 'creating' | 'created' | 'cancelled'>('idle')
@@ -154,6 +157,7 @@ export function ForgieActieKaart({
           voortgang: 0,
           team_leden: [],
         })
+        logCreate({ user, entityType: 'project', entityId: result.id, omschrijving: 'Aangemaakt via Daan' })
         createdId = result.id
       } else if (actie.type === 'offerte') {
         const klantId = String(editedData.klant_id || '')
@@ -178,6 +182,7 @@ export function ForgieActieKaart({
           notities: '',
           voorwaarden: '',
         })
+        logCreate({ user, entityType: 'offerte', entityId: result.id, omschrijving: 'Aangemaakt via Daan' })
         createdId = result.id
       } else if (actie.type === 'taak') {
         const result = await createTaak({

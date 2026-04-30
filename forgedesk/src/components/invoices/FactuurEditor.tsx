@@ -109,7 +109,7 @@ import { KlantStatusWarning } from '@/components/shared/KlantStatusWarning'
 import { useUnsavedWarning } from '@/hooks/useUnsavedWarning'
 import { AuditLogPanel } from '@/components/shared/AuditLogPanel'
 import { confirm } from '@/components/shared/ConfirmDialog'
-import { logWijziging } from '@/utils/auditLogger'
+import { logWijziging, logCreate } from '@/utils/auditLogger'
 
 // ============ TYPES ============
 
@@ -811,6 +811,7 @@ export function FactuurEditor() {
           credit_voor_factuur_id: creditVoorFactuurId || undefined,
           gerelateerde_factuur_id: creditVoorFactuurId || undefined,
         })
+        logCreate({ user, entityType: 'factuur', entityId: newFactuur.id, omschrijving: isCreditFactuur ? 'Creditnota' : undefined })
 
         for (let i = 0; i < validItems.length; i++) {
           const item = validItems[i]
@@ -1232,6 +1233,7 @@ export function FactuurEditor() {
       }
 
       const saved = await createFactuur(creditnota)
+      logCreate({ user, entityType: 'factuur', entityId: saved.id, omschrijving: `Creditnota op factuur ${existingFactuur.nummer}` })
 
       // Mark original as gecrediteerd
       await updateFactuur(existingFactuur.id, { status: 'gecrediteerd' })

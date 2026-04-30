@@ -137,7 +137,7 @@ import { useProjectSidebarConfig } from '@/hooks/useProjectSidebarConfig'
 import type { Taak, Project, Document, Offerte, TekeningGoedkeuring, Klant, Tijdregistratie, Medewerker, ProjectToewijzing, Werkbon, Factuur, Uitgave, MontageAfspraak, MontageBijlage, ProjectFoto } from '@/types'
 import { berekenBudgetStatus } from '@/utils/budgetUtils'
 import { logger } from '../../utils/logger'
-import { logWijziging } from '@/utils/auditLogger'
+import { logWijziging, logCreate } from '@/utils/auditLogger'
 
 const statusLabels: Record<string, string> = {
   gepland: 'Gepland',
@@ -471,6 +471,8 @@ export function ProjectDetail() {
         budget_waarschuwing_pct: project.budget_waarschuwing_pct,
         bron_project_id: project.id,
       })
+
+      logCreate({ user, medewerkers: alleMedewerkers, entityType: 'project', entityId: newProject.id })
 
       // Kopieer taken (zonder datums / bestede tijd)
       for (const taak of projectTaken) {
@@ -2358,6 +2360,7 @@ export function ProjectDetail() {
                     })
                     setProjectWerkbonnen(prev => [...prev, wb])
                     setMontageWerkbonId(wb.id)
+                    logCreate({ user, medewerkers: alleMedewerkers, entityType: 'werkbon', entityId: wb.id })
                     toast.success(`Werkbon ${wb.werkbon_nummer} aangemaakt`)
                   } catch (err) {
                     logger.error('Kon werkbon niet aanmaken:', err)

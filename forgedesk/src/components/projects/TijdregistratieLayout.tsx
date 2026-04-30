@@ -60,6 +60,8 @@ import { round2 } from "@/utils/budgetUtils";
 import { cn, formatCurrency } from "@/lib/utils";
 import { toast } from "sonner";
 import { exportCSV, exportExcel } from "@/lib/export";
+import { useAuth } from "@/contexts/AuthContext";
+import { logCreate } from "@/utils/auditLogger";
 
 type FilterType = "alle" | "deze_week" | "deze_maand" | "facturabel" | "niet_facturabel" | "gefactureerd" | "niet_gefactureerd";
 
@@ -173,6 +175,7 @@ const EMPTY_FORM: FormData = {
 };
 
 export function TijdregistratieLayout() {
+  const { user } = useAuth();
   const [registraties, setRegistraties] = useState<Tijdregistratie[]>([]);
   const [projecten, setProjecten] = useState<Project[]>([]);
   const [klanten, setKlanten] = useState<Klant[]>([]);
@@ -564,6 +567,7 @@ export function TijdregistratieLayout() {
           bron_type: "project",
           bron_project_id: projectId,
         });
+        logCreate({ user, entityType: 'factuur', entityId: factuur.id });
 
         // Factuuritems aanmaken
         for (const item of items) {
