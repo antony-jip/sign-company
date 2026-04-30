@@ -1903,7 +1903,7 @@ export interface AuditLogEntry {
   user_id?: string;
   medewerker_id?: string;
   organisatie_id?: string;
-  entity_type: 'taak' | 'project' | 'offerte' | 'factuur' | 'klant' | 'werkbon';
+  entity_type: 'taak' | 'project' | 'offerte' | 'factuur' | 'klant' | 'werkbon' | 'montage';
   entity_id: string;
   actie: 'aangemaakt' | 'gewijzigd' | 'verwijderd' | 'status_gewijzigd' | 'verstuurd' | 'goedgekeurd';
   veld?: string;
