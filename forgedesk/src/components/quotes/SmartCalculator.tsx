@@ -14,6 +14,7 @@ import {
 import { Calculator, RotateCcw, PlusCircle } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import { round2 } from '@/utils/budgetUtils'
+import { berekenVerkoopVanMarkup } from '@/utils/margeBerekening'
 
 interface SmartCalculatorProps {
   onAddToOfferte?: (data: {
@@ -35,8 +36,8 @@ export function SmartCalculator({ onAddToOfferte }: SmartCalculatorProps) {
   const berekening = useMemo(() => {
     const arbeidskosten = round2(uren * uurtarief)
     const kosten = round2(arbeidskosten + materiaalkosten)
-    const margeBedrag = round2(kosten * (margePercentage / 100))
-    const subtotaal = round2(kosten + margeBedrag)
+    const subtotaal = round2(berekenVerkoopVanMarkup(kosten, margePercentage))
+    const margeBedrag = round2(subtotaal - kosten)
     const btw = round2(subtotaal * (btwPercentage / 100))
     const totaal = round2(subtotaal + btw)
 

@@ -55,6 +55,7 @@ import {
 import { toast } from 'sonner'
 import { cn, formatCurrency } from '@/lib/utils'
 import { round2 } from '@/utils/budgetUtils'
+import { berekenMarkupPercentage, berekenVerkoopVanMarkup } from '@/utils/margeBerekening'
 import { logger } from '../../utils/logger'
 import { confirm } from '@/components/shared/ConfirmDialog'
 
@@ -805,7 +806,7 @@ function ProductenSection({
                     onChange={(e) => {
                       const val = parseFloat(e.target.value) || 0
                       setProductInkoop(val)
-                      setProductVerkoop(round2(val * (1 + productMarge / 100)))
+                      setProductVerkoop(round2(berekenVerkoopVanMarkup(val, productMarge)))
                     }}
                     min={0}
                     step={0.01}
@@ -824,7 +825,7 @@ function ProductenSection({
                     onChange={(e) => {
                       const val = parseFloat(e.target.value) || 0
                       setProductMarge(val)
-                      setProductVerkoop(round2(productInkoop * (1 + val / 100)))
+                      setProductVerkoop(round2(berekenVerkoopVanMarkup(productInkoop, val)))
                     }}
                     step={1}
                     placeholder="35"
@@ -845,7 +846,7 @@ function ProductenSection({
                       const val = parseFloat(e.target.value) || 0
                       setProductVerkoop(val)
                       if (productInkoop > 0) {
-                        setProductMarge(((val - productInkoop) / productInkoop) * 100)
+                        setProductMarge(berekenMarkupPercentage(productInkoop, val))
                       }
                     }}
                     min={0}
@@ -1057,15 +1058,13 @@ function TemplatesSection({
       if (r.id !== id) return r
       const updated = { ...r, ...updates }
       if ('inkoop_prijs' in updates && !('verkoop_prijs' in updates)) {
-        updated.verkoop_prijs = round2(updated.inkoop_prijs * (1 + updated.marge_percentage / 100))
+        updated.verkoop_prijs = round2(berekenVerkoopVanMarkup(updated.inkoop_prijs, updated.marge_percentage))
       }
       if ('marge_percentage' in updates && !('verkoop_prijs' in updates)) {
-        updated.verkoop_prijs = round2(updated.inkoop_prijs * (1 + updated.marge_percentage / 100))
+        updated.verkoop_prijs = round2(berekenVerkoopVanMarkup(updated.inkoop_prijs, updated.marge_percentage))
       }
       if ('verkoop_prijs' in updates && !('marge_percentage' in updates) && !('inkoop_prijs' in updates)) {
-        updated.marge_percentage = updated.inkoop_prijs > 0
-          ? ((updated.verkoop_prijs - updated.inkoop_prijs) / updated.inkoop_prijs) * 100
-          : 0
+        updated.marge_percentage = berekenMarkupPercentage(updated.inkoop_prijs, updated.verkoop_prijs)
       }
       return updated
     }))

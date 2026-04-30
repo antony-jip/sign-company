@@ -16,6 +16,7 @@ import { INKOOP_DRAG_TYPE, type InkoopDragData } from './InkoopOffertePaneel'
 import { labelToAutofillField } from '@/utils/autofillUtils'
 import type { CalculatieRegel } from '@/types'
 import { round2 } from '@/utils/budgetUtils'
+import { berekenMarkupPercentage } from '@/utils/margeBerekening'
 import { uploadFile, downloadFile, deleteFile } from '@/services/storageService'
 import { createDocument, getSigningVisualisatiesByOfferte } from '@/services/supabaseService'
 import type { SigningVisualisatie } from '@/types'
@@ -154,13 +155,12 @@ function genId(): string {
   return `dr-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
 }
 
-// ── Margin calculation per item (FIX 8) ──
 function calculateItemMargin(regels?: CalculatieRegel[]): { inkoop: number; verkoop: number; marge: number; percentage: number } | null {
   if (!regels || regels.length === 0) return null
   const inkoop = round2(regels.reduce((s, r) => s + r.inkoop_prijs * r.aantal, 0))
   const verkoop = round2(regels.reduce((s, r) => s + r.verkoop_prijs * r.aantal, 0))
   const marge = round2(verkoop - inkoop)
-  const percentage = verkoop > 0 ? Math.round((marge / verkoop) * 1000) / 10 : 0
+  const percentage = Math.round(berekenMarkupPercentage(inkoop, verkoop) * 10) / 10
   return { inkoop, verkoop, marge, percentage }
 }
 
@@ -467,8 +467,8 @@ function BijlageDropZone({
 }
 
 function getMargeColor(pct: number): { text: string; bg: string; bar: string } {
-  if (pct >= 65) return { text: 'text-green-600 dark:text-green-400', bg: 'bg-green-100 dark:bg-green-900/30', bar: 'bg-green-500' }
-  if (pct >= 50) return { text: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-100 dark:bg-amber-900/30', bar: 'bg-amber-500' }
+  if (pct >= 90) return { text: 'text-green-600 dark:text-green-400', bg: 'bg-green-100 dark:bg-green-900/30', bar: 'bg-green-500' }
+  if (pct >= 60) return { text: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-100 dark:bg-amber-900/30', bar: 'bg-amber-500' }
   return { text: 'text-red-600 dark:text-red-400', bg: 'bg-red-100 dark:bg-red-900/30', bar: 'bg-red-500' }
 }
 
