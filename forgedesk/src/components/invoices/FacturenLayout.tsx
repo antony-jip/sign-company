@@ -70,6 +70,7 @@ import {
   getHerinneringTemplates,
   generateBetaalToken,
   updateProject,
+  getProject,
   getProjecten,
   getOffertesByProject,
   getFacturenByProject,
@@ -90,7 +91,8 @@ import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useNavigateWithTab } from '@/hooks/useNavigateWithTab'
 import { InkoopfacturenLayout } from '@/components/inkoopfacturen/InkoopfacturenLayout'
 import { useAuth } from '@/contexts/AuthContext'
-import { logCreate } from '@/utils/auditLogger'
+import { logCreate, logWijziging } from '@/utils/auditLogger'
+import { useMedewerkers } from '@/contexts/MedewerkersContext'
 import { logger } from '../../utils/logger'
 import { SkeletonTable } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -270,6 +272,7 @@ export function FacturenLayout() {
   const navigate = useNavigate()
   const { navigateWithTab } = useNavigateWithTab()
   const { user } = useAuth()
+  const { medewerkers } = useMedewerkers()
   const { isBlocked: isTrialBlocked, showDialog: showTrialDialog, setShowDialog: setShowTrialDialog } = useTrialGuard()
   // App settings (bedrijfsprofiel for PDF generation)
   const { settings, profile, primaireKleur, emailHandtekening, bedrijfsnaam, factuurPrefix, factuurStartNummer, factuurBetaaltermijnDagen, factuurVoorwaarden } = useAppSettings()
@@ -712,7 +715,14 @@ export function FacturenLayout() {
       }
       // Update gekoppeld project naar 'gefactureerd'
       if (factuur.project_id) {
-        try { await updateProject(factuur.project_id, { status: 'gefactureerd' }) } catch (err) { /* ignore */ }
+        try {
+          const huidigProject = await getProject(factuur.project_id).catch(() => null)
+          await updateProject(factuur.project_id, { status: 'gefactureerd' })
+          if (user?.id && huidigProject?.status) {
+            const naam = medewerkers.find(m => m.user_id === user.id)?.naam ?? user.email ?? ''
+            logWijziging({ userId: user.id, entityType: 'project', entityId: factuur.project_id, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: huidigProject.status, nieuweWaarde: 'gefactureerd' })
+          }
+        } catch (err) { /* ignore */ }
       }
       toast.success(`${factuur.nummer} gemarkeerd als betaald`)
     },
@@ -1017,7 +1027,14 @@ export function FacturenLayout() {
 
         // Update gekoppeld project naar 'gefactureerd'
         if (factuur.project_id) {
-          try { await updateProject(factuur.project_id, { status: 'gefactureerd' }) } catch (err) { /* ignore */ }
+          try {
+            const huidigProject = await getProject(factuur.project_id).catch(() => null)
+            await updateProject(factuur.project_id, { status: 'gefactureerd' })
+            if (user?.id && huidigProject?.status) {
+              const naam = medewerkers.find(m => m.user_id === user.id)?.naam ?? user.email ?? ''
+              logWijziging({ userId: user.id, entityType: 'project', entityId: factuur.project_id, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: huidigProject.status, nieuweWaarde: 'gefactureerd' })
+            }
+          } catch (err) { /* ignore */ }
         }
 
         toast.success(`Factuur ${factuur.nummer} verzonden naar ${klant.email}`)
