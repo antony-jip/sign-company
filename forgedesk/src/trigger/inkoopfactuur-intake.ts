@@ -113,11 +113,17 @@ async function processInbox(
   try {
     await client.mailboxOpen(config.gmail_label, { readOnly: true });
 
+    let hoogsteUid = config.laatste_uid;
+    const persistUid = async (uid: number): Promise<void> => {
+      if (uid > hoogsteUid) {
+        hoogsteUid = uid;
+        await supabase.from("inkoopfactuur_inbox_config").update({ laatste_uid: uid }).eq("id", config.id);
+      }
+    };
+
     const searchCriteria: Record<string, unknown> = config.laatste_uid > 0
       ? { uid: `${config.laatste_uid + 1}:*` }
       : { all: true };
-
-    let hoogsteUid = config.laatste_uid;
 
     for await (const msg of client.fetch(searchCriteria, {
       uid: true,
@@ -134,7 +140,7 @@ async function processInbox(
       );
 
       if (pdfAttachments.length === 0) {
-        if (msg.uid > hoogsteUid) hoogsteUid = msg.uid;
+        await persistUid(msg.uid);
         continue;
       }
 
@@ -149,7 +155,7 @@ async function processInbox(
           .limit(1);
 
         if (existing && existing.length > 0) {
-          if (msg.uid > hoogsteUid) hoogsteUid = msg.uid;
+          await persistUid(msg.uid);
           continue;
         }
       }
@@ -195,14 +201,7 @@ async function processInbox(
         verwerkt++;
       }
 
-      if (msg.uid > hoogsteUid) hoogsteUid = msg.uid;
-    }
-
-    if (hoogsteUid > config.laatste_uid) {
-      await supabase
-        .from("inkoopfactuur_inbox_config")
-        .update({ laatste_uid: hoogsteUid })
-        .eq("id", config.id);
+      await persistUid(msg.uid);
     }
   } finally {
     await client.logout();

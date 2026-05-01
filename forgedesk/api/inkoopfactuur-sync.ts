@@ -88,6 +88,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const nieuweIds: string[] = []
     let hoogsteUid = config.laatste_uid
 
+    const persistUid = async (uid: number): Promise<void> => {
+      if (uid > hoogsteUid) {
+        hoogsteUid = uid
+        await supabase.from('inkoopfactuur_inbox_config').update({ laatste_uid: uid }).eq('id', config.id)
+      }
+    }
+
     try {
       await client.connect()
 
@@ -119,7 +126,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         )
 
         if (pdfAttachments.length === 0) {
-          if (msg.uid > hoogsteUid) hoogsteUid = msg.uid
+          await persistUid(msg.uid)
           continue
         }
 
@@ -133,7 +140,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             .eq('email_message_id', messageId)
             .limit(1)
           if (existing && existing.length > 0) {
-            if (msg.uid > hoogsteUid) hoogsteUid = msg.uid
+            await persistUid(msg.uid)
             continue
           }
         }
@@ -173,14 +180,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           nieuweIds.push(factuur.id)
         }
 
-        if (msg.uid > hoogsteUid) hoogsteUid = msg.uid
+        await persistUid(msg.uid)
       }
     } finally {
       try { await client.logout() } catch { /* best-effort */ }
     }
 
     await supabase.from('inkoopfactuur_inbox_config').update({
-      laatste_uid: Math.max(hoogsteUid, config.laatste_uid),
       laatst_gecheckt_op: new Date().toISOString(),
       laatste_error: null,
       updated_at: new Date().toISOString(),
