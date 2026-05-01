@@ -123,7 +123,7 @@ async function processInbox(
 
     const searchCriteria: Record<string, unknown> = config.laatste_uid > 0
       ? { uid: `${config.laatste_uid + 1}:*` }
-      : { all: true };
+      : { since: new Date(Date.now() - 24 * 60 * 60 * 1000) };
 
     for await (const msg of client.fetch(searchCriteria, {
       uid: true,
