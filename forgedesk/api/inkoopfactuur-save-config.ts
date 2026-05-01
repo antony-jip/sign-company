@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
-import { createCipheriv, randomBytes, createHash } from 'crypto'
+import { createCipheriv, createDecipheriv, randomBytes, createHash } from 'crypto'
+import { ImapFlow } from 'imapflow'
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL || '',
@@ -16,6 +17,17 @@ function encrypt(plaintext: string): string {
   const encrypted = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()])
   const tag = cipher.getAuthTag()
   return Buffer.concat([iv, tag, encrypted]).toString('base64')
+}
+
+function decrypt(encrypted: string): string {
+  const buf = Buffer.from(encrypted, 'base64')
+  const iv = buf.subarray(0, 12)
+  const tag = buf.subarray(12, 28)
+  const ciphertext = buf.subarray(28)
+  const key = createHash('sha256').update(ENCRYPTION_KEY).digest()
+  const decipher = createDecipheriv('aes-256-gcm', key, iv)
+  decipher.setAuthTag(tag)
+  return decipher.update(ciphertext) + decipher.final('utf8')
 }
 
 async function verifyUser(req: VercelRequest): Promise<string> {
@@ -63,15 +75,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(403).json({ error: 'Geen organisatie gevonden' })
     }
 
+    const { data: existing } = await supabase
+      .from('inkoopfactuur_inbox_config')
+      .select('id, imap_host, imap_port, imap_user, gmail_label, imap_password_encrypted')
+      .eq('organisatie_id', profile.organisatie_id)
+      .maybeSingle()
+
     const isNewPassword = password_plaintext && password_plaintext !== 'UNCHANGED'
 
     if (isNewPassword) {
-      const { data: existing } = await supabase
-        .from('inkoopfactuur_inbox_config')
-        .select('id')
-        .eq('organisatie_id', profile.organisatie_id)
-        .maybeSingle()
-
       if (!existing && !password_plaintext) {
         return res.status(400).json({ error: 'Wachtwoord is verplicht voor nieuwe configuratie' })
       }
@@ -98,6 +110,64 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .single()
 
     if (upsertError) throw upsertError
+
+    const targetHost = imap_host || 'imap.gmail.com'
+    const targetPort = imap_port || 993
+    const targetLabel = gmail_label || 'INBOX'
+
+    const credsChanged = !existing
+      || existing.imap_user !== imap_user
+      || existing.imap_host !== targetHost
+      || existing.gmail_label !== targetLabel
+
+    if (credsChanged) {
+      let password: string | null = null
+      if (isNewPassword) {
+        password = password_plaintext
+      } else if (existing?.imap_password_encrypted) {
+        try {
+          password = decrypt(existing.imap_password_encrypted)
+        } catch (err) {
+          console.warn('[save-config] Decrypt voor watermark mislukt, fallback laatste_uid=0', err)
+        }
+      }
+
+      let watermarkUid = 0
+      if (password) {
+        try {
+          const imapClient = new ImapFlow({
+            host: targetHost,
+            port: targetPort,
+            secure: targetPort === 993,
+            auth: { user: imap_user, pass: password },
+            logger: false,
+            emitLogs: false,
+            greetingTimeout: 10000,
+            socketTimeout: 30000,
+          })
+          try {
+            await imapClient.connect()
+            const mailbox = await imapClient.mailboxOpen(targetLabel, { readOnly: true })
+            const uidNext = (mailbox as { uidNext?: number }).uidNext
+            if (typeof uidNext === 'number' && uidNext > 0) {
+              watermarkUid = uidNext - 1
+            }
+          } finally {
+            try { await imapClient.logout() } catch { /* best-effort */ }
+          }
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err)
+          console.warn(`[save-config] IMAP watermark mislukt, fallback laatste_uid=0: ${msg}`)
+        }
+      }
+
+      await supabase
+        .from('inkoopfactuur_inbox_config')
+        .update({ laatste_uid: watermarkUid })
+        .eq('id', config.id)
+
+      config.laatste_uid = watermarkUid
+    }
 
     const overlapRes = await supabase
       .from('user_email_settings')
