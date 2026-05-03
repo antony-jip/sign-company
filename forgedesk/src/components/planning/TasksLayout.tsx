@@ -60,6 +60,7 @@ import { logger } from '../../utils/logger'
 import { AuditLogPanel } from '@/components/shared/AuditLogPanel'
 import { logWijziging } from '@/utils/auditLogger'
 import { CompletionPromptModal } from '@/components/shared/CompletionPromptModal'
+import { DatePicker } from '@/components/ui/date-picker'
 import { updateProject, getProject } from '@/services/supabaseService'
 import { MedewerkerFilterCombobox } from '@/components/shared/MedewerkerFilterCombobox'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -2382,17 +2383,17 @@ function EditTaskDialog({
             </SelectContent>
           </Select>
 
-          {/* Deadline — native date input, overlay pattern */}
-          <label className={cn(pillBase, 'relative cursor-pointer')}>
-            <CalendarIcon className="w-3 h-3 text-[#6B6B66]" />
-            <span className={cn(!formData.deadline && 'text-[#9B9B95]')}>{displayDeadline}</span>
-            <input
-              type="date"
-              value={formData.deadline}
-              onChange={(e) => updateField('deadline', e.target.value)}
-              className="absolute inset-0 opacity-0 cursor-pointer"
-            />
-          </label>
+          {/* Deadline — DOEN-styled date picker via Popover */}
+          <DatePicker
+            value={formData.deadline}
+            onChange={(v) => updateField('deadline', v)}
+            trigger={
+              <button type="button" className={pillBase}>
+                <CalendarIcon className="w-3 h-3 text-[#6B6B66]" />
+                <span className={cn(!formData.deadline && 'text-[#9B9B95]')}>{displayDeadline}</span>
+              </button>
+            }
+          />
 
           {/* Toegewezen */}
           {medewerkers.length > 0 ? (
