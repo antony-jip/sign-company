@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import {
   Search, Pencil, Inbox, Send, FileEdit, Trash2,
   Loader2, Archive, RefreshCw, CheckCheck, X, Mail, MailOpen,
-  Rows3, StretchHorizontal, Clock, Pin, Menu, Edit3,
+  Rows3, StretchHorizontal, Clock, Menu, Edit3,
 } from 'lucide-react'
 import { IngeplandeBerichtenLijst } from './IngeplandeBerichtenLijst'
 import { sendEmail as sendEmailViaApi, fetchEmailsFromIMAP, readEmailFromIMAP } from '@/services/gmailService'
@@ -1035,15 +1035,8 @@ export function EmailLayout() {
       >
         <Icon className={cn('h-4 w-4 flex-shrink-0', isActive && 'text-[#1A535C]')} />
         <span className="flex-1 text-left">{folder.label}</span>
-        {count > 0 && (
-          <span className={cn(
-            'text-[11px] font-mono px-1.5 py-0.5 rounded-full min-w-[20px] text-center',
-            folder.id === 'inbox' && isActive
-              ? 'bg-[#1A535C] text-white'
-              : folder.id === 'inbox'
-                ? 'bg-[#1A535C]/10 text-[#1A535C]'
-                : 'text-[#9B9B95]',
-          )}>
+        {count > 0 && folder.id !== 'inbox' && (
+          <span className="text-[11px] font-mono px-1.5 py-0.5 rounded-full min-w-[20px] text-center text-[#9B9B95]">
             {count}
           </span>
         )}
@@ -1117,15 +1110,8 @@ export function EmailLayout() {
               >
                 <Icon className={cn('h-4 w-4 flex-shrink-0', isActive && 'text-[#1A535C]')} />
                 <span className="flex-1 text-left">{folder.label}</span>
-                {count > 0 && (
-                  <span className={cn(
-                    'text-[11px] font-mono px-1.5 py-0.5 rounded-full min-w-[20px] text-center',
-                    folder.id === 'inbox' && isActive
-                      ? 'bg-[#1A535C] text-white'
-                      : folder.id === 'inbox'
-                        ? 'bg-[#1A535C]/10 text-[#1A535C]'
-                        : 'text-[#9B9B95]',
-                  )}>
+                {count > 0 && folder.id !== 'inbox' && (
+                  <span className="text-[11px] font-mono px-1.5 py-0.5 rounded-full min-w-[20px] text-center text-[#9B9B95]">
                     {count}
                   </span>
                 )}
@@ -1317,7 +1303,7 @@ export function EmailLayout() {
                 </Button>
               </div>
             ) : (
-              <div className="flex items-center gap-0.5 bg-[#F0EFEC] rounded-xl p-0.5">
+              <div className="flex items-center gap-0.5 bg-[#F8F7F5] rounded-xl p-0.5">
                 {filtersList.map(f => {
                   const isActiveFilter = filter === f.id
                   return (
@@ -1332,12 +1318,6 @@ export function EmailLayout() {
                       )}
                     >
                       {f.label}
-                      {f.id === 'ongelezen' && filterCounts.ongelezen > 0 && (
-                        <span className={cn(
-                          'ml-1 font-semibold',
-                          isActiveFilter ? 'text-[#1A535C]' : 'text-[#1A535C]/60',
-                        )}>{filterCounts.ongelezen}</span>
-                      )}
                     </button>
                   )
                 })}
@@ -1464,9 +1444,8 @@ export function EmailLayout() {
                   nodes.push(
                     <div
                       key="pinned-header"
-                      className="px-4 py-2.5 text-[10px] uppercase tracking-[0.1em] font-semibold text-[#1A535C]/70 bg-gradient-to-b from-[#F8F7F5] to-white sticky top-0 z-[1] flex items-center gap-1.5 border-b border-[#F0EFEC]"
+                      className="px-4 pt-5 pb-2 text-[11px] md:text-[10px] font-medium md:font-semibold md:uppercase md:tracking-[0.1em] text-[#B0ADA8] bg-white/85 md:bg-gradient-to-b md:from-white md:to-transparent backdrop-blur-md md:backdrop-blur-none sticky top-0 z-[1]"
                     >
-                      <Pin className="h-2.5 w-2.5 fill-[#1A535C]/70 -rotate-45" />
                       Vastgepind
                     </div>
                   )
@@ -1577,7 +1556,7 @@ export function EmailLayout() {
       {/* Bulk action bar — verschijnt onderaan zodra er emails zijn aangevinkt.
           Floating, met undo/cancel + de meest gebruikte bulk acties. */}
       {hasChecked && viewMode === 'idle' && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-2 fade-in duration-200">
+        <div className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] md:bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-2 fade-in duration-200">
           <div className="flex items-center gap-2 bg-[#1A1A1A] text-white rounded-xl shadow-xl px-3 py-2">
             <span className="text-[12px] font-medium px-2">
               {checkedEmails.size} geselecteerd

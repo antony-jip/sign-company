@@ -1,5 +1,5 @@
 import { memo, useCallback, useMemo, useRef } from 'react'
-import { Pin, Star, Paperclip, Archive, Trash2, MailOpen, Mail } from 'lucide-react'
+import { Pin, Paperclip, Archive, Trash2, MailOpen, Mail } from 'lucide-react'
 import type { Email } from '@/types'
 import { extractSenderName, cleanEmailPreview, formatShortDate, fontSizeClasses, getAvatarColor, getAvatarStyle } from './emailHelpers'
 import type { FontSize } from './emailTypes'
@@ -122,15 +122,15 @@ export const EmailListItem = memo(function EmailListItem({
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         className={cn(
-          'group relative flex items-center gap-2.5 pl-3 pr-3 h-[42px] cursor-pointer select-none',
+          'group relative flex items-center gap-2.5 pl-3 pr-3 h-[46px] cursor-pointer select-none',
           'transition-all duration-150 ease-out',
           isActive
             ? 'bg-[#1A535C]/[0.06]'
             : isChecked
               ? 'bg-[#1A535C]/[0.03]'
               : isUnread
-                ? 'bg-white hover:bg-[#FAFAF8]'
-                : 'hover:bg-[#F8F7F5]',
+                ? 'bg-white hover:bg-[#FAFAF8] active:bg-[#1A535C]/[0.05]'
+                : 'hover:bg-[#F8F7F5] active:bg-[#1A535C]/[0.05]',
           isFocused && !isActive && 'bg-[#FAFAF8]',
         )}
       >
@@ -167,8 +167,8 @@ export const EmailListItem = memo(function EmailListItem({
         {/* Sender */}
         <div className="flex items-center gap-1.5 w-[120px] md:w-[170px] flex-shrink-0 min-w-0">
           <span className={cn(
-            'truncate leading-none text-[14px]',
-            isUnread ? 'font-semibold text-[#1A1A1A]' : 'font-normal text-[#6B6B66]',
+            'truncate leading-none text-[15px] transition-colors duration-200',
+            isUnread ? 'font-medium text-[#1A1A1A]' : 'font-normal text-[#6B6B66]',
           )}>
             {senderName}
           </span>
@@ -180,18 +180,19 @@ export const EmailListItem = memo(function EmailListItem({
         </div>
 
         {/* Subject + preview */}
-        <div className="flex-1 min-w-0 truncate leading-none text-[14px]">
+        <div className="flex-1 min-w-0 truncate leading-none text-[15px]">
           <span className={cn(
-            isUnread ? 'font-semibold text-[#1A1A1A]' : 'font-normal text-[#6B6B66]',
+            'transition-colors duration-200',
+            isUnread ? 'font-medium text-[#1A1A1A]' : 'font-normal text-[#6B6B66]',
           )}>
             {email.onderwerp || '(geen onderwerp)'}
           </span>
           {preview && (
             <span className={cn(
-              'font-normal hidden md:inline',
+              'font-normal hidden md:inline ml-2 transition-colors duration-200',
               isUnread ? 'text-[#9B9B95]' : 'text-[#C5C2BD]',
             )}>
-              {' \u2014 '}{preview}
+              {preview}
             </span>
           )}
         </div>
@@ -203,11 +204,8 @@ export const EmailListItem = memo(function EmailListItem({
             {email.bijlagen > 0 && (
               <Paperclip className="h-3 w-3 text-[#C5C2BD]" />
             )}
-            {email.pinned && (
-              <Star className="h-3.5 w-3.5 fill-[#F15025] text-[#F15025]" />
-            )}
             <span className={cn(
-              'tabular-nums min-w-[40px] text-right text-[13px]',
+              'tabular-nums min-w-[52px] text-right text-[13px] transition-colors duration-200',
               isUnread ? 'text-[#1A535C] font-medium' : 'text-[#B0ADA8]',
             )}>
               {formatShortDate(email.datum)}
@@ -271,11 +269,11 @@ export const EmailListItem = memo(function EmailListItem({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       className={cn(
-        'group relative flex items-center gap-3 px-4 py-3.5 md:py-2.5 cursor-pointer transition-colors duration-100 md:duration-150 select-none',
+        'group relative flex items-center gap-3 px-4 py-3.5 md:py-2.5 cursor-pointer transition-colors duration-100 ease-out select-none',
         'border-b border-[#EBEBEB]/40 last:border-b-0 md:border-b-0',
         isActive
           ? 'bg-[#1A535C]/[0.05]'
-          : 'hover:bg-[#F0EFEC]/50 active:bg-[#F0EFEC]/60 md:active:bg-transparent',
+          : 'hover:bg-[#F0EFEC]/50 active:bg-[#F0EFEC]/60 md:active:bg-[#1A535C]/[0.05]',
         isFocused && !isActive && 'bg-[#F0EFEC]/30',
         !isActive && (isUnread ? 'bg-white' : 'bg-white md:bg-transparent'),
       )}
@@ -290,7 +288,7 @@ export const EmailListItem = memo(function EmailListItem({
         {/* Avatar */}
         <div
           className={cn(
-            'w-9 h-9 rounded-full md:rounded-lg flex items-center justify-center transition-all duration-150',
+            'w-9 h-9 rounded-md flex items-center justify-center transition-all duration-150',
             'group-hover:opacity-0',
             isChecked && 'opacity-0',
           )}
@@ -322,9 +320,9 @@ export const EmailListItem = memo(function EmailListItem({
         <div className="flex items-center justify-between gap-2 mb-0.5">
           <div className="flex items-center gap-2 min-w-0">
             <span className={cn(
-              'truncate leading-snug text-[14.5px]',
+              'truncate leading-snug text-[14.5px] transition-colors duration-200',
               mdSizes.name,
-              isUnread ? 'font-semibold text-[#1A1A1A]' : 'font-normal text-[#7A7975]',
+              isUnread ? 'font-medium text-[#1A1A1A]' : 'font-normal text-[#7A7975]',
             )}>
               {senderName}
             </span>
@@ -339,7 +337,7 @@ export const EmailListItem = memo(function EmailListItem({
               <Paperclip className="h-3.5 w-3.5 text-[#C5C2BD]" />
             )}
             <span className={cn(
-              'tabular-nums font-mono text-[12px]',
+              'tabular-nums font-mono text-[12px] transition-colors duration-200',
               mdSizes.date,
               isUnread
                 ? 'text-[#9B9B95] md:text-[#6B6B66] md:font-medium'
@@ -353,19 +351,18 @@ export const EmailListItem = memo(function EmailListItem({
         {/* Line 2: subject + preview */}
         <div className="flex items-center gap-1.5">
           <span className={cn(
-            'truncate leading-snug text-[14px]',
+            'truncate leading-snug text-[14px] transition-colors duration-200',
             mdSizes.subject,
             compact ? 'max-w-full' : 'max-w-full md:max-w-[55%] md:flex-shrink-0',
             isUnread
-              ? 'font-semibold md:font-medium text-[#1A1A1A]'
+              ? 'font-medium text-[#1A1A1A]'
               : 'font-normal text-[#1A1A1A]/85 md:text-[#9B9B95]',
           )}>
             {email.onderwerp || '(geen onderwerp)'}
           </span>
           {!compact && preview && (
             <span className="hidden md:contents">
-              <span className="text-[#EBEBEB] flex-shrink-0">&mdash;</span>
-              <span className={cn('text-[#B0ADA8] truncate', sizes.preview)}>{preview}</span>
+              <span className={cn('text-[#B0ADA8] truncate ml-2', sizes.preview)}>{preview}</span>
             </span>
           )}
         </div>
@@ -377,23 +374,21 @@ export const EmailListItem = memo(function EmailListItem({
         )}
       </div>
 
-      {/* Pin */}
+      {/* Pin (hover only — pinned status is communicated by the section header) */}
       <button
         onClick={handlePinClick}
         title={email.pinned ? 'Losmaken' : 'Vastpinnen'}
         className={cn(
           'flex-shrink-0 p-1 rounded transition-all duration-150',
-          'opacity-0 group-hover:opacity-100',
-          email.pinned && '!opacity-100',
-          !email.pinned && 'hover:bg-[#F0EFEC]',
+          'opacity-0 group-hover:opacity-100 hover:bg-[#F0EFEC]',
         )}
       >
-        <Star
+        <Pin
           className={cn(
             'h-4 w-4 transition-colors',
             email.pinned
-              ? 'fill-[#F15025] text-[#F15025]'
-              : 'text-[#B0ADA8] hover:text-[#F15025]',
+              ? 'fill-[#1A535C] text-[#1A535C] -rotate-45'
+              : 'text-[#B0ADA8] hover:text-[#1A535C]',
           )}
         />
       </button>

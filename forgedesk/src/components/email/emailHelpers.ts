@@ -77,18 +77,18 @@ export function getAvatarRingColor(name: string): string {
   return AVATAR_RING_COLORS[hash % AVATAR_RING_COLORS.length]
 }
 
-// DOEN Design System avatar palette — warm, onderscheidend, professioneel
+// DOEN Design System avatar palette — 8 onderscheidende muted tinten,
+// teal vervangen door petrol-tint voor brand-alignment, rood + lavendel
+// weggelaten (te schreeuwerig / te dicht bij paars).
 const DOEN_AVATAR_PALETTE = [
+  { bg: '#D6E5E7', text: '#1A535C' },  // petrol
   { bg: '#DCF0E4', text: '#2B6E44' },  // groen
   { bg: '#DBE6F5', text: '#2E5491' },  // blauw
   { bg: '#F5EDD8', text: '#7D6A2E' },  // goud
   { bg: '#F2E4EC', text: '#8A3D6E' },  // mauve
   { bg: '#E2DFF5', text: '#5A4E91' },  // paars
   { bg: '#FDEADF', text: '#B05C2E' },  // oranje
-  { bg: '#D9F0F0', text: '#2B7A7A' },  // teal
-  { bg: '#F5E0E0', text: '#9A3A3A' },  // rood
   { bg: '#E8EDDF', text: '#5A6B44' },  // olijf
-  { bg: '#E8E4F0', text: '#6B5A8A' },  // lavendel
 ]
 
 const avatarStyleCache = new Map<string, { bg: string; text: string }>()
