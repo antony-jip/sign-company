@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, RefreshCw, Download, FileText, CheckCircle2, X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Search, RefreshCw, Download, FileText, CheckCircle2, X, ChevronLeft, ChevronRight, Loader2, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
@@ -56,6 +56,11 @@ export function InkoopfacturenLayout() {
   const [lightbox, setLightbox] = useState<{ factuur: InkoopFactuur; pdfUrl: string; index: number } | null>(null)
   const [lightboxReden, setLightboxReden] = useState('')
   const [lightboxSaving, setLightboxSaving] = useState(false)
+  const [lightboxAction, setLightboxAction] = useState<'idle' | 'approving' | 'rejecting' | 'approved' | 'rejected'>('idle')
+
+  useEffect(() => {
+    setLightboxAction('idle')
+  }, [lightbox?.factuur.id])
   const [isSyncing, setIsSyncing] = useState(false)
   const [extractProgress, setExtractProgress] = useState<{ current: number; total: number } | null>(null)
 
@@ -266,16 +271,19 @@ export function InkoopfacturenLayout() {
   async function handleLightboxApprove() {
     if (!lightbox) return
     setLightboxSaving(true)
+    setLightboxAction('approving')
     try {
       const { approveInkoopfactuur } = await import('@/services/inkoopfactuurService')
       const mod = await import('@/services/supabaseClient')
       const sb = mod.supabase || mod.default
       const userId = (await sb?.auth.getUser())?.data?.user?.id
-      if (!userId) { toast.error('Niet ingelogd'); return }
+      if (!userId) { toast.error('Niet ingelogd'); setLightboxAction('idle'); return }
       await approveInkoopfactuur(lightbox.factuur.id, userId)
-      toast.success('Goedgekeurd')
+      setLightboxAction('approved')
+      await new Promise(resolve => setTimeout(resolve, 700))
       await goToNextOrClose()
     } catch (err) {
+      setLightboxAction('idle')
       toast.error(err instanceof Error ? err.message : 'Goedkeuren mislukt')
     } finally {
       setLightboxSaving(false)
@@ -285,12 +293,15 @@ export function InkoopfacturenLayout() {
   async function handleLightboxReject() {
     if (!lightbox || !lightboxReden.trim()) { toast.error('Vul een reden in'); return }
     setLightboxSaving(true)
+    setLightboxAction('rejecting')
     try {
       const { rejectInkoopfactuur } = await import('@/services/inkoopfactuurService')
       await rejectInkoopfactuur(lightbox.factuur.id, lightboxReden)
-      toast.success('Afgewezen')
+      setLightboxAction('rejected')
+      await new Promise(resolve => setTimeout(resolve, 700))
       await goToNextOrClose()
     } catch (err) {
+      setLightboxAction('idle')
       toast.error(err instanceof Error ? err.message : 'Afwijzen mislukt')
     } finally {
       setLightboxSaving(false)
@@ -734,12 +745,51 @@ export function InkoopfacturenLayout() {
             {/* Footer */}
             {lightbox.factuur.status !== 'goedgekeurd' && lightbox.factuur.status !== 'afgewezen' ? (
               <div className="px-6 py-5 border-t border-[#F0EFEC] space-y-2.5">
-                <Button onClick={handleLightboxApprove} disabled={lightboxSaving} className="w-full bg-[#2D6B48] hover:bg-[#245A3B] text-white h-11 text-[14px] font-semibold rounded-xl">
-                  Goedkeuren
+                <Button
+                  onClick={handleLightboxApprove}
+                  disabled={lightboxSaving}
+                  className={cn(
+                    'w-full text-white h-11 text-[14px] font-semibold rounded-xl transition-colors duration-200 disabled:opacity-100',
+                    lightboxAction === 'approved' ? 'bg-[#2D6B48]' : 'bg-[#2D6B48] hover:bg-[#245A3B]',
+                  )}
+                >
+                  {lightboxAction === 'approving' ? (
+                    <span className="inline-flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Bezig met goedkeuren…
+                    </span>
+                  ) : lightboxAction === 'approved' ? (
+                    <span className="inline-flex items-center gap-2">
+                      <Check className="h-4 w-4" />
+                      Goedgekeurd
+                    </span>
+                  ) : (
+                    'Goedkeuren'
+                  )}
                 </Button>
                 {lightboxReden.trim() ? (
-                  <Button variant="outline" onClick={handleLightboxReject} disabled={lightboxSaving} className="w-full text-[#C03A18] border-[#C03A18]/30 hover:bg-[#FDE8E2] h-11 text-[14px] rounded-xl">
-                    Afwijzen
+                  <Button
+                    variant="outline"
+                    onClick={handleLightboxReject}
+                    disabled={lightboxSaving}
+                    className={cn(
+                      'w-full text-[#C03A18] border-[#C03A18]/30 hover:bg-[#FDE8E2] h-11 text-[14px] rounded-xl transition-colors duration-200 disabled:opacity-100',
+                      lightboxAction === 'rejected' && 'bg-[#FDE8E2]',
+                    )}
+                  >
+                    {lightboxAction === 'rejecting' ? (
+                      <span className="inline-flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Bezig met afwijzen…
+                      </span>
+                    ) : lightboxAction === 'rejected' ? (
+                      <span className="inline-flex items-center gap-2">
+                        <Check className="h-4 w-4" />
+                        Afgewezen
+                      </span>
+                    ) : (
+                      'Afwijzen'
+                    )}
                   </Button>
                 ) : (
                   <button onClick={() => setLightbox(null)} className="w-full text-[13px] text-[#9B9B95] hover:text-[#6B6B66] py-2 transition-colors">
