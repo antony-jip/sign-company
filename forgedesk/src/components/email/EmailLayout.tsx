@@ -764,21 +764,64 @@ export function EmailLayout() {
     void fetchBodyToCache(email, selectedFolder)
   }, [fetchBodyToCache, selectedFolder])
 
+  // Targeted IMAP fetch voor enkel attachment-metadata. Triggert wanneer de
+  // body al ergens vandaan komt (DB of cache) maar de bijlagen-meta ontbreekt
+  // — bv. bij oude mails die gesynced zijn voordat attachment_meta werd
+  // bijgehouden, of bij DB-rijen zonder meta. Voorkomt het "open opnieuw om
+  // de details te laden" dead-end.
+  const fetchAttachmentMeta = useCallback(async (email: Email, folder: EmailFolder): Promise<EmailAttachment[] | undefined> => {
+    const cached = attachmentCacheRef.current.get(email.id)
+    if (cached?.length) return cached
+    try {
+      const uid = Number(email.gmail_id || email.id)
+      if (isNaN(uid)) return undefined
+      const detail = await readEmailFromIMAP(uid, IMAP_FOLDER_MAP[folder] || 'INBOX')
+      if (detail.attachments?.length) {
+        attachmentCacheRef.current.set(email.id, detail.attachments)
+        return detail.attachments
+      }
+    } catch (err) {
+      logger.error('Attachment meta-fetch mislukt:', err)
+    }
+    return undefined
+  }, [])
+
   const loadEmailBody = useCallback(async (email: Email, folder: EmailFolder): Promise<Email> => {
     const cachedAtt = attachmentCacheRef.current.get(email.id)
     const cached = bodyCacheRef.current.get(email.id)
-    if (cached !== undefined) return { ...email, gelezen: true, inhoud: cached, attachment_meta: email.attachment_meta || cachedAtt || undefined }
-    if (email.inhoud) return { ...email, gelezen: true }
+    const hasAtt = (cachedAtt?.length ?? 0) > 0 || (email.attachment_meta?.length ?? 0) > 0
+    const needsAttFetch = (email.bijlagen ?? 0) > 0 && !hasAtt
+
+    if (cached !== undefined && !needsAttFetch) {
+      return { ...email, gelezen: true, inhoud: cached, attachment_meta: email.attachment_meta || cachedAtt || undefined }
+    }
+    if (email.inhoud && !needsAttFetch) return { ...email, gelezen: true }
 
     setIsLoadingBody(true)
     try {
+      // Body is al gecached, alleen bijlagen ontbreken — alleen attachment-fetch.
+      if (cached !== undefined) {
+        const att = await fetchAttachmentMeta(email, folder)
+        return { ...email, gelezen: true, inhoud: cached, attachment_meta: email.attachment_meta || att || cachedAtt || undefined }
+      }
+      // Body op email-object aanwezig (uit lijst), bijlagen niet — alleen attachment-fetch.
+      if (email.inhoud) {
+        const att = await fetchAttachmentMeta(email, folder)
+        return { ...email, gelezen: true, attachment_meta: email.attachment_meta || att || undefined }
+      }
+
+      // Niets gecached — volle body-fetch (vult ook attachments als IMAP-pad).
       const body = await fetchBodyToCache(email, folder)
-      const att = attachmentCacheRef.current.get(email.id)
+      let att = attachmentCacheRef.current.get(email.id)
+      // Body kwam uit DB, maar attachments ontbraken in DB; haal ze nu via IMAP.
+      if (!att?.length && (email.bijlagen ?? 0) > 0) {
+        att = await fetchAttachmentMeta(email, folder)
+      }
       return { ...email, gelezen: true, inhoud: body, attachment_meta: email.attachment_meta || att || undefined }
     } finally {
       setIsLoadingBody(false)
     }
-  }, [fetchBodyToCache])
+  }, [fetchBodyToCache, fetchAttachmentMeta])
 
   // ─── Prefetch top-N email bodies na lijst laden ───
   // Zodra de lijst beschikbaar is, prefetch de eerste ~8 emails zodat

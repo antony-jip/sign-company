@@ -1380,12 +1380,22 @@ export function EmailReader({
                 </div>
               )}
 
-              {/* Fallback: count > 0 maar geen metadata (oude emails of nog niet opgehaald) */}
+              {/* Fallback: count > 0 maar geen metadata (auto-fetch faalde,
+                  bv. IMAP timeout of geen verbinding). EmailLayout doet bij
+                  het openen al een targeted fetchAttachmentMeta, dus dit pad
+                  is zeldzaam. */}
               {(!email.attachment_meta || email.attachment_meta.length === 0) && email.bijlagen > 0 && (
                 <div className="mt-6 pt-5 border-t border-[#F0EFEC]">
-                  <p className="text-[12px] text-[#9B9B95]">
-                    Deze e-mail heeft {email.bijlagen} bijlage{email.bijlagen > 1 ? 'n' : ''} — open de e-mail opnieuw om de details te laden.
-                  </p>
+                  {isLoadingBody ? (
+                    <p className="text-[12px] text-[#9B9B95] inline-flex items-center gap-2">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      Bijlagen worden geladen.
+                    </p>
+                  ) : (
+                    <p className="text-[12px] text-[#9B9B95]">
+                      {email.bijlagen} bijlage{email.bijlagen > 1 ? 'n' : ''} kon{email.bijlagen > 1 ? 'den' : ''} niet worden geladen. Probeer het zo opnieuw.
+                    </p>
+                  )}
                 </div>
               )}
             </div>
