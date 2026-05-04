@@ -63,7 +63,8 @@ import type { DagenOpenFilter } from '@/components/shared/DagenOpenFilter'
 import { exportCSV, exportExcel } from '@/lib/export'
 import { round2 } from '@/utils/budgetUtils'
 import { logger } from '../../utils/logger'
-import { SkeletonTable } from '@/components/ui/skeleton'
+import { Skeleton } from '@/components/ui/skeleton'
+import { useOptimisticState } from '@/hooks/useOptimistic'
 import { QuotesFollowUp } from './QuotesFollowUp'
 
 type ViewMode = 'pipeline' | 'lijst' | 'follow-up'
@@ -214,6 +215,7 @@ export function QuotesPipeline() {
   const [offertes, setOffertes] = useState<Offerte[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const runOptimistic = useOptimisticState(setOffertes)
   const [searchQuery, setSearchQuery] = useState('')
   const [viewMode, setViewMode] = useState<ViewMode>('lijst')
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>('alle')
@@ -430,18 +432,24 @@ export function QuotesPipeline() {
     if (!offerteId) return
     const offerte = offertes.find(o => o.id === offerteId)
     if (!offerte || offerte.status === newStatus) return
-    try {
-      const updates: Partial<Offerte> = { status: newStatus as Offerte['status'] }
-      if (newStatus === 'verzonden' && !offerte.verstuurd_op) updates.verstuurd_op = new Date().toISOString()
-      if (newStatus === 'goedgekeurd') updates.akkoord_op = new Date().toISOString()
-      const updated = await updateOfferte(offerteId, updates)
-      setOffertes(prev => prev.map(o => o.id === offerteId ? { ...o, ...updated } : o))
-      toast.success(`${offerte.nummer} → ${STATUS_LABELS[newStatus] || newStatus}`)
-    } catch (err) {
-      logger.error('Drag & drop status update failed:', err)
-      toast.error('Kon status niet bijwerken')
+    const updates: Partial<Offerte> = { status: newStatus as Offerte['status'] }
+    if (newStatus === 'verzonden' && !offerte.verstuurd_op) updates.verstuurd_op = new Date().toISOString()
+    if (newStatus === 'goedgekeurd') updates.akkoord_op = new Date().toISOString()
+    const ok = await runOptimistic({
+      snapshot: offertes,
+      apply: (prev) => prev.map(o => o.id === offerteId ? { ...o, ...updates } : o),
+      commit: async () => {
+        const updated = await updateOfferte(offerteId, updates)
+        return (prev: Offerte[]) => prev.map(o => o.id === offerteId ? { ...o, ...updated } : o)
+      },
+      errorMessage: 'Kon status niet bijwerken',
+    })
+    if (!ok) {
+      logger.error('Drag & drop status update failed')
+      return
     }
-  }, [offertes])
+    toast.success(`${offerte.nummer} → ${STATUS_LABELS[newStatus] || newStatus}`)
+  }, [offertes, runOptimistic])
 
   const handleSaveFollowUp = useCallback(async (offerteId: string) => {
     if (!followUpDate) { toast.error('Selecteer een datum'); return }
@@ -488,18 +496,24 @@ export function QuotesPipeline() {
   }, [listSortColumn])
 
   const handleStatusChange = useCallback(async (offerteId: string, newStatus: string) => {
-    try {
-      const updates: Partial<Offerte> = { status: newStatus as Offerte['status'] }
-      if (newStatus === 'verzonden') updates.verstuurd_op = new Date().toISOString()
-      if (newStatus === 'goedgekeurd') updates.akkoord_op = new Date().toISOString()
-      const updated = await updateOfferte(offerteId, updates)
-      setOffertes(prev => prev.map(o => o.id === offerteId ? { ...o, ...updated } : o))
-      toast.success(`Status gewijzigd naar ${STATUS_LABELS[newStatus] || newStatus}`)
-    } catch (err) {
-      logger.error('Fout bij statuswijziging:', err)
-      toast.error('Kon status niet wijzigen')
+    const updates: Partial<Offerte> = { status: newStatus as Offerte['status'] }
+    if (newStatus === 'verzonden') updates.verstuurd_op = new Date().toISOString()
+    if (newStatus === 'goedgekeurd') updates.akkoord_op = new Date().toISOString()
+    const ok = await runOptimistic({
+      snapshot: offertes,
+      apply: (prev) => prev.map(o => o.id === offerteId ? { ...o, ...updates } : o),
+      commit: async () => {
+        const updated = await updateOfferte(offerteId, updates)
+        return (prev: Offerte[]) => prev.map(o => o.id === offerteId ? { ...o, ...updated } : o)
+      },
+      errorMessage: 'Kon status niet wijzigen',
+    })
+    if (!ok) {
+      logger.error('Fout bij statuswijziging')
+      return
     }
-  }, [])
+    toast.success(`Status gewijzigd naar ${STATUS_LABELS[newStatus] || newStatus}`)
+  }, [offertes, runOptimistic])
 
   function toggleSelect(id: string) {
     setSelectedIds(prev => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next })
@@ -574,7 +588,81 @@ export function QuotesPipeline() {
     }).length
   }, [offertes])
 
-  if (isLoading) return <SkeletonTable rows={6} cols={5} />
+  if (isLoading) {
+    return (
+      <div className="h-full flex flex-col bg-[#F8F7F5] -m-3 sm:-m-4 md:-m-6">
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <div className="px-4 py-4 md:px-8 md:py-8 space-y-6">
+            {/* Header */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-baseline gap-4">
+                  <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-[#1A1A1A]">
+                    Offertes<span className="text-[#F15025]">.</span>
+                  </h1>
+                  <Skeleton className="h-4 w-12" />
+                </div>
+                <Skeleton className="h-10 w-36 rounded-xl" />
+              </div>
+              {/* Stats badges row */}
+              <div className="flex items-center gap-2 flex-wrap min-h-[28px]">
+                <Skeleton className="h-7 w-20 rounded-md" />
+                <Skeleton className="h-7 w-24 rounded-md" />
+                <Skeleton className="h-7 w-28 rounded-md" />
+              </div>
+            </div>
+            {/* Toolbar */}
+            <div className="bg-white rounded-2xl p-5 shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03] space-y-4">
+              <div className="flex items-center gap-5">
+                <Skeleton className="h-9 w-[280px] rounded-lg" />
+                <Skeleton className="h-9 w-20 rounded-lg" />
+                <Skeleton className="h-9 w-9 rounded-lg" />
+                <div className="hidden sm:flex items-center gap-1 ml-auto">
+                  <Skeleton className="h-8 w-16 rounded-lg" />
+                  <Skeleton className="h-8 w-16 rounded-lg" />
+                </div>
+              </div>
+              <div className="flex items-center gap-2 pt-4 border-t border-[#F0EFEC]">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Skeleton key={i} className="h-7 w-20 rounded-lg" />
+                ))}
+              </div>
+            </div>
+            {/* List view (default) — table on md+, cards on mobile */}
+            <div className="hidden md:block bg-white rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03] overflow-hidden">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-4 px-5 py-4 border-b border-[#F0EFEC] last:border-b-0">
+                  <Skeleton className="h-4 w-4 rounded" />
+                  <div className="flex-1 min-w-0 space-y-2">
+                    <Skeleton className="h-4 w-2/5" />
+                    <Skeleton className="h-3 w-1/4" />
+                  </div>
+                  <Skeleton className="h-6 w-24 rounded-full" />
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-4 w-16" />
+                  <Skeleton className="h-4 w-12" />
+                </div>
+              ))}
+            </div>
+            <div className="md:hidden space-y-2">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="bg-white rounded-xl p-4 ring-1 ring-black/[0.03] shadow-[0_1px_2px_rgba(0,0,0,0.04)] space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <Skeleton className="h-4 w-3/5" />
+                    <Skeleton className="h-4 w-16" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-3 w-1/3" />
+                    <Skeleton className="h-5 w-20 rounded-md ml-auto" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   if (error) {
     return (
@@ -640,7 +728,7 @@ export function QuotesPipeline() {
             </div>
 
             {/* Quick stats */}
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap min-h-[28px]">
               {kpis.openCount > 0 && (
                 <span className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold bg-[#FDE8E2] text-[#C03A18]">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#F15025] doen-pulse" />
