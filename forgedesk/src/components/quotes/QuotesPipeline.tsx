@@ -118,7 +118,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 const statusOpties = [
   { value: 'alle', label: 'Alle' },
-  { value: 'wacht_op_reactie', label: 'Wacht op reactie' },
+  { value: 'wacht_op_reactie', label: 'Opvolgen' },
   { value: 'concept', label: 'Concept' },
   { value: 'verzonden', label: 'Verstuurd' },
   { value: 'bekeken', label: 'Bekeken' },
