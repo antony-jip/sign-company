@@ -88,6 +88,8 @@ import { logger } from '../../utils/logger'
 import { getNederlandseFeestdagen, isFeestdag } from '@/utils/feestdagen'
 import { confirm } from '@/components/shared/ConfirmDialog'
 import { getAvatarStyle } from '@/utils/medewerkerAvatar'
+import { Skeleton } from '@/components/ui/skeleton'
+import { useOptimisticState } from '@/hooks/useOptimistic'
 
 // ============================================================
 // STATUS CONFIG
@@ -220,6 +222,7 @@ export function CalendarLayout() {
   const { user } = useAuth()
   const [currentDate, setCurrentDate] = useState(new Date())
   const [afspraken, setAfspraken] = useState<MontageAfspraak[]>([])
+  const runOptimistic = useOptimisticState(setAfspraken)
   const [projecten, setProjecten] = useState<Project[]>([])
   const [medewerkers, setMedewerkers] = useState<Medewerker[]>([])
   const [klanten, setKlanten] = useState<Klant[]>([])
@@ -465,16 +468,19 @@ export function CalendarLayout() {
   }
 
   const handleStatusUpdate = async (id: string, newStatus: MontageAfspraak['status']) => {
-    try {
-      await updateMontageAfspraak(id, { status: newStatus })
-      setAfspraken((prev) =>
-        prev.map((a) => (a.id === id ? { ...a, status: newStatus } : a))
-      )
-      toast.success(`Status bijgewerkt naar ${STATUS_CONFIG[newStatus].label}`)
-    } catch (err) {
-      logger.error('Fout bij status update:', err)
-      toast.error('Kon status niet bijwerken')
+    const ok = await runOptimistic({
+      snapshot: afspraken,
+      apply: (prev) => prev.map((a) => a.id === id ? { ...a, status: newStatus } : a),
+      commit: async () => {
+        await updateMontageAfspraak(id, { status: newStatus })
+      },
+      errorMessage: 'Kon status niet bijwerken',
+    })
+    if (!ok) {
+      logger.error('Fout bij status update')
+      return
     }
+    toast.success(`Status bijgewerkt naar ${STATUS_CONFIG[newStatus].label}`)
   }
 
   // When project changes in form, auto-fill klant
@@ -767,10 +773,32 @@ export function CalendarLayout() {
           {/* Week grid — DOEN card */}
           <div className="bg-white rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03] overflow-hidden">
             {isLoading ? (
-              <div className="flex items-center justify-center h-96">
-                <div className="flex flex-col items-center gap-3">
-                  <Loader2 className="w-8 h-8 animate-spin text-[#1A535C]" />
-                  <p className="text-sm text-[#9B9B95]">Planning laden...</p>
+              <div className="overflow-hidden" style={{ minHeight: '400px' }}>
+                <div className="flex min-w-[700px]">
+                  {/* Time column placeholder */}
+                  <div className="w-[50px] flex-shrink-0">
+                    <div className="h-[60px] border-b border-[#F0EFEC]" />
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <div key={i} className="border-b border-[#F0EFEC] flex justify-end pr-2 pt-1" style={{ height: `${HOUR_HEIGHT}px` }}>
+                        <Skeleton className="h-2.5 w-7" />
+                      </div>
+                    ))}
+                  </div>
+                  {/* Day columns */}
+                  {Array.from({ length: 5 }).map((_, colIdx) => (
+                    <div key={colIdx} className="flex-1 min-w-0 border-l border-[#F0EFEC]">
+                      <div className="h-[60px] border-b border-[#F0EFEC] flex flex-col items-center justify-center gap-1.5 bg-white">
+                        <Skeleton className="h-3 w-10" />
+                        <Skeleton className="h-4 w-6" />
+                      </div>
+                      <div className="relative" style={{ height: `${HOUR_HEIGHT * 6}px` }}>
+                        {colIdx === 0 && <Skeleton className="absolute left-1.5 right-1.5 rounded-md" style={{ top: 16, height: HOUR_HEIGHT * 1.5 }} />}
+                        {colIdx === 1 && <Skeleton className="absolute left-1.5 right-1.5 rounded-md" style={{ top: HOUR_HEIGHT * 1.2, height: HOUR_HEIGHT * 2 }} />}
+                        {colIdx === 3 && <Skeleton className="absolute left-1.5 right-1.5 rounded-md" style={{ top: HOUR_HEIGHT * 0.8, height: HOUR_HEIGHT }} />}
+                        {colIdx === 4 && <Skeleton className="absolute left-1.5 right-1.5 rounded-md" style={{ top: HOUR_HEIGHT * 2.5, height: HOUR_HEIGHT * 1.2 }} />}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             ) : (

@@ -75,6 +75,8 @@ import { confirm } from '@/components/shared/ConfirmDialog';
 import { useAuth } from "@/contexts/AuthContext";
 import { logCreate, logWijziging } from "@/utils/auditLogger";
 import { getAvatarStyle } from "@/utils/medewerkerAvatar";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useOptimisticState } from "@/hooks/useOptimistic";
 
 const SWIMLANE_COLLAPSED_KEY = 'doen_planning_swimlane_collapsed';
 const SWIMLANE_UNASSIGNED_KEY = '__ongetoewezen__';
@@ -214,6 +216,7 @@ export function MontagePlanningLayout() {
   );
   const [viewMode, setViewMode] = useState<"week" | "list" | "raster">("week");
   const [afspraken, setAfspraken] = useState<MontageAfspraak[]>([]);
+  const runOptimistic = useOptimisticState(setAfspraken);
   const [medewerkers, setMedewerkers] = useState<Medewerker[]>([]);
   const [projecten, setProjecten] = useState<Project[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -719,22 +722,24 @@ export function MontagePlanningLayout() {
     afspraak: MontageAfspraak,
     newStatus: MontageAfspraak["status"]
   ) {
-    try {
-      await updateMontageAfspraak(afspraak.id, { status: newStatus }).catch(
-        () => null
-      );
-      setAfspraken((prev) =>
+    const ok = await runOptimistic({
+      snapshot: afspraken,
+      apply: (prev) =>
         prev.map((a) =>
           a.id === afspraak.id
             ? { ...a, status: newStatus, updated_at: new Date().toISOString() }
             : a
-        )
-      );
-      toast.success(`Status bijgewerkt naar ${STATUS_CONFIG[newStatus].label}`);
-    } catch (err) {
-      logger.error('Status bijwerken mislukt:', err)
-      toast.error("Kon status niet bijwerken");
+        ),
+      commit: async () => {
+        await updateMontageAfspraak(afspraak.id, { status: newStatus });
+      },
+      errorMessage: "Kon status niet bijwerken",
+    });
+    if (!ok) {
+      logger.error("Status bijwerken mislukt");
+      return;
     }
+    toast.success(`Status bijgewerkt naar ${STATUS_CONFIG[newStatus].label}`);
   }
 
   async function handleDragDrop(dragId: string, newDate: string) {
@@ -749,21 +754,25 @@ export function MontagePlanningLayout() {
 
     const afspraak = afspraken.find((a) => a.id === dragId);
     if (!afspraak || afspraak.datum === newDate) return;
-    try {
-      await updateMontageAfspraak(afspraak.id, { datum: newDate });
-      setAfspraken((prev) =>
+    const ok = await runOptimistic({
+      snapshot: afspraken,
+      apply: (prev) =>
         prev.map((a) =>
           a.id === afspraak.id
             ? { ...a, datum: newDate, updated_at: new Date().toISOString() }
             : a
-        )
-      );
-      const dateObj = new Date(newDate + "T00:00:00");
-      toast.success(`Verplaatst naar ${formatDateDutch(dateObj)}`);
-    } catch (err) {
-      console.error("Fout bij verplaatsen:", err);
-      toast.error("Kon afspraak niet verplaatsen");
+        ),
+      commit: async () => {
+        await updateMontageAfspraak(afspraak.id, { datum: newDate });
+      },
+      errorMessage: "Kon afspraak niet verplaatsen",
+    });
+    if (!ok) {
+      logger.error("Fout bij verplaatsen");
+      return;
     }
+    const dateObj = new Date(newDate + "T00:00:00");
+    toast.success(`Verplaatst naar ${formatDateDutch(dateObj)}`);
   }
 
   function timeToMinutes(t: string): number {
@@ -1991,10 +2000,55 @@ export function MontagePlanningLayout() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center space-y-3">
-          <div className="animate-spin h-8 w-8 border-4 border-[#1A535C] border-t-transparent rounded-full mx-auto" />
-          <p className="text-[#9B9B95]">Planning laden...</p>
+      <div className="flex h-[calc(100vh-120px)] overflow-hidden bg-[#F8F7F5]">
+        {/* Sidebar (Te plannen) */}
+        <div className="hidden md:flex flex-col w-64 flex-shrink-0 border-r border-[#F0EFEC] bg-white p-3 gap-2">
+          <Skeleton className="h-5 w-28 mb-2" />
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="rounded-lg border border-[#F0EFEC] p-3 space-y-2">
+              <Skeleton className="h-3.5 w-3/4" />
+              <Skeleton className="h-3 w-1/2" />
+            </div>
+          ))}
+        </div>
+        {/* Main grid */}
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* Toolbar */}
+          <div className="flex items-center gap-3 px-4 py-2 border-b border-[#F0EFEC] bg-white flex-shrink-0">
+            <Skeleton className="h-7 w-20 rounded-md" />
+            <Skeleton className="h-7 w-7 rounded-md" />
+            <Skeleton className="h-7 w-7 rounded-md" />
+            <Skeleton className="h-5 w-32" />
+            <div className="flex-1" />
+            <Skeleton className="h-7 w-24 rounded-md" />
+            <Skeleton className="h-7 w-32 rounded-md" />
+          </div>
+          {/* Day-strip + monteur lanes */}
+          <div className="flex-1 overflow-hidden">
+            <div className="flex border-b-2 border-[#F0EFEC] bg-[#FAFAF9]">
+              <div className="w-32 flex-shrink-0 border-r border-[#F0EFEC]" />
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex-1 min-w-0 text-center py-3 border-l border-[#EBEBEB]/30 space-y-1">
+                  <Skeleton className="h-3 w-10 mx-auto" />
+                  <Skeleton className="h-4 w-6 mx-auto" />
+                </div>
+              ))}
+            </div>
+            {Array.from({ length: 4 }).map((_, laneIdx) => (
+              <div key={laneIdx} className="flex border-b border-[#F0EFEC]">
+                <div className="w-32 flex-shrink-0 p-2 flex items-center gap-2 border-r border-[#F0EFEC]">
+                  <Skeleton className="h-7 w-7 rounded-full" />
+                  <Skeleton className="h-3 w-16" />
+                </div>
+                {Array.from({ length: 5 }).map((_, dayIdx) => (
+                  <div key={dayIdx} className="flex-1 min-w-0 p-2 border-l border-[#EBEBEB]/30">
+                    {(laneIdx + dayIdx) % 3 === 0 && <Skeleton className="h-12 w-full rounded-md" />}
+                    {(laneIdx + dayIdx) % 4 === 1 && <Skeleton className="h-8 w-full rounded-md" />}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
