@@ -51,7 +51,8 @@ import type { Project, Klant, Offerte, Medewerker, Taak } from '@/types'
 import { createTaak } from '@/services/projectService'
 import { toast } from 'sonner'
 import { logger } from '../../utils/logger'
-import { SkeletonTable } from '@/components/ui/skeleton'
+import { Skeleton } from '@/components/ui/skeleton'
+import { useOptimisticState } from '@/hooks/useOptimistic'
 
 const statusOpties = [
   { value: 'alle', label: 'Alle' },
@@ -147,6 +148,7 @@ export function ProjectsList() {
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false)
   const [medewerkers, setMedewerkers] = useState<Medewerker[]>([])
   const zoekInputRef = useRef<HTMLInputElement>(null)
+  const runOptimistic = useOptimisticState(setProjecten)
 
   const [leadColumns, setLeadColumns] = useState<['project', 'klant'] | ['klant', 'project']>(() => {
     const saved = localStorage.getItem('projects_column_order')
@@ -377,19 +379,25 @@ export function ProjectsList() {
   }
 
   async function handleStatusChange(projectId: string, newStatus: Project['status']) {
-    try {
-      const oudeStatus = projecten.find(p => p.id === projectId)?.status
-      const updated = await updateProject(projectId, { status: newStatus })
-      setProjecten((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
-      if (user?.id && oudeStatus) {
-        const naam = medewerkers.find(m => m.user_id === user.id)?.naam ?? user.email ?? ''
-        logWijziging({ userId: user.id, entityType: 'project', entityId: projectId, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: oudeStatus, nieuweWaarde: newStatus })
-      }
-      toast.success(`Status gewijzigd naar ${statusLabels[newStatus]}`)
-    } catch (error) {
-      logger.error('Fout bij statuswijziging:', error)
-      toast.error('Kon status niet wijzigen')
+    const oudeStatus = projecten.find(p => p.id === projectId)?.status
+    const ok = await runOptimistic({
+      snapshot: projecten,
+      apply: (prev) => prev.map((p) => p.id === projectId ? { ...p, status: newStatus } : p),
+      commit: async () => {
+        const updated = await updateProject(projectId, { status: newStatus })
+        return (prev: Project[]) => prev.map((p) => p.id === updated.id ? updated : p)
+      },
+      errorMessage: 'Kon status niet wijzigen',
+    })
+    if (!ok) {
+      logger.error('Fout bij statuswijziging')
+      return
     }
+    if (user?.id && oudeStatus) {
+      const naam = medewerkers.find(m => m.user_id === user.id)?.naam ?? user.email ?? ''
+      logWijziging({ userId: user.id, entityType: 'project', entityId: projectId, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: oudeStatus, nieuweWaarde: newStatus })
+    }
+    toast.success(`Status gewijzigd naar ${statusLabels[newStatus]}`)
   }
 
   function toggleSelectAll() {
@@ -402,33 +410,38 @@ export function ProjectsList() {
 
   async function handleBulkStatusChange(newStatus: Project['status']) {
     if (selectedIds.size === 0) return
-    try {
-      const ids = [...selectedIds]
-      const naam = user?.id
-        ? (medewerkers.find(m => m.user_id === user.id)?.naam ?? user.email ?? '')
-        : ''
-      const updates = await Promise.all(
-        ids.map(async (id) => {
-          const oudeStatus = projecten.find(p => p.id === id)?.status
-          const updated = await updateProject(id, { status: newStatus })
-          if (user?.id && oudeStatus) {
-            logWijziging({ userId: user.id, entityType: 'project', entityId: id, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: oudeStatus, nieuweWaarde: newStatus })
-          }
-          return updated
-        })
-      )
-      setProjecten((prev) =>
-        prev.map((p) => {
-          const updated = updates.find((u) => u.id === p.id)
-          return updated || p
-        })
-      )
-      toast.success(`${selectedIds.size} project${selectedIds.size === 1 ? '' : 'en'} gewijzigd naar ${statusLabels[newStatus]}`)
-      setSelectedIds(new Set())
-    } catch (error) {
-      logger.error('Fout bij bulk statuswijziging:', error)
-      toast.error('Kon status niet wijzigen')
+    const ids = [...selectedIds]
+    const idSet = new Set(ids)
+    const naam = user?.id
+      ? (medewerkers.find(m => m.user_id === user.id)?.naam ?? user.email ?? '')
+      : ''
+    const oudeStatusById = new Map(
+      ids.map(id => [id, projecten.find(p => p.id === id)?.status])
+    )
+    const ok = await runOptimistic({
+      snapshot: projecten,
+      apply: (prev) => prev.map((p) => idSet.has(p.id) ? { ...p, status: newStatus } : p),
+      commit: async () => {
+        const updates = await Promise.all(ids.map((id) => updateProject(id, { status: newStatus })))
+        const byId = new Map(updates.map((u) => [u.id, u]))
+        return (prev: Project[]) => prev.map((p) => byId.get(p.id) ?? p)
+      },
+      errorMessage: 'Kon status niet wijzigen',
+    })
+    if (!ok) {
+      logger.error('Fout bij bulk statuswijziging')
+      return
     }
+    if (user?.id) {
+      for (const id of ids) {
+        const oudeStatus = oudeStatusById.get(id)
+        if (oudeStatus) {
+          logWijziging({ userId: user.id, entityType: 'project', entityId: id, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: oudeStatus, nieuweWaarde: newStatus })
+        }
+      }
+    }
+    toast.success(`${ids.length} project${ids.length === 1 ? '' : 'en'} gewijzigd naar ${statusLabels[newStatus]}`)
+    setSelectedIds(new Set())
   }
 
   async function handleBulkDelete() {
@@ -461,7 +474,83 @@ export function ProjectsList() {
   }, [projecten])
 
   if (isLoading) {
-    return <SkeletonTable rows={6} cols={4} />
+    return (
+      <div className="h-full flex flex-col bg-[#F8F7F5] -m-3 sm:-m-4 md:-m-6">
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <div className="px-4 py-4 md:px-8 md:py-8 space-y-6">
+            {/* Header */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-baseline gap-4">
+                  <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-[#1A1A1A]">
+                    Projecten<span className="text-[#F15025]">.</span>
+                  </h1>
+                  <Skeleton className="h-4 w-12" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Skeleton className="hidden md:block h-10 w-28 rounded-xl" />
+                  <Skeleton className="h-10 w-36 rounded-xl" />
+                </div>
+              </div>
+              {/* Stats badges row — fixed height to prevent shift */}
+              <div className="flex items-center gap-2 flex-wrap min-h-[28px]">
+                <Skeleton className="h-7 w-20 rounded-md" />
+                <Skeleton className="h-7 w-24 rounded-md" />
+                <Skeleton className="h-7 w-20 rounded-md" />
+              </div>
+            </div>
+            {/* Toolbar card */}
+            <div className="bg-white rounded-2xl p-5 shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03] space-y-4">
+              <div className="flex items-center gap-5">
+                <Skeleton className="h-9 w-[280px] rounded-lg" />
+                <div className="hidden sm:flex items-center gap-1 ml-auto">
+                  <Skeleton className="h-8 w-16 rounded-lg" />
+                  <Skeleton className="h-8 w-16 rounded-lg" />
+                </div>
+              </div>
+              <div className="flex items-center gap-2 pt-4 border-t border-[#F0EFEC]">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Skeleton key={i} className="h-7 w-16 rounded-lg" />
+                ))}
+              </div>
+            </div>
+            {/* Table — match desktop row layout */}
+            <div className="hidden md:block bg-white rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03] overflow-hidden">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-4 px-5 py-4 border-b border-[#F0EFEC] last:border-b-0">
+                  <Skeleton className="h-4 w-4 rounded" />
+                  <div className="flex-1 min-w-0 space-y-2">
+                    <Skeleton className="h-4 w-2/5" />
+                    <Skeleton className="h-3 w-1/4" />
+                  </div>
+                  <Skeleton className="h-6 w-24 rounded-full" />
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-4 w-16" />
+                </div>
+              ))}
+            </div>
+            {/* Mobile card stack */}
+            <div className="md:hidden space-y-2">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="bg-white rounded-xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)] space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0 space-y-1.5">
+                      <Skeleton className="h-4 w-3/5" />
+                      <Skeleton className="h-3 w-2/5" />
+                    </div>
+                    <Skeleton className="h-6 w-20 rounded-full" />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Skeleton className="h-3 w-16" />
+                    <Skeleton className="h-3 w-12" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   /** Status bg tint for inline chip */
@@ -538,7 +627,7 @@ export function ProjectsList() {
             </div>
 
             {/* Quick stats — compact inline badges */}
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap min-h-[28px]">
               {stats.actief > 0 && (
                 <span className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold bg-[#E8F2EC] text-[#2D6B48]">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#2D6B48] doen-pulse" />
