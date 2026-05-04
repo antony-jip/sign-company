@@ -568,7 +568,7 @@ function SignaturePreview({
 
 export function EmailTab() {
   const { user, isAdmin } = useAuth()
-  const { refreshSettings, profile, emailFetchLimit: currentFetchLimit } = useAppSettings()
+  const { refreshSettings, refreshProfile, profile, emailFetchLimit: currentFetchLimit } = useAppSettings()
   const initialSub = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('sub') || 'handtekening' : 'handtekening'
   const [subTab, setSubTab] = useState(initialSub)
   const [isLoading, setIsLoading] = useState(true)
@@ -590,11 +590,14 @@ export function EmailTab() {
     if (!user?.id) return
     try {
       setIsLoading(true)
+      // Handtekening + afzender_naam staan op profiles (migratie 091).
+      // Fallback op app_settings voor profiles die nog geen waarde hebben.
+      const userProfile = await getProfile(user.id)
       const data = await getAppSettings(user.id)
-      setEmailHandtekening(data.email_handtekening || '')
-      setAfzenderNaam(data.afzender_naam || '')
-      setHandtekeningAfbeelding(data.handtekening_afbeelding || '')
-      setAfbeeldingGrootte(data.handtekening_afbeelding_grootte ?? 64)
+      setEmailHandtekening(userProfile?.email_handtekening ?? data.email_handtekening ?? '')
+      setAfzenderNaam(userProfile?.afzender_naam ?? data.afzender_naam ?? '')
+      setHandtekeningAfbeelding(userProfile?.handtekening_afbeelding ?? data.handtekening_afbeelding ?? '')
+      setAfbeeldingGrootte(userProfile?.handtekening_afbeelding_grootte ?? data.handtekening_afbeelding_grootte ?? 64)
     } catch (err) {
       logger.error('Fout bij laden e-mailinstellingen:', err)
     } finally {
@@ -627,13 +630,15 @@ export function EmailTab() {
     if (!user?.id) return
     try {
       setIsSaving(true)
+      // updateAppSettings sluist per-user velden (handtekening, afzender_naam)
+      // automatisch door naar updateProfile. Daarna profile + settings refreshen.
       await updateAppSettings(user.id, {
         email_handtekening: emailHandtekening,
         afzender_naam: afzenderNaam,
         handtekening_afbeelding: handtekeningAfbeelding,
         handtekening_afbeelding_grootte: afbeeldingGrootte,
       })
-      await refreshSettings()
+      await Promise.all([refreshProfile(), refreshSettings()])
       toast.success('Opgeslagen.')
     } catch (err) {
       logger.error('Fout bij opslaan e-mailinstellingen:', err)

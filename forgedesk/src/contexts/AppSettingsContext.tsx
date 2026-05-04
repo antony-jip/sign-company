@@ -100,8 +100,17 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const handleUpdateSettings = useCallback(async (updates: Partial<AppSettings>) => {
     if (!user?.id) return
     try {
+      // Per-user velden (handtekening, sidebar_items, afzender_naam) worden
+      // door updateAppSettings doorgesluisd naar profiles. Vernieuw profile
+      // ook in state als zo'n veld in de update zit.
+      const perUserKeys = ['email_handtekening', 'handtekening_afbeelding', 'handtekening_afbeelding_grootte', 'afzender_naam', 'sidebar_items']
+      const heeftPerUserUpdate = perUserKeys.some(k => k in updates)
       const updated = await updateAppSettings(user.id, updates)
       setSettings(updated)
+      if (heeftPerUserUpdate) {
+        const freshProfile = await getProfile(user.id)
+        if (freshProfile) setProfile(freshProfile)
+      }
     } catch (err) {
       logger.error('Error updating settings:', err)
       throw err
@@ -134,8 +143,15 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   // Anthropic key is server-side only (ANTHROPIC_API_KEY in env, not exposed to frontend)
   const anthropicApiKey = ''
 
+  // Sinds migratie 091 staan sidebar_items per-user op profiles. Merge ze
+  // hier in het settings-object zodat consumers (Sidebar, TopNav) hun
+  // bestaande settings.sidebar_items lezen kunnen blijven gebruiken.
+  const mergedSettings: AppSettings = profile?.sidebar_items != null
+    ? { ...settings, sidebar_items: profile.sidebar_items }
+    : settings
+
   const value: AppSettingsContextType = {
-    settings,
+    settings: mergedSettings,
     profile,
     isLoading,
     updateSettings: handleUpdateSettings,
@@ -152,9 +168,11 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     autoFollowUp: settings.auto_follow_up ?? true,
     followUpDagen: settings.follow_up_dagen ?? 7,
     pipelineStappen: settings.pipeline_stappen || [],
-    emailHandtekening: settings.email_handtekening || '',
-    handtekeningAfbeelding: settings.handtekening_afbeelding || '',
-    handtekeningAfbeeldingGrootte: settings.handtekening_afbeelding_grootte ?? 64,
+    // Handtekening-velden staan sinds migratie 091 op profiles (per-user).
+    // Fallback op settings voor rijen die nog niet gebackfilld zijn.
+    emailHandtekening: profile?.email_handtekening ?? settings.email_handtekening ?? '',
+    handtekeningAfbeelding: profile?.handtekening_afbeelding ?? settings.handtekening_afbeelding ?? '',
+    handtekeningAfbeeldingGrootte: profile?.handtekening_afbeelding_grootte ?? settings.handtekening_afbeelding_grootte ?? 64,
     primaireKleur: settings.primaire_kleur || '#1A535C',
     secundaireKleur: settings.secundaire_kleur || '#7c3aed',
     toonConversieRate: settings.toon_conversie_rate ?? true,

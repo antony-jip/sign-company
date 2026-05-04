@@ -164,10 +164,10 @@ async function processUserHerinneringen(params: {
     (klanten || []).map((k: { id: string; email: string; contactpersoon: string }) => [k.id, k])
   );
 
-  // Get branding
+  // Get branding. Afzender_naam staat per-user op profiles (migratie 091).
   const { data: profile } = await supabase
     .from("profiles")
-    .select("bedrijfsnaam, logo_url, organisatie_id")
+    .select("bedrijfsnaam, logo_url, afzender_naam")
     .eq("id", userId)
     .maybeSingle();
 
@@ -181,23 +181,7 @@ async function processUserHerinneringen(params: {
   const logoUrl = showLogo ? profile?.logo_url : undefined;
   const primaireKleur = docStyle?.primaire_kleur || undefined;
 
-  let afzenderNaam: string | null = null;
-  if (profile?.organisatie_id) {
-    const { data: orgSettings } = await supabase
-      .from("app_settings")
-      .select("afzender_naam")
-      .eq("organisatie_id", profile.organisatie_id)
-      .maybeSingle();
-    afzenderNaam = (orgSettings?.afzender_naam || "").trim() || null;
-  }
-  if (!afzenderNaam) {
-    const { data: userSettings } = await supabase
-      .from("app_settings")
-      .select("afzender_naam")
-      .eq("user_id", userId)
-      .maybeSingle();
-    afzenderNaam = (userSettings?.afzender_naam || "").trim() || null;
-  }
+  const afzenderNaam = (profile?.afzender_naam || "").trim() || null;
   const fromName = afzenderNaam || bedrijfsnaam || undefined;
 
   const appUrl =

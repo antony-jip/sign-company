@@ -230,31 +230,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ success: true, message: 'Email ingepland', id: ingepland.id })
     }
 
-    // Haal afzendernaam op: app_settings.afzender_naam (org-first, dan user) → fallback bedrijfsnaam
+    // Afzendernaam staat per-user op profiles (migratie 091); bedrijfsnaam als fallback.
     const { data: profile } = await supabaseAdmin
       .from('profiles')
-      .select('bedrijfsnaam, organisatie_id')
+      .select('bedrijfsnaam, afzender_naam')
       .eq('id', user_id)
       .maybeSingle()
 
-    let afzenderNaam: string | null = null
-    if (profile?.organisatie_id) {
-      const { data: orgSettings } = await supabaseAdmin
-        .from('app_settings')
-        .select('afzender_naam')
-        .eq('organisatie_id', profile.organisatie_id)
-        .maybeSingle()
-      afzenderNaam = (orgSettings?.afzender_naam || '').trim() || null
-    }
-    if (!afzenderNaam) {
-      const { data: userSettings } = await supabaseAdmin
-        .from('app_settings')
-        .select('afzender_naam')
-        .eq('user_id', user_id)
-        .maybeSingle()
-      afzenderNaam = (userSettings?.afzender_naam || '').trim() || null
-    }
-
+    const afzenderNaam = (profile?.afzender_naam || '').trim() || null
     const fromName = afzenderNaam || profile?.bedrijfsnaam?.trim() || null
     const fromAddress = fromName
       ? `"${fromName.replace(/"/g, '')}" <${gmail_address}>`

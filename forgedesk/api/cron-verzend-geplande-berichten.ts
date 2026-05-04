@@ -43,25 +43,6 @@ interface UserCreds {
   fromName?: string
 }
 
-async function loadAfzenderNaam(userId: string, organisatieId: string | null): Promise<string | null> {
-  if (organisatieId) {
-    const { data } = await supabaseAdmin
-      .from('app_settings')
-      .select('afzender_naam')
-      .eq('organisatie_id', organisatieId)
-      .maybeSingle()
-    const naam = (data?.afzender_naam || '').trim()
-    if (naam) return naam
-  }
-  const { data } = await supabaseAdmin
-    .from('app_settings')
-    .select('afzender_naam')
-    .eq('user_id', userId)
-    .maybeSingle()
-  const naam = (data?.afzender_naam || '').trim()
-  return naam || null
-}
-
 async function getUserCreds(userId: string): Promise<UserCreds | null> {
   const { data: settings } = await supabaseAdmin
     .from('user_email_settings')
@@ -71,13 +52,14 @@ async function getUserCreds(userId: string): Promise<UserCreds | null> {
 
   if (!settings?.gmail_address || !settings?.encrypted_app_password) return null
 
+  // Afzendernaam staat per-user op profiles (migratie 091); bedrijfsnaam als fallback.
   const { data: profile } = await supabaseAdmin
     .from('profiles')
-    .select('bedrijfsnaam, organisatie_id')
+    .select('bedrijfsnaam, afzender_naam')
     .eq('id', userId)
     .maybeSingle()
 
-  const afzenderNaam = await loadAfzenderNaam(userId, profile?.organisatie_id || null)
+  const afzenderNaam = (profile?.afzender_naam || '').trim() || null
   const fromName = afzenderNaam || profile?.bedrijfsnaam?.trim() || undefined
 
   return {

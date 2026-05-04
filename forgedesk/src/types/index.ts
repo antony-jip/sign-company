@@ -27,6 +27,13 @@ export interface Profile {
   status?: TeamStatus;
   uitgenodigd_door?: string;
   uitgenodigd_op?: string;
+  // Per-user e-mail handtekening (verhuisd uit app_settings — migratie 091)
+  email_handtekening?: string;
+  handtekening_afbeelding?: string;
+  handtekening_afbeelding_grootte?: number;
+  afzender_naam?: string;
+  // Per-user navigatie — null/undefined = gebruik UI-defaults
+  sidebar_items?: string[] | null;
   created_at: string;
   updated_at: string;
 }
@@ -659,9 +666,12 @@ export interface AppSettings {
   melding_nieuwe_offerte: boolean;
   melding_status_wijziging: boolean;
   // Email handtekening
+  /** @deprecated Verhuisd naar profiles (migratie 091). Lees via useAppSettings().emailHandtekening. */
   email_handtekening: string;
-  handtekening_afbeelding: string;  // URL van logo/foto in handtekening
-  handtekening_afbeelding_grootte: number; // Afbeelding grootte in px (hoogte), default 64
+  /** @deprecated Verhuisd naar profiles (migratie 091). */
+  handtekening_afbeelding: string;
+  /** @deprecated Verhuisd naar profiles (migratie 091). */
+  handtekening_afbeelding_grootte: number;
   // Branding
   primaire_kleur: string;
   secundaire_kleur: string;
@@ -671,6 +681,7 @@ export interface AppSettings {
   toon_follow_up_indicatoren: boolean;
   dashboard_widgets: string[];
   // Sidebar navigatie - welke items zijn zichtbaar
+  /** @deprecated Verhuisd naar profiles (migratie 091). Lees via useAppSettings().settings.sidebar_items wordt nu uit profile gevuld. */
   sidebar_items: string[];
   // Calculatie instellingen
   calculatie_categorieen: string[];            // Product categorieën (bijv. "Materiaal", "Arbeid")
@@ -716,6 +727,7 @@ export interface AppSettings {
   offerte_intro_tekst: string;
   offerte_outro_tekst: string;
   // Email
+  /** @deprecated Verhuisd naar profiles (migratie 091). */
   afzender_naam: string;
   email_fetch_limit: number;
   // Daan

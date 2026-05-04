@@ -234,12 +234,15 @@ export async function getAppSettings(userId: string): Promise<AppSettings> {
     const orgId = await getOrgId()
     let data: AppSettings | null = null
 
-    // Try org-based lookup first (matches RLS policy)
+    // Org-based lookup. Veiligheid: bij meerdere rijen per org (door
+    // historische bug) altijd de meest recent geüpdatete pakken.
     if (orgId) {
       const res = await supabase
         .from('app_settings')
         .select('*')
         .eq('organisatie_id', orgId)
+        .order('updated_at', { ascending: false })
+        .limit(1)
         .maybeSingle()
       data = res.data
     }
@@ -277,8 +280,36 @@ function normalizeSidebarItems(settings: AppSettings): AppSettings {
   return { ...settings, sidebar_items: [...kept, ...newItems] }
 }
 
+// Velden die per-user op profiles staan (migratie 091). Updates worden
+// automatisch doorgesluisd naar updateProfile zodat oudere call-sites
+// die deze velden via updateAppSettings doorgeven blijven werken.
+const PER_USER_VELDEN_IN_PROFILE = [
+  'email_handtekening',
+  'handtekening_afbeelding',
+  'handtekening_afbeelding_grootte',
+  'afzender_naam',
+  'sidebar_items',
+] as const
+
 export async function updateAppSettings(userId: string, updates: Partial<AppSettings>): Promise<AppSettings> {
   assertId(userId, 'user_id')
+
+  // Splits updates: per-user velden gaan naar profiles, rest naar app_settings.
+  const orgWide: Partial<AppSettings> = { ...updates }
+  const perUser: Record<string, unknown> = {}
+  for (const veld of PER_USER_VELDEN_IN_PROFILE) {
+    if (veld in orgWide) {
+      perUser[veld] = (orgWide as Record<string, unknown>)[veld]
+      delete (orgWide as Record<string, unknown>)[veld]
+    }
+  }
+  if (Object.keys(perUser).length > 0) {
+    await updateProfile(userId, perUser as Partial<Profile>)
+  }
+  if (Object.keys(orgWide).length === 0) {
+    return await getAppSettings(userId)
+  }
+
   if (isSupabaseConfigured() && supabase) {
     const orgId = await getOrgId()
 
@@ -289,6 +320,8 @@ export async function updateAppSettings(userId: string, updates: Partial<AppSett
         .from('app_settings')
         .select('*')
         .eq('organisatie_id', orgId)
+        .order('updated_at', { ascending: false })
+        .limit(1)
         .maybeSingle()
       existing = data
     }
@@ -302,7 +335,7 @@ export async function updateAppSettings(userId: string, updates: Partial<AppSett
       existing = data
     }
 
-    const writePayload = { ...updates, user_id: userId, updated_at: now(), ...(orgId ? { organisatie_id: orgId } : {}) }
+    const writePayload = { ...orgWide, user_id: userId, updated_at: now(), ...(orgId ? { organisatie_id: orgId } : {}) }
 
     if (existing?.id) {
       const { error } = await supabase
@@ -331,12 +364,12 @@ export async function updateAppSettings(userId: string, updates: Partial<AppSett
   const index = settings.findIndex((s) => s.user_id === userId)
   if (index === -1) {
     const defaults = getDefaultAppSettings(userId)
-    const newSettings: AppSettings = { ...defaults, ...updates, updated_at: now() }
+    const newSettings: AppSettings = { ...defaults, ...orgWide, updated_at: now() }
     settings.push(newSettings)
     setLocalData('app_settings', settings)
     return newSettings
   }
-  settings[index] = { ...settings[index], ...updates, updated_at: now() }
+  settings[index] = { ...settings[index], ...orgWide, updated_at: now() }
   setLocalData('app_settings', settings)
   return settings[index]
 }
