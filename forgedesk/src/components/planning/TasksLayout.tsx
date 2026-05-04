@@ -806,7 +806,7 @@ export function TasksLayout() {
           logWijziging({ userId: user.id, entityType: 'taak', entityId: newTaak.id, actie: 'gewijzigd', veld: 'toewijzing', medewerkerNaam, nieuweWaarde: newTaak.toegewezen_aan })
         }
       }
-      toast.success('Taak aangemaakt')
+      toast.success(<>Taak aangemaakt<span style={{ color: '#F15025' }}>.</span></>)
       return true
     } catch (error) {
       logger.error('Fout bij aanmaken:', error)
@@ -859,7 +859,7 @@ export function TasksLayout() {
     try {
       await deleteTaak(taak.id)
       setTaken((prev) => prev.filter((t) => t.id !== taak.id))
-      toast.success('Taak verwijderd')
+      toast.success(<>Taak verwijderd<span style={{ color: '#F15025' }}>.</span></>)
     } catch (error) {
       logger.error('Fout bij verwijderen:', error)
       toast.error('Kon taak niet verwijderen')
@@ -927,7 +927,7 @@ export function TasksLayout() {
     try {
       await deleteTaak(deletingTaak.id)
       setTaken((prev) => prev.filter((t) => t.id !== deletingTaak.id))
-      toast.success('Taak verwijderd')
+      toast.success(<>Taak verwijderd<span style={{ color: '#F15025' }}>.</span></>)
       setDeleteDialogOpen(false)
       setDeletingTaak(null)
     } catch (error) {

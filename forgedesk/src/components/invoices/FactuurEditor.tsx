@@ -985,7 +985,7 @@ export function FactuurEditor() {
     try {
       const doc = generateFactuurPDF(factuurData, pdfItems, selectedKlant, bedrijfsProfiel, documentStyle)
       doc.save(`factuur-${nummer}.pdf`)
-      toast.success('PDF gedownload')
+      toast.success(<>PDF gedownload<span style={{ color: '#F15025' }}>.</span></>)
     } catch (err) {
       logger.error('Fout bij genereren PDF:', err)
       toast.error('Kon PDF niet genereren')

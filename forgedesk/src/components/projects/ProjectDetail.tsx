@@ -776,7 +776,7 @@ export function ProjectDetail() {
   const copyApprovalLink = (token: string) => {
     const link = `${window.location.origin}/goedkeuring/${token}`
     navigator.clipboard.writeText(link)
-    toast.success('Link gekopieerd naar klembord')
+    toast.success(<>Link gekopieerd naar klembord<span style={{ color: '#F15025' }}>.</span></>)
   }
 
   const recenteActiviteiten = useMemo(
@@ -1550,7 +1550,7 @@ export function ProjectDetail() {
                           const confirmed = await confirm({ message: `Werkbon ${wb.werkbon_nummer} verwijderen?`, variant: 'destructive', confirmLabel: 'Verwijderen' })
                           if (confirmed) {
                             deleteWerkbon(wb.id)
-                              .then(() => { setProjectWerkbonnen(prev => prev.filter(w => w.id !== wb.id)); toast.success('Werkbon verwijderd') })
+                              .then(() => { setProjectWerkbonnen(prev => prev.filter(w => w.id !== wb.id)); toast.success(<>Werkbon verwijderd<span style={{ color: '#F15025' }}>.</span></>) })
                               .catch(() => toast.error('Kon werkbon niet verwijderen'))
                           }
                         }}

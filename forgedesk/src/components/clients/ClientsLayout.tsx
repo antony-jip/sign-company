@@ -341,19 +341,19 @@ export function ClientsLayout() {
           {klanten.filter((k) => k.status === 'actief').length > 0 && (
             <span className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold bg-[#E8F2EC] text-[#2D6B48]">
               <span className="w-1.5 h-1.5 rounded-full bg-[#2D6B48] doen-pulse" />
-              <span className="font-mono">{klanten.filter((k) => k.status === 'actief').length}</span> actief
+              <span className="font-mono">{klanten.filter((k) => k.status === 'actief').length}</span> actief<span className="text-[#F15025]">.</span>
             </span>
           )}
           {klanten.filter((k) => k.status === 'prospect').length > 0 && (
             <span className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold bg-[#E8EEF9] text-[#3A5A9A]">
               <span className="w-1.5 h-1.5 rounded-full bg-[#3A5A9A]" />
-              <span className="font-mono">{klanten.filter((k) => k.status === 'prospect').length}</span> prospect
+              <span className="font-mono">{klanten.filter((k) => k.status === 'prospect').length}</span> prospect<span className="text-[#F15025]">.</span>
             </span>
           )}
           {klanten.filter((k) => k.status === 'inactief').length > 0 && (
             <span className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold bg-[#F5F2E8] text-[#8A7A4A]">
               <span className="w-1.5 h-1.5 rounded-full bg-[#8A7A4A]" />
-              <span className="font-mono">{klanten.filter((k) => k.status === 'inactief').length}</span> inactief
+              <span className="font-mono">{klanten.filter((k) => k.status === 'inactief').length}</span> inactief<span className="text-[#F15025]">.</span>
             </span>
           )}
         </div>

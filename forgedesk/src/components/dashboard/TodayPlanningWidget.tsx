@@ -220,7 +220,7 @@ export function TodayPlanningWidget() {
             <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-3" style={{ background: 'rgba(26, 83, 92, 0.1)' }}>
               <CheckCircle2 className="w-6 h-6 text-primary/40" />
             </div>
-            <p className="text-sm font-medium text-foreground/70">Geen montages of taken vandaag</p>
+            <p className="text-sm font-medium text-foreground/70">Geen montages of taken vandaag<span className="text-[#F15025]">.</span></p>
             <p className="text-xs mt-1 text-muted-foreground/60">Tijd om offertes op te volgen of de werkplaats in te duiken</p>
           </div>
         )}

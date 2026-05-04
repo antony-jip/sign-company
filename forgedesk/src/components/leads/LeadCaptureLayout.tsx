@@ -68,7 +68,7 @@ export function LeadCaptureLayout() {
   const handleCopyLink = useCallback((token: string) => {
     const link = `${window.location.origin}/formulier/${token}`
     navigator.clipboard.writeText(link)
-    toast.success('Link gekopieerd')
+    toast.success(<>Link gekopieerd<span style={{ color: '#F15025' }}>.</span></>)
   }, [])
 
   const handleDelete = useCallback(async () => {

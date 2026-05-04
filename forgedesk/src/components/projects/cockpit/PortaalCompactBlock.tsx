@@ -421,7 +421,7 @@ function InputBar({
         thumbnail_url: tekeningFile.type.startsWith('image/') ? url : undefined,
         uploaded_by: 'bedrijf',
       })
-      toast.success('Tekening gedeeld'); setTekeningFile(null); setTekeningTitel(''); setTekeningPopoverOpen(false)
+      toast.success(<>Tekening gedeeld<span style={{ color: '#F15025' }}>.</span></>); setTekeningFile(null); setTekeningTitel(''); setTekeningPopoverOpen(false)
       await fetchItems()
       if (notificeerKlant) sendEmailNotification(tekeningTitel || tekeningFile.name, tekeningTitel || tekeningFile.name)
     })

@@ -1490,7 +1490,7 @@ export function QuoteCreation() {
         primaireKleur: primaireKleur || '#2563eb',
       }, documentStyle)
       doc.save(`${offerteNummer}.pdf`)
-      toast.success('PDF gedownload')
+      toast.success(<>PDF gedownload<span style={{ color: '#F15025' }}>.</span></>)
     } catch (err) {
       logger.error('Failed to generate PDF:', err)
       toast.error('Kon PDF niet genereren')

@@ -280,7 +280,7 @@ export function PortalenOverzicht() {
         bestede_tijd: 0,
       })
       logCreate({ user, entityType: 'taak', entityId: taak.id })
-      toast.success('Taak aangemaakt')
+      toast.success(<>Taak aangemaakt<span style={{ color: '#F15025' }}>.</span></>)
       setTaakDialogOpen(false)
     } catch (err) {
       logger.error('Kon taak niet aanmaken:', err)

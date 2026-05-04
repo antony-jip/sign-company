@@ -150,7 +150,7 @@ export function LeadFormulierEditor() {
   const handleCopyLink = useCallback(() => {
     if (!publiekToken) return
     navigator.clipboard.writeText(`${window.location.origin}/formulier/${publiekToken}`)
-    toast.success('Link gekopieerd')
+    toast.success(<>Link gekopieerd<span style={{ color: '#F15025' }}>.</span></>)
   }, [publiekToken])
 
   const handleCopyEmbed = useCallback(() => {

@@ -215,7 +215,7 @@ export function MontagePlanningWidget() {
             <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-3" style={{ background: 'rgba(154, 90, 72, 0.1)' }}>
               <CalendarDays className="w-6 h-6 opacity-30" />
             </div>
-            <p className="text-sm font-medium text-foreground/70">Nog geen montages deze week</p>
+            <p className="text-sm font-medium text-foreground/70">Nog geen montages deze week<span className="text-[#F15025]">.</span></p>
             <Button variant="link" size="sm" className="mt-1 text-xs" onClick={() => navigate('/montage')}>
               Ga naar montageplanning
             </Button>

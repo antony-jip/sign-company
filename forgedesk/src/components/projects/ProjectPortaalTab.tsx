@@ -452,7 +452,7 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
         }
 
         if (emailNotify) sendEmailNotification(tekeningTitel.trim(), tekeningTitel.trim())
-        toast.success('Tekening gedeeld')
+        toast.success(<>Tekening gedeeld<span style={{ color: '#F15025' }}>.</span></>)
       }
 
       // Reset

@@ -320,7 +320,7 @@ export function InkoopfacturenLayout() {
       Status: STATUS_CONFIG[f.status].label,
     }))
     exportCSV('inkoopfacturen', headers, rows)
-    toast.success('CSV gedownload')
+    toast.success(<>CSV gedownload<span style={{ color: '#F15025' }}>.</span></>)
   }, [filtered])
 
   const handleExportExcel = useCallback(() => {
@@ -335,7 +335,7 @@ export function InkoopfacturenLayout() {
       Status: STATUS_CONFIG[f.status].label,
     }))
     exportExcel('inkoopfacturen', headers, rows, 'Inkoopfacturen')
-    toast.success('Excel gedownload')
+    toast.success(<>Excel gedownload<span style={{ color: '#F15025' }}>.</span></>)
   }, [filtered])
 
   const statistics = useMemo(() => {

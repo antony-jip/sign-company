@@ -151,7 +151,7 @@ export function BestelbonnenLayout() {
     const a = document.createElement('a')
     a.href = url; a.download = 'bestelbonnen.csv'; a.click()
     URL.revokeObjectURL(url)
-    toast.success('CSV gedownload')
+    toast.success(<>CSV gedownload<span style={{ color: '#F15025' }}>.</span></>)
   }, [gefilterd, getLeverancierNaam, getProjectNaam, bedragen])
 
   if (isLoading) {

@@ -76,7 +76,7 @@ export function RecenteActiviteitWidget() {
         ) : items.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
             <Clock className="w-8 h-8 mb-3 opacity-30" />
-            <p className="text-sm font-medium text-foreground/70">Nog geen activiteit</p>
+            <p className="text-sm font-medium text-foreground/70">Nog geen activiteit<span className="text-[#F15025]">.</span></p>
           </div>
         ) : (
           <div className="space-y-0">

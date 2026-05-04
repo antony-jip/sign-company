@@ -99,7 +99,7 @@ export function WeergaveTab() {
     try {
       setIsSavingSidebar(true)
       await updateSettings({ sidebar_items: sidebarItems })
-      toast.success('Opgeslagen.')
+      toast.success(<>Opgeslagen<span style={{ color: '#F15025' }}>.</span></>)
     } catch (err) {
       logger.error(err)
       toast.error('Kon navigatie niet opslaan')

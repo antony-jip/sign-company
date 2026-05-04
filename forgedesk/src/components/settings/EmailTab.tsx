@@ -293,7 +293,7 @@ function EmailTemplatesBeheerTab() {
       await deleteEmailTemplate(id)
       setTemplates(prev => prev.filter(t => t.id !== id))
       if (editId === id) { setEditId(null); setShowNew(false) }
-      toast.success('Template verwijderd')
+      toast.success(<>Template verwijderd<span style={{ color: '#F15025' }}>.</span></>)
     } catch {
       toast.error('Verwijderen mislukt')
     }
@@ -639,7 +639,7 @@ export function EmailTab() {
         handtekening_afbeelding_grootte: afbeeldingGrootte,
       })
       await Promise.all([refreshProfile(), refreshSettings()])
-      toast.success('Opgeslagen.')
+      toast.success(<>Opgeslagen<span style={{ color: '#F15025' }}>.</span></>)
     } catch (err) {
       logger.error('Fout bij opslaan e-mailinstellingen:', err)
       toast.error('Kon e-mailinstellingen niet opslaan')
@@ -1022,7 +1022,7 @@ export function EmailTab() {
                     setIsSaving(true)
                     await updateAppSettings(user.id, { email_fetch_limit: emailFetchLimit })
                     await refreshSettings()
-                    toast.success('Opgeslagen.')
+                    toast.success(<>Opgeslagen<span style={{ color: '#F15025' }}>.</span></>)
                   } catch (err) {
                     console.error('[SettingsLayout] Email voorkeuren opslaan mislukt:', err)
                     toast.error('Kon voorkeuren niet opslaan')

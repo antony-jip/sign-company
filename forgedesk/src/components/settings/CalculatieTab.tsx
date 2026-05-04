@@ -1135,7 +1135,7 @@ function TemplatesSection({
     try {
       await deleteCalculatieTemplate(id)
       setTemplates((prev) => prev.filter((t) => t.id !== id))
-      toast.success('Template verwijderd')
+      toast.success(<>Template verwijderd<span style={{ color: '#F15025' }}>.</span></>)
     } catch (err) {
       toast.error('Kon template niet verwijderen')
     }
@@ -1673,7 +1673,7 @@ function OfferteTemplatesSubSection({
     try {
       await deleteOfferteTemplate(id)
       setOfferteTemplates((prev) => prev.filter((t) => t.id !== id))
-      toast.success('Template verwijderd')
+      toast.success(<>Template verwijderd<span style={{ color: '#F15025' }}>.</span></>)
     } catch (err) {
       toast.error('Kon template niet verwijderen')
     }

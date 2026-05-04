@@ -62,7 +62,7 @@ export function ProfielTab() {
         telefoon,
       })
       await refreshProfile()
-      toast.success('Opgeslagen.')
+      toast.success(<>Opgeslagen<span style={{ color: '#F15025' }}>.</span></>)
     } catch (err: any) {
       logger.error('Fout bij opslaan profiel:', err)
       const msg = err?.message || err?.details || 'Onbekende fout'

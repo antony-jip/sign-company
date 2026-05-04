@@ -116,7 +116,7 @@ export function BedrijfTab() {
       await updateAppSettings(user.id, { primaire_kleur: emailKleur })
       await refreshProfile()
       await refreshSettings()
-      toast.success('Opgeslagen.')
+      toast.success(<>Opgeslagen<span style={{ color: '#F15025' }}>.</span></>)
     } catch (err: any) {
       logger.error('Fout bij opslaan bedrijfsgegevens:', err)
       const msg = err?.message || err?.details || 'Onbekende fout'

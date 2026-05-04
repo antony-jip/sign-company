@@ -384,7 +384,7 @@ export function EmailContextSidebar({
       logCreate({ user, medewerkers, entityType: 'taak', entityId: taak.id })
       setShowIdleTaakForm(false)
       setIdleTaakForm({ titel: '', beschrijving: '' })
-      toast.success('Taak aangemaakt')
+      toast.success(<>Taak aangemaakt<span style={{ color: '#F15025' }}>.</span></>)
     } catch (err) { logger.error('Taak aanmaken mislukt:', err); toast.error('Taak aanmaken mislukt') }
     finally { setSavingIdleTaak(false) }
   }

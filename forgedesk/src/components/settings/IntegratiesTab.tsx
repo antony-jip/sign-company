@@ -151,7 +151,7 @@ export function IntegratiesTab() {
     setMollieSaving(true)
     try {
       await saveIntegrationSettings({ mollie_enabled: mollieEnabled, mollie_api_key: mollieApiKey })
-      toast.success('Opgeslagen.')
+      toast.success(<>Opgeslagen<span style={{ color: '#F15025' }}>.</span></>)
     } catch (err) {
       logger.error('Fout bij opslaan Mollie instellingen:', err)
       toast.error('Kon Mollie instellingen niet opslaan')
@@ -174,7 +174,7 @@ export function IntegratiesTab() {
         exact_btw_laag: exactBtwLaag,
         exact_btw_nul: exactBtwNul,
       })
-      toast.success('Opgeslagen.')
+      toast.success(<>Opgeslagen<span style={{ color: '#F15025' }}>.</span></>)
     } catch (err) {
       logger.error('Fout bij opslaan Exact Online instellingen:', err)
       toast.error('Kon Exact Online instellingen niet opslaan')
@@ -483,7 +483,7 @@ export function IntegratiesTab() {
                         kvk_api_key: kvkApiKey,
                         kvk_api_enabled: !!kvkApiKey,
                       })
-                      toast.success('Opgeslagen.')
+                      toast.success(<>Opgeslagen<span style={{ color: '#F15025' }}>.</span></>)
                     } catch (err) {
                       logger.error('Fout bij opslaan KvK instellingen:', err)
                       toast.error('Kon KvK instellingen niet opslaan')

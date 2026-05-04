@@ -249,7 +249,7 @@ export function EmailCompose({
     try {
       await deleteEmailTemplate(id)
       setDbTemplates(prev => prev.filter(t => t.id !== id))
-      toast.success('Template verwijderd')
+      toast.success(<>Template verwijderd<span style={{ color: '#F15025' }}>.</span></>)
     } catch {
       toast.error('Template verwijderen mislukt')
     }

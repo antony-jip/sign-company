@@ -909,7 +909,7 @@ export function FacturenLayout() {
       Totaal: f.totaal,
     }))
     exportCSV('facturen', headers, rows)
-    toast.success('CSV gedownload')
+    toast.success(<>CSV gedownload<span style={{ color: '#F15025' }}>.</span></>)
   }, [filteredFacturen])
 
   const handleExportExcel = useCallback(() => {
@@ -926,7 +926,7 @@ export function FacturenLayout() {
       Totaal: f.totaal,
     }))
     exportExcel('facturen', headers, rows, 'Facturen')
-    toast.success('Excel gedownload')
+    toast.success(<>Excel gedownload<span style={{ color: '#F15025' }}>.</span></>)
   }, [filteredFacturen])
 
   const handleDownloadPdf = useCallback(
@@ -2005,7 +2005,7 @@ export function FacturenLayout() {
                                 try { await navigator.share({ title: `Factuur ${factuur.nummer}`, url }) } catch (err) { /* cancelled */ }
                               } else {
                                 await navigator.clipboard.writeText(url)
-                                toast.success('Link gekopieerd naar klembord')
+                                toast.success(<>Link gekopieerd naar klembord<span style={{ color: '#F15025' }}>.</span></>)
                               }
                             }}>
                               <Share2 className="h-4 w-4 mr-2" />
@@ -2102,7 +2102,7 @@ export function FacturenLayout() {
                       STATUS_CONFIG[viewingFactuur.status].bg
                     )}
                   >
-                    {STATUS_CONFIG[viewingFactuur.status].label}
+                    {STATUS_CONFIG[viewingFactuur.status].label}<span className="text-[#F15025]">.</span>
                   </Badge>
                 </div>
                 <div>

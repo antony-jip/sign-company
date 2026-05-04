@@ -1286,7 +1286,7 @@ export function OfferteDetail() {
                         ? `${window.location.origin}/portaal/${portaalToken}`
                         : `${window.location.origin}/offerte-bekijken/${offerte.publiek_token}`
                       navigator.clipboard.writeText(url)
-                      toast.success('Link gekopieerd')
+                      toast.success(<>Link gekopieerd<span style={{ color: '#F15025' }}>.</span></>)
                     }}
                   >
                     <Copy className="h-3.5 w-3.5" />

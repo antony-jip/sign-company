@@ -130,7 +130,7 @@ export function WerkbonnenLayout() {
     try {
       await deleteWerkbon(deleteTarget.id)
       setWerkbonnen((prev) => prev.filter((wb) => wb.id !== deleteTarget.id))
-      toast.success('Werkbon verwijderd')
+      toast.success(<>Werkbon verwijderd<span style={{ color: '#F15025' }}>.</span></>)
     } catch (err) {
       logger.error('Delete werkbon failed:', err)
       toast.error('Fout bij verwijderen werkbon')

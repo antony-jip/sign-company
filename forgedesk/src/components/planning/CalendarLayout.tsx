@@ -455,7 +455,7 @@ export function CalendarLayout() {
     if (!editingId) return
     try {
       await deleteMontageAfspraak(editingId)
-      toast.success('Taak verwijderd')
+      toast.success(<>Taak verwijderd<span style={{ color: '#F15025' }}>.</span></>)
       setDialogOpen(false)
       await loadData()
     } catch (err) {
