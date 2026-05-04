@@ -66,6 +66,8 @@ import { MedewerkerFilterCombobox } from '@/components/shared/MedewerkerFilterCo
 import { Checkbox } from '@/components/ui/checkbox'
 import { TakenBulkActionBar } from '@/components/planning/TakenBulkActionBar'
 import { getAvatarStyle as getLaneAvatarStyle } from '@/utils/medewerkerAvatar'
+import { Skeleton } from '@/components/ui/skeleton'
+import { useOptimisticState } from '@/hooks/useOptimistic'
 
 const TAKEN_FILTER_OVERRIDE_KEY = 'doen_taken_filter_override'
 const TAKEN_FILTER_MIGRATION_V2 = 'doen_taken_filter_migration_v2'
@@ -187,6 +189,7 @@ export function TasksLayout() {
   const { user } = useAuth()
 
   const [taken, setTaken] = useState<Taak[]>([])
+  const runOptimistic = useOptimisticState(setTaken)
   const [projecten, setProjecten] = useState<Project[]>([])
   const [klanten, setKlanten] = useState<Klant[]>([])
   const [offertes, setOffertes] = useState<Offerte[]>([])
@@ -828,31 +831,35 @@ export function TasksLayout() {
 
   async function handleToggleComplete(taak: Taak) {
     const newStatus: TaakStatus = taak.status === 'klaar' ? 'todo' : 'klaar'
-    try {
-      const updated = await updateTaak(taak.id, { status: newStatus })
-      if (user?.id) {
-        logWijziging({ userId: user.id, entityType: 'taak', entityId: taak.id, actie: 'status_gewijzigd', medewerkerNaam, veld: 'status', oudeWaarde: taak.status, nieuweWaarde: newStatus })
-      }
-      setTaken((prev) => {
-        const next = prev.map((t) => (t.id === updated.id ? updated : t))
-        // Check: als alle taken van dit project nu 'klaar' zijn → prompt
-        if (newStatus === 'klaar' && taak.project_id) {
-          const projectTaken = next.filter((t) => t.project_id === taak.project_id)
-          const alleKlaar = projectTaken.length > 0 && projectTaken.every((t) => t.status === 'klaar')
-          if (alleKlaar) {
-            const project = projecten.find((p) => p.id === taak.project_id)
-            if (project && project.status !== 'afgerond') {
-              setTimeout(() => setCompletionPrompt({ open: true, projectId: project.id, projectNaam: project.naam }), 500)
-            }
-          }
-        }
-        return next
-      })
-      if (newStatus === 'klaar') toast.success('Taak afgerond!')
-    } catch (error) {
-      logger.error('Fout bij statuswijziging:', error)
-      toast.error('Kon taak niet bijwerken')
+    const ok = await runOptimistic({
+      snapshot: taken,
+      apply: (prev) => prev.map((t) => t.id === taak.id ? { ...t, status: newStatus } : t),
+      commit: async () => {
+        const updated = await updateTaak(taak.id, { status: newStatus })
+        return (prev: Taak[]) => prev.map((t) => t.id === updated.id ? updated : t)
+      },
+      errorMessage: 'Kon taak niet bijwerken',
+    })
+    if (!ok) {
+      logger.error('Fout bij statuswijziging')
+      return
     }
+    if (user?.id) {
+      logWijziging({ userId: user.id, entityType: 'taak', entityId: taak.id, actie: 'status_gewijzigd', medewerkerNaam, veld: 'status', oudeWaarde: taak.status, nieuweWaarde: newStatus })
+    }
+    if (newStatus === 'klaar' && taak.project_id) {
+      const projectTaken = taken
+        .map((t) => t.id === taak.id ? { ...t, status: newStatus } : t)
+        .filter((t) => t.project_id === taak.project_id)
+      const alleKlaar = projectTaken.length > 0 && projectTaken.every((t) => t.status === 'klaar')
+      if (alleKlaar) {
+        const project = projecten.find((p) => p.id === taak.project_id)
+        if (project && project.status !== 'afgerond') {
+          setTimeout(() => setCompletionPrompt({ open: true, projectId: project.id, projectNaam: project.naam }), 500)
+        }
+      }
+    }
+    if (newStatus === 'klaar') toast.success('Taak afgerond!')
   }
 
   async function handleDeleteDirect(taak: Taak) {
@@ -961,14 +968,20 @@ export function TasksLayout() {
 
     const day = weekDays[dayIndex]
     const newDeadline = toDateTimeStr(day, hour)
-    try {
-      const updated = await updateTaak(taakId, { deadline: newDeadline })
-      setTaken((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
-      toast.success(`Verplaatst naar ${DAY_LABELS[dayIndex]} ${formatHourLabel(hour)}`)
-    } catch (error) {
-      logger.error('Fout bij verplaatsen:', error)
-      toast.error('Kon taak niet verplaatsen')
+    const ok = await runOptimistic({
+      snapshot: taken,
+      apply: (prev) => prev.map((t) => t.id === taakId ? { ...t, deadline: newDeadline } : t),
+      commit: async () => {
+        const updated = await updateTaak(taakId, { deadline: newDeadline })
+        return (prev: Taak[]) => prev.map((t) => t.id === updated.id ? updated : t)
+      },
+      errorMessage: 'Kon taak niet verplaatsen',
+    })
+    if (!ok) {
+      logger.error('Fout bij verplaatsen')
+      return
     }
+    toast.success(`Verplaatst naar ${DAY_LABELS[dayIndex]} ${formatHourLabel(hour)}`)
   }
 
   // Quick add for a specific day column (unscheduled)
@@ -996,9 +1009,64 @@ export function TasksLayout() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 bg-[#F8F7F5] -m-3 sm:-m-4 md:-m-6 h-full">
-        <Loader2 className="w-8 h-8 animate-spin text-[#1A535C] mb-4" />
-        <p className="text-[#9B9B95]">Taken laden...</p>
+      <div className="flex flex-col h-[calc(100vh-56px)] -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 bg-[#F8F7F5]">
+        {/* Sticky toolbar skeleton */}
+        <div className="sticky top-0 z-20 bg-[#FFFFFF] border-b border-[#F0EFEC] shadow-[0_1px_3px_rgba(0,0,0,0.03)] px-6 py-2 flex-shrink-0 flex items-center gap-3 flex-wrap">
+          <div className="flex items-baseline gap-2">
+            <h1 className="text-[17px] font-bold text-[#1A1A1A] tracking-[-0.3px]">
+              Taken<span className="text-[#F15025]">.</span>
+            </h1>
+            <Skeleton className="h-3 w-10" />
+          </div>
+          <span className="w-px h-5 bg-[#EBEBEB]" />
+          <div className="flex items-center gap-1">
+            <Skeleton className="h-6 w-12 rounded-md" />
+            <Skeleton className="h-6 w-16 rounded-md" />
+            <Skeleton className="h-6 w-12 rounded-md" />
+          </div>
+          <div className="flex-1 min-w-0" />
+          <Skeleton className="h-7 w-7 rounded-full" />
+          <Skeleton className="h-7 w-32 rounded-md" />
+          <Skeleton className="h-7 w-40 rounded-md" />
+          <Skeleton className="h-7 w-32 rounded-md" />
+          <Skeleton className="h-7 w-14 rounded-md" />
+        </div>
+
+        {/* Day headers skeleton */}
+        <div className="flex border-b-2 border-[#F0EFEC] bg-[#FAFAF9] flex-shrink-0">
+          <div className="w-14 flex-shrink-0" />
+          {Array.from({ length: 7 }).map((_, i) => (
+            <div key={i} className="flex-1 min-w-0 text-center py-3 border-l border-[#EBEBEB]/30">
+              <div className="flex items-center justify-center gap-1.5">
+                <Skeleton className="h-3 w-6" />
+                <Skeleton className="h-4 w-4" />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Calendar grid skeleton */}
+        <div className="flex-1 overflow-hidden bg-[#FFFFFF]">
+          <div className="flex h-full">
+            {/* Time gutter */}
+            <div className="w-14 flex-shrink-0 border-r border-[#F0EFEC] py-3 space-y-12">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="px-2 flex justify-end">
+                  <Skeleton className="h-2.5 w-6" />
+                </div>
+              ))}
+            </div>
+            {/* Day columns with placeholder task cards */}
+            {Array.from({ length: 7 }).map((_, colIdx) => (
+              <div key={colIdx} className="flex-1 min-w-0 border-l border-[#EBEBEB]/30 p-2 space-y-2">
+                {colIdx % 2 === 0 && <Skeleton className="h-12 w-full rounded-md" />}
+                {colIdx === 1 && <Skeleton className="h-16 w-full rounded-md" />}
+                {colIdx === 3 && <Skeleton className="h-10 w-full rounded-md" />}
+                {colIdx === 4 && <Skeleton className="h-14 w-full rounded-md" />}
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     )
   }
