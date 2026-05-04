@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Calendar, Clock, Loader2 } from 'lucide-react'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Calendar, Clock } from 'lucide-react'
 import {
   format,
   startOfMonth,
@@ -79,8 +80,13 @@ export function CalendarMiniWidget() {
       </CardHeader>
       <CardContent className="space-y-4">
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground/60" />
+          <div className="rounded-xl bg-[#9A5A48]/[0.04] p-3 space-y-3">
+            <Skeleton className="h-3.5 w-24 mx-auto" />
+            <div className="grid grid-cols-7 gap-1">
+              {Array.from({ length: 35 }).map((_, i) => (
+                <Skeleton key={i} className="h-7 rounded-md" />
+              ))}
+            </div>
           </div>
         ) : (<>
         {/* Month header */}

@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Loader2 } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
+import { Skeleton } from '@/components/ui/skeleton'
 import { getEmails } from '@/services/supabaseService'
 import type { Email } from '@/types'
 import { getInitials, cn } from '@/lib/utils'
@@ -52,8 +53,17 @@ export function InboxPreviewWidget() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+      <div className="rounded-xl bg-[#6A5A8A]/[0.04] p-2 space-y-1">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="flex items-center gap-2.5 p-2">
+            <Skeleton className="h-7 w-7 rounded-full flex-shrink-0" />
+            <div className="flex-1 min-w-0 space-y-1.5">
+              <Skeleton className="h-3.5 w-3/4" />
+              <Skeleton className="h-3 w-1/2" />
+            </div>
+            <Skeleton className="h-3 w-8 flex-shrink-0" />
+          </div>
+        ))}
       </div>
     )
   }
@@ -61,7 +71,7 @@ export function InboxPreviewWidget() {
   if (recentEmails.length === 0) {
     return (
       <p className="text-sm text-muted-foreground/60 py-6 text-center">
-        Geen emails gevonden
+        Geen emails gevonden<span className="text-[#F15025]">.</span>
       </p>
     )
   }

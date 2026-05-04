@@ -7,12 +7,12 @@ import {
   CloudLightning,
   CloudDrizzle,
   CloudFog,
-  Loader2,
   MapPin,
   Sunrise,
   Sunset,
 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 
 interface WeatherData {
   temperature: number
@@ -155,9 +155,22 @@ export function WeatherWidget() {
 
   if (loading) {
     return (
-      <Card className="h-full rounded-2xl border-0 bg-white" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-4 w-4 animate-spin text-[#9B9B95]" />
+      <Card className="h-full rounded-2xl border-0 bg-white overflow-hidden" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
+        <div className="p-5 flex flex-col h-full bg-[#1A535C]/[0.04] space-y-4">
+          <div className="flex items-center justify-between">
+            <Skeleton className="h-3 w-10" />
+            <Skeleton className="h-3 w-20" />
+          </div>
+          <div className="flex items-baseline gap-3">
+            <Skeleton className="h-10 w-20" />
+            <Skeleton className="h-7 w-7 rounded-full" />
+          </div>
+          <Skeleton className="h-3 w-2/3" />
+          <div className="grid grid-cols-3 gap-2 pt-2">
+            <div className="space-y-1.5"><Skeleton className="h-2.5 w-8" /><Skeleton className="h-3.5 w-10" /></div>
+            <div className="space-y-1.5"><Skeleton className="h-2.5 w-8" /><Skeleton className="h-3.5 w-10" /></div>
+            <div className="space-y-1.5"><Skeleton className="h-2.5 w-8" /><Skeleton className="h-3.5 w-10" /></div>
+          </div>
         </div>
       </Card>
     )

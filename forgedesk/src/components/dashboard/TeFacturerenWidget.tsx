@@ -6,9 +6,9 @@ import { Button } from '@/components/ui/button'
 import {
   Receipt,
   ArrowRight,
-  Loader2,
   CheckCircle2,
 } from 'lucide-react'
+import { Skeleton } from '@/components/ui/skeleton'
 import { formatCurrency } from '@/lib/utils'
 import type { Factuur } from '@/types'
 import { useDashboardData } from '@/contexts/DashboardDataContext'
@@ -27,9 +27,28 @@ export function TeFacturerenWidget() {
 
   if (loading) {
     return (
-      <Card className="overflow-hidden">
-        <CardContent className="p-5 flex items-center justify-center h-24">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+      <Card className="overflow-hidden" style={{ borderColor: 'hsl(35, 15%, 87%)' }}>
+        <CardContent className="p-0">
+          <div className="px-4 py-3" style={{ background: 'linear-gradient(135deg, #1A535C, #237580)' }}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Receipt className="h-4 w-4 text-white" />
+                <h3 className="text-sm font-semibold text-white">Te factureren</h3>
+              </div>
+              <Skeleton className="h-5 w-20 bg-white/20" />
+            </div>
+          </div>
+          <div className="bg-[#2D6B48]/[0.04] p-2 space-y-1">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3 py-2 px-2">
+                <div className="flex-1 min-w-0 space-y-1.5">
+                  <Skeleton className="h-3.5 w-3/4" />
+                  <Skeleton className="h-3 w-1/2" />
+                </div>
+                <Skeleton className="h-3.5 w-16 flex-shrink-0" />
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
     )
