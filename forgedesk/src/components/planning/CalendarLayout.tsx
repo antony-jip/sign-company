@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { MedewerkerSelector } from '@/components/shared/MedewerkerSelector'
+import { DatePicker } from '@/components/ui/date-picker'
 import {
   ChevronLeft,
   ChevronRight,
@@ -1177,10 +1178,10 @@ export function CalendarLayout() {
             {/* Datum */}
             <div className="grid gap-1.5">
               <Label className="text-xs font-medium text-muted-foreground">Datum</Label>
-              <Input
-                type="date"
+              <DatePicker
                 value={formData.datum}
-                onChange={(e) => setFormData((p) => ({ ...p, datum: e.target.value }))}
+                onChange={(v) => setFormData((p) => ({ ...p, datum: v }))}
+                asInput
               />
             </div>
 

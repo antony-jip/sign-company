@@ -8,6 +8,7 @@ import { logger } from '@/utils/logger'
 import { useAuth } from '@/contexts/AuthContext'
 import { logCreate } from '@/utils/auditLogger'
 import type { Taak } from '@/types'
+import { DatePicker } from '@/components/ui/date-picker'
 
 interface TaakNieuwSheetProps {
   open: boolean
@@ -116,12 +117,11 @@ export function TaakNieuwSheet({ open, onClose, defaultDate, toegewezenAan, onCr
             className="w-full h-11 px-3 rounded-lg bg-[#F8F7F5] border border-[#EBEBEB] focus:border-[#1A535C] focus:bg-white focus:ring-2 focus:ring-[#1A535C]/10 outline-none text-[15px] text-[#1A1A1A] placeholder:text-[#9B9B95] transition-all"
           />
           <div className="flex gap-2">
-            <input
-              type="date"
+            <DatePicker
               value={datum}
-              onChange={(e) => setDatum(e.target.value)}
-              required
-              className="flex-1 h-11 px-3 rounded-lg bg-[#F8F7F5] border border-[#EBEBEB] focus:border-[#1A535C] focus:bg-white focus:ring-2 focus:ring-[#1A535C]/10 outline-none text-[14px] text-[#1A1A1A] transition-all"
+              onChange={setDatum}
+              asInput
+              className="flex-1 h-11 px-3 rounded-lg bg-[#F8F7F5] border-[#EBEBEB] text-[14px]"
             />
             <input
               type="time"

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react'
 import {
   startOfMonth,
   endOfMonth,
@@ -13,6 +13,7 @@ import {
   format,
   parseISO,
   isValid,
+  startOfDay,
 } from 'date-fns'
 import { nl } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
@@ -20,7 +21,20 @@ import { cn } from '@/lib/utils'
 interface DatePickerProps {
   value: string | undefined | null
   onChange: (value: string) => void
-  trigger: React.ReactNode
+  /** Custom trigger node. Mutually exclusive with `asInput`. */
+  trigger?: React.ReactNode
+  /** Render a default trigger styled like the app's <Input>. */
+  asInput?: boolean
+  /** Placeholder text when no date selected (asInput mode). */
+  placeholder?: string
+  /** className for the asInput trigger button. */
+  className?: string
+  /** Disable the trigger (asInput mode). */
+  disabled?: boolean
+  /** Minimum selectable date (YYYY-MM-DD). */
+  min?: string
+  /** Maximum selectable date (YYYY-MM-DD). */
+  max?: string
   align?: 'start' | 'center' | 'end'
   side?: 'top' | 'right' | 'bottom' | 'left'
   contentClassName?: string
@@ -31,12 +45,20 @@ export function DatePicker({
   value,
   onChange,
   trigger,
+  asInput,
+  placeholder = 'Kies datum',
+  className,
+  disabled,
+  min,
+  max,
   align = 'start',
   side = 'bottom',
   contentClassName,
   weekStartsOn = 1,
 }: DatePickerProps) {
   const selected = value ? parseISO(value) : null
+  const minDate = min ? startOfDay(parseISO(min)) : null
+  const maxDate = max ? startOfDay(parseISO(max)) : null
   const today = new Date()
   const [open, setOpen] = useState(false)
   const [viewMonth, setViewMonth] = useState<Date>(() =>
@@ -64,22 +86,52 @@ export function DatePicker({
     })
   })()
 
+  const isOutOfRange = (d: Date): boolean => {
+    const day = startOfDay(d)
+    if (minDate && day < minDate) return true
+    if (maxDate && day > maxDate) return true
+    return false
+  }
+
   const handleSelect = (d: Date) => {
+    if (isOutOfRange(d)) return
     onChange(format(d, 'yyyy-MM-dd'))
     setOpen(false)
   }
 
   const handleToday = () => {
+    if (isOutOfRange(today)) {
+      setViewMonth(startOfMonth(today))
+      return
+    }
     onChange(format(today, 'yyyy-MM-dd'))
     setViewMonth(startOfMonth(today))
     setOpen(false)
   }
 
   const monthLabel = format(viewMonth, 'LLLL yyyy', { locale: nl })
+  const displayValue = selected && isValid(selected)
+    ? format(selected, 'd MMM yyyy', { locale: nl })
+    : ''
+
+  const renderedTrigger = trigger ?? (
+    <button
+      type="button"
+      disabled={disabled}
+      className={cn(
+        'flex h-10 w-full items-center justify-between rounded-md border border-[#E6E4E0] bg-[#FAFAF8] px-3.5 py-2.5 text-[13px] ring-offset-background transition-all duration-150 hover:border-text-tertiary/50 focus-visible:outline-none focus-visible:border-[#1A535C] focus-visible:ring-2 focus-visible:ring-[rgba(26,83,92,0.12)] focus-visible:shadow-[0_0_0_2px_rgba(26,83,92,0.12)] disabled:cursor-not-allowed disabled:opacity-50',
+        !displayValue && 'text-[#9B9B95]',
+        asInput && className,
+      )}
+    >
+      <span className="truncate">{displayValue || placeholder}</span>
+      <CalendarIcon className="h-4 w-4 text-[#9B9B95] flex-shrink-0 ml-2" />
+    </button>
+  )
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>{trigger}</PopoverTrigger>
+    <Popover open={open} onOpenChange={(o) => { if (disabled && o) return; setOpen(o) }}>
+      <PopoverTrigger asChild>{renderedTrigger}</PopoverTrigger>
       <PopoverContent
         align={align}
         side={side}
@@ -130,20 +182,24 @@ export function DatePicker({
             const inMonth = isSameMonth(d, viewMonth)
             const isToday = isSameDay(d, today)
             const isSelected = !!(selected && isValid(selected) && isSameDay(d, selected))
+            const outOfRange = isOutOfRange(d)
             return (
               <button
                 key={d.toISOString()}
                 type="button"
                 onClick={() => handleSelect(d)}
+                disabled={outOfRange}
                 className={cn(
                   'h-8 rounded-md text-[12px] tabular-nums transition-colors flex items-center justify-center',
-                  isSelected
-                    ? 'bg-[#1A535C] text-white font-semibold hover:bg-[#1A535C]/90'
-                    : !inMonth
-                      ? 'text-[#C5C2BD] hover:bg-[#F8F7F5]'
-                      : isToday
-                        ? 'text-[#1A535C] font-semibold ring-1 ring-inset ring-[#1A535C]/30 hover:bg-[#1A535C]/[0.06]'
-                        : 'text-[#1A1A1A] hover:bg-[#F3F2F0]',
+                  outOfRange
+                    ? 'text-[#D4D2CE] cursor-not-allowed'
+                    : isSelected
+                      ? 'bg-[#1A535C] text-white font-semibold hover:bg-[#1A535C]/90'
+                      : !inMonth
+                        ? 'text-[#C5C2BD] hover:bg-[#F8F7F5]'
+                        : isToday
+                          ? 'text-[#1A535C] font-semibold ring-1 ring-inset ring-[#1A535C]/30 hover:bg-[#1A535C]/[0.06]'
+                          : 'text-[#1A1A1A] hover:bg-[#F3F2F0]',
                 )}
               >
                 {format(d, 'd')}

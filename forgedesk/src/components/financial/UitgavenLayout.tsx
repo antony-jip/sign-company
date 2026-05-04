@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { DatePicker } from '@/components/ui/date-picker'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent } from '@/components/ui/card'
@@ -527,11 +528,11 @@ export function UitgavenLayout() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Datum</Label>
-                  <Input type="date" value={formData.datum} onChange={(e) => setFormData((p) => ({ ...p, datum: e.target.value }))} />
+                  <DatePicker value={formData.datum} onChange={(v) => setFormData((p) => ({ ...p, datum: v }))} asInput />
                 </div>
                 <div>
                   <Label>Vervaldatum</Label>
-                  <Input type="date" value={formData.vervaldatum} onChange={(e) => setFormData((p) => ({ ...p, vervaldatum: e.target.value }))} />
+                  <DatePicker value={formData.vervaldatum} onChange={(v) => setFormData((p) => ({ ...p, vervaldatum: v }))} asInput />
                 </div>
               </div>
 
@@ -550,7 +551,7 @@ export function UitgavenLayout() {
                 {formData.status === 'betaald' && (
                   <div>
                     <Label>Betaald op</Label>
-                    <Input type="date" value={formData.betaald_op} onChange={(e) => setFormData((p) => ({ ...p, betaald_op: e.target.value }))} />
+                    <DatePicker value={formData.betaald_op} onChange={(v) => setFormData((p) => ({ ...p, betaald_op: v }))} asInput />
                   </div>
                 )}
               </div>

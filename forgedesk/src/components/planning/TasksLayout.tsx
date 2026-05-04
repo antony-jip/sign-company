@@ -1531,11 +1531,12 @@ export function TasksLayout() {
               className="text-sm rounded-lg"
             />
             <div className="flex items-center gap-2 flex-wrap">
-              <Input
-                type="date"
+              <DatePicker
                 value={fabDeadline}
-                onChange={(e) => setFabDeadline(e.target.value)}
-                className="w-auto h-7 text-xs rounded-lg"
+                onChange={setFabDeadline}
+                asInput
+                placeholder="Deadline"
+                className="w-auto h-7 px-2.5 py-1 text-xs rounded-lg"
               />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

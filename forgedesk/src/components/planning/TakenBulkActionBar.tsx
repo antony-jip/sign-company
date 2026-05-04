@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Input } from '@/components/ui/input'
+import { DatePicker } from '@/components/ui/date-picker'
 import {
   Calendar as CalendarIcon,
   CheckCircle2,
@@ -113,11 +113,12 @@ export function TakenBulkActionBar({
             <button onClick={() => submitMove(toDateStr(nextWeek))} className="text-left text-[13px] px-2 py-1.5 rounded-md hover:bg-[#F3F2F0] transition-colors">Volgende week</button>
           </div>
           <div className="pt-2 border-t border-[#F0EFEC]">
-            <Input
-              type="date"
+            <DatePicker
               value={moveDate}
-              onChange={(e) => setMoveDate(e.target.value)}
-              className="h-8 text-[13px]"
+              onChange={setMoveDate}
+              asInput
+              placeholder="Kies datum"
+              className="h-8 text-[13px] py-1"
             />
             <button
               onClick={() => submitMove(moveDate)}

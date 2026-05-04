@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { DatePicker } from '@/components/ui/date-picker'
 import { Badge } from '@/components/ui/badge'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
@@ -2370,27 +2371,24 @@ export function FacturenLayout() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="factuurdatum">Factuurdatum</Label>
-                  <Input
-                    id="factuurdatum"
-                    type="date"
+                  <DatePicker
                     value={formData.factuurdatum}
-                    onChange={(e) => {
-                      const newDate = e.target.value
+                    onChange={(v) => {
                       setFormData((prev) => ({
                         ...prev,
-                        factuurdatum: newDate,
-                        vervaldatum: getDefaultVervaldatum(newDate),
+                        factuurdatum: v,
+                        vervaldatum: getDefaultVervaldatum(v),
                       }))
                     }}
+                    asInput
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="vervaldatum">Vervaldatum (standaard 30 dagen)</Label>
-                  <Input
-                    id="vervaldatum"
-                    type="date"
+                  <DatePicker
                     value={formData.vervaldatum}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, vervaldatum: e.target.value }))}
+                    onChange={(v) => setFormData((prev) => ({ ...prev, vervaldatum: v }))}
+                    asInput
                   />
                 </div>
               </div>

@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef, Fragment } from "react";
 import { logger } from '../../utils/logger'
+import { DatePicker } from '@/components/ui/date-picker'
 import { useWeekWeather, getWeatherForDate } from "./WeatherDayStrip";
 import type { DayWeather } from "./WeatherDayStrip";
 import { Button } from "@/components/ui/button";
@@ -1634,13 +1635,10 @@ export function MontagePlanningLayout() {
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="datum">Datum</Label>
-                <Input
-                  id="datum"
-                  type="date"
+                <DatePicker
                   value={formData.datum}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, datum: e.target.value }))
-                  }
+                  onChange={(v) => setFormData((prev) => ({ ...prev, datum: v }))}
+                  asInput
                 />
                 {formData.datum && isFeestdag(formData.datum, feestdagen) && (
                   <div className="flex items-center gap-1.5 text-[12px] text-[#C03A18] font-medium bg-[#FDE8E2] rounded-lg px-2.5 py-1.5 mt-1">

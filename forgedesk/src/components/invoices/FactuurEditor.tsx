@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { DatePicker } from '@/components/ui/date-picker'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
@@ -1723,22 +1724,22 @@ export function FactuurEditor() {
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <Label className="text-xs">Factuurdatum</Label>
-                  <Input
-                    type="date"
+                  <DatePicker
                     value={factuurdatum}
-                    onChange={(e) => {
-                      setFactuurdatum(e.target.value)
-                      setVervaldatum(getDefaultVervaldatum(e.target.value, factuurBetaaltermijnDagen))
+                    onChange={(v) => {
+                      setFactuurdatum(v)
+                      setVervaldatum(getDefaultVervaldatum(v, factuurBetaaltermijnDagen))
                     }}
+                    asInput
                     className="text-sm"
                   />
                 </div>
                 <div>
                   <Label className="text-xs">Vervaldatum</Label>
-                  <Input
-                    type="date"
+                  <DatePicker
                     value={vervaldatum}
-                    onChange={(e) => setVervaldatum(e.target.value)}
+                    onChange={setVervaldatum}
+                    asInput
                     className="text-sm"
                   />
                 </div>
