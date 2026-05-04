@@ -27,6 +27,7 @@ import type { EmailFolder, FilterType, FontSize, ViewMode } from './emailTypes'
 import { extractSenderEmail, extractSenderName, parseSearchQuery, IMAP_FOLDER_MAP, KEYBOARD_SHORTCUTS, calculateSnoozeDate, getAvatarStyle } from './emailHelpers'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
+import { Skeleton } from '@/components/ui/skeleton'
 import { hapticLight } from '@/utils/haptic'
 import { viewTransition } from '@/utils/viewTransition'
 
@@ -1437,9 +1438,23 @@ export function EmailLayout() {
           onScroll={handleScroll}
         >
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center h-full gap-3">
-              <Loader2 className="h-6 w-6 animate-spin text-[#1A535C]/40" />
-              <p className="text-[14px] text-[#B0ADA8]">Emails laden...</p>
+            <div>
+              {/* Date-group header placeholder */}
+              <div className="px-4 pt-5 pb-2">
+                <Skeleton className="h-3 w-16" />
+              </div>
+              {Array.from({ length: 12 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-2.5 pl-3 pr-3 h-[46px]"
+                >
+                  <div className="flex-shrink-0 h-5 w-4" />
+                  <Skeleton className="w-[26px] h-[26px] rounded-md flex-shrink-0" />
+                  <Skeleton className="h-3.5 flex-shrink-0" style={{ width: i % 3 === 0 ? 130 : i % 2 === 0 ? 100 : 150 }} />
+                  <Skeleton className="h-3.5 flex-1 max-w-[60%]" />
+                  <Skeleton className="h-3 w-10 flex-shrink-0 ml-auto" />
+                </div>
+              ))}
             </div>
           ) : threadedEmails.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center px-8">
