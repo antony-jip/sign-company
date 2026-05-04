@@ -131,8 +131,9 @@ function WidgetResizeControl({
     <div ref={ref} className="relative">
       <button
         onClick={(e) => { e.stopPropagation(); setOpen(!open) }}
-        className="p-1 rounded-md text-muted-foreground/40 hover:text-muted-foreground hover:bg-muted transition-colors"
+        className="p-1 rounded-md text-muted-foreground/40 hover:text-muted-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1A535C]/40 focus-visible:ring-offset-1"
         title="Breedte aanpassen"
+        aria-label="Widget-breedte aanpassen"
       >
         <Columns3 className="h-3.5 w-3.5" />
       </button>
@@ -145,8 +146,10 @@ function WidgetResizeControl({
             <button
               key={opt.value}
               onClick={() => { onResize(opt.value); setOpen(false) }}
+              aria-label={`Breedte ${opt.label}`}
+              aria-pressed={currentSize === opt.value}
               className={cn(
-                'w-full flex items-center gap-3 px-3 py-2 text-left text-xs transition-colors',
+                'w-full flex items-center gap-3 px-3 py-2 text-left text-xs transition-colors focus-visible:outline-none focus-visible:bg-[#1A535C]/[0.08]',
                 currentSize === opt.value
                   ? 'bg-[#1A535C]/[0.06] font-semibold text-[#1A535C]'
                   : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
@@ -243,7 +246,8 @@ function FORGEdeskDashboardInner() {
         <button
           type="button"
           onClick={() => navigate('/facturen')}
-          className="w-full flex items-center gap-3 px-5 py-3 rounded-xl bg-[#FDE8E4] hover:bg-[#FBDDD6] transition-colors text-left"
+          className="w-full flex items-center gap-3 px-5 py-3 rounded-xl bg-[#FDE8E4] hover:bg-[#FBDDD6] transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F15025]/40 focus-visible:ring-offset-2"
+          aria-label={`${verlopenFacturen.count} verlopen facturen openen`}
         >
           <AlertTriangle className="h-4 w-4 text-[#F15025] flex-shrink-0" />
           <span className="flex-1 text-sm text-[#1A1A1A]">
@@ -341,12 +345,17 @@ function FORGEdeskDashboardInner() {
                       )}
                       <button
                         onClick={() => layout.toggleWidget(widgetId)}
-                        className="p-1 rounded-md text-muted-foreground/40 hover:text-muted-foreground hover:bg-muted transition-colors"
+                        className="p-1 rounded-md text-muted-foreground/40 hover:text-muted-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1A535C]/40 focus-visible:ring-offset-1"
                         title="Verbergen"
+                        aria-label={`${def.label} verbergen`}
                       >
                         <EyeOff className="h-3.5 w-3.5" />
                       </button>
-                      <div className="cursor-grab active:cursor-grabbing p-1 rounded-md text-muted-foreground/40 hover:text-muted-foreground hover:bg-muted transition-colors">
+                      <div
+                        className="cursor-grab active:cursor-grabbing p-1 rounded-md text-muted-foreground/40 hover:text-muted-foreground hover:bg-muted transition-colors"
+                        aria-label={`${def.label} verslepen`}
+                        role="button"
+                      >
                         <GripVertical className="h-3.5 w-3.5" />
                       </div>
                     </div>
@@ -366,7 +375,9 @@ function FORGEdeskDashboardInner() {
         <div className="relative">
           <button
             onClick={() => setShowAddMenu(!showAddMenu)}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-dashed border-border/60 hover:border-[#1A535C]/30 text-muted-foreground hover:text-[#1A535C] transition-all duration-200"
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-dashed border-border/60 hover:border-[#1A535C]/30 text-muted-foreground hover:text-[#1A535C] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1A535C]/40 focus-visible:ring-offset-2"
+            aria-label="Verborgen widgets tonen"
+            aria-expanded={showAddMenu}
           >
             <Plus className="h-4 w-4" />
             <span className="text-sm font-medium">Widget toevoegen</span>
@@ -386,7 +397,8 @@ function FORGEdeskDashboardInner() {
                           layout.toggleWidget(id)
                           setShowAddMenu(false)
                         }}
-                        className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#1A535C]/[0.04] transition-all duration-150 text-left group/add"
+                        aria-label={`${def.label} toevoegen`}
+                        className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#1A535C]/[0.04] transition-all duration-150 text-left group/add focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1A535C]/40 focus-visible:ring-offset-1"
                       >
                         <div className="flex items-center justify-center h-10 w-10 rounded-xl flex-shrink-0 transition-colors" style={{ backgroundColor: 'rgba(26, 83, 92, 0.06)' }}>
                           <def.icon className="h-4.5 w-4.5 text-[#1A535C]" />
