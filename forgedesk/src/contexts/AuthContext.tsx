@@ -116,8 +116,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       try {
-        const profile = await getProfile(userId)
-        if (!profile) return
+        let profile = await getProfile(userId)
+        if (!profile) {
+          // Race: auth-header nog niet door supabase-client gepropageerd
+          // naar RLS-protected profile-query. Retry één keer.
+          await new Promise(r => setTimeout(r, 250))
+          profile = await getProfile(userId)
+          if (!profile) {
+            logger.warn('getProfile null na retry', { userId })
+            return
+          }
+        }
 
         setOrganisatieId(profile.organisatie_id || null)
         setUserRol(profile.rol || null)
