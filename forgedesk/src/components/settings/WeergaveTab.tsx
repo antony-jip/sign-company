@@ -145,7 +145,7 @@ export function WeergaveTab() {
           <Palette className="w-5 h-5" />
           Thema &amp; Kleuren
         </CardTitle>
-        <CardDescription>Kies een thema — elk thema heeft zijn eigen kleuren</CardDescription>
+        <CardDescription>Kies een thema. Elk thema heeft zijn eigen kleuren</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* App Theme Picker */}
@@ -157,7 +157,7 @@ export function WeergaveTab() {
                 App Thema
               </p>
               <p className="text-xs text-muted-foreground">
-                Kies een volledig thema — verandert achtergrond, kaarten, sidebar en sfeer
+                Kies een volledig thema. Verandert achtergrond, kaarten, sidebar en sfeer
               </p>
             </div>
           </div>
@@ -244,7 +244,7 @@ export function WeergaveTab() {
                 Accentkleur
               </p>
               <p className="text-xs text-muted-foreground">
-                Kies een accentkleur — verandert de sidebar indicator, logo en focus ring
+                Kies een accentkleur. Verandert de sidebar indicator, logo en focus ring
               </p>
             </div>
           </div>

@@ -491,7 +491,7 @@ function StartSection({
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <Zap className="h-4 w-4 text-amber-500" />
-            Snelstart — Kant-en-klare templates
+            Snelstart · Kant-en-klare templates
           </CardTitle>
           <CardDescription>
             Installeer een template met 1 klik. Je kunt ze daarna aanpassen aan je eigen prijzen.
@@ -742,7 +742,7 @@ function ProductenSection({
               </p>
               <p className="text-xs text-blue-600 dark:text-blue-400">
                 Denk aan: montage-uren, DTP-uren, veelgebruikte folie, dibond platen, LED modules.
-                Je hoeft niet alles in een keer toe te voegen — je kunt altijd later bijwerken.
+                Je hoeft niet alles in een keer toe te voegen. Je kunt altijd later bijwerken.
               </p>
             </div>
           )}
@@ -1367,7 +1367,7 @@ function TemplatesSection({
                                       <SelectItem value="__custom__">Handmatig invoeren</SelectItem>
                                       {producten.filter(p => p.actief).map((p) => (
                                         <SelectItem key={p.id} value={p.id}>
-                                          {p.naam} — {formatCurrency(p.verkoop_prijs)}/{p.eenheid}
+                                          {p.naam} · {formatCurrency(p.verkoop_prijs)}/{p.eenheid}
                                         </SelectItem>
                                       ))}
                                     </SelectContent>
@@ -2066,7 +2066,7 @@ function InstellingenSection() {
               <div className="flex items-center gap-3">
                 <Switch checked={toonM2} onCheckedChange={setToonM2} />
                 <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">
-                  {toonM2 ? 'Toon m² achter breedte × hoogte' : 'Verborgen — alleen mm weergeven'}
+                  {toonM2 ? 'Toon m² achter breedte × hoogte' : 'Verborgen · alleen mm weergeven'}
                 </p>
               </div>
             </div>
@@ -2274,7 +2274,7 @@ function InstellingenSection() {
                   )
                 })}
                 {urenVelden.length === 0 && (
-                  <span className="text-xs text-muted-foreground/60 italic">Geen categorieën — voeg er een toe</span>
+                  <span className="text-xs text-muted-foreground/60 italic">Geen categorieën, voeg er een toe</span>
                 )}
               </div>
               <div className="flex gap-2">

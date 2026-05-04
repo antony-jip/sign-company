@@ -462,7 +462,7 @@ export function BetaalPagina() {
                 {mollieLoading ? (
                   <><Loader2 className="h-5 w-5 animate-spin" /> Doorsturen naar betaalpagina...</>
                 ) : (
-                  <>Betaal nu — {formatCurrency(Math.max(0, factuur.totaal - factuur.betaald_bedrag))}</>
+                  <>Betaal nu · {formatCurrency(Math.max(0, factuur.totaal - factuur.betaald_bedrag))}</>
                 )}
               </Button>
             </CardContent>

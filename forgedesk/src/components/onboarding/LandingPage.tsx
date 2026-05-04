@@ -121,7 +121,7 @@ const PRICING_FEATURES = [
 const FAQ_ITEMS = [
   {
     q: 'Is Doen. geschikt voor mijn branche?',
-    a: 'Doen. is gebouwd voor de creatieve maakbranche — signbedrijven, interieurbouwers, reclamemakers, standbouwers, schilders, installateurs en meer. Als je iets maakt met je handen en offertes, werkbonnen en facturen nodig hebt, past Doen. perfect.',
+    a: 'Doen. is gebouwd voor de creatieve maakbranche · signbedrijven, interieurbouwers, reclamemakers, standbouwers, schilders, installateurs en meer. Als je iets maakt met je handen en offertes, werkbonnen en facturen nodig hebt, past Doen. perfect.',
   },
   {
     q: 'Wat kost Doen. na de proefperiode?',
@@ -285,7 +285,7 @@ function FloatingCards({ scrollY }: { scrollY: number }) {
     },
     {
       title: 'Planning',
-      sub: 'Ma 14 mrt — Montage',
+      sub: 'Ma 14 mrt · Montage',
       amount: '09:00 – 14:00',
       accent: COLORS.sage,
       top: '30%',
@@ -369,7 +369,7 @@ function Hero() {
 
             {/* Sub */}
             <p className="lf-fade-up lf-delay-2 text-[17px] md:text-[19px] text-[#777] max-w-[520px] mt-8 leading-relaxed">
-              Offertes, werkbonnen, planning, facturen — alles wat je nodig hebt als{' '}
+              Offertes, werkbonnen, planning, facturen. Alles wat je nodig hebt als{' '}
               <span className="text-[#1a1a1a] font-semibold">creatief maakbedrijf</span>. Zonder gedoe, zonder dubbel werk.
             </p>
 
@@ -459,7 +459,7 @@ function ThreeIcons() {
             </span>
           </h2>
           <p className="lf-fade-up lf-delay-2 text-[17px] text-[#777] max-w-xl mx-auto mt-5">
-            Signbedrijven, interieurbouwers, reclamemakers — Doen. begrijpt jouw werkproces.
+            Signbedrijven, interieurbouwers, reclamemakers. Doen. begrijpt jouw werkproces.
           </p>
         </div>
 
@@ -495,7 +495,7 @@ const BOSS_STEPS = [
   {
     num: '01',
     title: 'Klant aanmaken',
-    desc: 'Nieuwe klant belt? In 30 seconden staat alles erin — bedrijf, contactgegevens, notities.',
+    desc: 'Nieuwe klant belt? In 30 seconden staat alles erin · bedrijf, contactgegevens, notities.',
     icon: <Users className="w-5 h-5" />,
     color: COLORS.coral,
   },
@@ -677,7 +677,7 @@ function ForgieSection() {
             </h2>
             <p className="lf-fade-up lf-delay-2 text-[17px] text-[#777] mt-6 leading-relaxed">
               Daan is je persoonlijke AI-assistent die alles weet over jouw bedrijf.
-              Stel een vraag over klanten, offertes, facturen of omzet — en krijg direct antwoord.
+              Stel een vraag over klanten, offertes, facturen of omzet, en krijg direct antwoord.
             </p>
             <p className="lf-fade-up lf-delay-3 text-[15px] text-[#999] mt-4 leading-relaxed">
               Daan kan ook e-mails opstellen, vertalen en samenvatten. Geen technische kennis nodig.
@@ -793,13 +793,13 @@ function StatsSection() {
             <div className="text-[56px] md:text-[72px] font-extrabold text-white leading-none font-outfit">
               €{stat1}
             </div>
-            <div className="text-white/40 text-sm mt-2 font-medium">per maand — alles inbegrepen</div>
+            <div className="text-white/40 text-sm mt-2 font-medium">per maand · alles inbegrepen</div>
           </div>
           <div className="lf-fade-up lf-delay-1">
             <div className="text-[56px] md:text-[72px] font-extrabold text-white leading-none font-outfit">
               {stat2}
             </div>
-            <div className="text-white/40 text-sm mt-2 font-medium">features — van offerte tot factuur</div>
+            <div className="text-white/40 text-sm mt-2 font-medium">features · van offerte tot factuur</div>
           </div>
           <div className="lf-fade-up lf-delay-2">
             <div className="text-[56px] md:text-[72px] font-extrabold text-white leading-none font-outfit">

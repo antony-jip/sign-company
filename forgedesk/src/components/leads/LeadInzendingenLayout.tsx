@@ -199,7 +199,7 @@ export function LeadInzendingenLayout() {
           {selectedInzending && (
             <div className="space-y-3">
               <div className="text-xs text-muted-foreground/60">
-                {formatDateTime(selectedInzending.created_at)} — {getFormulierNaam(selectedInzending.formulier_id)}
+                {formatDateTime(selectedInzending.created_at)} · {getFormulierNaam(selectedInzending.formulier_id)}
               </div>
               {getFormulierVelden(selectedInzending.formulier_id)
                 .sort((a, b) => a.volgorde - b.volgorde)

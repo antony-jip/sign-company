@@ -318,7 +318,7 @@ export function IntegratiesTab() {
                       </li>
                       <li>Kopieer de Client ID en Client Secret die Exact toont</li>
                       <li>Plak ze hieronder in de velden en klik op &ldquo;Verbinden&rdquo;</li>
-                      <li>Log in bij Exact wanneer het inlogscherm verschijnt — daarna ben je gekoppeld</li>
+                      <li>Log in bij Exact wanneer het inlogscherm verschijnt. Daarna ben je gekoppeld</li>
                     </ol>
                     <p className="text-xs text-muted-foreground pt-1 border-t border-border/50">
                       Na het verbinden kun je bij elke factuur op &ldquo;Sync naar Exact&rdquo; klikken

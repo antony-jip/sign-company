@@ -293,7 +293,7 @@ export function DealsLayout() {
           </div>
           <div className="min-w-0">
             <h1 className="text-2xl font-bold text-foreground font-display truncate">Sales Pipeline</h1>
-            <p className="text-sm text-muted-foreground truncate">{kpis.aantalOpen} open deals — {formatCurrency(kpis.openWaarde)} pipeline</p>
+            <p className="text-sm text-muted-foreground truncate">{kpis.aantalOpen} open deals · {formatCurrency(kpis.openWaarde)} pipeline</p>
           </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">

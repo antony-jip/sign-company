@@ -80,7 +80,7 @@ export function AanDeSlagSectie() {
           Werk vanuit projecten<span className="text-[#F15025]">.</span>
         </h2>
         <p className="mt-3 text-[14px] text-white/60 leading-[1.6] max-w-[640px]">
-          In doen. hangt alles aan een project &mdash; offertes, taken, planning, facturen, werkbonnen.
+          In doen. hangt alles aan een project · offertes, taken, planning, facturen, werkbonnen.
           Maak een project aan voor elke opdracht en regel daar alles vanuit.
           Geen losse modules om te onthouden, gewoon &eacute;&eacute;n plek per klus.
         </p>

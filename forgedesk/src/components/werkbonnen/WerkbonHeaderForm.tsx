@@ -101,7 +101,7 @@ export const WerkbonHeaderForm = React.memo(function WerkbonHeaderForm({
                 <SelectContent>
                   <SelectItem value="none">Geen</SelectItem>
                   {filteredOffertes.map((o) => (
-                    <SelectItem key={o.id} value={o.id}>{o.nummer} — {o.titel}</SelectItem>
+                    <SelectItem key={o.id} value={o.id}>{o.nummer} · {o.titel}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

@@ -177,7 +177,7 @@ function getDagenOpenHint(offerte: Offerte): { text: string; className: string }
   const dagen = Math.floor((Date.now() - new Date(sentDate).getTime()) / 86400000)
   if (dagen < 5) return null
   if (dagen <= 7) return { text: `${dagen} dagen open`, className: 'text-[11px] text-[#6B6B66]' }
-  if (dagen <= 14) return { text: `${dagen} dagen — overweeg opvolging`, className: 'text-[11px] text-[#C03A18]' }
+  if (dagen <= 14) return { text: `${dagen} dagen · overweeg opvolging`, className: 'text-[11px] text-[#C03A18]' }
   return { text: `${dagen} dagen open`, className: 'text-[11px] text-[#C03A18] font-medium' }
 }
 

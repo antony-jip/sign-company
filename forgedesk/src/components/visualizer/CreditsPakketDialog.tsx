@@ -196,13 +196,13 @@ export function CreditsPakketDialog({
               )}
               {isLoading
                 ? 'Doorsturen naar betaling...'
-                : `Afrekenen — €${geselecteerdPakket.prijs_eur.toFixed(2).replace('.', ',')}`
+                : `Afrekenen · €${geselecteerdPakket.prijs_eur.toFixed(2).replace('.', ',')}`
               }
             </Button>
 
             <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
               <Shield className="h-3 w-3" />
-              Veilig betalen via Stripe — iDEAL & creditcard
+              Veilig betalen via Stripe · iDEAL & creditcard
             </div>
 
             {import.meta.env.DEV && (

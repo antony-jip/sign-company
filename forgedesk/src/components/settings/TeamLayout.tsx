@@ -799,7 +799,7 @@ export function TeamLayout() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-sm truncate">{m.naam}</p>
-                        <p className="text-xs text-muted-foreground">{m.functie} — {m.afdeling}</p>
+                        <p className="text-xs text-muted-foreground">{m.functie} · {m.afdeling}</p>
                       </div>
                       <Badge variant="outline" className={cn('text-2xs', ROL_KLEUREN[m.rol])}>
                         {ROL_LABELS[m.rol]}

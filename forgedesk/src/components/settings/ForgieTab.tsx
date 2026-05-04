@@ -450,13 +450,13 @@ export function ForgieTab() {
                     )}
                     {isCheckoutLoading
                       ? 'Doorsturen naar betaling...'
-                      : `Afrekenen — ${geselecteerdPakket.prijs_eur.toFixed(2).replace('.', ',')} EUR`
+                      : `Afrekenen · ${geselecteerdPakket.prijs_eur.toFixed(2).replace('.', ',')} EUR`
                     }
                   </Button>
 
                   <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
                     <Shield className="h-3 w-3" />
-                    Veilig betalen via Stripe — iDEAL & creditcard
+                    Veilig betalen via Stripe · iDEAL & creditcard
                   </div>
 
                   {import.meta.env.DEV && (
@@ -662,7 +662,7 @@ export function ForgieTab() {
         <CardHeader>
           <CardTitle className="text-base">Bedrijfshistorie importeren</CardTitle>
           <CardDescription>
-            Upload een CSV bestand met je oude bedrijfsdata. Daan kan dan vragen beantwoorden over je hele historie — ook van voor doen.
+            Upload een CSV bestand met je oude bedrijfsdata. Daan kan dan vragen beantwoorden over je hele historie. Ook van voor doen.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -818,7 +818,7 @@ export function ForgieTab() {
                   onClick={() => updateVisInstelling('standaard_resolutie', res)}
                   className="text-xs"
                 >
-                  {res} (${KOSTEN_PER_RESOLUTIE_USD[res]}) {res === '4K' ? '— 2 credits' : '— 1 credit'}
+                  {res} (${KOSTEN_PER_RESOLUTIE_USD[res]}) {res === '4K' ? '· 2 credits' : '· 1 credit'}
                 </Button>
               ))}
             </div>

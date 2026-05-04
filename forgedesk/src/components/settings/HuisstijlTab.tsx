@@ -1096,7 +1096,7 @@ export function HuisstijlTab({ lockedSubTab }: HuisstijlTabProps = {}) {
             <div className="mt-3 rounded-lg bg-[#1A535C]/[0.04] border border-[#1A535C]/15 p-3 space-y-1.5">
               <p className="text-[11px] font-semibold text-[#1A535C] uppercase tracking-wider">Tip voor scherp resultaat</p>
               <p className="text-[11px] text-[#6B6B66] leading-relaxed">
-                Upload bij voorkeur een <strong>JPG</strong> op <strong>3× de uiteindelijke grootte</strong> — voor A4 betekent dat ongeveer <strong>2480 × 3508 px</strong>. Zo blijft het briefpapier scherp bij printen en zoomen.
+                Upload bij voorkeur een <strong>JPG</strong> op <strong>3× de uiteindelijke grootte</strong>. Voor A4 betekent dat ongeveer <strong>2480 × 3508 px</strong>. Zo blijft het briefpapier scherp bij printen en zoomen.
               </p>
               <p className="text-[11px] text-[#6B6B66] leading-relaxed">
                 <strong>Pagina 1</strong> krijgt het briefpapier met je logo en adres, <strong>Pagina 2+</strong> kan een compactere versie krijgen voor vervolgpagina's.
@@ -1193,7 +1193,7 @@ export function HuisstijlTab({ lockedSubTab }: HuisstijlTabProps = {}) {
                 <div>
                   <p className="text-[11px] font-semibold text-[#6B6B66] uppercase tracking-wider mb-1">Veilige zone</p>
                   <p className="text-[11px] text-[#9B9B95] mb-3">
-                    Extra ruimte zodat content niet over kop- of voettekst van het briefpapier loopt. Negatieve waarden bij links/rechts trekken de content juist verder naar buiten — handig om uit te lijnen met je logo.
+                    Extra ruimte zodat content niet over kop- of voettekst van het briefpapier loopt. Negatieve waarden bij links/rechts trekken de content juist verder naar buiten, handig om uit te lijnen met je logo.
                   </p>
                   <div className="grid grid-cols-2 gap-4">
                     <SliderWithInput

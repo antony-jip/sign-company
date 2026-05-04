@@ -1246,7 +1246,7 @@ export function FacturenLayout() {
         offerte_id: voorschotOfferte.id,
         project_id: voorschotOfferte.project_id || undefined,
         nummer,
-        titel: `Voorschotfactuur ${voorschotPercentage}% — ${voorschotOfferte.titel}`,
+        titel: `Voorschotfactuur ${voorschotPercentage}% · ${voorschotOfferte.titel}`,
         status: 'concept',
         subtotaal,
         btw_bedrag: btwBedrag,
@@ -1316,7 +1316,7 @@ export function FacturenLayout() {
         offerte_id: eindafrekeningFactuur.offerte_id,
         project_id: eindafrekeningFactuur.project_id,
         nummer,
-        titel: `Eindafrekening — ${eindafrekeningFactuur.titel}`,
+        titel: `Eindafrekening · ${eindafrekeningFactuur.titel}`,
         status: 'concept',
         subtotaal: restSubtotaal,
         btw_bedrag: restBtw,
@@ -2828,7 +2828,7 @@ export function FacturenLayout() {
               {herinneringType === 'aanmaning' ? 'Aanmaning versturen' : 'Herinnering versturen'}
             </DialogTitle>
             <DialogDescription>
-              Factuur {herinneringFactuur?.nummer} — {getDagenVerlopen(herinneringFactuur || {} as Factuur)} dagen verlopen
+              Factuur {herinneringFactuur?.nummer} · {getDagenVerlopen(herinneringFactuur || {} as Factuur)} dagen verlopen
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">

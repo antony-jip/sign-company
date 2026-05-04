@@ -100,7 +100,7 @@ export function PortaalAlerts() {
       const project = notif.project_id ? await getProject(notif.project_id) : null
       setMontagePrefill({
         projectId: notif.project_id || '',
-        titel: `Montage — ${project?.naam || 'Project'}`,
+        titel: `Montage · ${project?.naam || 'Project'}`,
         locatie: project?.beschrijving || '',
       })
       setMontageDatum('')
@@ -148,7 +148,7 @@ export function PortaalAlerts() {
     setTaakNotifId(notif.id)
     setTaakProjectId(notif.project_id || '')
     setTaakKlantId(notif.klant_id || '')
-    setTaakTitel(`Montage plannen — ${notif.titel}`)
+    setTaakTitel(`Montage plannen · ${notif.titel}`)
     setTaakBeschrijving(notif.bericht || '')
     setTaakOpen(true)
   }

@@ -414,7 +414,7 @@ function BijlageDropZone({
             )}>
               {isDragOver ? 'Laat los om te uploaden' : 'Sleep, plak of klik om te uploaden'}
             </p>
-            <p className="text-2xs text-muted-foreground/60 dark:text-muted-foreground mt-0.5">JPG, PNG of PDF — max 10MB</p>
+            <p className="text-2xs text-muted-foreground/60 dark:text-muted-foreground mt-0.5">JPG, PNG of PDF · max 10MB</p>
             <p className="text-2xs text-muted-foreground/50 dark:text-muted-foreground/60 mt-1 max-w-[260px]">
               Verschijnt automatisch als aparte landscape-pagina achter de offerte met de item-specs erboven.
             </p>
@@ -1094,7 +1094,7 @@ export function QuoteItemsTable({
                       <textarea
                         value={item.interne_notitie || ''}
                         onChange={(e) => onUpdateItem(item.id, 'interne_notitie', e.target.value)}
-                        placeholder="Interne notitie — niet zichtbaar voor klant"
+                        placeholder="Interne notitie · niet zichtbaar voor klant"
                         rows={2}
                         className="w-full text-xs px-3 py-2 rounded-lg border border-amber-200 dark:border-amber-800/50 bg-amber-50/80 dark:bg-amber-900/20 text-foreground placeholder:text-amber-400 dark:placeholder:text-amber-600 focus:outline-none focus:ring-1 focus:ring-amber-300 dark:focus:ring-amber-700 resize-y"
                       />
@@ -1329,7 +1329,7 @@ export function QuoteItemsTable({
                     <div className="space-y-2">
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs font-bold text-text-tertiary uppercase tracking-label">
-                          Prijsopties — beide op offerte, kies welke in het totaal telt
+                          Prijsopties · beide op offerte, kies welke in het totaal telt
                         </span>
                       </div>
 
@@ -1604,7 +1604,7 @@ export function QuoteItemsTable({
           setActiveVariantId(null)
         }}
         initialRegels={activeVariant?.calculatie_regels || activeItem?.calculatie_regels}
-        itemBeschrijving={activeVariant ? `${activeItem?.beschrijving} — ${activeVariant.label}` : activeItem?.beschrijving}
+        itemBeschrijving={activeVariant ? `${activeItem?.beschrijving} · ${activeVariant.label}` : activeItem?.beschrijving}
         onConfirm={handleCalculatieConfirm}
       />
     </div>

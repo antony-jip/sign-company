@@ -66,7 +66,7 @@ export function PortaalSidebarHeader({
         {!expanded && previewText && (
           <p className={`text-[11px] truncate max-w-[300px] mt-0.5 ${hasKlantReactie ? 'text-foreground font-medium' : 'text-muted-foreground/70'}`}>
             {hasKlantReactie && (
-              <span className="text-rose-500 font-semibold">Klant heeft gereageerd — </span>
+              <span className="text-rose-500 font-semibold">Klant heeft gereageerd. </span>
             )}
             <span className={hasKlantReactie ? '' : 'font-medium'}>{previewAfzender}</span>
             {': '}

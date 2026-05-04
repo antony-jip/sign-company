@@ -200,7 +200,7 @@ export function DealDetail() {
         user_id: '',
         deal_id: deal.id,
         type: 'status_wijziging',
-        beschrijving: `Deal gewonnen — ${formatCurrency(werkelijkeWaarde || deal.verwachte_waarde)}`,
+        beschrijving: `Deal gewonnen · ${formatCurrency(werkelijkeWaarde || deal.verwachte_waarde)}`,
         datum: new Date().toISOString(),
       })
       setWonDialogOpen(false)
@@ -225,7 +225,7 @@ export function DealDetail() {
         user_id: '',
         deal_id: deal.id,
         type: 'status_wijziging',
-        beschrijving: `Deal verloren${verlorenReden ? ` — ${verlorenReden}` : ''}`,
+        beschrijving: `Deal verloren${verlorenReden ? ` · ${verlorenReden}` : ''}`,
         datum: new Date().toISOString(),
       })
       setLostDialogOpen(false)
@@ -278,7 +278,7 @@ export function DealDetail() {
               <h1 className="text-xl font-bold">{deal.titel}</h1>
               <Badge className={cn('text-xs', statusColor)}>{deal.status}</Badge>
             </div>
-            <p className="text-sm text-muted-foreground">{klant?.bedrijfsnaam || '-'} — {faseLabel}</p>
+            <p className="text-sm text-muted-foreground">{klant?.bedrijfsnaam || '-'} · {faseLabel}</p>
           </div>
         </div>
         <div className="flex gap-2">

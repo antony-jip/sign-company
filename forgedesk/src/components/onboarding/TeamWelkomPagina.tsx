@@ -141,7 +141,7 @@ export function TeamWelkomPagina() {
               Welkom bij het team<span className="text-flame">.</span>
             </h1>
             <p className="text-[15px] text-text-sec mb-8 max-w-lg" style={{ lineHeight: 1.55 }}>
-              Je bent uitgenodigd om samen te werken in doen. — het platform waar jullie team projecten, offertes en facturen beheert.
+              Je bent uitgenodigd om samen te werken in doen. Het platform waar jullie team projecten, offertes en facturen beheert.
             </p>
             <ul className="space-y-2 mb-10">
               {highlights.map((label) => (

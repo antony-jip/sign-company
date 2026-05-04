@@ -856,7 +856,7 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
               >
                 <option value="">Kies offerte...</option>
                 {offertes.map(o => (
-                  <option key={o.id} value={o.id}>{o.titel || `Offerte ${o.nummer}`} — {formatCurrency(o.totaal || 0)}</option>
+                  <option key={o.id} value={o.id}>{o.titel || `Offerte ${o.nummer}`} · {formatCurrency(o.totaal || 0)}</option>
                 ))}
               </select>
               <button
@@ -880,7 +880,7 @@ export function ProjectPortaalTab({ projectId, projectNaam }: ProjectPortaalTabP
               >
                 <option value="">Kies factuur...</option>
                 {facturen.map(f => (
-                  <option key={f.id} value={f.id}>Factuur {f.nummer} — {formatCurrency(f.totaal || 0)}</option>
+                  <option key={f.id} value={f.id}>Factuur {f.nummer} · {formatCurrency(f.totaal || 0)}</option>
                 ))}
               </select>
               <button

@@ -315,9 +315,9 @@ export function TeamledenTab() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="admin">Admin — Volledige toegang</SelectItem>
-                    <SelectItem value="medewerker">Medewerker — Standaard toegang</SelectItem>
-                    <SelectItem value="monteur">Monteur — Alleen werkbonnen</SelectItem>
+                    <SelectItem value="admin">Admin · Volledige toegang</SelectItem>
+                    <SelectItem value="medewerker">Medewerker · Standaard toegang</SelectItem>
+                    <SelectItem value="monteur">Monteur · Alleen werkbonnen</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

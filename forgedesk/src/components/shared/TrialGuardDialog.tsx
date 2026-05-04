@@ -31,7 +31,7 @@ export function TrialGuardDialog({ open, onOpenChange }: TrialGuardDialogProps) 
             Je proefperiode is verlopen
           </DialogTitle>
           <DialogDescription className="text-[14px] pt-2" style={{ color: '#6B6B66', lineHeight: 1.6 }}>
-            Bedankt voor het uitproberen van doen. Activeer je abonnement om verder te gaan — je data blijft bewaard.
+            Bedankt voor het uitproberen van doen. Activeer je abonnement om verder te gaan, je data blijft bewaard.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="mt-4 flex-col sm:flex-row gap-2">
@@ -47,7 +47,7 @@ export function TrialGuardDialog({ open, onOpenChange }: TrialGuardDialogProps) 
             className="text-white font-bold sm:order-2 inline-flex items-center gap-2"
             style={{ backgroundColor: '#F15025' }}
           >
-            Activeer abonnement — €79/maand
+            Activeer abonnement · €79/maand
             <ArrowRight className="h-4 w-4" />
           </Button>
         </DialogFooter>

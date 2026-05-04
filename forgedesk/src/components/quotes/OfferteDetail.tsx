@@ -279,7 +279,7 @@ export function OfferteDetail() {
     const contactEmail = selectedCp?.email || klant.email || ''
     const contactNaam = selectedCp?.naam || klant.contactpersoon || klant.bedrijfsnaam
     setSendTo(contactEmail)
-    setSendSubject(`Offerte ${offerte.nummer} — ${offerte.titel}`)
+    setSendSubject(`Offerte ${offerte.nummer} · ${offerte.titel}`)
     setSendBody(
       `Beste ${contactNaam},\n\nHierbij ontvangt u onze offerte ${offerte.nummer} voor "${offerte.titel}".\n\nWij zien uw reactie graag tegemoet.\n\nMet vriendelijke groet,\n${bedrijfsnaam || 'Uw bedrijf'}`
     )

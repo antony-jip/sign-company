@@ -1313,7 +1313,7 @@ export function ProjectDetail() {
                       >
                         <option value="">Selecteer contactpersoon...</option>
                         {klant.contactpersonen?.map((cp) => (
-                          <option key={cp.id} value={cp.id}>{cp.naam}{cp.functie ? ` — ${cp.functie}` : ''}</option>
+                          <option key={cp.id} value={cp.id}>{cp.naam}{cp.functie ? ` · ${cp.functie}` : ''}</option>
                         ))}
                       </select>
                       {activeCp && (activeCp.email || activeCp.telefoon) && (

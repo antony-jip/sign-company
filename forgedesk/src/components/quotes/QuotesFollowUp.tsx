@@ -255,7 +255,7 @@ export function QuotesFollowUp({ offertes, onRefresh }: QuotesFollowUpProps) {
         portaal_id: portaal.id,
         type: 'offerte',
         offerte_id: offerte.id,
-        titel: `${offerte.nummer} — ${offerte.titel}`,
+        titel: `${offerte.nummer} · ${offerte.titel}`,
         status: 'verstuurd',
         zichtbaar_voor_klant: true,
         volgorde: items.length,
@@ -434,7 +434,7 @@ export function QuotesFollowUp({ offertes, onRefresh }: QuotesFollowUpProps) {
 
             <p className="font-semibold mt-1.5 truncate">
               {klant?.bedrijfsnaam || offerte.klant_naam || 'Onbekende klant'}
-              <span className="font-normal text-muted-foreground"> — {offerte.titel}</span>
+              <span className="font-normal text-muted-foreground"> · {offerte.titel}</span>
             </p>
 
             <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground flex-wrap">

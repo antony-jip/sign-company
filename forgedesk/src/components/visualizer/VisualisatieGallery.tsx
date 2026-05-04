@@ -126,7 +126,7 @@ export function VisualisatieGallery({
             <ImageIcon className="h-6 w-6 text-muted-foreground" />
           </div>
           <p className="text-sm text-muted-foreground mb-3">
-            Nog geen visualisaties — genereer de eerste mockup
+            Nog geen visualisaties. Genereer de eerste mockup
           </p>
           {toon_toevoegen_knop && (
             <Button size="sm" onClick={() => setDialogOpen(true)} className="gap-1.5">

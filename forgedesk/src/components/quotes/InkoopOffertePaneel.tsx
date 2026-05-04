@@ -415,7 +415,7 @@ export function InkoopOffertePaneel({ userId, offerteId, onRegelToevoegen, onReg
         ) : (
           /* Bewerkbare tabel met resultaten */
           <div className="space-y-3">
-            <p className="text-xs text-muted-foreground">{geanalyseerdeRegels.length} regels gevonden — pas aan indien nodig</p>
+            <p className="text-xs text-muted-foreground">{geanalyseerdeRegels.length} regels gevonden · pas aan indien nodig</p>
             <div className="border rounded-lg overflow-hidden">
               <table className="w-full text-xs">
                 <thead className="bg-muted/50">

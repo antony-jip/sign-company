@@ -147,7 +147,7 @@ function searchData(
       results: offerteResults.slice(0, MAX_PER_CATEGORY).map((o) => ({
         id: o.id,
         type: 'offerte',
-        title: o.nummer ? `${o.nummer} — ${o.titel}` : o.titel,
+        title: o.nummer ? `${o.nummer} · ${o.titel}` : o.titel,
         subtitle: o.klant_naam || undefined,
         status: o.status,
         route: `/offertes/${o.id}/preview`,

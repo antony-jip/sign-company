@@ -546,7 +546,7 @@ export function ClientsLayout() {
             title={searchQuery || statusFilter !== 'alle' ? 'Geen klanten gevonden' : 'Nog geen klanten'}
             description={searchQuery || statusFilter !== 'alle'
               ? 'Probeer andere zoektermen of filters.'
-              : 'Voeg je eerste klant toe — winkels, horeca, bedrijven die signing nodig hebben.'}
+              : 'Voeg je eerste klant toe. Winkels, horeca, bedrijven die signing nodig hebben.'}
           />
         </div>
       ) : viewMode === 'grid' ? (

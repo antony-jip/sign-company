@@ -1596,8 +1596,8 @@ export function FactuurEditor() {
             {isVervallen && <AlertTriangle className="h-4 w-4" />}
             <span>
               {currentStatus === 'betaald' && <>Betaald op <span className="font-mono">{formatDate(existingFactuur.betaaldatum || '')}</span><span style={{ color: '#F15025' }}>.</span></>}
-              {currentStatus === 'verzonden' && !isVervallen && <>Verstuurd — wachtend op betaling<span style={{ color: '#F15025' }}>.</span></>}
-              {currentStatus === 'concept' && <>Concept — nog niet verstuurd<span style={{ color: '#F15025' }}>.</span></>}
+              {currentStatus === 'verzonden' && !isVervallen && <>Verstuurd · wachtend op betaling<span style={{ color: '#F15025' }}>.</span></>}
+              {currentStatus === 'concept' && <>Concept · nog niet verstuurd<span style={{ color: '#F15025' }}>.</span></>}
               {currentStatus === 'gecrediteerd' && <>Gecrediteerd<span style={{ color: '#F15025' }}>.</span></>}
               {isVervallen && <>{dagenVervallen} dag{dagenVervallen !== 1 ? 'en' : ''} vervallen<span style={{ color: '#F15025' }}>.</span></>}
             </span>
@@ -1886,7 +1886,7 @@ export function FactuurEditor() {
                           <span className="font-mono font-medium truncate">{offerte.nummer}</span>
                         </div>
                         <div className="text-xs text-muted-foreground truncate">
-                          {offerte.klant_naam || 'Klant'} — {offerte.titel}
+                          {offerte.klant_naam || 'Klant'} · {offerte.titel}
                         </div>
                         <div className="text-xs font-medium text-muted-foreground">
                           <span className="font-mono">{formatCurrency(offerte.totaal)}</span>

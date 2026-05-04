@@ -219,7 +219,7 @@ export function WerkbonVanProjectDialog({
                         <SelectItem key={o.id} value={o.id}>
                           <span className="flex items-center gap-2">
                             <FileText className="h-3 w-3" />
-                            {o.nummer} — {o.titel}
+                            {o.nummer} · {o.titel}
                           </span>
                         </SelectItem>
                       ))}

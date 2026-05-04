@@ -220,8 +220,8 @@ export function EmailComposePage() {
           <h1 className="text-xl font-extrabold tracking-[-0.03em] text-foreground">Offerte versturen</h1>
           {offerte && (
             <p className="text-sm text-muted-foreground">
-              <span className="font-mono">{offerte.nummer}</span> — {offerte.titel}
-              {klant && <> — {klant.bedrijfsnaam}</>}
+              <span className="font-mono">{offerte.nummer}</span> · {offerte.titel}
+              {klant && <> · {klant.bedrijfsnaam}</>}
             </p>
           )}
         </div>
@@ -277,7 +277,7 @@ export function EmailComposePage() {
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground truncate">{pdfFilename}</p>
                 <p className="text-xs text-muted-foreground">
-                  {(pdfBlob.size / 1024).toFixed(0)} KB — Automatisch bijgevoegd
+                  {(pdfBlob.size / 1024).toFixed(0)} KB · Automatisch bijgevoegd
                 </p>
               </div>
               <FileText className="h-4 w-4 text-blue-500 flex-shrink-0" />
@@ -363,7 +363,7 @@ export function EmailComposePage() {
           <div className="text-xs text-muted-foreground">
             {offerte && (
               <span>
-                Offerte <span className="font-mono">{offerte.nummer}</span> — {formatCurrency(offerte.totaal)} incl. BTW
+                Offerte <span className="font-mono">{offerte.nummer}</span> · {formatCurrency(offerte.totaal)} incl. BTW
               </span>
             )}
           </div>

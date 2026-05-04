@@ -86,7 +86,7 @@ export function PakbonVanProjectDialog({
         locatie_adres: klant?.adres || '',
         locatie_stad: klant?.stad || undefined,
         locatie_postcode: klant?.postcode || undefined,
-        omschrijving: mode === 'leeg' ? 'Lege pakbon — ter plaatse invullen' : undefined,
+        omschrijving: mode === 'leeg' ? 'Lege pakbon · ter plaatse invullen' : undefined,
       })
 
       if (mode === 'offerte' && selectedIds.size > 0) {
@@ -159,7 +159,7 @@ export function PakbonVanProjectDialog({
                       <SelectItem key={o.id} value={o.id}>
                         <span className="flex items-center gap-2">
                           <FileText className="h-3 w-3" />
-                          {o.nummer} — {o.titel}
+                          {o.nummer} · {o.titel}
                         </span>
                       </SelectItem>
                     ))}
@@ -194,7 +194,7 @@ export function PakbonVanProjectDialog({
               <FileCheck className="h-5 w-5 text-[#6B6B66] mt-0.5 shrink-0" />
               <div>
                 <div className="text-sm font-semibold text-[#1A1A1A]">Lege pakbon (invulformulier)</div>
-                <div className="text-xs text-[#9B9B95] mt-0.5">Pakbon met lege regels — handig om ter plaatse in te vullen</div>
+                <div className="text-xs text-[#9B9B95] mt-0.5">Pakbon met lege regels, handig om ter plaatse in te vullen</div>
               </div>
             </button>
 

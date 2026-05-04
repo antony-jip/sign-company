@@ -255,7 +255,7 @@ function FeedItem({ item }: { item: PortaalItem }) {
             <span className="text-[11px] font-semibold" style={{ color: r.type === 'goedkeuring' ? '#3A7D52' : r.type === 'revisie' ? '#C0451A' : '#5A5A55' }}>
               {r.type === 'goedkeuring' ? 'Goedgekeurd' : r.type === 'revisie' ? 'Revisie' : 'Reactie'}
             </span>
-            <span className="text-[11px] text-[#9B9B95]">— {r.klant_naam || 'Klant'}</span>
+            <span className="text-[11px] text-[#9B9B95]">· {r.klant_naam || 'Klant'}</span>
             <span className="text-[10px] font-mono text-[#C0BDB8] ml-auto">{formatTime(r.created_at)}</span>
           </div>
           {r.bericht && <p className="text-xs text-[#3A3A35] mt-0.5">{r.bericht}</p>}

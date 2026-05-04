@@ -285,7 +285,7 @@ export function FinancialLayout() {
                 {facturen.length === 0 ? (
                   <div className="h-[350px] flex items-center justify-center">
                     <p className="text-sm text-[#9B9B95]">
-                      Nog geen facturen — maak je eerste factuur aan om het overzicht te zien
+                      Nog geen facturen. Maak je eerste factuur aan om het overzicht te zien
                     </p>
                   </div>
                 ) : (

@@ -21,7 +21,7 @@ function OfflineBanner() {
   return (
     <div className="bg-destructive text-destructive-foreground px-4 py-2 text-center text-sm font-medium flex items-center justify-center gap-2 flex-shrink-0">
       <WifiOff className="h-4 w-4" />
-      Je bent offline — wijzigingen worden niet opgeslagen
+      Je bent offline. Wijzigingen worden niet opgeslagen
     </div>
   )
 }

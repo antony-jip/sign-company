@@ -1595,7 +1595,7 @@ export function QuoteCreation() {
           const { buildPortalEmailHtml } = await import('@/utils/emailTemplate')
           const htmlBody = buildPortalEmailHtml({
             heading: `Er staat een nieuwe offerte voor u klaar.`,
-            itemTitel: `Offerte ${offerteNummer} — ${offerteTitel}`,
+            itemTitel: `Offerte ${offerteNummer} · ${offerteTitel}`,
             beschrijving: `Bedrag: ${formatCurrency(round2(subtotaal + btwBedrag))} incl. BTW`,
             ctaLabel: 'Bekijk in portaal →',
             ctaUrl: portaalUrl,

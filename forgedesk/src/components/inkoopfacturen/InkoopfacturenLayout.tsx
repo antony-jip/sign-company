@@ -529,7 +529,7 @@ export function InkoopfacturenLayout() {
                         <p className="text-[13px] text-[#9B9B95] max-w-md mb-6">
                           {inboxConfig
                             ? 'Je inbox wordt elke 15 minuten gecheckt. Klik op Synchroniseer om nu te checken.'
-                            : 'Koppel een Gmail inbox en ontvang automatisch inkoopfacturen. AI leest de PDF en extraheert alle gegevens — je hoeft alleen nog goed te keuren.'}
+                            : 'Koppel een Gmail inbox en ontvang automatisch inkoopfacturen. AI leest de PDF en extraheert alle gegevens · je hoeft alleen nog goed te keuren.'}
                         </p>
                         {!inboxConfig && (
                           <div className="bg-[#FAFAF8] rounded-xl border border-[#F0EFEC] p-5 max-w-sm w-full text-left space-y-3 mb-6">

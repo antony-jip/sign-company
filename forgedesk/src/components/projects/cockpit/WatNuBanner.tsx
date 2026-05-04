@@ -42,8 +42,8 @@ function getWatNuConfig(
       const verzonden = offertes.some(o => ['verzonden', 'bekeken'].includes(o.status))
       return {
         tekst: verzonden
-          ? 'Wacht op akkoord — offerte verzonden via portaal'
-          : 'Offerte in concept — verstuur naar klant',
+          ? 'Wacht op akkoord · offerte verzonden via portaal'
+          : 'Offerte in concept · verstuur naar klant',
         acties: [
           ...(verzonden ? [{ label: 'Portaal bekijken', onClick: callbacks.onViewPortaal }] : []),
         ],
@@ -52,7 +52,7 @@ function getWatNuConfig(
     }
     case 2:
       return {
-        tekst: 'Klant akkoord — start met uitvoering',
+        tekst: 'Klant akkoord · start met uitvoering',
         acties: [
           { label: 'Werkbon maken', onClick: callbacks.onCreateWerkbon, primary: true },
         ],
@@ -68,7 +68,7 @@ function getWatNuConfig(
       }
     case 4:
       return {
-        tekst: `Montage gepland — ${montageAfspraken.find(m => m.status === 'gepland')?.monteurs?.[0] || 'monteur'} gaat erheen`,
+        tekst: `Montage gepland · ${montageAfspraken.find(m => m.status === 'gepland')?.monteurs?.[0] || 'monteur'} gaat erheen`,
         acties: [
           { label: 'Details bekijken', onClick: callbacks.onViewPlanning },
         ],
@@ -79,13 +79,13 @@ function getWatNuConfig(
       if (hasFactuur) {
         const openBedrag = facturen.reduce((sum, f) => sum + (f.totaal - (f.betaald_bedrag || 0)), 0)
         return {
-          tekst: `Factuur verstuurd — ${new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(openBedrag)} open`,
+          tekst: `Factuur verstuurd · ${new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(openBedrag)} open`,
           acties: [],
           kleur,
         }
       }
       return {
-        tekst: 'Montage afgerond — maak factuur',
+        tekst: 'Montage afgerond · maak factuur',
         acties: [{ label: 'Factuur maken', onClick: callbacks.onCreateFactuur, primary: true }],
         kleur,
       }

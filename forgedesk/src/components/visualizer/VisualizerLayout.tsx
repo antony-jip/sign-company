@@ -980,7 +980,7 @@ export function VisualizerLayout() {
               ) : (
                 <>
                   <Sparkles className="h-4 w-4" />
-                  Genereer Visualisatie — {resolutie === '4K' ? '2 credits' : '1 credit'}
+                  Genereer Visualisatie · {resolutie === '4K' ? '2 credits' : '1 credit'}
                 </>
               )}
             </Button>
@@ -1021,7 +1021,7 @@ export function VisualizerLayout() {
         ) : gefilterd.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             {visualisaties.length === 0
-              ? 'Nog geen visualisaties — genereer je eerste hierboven'
+              ? 'Nog geen visualisaties. Genereer je eerste hierboven'
               : 'Geen resultaten voor dit filter'}
           </div>
         ) : (
