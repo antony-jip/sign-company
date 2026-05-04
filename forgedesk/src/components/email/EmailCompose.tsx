@@ -318,8 +318,8 @@ export function EmailCompose({
 
     const totalFileBytes = attachments.reduce((sum, f) => sum + f.size, 0)
     const totalMB = totalFileBytes / (1024 * 1024)
-    if (totalMB > 18) {
-      toast.error(`Bijlagen zijn te groot (${totalMB.toFixed(1)}MB). Maximum is ca. 18MB per mail.`, { duration: 8000 })
+    if (totalMB > 22) {
+      toast.error(`Bijlagen zijn te groot (${totalMB.toFixed(1)}MB). Maximum is ca. 22MB per mail.`, { duration: 8000 })
       return undefined
     }
 
@@ -709,7 +709,7 @@ export function EmailCompose({
               multiple
               className="hidden"
               onChange={handleFileSelect}
-              accept=".pdf,.jpg,.jpeg,.png,.dwg,.dxf,.doc,.docx"
+              accept=".pdf,.jpg,.jpeg,.png,.dwg,.dxf,.doc,.docx,.eps,.ai,.cdr,.svg,.indd,.psd,.zip,.rar"
             />
           </div>
           <div className="flex items-center gap-2 w-full md:w-auto justify-end md:justify-start">
