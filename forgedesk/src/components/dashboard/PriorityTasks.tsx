@@ -1,9 +1,8 @@
-import React, { useMemo } from 'react'
+import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { Card, CardContent } from '@/components/ui/card'
 import { ListTodo, CheckCircle2, Loader2 } from 'lucide-react'
-import { formatDate, getPriorityColor, getStatusColor } from '@/lib/utils'
+import { formatDate } from '@/lib/utils'
 import { useDashboardData } from '@/contexts/DashboardDataContext'
 
 const priorityOrder: Record<string, number> = {
@@ -13,17 +12,26 @@ const priorityOrder: Record<string, number> = {
   laag: 3,
 }
 
+const PRIORITY_BAR: Record<string, string> = {
+  kritiek: 'bg-[#F15025]',
+  hoog: 'bg-[#C44830]',
+  medium: 'bg-[#1A535C]/50',
+  laag: 'bg-[#888780]',
+}
+
+const STATUS_LABELS: Record<string, string> = {
+  todo: 'Open',
+  bezig: 'Bezig',
+  review: 'Review',
+}
+
 export function PriorityTasks() {
   const navigate = useNavigate()
   const { taken, projecten, klanten, isLoading: loading } = useDashboardData()
 
   const topTasks = useMemo(() => {
-    const projectMap = new Map(
-      projecten.map((p) => [p.id, p.naam])
-    )
-    const klantMap = new Map(
-      klanten.map((k) => [k.id, k.bedrijfsnaam])
-    )
+    const projectMap = new Map(projecten.map((p) => [p.id, p.naam]))
+    const klantMap = new Map(klanten.map((k) => [k.id, k.bedrijfsnaam]))
 
     return [...taken]
       .filter((t) => t.status !== 'klaar')
@@ -48,84 +56,65 @@ export function PriorityTasks() {
 
   return (
     <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2.5 text-base">
-          <div className="flex items-center justify-center h-8 w-8 rounded-xl text-white" style={{ backgroundColor: '#1A535C' }}>
-            <ListTodo className="h-4 w-4" />
+      <CardContent className="p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2.5">
+            <div className="flex items-center justify-center h-8 w-8 rounded-xl text-white" style={{ backgroundColor: '#5A5A55' }}>
+              <ListTodo className="h-4 w-4" />
+            </div>
+            <h3 className="text-[14px] font-bold text-foreground">Prioritaire taken</h3>
           </div>
-          <div>
-            <span className="text-[14px] font-bold leading-tight">Prioritaire Taken</span>
-            {!loading && topTasks.length > 0 && (
-              <p className="text-[11px] text-muted-foreground font-mono font-normal">{topTasks.length} openstaand</p>
-            )}
-          </div>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
+          <span
+            onClick={() => navigate('/taken')}
+            className="text-[11px] font-bold uppercase tracking-[0.06em] text-muted-foreground cursor-pointer hover:text-[#1A535C] transition-colors"
+          >
+            Alles →
+          </span>
+        </div>
         {loading ? (
-          <div className="flex items-center justify-center py-12">
+          <div className="flex items-center justify-center py-8">
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           </div>
         ) : topTasks.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
-            <CheckCircle2 className="w-10 h-10 mb-3 opacity-30" />
-            <p className="text-sm font-medium text-foreground/70">Nog geen openstaande taken</p>
-            <p className="text-xs mt-1 text-muted-foreground/60">Alle taken zijn afgerond.</p>
+          <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+            <CheckCircle2 className="w-8 h-8 mb-3 opacity-30" />
+            <p className="text-sm font-medium text-foreground/70">
+              Geen prioritaire taken vandaag<span className="text-[#F15025]">.</span>
+            </p>
           </div>
         ) : (
-        <div className="space-y-1">
-          {/* Table header */}
-          <div className="grid grid-cols-[80px_1fr_140px_100px_90px] gap-3 px-3 py-2 text-xs font-bold text-text-tertiary uppercase tracking-label border-b border-border/50">
-            <span>Prioriteit</span>
-            <span>Taak</span>
-            <span>Project</span>
-            <span>Deadline</span>
-            <span>Status</span>
+          <div className="space-y-0">
+            {topTasks.map((task, idx) => {
+              const statusLabel = STATUS_LABELS[task.status] ?? task.status
+              const deadline = task.deadline ? formatDate(task.deadline) : null
+              return (
+                <div
+                  key={task.id}
+                  onClick={() => navigate(task.project_id ? `/projecten/${task.project_id}` : '/taken')}
+                  className={`flex items-center gap-3 py-3 cursor-pointer hover:bg-bg-hover -mx-2 px-2 rounded-lg transition-all duration-150 ${
+                    idx > 0 ? 'border-t border-border/50' : ''
+                  }`}
+                >
+                  <div className={`w-1 h-9 rounded-sm flex-shrink-0 ${PRIORITY_BAR[task.prioriteit] ?? 'bg-border'}`} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground truncate">{task.titel}</p>
+                    <p className="text-[11.5px] text-muted-foreground mt-0.5 truncate">
+                      {task.projectNaam}
+                      {deadline && (
+                        <>
+                          {' · '}
+                          <span className="font-mono">{deadline}</span>
+                        </>
+                      )}
+                    </p>
+                  </div>
+                  <span className="text-xs font-semibold text-muted-foreground whitespace-nowrap">
+                    {statusLabel}<span style={{ color: '#F15025' }}>.</span>
+                  </span>
+                </div>
+              )
+            })}
           </div>
-
-          {/* Task rows */}
-          {topTasks.map((task) => (
-            <div
-              key={task.id}
-              onClick={() => navigate(task.project_id ? `/projecten/${task.project_id}` : '/taken')}
-              className="grid grid-cols-[80px_1fr_140px_100px_90px] gap-3 items-center px-3 py-2.5 rounded-lg hover:bg-muted/50 transition-all duration-150 cursor-pointer group"
-            >
-              <div>
-                <Badge
-                  className={`${getPriorityColor(task.prioriteit)} text-xs capitalize`}
-                >
-                  {task.prioriteit}
-                </Badge>
-              </div>
-
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">
-                  {task.titel}
-                </p>
-              </div>
-
-              <div className="min-w-0">
-                <p className="text-sm text-muted-foreground truncate">
-                  {task.projectNaam}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-sm text-muted-foreground font-mono">
-                  {formatDate(task.deadline ?? "")}
-                </p>
-              </div>
-
-              <div>
-                <Badge
-                  className={`${getStatusColor(task.status)} text-xs capitalize`}
-                >
-                  {task.status}
-                </Badge>
-              </div>
-            </div>
-          ))}
-        </div>
         )}
       </CardContent>
     </Card>
