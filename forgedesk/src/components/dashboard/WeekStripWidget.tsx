@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils'
 import { isToday, addDays, format, startOfDay } from 'date-fns'
 import { nl } from 'date-fns/locale'
 import { useDashboardData } from '@/contexts/DashboardDataContext'
+import { Skeleton } from '@/components/ui/skeleton'
 
 const DAG_NAMEN = ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za']
 
@@ -35,7 +36,22 @@ export function WeekStripWidget() {
     })
   }, [montages, taken])
 
-  if (loading) return null
+  if (loading) {
+    return (
+      <div className="flex items-center gap-1.5 rounded-xl bg-[#1A535C]/[0.04] p-1.5">
+        {Array.from({ length: 7 }).map((_, i) => (
+          <div
+            key={i}
+            className="flex flex-col items-center gap-1 py-2 px-2.5 rounded-lg flex-1"
+          >
+            <Skeleton className="h-2.5 w-6" />
+            <Skeleton className="h-3.5 w-5" />
+            <div className="h-2.5" />
+          </div>
+        ))}
+      </div>
+    )
+  }
 
   return (
     <div className="flex items-center gap-1.5">

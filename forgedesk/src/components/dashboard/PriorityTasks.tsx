@@ -1,7 +1,8 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
-import { ListTodo, CheckCircle2, Loader2 } from 'lucide-react'
+import { Skeleton } from '@/components/ui/skeleton'
+import { ListTodo, CheckCircle2 } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import { useDashboardData } from '@/contexts/DashboardDataContext'
 
@@ -72,8 +73,20 @@ export function PriorityTasks() {
           </span>
         </div>
         {loading ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          <div className="rounded-xl bg-[#5A5A55]/[0.04] p-2 space-y-0">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div
+                key={i}
+                className={`flex items-center gap-3 py-3 px-2 ${i > 0 ? 'border-t border-border/40' : ''}`}
+              >
+                <Skeleton className="w-1 h-9 rounded-sm flex-shrink-0" />
+                <div className="flex-1 min-w-0 space-y-1.5">
+                  <Skeleton className="h-3.5 w-3/4" />
+                  <Skeleton className="h-3 w-1/2" />
+                </div>
+                <Skeleton className="h-3 w-12 flex-shrink-0" />
+              </div>
+            ))}
           </div>
         ) : topTasks.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">

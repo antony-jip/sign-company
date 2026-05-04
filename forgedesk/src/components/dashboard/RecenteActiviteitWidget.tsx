@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
-import { Loader2, Clock } from 'lucide-react'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Clock } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import { formatDistanceToNow } from 'date-fns'
 import { nl } from 'date-fns/locale'
@@ -58,8 +59,19 @@ export function RecenteActiviteitWidget() {
           </div>
         </div>
         {loading ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          <div className="rounded-xl bg-[#3A5A9A]/[0.04] p-2 space-y-0">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div
+                key={i}
+                className={`flex items-start gap-3 py-3 px-2 ${i > 0 ? 'border-t border-border/40' : ''}`}
+              >
+                <Skeleton className="w-2 h-2 rounded-full mt-[7px] flex-shrink-0" />
+                <div className="flex-1 min-w-0 space-y-1.5">
+                  <Skeleton className="h-3.5 w-4/5" />
+                  <Skeleton className="h-3 w-1/3" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : items.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">

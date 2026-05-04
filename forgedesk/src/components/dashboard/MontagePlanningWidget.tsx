@@ -7,7 +7,6 @@ import {
   Clock,
   MapPin,
   ArrowRight,
-  Loader2,
   ChevronLeft,
   ChevronRight,
   CalendarDays,
@@ -15,6 +14,7 @@ import {
   Paperclip,
   ClipboardCheck,
 } from 'lucide-react'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import type { MontageAfspraak } from '@/types'
 import { cn } from '@/lib/utils'
@@ -198,8 +198,17 @@ export function MontagePlanningWidget() {
         )}
 
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          <div className="rounded-xl bg-[#9A5A48]/[0.04] p-3 space-y-2">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3 py-1.5">
+                <Skeleton className="h-8 w-8 rounded-full flex-shrink-0" />
+                <div className="flex-1 min-w-0 space-y-1.5">
+                  <Skeleton className="h-3.5 w-2/3" />
+                  <Skeleton className="h-3 w-2/5" />
+                </div>
+                <Skeleton className="h-3 w-12 flex-shrink-0" />
+              </div>
+            ))}
           </div>
         ) : weekTotal === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
