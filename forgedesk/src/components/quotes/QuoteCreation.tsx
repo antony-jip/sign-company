@@ -173,7 +173,8 @@ async function ensureContactUUID(
 
 function generateOfferteNummer(prefix: string = 'OFF', existingOffertes: { nummer: string }[] = [], startNummer = 1): string {
   const year = new Date().getFullYear()
-  const jaarPrefix = `${prefix}-${year}-`
+  const schoonPrefix = prefix.replace(/-+$/, '') || 'OFF'
+  const jaarPrefix = `${schoonPrefix}-${year}-`
   const maxNr = existingOffertes
     .filter((o) => o.nummer.startsWith(jaarPrefix))
     .reduce((max, o) => Math.max(max, parseInt(o.nummer.replace(jaarPrefix, ''), 10) || 0), 0)

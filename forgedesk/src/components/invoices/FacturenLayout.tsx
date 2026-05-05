@@ -238,7 +238,8 @@ function getTodayString(): string {
 
 function generateFactuurNummer(existing: Factuur[], factuurPrefix = 'FAC', startNummer = 1): string {
   const year = new Date().getFullYear()
-  const prefix = `${factuurPrefix}-${year}-`
+  const schoonPrefix = factuurPrefix.replace(/-+$/, '') || 'FAC'
+  const prefix = `${schoonPrefix}-${year}-`
   const maxNum = existing
     .filter((f) => f.nummer.startsWith(prefix))
     .reduce((max, f) => {
@@ -251,7 +252,8 @@ function generateFactuurNummer(existing: Factuur[], factuurPrefix = 'FAC', start
 
 function generateTypedNummer(existing: Factuur[], prefix: string): string {
   const year = new Date().getFullYear()
-  const fullPrefix = `${prefix}-${year}-`
+  const schoonPrefix = prefix.replace(/-+$/, '')
+  const fullPrefix = `${schoonPrefix}-${year}-`
   const maxNum = existing
     .filter((f) => f.nummer.startsWith(fullPrefix))
     .reduce((max, f) => {

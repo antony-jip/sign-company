@@ -175,7 +175,8 @@ function getDefaultVervaldatum(factuurdatum: string, dagen: number = 30): string
 
 function generateFactuurNummer(prefix: string, existing: { nummer: string }[], startNummer = 1): string {
   const year = new Date().getFullYear()
-  const jaarPrefix = `${prefix}-${year}-`
+  const schoonPrefix = prefix.replace(/-+$/, '') || 'FAC'
+  const jaarPrefix = `${schoonPrefix}-${year}-`
   const maxNr = existing
     .filter((f) => f.nummer.startsWith(jaarPrefix))
     .reduce((max, f) => Math.max(max, parseInt(f.nummer.replace(jaarPrefix, ''), 10) || 0), 0)
@@ -185,7 +186,8 @@ function generateFactuurNummer(prefix: string, existing: { nummer: string }[], s
 
 function generateTypedNummer(existing: { nummer: string }[], prefix: string): string {
   const year = new Date().getFullYear()
-  const fullPrefix = `${prefix}-${year}-`
+  const schoonPrefix = prefix.replace(/-+$/, '')
+  const fullPrefix = `${schoonPrefix}-${year}-`
   const maxNum = existing
     .filter((f) => f.nummer.startsWith(fullPrefix))
     .reduce((max, f) => {

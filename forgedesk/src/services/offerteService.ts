@@ -464,7 +464,8 @@ export async function getRecentOfferteItemSuggesties(): Promise<{ beschrijving: 
 
 export async function getNextOfferteNummer(prefix: string = 'OFF', startNummer = 1): Promise<string> {
   const year = new Date().getFullYear()
-  const jaarPrefix = `${prefix}-${year}-`
+  const schoonPrefix = prefix.replace(/-+$/, '') || 'OFF'
+  const jaarPrefix = `${schoonPrefix}-${year}-`
 
   // startNummer als floor: bij overstap vanuit een ander systeem kan de
   // gebruiker doorlopen vanaf een specifiek nummer.
@@ -914,7 +915,8 @@ export async function updateTekeningGoedkeuringByToken(
 
 export async function generateOfferteNummer(prefix: string = 'OFF', startNummer = 1): Promise<string> {
   const jaar = new Date().getFullYear()
-  const jaarPrefix = `${prefix}-${jaar}-`
+  const schoonPrefix = prefix.replace(/-+$/, '') || 'OFF'
+  const jaarPrefix = `${schoonPrefix}-${jaar}-`
   let maxNr = await getMaxNummer('offertes', 'nummer', jaarPrefix)
   if (maxNr === 0) {
     // Fallback voor localStorage

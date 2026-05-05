@@ -414,7 +414,8 @@ export async function deleteProjectFoto(id: string): Promise<void> {
 
 export async function generateProjectNummer(prefix: string = 'PRJ'): Promise<string> {
   const jaar = new Date().getFullYear()
-  const jaarPrefix = `${prefix}-${jaar}-`
+  const schoonPrefix = prefix.replace(/-+$/, '') || 'PRJ'
+  const jaarPrefix = `${schoonPrefix}-${jaar}-`
   let maxNr = await getMaxNummer('projecten', 'project_nummer', jaarPrefix)
   if (maxNr === 0) {
     const projecten = isSupabaseConfigured() ? [] : getLocalData<Project>('projecten')

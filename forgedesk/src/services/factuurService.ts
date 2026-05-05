@@ -230,7 +230,8 @@ export async function deleteHerinneringTemplate(id: string): Promise<void> {
 
 export async function generateFactuurNummer(prefix: string = 'FAC', startNummer = 1): Promise<string> {
   const jaar = new Date().getFullYear()
-  const jaarPrefix = `${prefix}-${jaar}-`
+  const schoonPrefix = prefix.replace(/-+$/, '') || 'FAC'
+  const jaarPrefix = `${schoonPrefix}-${jaar}-`
   let maxNr = await getMaxNummer('facturen', 'nummer', jaarPrefix)
   if (maxNr === 0) {
     const facturen = isSupabaseConfigured() ? [] : getLocalData<Factuur>('facturen')
