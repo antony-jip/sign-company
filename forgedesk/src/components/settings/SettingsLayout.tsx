@@ -317,6 +317,7 @@ function DocumentenTab() {
   const [factuurStartNummer, setFactuurStartNummer] = useState('1')
   const [creditnotaPrefix, setCreditnotaPrefix] = useState('CN')
   const [werkbonPrefix, setWerkbonPrefix] = useState('WB')
+  const [werkbonStartNummer, setWerkbonStartNummer] = useState('1')
   const [projectPrefix, setProjectPrefix] = useState('PRJ')
   const [betaaltermijn, setBetaaltermijn] = useState('30')
   const [voorwaarden, setVoorwaarden] = useState('')
@@ -342,6 +343,7 @@ function DocumentenTab() {
       setFactuurStartNummer(String(data.factuur_volgnummer ?? 1))
       setCreditnotaPrefix(data.creditnota_prefix || 'CN')
       setWerkbonPrefix(data.werkbon_prefix || 'WB')
+      setWerkbonStartNummer(String(data.werkbon_volgnummer ?? 1))
       setProjectPrefix(data.project_prefix || 'PRJ')
       setBetaaltermijn(String(data.factuur_betaaltermijn_dagen || 30))
       setVoorwaarden(data.factuur_voorwaarden || '')
@@ -380,6 +382,7 @@ function DocumentenTab() {
         factuur_volgnummer: parseInt(factuurStartNummer) || 1,
         creditnota_prefix: creditnotaPrefix,
         werkbon_prefix: werkbonPrefix,
+        werkbon_volgnummer: parseInt(werkbonStartNummer) || 1,
         project_prefix: projectPrefix,
         factuur_betaaltermijn_dagen: parseInt(betaaltermijn) || 30,
         factuur_voorwaarden: voorwaarden,
@@ -498,11 +501,6 @@ function DocumentenTab() {
                   <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Voorbeeld: {creditnotaPrefix}-2026-0001</p>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="werkbon-prefix">Werkbon prefix</Label>
-                  <Input id="werkbon-prefix" value={werkbonPrefix} onChange={(e) => setWerkbonPrefix(e.target.value.toUpperCase())} placeholder="WB" maxLength={5} />
-                  <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Voorbeeld: {werkbonPrefix}-2026-0001</p>
-                </div>
-                <div className="space-y-2">
                   <Label htmlFor="project-prefix">Project prefix</Label>
                   <Input id="project-prefix" value={projectPrefix} onChange={(e) => setProjectPrefix(e.target.value.toUpperCase())} placeholder="PRJ" maxLength={5} />
                   <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Voorbeeld: {projectPrefix}-2026-0001</p>
@@ -555,9 +553,22 @@ function DocumentenTab() {
                 <Package className="w-5 h-5" />
                 Werkbon Instellingen
               </CardTitle>
-              <CardDescription>Bepaal wat de monteur ziet en kan doen op de werkbon</CardDescription>
+              <CardDescription>Nummering en wat de monteur ziet en kan doen op de werkbon</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="werkbon-prefix">Werkbon prefix</Label>
+                  <Input id="werkbon-prefix" value={werkbonPrefix} onChange={(e) => setWerkbonPrefix(e.target.value.toUpperCase())} placeholder="WB" maxLength={5} />
+                  <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Voorbeeld: {werkbonPrefix}-{new Date().getFullYear()}-{String(parseInt(werkbonStartNummer) || 1).padStart(3, '0')}</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="werkbon-startnummer">Begin nummer</Label>
+                  <Input id="werkbon-startnummer" type="number" min="1" value={werkbonStartNummer} onChange={(e) => setWerkbonStartNummer(e.target.value)} />
+                  <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Volgende werkbon start hier (handig bij overstap)</p>
+                </div>
+              </div>
+              <Separator />
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>

@@ -709,6 +709,7 @@ export interface AppSettings {
   factuur_outro_tekst: string;
   creditnota_prefix: string;
   werkbon_prefix: string;
+  werkbon_volgnummer: number;
   project_prefix: string;
   // Werkbon instellingen
   werkbon_monteur_uren: boolean;

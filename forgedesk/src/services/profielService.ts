@@ -189,6 +189,7 @@ export function getDefaultAppSettings(userId: string): AppSettings {
     factuur_outro_tekst: '',
     creditnota_prefix: 'CN',
     werkbon_prefix: 'WB',
+    werkbon_volgnummer: 1,
     herinnering_1_tekst: '',
     herinnering_1_onderwerp: 'Herinnering: Factuur {factuur_nummer}',
     herinnering_2_tekst: '',
