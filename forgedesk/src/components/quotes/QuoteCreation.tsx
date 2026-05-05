@@ -193,7 +193,7 @@ export function QuoteCreation() {
   const { id: routeId } = useParams<{ id: string }>()
   const { user } = useAuth()
   const { isBlocked: isTrialBlocked, showDialog: showTrialDialog, setShowDialog: setShowTrialDialog } = useTrialGuard()
-  const { settings, offertePrefix, offerteStartNummer, offerteGeldigheidDagen, standaardBtw, bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur, logoUrl, profile, offerteToonM2, emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte } = useAppSettings()
+  const { settings, offertePrefix, offerteStartNummer, offerteGeldigheidDagen, standaardBtw, bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur, logoUrl, profile, offerteToonM2, offerteIntroTekst, offerteOutroTekst, emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte } = useAppSettings()
   const documentStyle = useDocumentStyle()
   const [showKlantSelector, setShowKlantSelector] = useState(true)
   const [klanten, setKlanten] = useState<Klant[]>([])
@@ -280,6 +280,7 @@ export function QuoteCreation() {
 
   const autoSaveIdRef = useRef<string | null>(null)
   const performAutoSaveRef = useRef<() => Promise<void>>(async () => {})
+  const introOutroPrefilledRef = useRef(false)
 
   // ── FIX 12: Versie tracking (extracted to hook) ──
   const versioning = useQuoteVersioning({
@@ -671,6 +672,16 @@ export function QuoteCreation() {
     loadEditData()
     return () => { cancelled = true }
   }, [editOfferteId, isLoading])
+
+  // Prefill intro/outro vanuit app_settings bij nieuwe offerte
+  useEffect(() => {
+    if (editOfferteId) return
+    if (introOutroPrefilledRef.current) return
+    if (!offerteIntroTekst && !offerteOutroTekst) return
+    if (offerteIntroTekst && !introTekst) setIntroTekst(offerteIntroTekst)
+    if (offerteOutroTekst && !outroTekst) setOutroTekst(offerteOutroTekst)
+    introOutroPrefilledRef.current = true
+  }, [editOfferteId, offerteIntroTekst, offerteOutroTekst])
 
   // Auto-fill from project params
   useEffect(() => {
@@ -2014,7 +2025,7 @@ export function QuoteCreation() {
             </div>
             <div className="flex flex-wrap gap-1.5 mb-3">
               {[
-                { label: 'Standaard', tekst: `Beste ${selectedKlant?.contactpersoon || selectedKlant?.bedrijfsnaam || '{klant_naam}'}, hierbij ontvangt u onze offerte voor de door u gevraagde werkzaamheden.` },
+                { label: 'Standaard', tekst: offerteIntroTekst || `Beste ${selectedKlant?.contactpersoon || selectedKlant?.bedrijfsnaam || '{klant_naam}'}, hierbij ontvangt u onze offerte voor de door u gevraagde werkzaamheden.` },
                 { label: 'Na gesprek', tekst: `Geachte heer/mevrouw ${selectedKlant?.contactpersoon || selectedKlant?.bedrijfsnaam || '{klant_naam}'}, naar aanleiding van ons gesprek sturen wij u hierbij onze offerte.` },
                 { label: 'Bedankt', tekst: `Beste ${selectedKlant?.contactpersoon || selectedKlant?.bedrijfsnaam || '{klant_naam}'}, bedankt voor uw aanvraag. Hierbij onze offerte.` },
               ].map((tmpl) => (
@@ -2061,7 +2072,7 @@ export function QuoteCreation() {
             </div>
             <div className="flex flex-wrap gap-1.5 mb-3">
               {[
-                { label: 'Standaard', tekst: 'Wij zien uw reactie graag tegemoet.' },
+                { label: 'Standaard', tekst: offerteOutroTekst || 'Wij zien uw reactie graag tegemoet.' },
                 { label: 'Met vragen', tekst: 'Mocht u vragen hebben of aanvullende informatie wensen, neem dan gerust contact met ons op.' },
                 { label: 'Dank', tekst: 'Wij danken u voor uw vertrouwen en hopen u van dienst te mogen zijn.' },
               ].map((tmpl) => (

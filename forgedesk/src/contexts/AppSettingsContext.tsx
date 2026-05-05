@@ -44,6 +44,9 @@ interface AppSettingsContextType {
   factuurVoorwaarden: string
   factuurIntroTekst: string
   factuurOutroTekst: string
+  // Offerte teksten
+  offerteIntroTekst: string
+  offerteOutroTekst: string
   // Offerte layout
   offerteToonM2: boolean
   // Werkbon instellingen
@@ -191,6 +194,9 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     factuurVoorwaarden: settings.factuur_voorwaarden || 'Betaling binnen 30 dagen na factuurdatum.',
     factuurIntroTekst: settings.factuur_intro_tekst || '',
     factuurOutroTekst: settings.factuur_outro_tekst || '',
+    // Offerte teksten
+    offerteIntroTekst: settings.offerte_intro_tekst || '',
+    offerteOutroTekst: settings.offerte_outro_tekst || '',
     // Offerte layout
     offerteToonM2: settings.offerte_toon_m2 ?? true,
     // Werkbon instellingen
