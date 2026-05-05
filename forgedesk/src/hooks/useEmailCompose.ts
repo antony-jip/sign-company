@@ -3,7 +3,7 @@ import { useState, useRef } from 'react'
 export interface EmailExtraBijlage {
   naam: string
   grootte: number
-  base64: string
+  file: File
 }
 
 interface EmailComposeState {
@@ -69,14 +69,7 @@ export function useEmailCompose(): EmailComposeState {
     if (files) {
       Array.from(files).forEach((file) => {
         setEmailBijlagen((prev) => [...prev, { naam: file.name, grootte: file.size }])
-        const reader = new FileReader()
-        reader.onload = () => {
-          const base64 = (reader.result as string).split(',')[1]
-          if (base64) {
-            setEmailExtraBijlagen((prev) => [...prev, { naam: file.name, grootte: file.size, base64 }])
-          }
-        }
-        reader.readAsDataURL(file)
+        setEmailExtraBijlagen((prev) => [...prev, { naam: file.name, grootte: file.size, file }])
       })
     }
     e.target.value = ''

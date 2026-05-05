@@ -66,6 +66,7 @@ import {
   Underline,
   List,
   Link2,
+  AlertTriangle,
 } from 'lucide-react'
 import { getKlanten, getProjecten, getOffertes, createOfferte, createOfferteItem, updateKlant, createKlant, getOfferte, getOfferteItems, updateOfferte, deleteOfferteItem, getOfferteVersies, createOfferteVersie, getFactuur, createPortaal, createPortaalItem, getPortaalItems, createProject, syncOfferteItems, getRecentOfferteItemSuggesties, getNextOfferteNummer, OfferteConflictError, createContactpersoonDB, getContactpersonenByKlant } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
@@ -79,6 +80,7 @@ import { WerkbonAanmaakDialog } from '@/components/werkbonnen/WerkbonAanmaakDial
 const PdfPreviewDialog = React.lazy(() => import('@/components/shared/PdfPreviewDialog').then(m => ({ default: m.PdfPreviewDialog })))
 import { useDocumentStyle } from '@/hooks/useDocumentStyle'
 import { sendEmail } from '@/services/gmailService'
+import { supabase } from '@/services/supabaseClient'
 import { offerteVerzendTemplate } from '@/services/emailTemplateService'
 import { cn, formatCurrency } from '@/lib/utils'
 import { initAutofillDefaults, saveAutofillValue, labelToAutofillField } from '@/utils/autofillUtils'
@@ -98,6 +100,16 @@ import { useQuoteVersioning } from '@/hooks/useQuoteVersioning'
 import { useContactManagement } from '@/hooks/useContactManagement'
 import { useTrialGuard } from '@/hooks/useTrialGuard'
 import { TrialGuardDialog } from '@/components/shared/TrialGuardDialog'
+
+// Cumulatieve cap voor user-uploads in de offerte-email-dialog. Onder Gmail's
+// 25 MB SMTP-limiet incl. base64-overhead, met ruimte voor de offerte-PDF.
+const MAX_BIJLAGEN_BYTES = 15 * 1024 * 1024
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
 
 const DEFAULT_VOORWAARDEN = `1. Deze offerte is geldig gedurende de aangegeven termijn.
 2. Betaling dient te geschieden binnen 30 dagen na factuurdatum.
@@ -1707,8 +1719,11 @@ export function QuoteCreation() {
         customBody: email.emailBody || undefined,
       })
 
-      // Genereer PDF bijlage
-      let attachments: Array<{ filename: string; content: string; encoding: 'base64' }> = []
+      // Bijlagen worden via Supabase Storage geüpload zodat we niet tegen Vercel's
+      // 4.5 MB request body-limiet aanlopen. De server downloadt en attacht ze.
+      let attachments: Array<{ filename: string; storagePath?: string; content?: string; encoding?: 'base64' }> = []
+      const uploadDir = `email-bijlagen/${user?.id || 'anon'}`
+
       if (selectedKlant) {
         try {
           const offerteData = {
@@ -1729,18 +1744,37 @@ export function QuoteCreation() {
             ...profile,
             primaireKleur: primaireKleur || '#2563eb',
           }, documentStyle)
-          const pdfBase64 = doc.output('datauristring').split(',')[1]
-          attachments = [{ filename: `Offerte ${offerteNummer || 'concept'} - ${offerteTitel || 'offerte'}.pdf`, content: pdfBase64, encoding: 'base64' as const }]
+          const pdfFilename = `Offerte ${offerteNummer || 'concept'} - ${offerteTitel || 'offerte'}.pdf`
+          const pdfBlob = doc.output('blob') as Blob
+          const pdfPath = `${uploadDir}/${crypto.randomUUID()}-offerte.pdf`
+          const { error: pdfUploadErr } = await supabase.storage
+            .from('documenten')
+            .upload(pdfPath, pdfBlob, { contentType: 'application/pdf', upsert: false })
+          if (pdfUploadErr) throw pdfUploadErr
+          attachments.push({ filename: pdfFilename, storagePath: pdfPath })
         } catch (pdfErr) {
-          logger.error('PDF genereren mislukt, email wordt zonder bijlage verstuurd:', pdfErr)
-          toast.warning('PDF kon niet gegenereerd worden — email wordt zonder bijlage verstuurd')
+          logger.error('PDF genereren of uploaden mislukt:', pdfErr)
+          toast.error('Offerte-PDF kon niet worden voorbereid — email niet verstuurd')
+          email.setIsSendingEmail(false)
+          return
         }
       }
 
-      // Voeg user-uploaded bijlagen toe (naast de PDF)
       if (email.emailExtraBijlagen && email.emailExtraBijlagen.length > 0) {
         for (const bijlage of email.emailExtraBijlagen) {
-          attachments.push({ filename: bijlage.naam, content: bijlage.base64, encoding: 'base64' as const })
+          try {
+            const path = `${uploadDir}/${crypto.randomUUID()}-${bijlage.naam}`
+            const { error: upErr } = await supabase.storage
+              .from('documenten')
+              .upload(path, bijlage.file, { contentType: bijlage.file.type || 'application/octet-stream', upsert: false })
+            if (upErr) throw upErr
+            attachments.push({ filename: bijlage.naam, storagePath: path })
+          } catch (upErr) {
+            logger.error(`Bijlage uploaden mislukt voor ${bijlage.naam}:`, upErr)
+            toast.error(`Bijlage "${bijlage.naam}" uploaden mislukt — email niet verstuurd`)
+            email.setIsSendingEmail(false)
+            return
+          }
         }
       }
 
@@ -2172,7 +2206,10 @@ export function QuoteCreation() {
                       <div key={idx} className="flex items-center gap-2 px-3 py-1.5 bg-[#F8F7F5] rounded-lg text-sm">
                         <FileText className="h-3.5 w-3.5 text-[#C03A18]" />
                         <span className="text-[#1A1A1A] font-mono text-xs">{bijlage.naam}</span>
-                        {idx > 0 && <button onClick={() => email.setEmailBijlagen((prev: { naam: string; grootte: number }[]) => prev.filter((_: { naam: string; grootte: number }, i: number) => i !== idx))} className="text-[#9B9B95] hover:text-[#C03A18] transition-colors"><X className="h-3 w-3" /></button>}
+                        {idx > 0 && <button onClick={() => {
+                          email.setEmailBijlagen((prev: { naam: string; grootte: number }[]) => prev.filter((_: { naam: string; grootte: number }, i: number) => i !== idx))
+                          email.setEmailExtraBijlagen((prev) => prev.filter((_, i) => i !== idx - 1))
+                        }} className="text-[#9B9B95] hover:text-[#C03A18] transition-colors"><X className="h-3 w-3" /></button>}
                       </div>
                     ))}
                     <button onClick={email.handleAddBijlage} className="flex items-center gap-1 px-2 py-1.5 text-xs text-[#1A535C] hover:underline">
@@ -2180,6 +2217,26 @@ export function QuoteCreation() {
                     </button>
                     <input ref={email.fileInputRef} type="file" multiple className="hidden" onChange={email.handleFileSelect} accept=".pdf,.jpg,.jpeg,.png,.dwg,.dxf,.doc,.docx" />
                   </div>
+
+                  {/* Cumulatieve grootte van user-uploads — PDF wordt apart genoemd */}
+                  {(() => {
+                    const totaalBytes = email.emailExtraBijlagen.reduce((sum, b) => sum + b.grootte, 0)
+                    const teGroot = totaalBytes > MAX_BIJLAGEN_BYTES
+                    if (totaalBytes === 0) return null
+                    return (
+                      <div className={cn(
+                        'flex items-center gap-1.5 text-xs',
+                        teGroot ? 'text-[#F15025]' : 'text-[#9B9B95]'
+                      )}>
+                        {teGroot && <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />}
+                        <span className="font-mono tabular-nums">{formatBytes(totaalBytes)} / {formatBytes(MAX_BIJLAGEN_BYTES)}</span>
+                        {teGroot
+                          ? <span>— totaal te groot. Verwijder bijlagen of gebruik kleinere bestanden.</span>
+                          : <span>+ offerte-PDF (~1 MB)</span>
+                        }
+                      </div>
+                    )
+                  })()}
 
                   {/* Inplannen */}
                   <div className="border-t border-[#EBEBEB]/40 pt-3">
@@ -2213,7 +2270,7 @@ export function QuoteCreation() {
                   <button onClick={() => email.setShowEmailCompose(false)} className="text-sm text-[#9B9B95] hover:text-[#6B6B66] transition-colors">Annuleren</button>
                   <button
                     onClick={handleSendEmailInline}
-                    disabled={!email.emailTo.trim() || !email.emailSubject.trim() || email.isSendingEmail}
+                    disabled={!email.emailTo.trim() || !email.emailSubject.trim() || email.isSendingEmail || email.emailExtraBijlagen.reduce((s, b) => s + b.grootte, 0) > MAX_BIJLAGEN_BYTES}
                     className="inline-flex items-center gap-1.5 px-5 py-2 text-sm font-medium rounded-lg bg-[#F15025] text-white hover:bg-[#D94520] disabled:opacity-40 transition-colors"
                   >
                     <Send className="h-3.5 w-3.5" />

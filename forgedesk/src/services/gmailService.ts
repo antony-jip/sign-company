@@ -96,7 +96,7 @@ export async function sendEmail(
     bcc?: string
     html?: string
     scheduledAt?: string
-    attachments?: Array<{ filename: string; content: string; encoding: 'base64' }>
+    attachments?: Array<{ filename: string; content?: string; encoding?: 'base64'; storagePath?: string }>
     // Sales Inbox v1
     wacht_op_reactie?: boolean
     // Threading
