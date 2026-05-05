@@ -111,7 +111,7 @@ function getProjectColor(name: string): string {
 
 const DAY_LABELS = ['ma', 'di', 'wo', 'do', 'vr', 'za', 'zo']
 const MONTH_NAMES = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec']
-const HOURS = Array.from({ length: 13 }, (_, i) => i + 7) // 07:00 - 19:00
+const HOURS = Array.from({ length: 24 }, (_, i) => i) // 00:00 - 23:00
 const HOUR_HEIGHT_DEFAULT = 44
 const HOUR_HEIGHT_MIN = 36
 const HOUR_HEIGHT_MAX = 80
@@ -172,7 +172,7 @@ function getHourFromDeadline(deadline: string | undefined): number | null {
   const [hStr, mStr] = timePart.split(':')
   const hour = parseInt(hStr, 10)
   const minute = parseInt(mStr || '0', 10)
-  if (isNaN(hour) || hour < 7 || hour > 19) return null
+  if (isNaN(hour) || hour < 0 || hour >= 24) return null
   return hour + (isNaN(minute) ? 0 : minute / 60)
 }
 
@@ -516,12 +516,13 @@ export function TasksLayout() {
     return () => clearInterval(interval)
   }, [])
 
-  // Scroll to current time on load
+  // Scroll to current time on load — fallback naar 07:00 buiten werkuren
   useEffect(() => {
     if (!isLoading && scrollRef.current) {
       const nowHour = new Date().getHours()
-      const targetHour = Math.max(7, nowHour - 1)
-      scrollRef.current.scrollTop = (targetHour - 7) * HOUR_HEIGHT
+      const withinWerkuren = nowHour >= 6 && nowHour <= 20
+      const targetHour = withinWerkuren ? Math.max(0, nowHour - 1) : 7
+      scrollRef.current.scrollTop = targetHour * HOUR_HEIGHT
     }
   }, [isLoading])
 
@@ -775,12 +776,9 @@ export function TasksLayout() {
 
   // Now-line position
   const nowLineTop = useMemo(() => {
-    const startMin = 7 * 60
-    const endMin = 20 * 60
-    const totalMin = endMin - startMin
-    const offset = nowMinutes - startMin
-    if (offset < 0 || offset > totalMin) return null
-    return (offset / totalMin) * 100
+    const totalMin = 24 * 60
+    if (nowMinutes < 0 || nowMinutes > totalMin) return null
+    return (nowMinutes / totalMin) * 100
   }, [nowMinutes])
 
   const isCurrentWeek = weekOffset === 0
@@ -2069,7 +2067,7 @@ function DayColumn({
       {/* Scheduled tasks - positioned at their time */}
       {scheduledTasks.map((taak) => {
         const hour = getHourFromDeadline(taak.deadline ?? "")!
-        const topPx = (hour - 7) * HOUR_HEIGHT
+        const topPx = hour * HOUR_HEIGHT
         const duration = taak.geschatte_tijd || 0
         const isResizing = resizingTaakId === taak.id
         // Height: use geschatte_tijd if > 0, otherwise auto (null)
@@ -2120,9 +2118,9 @@ function DayColumn({
         const startMin = afspraak.start_tijd ? parseInt(afspraak.start_tijd.split(':')[1], 10) || 0 : 0
         const endHour = afspraak.eind_tijd ? parseInt(afspraak.eind_tijd.split(':')[0], 10) : null
         const endMin = afspraak.eind_tijd ? parseInt(afspraak.eind_tijd.split(':')[1], 10) || 0 : 0
-        if (startHour === null || startHour < 7 || startHour > 19) return null
-        const topPx = (startHour - 7) * HOUR_HEIGHT + (startMin / 60) * HOUR_HEIGHT
-        const endTotal = endHour !== null && endHour > startHour ? (endHour - 7) * HOUR_HEIGHT + (endMin / 60) * HOUR_HEIGHT : topPx + HOUR_HEIGHT
+        if (startHour === null || startHour < 0 || startHour >= 24) return null
+        const topPx = startHour * HOUR_HEIGHT + (startMin / 60) * HOUR_HEIGHT
+        const endTotal = endHour !== null && endHour > startHour ? endHour * HOUR_HEIGHT + (endMin / 60) * HOUR_HEIGHT : topPx + HOUR_HEIGHT
         const heightPx = Math.max(endTotal - topPx, 20)
 
         const STATUS_LABELS: Record<string, string> = {
