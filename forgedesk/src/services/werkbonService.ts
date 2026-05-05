@@ -5,19 +5,42 @@ import {
 } from './supabaseHelpers'
 import type { Werkbon, WerkbonItem, WerkbonAfbeelding, WerkbonRegel, WerkbonFoto } from '@/types'
 
-async function generateWerkbonNummer(): Promise<string> {
+export async function generateWerkbonNummer(prefix: string = 'WB', startNummer = 1): Promise<string> {
   const jaar = new Date().getFullYear()
-  const prefix = `WB-${jaar}-`
-  let maxNr = await getMaxNummer('werkbonnen', 'werkbon_nummer', prefix)
+  // Defensief: strip trailing dashes zodat oudere settings met 'WB-' niet
+  // resulteren in dubbele dashes (`WB--2026-001`).
+  const schoonPrefix = prefix.replace(/-+$/, '') || 'WB'
+  const jaarPrefix = `${schoonPrefix}-${jaar}-`
+  let maxNr = await getMaxNummer('werkbonnen', 'werkbon_nummer', jaarPrefix)
   if (maxNr === 0) {
     const werkbonnen = isSupabaseConfigured() ? [] : getLocalData<Werkbon>('werkbonnen')
-    const ditJaar = werkbonnen.filter((w) => w.werkbon_nummer.startsWith(prefix))
+    const ditJaar = werkbonnen.filter((w) => w.werkbon_nummer.startsWith(jaarPrefix))
     maxNr = ditJaar.reduce((max, w) => {
-      const nr = parseInt(w.werkbon_nummer.split('-')[2], 10)
+      const nr = parseInt(w.werkbon_nummer.replace(jaarPrefix, ''), 10) || 0
       return nr > max ? nr : max
     }, 0)
   }
-  return `${prefix}${String(maxNr + 1).padStart(3, '0')}`
+  // startNummer fungeert als floor: handig bij overstap vanuit een ander
+  // systeem zodat de nummering doorloopt vanaf een specifiek beginpunt.
+  const nextNr = Math.max(maxNr, Math.max(0, startNummer - 1)) + 1
+  return `${jaarPrefix}${String(nextNr).padStart(3, '0')}`
+}
+
+async function loadWerkbonInstellingen(): Promise<{ prefix: string; startNummer: number }> {
+  if (!isSupabaseConfigured() || !supabase) return { prefix: 'WB', startNummer: 1 }
+  const orgId = await getOrgId()
+  if (!orgId) return { prefix: 'WB', startNummer: 1 }
+  const { data } = await supabase
+    .from('app_settings')
+    .select('werkbon_prefix, werkbon_volgnummer')
+    .eq('organisatie_id', orgId)
+    .order('updated_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  return {
+    prefix: data?.werkbon_prefix || 'WB',
+    startNummer: data?.werkbon_volgnummer ?? 1,
+  }
 }
 
 export async function getWerkbonnen(limit = 500): Promise<Werkbon[]> {
@@ -70,7 +93,8 @@ export async function getWerkbonnenByKlant(klantId: string): Promise<Werkbon[]> 
 }
 
 export async function createWerkbon(werkbon: Omit<Werkbon, 'id' | 'werkbon_nummer' | 'created_at' | 'updated_at'>): Promise<Werkbon> {
-  const werkbon_nummer = await generateWerkbonNummer()
+  const { prefix, startNummer } = await loadWerkbonInstellingen()
+  const werkbon_nummer = await generateWerkbonNummer(prefix, startNummer)
   const newWerkbon: Werkbon = { ...sanitizeDates(werkbon), id: generateId(), werkbon_nummer, created_at: now(), updated_at: now() } as Werkbon
   if (isSupabaseConfigured() && supabase) {
     const _orgId = await getOrgId()
