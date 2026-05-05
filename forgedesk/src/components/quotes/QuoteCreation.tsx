@@ -71,7 +71,7 @@ import { getKlanten, getProjecten, getOffertes, createOfferte, createOfferteItem
 import { useAuth } from '@/contexts/AuthContext'
 import { logCreate } from '@/utils/auditLogger'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
-import type { Klant, Project, Contactpersoon, Factuur } from '@/types'
+import type { Klant, Project, Contactpersoon, Factuur, OfferteItem } from '@/types'
 import { round2 } from '@/utils/budgetUtils'
 import { berekenMarkupPercentage } from '@/utils/margeBerekening'
 import { generateOffertePDF, generateOpdrachtbevestigingPDF } from '@/services/pdfService'
@@ -179,6 +179,35 @@ function generateOfferteNummer(prefix: string = 'OFF', existingOffertes: { numme
     .reduce((max, o) => Math.max(max, parseInt(o.nummer.replace(jaarPrefix, ''), 10) || 0), 0)
   const nextNr = Math.max(maxNr, Math.max(0, startNummer - 1)) + 1
   return `${jaarPrefix}${String(nextNr).padStart(3, '0')}`
+}
+
+function toPdfItem(item: QuoteLineItem, index: number): OfferteItem {
+  return {
+    id: item.id,
+    offerte_id: '',
+    beschrijving: item.beschrijving,
+    aantal: item.aantal,
+    eenheidsprijs: item.eenheidsprijs,
+    btw_percentage: item.btw_percentage,
+    korting_percentage: item.korting_percentage,
+    totaal: item.totaal,
+    volgorde: index + 1,
+    soort: item.soort,
+    extra_velden: item.extra_velden,
+    detail_regels: item.detail_regels,
+    prijs_varianten: item.prijs_varianten,
+    actieve_variant_id: item.actieve_variant_id,
+    breedte_mm: item.breedte_mm,
+    hoogte_mm: item.hoogte_mm,
+    oppervlakte_m2: item.oppervlakte_m2,
+    foto_url: item.foto_url,
+    foto_op_offerte: item.foto_op_offerte,
+    is_optioneel: item.is_optioneel,
+    bijlage_url: item.bijlage_url,
+    bijlage_type: item.bijlage_type,
+    bijlage_naam: item.bijlage_naam,
+    created_at: new Date().toISOString(),
+  }
 }
 
 // ============================================================
@@ -1470,32 +1499,7 @@ export function QuoteCreation() {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       }
-      const offerteItems = items.map((item, index) => ({
-        id: item.id,
-        offerte_id: '',
-        beschrijving: item.beschrijving,
-        aantal: item.aantal,
-        eenheidsprijs: item.eenheidsprijs,
-        btw_percentage: item.btw_percentage,
-        korting_percentage: item.korting_percentage,
-        totaal: item.totaal,
-        volgorde: index + 1,
-        soort: item.soort,
-        extra_velden: item.extra_velden,
-        detail_regels: item.detail_regels,
-        prijs_varianten: item.prijs_varianten,
-        actieve_variant_id: item.actieve_variant_id,
-        breedte_mm: item.breedte_mm,
-        hoogte_mm: item.hoogte_mm,
-        oppervlakte_m2: item.oppervlakte_m2,
-        foto_url: item.foto_url,
-        foto_op_offerte: item.foto_op_offerte,
-        is_optioneel: item.is_optioneel,
-        bijlage_url: item.bijlage_url,
-        bijlage_type: item.bijlage_type,
-        bijlage_naam: item.bijlage_naam,
-        created_at: new Date().toISOString(),
-      }))
+      const offerteItems = items.map(toPdfItem)
       const doc = await generateOffertePDF(offerteData, offerteItems, selectedKlant, {
         ...profile,
         primaireKleur: primaireKleur || '#2563eb',
@@ -1719,23 +1723,7 @@ export function QuoteCreation() {
             outro_tekst: outroTekst,
             ...(afrondingskorting !== 0 ? { afrondingskorting_excl_btw: afrondingskorting } : {}),
           } as Parameters<typeof generateOffertePDF>[0]
-          const pdfItems = items.map((item, index) => ({
-            id: item.id,
-            offerte_id: '',
-            beschrijving: item.beschrijving,
-            aantal: item.aantal,
-            eenheidsprijs: item.eenheidsprijs,
-            btw_percentage: item.btw_percentage,
-            korting_percentage: item.korting_percentage,
-            totaal: item.totaal,
-            volgorde: index + 1,
-            soort: item.soort,
-            extra_velden: item.extra_velden,
-            detail_regels: item.detail_regels,
-            prijs_varianten: item.prijs_varianten,
-            actieve_variant_id: item.actieve_variant_id,
-            is_optioneel: item.is_optioneel,
-          })) as Parameters<typeof generateOffertePDF>[1]
+          const pdfItems = items.map(toPdfItem)
           const doc = await generateOffertePDF(offerteData, pdfItems, selectedKlant, {
             ...profile,
             primaireKleur: primaireKleur || '#2563eb',
