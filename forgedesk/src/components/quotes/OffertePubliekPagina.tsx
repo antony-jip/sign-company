@@ -651,10 +651,10 @@ export function OffertePubliekPagina() {
                   <svg className="h-4 w-4 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"/></svg>
                   <span>
                     {hasOptionalItems && hasVariants
-                      ? 'Selecteer de gewenste opties en kies uw voorkeur bij de staffelprijzen.'
+                      ? 'Selecteer de gewenste opties en maak jouw keuze.'
                       : hasOptionalItems
                       ? 'Vink de optionele items aan die u wenst.'
-                      : 'Kies uw voorkeur bij de staffelprijzen.'}
+                      : 'Maak jouw keuze.'}
                   </span>
                 </div>
               )}
@@ -723,38 +723,47 @@ export function OffertePubliekPagina() {
                             )}
                           </tr>
                           {/* Variant selector row */}
-                          {item.prijs_varianten && item.prijs_varianten.length > 0 && kanActie && !isDeselected && (
-                            <tr className="border-b border-gray-50">
-                              {hasOptionalItems && <td />}
-                              <td colSpan={6} className="py-2 pl-2 pr-4">
-                                <div className="flex items-center gap-2 pl-1">
-                                  <span className="text-xs text-gray-500 shrink-0">Kies optie:</span>
-                                  <select
-                                    value={selectedVariants[item.id] || ''}
-                                    onChange={(e) => {
-                                      const val = e.target.value
-                                      setSelectedVariants(prev => {
-                                        if (!val) {
-                                          const next = { ...prev }
-                                          delete next[item.id]
-                                          return next
-                                        }
-                                        return { ...prev, [item.id]: val }
-                                      })
-                                    }}
-                                    className="text-xs border border-gray-200 rounded-md px-2 py-1.5 bg-white text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 max-w-[300px]"
-                                  >
-                                    <option value="">Basis — {item.aantal} x {formatCurrency(item.eenheidsprijs)}</option>
-                                    {item.prijs_varianten.map((v) => (
-                                      <option key={v.id} value={v.id}>
-                                        {v.label} — {v.aantal} x {formatCurrency(v.eenheidsprijs)}
-                                      </option>
-                                    ))}
-                                  </select>
-                                </div>
-                              </td>
-                            </tr>
-                          )}
+                          {(() => {
+                            const toonbareVarianten = item.prijs_varianten?.filter(v => v.eenheidsprijs > 0) || []
+                            if (toonbareVarianten.length === 0 || !kanActie || isDeselected) return null
+                            const toonBasis = item.eenheidsprijs > 0
+                            return (
+                              <tr className="border-b border-gray-50">
+                                {hasOptionalItems && <td />}
+                                <td colSpan={6} className="py-2 pl-2 pr-4">
+                                  <div className="flex items-center gap-2 pl-1">
+                                    <span className="text-xs text-gray-500 shrink-0">Kies optie:</span>
+                                    <select
+                                      value={selectedVariants[item.id] || ''}
+                                      onChange={(e) => {
+                                        const val = e.target.value
+                                        setSelectedVariants(prev => {
+                                          if (!val) {
+                                            const next = { ...prev }
+                                            delete next[item.id]
+                                            return next
+                                          }
+                                          return { ...prev, [item.id]: val }
+                                        })
+                                      }}
+                                      className="text-xs border border-gray-200 rounded-md px-2 py-1.5 bg-white text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 max-w-[300px]"
+                                    >
+                                      {toonBasis ? (
+                                        <option value="">Basis — {item.aantal} x {formatCurrency(item.eenheidsprijs)}</option>
+                                      ) : (
+                                        <option value="" disabled>Selecteer een optie</option>
+                                      )}
+                                      {toonbareVarianten.map((v) => (
+                                        <option key={v.id} value={v.id}>
+                                          {v.label} — {v.aantal} x {formatCurrency(v.eenheidsprijs)}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                </td>
+                              </tr>
+                            )
+                          })()}
                         </React.Fragment>
                       )
                     })}
