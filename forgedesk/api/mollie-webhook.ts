@@ -89,7 +89,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Zoek de factuur met dit mollie_payment_id om de user_id te achterhalen
     const { data: factuur, error: factuurLookupError } = await supabase
       .from('facturen')
-      .select('id, user_id, totaal, betaald_bedrag')
+      .select('id, user_id, totaal, betaald_bedrag, status')
       .eq('mollie_payment_id', paymentId)
       .single()
 
