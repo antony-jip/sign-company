@@ -192,7 +192,14 @@ export function BetaalPagina() {
         }),
       })
       const data = await response.json()
-      if (!response.ok) throw new Error(data.error || 'Betaling aanmaken mislukt')
+      if (!response.ok) {
+        if (response.status === 409 && data.factuur_status === 'betaald') {
+          toast.success('Deze factuur is al voldaan.')
+          setTimeout(() => window.location.reload(), 1500)
+          return
+        }
+        throw new Error(data.error || 'Betaling aanmaken mislukt')
+      }
       if (data.payment_url) {
         window.location.href = data.payment_url
       }
