@@ -1,6 +1,7 @@
 import React, { Component, ReactNode } from 'react'
 import { AlertTriangle, RotateCcw } from 'lucide-react'
 import { logger } from '../../utils/logger'
+import { isChunkLoadError } from '../../utils/chunkErrorHandler'
 
 interface Props {
   children: ReactNode
@@ -10,21 +11,6 @@ interface Props {
 interface State {
   hasError: boolean
   error: Error | null
-}
-
-// Detecteer of de error een Vite chunk-load failure is. Dit gebeurt na een
-// Vercel deploy: de browser heeft een oude bundle vast en probeert chunks
-// op te halen waarvan de hash niet meer bestaat op de server.
-function isChunkLoadError(error: Error | null): boolean {
-  if (!error) return false
-  const msg = error.message || ''
-  return (
-    msg.includes('Failed to fetch dynamically imported module') ||
-    msg.includes('Loading chunk') ||
-    msg.includes('Loading CSS chunk') ||
-    msg.includes('error loading dynamically imported module') ||
-    /ChunkLoadError/i.test(error.name)
-  )
 }
 
 // Gebruik dezelfde key als de globale handler in main.tsx zodat de cleanup
