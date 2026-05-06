@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Search, X, Plus, ChevronDown, ChevronUp, Building2, UserPlus, Check } from 'lucide-react'
@@ -37,6 +38,8 @@ export function KlantContactSelector({
   const [showNieuwContact, setShowNieuwContact] = useState(false)
   const [creating, setCreating] = useState(false)
   const wrapperRef = useRef<HTMLDivElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+  const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number; width: number } | null>(null)
 
   // Nieuw bedrijf state
   const [nb, setNb] = useState({ bedrijfsnaam: '', contactpersoon: '', email: '', telefoon: '', adres: '', postcode: '', stad: '', website: '', kvk_nummer: '', btw_nummer: '' })
@@ -93,16 +96,39 @@ export function KlantContactSelector({
       .slice(0, 8)
   }, [klanten, search])
 
-  // Close dropdown when clicking outside
+  // Close dropdown when clicking outside (dropdown is portaled, so check both refs)
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+      const target = e.target as Node
+      const inWrapper = wrapperRef.current?.contains(target)
+      const inDropdown = dropdownRef.current?.contains(target)
+      if (!inWrapper && !inDropdown) {
         setShowResults(false)
       }
     }
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
+
+  // Position the portaled dropdown beneath the input; track scroll (incl. nested) + resize
+  useEffect(() => {
+    if (!showResults || showNieuwBedrijf) {
+      setDropdownPos(null)
+      return
+    }
+    function updatePos() {
+      if (!wrapperRef.current) return
+      const rect = wrapperRef.current.getBoundingClientRect()
+      setDropdownPos({ top: rect.bottom + 4, left: rect.left, width: rect.width })
+    }
+    updatePos()
+    window.addEventListener('scroll', updatePos, true)
+    window.addEventListener('resize', updatePos)
+    return () => {
+      window.removeEventListener('scroll', updatePos, true)
+      window.removeEventListener('resize', updatePos)
+    }
+  }, [showResults, showNieuwBedrijf])
 
   function handleSelectKlant(klant: Klant) {
     onKlantChange(klant.id, klant)
@@ -239,8 +265,17 @@ export function KlantContactSelector({
               />
             </div>
 
-            {showResults && !showNieuwBedrijf && (
-              <div className="absolute z-50 w-full mt-1 rounded-lg border bg-white shadow-lg max-h-[320px] overflow-y-auto" style={{ border: '0.5px solid #E6E4E0' }}>
+            {showResults && !showNieuwBedrijf && dropdownPos && createPortal(
+              <div
+                ref={dropdownRef}
+                className="fixed z-50 rounded-lg border bg-white shadow-lg max-h-[320px] overflow-y-auto"
+                style={{
+                  border: '0.5px solid #E6E4E0',
+                  top: dropdownPos.top,
+                  left: dropdownPos.left,
+                  width: dropdownPos.width,
+                }}
+              >
                 {/* Nieuw bedrijf optie */}
                 <button
                   className="w-full text-left px-3 py-2.5 flex items-center gap-2 text-[#1A535C] hover:bg-[#E2F0F0]/50 transition-colors border-b"
@@ -276,7 +311,8 @@ export function KlantContactSelector({
                     </button>
                   ))
                 )}
-              </div>
+              </div>,
+              document.body
             )}
 
             {/* Nieuw bedrijf formulier (inline) */}
