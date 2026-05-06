@@ -73,6 +73,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (verloopt && new Date(verloopt) < new Date()) {
         return res.status(410).json({ error: 'Deze betaallink is verlopen' })
       }
+
+      // Telemetrie: markeer eerste view (idempotent — alleen als nog niet eerder bekeken)
+      if (factuur && !factuur.online_bekeken_op) {
+        await supabaseAdmin
+          .from('facturen')
+          .update({ online_bekeken: true, online_bekeken_op: new Date().toISOString() })
+          .eq('id', factuur.id)
+          .is('online_bekeken_op', null)
+      }
     } else if (portaalToken && factuurId) {
       // Via portaal token + factuur_id
       const { data: portaal } = await supabaseAdmin
@@ -152,12 +161,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .eq('user_id', userId)
       .maybeSingle()
 
+    // App settings — alleen Mollie-vlag exposen (default-deny bij failure)
+    const { data: appSettings } = await supabaseAdmin
+      .from('app_settings')
+      .select('mollie_enabled')
+      .eq('user_id', userId)
+      .maybeSingle()
+
     return res.status(200).json({
       factuur,
       items: factuurItems || [],
       bedrijf: profile || null,
       klant: klant || null,
       docStyle: docStyle || null,
+      app_settings: { mollie_enabled: appSettings?.mollie_enabled ?? false },
     })
   } catch (error: unknown) {
     console.error('factuur-portaal error:', error)

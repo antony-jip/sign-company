@@ -14,7 +14,6 @@ import {
   Building2,
   Download,
 } from 'lucide-react'
-import { getFactuurByBetaalToken, markFactuurBekeken, getProfile, getAppSettings } from '@/services/supabaseService'
 import { logger } from '@/utils/logger'
 import { toast, Toaster } from 'sonner'
 import type { Factuur, Profile } from '@/types'
@@ -148,34 +147,25 @@ export function BetaalPagina() {
         return
       }
       try {
-        const data = await getFactuurByBetaalToken(token)
+        // Public endpoint: anon klant kan factuur niet via RLS lezen.
+        // Endpoint markeert online_bekeken server-side en levert profile + mollie-vlag mee.
+        const resp = await fetch(`/api/factuur-portaal?betaal_token=${encodeURIComponent(token)}`)
+        if (!resp.ok) {
+          if (!cancelled) setNotFound(true)
+          return
+        }
+        const data = await resp.json()
         if (!cancelled) {
-          if (data) {
-            setFactuur(data)
-            // Mark as bekeken — background telemetry, niet zichtbaar voor klant
-            markFactuurBekeken(token).catch((err) => {
-              logger.error('[BetaalPagina] markFactuurBekeken faalde:', err)
-            })
-            // Load company profile for IBAN and bedrijfsnaam
-            // Bij failure toont de UI al een fallback ("Neem contact op...") als IBAN ontbreekt
-            getProfile(data.user_id!).then((p) => {
-              if (!cancelled && p) setCompanyProfile(p)
-            }).catch((err) => {
-              logger.error('[BetaalPagina] getProfile faalde:', err)
-            })
-            // Check of Mollie ingeschakeld is voor deze gebruiker — default-deny bij failure
-            if (data.user_id) {
-              getAppSettings(data.user_id).then((s) => {
-                if (!cancelled) setMollieEnabled(s.mollie_enabled ?? false)
-              }).catch((err) => {
-                logger.error('[BetaalPagina] getAppSettings faalde:', err)
-              })
-            }
+          if (data?.factuur) {
+            setFactuur(data.factuur)
+            if (data.bedrijf) setCompanyProfile(data.bedrijf)
+            setMollieEnabled(data.app_settings?.mollie_enabled ?? false)
           } else {
             setNotFound(true)
           }
         }
       } catch (err) {
+        logger.error('[BetaalPagina] factuur-portaal laden faalde:', err)
         if (!cancelled) setNotFound(true)
       } finally {
         if (!cancelled) setIsLoading(false)
