@@ -87,26 +87,38 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
     // Zoek de factuur met dit mollie_payment_id om de user_id te achterhalen
-    const { data: factuur } = await supabase
+    const { data: factuur, error: factuurLookupError } = await supabase
       .from('facturen')
       .select('id, user_id, totaal, betaald_bedrag')
       .eq('mollie_payment_id', paymentId)
       .single()
 
+    // PGRST116 = no rows; alle andere error-codes zijn echte DB-failures
+    if (factuurLookupError && factuurLookupError.code !== 'PGRST116') {
+      console.error(`Mollie webhook: factuur lookup faalde voor payment ${paymentId}`, factuurLookupError)
+      Sentry.captureException(factuurLookupError, { extra: { paymentId } })
+      return res.status(500).json({ error: 'Database lookup failed' })
+    }
+
     if (!factuur) {
       console.warn(`Mollie webhook: geen factuur gevonden voor payment ${paymentId}`)
-      // Toch 200 teruggeven zodat Mollie niet blijft retrien
+      // Truly not-found — 200 zodat Mollie niet blijft retrien
       return res.status(200).json({ received: true })
     }
 
     // Haal mollie_api_key op uit app_settings voor die user
     let mollieApiKey = ''
     if (factuur.user_id) {
-      const { data: settings } = await supabase
+      const { data: settings, error: settingsLookupError } = await supabase
         .from('app_settings')
         .select('mollie_api_key')
         .eq('user_id', factuur.user_id)
         .single()
+      if (settingsLookupError && settingsLookupError.code !== 'PGRST116') {
+        // Niet fataal — env-fallback hieronder vangt het op, maar wel zichtbaar maken
+        console.warn(`Mollie webhook: settings lookup faalde voor user ${factuur.user_id}`, settingsLookupError)
+        Sentry.captureException(settingsLookupError, { extra: { paymentId, userId: factuur.user_id } })
+      }
       if (settings?.mollie_api_key) {
         mollieApiKey = decryptSecret(settings.mollie_api_key)
       }
@@ -136,6 +148,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     console.log(`Mollie webhook: payment ${paymentId} status=${payment.status}`)
 
+    // Non-actionable statussen — geen DB-werk, 200 zodat Mollie niet blijft retrien
+    if (
+      payment.status === 'expired' ||
+      payment.status === 'canceled' ||
+      payment.status === 'failed' ||
+      payment.status === 'open'
+    ) {
+      console.log(`Mollie webhook: payment ${paymentId} status=${payment.status}, no-op`)
+      return res.status(200).json({ received: true, status: payment.status })
+    }
+
     if (payment.status === 'paid') {
       // Idempotency: skip als factuur al betaald is
       if (factuur.status === 'betaald') {
@@ -144,7 +167,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       const now = new Date().toISOString()
-      await supabase
+      const { error: updateError } = await supabase
         .from('facturen')
         .update({
           status: 'betaald',
@@ -154,6 +177,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         })
         .eq('id', factuur.id)
 
+      if (updateError) {
+        console.error(`Mollie webhook: UPDATE faalde voor factuur ${factuur.id}, payment ${paymentId}`, updateError)
+        Sentry.captureException(updateError, { extra: { paymentId, factuurId: factuur.id } })
+        return res.status(500).json({ error: 'Database update failed' })
+      }
+
       console.log(`Factuur ${factuur.id} gemarkeerd als betaald via Mollie`)
     }
 
@@ -162,7 +191,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const message = error instanceof Error ? error.message : 'Onbekende fout'
     console.error('Mollie webhook error:', message)
     Sentry.captureException(error)
-    // Altijd 200 teruggeven om Mollie retries te voorkomen bij onze fout
-    return res.status(200).json({ received: true, error: message })
+    // 500 zodat Mollie retried — bij transient DB-failures willen we niet
+    // permanent de webhook verliezen.
+    return res.status(500).json({ error: message })
   }
 }
