@@ -160,14 +160,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const payment = await mollieResponse.json()
 
-    // Sla mollie_payment_id en betaal_link op in factuur
+    // Sla mollie_payment_id op in factuur.
+    // betaal_link NIET overschrijven — dit veld bevat de doen.-eigen URL
+    // /betalen/{token} en moet stabiel blijven over meerdere mails/herinneringen.
+    // Mollie checkout URL is per-payment en heeft korte TTL; staat in response,
+    // niet in DB.
     if (SUPABASE_URL && SUPABASE_SERVICE_KEY) {
       const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
       const { error: updateError } = await supabase
         .from('facturen')
         .update({
           mollie_payment_id: payment.id,
-          betaal_link: payment._links?.checkout?.href || '',
         })
         .eq('id', factuur_id)
         .eq('user_id', user_id)
