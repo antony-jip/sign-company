@@ -66,7 +66,7 @@ export {
 } from './documentenService'
 
 export {
-  getKlanten, getKlant, createKlant, updateKlant, deleteKlant,
+  getKlanten, getKlantenLijst, getKlant, createKlant, updateKlant, deleteKlant,
   getAllKlantLabels,
   getContactpersonenDB, getContactpersonenByKlant, createContactpersoonDB, updateContactpersoonDB, deleteContactpersoonDB,
   koppelContactAanKlant, ontkoppelContact,

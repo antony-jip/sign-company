@@ -27,14 +27,14 @@ import {
   Trash2,
 } from 'lucide-react'
 import { cn, getStatusColor } from '@/lib/utils'
-import type { Klant } from '@/types'
+import type { KlantLijstRij } from '@/types'
 import { klantStatusConfig } from '@/types'
 
 interface ClientCardProps {
   key?: React.Key
-  klant: Klant
+  klant: KlantLijstRij
   projectCount: number
-  onEdit?: (klant: Klant) => void
+  onEdit?: (klant: KlantLijstRij) => void
   onDelete?: (id: string) => void
   selected?: boolean
   onToggleSelect?: () => void

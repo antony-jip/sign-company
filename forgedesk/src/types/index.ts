@@ -130,6 +130,32 @@ export interface Klant {
   updated_at: string;
 }
 
+// Slim subset voor de klantenlijst — laat zware jsonb (contactpersonen, vestigingen)
+// en het notities-veld weg om de lijstquery klein te houden.
+export type KlantLijstRij = Pick<
+  Klant,
+  | 'id'
+  | 'user_id'
+  | 'bedrijfsnaam'
+  | 'contactpersoon'
+  | 'email'
+  | 'telefoon'
+  | 'adres'
+  | 'postcode'
+  | 'stad'
+  | 'website'
+  | 'kvk_nummer'
+  | 'btw_nummer'
+  | 'status'
+  | 'tags'
+  | 'klant_labels'
+  | 'gepinde_notitie'
+  | 'klant_status'
+  | 'labels'
+  | 'created_at'
+  | 'updated_at'
+>
+
 // ============ KLANT ACTIVITEITEN & IMPORT ============
 
 export interface KlantActiviteit {

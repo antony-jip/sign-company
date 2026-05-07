@@ -36,8 +36,8 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { exportCSV, exportExcel } from '@/lib/export'
-import { getKlanten, getProjecten, deleteKlant } from '@/services/supabaseService'
-import type { Klant, Project } from '@/types'
+import { getKlantenLijst, getKlant, getProjecten, deleteKlant } from '@/services/supabaseService'
+import type { Klant, KlantLijstRij, Project } from '@/types'
 import { klantStatusConfig } from '@/types'
 import { ClientCard } from './ClientCard'
 import { AddEditClient } from './AddEditClient'
@@ -62,7 +62,7 @@ export function ClientsLayout() {
   const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [addDialogOpen, setAddDialogOpen] = useState(false)
   const [editingKlant, setEditingKlant] = useState<Klant | undefined>(undefined)
-  const [klanten, setKlanten] = useState<Klant[]>([])
+  const [klanten, setKlanten] = useState<KlantLijstRij[]>([])
   const [projecten, setProjecten] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
   const [sortField, setSortField] = useState<SortField>('bedrijfsnaam')
@@ -73,7 +73,7 @@ export function ClientsLayout() {
 
   const fetchData = useCallback(() => {
     setLoading(true)
-    Promise.all([getKlanten(), getProjecten()])
+    Promise.all([getKlantenLijst(), getProjecten()])
       .then(([k, p]) => {
         setKlanten(k)
         setProjecten(p)
@@ -85,7 +85,7 @@ export function ClientsLayout() {
   useEffect(() => {
     let cancelled = false
     setLoading(true)
-    Promise.all([getKlanten(), getProjecten()])
+    Promise.all([getKlantenLijst(), getProjecten()])
       .then(([k, p]) => {
         if (!cancelled) {
           setKlanten(k)
@@ -108,9 +108,9 @@ export function ClientsLayout() {
 
   // Eén pass over klanten voor status-slices + counts
   const klantSlices = useMemo(() => {
-    const actief: Klant[] = []
-    const inactief: Klant[] = []
-    const prospect: Klant[] = []
+    const actief: KlantLijstRij[] = []
+    const inactief: KlantLijstRij[] = []
+    const prospect: KlantLijstRij[] = []
     for (const k of klanten) {
       if (k.status === 'actief') actief.push(k)
       else if (k.status === 'inactief') inactief.push(k)
@@ -133,7 +133,7 @@ export function ClientsLayout() {
   // Filtered + sorted clients
   const filteredKlanten = useMemo(() => {
     // sort() muteert in-place — kopie maken om klantSlices niet te corrumperen
-    let result: Klant[] = [...klantSlices[statusFilter]]
+    let result: KlantLijstRij[] = [...klantSlices[statusFilter]]
 
     // Label filter
     if (labelFilter !== 'alle') {
@@ -202,9 +202,20 @@ export function ClientsLayout() {
     fetchData()
   }
 
-  function handleEditClient(klant: Klant) {
-    setEditingKlant(klant)
-    setAddDialogOpen(true)
+  async function handleEditClient(klantRij: KlantLijstRij) {
+    // Lijst-rij heeft geen contactpersonen/vestigingen/notities — vol klant ophalen voor edit-form
+    try {
+      const fullKlant = await getKlant(klantRij.id)
+      if (fullKlant) {
+        setEditingKlant(fullKlant)
+        setAddDialogOpen(true)
+      } else {
+        toast.error('Klant niet gevonden')
+      }
+    } catch (error) {
+      logger.error(error)
+      toast.error('Fout bij laden klant')
+    }
   }
 
   async function handleDeleteClient(id: string) {
@@ -272,7 +283,7 @@ export function ClientsLayout() {
     }))
   }
 
-  function renderRowActions(klant: Klant) {
+  function renderRowActions(klant: KlantLijstRij) {
     return (
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>

@@ -3,7 +3,7 @@ import {
   assertId, getLocalData, setLocalData, generateId, now,
   getOrgId,
 } from './supabaseHelpers'
-import type { Klant, Contactpersoon, ContactpersoonRecord, KlantHistorie, ImportLog, Project } from '@/types'
+import type { Klant, KlantLijstRij, Contactpersoon, ContactpersoonRecord, KlantHistorie, ImportLog, Project } from '@/types'
 
 // ============ KLANT HELPERS ============
 
@@ -60,6 +60,59 @@ export async function getAllKlantLabels(userId: string): Promise<string[]> {
     }
   }
   return []
+}
+
+// Smalle select voor de klantenlijst — laat notities/contactpersonen/vestigingen weg.
+const KLANT_LIJST_FIELDS = 'id,user_id,bedrijfsnaam,contactpersoon,email,telefoon,adres,postcode,stad,website,kvk_nummer,btw_nummer,status,tags,klant_labels,gepinde_notitie,klant_status,labels,created_at,updated_at'
+
+function normalizeKlantLijstRij(raw: unknown): KlantLijstRij {
+  const klant = raw as Record<string, unknown>
+  return {
+    id: klant.id as string,
+    user_id: klant.user_id as string | undefined,
+    bedrijfsnaam: (klant.bedrijfsnaam as string) || '',
+    contactpersoon: (klant.contactpersoon as string) || '',
+    email: (klant.email as string) || '',
+    telefoon: (klant.telefoon as string) || '',
+    adres: (klant.adres as string) || '',
+    postcode: (klant.postcode as string) || '',
+    stad: (klant.stad as string) || '',
+    website: (klant.website as string) || '',
+    kvk_nummer: (klant.kvk_nummer as string) || '',
+    btw_nummer: (klant.btw_nummer as string) || '',
+    status: ((klant.status as string) || 'actief') as KlantLijstRij['status'],
+    tags: safeParseJsonArray(klant.tags) as string[],
+    klant_labels: klant.klant_labels as string[] | undefined,
+    gepinde_notitie: klant.gepinde_notitie as string | undefined,
+    klant_status: klant.klant_status as KlantLijstRij['klant_status'],
+    labels: klant.labels as string[] | undefined,
+    created_at: klant.created_at as string,
+    updated_at: klant.updated_at as string,
+  }
+}
+
+export async function getKlantenLijst(limit = 50000): Promise<KlantLijstRij[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const pageSize = 1000
+    const allData: KlantLijstRij[] = []
+    let offset = 0
+
+    while (offset < limit) {
+      const { data, error } = await supabase
+        .from('klanten')
+        .select(KLANT_LIJST_FIELDS)
+        .order('bedrijfsnaam')
+        .range(offset, offset + pageSize - 1)
+      if (error) throw error
+      if (!data || data.length === 0) break
+      allData.push(...data.map(normalizeKlantLijstRij))
+      if (data.length < pageSize) break
+      offset += pageSize
+    }
+
+    return allData
+  }
+  return getLocalData<Klant>('klanten').map(normalizeKlantLijstRij)
 }
 
 export async function getKlanten(limit = 50000): Promise<Klant[]> {
