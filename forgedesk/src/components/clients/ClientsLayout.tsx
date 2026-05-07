@@ -43,6 +43,7 @@ import { ClientCard } from './ClientCard'
 import { AddEditClient } from './AddEditClient'
 import { logger } from '../../utils/logger'
 import { useDebounce } from '@/hooks/useDebounce'
+import { List as VirtualList, type RowComponentProps } from 'react-window'
 import { SkeletonTable } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/ui/empty-state'
 // ModuleHeader removed — using DOEN inline header
@@ -52,6 +53,115 @@ type ViewMode = 'grid' | 'list'
 type StatusFilter = 'alle' | 'actief' | 'inactief' | 'prospect'
 type SortField = 'bedrijfsnaam' | 'contactpersoon' | 'stad' | 'status' | 'created_at'
 type SortDir = 'asc' | 'desc'
+
+const AVATAR_COLORS = [
+  'bg-[#E8F2EC] text-[#3A7D52]',
+  'bg-[#E8EEF9] text-[#3A5A9A]',
+  'bg-[#F5F2E8] text-[#8A7A4A]',
+  'bg-[#F0EFEC] text-[#6B6B66]',
+  'bg-[#EDE8F4] text-[#6A5A8A]',
+] as const
+
+const LABEL_DOT_COLORS: Record<string, string> = {
+  vooruit_betalen: 'bg-[#FEA060]',
+  niet_helpen: 'bg-[#C03A18]',
+  voorrang: 'bg-[#2D6B48]',
+  grote_klant: 'bg-[#3A5A9A]',
+  wanbetaler: 'bg-[#C03A18]',
+}
+
+const ROW_HEIGHT = 56
+
+type KlantRowData = {
+  klanten: KlantLijstRij[]
+  selectedIds: Set<string>
+  toggleSelect: (id: string) => void
+  onRowClick: (klant: KlantLijstRij) => void
+  projectCounts: Record<string, number>
+  renderRowActions: (klant: KlantLijstRij) => React.ReactNode
+}
+
+function KlantRow({
+  ariaAttributes,
+  index,
+  style,
+  klanten,
+  selectedIds,
+  toggleSelect,
+  onRowClick,
+  projectCounts,
+  renderRowActions,
+}: RowComponentProps<KlantRowData>) {
+  const klant = klanten[index]
+  const isSelected = selectedIds.has(klant.id)
+  const c = klant.bedrijfsnaam.charCodeAt(0) % 5
+
+  return (
+    <div
+      style={style}
+      {...ariaAttributes}
+      className={cn(
+        'flex items-center border-b border-[#F0EFEC] cursor-pointer transition-colors duration-200 group',
+        'hover:bg-[#F8F7F4]',
+        isSelected && 'bg-[#1A535C]/[0.03]'
+      )}
+      onClick={() => onRowClick(klant)}
+    >
+      <div className="py-3.5 pl-5 pr-3 w-10 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+        <Checkbox
+          checked={isSelected}
+          onCheckedChange={() => toggleSelect(klant.id)}
+          aria-label={`Selecteer ${klant.bedrijfsnaam}`}
+        />
+      </div>
+      <div className="py-3.5 pr-4 flex-1 min-w-0">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <span className={cn('flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold uppercase select-none', AVATAR_COLORS[c])}>
+            {klant.bedrijfsnaam.charAt(0)}
+          </span>
+          <div className="min-w-0">
+            <span className="text-[15px] font-semibold text-[#1A1A1A] group-hover:text-[#1A535C] truncate block transition-colors">
+              {klant.bedrijfsnaam}
+            </span>
+            {(klant.klant_labels || []).length > 0 && (
+              <div className="flex items-center gap-1 mt-0.5">
+                {(klant.klant_labels || []).map((label) => (
+                  <span
+                    key={label}
+                    className={`w-1.5 h-1.5 rounded-full ${LABEL_DOT_COLORS[label] || 'bg-[#C0BDB8]'}`}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+      <div className="py-3.5 pr-4 flex-1 min-w-0">
+        <span className="text-[13px] text-[#9B9B95] truncate block">
+          {klant.email}
+        </span>
+      </div>
+      <div className="py-3.5 pr-4 flex-1 min-w-0">
+        <span className="text-[13px] text-[#9B9B95] font-mono truncate block">
+          {klant.telefoon}
+        </span>
+      </div>
+      <div className="py-3.5 pr-4 flex-1 min-w-0">
+        <span className="text-[13px] text-[#6B6B66] truncate block">
+          {klant.stad}
+        </span>
+      </div>
+      <div className="py-3.5 pr-4 text-center w-[80px] flex-shrink-0">
+        <span className="inline-flex items-center justify-center text-[11px] font-mono font-semibold tabular-nums rounded-md px-2 py-0.5 bg-[#F8F7F5] text-[#6B6B66]">
+          {projectCounts[klant.id] || 0}
+        </span>
+      </div>
+      <div className="py-3.5 pr-4 w-10 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+        {renderRowActions(klant)}
+      </div>
+    </div>
+  )
+}
 
 export function ClientsLayout() {
   const navigate = useNavigate()
@@ -185,6 +295,14 @@ export function ClientsLayout() {
 
     return result
   }, [klantSlices, debouncedSearch, statusFilter, labelFilter, klantStatusFilter, sortField, sortDir])
+
+  const handleRowClick = useCallback((klant: KlantLijstRij) => {
+    navigateWithTab({
+      path: `/klanten/${klant.id}`,
+      label: klant.bedrijfsnaam || 'Klant',
+      id: `/klanten/${klant.id}`,
+    })
+  }, [navigateWithTab])
 
   function handleSort(field: SortField) {
     if (field === sortField) {
@@ -682,122 +800,49 @@ export function ClientsLayout() {
         )}
 
         <div className="bg-white rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03] overflow-hidden">
-            <table className="w-full table-fixed">
-              <thead>
-                <tr className="border-b-2 border-[#F0EFEC]">
-                  <th className="py-3.5 pl-5 pr-3 w-10 text-left">
-                    <Checkbox
-                      checked={filteredKlanten.length > 0 && selectedIds.size === filteredKlanten.length}
-                      onCheckedChange={toggleSelectAll}
-                      aria-label="Selecteer alles"
-                    />
-                  </th>
-                  <th className="text-left py-3.5 pr-4">
-                    <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Bedrijfsnaam</span>
-                  </th>
-                  <th className="text-left py-3.5 pr-4">
-                    <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Email</span>
-                  </th>
-                  <th className="text-left py-3.5 pr-4">
-                    <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Telefoon</span>
-                  </th>
-                  <th className="text-left py-3.5 pr-4">
-                    <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Stad</span>
-                  </th>
-                  <th className="text-center py-3.5 pr-4 w-[80px]">
-                    <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Projecten</span>
-                  </th>
-                  <th className="w-10 py-3.5 pr-4" />
-                </tr>
-              </thead>
-              <tbody>
-                {filteredKlanten.map((klant) => (
-                  <tr
-                    key={klant.id}
-                    className={cn(
-                      'border-b border-[#F0EFEC] last:border-0 cursor-pointer transition-all duration-200 group',
-                      'hover:bg-[#F8F7F4]',
-                      selectedIds.has(klant.id) && 'bg-[#1A535C]/[0.03]'
-                    )}
-                    onClick={() => navigateWithTab({ path: `/klanten/${klant.id}`, label: klant.bedrijfsnaam || 'Klant', id: `/klanten/${klant.id}` })}
-                  >
-                    <td className="py-3.5 pl-5 pr-3 align-middle" onClick={(e) => e.stopPropagation()}>
-                      <Checkbox
-                        checked={selectedIds.has(klant.id)}
-                        onCheckedChange={() => toggleSelect(klant.id)}
-                        aria-label={`Selecteer ${klant.bedrijfsnaam}`}
-                      />
-                    </td>
-                    <td className="py-3.5 pr-4">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        {(() => {
-                          const c = klant.bedrijfsnaam.charCodeAt(0) % 5
-                          const avatarColors = [
-                            'bg-[#E8F2EC] text-[#3A7D52]',
-                            'bg-[#E8EEF9] text-[#3A5A9A]',
-                            'bg-[#F5F2E8] text-[#8A7A4A]',
-                            'bg-[#F0EFEC] text-[#6B6B66]',
-                            'bg-[#EDE8F4] text-[#6A5A8A]',
-                          ]
-                          return (
-                            <span className={cn('flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold uppercase select-none', avatarColors[c])}>
-                              {klant.bedrijfsnaam.charAt(0)}
-                            </span>
-                          )
-                        })()}
-                        <div className="min-w-0">
-                          <span className="text-[15px] font-semibold text-[#1A1A1A] group-hover:text-[#1A535C] truncate block transition-colors">
-                            {klant.bedrijfsnaam}
-                          </span>
-                          {(klant.klant_labels || []).length > 0 && (
-                            <div className="flex items-center gap-1 mt-0.5">
-                              {(klant.klant_labels || []).map((label) => {
-                                const dotColors: Record<string, string> = {
-                                  vooruit_betalen: 'bg-[#FEA060]',
-                                  niet_helpen: 'bg-[#C03A18]',
-                                  voorrang: 'bg-[#2D6B48]',
-                                  grote_klant: 'bg-[#3A5A9A]',
-                                  wanbetaler: 'bg-[#C03A18]',
-                                }
-                                return (
-                                  <span
-                                    key={label}
-                                    className={`w-1.5 h-1.5 rounded-full ${dotColors[label] || 'bg-[#C0BDB8]'}`}
-                                  />
-                                )
-                              })}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-3.5 pr-4">
-                      <span className="text-[13px] text-[#9B9B95] truncate block">
-                        {klant.email}
-                      </span>
-                    </td>
-                    <td className="py-3.5 pr-4">
-                      <span className="text-[13px] text-[#9B9B95] font-mono">
-                        {klant.telefoon}
-                      </span>
-                    </td>
-                    <td className="py-3.5 pr-4">
-                      <span className="text-[13px] text-[#6B6B66]">
-                        {klant.stad}
-                      </span>
-                    </td>
-                    <td className="py-3.5 pr-4 text-center">
-                      <span className="inline-flex items-center justify-center text-[11px] font-mono font-semibold tabular-nums rounded-md px-2 py-0.5 bg-[#F8F7F5] text-[#6B6B66]">
-                        {projectCounts[klant.id] || 0}
-                      </span>
-                    </td>
-                    <td className="py-3.5 pr-4" onClick={(e) => e.stopPropagation()}>
-                      {renderRowActions(klant)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            {/* Header rij — blijft boven de virtuele lijst staan */}
+            <div className="flex items-center border-b-2 border-[#F0EFEC]" role="row">
+              <div className="py-3.5 pl-5 pr-3 w-10 flex-shrink-0 text-left">
+                <Checkbox
+                  checked={filteredKlanten.length > 0 && selectedIds.size === filteredKlanten.length}
+                  onCheckedChange={toggleSelectAll}
+                  aria-label="Selecteer alles"
+                />
+              </div>
+              <div className="text-left py-3.5 pr-4 flex-1 min-w-0">
+                <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Bedrijfsnaam</span>
+              </div>
+              <div className="text-left py-3.5 pr-4 flex-1 min-w-0">
+                <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Email</span>
+              </div>
+              <div className="text-left py-3.5 pr-4 flex-1 min-w-0">
+                <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Telefoon</span>
+              </div>
+              <div className="text-left py-3.5 pr-4 flex-1 min-w-0">
+                <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Stad</span>
+              </div>
+              <div className="text-center py-3.5 pr-4 w-[80px] flex-shrink-0">
+                <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Projecten</span>
+              </div>
+              <div className="w-10 py-3.5 pr-4 flex-shrink-0" />
+            </div>
+            {/* Body — gevirtualiseerd met react-window */}
+            <VirtualList
+              rowComponent={KlantRow}
+              rowCount={filteredKlanten.length}
+              rowHeight={ROW_HEIGHT}
+              rowProps={{
+                klanten: filteredKlanten,
+                selectedIds,
+                toggleSelect,
+                onRowClick: handleRowClick,
+                projectCounts,
+                renderRowActions,
+              }}
+              style={{
+                height: `min(${filteredKlanten.length * ROW_HEIGHT}px, calc(100vh - 360px))`,
+              }}
+            />
         </div>
         </>
       )}
