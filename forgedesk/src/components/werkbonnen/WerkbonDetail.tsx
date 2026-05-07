@@ -46,8 +46,14 @@ async function resolveUrl(url: string): Promise<string> {
   }
 }
 
-const sanitizeFilename = (name: string) =>
-  name.replace(/[\u00AD\u200B-\u200F\uFEFF]/g, '').trim()
+const sanitizeFilename = (name: string): string =>
+  name
+    .normalize('NFKD')
+    .replace(/[\u00AD\u200B-\u200F\uFEFF]/g, '')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^\w.\-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
 
 // Resize image voor localStorage limiet
 function resizeImage(file: File, maxWidth: number): Promise<Blob> {
