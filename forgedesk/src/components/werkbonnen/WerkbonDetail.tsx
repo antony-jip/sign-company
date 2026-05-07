@@ -36,11 +36,18 @@ import { WerkbonItemCard } from './WerkbonItemCard'
 import { WerkbonHeaderForm } from './WerkbonHeaderForm'
 import { WerkbonMonteurFeedback } from './WerkbonMonteurFeedback'
 
-// Resolve a URL: if it's a storage path, convert to a signed URL
+// Resolve a URL: if it's a storage path, convert to a signed URL.
+// Returns '' on failure so render-laag een placeholder kan tonen ipv broken image.
 async function resolveUrl(url: string): Promise<string> {
   if (!url || url.startsWith('data:') || url.startsWith('http') || url.startsWith('blob:')) return url
-  try { return await getSignedUrl(url) } catch (err) { return url }
+  try { return await getSignedUrl(url) } catch (err) {
+    logger.warn('Kon storage URL niet resolven:', url, err)
+    return ''
+  }
 }
+
+const sanitizeFilename = (name: string) =>
+  name.replace(/[\u00AD\u200B-\u200F\uFEFF]/g, '').trim()
 
 // Resize image voor localStorage limiet
 function resizeImage(file: File, maxWidth: number): Promise<Blob> {
@@ -400,7 +407,8 @@ export function WerkbonDetail() {
     try {
       const resized = await resizeImage(file, 1200)
       const resizedFile = new File([resized], file.name, { type: 'image/jpeg' })
-      const storagePath = `werkbon-afbeeldingen/${itemId}/${Date.now()}-${file.name}`
+      const safeName = sanitizeFilename(file.name)
+      const storagePath = `werkbon-afbeeldingen/${itemId}/${Date.now()}-${safeName}`
       const uploadedPath = await uploadFile(resizedFile, storagePath)
       const displayUrl = await resolveUrl(uploadedPath)
 
@@ -408,7 +416,7 @@ export function WerkbonDetail() {
         werkbon_item_id: itemId,
         url: uploadedPath,
         type: 'overig',
-        omschrijving: file.name,
+        omschrijving: safeName,
       })
       // Gebruik display URL voor directe weergave, DB heeft het storage path
       afb.url = displayUrl
@@ -419,8 +427,9 @@ export function WerkbonDetail() {
       ))
       toast.success('Afbeelding toegevoegd')
     } catch (err) {
-      console.error('Fout bij uploaden afbeelding:', err)
-      toast.error('Fout bij uploaden afbeelding')
+      logger.error('Fout bij uploaden afbeelding:', err)
+      const msg = err instanceof Error ? err.message : 'Onbekende fout'
+      toast.error(`Upload mislukt: ${msg}`)
     }
     e.target.value = ''
   }, [])
@@ -443,11 +452,13 @@ export function WerkbonDetail() {
     if (files.length === 0) return
 
     let uploaded = 0
+    let lastError: string | null = null
     for (const file of files) {
       try {
         const resized = await resizeImage(file, 1200)
         const resizedFile = new File([resized], file.name, { type: 'image/jpeg' })
-        const storagePath = `werkbon-fotos/${werkbonId}/${Date.now()}-${file.name}`
+        const safeName = sanitizeFilename(file.name)
+        const storagePath = `werkbon-fotos/${werkbonId}/${Date.now()}-${safeName}`
         const uploadedPath = await uploadFile(resizedFile, storagePath)
         const displayUrl = await resolveUrl(uploadedPath)
 
@@ -456,17 +467,18 @@ export function WerkbonDetail() {
           werkbon_id: werkbonId,
           type,
           url: uploadedPath,
-          omschrijving: file.name,
+          omschrijving: safeName,
         })
         foto.url = displayUrl
         setFotos((prev) => [...prev, foto])
         uploaded++
       } catch (err) {
-        console.error('Fout bij uploaden foto:', err)
+        logger.error('Fout bij uploaden foto:', err)
+        lastError = err instanceof Error ? err.message : 'Onbekende fout'
       }
     }
     if (uploaded > 0) toast.success(`${uploaded} foto${uploaded > 1 ? "'s" : ''} toegevoegd`)
-    else toast.error('Fout bij uploaden foto')
+    else toast.error(`Upload mislukt: ${lastError ?? 'Onbekende fout'}`)
     e.target.value = ''
   }, [werkbonId, userId])
 

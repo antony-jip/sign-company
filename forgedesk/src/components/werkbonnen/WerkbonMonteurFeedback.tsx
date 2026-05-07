@@ -205,7 +205,11 @@ export const WerkbonMonteurFeedback = React.memo(function WerkbonMonteurFeedback
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {voorFotos.map((foto) => (
                   <div key={foto.id} className="relative group rounded-xl overflow-hidden border border-[#F0EFEC]">
-                    <img src={foto.url} alt={foto.omschrijving || ''} className="w-full aspect-[4/3] object-cover cursor-pointer" onClick={() => onLightbox(foto.url)} />
+                    {foto.url ? (
+                      <img src={foto.url} alt={foto.omschrijving || ''} className="w-full aspect-[4/3] object-cover cursor-pointer" onClick={() => onLightbox(foto.url)} />
+                    ) : (
+                      <div className="w-full aspect-[4/3] bg-[#F8F7F5] flex items-center justify-center text-[11px] text-[#9B9B95]">Foto niet beschikbaar</div>
+                    )}
                     {!readOnly && (
                       <button
                         className="absolute top-1.5 right-1.5 h-7 w-7 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 md:opacity-0 active:opacity-100 transition-opacity"
@@ -227,7 +231,11 @@ export const WerkbonMonteurFeedback = React.memo(function WerkbonMonteurFeedback
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {naFotos.map((foto) => (
                   <div key={foto.id} className="relative group rounded-xl overflow-hidden border border-[#F0EFEC]">
-                    <img src={foto.url} alt={foto.omschrijving || ''} className="w-full aspect-[4/3] object-cover cursor-pointer" onClick={() => onLightbox(foto.url)} />
+                    {foto.url ? (
+                      <img src={foto.url} alt={foto.omschrijving || ''} className="w-full aspect-[4/3] object-cover cursor-pointer" onClick={() => onLightbox(foto.url)} />
+                    ) : (
+                      <div className="w-full aspect-[4/3] bg-[#F8F7F5] flex items-center justify-center text-[11px] text-[#9B9B95]">Foto niet beschikbaar</div>
+                    )}
                     {!readOnly && (
                       <button
                         className="absolute top-1.5 right-1.5 h-7 w-7 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 active:opacity-100 transition-opacity"
@@ -249,7 +257,11 @@ export const WerkbonMonteurFeedback = React.memo(function WerkbonMonteurFeedback
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {overigFotos.map((foto) => (
                   <div key={foto.id} className="relative group rounded-xl overflow-hidden border border-[#F0EFEC]">
-                    <img src={foto.url} alt={foto.omschrijving || ''} className="w-full aspect-[4/3] object-cover cursor-pointer" onClick={() => onLightbox(foto.url)} />
+                    {foto.url ? (
+                      <img src={foto.url} alt={foto.omschrijving || ''} className="w-full aspect-[4/3] object-cover cursor-pointer" onClick={() => onLightbox(foto.url)} />
+                    ) : (
+                      <div className="w-full aspect-[4/3] bg-[#F8F7F5] flex items-center justify-center text-[11px] text-[#9B9B95]">Foto niet beschikbaar</div>
+                    )}
                     {!readOnly && (
                       <button
                         className="absolute top-1.5 right-1.5 h-7 w-7 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 active:opacity-100 transition-opacity"

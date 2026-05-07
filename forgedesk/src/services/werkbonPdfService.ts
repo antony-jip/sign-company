@@ -192,6 +192,15 @@ export function generateWerkbonInstructiePDF(
 
   // Helper: teken één afbeelding met border (of placeholder)
   function drawImage(url: string, x: number, iy: number, w: number, h: number) {
+    if (!url) {
+      doc.setDrawColor(200, 200, 200)
+      doc.setFillColor(245, 245, 245)
+      doc.rect(x, iy, w, h, 'FD')
+      doc.setFontSize(8)
+      doc.setTextColor(150, 150, 150)
+      doc.text('Afbeelding niet beschikbaar', x + w / 2, iy + h / 2, { align: 'center' })
+      return
+    }
     try {
       doc.addImage(url, 'JPEG', x, iy, w, h, undefined, 'MEDIUM')
       doc.setDrawColor(200, 200, 200)
@@ -483,9 +492,11 @@ export function generateWerkbonInstructiePDF(
             doc.addPage()
             fy = marginTop
           }
-          try {
-            doc.addImage(foto.url, 'JPEG', fx, fy, fotoW, fotoH)
-          } catch { /* skip broken images */ }
+          if (foto.url) {
+            try {
+              doc.addImage(foto.url, 'JPEG', fx, fy, fotoW, fotoH)
+            } catch { /* skip broken images */ }
+          }
           fx += fotoW + 4
         }
         fy += fotoH + 6
