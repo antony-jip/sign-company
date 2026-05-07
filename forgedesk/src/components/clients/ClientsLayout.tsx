@@ -104,14 +104,34 @@ export function ClientsLayout() {
     return counts
   }, [projecten])
 
+  // Eén pass over klanten voor status-slices + counts
+  const klantSlices = useMemo(() => {
+    const actief: Klant[] = []
+    const inactief: Klant[] = []
+    const prospect: Klant[] = []
+    for (const k of klanten) {
+      if (k.status === 'actief') actief.push(k)
+      else if (k.status === 'inactief') inactief.push(k)
+      else if (k.status === 'prospect') prospect.push(k)
+    }
+    return {
+      alle: klanten,
+      actief,
+      inactief,
+      prospect,
+      counts: {
+        alle: klanten.length,
+        actief: actief.length,
+        inactief: inactief.length,
+        prospect: prospect.length,
+      },
+    }
+  }, [klanten])
+
   // Filtered + sorted clients
   const filteredKlanten = useMemo(() => {
-    let result = [...klanten]
-
-    // Status filter
-    if (statusFilter !== 'alle') {
-      result = result.filter((k) => k.status === statusFilter)
-    }
+    // sort() muteert in-place — kopie maken om klantSlices niet te corrumperen
+    let result: Klant[] = [...klantSlices[statusFilter]]
 
     // Label filter
     if (labelFilter !== 'alle') {
@@ -162,7 +182,7 @@ export function ClientsLayout() {
     })
 
     return result
-  }, [klanten, searchQuery, statusFilter, labelFilter, klantStatusFilter, sortField, sortDir])
+  }, [klantSlices, searchQuery, statusFilter, labelFilter, klantStatusFilter, sortField, sortDir])
 
   function handleSort(field: SortField) {
     if (field === sortField) {
@@ -336,22 +356,22 @@ export function ClientsLayout() {
 
         {/* Quick stats — compact inline badges */}
         <div className="flex items-center gap-2 flex-wrap">
-          {klanten.filter((k) => k.status === 'actief').length > 0 && (
+          {klantSlices.counts.actief > 0 && (
             <span className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold bg-[#E8F2EC] text-[#2D6B48]">
               <span className="w-1.5 h-1.5 rounded-full bg-[#2D6B48] doen-pulse" />
-              <span className="font-mono">{klanten.filter((k) => k.status === 'actief').length}</span> actief<span className="text-[#F15025]">.</span>
+              <span className="font-mono">{klantSlices.counts.actief}</span> actief<span className="text-[#F15025]">.</span>
             </span>
           )}
-          {klanten.filter((k) => k.status === 'prospect').length > 0 && (
+          {klantSlices.counts.prospect > 0 && (
             <span className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold bg-[#E8EEF9] text-[#3A5A9A]">
               <span className="w-1.5 h-1.5 rounded-full bg-[#3A5A9A]" />
-              <span className="font-mono">{klanten.filter((k) => k.status === 'prospect').length}</span> prospect<span className="text-[#F15025]">.</span>
+              <span className="font-mono">{klantSlices.counts.prospect}</span> prospect<span className="text-[#F15025]">.</span>
             </span>
           )}
-          {klanten.filter((k) => k.status === 'inactief').length > 0 && (
+          {klantSlices.counts.inactief > 0 && (
             <span className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold bg-[#F5F2E8] text-[#8A7A4A]">
               <span className="w-1.5 h-1.5 rounded-full bg-[#8A7A4A]" />
-              <span className="font-mono">{klanten.filter((k) => k.status === 'inactief').length}</span> inactief<span className="text-[#F15025]">.</span>
+              <span className="font-mono">{klantSlices.counts.inactief}</span> inactief<span className="text-[#F15025]">.</span>
             </span>
           )}
         </div>
@@ -453,12 +473,7 @@ export function ClientsLayout() {
                 inactief: 'Inactief',
                 prospect: 'Prospect',
               }
-              const counts: Record<StatusFilter, number> = {
-                alle: klanten.length,
-                actief: klanten.filter((k) => k.status === 'actief').length,
-                inactief: klanten.filter((k) => k.status === 'inactief').length,
-                prospect: klanten.filter((k) => k.status === 'prospect').length,
-              }
+              const counts = klantSlices.counts
               const isActive = statusFilter === f
               return (
                 <button
