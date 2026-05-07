@@ -70,18 +70,12 @@ export async function uploadFile(file: File, path: string): Promise<string> {
   if (!isSupabaseConfigured() || !supabase) {
     return uploadFileToLocalStorage(file, path)
   }
-  try {
-    const { data, error } = await supabase.storage.from(BUCKET).upload(path, file, {
-      cacheControl: '3600',
-      upsert: false
-    })
-    if (error) throw error
-    return data.path
-  } catch (err) {
-    // Supabase Storage failed (bucket missing, RLS, network) — fall back to localStorage
-    console.warn('Supabase Storage upload failed, falling back to localStorage:', err)
-    return uploadFileToLocalStorage(file, path)
-  }
+  const { data, error } = await supabase.storage.from(BUCKET).upload(path, file, {
+    cacheControl: '3600',
+    upsert: false
+  })
+  if (error) throw error
+  return data.path
 }
 
 async function uploadFileToLocalStorage(file: File, path: string): Promise<string> {
