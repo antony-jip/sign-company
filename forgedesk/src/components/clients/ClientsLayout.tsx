@@ -198,8 +198,49 @@ export function ClientsLayout() {
   function handleClientSaved(klant: Klant) {
     setAddDialogOpen(false)
     setEditingKlant(undefined)
-    toast.success(`Klant "${klant.bedrijfsnaam}" opgeslagen`)
-    fetchData()
+    setKlanten((prev) => {
+      const idx = prev.findIndex((k) => k.id === klant.id)
+      if (idx >= 0) {
+        const next = prev.slice()
+        next[idx] = klant
+        return next
+      }
+      return [...prev, klant]
+    })
+    // Zou de opgeslagen klant zichtbaar zijn onder huidige filters?
+    const matchesActiveFilters = (k: Klant): boolean => {
+      if (statusFilter !== 'alle' && k.status !== statusFilter) return false
+      if (labelFilter !== 'alle' && !(k.klant_labels || []).includes(labelFilter)) return false
+      if (klantStatusFilter !== 'alle' && (k.klant_status || 'normaal') !== klantStatusFilter) return false
+      const q = debouncedSearch.trim().toLowerCase()
+      if (q) {
+        const hit =
+          (k.bedrijfsnaam || '').toLowerCase().includes(q) ||
+          (k.contactpersoon || '').toLowerCase().includes(q) ||
+          (k.email || '').toLowerCase().includes(q) ||
+          (k.telefoon || '').toLowerCase().includes(q) ||
+          (k.stad || '').toLowerCase().includes(q) ||
+          (k.tags || []).some((t) => t.toLowerCase().includes(q)) ||
+          (k.labels || []).some((l) => l.toLowerCase().includes(q))
+        if (!hit) return false
+      }
+      return true
+    }
+    if (matchesActiveFilters(klant)) {
+      toast.success(`Klant "${klant.bedrijfsnaam}" opgeslagen`)
+    } else {
+      toast.success(`Klant "${klant.bedrijfsnaam}" opgeslagen`, {
+        action: {
+          label: 'Toon',
+          onClick: () => {
+            setSearchQuery('')
+            setStatusFilter('alle')
+            setLabelFilter('alle')
+            setKlantStatusFilter('alle')
+          },
+        },
+      })
+    }
   }
 
   async function handleEditClient(klantRij: KlantLijstRij) {
