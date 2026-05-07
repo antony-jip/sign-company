@@ -540,7 +540,7 @@ export function WerkbonDetail() {
   }, [setDirty])
 
   // PDF download
-  const handleDownloadPDF = useCallback(() => {
+  const handleDownloadPDF = useCallback(async () => {
     const klant = klanten.find((k) => k.id === klantId)
     const project = projecten.find((p) => p.id === projectId)
     const bedrijfsProfiel = { ...profile, primaireKleur }
@@ -563,7 +563,7 @@ export function WerkbonDetail() {
     }
 
     try {
-      const doc = generateWerkbonInstructiePDF(
+      const doc = await generateWerkbonInstructiePDF(
         pdfData,
         werkbonItems,
         klant || {},
@@ -586,7 +586,7 @@ export function WerkbonDetail() {
   ])
 
   // Print werkbon (open PDF in nieuw venster met print dialog)
-  const handlePrint = useCallback(() => {
+  const handlePrint = useCallback(async () => {
     const klant = klanten.find((k) => k.id === klantId)
     const project = projecten.find((p) => p.id === projectId)
     const bedrijfsProfiel = { ...profile, primaireKleur }
@@ -609,7 +609,7 @@ export function WerkbonDetail() {
     }
 
     try {
-      const doc = generateWerkbonInstructiePDF(
+      const doc = await generateWerkbonInstructiePDF(
         pdfData,
         werkbonItems,
         klant || {},
@@ -641,7 +641,7 @@ export function WerkbonDetail() {
     const bedrijfsProfiel = { ...profile, primaireKleur }
     const bestandsnaam = `werkbon-${werkbonNummer || 'nieuw'}.pdf`
 
-    const doc = generateWerkbonInstructiePDF(
+    const doc = await generateWerkbonInstructiePDF(
       {
         werkbon_nummer: werkbonNummer,
         titel,

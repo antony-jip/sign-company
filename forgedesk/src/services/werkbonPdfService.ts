@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf'
 import type { WerkbonItem, WerkbonFoto, Klant, Profile, DocumentStyle } from '@/types'
 import { getJsPdfFontFamily } from '@/lib/documentTemplates'
+import { resolveImageToBase64, detectImageFormat } from '@/services/pdfService'
 
 interface PdfBedrijfsProfiel extends Partial<Profile> {
   primaireKleur?: string
@@ -65,7 +66,7 @@ function formatDate(dateString: string): string {
  * Genereert een liggend A4 (landscape) werkbon PDF als instructieblad voor monteurs.
  * GEEN prijzen — puur omschrijvingen, afmetingen, afbeeldingen en notities.
  */
-export function generateWerkbonInstructiePDF(
+export async function generateWerkbonInstructiePDF(
   werkbonData: WerkbonPdfData,
   items: WerkbonItem[],
   klant: Partial<Klant>,
@@ -73,9 +74,17 @@ export function generateWerkbonInstructiePDF(
   bedrijfsProfiel: PdfBedrijfsProfiel,
   docStyle?: DocumentStyle | null,
   options?: WerkbonPdfOptions
-): jsPDF {
+): Promise<jsPDF> {
   // Landscape A4
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
+
+  // Pre-resolve logo to base64 om race condition met browser-cache te vermijden:
+  // synchroon `new Image() + img.src = url` had naturalWidth=0 bij eerste render
+  // → fallback ratio + half-decoded image bij addImage. Nu base64 + getImageProperties.
+  let logoBase64: string | null = null
+  if (werkbonData.toon_briefpapier && bedrijfsProfiel.logo_url) {
+    logoBase64 = await resolveImageToBase64(bedrijfsProfiel.logo_url)
+  }
 
   // Terracotta strip at top (werkbon = uitvoering)
   const pgW0 = doc.internal.pageSize.getWidth()
@@ -99,17 +108,13 @@ export function generateWerkbonInstructiePDF(
   function addPageHeader(y: number): number {
     // Logo + bedrijfsnaam (optioneel)
     let logoWidth = 0
-    if (werkbonData.toon_briefpapier && bedrijfsProfiel.logo_url) {
+    if (logoBase64) {
       try {
-        // Bereken aspect ratio om vervorming te voorkomen
         const maxLogoH = 12
-        const img = new Image()
-        img.src = bedrijfsProfiel.logo_url
-        const naturalW = img.naturalWidth || img.width || 200
-        const naturalH = img.naturalHeight || img.height || 100
-        const ratio = naturalW / naturalH
+        const props = doc.getImageProperties(logoBase64)
+        const ratio = props.width / props.height
         logoWidth = maxLogoH * ratio
-        doc.addImage(bedrijfsProfiel.logo_url, 'JPEG', marginLeft, y + 1, logoWidth, maxLogoH, undefined, 'MEDIUM')
+        doc.addImage(logoBase64, detectImageFormat(logoBase64), marginLeft, y + 1, logoWidth, maxLogoH, undefined, 'MEDIUM')
       } catch (err) {
         // logo failed
       }

@@ -20,7 +20,7 @@ interface PdfBedrijfsProfiel extends Partial<Profile> {
  * Resolve a storage path or URL to a base64 data URL for embedding in PDFs.
  * Handles: data: URLs (passthrough), http URLs (fetch), storage paths (resolve via Supabase).
  */
-async function resolveImageToBase64(urlOrPath: string, timeoutMs = 8000): Promise<string | null> {
+export async function resolveImageToBase64(urlOrPath: string, timeoutMs = 8000): Promise<string | null> {
   try {
     // Already a data URL — use directly
     if (urlOrPath.startsWith('data:')) return urlOrPath
@@ -168,7 +168,7 @@ function addColorStrip(doc: jsPDF, color: [number, number, number], height: numb
 
 // ============ BRIEFPAPIER BACKGROUND ============
 
-function detectImageFormat(url: string): string {
+export function detectImageFormat(url: string): string {
   const lower = url.toLowerCase()
   if (lower.includes('image/jpeg') || lower.includes('.jpg') || lower.includes('.jpeg')) return 'JPEG'
   if (lower.includes('image/webp') || lower.includes('.webp')) return 'WEBP'
