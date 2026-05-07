@@ -42,6 +42,7 @@ import { klantStatusConfig } from '@/types'
 import { ClientCard } from './ClientCard'
 import { AddEditClient } from './AddEditClient'
 import { logger } from '../../utils/logger'
+import { useDebounce } from '@/hooks/useDebounce'
 import { SkeletonTable } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/ui/empty-state'
 // ModuleHeader removed — using DOEN inline header
@@ -56,6 +57,7 @@ export function ClientsLayout() {
   const navigate = useNavigate()
   const { navigateWithTab } = useNavigateWithTab()
   const [searchQuery, setSearchQuery] = useState('')
+  const debouncedSearch = useDebounce(searchQuery, 200)
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('alle')
   const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [addDialogOpen, setAddDialogOpen] = useState(false)
@@ -144,8 +146,8 @@ export function ClientsLayout() {
     }
 
     // Search filter
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase().trim()
+    if (debouncedSearch.trim()) {
+      const query = debouncedSearch.toLowerCase().trim()
       result = result.filter(
         (k) =>
           (k.bedrijfsnaam || '').toLowerCase().includes(query) ||
@@ -182,7 +184,7 @@ export function ClientsLayout() {
     })
 
     return result
-  }, [klantSlices, searchQuery, statusFilter, labelFilter, klantStatusFilter, sortField, sortDir])
+  }, [klantSlices, debouncedSearch, statusFilter, labelFilter, klantStatusFilter, sortField, sortDir])
 
   function handleSort(field: SortField) {
     if (field === sortField) {
