@@ -36,10 +36,14 @@ import { WerkbonItemCard } from './WerkbonItemCard'
 import { WerkbonHeaderForm } from './WerkbonHeaderForm'
 import { WerkbonMonteurFeedback } from './WerkbonMonteurFeedback'
 
-// Resolve a URL: if it's a storage path, convert to a signed URL
+// Resolve a URL: if it's a storage path, convert to a signed URL.
+// Returns '' on failure so render-laag een placeholder kan tonen ipv broken image.
 async function resolveUrl(url: string): Promise<string> {
   if (!url || url.startsWith('data:') || url.startsWith('http') || url.startsWith('blob:')) return url
-  try { return await getSignedUrl(url) } catch (err) { return url }
+  try { return await getSignedUrl(url) } catch (err) {
+    logger.warn('Kon storage URL niet resolven:', url, err)
+    return ''
+  }
 }
 
 const sanitizeFilename = (name: string) =>

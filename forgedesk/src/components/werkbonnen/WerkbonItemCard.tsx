@@ -142,16 +142,24 @@ export const WerkbonItemCard = React.memo(function WerkbonItemCard({
             <div className="grid grid-cols-2 gap-2">
               {item.afbeeldingen.map((afb) => (
                 <div key={afb.id} className="relative group rounded-lg overflow-hidden border bg-muted/30">
-                  <img
-                    src={afb.url}
-                    alt={afb.omschrijving || 'Afbeelding'}
-                    className="w-full aspect-[4/3] object-cover cursor-pointer"
-                    onClick={() => onLightbox(afb.url)}
-                  />
+                  {afb.url ? (
+                    <img
+                      src={afb.url}
+                      alt={afb.omschrijving || 'Afbeelding'}
+                      className="w-full aspect-[4/3] object-cover cursor-pointer"
+                      onClick={() => onLightbox(afb.url)}
+                    />
+                  ) : (
+                    <div className="w-full aspect-[4/3] bg-muted flex items-center justify-center text-xs text-muted-foreground">
+                      Afbeelding niet beschikbaar
+                    </div>
+                  )}
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 active:opacity-100">
-                    <Button variant="secondary" size="icon" className="h-7 w-7" onClick={() => onLightbox(afb.url)}>
-                      <Maximize2 className="h-3 w-3" />
-                    </Button>
+                    {afb.url && (
+                      <Button variant="secondary" size="icon" className="h-7 w-7" onClick={() => onLightbox(afb.url)}>
+                        <Maximize2 className="h-3 w-3" />
+                      </Button>
+                    )}
                     <Button variant="destructive" size="icon" className="h-7 w-7" onClick={() => onImageDelete(item.id, afb.id)}>
                       <X className="h-3 w-3" />
                     </Button>
