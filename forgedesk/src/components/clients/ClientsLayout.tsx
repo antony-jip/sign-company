@@ -303,12 +303,10 @@ export function ClientsLayout() {
 
   return (
     <div className="h-full flex flex-col bg-[#F8F7F5] -m-3 sm:-m-4 md:-m-6">
-      {/* Inline keyframes for pulse + stagger */}
+      {/* Inline keyframes for pulse */}
       <style>{`
         @keyframes doen-pulse { 0%,100% { opacity:1 } 50% { opacity:.35 } }
-        @keyframes doen-fade-up { from { opacity:0; transform:translateY(8px) } to { opacity:1; transform:translateY(0) } }
         .doen-pulse { animation: doen-pulse 2.5s ease-in-out infinite }
-        .doen-row { animation: doen-fade-up .35s cubic-bezier(.22,1,.36,1) both }
       `}</style>
 
       {/* Content */}
@@ -644,15 +642,14 @@ export function ClientsLayout() {
                 </tr>
               </thead>
               <tbody>
-                {filteredKlanten.map((klant, i) => (
+                {filteredKlanten.map((klant) => (
                   <tr
                     key={klant.id}
                     className={cn(
-                      'doen-row border-b border-[#F0EFEC] last:border-0 cursor-pointer transition-all duration-200 group',
+                      'border-b border-[#F0EFEC] last:border-0 cursor-pointer transition-all duration-200 group',
                       'hover:bg-[#F8F7F4]',
                       selectedIds.has(klant.id) && 'bg-[#1A535C]/[0.03]'
                     )}
-                    style={{ animationDelay: `${i * 25}ms` }}
                     onClick={() => navigateWithTab({ path: `/klanten/${klant.id}`, label: klant.bedrijfsnaam || 'Klant', id: `/klanten/${klant.id}` })}
                   >
                     <td className="py-3.5 pl-5 pr-3 align-middle" onClick={(e) => e.stopPropagation()}>
