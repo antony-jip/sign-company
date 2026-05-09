@@ -89,6 +89,7 @@ import {
   getKlant,
   getKlanten,
   updateKlant,
+  getContactpersonenByKlant,
   getTijdregistratiesByProject,
   getMedewerkers,
   getProjectToewijzingen,
@@ -134,7 +135,7 @@ import { ActiviteitFeed, buildActivityFeed, type ActivityEvent } from './cockpit
 const PdfPreviewDialog = React.lazy(() => import('@/components/shared/PdfPreviewDialog').then(m => ({ default: m.PdfPreviewDialog })))
 import { generateOpdrachtbevestigingPDF } from '@/services/pdfService'
 import { useProjectSidebarConfig } from '@/hooks/useProjectSidebarConfig'
-import type { Taak, Project, Document, Offerte, TekeningGoedkeuring, Klant, Tijdregistratie, Medewerker, ProjectToewijzing, Werkbon, Factuur, Uitgave, MontageAfspraak, MontageBijlage, ProjectFoto, AuditLogEntry } from '@/types'
+import type { Taak, Project, Document, Offerte, TekeningGoedkeuring, Klant, Tijdregistratie, Medewerker, ProjectToewijzing, Werkbon, Factuur, Uitgave, MontageAfspraak, MontageBijlage, ProjectFoto, AuditLogEntry, Contactpersoon, ContactpersoonRecord } from '@/types'
 import { berekenBudgetStatus } from '@/utils/budgetUtils'
 import { logger } from '../../utils/logger'
 import { logWijziging, logCreate } from '@/utils/auditLogger'
@@ -248,6 +249,7 @@ export function ProjectDetail() {
   const [nieuwCpEmail, setNieuwCpEmail] = useState('')
   const [nieuwCpTelefoon, setNieuwCpTelefoon] = useState('')
   const [nieuwCpFunctie, setNieuwCpFunctie] = useState('')
+  const [dbContacten, setDbContacten] = useState<ContactpersoonRecord[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isDragging, setIsDragging] = useState(false)
 
@@ -661,6 +663,31 @@ export function ProjectDetail() {
     fetchData()
     return () => { cancelled = true }
   }, [id])
+
+  useEffect(() => {
+    if (!klant?.id) { setDbContacten([]); return }
+    let cancelled = false
+    getContactpersonenByKlant(klant.id)
+      .then((rows) => { if (!cancelled) setDbContacten(rows) })
+      .catch(() => { if (!cancelled) setDbContacten([]) })
+    return () => { cancelled = true }
+  }, [klant?.id])
+
+  const gemergedeContactpersonen = useMemo<Contactpersoon[]>(() => {
+    const jsonbCps = klant?.contactpersonen || []
+    const jsonbEmails = new Set(jsonbCps.map((c) => c.email?.toLowerCase()).filter(Boolean))
+    const fromDb: Contactpersoon[] = dbContacten
+      .filter((c) => !jsonbEmails.has(c.email?.toLowerCase()))
+      .map((c) => ({
+        id: c.id,
+        naam: [c.voornaam, c.achternaam].filter(Boolean).join(' ') || c.email,
+        functie: c.functie || '',
+        email: c.email || '',
+        telefoon: c.telefoon || '',
+        is_primair: false,
+      }))
+    return [...jsonbCps, ...fromDb]
+  }, [klant, dbContacten])
 
   // ── File upload handler ──
   const handleFileUpload = async (files: FileList | File[]) => {
@@ -1264,7 +1291,7 @@ export function ProjectDetail() {
                 </div>
               </div>
               {(() => {
-                const projectCp = project.contactpersoon_id ? klant.contactpersonen?.find(c => c.id === project.contactpersoon_id) : null
+                const projectCp = project.contactpersoon_id ? gemergedeContactpersonen.find(c => c.id === project.contactpersoon_id) : null
                 const displayEmail = projectCp?.email || klant.email
                 const displayTelefoon = projectCp?.telefoon || klant.telefoon
                 return (
@@ -1293,7 +1320,7 @@ export function ProjectDetail() {
               <div className="border-t border-[#EBEBEB]/60 pt-4 mt-4">
                 <h4 className="text-[11px] font-semibold text-[#9B9B95] uppercase tracking-wider mb-2">Contactpersoon</h4>
                 {(() => {
-                  const activeCp = klant.contactpersonen?.find(cp => cp.id === project.contactpersoon_id)
+                  const activeCp = gemergedeContactpersonen.find(cp => cp.id === project.contactpersoon_id)
                   return (
                     <div className="space-y-2">
                       <select
@@ -1302,7 +1329,7 @@ export function ProjectDetail() {
                           try {
                             const updated = await updateProject(id!, { contactpersoon_id: e.target.value || undefined })
                             setProject(updated)
-                            const cp = klant.contactpersonen?.find(c => c.id === e.target.value)
+                            const cp = gemergedeContactpersonen.find(c => c.id === e.target.value)
                             toast.success(cp ? `Contactpersoon: ${cp.naam}` : 'Contactpersoon verwijderd')
                           } catch (err) {
                             logger.error('Kon contactpersoon niet wijzigen:', err)
@@ -1312,7 +1339,7 @@ export function ProjectDetail() {
                         style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239B9B95' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center' }}
                       >
                         <option value="">Selecteer contactpersoon...</option>
-                        {klant.contactpersonen?.map((cp) => (
+                        {gemergedeContactpersonen.map((cp) => (
                           <option key={cp.id} value={cp.id}>{cp.naam}{cp.functie ? ` · ${cp.functie}` : ''}</option>
                         ))}
                       </select>
@@ -1412,7 +1439,7 @@ export function ProjectDetail() {
                   navigate(`/facturen/nieuw?${params.toString()}`, { state: { from: location.pathname } })
                 }},
                 ...(() => {
-                  const cpEmail = project.contactpersoon_id ? klant?.contactpersonen?.find(c => c.id === project.contactpersoon_id)?.email : undefined
+                  const cpEmail = project.contactpersoon_id ? gemergedeContactpersonen.find(c => c.id === project.contactpersoon_id)?.email : undefined
                   const emailTo = cpEmail || klant?.email
                   return emailTo ? [{ label: 'Email versturen', bg: '#E2DFF5', color: '#5A4E91', icon: <Mail className="h-4 w-4" />, onClick: () => navigateWithTab({ path: `/email/compose?to=${encodeURIComponent(emailTo)}`, label: 'Nieuwe email', id: `/email/compose-${emailTo}` }) }] : []
                 })(),
