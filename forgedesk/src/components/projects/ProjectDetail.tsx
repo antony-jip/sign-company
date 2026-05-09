@@ -1326,10 +1326,11 @@ export function ProjectDetail() {
                       <select
                         value={project.contactpersoon_id || ''}
                         onChange={async (e) => {
+                          const cpId = e.target.value
+                          const cp = cpId ? gemergedeContactpersonen.find(c => c.id === cpId) : null
                           try {
-                            const updated = await updateProject(id!, { contactpersoon_id: e.target.value || undefined })
+                            const updated = await updateProject(id!, { contactpersoon_id: cpId || undefined })
                             setProject(updated)
-                            const cp = gemergedeContactpersonen.find(c => c.id === e.target.value)
                             toast.success(cp ? `Contactpersoon: ${cp.naam}` : 'Contactpersoon verwijderd')
                           } catch (err) {
                             logger.error('Kon contactpersoon niet wijzigen:', err)
