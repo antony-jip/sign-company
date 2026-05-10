@@ -1,5 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
+import { Ratelimit } from '@upstash/ratelimit'
+import { Redis } from '@upstash/redis'
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL || '',
@@ -9,6 +11,41 @@ const supabase = createClient(
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || ''
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 
+const ROUTE_NAME = 'analyze-inkoop-offerte'
+const INKOOP_OFFERTE_MONTHLY_CAP = 100
+
+// Anthropic pricing per 1M tokens — Sonnet 4.6 (verifieer bij prijswijziging)
+// Bron: https://www.anthropic.com/pricing — laatst gecheckt: 2026-05-10
+const SONNET_46_INPUT_PRICE = 3
+const SONNET_46_OUTPUT_PRICE = 15
+
+// ── Rate limiting (inline; Vercel bundelt geen lokale imports in api/) ──
+const rlConfigured = !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
+if (!rlConfigured) {
+  console.warn('[ratelimit] UPSTASH env vars missing for analyze-inkoop-offerte, requests will not be rate limited')
+}
+const ratelimit = rlConfigured
+  ? new Ratelimit({ redis: Redis.fromEnv(), limiter: Ratelimit.slidingWindow(10, '60 s'), prefix: 'rl:analyze-inkoop-offerte', timeout: 2000 })
+  : null
+
+async function enforceRateLimit(identifier: string, res: VercelResponse): Promise<boolean> {
+  if (!ratelimit) return true
+  try {
+    const { success, limit, remaining, reset } = await ratelimit.limit(identifier)
+    if (success) return true
+    const retryAfter = Math.max(1, Math.ceil((reset - Date.now()) / 1000))
+    console.warn(`[ratelimit-hit] analyze-inkoop-offerte id=${identifier} limit=${limit}`)
+    res.setHeader('Retry-After', String(retryAfter))
+    res.setHeader('X-RateLimit-Limit', String(limit))
+    res.setHeader('X-RateLimit-Remaining', String(remaining))
+    res.status(429).json({ error: 'Te veel verzoeken. Probeer het later opnieuw.' })
+    return false
+  } catch (err) {
+    console.warn(`[ratelimit-error] analyze-inkoop-offerte id=${identifier} err=${(err as Error).message}`)
+    return true
+  }
+}
+
 async function verifyUser(req: VercelRequest): Promise<string> {
   const authHeader = req.headers.authorization
   if (!authHeader?.startsWith('Bearer ')) throw new Error('Niet geautoriseerd')
@@ -16,6 +53,70 @@ async function verifyUser(req: VercelRequest): Promise<string> {
   const { data: { user }, error } = await supabase.auth.getUser(token)
   if (error || !user) throw new Error('Ongeldige sessie')
   return user.id
+}
+
+function getCurrentMonth(): string {
+  const now = new Date()
+  return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`
+}
+
+async function checkOrgCap(orgId: string): Promise<{ allowed: boolean; current: number; cap: number }> {
+  const maand = getCurrentMonth()
+  const { data } = await supabase
+    .from('ai_usage_org')
+    .select('aantal_calls')
+    .eq('organisatie_id', orgId)
+    .eq('route', ROUTE_NAME)
+    .eq('maand', maand)
+    .maybeSingle()
+  const current = data?.aantal_calls ?? 0
+  return { allowed: current < INKOOP_OFFERTE_MONTHLY_CAP, current, cap: INKOOP_OFFERTE_MONTHLY_CAP }
+}
+
+async function incrementOrgUsage(orgId: string, inputTokens: number, outputTokens: number): Promise<void> {
+  const maand = getCurrentMonth()
+  const kosten = (inputTokens / 1_000_000) * SONNET_46_INPUT_PRICE + (outputTokens / 1_000_000) * SONNET_46_OUTPUT_PRICE
+
+  const { data: existing } = await supabase
+    .from('ai_usage_org')
+    .select('id, aantal_calls, geschatte_kosten')
+    .eq('organisatie_id', orgId)
+    .eq('route', ROUTE_NAME)
+    .eq('maand', maand)
+    .maybeSingle()
+
+  if (existing) {
+    await supabase
+      .from('ai_usage_org')
+      .update({
+        aantal_calls: (existing.aantal_calls || 0) + 1,
+        geschatte_kosten: Number((Number(existing.geschatte_kosten || 0) + kosten).toFixed(4)),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', existing.id)
+  } else {
+    await supabase
+      .from('ai_usage_org')
+      .insert({
+        organisatie_id: orgId,
+        route: ROUTE_NAME,
+        maand,
+        aantal_calls: 1,
+        geschatte_kosten: Number(kosten.toFixed(4)),
+      })
+  }
+}
+
+async function markCapHit(orgId: string): Promise<void> {
+  const maand = getCurrentMonth()
+  await supabase
+    .from('ai_usage_org')
+    .update({ eerste_cap_hit_op: new Date().toISOString(), updated_at: new Date().toISOString() })
+    .eq('organisatie_id', orgId)
+    .eq('route', ROUTE_NAME)
+    .eq('maand', maand)
+    .is('eerste_cap_hit_op', null)
+  // Sentry-alert volgt in latere commit (stap 6)
 }
 
 interface GeextraheerdeRegel {
@@ -32,11 +133,34 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   try {
-    await verifyUser(req)
+    const userId = await verifyUser(req)
+
+    if (!(await enforceRateLimit(userId, res))) return
 
     if (!ANTHROPIC_API_KEY) {
       return res.status(500).json({
         error: 'Anthropic API key niet geconfigureerd. Voeg ANTHROPIC_API_KEY toe aan environment variables.',
+      })
+    }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('organisatie_id')
+      .eq('id', userId)
+      .maybeSingle()
+
+    if (!profile?.organisatie_id) {
+      return res.status(403).json({ error: 'Geen organisatie gevonden' })
+    }
+
+    const orgId = profile.organisatie_id
+
+    const cap = await checkOrgCap(orgId)
+    if (!cap.allowed) {
+      await markCapHit(orgId).catch(() => { /* niet-kritiek */ })
+      return res.status(429).json({
+        error: 'AI-limiet bereikt',
+        message: `Je organisatie heeft de maandlimiet (${cap.cap}) voor AI-analyse van offertes bereikt. Mail hello@doen.team om te verhogen.`,
       })
     }
 
@@ -132,6 +256,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const data = await response.json() as {
       content: Array<{ type: string; text: string }>
+      usage?: { input_tokens: number; output_tokens: number }
+    }
+
+    if (data.usage) {
+      try {
+        await incrementOrgUsage(orgId, data.usage.input_tokens, data.usage.output_tokens)
+      } catch (err) {
+        console.warn(`[analyze-inkoop-offerte] Usage tracking faalde: ${(err as Error).message}`)
+      }
     }
 
     const textContent = data.content?.find((c) => c.type === 'text')?.text || '[]'
