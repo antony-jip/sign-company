@@ -227,7 +227,7 @@ export async function updateInkoopfactuurRegels(id: string, regels: Omit<InkoopF
 
 // ============ EXTRACTIE ============
 
-export async function extractInkoopfactuur(id: string): Promise<{ success: boolean; error?: string }> {
+export async function extractInkoopfactuur(id: string): Promise<{ success: boolean; error?: string; capHit?: boolean }> {
   if (!isSupabaseConfigured() || !supabase) throw new Error('Supabase niet geconfigureerd')
   const token = (await supabase.auth.getSession()).data.session?.access_token
   if (!token) throw new Error('Niet ingelogd')
@@ -241,6 +241,37 @@ export async function extractInkoopfactuur(id: string): Promise<{ success: boole
     body: JSON.stringify({ inkoopfactuur_id: id }),
   })
 
+  const body = await res.json()
+  if (res.status === 429) {
+    return { success: false, error: body?.message || body?.error || 'AI-limiet bereikt', capHit: true }
+  }
+  return body
+}
+
+export interface InkoopAIUsageRoute {
+  used: number
+  cap: number
+  remaining: number
+  percent: number
+  warning: boolean
+  blocked: boolean
+}
+
+export interface InkoopAIUsageResponse {
+  extract: InkoopAIUsageRoute
+  analyze: InkoopAIUsageRoute
+  maand: string
+}
+
+export async function getInkoopAIUsage(): Promise<InkoopAIUsageResponse> {
+  if (!isSupabaseConfigured() || !supabase) throw new Error('Supabase niet geconfigureerd')
+  const token = (await supabase.auth.getSession()).data.session?.access_token
+  if (!token) throw new Error('Niet ingelogd')
+
+  const res = await fetch('/api/inkoop-ai-usage', {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  if (!res.ok) throw new Error(`Usage ophalen mislukt (HTTP ${res.status})`)
   return res.json()
 }
 

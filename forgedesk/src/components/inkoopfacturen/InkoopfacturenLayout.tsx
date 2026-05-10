@@ -14,6 +14,7 @@ import {
   getInboxConfig,
   syncInkoopfacturen,
   extractInkoopfactuur,
+  getInkoopAIUsage,
 } from '@/services/inkoopfactuurService'
 import { InkoopAILimietBanner } from '@/components/shared/InkoopAILimietBanner'
 import type { InkoopFactuurInboxConfig, InkoopFactuur, InkoopFactuurStatus } from '@/types'
@@ -78,13 +79,36 @@ export function InkoopfacturenLayout() {
 
   async function extractBatch(ids: string[]) {
     if (ids.length === 0) return
-    setExtractProgress({ current: 0, total: ids.length })
+
+    let plannedIds = ids
+    let truncatedByPreflight = false
+    try {
+      const usage = await getInkoopAIUsage()
+      const remaining = usage.extract.remaining
+      if (remaining <= 0) {
+        toast.error('AI-limiet bereikt. Mail hello@doen.team om te verhogen.')
+        return
+      }
+      if (remaining < ids.length) {
+        plannedIds = ids.slice(0, remaining)
+        truncatedByPreflight = true
+      }
+    } catch {
+      // Pre-flight is een hint; bij netwerk/fetch-fout ga gewoon door
+    }
+
+    setExtractProgress({ current: 0, total: plannedIds.length })
     let gelukt = 0
     let laatsteFout = ''
-    for (let i = 0; i < ids.length; i++) {
-      setExtractProgress({ current: i + 1, total: ids.length })
+    let capRaceHit = false
+    for (let i = 0; i < plannedIds.length; i++) {
+      setExtractProgress({ current: i + 1, total: plannedIds.length })
       try {
-        const result = await extractInkoopfactuur(ids[i])
+        const result = await extractInkoopfactuur(plannedIds[i])
+        if (result.capHit) {
+          capRaceHit = true
+          break
+        }
         if (result.success) gelukt++
         else laatsteFout = result.error || 'Onbekende fout'
       } catch (err) {
@@ -92,8 +116,16 @@ export function InkoopfacturenLayout() {
       }
     }
     setExtractProgress(null)
-    if (gelukt > 0) toast.success(`${gelukt} factuur${gelukt > 1 ? 'en' : ''} geextraheerd`)
-    else if (laatsteFout) toast.error(`Extractie mislukt: ${laatsteFout}`)
+
+    const capReached = truncatedByPreflight || capRaceHit
+    if (capReached) {
+      const totaal = ids.length
+      toast.error(`${gelukt} van ${totaal} verwerkt — AI-limiet bereikt. Mail hello@doen.team om te verhogen.`)
+    } else if (gelukt > 0) {
+      toast.success(`${gelukt} factuur${gelukt > 1 ? 'en' : ''} geextraheerd`)
+    } else if (laatsteFout) {
+      toast.error(`Extractie mislukt: ${laatsteFout}`)
+    }
     await refreshData()
   }
 
