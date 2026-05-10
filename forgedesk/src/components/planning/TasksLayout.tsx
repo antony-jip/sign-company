@@ -2405,7 +2405,7 @@ function EditTaskDialog({
     const el = beschrijvingRef.current
     if (!el) return
     el.style.height = 'auto'
-    el.style.height = `${el.scrollHeight}px`
+    el.style.height = `${Math.min(el.scrollHeight, 400)}px`
   }, [formData.beschrijving, open])
 
   const displayDeadline = formData.deadline
@@ -2542,81 +2542,85 @@ function EditTaskDialog({
           </div>
         )}
 
-        {/* Beschrijving — subtle field, auto-grow */}
-        <div className="px-7 pb-5">
+        {/* Briefing — dominant field, auto-grow tot 400px, daarna scroll */}
+        <div className="px-7 pb-5 space-y-2">
+          <Label className="text-xs uppercase tracking-[0.05em] text-[#9B9B95] font-semibold block">Briefing</Label>
           <Textarea
             ref={beschrijvingRef}
             value={formData.beschrijving}
             onChange={(e) => updateField('beschrijving', e.target.value)}
-            placeholder="Beschrijving toevoegen"
-            rows={2}
+            placeholder="Briefing toevoegen…"
             data-gramm="false"
-            className="border-0 shadow-none px-3 py-2.5 min-h-[44px] resize-none overflow-hidden bg-[#F8F7F5] hover:bg-[#F0EFEC] focus:bg-white rounded-lg text-sm leading-relaxed text-[#1A1A1A] placeholder:text-[#6B6B66] focus-visible:ring-1 focus-visible:ring-[#1A535C]/20 transition-colors"
+            className="border-0 shadow-none px-3 py-2.5 min-h-[180px] max-h-[400px] resize-none overflow-y-auto bg-[#F8F7F5] hover:bg-[#F0EFEC] focus:bg-white rounded-lg text-sm leading-relaxed text-[#1A1A1A] placeholder:text-[#6B6B66] focus-visible:ring-1 focus-visible:ring-[#1A535C]/20 transition-colors"
           />
         </div>
 
-        {/* Bijlagen + Geschiedenis — inline */}
-        <div className="border-t border-[#EBEBEB] px-7 pt-4 pb-5 space-y-5">
-          {/* Bijlagen — compact grid */}
-          <div className="space-y-1.5">
-            <Label className="text-[10px] uppercase tracking-[0.08em] text-[#9B9B95] font-semibold">Bijlagen</Label>
-            <div className="flex flex-wrap gap-2">
-                  {formData.bijlagen.map((url, i) => {
-                    const isImage = url.startsWith('data:image/') || /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(url)
-                    const filename = url.startsWith('data:')
-                      ? `Bestand ${i + 1}`
-                      : decodeURIComponent(url.split('/').pop()?.split('?')[0] || `Bestand ${i + 1}`).replace(/^\d+_/, '')
-                    return (
-                      <div key={i} className="group relative">
-                        {isImage ? (
-                          <a href={url} target="_blank" rel="noopener noreferrer" title={filename}>
-                            <img src={url} alt="" className="h-14 w-14 rounded-lg object-cover border border-[#E0DED8] hover:border-[#1A535C] transition-colors" />
-                          </a>
-                        ) : (
-                          <a href={url} target="_blank" rel="noopener noreferrer" title={filename} className="h-14 w-14 rounded-lg border border-[#E0DED8] bg-white flex items-center justify-center hover:border-[#1A535C] transition-colors">
-                            <Paperclip className="h-4 w-4 text-[#6B6B66]" />
-                          </a>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => updateField('bijlagen', formData.bijlagen.filter((_, j) => j !== i) as string[])}
-                          className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-white border border-[#E0DED8] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:border-[#C03A18] hover:text-[#C03A18] text-[#6B6B66] shadow-sm"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </div>
-                    )
-                  })}
-                  <label className="group h-14 w-14 rounded-lg border border-dashed border-[#C4C2BD] bg-transparent flex flex-col items-center justify-center cursor-pointer hover:border-[#1A535C] hover:bg-[#1A535C]/[0.03] transition-colors text-[#B0ADA8] hover:text-[#1A535C]">
-                    <Plus className="h-4 w-4 transition-transform group-hover:scale-110" />
-                    <input
-                      type="file"
-                      multiple
-                      accept="image/*,.pdf,.doc,.docx"
-                      className="hidden"
-                      onChange={async (e) => {
-                        const files = Array.from(e.target.files || [])
-                        if (!editingTaakId || files.length === 0) return
-                        for (const file of files) {
-                          try {
-                            const url = await uploadTaakBijlage(editingTaakId, file)
-                            setFormData(prev => ({ ...prev, bijlagen: [...prev.bijlagen, url] }))
-                          } catch (err) {
-                            logger.error('uploadTaakBijlage:', err)
-                            toast.error(`Kon "${file.name}" niet uploaden`)
-                          }
-                        }
-                        e.target.value = ''
-                      }}
-                    />
-                  </label>
-                </div>
-              </div>
-
-          {editingTaakId && (
-            <AuditLogPanel entityType="taak" entityId={editingTaakId} />
-          )}
+        {/* Bijlagen — compacte inline rij */}
+        <div className="px-7 pb-5">
+          <div className="flex items-center flex-wrap gap-3">
+            <Label className="text-xs uppercase tracking-[0.05em] text-[#9B9B95] font-semibold m-0">Bijlagen</Label>
+            <label className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full border border-dashed border-[#C4C2BD] bg-transparent text-xs font-medium text-[#6B6B66] hover:border-[#1A535C] hover:text-[#1A535C] hover:bg-[#1A535C]/[0.03] transition-colors cursor-pointer">
+              <Plus className="h-3.5 w-3.5" />
+              Toevoegen
+              <input
+                type="file"
+                multiple
+                accept="image/*,.pdf,.doc,.docx"
+                className="hidden"
+                onChange={async (e) => {
+                  const files = Array.from(e.target.files || [])
+                  if (!editingTaakId || files.length === 0) return
+                  for (const file of files) {
+                    try {
+                      const url = await uploadTaakBijlage(editingTaakId, file)
+                      setFormData(prev => ({ ...prev, bijlagen: [...prev.bijlagen, url] }))
+                    } catch (err) {
+                      logger.error('uploadTaakBijlage:', err)
+                      toast.error(`Kon "${file.name}" niet uploaden`)
+                    }
+                  }
+                  e.target.value = ''
+                }}
+              />
+            </label>
+            {formData.bijlagen.length === 0 ? (
+              <span className="text-xs italic text-[#9B9B95]">geen bijlagen</span>
+            ) : (
+              formData.bijlagen.map((url, i) => {
+                const isImage = url.startsWith('data:image/') || /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(url)
+                const filename = url.startsWith('data:')
+                  ? `Bestand ${i + 1}`
+                  : decodeURIComponent(url.split('/').pop()?.split('?')[0] || `Bestand ${i + 1}`).replace(/^\d+_/, '')
+                return (
+                  <div key={i} className="group relative">
+                    {isImage ? (
+                      <a href={url} target="_blank" rel="noopener noreferrer" title={filename}>
+                        <img src={url} alt="" className="h-14 w-14 rounded-lg object-cover border border-[#E0DED8] hover:border-[#1A535C] transition-colors" />
+                      </a>
+                    ) : (
+                      <a href={url} target="_blank" rel="noopener noreferrer" title={filename} className="h-14 w-14 rounded-lg border border-[#E0DED8] bg-white flex items-center justify-center hover:border-[#1A535C] transition-colors">
+                        <Paperclip className="h-4 w-4 text-[#6B6B66]" />
+                      </a>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => updateField('bijlagen', formData.bijlagen.filter((_, j) => j !== i) as string[])}
+                      className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-white border border-[#E0DED8] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:border-[#C03A18] hover:text-[#C03A18] text-[#6B6B66] shadow-sm"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                )
+              })
+            )}
+          </div>
         </div>
+
+        {editingTaakId && (
+          <div className="px-7 pb-5">
+            <AuditLogPanel entityType="taak" entityId={editingTaakId} />
+          </div>
+        )}
         </div>
 
         <DialogFooter className="px-7 py-4 border-t border-[#EBEBEB] bg-[#F8F7F5]/60">
