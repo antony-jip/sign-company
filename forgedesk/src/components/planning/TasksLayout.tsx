@@ -55,6 +55,7 @@ import { cn } from '@/lib/utils'
 // DOEN design — ModuleHeader verwijderd
 import { useAuth } from '@/contexts/AuthContext'
 import { getTaken, createTaak, updateTaak, deleteTaak, getProjecten, getKlanten, getMontageAfspraken, getOffertes, uploadTaakBijlage, getMedewerkers } from '@/services/supabaseService'
+import { getDisplayFilename } from '@/services/projectService'
 import type { Taak, Project, Klant, MontageAfspraak, Offerte, Medewerker } from '@/types'
 import { logger } from '../../utils/logger'
 import { AuditLogPanel } from '@/components/shared/AuditLogPanel'
@@ -2563,9 +2564,7 @@ function EditTaskDialog({
             <div className="flex flex-wrap gap-2">
                   {formData.bijlagen.map((url, i) => {
                     const isImage = url.startsWith('data:image/') || /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(url)
-                    const filename = url.startsWith('data:')
-                      ? `Bestand ${i + 1}`
-                      : decodeURIComponent(url.split('/').pop()?.split('?')[0] || `Bestand ${i + 1}`).replace(/^\d+_/, '')
+                    const filename = getDisplayFilename(url, i + 1)
                     return (
                       <div key={i} className="group relative">
                         {isImage ? (
