@@ -1,5 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
+import { Ratelimit } from '@upstash/ratelimit'
+import { Redis } from '@upstash/redis'
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL || '',
@@ -8,6 +10,41 @@ const supabase = createClient(
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || ''
 
+const ROUTE_NAME = 'inkoopfactuur-extract'
+const INKOOP_EXTRACT_MONTHLY_CAP = 500
+
+// Anthropic pricing per 1M tokens — Sonnet 4.6 (verifieer bij prijswijziging)
+// Bron: https://www.anthropic.com/pricing — laatst gecheckt: 2026-05-10
+const SONNET_46_INPUT_PRICE = 3
+const SONNET_46_OUTPUT_PRICE = 15
+
+// ── Rate limiting (inline; Vercel bundelt geen lokale imports in api/) ──
+const rlConfigured = !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
+if (!rlConfigured) {
+  console.warn('[ratelimit] UPSTASH env vars missing for inkoopfactuur-extract, requests will not be rate limited')
+}
+const ratelimit = rlConfigured
+  ? new Ratelimit({ redis: Redis.fromEnv(), limiter: Ratelimit.slidingWindow(30, '60 s'), prefix: 'rl:inkoopfactuur-extract', timeout: 2000 })
+  : null
+
+async function enforceRateLimit(identifier: string, res: VercelResponse): Promise<boolean> {
+  if (!ratelimit) return true
+  try {
+    const { success, limit, remaining, reset } = await ratelimit.limit(identifier)
+    if (success) return true
+    const retryAfter = Math.max(1, Math.ceil((reset - Date.now()) / 1000))
+    console.warn(`[ratelimit-hit] inkoopfactuur-extract id=${identifier} limit=${limit}`)
+    res.setHeader('Retry-After', String(retryAfter))
+    res.setHeader('X-RateLimit-Limit', String(limit))
+    res.setHeader('X-RateLimit-Remaining', String(remaining))
+    res.status(429).json({ error: 'Te veel verzoeken. Probeer het later opnieuw.' })
+    return false
+  } catch (err) {
+    console.warn(`[ratelimit-error] inkoopfactuur-extract id=${identifier} err=${(err as Error).message}`)
+    return true
+  }
+}
+
 async function verifyUser(req: VercelRequest): Promise<string> {
   const authHeader = req.headers.authorization
   if (!authHeader?.startsWith('Bearer ')) throw new Error('Niet geautoriseerd')
@@ -15,6 +52,70 @@ async function verifyUser(req: VercelRequest): Promise<string> {
   const { data: { user }, error } = await supabase.auth.getUser(token)
   if (error || !user) throw new Error('Ongeldige sessie')
   return user.id
+}
+
+function getCurrentMonth(): string {
+  const now = new Date()
+  return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`
+}
+
+async function checkOrgCap(orgId: string): Promise<{ allowed: boolean; current: number; cap: number }> {
+  const maand = getCurrentMonth()
+  const { data } = await supabase
+    .from('ai_usage_org')
+    .select('aantal_calls')
+    .eq('organisatie_id', orgId)
+    .eq('route', ROUTE_NAME)
+    .eq('maand', maand)
+    .maybeSingle()
+  const current = data?.aantal_calls ?? 0
+  return { allowed: current < INKOOP_EXTRACT_MONTHLY_CAP, current, cap: INKOOP_EXTRACT_MONTHLY_CAP }
+}
+
+async function incrementOrgUsage(orgId: string, inputTokens: number, outputTokens: number): Promise<void> {
+  const maand = getCurrentMonth()
+  const kosten = (inputTokens / 1_000_000) * SONNET_46_INPUT_PRICE + (outputTokens / 1_000_000) * SONNET_46_OUTPUT_PRICE
+
+  const { data: existing } = await supabase
+    .from('ai_usage_org')
+    .select('id, aantal_calls, geschatte_kosten')
+    .eq('organisatie_id', orgId)
+    .eq('route', ROUTE_NAME)
+    .eq('maand', maand)
+    .maybeSingle()
+
+  if (existing) {
+    await supabase
+      .from('ai_usage_org')
+      .update({
+        aantal_calls: (existing.aantal_calls || 0) + 1,
+        geschatte_kosten: Number((Number(existing.geschatte_kosten || 0) + kosten).toFixed(4)),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', existing.id)
+  } else {
+    await supabase
+      .from('ai_usage_org')
+      .insert({
+        organisatie_id: orgId,
+        route: ROUTE_NAME,
+        maand,
+        aantal_calls: 1,
+        geschatte_kosten: Number(kosten.toFixed(4)),
+      })
+  }
+}
+
+async function markCapHit(orgId: string): Promise<void> {
+  const maand = getCurrentMonth()
+  await supabase
+    .from('ai_usage_org')
+    .update({ eerste_cap_hit_op: new Date().toISOString(), updated_at: new Date().toISOString() })
+    .eq('organisatie_id', orgId)
+    .eq('route', ROUTE_NAME)
+    .eq('maand', maand)
+    .is('eerste_cap_hit_op', null)
+  // Sentry-alert volgt in latere commit (stap 6)
 }
 
 const SYSTEM_PROMPT = `Je bent een Nederlandse inkoopfactuur extractor. Analyseer de PDF en geef UITSLUITEND valide JSON terug, geen markdown codeblokken, geen uitleg. Schema:
@@ -50,6 +151,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const userId = await verifyUser(req)
 
+    if (!(await enforceRateLimit(userId, res))) return
+
     if (!ANTHROPIC_API_KEY) {
       return res.status(200).json({ success: false, error: 'ANTHROPIC_API_KEY niet geconfigureerd op Vercel.' })
     }
@@ -69,11 +172,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ success: false, error: 'Geen organisatie gevonden' })
     }
 
+    const orgId = profile.organisatie_id
+
+    const cap = await checkOrgCap(orgId)
+    if (!cap.allowed) {
+      await markCapHit(orgId).catch(() => { /* niet-kritiek */ })
+      return res.status(429).json({
+        error: 'AI-limiet bereikt',
+        message: `Je organisatie heeft de maandlimiet (${cap.cap}) voor AI-extractie van inkoopfacturen bereikt. Mail hello@doen.team om te verhogen.`,
+      })
+    }
+
     const { data: factuur, error: fetchError } = await supabase
       .from('inkoopfacturen')
       .select('id, pdf_storage_path, status')
       .eq('id', inkoopfactuur_id)
-      .eq('organisatie_id', profile.organisatie_id)
+      .eq('organisatie_id', orgId)
       .single()
 
     if (fetchError || !factuur) {
@@ -152,8 +266,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ success: false, error: `Claude API fout (${anthropicResponse?.status || '?'}): ${errBody.slice(0, 200)}` })
     }
 
-    const anthropicData = await anthropicResponse.json()
-    const textContent = anthropicData.content?.find((c: { type: string }) => c.type === 'text')?.text || ''
+    const anthropicData = await anthropicResponse.json() as {
+      content?: Array<{ type: string; text: string }>
+      usage?: { input_tokens: number; output_tokens: number }
+    }
+    const textContent = anthropicData.content?.find((c) => c.type === 'text')?.text || ''
+
+    if (anthropicData.usage) {
+      try {
+        await incrementOrgUsage(orgId, anthropicData.usage.input_tokens, anthropicData.usage.output_tokens)
+      } catch (err) {
+        console.warn(`[extract] Usage tracking faalde: ${(err as Error).message}`)
+      }
+    }
 
     console.log(`[extract] Anthropic response length: ${textContent.length}`)
 
