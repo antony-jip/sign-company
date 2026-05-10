@@ -47,6 +47,8 @@ import {
   Wrench,
   FilePlus,
   Paperclip,
+  FileText,
+  FileSpreadsheet,
   Calendar as CalendarIcon,
   ExternalLink,
 } from 'lucide-react'
@@ -2566,6 +2568,12 @@ function EditTaskDialog({
                     const filename = url.startsWith('data:')
                       ? `Bestand ${i + 1}`
                       : decodeURIComponent(url.split('/').pop()?.split('?')[0] || `Bestand ${i + 1}`).replace(/^\d+_/, '')
+                    const ext = filename.split('.').pop()?.toLowerCase() || ''
+                    const DocIcon = (ext === 'xls' || ext === 'xlsx')
+                      ? FileSpreadsheet
+                      : (ext === 'pdf' || ext === 'doc' || ext === 'docx' || ext === 'txt')
+                        ? FileText
+                        : Paperclip
                     return (
                       <div key={i} className="group relative">
                         {isImage ? (
@@ -2573,8 +2581,9 @@ function EditTaskDialog({
                             <img src={url} alt="" className="h-14 w-14 rounded-lg object-cover border border-[#E0DED8] hover:border-[#1A535C] transition-colors" />
                           </a>
                         ) : (
-                          <a href={url} target="_blank" rel="noopener noreferrer" title={filename} className="h-14 w-14 rounded-lg border border-[#E0DED8] bg-white flex items-center justify-center hover:border-[#1A535C] transition-colors">
-                            <Paperclip className="h-4 w-4 text-[#6B6B66]" />
+                          <a href={url} target="_blank" rel="noopener noreferrer" title={filename} className="h-14 px-3 rounded-lg border border-[#E0DED8] bg-white flex items-center gap-2 hover:border-[#1A535C] transition-colors">
+                            <DocIcon className="h-4 w-4 text-[#6B6B66] flex-shrink-0" />
+                            <span className="text-xs text-[#1A1A1A] truncate max-w-[160px]">{filename}</span>
                           </a>
                         )}
                         <button
