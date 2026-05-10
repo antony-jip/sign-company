@@ -9,6 +9,7 @@ import { ForgieChatWidget } from '@/components/forgie/ForgieChatWidget'
 import { FloatingQuickActions } from '@/components/dashboard/FloatingQuickActions'
 import { FloatingEmailButton } from '@/components/shared/FloatingEmailButton'
 import { TrialBanner } from '@/components/shared/TrialBanner'
+import { InkoopAILimietBanner } from '@/components/shared/InkoopAILimietBanner'
 import { TabBar } from '@/components/layouts/TabBar'
 import { useSidebar } from '@/contexts/SidebarContext'
 import { useTabShortcuts } from '@/hooks/useTabShortcuts'
@@ -40,6 +41,7 @@ export function AppLayout() {
         <div className="flex flex-col h-[100dvh] overflow-hidden bg-[#F8F7F5]">
           <OfflineBanner />
           <TrialBanner />
+          <InkoopAILimietBanner variant="globaal" />
           {!hideTopNav && <TopNav />}
           <TabBar />
           <main className="flex-1 overflow-y-auto overflow-x-hidden" style={{ position: 'relative', zIndex: 0 }}>
@@ -63,6 +65,7 @@ export function AppLayout() {
         <div className="flex-1 flex flex-col min-w-0 w-0 overflow-hidden">
           <OfflineBanner />
           <TrialBanner />
+          <InkoopAILimietBanner variant="globaal" />
           <Header />
           <TabBar />
           <main className="flex-1 overflow-y-auto overflow-x-hidden">

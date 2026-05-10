@@ -17,6 +17,7 @@ import {
   extractInkoopfactuur,
 } from '@/services/inkoopfactuurService'
 import { supabase } from '@/services/supabaseClient'
+import { InkoopAILimietBanner } from '@/components/shared/InkoopAILimietBanner'
 import type { InkoopFactuur, InkoopFactuurRegel } from '@/types'
 
 function createEmptyRegel(): Omit<InkoopFactuurRegel, 'id' | 'inkoopfactuur_id' | 'created_at'> {
@@ -215,6 +216,9 @@ export function InkoopfactuurDetail() {
 
   return (
     <div className="p-3 sm:p-4 md:p-6 animate-in fade-in duration-300">
+      <div className="mb-3">
+        <InkoopAILimietBanner variant="lokaal" route="extract" />
+      </div>
       {/* Header */}
       <div className="flex items-center gap-3 mb-5">
         <button onClick={() => navigate('/inkoopfacturen')} className="text-[#9B9B95] hover:text-[#4A4A46]">

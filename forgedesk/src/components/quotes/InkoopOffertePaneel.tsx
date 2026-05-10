@@ -28,6 +28,7 @@ import {
 } from '@/services/supabaseService'
 import type { InkoopOfferte, InkoopRegel } from '@/types'
 import { logger } from '../../utils/logger'
+import { InkoopAILimietBanner } from '@/components/shared/InkoopAILimietBanner'
 
 // Drag data type for inkoop regels
 export const INKOOP_DRAG_TYPE = 'application/x-forgedesk-inkoop-regel'
@@ -305,6 +306,7 @@ export function InkoopOffertePaneel({ userId, offerteId, onRegelToevoegen, onReg
   if (!showUpload && offertes.length === 0) {
     return (
       <div className="space-y-4">
+        <InkoopAILimietBanner variant="lokaal" route="analyze" />
         <div className="text-center py-8 space-y-3">
           <div className="mx-auto w-12 h-12 rounded-xl bg-muted flex items-center justify-center">
             <FileText className="h-6 w-6 text-muted-foreground" />
@@ -324,6 +326,7 @@ export function InkoopOffertePaneel({ userId, offerteId, onRegelToevoegen, onReg
   if (showUpload) {
     return (
       <div className="space-y-4">
+        <InkoopAILimietBanner variant="lokaal" route="analyze" />
         <div className="flex items-center justify-between">
           <h4 className="text-sm font-bold text-foreground">Inkoopofferte uploaden</h4>
           <Button variant="ghost" size="sm" onClick={() => { setShowUpload(false); setShowResultaat(false); setGeanalyseerdeRegels([]) }}>
@@ -484,6 +487,7 @@ export function InkoopOffertePaneel({ userId, offerteId, onRegelToevoegen, onReg
   // ── STATE C: Opgeslagen offertes ──
   return (
     <div className="space-y-3">
+      <InkoopAILimietBanner variant="lokaal" route="analyze" />
       <p className="text-xs text-muted-foreground/60">
         Sleep een regel naar een offerte-item, of gebruik de knoppen.
       </p>

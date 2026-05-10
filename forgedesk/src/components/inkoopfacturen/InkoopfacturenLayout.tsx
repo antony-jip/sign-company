@@ -15,6 +15,7 @@ import {
   syncInkoopfacturen,
   extractInkoopfactuur,
 } from '@/services/inkoopfactuurService'
+import { InkoopAILimietBanner } from '@/components/shared/InkoopAILimietBanner'
 import type { InkoopFactuurInboxConfig, InkoopFactuur, InkoopFactuurStatus } from '@/types'
 
 const STATUS_CONFIG: Record<InkoopFactuurStatus, { label: string; bg: string; text: string; dot: boolean }> = {
@@ -363,6 +364,7 @@ export function InkoopfacturenLayout() {
         .doen-pulse { animation: doen-pulse-kf 2.5s ease-in-out infinite }
         .doen-row { animation: doen-fade-up .35s cubic-bezier(.22,1,.36,1) both }
       `}</style>
+      <InkoopAILimietBanner variant="lokaal" route="extract" />
       {/* ── Header + Stats ── */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
