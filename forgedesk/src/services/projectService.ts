@@ -199,10 +199,33 @@ export async function createTaak(taak: Omit<Taak, 'id' | 'created_at' | 'updated
   return newTaak
 }
 
+export function sanitizeAttachmentName(name: string): string {
+  const cleaned = name
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, '_')
+    .replace(/[^A-Za-z0-9._-]/g, '')
+    .replace(/_+/g, '_')
+    .replace(/^[._-]+|[._-]+$/g, '')
+  return cleaned || 'bestand'
+}
+
+export function getDisplayFilename(url: string, fallbackIndex?: number): string {
+  const fallback = fallbackIndex !== undefined ? `Bestand ${fallbackIndex}` : 'Bestand'
+  if (url.startsWith('data:')) return fallback
+  const lastSegment = url.split('/').pop()?.split('?')[0]
+  if (!lastSegment) return fallback
+  const decoded = decodeURIComponent(lastSegment).replace(/^\d+_/, '')
+  const sepIdx = decoded.indexOf('__')
+  return sepIdx >= 0 ? decoded.slice(sepIdx + 2) : decoded
+}
+
 export async function uploadTaakBijlage(taakId: string, file: File): Promise<string> {
   if (isSupabaseConfigured() && supabase) {
     const ext = file.name.split('.').pop()?.toLowerCase() || 'bin'
-    const storagePath = `taken/${taakId}/${crypto.randomUUID()}.${ext}`
+    const baseName = file.name.replace(/\.[^.]+$/, '')
+    const sanitized = sanitizeAttachmentName(baseName)
+    const storagePath = `taken/${taakId}/${crypto.randomUUID()}__${sanitized}.${ext}`
     const { error } = await supabase.storage
       .from('project-fotos')
       .upload(storagePath, file, { cacheControl: '3600', upsert: false })
