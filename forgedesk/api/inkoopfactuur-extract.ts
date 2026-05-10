@@ -2,6 +2,16 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
 import { Ratelimit } from '@upstash/ratelimit'
 import { Redis } from '@upstash/redis'
+import * as Sentry from '@sentry/node'
+
+if (process.env.SENTRY_DSN && !Sentry.getClient()) {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    environment: process.env.VERCEL_ENV || process.env.NODE_ENV || 'development',
+    tracesSampleRate: 0.1,
+    sendDefaultPii: false,
+  })
+}
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL || '',
@@ -108,14 +118,25 @@ async function incrementOrgUsage(orgId: string, inputTokens: number, outputToken
 
 async function markCapHit(orgId: string): Promise<void> {
   const maand = getCurrentMonth()
-  await supabase
+  const { data: updated } = await supabase
     .from('ai_usage_org')
     .update({ eerste_cap_hit_op: new Date().toISOString(), updated_at: new Date().toISOString() })
     .eq('organisatie_id', orgId)
     .eq('route', ROUTE_NAME)
     .eq('maand', maand)
     .is('eerste_cap_hit_op', null)
-  // Sentry-alert volgt in latere commit (stap 6)
+    .select('id')
+
+  if (updated && updated.length > 0) {
+    try {
+      Sentry.captureMessage('inkoop_ai_cap_hit', {
+        level: 'warning',
+        tags: { route: ROUTE_NAME, organisatie_id: orgId, maand },
+      })
+    } catch {
+      // Sentry-fout mag de cap-flow niet breken
+    }
+  }
 }
 
 const SYSTEM_PROMPT = `Je bent een Nederlandse inkoopfactuur extractor. Analyseer de PDF en geef UITSLUITEND valide JSON terug, geen markdown codeblokken, geen uitleg. Schema:
