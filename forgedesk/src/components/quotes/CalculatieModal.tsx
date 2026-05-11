@@ -13,7 +13,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { Checkbox } from '@/components/ui/checkbox'
 import {
   Select,
   SelectContent,
@@ -47,6 +46,7 @@ import { getCalculatieProducten, getCalculatieTemplates } from '@/services/supab
 import type { CalculatieRegel, CalculatieProduct, CalculatieTemplate } from '@/types'
 import { logger } from '../../utils/logger'
 import { confirm } from '@/components/shared/ConfirmDialog'
+import { ProductCatalogusCombobox } from '@/components/shared/ProductCatalogusCombobox'
 
 // ============================================================
 // CALCULATIE MODAL
@@ -96,6 +96,92 @@ function berekenVerkoopVanInkoop(inkoop: number, margePerc: number): number {
 
 function berekenMarge(inkoop: number, verkoop: number): number {
   return Math.round(berekenMarkupPercentage(inkoop, verkoop) * 10) / 10
+}
+
+const NUM_INPUT_CLS = 'border-0 bg-transparent shadow-none focus-visible:ring-1 h-8 w-full px-2 text-right text-sm font-mono tabular-nums [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none'
+
+function CurrencyCell({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const [editing, setEditing] = useState(false)
+  if (editing) {
+    return (
+      <Input
+        type="number"
+        autoFocus
+        value={value || ''}
+        onChange={(e) => onChange(Math.max(0, parseFloat(e.target.value) || 0))}
+        onBlur={() => setEditing(false)}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === 'Escape') (e.target as HTMLInputElement).blur() }}
+        min={0}
+        step={0.01}
+        className={NUM_INPUT_CLS}
+      />
+    )
+  }
+  return (
+    <button
+      type="button"
+      onClick={() => setEditing(true)}
+      className={`w-full h-8 px-2 text-right text-sm font-mono tabular-nums hover:bg-muted/40 rounded transition-colors ${
+        value > 0 ? 'text-foreground' : 'text-muted-foreground/40'
+      }`}
+    >
+      {formatCurrency(value || 0)}
+    </button>
+  )
+}
+
+function PercentCell({
+  value,
+  onChange,
+  min,
+  max,
+  colored = false,
+}: {
+  value: number
+  onChange: (v: number) => void
+  min?: number
+  max?: number
+  colored?: boolean
+}) {
+  const [editing, setEditing] = useState(false)
+  const colorClass = colored
+    ? value > 0
+      ? 'text-emerald-600 dark:text-emerald-400'
+      : value < 0
+        ? 'text-red-600 dark:text-red-400'
+        : ''
+    : ''
+  if (editing) {
+    return (
+      <Input
+        type="number"
+        autoFocus
+        value={Math.round(value * 10) / 10 || ''}
+        onChange={(e) => {
+          let v = parseFloat(e.target.value) || 0
+          if (max !== undefined) v = Math.min(max, v)
+          if (min !== undefined) v = Math.max(min, v)
+          onChange(v)
+        }}
+        onBlur={() => setEditing(false)}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === 'Escape') (e.target as HTMLInputElement).blur() }}
+        step={1}
+        className={`${NUM_INPUT_CLS} ${colorClass}`}
+      />
+    )
+  }
+  const display = Math.round(value * 10) / 10
+  return (
+    <button
+      type="button"
+      onClick={() => setEditing(true)}
+      className={`w-full h-8 px-2 text-right text-sm font-mono tabular-nums hover:bg-muted/40 rounded transition-colors ${
+        value !== 0 ? colorClass || 'text-foreground' : 'text-muted-foreground/40'
+      }`}
+    >
+      {display}%
+    </button>
+  )
 }
 
 export function CalculatieModal({
@@ -255,12 +341,12 @@ export function CalculatieModal({
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-xl">
-            <Calculator className="h-5 w-5 text-[#1A5C5E]" />
+        <DialogHeader className="pb-1">
+          <DialogTitle className="flex items-center gap-2.5 text-2xl font-bold text-foreground">
+            <Calculator className="h-6 w-6 text-[#1A535C]" />
             Calculatie maken
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-foreground/70 text-sm">
             Bouw hier de prijs op uit losse onderdelen. Vul inkoop- en verkoopprijzen in,
             de marge wordt automatisch berekend.
           </DialogDescription>
@@ -268,7 +354,7 @@ export function CalculatieModal({
 
         {/* Beschrijving */}
         <div className="space-y-2">
-          <Label htmlFor="calc-beschrijving" className="text-sm font-medium">
+          <Label htmlFor="calc-beschrijving" className="text-sm font-semibold text-foreground">
             Omschrijving offerte-regel
           </Label>
           <Input
@@ -276,7 +362,7 @@ export function CalculatieModal({
             value={beschrijving}
             onChange={(e) => setBeschrijving(e.target.value)}
             placeholder="Bijv. Gevelreclame doosletter incl. montage"
-            className="font-medium"
+            className="font-medium h-11 text-base"
           />
         </div>
 
@@ -383,10 +469,10 @@ export function CalculatieModal({
                       </Tooltip>
                     </TooltipProvider>
                   </th>
-                  <th className="text-center px-2 py-2.5 font-medium text-muted-foreground dark:text-muted-foreground/60 w-20">
+                  <th className="text-right px-2 py-2.5 font-medium text-muted-foreground dark:text-muted-foreground/60 w-20">
                     <TooltipProvider>
                       <Tooltip>
-                        <TooltipTrigger className="flex items-center gap-1 mx-auto">
+                        <TooltipTrigger className="flex items-center gap-1 ml-auto">
                           Aantal
                           <HelpCircle className="h-3 w-3 text-muted-foreground/60" />
                         </TooltipTrigger>
@@ -396,10 +482,10 @@ export function CalculatieModal({
                       </Tooltip>
                     </TooltipProvider>
                   </th>
-                  <th className="text-center px-2 py-2.5 font-medium text-muted-foreground dark:text-muted-foreground/60 w-20">
+                  <th className="text-left px-2 py-2.5 font-medium text-muted-foreground dark:text-muted-foreground/60 w-20">
                     Eenh.
                   </th>
-                  <th className="text-right px-2 py-2.5 font-medium text-muted-foreground dark:text-muted-foreground/60 w-28">
+                  <th className="text-right px-2 py-2.5 font-medium text-muted-foreground dark:text-muted-foreground/60 w-32">
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger className="flex items-center gap-1 ml-auto">
@@ -412,7 +498,7 @@ export function CalculatieModal({
                       </Tooltip>
                     </TooltipProvider>
                   </th>
-                  <th className="text-right px-2 py-2.5 font-medium text-muted-foreground dark:text-muted-foreground/60 w-28">
+                  <th className="text-right px-2 pl-4 py-2.5 font-medium text-muted-foreground dark:text-muted-foreground/60 w-32 border-l border-[#1A535C]/10 dark:border-[#5BB5B5]/10">
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger className="flex items-center gap-1 ml-auto">
@@ -451,20 +537,7 @@ export function CalculatieModal({
                       </Tooltip>
                     </TooltipProvider>
                   </th>
-                  <th className="text-center px-2 py-2.5 font-medium text-muted-foreground dark:text-muted-foreground/60 w-16">
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger className="flex items-center gap-1 mx-auto">
-                          Nacalc.
-                          <HelpCircle className="h-3 w-3 text-muted-foreground/60" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Vink aan als dit een nacalculatie-post is.<br />Deze regel wordt achteraf verrekend<br />op basis van werkelijke kosten.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </th>
-                  <th className="text-right px-2 py-2.5 font-medium text-muted-foreground dark:text-muted-foreground/60 w-28">
+                  <th className="text-right px-3 py-2.5 font-medium text-muted-foreground dark:text-muted-foreground/60 w-32">
                     Regeltotaal
                   </th>
                   <th className="w-10" />
@@ -481,57 +554,21 @@ export function CalculatieModal({
                   return (
                     <React.Fragment key={regel.id}>
                     <tr
-                      className={`border-b border-border dark:border-border ${
+                      className={`border-b border-border/40 dark:border-border/40 ${
                         index % 2 === 0
                           ? 'bg-card'
                           : 'bg-background/50 dark:bg-muted/20'
-                      } hover:bg-[#E2F0F0]/50 dark:hover:bg-[#1A5C5E]/10 transition-colors`}
+                      } hover:bg-[#E2F0F0]/40 dark:hover:bg-[#1A5C5E]/10 transition-colors`}
                     >
                       {/* Product */}
                       <td className="px-2 py-1.5">
-                        <div className="flex items-center gap-1">
-                          {producten.length > 0 ? (
-                            <Select
-                              value={regel.product_id || '__custom__'}
-                              onValueChange={(val) => {
-                                if (val === '__custom__') {
-                                  updateRegel(regel.id, { product_id: undefined })
-                                } else {
-                                  const p = producten.find((pr) => pr.id === val)
-                                  if (p) vulRegelMetProduct(regel.id, p)
-                                }
-                              }}
-                            >
-                              <SelectTrigger className="border-0 bg-transparent shadow-none h-8 w-[60px] px-1 flex-shrink-0">
-                                <Package className="h-3.5 w-3.5 text-muted-foreground/60" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="__custom__">
-                                  <span className="text-muted-foreground">Handmatig invoeren</span>
-                                </SelectItem>
-                                {producten.filter(p => p.actief).map((p) => (
-                                  <SelectItem key={p.id} value={p.id}>
-                                    <div className="flex items-center gap-2">
-                                      <Badge variant="outline" className="text-2xs px-1 py-0">
-                                        {p.categorie}
-                                      </Badge>
-                                      <span>{p.naam}</span>
-                                      <span className="text-muted-foreground/60 text-xs ml-auto">
-                                        {formatCurrency(p.verkoop_prijs)}
-                                      </span>
-                                    </div>
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          ) : null}
-                          <Input
-                            value={regel.product_naam}
-                            onChange={(e) => updateRegel(regel.id, { product_naam: e.target.value })}
-                            placeholder="Productnaam..."
-                            className="border-0 bg-transparent shadow-none focus-visible:ring-1 h-8 text-sm flex-1"
-                          />
-                        </div>
+                        <ProductCatalogusCombobox
+                          value={regel.product_naam}
+                          producten={producten}
+                          onSelectProduct={(p) => vulRegelMetProduct(regel.id, p)}
+                          onVrijeNaam={(naam) => updateRegel(regel.id, { product_naam: naam, product_id: undefined })}
+                          placeholder="Zoek of typ product..."
+                        />
                       </td>
 
                       {/* Aantal */}
@@ -542,7 +579,7 @@ export function CalculatieModal({
                           onChange={(e) => updateRegel(regel.id, { aantal: Math.max(0, parseFloat(e.target.value) || 0) })}
                           min={0}
                           step={1}
-                          className="border-0 bg-transparent shadow-none focus-visible:ring-1 h-8 text-center text-sm"
+                          className={NUM_INPUT_CLS}
                         />
                       </td>
 
@@ -565,84 +602,50 @@ export function CalculatieModal({
 
                       {/* Inkoop */}
                       <td className="px-2 py-1.5">
-                        <Input
-                          type="number"
-                          value={regel.inkoop_prijs || ''}
-                          onChange={(e) => updateRegel(regel.id, { inkoop_prijs: Math.max(0, parseFloat(e.target.value) || 0) })}
-                          min={0}
-                          step={0.01}
-                          className="border-0 bg-transparent shadow-none focus-visible:ring-1 h-8 text-right text-sm"
-                          placeholder="0,00"
+                        <CurrencyCell
+                          value={regel.inkoop_prijs}
+                          onChange={(v) => updateRegel(regel.id, { inkoop_prijs: v })}
                         />
                       </td>
 
                       {/* Verkoop */}
-                      <td className="px-2 py-1.5">
-                        <Input
-                          type="number"
-                          value={regel.verkoop_prijs || ''}
-                          onChange={(e) => updateRegel(regel.id, { verkoop_prijs: Math.max(0, parseFloat(e.target.value) || 0) })}
-                          min={0}
-                          step={0.01}
-                          className="border-0 bg-transparent shadow-none focus-visible:ring-1 h-8 text-right text-sm"
-                          placeholder="0,00"
+                      <td className="px-2 pl-4 py-1.5 border-l border-[#1A535C]/10 dark:border-[#5BB5B5]/10">
+                        <CurrencyCell
+                          value={regel.verkoop_prijs}
+                          onChange={(v) => updateRegel(regel.id, { verkoop_prijs: v })}
                         />
                       </td>
 
                       {/* Marge % */}
                       <td className="px-2 py-1.5">
-                        <div className="relative">
-                          <Input
-                            type="number"
-                            value={Math.round(regel.marge_percentage * 10) / 10 || ''}
-                            onChange={(e) => updateRegel(regel.id, { marge_percentage: parseFloat(e.target.value) || 0 })}
-                            step={1}
-                            className={`border-0 bg-transparent shadow-none focus-visible:ring-1 h-8 text-right text-sm pr-6 ${
-                              regel.marge_percentage > 0
-                                ? 'text-green-600 dark:text-green-400'
-                                : regel.marge_percentage < 0
-                                  ? 'text-red-600 dark:text-red-400'
-                                  : ''
-                            }`}
-                          />
-                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground/60">%</span>
-                        </div>
+                        <PercentCell
+                          value={regel.marge_percentage}
+                          onChange={(v) => updateRegel(regel.id, { marge_percentage: v })}
+                          colored
+                        />
                       </td>
 
                       {/* Korting % */}
                       <td className="px-2 py-1.5">
-                        <div className="relative">
-                          <Input
-                            type="number"
-                            value={regel.korting_percentage || ''}
-                            onChange={(e) => updateRegel(regel.id, { korting_percentage: Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)) })}
-                            min={0}
-                            max={100}
-                            step={1}
-                            className="border-0 bg-transparent shadow-none focus-visible:ring-1 h-8 text-right text-sm pr-6"
-                          />
-                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground/60">%</span>
-                        </div>
-                      </td>
-
-                      {/* Nacalculatie */}
-                      <td className="px-2 py-1.5 text-center">
-                        <Checkbox
-                          checked={regel.nacalculatie}
-                          onCheckedChange={(checked) => updateRegel(regel.id, { nacalculatie: !!checked })}
-                          className="mx-auto"
+                        <PercentCell
+                          value={regel.korting_percentage}
+                          onChange={(v) => updateRegel(regel.id, { korting_percentage: v })}
+                          min={0}
+                          max={100}
                         />
                       </td>
 
                       {/* Regeltotaal */}
                       <td className="px-3 py-1.5 text-right">
-                        <span className={`font-medium font-mono text-sm ${
-                          isWinst
-                            ? 'text-foreground dark:text-muted-foreground/20'
-                            : 'text-red-600 dark:text-red-400'
-                        }`}>
-                          {formatCurrency(regelTotaal)}
-                        </span>
+                        {regelTotaal !== 0 && (
+                          <span className={`font-semibold font-mono tabular-nums text-sm ${
+                            isWinst
+                              ? 'text-foreground dark:text-muted-foreground/20'
+                              : 'text-red-600 dark:text-red-400'
+                          }`}>
+                            {formatCurrency(regelTotaal)}
+                          </span>
+                        )}
                       </td>
 
                       {/* Verwijderen */}
@@ -680,72 +683,53 @@ export function CalculatieModal({
         <Separator />
 
         {/* ======== TOTALEN SAMENVATTING ======== */}
-        <div className="grid grid-cols-2 gap-4">
-          {/* Uitleg blok links */}
-          <div className="bg-[#E2F0F0] dark:bg-[#1A5C5E]/20 rounded-lg p-4 border border-[#B8D8D8] dark:border-[#1A5C5E]/40">
-            <h4 className="text-sm font-medium text-[#1A5C5E] dark:text-[#5BB5B5] mb-2 flex items-center gap-1.5">
-              <HelpCircle className="h-4 w-4" />
-              Zo werkt de calculatie
-            </h4>
-            <ul className="text-xs text-[#1A5C5E] dark:text-[#5BB5B5] space-y-1.5">
-              <li><strong>Inkoop:</strong> Wat jij betaalt (ziet de klant niet)</li>
-              <li><strong>Marge:</strong> Markup = winst t.o.v. inkoop. Voorbeeld: inkoop &euro;100, verkoop &euro;200 &rarr; 100% markup.</li>
-              <li><strong>Verkoop:</strong> Wat de klant betaalt. Wordt de eenheidsprijs op de offerte</li>
-              <li><strong>Nacalc.:</strong> Vink aan als kosten achteraf worden verrekend</li>
-            </ul>
-          </div>
-
-          {/* Totalen blok rechts */}
-          <div className="bg-background dark:bg-muted/50 rounded-lg p-4 border border-border dark:border-border space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground dark:text-muted-foreground/60">Totaal inkoop</span>
-              <span className="font-medium font-mono text-foreground/70 dark:text-muted-foreground/50">
-                {formatCurrency(totalen.totaalInkoop)}
-              </span>
+        <div className="grid grid-cols-2 md:grid-cols-4 rounded-lg border border-border dark:border-border overflow-hidden">
+          <div className="px-5 py-4 bg-background dark:bg-muted/50">
+            <div className="text-xs text-muted-foreground dark:text-muted-foreground/60 mb-1">Totaal inkoop</div>
+            <div className="font-mono tabular-nums text-lg text-foreground/70 dark:text-muted-foreground/50">
+              {formatCurrency(totalen.totaalInkoop)}
             </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground dark:text-muted-foreground/60">Totaal verkoop</span>
-              <span className="font-medium font-mono text-foreground dark:text-muted-foreground/20">
-                {formatCurrency(totalen.totaalVerkoop)}
-              </span>
+          </div>
+          <div className="px-5 py-4 bg-background dark:bg-muted/50 border-l border-border/60 dark:border-border/40">
+            <div className="text-xs text-muted-foreground dark:text-muted-foreground/60 mb-1">Totaal verkoop</div>
+            <div className="font-mono tabular-nums text-lg text-foreground dark:text-muted-foreground/20">
+              {formatCurrency(totalen.totaalVerkoop)}
             </div>
             {totalen.totaalKorting > 0 && (
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground dark:text-muted-foreground/60">Totaal korting</span>
-                <span className="font-medium font-mono text-orange-600 dark:text-orange-400">
-                  - {formatCurrency(totalen.totaalKorting)}
-                </span>
+              <div className="text-xs text-orange-600 dark:text-orange-400 mt-0.5 font-mono tabular-nums">
+                incl. − {formatCurrency(totalen.totaalKorting)} korting
               </div>
             )}
-            <Separator className="my-1" />
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground dark:text-muted-foreground/60">
-                Marge ({Math.round(totalen.margePercentage)}%)
-              </span>
-              <span className={`font-bold font-mono ${
-                totalen.margeBedrag >= 0
-                  ? 'text-green-600 dark:text-green-400'
-                  : 'text-red-600 dark:text-red-400'
-              }`}>
-                {formatCurrency(totalen.margeBedrag)}
-              </span>
+          </div>
+          <div className="px-5 py-4 bg-background dark:bg-muted/50 border-l border-border/60 dark:border-border/40">
+            <div className="text-xs text-muted-foreground dark:text-muted-foreground/60 mb-1">
+              Marge <span className="text-muted-foreground/60">({Math.round(totalen.margePercentage)}%)</span>
             </div>
-            <Separator className="my-1" />
-            <div className="flex justify-between text-base font-bold">
-              <span className="text-foreground dark:text-white">Verkooptotaal</span>
-              <span className="font-mono text-[#1A5C5E] dark:text-[#5BB5B5]">
-                {formatCurrency(totalen.totaalVerkoop)}
-              </span>
+            <div className={`font-mono tabular-nums text-lg font-medium ${
+              totalen.margeBedrag >= 0
+                ? 'text-emerald-600 dark:text-emerald-400'
+                : 'text-red-600 dark:text-red-400'
+            }`}>
+              {formatCurrency(totalen.margeBedrag)}
+            </div>
+          </div>
+          <div className="px-5 py-4 bg-[#1A535C] dark:bg-[#1A535C]/80 text-white">
+            <div className="text-xs text-white/70 mb-1">
+              Verkooptotaal<span className="text-[#F15025]">.</span>
+            </div>
+            <div className="font-mono tabular-nums text-xl font-bold">
+              {formatCurrency(totalen.totaalVerkoop)}
             </div>
           </div>
         </div>
 
         {/* ======== FOOTER KNOPPEN ======== */}
-        <DialogFooter className="gap-2 sm:gap-0">
+        <DialogFooter className="gap-3">
           <Button variant="outline" onClick={onClose}>
             Annuleren
           </Button>
           <Button
+            variant="destructive"
             onClick={handleConfirm}
             disabled={regels.length === 0 || !beschrijving.trim()}
             className="gap-2"
