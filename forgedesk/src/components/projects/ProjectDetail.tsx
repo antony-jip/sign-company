@@ -1370,9 +1370,9 @@ export function ProjectDetail() {
                               onClick={async () => {
                                 if (!nieuwCpNaam.trim()) return
                                 try {
-                                  const newCp = { id: crypto.randomUUID(), naam: nieuwCpNaam.trim(), email: nieuwCpEmail.trim(), telefoon: nieuwCpTelefoon.trim(), functie: nieuwCpFunctie.trim(), is_primair: false }
+                                  const newCp = { id: crypto.randomUUID(), naam: nieuwCpNaam.trim(), email: nieuwCpEmail.trim(), telefoon: nieuwCpTelefoon.trim(), functie: nieuwCpFunctie.trim(), is_primair: (klant.contactpersonen?.length || 0) === 0 }
                                   const updatedCps = [...(klant.contactpersonen || []), newCp]
-                                  await updateKlant(klant.id, { contactpersonen: JSON.stringify(updatedCps) as any })
+                                  await updateKlant(klant.id, { contactpersonen: updatedCps })
                                   setKlant({ ...klant, contactpersonen: updatedCps })
                                   const updated = await updateProject(id!, { contactpersoon_id: newCp.id })
                                   setProject(updated)
