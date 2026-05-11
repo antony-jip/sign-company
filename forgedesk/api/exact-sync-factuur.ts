@@ -280,7 +280,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const user_id = await verifyUser(req)
-    const { factuur_id } = req.body as { factuur_id: string }
+    const { factuur_id, attachment_only } = req.body as { factuur_id: string; attachment_only?: boolean }
 
     if (!factuur_id) {
       return res.status(400).json({ error: 'factuur_id is verplicht' })
@@ -366,6 +366,158 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     let documentId: string | null = null
     let bijlageSynced = false
+
+    // 3d. Retry-only flow: alleen Document + Attachment opnieuw proberen voor
+    // een factuur die al een SalesEntry heeft. Vermijdt dubbele Documents als
+    // exact_document_id al gezet is.
+    if (attachment_only) {
+      if (!factuur.exact_entry_id) {
+        return res.status(400).json({
+          error: 'Retry vereist eerst een succesvolle SalesEntry sync',
+        })
+      }
+      if (!pdfBase64) {
+        return res.status(400).json({
+          error: 'Geen PDF beschikbaar in Storage voor deze factuur',
+        })
+      }
+
+      documentId = (factuur.exact_document_id as string | null) ?? null
+
+      if (!documentId) {
+        // Resolve klant alleen als we het Document echt nog moeten aanmaken.
+        const { data: retryKlant } = await supabaseAdmin
+          .from('klanten')
+          .select('naam, email, telefoon')
+          .eq('id', factuur.klant_id)
+          .single()
+        const retryKlantNaam = retryKlant?.naam || factuur.klant_naam || 'Onbekende klant'
+        let retryCustomerGuid: string
+        try {
+          retryCustomerGuid = await findOrCreateKlant(
+            token,
+            division,
+            retryKlantNaam,
+            retryKlant?.email,
+            retryKlant?.telefoon,
+          )
+        } catch (klantErr) {
+          console.error('Klant lookup mislukt in retry-flow:', klantErr)
+          return res.status(502).json({ error: 'Klant niet gevonden in Exact' })
+        }
+
+        const retrySubject = factuur.factuur_type === 'creditnota'
+          ? `Creditnota ${factuur.nummer}`
+          : `Factuur ${factuur.nummer}`
+        const docPayload = {
+          Subject: retrySubject,
+          Type: exactSettings.exact_document_type_id,
+          Account: retryCustomerGuid,
+        }
+
+        try {
+          const docResult = await exactPost(
+            token,
+            division,
+            'documents/Documents',
+            docPayload,
+          ) as { d?: { ID?: string } }
+          documentId = docResult?.d?.ID ?? null
+        } catch (docErr) {
+          try {
+            const refreshResponse = await fetch(`${protocol}://${host}/api/exact-refresh`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ user_id }),
+            })
+            if (!refreshResponse.ok) throw new Error('Refresh mislukt')
+            const refreshed = await refreshResponse.json() as { access_token: string }
+            token = refreshed.access_token
+            const docResult = await exactPost(
+              token,
+              division,
+              'documents/Documents',
+              docPayload,
+            ) as { d?: { ID?: string } }
+            documentId = docResult?.d?.ID ?? null
+          } catch (retryErr) {
+            console.error('Document POST mislukt in retry-flow:', docErr, retryErr)
+            return res.status(502).json({ error: 'Document aanmaken in Exact mislukt' })
+          }
+        }
+
+        if (!documentId) {
+          return res.status(502).json({ error: 'Document GUID niet terug van Exact' })
+        }
+
+        await supabaseAdmin
+          .from('facturen')
+          .update({ exact_document_id: documentId })
+          .eq('id', factuur_id)
+      }
+
+      const attPayload = {
+        Document: documentId,
+        FileName: `Factuur-${factuur.nummer}.pdf`,
+        Attachment: pdfBase64,
+      }
+      try {
+        await exactPost(token, division, 'documents/DocumentAttachments', attPayload)
+        bijlageSynced = true
+      } catch (attErr) {
+        try {
+          const refreshResponse = await fetch(`${protocol}://${host}/api/exact-refresh`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id }),
+          })
+          if (!refreshResponse.ok) throw new Error('Refresh mislukt')
+          const refreshed = await refreshResponse.json() as { access_token: string }
+          token = refreshed.access_token
+          await exactPost(token, division, 'documents/DocumentAttachments', attPayload)
+          bijlageSynced = true
+        } catch (retryErr) {
+          console.error('DocumentAttachment POST mislukt in retry-flow:', attErr, retryErr)
+          return res.status(502).json({ error: 'Bijlage uploaden naar Exact mislukt' })
+        }
+      }
+
+      if (bijlageSynced) {
+        await supabaseAdmin
+          .from('facturen')
+          .update({ exact_bijlage_gesynced_op: new Date().toISOString() })
+          .eq('id', factuur_id)
+      }
+
+      // Best-effort: koppel het Document inline aan de SalesEntry via PUT.
+      // Niet-kritiek — Document is al gekoppeld via DocumentAttachment-relatie.
+      // Sommige Exact-tenants weigeren PUT op SalesEntry, dat is acceptabel.
+      try {
+        const putUrl = `${EXACT_API_BASE}/${division}/salesentry/SalesEntries(guid'${factuur.exact_entry_id}')`
+        const putRes = await fetch(putUrl, {
+          method: 'PUT',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
+          body: JSON.stringify({ Document: documentId }),
+        })
+        if (!putRes.ok) {
+          const putBody = await putRes.text()
+          console.warn('SalesEntry PUT met Document mislukt (niet-kritiek):', putRes.status, putBody)
+        }
+      } catch (putErr) {
+        console.warn('SalesEntry PUT exception (niet-kritiek):', putErr)
+      }
+
+      return res.status(200).json({
+        success: true,
+        exact_entry_id: factuur.exact_entry_id,
+        document_id: documentId,
+        bijlage_synced: bijlageSynced,
+      })
+    }
 
     // 4. Klant zoeken/aanmaken
     // Haal klantgegevens op uit Supabase

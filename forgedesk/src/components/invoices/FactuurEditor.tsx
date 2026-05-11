@@ -55,6 +55,7 @@ import {
   CreditCard,
   Bell,
   CheckCircle2,
+  AlertCircle,
   AlertTriangle,
   MinusCircle,
   FileDown,
@@ -1431,6 +1432,99 @@ export function FactuurEditor() {
     }
   }, [existingFactuur, selectedKlant, herinneringTemplates, herinneringType, herinneringPreview, replaceHerinneringVars, dagenVervallen, bedrijfsnaam, primaireKleur, profile])
 
+  // ============ EXACT SYNC ============
+
+  const handleSyncExact = useCallback(async (attachmentOnly: boolean) => {
+    if (!existingFactuur) return
+
+    const loadingMsg = attachmentOnly ? 'Bijlage opnieuw versturen...' : 'Synchroniseren met Exact...'
+    const toastId = toast.loading(loadingMsg)
+
+    try {
+      const session = await import('@/services/supabaseClient').then(m => m.default?.auth.getSession())
+      const token = session?.data?.session?.access_token
+      if (!token) { toast.error('Niet ingelogd', { id: toastId }); return }
+
+      // Lazy PDF: zonder pdf_storage_path heeft de server geen bijlage om te
+      // koppelen. Geldt voor zowel initial sync als retry — anders krijg je
+      // op retry een 400 "Geen PDF beschikbaar".
+      if (!existingFactuur.pdf_storage_path && existingFactuur.organisatie_id) {
+        try {
+          const bedrijfsProfiel = { ...profile, primaireKleur }
+          const factuurData = {
+            nummer,
+            titel,
+            datum: factuurdatum,
+            vervaldatum,
+            subtotaal,
+            btw_bedrag: btwBedrag,
+            totaal,
+            notities: notities || undefined,
+            betaalvoorwaarden: voorwaarden || undefined,
+            factuur_type: (isCreditFactuur ? 'creditnota' : existingFactuur.factuur_type || 'standaard') as string,
+            betaal_link: existingFactuur.betaal_link || undefined,
+          }
+          const pdfItems: OfferteItem[] = validItems.map((item, idx) => ({
+            id: item.id,
+            offerte_id: '',
+            beschrijving: item.beschrijving,
+            aantal: item.aantal,
+            eenheidsprijs: item.eenheidsprijs,
+            btw_percentage: item.btw_percentage,
+            korting_percentage: item.korting_percentage,
+            totaal: calcLineTotal(item),
+            volgorde: idx + 1,
+            created_at: new Date().toISOString(),
+          }))
+          await genereerEnUploadFactuurPdf({
+            factuurId: existingFactuur.id,
+            organisatieId: existingFactuur.organisatie_id,
+            factuurData,
+            items: pdfItems,
+            klant: selectedKlant || {},
+            bedrijfsProfiel,
+            docStyle: documentStyle,
+          })
+        } catch (pdfErr) {
+          logger.warn('Lazy PDF upload vóór sync mislukt, sync gaat door zonder bijlage:', pdfErr)
+        }
+      }
+
+      const res = await fetch('/api/exact-sync-factuur', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ factuur_id: existingFactuur.id, attachment_only: attachmentOnly }),
+      })
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}))
+        throw new Error(errData.error || 'Sync mislukt')
+      }
+      const data = await res.json() as {
+        exact_entry_id: string
+        document_id: string | null
+        bijlage_synced: boolean
+      }
+
+      setExistingFactuur({
+        ...existingFactuur,
+        exact_entry_id: data.exact_entry_id,
+        exact_synced_at: existingFactuur.exact_synced_at || new Date().toISOString(),
+        exact_document_id: data.document_id,
+        exact_bijlage_gesynced_op: data.bijlage_synced
+          ? new Date().toISOString()
+          : existingFactuur.exact_bijlage_gesynced_op,
+      })
+
+      const successMsg = attachmentOnly
+        ? 'Bijlage opnieuw verstuurd naar Exact Online'
+        : 'Factuur gesynchroniseerd met Exact Online'
+      toast.success(successMsg, { id: toastId })
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Sync mislukt'
+      toast.error(msg, { id: toastId })
+    }
+  }, [existingFactuur, profile, primaireKleur, nummer, titel, factuurdatum, vervaldatum, subtotaal, btwBedrag, totaal, notities, voorwaarden, validItems, isCreditFactuur, selectedKlant, documentStyle])
+
   // ============ LOADING ============
 
   if (isLoading) {
@@ -1520,86 +1614,41 @@ export function FactuurEditor() {
                 {/* Exact Online sync */}
                 {settings.exact_online_connected && existingFactuur && (
                   existingFactuur.exact_synced_at ? (
-                    <Badge className="bg-[#E4F0EA] text-[#2D6B48] text-xs gap-1">
-                      <CheckCircle2 className="w-3 h-3" />
-                      Exact {new Date(existingFactuur.exact_synced_at).toLocaleDateString('nl-NL')}
-                    </Badge>
+                    <div className="flex items-center gap-1">
+                      <Badge
+                        className="bg-[#E4F0EA] text-[#2D6B48] text-xs gap-1"
+                        title={`Exact gesynchroniseerd op ${new Date(existingFactuur.exact_synced_at).toLocaleDateString('nl-NL')}`}
+                      >
+                        <CheckCircle2 className="w-3 h-3" />
+                        Exact
+                      </Badge>
+                      {existingFactuur.exact_bijlage_gesynced_op ? (
+                        <Badge
+                          className="bg-[#E4F0EA] text-[#2D6B48] text-xs gap-1"
+                          title={`Bijlage gesynchroniseerd op ${new Date(existingFactuur.exact_bijlage_gesynced_op).toLocaleDateString('nl-NL')}`}
+                        >
+                          <CheckCircle2 className="w-3 h-3" />
+                          Bijlage
+                        </Badge>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-6 px-2 text-xs gap-1 bg-[#FEF3E2] text-[#C56A1A] border-[#FEA060]/40 hover:bg-[#FCEED1]"
+                          onClick={() => handleSyncExact(true)}
+                          title="Bijlage ontbreekt in Exact — klik om opnieuw te proberen"
+                        >
+                          <AlertCircle className="w-3 h-3" />
+                          Bijlage opnieuw
+                        </Button>
+                      )}
+                    </div>
                   ) : (
                     <Button
                       variant="outline"
                       size="sm"
                       className="text-[#1A535C] border-[#1A535C]/20 hover:bg-[#1A535C]/5 gap-1"
-                      onClick={async () => {
-                        if (!existingFactuur) return
-                        const toastId = toast.loading('Synchroniseren met Exact...')
-                        try {
-                          const session = await import('@/services/supabaseClient').then(m => m.default?.auth.getSession())
-                          const token = session?.data?.session?.access_token
-                          if (!token) { toast.error('Niet ingelogd', { id: toastId }); return }
-
-                          // Lazy PDF: als de factuur nog niet eerder verzonden is, is er
-                          // nog geen pdf_storage_path. Genereer + upload nu zodat de
-                          // server-side bijlage-flow iets vindt. Failure is soft — sync
-                          // gaat door zonder bijlage (zelfde gedrag als oude facturen).
-                          if (!existingFactuur.pdf_storage_path && existingFactuur.organisatie_id) {
-                            try {
-                              const bedrijfsProfiel = { ...profile, primaireKleur }
-                              const factuurData = {
-                                nummer,
-                                titel,
-                                datum: factuurdatum,
-                                vervaldatum,
-                                subtotaal,
-                                btw_bedrag: btwBedrag,
-                                totaal,
-                                notities: notities || undefined,
-                                betaalvoorwaarden: voorwaarden || undefined,
-                                factuur_type: (isCreditFactuur ? 'creditnota' : existingFactuur.factuur_type || 'standaard') as string,
-                                betaal_link: existingFactuur.betaal_link || undefined,
-                              }
-                              const pdfItems: OfferteItem[] = validItems.map((item, idx) => ({
-                                id: item.id,
-                                offerte_id: '',
-                                beschrijving: item.beschrijving,
-                                aantal: item.aantal,
-                                eenheidsprijs: item.eenheidsprijs,
-                                btw_percentage: item.btw_percentage,
-                                korting_percentage: item.korting_percentage,
-                                totaal: calcLineTotal(item),
-                                volgorde: idx + 1,
-                                created_at: new Date().toISOString(),
-                              }))
-                              await genereerEnUploadFactuurPdf({
-                                factuurId: existingFactuur.id,
-                                organisatieId: existingFactuur.organisatie_id,
-                                factuurData,
-                                items: pdfItems,
-                                klant: selectedKlant || {},
-                                bedrijfsProfiel,
-                                docStyle: documentStyle,
-                              })
-                            } catch (pdfErr) {
-                              logger.warn('Lazy PDF upload vóór sync mislukt, sync gaat door zonder bijlage:', pdfErr)
-                            }
-                          }
-
-                          const res = await fetch('/api/exact-sync-factuur', {
-                            method: 'POST',
-                            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ factuur_id: existingFactuur.id }),
-                          })
-                          if (!res.ok) {
-                            const data = await res.json().catch(() => ({}))
-                            throw new Error(data.error || 'Sync mislukt')
-                          }
-                          const data = await res.json()
-                          setExistingFactuur({ ...existingFactuur, exact_entry_id: data.exact_entry_id, exact_synced_at: new Date().toISOString() })
-                          toast.success('Factuur gesynchroniseerd met Exact Online', { id: toastId })
-                        } catch (err: unknown) {
-                          const msg = err instanceof Error ? err.message : 'Sync mislukt'
-                          toast.error(msg, { id: toastId })
-                        }
-                      }}
+                      onClick={() => handleSyncExact(false)}
                     >
                       <RefreshCw className="w-3.5 h-3.5" />
                       Sync Exact

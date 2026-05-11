@@ -1987,8 +1987,21 @@ export function FacturenLayout() {
                         ) : null}
                         {exactConnected && (
                           <span
-                            className={cn('w-2 h-2 rounded-full flex-shrink-0', factuur.exact_synced_at ? 'bg-[#2D6B48]' : 'bg-[#D0D0CC]')}
-                            title={factuur.exact_synced_at ? `Exact: ${new Date(factuur.exact_synced_at).toLocaleDateString('nl-NL')}` : 'Niet gesynchroniseerd met Exact'}
+                            className={cn(
+                              'w-2 h-2 rounded-full flex-shrink-0',
+                              !factuur.exact_synced_at
+                                ? 'bg-[#D0D0CC]'
+                                : factuur.exact_bijlage_gesynced_op
+                                  ? 'bg-[#2D6B48]'
+                                  : 'bg-[#FEA060]',
+                            )}
+                            title={
+                              !factuur.exact_synced_at
+                                ? 'Niet gesynchroniseerd met Exact'
+                                : factuur.exact_bijlage_gesynced_op
+                                  ? `Exact: ${new Date(factuur.exact_synced_at).toLocaleDateString('nl-NL')} — bijlage gekoppeld`
+                                  : `Exact: ${new Date(factuur.exact_synced_at).toLocaleDateString('nl-NL')} — bijlage ontbreekt, open factuur om opnieuw te proberen`
+                            }
                           />
                         )}
                       </div>
