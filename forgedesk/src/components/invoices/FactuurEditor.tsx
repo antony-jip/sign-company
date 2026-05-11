@@ -1536,6 +1536,53 @@ export function FactuurEditor() {
                           const session = await import('@/services/supabaseClient').then(m => m.default?.auth.getSession())
                           const token = session?.data?.session?.access_token
                           if (!token) { toast.error('Niet ingelogd', { id: toastId }); return }
+
+                          // Lazy PDF: als de factuur nog niet eerder verzonden is, is er
+                          // nog geen pdf_storage_path. Genereer + upload nu zodat de
+                          // server-side bijlage-flow iets vindt. Failure is soft — sync
+                          // gaat door zonder bijlage (zelfde gedrag als oude facturen).
+                          if (!existingFactuur.pdf_storage_path && existingFactuur.organisatie_id) {
+                            try {
+                              const bedrijfsProfiel = { ...profile, primaireKleur }
+                              const factuurData = {
+                                nummer,
+                                titel,
+                                datum: factuurdatum,
+                                vervaldatum,
+                                subtotaal,
+                                btw_bedrag: btwBedrag,
+                                totaal,
+                                notities: notities || undefined,
+                                betaalvoorwaarden: voorwaarden || undefined,
+                                factuur_type: (isCreditFactuur ? 'creditnota' : existingFactuur.factuur_type || 'standaard') as string,
+                                betaal_link: existingFactuur.betaal_link || undefined,
+                              }
+                              const pdfItems: OfferteItem[] = validItems.map((item, idx) => ({
+                                id: item.id,
+                                offerte_id: '',
+                                beschrijving: item.beschrijving,
+                                aantal: item.aantal,
+                                eenheidsprijs: item.eenheidsprijs,
+                                btw_percentage: item.btw_percentage,
+                                korting_percentage: item.korting_percentage,
+                                totaal: calcLineTotal(item),
+                                volgorde: idx + 1,
+                                created_at: new Date().toISOString(),
+                              }))
+                              await genereerEnUploadFactuurPdf({
+                                factuurId: existingFactuur.id,
+                                organisatieId: existingFactuur.organisatie_id,
+                                factuurData,
+                                items: pdfItems,
+                                klant: selectedKlant || {},
+                                bedrijfsProfiel,
+                                docStyle: documentStyle,
+                              })
+                            } catch (pdfErr) {
+                              logger.warn('Lazy PDF upload vóór sync mislukt, sync gaat door zonder bijlage:', pdfErr)
+                            }
+                          }
+
                           const res = await fetch('/api/exact-sync-factuur', {
                             method: 'POST',
                             headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
