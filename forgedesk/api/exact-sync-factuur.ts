@@ -103,6 +103,7 @@ interface ExactSettings {
   exact_btw_hoog: string
   exact_btw_laag: string | null
   exact_btw_nul: string | null
+  exact_document_type_id: number | null
 }
 
 async function getValidToken(user_id: string): Promise<string> {
@@ -323,7 +324,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const settings = await loadAppSettingsOrgFirst(
       supabaseAdmin,
       user_id,
-      'exact_administratie_id, exact_verkoopboek, exact_grootboek, exact_btw_hoog, exact_btw_laag, exact_btw_nul',
+      'exact_administratie_id, exact_verkoopboek, exact_grootboek, exact_btw_hoog, exact_btw_laag, exact_btw_nul, exact_document_type_id',
     )
 
     if (!settings?.exact_administratie_id) {
@@ -334,6 +335,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const exactSettings = settings as unknown as ExactSettings
     const division = exactSettings.exact_administratie_id
+
+    // 3b. Pre-check: Document-type moet geconfigureerd zijn voor de bijlage-flow.
+    if (exactSettings.exact_document_type_id == null) {
+      return res.status(400).json({
+        error: 'Configureer eerst Document-type in Exact-instellingen voordat je een factuur kunt syncen.',
+      })
+    }
+
+    // 3c. Download PDF uit Storage. Failure is soft — sync gaat door zonder
+    // bijlage als pdf_storage_path NULL is (oude facturen) of download mislukt.
+    let pdfBase64: string | null = null
+    if (factuur.pdf_storage_path) {
+      try {
+        const { data: pdfBlob, error: dlError } = await supabaseAdmin.storage
+          .from('facturen')
+          .download(factuur.pdf_storage_path as string)
+        if (dlError || !pdfBlob) {
+          console.warn('PDF download uit storage.facturen mislukt:', dlError)
+        } else {
+          const buffer = Buffer.from(await pdfBlob.arrayBuffer())
+          pdfBase64 = buffer.toString('base64')
+        }
+      } catch (dlErr) {
+        console.warn('PDF download uit storage.facturen exception:', dlErr)
+      }
+    } else {
+      console.warn(`Factuur ${factuur_id} heeft geen pdf_storage_path, sync zonder bijlage`)
+    }
+
+    let documentId: string | null = null
+    let bijlageSynced = false
 
     // 4. Klant zoeken/aanmaken
     // Haal klantgegevens op uit Supabase
@@ -382,6 +414,95 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // 5. Grootboek GUID opzoeken
     const grootboekGuid = await getGrootboekGuid(token, division, exactSettings.exact_grootboek)
 
+    // 5b. Document POST + DocumentAttachment POST (alleen als PDF beschikbaar).
+    // Bij failure: log, sla over, sync gaat door zonder bijlage-koppeling.
+    // Aparte 401-retry per call zodat een retry op Attachment geen dubbele
+    // Document aanmaakt (Exact heeft geen idempotency-key).
+    if (pdfBase64) {
+      const documentSubject = factuur.factuur_type === 'creditnota'
+        ? `Creditnota ${factuur.nummer}`
+        : `Factuur ${factuur.nummer}`
+
+      const documentPayload = {
+        Subject: documentSubject,
+        Type: exactSettings.exact_document_type_id,
+        Account: customerGuid,
+      }
+
+      try {
+        const docResult = await exactPost(
+          token,
+          division,
+          'documents/Documents',
+          documentPayload,
+        ) as { d?: { ID?: string } }
+        documentId = docResult?.d?.ID ?? null
+      } catch (docErr) {
+        try {
+          const refreshResponse = await fetch(`${protocol}://${host}/api/exact-refresh`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id }),
+          })
+          if (!refreshResponse.ok) throw new Error('Refresh mislukt')
+          const refreshed = await refreshResponse.json() as { access_token: string }
+          token = refreshed.access_token
+
+          const docResult = await exactPost(
+            token,
+            division,
+            'documents/Documents',
+            documentPayload,
+          ) as { d?: { ID?: string } }
+          documentId = docResult?.d?.ID ?? null
+        } catch (retryErr) {
+          console.error('Document POST mislukt (na retry):', docErr, retryErr)
+          documentId = null
+        }
+      }
+
+      if (documentId) {
+        await supabaseAdmin
+          .from('facturen')
+          .update({ exact_document_id: documentId })
+          .eq('id', factuur_id)
+
+        const attachmentPayload = {
+          Document: documentId,
+          FileName: `Factuur-${factuur.nummer}.pdf`,
+          Attachment: pdfBase64,
+        }
+
+        try {
+          await exactPost(token, division, 'documents/DocumentAttachments', attachmentPayload)
+          bijlageSynced = true
+        } catch (attErr) {
+          try {
+            const refreshResponse = await fetch(`${protocol}://${host}/api/exact-refresh`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ user_id }),
+            })
+            if (!refreshResponse.ok) throw new Error('Refresh mislukt')
+            const refreshed = await refreshResponse.json() as { access_token: string }
+            token = refreshed.access_token
+
+            await exactPost(token, division, 'documents/DocumentAttachments', attachmentPayload)
+            bijlageSynced = true
+          } catch (retryErr) {
+            console.error('DocumentAttachment POST mislukt (na retry):', attErr, retryErr)
+          }
+        }
+
+        if (bijlageSynced) {
+          await supabaseAdmin
+            .from('facturen')
+            .update({ exact_bijlage_gesynced_op: new Date().toISOString() })
+            .eq('id', factuur_id)
+        }
+      }
+    }
+
     // 6. SalesEntry aanmaken
     const factuurdatum = factuur.factuurdatum || new Date().toISOString().split('T')[0]
     const dateParts = factuurdatum.split('-')
@@ -411,7 +532,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return line
     })
 
-    const salesEntry = {
+    const salesEntry: Record<string, unknown> = {
       Journal: exactSettings.exact_verkoopboek,
       YourRef: factuur.nummer,
       Customer: customerGuid,
@@ -421,6 +542,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       VATAmountDC: (factuur.btw_bedrag as number).toFixed(2),
       VATAmountFC: (factuur.btw_bedrag as number).toFixed(2),
       SalesEntryLines: salesEntryLines,
+    }
+    if (documentId) {
+      salesEntry.Document = documentId
     }
 
     let entryResult: { d?: { EntryID?: string } }
@@ -469,6 +593,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({
       success: true,
       exact_entry_id: exactEntryId,
+      document_id: documentId,
+      bijlage_synced: bijlageSynced,
     })
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Onbekende fout bij synchroniseren'
