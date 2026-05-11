@@ -754,6 +754,8 @@ export interface AppSettings {
   exact_btw_hoog?: string;
   exact_btw_laag?: string;
   exact_btw_nul?: string;
+  exact_document_type_id?: number;
+  exact_document_type_naam?: string;
   // Snelofferte: welke calculatie-templates als snelkoppeling tonen in het Nieuwe Offerte formulier
   snelofferte_templates?: string[];
   created_at: string;
@@ -997,9 +999,14 @@ export interface Factuur {
   outro_tekst?: string;
   // Contactpersoon
   contactpersoon_id?: string;
+  // PDF artifact
+  pdf_storage_path?: string;
+  pdf_gegenereerd_op?: string;
   // Exact Online sync
   exact_entry_id?: string;
   exact_synced_at?: string;
+  exact_document_id?: string;
+  exact_bijlage_gesynced_op?: string;
   // Creditfactuur referentie
   credit_voor_factuur_id?: string;
   // Kostenplaats
