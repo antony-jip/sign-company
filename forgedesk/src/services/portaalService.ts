@@ -157,11 +157,26 @@ export function getDefaultPortaalInstellingen(): PortaalInstellingen {
 export async function getPortaalInstellingen(userId: string): Promise<PortaalInstellingen> {
   assertId(userId, 'user_id')
   if (isSupabaseConfigured() && supabase) {
-    const { data } = await supabase
-      .from('app_settings')
-      .select('portaal_instellingen')
-      .eq('user_id', userId)
-      .maybeSingle()
+    const orgId = await getOrgId()
+    let data: { portaal_instellingen: unknown } | null = null
+    if (orgId) {
+      const res = await supabase
+        .from('app_settings')
+        .select('portaal_instellingen')
+        .eq('organisatie_id', orgId)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      data = res.data
+    }
+    if (!data) {
+      const res = await supabase
+        .from('app_settings')
+        .select('portaal_instellingen')
+        .eq('user_id', userId)
+        .maybeSingle()
+      data = res.data
+    }
     if (data?.portaal_instellingen && typeof data.portaal_instellingen === 'object') {
       return { ...DEFAULT_PORTAAL_INSTELLINGEN, ...(data.portaal_instellingen as Partial<PortaalInstellingen>) }
     }
@@ -176,10 +191,29 @@ export async function updatePortaalInstellingen(userId: string, settings: Partia
   const current = await getPortaalInstellingen(userId)
   const updated = { ...current, ...settings }
   if (isSupabaseConfigured() && supabase) {
-    await supabase
-      .from('app_settings')
-      .update({ portaal_instellingen: updated })
-      .eq('user_id', userId)
+    const orgId = await getOrgId()
+    let existing: { id: string } | null = null
+    if (orgId) {
+      const { data } = await supabase
+        .from('app_settings')
+        .select('id')
+        .eq('organisatie_id', orgId)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      existing = data
+    }
+    if (existing) {
+      await supabase
+        .from('app_settings')
+        .update({ portaal_instellingen: updated })
+        .eq('id', existing.id)
+    } else {
+      await supabase
+        .from('app_settings')
+        .update({ portaal_instellingen: updated })
+        .eq('user_id', userId)
+    }
     return updated
   }
   safeSetItem('doen_portaal_instellingen', JSON.stringify(updated))

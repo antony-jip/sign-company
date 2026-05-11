@@ -75,12 +75,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ portaal: bestaand, hergebruikt: true })
     }
 
-    // Haal portaal instellingen op voor instructietekst
-    const { data: appSettings } = await supabaseAdmin
-      .from('app_settings')
-      .select('portaal_instellingen')
-      .eq('user_id', userId)
+    // Haal portaal instellingen op voor instructietekst — org-first met user-fallback
+    const { data: callerProfile } = await supabaseAdmin
+      .from('profiles')
+      .select('organisatie_id')
+      .eq('id', userId)
       .maybeSingle()
+    const orgId = (callerProfile?.organisatie_id as string | null) ?? null
+    let appSettings: { portaal_instellingen: unknown } | null = null
+    if (orgId) {
+      const { data } = await supabaseAdmin
+        .from('app_settings')
+        .select('portaal_instellingen')
+        .eq('organisatie_id', orgId)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      appSettings = data
+    }
+    if (!appSettings) {
+      const { data } = await supabaseAdmin
+        .from('app_settings')
+        .select('portaal_instellingen')
+        .eq('user_id', userId)
+        .maybeSingle()
+      appSettings = data
+    }
 
     const instellingen = appSettings?.portaal_instellingen || {}
 

@@ -89,7 +89,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Zoek de factuur met dit mollie_payment_id om de user_id te achterhalen
     const { data: factuur, error: factuurLookupError } = await supabase
       .from('facturen')
-      .select('id, user_id, totaal, betaald_bedrag, status')
+      .select('id, user_id, organisatie_id, totaal, betaald_bedrag, status')
       .eq('mollie_payment_id', paymentId)
       .single()
 
@@ -106,22 +106,39 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ received: true })
     }
 
-    // Haal mollie_api_key op uit app_settings voor die user
+    // Haal mollie_api_key op uit app_settings — org-first met user_id-fallback
+    // voor legacy rijen zonder organisatie_id.
     let mollieApiKey = ''
-    if (factuur.user_id) {
-      const { data: settings, error: settingsLookupError } = await supabase
+    const factuurOrgId = (factuur.organisatie_id as string | null) ?? null
+    let settings: { mollie_api_key: string | null } | null = null
+    if (factuurOrgId) {
+      const { data, error: settingsLookupError } = await supabase
+        .from('app_settings')
+        .select('mollie_api_key')
+        .eq('organisatie_id', factuurOrgId)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      if (settingsLookupError && settingsLookupError.code !== 'PGRST116') {
+        console.warn(`Mollie webhook: org settings lookup faalde voor org ${factuurOrgId}`, settingsLookupError)
+        Sentry.captureException(settingsLookupError, { extra: { paymentId, organisatieId: factuurOrgId } })
+      }
+      settings = data
+    }
+    if (!settings && factuur.user_id) {
+      const { data, error: settingsLookupError } = await supabase
         .from('app_settings')
         .select('mollie_api_key')
         .eq('user_id', factuur.user_id)
-        .single()
+        .maybeSingle()
       if (settingsLookupError && settingsLookupError.code !== 'PGRST116') {
-        // Niet fataal — env-fallback hieronder vangt het op, maar wel zichtbaar maken
-        console.warn(`Mollie webhook: settings lookup faalde voor user ${factuur.user_id}`, settingsLookupError)
+        console.warn(`Mollie webhook: user settings lookup faalde voor user ${factuur.user_id}`, settingsLookupError)
         Sentry.captureException(settingsLookupError, { extra: { paymentId, userId: factuur.user_id } })
       }
-      if (settings?.mollie_api_key) {
-        mollieApiKey = decryptSecret(settings.mollie_api_key)
-      }
+      settings = data
+    }
+    if (settings?.mollie_api_key) {
+      mollieApiKey = decryptSecret(settings.mollie_api_key)
     }
 
     // Fallback naar env vars

@@ -98,12 +98,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(404).json({ error: 'Portaal niet gevonden' })
     }
 
-    // Haal portaal instellingen op (nodig voor gesloten/verlopen pagina's ook)
-    const { data: appSettingsEarly } = await supabaseAdmin
-      .from('app_settings')
-      .select('portaal_instellingen')
-      .eq('user_id', portaal.user_id)
-      .maybeSingle()
+    // Haal portaal instellingen op (nodig voor gesloten/verlopen pagina's ook).
+    // Org-first via portaal.organisatie_id (sinds 047), user_id-fallback voor legacy.
+    const portaalOrgId = (portaal.organisatie_id as string | null) ?? null
+    let appSettingsEarly: { portaal_instellingen: unknown } | null = null
+    if (portaalOrgId) {
+      const { data } = await supabaseAdmin
+        .from('app_settings')
+        .select('portaal_instellingen')
+        .eq('organisatie_id', portaalOrgId)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      appSettingsEarly = data
+    }
+    if (!appSettingsEarly) {
+      const { data } = await supabaseAdmin
+        .from('app_settings')
+        .select('portaal_instellingen')
+        .eq('user_id', portaal.user_id)
+        .maybeSingle()
+      appSettingsEarly = data
+    }
 
     // Merge met defaults zodat ontbrekende velden correcte standaardwaarden krijgen
     const DEFAULT_INSTELLINGEN = {
@@ -158,7 +174,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       })
     }
 
-    // Haal alle data parallel op
+    // Haal alle data parallel op. docStyle wordt org-first via portaalOrgId
+    // gelezen met user_id-fallback (legacy rijen zonder organisatie_id).
+    const docStylePromise = (async () => {
+      if (portaalOrgId) {
+        const { data } = await supabaseAdmin
+          .from('document_styles')
+          .select('primaire_kleur, logo_url')
+          .eq('organisatie_id', portaalOrgId)
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+        if (data) return { data }
+      }
+      const { data } = await supabaseAdmin
+        .from('document_styles')
+        .select('primaire_kleur, logo_url')
+        .eq('user_id', portaal.user_id)
+        .maybeSingle()
+      return { data }
+    })()
+
     const [
       { data: project },
       { data: profile },
@@ -175,11 +211,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .select('bedrijfsnaam, logo_url, bedrijfs_telefoon, bedrijfs_email, bedrijfs_website')
         .eq('id', portaal.user_id)
         .single(),
-      supabaseAdmin
-        .from('document_styles')
-        .select('primaire_kleur, logo_url')
-        .eq('user_id', portaal.user_id)
-        .maybeSingle(),
+      docStylePromise,
       supabaseAdmin
         .from('portaal_items')
         .select('id, type, titel, omschrijving, label, status, bekeken_op, mollie_payment_url, bedrag, volgorde, created_at, bericht_type, bericht_tekst, foto_url, afzender, offerte_id, factuur_id, portaal_bestanden(*), portaal_reacties(*)')
@@ -396,11 +428,33 @@ async function handleGoedkeuringToken(supabase: any, token: string, res: VercelR
     .eq('id', gk.user_id)
     .single()
 
-  const { data: docStyle } = await supabase
-    .from('document_styles')
-    .select('primaire_kleur')
-    .eq('user_id', gk.user_id)
+  // docStyle org-first via profile.organisatie_id (tekening_goedkeuringen
+  // heeft zelf geen organisatie_id-kolom), user_id-fallback voor legacy.
+  const { data: gkProfile } = await supabase
+    .from('profiles')
+    .select('organisatie_id')
+    .eq('id', gk.user_id)
     .maybeSingle()
+  const gkOrgId = (gkProfile?.organisatie_id as string | null) ?? null
+  let docStyle: { primaire_kleur: string | null } | null = null
+  if (gkOrgId) {
+    const { data } = await supabase
+      .from('document_styles')
+      .select('primaire_kleur')
+      .eq('organisatie_id', gkOrgId)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    docStyle = data
+  }
+  if (!docStyle) {
+    const { data } = await supabase
+      .from('document_styles')
+      .select('primaire_kleur')
+      .eq('user_id', gk.user_id)
+      .maybeSingle()
+    docStyle = data
+  }
 
   // Haal project info
   const { data: project } = await supabase

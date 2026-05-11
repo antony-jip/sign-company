@@ -129,7 +129,7 @@ export function EmailContextSidebar({
     setLinkedKlant(null)
     async function findKlant() {
       try {
-        const klanten = await getKlanten(500)
+        const klanten = await getKlanten()
         const addr = contactEmail.toLowerCase()
         const domain = contactEmail.match(/@(.+)/)?.[1]?.toLowerCase()
         let match = klanten.find(k =>
@@ -168,7 +168,7 @@ export function EmailContextSidebar({
     if (panel === 'klant') {
       setKlantForm({ bedrijfsnaam: companyGuess, contactpersoon: personName, email: contactEmail, telefoon: '' })
       setKlantSearchMode(true)
-      getKlanten(500).then(k => setAllKlanten(k)).catch(() => {})
+      getKlanten().then(k => setAllKlanten(k)).catch(() => {})
     } else if (panel === 'project') {
       setProjectForm({
         naam: `${klantDisplayName || 'Project'} - ${email?.onderwerp?.slice(0, 40) || ''}`.trim(),
@@ -180,7 +180,7 @@ export function EmailContextSidebar({
         start_datum: new Date().toISOString().split('T')[0],
         eind_datum: '',
       })
-      getKlanten(500).then(k => setAllKlanten(k)).catch(() => {})
+      getKlanten().then(k => setAllKlanten(k)).catch(() => {})
     } else if (panel === 'taak') {
       setTaakForm({ titel: email?.onderwerp || 'Opvolging email', beschrijving: `Van: ${contactName} <${contactEmail}>`, deadline: '', toegewezen_aan: '' })
     }
@@ -192,7 +192,7 @@ export function EmailContextSidebar({
     if (!klantForm.contactpersoon.trim() || !klantForm.email.trim()) { toast.error('Naam en email verplicht'); return }
     setSaving(true)
     try {
-      const existing = await getKlanten(500)
+      const existing = await getKlanten()
       const dupe = existing.find(k => k.email?.toLowerCase() === klantForm.email.toLowerCase())
       if (dupe) { toast.success('Klant gekoppeld'); setLinkedKlant(dupe); setActivePanel('none'); return }
       const domain = klantForm.email.match(/@(.+)/)?.[1]?.toLowerCase()
@@ -914,7 +914,7 @@ export function EmailContextSidebar({
                     vestigingId={projectForm.vestiging_id}
                     onVestigingChange={(id) => setProjectForm(f => ({ ...f, vestiging_id: id }))}
                     klanten={allKlanten}
-                    onKlantenRefresh={() => getKlanten(500).then(k => setAllKlanten(k)).catch(() => {})}
+                    onKlantenRefresh={() => getKlanten().then(k => setAllKlanten(k)).catch(() => {})}
                   />
                 </div>
 

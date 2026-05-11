@@ -349,12 +349,32 @@ export async function checkEnVerstuurHerinneringen(params: {
   const supabase = createClient(supabaseUrl, supabaseKey)
   const result: { verstuurd: number; errors: string[] } = { verstuurd: 0, errors: [] }
 
-  // Haal portaal instellingen op
-  const { data: appSettings } = await supabase
-    .from('app_settings')
-    .select('portaal_instellingen')
-    .eq('user_id', userId)
+  // Haal portaal instellingen op — org-first met user_id-fallback
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('organisatie_id')
+    .eq('id', userId)
     .maybeSingle()
+  const orgId = (profile?.organisatie_id as string | null) ?? null
+  let appSettings: { portaal_instellingen: unknown } | null = null
+  if (orgId) {
+    const { data } = await supabase
+      .from('app_settings')
+      .select('portaal_instellingen')
+      .eq('organisatie_id', orgId)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    appSettings = data
+  }
+  if (!appSettings) {
+    const { data } = await supabase
+      .from('app_settings')
+      .select('portaal_instellingen')
+      .eq('user_id', userId)
+      .maybeSingle()
+    appSettings = data
+  }
 
   const instellingen = (appSettings?.portaal_instellingen || {}) as {
     herinnering_na_dagen?: number

@@ -1311,62 +1311,76 @@ export function CalendarLayout() {
                 <ClipboardCheck className="h-3.5 w-3.5" />
                 Werkbon koppelen
               </Label>
-              <Select
-                value={formData.werkbon_id || '__none__'}
-                onValueChange={async (v) => {
-                  if (v === '__new__') {
-                    if (!formData.project_id) {
-                      toast.error('Selecteer eerst een project')
-                      return
+              <div className="flex gap-1.5">
+                <Select
+                  value={formData.werkbon_id || '__none__'}
+                  onValueChange={async (v) => {
+                    if (v === '__new__') {
+                      if (!formData.project_id) {
+                        toast.error('Selecteer eerst een project')
+                        return
+                      }
+                      try {
+                        const wb = await createWerkbon({
+                          user_id: user?.id || '',
+                          klant_id: formData.klant_id,
+                          project_id: formData.project_id,
+                          titel: formData.titel || '',
+                          datum: new Date().toISOString().split('T')[0],
+                          status: 'concept',
+                        } as Parameters<typeof createWerkbon>[0])
+                        logCreate({ user, entityType: 'werkbon', entityId: wb.id })
+                        setProjectWerkbonnen(prev => [...prev, wb])
+                        setFormData(p => ({ ...p, werkbon_id: wb.id }))
+                        toast.success(`Werkbon ${wb.werkbon_nummer} aangemaakt`)
+                      } catch (err) {
+                        logger.error('Kon werkbon niet aanmaken:', err)
+                        toast.error('Kon werkbon niet aanmaken')
+                      }
+                    } else {
+                      setFormData(p => ({ ...p, werkbon_id: v === '__none__' ? '' : v }))
                     }
-                    try {
-                      const wb = await createWerkbon({
-                        user_id: user?.id || '',
-                        klant_id: formData.klant_id,
-                        project_id: formData.project_id,
-                        titel: formData.titel || '',
-                        datum: new Date().toISOString().split('T')[0],
-                        status: 'concept',
-                      } as Parameters<typeof createWerkbon>[0])
-                      logCreate({ user, entityType: 'werkbon', entityId: wb.id })
-                      setProjectWerkbonnen(prev => [...prev, wb])
-                      setFormData(p => ({ ...p, werkbon_id: wb.id }))
-                      toast.success(`Werkbon ${wb.werkbon_nummer} aangemaakt`)
-                    } catch (err) {
-                      logger.error('Kon werkbon niet aanmaken:', err)
-                      toast.error('Kon werkbon niet aanmaken')
-                    }
-                  } else {
-                    setFormData(p => ({ ...p, werkbon_id: v === '__none__' ? '' : v }))
-                  }
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Geen werkbon" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">Geen werkbon</SelectItem>
-                  {projectWerkbonnen.map((wb) => {
-                    const st = wb.status === 'concept' ? 'Open' : wb.status === 'definitief' ? 'In uitvoering' : 'Afgetekend'
-                    return (
-                      <SelectItem key={wb.id} value={wb.id}>
-                        <span className="flex items-center gap-2">
-                          <span className="font-mono text-xs">{wb.werkbon_nummer}</span>
-                          <span className="text-muted-foreground text-xs truncate">{wb.titel}</span>
-                          <span className="text-[10px] text-muted-foreground/60">{st}</span>
+                  }}
+                >
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Geen werkbon" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Geen werkbon</SelectItem>
+                    {projectWerkbonnen.map((wb) => {
+                      const st = wb.status === 'concept' ? 'Open' : wb.status === 'definitief' ? 'In uitvoering' : 'Afgetekend'
+                      return (
+                        <SelectItem key={wb.id} value={wb.id}>
+                          <span className="flex items-center gap-2">
+                            <span className="font-mono text-xs">{wb.werkbon_nummer}</span>
+                            <span className="text-muted-foreground text-xs truncate">{wb.titel}</span>
+                            <span className="text-[10px] text-muted-foreground/60">{st}</span>
+                          </span>
+                        </SelectItem>
+                      )
+                    })}
+                    {formData.project_id && (
+                      <SelectItem value="__new__">
+                        <span className="flex items-center gap-1 text-primary font-medium">
+                          <Plus className="h-3 w-3" /> Nieuwe werkbon
                         </span>
                       </SelectItem>
-                    )
-                  })}
-                  {formData.project_id && (
-                    <SelectItem value="__new__">
-                      <span className="flex items-center gap-1 text-primary font-medium">
-                        <Plus className="h-3 w-3" /> Nieuwe werkbon
-                      </span>
-                    </SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
+                    )}
+                  </SelectContent>
+                </Select>
+                {formData.werkbon_id && formData.werkbon_id !== '__none__' && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="shrink-0"
+                    title="Werkbon openen in nieuw tabblad"
+                    onClick={() => window.open(`/werkbonnen/${formData.werkbon_id}`, '_blank')}
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
             </div>
 
             {/* Bijlagen */}

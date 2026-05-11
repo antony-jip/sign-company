@@ -115,11 +115,28 @@ async function updateUsage(userId: string, inputTokens: number, outputTokens: nu
 }
 
 async function getToneOfVoice(userId: string): Promise<string> {
+  // Org-first via profiles, user_id-fallback voor legacy rijen
+  const { data: callerProfile } = await supabase
+    .from('profiles')
+    .select('organisatie_id')
+    .eq('id', userId)
+    .maybeSingle()
+  const callerOrgId = (callerProfile?.organisatie_id as string | null) ?? null
+  if (callerOrgId) {
+    const { data } = await supabase
+      .from('app_settings')
+      .select('ai_tone_of_voice')
+      .eq('organisatie_id', callerOrgId)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    if (data?.ai_tone_of_voice) return data.ai_tone_of_voice
+  }
   const { data } = await supabase
     .from('app_settings')
     .select('ai_tone_of_voice')
     .eq('user_id', userId)
-    .single()
+    .maybeSingle()
   return data?.ai_tone_of_voice || ''
 }
 

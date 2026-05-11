@@ -139,12 +139,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .eq('id', offerte.klant_id)
       .single()
 
-    // Haal document style op (voor briefpapier, kleuren, etc. in de PDF)
-    const { data: docStyle } = await supabaseAdmin
-      .from('document_styles')
-      .select('*')
-      .eq('user_id', offerte.user_id)
-      .maybeSingle()
+    // Haal document style op (voor briefpapier, kleuren, etc. in de PDF) —
+    // org-first via offerte.organisatie_id, user_id-fallback voor legacy.
+    const offerteOrgId = (offerte.organisatie_id as string | null) ?? null
+    let docStyle: Record<string, unknown> | null = null
+    if (offerteOrgId) {
+      const { data } = await supabaseAdmin
+        .from('document_styles')
+        .select('*')
+        .eq('organisatie_id', offerteOrgId)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      docStyle = data
+    }
+    if (!docStyle) {
+      const { data } = await supabaseAdmin
+        .from('document_styles')
+        .select('*')
+        .eq('user_id', offerte.user_id)
+        .maybeSingle()
+      docStyle = data
+    }
 
     // Merge status update in return data
     const safeOfferte = pick({ ...offerte, ...updates }, OFFERTE_VELDEN)

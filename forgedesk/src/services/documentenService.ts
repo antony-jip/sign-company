@@ -93,12 +93,27 @@ export async function deleteDocument(id: string): Promise<void> {
 export async function getDocumentStyle(userId: string): Promise<DocumentStyle | null> {
   assertId(userId, 'user_id')
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase
-      .from('document_styles')
-      .select('*')
-      .eq('user_id', userId)
-      .maybeSingle()
-    if (error) throw error
+    const orgId = await getOrgId()
+    let data: DocumentStyle | null = null
+
+    if (orgId) {
+      const res = await supabase
+        .from('document_styles')
+        .select('*')
+        .eq('organisatie_id', orgId)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      data = res.data
+    }
+    if (!data) {
+      const res = await supabase
+        .from('document_styles')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle()
+      data = res.data
+    }
     return data
   }
   const styles = getLocalData<DocumentStyle>('document_styles')
@@ -112,18 +127,33 @@ export async function upsertDocumentStyle(userId: string, style: Partial<Documen
     const { id: styleId, ...styleWithoutId } = style as any
     const cleanStyle = (styleId && typeof styleId === 'string' && styleId.length > 10) ? style : styleWithoutId
 
-    const { data: existing } = await supabase
-      .from('document_styles')
-      .select('id')
-      .eq('user_id', userId)
-      .maybeSingle()
+    const orgId = await getOrgId()
+    let existing: { id: string } | null = null
+    if (orgId) {
+      const { data } = await supabase
+        .from('document_styles')
+        .select('id')
+        .eq('organisatie_id', orgId)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      existing = data
+    }
+    if (!existing) {
+      const { data } = await supabase
+        .from('document_styles')
+        .select('id')
+        .eq('user_id', userId)
+        .maybeSingle()
+      existing = data
+    }
 
     if (existing) {
       const { id: _id, ...updateFields } = cleanStyle as any
       const { data, error } = await supabase
         .from('document_styles')
-        .update({ ...updateFields, updated_at: now() })
-        .eq('user_id', userId)
+        .update({ ...updateFields, updated_at: now(), ...(orgId ? { organisatie_id: orgId } : {}) })
+        .eq('id', existing.id)
         .select()
         .maybeSingle()
       if (error) throw error
@@ -133,7 +163,7 @@ export async function upsertDocumentStyle(userId: string, style: Partial<Documen
       const { id: _id, ...insertFields } = cleanStyle as any
       const { data, error } = await supabase
         .from('document_styles')
-        .insert({ ...insertFields, user_id: userId, created_at: now(), updated_at: now() })
+        .insert({ ...insertFields, user_id: userId, ...(orgId ? { organisatie_id: orgId } : {}), created_at: now(), updated_at: now() })
         .select()
         .single()
       if (error) throw error
