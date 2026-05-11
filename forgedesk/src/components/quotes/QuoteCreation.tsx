@@ -726,6 +726,7 @@ export function QuoteCreation() {
   }, [editOfferteId, offerteIntroTekst, offerteOutroTekst])
 
   // Auto-fill from project params
+  const projectContactPrefilledRef = useRef(false)
   useEffect(() => {
     if (paramProjectId && projecten.length > 0) {
       const project = projecten.find((p) => p.id === paramProjectId)
@@ -735,6 +736,10 @@ export function QuoteCreation() {
         if (!offerteTitel && project.naam) {
           setOfferteTitel(project.naam)
         }
+        if (project.contactpersoon_id) {
+          setSelectedContactId(project.contactpersoon_id)
+          projectContactPrefilledRef.current = true
+        }
       }
     }
   }, [paramProjectId, projecten])
@@ -742,6 +747,13 @@ export function QuoteCreation() {
   // Auto-fill contactpersoon from klant
   useEffect(() => {
     if (!selectedKlant) return
+    if (projectContactPrefilledRef.current) {
+      const cp = selectedKlant.contactpersonen?.find(c => c.id === selectedContactId)
+      if (cp) setContactpersoon(cp.naam)
+      projectContactPrefilledRef.current = false
+      contact.setShowNewContact(false)
+      return
+    }
     // Try to select primary contact from contactpersonen array
     const primair = selectedKlant.contactpersonen?.find(c => c.is_primair)
     if (primair) {
