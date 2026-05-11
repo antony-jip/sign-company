@@ -93,7 +93,7 @@ export const CRMSidebar = memo(function CRMSidebar({
     setLinkedKlant(null)
     async function findKlant() {
       try {
-        const klanten = await getKlanten(500)
+        const klanten = await getKlanten()
         const emailDomain = senderEmail.match(/@(.+)/)?.[1]?.toLowerCase()
         let match = klanten.find(k =>
           k.email?.toLowerCase() === senderEmail.toLowerCase() ||
@@ -121,7 +121,7 @@ export const CRMSidebar = memo(function CRMSidebar({
       setKlantForm({ bedrijfsnaam: companyGuess, contactpersoon: personName, email: senderEmail, telefoon: '' })
       setKlantSearchMode(true)
       // Load all klanten for autocomplete
-      getKlanten(500).then(k => setAllKlanten(k)).catch(() => {})
+      getKlanten().then(k => setAllKlanten(k)).catch(() => {})
     } else if (panel === 'offerte') {
       setOfferteForm({ titel: `Offerte - ${klantDisplayName}`, notities: `n.a.v. email: ${email.onderwerp}` })
     } else if (panel === 'project') {
@@ -137,7 +137,7 @@ export const CRMSidebar = memo(function CRMSidebar({
     if (!klantForm.contactpersoon.trim() || !klantForm.email.trim()) { toast.error('Naam en email zijn verplicht'); return }
     setSaving(true)
     try {
-      const existing = await getKlanten(500)
+      const existing = await getKlanten()
       const dupe = existing.find(k =>
         k.email?.toLowerCase() === klantForm.email.toLowerCase() ||
         (klantForm.bedrijfsnaam && k.bedrijfsnaam?.toLowerCase() === klantForm.bedrijfsnaam.toLowerCase())
