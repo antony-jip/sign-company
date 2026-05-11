@@ -382,12 +382,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       })
     }
 
-    // Get bedrijfscontext from settings
-    const { data: settingsData } = await supabase
-      .from('app_settings')
-      .select('forgie_bedrijfscontext')
-      .eq('user_id', userId)
-      .single()
+    // Get bedrijfscontext from settings — org-first via profiles, user_id-fallback
+    const { data: callerProfile } = await supabase
+      .from('profiles')
+      .select('organisatie_id')
+      .eq('id', userId)
+      .maybeSingle()
+    const callerOrgId = (callerProfile?.organisatie_id as string | null) ?? null
+    let settingsData: { forgie_bedrijfscontext: string | null } | null = null
+    if (callerOrgId) {
+      const { data } = await supabase
+        .from('app_settings')
+        .select('forgie_bedrijfscontext')
+        .eq('organisatie_id', callerOrgId)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      settingsData = data
+    }
+    if (!settingsData) {
+      const { data } = await supabase
+        .from('app_settings')
+        .select('forgie_bedrijfscontext')
+        .eq('user_id', userId)
+        .maybeSingle()
+      settingsData = data
+    }
 
     const bedrijfscontext = settingsData?.forgie_bedrijfscontext || ''
 

@@ -69,12 +69,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const isTestMode = process.env.KVK_TEST_MODE === 'true' || !apiKey
 
     if (!apiKey) {
-      // Probeer uit app_settings voor de user
-      const { data: settings } = await supabaseAdmin
-        .from('app_settings')
-        .select('kvk_api_key')
-        .eq('user_id', userId)
+      // Probeer uit app_settings — org-first via profiles, user_id-fallback
+      const { data: callerProfile } = await supabaseAdmin
+        .from('profiles')
+        .select('organisatie_id')
+        .eq('id', userId)
         .maybeSingle()
+      const callerOrgId = (callerProfile?.organisatie_id as string | null) ?? null
+      let settings: { kvk_api_key: string | null } | null = null
+      if (callerOrgId) {
+        const { data } = await supabaseAdmin
+          .from('app_settings')
+          .select('kvk_api_key')
+          .eq('organisatie_id', callerOrgId)
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+        settings = data
+      }
+      if (!settings) {
+        const { data } = await supabaseAdmin
+          .from('app_settings')
+          .select('kvk_api_key')
+          .eq('user_id', userId)
+          .maybeSingle()
+        settings = data
+      }
 
       if (settings?.kvk_api_key) {
         apiKey = settings.kvk_api_key
