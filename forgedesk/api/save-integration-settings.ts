@@ -50,6 +50,8 @@ const ALLOWED_FIELDS = [
   'exact_btw_hoog',
   'exact_btw_laag',
   'exact_btw_nul',
+  'exact_document_type_id',
+  'exact_document_type_naam',
 ] as const
 
 const SECRET_FIELDS = ['mollie_api_key', 'exact_online_client_secret']

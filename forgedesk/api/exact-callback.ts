@@ -274,10 +274,41 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.redirect(302, `${APP_URL}/instellingen?tab=integraties&exact=error&reason=save_tokens`)
     }
 
-    // 5. Zet exact_online_connected = true + sla division op als administratie_id
+    // 5a. Haal default DocumentType voor bijlagen op.
+    // Best-effort: ELKE failure (network, 401, lege array, JSON-parse) wordt
+    // gezwaluwd zodat de OAuth-flow nooit faalt door deze fetch. Antony kan
+    // alsnog handmatig kiezen in Instellingen > Integraties.
+    let defaultDocumentType: { id: number; description: string } | null = null
+    if (division !== null) {
+      try {
+        const typesRes = await fetch(
+          `${EXACT_API_BASE}/${division}/documents/DocumentTypes?$filter=DocumentIsCreatable eq true&$select=ID,Description,TypeCategory&$orderby=Description`,
+          { headers: { Authorization: `Bearer ${tokens.access_token}`, Accept: 'application/json' } },
+        )
+        if (typesRes.ok) {
+          const typesBody = await typesRes.json() as {
+            d?: { results?: Array<{ ID: number; Description: string }> }
+          }
+          const first = typesBody?.d?.results?.[0]
+          if (first?.ID && first?.Description) {
+            defaultDocumentType = { id: first.ID, description: first.Description }
+          }
+        } else {
+          console.error('Exact DocumentTypes fetch error (non-fatal):', typesRes.status)
+        }
+      } catch (dtErr) {
+        console.error('Exact DocumentTypes fetch failed (non-fatal):', dtErr)
+      }
+    }
+
+    // 5b. Zet exact_online_connected = true + sla division op als administratie_id
     const settingsUpdate: Record<string, unknown> = { exact_online_connected: true }
     if (division !== null) {
       settingsUpdate.exact_administratie_id = String(division)
+    }
+    if (defaultDocumentType) {
+      settingsUpdate.exact_document_type_id = defaultDocumentType.id
+      settingsUpdate.exact_document_type_naam = defaultDocumentType.description
     }
 
     await updateAppSettingsOrgFirst(supabase, user_id, settingsUpdate)

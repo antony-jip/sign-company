@@ -1,10 +1,17 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import {
   Puzzle,
   CreditCard,
@@ -13,6 +20,7 @@ import {
   CheckCircle2,
   XCircle,
   ArrowRight,
+  RefreshCw,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -66,6 +74,11 @@ export function IntegratiesTab() {
   const [exactBtwNul, setExactBtwNul] = useState('')
   const [exactAdvancedOpen, setExactAdvancedOpen] = useState(false)
   const [exactHelpOpen, setExactHelpOpen] = useState(false)
+  const [exactDocumentTypeId, setExactDocumentTypeId] = useState<number | null>(null)
+  const [exactDocumentTypeNaam, setExactDocumentTypeNaam] = useState('')
+  const [documentTypes, setDocumentTypes] = useState<Array<{ id: number; description: string; typeCategory: number }>>([])
+  const [docTypesLoading, setDocTypesLoading] = useState(false)
+  const [docTypesError, setDocTypesError] = useState<string | null>(null)
 
   // KvK API state
   const [kvkApiKey, setKvkApiKey] = useState('')
@@ -87,6 +100,8 @@ export function IntegratiesTab() {
       setExactBtwHoog(s.exact_btw_hoog ?? '2')
       setExactBtwLaag(s.exact_btw_laag ?? '')
       setExactBtwNul(s.exact_btw_nul ?? '')
+      setExactDocumentTypeId(s.exact_document_type_id ?? null)
+      setExactDocumentTypeNaam(s.exact_document_type_naam ?? '')
       setKvkApiKey(s.kvk_api_key ?? '')
     }).catch(() => {})
   }, [user?.id])
@@ -105,6 +120,8 @@ export function IntegratiesTab() {
       getAppSettings(user.id).then((s) => {
         setExactConnected(s.exact_online_connected ?? false)
         setExactAdministratieId(s.exact_administratie_id ?? '')
+        setExactDocumentTypeId(s.exact_document_type_id ?? null)
+        setExactDocumentTypeNaam(s.exact_document_type_naam ?? '')
       }).catch(() => {})
       refreshSettings?.()
     } else if (exactStatus === 'error') {
@@ -120,6 +137,36 @@ export function IntegratiesTab() {
     url.searchParams.delete('reason')
     window.history.replaceState({}, '', url.toString())
   }, [user?.id, refreshSettings])
+
+  const loadDocumentTypes = useCallback(async () => {
+    if (!exactConnected) return
+    setDocTypesLoading(true)
+    setDocTypesError(null)
+    try {
+      const { data: sess } = await supabase.auth.getSession()
+      const token = sess?.session?.access_token
+      if (!token) throw new Error('Niet ingelogd')
+      const res = await fetch('/api/exact-document-types', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || `Status ${res.status}`)
+      }
+      const data = await res.json() as Array<{ id: number; description: string; typeCategory: number }>
+      setDocumentTypes(data)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Onbekende fout'
+      setDocTypesError(msg)
+      logger.error('DocumentTypes laden mislukt:', err)
+    } finally {
+      setDocTypesLoading(false)
+    }
+  }, [exactConnected])
+
+  useEffect(() => {
+    if (exactConnected) loadDocumentTypes()
+  }, [exactConnected, loadDocumentTypes])
 
   const handleExactConnect = async () => {
     if (!user?.id) return
@@ -168,6 +215,8 @@ export function IntegratiesTab() {
         exact_online_client_id: exactClientId,
         exact_online_client_secret: exactClientSecret,
         exact_administratie_id: exactAdministratieId,
+        exact_document_type_id: exactDocumentTypeId,
+        exact_document_type_naam: exactDocumentTypeNaam,
         exact_verkoopboek: exactVerkoopboek,
         exact_grootboek: exactGrootboek,
         exact_btw_hoog: exactBtwHoog,
@@ -383,6 +432,53 @@ export function IntegratiesTab() {
                     <div className="space-y-2">
                       <Label htmlFor="exact-admin-id" className="text-sm">Administratie ID</Label>
                       <Input id="exact-admin-id" value={exactAdministratieId} onChange={(e) => setExactAdministratieId(e.target.value)} placeholder="Exact administratie ID" className="font-mono text-sm" />
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="exact-doctype" className="text-sm">Document-type voor bijlagen</Label>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={loadDocumentTypes}
+                          disabled={docTypesLoading || !exactConnected}
+                          className="h-7 text-xs gap-1"
+                        >
+                          <RefreshCw className={cn('w-3 h-3', docTypesLoading && 'animate-spin')} />
+                          Opnieuw ophalen
+                        </Button>
+                      </div>
+                      {docTypesError ? (
+                        <div className="text-xs text-amber-600 dark:text-amber-400">
+                          Lijst ophalen mislukt: {docTypesError}. Huidige keuze: {exactDocumentTypeNaam || '(geen)'}
+                        </div>
+                      ) : (
+                        <Select
+                          value={exactDocumentTypeId != null ? String(exactDocumentTypeId) : ''}
+                          onValueChange={(v) => {
+                            const id = parseInt(v, 10)
+                            const t = documentTypes.find((dt) => dt.id === id)
+                            setExactDocumentTypeId(id)
+                            setExactDocumentTypeNaam(t?.description ?? '')
+                          }}
+                          disabled={docTypesLoading || documentTypes.length === 0}
+                        >
+                          <SelectTrigger id="exact-doctype" className="text-sm">
+                            <SelectValue placeholder={docTypesLoading ? 'Laden...' : (documentTypes.length === 0 ? 'Geen types beschikbaar' : 'Kies type...')} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {documentTypes.map((t) => (
+                              <SelectItem key={t.id} value={String(t.id)}>
+                                <div className="flex flex-col">
+                                  <span>{t.description}</span>
+                                  <span className="text-xs text-muted-foreground">Categorie {t.typeCategory}</span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                      <p className="text-xs text-muted-foreground">Bepaalt waar PDF-bijlagen worden geboekt in Exact bij synchroniseren.</p>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div className="space-y-2">
