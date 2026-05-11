@@ -86,6 +86,7 @@ import { factuurBetaalTokenExpiry } from '@/lib/tokenExpiry'
 import { sendEmail } from '@/services/gmailService'
 import { factuurHerinneringTemplate, factuurVerzendTemplate } from '@/services/emailTemplateService'
 import { generateFactuurPDF } from '@/services/pdfService'
+import { downloadFactuurPdfFromStorage } from '@/services/factuurPdfService'
 import { useDocumentStyle } from '@/hooks/useDocumentStyle'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useSearchParams, useNavigate } from 'react-router-dom'
@@ -932,7 +933,32 @@ export function FacturenLayout() {
   }, [filteredFacturen])
 
   const handleDownloadPdf = useCallback(
-    (factuur: Factuur) => {
+    async (factuur: Factuur) => {
+      const filename = `Factuur-${factuur.nummer}.pdf`
+
+      // Storage-first: lees gepersisteerde PDF als die bestaat.
+      if (factuur.pdf_storage_path) {
+        try {
+          const blob = await downloadFactuurPdfFromStorage(factuur.pdf_storage_path)
+          if (blob) {
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = filename
+            document.body.appendChild(a)
+            a.click()
+            document.body.removeChild(a)
+            URL.revokeObjectURL(url)
+            toast.success(`PDF gedownload voor ${factuur.nummer}`)
+            return
+          }
+        } catch (storageErr) {
+          logger.warn('PDF Storage-download mislukt, val terug op on-the-fly:', storageErr)
+        }
+      }
+
+      // Fallback: on-the-fly generatie (oude facturen zonder pdf_storage_path,
+      // of Storage-failure).
       const klant = klanten.find((k) => k.id === factuur.klant_id) || {}
 
       const bedrijfsProfiel = {
@@ -972,14 +998,14 @@ export function FacturenLayout() {
 
       try {
         const doc = generateFactuurPDF(factuurData, items, klant, bedrijfsProfiel, documentStyle)
-        doc.save(`factuur-${factuur.nummer}.pdf`)
+        doc.save(filename)
         toast.success(`PDF gedownload voor ${factuur.nummer}`)
       } catch (err) {
         logger.error('Fout bij genereren PDF:', err)
         toast.error('Kon PDF niet genereren')
       }
     },
-    [klanten, profile, primaireKleur]
+    [klanten, profile, primaireKleur, documentStyle]
   )
 
   const handleSendFactuur = useCallback(

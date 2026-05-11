@@ -389,7 +389,10 @@ export function BetaalPagina() {
           </CardContent>
         </Card>
 
-        {/* Download PDF — haalt factuur items + docStyle op en genereert in huisstijl */}
+        {/* Download PDF — haalt factuur items + docStyle op en genereert in huisstijl.
+            Betaalpagina draait betaal-token-based (geen Supabase auth), dus de RLS-policy
+            op storage.buckets.facturen blokkeert directe downloads. Bewust on-the-fly,
+            geen Storage-fallback nodig. */}
         <div className="flex justify-center">
           <Button
             variant="outline"

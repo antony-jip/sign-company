@@ -71,3 +71,51 @@ export async function genereerEnUploadFactuurPdf(
 
   return { path, blob }
 }
+
+/**
+ * Download een eerder geüploade factuur-PDF uit storage.buckets.facturen.
+ *
+ * ALLEEN AANROEPEN VANUIT SUPABASE-AUTHENTICATED CONTEXT (ingelogde org-user).
+ * De RLS-policy op de bucket vereist auth_organisatie_id() matching — calls
+ * vanuit token-based portaal/betaalpagina worden geweigerd. Die paden gebruiken
+ * generateFactuurPDF on-the-fly.
+ *
+ * Bij lege/ontbrekende path of elke Storage-failure: return null. Caller moet
+ * fallback hebben naar on-the-fly generatie.
+ */
+export async function downloadFactuurPdfFromStorage(
+  pdfStoragePath: string | null | undefined,
+): Promise<Blob | null> {
+  if (!pdfStoragePath) return null
+  if (!supabase) {
+    logger.warn('PDF download skipped — supabase client niet geconfigureerd')
+    return null
+  }
+
+  const { data, error } = await supabase.storage
+    .from('facturen')
+    .download(pdfStoragePath)
+
+  if (error || !data) {
+    logger.warn('PDF download uit storage.facturen mislukt:', error)
+    return null
+  }
+
+  return data
+}
+
+/**
+ * Converteer een Blob naar een base64-string (zonder data-URL prefix).
+ * Werkt veilig voor grote PDFs via FileReader (geen UTF-8 decode-risico).
+ */
+export async function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      const dataUrl = reader.result as string
+      resolve(dataUrl.split(',')[1])
+    }
+    reader.onerror = () => reject(reader.error ?? new Error('FileReader failed'))
+    reader.readAsDataURL(blob)
+  })
+}

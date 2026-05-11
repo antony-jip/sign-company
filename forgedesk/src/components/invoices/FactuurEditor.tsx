@@ -99,7 +99,7 @@ import { TrialGuardDialog } from '@/components/shared/TrialGuardDialog'
 import type { Klant, Factuur, FactuurItem, Offerte, OfferteItem, HerinneringTemplate, Project, Grootboek, Kostenplaats, Werkbon } from '@/types'
 import { round2 } from '@/utils/budgetUtils'
 import { generateFactuurPDF } from '@/services/pdfService'
-import { genereerEnUploadFactuurPdf } from '@/services/factuurPdfService'
+import { genereerEnUploadFactuurPdf, downloadFactuurPdfFromStorage } from '@/services/factuurPdfService'
 import { generateUBLInvoice, downloadUBLXml } from '@/services/ublService'
 import { useDocumentStyle } from '@/hooks/useDocumentStyle'
 import { sendEmail } from '@/services/gmailService'
@@ -950,12 +950,37 @@ export function FactuurEditor() {
 
   // ============ PDF ============
 
-  const handleDownloadPdf = useCallback(() => {
+  const handleDownloadPdf = useCallback(async () => {
     if (!selectedKlant) {
       toast.error('Selecteer eerst een klant')
       return
     }
 
+    const filename = `Factuur-${nummer}.pdf`
+
+    // Storage-first: lees gepersisteerde PDF als die bestaat.
+    if (existingFactuur?.pdf_storage_path) {
+      try {
+        const blob = await downloadFactuurPdfFromStorage(existingFactuur.pdf_storage_path)
+        if (blob) {
+          const url = URL.createObjectURL(blob)
+          const a = document.createElement('a')
+          a.href = url
+          a.download = filename
+          document.body.appendChild(a)
+          a.click()
+          document.body.removeChild(a)
+          URL.revokeObjectURL(url)
+          toast.success(<>PDF gedownload<span style={{ color: '#F15025' }}>.</span></>)
+          return
+        }
+      } catch (storageErr) {
+        logger.warn('PDF Storage-download mislukt, val terug op on-the-fly:', storageErr)
+      }
+    }
+
+    // Fallback: on-the-fly generatie (oude facturen zonder pdf_storage_path,
+    // of Storage-failure).
     const bedrijfsProfiel = { ...profile, primaireKleur }
     const factuurData = {
       nummer,
@@ -987,13 +1012,13 @@ export function FactuurEditor() {
 
     try {
       const doc = generateFactuurPDF(factuurData, pdfItems, selectedKlant, bedrijfsProfiel, documentStyle)
-      doc.save(`factuur-${nummer}.pdf`)
+      doc.save(filename)
       toast.success(<>PDF gedownload<span style={{ color: '#F15025' }}>.</span></>)
     } catch (err) {
       logger.error('Fout bij genereren PDF:', err)
       toast.error('Kon PDF niet genereren')
     }
-  }, [selectedKlant, profile, primaireKleur, nummer, titel, factuurdatum, vervaldatum, subtotaal, btwBedrag, totaal, notities, voorwaarden, validItems, documentStyle, existingFactuur])
+  }, [selectedKlant, profile, primaireKleur, nummer, titel, factuurdatum, vervaldatum, subtotaal, btwBedrag, totaal, notities, voorwaarden, validItems, documentStyle, existingFactuur, creditVoorNummer, isCreditFactuur])
 
   // ============ UBL XML ============
 

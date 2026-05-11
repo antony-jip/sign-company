@@ -46,6 +46,10 @@ export function PortaalFeedItemFactuur({
   const isBetaald = ['betaald', 'goedgekeurd'].includes(item.status)
   const [isDownloading, setIsDownloading] = useState(false)
 
+  // Klantportaal draait token-based (geen Supabase auth), dus de RLS-policy
+  // op storage.buckets.facturen blokkeert directe downloads. Bewust on-the-fly
+  // gegenereerd via /api/factuur-portaal — zelfde flow voor oude en nieuwe
+  // facturen, geen Storage-fallback nodig hier.
   const handleDownloadPDF = useCallback(async () => {
     const factuurId = item.factuur_id
     if (!factuurId || !token) return
