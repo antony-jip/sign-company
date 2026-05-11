@@ -43,6 +43,7 @@ import {
 } from '@/lib/utils'
 import { exportCSV, exportExcel } from '@/lib/export'
 import { PaginationControls } from '@/components/ui/pagination-controls'
+import { DatePicker } from '@/components/ui/date-picker'
 import { getProjecten, getKlanten, getOffertes, updateProject, createProjectFoto, deleteProject, getMedewerkers as fetchMedewerkers } from '@/services/supabaseService'
 import { ProjectImportDialog } from './ProjectImportDialog'
 import { useAuth } from '@/contexts/AuthContext'
@@ -135,7 +136,7 @@ export function ProjectsList() {
   const [isLoading, setIsLoading] = useState(true)
   const [zoekterm, setZoekterm] = useState('')
   const [statusFilter, setStatusFilter] = useState('alle')
-  const [sortField, setSortField] = useState<'naam' | 'bedrag' | 'start_datum'>('start_datum')
+  const [sortField, setSortField] = useState<'naam' | 'bedrag' | 'created_at'>('created_at')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [currentPage, setCurrentPage] = useState(1)
   const PAGE_SIZE = 50
@@ -351,9 +352,12 @@ export function ProjectsList() {
         case 'bedrag':
           cmp = getProjectBedrag(a.id) - getProjectBedrag(b.id)
           break
-        case 'start_datum':
-          cmp = new Date(a.start_datum || a.created_at).getTime() - new Date(b.start_datum || b.created_at).getTime()
+        case 'created_at': {
+          const aTime = a.created_at ? new Date(a.created_at).getTime() : 0
+          const bTime = b.created_at ? new Date(b.created_at).getTime() : 0
+          cmp = aTime - bTime
           break
+        }
       }
       return sortDir === 'asc' ? cmp : -cmp
     })
@@ -398,6 +402,29 @@ export function ProjectsList() {
       logWijziging({ userId: user.id, entityType: 'project', entityId: projectId, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: oudeStatus, nieuweWaarde: newStatus })
     }
     toast.success(`Status gewijzigd naar ${statusLabels[newStatus]}`)
+  }
+
+  async function handleDatumChange(projectId: string, nieuweDatum: string) {
+    const oudeDatum = projecten.find(p => p.id === projectId)?.created_at
+    if (!oudeDatum || oudeDatum.startsWith(nieuweDatum)) return
+    const ok = await runOptimistic({
+      snapshot: projecten,
+      apply: (prev) => prev.map((p) => p.id === projectId ? { ...p, created_at: nieuweDatum } : p),
+      commit: async () => {
+        const updated = await updateProject(projectId, { created_at: nieuweDatum })
+        return (prev: Project[]) => prev.map((p) => p.id === updated.id ? updated : p)
+      },
+      errorMessage: 'Kon datum niet wijzigen',
+    })
+    if (!ok) {
+      logger.error('Fout bij datumwijziging')
+      return
+    }
+    if (user?.id) {
+      const naam = medewerkers.find(m => m.user_id === user.id)?.naam ?? user.email ?? ''
+      logWijziging({ userId: user.id, entityType: 'project', entityId: projectId, actie: 'datum_gewijzigd', medewerkerNaam: naam, veld: 'created_at', oudeWaarde: oudeDatum, nieuweWaarde: nieuweDatum })
+    }
+    toast.success('Datum gewijzigd')
   }
 
   function toggleSelectAll() {
@@ -970,11 +997,11 @@ export function ProjectsList() {
                       </th>
                       <th className="text-right py-3.5 pr-4 w-[80px] hidden lg:table-cell">
                         <button
-                          onClick={() => handleSort('start_datum')}
+                          onClick={() => handleSort('created_at')}
                           className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95] hover:text-[#6B6B66] transition-colors ml-auto"
                         >
                           Datum
-                          {sortField === 'start_datum' ? (
+                          {sortField === 'created_at' ? (
                             sortDir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
                           ) : (
                             <ArrowUpDown className="w-3 h-3 opacity-30" />
@@ -1226,10 +1253,17 @@ export function ProjectsList() {
                           </td>
 
                           {/* Datum */}
-                          <td className="py-3.5 pr-4 text-right hidden lg:table-cell">
-                            <span className="text-[12px] font-mono tabular-nums text-[#B0ADA8]">
-                              {new Date(project.created_at).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' }).replace('.', '')}
-                            </span>
+                          <td className="py-3.5 pr-4 text-right hidden lg:table-cell" onClick={(e) => e.stopPropagation()}>
+                            <DatePicker
+                              value={project.created_at}
+                              onChange={(d) => handleDatumChange(project.id, d)}
+                              align="end"
+                              trigger={
+                                <button className="text-[12px] font-mono tabular-nums text-[#B0ADA8] hover:text-[#6B6B66] transition-colors">
+                                  {new Date(project.created_at).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' }).replace('.', '')}
+                                </button>
+                              }
+                            />
                           </td>
 
                           {/* Dagen open */}
