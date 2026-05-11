@@ -94,7 +94,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const handleOnboardingRedirect = (userId: string, currentPath: string, accessToken?: string): Promise<void> => {
-    if (isTrulyPublic(currentPath)) return Promise.resolve()
     const existing = inFlightRedirects.get(userId)
     if (existing) return existing
 
@@ -131,30 +130,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setOrganisatieId(profile.organisatie_id || null)
         setUserRol(profile.rol || null)
 
+        let org: Organisatie | null = null
+        if (profile.organisatie_id) {
+          org = await getOrganisatie(profile.organisatie_id)
+          if (org) {
+            setOrganisatie(org)
+            setTrialDagenOver(computeTrialDagenOver(org.trial_einde))
+            setTrialStatus((org.abonnement_status as TrialStatus) || 'trial')
+          }
+        }
+
+        // Hydratie klaar. Op truly-public paden (/login, /register, ...)
+        // slaan we de redirect-branches over — de page zelf navigeert na
+        // succes, met state al gevuld zodat ProtectedRoute correct beslist.
+        if (isTrulyPublic(currentPath)) return
+
         if (!profile.organisatie_id) {
           // Trigger handle_new_user hoort altijd een organisatie_id te zetten
           // (bestaande org bij invite, nieuwe org bij eigen signup). Als we
           // hier belanden is er iets mis op DB-niveau.
           logger.error('Profile zonder organisatie_id na signup', { userId })
           if (!isOnboardingRoute(currentPath)) navigate?.('/welkom')
-        } else {
-          const org = await getOrganisatie(profile.organisatie_id)
-          if (org) {
-            setOrganisatie(org)
-            setTrialDagenOver(computeTrialDagenOver(org.trial_einde))
-            setTrialStatus((org.abonnement_status as TrialStatus) || 'trial')
-
-            if (profile.uitgenodigd_door && !profile.voornaam) {
-              try {
-                await createMedewerker({ naam: profile.email || 'Nieuw teamlid', email: profile.email || '', status: 'actief', user_id: userId } as Parameters<typeof createMedewerker>[0])
-              } catch { /* may already exist */ }
-              if (!isOnboardingRoute(currentPath)) navigate?.('/team-welkom')
-            } else if (!org.onboarding_compleet) {
-              if (accessToken && !org.onboarding_getriggerd_op) {
-                triggerOnboarding(accessToken)
-              }
-              if (!isOnboardingRoute(currentPath)) navigate?.('/onboarding')
+        } else if (org) {
+          if (profile.uitgenodigd_door && !profile.voornaam) {
+            try {
+              await createMedewerker({ naam: profile.email || 'Nieuw teamlid', email: profile.email || '', status: 'actief', user_id: userId } as Parameters<typeof createMedewerker>[0])
+            } catch { /* may already exist */ }
+            if (!isOnboardingRoute(currentPath)) navigate?.('/team-welkom')
+          } else if (!org.onboarding_compleet) {
+            if (accessToken && !org.onboarding_getriggerd_op) {
+              triggerOnboarding(accessToken)
             }
+            if (!isOnboardingRoute(currentPath)) navigate?.('/onboarding')
           }
         }
       } catch (err) {
