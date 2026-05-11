@@ -154,19 +154,48 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           .maybeSingle()
       : { data: null }
 
-    // Document style
-    const { data: docStyle } = await supabaseAdmin
-      .from('document_styles')
-      .select('*')
-      .eq('user_id', userId)
-      .maybeSingle()
+    // Document style — org-first met user_id-fallback voor legacy rijen
+    const factuurOrgId = (factuur.organisatie_id as string | null) ?? null
+    let docStyle: Record<string, unknown> | null = null
+    if (factuurOrgId) {
+      const { data } = await supabaseAdmin
+        .from('document_styles')
+        .select('*')
+        .eq('organisatie_id', factuurOrgId)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      docStyle = data
+    }
+    if (!docStyle) {
+      const { data } = await supabaseAdmin
+        .from('document_styles')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle()
+      docStyle = data
+    }
 
     // App settings — alleen Mollie-vlag exposen (default-deny bij failure)
-    const { data: appSettings } = await supabaseAdmin
-      .from('app_settings')
-      .select('mollie_enabled')
-      .eq('user_id', userId)
-      .maybeSingle()
+    let appSettings: { mollie_enabled: boolean | null } | null = null
+    if (factuurOrgId) {
+      const { data } = await supabaseAdmin
+        .from('app_settings')
+        .select('mollie_enabled')
+        .eq('organisatie_id', factuurOrgId)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      appSettings = data
+    }
+    if (!appSettings) {
+      const { data } = await supabaseAdmin
+        .from('app_settings')
+        .select('mollie_enabled')
+        .eq('user_id', userId)
+        .maybeSingle()
+      appSettings = data
+    }
 
     return res.status(200).json({
       factuur,

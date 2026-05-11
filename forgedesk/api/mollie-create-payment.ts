@@ -91,6 +91,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Twee auth-paden: JWT (interne gebruiker) of betaal_token (publieke klant)
     const jwt_user_id = await verifyUser(req)
     let user_id: string
+    let organisatie_id: string | null = null
     let factuurStatus: string | null = null
     let existingPaymentId: string | null = null
 
@@ -98,7 +99,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Interne flow: verifieer dat factuur toebehoort aan ingelogde gebruiker
       const { data: eigenFactuur } = await supabaseAdmin
         .from('facturen')
-        .select('id, user_id, status, mollie_payment_id')
+        .select('id, user_id, organisatie_id, status, mollie_payment_id')
         .eq('id', factuur_id)
         .eq('user_id', jwt_user_id)
         .maybeSingle()
@@ -106,13 +107,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(403).json({ error: 'Factuur niet gevonden of geen toegang' })
       }
       user_id = jwt_user_id
+      organisatie_id = (eigenFactuur.organisatie_id as string | null) ?? null
       factuurStatus = eigenFactuur.status ?? null
       existingPaymentId = eigenFactuur.mollie_payment_id ?? null
     } else if (betaal_token) {
       // Publieke flow: verifieer factuur via betaal_token
       const { data: factuur } = await supabaseAdmin
         .from('facturen')
-        .select('id, user_id, betaal_token_verloopt_op, status, mollie_payment_id')
+        .select('id, user_id, organisatie_id, betaal_token_verloopt_op, status, mollie_payment_id')
         .eq('id', factuur_id)
         .eq('betaal_token', betaal_token)
         .maybeSingle()
@@ -123,6 +125,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(410).json({ error: 'Deze betaallink is verlopen' })
       }
       user_id = factuur.user_id
+      organisatie_id = (factuur.organisatie_id as string | null) ?? null
       factuurStatus = factuur.status ?? null
       existingPaymentId = factuur.mollie_payment_id ?? null
     } else {
@@ -137,16 +140,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       })
     }
 
-    // Haal mollie_api_key op uit app_settings voor de user_id
+    // Haal mollie_api_key op uit app_settings — org-first met user_id-fallback
+    // voor legacy rijen zonder organisatie_id.
     let mollieApiKey = ''
 
     if (SUPABASE_URL && SUPABASE_SERVICE_KEY) {
       const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
-      const { data: settings } = await supabase
-        .from('app_settings')
-        .select('mollie_api_key, mollie_enabled')
-        .eq('user_id', user_id)
-        .single()
+      let settings: { mollie_api_key: string | null; mollie_enabled: boolean | null } | null = null
+
+      if (organisatie_id) {
+        const { data } = await supabase
+          .from('app_settings')
+          .select('mollie_api_key, mollie_enabled')
+          .eq('organisatie_id', organisatie_id)
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+        settings = data
+      }
+      if (!settings) {
+        const { data } = await supabase
+          .from('app_settings')
+          .select('mollie_api_key, mollie_enabled')
+          .eq('user_id', user_id)
+          .maybeSingle()
+        settings = data
+      }
 
       if (settings?.mollie_enabled && settings?.mollie_api_key) {
         mollieApiKey = decryptSecret(settings.mollie_api_key)
