@@ -99,6 +99,7 @@ import { TrialGuardDialog } from '@/components/shared/TrialGuardDialog'
 import type { Klant, Factuur, FactuurItem, Offerte, OfferteItem, HerinneringTemplate, Project, Grootboek, Kostenplaats, Werkbon } from '@/types'
 import { round2 } from '@/utils/budgetUtils'
 import { generateFactuurPDF } from '@/services/pdfService'
+import { genereerEnUploadFactuurPdf } from '@/services/factuurPdfService'
 import { generateUBLInvoice, downloadUBLXml } from '@/services/ublService'
 import { useDocumentStyle } from '@/hooks/useDocumentStyle'
 import { sendEmail } from '@/services/gmailService'
@@ -1065,7 +1066,9 @@ export function FactuurEditor() {
         betaalUrl: existingFactuur.betaal_link || undefined,
       })
 
-      // Generate PDF attachment
+      // Generate PDF attachment — eerst proberen via Storage (persistente kopie),
+      // bij ELKE failure fallback naar on-the-fly generatie zodat de email nooit
+      // door een Storage-issue geblokkeerd wordt.
       let attachments: Array<{ filename: string; content: string; encoding: 'base64' }> | undefined
       try {
         const bedrijfsProfiel = { ...profile, primaireKleur }
@@ -1094,8 +1097,41 @@ export function FactuurEditor() {
           volgorde: idx + 1,
           created_at: new Date().toISOString(),
         }))
-        const doc = generateFactuurPDF(factuurData, pdfItems, selectedKlant, bedrijfsProfiel, documentStyle)
-        const pdfBase64 = doc.output('datauristring').split(',')[1]
+
+        let pdfBase64: string | null = null
+
+        if (existingFactuur.organisatie_id) {
+          try {
+            const result = await genereerEnUploadFactuurPdf({
+              factuurId: existingFactuur.id,
+              organisatieId: existingFactuur.organisatie_id,
+              factuurData,
+              items: pdfItems,
+              klant: selectedKlant,
+              bedrijfsProfiel,
+              docStyle: documentStyle,
+            })
+            if (result) {
+              pdfBase64 = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader()
+                reader.onloadend = () => {
+                  const dataUrl = reader.result as string
+                  resolve(dataUrl.split(',')[1])
+                }
+                reader.onerror = () => reject(reader.error ?? new Error('FileReader failed'))
+                reader.readAsDataURL(result.blob)
+              })
+            }
+          } catch (storageErr) {
+            logger.warn('PDF Storage-upload of Blob-conversie mislukt, val terug op on-the-fly:', storageErr)
+          }
+        }
+
+        if (!pdfBase64) {
+          const doc = generateFactuurPDF(factuurData, pdfItems, selectedKlant, bedrijfsProfiel, documentStyle)
+          pdfBase64 = doc.output('datauristring').split(',')[1]
+        }
+
         attachments = [{ filename: `Factuur-${nummer}.pdf`, content: pdfBase64, encoding: 'base64' }]
       } catch (pdfErr) {
         logger.warn('PDF bijlage genereren mislukt, email wordt zonder bijlage verstuurd:', pdfErr)
