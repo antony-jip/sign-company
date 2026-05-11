@@ -114,14 +114,12 @@ export function WelkomPagina() {
           Je hele bedrijf. Eén plek<span className="text-flame">.</span>
         </motion.h1>
 
-        {voornaam && (
-          <motion.p
-            variants={item}
-            className="text-[15px] text-text-sec mb-6"
-          >
-            Welkom, {voornaam}.
-          </motion.p>
-        )}
+        <motion.p
+          variants={item}
+          className="text-[15px] text-text-sec mb-6"
+        >
+          Welkom{voornaam ? `, ${voornaam}` : ''}.
+        </motion.p>
 
         <motion.p
           variants={item}
