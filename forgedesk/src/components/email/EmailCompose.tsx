@@ -114,6 +114,22 @@ export function EmailCompose({
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isDragging, setIsDragging] = useState(false)
 
+  // Blob-URLs voor image-thumbnails. Vernieuwt zodra `attachments` muteert; cleanup revoked oude URLs nadat React de nieuwe heeft gerendered.
+  const imagePreviewUrls = useMemo(() => {
+    const map = new Map<File, string>()
+    attachments.forEach((file) => {
+      if (file.type.startsWith('image/')) {
+        map.set(file, URL.createObjectURL(file))
+      }
+    })
+    return map
+  }, [attachments])
+  useEffect(() => {
+    return () => {
+      imagePreviewUrls.forEach((url) => URL.revokeObjectURL(url))
+    }
+  }, [imagePreviewUrls])
+
   // Editor
   const editorRef = useRef<HTMLDivElement>(null)
 
@@ -670,21 +686,28 @@ export function EmailCompose({
             {/* Attachments */}
             {attachments.length > 0 && (
               <div className="flex flex-wrap gap-2 py-4">
-                {attachments.map((file, i) => (
-                  <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#F8F7F5] text-[14px] group">
-                    <div className={cn('w-6 h-6 rounded text-white text-[8px] font-bold flex items-center justify-center', getFileTypeColor(file.name))}>
-                      {getFileExt(file.name)}
+                {attachments.map((file, i) => {
+                  const previewUrl = imagePreviewUrls.get(file)
+                  return (
+                    <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#F8F7F5] text-[14px] group">
+                      {previewUrl ? (
+                        <img src={previewUrl} alt={file.name} className="w-8 h-8 rounded object-cover flex-shrink-0" />
+                      ) : (
+                        <div className={cn('w-6 h-6 rounded text-white text-[8px] font-bold flex items-center justify-center', getFileTypeColor(file.name))}>
+                          {getFileExt(file.name)}
+                        </div>
+                      )}
+                      <span className="text-[#6B6B66] max-w-[150px] truncate text-[13px]">{file.name}</span>
+                      <span className="text-[#9B9B95] text-[11px]">{formatFileSize(file.size)}</span>
+                      <button
+                        onClick={() => setAttachments(prev => prev.filter((_, idx) => idx !== i))}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="h-3 w-3 text-[#9B9B95] hover:text-[#1A1A1A]" />
+                      </button>
                     </div>
-                    <span className="text-[#6B6B66] max-w-[150px] truncate text-[13px]">{file.name}</span>
-                    <span className="text-[#9B9B95] text-[11px]">{formatFileSize(file.size)}</span>
-                    <button
-                      onClick={() => setAttachments(prev => prev.filter((_, idx) => idx !== i))}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <X className="h-3 w-3 text-[#9B9B95] hover:text-[#1A1A1A]" />
-                    </button>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </div>

@@ -99,6 +99,22 @@ export function EmailReader({
   const [isSending, setIsSending] = useState(false)
   const [forgieLoading, setForgieLoading] = useState(false)
   const [replyAttachments, setReplyAttachments] = useState<File[]>([])
+
+  // Blob-URLs voor image-thumbnails op user-uploaded reply-bijlagen
+  const replyImagePreviewUrls = useMemo(() => {
+    const map = new Map<File, string>()
+    replyAttachments.forEach((file) => {
+      if (file.type.startsWith('image/')) {
+        map.set(file, URL.createObjectURL(file))
+      }
+    })
+    return map
+  }, [replyAttachments])
+  useEffect(() => {
+    return () => {
+      replyImagePreviewUrls.forEach((url) => URL.revokeObjectURL(url))
+    }
+  }, [replyImagePreviewUrls])
   // Originele bijlagen die meegestuurd worden bij forward (los van user uploads)
   const [forwardOriginalAttachments, setForwardOriginalAttachments] = useState<EmailAttachment[]>([])
   // Schedule send menu state
@@ -137,6 +153,57 @@ export function EmailReader({
   const [previewLoading, setPreviewLoading] = useState<string | null>(null)
   const [downloadingAll, setDownloadingAll] = useState(false)
   const [previewAtt, setPreviewAtt] = useState<{ filename: string; url: string; contentType: string } | null>(null)
+  // Cache van blob-URLs voor image-thumbnails per filename. Wordt gevuld bij open van email
+  // voor alle image-bijlagen onder 10MB, en wordt gerevoked bij email-switch / unmount.
+  const [attachmentThumbnails, setAttachmentThumbnails] = useState<Record<string, string>>({})
+
+  // ─── Auto-fetch image-thumbnails voor ontvangen bijlagen ───
+  // Haalt alle image-bijlagen (< 10MB) op via IMAP zodra de email opent, en
+  // bouwt blob-URLs voor inline-preview in de bijlagen-cards.
+  useEffect(() => {
+    if (!email?.attachment_meta?.length) {
+      setAttachmentThumbnails({})
+      return
+    }
+    const uid = Number(email.gmail_id || email.id)
+    if (Number.isNaN(uid)) return
+
+    let cancelled = false
+    const createdUrls: string[] = []
+    const MAX_THUMB_BYTES = 10 * 1024 * 1024
+
+    const fetchThumbs = async () => {
+      for (const att of email.attachment_meta!) {
+        if (cancelled) return
+        const ext = (att.filename.split('.').pop() || '').toLowerCase()
+        const isImage =
+          (att.contentType || '').toLowerCase().startsWith('image/') ||
+          ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'svg'].includes(ext)
+        if (!isImage) continue
+        if (att.size && att.size > MAX_THUMB_BYTES) continue
+        try {
+          const result = await downloadEmailAttachment(uid, imapFolder, att.filename)
+          if (cancelled) return
+          const binary = atob(result.content)
+          const bytes = new Uint8Array(binary.length)
+          for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+          const blob = new Blob([bytes], { type: result.contentType || att.contentType || 'image/jpeg' })
+          const url = URL.createObjectURL(blob)
+          createdUrls.push(url)
+          setAttachmentThumbnails((prev) => ({ ...prev, [att.filename]: url }))
+        } catch {
+          /* stil: gebruiker kan altijd via klik de full preview ophalen */
+        }
+      }
+    }
+    fetchThumbs()
+
+    return () => {
+      cancelled = true
+      createdUrls.forEach((url) => URL.revokeObjectURL(url))
+      setAttachmentThumbnails({})
+    }
+  }, [email?.id, email?.attachment_meta?.length, imapFolder])
 
   // ─── Draft persistence ───
   const draftKey = email ? `email-draft-${email.id}` : null
@@ -847,20 +914,27 @@ export function EmailReader({
                   )
                 })}
                 {/* User uploaded files */}
-                {replyAttachments.map((file, i) => (
-                  <div key={i} className="inline-flex items-center gap-2 px-2.5 py-1.5 bg-white rounded-lg border border-[#EBEBEB] text-[12px] text-[#6B6B66]">
-                    <Paperclip className="h-3 w-3 text-[#9B9B95]" />
-                    <span className="max-w-[180px] truncate">{file.name}</span>
-                    <span className="text-[10px] text-[#9B9B95] font-mono">{(file.size / 1024).toFixed(0)}KB</span>
-                    <button
-                      onClick={() => setReplyAttachments(prev => prev.filter((_, idx) => idx !== i))}
-                      className="text-[#9B9B95] hover:text-[#C0451A] transition-colors"
-                      title="Verwijderen"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </div>
-                ))}
+                {replyAttachments.map((file, i) => {
+                  const previewUrl = replyImagePreviewUrls.get(file)
+                  return (
+                    <div key={i} className="inline-flex items-center gap-2 px-2.5 py-1.5 bg-white rounded-lg border border-[#EBEBEB] text-[12px] text-[#6B6B66]">
+                      {previewUrl ? (
+                        <img src={previewUrl} alt={file.name} className="w-6 h-6 rounded object-cover flex-shrink-0" />
+                      ) : (
+                        <Paperclip className="h-3 w-3 text-[#9B9B95]" />
+                      )}
+                      <span className="max-w-[180px] truncate">{file.name}</span>
+                      <span className="text-[10px] text-[#9B9B95] font-mono">{(file.size / 1024).toFixed(0)}KB</span>
+                      <button
+                        onClick={() => setReplyAttachments(prev => prev.filter((_, idx) => idx !== i))}
+                        className="text-[#9B9B95] hover:text-[#C0451A] transition-colors"
+                        title="Verwijderen"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  )
+                })}
               </div>
             )}
 
@@ -1327,6 +1401,7 @@ export function EmailReader({
                       const visual = getAttachmentVisual(att.filename, att.contentType)
                       const isDownloading = downloadingAttachment === att.filename
                       const isPreviewing = previewLoading === att.filename
+                      const thumbUrl = attachmentThumbnails[att.filename]
                       return (
                         <div
                           key={`${att.filename}-${i}`}
@@ -1345,12 +1420,20 @@ export function EmailReader({
                           )}
                           title={`Preview ${att.filename}`}
                         >
-                          <div className={cn(
-                            'w-8 h-8 rounded-lg text-white text-[9px] font-bold flex items-center justify-center flex-shrink-0',
-                            visual.bg,
-                          )}>
-                            {visual.label}
-                          </div>
+                          {thumbUrl ? (
+                            <img
+                              src={thumbUrl}
+                              alt={att.filename}
+                              className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
+                            />
+                          ) : (
+                            <div className={cn(
+                              'w-8 h-8 rounded-lg text-white text-[9px] font-bold flex items-center justify-center flex-shrink-0',
+                              visual.bg,
+                            )}>
+                              {visual.label}
+                            </div>
+                          )}
                           <div className="min-w-0 flex-1">
                             <span className="text-[13px] text-[#6B6B66] group-hover/att:text-[#4A4A46] transition-colors duration-150 block truncate">
                               {att.filename}
