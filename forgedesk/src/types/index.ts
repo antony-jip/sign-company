@@ -727,6 +727,7 @@ export interface AppSettings {
   // Offerte teksten
   offerte_intro_tekst: string;
   offerte_outro_tekst: string;
+  offerte_voorwaarden: string;
   // Email
   /** @deprecated Verhuisd naar profiles (migratie 091). */
   afzender_naam: string;

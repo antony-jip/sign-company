@@ -5,6 +5,7 @@ import {
 } from './supabaseHelpers'
 import { safeSetItem } from '@/utils/localStorageUtils'
 import { normaliseerNaam } from '@/utils/naamNormalisatie'
+import { DEFAULT_OFFERTE_VOORWAARDEN } from '@/utils/defaults'
 import { getOffertesByProject } from './offerteService'
 import { getWerkbonnenByProject } from './werkbonService'
 import { getFacturenByProject } from './factuurService'
@@ -199,6 +200,7 @@ export function getDefaultAppSettings(userId: string): AppSettings {
     standaard_uurtarief: 75,
     offerte_intro_tekst: '',
     offerte_outro_tekst: '',
+    offerte_voorwaarden: DEFAULT_OFFERTE_VOORWAARDEN,
     afzender_naam: '',
     email_fetch_limit: 200,
     forgie_enabled: true,
