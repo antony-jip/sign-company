@@ -267,6 +267,9 @@ export function ProjectDetail() {
       klant_id: project.klant_id || '',
       titel: project.naam || '',
     })
+    if (project.contactpersoon_id) {
+      params.set('contactpersoon_id', project.contactpersoon_id)
+    }
     navigate(`/offertes/nieuw?${params.toString()}`, { state: { from: location.pathname } })
   }
 
