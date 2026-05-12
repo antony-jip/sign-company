@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
@@ -23,7 +23,8 @@ import {
   Receipt,
   ArrowRight,
 } from 'lucide-react'
-import type { Klant, Project } from '@/types'
+import type { Klant, Project, Contactpersoon, ContactpersoonRecord } from '@/types'
+import { getContactpersonenByKlant } from '@/services/supabaseService'
 import { cn } from '@/lib/utils'
 import { hapticLight, hapticMedium } from '@/utils/haptic'
 
@@ -121,6 +122,32 @@ export function CustomerSelector({
   handleStartEditing,
   canStartEditing,
 }: CustomerSelectorProps) {
+  const [dbContacten, setDbContacten] = useState<ContactpersoonRecord[]>([])
+  useEffect(() => {
+    if (!selectedKlant?.id) { setDbContacten([]); return }
+    let cancelled = false
+    getContactpersonenByKlant(selectedKlant.id)
+      .then((rows) => { if (!cancelled) setDbContacten(rows) })
+      .catch(() => { if (!cancelled) setDbContacten([]) })
+    return () => { cancelled = true }
+  }, [selectedKlant?.id])
+
+  const gemergedeContactpersonen = useMemo<Contactpersoon[]>(() => {
+    const jsonbCps = selectedKlant?.contactpersonen || []
+    const jsonbEmails = new Set(jsonbCps.map((c) => c.email?.toLowerCase()).filter(Boolean))
+    const fromDb: Contactpersoon[] = dbContacten
+      .filter((c) => !jsonbEmails.has(c.email?.toLowerCase()))
+      .map((c) => ({
+        id: c.id,
+        naam: [c.voornaam, c.achternaam].filter(Boolean).join(' ') || c.email || '',
+        functie: c.functie || '',
+        email: c.email || '',
+        telefoon: c.telefoon || '',
+        is_primair: false,
+      }))
+    return [...jsonbCps, ...fromDb]
+  }, [selectedKlant, dbContacten])
+
   return (
       <div className="relative -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 min-h-full" style={{ backgroundColor: '#F8F7F5' }}>
         <div className="relative max-w-2xl mx-auto px-4 py-8 md:py-12 animate-fade-in-up">
@@ -254,9 +281,9 @@ export function CustomerSelector({
               {selectedKlant && (
                 <div className="pt-2 border-t space-y-2" style={{ borderColor: '#EBEBEB' }}>
                   <Label className="text-[11px] font-semibold uppercase tracking-wider block" style={{ color: '#9B9B95' }}>Contactpersoon</Label>
-                  {(selectedKlant.contactpersonen?.length > 0 || selectedKlant.contactpersoon) && (
+                  {(gemergedeContactpersonen.length > 0 || selectedKlant.contactpersoon) && (
                     <div className="space-y-1.5">
-                      {selectedKlant.contactpersonen?.map((cp) => (
+                      {gemergedeContactpersonen.map((cp) => (
                         <button key={cp.id} onClick={() => contact.handleSelectContact(cp.id)} className={cn('w-full text-left rounded-lg p-2.5 transition-all')} style={{ border: selectedContactId === cp.id ? '1px solid #1A535C' : '0.5px solid #EBEBEB', backgroundColor: selectedContactId === cp.id ? '#E2F0F0' : 'transparent' }}>
                           <div className="flex items-center gap-2">
                             <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold" style={{ backgroundColor: selectedContactId === cp.id ? '#1A535C' : '#EBEBEB', color: selectedContactId === cp.id ? '#FFFFFF' : '#6B6B66' }}>{cp.naam[0]?.toUpperCase()}</div>
@@ -268,7 +295,7 @@ export function CustomerSelector({
                           </div>
                         </button>
                       ))}
-                      {(!selectedKlant.contactpersonen || selectedKlant.contactpersonen.length === 0) && selectedKlant.contactpersoon && (
+                      {gemergedeContactpersonen.length === 0 && selectedKlant.contactpersoon && (
                         <div className="rounded-lg p-2.5" style={{ border: '1px solid #1A535C', backgroundColor: '#E2F0F0' }}>
                           <div className="flex items-center gap-2">
                             <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold" style={{ backgroundColor: '#1A535C', color: '#FFFFFF' }}>{selectedKlant.contactpersoon[0]?.toUpperCase()}</div>
