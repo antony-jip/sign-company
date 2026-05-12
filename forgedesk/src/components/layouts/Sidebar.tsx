@@ -66,18 +66,6 @@ const NAV_GROUPS: NavGroup[] = [
 // Flat list for rail mode
 const ALL_NAV_ITEMS: NavItem[] = [...WERK_ITEMS, ...FINANCIEEL_ITEMS, ...PLANNING_ITEMS, ...COMMUNICATIE_ITEMS, IMPORTEREN_ITEM]
 
-// Bright icon tints for dark sidebar
-const ICON_BRIGHT: Record<string, string> = {
-  '#1A535C': '#7EC8D0',
-  '#F15025': '#FF8A6A',
-  '#2D6B48': '#6CC98A',
-  '#3A6B8C': '#7AAED4',
-  '#C44830': '#F0826A',
-  '#9A5A48': '#D4927E',
-  '#5A5A55': '#A8A8A2',
-  '#6A5A8A': '#A896CC',
-}
-
 function useIsDesktop() {
   const [isDesktop, setIsDesktop] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 768)
   useEffect(() => {
@@ -100,8 +88,10 @@ export function Sidebar() {
   const navigate = useNavigate()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [userPopoverOpen, setUserPopoverOpen] = useState(false)
+  const [popoverPos, setPopoverPos] = useState<{ left: number; bottom: number } | null>(null)
   const sidebarRef = useRef<HTMLDivElement>(null)
   const userPopoverRef = useRef<HTMLDivElement>(null)
+  const userButtonRef = useRef<HTMLButtonElement>(null)
 
   const isItemVisible = useMemo(() => {
     const sidebarItems = settings?.sidebar_items
@@ -134,11 +124,35 @@ export function Sidebar() {
   useEffect(() => {
     if (!userPopoverOpen) return
     const handleClick = (e: MouseEvent) => {
-      if (userPopoverRef.current && !userPopoverRef.current.contains(e.target as Node)) setUserPopoverOpen(false)
+      const target = e.target as Node
+      const inAnchor = userPopoverRef.current?.contains(target)
+      const inPopover = (target as HTMLElement)?.closest?.('[data-user-popover]')
+      if (!inAnchor && !inPopover) setUserPopoverOpen(false)
     }
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
   }, [userPopoverOpen])
+
+  useEffect(() => {
+    if (!userPopoverOpen) { setPopoverPos(null); return }
+    const updatePos = () => {
+      const btn = userButtonRef.current
+      if (!btn) return
+      const rect = btn.getBoundingClientRect()
+      if (isCollapsed) {
+        setPopoverPos({ left: rect.right + 12, bottom: window.innerHeight - rect.bottom })
+      } else {
+        setPopoverPos({ left: rect.left, bottom: window.innerHeight - rect.top + 8 })
+      }
+    }
+    updatePos()
+    window.addEventListener('resize', updatePos)
+    window.addEventListener('scroll', updatePos, true)
+    return () => {
+      window.removeEventListener('resize', updatePos)
+      window.removeEventListener('scroll', updatePos, true)
+    }
+  }, [userPopoverOpen, isCollapsed])
 
   const userInitial = (user?.user_metadata?.voornaam?.[0] || user?.email?.[0] || 'U').toUpperCase()
   const userName = user?.user_metadata?.voornaam
@@ -148,13 +162,10 @@ export function Sidebar() {
   const isActivePath = (path: string) =>
     path === '/' ? location.pathname === '/' : location.pathname.startsWith(path)
 
-  const brightIcon = (color: string) => ICON_BRIGHT[color] || '#FFFFFF'
-
   // ── Rail item (collapsed) ──
   const renderRailItem = (item: NavItem) => {
     const active = isActivePath(item.path)
     const Icon = item.icon
-    const iconColor = active ? '#FFFFFF' : brightIcon(item.color)
 
     return (
       <NavLink
@@ -175,10 +186,9 @@ export function Sidebar() {
           <Icon
             className={cn(
               'w-[22px] h-[22px] transition-all duration-300 ease-out',
-              active && 'drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]',
               !active && 'group-hover/rail:scale-110',
             )}
-            style={{ color: iconColor }}
+            style={{ color: item.color }}
             strokeWidth={active ? 2 : 1.6}
           />
         </div>
@@ -186,7 +196,7 @@ export function Sidebar() {
         <span
           className={cn(
             'relative z-10 text-center leading-tight transition-all duration-300',
-            active ? 'text-white font-semibold' : 'text-white/40 font-medium group-hover/rail:text-white/75',
+            active ? 'text-[#1A1A1A] font-semibold' : 'text-[#9B9B95] font-medium group-hover/rail:text-[#1A1A1A]',
           )}
           style={{ fontSize: '9px' }}
         >
@@ -198,14 +208,13 @@ export function Sidebar() {
 
   // ── Rail divider ──
   const railDivider = (key: string) => (
-    <div key={key} className="w-6 mx-auto my-2.5" style={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.07), transparent)' }} />
+    <div key={key} className="w-6 mx-auto my-2.5" style={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(0,0,0,0.06), transparent)' }} />
   )
 
   // ── Expanded item ──
   const renderExpandedItem = (item: NavItem, isBottom = false) => {
     const active = isActivePath(item.path)
     const Icon = item.icon
-    const iconColor = active ? '#FFFFFF' : brightIcon(item.color)
 
     return (
       <NavLink
@@ -225,28 +234,23 @@ export function Sidebar() {
         )}
 
         {/* Flame left accent */}
-        {active && <div className="doen-sidebar-flame-accent" style={{ left: '-8px' }} />}
+        {active && <div className="doen-sidebar-flame-accent" style={{ left: '4px' }} />}
 
         {/* Icon — rounded container with module color tint */}
         <div
           className={cn(
             'relative z-10 w-[30px] h-[30px] rounded-[8px] flex items-center justify-center flex-shrink-0 transition-all duration-300',
-            active
-              ? 'shadow-[0_0_12px_rgba(255,255,255,0.05)]'
-              : 'group-hover/nav:brightness-125',
+            !active && 'group-hover/nav:brightness-105',
           )}
           style={{
             backgroundColor: active
-              ? `${item.color}33`
-              : `${item.color}15`,
+              ? `${item.color}22`
+              : `${item.color}12`,
           }}
         >
           <Icon
-            className={cn(
-              'w-[17px] h-[17px] transition-all duration-300 ease-out',
-              active && 'drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]',
-            )}
-            style={{ color: iconColor }}
+            className="w-[17px] h-[17px] transition-all duration-300 ease-out"
+            style={{ color: item.color }}
             strokeWidth={active ? 2.2 : 1.5}
           />
         </div>
@@ -254,7 +258,7 @@ export function Sidebar() {
         {/* Label */}
         <span className={cn(
           'relative z-10 truncate transition-all duration-300 tracking-[-0.01em]',
-          active ? 'text-white font-semibold' : 'text-white/55 font-medium group-hover/nav:text-white/90',
+          active ? 'text-[#1A1A1A] font-semibold' : 'text-[#6B6B66] font-medium group-hover/nav:text-[#1A1A1A]',
         )}>
           {item.label}
         </span>
@@ -282,15 +286,15 @@ export function Sidebar() {
           )}
         >
           {collapsed ? (
-            <img src="/logos/doen-app-icon-wit.svg" alt="doen." className="h-5 w-5 transition-transform duration-300 group-hover/logo:scale-105" />
+            <img src="/logos/doen-app-icon.svg" alt="doen." className="h-16 w-16 transition-transform duration-300 group-hover/logo:scale-105" />
           ) : (
-            <img src="/logos/doen-logo-wit.svg" alt="doen." className="h-6 transition-transform duration-300 group-hover/logo:translate-x-0.5" />
+            <img src="/logos/doen-logo.svg" alt="doen." className="h-6 transition-transform duration-300 group-hover/logo:translate-x-0.5" />
           )}
         </NavLink>
 
         {/* Separator */}
         <div className={cn(collapsed ? 'mx-4' : 'mx-5')}>
-          <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.09) 20%, rgba(255,255,255,0.09) 80%, transparent 100%)' }} />
+          <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.07) 20%, rgba(0,0,0,0.07) 80%, transparent 100%)' }} />
         </div>
 
         {/* Main navigation — NO scroll, flex-distributed */}
@@ -308,7 +312,7 @@ export function Sidebar() {
           ) : (
             <div className="px-0">
               {filteredGroups.map((group, gi) => (
-                <div key={group.section} className={gi > 0 ? 'mt-5' : ''}>
+                <div key={group.section} className={gi > 0 ? 'mt-7' : ''}>
                   <div className="doen-sidebar-section">{group.section}</div>
                   <div className="space-y-[1px]">
                     {group.items.map(item => renderExpandedItem(item))}
@@ -326,7 +330,7 @@ export function Sidebar() {
         )}>
           {/* Divider */}
           <div className={cn('mb-3', collapsed ? 'w-6 mx-auto' : 'mx-5')}>
-            <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.07) 20%, rgba(255,255,255,0.07) 80%, transparent 100%)' }} />
+            <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.05) 20%, rgba(0,0,0,0.05) 80%, transparent 100%)' }} />
           </div>
 
           {/* Importeren */}
@@ -339,17 +343,17 @@ export function Sidebar() {
             collapsed ? (
               <button
                 onClick={toggleSidebar}
-                className="w-9 h-8 flex items-center justify-center rounded-[10px] text-white/20 hover:text-white/55 hover:bg-white/[0.05] transition-all duration-300 mt-2"
+                className="w-9 h-8 flex items-center justify-center rounded-[10px] text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-black/[0.04] transition-all duration-300 mt-2"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
             ) : (
               <button
                 onClick={toggleSidebar}
-                className="flex items-center justify-center h-7 px-4 mx-3 gap-2 rounded-[8px] text-white/15 hover:text-white/45 hover:bg-white/[0.04] transition-all duration-300 w-auto mt-2"
+                className="flex items-center gap-2 h-8 px-4 mx-2 rounded-[10px] text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-black/[0.04] transition-all duration-300 mt-2"
               >
-                <ChevronLeft className="w-3 h-3" />
-                <span className="text-[10px] font-medium tracking-wider uppercase">Inklappen</span>
+                <ChevronLeft className="w-3.5 h-3.5" />
+                <span className="text-[12px] font-medium">Inklappen</span>
               </button>
             )
           )}
@@ -358,84 +362,84 @@ export function Sidebar() {
           {user && (
             <div ref={userPopoverRef} className={cn('relative mt-1', collapsed ? 'flex justify-center' : '')}>
               <button
+                ref={userButtonRef}
                 onClick={() => setUserPopoverOpen(!userPopoverOpen)}
                 className={cn(
-                  'flex items-center transition-all duration-300 rounded-[12px] hover:bg-white/[0.05]',
+                  'flex items-center transition-all duration-300 rounded-[12px] hover:bg-black/[0.04]',
                   collapsed ? 'w-11 h-11 justify-center' : 'gap-3 h-[52px] px-4 mx-2 w-[calc(100%-16px)]',
                 )}
               >
                 <div
                   className="w-[34px] h-[34px] rounded-full flex items-center justify-center flex-shrink-0 doen-sidebar-avatar"
-                  style={{ background: 'linear-gradient(145deg, rgba(255,255,255,0.18), rgba(255,255,255,0.06))' }}
+                  style={{ background: 'linear-gradient(145deg, rgba(26,83,92,0.12), rgba(26,83,92,0.04))' }}
                 >
-                  <span className="text-[13px] font-bold text-white/90">{userInitial}</span>
+                  <span className="text-[13px] font-bold text-[#1A535C]">{userInitial}</span>
                 </div>
                 {!collapsed && (
                   <div className="flex-1 min-w-0 text-left">
-                    <p className="text-white/85 text-[13px] font-medium truncate leading-tight">{userName}</p>
-                    <p className="text-white/30 text-[10px] truncate leading-tight mt-0.5">{user.email}</p>
+                    <p className="text-[#1A1A1A] text-[13px] font-medium truncate leading-tight">{userName}</p>
+                    <p className="text-[#9B9B95] text-[10px] truncate leading-tight mt-0.5">{user.email}</p>
                   </div>
                 )}
               </button>
 
               {/* User popover */}
-              {userPopoverOpen && (
-                <div className={cn(
-                  'absolute z-50 w-56 overflow-hidden',
-                  collapsed ? 'left-full bottom-0 ml-3' : 'left-2 bottom-full mb-2',
-                )}
+              {userPopoverOpen && popoverPos && (
+                <div
+                  data-user-popover
+                  className="fixed z-50 w-56 overflow-hidden"
                   style={{
-                    background: 'rgba(15, 58, 66, 0.95)',
-                    backdropFilter: 'blur(20px)',
-                    WebkitBackdropFilter: 'blur(20px)',
-                    border: '0.5px solid rgba(255, 255, 255, 0.1)',
+                    left: popoverPos.left,
+                    bottom: popoverPos.bottom,
+                    background: '#FFFFFF',
+                    border: '0.5px solid #EBEBEB',
                     borderRadius: '14px',
-                    boxShadow: '0 16px 48px rgba(0, 0, 0, 0.3), 0 0 0 0.5px rgba(255,255,255,0.05)',
+                    boxShadow: '0 16px 48px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0,0,0,0.04)',
                   }}
                 >
-                  <div className="px-4 py-3.5" style={{ borderBottom: '0.5px solid rgba(255,255,255,0.08)' }}>
-                    <p className="text-[13px] font-semibold text-white/90 truncate">{userName}</p>
-                    <p className="text-[11px] text-white/40 truncate mt-0.5">{user.email}</p>
+                  <div className="px-4 py-3.5" style={{ borderBottom: '0.5px solid #EBEBEB' }}>
+                    <p className="text-[13px] font-semibold text-[#1A1A1A] truncate">{userName}</p>
+                    <p className="text-[11px] text-[#9B9B95] truncate mt-0.5">{user.email}</p>
                   </div>
 
                   <div className="py-1">
                     <button
                       onClick={() => { setUserPopoverOpen(false); navigate('/instellingen') }}
-                      className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-white/70 hover:text-white hover:bg-white/[0.06] transition-all duration-200"
+                      className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] transition-all duration-200"
                     >
-                      <SlidersHorizontal className="w-4 h-4 text-white/40" />
+                      <SlidersHorizontal className="w-4 h-4 text-[#9B9B95]" />
                       Profiel
                     </button>
                     <button
                       onClick={() => { setUserPopoverOpen(false); navigate('/instellingen?tab=abonnement') }}
-                      className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-white/70 hover:text-white hover:bg-white/[0.06] transition-all duration-200"
+                      className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] transition-all duration-200"
                     >
-                      <CreditCard className="w-4 h-4 text-white/40" />
+                      <CreditCard className="w-4 h-4 text-[#9B9B95]" />
                       Abonnement
                     </button>
                     <button
                       onClick={() => { setUserPopoverOpen(false); navigate('/kennisbank') }}
-                      className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-white/70 hover:text-white hover:bg-white/[0.06] transition-all duration-200"
+                      className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] transition-all duration-200"
                     >
-                      <BookOpen className="w-4 h-4 text-white/40" />
+                      <BookOpen className="w-4 h-4 text-[#9B9B95]" />
                       Kennisbank
                     </button>
                   </div>
 
-                  <div className="py-1" style={{ borderTop: '0.5px solid rgba(255,255,255,0.08)' }}>
+                  <div className="py-1" style={{ borderTop: '0.5px solid #EBEBEB' }}>
                     <button
                       onClick={() => { setUserPopoverOpen(false); setLayoutMode('topnav') }}
-                      className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-white/70 hover:text-white hover:bg-white/[0.06] transition-all duration-200"
+                      className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] transition-all duration-200"
                     >
-                      <PanelTop className="w-4 h-4 text-white/40" />
+                      <PanelTop className="w-4 h-4 text-[#9B9B95]" />
                       Top navigatie
                     </button>
                   </div>
 
-                  <div className="py-1" style={{ borderTop: '0.5px solid rgba(255,255,255,0.08)' }}>
+                  <div className="py-1" style={{ borderTop: '0.5px solid #EBEBEB' }}>
                     <button
                       onClick={() => { setUserPopoverOpen(false); logout() }}
-                      className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-[#F15025]/80 hover:text-[#F15025] hover:bg-[#F15025]/[0.06] transition-all duration-200"
+                      className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-[#F15025] hover:bg-[#F15025]/[0.06] transition-all duration-200"
                     >
                       <LogOut className="w-4 h-4" />
                       Uitloggen
