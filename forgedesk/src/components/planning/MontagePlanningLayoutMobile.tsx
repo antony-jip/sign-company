@@ -8,6 +8,7 @@ import {
   ClipboardList,
   CalendarCheck,
   Loader2,
+  ArrowUpRight,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
@@ -168,7 +169,7 @@ function MontageCard({
             </p>
           )}
 
-          {(heeftBijlagen || afspraak.werkbon_id) && (
+          {(heeftBijlagen || afspraak.werkbon_id || afspraak.project_id) && (
             <div className="flex flex-wrap gap-2">
               {afspraak.bijlagen?.map((b) => (
                 <a
@@ -189,6 +190,15 @@ function MontageCard({
                 >
                   <ClipboardList className="h-3 w-3" />
                   {afspraak.werkbon_nummer || 'Werkbon'}
+                </a>
+              )}
+              {afspraak.project_id && (
+                <a
+                  href={`/projecten/${afspraak.project_id}`}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-[#1A535C]/[0.07] px-2.5 py-1 text-[12px] font-medium text-[#1A535C] hover:bg-[#1A535C]/[0.12] transition-colors"
+                >
+                  Open project
+                  <ArrowUpRight className="h-3 w-3" />
                 </a>
               )}
             </div>

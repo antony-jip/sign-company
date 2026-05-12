@@ -50,6 +50,7 @@ import {
   Image,
   Upload,
   Eye,
+  ArrowUpRight,
 } from "lucide-react";
 import {
   getMontageAfspraken,
@@ -78,6 +79,7 @@ import { getAvatarStyle } from "@/utils/medewerkerAvatar";
 import { isAdminUser } from "@/utils/authHelpers";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useOptimisticState } from "@/hooks/useOptimistic";
+import { useNavigateWithTab } from "@/hooks/useNavigateWithTab";
 
 const SWIMLANE_COLLAPSED_KEY = 'doen_planning_swimlane_collapsed';
 const SWIMLANE_UNASSIGNED_KEY = '__ongetoewezen__';
@@ -213,6 +215,7 @@ const EMPTY_FORM: MontageFormData = {
 
 export function MontagePlanningLayout() {
   const { user } = useAuth();
+  const { navigateWithTab } = useNavigateWithTab();
   const [currentMonday, setCurrentMonday] = useState<Date>(() =>
     getMondayOfWeek(new Date())
   );
@@ -1608,11 +1611,31 @@ export function MontagePlanningLayout() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-[560px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
-              {editingAfspraak
-                ? "Montage afspraak bewerken"
-                : "Nieuwe montage afspraak"}
-            </DialogTitle>
+            <div className="flex items-center justify-between gap-3 pr-6">
+              <DialogTitle>
+                {editingAfspraak
+                  ? "Montage afspraak bewerken"
+                  : "Nieuwe montage afspraak"}
+              </DialogTitle>
+              {formData.project_id && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const project = projecten.find((p) => p.id === formData.project_id);
+                    setDialogOpen(false);
+                    navigateWithTab({
+                      path: `/projecten/${formData.project_id}`,
+                      label: project?.naam || 'Project',
+                      id: `/projecten/${formData.project_id}`,
+                    });
+                  }}
+                  className="inline-flex items-center gap-1 text-[12px] font-medium text-[#1A535C] hover:text-[#143F46] hover:underline shrink-0"
+                >
+                  Open project
+                  <ArrowUpRight className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
           </DialogHeader>
 
           <div className="space-y-4 py-2">

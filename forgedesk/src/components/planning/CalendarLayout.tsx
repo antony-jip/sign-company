@@ -48,6 +48,7 @@ import {
   Upload,
   Eye,
   Printer,
+  ArrowUpRight,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { uploadMontageBijlage } from '@/services/storageService'
@@ -91,6 +92,7 @@ import { getAvatarStyle } from '@/utils/medewerkerAvatar'
 import { isAdminUser } from '@/utils/authHelpers'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useOptimisticState } from '@/hooks/useOptimistic'
+import { useNavigateWithTab } from '@/hooks/useNavigateWithTab'
 
 const PLANNING_FILTER_KEY = 'doen_planning_filter_v1'
 
@@ -223,6 +225,7 @@ const defaultForm = {
 
 export function CalendarLayout() {
   const { user } = useAuth()
+  const { navigateWithTab } = useNavigateWithTab()
   const [currentDate, setCurrentDate] = useState(new Date())
   const [afspraken, setAfspraken] = useState<MontageAfspraak[]>([])
   const runOptimistic = useOptimisticState(setAfspraken)
@@ -1178,12 +1181,32 @@ export function CalendarLayout() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <div className="h-7 w-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#E2F0F0', color: '#1A535C' }}>
-                <Wrench className="h-3.5 w-3.5" />
-              </div>
-              {editingId ? 'Taak bewerken' : 'Taak toevoegen'}
-            </DialogTitle>
+            <div className="flex items-center justify-between gap-3 pr-6">
+              <DialogTitle className="flex items-center gap-2">
+                <div className="h-7 w-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#E2F0F0', color: '#1A535C' }}>
+                  <Wrench className="h-3.5 w-3.5" />
+                </div>
+                {editingId ? 'Taak bewerken' : 'Taak toevoegen'}
+              </DialogTitle>
+              {formData.project_id && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const project = projecten.find((p) => p.id === formData.project_id)
+                    setDialogOpen(false)
+                    navigateWithTab({
+                      path: `/projecten/${formData.project_id}`,
+                      label: project?.naam || 'Project',
+                      id: `/projecten/${formData.project_id}`,
+                    })
+                  }}
+                  className="inline-flex items-center gap-1 text-[12px] font-medium text-[#1A535C] hover:text-[#143F46] hover:underline shrink-0"
+                >
+                  Open project
+                  <ArrowUpRight className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
           </DialogHeader>
 
           <div className="grid gap-4 py-2 max-h-[70vh] overflow-y-auto pr-1">
