@@ -747,13 +747,31 @@ export function QuoteCreation() {
   // Auto-fill contactpersoon from klant
   useEffect(() => {
     if (!selectedKlant) return
+
     if (projectContactPrefilledRef.current) {
-      const cp = selectedKlant.contactpersonen?.find(c => c.id === selectedContactId)
-      if (cp) setContactpersoon(cp.naam)
       projectContactPrefilledRef.current = false
       contact.setShowNewContact(false)
-      return
+
+      const cp = selectedKlant.contactpersonen?.find(c => c.id === selectedContactId)
+      if (cp) {
+        setContactpersoon(cp.naam)
+        return
+      }
+
+      // Fallback: contactpersonen-tabel (project.contactpersoon_id kan een DB-record zijn dat niet in JSONB staat)
+      let cancelled = false
+      getContactpersonenByKlant(selectedKlant.id)
+        .then((dbCps) => {
+          if (cancelled) return
+          const dbCp = dbCps.find(c => c.id === selectedContactId)
+          if (!dbCp) return
+          const naam = [dbCp.voornaam, dbCp.achternaam].filter(Boolean).join(' ') || dbCp.email || ''
+          if (naam) setContactpersoon(naam)
+        })
+        .catch(() => { /* stil: gebruiker kan handmatig invullen */ })
+      return () => { cancelled = true }
     }
+
     // Try to select primary contact from contactpersonen array
     const primair = selectedKlant.contactpersonen?.find(c => c.is_primair)
     if (primair) {

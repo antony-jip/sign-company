@@ -304,6 +304,8 @@ export function QuoteSidebar({
 
                                 <KlantStatusWarning klant={selectedKlant} className="mt-1" />
 
+                                {/* TODO: vervang door <KlantContactSelector> (zelfde component als ProjectDetail). */}
+                                {/* Mergt JSONB+DB en biedt primary-fallback gratis. Vereist QuoteSidebar refactor — losse follow-up. */}
                                 {selectedKlant.contactpersonen?.length > 0 && (
                                   <div className="space-y-1">
                                     <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: '#9B9B95' }}>Contactpersoon</label>
