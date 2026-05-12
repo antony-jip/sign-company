@@ -111,15 +111,6 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-const DEFAULT_VOORWAARDEN = `1. Deze offerte is geldig gedurende de aangegeven termijn.
-2. Betaling dient te geschieden binnen 30 dagen na factuurdatum.
-3. Alle genoemde bedragen zijn exclusief BTW, tenzij anders vermeld.
-4. Levertijd wordt in overleg bepaald na akkoord op deze offerte.
-5. Op al onze leveringen en diensten zijn onze algemene voorwaarden van toepassing.
-6. Kleuren en materialen kunnen licht afwijken van getoonde voorbeelden.
-7. Wijzigingen na akkoord kunnen tot meerkosten leiden.
-8. Garantie: 2 jaar op materiaal en constructie, 1 jaar op elektronica.`
-
 const ITEM_COUNT_OPTIONS = [1, 2, 3, 4, 5] as const
 
 // Steps removed — now a permanent two-column layout
@@ -313,7 +304,7 @@ export function QuoteCreation() {
   // ── Step 1: Items ──
   const [items, setItems] = useState<QuoteLineItem[]>([])
   const [notities, setNotities] = useState('')
-  const [voorwaarden, setVoorwaarden] = useState(DEFAULT_VOORWAARDEN)
+  const [voorwaarden, setVoorwaarden] = useState(settings.offerte_voorwaarden)
   const [introTekst, setIntroTekst] = useState('')
   const [outroTekst, setOutroTekst] = useState('')
 
@@ -639,7 +630,7 @@ export function QuoteCreation() {
         setVerstuurdNaar(offerte.verstuurd_naar || undefined)
         setGeldigTot(offerte.geldig_tot?.split('T')[0] || '')
         setNotities(offerte.notities || '')
-        setVoorwaarden(offerte.voorwaarden || DEFAULT_VOORWAARDEN)
+        setVoorwaarden(offerte.voorwaarden || settings.offerte_voorwaarden)
         setIntroTekst(offerte.intro_tekst || '')
         setOutroTekst(offerte.outro_tekst || '')
 
