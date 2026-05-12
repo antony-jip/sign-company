@@ -89,11 +89,12 @@ export function TopNav() {
   const updateIndicator = useCallback(() => {
     if (!navRef.current || !indicatorRef.current) return
     const activeLink = navRef.current.querySelector<HTMLElement>('[data-active="true"]')
-    if (activeLink) {
+    const target = activeLink?.querySelector<HTMLElement>('[data-tab-content]') ?? activeLink
+    if (target) {
       const navRect = navRef.current.getBoundingClientRect()
-      const linkRect = activeLink.getBoundingClientRect()
-      indicatorRef.current.style.width = `${linkRect.width}px`
-      indicatorRef.current.style.transform = `translateX(${linkRect.left - navRect.left}px)`
+      const targetRect = target.getBoundingClientRect()
+      indicatorRef.current.style.width = `${targetRect.width}px`
+      indicatorRef.current.style.transform = `translateX(${targetRect.left - navRect.left}px)`
       indicatorRef.current.style.opacity = '1'
     } else {
       indicatorRef.current.style.opacity = '0'
@@ -117,10 +118,19 @@ export function TopNav() {
   return (
     <header className="flex-shrink-0" style={{ position: 'relative', zIndex: 30 }}>
       {/* ── Row 1: Utility bar ── */}
-      <div className="flex items-center h-[52px] px-5 md:px-6" style={{ background: 'linear-gradient(180deg, #1D5A64 0%, #1A535C 100%)' }}>
+      <div
+        className="relative flex items-center h-[56px] px-5 md:px-6"
+        style={{ background: 'linear-gradient(180deg, #FCFCFA 0%, #F8F7F5 100%)' }}
+      >
+        {/* Subtle Flame warmth from right (notifications/avatar zone) */}
+        <div
+          className="pointer-events-none absolute inset-y-0 right-0 w-[320px]"
+          style={{ background: 'radial-gradient(ellipse at 100% 50%, rgba(241, 80, 37, 0.05) 0%, transparent 70%)' }}
+        />
+
         {/* Logo */}
-        <NavLink to="/" className="flex items-center mr-5 flex-shrink-0 opacity-90 hover:opacity-100 transition-opacity">
-          <img src="/logos/doen-logo-wit.svg" alt="doen." className="h-[19px]" />
+        <NavLink to="/" className="relative flex items-center mr-5 flex-shrink-0 opacity-90 hover:opacity-100 transition-opacity">
+          <img src="/logos/doen-logo.svg" alt="doen." className="h-[22px]" />
         </NavLink>
 
         {/* Quick-add — mobile only */}
@@ -129,8 +139,8 @@ export function TopNav() {
             onClick={() => setQuickAddOpen(!quickAddOpen)}
             className={cn(
               'h-6 px-2 rounded-md flex items-center gap-1.5 transition-all duration-200 text-[11px] font-medium',
-              'bg-white/12 text-white/80 hover:bg-white/20 hover:text-white',
-              quickAddOpen && 'bg-white/20 text-white',
+              'bg-black/[0.04] text-[#6B6B66] hover:bg-black/[0.06] hover:text-[#1A1A1A]',
+              quickAddOpen && 'bg-black/[0.06] text-[#1A1A1A]',
             )}
           >
             <Plus className={cn('w-3 h-3 transition-transform duration-200', quickAddOpen && 'rotate-45')} />
@@ -160,25 +170,25 @@ export function TopNav() {
         </div>
 
         {/* Search — desktop */}
-        <div className="hidden md:flex flex-1 justify-center mx-6">
+        <div className="relative hidden md:flex flex-1 justify-center mx-6">
           <GlobalSearch className="w-full max-w-[220px]" />
         </div>
 
         {/* Mobile search */}
         {mobileSearchOpen && (
-          <div className="absolute inset-x-0 top-0 h-[52px] z-40 bg-[#1A535C] flex items-center gap-2 px-4 md:hidden">
+          <div className="absolute inset-x-0 top-0 h-[52px] z-40 bg-[#F8F7F5] flex items-center gap-2 px-4 md:hidden">
             <GlobalSearch className="flex flex-1" />
-            <button onClick={() => setMobileSearchOpen(false)} className="w-7 h-7 rounded-md flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10">
+            <button onClick={() => setMobileSearchOpen(false)} className="w-7 h-7 rounded-md flex items-center justify-center text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-black/[0.04]">
               <X className="w-4 h-4" />
             </button>
           </div>
         )}
 
         {/* Right actions */}
-        <div className="flex items-center gap-0.5 ml-auto md:ml-0">
+        <div className="relative flex items-center gap-0.5 ml-auto md:ml-0">
           <button
             onClick={() => setMobileSearchOpen(true)}
-            className="w-7 h-7 rounded-md md:hidden flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-all"
+            className="w-7 h-7 rounded-md md:hidden flex items-center justify-center text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-black/[0.04] transition-all"
           >
             <Search className="w-3.5 h-3.5" />
           </button>
@@ -187,7 +197,7 @@ export function TopNav() {
             <NotificatieCenter />
           </div>
 
-          <div className="hidden md:block w-px h-4 bg-white/10 mx-1.5" />
+          <div className="hidden md:block w-px h-4 bg-[#EBEBEB] mx-1.5" />
 
           {/* User dropdown — desktop */}
           <div ref={userMenuRef} className="relative hidden md:block">
@@ -195,48 +205,62 @@ export function TopNav() {
               onClick={() => setUserMenuOpen(!userMenuOpen)}
               className={cn(
                 'flex items-center gap-2 pl-1 pr-2 py-1 rounded-lg transition-all duration-200',
-                'hover:bg-white/10',
-                userMenuOpen && 'bg-white/15',
+                'hover:bg-black/[0.04]',
+                userMenuOpen && 'bg-black/[0.06]',
               )}
             >
-              <div className="w-6 h-6 rounded-full bg-white/15 flex items-center justify-center ring-1 ring-white/10">
-                <span className="text-white text-[9px] font-bold">{userInitial}</span>
+              <div
+                className="w-7 h-7 rounded-full flex items-center justify-center"
+                style={{
+                  background: 'linear-gradient(145deg, rgba(26,83,92,0.14), rgba(26,83,92,0.05))',
+                  border: '1.5px solid rgba(241, 80, 37, 0.18)',
+                }}
+              >
+                <span className="text-[11px] font-bold text-[#1A535C]">{userInitial}</span>
               </div>
               <div className="hidden xl:block text-left min-w-0">
-                <p className="text-[11px] font-medium text-white/90 truncate max-w-[90px] leading-tight">{userName}</p>
+                <p className="text-[11px] font-medium text-[#1A1A1A] truncate max-w-[90px] leading-tight">{userName}</p>
               </div>
-              <ChevronDown className={cn('w-2.5 h-2.5 text-white/30 transition-transform hidden xl:block', userMenuOpen && 'rotate-180')} />
+              <ChevronDown className={cn('w-2.5 h-2.5 text-[#9B9B95] transition-transform hidden xl:block', userMenuOpen && 'rotate-180')} />
             </button>
 
             {userMenuOpen && (
-              <div className="absolute right-0 top-full mt-2 w-56 bg-card border border-border/60 rounded-2xl shadow-2xl shadow-[rgba(120,90,50,0.10)] z-50 overflow-hidden animate-scale-in">
-                <div className="px-4 py-3.5 border-b border-border/40">
-                  <p className="text-[14px] font-semibold text-foreground truncate">{userName}</p>
-                  <p className="text-[12px] text-muted-foreground truncate mt-0.5">{user?.email}</p>
+              <div
+                className="absolute right-0 top-full mt-2 w-56 z-50 overflow-hidden"
+                style={{
+                  background: '#FFFFFF',
+                  border: '0.5px solid #EBEBEB',
+                  borderRadius: '14px',
+                  boxShadow: '0 16px 48px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0,0,0,0.04)',
+                }}
+              >
+                <div className="px-4 py-3.5" style={{ borderBottom: '0.5px solid #EBEBEB' }}>
+                  <p className="text-[13px] font-semibold text-[#1A1A1A] truncate">{userName}</p>
+                  <p className="text-[11px] text-[#9B9B95] truncate mt-0.5">{user?.email}</p>
                 </div>
-                <div className="py-1.5">
+                <div className="py-1">
                   <button onClick={() => { setUserMenuOpen(false); navigate('/instellingen') }}
-                    className="flex items-center gap-3 w-full px-4 py-2.5 text-[13px] text-foreground/80 hover:bg-muted/50 transition-colors">
-                    <Settings className="w-4 h-4 text-muted-foreground" /> Profiel
+                    className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] transition-all duration-200">
+                    <Settings className="w-4 h-4 text-[#9B9B95]" /> Profiel
                   </button>
                   <button onClick={() => { setUserMenuOpen(false); navigate('/instellingen?tab=abonnement') }}
-                    className="flex items-center gap-3 w-full px-4 py-2.5 text-[13px] text-foreground/80 hover:bg-muted/50 transition-colors">
-                    <CreditCard className="w-4 h-4 text-muted-foreground" /> Abonnement
+                    className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] transition-all duration-200">
+                    <CreditCard className="w-4 h-4 text-[#9B9B95]" /> Abonnement
                   </button>
                   <button onClick={() => { setUserMenuOpen(false); navigate('/kennisbank') }}
-                    className="flex items-center gap-3 w-full px-4 py-2.5 text-[13px] text-foreground/80 hover:bg-muted/50 transition-colors">
-                    <BookOpen className="w-4 h-4 text-muted-foreground" /> Kennisbank
+                    className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] transition-all duration-200">
+                    <BookOpen className="w-4 h-4 text-[#9B9B95]" /> Kennisbank
                   </button>
                 </div>
-                <div className="border-t border-border/40 py-1.5">
+                <div className="py-1" style={{ borderTop: '0.5px solid #EBEBEB' }}>
                   <button onClick={() => { setUserMenuOpen(false); setLayoutMode('sidebar') }}
-                    className="flex items-center gap-3 w-full px-4 py-2.5 text-[13px] text-foreground/80 hover:bg-muted/50 transition-colors">
-                    <Monitor className="w-4 h-4 text-muted-foreground" /> Zijbalk navigatie
+                    className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] transition-all duration-200">
+                    <Monitor className="w-4 h-4 text-[#9B9B95]" /> Zijbalk navigatie
                   </button>
                 </div>
-                <div className="border-t border-border/40 py-1.5">
+                <div className="py-1" style={{ borderTop: '0.5px solid #EBEBEB' }}>
                   <button onClick={() => { setUserMenuOpen(false); logout() }}
-                    className="flex items-center gap-3 w-full px-4 py-2.5 text-[13px] text-destructive hover:bg-destructive/5 transition-colors">
+                    className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-[#F15025] hover:bg-[#F15025]/[0.06] transition-all duration-200">
                     <LogOut className="w-4 h-4" /> Uitloggen
                   </button>
                 </div>
@@ -245,23 +269,27 @@ export function TopNav() {
           </div>
 
           {/* Mobile hamburger */}
-          <Button variant="ghost" size="icon" className="w-7 h-7 rounded-md text-white/50 hover:text-white hover:bg-white/10 lg:hidden order-2 md:order-none"
+          <Button variant="ghost" size="icon" className="w-7 h-7 rounded-md text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-black/[0.04] lg:hidden order-2 md:order-none"
             onClick={() => setMobileOpen(!mobileOpen)}>
             {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
           </Button>
         </div>
       </div>
 
+      {/* Soft horizontal separator between rows */}
+      <div className="hidden lg:block" style={{ height: '1px', background: 'linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.06) 15%, rgba(0,0,0,0.06) 85%, transparent 100%)' }} />
+
       {/* ── Row 2: Navigation tabs — desktop ── */}
       <nav
         ref={navRef}
-        className="hidden lg:flex items-stretch relative h-9 px-4 bg-white border-b border-[#ECEAE6] overflow-x-auto scrollbar-none"
+        className="hidden lg:flex items-stretch relative h-11 px-2 bg-[#F8F7F5] overflow-x-auto scrollbar-none"
+        style={{ boxShadow: '0 1px 0 #EBEBEB, 0 6px 14px -6px rgba(20, 30, 40, 0.04)' }}
       >
         {/* Sliding indicator */}
         <div
           ref={indicatorRef}
-          className="absolute bottom-0 left-0 h-[2px] rounded-full bg-[#1A535C] transition-all duration-300 ease-out"
-          style={{ opacity: 0 }}
+          className="absolute bottom-0 left-0 h-[2.5px] rounded-t-full bg-[#1A535C] transition-all duration-300 ease-out"
+          style={{ opacity: 0, boxShadow: '0 0 8px rgba(26, 83, 92, 0.3)' }}
         />
 
         {visibleItems.map((item) => {
@@ -274,35 +302,29 @@ export function TopNav() {
               end={item.path === '/'}
               data-active={isActive}
               className={cn(
-                'relative flex items-center gap-1.5 px-2.5 text-[12px] transition-all duration-200 whitespace-nowrap flex-shrink-0',
+                'group/tab relative flex flex-1 items-center justify-center text-[13px] transition-all duration-200 whitespace-nowrap',
                 isActive
                   ? 'text-[#1A1A1A] font-semibold'
-                  : 'text-[#B0ADA8] hover:text-[#6B6B66]',
+                  : 'text-[#6B6B66] hover:text-[#1A1A1A]',
               )}
             >
-              <Icon
-                className={cn('w-[13px] h-[13px] transition-all duration-200', isActive ? '' : 'opacity-30')}
-                style={isActive ? { color: item.color } : undefined}
-              />
-              <span>{item.label}</span>
+              <span
+                data-tab-content
+                className={cn(
+                  'inline-flex items-center gap-2 px-3 py-1 rounded-md transition-colors',
+                  !isActive && 'group-hover/tab:bg-[rgba(26,83,92,0.04)]',
+                )}
+              >
+                <Icon
+                  className={cn('w-[16px] h-[16px] transition-all duration-200', isActive ? '' : 'opacity-55')}
+                  style={isActive ? { color: item.color, filter: `drop-shadow(0 1px 3px ${item.color}40)` } : undefined}
+                />
+                <span>{item.label}</span>
+              </span>
             </NavLink>
           )
         })}
 
-        {/* Separator + Instellingen */}
-        <div className="flex-1" />
-        <NavLink
-          to="/instellingen"
-          data-active={location.pathname.startsWith('/instellingen')}
-          className={cn(
-            'relative flex items-center px-2.5 text-[12px] transition-all duration-200 whitespace-nowrap flex-shrink-0',
-            location.pathname.startsWith('/instellingen')
-              ? 'text-[#1A1A1A] font-semibold'
-              : 'text-[#B0ADA8] hover:text-[#6B6B66]',
-          )}
-        >
-          <Settings className={cn('w-[13px] h-[13px] transition-opacity', location.pathname.startsWith('/instellingen') ? '' : 'opacity-40')} />
-        </NavLink>
       </nav>
 
       {/* ── Mobile nav dropdown ── */}
