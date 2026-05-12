@@ -41,6 +41,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { logger } from '../../utils/logger'
+import { DEFAULT_OFFERTE_VOORWAARDEN } from '@/utils/defaults'
 
 // Already-extracted tab components
 import { HuisstijlTab } from './HuisstijlTab'
@@ -304,6 +305,7 @@ function DocumentenTab() {
   const [standaardBtw, setStandaardBtw] = useState('21')
   const [offerteIntroTekst, setOfferteIntroTekst] = useState('')
   const [offerteOutroTekst, setOfferteOutroTekst] = useState('')
+  const [offerteVoorwaarden, setOfferteVoorwaarden] = useState('')
 
   const [werkbonMonteurUren, setWerkbonMonteurUren] = useState(true)
   const [werkbonMonteurOpmerkingen, setWerkbonMonteurOpmerkingen] = useState(true)
@@ -334,6 +336,7 @@ function DocumentenTab() {
       setStandaardBtw(String(data.standaard_btw || 21))
       setOfferteIntroTekst(data.offerte_intro_tekst || '')
       setOfferteOutroTekst(data.offerte_outro_tekst || '')
+      setOfferteVoorwaarden(data.offerte_voorwaarden || DEFAULT_OFFERTE_VOORWAARDEN)
       setWerkbonMonteurUren(data.werkbon_monteur_uren ?? true)
       setWerkbonMonteurOpmerkingen(data.werkbon_monteur_opmerkingen ?? true)
       setWerkbonMonteurFotos(data.werkbon_monteur_fotos ?? false)
@@ -373,6 +376,7 @@ function DocumentenTab() {
         standaard_btw: parseFloat(standaardBtw) || 21,
         offerte_intro_tekst: offerteIntroTekst,
         offerte_outro_tekst: offerteOutroTekst,
+        offerte_voorwaarden: offerteVoorwaarden,
         werkbon_monteur_uren: werkbonMonteurUren,
         werkbon_monteur_opmerkingen: werkbonMonteurOpmerkingen,
         werkbon_monteur_fotos: werkbonMonteurFotos,
@@ -465,6 +469,27 @@ function DocumentenTab() {
                   <Label htmlFor="offerte-outro">Standaard afsluittekst</Label>
                   <Textarea id="offerte-outro" value={offerteOutroTekst} onChange={(e) => setOfferteOutroTekst(e.target.value)} placeholder="Bijv. Wij vertrouwen erop u een passend aanbod te hebben gedaan." rows={2} />
                   <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Wordt onderaan de offerte weergegeven</p>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="offerte-voorwaarden">Voorwaarden offerte</Label>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={async () => {
+                        const doorgaan = await confirm({
+                          message: 'Voorwaarden herstellen naar de standaardtekst? Je huidige tekst gaat verloren.',
+                          confirmLabel: 'Herstellen',
+                        })
+                        if (doorgaan) setOfferteVoorwaarden(DEFAULT_OFFERTE_VOORWAARDEN)
+                      }}
+                    >
+                      Herstel naar standaard
+                    </Button>
+                  </div>
+                  <Textarea id="offerte-voorwaarden" value={offerteVoorwaarden} onChange={(e) => setOfferteVoorwaarden(e.target.value)} rows={8} />
+                  <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Verschijnt onder elke offerte. Per offerte kun je deze nog overschrijven in de offerte-editor.</p>
                 </div>
               </div>
             </CardContent>
