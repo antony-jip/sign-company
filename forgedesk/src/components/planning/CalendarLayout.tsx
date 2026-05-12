@@ -88,8 +88,11 @@ import { logger } from '../../utils/logger'
 import { getNederlandseFeestdagen, isFeestdag } from '@/utils/feestdagen'
 import { confirm } from '@/components/shared/ConfirmDialog'
 import { getAvatarStyle } from '@/utils/medewerkerAvatar'
+import { isAdminUser } from '@/utils/authHelpers'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useOptimisticState } from '@/hooks/useOptimistic'
+
+const PLANNING_FILTER_KEY = 'doen_planning_filter_v1'
 
 // ============================================================
 // STATUS CONFIG
@@ -241,7 +244,28 @@ export function CalendarLayout() {
   const [projectWerkbonnen, setProjectWerkbonnen] = useState<Werkbon[]>([])
 
   // Active medewerker filter: null = show all, string = single medewerker id
-  const [activeMedewerker, setActiveMedewerker] = useState<string | null>(null)
+  const [activeMedewerker, setActiveMedewerkerState] = useState<string | null>(() => {
+    try {
+      const raw = localStorage.getItem(PLANNING_FILTER_KEY)
+      return raw && raw !== 'alle' ? raw : null
+    } catch (err) { return null }
+  })
+  const [filterInitialized, setFilterInitialized] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(PLANNING_FILTER_KEY) !== null
+    } catch (err) { return false }
+  })
+  const setActiveMedewerker = useCallback((value: string | null) => {
+    setActiveMedewerkerState(value)
+    setFilterInitialized(true)
+    try {
+      if (value === null) {
+        localStorage.removeItem(PLANNING_FILTER_KEY)
+      } else {
+        localStorage.setItem(PLANNING_FILTER_KEY, value)
+      }
+    } catch (err) { /* ignore */ }
+  }, [])
 
   // ---- Data loading ----
   const loadData = useCallback(async (cancelled?: { current: boolean }) => {
@@ -275,6 +299,19 @@ export function CalendarLayout() {
     loadData(cancelled)
     return () => { cancelled.current = true }
   }, [loadData])
+
+  // Auto-default filter: monteur ziet eigen agenda bij eerste bezoek
+  useEffect(() => {
+    if (filterInitialized) return
+    if (!user?.id || medewerkers.length === 0) return
+    const eigenMedewerker = medewerkers.find((m) => m.user_id === user.id)
+      || medewerkers.find((m) => m.email?.toLowerCase() === user.email?.toLowerCase())
+    if (!eigenMedewerker) return
+    if (eigenMedewerker.rol !== 'monteur') return
+    if (isAdminUser(eigenMedewerker, user)) return
+    setActiveMedewerkerState(eigenMedewerker.id)
+    setFilterInitialized(true)
+  }, [filterInitialized, user, medewerkers])
 
   // ---- Week dates ----
   const weekDates = useMemo(() => {
@@ -504,7 +541,7 @@ export function CalendarLayout() {
 
   // Switch medewerker filter (single select toggle)
   const switchMedewerker = (id: string | null) => {
-    setActiveMedewerker((prev) => (prev === id ? null : id))
+    setActiveMedewerker(activeMedewerker === id ? null : id)
   }
 
   // ---- Stats ----

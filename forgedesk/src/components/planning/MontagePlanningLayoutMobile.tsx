@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import {
   ChevronLeft,
   ChevronRight,
@@ -11,6 +11,9 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
+import { isAdminUser } from '@/utils/authHelpers'
+
+const PLANNING_FILTER_KEY = 'doen_planning_filter_v1'
 import {
   getMontageAfspraken,
   getMedewerkers,
@@ -232,7 +235,17 @@ export function MontagePlanningLayoutMobile() {
   const [medewerkers, setMedewerkers] = useState<Medewerker[]>([])
   const [klanten, setKlanten] = useState<Klant[]>([])
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date())
-  const [scope, setScope] = useState<'mijn' | 'iedereen'>('mijn')
+  const [scope, setScopeState] = useState<'mijn' | 'iedereen'>(() => {
+    try {
+      const raw = localStorage.getItem(PLANNING_FILTER_KEY)
+      return raw ? 'mijn' : 'iedereen'
+    } catch (err) { return 'iedereen' }
+  })
+  const [filterInitialized, setFilterInitialized] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(PLANNING_FILTER_KEY) !== null
+    } catch (err) { return false }
+  })
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -253,12 +266,30 @@ export function MontagePlanningLayoutMobile() {
       || null
   }, [medewerkers, user])
 
-  // Default scope: monteur ziet zijn eigen dag, anders 'iedereen'
-  useEffect(() => {
-    if (currentMedewerker) {
-      setScope(currentMedewerker.rol === 'monteur' ? 'mijn' : 'iedereen')
-    }
+  const setScope = useCallback((value: 'mijn' | 'iedereen') => {
+    setScopeState(value)
+    setFilterInitialized(true)
+    try {
+      if (value === 'iedereen') {
+        localStorage.removeItem(PLANNING_FILTER_KEY)
+      } else if (currentMedewerker) {
+        localStorage.setItem(PLANNING_FILTER_KEY, currentMedewerker.id)
+      }
+    } catch (err) { /* ignore */ }
   }, [currentMedewerker])
+
+  // Auto-default scope: monteur ziet eigen dag bij eerste bezoek
+  useEffect(() => {
+    if (filterInitialized) return
+    if (!currentMedewerker) return
+    if (currentMedewerker.rol !== 'monteur') return
+    if (isAdminUser(currentMedewerker, user)) return
+    setScopeState('mijn')
+    setFilterInitialized(true)
+    try {
+      localStorage.setItem(PLANNING_FILTER_KEY, currentMedewerker.id)
+    } catch (err) { /* ignore */ }
+  }, [filterInitialized, currentMedewerker, user])
 
   const klantById = useMemo(() => new Map(klanten.map((k) => [k.id, k])), [klanten])
   const medewerkerById = useMemo(() => new Map(medewerkers.map((m) => [m.id, m])), [medewerkers])

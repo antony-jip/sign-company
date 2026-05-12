@@ -75,6 +75,7 @@ import { confirm } from '@/components/shared/ConfirmDialog';
 import { useAuth } from "@/contexts/AuthContext";
 import { logCreate, logWijziging } from "@/utils/auditLogger";
 import { getAvatarStyle } from "@/utils/medewerkerAvatar";
+import { isAdminUser } from "@/utils/authHelpers";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useOptimisticState } from "@/hooks/useOptimistic";
 
@@ -82,6 +83,7 @@ const SWIMLANE_COLLAPSED_KEY = 'doen_planning_swimlane_collapsed';
 const SWIMLANE_UNASSIGNED_KEY = '__ongetoewezen__';
 const HIDE_EMPTY_LANES_KEY = 'doen_planning_hide_empty_lanes';
 const LANE_GROUPING_KEY = 'doen_planning_lane_grouping';
+const PLANNING_FILTER_KEY = 'doen_planning_filter_v1';
 
 type LaneGrouping = 'none' | 'rol';
 
@@ -224,7 +226,29 @@ export function MontagePlanningLayout() {
     useState<MontageAfspraak | null>(null);
   const [formData, setFormData] = useState<MontageFormData>(EMPTY_FORM);
   const [loading, setLoading] = useState(true);
-  const [selectedMonteur, setSelectedMonteur] = useState<string>("alle");
+  const [selectedMonteur, setSelectedMonteurState] = useState<string>(() => {
+    try {
+      const raw = localStorage.getItem(PLANNING_FILTER_KEY);
+      if (raw) return raw;
+    } catch (err) { /* ignore */ }
+    return "alle";
+  });
+  const [filterInitialized, setFilterInitialized] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(PLANNING_FILTER_KEY) !== null;
+    } catch (err) { return false; }
+  });
+  const setSelectedMonteur = useCallback((value: string) => {
+    setSelectedMonteurState(value);
+    setFilterInitialized(true);
+    try {
+      if (value === "alle") {
+        localStorage.removeItem(PLANNING_FILTER_KEY);
+      } else {
+        localStorage.setItem(PLANNING_FILTER_KEY, value);
+      }
+    } catch (err) { /* ignore */ }
+  }, []);
   const [statusFilter, setStatusFilter] = useState<Set<MontageAfspraak["status"]>>(
     new Set(["gepland", "onderweg", "bezig", "uitgesteld"])
   );
@@ -321,6 +345,19 @@ export function MontagePlanningLayout() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Auto-default filter: monteur ziet eigen agenda bij eerste bezoek
+  useEffect(() => {
+    if (filterInitialized) return;
+    if (!user?.id || medewerkers.length === 0) return;
+    const eigenMedewerker = medewerkers.find((m) => m.user_id === user.id)
+      || medewerkers.find((m) => m.email?.toLowerCase() === user.email?.toLowerCase());
+    if (!eigenMedewerker) return;
+    if (eigenMedewerker.rol !== 'monteur') return;
+    if (isAdminUser(eigenMedewerker, user)) return;
+    setSelectedMonteurState(eigenMedewerker.id);
+    setFilterInitialized(true);
+  }, [filterInitialized, user, medewerkers]);
 
   // All afspraken for this week (unfiltered, needed for conflict detection)
   const weekAfsprakenAll = useMemo(() => {
