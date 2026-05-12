@@ -17,15 +17,12 @@ import {
 } from '@/services/supabaseService'
 import type { Offerte, OfferteItem, Klant, OfferteActiviteit } from '@/types'
 import { cn, formatCurrency, formatDate, formatDateTime, getStatusColor } from '@/lib/utils'
-import { offerteTokenExpiry } from '@/lib/tokenExpiry'
 import { getStatusBadgeClass } from '@/utils/statusColors'
 import { round2 } from '@/utils/budgetUtils'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTrialGuard } from '@/hooks/useTrialGuard'
 import { TrialGuardDialog } from '@/components/shared/TrialGuardDialog'
-import { sendEmail } from '@/services/gmailService'
-import { offerteVerzendTemplate } from '@/services/emailTemplateService'
 import { generateOffertePDF, generateOpdrachtbevestigingPDF } from '@/services/pdfService'
 import { useDocumentStyle } from '@/hooks/useDocumentStyle'
 import { Badge } from '@/components/ui/badge'
@@ -68,6 +65,7 @@ const PdfPreviewDialog = React.lazy(() => import('@/components/shared/PdfPreview
 import { ShareButton } from '@/components/shared/ShareButton'
 import { VisualisatieGallery } from '@/components/visualizer/VisualisatieGallery'
 import { OfferteOpvolgTimeline } from '@/components/quotes/OfferteOpvolgTimeline'
+import { SendOfferteDialog } from '@/components/quotes/SendOfferteDialog'
 
 const STATUS_LABELS: Record<string, string> = {
   concept: 'Concept',
@@ -129,12 +127,6 @@ export function OfferteDetail() {
   const [editOutro, setEditOutro] = useState('')
   const [editTitel, setEditTitel] = useState('')
   const [editNotities, setEditNotities] = useState('')
-
-  // Send dialog state
-  const [sendTo, setSendTo] = useState('')
-  const [sendSubject, setSendSubject] = useState('')
-  const [sendBody, setSendBody] = useState('')
-  const [isSending, setIsSending] = useState(false)
 
   const [isDuplicating, setIsDuplicating] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -270,138 +262,10 @@ export function OfferteDetail() {
     }
   }, [offerte, user])
 
-  // Open send dialog
   const openSendDialog = useCallback(() => {
     if (!offerte || !klant) return
-    const selectedCp = offerte.contactpersoon_id
-      ? klant.contactpersonen?.find(c => c.id === offerte.contactpersoon_id)
-      : klant.contactpersonen?.find(c => c.is_primair) || klant.contactpersonen?.[0]
-    const contactEmail = selectedCp?.email || klant.email || ''
-    const contactNaam = selectedCp?.naam || klant.contactpersoon || klant.bedrijfsnaam
-    setSendTo(contactEmail)
-    setSendSubject(`Offerte ${offerte.nummer} · ${offerte.titel}`)
-    setSendBody(
-      `Beste ${contactNaam},\n\nHierbij ontvangt u onze offerte ${offerte.nummer} voor "${offerte.titel}".\n\nWij zien uw reactie graag tegemoet.\n\nMet vriendelijke groet,\n${bedrijfsnaam || 'Uw bedrijf'}`
-    )
     setShowSendDialog(true)
-  }, [offerte, klant, bedrijfsnaam])
-
-  // Send offerte
-  const handleSend = useCallback(async () => {
-    if (!offerte || !user?.id) return
-    if (isTrialBlocked) {
-      setShowSendDialog(false)
-      setShowTrialDialog(true)
-      return
-    }
-    setIsSending(true)
-    try {
-      // Gebruik portaal-systeem als de offerte aan een project gekoppeld is
-      let publiekeUrl = ''
-
-      if (offerte.project_id) {
-        // Maak portaal aan of hergebruik bestaand portaal
-        const portaal = await createPortaal(offerte.project_id, user.id)
-
-        // Check of er al een portaal_item bestaat voor deze offerte
-        const bestaandeItems = await getPortaalItems(portaal.id)
-        const bestaandOfferteItem = bestaandeItems.find(
-          (i) => i.type === 'offerte' && i.offerte_id === offerte.id
-        )
-
-        if (!bestaandOfferteItem) {
-          await createPortaalItem({
-            user_id: user.id,
-            project_id: offerte.project_id,
-            portaal_id: portaal.id,
-            type: 'offerte',
-            offerte_id: offerte.id,
-            titel: `Offerte ${offerte.nummer}`,
-            omschrijving: offerte.titel,
-            label: formatCurrency(offerte.totaal),
-            status: 'verstuurd',
-            zichtbaar_voor_klant: true,
-            bedrag: offerte.totaal,
-            volgorde: 0,
-          })
-        }
-
-        publiekeUrl = `${window.location.origin}/portaal/${portaal.token}`
-        setPortaalToken(portaal.token)
-      } else {
-        // Fallback: offerte zonder project → gebruik oude publieke link
-        let publiekToken = offerte.publiek_token
-        if (!publiekToken) {
-          publiekToken = crypto.randomUUID()
-          await updateOfferte(offerte.id, { publiek_token: publiekToken, publiek_token_verloopt_op: offerteTokenExpiry() })
-          setOfferte({ ...offerte, publiek_token: publiekToken })
-        }
-        publiekeUrl = `${window.location.origin}/offerte-bekijken/${publiekToken}`
-      }
-
-      // Actually send the email
-      const sendCp = offerte.contactpersoon_id
-        ? klant?.contactpersonen?.find(c => c.id === offerte.contactpersoon_id)
-        : null
-      const { subject, html, text } = offerteVerzendTemplate({
-        klantNaam: sendCp?.naam || klant?.contactpersoon || klant?.bedrijfsnaam || '',
-        offerteNummer: offerte.nummer,
-        offerteTitel: offerte.titel,
-        totaalBedrag: formatCurrency(offerte.totaal),
-        geldigTot: formatDate(offerte.geldig_tot),
-        bedrijfsnaam: bedrijfsnaam || 'Uw bedrijf',
-        primaireKleur,
-        handtekening: emailHandtekening || undefined,
-        logoUrl: profile?.logo_url || undefined,
-        bekijkUrl: publiekeUrl,
-      })
-
-      // Genereer PDF bijlage
-      let attachments: Array<{ filename: string; content: string; encoding: 'base64' }> = []
-      try {
-        const doc = await generateOffertePDF(
-          offerte,
-          items,
-          klant || {},
-          { ...profile, primaireKleur: primaireKleur || '#2563eb' },
-          documentStyle,
-        )
-        const pdfBase64 = doc.output('datauristring').split(',')[1]
-        attachments = [{ filename: `${offerte.nummer}.pdf`, content: pdfBase64, encoding: 'base64' as const }]
-      } catch (pdfErr) {
-        logger.error('PDF genereren mislukt, email wordt zonder bijlage verstuurd:', pdfErr)
-      }
-
-      try {
-        await sendEmail(sendTo, sendSubject || subject, text, { html, attachments })
-      } catch (err) {
-        logger.error('Email verzenden mislukt:', err)
-        toast.warning('Email niet verzonden (SMTP niet geconfigureerd). Status is wel bijgewerkt.')
-      }
-
-      const now = new Date().toISOString()
-      const newActivity: OfferteActiviteit = {
-        datum: now,
-        type: 'verstuurd',
-        beschrijving: `Verstuurd naar ${sendTo}`,
-        medewerker: user?.email || undefined,
-      }
-      const updated = await updateOfferte(offerte.id, {
-        status: 'verzonden',
-        verstuurd_op: now,
-        verstuurd_naar: sendTo,
-        activiteiten: [...(offerte.activiteiten || []), newActivity],
-      })
-      setOfferte(updated)
-      setShowSendDialog(false)
-      toast.success('Offerte verstuurd', { description: `Email verstuurd naar ${sendTo}` })
-    } catch (err) {
-      logger.error('Failed to send offerte:', err)
-      toast.error('Kon offerte niet versturen')
-    } finally {
-      setIsSending(false)
-    }
-  }, [offerte, klant, items, sendTo, sendSubject, user, bedrijfsnaam, primaireKleur, emailHandtekening, profile, documentStyle, isTrialBlocked, setShowTrialDialog])
+  }, [offerte, klant])
 
   // Duplicate offerte
   const handleDuplicate = useCallback(async () => {
@@ -1230,94 +1094,22 @@ export function OfferteDetail() {
         <AuditLogPanel entityType="offerte" entityId={offerte.id} />
       </div>
 
-      {/* Send Dialog */}
-      <Dialog open={showSendDialog} onOpenChange={setShowSendDialog}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Offerte versturen</DialogTitle>
-            <DialogDescription>
-              Verstuur {offerte.nummer} als email met PDF bijlage.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Aan</label>
-              <Input
-                value={sendTo}
-                onChange={(e) => setSendTo(e.target.value)}
-                placeholder="email@bedrijf.nl"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Onderwerp</label>
-              <Input
-                value={sendSubject}
-                onChange={(e) => setSendSubject(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Bericht</label>
-              <Textarea
-                value={sendBody}
-                onChange={(e) => setSendBody(e.target.value)}
-                rows={6}
-              />
-            </div>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/30 rounded-lg p-3">
-              <FileText className="h-4 w-4 flex-shrink-0" />
-              <span>Bijlage: {offerte.nummer}.pdf (wordt automatisch gegenereerd)</span>
-            </div>
-            {(portaalToken || offerte.publiek_token) && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Publieke link</label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    readOnly
-                    value={portaalToken
-                      ? `${window.location.origin}/portaal/${portaalToken}`
-                      : `${window.location.origin}/offerte-bekijken/${offerte.publiek_token}`}
-                    className="text-xs font-mono bg-muted/30"
-                  />
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      const url = portaalToken
-                        ? `${window.location.origin}/portaal/${portaalToken}`
-                        : `${window.location.origin}/offerte-bekijken/${offerte.publiek_token}`
-                      navigator.clipboard.writeText(url)
-                      toast.success(<>Link gekopieerd<span style={{ color: '#F15025' }}>.</span></>)
-                    }}
-                  >
-                    <Copy className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      const path = portaalToken
-                        ? `/portaal/${portaalToken}`
-                        : `/offerte-bekijken/${offerte.publiek_token}`
-                      window.open(path, '_blank')
-                    }}
-                  >
-                    <ExternalLink className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowSendDialog(false)} disabled={isSending}>
-              Annuleren
-            </Button>
-            <Button onClick={handleSend} disabled={isSending || !sendTo}>
-              {isSending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Send className="h-4 w-4 mr-1" />}
-              Versturen
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {offerte && (
+        <SendOfferteDialog
+          open={showSendDialog}
+          onOpenChange={setShowSendDialog}
+          offerte={offerte}
+          klant={klant}
+          items={items}
+          userId={user?.id || ''}
+          mode="eerste"
+          onSent={setOfferte}
+          onPortaalCreated={setPortaalToken}
+          isTrialBlocked={isTrialBlocked}
+          onTrialBlocked={() => setShowTrialDialog(true)}
+          medewerkerNaam={user?.email || undefined}
+        />
+      )}
 
       {/* Delete Dialog */}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
