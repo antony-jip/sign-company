@@ -151,6 +151,50 @@ export function ProjectsList() {
   const zoekInputRef = useRef<HTMLInputElement>(null)
   const runOptimistic = useOptimisticState(setProjecten)
 
+  // Pending deletes: project verdwijnt direct uit UI, daadwerkelijke server-delete pas na 5s
+  // (binnen die tijd kan de gebruiker via toast undo'en). Bij unmount flushen.
+  const pendingDeletesRef = useRef<Map<string, { project: Project; timer: ReturnType<typeof setTimeout> }>>(new Map())
+
+  useEffect(() => {
+    const map = pendingDeletesRef.current
+    return () => {
+      const entries = [...map.entries()]
+      map.clear()
+      entries.forEach(([id, { timer }]) => {
+        clearTimeout(timer)
+        deleteProject(id).catch((err) => logger.error('flush delete:', err))
+      })
+    }
+  }, [])
+
+  function handleDeleteProject(project: Project) {
+    setProjecten((prev) => prev.filter((p) => p.id !== project.id))
+    const timer = setTimeout(() => {
+      pendingDeletesRef.current.delete(project.id)
+      deleteProject(project.id).catch((err) => {
+        logger.error('delete project:', err)
+        setProjecten((prev) => (prev.some((p) => p.id === project.id) ? prev : [...prev, project]))
+        toast.error(`Kon "${project.naam}" niet verwijderen (gekoppelde offertes/werkbonnen?)`)
+      })
+    }, 5000)
+    pendingDeletesRef.current.set(project.id, { project, timer })
+
+    toast.success(`"${project.naam}" verwijderd`, {
+      duration: 5000,
+      action: {
+        label: 'Ongedaan maken',
+        onClick: () => {
+          const entry = pendingDeletesRef.current.get(project.id)
+          if (entry) {
+            clearTimeout(entry.timer)
+            pendingDeletesRef.current.delete(project.id)
+          }
+          setProjecten((prev) => (prev.some((p) => p.id === project.id) ? prev : [...prev, project]))
+        },
+      },
+    })
+  }
+
   const [leadColumns, setLeadColumns] = useState<['project', 'klant'] | ['klant', 'project']>(() => {
     const saved = localStorage.getItem('projects_column_order')
     if (saved) {
@@ -1014,6 +1058,7 @@ export function ProjectsList() {
                       <th className="text-left py-3.5 pr-4 w-[120px] hidden xl:table-cell">
                         <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Team</span>
                       </th>
+                      <th className="py-3.5 pr-5 w-[44px]"></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1295,6 +1340,18 @@ export function ProjectsList() {
                               placeholder="Team toewijzen"
                               popoverAlign="start"
                             />
+                          </td>
+
+                          {/* Delete */}
+                          <td className="py-3.5 pr-5 align-middle" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              onClick={() => handleDeleteProject(project)}
+                              className="h-7 w-7 rounded-md flex items-center justify-center transition-colors text-[#C0BDB8] hover:bg-[#FDE8E4] hover:text-[#C03A18]"
+                              title="Project verwijderen"
+                              aria-label={`Verwijder ${project.naam || 'project'}`}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
                           </td>
 
                         </tr>
