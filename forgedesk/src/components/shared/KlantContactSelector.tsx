@@ -18,6 +18,7 @@ interface KlantContactSelectorProps {
   onVestigingChange?: (vId: string) => void
   klanten: Klant[]
   onKlantenRefresh?: () => void
+  portalContainer?: HTMLElement | null
 }
 
 export function KlantContactSelector({
@@ -29,6 +30,7 @@ export function KlantContactSelector({
   onVestigingChange,
   klanten,
   onKlantenRefresh,
+  portalContainer,
 }: KlantContactSelectorProps) {
   const { user } = useAuth()
   const [search, setSearch] = useState('')
@@ -312,7 +314,7 @@ export function KlantContactSelector({
                   ))
                 )}
               </div>,
-              document.body
+              portalContainer ?? document.body
             )}
 
             {/* Nieuw bedrijf formulier (inline) */}

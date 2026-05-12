@@ -96,6 +96,7 @@ export function EmailContextSidebar({
   // ── Panels ──
   const [activePanel, setActivePanel] = useState<'none' | 'klant' | 'project' | 'taak'>('none')
   const [saving, setSaving] = useState(false)
+  const [projectDialogEl, setProjectDialogEl] = useState<HTMLDivElement | null>(null)
 
   // ── Forms ──
   const [allKlanten, setAllKlanten] = useState<Klant[]>([])
@@ -831,7 +832,7 @@ export function EmailContextSidebar({
 
         {/* ── PROJECT MODAL ── */}
         <Dialog open={activePanel === 'project'} onOpenChange={(open) => !open && setActivePanel('none')}>
-          <DialogContent className="max-w-2xl bg-white rounded-2xl p-0">
+          <DialogContent ref={setProjectDialogEl} className="max-w-2xl bg-white rounded-2xl p-0">
             <div className="px-8 pt-7 pb-6">
               <DialogHeader className="mb-5">
                 <DialogTitle className="text-[22px] font-bold tracking-tight text-[#1A1A1A]">
@@ -914,6 +915,7 @@ export function EmailContextSidebar({
                     onVestigingChange={(id) => setProjectForm(f => ({ ...f, vestiging_id: id }))}
                     klanten={allKlanten}
                     onKlantenRefresh={() => getKlanten().then(k => setAllKlanten(k)).catch(() => {})}
+                    portalContainer={projectDialogEl}
                   />
                 </div>
 
