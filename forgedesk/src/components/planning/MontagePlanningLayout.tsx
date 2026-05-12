@@ -266,6 +266,7 @@ export function MontagePlanningLayout() {
   const [werkbonDialogOpen, setWerkbonDialogOpen] = useState(false);
   const [werkbonMontage, setWerkbonMontage] = useState<MontageAfspraak | null>(null);
   const [projectWerkbonnen, setProjectWerkbonnen] = useState<Werkbon[]>([]);
+  const [recentlyAfgerond, setRecentlyAfgerond] = useState<Set<string>>(new Set());
 
   const [collapsedLanes, setCollapsedLanes] = useState<Set<string>>(() => {
     try {
@@ -369,14 +370,14 @@ export function MontagePlanningLayout() {
     return afspraken.filter((a) => a.datum >= startStr && a.datum <= endStr);
   }, [afspraken, weekDates]);
 
-  // Filtered by monteur + status
+  // Filtered by monteur + status (afgeronde kaart blijft kort zichtbaar voor fade-out)
   const weekAfspraken = useMemo(() => {
     return weekAfsprakenAll.filter((a) => {
       if (selectedMonteur !== "alle" && !a.monteurs.includes(selectedMonteur)) return false;
-      if (!statusFilter.has(a.status)) return false;
+      if (!statusFilter.has(a.status) && !recentlyAfgerond.has(a.id)) return false;
       return true;
     });
-  }, [weekAfsprakenAll, selectedMonteur, statusFilter]);
+  }, [weekAfsprakenAll, selectedMonteur, statusFilter, recentlyAfgerond]);
 
   const afsprakenPerDag = useMemo(() => {
     const map: Record<string, MontageAfspraak[]> = {};
@@ -706,7 +707,7 @@ export function MontagePlanningLayout() {
       bijlagen: formData.bijlagen.length > 0 ? formData.bijlagen : undefined,
       werkbon_id: formData.werkbon_id || undefined,
       werkbon_nummer: formData.werkbon_id ? projectWerkbonnen.find(w => w.id === formData.werkbon_id)?.werkbon_nummer : undefined,
-      status: "gepland" as const,
+      status: editingAfspraak ? editingAfspraak.status : ("gepland" as const),
     };
 
     try {
@@ -966,10 +967,40 @@ export function MontagePlanningLayout() {
     );
   }
 
+  async function toggleAfgerond(afspraak: MontageAfspraak) {
+    const wasAfgerond = afspraak.status === 'afgerond';
+    const nieuweStatus: MontageAfspraak['status'] = wasAfgerond ? 'gepland' : 'afgerond';
+    const snapshot = afspraken;
+    const ok = await runOptimistic({
+      snapshot,
+      apply: (prev) => prev.map((a) => a.id === afspraak.id ? { ...a, status: nieuweStatus } : a),
+      commit: async () => { await updateMontageAfspraak(afspraak.id, { status: nieuweStatus }); },
+      errorMessage: 'Kon status niet bijwerken',
+    });
+    if (!ok) return;
+    if (!wasAfgerond && !statusFilter.has('afgerond')) {
+      setRecentlyAfgerond((prev) => {
+        const next = new Set(prev);
+        next.add(afspraak.id);
+        return next;
+      });
+      setTimeout(() => {
+        setRecentlyAfgerond((prev) => {
+          if (!prev.has(afspraak.id)) return prev;
+          const next = new Set(prev);
+          next.delete(afspraak.id);
+          return next;
+        });
+      }, 800);
+    }
+  }
+
   // ── Card with colored left border — DOEN style ──
   function renderMontageCard(afspraak: MontageAfspraak) {
     const hasConflict = conflictAfspraakIds.has(afspraak.id);
     const cfg = STATUS_CONFIG[afspraak.status];
+    const isAfgerond = afspraak.status === 'afgerond';
+    const isFadingOut = isAfgerond && recentlyAfgerond.has(afspraak.id);
 
     return (
       <div
@@ -995,16 +1026,34 @@ export function MontagePlanningLayout() {
         }}
         onDragEnd={() => { setDraggingAfspraakId(null); setDragOverDate(null); }}
         className={cn(
-          "bg-white rounded-lg border border-[#F0EFEC] border-l-[3px] px-2.5 py-2 mb-1.5 cursor-grab active:cursor-grabbing transition-all duration-200 hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] group/card",
+          "bg-white rounded-lg border border-[#F0EFEC] border-l-[3px] px-2.5 py-2 mb-1.5 cursor-grab active:cursor-grabbing transition-all duration-700 hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] group/card relative",
           hasConflict && "ring-1 ring-[#F0C8BC]",
-          draggingAfspraakId === afspraak.id && "opacity-30 scale-[0.97] ring-2 ring-[#1A535C]/30"
+          draggingAfspraakId === afspraak.id && "opacity-30 scale-[0.97] ring-2 ring-[#1A535C]/30",
+          isFadingOut && "opacity-0"
         )}
         style={{ borderLeftColor: cfg.dot }}
         onClick={() => openEditDialog(afspraak)}
       >
-        <div className="min-w-0">
-          <div className="flex items-start justify-between gap-1">
-            <div className="text-[12px] font-semibold text-[#1A1A1A] leading-tight truncate">{afspraak.titel}</div>
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); toggleAfgerond(afspraak); }}
+          title={isAfgerond ? 'Markeer als gepland' : 'Markeer als afgerond'}
+          aria-label={isAfgerond ? 'Markeer als gepland' : 'Markeer als afgerond'}
+          className={cn(
+            "absolute top-1 right-1 rounded-full p-0.5 transition-opacity z-10",
+            isAfgerond
+              ? 'opacity-100 text-[#2A8A8A] hover:bg-[#2A8A8A]/10'
+              : 'opacity-0 group-hover/card:opacity-100 text-[#9B9B95] hover:text-[#2A8A8A] hover:bg-[#2A8A8A]/10'
+          )}
+        >
+          <CheckCircle2 className={cn("h-3.5 w-3.5", isAfgerond && "fill-[#2A8A8A] text-white")} />
+        </button>
+        <div className={cn("min-w-0", isAfgerond && "opacity-60")}>
+          <div className="flex items-start justify-between gap-1 pr-5">
+            <div className={cn(
+              "text-[12px] font-semibold text-[#1A1A1A] leading-tight truncate",
+              isAfgerond && "line-through"
+            )}>{afspraak.titel}</div>
             {hasConflict && <AlertTriangle className="h-3 w-3 text-[#C03A18] shrink-0 mt-0.5" />}
           </div>
           {afspraak.klant_naam && (

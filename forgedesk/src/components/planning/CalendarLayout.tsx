@@ -523,6 +523,11 @@ export function CalendarLayout() {
     toast.success(`Status bijgewerkt naar ${STATUS_CONFIG[newStatus].label}`)
   }
 
+  const toggleAfgerond = (afspraak: MontageAfspraak) => {
+    const nieuweStatus: MontageAfspraak['status'] = afspraak.status === 'afgerond' ? 'gepland' : 'afgerond'
+    handleStatusUpdate(afspraak.id, nieuweStatus)
+  }
+
   // When project changes in form, auto-fill klant
   const handleProjectChange = (projectId: string) => {
     setFormData((prev) => {
@@ -605,6 +610,8 @@ export function CalendarLayout() {
     const topOffset = minutesToPx(startMin - HOURS[0] * 60, HOUR_HEIGHT)
     const height = Math.max(minutesToPx(duration, HOUR_HEIGHT), 28)
 
+    const isAfgerond = afspraak.status === 'afgerond'
+
     if (isOverlay) {
       const colIndex = layout?.colIndex ?? 0
       const totalCols = layout?.totalCols ?? 1
@@ -620,7 +627,7 @@ export function CalendarLayout() {
       return (
         <div
           key={afspraak.id}
-          className="absolute rounded-xl cursor-pointer transition-all hover:shadow-[0_2px_8px_rgba(0,0,0,0.1)] hover:z-20 overflow-hidden"
+          className="absolute rounded-xl cursor-pointer transition-all hover:shadow-[0_2px_8px_rgba(0,0,0,0.1)] hover:z-20 overflow-hidden group/card"
           style={{
             top: `${topOffset}px`,
             height: `${height}px`,
@@ -631,13 +638,28 @@ export function CalendarLayout() {
           }}
           onClick={() => openEditDialog(afspraak)}
         >
-          <div className={cn('h-full px-1.5 py-1', isNarrow && 'px-1')}>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); toggleAfgerond(afspraak) }}
+            title={isAfgerond ? 'Markeer als gepland' : 'Markeer als afgerond'}
+            aria-label={isAfgerond ? 'Markeer als gepland' : 'Markeer als afgerond'}
+            className={cn(
+              'absolute top-0.5 right-0.5 rounded-full p-0.5 transition-opacity z-10',
+              isAfgerond
+                ? 'opacity-100 text-[#2A8A8A] hover:bg-[#2A8A8A]/10'
+                : 'opacity-0 group-hover/card:opacity-100 text-[#6B6B66] hover:text-[#2A8A8A] hover:bg-[#2A8A8A]/10'
+            )}
+          >
+            <CheckCircle2 className={cn('h-3 w-3', isAfgerond && 'fill-[#2A8A8A] text-white')} />
+          </button>
+          <div className={cn('h-full px-1.5 py-1', isNarrow && 'px-1', isAfgerond && 'opacity-60')}>
             <div className="flex items-start gap-1 min-h-0">
               <div className="w-1.5 h-1.5 rounded-full mt-1 flex-shrink-0" style={{ backgroundColor: cfg.dot }} />
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0 pr-4">
                 <p className={cn(
                   'font-semibold truncate leading-tight',
-                  isNarrow ? 'text-2xs' : 'text-xs'
+                  isNarrow ? 'text-2xs' : 'text-xs',
+                  isAfgerond && 'line-through'
                 )} style={{ color: cfg.text }}>
                   {afspraak.titel}
                 </p>
@@ -673,13 +695,27 @@ export function CalendarLayout() {
     return (
       <div
         key={afspraak.id}
-        className="rounded-xl p-3 cursor-pointer transition-all hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)]"
+        className="rounded-xl p-3 cursor-pointer transition-all hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] group/card relative"
         style={{ backgroundColor: cfg.bg, border: `1px solid ${cfg.border}` }}
         onClick={() => openEditDialog(afspraak)}
       >
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold truncate" style={{ color: cfg.text }}>
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); toggleAfgerond(afspraak) }}
+          title={isAfgerond ? 'Markeer als gepland' : 'Markeer als afgerond'}
+          aria-label={isAfgerond ? 'Markeer als gepland' : 'Markeer als afgerond'}
+          className={cn(
+            'absolute top-1.5 right-1.5 rounded-full p-0.5 transition-opacity z-10',
+            isAfgerond
+              ? 'opacity-100 text-[#2A8A8A] hover:bg-[#2A8A8A]/10'
+              : 'opacity-0 group-hover/card:opacity-100 text-[#6B6B66] hover:text-[#2A8A8A] hover:bg-[#2A8A8A]/10'
+          )}
+        >
+          <CheckCircle2 className={cn('h-4 w-4', isAfgerond && 'fill-[#2A8A8A] text-white')} />
+        </button>
+        <div className={cn('flex items-start justify-between gap-2', isAfgerond && 'opacity-60')}>
+          <div className="flex-1 min-w-0 pr-5">
+            <p className={cn('text-sm font-semibold truncate', isAfgerond && 'line-through')} style={{ color: cfg.text }}>
               {afspraak.titel}
             </p>
             <div className="flex items-center gap-2 mt-1 text-xs text-[#9B9B95]">
