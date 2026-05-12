@@ -240,6 +240,7 @@ export function QuoteCreation() {
   const paramProjectId = searchParams.get('project_id') || ''
   const paramDealId = searchParams.get('deal_id') || ''
   const paramTitel = searchParams.get('titel') || ''
+  const paramContactpersoonId = searchParams.get('contactpersoon_id') || ''
   // Support both /offertes/:id (routeId) and /offertes/nieuw?edit=id (search param)
   const editOfferteId = routeId || searchParams.get('edit') || ''
 
@@ -727,13 +728,14 @@ export function QuoteCreation() {
         if (!offerteTitel && project.naam) {
           setOfferteTitel(project.naam)
         }
-        if (project.contactpersoon_id) {
-          setSelectedContactId(project.contactpersoon_id)
+        const contactIdToUse = paramContactpersoonId || project.contactpersoon_id
+        if (contactIdToUse) {
+          setSelectedContactId(contactIdToUse)
           projectContactPrefilledRef.current = true
         }
       }
     }
-  }, [paramProjectId, projecten])
+  }, [paramProjectId, paramContactpersoonId, projecten])
 
   // Auto-fill contactpersoon from klant
   useEffect(() => {
