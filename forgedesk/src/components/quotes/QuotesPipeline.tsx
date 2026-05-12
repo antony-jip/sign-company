@@ -215,11 +215,30 @@ export function QuotesPipeline() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false)
 
+  const [kolomLabels, setKolomLabels] = useState<Record<string, string>>(() => {
+    if (typeof window === 'undefined') return {}
+    try { return JSON.parse(localStorage.getItem('doen_offerte_kolom_labels') || '{}') } catch { return {} }
+  })
+  const [editingKolomKey, setEditingKolomKey] = useState<string | null>(null)
+  const [editingKolomLabel, setEditingKolomLabel] = useState('')
+
+  const saveKolomLabel = useCallback((key: string, label: string) => {
+    const trimmed = label.trim()
+    setKolomLabels(prev => {
+      const next = { ...prev }
+      if (trimmed) next[key] = trimmed
+      else delete next[key]
+      try { localStorage.setItem('doen_offerte_kolom_labels', JSON.stringify(next)) } catch { /* stil */ }
+      return next
+    })
+    setEditingKolomKey(null)
+  }, [])
+
   const STATUS_COLUMNS = useMemo(() => {
     const cols = [...DEFAULT_STATUS_COLUMNS]
     if (showClosed) cols.push(...CLOSED_STATUS_COLUMNS)
-    return cols
-  }, [showClosed])
+    return cols.map(c => kolomLabels[c.key] ? { ...c, label: kolomLabels[c.key] } : c)
+  }, [showClosed, kolomLabels])
 
   const [showPriorityDropdown, setShowPriorityDropdown] = useState(false)
   const [showSortDropdown, setShowSortDropdown] = useState(false)
@@ -983,7 +1002,29 @@ export function QuotesPipeline() {
                       <div className="px-4 py-3.5 border-b border-[#EBEBEB]">
                         <div className="flex items-center gap-2 mb-1">
                           <div className={cn('w-2 h-2 rounded-full', col.accent)} />
-                          <h3 className="font-bold text-[13px] text-[#1A1A1A]">{col.label}<span className="text-[#F15025]">.</span></h3>
+                          {editingKolomKey === col.key ? (
+                            <input
+                              autoFocus
+                              value={editingKolomLabel}
+                              onChange={e => setEditingKolomLabel(e.target.value)}
+                              onBlur={() => saveKolomLabel(col.key, editingKolomLabel)}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') { e.preventDefault(); saveKolomLabel(col.key, editingKolomLabel) }
+                                if (e.key === 'Escape') { e.preventDefault(); setEditingKolomKey(null) }
+                              }}
+                              className="font-bold text-[13px] text-[#1A1A1A] bg-white border border-[#EBEBEB] rounded-md px-1.5 py-0.5 flex-1 min-w-0 focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/10"
+                              placeholder={DEFAULT_STATUS_COLUMNS.concat(CLOSED_STATUS_COLUMNS).find(c => c.key === col.key)?.label || ''}
+                            />
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => { setEditingKolomLabel(col.label); setEditingKolomKey(col.key) }}
+                              className="font-bold text-[13px] text-[#1A1A1A] hover:text-[#1A535C] transition-colors text-left"
+                              title="Klik om kolomnaam aan te passen"
+                            >
+                              {col.label}<span className="text-[#F15025]">.</span>
+                            </button>
+                          )}
                           <span className="ml-auto text-[11px] font-mono font-semibold text-[#9B9B95] bg-[#EBEBEB] px-2 py-0.5 rounded-md">{colOffertes.length}</span>
                         </div>
                         <p className="text-[11px] text-[#9B9B95] font-mono tabular-nums pl-4">{formatEur(colTotal)}</p>
