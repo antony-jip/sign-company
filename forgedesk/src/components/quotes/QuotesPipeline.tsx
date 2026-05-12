@@ -68,9 +68,8 @@ import { round2 } from '@/utils/budgetUtils'
 import { logger } from '../../utils/logger'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useOptimisticState } from '@/hooks/useOptimistic'
-import { QuotesFollowUp } from './QuotesFollowUp'
 
-type ViewMode = 'pipeline' | 'lijst' | 'follow-up'
+type ViewMode = 'pipeline' | 'lijst'
 type SortOption = 'newest' | 'oldest' | 'highest' | 'expiring'
 type PriorityFilter = 'alle' | 'laag' | 'medium' | 'hoog' | 'urgent'
 type StatusFilter = 'alle' | 'concept' | 'verzonden' | 'bekeken' | 'goedgekeurd' | 'afgewezen' | 'verlopen' | 'gefactureerd' | 'wacht_op_reactie'
@@ -704,20 +703,6 @@ export function QuotesPipeline() {
     return sorted
   }, [filteredOffertes, listSortColumn, listSortDir])
 
-  // Follow-up badge count
-  const followUpBadgeCount = useMemo(() => {
-    const now = Date.now()
-    const drieD = 3 * 86400000
-    const vijfD = 5 * 86400000
-    return offertes.filter(o => {
-      if (o.status !== 'verzonden' && o.status !== 'bekeken') return false
-      if (o.verstuurd_op && (now - new Date(o.verstuurd_op).getTime()) > drieD) return true
-      if (o.follow_up_datum && new Date(o.follow_up_datum).getTime() <= now) return true
-      if (o.geldig_tot) { const vt = new Date(o.geldig_tot).getTime(); if (vt - now <= vijfD && vt > now) return true }
-      return false
-    }).length
-  }, [offertes])
-
   if (isLoading) {
     return (
       <div className="h-full flex flex-col bg-[#F8F7F5] -m-3 sm:-m-4 md:-m-6">
@@ -893,8 +878,7 @@ export function QuotesPipeline() {
           </div>
 
           {/* ── Toolbar card ── */}
-          {viewMode !== 'follow-up' && (
-            <div className="bg-white rounded-2xl p-5 shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03]">
+          <div className="bg-white rounded-2xl p-5 shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03]">
               <div className="flex items-center gap-5">
                 {/* Search */}
                 <div className="relative max-w-[280px] flex-1">
@@ -924,18 +908,6 @@ export function QuotesPipeline() {
                     title="Kanban"
                   >
                     <LayoutGrid className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={() => setViewMode('follow-up')}
-                    className={cn('p-1.5 rounded-md transition-all relative', (viewMode as string) === 'follow-up' ? 'bg-white shadow-sm text-[#1A1A1A]' : 'text-[#9B9B95] hover:text-[#6B6B66]')}
-                    title="Follow-up"
-                  >
-                    <BellRing className="w-3.5 h-3.5" />
-                    {followUpBadgeCount > 0 && (
-                      <span className="absolute -top-1 -right-1 min-w-[14px] h-[14px] rounded-full text-[9px] font-bold flex items-center justify-center text-white bg-[#F15025] px-0.5">
-                        {followUpBadgeCount}
-                      </span>
-                    )}
                   </button>
                 </div>
 
@@ -1026,7 +998,6 @@ export function QuotesPipeline() {
                 />
               </div>
             </div>
-          )}
 
           {/* ── Pipeline Settings Panel ── */}
           {showPipelineSettings && (
@@ -1580,10 +1551,6 @@ export function QuotesPipeline() {
             </>
           )}
 
-          {/* ── Follow-up View ── */}
-          {viewMode === 'follow-up' && (
-            <QuotesFollowUp offertes={offertes} onRefresh={loadOffertes} />
-          )}
         </div>
       </div>
 

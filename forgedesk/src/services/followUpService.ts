@@ -50,26 +50,3 @@ export async function generateFollowUpEmail(context: FollowUpContext): Promise<F
   return response.json()
 }
 
-export async function sendFollowUpEmail(params: {
-  to: string
-  subject: string
-  body: string
-  html?: string
-  attachments?: Array<{ filename: string; content: string; encoding: 'base64' }>
-}): Promise<void> {
-  const token = await getAuthToken()
-
-  const response = await fetch('/api/send-email', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-    },
-    body: JSON.stringify(params),
-  })
-
-  if (!response.ok) {
-    const error: { error?: string; message?: string } = await response.json().catch(() => ({}))
-    throw new Error(error?.message || error?.error || `Email verzenden mislukt: ${response.status}`)
-  }
-}
