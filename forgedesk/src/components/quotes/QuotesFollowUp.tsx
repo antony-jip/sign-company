@@ -31,6 +31,7 @@ import { cn, formatCurrency } from '@/lib/utils'
 import { round2 } from '@/utils/budgetUtils'
 import type { Offerte, Klant, Project } from '@/types'
 import { FollowUpMailPanel } from './FollowUpMailPanel'
+import { getDagenOpen, getDagenTotVerlopen, isFollowUpNodig } from '@/utils/offerteFollowUp'
 
 interface QuotesFollowUpProps {
   offertes: Offerte[]
@@ -38,17 +39,6 @@ interface QuotesFollowUpProps {
 }
 
 type FollowUpFilter = 'alle' | 'urgent' | 'niet_bekeken' | 'bekeken_geen_reactie'
-
-function getDagenOpen(offerte: Offerte): number {
-  const datum = offerte.verstuurd_op || offerte.created_at
-  if (!datum) return 0
-  return Math.floor((Date.now() - new Date(datum).getTime()) / (1000 * 60 * 60 * 24))
-}
-
-function getDagenTotVerlopen(offerte: Offerte): number {
-  if (!offerte.geldig_tot) return 999
-  return Math.floor((new Date(offerte.geldig_tot).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-}
 
 function formatDatumKort(dateStr: string | undefined): string {
   if (!dateStr) return '—'
@@ -90,30 +80,6 @@ function getPortaalStatusLabel(offerte: Offerte) {
     )
   }
   return null
-}
-
-function isFollowUpNodig(offerte: Offerte): boolean {
-  if (offerte.status !== 'verzonden' && offerte.status !== 'bekeken') return false
-  const now = Date.now()
-  const drieDAgen = 3 * 24 * 60 * 60 * 1000
-
-  // Verstuurd > 3 dagen geleden
-  if (offerte.verstuurd_op && (now - new Date(offerte.verstuurd_op).getTime()) > drieDAgen) return true
-
-  // Follow-up datum vandaag of eerder
-  if (offerte.follow_up_datum) {
-    const fud = new Date(offerte.follow_up_datum)
-    if (fud.getTime() <= now) return true
-  }
-
-  // Geldig tot binnen 5 dagen
-  if (offerte.geldig_tot) {
-    const vijfDagen = 5 * 24 * 60 * 60 * 1000
-    const verloopt = new Date(offerte.geldig_tot).getTime()
-    if (verloopt - now <= vijfDagen && verloopt > now) return true
-  }
-
-  return false
 }
 
 function sorteerOpUrgentie(a: Offerte, b: Offerte): number {

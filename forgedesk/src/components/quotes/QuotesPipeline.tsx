@@ -12,10 +12,10 @@ import {
   LayoutGrid,
   List,
   Bell,
-  BellOff,
   BellRing,
-  Phone,
-  CalendarPlus,
+  Mail,
+  Pause,
+  Send,
   TrendingUp,
   AlertTriangle,
   ChevronDown,
@@ -43,10 +43,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { getOffertes, updateOfferte, updateAppSettings, deleteOfferte } from '@/services/supabaseService'
+import { getOffertes, updateOfferte, updateAppSettings, deleteOfferte, getKlant, getOfferteItems, getProject, createTaak, getMedewerkers } from '@/services/supabaseService'
+import { sendPortaalHerinneringEmail } from '@/services/portaalNotificatieService'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useAuth } from '@/contexts/AuthContext'
-import type { Offerte, PipelineStap } from '@/types'
+import type { Offerte, OfferteItem, Klant, Project, Medewerker, PipelineStap } from '@/types'
+import { SendOfferteDialog } from './SendOfferteDialog'
+import { isFollowUpNodig } from '@/utils/offerteFollowUp'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
 import {
   DropdownMenu,
@@ -292,13 +295,37 @@ export function QuotesPipeline() {
 
   const [showPriorityDropdown, setShowPriorityDropdown] = useState(false)
   const [showSortDropdown, setShowSortDropdown] = useState(false)
-  const [followUpOpen, setFollowUpOpen] = useState<string | null>(null)
-  const [followUpDate, setFollowUpDate] = useState('')
-  const [followUpNote, setFollowUpNote] = useState('')
-  const [savingFollowUp, setSavingFollowUp] = useState(false)
-  const [callingClient, setCallingClient] = useState<string | null>(null)
   const [listSortColumn, setListSortColumn] = useState<string>('created_at')
   const [listSortDir, setListSortDir] = useState<'asc' | 'desc'>('desc')
+
+  // Sales-action dialogs
+  const [openingActieId, setOpeningActieId] = useState<string | null>(null)
+  const [mailOfferte, setMailOfferte] = useState<Offerte | null>(null)
+  const [mailKlant, setMailKlant] = useState<Klant | null>(null)
+  const [mailItems, setMailItems] = useState<OfferteItem[]>([])
+  const [mailProject, setMailProject] = useState<Project | null>(null)
+
+  const [portaalOfferte, setPortaalOfferte] = useState<Offerte | null>(null)
+  const [portaalKlant, setPortaalKlant] = useState<Klant | null>(null)
+  const [portaalLink, setPortaalLink] = useState<string>('')
+  const [portaalBericht, setPortaalBericht] = useState('')
+  const [portaalSending, setPortaalSending] = useState(false)
+
+  const [taakOfferte, setTaakOfferte] = useState<Offerte | null>(null)
+  const [taakTitel, setTaakTitel] = useState('')
+  const [taakDeadline, setTaakDeadline] = useState('')
+  const [taakToegewezen, setTaakToegewezen] = useState('')
+  const [taakSaving, setTaakSaving] = useState(false)
+
+  const [medewerkers, setMedewerkers] = useState<Medewerker[]>([])
+
+  useEffect(() => {
+    let cancelled = false
+    getMedewerkers()
+      .then((m) => { if (!cancelled) setMedewerkers(m || []) })
+      .catch(() => { /* stil */ })
+    return () => { cancelled = true }
+  }, [])
 
   const priorityRef = useRef<HTMLDivElement>(null)
   const sortRef = useRef<HTMLDivElement>(null)
@@ -451,31 +478,134 @@ export function QuotesPipeline() {
     toast.success(`${offerte.nummer} → ${STATUS_LABELS[newStatus] || newStatus}`)
   }, [offertes, runOptimistic])
 
-  const handleSaveFollowUp = useCallback(async (offerteId: string) => {
-    if (!followUpDate) { toast.error('Selecteer een datum'); return }
+  const handleOpenMail = useCallback(async (offerte: Offerte) => {
     try {
-      setSavingFollowUp(true)
-      const updated = await updateOfferte(offerteId, { follow_up_datum: followUpDate, follow_up_notitie: followUpNote, follow_up_status: 'gepland' })
-      setOffertes(prev => prev.map(o => o.id === offerteId ? { ...o, ...updated } : o))
-      toast.success('Follow-up ingepland')
-      setFollowUpOpen(null); setFollowUpDate(''); setFollowUpNote('')
+      setOpeningActieId(offerte.id)
+      const [klant, items, project] = await Promise.all([
+        getKlant(offerte.klant_id),
+        getOfferteItems(offerte.id),
+        offerte.project_id ? getProject(offerte.project_id).catch(() => null) : Promise.resolve(null),
+      ])
+      setMailKlant(klant)
+      setMailItems(items)
+      setMailProject(project)
+      setMailOfferte(offerte)
     } catch (err) {
-      logger.error('Fout bij opslaan follow-up:', err)
-      toast.error('Kon follow-up niet opslaan')
-    } finally { setSavingFollowUp(false) }
-  }, [followUpDate, followUpNote])
+      logger.error('Kon mail-dialog niet openen:', err)
+      toast.error('Kon offertegegevens niet laden')
+    } finally {
+      setOpeningActieId(null)
+    }
+  }, [])
 
-  const handleCallClient = useCallback(async (offerte: Offerte) => {
+  const handleOpenPortaal = useCallback(async (offerte: Offerte) => {
     try {
-      setCallingClient(offerte.id)
-      const now = new Date().toISOString()
-      const updated = await updateOfferte(offerte.id, { contact_pogingen: (offerte.contact_pogingen || 0) + 1, laatste_contact: now })
-      setOffertes(prev => prev.map(o => o.id === offerte.id ? { ...o, ...updated } : o))
-      toast.success(`Contactpoging ${(offerte.contact_pogingen || 0) + 1} geregistreerd`)
+      setOpeningActieId(offerte.id)
+      const klant = await getKlant(offerte.klant_id)
+      let link = ''
+      if (offerte.project_id && user?.id) {
+        const { createPortaal: createPortaalFn } = await import('@/services/supabaseService')
+        const portaal = await createPortaalFn(offerte.project_id, user.id)
+        link = `${window.location.origin}/portaal/${portaal.token}`
+      } else if (offerte.publiek_token) {
+        link = `${window.location.origin}/offerte-bekijken/${offerte.publiek_token}`
+      }
+      if (!link) {
+        toast.error('Geen portaal beschikbaar. Verstuur eerst de offerte via Mail.')
+        return
+      }
+      setPortaalKlant(klant)
+      setPortaalLink(link)
+      setPortaalBericht('')
+      setPortaalOfferte(offerte)
     } catch (err) {
-      logger.error('Fout bij registreren contactpoging:', err)
-      toast.error('Kon contactpoging niet registreren')
-    } finally { setCallingClient(null) }
+      logger.error('Kon portaal niet openen:', err)
+      toast.error('Kon portaal niet voorbereiden')
+    } finally {
+      setOpeningActieId(null)
+    }
+  }, [user?.id])
+
+  const handleSendPortaal = useCallback(async () => {
+    if (!portaalOfferte || !portaalKlant || !portaalLink) return
+    const email = portaalOfferte.verstuurd_naar || portaalKlant.email || ''
+    if (!email) { toast.error('Geen email-adres voor klant'); return }
+    try {
+      setPortaalSending(true)
+      const klantNaam = portaalKlant.contactpersonen?.find(c => c.is_primair)?.naam
+        || portaalKlant.contactpersoon
+        || portaalKlant.bedrijfsnaam
+        || ''
+      const result = await sendPortaalHerinneringEmail({
+        klantEmail: email,
+        klantNaam,
+        bedrijfsNaam: portaalKlant.bedrijfsnaam || '',
+        projectNaam: portaalOfferte.titel,
+        portaalLink,
+        dagenOpen: portaalOfferte.verstuurd_op
+          ? Math.floor((Date.now() - new Date(portaalOfferte.verstuurd_op).getTime()) / 86400000)
+          : 0,
+        onbeantwoordeItems: 1,
+        itemTitel: `offerte ${portaalOfferte.nummer}`,
+        templateOverrides: portaalBericht.trim() ? { inhoud: portaalBericht.trim() } : undefined,
+      })
+      if (!result.success) throw new Error(result.error || 'Onbekend')
+      const now = new Date().toISOString()
+      const updated = await updateOfferte(portaalOfferte.id, {
+        contact_pogingen: (portaalOfferte.contact_pogingen || 0) + 1,
+        laatste_contact: now,
+      })
+      setOffertes(prev => prev.map(o => o.id === portaalOfferte.id ? { ...o, ...updated } : o))
+      toast.success(`Herinnering verstuurd naar ${portaalKlant.bedrijfsnaam || email}`)
+      setPortaalOfferte(null)
+    } catch (err) {
+      logger.error('Portaal herinnering mislukt:', err)
+      toast.error('Kon herinnering niet versturen')
+    } finally {
+      setPortaalSending(false)
+    }
+  }, [portaalOfferte, portaalKlant, portaalLink, portaalBericht])
+
+  const handleOpenTaak = useCallback((offerte: Offerte) => {
+    const deadline = new Date()
+    deadline.setDate(deadline.getDate() + 7)
+    setTaakTitel(`Opvolgen offerte ${offerte.nummer}`)
+    setTaakDeadline(deadline.toISOString().split('T')[0])
+    setTaakToegewezen('')
+    setTaakOfferte(offerte)
+  }, [])
+
+  const handleSaveTaak = useCallback(async () => {
+    if (!taakOfferte || !user?.id) return
+    if (!taakTitel.trim()) { toast.error('Vul een titel in'); return }
+    try {
+      setTaakSaving(true)
+      await createTaak({
+        user_id: user.id,
+        offerte_id: taakOfferte.id,
+        project_id: taakOfferte.project_id || undefined,
+        klant_id: taakOfferte.klant_id,
+        titel: taakTitel.trim(),
+        beschrijving: '',
+        status: 'todo',
+        prioriteit: 'medium',
+        toegewezen_aan: taakToegewezen,
+        deadline: taakDeadline || undefined,
+        geschatte_tijd: 0,
+        bestede_tijd: 0,
+      })
+      toast.success(`Taak "${taakTitel.trim()}" aangemaakt`)
+      setTaakOfferte(null)
+    } catch (err) {
+      logger.error('Kon taak niet aanmaken:', err)
+      toast.error('Kon taak niet aanmaken')
+    } finally {
+      setTaakSaving(false)
+    }
+  }, [taakOfferte, taakTitel, taakDeadline, taakToegewezen, user?.id])
+
+  const handleMailSent = useCallback((updated: Offerte) => {
+    setOffertes(prev => prev.map(o => o.id === updated.id ? { ...o, ...updated } : o))
   }, [])
 
   const handleToggleOpvolging = useCallback(async (offerte: Offerte) => {
@@ -1037,13 +1167,29 @@ export function QuotesPipeline() {
                           const expiryStatus = getExpiryStatus(offerte.geldig_tot)
                           const followUpState = getFollowUpState(offerte)
                           const showActions = col.key === 'verzonden' || col.key === 'bekeken'
+                          const isPaused = offerte.opvolging_actief === false
+                          const needsFollowUp = !isPaused && isFollowUpNodig(offerte)
+                          const pogingen = offerte.contact_pogingen || 0
                           return (
                             <div key={offerte.id} className="relative group">
+                              {isPaused && (
+                                <button
+                                  onClick={e => { e.preventDefault(); e.stopPropagation(); handleToggleOpvolging(offerte) }}
+                                  className="absolute top-1.5 right-1.5 z-10 p-1 rounded-md bg-white/90 backdrop-blur-sm text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-white shadow-sm transition-colors"
+                                  title="Opvolging hervatten"
+                                >
+                                  <Pause className="h-3 w-3" />
+                                </button>
+                              )}
                               <div
                                 draggable
                                 onDragStart={e => handleDragStart(e, offerte.id)}
                                 onClick={() => navigateWithTab({ path: `/offertes/${offerte.id}/bewerken`, label: offerte.nummer || offerte.titel || 'Offerte', id: `/offertes/${offerte.id}` })}
-                                className="bg-white rounded-xl p-3.5 space-y-2 ring-1 ring-black/[0.03] shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] hover:-translate-y-[1px] transition-all duration-200 cursor-pointer active:cursor-grabbing"
+                                className={cn(
+                                  'bg-white rounded-xl p-3.5 space-y-2 shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] hover:-translate-y-[1px] transition-all duration-200 cursor-pointer active:cursor-grabbing',
+                                  needsFollowUp ? 'ring-1 ring-[#F15025]/40' : 'ring-1 ring-black/[0.03]',
+                                  isPaused && 'opacity-60 saturate-50',
+                                )}
                               >
                                 {/* Top row */}
                                 <div className="flex items-center justify-between gap-1">
@@ -1087,69 +1233,43 @@ export function QuotesPipeline() {
                                     <span className="text-[10px] text-[#C0BDB8]">{relativeDate(offerte.created_at)}</span>
                                   </div>
                                 </div>
+                                {pogingen > 0 && offerte.laatste_contact && (
+                                  <p className="text-[10px] text-[#9B9B95]">{pogingen} {pogingen === 1 ? 'poging' : 'pogingen'}, laatst {new Intl.DateTimeFormat('nl-NL', { day: 'numeric', month: 'short' }).format(new Date(offerte.laatste_contact))}</p>
+                                )}
                                 {expiryStatus === 'expired' && (
                                   <span className="inline-flex text-[10px] font-semibold px-2 py-0.5 rounded-md bg-[#FDE8E2] text-[#C03A18]">Verlopen</span>
                                 )}
                                 {expiryStatus === 'soon' && (
                                   <span className="inline-flex text-[10px] font-semibold px-2 py-0.5 rounded-md bg-[#FDE8E2] text-[#C03A18]">Verloopt binnenkort</span>
                                 )}
+                                {showActions && (
+                                  <div className="flex items-center justify-end gap-0.5 pt-1.5 -mr-1">
+                                    <button
+                                      onClick={e => { e.preventDefault(); e.stopPropagation(); handleOpenMail(offerte) }}
+                                      disabled={openingActieId === offerte.id}
+                                      className="p-1.5 rounded-md text-[#6B6B66] hover:bg-[#F4F2EE] hover:text-[#F15025] transition-colors disabled:opacity-50"
+                                      title="Mail versturen"
+                                    >
+                                      {openingActieId === offerte.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Mail className="h-3.5 w-3.5" />}
+                                    </button>
+                                    <button
+                                      onClick={e => { e.preventDefault(); e.stopPropagation(); handleOpenPortaal(offerte) }}
+                                      disabled={openingActieId === offerte.id}
+                                      className="p-1.5 rounded-md text-[#6B6B66] hover:bg-[#F4F2EE] hover:text-[#1A535C] transition-colors disabled:opacity-50"
+                                      title="Portaal herinnering"
+                                    >
+                                      <Bell className="h-3.5 w-3.5" />
+                                    </button>
+                                    <button
+                                      onClick={e => { e.preventDefault(); e.stopPropagation(); handleOpenTaak(offerte) }}
+                                      className="p-1.5 rounded-md text-[#6B6B66] hover:bg-[#F4F2EE] hover:text-[#2D6B48] transition-colors"
+                                      title="Taak aanmaken"
+                                    >
+                                      <CheckCircle2 className="h-3.5 w-3.5" />
+                                    </button>
+                                  </div>
+                                )}
                               </div>
-                              {/* Quick actions */}
-                              {showActions && (
-                                <div className="flex items-center gap-1.5 mt-1.5">
-                                  <button
-                                    onClick={e => { e.preventDefault(); e.stopPropagation(); if (followUpOpen === offerte.id) setFollowUpOpen(null); else { setFollowUpOpen(offerte.id); setFollowUpDate(offerte.follow_up_datum || ''); setFollowUpNote(offerte.follow_up_notitie || '') } }}
-                                    className="flex-1 flex items-center justify-center gap-1 py-1.5 text-[11px] font-medium rounded-lg bg-[#E2F0F0] text-[#1A535C] hover:bg-[#D0E8EA] transition-all"
-                                  >
-                                    <CalendarPlus className="h-3 w-3" /> Follow-up
-                                  </button>
-                                  <button
-                                    onClick={e => { e.preventDefault(); e.stopPropagation(); handleCallClient(offerte) }}
-                                    disabled={callingClient === offerte.id}
-                                    className="flex-1 flex items-center justify-center gap-1 py-1.5 text-[11px] font-medium rounded-lg bg-[#E8F2EC] text-[#2D6B48] hover:bg-[#D4E8DB] transition-all disabled:opacity-50"
-                                  >
-                                    {callingClient === offerte.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Phone className="h-3 w-3" />}
-                                    Bel klant
-                                  </button>
-                                  <button
-                                    onClick={e => { e.preventDefault(); e.stopPropagation(); handleToggleOpvolging(offerte) }}
-                                    className={cn(
-                                      'flex items-center justify-center gap-1 py-1.5 px-2 text-[11px] font-medium rounded-lg transition-all',
-                                      offerte.opvolging_actief !== false
-                                        ? 'bg-[#E2F0F0] text-[#1A535C] hover:bg-[#D0E8EA]'
-                                        : 'bg-[#F4F2EE] text-[#9B9B95] hover:bg-[#EBEBEB]'
-                                    )}
-                                    title={offerte.opvolging_actief !== false ? 'Opvolging pauzeren' : 'Opvolging hervatten'}
-                                  >
-                                    {offerte.opvolging_actief !== false ? <Bell className="h-3 w-3" /> : <BellOff className="h-3 w-3" />}
-                                  </button>
-                                </div>
-                              )}
-                              {/* Follow-up popover */}
-                              {followUpOpen === offerte.id && (
-                                <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-white rounded-xl ring-1 ring-black/[0.05] shadow-[0_8px_32px_rgba(0,0,0,0.12)] p-4 space-y-3" onClick={e => e.stopPropagation()}>
-                                  <div className="flex items-center justify-between">
-                                    <p className="text-[13px] font-semibold text-[#1A1A1A]">Follow-up plannen</p>
-                                    <button onClick={() => setFollowUpOpen(null)} className="text-[#9B9B95] hover:text-[#1A1A1A] transition-colors"><X className="h-3.5 w-3.5" /></button>
-                                  </div>
-                                  <div>
-                                    <label className="text-[11px] font-medium text-[#6B6B66] mb-1 block">Datum</label>
-                                    <input type="date" value={followUpDate} onChange={e => setFollowUpDate(e.target.value)} className="w-full rounded-lg border border-[#EBEBEB] bg-[#F8F7F5] px-3 py-2 text-sm text-[#1A1A1A] focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/10" />
-                                  </div>
-                                  <div>
-                                    <label className="text-[11px] font-medium text-[#6B6B66] mb-1 block">Notitie</label>
-                                    <textarea value={followUpNote} onChange={e => setFollowUpNote(e.target.value)} rows={2} placeholder="Bijv. bellen over status..." className="w-full rounded-lg border border-[#EBEBEB] bg-[#F8F7F5] px-3 py-2 text-sm text-[#1A1A1A] placeholder:text-[#C0BDB8] focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/10 resize-none" />
-                                  </div>
-                                  <button
-                                    onClick={() => handleSaveFollowUp(offerte.id)}
-                                    disabled={savingFollowUp}
-                                    className="w-full inline-flex items-center justify-center gap-2 bg-[#1A535C] text-white py-2 rounded-lg text-sm font-semibold hover:bg-[#154750] transition-all disabled:opacity-50"
-                                  >
-                                    {savingFollowUp ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Calendar className="h-3.5 w-3.5" />}
-                                    Opslaan
-                                  </button>
-                                </div>
-                              )}
                             </div>
                           )
                         })}
@@ -1478,6 +1598,105 @@ export function QuotesPipeline() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setBulkDeleteDialogOpen(false)}>Annuleren</Button>
             <Button variant="destructive" onClick={handleBulkDelete}>Verwijderen</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {mailOfferte && (
+        <SendOfferteDialog
+          open={!!mailOfferte}
+          onOpenChange={(o) => { if (!o) setMailOfferte(null) }}
+          offerte={mailOfferte}
+          klant={mailKlant}
+          items={mailItems}
+          project={mailProject}
+          userId={user?.id || ''}
+          mode="follow-up"
+          onSent={handleMailSent}
+          medewerkerNaam={user?.email || undefined}
+        />
+      )}
+
+      <Dialog open={!!portaalOfferte} onOpenChange={(o) => { if (!o) setPortaalOfferte(null) }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Portaal herinnering</DialogTitle>
+            <DialogDescription>
+              {portaalOfferte && (
+                <>Stuur {portaalKlant?.bedrijfsnaam || portaalOfferte.klant_naam || 'de klant'} een herinnering om de offerte {portaalOfferte.nummer} in het portaal te bekijken.</>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-1.5">
+              <label className="text-[12px] font-medium text-[#6B6B66]">Persoonlijk bericht (optioneel)</label>
+              <textarea
+                value={portaalBericht}
+                onChange={(e) => setPortaalBericht(e.target.value)}
+                rows={3}
+                placeholder="Bijv. Heeft u onze offerte al kunnen bekijken? Ik hoor graag uw reactie."
+                className="w-full rounded-lg border border-[#EBEBEB] bg-[#F8F7F5] px-3 py-2 text-sm text-[#1A1A1A] placeholder:text-[#C0BDB8] focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/10 resize-none"
+              />
+            </div>
+            <p className="text-[11px] text-[#9B9B95]">Geen bericht? Dan wordt de standaard-tekst gebruikt.</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPortaalOfferte(null)} disabled={portaalSending}>Annuleren</Button>
+            <Button onClick={handleSendPortaal} disabled={portaalSending}>
+              {portaalSending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Send className="h-4 w-4 mr-1" />}
+              Versturen
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!taakOfferte} onOpenChange={(o) => { if (!o) setTaakOfferte(null) }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Taak aanmaken</DialogTitle>
+            <DialogDescription>
+              {taakOfferte && <>Maak een taak gekoppeld aan offerte {taakOfferte.nummer}.</>}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-1.5">
+              <label className="text-[12px] font-medium text-[#6B6B66]">Titel</label>
+              <input
+                type="text"
+                value={taakTitel}
+                onChange={(e) => setTaakTitel(e.target.value)}
+                className="w-full rounded-lg border border-[#EBEBEB] bg-[#F8F7F5] px-3 py-2 text-sm text-[#1A1A1A] focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/10"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[12px] font-medium text-[#6B6B66]">Deadline</label>
+              <input
+                type="date"
+                value={taakDeadline}
+                onChange={(e) => setTaakDeadline(e.target.value)}
+                className="w-full rounded-lg border border-[#EBEBEB] bg-[#F8F7F5] px-3 py-2 text-sm text-[#1A1A1A] focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/10"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[12px] font-medium text-[#6B6B66]">Toegewezen aan</label>
+              <Select value={taakToegewezen} onValueChange={setTaakToegewezen}>
+                <SelectTrigger className="w-full bg-[#F8F7F5] border-[#EBEBEB]">
+                  <SelectValue placeholder="Selecteer medewerker..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {medewerkers.filter(m => m.status === 'actief').map(m => (
+                    <SelectItem key={m.id} value={m.naam}>{m.naam}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTaakOfferte(null)} disabled={taakSaving}>Annuleren</Button>
+            <Button onClick={handleSaveTaak} disabled={taakSaving || !taakTitel.trim()}>
+              {taakSaving ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-1" />}
+              Aanmaken
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
