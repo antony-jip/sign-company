@@ -117,6 +117,7 @@ export function EmailContextSidebar({
 
   useEffect(() => {
     getMedewerkers().then(m => setMedewerkers(m.filter(mw => mw.status === 'actief'))).catch(() => {})
+    getKlanten().then(setAllKlanten).catch(() => {})
   }, [])
 
   const klantDisplayName = linkedKlant?.bedrijfsnaam || linkedKlant?.contactpersoon || companyGuess || personName
@@ -168,7 +169,6 @@ export function EmailContextSidebar({
     if (panel === 'klant') {
       setKlantForm({ bedrijfsnaam: companyGuess, contactpersoon: personName, email: contactEmail, telefoon: '' })
       setKlantSearchMode(true)
-      getKlanten().then(k => setAllKlanten(k)).catch(() => {})
     } else if (panel === 'project') {
       setProjectForm({
         naam: `${klantDisplayName || 'Project'} - ${email?.onderwerp?.slice(0, 40) || ''}`.trim(),
@@ -180,7 +180,6 @@ export function EmailContextSidebar({
         start_datum: new Date().toISOString().split('T')[0],
         eind_datum: '',
       })
-      getKlanten().then(k => setAllKlanten(k)).catch(() => {})
     } else if (panel === 'taak') {
       setTaakForm({ titel: email?.onderwerp || 'Opvolging email', beschrijving: `Van: ${contactName} <${contactEmail}>`, deadline: '', toegewezen_aan: '' })
     }
