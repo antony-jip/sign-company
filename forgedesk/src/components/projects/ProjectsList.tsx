@@ -494,10 +494,7 @@ export function ProjectsList() {
     const actief = projecten.filter((p) => p.status === 'actief').length
     const teFactureren = projecten.filter((p) => p.status === 'te-factureren').length
     const afgerond = projecten.filter((p) => p.status === 'afgerond').length
-    const overdue = projecten.filter(
-      (p) => p.eind_datum && new Date(p.eind_datum ?? "") < new Date() && p.status !== 'afgerond'
-    ).length
-    return { actief, teFactureren, afgerond, overdue }
+    return { actief, teFactureren, afgerond }
   }, [projecten])
 
   if (isLoading) {
@@ -631,16 +628,22 @@ export function ProjectsList() {
                   Projecten<span className="text-[#F15025]">.</span>
                 </h1>
                 <span className="text-[13px] text-[#9B9B95] font-mono tabular-nums">
-                  <span className="font-medium text-[#6B6B66]">{gefilterdeProjecten.length}</span>
-                  <span className="text-[#C0BDB8]">/</span>{projecten.length}
+                  {gefilterdeProjecten.length === projecten.length ? (
+                    <span className="font-medium text-[#6B6B66]">{projecten.length}</span>
+                  ) : (
+                    <>
+                      <span className="font-medium text-[#6B6B66]">{gefilterdeProjecten.length}</span>
+                      <span className="text-[#C0BDB8]">/</span>{projecten.length}
+                    </>
+                  )}
                 </span>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <button
                   onClick={() => setShowImportDialog(true)}
-                  className="hidden md:inline-flex items-center gap-2 bg-white text-[#1A535C] pl-3.5 pr-4 py-2.5 rounded-xl text-sm font-semibold border border-[#E0DFDB] shadow-sm hover:bg-[#F8F7F5] hover:border-[#1A535C30] hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200"
+                  className="hidden md:inline-flex items-center gap-1.5 text-[13px] font-medium text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-black/[0.04] px-2.5 py-1.5 rounded-md transition-all duration-200"
                 >
-                  <Upload className="w-4 h-4 opacity-70" />
+                  <Upload className="w-3.5 h-3.5" />
                   Importeer
                 </button>
                 <Link
@@ -653,30 +656,27 @@ export function ProjectsList() {
               </div>
             </div>
 
-            {/* Quick stats — compact inline badges */}
-            <div className="flex items-center gap-2 flex-wrap min-h-[28px]">
+            {/* Status overview — text + dot, design-system stijl */}
+            <div className="flex items-center gap-5 flex-wrap min-h-[20px] text-[12.5px]">
               {stats.actief > 0 && (
-                <span className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold bg-[#E8F2EC] text-[#2D6B48]">
+                <span className="inline-flex items-center gap-1.5 text-[#2D6B48]">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#2D6B48] doen-pulse" />
-                  <span className="font-mono">{stats.actief}</span> actief
+                  <span className="font-mono font-medium">{stats.actief}</span>
+                  <span className="text-[#6B6B66]">actief</span>
                 </span>
               )}
               {stats.teFactureren > 0 && (
-                <span className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold bg-[#E8EEF9] text-[#3A5A9A]">
+                <span className="inline-flex items-center gap-1.5 text-[#3A5A9A]">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#3A5A9A]" />
-                  <span className="font-mono">{stats.teFactureren}</span> factureren
-                </span>
-              )}
-              {stats.overdue > 0 && (
-                <span className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold bg-[#FDE8E4] text-[#C0451A]">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#F15025] doen-pulse" />
-                  <span className="font-mono">{stats.overdue}</span> verlopen
+                  <span className="font-mono font-medium">{stats.teFactureren}</span>
+                  <span className="text-[#6B6B66]">te factureren</span>
                 </span>
               )}
               {stats.afgerond > 0 && (
-                <span className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold bg-[#F5F2E8] text-[#8A7A4A]">
+                <span className="inline-flex items-center gap-1.5 text-[#8A7A4A]">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#8A7A4A]" />
-                  <span className="font-mono">{stats.afgerond}</span> klaar
+                  <span className="font-mono font-medium">{stats.afgerond}</span>
+                  <span className="text-[#6B6B66]">klaar</span>
                 </span>
               )}
             </div>
@@ -1020,7 +1020,6 @@ export function ProjectsList() {
                     {paginatedProjecten.map((project, i) => {
                       const klantNaam = project.klant_naam || getKlantNaam(project.klant_id)
                       const contactpersoon = getKlantContactpersoon(project.klant_id)
-                      const isOverdue = project.eind_datum && new Date(project.eind_datum ?? "") < new Date() && project.status !== 'afgerond'
 
                       return (
                         <tr
@@ -1204,9 +1203,6 @@ export function ProjectsList() {
                                     {statusLabels[project.status] || project.status}<span className="text-[#F15025]">.</span>
                                   </span>
                                   <ChevronDown className="w-3 h-3 text-[#C0BDB8] opacity-0 group-hover/status:opacity-100 transition-opacity -ml-0.5" />
-                                  {isOverdue && (
-                                    <span className="ml-1.5 text-[11px] font-semibold text-[#C03A18]">Verlopen</span>
-                                  )}
                                 </button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="start" className="w-40">

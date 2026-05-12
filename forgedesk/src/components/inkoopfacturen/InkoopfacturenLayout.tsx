@@ -405,8 +405,14 @@ export function InkoopfacturenLayout() {
               Inkoopfacturen<span className="text-[#F15025]">.</span>
             </h1>
             <span className="text-[13px] text-[#9B9B95] font-mono tabular-nums">
-              <span className="font-medium text-[#6B6B66]">{filtered.length}</span>
-              <span className="text-[#C0BDB8]">/</span>{facturen.length}
+              {filtered.length === facturen.length ? (
+                <span className="font-medium text-[#6B6B66]">{facturen.length}</span>
+              ) : (
+                <>
+                  <span className="font-medium text-[#6B6B66]">{filtered.length}</span>
+                  <span className="text-[#C0BDB8]">/</span>{facturen.length}
+                </>
+              )}
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -423,30 +429,34 @@ export function InkoopfacturenLayout() {
           </div>
         </div>
 
-        {/* Quick stats */}
-        <div className="flex items-center gap-2 flex-wrap">
+        {/* Status overview — text + dot */}
+        <div className="flex items-center gap-5 flex-wrap min-h-[20px] text-[12.5px]">
           {wachtendCount > 0 && (
-            <span className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold bg-[#FDE8E2] text-[#C03A18]">
+            <span className="inline-flex items-center gap-1.5 text-[#C03A18]">
               <span className="w-1.5 h-1.5 rounded-full bg-[#F15025] doen-pulse" />
-              <span className="font-mono">{wachtendCount}</span> wachten op review
+              <span className="font-mono font-medium">{wachtendCount}</span>
+              <span className="text-[#6B6B66]">wachten op review</span>
             </span>
           )}
           {statistics.totaalOpen > 0 && (
-            <span className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold bg-[#FEF3E8] text-[#D4621A]">
+            <span className="inline-flex items-center gap-1.5 text-[#D4621A]">
               <span className="w-1.5 h-1.5 rounded-full bg-[#D4621A]" />
-              <span className="font-mono">{formatCurrency(statistics.totaalOpen)}</span> open
+              <span className="font-mono font-medium">{formatCurrency(statistics.totaalOpen)}</span>
+              <span className="text-[#6B6B66]">open</span>
             </span>
           )}
           {statistics.goedgekeurdCount > 0 && (
-            <span className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold bg-[#E8F2EC] text-[#2D6B48]">
+            <span className="inline-flex items-center gap-1.5 text-[#2D6B48]">
               <span className="w-1.5 h-1.5 rounded-full bg-[#2D6B48]" />
-              <span className="font-mono">{statistics.goedgekeurdCount}</span> goedgekeurd
+              <span className="font-mono font-medium">{statistics.goedgekeurdCount}</span>
+              <span className="text-[#6B6B66]">goedgekeurd</span>
             </span>
           )}
           {maandStats.totaalDezeMaand > 0 && (
-            <span className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold bg-[#F5F2E8] text-[#8A7A4A]">
+            <span className="inline-flex items-center gap-1.5 text-[#8A7A4A]">
               <span className="w-1.5 h-1.5 rounded-full bg-[#8A7A4A]" />
-              <span className="font-mono">{formatCurrency(maandStats.totaalDezeMaand)}</span> deze maand ({maandStats.aantalDezeMaand})
+              <span className="font-mono font-medium">{formatCurrency(maandStats.totaalDezeMaand)}</span>
+              <span className="text-[#6B6B66]">deze maand ({maandStats.aantalDezeMaand})</span>
             </span>
           )}
         </div>

@@ -1460,8 +1460,14 @@ export function FacturenLayout() {
               Facturen<span className="text-[#F15025]">.</span>
             </h1>
             <span className="text-[13px] text-[#9B9B95] font-mono tabular-nums">
-              <span className="font-medium text-[#6B6B66]">{filteredFacturen.length}</span>
-              <span className="text-[#C0BDB8]">/</span>{facturen.length}
+              {filteredFacturen.length === facturen.length ? (
+                <span className="font-medium text-[#6B6B66]">{facturen.length}</span>
+              ) : (
+                <>
+                  <span className="font-medium text-[#6B6B66]">{filteredFacturen.length}</span>
+                  <span className="text-[#C0BDB8]">/</span>{facturen.length}
+                </>
+              )}
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -1482,32 +1488,36 @@ export function FacturenLayout() {
           </div>
         </div>
 
-        {/* Quick stats — compact inline badges */}
-        <div className="flex items-center gap-2 flex-wrap">
+        {/* Status overview — text + dot */}
+        <div className="flex items-center gap-5 flex-wrap min-h-[20px] text-[12.5px]">
           {statistics.totaalOpenstaand > 0 && (
-            <span className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold bg-[#FDE8E2] text-[#C03A18]">
+            <span className="inline-flex items-center gap-1.5 text-[#C03A18]">
               <span className="w-1.5 h-1.5 rounded-full bg-[#F15025] doen-pulse" />
-              <span className="font-mono">{formatCurrency(statistics.totaalOpenstaand)}</span> open
+              <span className="font-mono font-medium">{formatCurrency(statistics.totaalOpenstaand)}</span>
+              <span className="text-[#6B6B66]">open</span>
             </span>
           )}
           {statistics.betaaldDezeMaand > 0 && (
-            <span className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold bg-[#E8F2EC] text-[#2D6B48]">
+            <span className="inline-flex items-center gap-1.5 text-[#2D6B48]">
               <span className="w-1.5 h-1.5 rounded-full bg-[#2D6B48]" />
-              <span className="font-mono">{formatCurrency(statistics.betaaldDezeMaand)}</span> betaald
+              <span className="font-mono font-medium">{formatCurrency(statistics.betaaldDezeMaand)}</span>
+              <span className="text-[#6B6B66]">betaald</span>
             </span>
           )}
           {verlopenCount > 0 && (
             <button
               onClick={() => setFilterStatus('verlopen')}
-              className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold bg-[#FDE8E4] text-[#C0451A] hover:bg-[#FBD8D2] transition-colors"
+              className="inline-flex items-center gap-1.5 text-[#C0451A] hover:text-[#9A3814] transition-colors"
             >
               <span className="w-1.5 h-1.5 rounded-full bg-[#F15025] doen-pulse" />
-              <span className="font-mono">{verlopenCount}</span> vervallen
+              <span className="font-mono font-medium">{verlopenCount}</span>
+              <span className="text-[#6B6B66]">vervallen</span>
             </button>
           )}
-          <span className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold bg-[#F5F2E8] text-[#8A7A4A]">
+          <span className="inline-flex items-center gap-1.5 text-[#8A7A4A]">
             <span className="w-1.5 h-1.5 rounded-full bg-[#8A7A4A]" />
-            <span className="font-mono">{statistics.gemiddeldeBetaaltermijn}</span> dgn termijn
+            <span className="font-mono font-medium">{statistics.gemiddeldeBetaaltermijn}</span>
+            <span className="text-[#6B6B66]">dgn termijn</span>
           </span>
         </div>
       </div>

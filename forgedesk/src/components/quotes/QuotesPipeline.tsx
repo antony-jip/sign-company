@@ -714,8 +714,14 @@ export function QuotesPipeline() {
                   Offertes<span className="text-[#F15025]">.</span>
                 </h1>
                 <span className="text-[13px] text-[#9B9B95] font-mono tabular-nums">
-                  <span className="font-medium text-[#6B6B66]">{filteredOffertes.length}</span>
-                  <span className="text-[#C0BDB8]">/</span>{offertes.length}
+                  {filteredOffertes.length === offertes.length ? (
+                    <span className="font-medium text-[#6B6B66]">{offertes.length}</span>
+                  ) : (
+                    <>
+                      <span className="font-medium text-[#6B6B66]">{filteredOffertes.length}</span>
+                      <span className="text-[#C0BDB8]">/</span>{offertes.length}
+                    </>
+                  )}
                 </span>
               </div>
               <Link
@@ -727,27 +733,31 @@ export function QuotesPipeline() {
               </Link>
             </div>
 
-            {/* Quick stats */}
-            <div className="flex items-center gap-2 flex-wrap min-h-[28px]">
+            {/* Status overview — text + dot */}
+            <div className="flex items-center gap-5 flex-wrap min-h-[20px] text-[12.5px]">
               {kpis.openCount > 0 && (
-                <span className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold bg-[#FDE8E2] text-[#C03A18]">
+                <span className="inline-flex items-center gap-1.5 text-[#C03A18]">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#F15025] doen-pulse" />
-                  <span className="font-mono">{kpis.openCount}</span> open
+                  <span className="font-mono font-medium">{kpis.openCount}</span>
+                  <span className="text-[#6B6B66]">open</span>
                 </span>
               )}
-              <span className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold bg-[#E8F2EC] text-[#2D6B48]">
+              <span className="inline-flex items-center gap-1.5 text-[#2D6B48]">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#2D6B48]" />
-                <span className="font-mono">{kpis.conversionRate}%</span> conversie
+                <span className="font-mono font-medium">{kpis.conversionRate}%</span>
+                <span className="text-[#6B6B66]">conversie</span>
               </span>
               {kpis.overdueFollowUps > 0 && (
-                <span className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold bg-[#FDE8E4] text-[#C0451A]">
+                <span className="inline-flex items-center gap-1.5 text-[#C0451A]">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#F15025] doen-pulse" />
-                  <span className="font-mono">{kpis.overdueFollowUps}</span> achterstallig
+                  <span className="font-mono font-medium">{kpis.overdueFollowUps}</span>
+                  <span className="text-[#6B6B66]">achterstallig</span>
                 </span>
               )}
-              <span className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold bg-[#E8EEF9] text-[#3A5A9A]">
+              <span className="inline-flex items-center gap-1.5 text-[#3A5A9A]">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#3A5A9A]" />
-                Pipeline <span className="font-mono">{formatEur(financialSummary.pipelineTotaal)}</span>
+                <span className="text-[#6B6B66]">Pipeline</span>
+                <span className="font-mono font-medium">{formatEur(financialSummary.pipelineTotaal)}</span>
               </span>
             </div>
           </div>

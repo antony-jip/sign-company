@@ -323,8 +323,14 @@ export function ClientsLayout() {
               Klanten<span className="text-[#F15025]">.</span>
             </h1>
             <span className="text-[13px] text-[#9B9B95] font-mono tabular-nums">
-              <span className="font-medium text-[#6B6B66]">{filteredKlanten.length}</span>
-              <span className="text-[#C0BDB8]">/</span>{klanten.length}
+              {filteredKlanten.length === klanten.length ? (
+                <span className="font-medium text-[#6B6B66]">{klanten.length}</span>
+              ) : (
+                <>
+                  <span className="font-medium text-[#6B6B66]">{filteredKlanten.length}</span>
+                  <span className="text-[#C0BDB8]">/</span>{klanten.length}
+                </>
+              )}
             </span>
           </div>
           <Button
@@ -336,24 +342,27 @@ export function ClientsLayout() {
           </Button>
         </div>
 
-        {/* Quick stats — compact inline badges */}
-        <div className="flex items-center gap-2 flex-wrap">
+        {/* Status overview — text + dot */}
+        <div className="flex items-center gap-5 flex-wrap min-h-[20px] text-[12.5px]">
           {klanten.filter((k) => k.status === 'actief').length > 0 && (
-            <span className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold bg-[#E8F2EC] text-[#2D6B48]">
+            <span className="inline-flex items-center gap-1.5 text-[#2D6B48]">
               <span className="w-1.5 h-1.5 rounded-full bg-[#2D6B48] doen-pulse" />
-              <span className="font-mono">{klanten.filter((k) => k.status === 'actief').length}</span> actief<span className="text-[#F15025]">.</span>
+              <span className="font-mono font-medium">{klanten.filter((k) => k.status === 'actief').length}</span>
+              <span className="text-[#6B6B66]">actief</span>
             </span>
           )}
           {klanten.filter((k) => k.status === 'prospect').length > 0 && (
-            <span className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold bg-[#E8EEF9] text-[#3A5A9A]">
+            <span className="inline-flex items-center gap-1.5 text-[#3A5A9A]">
               <span className="w-1.5 h-1.5 rounded-full bg-[#3A5A9A]" />
-              <span className="font-mono">{klanten.filter((k) => k.status === 'prospect').length}</span> prospect<span className="text-[#F15025]">.</span>
+              <span className="font-mono font-medium">{klanten.filter((k) => k.status === 'prospect').length}</span>
+              <span className="text-[#6B6B66]">prospect</span>
             </span>
           )}
           {klanten.filter((k) => k.status === 'inactief').length > 0 && (
-            <span className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold bg-[#F5F2E8] text-[#8A7A4A]">
+            <span className="inline-flex items-center gap-1.5 text-[#8A7A4A]">
               <span className="w-1.5 h-1.5 rounded-full bg-[#8A7A4A]" />
-              <span className="font-mono">{klanten.filter((k) => k.status === 'inactief').length}</span> inactief<span className="text-[#F15025]">.</span>
+              <span className="font-mono font-medium">{klanten.filter((k) => k.status === 'inactief').length}</span>
+              <span className="text-[#6B6B66]">inactief</span>
             </span>
           )}
         </div>

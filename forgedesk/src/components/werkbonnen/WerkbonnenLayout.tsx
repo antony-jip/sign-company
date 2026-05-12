@@ -219,8 +219,14 @@ export function WerkbonnenLayout() {
               Werkbonnen<span className="text-[#F15025]">.</span>
             </h1>
             <span className="text-[13px] text-[#9B9B95] font-mono tabular-nums">
-              <span className="font-medium text-[#6B6B66]">{gefilterd.length}</span>
-              <span className="text-[#C0BDB8]">/</span>{werkbonnen.length}
+              {gefilterd.length === werkbonnen.length ? (
+                <span className="font-medium text-[#6B6B66]">{werkbonnen.length}</span>
+              ) : (
+                <>
+                  <span className="font-medium text-[#6B6B66]">{gefilterd.length}</span>
+                  <span className="text-[#C0BDB8]">/</span>{werkbonnen.length}
+                </>
+              )}
             </span>
           </div>
           <button
@@ -232,24 +238,27 @@ export function WerkbonnenLayout() {
           </button>
         </div>
 
-        {/* Quick stats — compact inline badges */}
-        <div className="flex items-center gap-2 flex-wrap">
+        {/* Status overview — text + dot */}
+        <div className="flex items-center gap-5 flex-wrap min-h-[20px] text-[12.5px]">
           {(statusCounts['concept'] || 0) > 0 && (
-            <span className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold bg-[#EEEEED] text-[#5A5A55]">
+            <span className="inline-flex items-center gap-1.5 text-[#5A5A55]">
               <span className="w-1.5 h-1.5 rounded-full bg-[#5A5A55]" />
-              <span className="font-mono">{statusCounts['concept']}</span> open
+              <span className="font-mono font-medium">{statusCounts['concept']}</span>
+              <span className="text-[#6B6B66]">open</span>
             </span>
           )}
           {(statusCounts['definitief'] || 0) > 0 && (
-            <span className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold bg-[#FDE8E2] text-[#C03A18]">
+            <span className="inline-flex items-center gap-1.5 text-[#C03A18]">
               <span className="w-1.5 h-1.5 rounded-full bg-[#F15025] doen-pulse" />
-              <span className="font-mono">{statusCounts['definitief']}</span> in uitvoering
+              <span className="font-mono font-medium">{statusCounts['definitief']}</span>
+              <span className="text-[#6B6B66]">in uitvoering</span>
             </span>
           )}
           {(statusCounts['afgerond'] || 0) > 0 && (
-            <span className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold bg-[#E8F2EC] text-[#2D6B48]">
+            <span className="inline-flex items-center gap-1.5 text-[#2D6B48]">
               <span className="w-1.5 h-1.5 rounded-full bg-[#2D6B48]" />
-              <span className="font-mono">{statusCounts['afgerond']}</span> afgetekend
+              <span className="font-mono font-medium">{statusCounts['afgerond']}</span>
+              <span className="text-[#6B6B66]">afgetekend</span>
             </span>
           )}
         </div>
