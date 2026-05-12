@@ -147,6 +147,8 @@ export function TabBar() {
     }
   }
 
+  if (tabs.length <= 1) return null
+
   return (
     <>
       <div className="tab-bar flex items-center gap-0.5 px-2 py-1 border-b border-border/30">
