@@ -214,8 +214,8 @@ export function QuotesPipeline() {
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false)
-  const [offerteToDelete, setOfferteToDelete] = useState<Offerte | null>(null)
-  const [deletingOne, setDeletingOne] = useState(false)
+  const deleteTimersRef = useRef<Map<string, number>>(new Map())
+  const deleteBufferRef = useRef<Map<string, Offerte>>(new Map())
 
   const [kolomLabels, setKolomLabels] = useState<Record<string, string>>(() => {
     if (typeof window === 'undefined') return {}
@@ -557,21 +557,53 @@ export function QuotesPipeline() {
     setOffertes(prev => prev.map(o => o.id === updated.id ? { ...o, ...updated } : o))
   }, [])
 
-  const handleConfirmDeleteOne = useCallback(async () => {
-    if (!offerteToDelete) return
-    try {
-      setDeletingOne(true)
-      await deleteOfferte(offerteToDelete.id)
-      setOffertes(prev => prev.filter(o => o.id !== offerteToDelete.id))
-      toast.success(`Offerte ${offerteToDelete.nummer || ''} verwijderd`)
-      setOfferteToDelete(null)
-    } catch (err) {
-      logger.error('Kon offerte niet verwijderen:', err)
-      toast.error('Kon offerte niet verwijderen')
-    } finally {
-      setDeletingOne(false)
+  const handleDeleteOfferte = useCallback((offerte: Offerte) => {
+    setOffertes(prev => prev.filter(o => o.id !== offerte.id))
+    deleteBufferRef.current.set(offerte.id, offerte)
+
+    const timer = window.setTimeout(async () => {
+      deleteBufferRef.current.delete(offerte.id)
+      deleteTimersRef.current.delete(offerte.id)
+      try {
+        await deleteOfferte(offerte.id)
+      } catch (err) {
+        logger.error('Kon offerte niet verwijderen:', err)
+        toast.error(`Kon ${offerte.nummer || 'offerte'} niet verwijderen`)
+        setOffertes(prev => prev.some(o => o.id === offerte.id) ? prev : [...prev, offerte])
+      }
+    }, 5000)
+    deleteTimersRef.current.set(offerte.id, timer)
+
+    toast(`${offerte.nummer || 'Offerte'} verwijderd`, {
+      duration: 5000,
+      action: {
+        label: 'Ongedaan',
+        onClick: () => {
+          const t = deleteTimersRef.current.get(offerte.id)
+          if (t !== undefined) {
+            clearTimeout(t)
+            deleteTimersRef.current.delete(offerte.id)
+          }
+          const buffered = deleteBufferRef.current.get(offerte.id)
+          if (buffered) {
+            deleteBufferRef.current.delete(offerte.id)
+            setOffertes(prev => prev.some(o => o.id === buffered.id) ? prev : [...prev, buffered])
+          }
+        },
+      },
+    })
+  }, [])
+
+  useEffect(() => {
+    const timers = deleteTimersRef.current
+    const buffer = deleteBufferRef.current
+    return () => {
+      timers.forEach(t => clearTimeout(t))
+      buffer.forEach(o => { deleteOfferte(o.id).catch(() => { /* stil */ }) })
+      timers.clear()
+      buffer.clear()
     }
-  }, [offerteToDelete])
+  }, [])
 
   const handleToggleOpvolging = useCallback(async (offerte: Offerte) => {
     const newVal = offerte.opvolging_actief === false
@@ -1065,19 +1097,19 @@ export function QuotesPipeline() {
                           const pogingen = offerte.contact_pogingen || 0
                           return (
                             <div key={offerte.id} className="relative group">
-                              <div className="absolute top-1.5 right-1.5 z-10 flex items-center gap-0.5">
+                              <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
                                 {isPaused && (
                                   <button
                                     onClick={e => { e.preventDefault(); e.stopPropagation(); handleToggleOpvolging(offerte) }}
-                                    className="p-1 rounded-md bg-white/90 backdrop-blur-sm text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-white shadow-sm transition-colors"
+                                    className="p-1 rounded-full bg-white/55 backdrop-blur-lg ring-1 ring-black/5 text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-white/85 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.18)] transition-all duration-200"
                                     title="Opvolging hervatten"
                                   >
                                     <Pause className="h-3 w-3" />
                                   </button>
                                 )}
                                 <button
-                                  onClick={e => { e.preventDefault(); e.stopPropagation(); setOfferteToDelete(offerte) }}
-                                  className="p-1 rounded-md bg-white/90 backdrop-blur-sm text-[#9B9B95] hover:text-[#C03A18] hover:bg-white shadow-sm transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                                  onClick={e => { e.preventDefault(); e.stopPropagation(); handleDeleteOfferte(offerte) }}
+                                  className="p-1 rounded-full bg-white/55 backdrop-blur-lg ring-1 ring-black/5 text-[#9B9B95] hover:text-[#C03A18] hover:bg-white/85 hover:ring-[#C03A18]/20 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.18)] transition-all duration-200 opacity-0 group-hover:opacity-100 focus:opacity-100"
                                   title="Offerte verwijderen"
                                 >
                                   <X className="h-3 w-3" />
@@ -1088,9 +1120,9 @@ export function QuotesPipeline() {
                                 onDragStart={e => handleDragStart(e, offerte.id)}
                                 onClick={() => navigateWithTab({ path: `/offertes/${offerte.id}/bewerken`, label: offerte.nummer || offerte.titel || 'Offerte', id: `/offertes/${offerte.id}` })}
                                 className={cn(
-                                  'bg-white rounded-xl p-3.5 space-y-2 shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] hover:-translate-y-[1px] transition-all duration-200 cursor-pointer active:cursor-grabbing',
-                                  needsFollowUp ? 'ring-1 ring-[#F15025]/40' : 'ring-1 ring-black/[0.03]',
-                                  isPaused && 'opacity-60 saturate-50',
+                                  'bg-white rounded-xl p-3.5 space-y-2 shadow-[0_1px_2px_rgba(15,15,15,0.04)] hover:shadow-[0_10px_28px_-12px_rgba(15,15,15,0.18),0_2px_6px_-2px_rgba(15,15,15,0.04)] hover:-translate-y-0.5 transition-all duration-300 ease-out cursor-pointer active:cursor-grabbing active:translate-y-0',
+                                  needsFollowUp ? 'ring-1 ring-[#F15025]/35' : 'ring-1 ring-black/[0.04]',
+                                  isPaused && 'opacity-55 saturate-50',
                                 )}
                               >
                                 {/* Top row */}
@@ -1496,26 +1528,6 @@ export function QuotesPipeline() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setBulkDeleteDialogOpen(false)}>Annuleren</Button>
             <Button variant="destructive" onClick={handleBulkDelete}>Verwijderen</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={!!offerteToDelete} onOpenChange={(o) => { if (!o) setOfferteToDelete(null) }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Offerte verwijderen</DialogTitle>
-            <DialogDescription>
-              {offerteToDelete && (
-                <>Weet je zeker dat je offerte <strong>{offerteToDelete.nummer}</strong>{offerteToDelete.titel ? ` — ${offerteToDelete.titel}` : ''} wilt verwijderen? Dit kan niet ongedaan worden gemaakt.</>
-              )}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOfferteToDelete(null)} disabled={deletingOne}>Annuleren</Button>
-            <Button variant="destructive" onClick={handleConfirmDeleteOne} disabled={deletingOne}>
-              {deletingOne ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : null}
-              Verwijderen
-            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
