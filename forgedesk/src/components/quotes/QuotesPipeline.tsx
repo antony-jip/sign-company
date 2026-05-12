@@ -29,13 +29,9 @@ import {
   MoreHorizontal,
   CheckCircle2,
   Download,
-  Settings,
-  GripVertical,
   Trash2,
-  Save,
 } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Switch } from '@/components/ui/switch'
 import {
   Select,
   SelectContent,
@@ -43,11 +39,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { getOffertes, updateOfferte, updateAppSettings, deleteOfferte, getKlant, getOfferteItems, getProject, createTaak, getMedewerkers } from '@/services/supabaseService'
+import { getOffertes, updateOfferte, deleteOfferte, getKlant, getOfferteItems, getProject, createTaak, getMedewerkers } from '@/services/supabaseService'
 import { sendPortaalHerinneringEmail } from '@/services/portaalNotificatieService'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useAuth } from '@/contexts/AuthContext'
-import type { Offerte, OfferteItem, Klant, Project, Medewerker, PipelineStap } from '@/types'
+import type { Offerte, OfferteItem, Klant, Project, Medewerker } from '@/types'
 import { SendOfferteDialog } from './SendOfferteDialog'
 import { isFollowUpNodig } from '@/utils/offerteFollowUp'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
@@ -86,16 +82,6 @@ const CLOSED_STATUS_COLUMNS = [
   { key: 'afgewezen', label: 'Afgewezen', color: 'from-mod-werkbonnen-light/30 to-mod-werkbonnen-light/10', accent: 'bg-mod-werkbonnen-text', headerBg: 'bg-mod-werkbonnen-light/60' },
   { key: 'verlopen', label: 'Verlopen', color: 'from-mod-offertes-light/30 to-mod-offertes-light/10', accent: 'bg-mod-offertes-text', headerBg: 'bg-mod-offertes-light/60' },
 ]
-
-const KLEUR_TO_STYLE: Record<string, { color: string; accent: string; headerBg: string }> = {
-  gray: { color: 'from-mod-taken-light/30 to-mod-taken-light/10', accent: 'bg-mod-taken-text', headerBg: 'bg-mod-taken-light/60' },
-  blue: { color: 'from-mod-klanten-light/30 to-mod-klanten-light/10', accent: 'bg-mod-klanten-text', headerBg: 'bg-mod-klanten-light/60' },
-  purple: { color: 'from-mod-email-light/30 to-mod-email-light/10', accent: 'bg-mod-email-text', headerBg: 'bg-mod-email-light/60' },
-  green: { color: 'from-mod-facturen-light/30 to-mod-facturen-light/10', accent: 'bg-mod-facturen-text', headerBg: 'bg-mod-facturen-light/60' },
-  red: { color: 'from-mod-werkbonnen-light/30 to-mod-werkbonnen-light/10', accent: 'bg-mod-werkbonnen-text', headerBg: 'bg-mod-werkbonnen-light/60' },
-  orange: { color: 'from-mod-offertes-light/30 to-mod-offertes-light/10', accent: 'bg-mod-offertes-text', headerBg: 'bg-mod-offertes-light/60' },
-  teal: { color: 'from-mod-facturen-light/30 to-mod-facturen-light/10', accent: 'bg-mod-facturen-text', headerBg: 'bg-mod-facturen-light/60' },
-}
 
 const STATUS_BADGE_STYLES: Record<string, { bg: string; text: string }> = {
   concept: { bg: '#EEEEED', text: '#5A5A55' },
@@ -213,7 +199,7 @@ export function QuotesPipeline() {
   const navigate = useNavigate()
   const { navigateWithTab } = useNavigateWithTab()
   const { user } = useAuth()
-  const { pipelineStappen, toonConversieRate, toonDagenOpen, toonFollowUpIndicatoren, valuta, refreshSettings } = useAppSettings()
+  const { toonConversieRate, toonDagenOpen, toonFollowUpIndicatoren, valuta } = useAppSettings()
   const [offertes, setOffertes] = useState<Offerte[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -229,68 +215,11 @@ export function QuotesPipeline() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false)
 
-  // Pipeline settings panel
-  const [showPipelineSettings, setShowPipelineSettings] = useState(false)
-  const [editStappen, setEditStappen] = useState<PipelineStap[]>([])
-  const [isSavingPipeline, setIsSavingPipeline] = useState(false)
-
-  useEffect(() => {
-    if (pipelineStappen) setEditStappen([...pipelineStappen])
-  }, [pipelineStappen])
-
-  const handleAddPipelineStap = () => {
-    setEditStappen([...editStappen, {
-      key: `custom_${Date.now()}`,
-      label: 'Nieuwe stap',
-      kleur: 'blue',
-      volgorde: editStappen.length,
-      actief: true,
-    }])
-  }
-
-  const handleRemovePipelineStap = (index: number) => {
-    const stap = editStappen[index]
-    if (['concept', 'goedgekeurd', 'afgewezen'].includes(stap.key)) {
-      toast.error('Deze standaard stap kan niet worden verwijderd')
-      return
-    }
-    setEditStappen(editStappen.filter((_, i) => i !== index))
-  }
-
-  const handleUpdatePipelineStap = (index: number, updates: Partial<PipelineStap>) => {
-    setEditStappen(editStappen.map((stap, i) => (i === index ? { ...stap, ...updates } : stap)))
-  }
-
-  const handleSavePipeline = async () => {
-    if (!user?.id) return
-    try {
-      setIsSavingPipeline(true)
-      await updateAppSettings(user.id, { pipeline_stappen: editStappen })
-      await refreshSettings()
-      toast.success('Pipeline opgeslagen')
-      setShowPipelineSettings(false)
-    } catch (err) {
-      logger.error('Fout bij opslaan pipeline:', err)
-      toast.error('Kon pipeline niet opslaan')
-    } finally {
-      setIsSavingPipeline(false)
-    }
-  }
-
   const STATUS_COLUMNS = useMemo(() => {
-    if (pipelineStappen && pipelineStappen.length > 0) {
-      return pipelineStappen
-        .filter(stap => stap.actief)
-        .sort((a, b) => a.volgorde - b.volgorde)
-        .map(stap => {
-          const styles = KLEUR_TO_STYLE[stap.kleur] || KLEUR_TO_STYLE.gray
-          return { key: stap.key, label: stap.label, ...styles }
-        })
-    }
     const cols = [...DEFAULT_STATUS_COLUMNS]
     if (showClosed) cols.push(...CLOSED_STATUS_COLUMNS)
     return cols
-  }, [pipelineStappen, showClosed])
+  }, [showClosed])
 
   const [showPriorityDropdown, setShowPriorityDropdown] = useState(false)
   const [showSortDropdown, setShowSortDropdown] = useState(false)
@@ -911,18 +840,6 @@ export function QuotesPipeline() {
                   </button>
                 </div>
 
-                {/* Pipeline settings */}
-                <button
-                  onClick={() => setShowPipelineSettings(!showPipelineSettings)}
-                  className={cn(
-                    'p-1.5 rounded-lg transition-all',
-                    showPipelineSettings ? 'bg-[#E2F0F0] text-[#1A535C]' : 'text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F8F7F5]'
-                  )}
-                  title="Pipeline instellingen"
-                >
-                  <Settings className="w-4 h-4" />
-                </button>
-
                 {/* Export */}
                 <div className="hidden sm:flex items-center gap-1 ml-auto">
                   <button
@@ -998,60 +915,6 @@ export function QuotesPipeline() {
                 />
               </div>
             </div>
-
-          {/* ── Pipeline Settings Panel ── */}
-          {showPipelineSettings && (
-            <div className="bg-white rounded-2xl p-6 shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03] space-y-4">
-              <h3 className="text-[15px] font-bold text-[#1A1A1A] flex items-center gap-2">
-                <Settings className="w-4 h-4 text-[#9B9B95]" />
-                Pipeline Stappen
-              </h3>
-              <div className="space-y-2">
-                {editStappen.map((stap, index) => (
-                  <div key={stap.key} className="flex items-center gap-3 p-3 rounded-xl bg-[#F8F7F5] border border-[#EBEBEB]">
-                    <GripVertical className="w-4 h-4 text-[#C0BDB8] flex-shrink-0" />
-                    <div className="w-3 h-3 rounded-full flex-shrink-0" style={{
-                      backgroundColor: stap.kleur === 'gray' ? '#9ca3af' : stap.kleur === 'blue' ? '#3b82f6' : stap.kleur === 'purple' ? '#8b5cf6' : stap.kleur === 'green' ? '#22c55e' : stap.kleur === 'red' ? '#ef4444' : stap.kleur === 'orange' ? '#f97316' : stap.kleur === 'teal' ? '#14b8a6' : '#6b7280'
-                    }} />
-                    <input
-                      value={stap.label}
-                      onChange={e => handleUpdatePipelineStap(index, { label: e.target.value })}
-                      className="flex-1 h-8 px-3 text-sm bg-white border border-[#EBEBEB] rounded-lg text-[#1A1A1A] focus:outline-none focus:border-[#1A535C] focus:ring-2 focus:ring-[#1A535C]/10"
-                    />
-                    <Select value={stap.kleur} onValueChange={v => handleUpdatePipelineStap(index, { kleur: v })}>
-                      <SelectTrigger className="w-28 h-8"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="gray">Grijs</SelectItem>
-                        <SelectItem value="blue">Blauw</SelectItem>
-                        <SelectItem value="purple">Paars</SelectItem>
-                        <SelectItem value="green">Groen</SelectItem>
-                        <SelectItem value="red">Rood</SelectItem>
-                        <SelectItem value="orange">Oranje</SelectItem>
-                        <SelectItem value="teal">Teal</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Switch checked={stap.actief} onCheckedChange={checked => handleUpdatePipelineStap(index, { actief: checked })} />
-                    <button onClick={() => handleRemovePipelineStap(index)} className="p-1.5 rounded-lg text-[#C0BDB8] hover:text-[#C03A18] hover:bg-[#FDE8E2] transition-all">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-              <div className="flex items-center gap-2 pt-2">
-                <button onClick={handleAddPipelineStap} className="text-sm font-medium text-[#1A535C] hover:underline flex items-center gap-1.5">
-                  <Plus className="w-4 h-4" /> Stap toevoegen
-                </button>
-                <button
-                  onClick={handleSavePipeline}
-                  disabled={isSavingPipeline}
-                  className="ml-auto inline-flex items-center gap-2 bg-[#1A535C] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-[#154750] transition-all disabled:opacity-50"
-                >
-                  <Save className="w-4 h-4" />
-                  {isSavingPipeline ? 'Opslaan...' : 'Opslaan'}
-                </button>
-              </div>
-            </div>
-          )}
 
           {/* ── Pipeline (Kanban) View ── */}
           {viewMode === 'pipeline' && (
