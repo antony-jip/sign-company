@@ -42,7 +42,7 @@ export {
 
 export {
   getEvents, getEvent, createEvent, updateEvent, deleteEvent,
-  getMontageAfspraken, createMontageAfspraak, updateMontageAfspraak, deleteMontageAfspraak,
+  getMontageAfspraken, getMontageAfspraak, createMontageAfspraak, updateMontageAfspraak, deleteMontageAfspraak,
   getMontageAfsprakenByProject, getMontageAfsprakenByKlant,
   getVerlof, getVerlofByMedewerker, createVerlof, updateVerlof, deleteVerlof,
   getBedrijfssluitingsdagen, createBedrijfssluitingsdag, deleteBedrijfssluitingsdag,

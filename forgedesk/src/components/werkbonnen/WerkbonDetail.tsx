@@ -29,6 +29,7 @@ import {
   createWerkbonAfbeelding, deleteWerkbonAfbeelding,
   getWerkbonFotos, createWerkbonFoto, deleteWerkbonFoto,
   getKlanten, getProjecten, getOffertes,
+  getMontageAfspraak, updateMontageAfspraak,
 } from '@/services/supabaseService'
 import { generateWerkbonInstructiePDF } from '@/services/werkbonPdfService'
 import { uploadFile, downloadFile, getSignedUrl } from '@/services/storageService'
@@ -128,6 +129,7 @@ export function WerkbonDetail() {
   const [toonBriefpapier, setToonBriefpapier] = useState(true)
   const [contactNaam, setContactNaam] = useState('')
   const [contactTelefoon, setContactTelefoon] = useState('')
+  const [montageAfspraakId, setMontageAfspraakId] = useState<string | undefined>(undefined)
 
   // Monteur secties
   const [urenGewerkt, setUrenGewerkt] = useState<number | undefined>()
@@ -176,6 +178,7 @@ export function WerkbonDetail() {
           setToonBriefpapier(wb.toon_briefpapier ?? werkbonBriefpapier)
           setContactNaam(wb.contact_naam || '')
           setContactTelefoon(wb.contact_telefoon || '')
+          setMontageAfspraakId(wb.montage_afspraak_id || undefined)
           setUrenGewerkt(wb.uren_gewerkt)
           setMonteurOpmerkingen(wb.monteur_opmerkingen || '')
           setKlantNaamGetekend(wb.klant_naam_getekend || '')
@@ -304,13 +307,24 @@ export function WerkbonDetail() {
       setStatus('afgerond')
       setDirty(false)
       toast.success('Werkbon afgerond')
+
+      // Sluit gekoppelde montage automatisch — fire-and-forget, faalt stil
+      if (montageAfspraakId) {
+        getMontageAfspraak(montageAfspraakId)
+          .then(async (afspraak) => {
+            if (!afspraak || afspraak.status === 'afgerond') return
+            await updateMontageAfspraak(montageAfspraakId, { status: 'afgerond' })
+            toast.success('Montage automatisch afgerond')
+          })
+          .catch((err) => logger.warn('Kon montage niet automatisch afronden:', err))
+      }
     } catch (err) {
       logger.error('Fout bij afronden werkbon:', err)
       toast.error('Kon werkbon niet afronden')
     } finally {
       setIsSaving(false)
     }
-  }, [werkbonId, klantId, urenGewerkt, monteurOpmerkingen, handtekeningData, klantNaamGetekend, profile, user, setDirty])
+  }, [werkbonId, klantId, urenGewerkt, monteurOpmerkingen, handtekeningData, klantNaamGetekend, profile, user, setDirty, montageAfspraakId])
 
   // Item toevoegen — auto-save werkbon als die nog niet bestaat
   const handleItemToevoegen = useCallback(async () => {

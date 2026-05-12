@@ -99,6 +99,17 @@ export async function getMontageAfspraken(): Promise<MontageAfspraak[]> {
   return getLocalData<MontageAfspraak>('montage_afspraken')
 }
 
+export async function getMontageAfspraak(id: string): Promise<MontageAfspraak | null> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('montage_afspraken').select('*').eq('id', id).maybeSingle()
+    if (error) throw error
+    return data as MontageAfspraak | null
+  }
+  const items = getLocalData<MontageAfspraak>('montage_afspraken')
+  return items.find((a) => a.id === id) || null
+}
+
 export async function createMontageAfspraak(afspraak: Omit<MontageAfspraak, 'id' | 'created_at' | 'updated_at'>): Promise<MontageAfspraak> {
   const newAfspraak: MontageAfspraak = { ...sanitizeDates(afspraak), id: generateId(), created_at: now(), updated_at: now() } as MontageAfspraak
   if (isSupabaseConfigured() && supabase) {
