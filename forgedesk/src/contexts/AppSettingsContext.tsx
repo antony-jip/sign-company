@@ -24,7 +24,6 @@ interface AppSettingsContextType {
   followUpDagen: number
   pipelineStappen: PipelineStap[]
   emailHandtekening: string
-  afzenderNaam: string
   handtekeningAfbeelding: string
   handtekeningAfbeeldingGrootte: number
   primaireKleur: string
@@ -177,7 +176,6 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     // `||` ipv `??` zodat een lege string (DEFAULT '' uit migratie 091) ook
     // doorvalt naar de oude org-brede waarde in app_settings.
     emailHandtekening: (profile?.email_handtekening?.trim() ? profile.email_handtekening : null) || settings.email_handtekening || '',
-    afzenderNaam: (profile?.afzender_naam?.trim() ? profile.afzender_naam : null) || settings.afzender_naam || '',
     handtekeningAfbeelding: profile?.handtekening_afbeelding || settings.handtekening_afbeelding || '',
     handtekeningAfbeeldingGrootte: profile?.handtekening_afbeelding_grootte || settings.handtekening_afbeelding_grootte || 64,
     primaireKleur: settings.primaire_kleur || '#1A535C',

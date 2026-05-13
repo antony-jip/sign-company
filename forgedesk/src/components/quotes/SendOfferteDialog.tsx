@@ -78,7 +78,7 @@ export function SendOfferteDialog({
   onTrialBlocked,
   medewerkerNaam,
 }: SendOfferteDialogProps) {
-  const { bedrijfsnaam, primaireKleur, emailHandtekening, afzenderNaam, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, profile } = useAppSettings()
+  const { bedrijfsnaam, primaireKleur, emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, profile } = useAppSettings()
   const documentStyle = useDocumentStyle()
 
   const [sendTo, setSendTo] = useState('')
@@ -99,23 +99,18 @@ export function SendOfferteDialog({
   const buildFallbackFollowUp = useCallback((): { onderwerp: string; body: string } => {
     const naam = resolveContactNaam(offerte, klant)
     const voornaam = naam.split(' ')[0] || naam
-    const handtekeningTekst = emailHandtekening?.trim() || ''
-    const naamRegel = afzenderNaam?.trim() || bedrijfsnaam || ''
-    // Bij handtekening-afbeelding: laat afzender leeg, de afbeelding wordt in HTML toegevoegd.
-    const afzender = handtekeningTekst
-      || (handtekeningAfbeelding ? '' : (naamRegel ? `Met vriendelijke groet,\n${naamRegel}` : ''))
     const bedrag = formatCurrency(offerte.totaal || 0)
     const pogingen = offerte.contact_pogingen || 0
     const aanhef = voornaam ? `Beste ${voornaam}` : 'Beste'
     let body: string
     if (dagenOpen <= 7) {
-      body = `${aanhef},\n\nGraag wilde ik even informeren of u de offerte ${offerte.nummer} voor "${offerte.titel}" (${bedrag}) heeft kunnen bekijken.\n\n${offerte.geldig_tot ? `De offerte is geldig tot ${formatDate(offerte.geldig_tot)}.` : ''}\n\nMocht u nog vragen hebben of iets willen bespreken, dan hoor ik het graag.\n\n${afzender}`
+      body = `${aanhef},\n\nGraag wilde ik even informeren of u de offerte ${offerte.nummer} voor "${offerte.titel}" (${bedrag}) heeft kunnen bekijken.\n\n${offerte.geldig_tot ? `De offerte is geldig tot ${formatDate(offerte.geldig_tot)}.\n\n` : ''}Mocht u nog vragen hebben of iets willen bespreken, dan hoor ik het graag.`
     } else if (dagenOpen <= 14) {
-      body = `${aanhef},\n\n${pogingen > 0 ? 'Ik kom nog even terug op ' : 'Ik wilde graag even opvolgen over '}onze offerte ${offerte.nummer} voor "${offerte.titel}" ter waarde van ${bedrag}.\n\nHeeft u de offerte kunnen bekijken? Ik help u graag als er nog vragen zijn.\n\n${afzender}`
+      body = `${aanhef},\n\n${pogingen > 0 ? 'Ik kom nog even terug op ' : 'Ik wilde graag even opvolgen over '}onze offerte ${offerte.nummer} voor "${offerte.titel}" ter waarde van ${bedrag}.\n\nHeeft u de offerte kunnen bekijken? Ik help u graag als er nog vragen zijn.`
     } else if (dagenOpen <= 21) {
-      body = `${aanhef},\n\nOnze offerte ${offerte.nummer} voor "${offerte.titel}" (${bedrag}) staat nu ${dagenOpen} dagen open.${offerte.geldig_tot && dagenTotVerlopen <= 7 ? ` Let op: de offerte verloopt over ${dagenTotVerlopen} dagen.` : ''}\n\nZijn er nog punten die u tegengehouden hebben? Ik denk graag met u mee over eventuele aanpassingen of alternatieven.\n\n${afzender}`
+      body = `${aanhef},\n\nOnze offerte ${offerte.nummer} voor "${offerte.titel}" (${bedrag}) staat nu ${dagenOpen} dagen open.${offerte.geldig_tot && dagenTotVerlopen <= 7 ? ` Let op: de offerte verloopt over ${dagenTotVerlopen} dagen.` : ''}\n\nZijn er nog punten die u tegengehouden hebben? Ik denk graag met u mee over eventuele aanpassingen of alternatieven.`
     } else {
-      body = `${aanhef},\n\n${pogingen > 1 ? `Ik heb u eerder ${pogingen}x benaderd` : 'Ik heb u eerder benaderd'} over offerte ${offerte.nummer} — "${offerte.titel}" (${bedrag}).\n\nIk begrijp dat prioriteiten kunnen verschuiven. Laat me weten of dit project nog actueel is, dan kijken we samen naar de volgende stap.\n\n${afzender}`
+      body = `${aanhef},\n\n${pogingen > 1 ? `Ik heb u eerder ${pogingen}x benaderd` : 'Ik heb u eerder benaderd'} over offerte ${offerte.nummer} — "${offerte.titel}" (${bedrag}).\n\nIk begrijp dat prioriteiten kunnen verschuiven. Laat me weten of dit project nog actueel is, dan kijken we samen naar de volgende stap.`
     }
     return {
       onderwerp: pogingen > 0
@@ -123,7 +118,7 @@ export function SendOfferteDialog({
         : `Opvolging offerte ${offerte.nummer} — ${offerte.titel}`,
       body,
     }
-  }, [offerte, klant, bedrijfsnaam, emailHandtekening, afzenderNaam, handtekeningAfbeelding, dagenOpen, dagenTotVerlopen])
+  }, [offerte, klant, dagenOpen, dagenTotVerlopen])
 
   const generateFollowUp = useCallback(async () => {
     setIsGenerating(true)
@@ -143,8 +138,7 @@ export function SendOfferteDialog({
         aantal_eerdere_followups: offerte.contact_pogingen || 0,
         status: offerte.status,
         bedrijfsnaam_afzender: bedrijfsnaam || '',
-        afzender_naam: afzenderNaam || bedrijfsnaam || '',
-        email_handtekening: emailHandtekening || '',
+        afzender_naam: bedrijfsnaam || '',
       }
       const result = await generateFollowUpEmail(context)
       setSendSubject(result.onderwerp)
@@ -156,7 +150,7 @@ export function SendOfferteDialog({
     } finally {
       setIsGenerating(false)
     }
-  }, [offerte, klant, project, bedrijfsnaam, emailHandtekening, afzenderNaam, dagenOpen, dagenTotVerlopen, buildFallbackFollowUp])
+  }, [offerte, klant, project, bedrijfsnaam, dagenOpen, dagenTotVerlopen, buildFallbackFollowUp])
 
   useEffect(() => {
     if (!open) {
@@ -172,21 +166,15 @@ export function SendOfferteDialog({
 
     if (mode === 'eerste') {
       setSendSubject(`Offerte ${offerte.nummer} · ${offerte.titel}`)
-      const afsluiting = emailHandtekening?.trim()
-        ? emailHandtekening
-        : handtekeningAfbeelding
-          ? ''
-          : `Met vriendelijke groet,\n${afzenderNaam?.trim() || bedrijfsnaam || 'Uw bedrijf'}`
-      const slot = afsluiting ? `\n\n${afsluiting}` : ''
       setSendBody(
-        `Beste ${contactNaam},\n\nHierbij ontvangt u onze offerte ${offerte.nummer} voor "${offerte.titel}".\n\nWij zien uw reactie graag tegemoet.${slot}`
+        `Beste ${contactNaam},\n\nHierbij ontvangt u onze offerte ${offerte.nummer} voor "${offerte.titel}".\n\nWij zien uw reactie graag tegemoet.`
       )
     } else {
       setSendSubject('')
       setSendBody('')
       generateFollowUp()
     }
-  }, [open, mode, offerte, klant, bedrijfsnaam, emailHandtekening, afzenderNaam, handtekeningAfbeelding, generateFollowUp])
+  }, [open, mode, offerte, klant, generateFollowUp])
 
   const handleSend = useCallback(async () => {
     if (isTrialBlocked) {
@@ -405,6 +393,15 @@ export function SendOfferteDialog({
               disabled={isGenerating}
               placeholder={isGenerating ? 'Bericht wordt gegenereerd…' : undefined}
             />
+            {handtekeningAfbeelding && (
+              <div className="pt-2">
+                <img
+                  src={handtekeningAfbeelding}
+                  alt=""
+                  style={{ maxHeight: handtekeningAfbeeldingGrootte || 64, maxWidth: 200, objectFit: 'contain' }}
+                />
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/30 rounded-lg p-3">
             <FileText className="h-4 w-4 flex-shrink-0" />

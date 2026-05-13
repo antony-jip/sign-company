@@ -14,7 +14,6 @@ export interface FollowUpContext {
   status: string
   bedrijfsnaam_afzender: string
   afzender_naam: string
-  email_handtekening?: string
 }
 
 export interface FollowUpEmailResult {
