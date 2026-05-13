@@ -99,7 +99,10 @@ export function SendOfferteDialog({
   const buildFallbackFollowUp = useCallback((): { onderwerp: string; body: string } => {
     const naam = resolveContactNaam(offerte, klant)
     const voornaam = naam.split(' ')[0] || naam
-    const afzender = (emailHandtekening?.trim()) || (afzenderNaam?.trim()) || bedrijfsnaam || ''
+    const handtekeningTekst = emailHandtekening?.trim() || ''
+    const naamRegel = afzenderNaam?.trim() || bedrijfsnaam || ''
+    const afzender = handtekeningTekst
+      || (naamRegel ? `Met vriendelijke groet,\n${naamRegel}` : '')
     const bedrag = formatCurrency(offerte.totaal || 0)
     const pogingen = offerte.contact_pogingen || 0
     const aanhef = voornaam ? `Beste ${voornaam}` : 'Beste'
