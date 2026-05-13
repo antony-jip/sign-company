@@ -1630,7 +1630,10 @@ export function TasksLayout() {
                 <SelectContent>
                   <SelectItem value="geen">Geen project</SelectItem>
                   {projecten.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>{p.naam}</SelectItem>
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.naam}
+                      {p.klant_naam ? <span className="text-[#9B9B95] ml-2">· {p.klant_naam}</span> : null}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -2524,7 +2527,12 @@ function EditTaskDialog({
               <SelectTrigger className="h-9 text-sm border-[#E0DED8] bg-[#F8F7F5]"><SelectValue placeholder="Kies project..." /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="geen">Geen project</SelectItem>
-                {projecten.map((p) => (<SelectItem key={p.id} value={p.id}>{p.naam}</SelectItem>))}
+                {projecten.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.naam}
+                    {p.klant_naam ? <span className="text-[#9B9B95] ml-2">· {p.klant_naam}</span> : null}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             {formData.project_id && (
