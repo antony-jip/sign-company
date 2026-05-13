@@ -483,6 +483,21 @@ export interface EmailAttachment {
   size: number;
 }
 
+export interface FactuurBijlage {
+  id: string;
+  organisatie_id: string;
+  factuur_id: string;
+  bestandsnaam: string;
+  mime_type: string;
+  grootte: number;
+  storage_path: string;
+  type: 'inkooporder' | 'overig';
+  bron_email_id?: string | null;
+  geupload_door?: string | null;
+  exact_synced_op?: string | null;
+  aangemaakt_op: string;
+}
+
 export interface Email {
   id: string;
   user_id?: string;

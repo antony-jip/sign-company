@@ -181,7 +181,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       subject: string
       body?: string
       html?: string
-      attachments?: Array<{ filename: string; content?: string; encoding?: 'base64'; storagePath?: string; size?: number }>
+      attachments?: Array<{ filename: string; content?: string; encoding?: 'base64'; storagePath?: string; bucket?: string; cleanupAfter?: boolean; size?: number }>
       opvolging_id?: string
       scheduledAt?: string
       wacht_op_reactie?: boolean
@@ -296,25 +296,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (cc) mailOptions.cc = cc
     if (bcc) mailOptions.bcc = bcc
 
-    // Verwerk bijlagen: download van Supabase Storage of gebruik base64
-    const storagePaths: string[] = []
+    // Verwerk bijlagen: download van Supabase Storage of gebruik base64.
+    // Per attachment kan een bucket meegegeven worden (default 'documenten' voor
+    // backwards compat met portaal-upload flow). cleanupAfter regelt of het
+    // storage-object na verzending verwijderd wordt — standaard alleen voor
+    // documenten-bucket (tijdelijke portaal-uploads). Persistente bijlagen
+    // (bv factuur-bijlagen, facturen) moeten NIET na verzending gewist worden.
+    const cleanupTargets: Array<{ bucket: string; path: string }> = []
     const fileAttachments: Array<{ filename: string; content: Buffer }> = []
     if (attachments?.length) {
       for (const a of attachments) {
         if (a.storagePath) {
-          // Download van Supabase Storage
+          const bucket = a.bucket ?? 'documenten'
           const { data, error: dlError } = await supabaseAdmin.storage
-            .from('documenten')
+            .from(bucket)
             .download(a.storagePath)
           if (dlError || !data) {
-            console.error(`[send-email] Storage download mislukt voor ${a.storagePath}:`, dlError)
+            console.error(`[send-email] Storage download mislukt voor ${bucket}/${a.storagePath}:`, dlError)
             throw new Error(`Bijlage "${a.filename}" kon niet worden opgehaald`)
           }
           const buffer = Buffer.from(await data.arrayBuffer())
           fileAttachments.push({ filename: a.filename, content: buffer })
-          storagePaths.push(a.storagePath)
+          const shouldCleanup = a.cleanupAfter ?? (bucket === 'documenten')
+          if (shouldCleanup) cleanupTargets.push({ bucket, path: a.storagePath })
         } else if (a.content) {
-          // Legacy: base64 direct in payload (forward bijlagen)
           fileAttachments.push({ filename: a.filename, content: Buffer.from(a.content, 'base64') })
         }
       }
@@ -394,11 +399,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Ruim tijdelijke bestanden op uit Storage. Email is al verzonden, dus niet
     // fataal — maar wel error-niveau, want hangende bijlagen lekken storage.
-    if (storagePaths.length > 0) {
-      supabaseAdmin.storage.from('documenten').remove(storagePaths).catch((err) => {
-        console.error('[send-email] Storage cleanup mislukt:', err)
-        Sentry.captureException(err, { tags: { phase: 'storage-cleanup' } })
-      })
+    // Per bucket gegroepeerd zodat we niet kruislings deleten.
+    if (cleanupTargets.length > 0) {
+      const byBucket = new Map<string, string[]>()
+      for (const t of cleanupTargets) {
+        const list = byBucket.get(t.bucket) ?? []
+        list.push(t.path)
+        byBucket.set(t.bucket, list)
+      }
+      for (const [bucket, paths] of byBucket) {
+        supabaseAdmin.storage.from(bucket).remove(paths).catch((err) => {
+          console.error(`[send-email] Storage cleanup mislukt voor bucket ${bucket}:`, err)
+          Sentry.captureException(err, { tags: { phase: 'storage-cleanup', bucket } })
+        })
+      }
     }
 
     // Trigger auto-opvolging task als opvolging_id meegegeven is

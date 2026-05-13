@@ -272,6 +272,93 @@ async function findOrCreateKlant(
   return newId
 }
 
+// Loop factuur_bijlagen (alleen onsync'd) en POST elk als DocumentAttachment.
+// Werkt best-effort: één gefaalde bijlage blokkeert de rest niet.
+// `tokenRef.current` wordt bijgewerkt na een succesvolle refresh zodat de
+// caller met een vers token verder kan.
+async function syncFactuurBijlagenToExact(params: {
+  factuurId: string
+  documentId: string
+  tokenRef: { current: string }
+  division: string
+  protocol: string
+  host: string
+  user_id: string
+}): Promise<{ synced: number; failed: number; geprobeerd: number }> {
+  const { factuurId, documentId, tokenRef, division, protocol, host, user_id } = params
+
+  const { data: bijlagen, error: bijErr } = await supabaseAdmin
+    .from('factuur_bijlagen')
+    .select('id, bestandsnaam, storage_path')
+    .eq('factuur_id', factuurId)
+    .is('exact_synced_op', null)
+
+  if (bijErr) {
+    console.error('factuur_bijlagen lookup mislukt:', bijErr)
+    return { synced: 0, failed: 0, geprobeerd: 0 }
+  }
+  if (!bijlagen?.length) {
+    return { synced: 0, failed: 0, geprobeerd: 0 }
+  }
+
+  let synced = 0
+  let failed = 0
+
+  for (const bij of bijlagen) {
+    try {
+      const { data: blob, error: dlError } = await supabaseAdmin.storage
+        .from('factuur-bijlagen')
+        .download(bij.storage_path as string)
+      if (dlError || !blob) {
+        console.error(`Bijlage download mislukt: ${bij.storage_path}`, dlError)
+        failed++
+        continue
+      }
+      const buffer = Buffer.from(await blob.arrayBuffer())
+      const base64 = buffer.toString('base64')
+      const payload = {
+        Document: documentId,
+        FileName: bij.bestandsnaam,
+        Attachment: base64,
+      }
+
+      try {
+        await exactPost(tokenRef.current, division, 'documents/DocumentAttachments', payload)
+      } catch (firstErr) {
+        try {
+          const refreshResponse = await fetch(`${protocol}://${host}/api/exact-refresh`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id }),
+          })
+          if (!refreshResponse.ok) throw new Error('Refresh mislukt')
+          const refreshed = (await refreshResponse.json()) as { access_token: string }
+          tokenRef.current = refreshed.access_token
+          await exactPost(tokenRef.current, division, 'documents/DocumentAttachments', payload)
+        } catch (retryErr) {
+          console.error(`Bijlage DocumentAttachment POST mislukt voor ${bij.bestandsnaam}:`, firstErr, retryErr)
+          failed++
+          continue
+        }
+      }
+
+      const { error: updateErr } = await supabaseAdmin
+        .from('factuur_bijlagen')
+        .update({ exact_synced_op: new Date().toISOString() })
+        .eq('id', bij.id)
+      if (updateErr) {
+        console.error(`exact_synced_op update mislukt voor ${bij.id}:`, updateErr)
+      }
+      synced++
+    } catch (err) {
+      console.error(`Bijlage sync exception voor ${bij.bestandsnaam}:`, err)
+      failed++
+    }
+  }
+
+  return { synced, failed, geprobeerd: bijlagen.length }
+}
+
 // ── Main Handler ──
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -280,7 +367,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const user_id = await verifyUser(req)
-    const { factuur_id, attachment_only } = req.body as { factuur_id: string; attachment_only?: boolean }
+    const { factuur_id, attachment_only, bijlagen_only } = req.body as { factuur_id: string; attachment_only?: boolean; bijlagen_only?: boolean }
 
     if (!factuur_id) {
       return res.status(400).json({ error: 'factuur_id is verplicht' })
@@ -343,6 +430,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       })
     }
 
+    // 3b-bis. bijlagen_only flow: retry alleen de factuur_bijlagen die nog niet
+    // gesynced zijn. Vereist dat de factuur al een Document GUID in Exact heeft;
+    // raakt SalesEntry of de factuur-PDF zelf niet aan.
+    if (bijlagen_only) {
+      if (!factuur.exact_document_id) {
+        return res.status(400).json({
+          error: 'Bijlagen-sync vereist dat de factuur al een Document in Exact heeft. Sync eerst de factuur volledig.',
+        })
+      }
+      const tokenRef = { current: token }
+      const result = await syncFactuurBijlagenToExact({
+        factuurId: factuur_id,
+        documentId: factuur.exact_document_id as string,
+        tokenRef,
+        division,
+        protocol,
+        host,
+        user_id,
+      })
+      return res.status(200).json({
+        success: true,
+        bijlagen_synced: result.synced,
+        bijlagen_failed: result.failed,
+        bijlagen_geprobeerd: result.geprobeerd,
+      })
+    }
+
     // 3c. Download PDF uit Storage. Failure is soft — sync gaat door zonder
     // bijlage als pdf_storage_path NULL is (oude facturen) of download mislukt.
     let pdfBase64: string | null = null
@@ -366,6 +480,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     let documentId: string | null = null
     let bijlageSynced = false
+    let mainBijlagenSyncResult: { synced: number; failed: number; geprobeerd: number } = { synced: 0, failed: 0, geprobeerd: 0 }
 
     // 3d. Retry-only flow: alleen Document + Attachment opnieuw proberen voor
     // een factuur die al een SalesEntry heeft. Vermijdt dubbele Documents als
@@ -489,6 +604,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           .eq('id', factuur_id)
       }
 
+      // Best-effort: sync ook de losse factuur_bijlagen (klant-inkooporders,
+      // extra docs) die nog niet aan Exact gekoppeld zijn. Falures blokkeren
+      // de attachment-retry-flow niet — die is succesvol zolang de factuur-PDF
+      // gekoppeld is.
+      const retryTokenRef = { current: token }
+      const bijlagenResult = documentId
+        ? await syncFactuurBijlagenToExact({
+            factuurId: factuur_id,
+            documentId,
+            tokenRef: retryTokenRef,
+            division,
+            protocol,
+            host,
+            user_id,
+          })
+        : { synced: 0, failed: 0, geprobeerd: 0 }
+      token = retryTokenRef.current
+
       // Best-effort: koppel het Document inline aan de SalesEntry via PUT.
       // Niet-kritiek — Document is al gekoppeld via DocumentAttachment-relatie.
       // Sommige Exact-tenants weigeren PUT op SalesEntry, dat is acceptabel.
@@ -516,6 +649,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         exact_entry_id: factuur.exact_entry_id,
         document_id: documentId,
         bijlage_synced: bijlageSynced,
+        bijlagen_synced: bijlagenResult.synced,
+        bijlagen_failed: bijlagenResult.failed,
+        bijlagen_geprobeerd: bijlagenResult.geprobeerd,
       })
     }
 
@@ -652,6 +788,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             .update({ exact_bijlage_gesynced_op: new Date().toISOString() })
             .eq('id', factuur_id)
         }
+
+        // Losse factuur_bijlagen (klant-inkooporders, extra docs) elk als
+        // aparte DocumentAttachment posten. Best-effort: faalt één, dan
+        // blijven de andere staan en blokkeert het de factuur-sync niet.
+        const mainTokenRef = { current: token }
+        const bijlagenResult = await syncFactuurBijlagenToExact({
+          factuurId: factuur_id,
+          documentId,
+          tokenRef: mainTokenRef,
+          division,
+          protocol,
+          host,
+          user_id,
+        })
+        token = mainTokenRef.current
+        mainBijlagenSyncResult = bijlagenResult
       }
     }
 
@@ -747,6 +899,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       exact_entry_id: exactEntryId,
       document_id: documentId,
       bijlage_synced: bijlageSynced,
+      bijlagen_synced: mainBijlagenSyncResult.synced,
+      bijlagen_failed: mainBijlagenSyncResult.failed,
+      bijlagen_geprobeerd: mainBijlagenSyncResult.geprobeerd,
     })
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Onbekende fout bij synchroniseren'
