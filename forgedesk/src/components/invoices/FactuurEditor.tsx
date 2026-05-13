@@ -9,6 +9,7 @@ import { DatePicker } from '@/components/ui/date-picker'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Separator } from '@/components/ui/separator'
 import {
   Select,
@@ -98,7 +99,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useTrialGuard } from '@/hooks/useTrialGuard'
 import { TrialGuardDialog } from '@/components/shared/TrialGuardDialog'
-import type { Klant, Factuur, FactuurItem, Offerte, OfferteItem, HerinneringTemplate, Project, Grootboek, Kostenplaats, Werkbon } from '@/types'
+import type { Klant, Factuur, FactuurItem, Offerte, OfferteItem, HerinneringTemplate, Project, Grootboek, Kostenplaats, Werkbon, FactuurBijlage } from '@/types'
 import { round2 } from '@/utils/budgetUtils'
 import { generateFactuurPDF } from '@/services/pdfService'
 import { genereerEnUploadFactuurPdf, downloadFactuurPdfFromStorage } from '@/services/factuurPdfService'
@@ -111,6 +112,7 @@ import { factuurBetaalTokenExpiry } from '@/lib/tokenExpiry'
 import { logger } from '../../utils/logger'
 import { KlantStatusWarning } from '@/components/shared/KlantStatusWarning'
 import { FactuurBijlagenSectie } from '@/components/invoices/FactuurBijlagenSectie'
+import { getFactuurBijlagen } from '@/services/factuurBijlagenService'
 import { useUnsavedWarning } from '@/hooks/useUnsavedWarning'
 import { AuditLogPanel } from '@/components/shared/AuditLogPanel'
 import { confirm } from '@/components/shared/ConfirmDialog'
@@ -313,6 +315,8 @@ export function FactuurEditor() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [sendDialogOpen, setSendDialogOpen] = useState(false)
   const [isSending, setIsSending] = useState(false)
+  const [dialogBijlagen, setDialogBijlagen] = useState<FactuurBijlage[]>([])
+  const [selectedBijlageIds, setSelectedBijlageIds] = useState<Set<string>>(new Set())
   const [creditnotaDialogOpen, setCreditnotaDialogOpen] = useState(false)
   const [creditReden, setCreditReden] = useState('')
   const [herinneringDialogOpen, setHerinneringDialogOpen] = useState(false)
@@ -624,6 +628,24 @@ export function FactuurEditor() {
     if (!klantId) { setWerkbonnen([]); return }
     getWerkbonnenByKlant(klantId).then(setWerkbonnen).catch(() => setWerkbonnen([]))
   }, [klantId])
+
+  // Laad bijlagen voor de verzend-dialog. Default alle bijlagen aangevinkt.
+  useEffect(() => {
+    if (!sendDialogOpen || !existingFactuur?.id) return
+    let cancelled = false
+    getFactuurBijlagen(existingFactuur.id)
+      .then((data) => {
+        if (cancelled) return
+        setDialogBijlagen(data)
+        setSelectedBijlageIds(new Set(data.map((b) => b.id)))
+      })
+      .catch((err) => {
+        logger.error('Bijlagen voor verzend-dialog laden mislukt:', err)
+        setDialogBijlagen([])
+        setSelectedBijlageIds(new Set())
+      })
+    return () => { cancelled = true }
+  }, [sendDialogOpen, existingFactuur?.id])
 
   // ============ PERCENTAGE EFFECT ============
 
@@ -1095,7 +1117,14 @@ export function FactuurEditor() {
       // Generate PDF attachment — eerst proberen via Storage (persistente kopie),
       // bij ELKE failure fallback naar on-the-fly generatie zodat de email nooit
       // door een Storage-issue geblokkeerd wordt.
-      let attachments: Array<{ filename: string; content: string; encoding: 'base64' }> | undefined
+      let attachments: Array<{
+        filename: string;
+        content?: string;
+        encoding?: 'base64';
+        storagePath?: string;
+        bucket?: string;
+        cleanupAfter?: boolean;
+      }> | undefined
       try {
         const bedrijfsProfiel = { ...profile, primaireKleur }
         const factuurData = {
@@ -1203,6 +1232,20 @@ export function FactuurEditor() {
         }
       }
 
+      // Geselecteerde factuur-bijlagen (klant-inkooporders e.d.) meesturen.
+      // Bucket 'factuur-bijlagen' is persistent; send-email mag niet opruimen.
+      if (attachments) {
+        const geselecteerd = dialogBijlagen.filter((b) => selectedBijlageIds.has(b.id))
+        for (const bij of geselecteerd) {
+          attachments.push({
+            filename: bij.bestandsnaam,
+            storagePath: bij.storage_path,
+            bucket: 'factuur-bijlagen',
+            cleanupAfter: false,
+          })
+        }
+      }
+
       await sendEmail(selectedKlant.email, subject, '', { html, attachments })
 
       const updated = await updateFactuur(existingFactuur.id, { status: 'verzonden' })
@@ -1228,7 +1271,7 @@ export function FactuurEditor() {
     } finally {
       setIsSending(false)
     }
-  }, [existingFactuur, selectedKlant, nummer, titel, totaal, vervaldatum, bedrijfsnaam, primaireKleur, emailHandtekening, profile, factuurdatum, subtotaal, btwBedrag, notities, voorwaarden, validItems, isCreditFactuur, documentStyle, werkbonId, projectId])
+  }, [existingFactuur, selectedKlant, nummer, titel, totaal, vervaldatum, bedrijfsnaam, primaireKleur, emailHandtekening, profile, factuurdatum, subtotaal, btwBedrag, notities, voorwaarden, validItems, isCreditFactuur, documentStyle, werkbonId, projectId, dialogBijlagen, selectedBijlageIds])
 
   // ============ MARK AS PAID ============
 
@@ -1944,6 +1987,7 @@ export function FactuurEditor() {
             <FactuurBijlagenSectie
               factuurId={existingFactuur.id}
               organisatieId={existingFactuur.organisatie_id}
+              exactDocumentId={existingFactuur.exact_document_id}
             />
           ) : (
             <Card className="bg-[#F8F7F5] border-sand">
@@ -2407,6 +2451,52 @@ export function FactuurEditor() {
               <span className="text-muted-foreground">Vervaldatum:</span>{' '}
               <span className="font-mono">{formatDate(vervaldatum)}</span>
             </div>
+            {dialogBijlagen.length > 0 && (() => {
+              const totaalGrootte = dialogBijlagen
+                .filter((b) => selectedBijlageIds.has(b.id))
+                .reduce((sum, b) => sum + b.grootte, 0)
+              const totaalMb = totaalGrootte / 1024 / 1024
+              const tooGroot = totaalMb > 23
+              return (
+                <div className="border-t pt-3 space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Extra bijlagen</span>
+                    <span className={cn('font-mono text-xs', tooGroot ? 'text-amber-600 font-semibold' : 'text-muted-foreground')}>
+                      {totaalMb.toFixed(1)} MB
+                    </span>
+                  </div>
+                  <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                    {dialogBijlagen.map((bij) => (
+                      <label
+                        key={bij.id}
+                        className="flex items-center gap-2 text-xs cursor-pointer hover:bg-muted/40 rounded px-1.5 py-1"
+                      >
+                        <Checkbox
+                          checked={selectedBijlageIds.has(bij.id)}
+                          onCheckedChange={(checked) => {
+                            setSelectedBijlageIds((prev) => {
+                              const next = new Set(prev)
+                              if (checked) next.add(bij.id)
+                              else next.delete(bij.id)
+                              return next
+                            })
+                          }}
+                        />
+                        <span className="flex-1 truncate" title={bij.bestandsnaam}>{bij.bestandsnaam}</span>
+                        <span className="font-mono text-[10px] text-muted-foreground">
+                          {(bij.grootte / 1024 / 1024).toFixed(1)} MB
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                  {tooGroot && (
+                    <p className="text-[11px] text-amber-700 leading-snug">
+                      Totale bijlage-grootte boven 23 MB. Gmail-grens (25 MB) komt in zicht. Vink minder bijlagen aan.
+                    </p>
+                  )}
+                </div>
+              )
+            })()}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setSendDialogOpen(false)}>Annuleren</Button>

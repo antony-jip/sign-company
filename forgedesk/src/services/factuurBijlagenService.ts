@@ -139,6 +139,16 @@ export async function updateFactuurBijlageType(
   if (error) throw error
 }
 
+export async function markBijlageSynced(bijlageId: string): Promise<void> {
+  assertId(bijlageId, 'bijlageId')
+  assertSupabase()
+  const { error } = await supabase!
+    .from('factuur_bijlagen')
+    .update({ exact_synced_op: new Date().toISOString() })
+    .eq('id', bijlageId)
+  if (error) throw error
+}
+
 export async function getFactuurBijlageCounts(): Promise<Map<string, number>> {
   const counts = new Map<string, number>()
   if (!isSupabaseConfigured() || !supabase) return counts

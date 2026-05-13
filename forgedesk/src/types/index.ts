@@ -494,6 +494,7 @@ export interface FactuurBijlage {
   type: 'inkooporder' | 'overig';
   bron_email_id?: string | null;
   geupload_door?: string | null;
+  exact_synced_op?: string | null;
   aangemaakt_op: string;
 }
 

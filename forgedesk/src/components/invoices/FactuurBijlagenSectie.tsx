@@ -1,6 +1,16 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { toast } from 'sonner'
-import { Paperclip, FileIcon, ExternalLink, Trash2, Upload, Loader2 } from 'lucide-react'
+import {
+  Paperclip,
+  FileIcon,
+  ExternalLink,
+  Trash2,
+  Upload,
+  Loader2,
+  CheckCircle2,
+  AlertTriangle,
+  RefreshCw,
+} from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -19,6 +29,7 @@ import {
   updateFactuurBijlageType,
   getSignedUrl,
 } from '@/services/factuurBijlagenService'
+import { supabase } from '@/services/supabaseHelpers'
 import type { FactuurBijlage } from '@/types'
 
 const MAX_BIJLAGEN = 5
@@ -40,14 +51,17 @@ function formatBytes(bytes: number): string {
 interface Props {
   factuurId: string
   organisatieId: string
+  exactDocumentId?: string | null
   onCountChange?: (count: number) => void
 }
 
-export function FactuurBijlagenSectie({ factuurId, organisatieId, onCountChange }: Props) {
+export function FactuurBijlagenSectie({ factuurId, organisatieId, exactDocumentId, onCountChange }: Props) {
   const [bijlagen, setBijlagen] = useState<FactuurBijlage[]>([])
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
+  const [retryingSync, setRetryingSync] = useState(false)
   const [dragActive, setDragActive] = useState(false)
+  const [reloadTrigger, setReloadTrigger] = useState(0)
   const pendingDeletesRef = useRef<Map<string, { bijlage: FactuurBijlage; timer: number }>>(new Map())
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -70,7 +84,7 @@ export function FactuurBijlagenSectie({ factuurId, organisatieId, onCountChange 
     return () => {
       cancelled = true
     }
-  }, [factuurId, onCountChange])
+  }, [factuurId, onCountChange, reloadTrigger])
 
   useEffect(() => {
     return () => {
@@ -208,6 +222,43 @@ export function FactuurBijlagenSectie({ factuurId, organisatieId, onCountChange 
     [bijlagen],
   )
 
+  const handleRetrySync = useCallback(async () => {
+    if (!exactDocumentId) return
+    setRetryingSync(true)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      if (!token) throw new Error('Geen actieve sessie')
+
+      const res = await fetch('/api/exact-sync-factuur', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ factuur_id: factuurId, bijlagen_only: true }),
+      })
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}))
+        throw new Error(errData.error || 'Sync mislukt')
+      }
+      const data = (await res.json()) as { bijlagen_synced: number; bijlagen_failed: number; bijlagen_geprobeerd: number }
+      setReloadTrigger((t) => t + 1)
+      if (data.bijlagen_failed > 0) {
+        toast.warning(`${data.bijlagen_synced} gesynced, ${data.bijlagen_failed} mislukt`)
+      } else if (data.bijlagen_synced > 0) {
+        toast.success(`${data.bijlagen_synced} bijlage(n) gesynced naar Exact`)
+      } else {
+        toast.info('Geen bijlagen om te syncen')
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Sync mislukt'
+      toast.error(msg)
+    } finally {
+      setRetryingSync(false)
+    }
+  }, [exactDocumentId, factuurId])
+
   const handlePreview = useCallback(async (bijlage: FactuurBijlage) => {
     try {
       const url = await getSignedUrl(bijlage.storage_path)
@@ -219,6 +270,10 @@ export function FactuurBijlagenSectie({ factuurId, organisatieId, onCountChange 
   }, [])
 
   const maxBereikt = bijlagen.length >= MAX_BIJLAGEN
+  const exactGekoppeld = Boolean(exactDocumentId)
+  const aantalNietGesynced = exactGekoppeld
+    ? bijlagen.filter((b) => !b.exact_synced_op).length
+    : 0
 
   return (
     <Card className="bg-[#1A535C0D] border-petrol-border">
@@ -248,8 +303,23 @@ export function FactuurBijlagenSectie({ factuurId, organisatieId, onCountChange 
               >
                 <FileIcon className="h-4 w-4 text-petrol shrink-0" />
                 <div className="min-w-0 flex-1">
-                  <div className="text-xs font-medium truncate" title={bijlage.bestandsnaam}>
-                    {bijlage.bestandsnaam}
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-medium truncate" title={bijlage.bestandsnaam}>
+                      {bijlage.bestandsnaam}
+                    </span>
+                    {exactGekoppeld && (
+                      bijlage.exact_synced_op ? (
+                        <CheckCircle2
+                          className="h-3 w-3 text-emerald-600 shrink-0"
+                          aria-label="Gesynced naar Exact"
+                        />
+                      ) : (
+                        <AlertTriangle
+                          className="h-3 w-3 text-amber-500 shrink-0"
+                          aria-label="Nog niet gesynced naar Exact"
+                        />
+                      )
+                    )}
                   </div>
                   <div className="text-[10px] font-mono text-muted-foreground">
                     {formatBytes(bijlage.grootte)}
@@ -345,6 +415,22 @@ export function FactuurBijlagenSectie({ factuurId, organisatieId, onCountChange 
             <p className="text-[10px] text-muted-foreground/70 px-1">
               PDF, JPG, PNG, DOCX, XLSX · max 20 MB per bestand
             </p>
+            {aantalNietGesynced > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRetrySync}
+                disabled={retryingSync}
+                className="w-full text-xs h-8 border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900"
+              >
+                {retryingSync ? (
+                  <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+                )}
+                {aantalNietGesynced} bijlage{aantalNietGesynced === 1 ? '' : 'n'} opnieuw syncen naar Exact
+              </Button>
+            )}
           </>
         )}
       </CardContent>
