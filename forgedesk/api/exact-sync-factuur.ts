@@ -821,8 +821,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       eenheidsprijs: number
       korting_percentage: number
     }) => {
-      // Bereken totaal excl BTW per regel
-      const regelTotaal = item.totaal / (1 + item.btw_percentage / 100)
+      // factuur_items.totaal is al excl. BTW (zie calcLineTotal in FactuurEditor)
+      const regelTotaal = item.totaal
       const btwCode = bepaalBtwCode(item.btw_percentage, exactSettings)
 
       const line: Record<string, string | null> = {
