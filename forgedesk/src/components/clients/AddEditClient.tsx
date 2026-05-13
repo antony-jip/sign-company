@@ -52,6 +52,7 @@ interface FormData {
   stad: string
   website: string
   debiteurennummer: string
+  kvk_nummer: string
   btw_nummer: string
   status: 'actief' | 'inactief' | 'prospect'
   tags: string
@@ -73,6 +74,7 @@ const initialFormData: FormData = {
   stad: '',
   website: '',
   debiteurennummer: '',
+  kvk_nummer: '',
   btw_nummer: '',
   status: 'actief',
   tags: '',
@@ -140,6 +142,7 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
         setFormData((prev: FormData) => ({
           ...prev,
           bedrijfsnaam: profiel.naam || prev.bedrijfsnaam,
+          kvk_nummer: profiel.kvkNummer,
           adres: adresStr || prev.adres,
           postcode: profiel.adres.postcode || prev.postcode,
           stad: profiel.adres.stad || prev.stad,
@@ -150,6 +153,7 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
         setFormData((prev: FormData) => ({
           ...prev,
           bedrijfsnaam: result.naam || prev.bedrijfsnaam,
+          kvk_nummer: result.kvkNummer,
           adres: result.adres.straat || prev.adres,
           stad: result.adres.plaats || prev.stad,
           postcode: result.postcode || prev.postcode,
@@ -160,6 +164,7 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
       setFormData((prev: FormData) => ({
         ...prev,
         bedrijfsnaam: result.naam || prev.bedrijfsnaam,
+        kvk_nummer: result.kvkNummer,
         adres: result.adres.straat || prev.adres,
         stad: result.adres.plaats || prev.stad,
         postcode: result.postcode || prev.postcode,
@@ -201,6 +206,7 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
         stad: klant.stad,
         website: klant.website,
         debiteurennummer: klant.debiteurennummer,
+        kvk_nummer: klant.kvk_nummer,
         btw_nummer: klant.btw_nummer,
         status: klant.status,
         tags: klant.tags.join(', '),
@@ -270,6 +276,7 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
         land: 'Nederland',
         website: formData.website.trim(),
         debiteurennummer: formData.debiteurennummer.trim(),
+        kvk_nummer: formData.kvk_nummer.trim(),
         btw_nummer: formData.btw_nummer.trim(),
         status: formData.status,
         tags: tagsArray,
@@ -597,6 +604,12 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
                 onChange={(e) => handleChange('debiteurennummer', e.target.value)}
                 placeholder="Bijv. 26650"
               />
+              {formData.kvk_nummer && (
+                <div className="pt-1">
+                  <span className="text-xs text-muted-foreground">KvK</span>
+                  <span className="ml-2 text-sm font-mono">{formData.kvk_nummer}</span>
+                </div>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="btw_nummer">BTW Nummer</Label>

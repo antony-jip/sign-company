@@ -121,6 +121,7 @@ export function NieuweKlantModal({ open, onOpenChange }: Props) {
           land: 'Nederland',
           website: website.trim(),
           debiteurennummer: debiteurennummer.trim(),
+          kvk_nummer: '',
           btw_nummer: btwNummer.trim(),
           status: 'actief',
           tags: [],

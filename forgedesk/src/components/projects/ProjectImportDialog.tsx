@@ -184,6 +184,7 @@ export function ProjectImportDialog({ open, onOpenChange, onImportComplete }: Pr
             land: 'Nederland',
             website: '',
             debiteurennummer: '',
+            kvk_nummer: '',
             btw_nummer: '',
             status: 'actief',
             tags: [],

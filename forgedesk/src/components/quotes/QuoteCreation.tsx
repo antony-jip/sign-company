@@ -254,7 +254,7 @@ export function QuoteCreation() {
   const [showKlantResults, setShowKlantResults] = useState(false)
   const [showNieuwBedrijf, setShowNieuwBedrijf] = useState(false)
   const [showNbUitgebreid, setShowNbUitgebreid] = useState(false)
-  const [nbData, setNbData] = useState({ bedrijfsnaam: '', contactpersoon: '', email: '', telefoon: '', adres: '', postcode: '', stad: '', website: '', debiteurennummer: '', btw_nummer: '' })
+  const [nbData, setNbData] = useState({ bedrijfsnaam: '', contactpersoon: '', email: '', telefoon: '', adres: '', postcode: '', stad: '', website: '', debiteurennummer: '', kvk_nummer: '', btw_nummer: '' })
   const [nbCreating, setNbCreating] = useState(false)
   const klantWrapperRef = useRef<HTMLDivElement>(null)
   const [offerteTitel, setOfferteTitel] = useState(paramTitel)
@@ -378,12 +378,12 @@ export function QuoteCreation() {
       const nieuw = await createKlant({
         bedrijfsnaam: nbData.bedrijfsnaam.trim(), contactpersoon: nbData.contactpersoon.trim(), email: nbData.email.trim(), telefoon: nbData.telefoon.trim(),
         adres: nbData.adres.trim(), postcode: nbData.postcode.trim(), stad: nbData.stad.trim(), land: 'Nederland',
-        website: nbData.website.trim(), debiteurennummer: nbData.debiteurennummer.trim(), btw_nummer: nbData.btw_nummer.trim(),
+        website: nbData.website.trim(), debiteurennummer: nbData.debiteurennummer.trim(), kvk_nummer: nbData.kvk_nummer.trim(), btw_nummer: nbData.btw_nummer.trim(),
         status: 'actief', tags: [], notities: '', contactpersonen: cpArray, user_id: user?.id || '',
       } as any)
       const updated = await getKlanten(); setKlanten(updated)
       setSelectedKlantId(nieuw.id); setKlantSearch('')
-      setNbData({ bedrijfsnaam: '', contactpersoon: '', email: '', telefoon: '', adres: '', postcode: '', stad: '', website: '', debiteurennummer: '', btw_nummer: '' })
+      setNbData({ bedrijfsnaam: '', contactpersoon: '', email: '', telefoon: '', adres: '', postcode: '', stad: '', website: '', debiteurennummer: '', kvk_nummer: '', btw_nummer: '' })
       setShowNieuwBedrijf(false); setShowKlantResults(false); setShowNbUitgebreid(false)
       toast.success(`Bedrijf "${nieuw.bedrijfsnaam}" aangemaakt`)
     } catch (err) { logger.error('Fout bij aanmaken bedrijf:', err); toast.error('Fout bij aanmaken bedrijf') }

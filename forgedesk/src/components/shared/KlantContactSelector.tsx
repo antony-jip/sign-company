@@ -42,7 +42,7 @@ export function KlantContactSelector({
   const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number; width: number } | null>(null)
 
   // Nieuw bedrijf state
-  const [nb, setNb] = useState({ bedrijfsnaam: '', contactpersoon: '', email: '', telefoon: '', adres: '', postcode: '', stad: '', website: '', debiteurennummer: '', btw_nummer: '' })
+  const [nb, setNb] = useState({ bedrijfsnaam: '', contactpersoon: '', email: '', telefoon: '', adres: '', postcode: '', stad: '', website: '', debiteurennummer: '', kvk_nummer: '', btw_nummer: '' })
   // Nieuw contact state
   const [nc, setNc] = useState({ naam: '', functie: '', email: '', telefoon: '' })
 
@@ -170,6 +170,7 @@ export function KlantContactSelector({
         land: 'Nederland',
         website: nb.website.trim(),
         debiteurennummer: nb.debiteurennummer.trim(),
+        kvk_nummer: nb.kvk_nummer.trim(),
         btw_nummer: nb.btw_nummer.trim(),
         status: 'actief',
         tags: [],
@@ -180,7 +181,7 @@ export function KlantContactSelector({
 
       onKlantenRefresh?.()
       onKlantChange(nieuw.id, nieuw)
-      setNb({ bedrijfsnaam: '', contactpersoon: '', email: '', telefoon: '', adres: '', postcode: '', stad: '', website: '', debiteurennummer: '', btw_nummer: '' })
+      setNb({ bedrijfsnaam: '', contactpersoon: '', email: '', telefoon: '', adres: '', postcode: '', stad: '', website: '', debiteurennummer: '', kvk_nummer: '', btw_nummer: '' })
       setShowNieuwBedrijf(false)
       setShowUitgebreid(false)
       setShowResults(false)

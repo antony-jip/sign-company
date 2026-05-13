@@ -129,6 +129,7 @@ export function ForgieActieKaart({
           land: 'Nederland',
           website: '',
           debiteurennummer: '',
+          kvk_nummer: '',
           btw_nummer: '',
           status: 'prospect',
           tags: [],

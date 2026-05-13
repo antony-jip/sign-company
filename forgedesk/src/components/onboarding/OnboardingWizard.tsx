@@ -648,7 +648,7 @@ export function OnboardingWizard() {
           email: 'jan@goudenkorenaar.nl',
           telefoon: '020-1234567',
           adres: 'Hoofdstraat 12', postcode: '1012 AB', stad: 'Amsterdam', land: 'Nederland',
-          website: '', debiteurennummer: '', btw_nummer: '',
+          website: '', debiteurennummer: '', kvk_nummer: '', btw_nummer: '',
           status: 'actief', tags: [], notities: '', contactpersonen: [],
           is_demo_data: true,
         } as Parameters<typeof createKlant>[0])
@@ -660,7 +660,7 @@ export function OnboardingWizard() {
           email: 'info@jansen-installatie.nl',
           telefoon: '010-7654321',
           adres: 'Industrieweg 8', postcode: '3012 CD', stad: 'Rotterdam', land: 'Nederland',
-          website: '', debiteurennummer: '', btw_nummer: '',
+          website: '', debiteurennummer: '', kvk_nummer: '', btw_nummer: '',
           status: 'actief', tags: [], notities: '', contactpersonen: [],
           is_demo_data: true,
         } as Parameters<typeof createKlant>[0])
@@ -672,7 +672,7 @@ export function OnboardingWizard() {
           email: 'info@hetanker.nl',
           telefoon: '030-9876543',
           adres: 'Havenstraat 3', postcode: '3511 AA', stad: 'Utrecht', land: 'Nederland',
-          website: '', debiteurennummer: '', btw_nummer: '',
+          website: '', debiteurennummer: '', kvk_nummer: '', btw_nummer: '',
           status: 'actief', tags: [], notities: '', contactpersonen: [],
           is_demo_data: true,
         } as Parameters<typeof createKlant>[0])

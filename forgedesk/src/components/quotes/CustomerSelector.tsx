@@ -59,8 +59,8 @@ export interface CustomerSelectorProps {
   selectedKlant: Klant | undefined
   klantWrapperRef: React.RefObject<HTMLDivElement | null>
   filteredKlanten: Klant[]
-  nbData: { bedrijfsnaam: string; contactpersoon: string; email: string; telefoon: string; adres: string; postcode: string; stad: string; website: string; debiteurennummer: string; btw_nummer: string }
-  setNbData: React.Dispatch<React.SetStateAction<{ bedrijfsnaam: string; contactpersoon: string; email: string; telefoon: string; adres: string; postcode: string; stad: string; website: string; debiteurennummer: string; btw_nummer: string }>>
+  nbData: { bedrijfsnaam: string; contactpersoon: string; email: string; telefoon: string; adres: string; postcode: string; stad: string; website: string; debiteurennummer: string; kvk_nummer: string; btw_nummer: string }
+  setNbData: React.Dispatch<React.SetStateAction<{ bedrijfsnaam: string; contactpersoon: string; email: string; telefoon: string; adres: string; postcode: string; stad: string; website: string; debiteurennummer: string; kvk_nummer: string; btw_nummer: string }>>
   showNbUitgebreid: boolean
   setShowNbUitgebreid: (v: boolean) => void
   nbCreating: boolean
