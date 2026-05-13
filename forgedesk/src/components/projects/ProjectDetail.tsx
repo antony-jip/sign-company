@@ -941,23 +941,23 @@ export function ProjectDetail() {
       <div className="sticky top-0 z-10 bg-[#F8F7F5]/95 backdrop-blur-md px-8 pt-4 flex-shrink-0">
         <div className="flex items-start justify-between gap-6">
           <div className="flex items-start gap-3 min-w-0 flex-1">
-            {/* Back-button 36×36 */}
+            {/* Back-button ghost */}
             <Link
               to="/projecten"
-              className="flex items-center justify-center h-9 w-9 rounded-lg border border-[#EBEBEB] bg-white text-[#6B6B66] hover:bg-[var(--cream-bg)] hover:text-[#1A1A1A] transition-colors flex-shrink-0"
+              className="flex items-center justify-center h-8 w-8 -ml-1 rounded-lg text-[#9B9B95] hover:bg-[var(--cream-bg)] hover:text-[#1A1A1A] transition-colors flex-shrink-0"
               aria-label="Terug naar projecten"
             >
               <ArrowLeft className="h-4 w-4" />
             </Link>
 
             <div className="min-w-0 flex-1">
-              {/* Row 0: breadcrumb */}
-              <div className="flex items-center gap-1.5 text-[13px] mb-1.5">
-                <Link to="/projecten" className="text-[#9B9B95] hover:text-[#1A1A1A] transition-colors">
+              {/* Row 0: subtle breadcrumb */}
+              <div className="flex items-center gap-1.5 text-[12px] text-[#9B9B95] mb-1">
+                <Link to="/projecten" className="hover:text-[#1A1A1A] transition-colors">
                   Projecten
                 </Link>
-                <ChevronRight className="h-3.5 w-3.5 text-[#C0BDB8] flex-shrink-0" />
-                <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[var(--cream-bg)] text-[var(--cream-text)] border border-[var(--cream-border)] font-mono text-[12px]">
+                <ChevronRight className="h-3 w-3 text-[#C0BDB8] flex-shrink-0" />
+                <span className="font-mono">
                   {project.project_nummer || `PRJ-${id?.slice(0, 8).toUpperCase()}`}
                 </span>
               </div>
