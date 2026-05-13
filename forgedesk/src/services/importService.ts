@@ -332,6 +332,7 @@ export async function importeerBedrijfsdata(
           land: 'Nederland',
           website: '',
           debiteurennummer: rij.debiteurennummer || '',
+          kvk_nummer: rij.kvk_nummer || '',
           btw_nummer: rij.btw_nummer || '',
           status: 'actief',
           tags: [],
@@ -574,16 +575,16 @@ export async function importeerContactpersonen(
 
 export function generateBedrijfsdataTemplate(): string {
   const BOM = '\uFEFF'
-  const header = 'type;bedrijfsnaam;naam;nummer;datum;bedrag;adres;postcode;plaats;telefoon;email;debiteurennummer;btw_nummer;verantwoordelijke'
+  const header = 'type;bedrijfsnaam;naam;nummer;datum;bedrag;adres;postcode;plaats;telefoon;email;kvk_nummer;debiteurennummer;btw_nummer;verantwoordelijke'
   const rows = [
-    'relatie;Bakkerij Janssen;;;;;Hoofdstraat 1;1234 AB;Amsterdam;020-1234567;info@bakkerij-janssen.nl;12345678;NL123456789B01;',
-    'relatie;Bouwbedrijf De Groot B.V.;;;;;Industrieweg 88;5678 CD;Rotterdam;010-9876543;info@degroot-bouw.nl;87654321;;',
-    'project;Bakkerij Janssen;Gevelreclame hoofdkantoor;P-2026-001;2026-01-15;;;;;;;;;Jan de Vries',
-    'project;Bouwbedrijf De Groot B.V.;Signing entree;P-2026-002;2026-02-20;;;;;;;;;Marie Bakker',
-    'offerte;Bakkerij Janssen;Gevelreclame 3x2m dibond;OFF-2026-001;2026-01-10;2500.00;;;;;;;;',
-    'offerte;Bouwbedrijf De Groot B.V.;Raambelettering 12 stuks;OFF-2026-002;2026-02-15;890.00;;;;;;;;',
-    'factuur;Bakkerij Janssen;Gevelreclame 3x2m dibond;FAC-2026-001;2026-02-01;2500.00;;;;;;;;',
-    'factuur;Bouwbedrijf De Groot B.V.;Raambelettering 12 stuks;FAC-2026-002;2026-03-01;890.00;;;;;;;;',
+    'relatie;Bakkerij Janssen;;;;;Hoofdstraat 1;1234 AB;Amsterdam;020-1234567;info@bakkerij-janssen.nl;12345678;100;NL123456789B01;',
+    'relatie;Bouwbedrijf De Groot B.V.;;;;;Industrieweg 88;5678 CD;Rotterdam;010-9876543;info@degroot-bouw.nl;87654321;101;;',
+    'project;Bakkerij Janssen;Gevelreclame hoofdkantoor;P-2026-001;2026-01-15;;;;;;;;;;Jan de Vries',
+    'project;Bouwbedrijf De Groot B.V.;Signing entree;P-2026-002;2026-02-20;;;;;;;;;;Marie Bakker',
+    'offerte;Bakkerij Janssen;Gevelreclame 3x2m dibond;OFF-2026-001;2026-01-10;2500.00;;;;;;;;;',
+    'offerte;Bouwbedrijf De Groot B.V.;Raambelettering 12 stuks;OFF-2026-002;2026-02-15;890.00;;;;;;;;;',
+    'factuur;Bakkerij Janssen;Gevelreclame 3x2m dibond;FAC-2026-001;2026-02-01;2500.00;;;;;;;;;',
+    'factuur;Bouwbedrijf De Groot B.V.;Raambelettering 12 stuks;FAC-2026-002;2026-03-01;890.00;;;;;;;;;',
   ]
   return BOM + [header, ...rows].join('\n')
 }

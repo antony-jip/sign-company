@@ -50,7 +50,7 @@ function BedrijfsdataHelp() {
         <p className="font-semibold text-foreground mb-1">WELKE KOLOMMEN BIJ WELK TYPE?</p>
         <div className="space-y-2">
           <p>Bij type <strong>&quot;relatie&quot;</strong> vul je in:<br />
-            <code className="text-xs bg-muted px-1 py-0.5 rounded">bedrijfsnaam, adres, postcode, plaats, telefoon, email, debiteurennummer, btw_nummer</code>
+            <code className="text-xs bg-muted px-1 py-0.5 rounded">bedrijfsnaam, adres, postcode, plaats, telefoon, email, kvk_nummer, debiteurennummer, btw_nummer</code>
           </p>
           <p>Bij type <strong>&quot;project&quot;</strong> vul je in:<br />
             <code className="text-xs bg-muted px-1 py-0.5 rounded">bedrijfsnaam, naam (= projectnaam), nummer, datum, verantwoordelijke</code>
