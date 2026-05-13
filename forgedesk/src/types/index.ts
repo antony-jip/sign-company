@@ -102,7 +102,7 @@ export interface Klant {
   stad: string;
   land: string;
   website: string;
-  kvk_nummer: string;
+  debiteurennummer: string;
   btw_nummer: string;
   status: 'actief' | 'inactief' | 'prospect';
   tags: string[];
@@ -155,7 +155,7 @@ export interface CSVKlantRij {
   plaats: string;
   telefoon: string;
   email: string;
-  kvk_nummer: string;
+  debiteurennummer: string;
   btw_nummer: string;
   omzet_totaal: string;
   accountmanager: string;
