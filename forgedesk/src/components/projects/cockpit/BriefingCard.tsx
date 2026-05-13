@@ -127,7 +127,7 @@ Antwoord ALLEEN met de briefing, niets anders.`
         onChange={(e) => setText(e.target.value)}
         onBlur={handleBlur}
         placeholder="Wat moet er gemaakt worden? Waar? Welke materialen?"
-        className="resize-y text-[14px] leading-relaxed w-full min-h-[110px] px-4 py-3.5 bg-[var(--cream-bg)] border-[var(--cream-border)] focus-visible:bg-white focus-visible:border-[var(--amber)] focus-visible:ring-[3px] focus-visible:ring-[rgba(204,138,63,0.18)] focus-visible:shadow-none"
+        className="resize-y text-[14px] leading-relaxed w-full min-h-[110px] px-4 py-3.5 bg-[var(--surface-soft)] border-[var(--surface-soft-border)] focus-visible:bg-white focus-visible:border-[var(--amber)] focus-visible:ring-[3px] focus-visible:ring-[rgba(204,138,63,0.18)] focus-visible:shadow-none"
         onKeyDown={(e) => {
           if (e.key === 'Escape') {
             setText(savedRef.current)

@@ -123,6 +123,10 @@
     /* Amber UI-accent — focus rings, active tab, current fase */
     --amber: #CC8A3F;
 
+    /* Surface-soft — voor textarea/tile fills (minder geel-verzadigd dan cream-bg) */
+    --surface-soft: #F7F5EF;
+    --surface-soft-border: #ECE8DF;
+
     /* Module accenten */
     --m-klant: #3A6B8C;
     --m-portaal: #6A5A8A;

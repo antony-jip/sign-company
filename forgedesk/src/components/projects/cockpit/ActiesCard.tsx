@@ -43,7 +43,7 @@ export function ActiesCard({ onOfferte, onWerkbon, onMontage, onFactuur, onPakbo
             <button
               key={tile.key}
               onClick={tile.onClick}
-              className="acties-tile group relative overflow-hidden rounded-lg bg-[var(--cream-bg)] hover:bg-white p-3 text-left transition-all hover:-translate-y-px hover:shadow-[0_2px_6px_rgba(130,100,60,0.08)]"
+              className="acties-tile group relative overflow-hidden rounded-lg bg-[var(--surface-soft)] hover:bg-white p-3 text-left transition-all hover:-translate-y-px hover:shadow-[0_2px_6px_rgba(130,100,60,0.08)]"
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center justify-center h-6 w-6 rounded-md" style={{ background: 'rgba(255,255,255,0.6)' }}>

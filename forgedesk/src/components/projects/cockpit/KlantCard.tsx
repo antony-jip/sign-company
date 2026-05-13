@@ -172,7 +172,7 @@ export function KlantCard({ klant, project, contactpersonen, onContactpersoonCha
                 logger.error('Kon contactpersoon niet wijzigen:', err)
               }
             }}
-            className="w-full text-[13px] font-medium text-[#1A1A1A] bg-[var(--cream-bg)] hover:bg-white border border-[var(--cream-border)] rounded-lg pl-9 pr-9 py-2.5 outline-none cursor-pointer transition-colors appearance-none focus:bg-white focus:border-[var(--amber)] focus:ring-[3px] focus:ring-[rgba(204,138,63,0.18)]"
+            className="w-full text-[13px] font-medium text-[#1A1A1A] bg-[var(--surface-soft)] hover:bg-white border border-[var(--surface-soft-border)] rounded-lg pl-9 pr-9 py-2.5 outline-none cursor-pointer transition-colors appearance-none focus:bg-white focus:border-[var(--amber)] focus:ring-[3px] focus:ring-[rgba(204,138,63,0.18)]"
           >
             <option value="">Selecteer contactpersoon…</option>
             {contactpersonen.map((cp) => (
@@ -216,26 +216,26 @@ export function KlantCard({ klant, project, contactpersonen, onContactpersoonCha
               onChange={(e) => setNieuwCpNaam(e.target.value)}
               placeholder="Naam"
               autoFocus
-              className="w-full text-[12px] text-[#1A1A1A] placeholder:text-[#9B9B95] bg-[var(--cream-bg)] border border-[var(--cream-border)] rounded-lg px-3 py-2 outline-none focus:bg-white focus:border-[var(--amber)] focus:ring-[3px] focus:ring-[rgba(204,138,63,0.18)] transition-colors"
+              className="w-full text-[12px] text-[#1A1A1A] placeholder:text-[#9B9B95] bg-[var(--surface-soft)] border border-[var(--surface-soft-border)] rounded-lg px-3 py-2 outline-none focus:bg-white focus:border-[var(--amber)] focus:ring-[3px] focus:ring-[rgba(204,138,63,0.18)] transition-colors"
             />
             <input
               value={nieuwCpEmail}
               onChange={(e) => setNieuwCpEmail(e.target.value)}
               placeholder="Email"
-              className="w-full text-[12px] text-[#1A1A1A] placeholder:text-[#9B9B95] bg-[var(--cream-bg)] border border-[var(--cream-border)] rounded-lg px-3 py-2 outline-none focus:bg-white focus:border-[var(--amber)] focus:ring-[3px] focus:ring-[rgba(204,138,63,0.18)] transition-colors"
+              className="w-full text-[12px] text-[#1A1A1A] placeholder:text-[#9B9B95] bg-[var(--surface-soft)] border border-[var(--surface-soft-border)] rounded-lg px-3 py-2 outline-none focus:bg-white focus:border-[var(--amber)] focus:ring-[3px] focus:ring-[rgba(204,138,63,0.18)] transition-colors"
             />
             <div className="flex gap-1.5">
               <input
                 value={nieuwCpTelefoon}
                 onChange={(e) => setNieuwCpTelefoon(e.target.value)}
                 placeholder="Telefoon"
-                className="flex-1 min-w-0 text-[12px] text-[#1A1A1A] placeholder:text-[#9B9B95] bg-[var(--cream-bg)] border border-[var(--cream-border)] rounded-lg px-3 py-2 outline-none focus:bg-white focus:border-[var(--amber)] focus:ring-[3px] focus:ring-[rgba(204,138,63,0.18)] transition-colors"
+                className="flex-1 min-w-0 text-[12px] text-[#1A1A1A] placeholder:text-[#9B9B95] bg-[var(--surface-soft)] border border-[var(--surface-soft-border)] rounded-lg px-3 py-2 outline-none focus:bg-white focus:border-[var(--amber)] focus:ring-[3px] focus:ring-[rgba(204,138,63,0.18)] transition-colors"
               />
               <input
                 value={nieuwCpFunctie}
                 onChange={(e) => setNieuwCpFunctie(e.target.value)}
                 placeholder="Functie"
-                className="flex-1 min-w-0 text-[12px] text-[#1A1A1A] placeholder:text-[#9B9B95] bg-[var(--cream-bg)] border border-[var(--cream-border)] rounded-lg px-3 py-2 outline-none focus:bg-white focus:border-[var(--amber)] focus:ring-[3px] focus:ring-[rgba(204,138,63,0.18)] transition-colors"
+                className="flex-1 min-w-0 text-[12px] text-[#1A1A1A] placeholder:text-[#9B9B95] bg-[var(--surface-soft)] border border-[var(--surface-soft-border)] rounded-lg px-3 py-2 outline-none focus:bg-white focus:border-[var(--amber)] focus:ring-[3px] focus:ring-[rgba(204,138,63,0.18)] transition-colors"
               />
             </div>
             <div className="flex items-center justify-end gap-3 pt-1">
