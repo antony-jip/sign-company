@@ -112,6 +112,21 @@
     --color-petrol-light: #237580;
     --color-petrol-dark: #143F46;
 
+    /* Pastel statuskleuren — style guide tabel */
+    --blush-bg: #F9E8E8;    --blush-text: #C0514A;    --blush-border: #F0C8C8;
+    --sage-bg: #E8F2EC;     --sage-text: #3A7D52;     --sage-border: #C2DFCC;
+    --mist-bg: #E8EEF9;     --mist-text: #3A5A9A;     --mist-border: #C2D0EE;
+    --cream-bg: #F5F2E8;    --cream-text: #8A7A4A;    --cream-border: #E0D8C0;
+    --coral-bg: #FDE8E4;    --coral-text: #C0451A;    --coral-border: #F5C4B8;
+    --lavender-bg: #EEE8F9; --lavender-text: #6A4A9A; --lavender-border: #D8C8EE;
+
+    /* Amber UI-accent — focus rings, active tab, current fase */
+    --amber: #CC8A3F;
+
+    /* Module accenten */
+    --m-klant: #3A6B8C;
+    --m-portaal: #6A5A8A;
+
     /* Elevation system — layered depth */
     /* Warm shadows — not cold black but warm brown-tinted */
     --shadow-xs: 0 1px 2px rgba(120,90,50,0.05);
@@ -520,6 +535,68 @@ input:focus, textarea:focus, select:focus {
   .badge-warm-paars::before { background: #5A4A78; }
   .dark .badge-warm-paars { background: rgba(90, 74, 120, 0.15); color: #9A7ACC; }
   .dark .badge-warm-paars::before { background: #9A7ACC; }
+
+  /* Pastel pills — voor status-labels in UI (badges, headers, accenten) */
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.4;
+    white-space: nowrap;
+    border: 1px solid transparent;
+  }
+  .pill::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .pill-blush    { background: var(--blush-bg);    color: var(--blush-text);    border-color: var(--blush-border); }
+  .pill-blush::before    { background: var(--blush-text); }
+  .pill-sage     { background: var(--sage-bg);     color: var(--sage-text);     border-color: var(--sage-border); }
+  .pill-sage::before     { background: var(--sage-text); }
+  .pill-mist     { background: var(--mist-bg);     color: var(--mist-text);     border-color: var(--mist-border); }
+  .pill-mist::before     { background: var(--mist-text); }
+  .pill-cream    { background: var(--cream-bg);    color: var(--cream-text);    border-color: var(--cream-border); }
+  .pill-cream::before    { background: var(--cream-text); }
+  .pill-coral    { background: var(--coral-bg);    color: var(--coral-text);    border-color: var(--coral-border); }
+  .pill-coral::before    { background: var(--coral-text); }
+  .pill-lavender { background: var(--lavender-bg); color: var(--lavender-text); border-color: var(--lavender-border); }
+  .pill-lavender::before { background: var(--lavender-text); }
+
+  /* Primary button met flame-dot accent — alleen voor ProjectDetail hoofd-CTA */
+  .btn-primary-flame-dot {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 16px;
+    border-radius: 8px;
+    background: #1A535C;
+    color: #FFFFFF;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1;
+    box-shadow: 0 1px 2px rgba(26, 83, 92, 0.2);
+    transition: background 150ms ease, transform 150ms ease, box-shadow 150ms ease;
+  }
+  .btn-primary-flame-dot:hover {
+    background: #237580;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(26, 83, 92, 0.25);
+  }
+  .btn-primary-flame-dot::after {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #F15025;
+    box-shadow: 0 0 0 2px rgba(241, 80, 37, 0.25);
+  }
 
 }
 
@@ -1890,7 +1967,7 @@ html, body, #root {
 
 /* KPI card — oversized number with subtle gradient text */
 .wm-kpi-value {
-  font-family: 'DM Mono', monospace;
+  font-family: 'IBM Plex Mono', 'DM Mono', monospace;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.03em;
   line-height: 1;
@@ -1933,7 +2010,7 @@ html, body, #root {
 
 /* Number highlight — for inline metrics */
 .wm-number-highlight {
-  font-family: 'DM Mono', monospace;
+  font-family: 'IBM Plex Mono', 'DM Mono', monospace;
   font-variant-numeric: tabular-nums;
   font-weight: 700;
   color: hsl(var(--foreground));
@@ -2173,7 +2250,7 @@ button, a, [role="button"], summary, label, input[type="checkbox"], input[type="
 
 /* Price number styling */
 .lf-price-number {
-  font-family: 'DM Mono', monospace;
+  font-family: 'IBM Plex Mono', 'DM Mono', monospace;
   font-weight: 800;
 }
 
@@ -2476,7 +2553,7 @@ button, a, [role="button"], summary, label, input[type="checkbox"], input[type="
 
 /* ── Number Display — Large, premium data presentation ── */
 .display-number {
-  font-family: 'DM Mono', ui-monospace, SFMono-Regular, monospace;
+  font-family: 'IBM Plex Mono', 'DM Mono', ui-monospace, SFMono-Regular, monospace;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;

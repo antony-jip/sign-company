@@ -192,3 +192,57 @@ export function getRowAccentClass(status: string): string {
 export function getStatusColor(status: string): string {
   return getStatusBadgeClass(status)
 }
+
+export type PillTone = 'cream' | 'mist' | 'blush' | 'lavender' | 'sage' | 'coral'
+
+export function getStatusPillTone(status: string): PillTone {
+  const map: Record<string, PillTone> = {
+    'concept':        'cream',
+    'te-plannen':     'cream',
+    'gepland':        'cream',
+    'on-hold':        'cream',
+    'gepauzeerd':     'cream',
+
+    'actief':         'mist',
+    'in-uitvoering':  'mist',
+    'productie':      'mist',
+    'montage':        'mist',
+    'verstuurd':      'mist',
+    'verzonden':      'mist',
+    'open':           'mist',
+    'besteld':        'mist',
+    'geleverd':       'mist',
+    'bezig':          'mist',
+    'definitief':     'mist',
+
+    'in-review':      'blush',
+    'review':         'blush',
+    'bekeken':        'blush',
+    'wijziging_gevraagd': 'blush',
+
+    'te-factureren':  'lavender',
+    'gefactureerd':   'lavender',
+    'gecrediteerd':   'lavender',
+
+    'afgerond':       'sage',
+    'opgeleverd':     'sage',
+    'goedgekeurd':    'sage',
+    'betaald':        'sage',
+    'klaar':          'sage',
+    'getekend':       'sage',
+    'ontvangen':      'sage',
+
+    'afgewezen':      'coral',
+    'verlopen':       'coral',
+    'vervallen':      'coral',
+    'te-laat':        'coral',
+    'geannuleerd':    'coral',
+    'geblokkeerd':    'coral',
+    'geweigerd':      'coral',
+  }
+  return map[status.toLowerCase()] ?? 'cream'
+}
+
+export function getStatusPillClass(status: string): string {
+  return `pill pill-${getStatusPillTone(status)}`
+}
