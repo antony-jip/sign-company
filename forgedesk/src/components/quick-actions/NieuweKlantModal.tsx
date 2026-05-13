@@ -53,7 +53,7 @@ export function NieuweKlantModal({ open, onOpenChange }: Props) {
     setPostcode('')
     setStad('')
     setWebsite('')
-    setKvkNummer('')
+    setDebiteurennummer('')
     setBtwNummer('')
   }
 
