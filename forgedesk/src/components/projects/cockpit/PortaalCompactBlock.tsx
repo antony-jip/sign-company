@@ -7,7 +7,7 @@ import {
   Bold, Italic, Underline, List, Link2, FileCheck,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { getPortaalByProject, getPortaalItems, createPortaalItem, getOffertesByProject, getFacturenByProject } from '@/services/supabaseService'
+import { getPortaalByProject, getPortaalItems, createPortaalItem, getOffertesByProject, getFacturenByProject, createPortaal } from '@/services/supabaseService'
 import { uploadFile } from '@/services/storageService'
 import { useAuth } from '@/contexts/AuthContext'
 import { offerteTokenExpiry } from '@/lib/tokenExpiry'
@@ -639,6 +639,7 @@ export function PortaalCompactBlock({ projectId }: { projectId: string }) {
   const [loading, setLoading] = useState(true)
   const [moduleActief, setModuleActief] = useState<boolean | null>(null)
   const [isSending, setIsSending] = useState(false)
+  const [activating, setActivating] = useState(false)
   const [collapsed, setCollapsed] = useState(() => {
     try { return localStorage.getItem(STORAGE_KEY) === 'true' } catch (err) { return false }
   })
@@ -692,7 +693,24 @@ export function PortaalCompactBlock({ projectId }: { projectId: string }) {
     return () => { cancelled = true }
   }, [projectId, user?.id])
 
+  // TODO: hooks-volgorde fix (moduleActief check vóór useEffect)
   if (moduleActief === false) return null
+
+  const handleActiveer = async () => {
+    if (!user?.id || activating) return
+    setActivating(true)
+    try {
+      const nieuwPortaal = await createPortaal(projectId, user.id)
+      setPortaal(nieuwPortaal)
+      setCollapsed(false)
+      toast.success('Portaal geactiveerd')
+    } catch (err) {
+      logger.error('activeerPortaal:', err)
+      toast.error('Kon portaal niet activeren')
+    } finally {
+      setActivating(false)
+    }
+  }
 
   // Realtime subscription for portaal_items and portaal_reacties
   useEffect(() => {
@@ -737,55 +755,60 @@ export function PortaalCompactBlock({ projectId }: { projectId: string }) {
 
   if (loading) return null
 
-  if (!portaal) {
-    // Inactive state wordt nu door PortaalPreviewCard getoond; PortaalCompactBlock blijft null.
-    return null
-  }
-
-  const isVerlopen = new Date(portaal.verloopt_op) < new Date()
-  const isActief = portaal.actief && !isVerlopen
+  const isVerlopen = portaal ? new Date(portaal.verloopt_op) < new Date() : false
+  const isActief = !!portaal && portaal.actief && !isVerlopen
   const sharedCount = items.filter(i => i.type !== 'bericht').length
 
   return (
     <div className="rounded-xl shadow-[0_1px_3px_rgba(130,100,60,0.04)] overflow-hidden">
       {/* Header bar */}
       <div
-        className="flex items-center justify-between cursor-pointer select-none group bg-[#1A535C] rounded-t-xl px-5 py-4"
-        onClick={toggleCollapsed}
+        className={`flex items-center justify-between select-none group bg-[#1A535C] px-5 py-4 ${portaal ? `cursor-pointer ${!collapsed ? 'rounded-t-xl' : 'rounded-xl'}` : 'cursor-default rounded-xl'}`}
+        onClick={portaal ? toggleCollapsed : undefined}
       >
         <div className="flex items-center gap-2.5">
-          {collapsed
+          {portaal && (collapsed
             ? <ChevronRight className="h-3.5 w-3.5 text-white/50 group-hover:text-white/80 transition-colors" />
             : <ChevronDown className="h-3.5 w-3.5 text-white/50 group-hover:text-white/80 transition-colors" />
-          }
+          )}
           <h3 className="text-[12px] font-semibold text-white uppercase tracking-widest">Portaal</h3>
           <span className="text-[11px] font-medium text-white/60">
-            {isActief ? 'Actief' : 'Verlopen'}<span className="text-[#F15025]">.</span>
+            {portaal ? (isActief ? 'Actief' : 'Verlopen') : 'Niet actief'}<span className="text-[#F15025]">.</span>
           </span>
-          {sharedCount > 0 && (
+          {portaal && sharedCount > 0 && (
             <span className="text-[11px] text-white/40 font-mono">{sharedCount} gedeeld</span>
           )}
-          {hasKlantReactie && (
+          {portaal && hasKlantReactie && (
             <span className="flex items-center gap-1 text-[11px] font-medium text-[#F15025]">
               <span className="w-1.5 h-1.5 rounded-full bg-[#F15025] animate-pulse" />
               Reactie
             </span>
           )}
         </div>
-        <button
-          onClick={(e) => { e.stopPropagation(); navigate('/portalen') }}
-          className="text-[11px] font-medium text-white/60 hover:text-white flex items-center gap-1 transition-colors"
-        >
-          Openen <ArrowRight className="h-3 w-3" />
-        </button>
+        {portaal ? (
+          <button
+            onClick={(e) => { e.stopPropagation(); navigate('/portalen') }}
+            className="text-[11px] font-medium text-white/60 hover:text-white flex items-center gap-1 transition-colors"
+          >
+            Openen <ArrowRight className="h-3 w-3" />
+          </button>
+        ) : (
+          <button
+            onClick={handleActiveer}
+            disabled={activating}
+            className="text-[11px] font-medium text-white/60 hover:text-white flex items-center gap-1 transition-colors disabled:opacity-50 disabled:cursor-wait"
+          >
+            {activating ? 'Activeren…' : 'Activeer'} <ArrowRight className="h-3 w-3" />
+          </button>
+        )}
       </div>
 
-      {/* Content */}
-      {!collapsed && (
+      {/* Content — alleen bij actief portaal */}
+      {portaal && !collapsed && (
         <div className="bg-[#F8F7F5] rounded-b-xl px-5 py-4">
           <Feed items={items} feedEndRef={feedEndRef} />
 
-          {portaal && user?.id && (
+          {user?.id && (
             <InputBar
               portaal={portaal}
               projectId={projectId}

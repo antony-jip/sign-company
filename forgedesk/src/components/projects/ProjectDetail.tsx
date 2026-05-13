@@ -126,7 +126,6 @@ import { PakbonVanProjectDialog } from '@/components/leveringsbonnen/PakbonVanPr
 import { getFase } from '@/utils/projectFases'
 // ProjectKaart removed — using inline sticky header
 import { PortaalCompactBlock } from './cockpit/PortaalCompactBlock'
-import { PortaalPreviewCard } from './cockpit/PortaalPreviewCard'
 import { ActiviteitCard } from './cockpit/ActiviteitCard'
 import { KlantCard } from './cockpit/KlantCard'
 import { ActiesCard } from './cockpit/ActiesCard'
@@ -1164,14 +1163,7 @@ export function ProjectDetail() {
           {/* Activiteit */}
           <ActiviteitCard events={recenteActiviteiten} />
 
-          {/* Portaal — preview voor inactief, compact-feed voor actief (beide checken intern) */}
-          <PortaalPreviewCard
-            projectId={id!}
-            klant={klant}
-            offertes={projectOffertes}
-            bestanden={projectDocumenten}
-            fotos={projectFotos}
-          />
+          {/* Portaal — één compact-strip voor actieve én niet-actieve state */}
           <PortaalCompactBlock projectId={id!} />
 
           {/* Verzonden emails */}
