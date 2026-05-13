@@ -29,6 +29,7 @@ function normalizeKlant(raw: unknown): Klant {
     land: (klant.land as string) || '',
     website: (klant.website as string) || '',
     debiteurennummer: (klant.debiteurennummer as string) || '',
+    kvk_nummer: (klant.kvk_nummer as string) || '',
     btw_nummer: (klant.btw_nummer as string) || '',
     status: (klant.status as string) || 'actief',
     tags: safeParseJsonArray(klant.tags) as string[],
