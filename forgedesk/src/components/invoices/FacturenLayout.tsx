@@ -57,6 +57,7 @@ import {
   Receipt,
   Share2,
   MinusCircle,
+  Paperclip,
 } from 'lucide-react'
 import {
   getFacturen,
@@ -77,6 +78,7 @@ import {
   getFacturenByProject,
 } from '@/services/supabaseService'
 import type { Factuur, FactuurItem, Klant, Offerte, OfferteItem, HerinneringTemplate, Project } from '@/types'
+import { getFactuurBijlageCounts } from '@/services/factuurBijlagenService'
 import { Checkbox } from '@/components/ui/checkbox'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
 import { round2 } from '@/utils/budgetUtils'
@@ -288,6 +290,7 @@ export function FacturenLayout() {
   const [klanten, setKlanten] = useState<Klant[]>([])
   const [offertes, setOffertes] = useState<Offerte[]>([])
   const [teFacturerenProjecten, setTeFacturerenProjecten] = useState<(Project & { offerteBedrag: number; alGefactureerd: number })[]>([])
+  const [bijlageCounts, setBijlageCounts] = useState<Map<string, number>>(new Map())
   const [isLoading, setIsLoading] = useState(true)
 
   // Filter & sort state
@@ -346,11 +349,12 @@ export function FacturenLayout() {
     async function loadData() {
       try {
         setIsLoading(true)
-        const [facturenData, klantenData, offertesData, herinneringData] = await Promise.all([
+        const [facturenData, klantenData, offertesData, herinneringData, bijlageCountsData] = await Promise.all([
           getFacturen().catch(() => []),
           getKlanten().catch(() => []),
           getOffertes().catch(() => []),
           getHerinneringTemplates().catch(() => []),
+          getFactuurBijlageCounts().catch(() => new Map<string, number>()),
         ])
 
         if (!cancelled) {
@@ -358,6 +362,7 @@ export function FacturenLayout() {
           setKlanten(klantenData)
           setOffertes(offertesData)
           setHerinneringTemplates(herinneringData)
+          setBijlageCounts(bijlageCountsData)
         }
 
         // Fetch te factureren projects with enriched data
@@ -1804,13 +1809,14 @@ export function FacturenLayout() {
                 <th className="text-left py-3.5 pr-4 hidden lg:table-cell">
                   <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Online</span>
                 </th>
+                <th className="text-center py-3.5 px-2 w-10 hidden md:table-cell" aria-label="Bijlagen" />
                 <th className="w-10 py-3.5 pr-4 hidden md:table-cell" />
               </tr>
             </thead>
             <tbody className="row-stagger">
               {filteredFacturen.length === 0 && (
                 <tr>
-                  <td colSpan={12}>
+                  <td colSpan={13}>
                     <EmptyState
                       module="facturen"
                       title="Nog geen facturen"
@@ -2015,6 +2021,18 @@ export function FacturenLayout() {
                           />
                         )}
                       </div>
+                    </td>
+                    <td className="py-3.5 px-2 text-center hidden md:table-cell" onClick={(e) => e.stopPropagation()}>
+                      {(bijlageCounts.get(factuur.id) ?? 0) > 0 && (
+                        <button
+                          onClick={() => setViewingFactuur(factuur)}
+                          className="inline-flex items-center gap-1 text-[11px] text-[#6B6B66] hover:text-[#1A535C] transition-colors"
+                          title={`${bijlageCounts.get(factuur.id)} bijlage(n)`}
+                        >
+                          <Paperclip className="h-3.5 w-3.5" />
+                          <span className="font-mono tabular-nums">{bijlageCounts.get(factuur.id)}</span>
+                        </button>
+                      )}
                     </td>
                     <td className="py-3.5 pr-4 hidden md:table-cell">
                       <DropdownMenu>

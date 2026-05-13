@@ -63,6 +63,7 @@ import {
   ClipboardList,
   RefreshCw,
   ClipboardCheck,
+  Paperclip,
 } from 'lucide-react'
 import {
   getKlanten,
@@ -109,6 +110,7 @@ import { cn, formatCurrency, formatDate } from '@/lib/utils'
 import { factuurBetaalTokenExpiry } from '@/lib/tokenExpiry'
 import { logger } from '../../utils/logger'
 import { KlantStatusWarning } from '@/components/shared/KlantStatusWarning'
+import { FactuurBijlagenSectie } from '@/components/invoices/FactuurBijlagenSectie'
 import { useUnsavedWarning } from '@/hooks/useUnsavedWarning'
 import { AuditLogPanel } from '@/components/shared/AuditLogPanel'
 import { confirm } from '@/components/shared/ConfirmDialog'
@@ -1936,6 +1938,28 @@ export function FactuurEditor() {
               )}
             </CardContent>
           </Card>
+
+          {/* Bijlagen */}
+          {existingFactuur?.id && existingFactuur?.organisatie_id ? (
+            <FactuurBijlagenSectie
+              factuurId={existingFactuur.id}
+              organisatieId={existingFactuur.organisatie_id}
+            />
+          ) : (
+            <Card className="bg-[#F8F7F5] border-sand">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium flex items-center gap-2 text-petrol">
+                  <Paperclip className="h-4 w-4" />
+                  Bijlagen
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-xs text-muted-foreground">
+                  Sla eerst de factuur op om bijlagen toe te voegen.
+                </p>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Financieel overzicht */}
           <Card className="bg-[#F8F7F5] border-sand">

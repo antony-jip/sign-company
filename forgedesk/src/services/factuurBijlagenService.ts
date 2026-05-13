@@ -126,6 +126,32 @@ export async function deleteFactuurBijlage(bijlageId: string): Promise<void> {
   })
 }
 
+export async function updateFactuurBijlageType(
+  bijlageId: string,
+  type: 'inkooporder' | 'overig',
+): Promise<void> {
+  assertId(bijlageId, 'bijlageId')
+  assertSupabase()
+  const { error } = await supabase!
+    .from('factuur_bijlagen')
+    .update({ type })
+    .eq('id', bijlageId)
+  if (error) throw error
+}
+
+export async function getFactuurBijlageCounts(): Promise<Map<string, number>> {
+  const counts = new Map<string, number>()
+  if (!isSupabaseConfigured() || !supabase) return counts
+  const { data, error } = await supabase
+    .from('factuur_bijlagen')
+    .select('factuur_id')
+  if (error) throw error
+  for (const row of (data ?? []) as { factuur_id: string }[]) {
+    counts.set(row.factuur_id, (counts.get(row.factuur_id) ?? 0) + 1)
+  }
+  return counts
+}
+
 export async function getSignedUrl(storagePath: string, expiresIn = 3600): Promise<string> {
   assertSupabase()
   const { data, error } = await supabase!.storage
