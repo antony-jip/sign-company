@@ -232,7 +232,7 @@ export function ClientsLayout() {
     fetchData()
   }
 
-  const exportHeaders = ['Bedrijfsnaam', 'Contactpersoon', 'Email', 'Telefoon', 'Adres', 'Postcode', 'Stad', 'Website', 'Debiteurennummer', 'BTW', 'Status', 'Tags']
+  const exportHeaders = ['Bedrijfsnaam', 'Contactpersoon', 'Email', 'Telefoon', 'Adres', 'Postcode', 'Stad', 'Website', 'Debiteurennummer', 'KvK', 'BTW', 'Status', 'Tags']
   function getExportRows() {
     return filteredKlanten.map((k) => ({
       Bedrijfsnaam: k.bedrijfsnaam,
@@ -244,6 +244,7 @@ export function ClientsLayout() {
       Stad: k.stad,
       Website: k.website,
       Debiteurennummer: k.debiteurennummer,
+      KvK: k.kvk_nummer,
       BTW: k.btw_nummer,
       Status: k.status,
       Tags: k.tags.join(', '),
