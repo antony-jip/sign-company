@@ -128,6 +128,7 @@ import { getFase } from '@/utils/projectFases'
 import { PortaalCompactBlock } from './cockpit/PortaalCompactBlock'
 import { ActiviteitCard } from './cockpit/ActiviteitCard'
 import { KlantCard } from './cockpit/KlantCard'
+import { ProjectMailComposer, type ProjectMailComposerHandle } from './ProjectMailComposer'
 import { ActiesCard } from './cockpit/ActiesCard'
 import { confirm } from '@/components/shared/ConfirmDialog'
 import { TaskChecklistView } from './cockpit/TaskChecklistView'
@@ -219,6 +220,17 @@ export function ProjectDetail() {
   const { offertePrefix, offerteGeldigheidDagen, standaardBtw, bedrijfsnaam, primaireKleur, emailHandtekening } = useAppSettings()
   const { config: sidebarConfig } = useProjectSidebarConfig()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const scrollAreaRef = useRef<HTMLDivElement>(null)
+  const mailComposerRef = useRef<ProjectMailComposerHandle>(null)
+  const [mailComposerOpen, setMailComposerOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+  useEffect(() => {
+    const el = scrollAreaRef.current
+    if (!el) return
+    const onScroll = () => setScrolled(el.scrollTop > 48)
+    el.addEventListener('scroll', onScroll, { passive: true })
+    return () => el.removeEventListener('scroll', onScroll)
+  }, [])
   const [activeTab, setActiveTab] = useState<ProjectTab>(() => {
     const tabParam = new URLSearchParams(window.location.search).get('tab')
     return (['overzicht', 'werkbon', 'financieel', 'notities'].includes(tabParam || '') ? tabParam : 'overzicht') as ProjectTab
@@ -889,7 +901,7 @@ export function ProjectDetail() {
   const fase = getFase(project.status)
 
   return (
-    <div className="-m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 h-[calc(100vh-56px)] flex flex-col bg-[#F8F7F5]">
+    <div className="relative -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 h-[calc(100vh-56px)] flex flex-col bg-[#F8F7F5]">
 
       {/* ── Hidden file inputs ── */}
       <input
@@ -938,8 +950,11 @@ export function ProjectDetail() {
         </label>
       </div>
 
-      {/* ══════════ STICKY HEADER + TABS ══════════ */}
-      <div className="sticky top-0 z-10 bg-[#F8F7F5]/95 backdrop-blur-md px-8 pt-4 flex-shrink-0">
+      {/* ══════════ SCROLL AREA ══════════ */}
+      <div ref={scrollAreaRef} className="flex-1 overflow-y-auto">
+
+      {/* ══════════ HEADER + TABS ══════════ */}
+      <div className="bg-[#F8F7F5] px-8 pt-4">
         <div className="flex items-start justify-between gap-6">
           <div className="flex items-start gap-3 min-w-0 flex-1">
             {/* Back-button ghost */}
@@ -1044,66 +1059,10 @@ export function ProjectDetail() {
             </div>
           </div>
 
-          {/* Right: CTA + menu */}
-          <div className="flex items-center gap-2 flex-shrink-0">
-            {/* Offerte CTA — petrol primary met flame-dot */}
-            {(() => {
-              const activeOfferte = projectOffertes.find(o => !['afgewezen', 'verlopen', 'gefactureerd'].includes(o.status)) || projectOffertes[0]
-              if (!activeOfferte) {
-                return (
-                  <button onClick={openNieuweOfferte} className="btn-primary-flame">
-                    <Pencil className="h-3.5 w-3.5" />
-                    Offerte maken
-                  </button>
-                )
-              }
-              return (
-                <button
-                  onClick={() => navigate(`/offertes/${activeOfferte.id}/bewerken`, { state: { from: location.pathname } })}
-                  className="btn-primary-flame"
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                  Offerte bewerken
-                </button>
-              )
-            })()}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="h-9 w-9 rounded-lg border border-[#EBEBEB] bg-white flex items-center justify-center text-[#6B6B66] hover:bg-[var(--cream-bg)] hover:text-[#1A1A1A] transition-colors">
-                  <MoreHorizontal className="h-4 w-4" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={openKopieDialog}>
-                  <Copy className="mr-2 h-3.5 w-3.5" />
-                  Kopiëren
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleAiAnalysis}>
-                  <Sparkles className="mr-2 h-3.5 w-3.5" />
-                  AI Analyse
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={async () => {
-                  try {
-                    const oudeStatus = project.status
-                    const updated = await updateProject(id!, { status: 'afgerond' })
-                    setProject(updated)
-                    if (user?.id) {
-                      const naam = medewerkers.find(m => m.user_id === user.id)?.naam ?? user.email ?? ''
-                      logWijziging({ userId: user.id, entityType: 'project', entityId: id!, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: oudeStatus, nieuweWaarde: 'afgerond' })
-                    }
-                    toast.success('Project gearchiveerd')
-                  } catch (err) { logger.error('Kon project niet archiveren:', err); toast.error('Kon project niet archiveren') }
-                }}>
-                  <CheckCircle2 className="mr-2 h-3.5 w-3.5" />
-                  Archiveren
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
         </div>
 
-        {/* TAB BAR — amber underline */}
-        <div className="flex items-center gap-7 border-b border-[#EBEBEB] mt-4">
+        {/* TAB BAR — amber underline, sticky binnen scroll-area */}
+        <div className="flex items-center gap-7 border-b border-[#EBEBEB] mt-4 sticky top-0 z-10 bg-[#F8F7F5]">
         {([
           { key: 'overzicht' as ProjectTab, label: 'Overzicht', count: 0 },
           { key: 'werkbon' as ProjectTab, label: 'Werkbon', count: projectWerkbonnen.length },
@@ -1134,11 +1093,25 @@ export function ProjectDetail() {
 
       {/* ══════════ OVERZICHT TAB ══════════ */}
       {activeTab === 'overzicht' && (
-      <div className="flex-1 overflow-y-auto">
+      <div>
       <div className="flex flex-col lg:flex-row gap-8 px-8 py-8">
 
         {/* ── Left column (65%) ── */}
         <div className="flex-1 min-w-0 space-y-6">
+
+          {/* Mail-composer (inline, opens when "Mail contactpersoon" geklikt) */}
+          <ProjectMailComposer
+            ref={mailComposerRef}
+            project={project}
+            klant={klant}
+            contactpersoon={project.contactpersoon_id
+              ? gemergedeContactpersonen.find((c) => c.id === project.contactpersoon_id) || null
+              : null}
+            userId={user?.id}
+            medewerkerNaam={medewerkers.find((m) => m.user_id === user?.id)?.naam}
+            open={mailComposerOpen}
+            onOpenChange={setMailComposerOpen}
+          />
 
           {/* Fase indicator */}
           <ProjectFaseBar
@@ -1285,6 +1258,10 @@ export function ProjectDetail() {
                 const updated = await updateProject(id!, { contactpersoon_id: cp.id })
                 setProject(updated)
               }}
+              onMail={() => {
+                setMailComposerOpen(true)
+                setTimeout(() => mailComposerRef.current?.scrollIntoView(), 80)
+              }}
             />
           )}
 
@@ -1364,7 +1341,7 @@ export function ProjectDetail() {
 
       {/* ══════════ WERKBON TAB ══════════ */}
       {activeTab === 'werkbon' && (
-      <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6">
+      <div className="px-8 py-6 space-y-6">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold text-[#1A1A1A] tracking-[-0.3px]">Werkbonnen</h2>
           <button
@@ -1431,7 +1408,7 @@ export function ProjectDetail() {
 
       {/* ══════════ FINANCIEEL TAB ══════════ */}
       {activeTab === 'financieel' && (
-      <div className="flex-1 overflow-y-auto px-8 py-6 space-y-8">
+      <div className="px-8 py-6 space-y-8">
         {/* Totalen overzicht */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
@@ -1649,7 +1626,7 @@ export function ProjectDetail() {
 
       {/* ══════════ NOTITIES TAB ══════════ */}
       {activeTab === 'notities' && (
-      <div className="flex-1 overflow-y-auto px-8 py-6">
+      <div className="px-8 py-6">
         <div className="max-w-2xl">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold text-[#1A1A1A] tracking-[-0.3px]">Notities</h2>
@@ -1676,6 +1653,81 @@ export function ProjectDetail() {
         </div>
       </div>
       )}
+
+      </div>
+      {/* ══════════ /SCROLL AREA ══════════ */}
+
+      {/* ══════════ FLOATING ACTIONS (top-right, glass on scroll) ══════════ */}
+      <div
+        className={cn(
+          "absolute top-4 right-6 z-30 flex items-center gap-2 rounded-xl transition-all",
+          scrolled && "bg-white/70 backdrop-blur-md border border-[#EBEBEB]/60 shadow-[0_2px_8px_rgba(0,0,0,0.06)] px-2 py-1.5"
+        )}
+      >
+        {(() => {
+          const activeOfferte = projectOffertes.find(o => !['afgewezen', 'verlopen', 'gefactureerd'].includes(o.status)) || projectOffertes[0]
+          if (!activeOfferte) {
+            return (
+              <button onClick={openNieuweOfferte} className="btn-primary-flame">
+                <Pencil className="h-3.5 w-3.5" />
+                Offerte maken
+              </button>
+            )
+          }
+          const isGefactureerd = !!activeOfferte.geconverteerd_naar_factuur_id
+          return (
+            <>
+              <button
+                onClick={() => navigate(`/offertes/${activeOfferte.id}/bewerken`, { state: { from: location.pathname } })}
+                className="btn-primary-flame"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                Offerte bewerken
+              </button>
+              <button
+                onClick={() => handleCreateFactuurFromOfferte(activeOfferte)}
+                className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-[#1A535C]/30 bg-white text-[#1A535C] hover:bg-[#1A535C] hover:text-white transition-colors text-[13px] font-medium"
+                title={isGefactureerd ? `Factuur openen` : 'Factuur maken van deze offerte'}
+              >
+                <Receipt className="h-3.5 w-3.5" />
+                {isGefactureerd ? 'Factuur' : 'Maak factuur'}
+              </button>
+            </>
+          )
+        })()}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="h-9 w-9 rounded-lg border border-[#EBEBEB] bg-white flex items-center justify-center text-[#6B6B66] hover:bg-[var(--cream-bg)] hover:text-[#1A1A1A] transition-colors">
+              <MoreHorizontal className="h-4 w-4" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={openKopieDialog}>
+              <Copy className="mr-2 h-3.5 w-3.5" />
+              Kopiëren
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleAiAnalysis}>
+              <Sparkles className="mr-2 h-3.5 w-3.5" />
+              AI Analyse
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={async () => {
+              try {
+                const oudeStatus = project.status
+                const updated = await updateProject(id!, { status: 'afgerond' })
+                setProject(updated)
+                if (user?.id) {
+                  const naam = medewerkers.find(m => m.user_id === user.id)?.naam ?? user.email ?? ''
+                  logWijziging({ userId: user.id, entityType: 'project', entityId: id!, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: oudeStatus, nieuweWaarde: 'afgerond' })
+                }
+                toast.success('Project gearchiveerd')
+              } catch (err) { logger.error('Kon project niet archiveren:', err); toast.error('Kon project niet archiveren') }
+            }}>
+              <CheckCircle2 className="mr-2 h-3.5 w-3.5" />
+              Archiveren
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
 
       {/* ══════════ DIALOGS (shared across all tabs) ══════════ */}
 

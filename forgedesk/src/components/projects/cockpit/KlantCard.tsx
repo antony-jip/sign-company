@@ -13,13 +13,14 @@ interface KlantCardProps {
   contactpersonen: Contactpersoon[]
   onContactpersoonChange: (cpId: string | null) => Promise<void>
   onContactpersoonAdd: (cp: Contactpersoon) => Promise<void>
+  onMail?: () => void
 }
 
 function getInitial(name?: string | null): string {
   return (name || '?').trim().charAt(0).toUpperCase() || '?'
 }
 
-export function KlantCard({ klant, project, contactpersonen, onContactpersoonChange, onContactpersoonAdd }: KlantCardProps) {
+export function KlantCard({ klant, project, contactpersonen, onContactpersoonChange, onContactpersoonAdd, onMail }: KlantCardProps) {
   const { navigateWithTab } = useNavigateWithTab()
   const [showNieuwCp, setShowNieuwCp] = useState(false)
   const [nieuwCpNaam, setNieuwCpNaam] = useState('')
@@ -40,6 +41,10 @@ export function KlantCard({ klant, project, contactpersonen, onContactpersoonCha
 
   const handleMail = () => {
     if (!displayEmail) return
+    if (onMail) {
+      onMail()
+      return
+    }
     navigateWithTab({
       path: `/email/compose?to=${encodeURIComponent(displayEmail)}`,
       label: 'Nieuwe email',
