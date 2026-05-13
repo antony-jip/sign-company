@@ -135,7 +135,6 @@ import { TaskChecklistView } from './cockpit/TaskChecklistView'
 import { BriefingCard } from './cockpit/BriefingCard'
 import { TakenOfferteGrid } from './cockpit/TakenOfferteGrid'
 import { ProjectFaseBar } from './cockpit/ProjectFaseBar'
-import { MontageSection } from './cockpit/MontageSection'
 import { BestandenSection } from './cockpit/BestandenSection'
 import { ActiviteitFeed, buildActivityFeed, type ActivityEvent } from './cockpit/ActiviteitFeed'
 const PdfPreviewDialog = React.lazy(() => import('@/components/shared/PdfPreviewDialog').then(m => ({ default: m.PdfPreviewDialog })))
@@ -975,7 +974,7 @@ export function ProjectDetail() {
                       aria-label="Status wijzigen"
                     >
                       {statusLabels[project.status] || project.status}
-                      <ChevronDown className="h-3 w-3 -mr-1 opacity-0 group-hover:opacity-60 transition-opacity" />
+                      <ChevronDown className="h-2.5 w-2.5 -mr-1 opacity-0 group-hover:opacity-60 transition-opacity" />
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start" className="w-44">

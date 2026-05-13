@@ -172,7 +172,7 @@ export function PortaalPreviewCard({ projectId, klant, offertes, bestanden, foto
                     {item.kind === 'offerte' ? (
                       <>
                         <p className={`text-[13px] truncate ${isPrimary ? 'font-semibold text-[#1A1A1A]' : 'text-[#1A1A1A]'}`}>
-                          Offerte {item.titel}
+                          {/^offerte\b/i.test(item.titel) ? item.titel : `Offerte ${item.titel}`}
                         </p>
                         <p className="font-mono text-[11px] text-[#9B9B95] truncate">
                           {item.nummer} · {item.status}
@@ -211,8 +211,7 @@ export function PortaalPreviewCard({ projectId, klant, offertes, bestanden, foto
         <button
           onClick={handleActiveer}
           disabled={!heeftItems || activating}
-          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-[13px] font-semibold text-white transition-all hover:-translate-y-px disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-y-0"
-          style={{ background: heeftItems ? 'var(--lavender-text)' : '#C0BDB8' }}
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-[13px] font-semibold text-white bg-[var(--lavender-text)] hover:brightness-110 transition-all hover:-translate-y-px disabled:bg-[#C0BDB8] disabled:cursor-not-allowed disabled:translate-y-0 disabled:hover:brightness-100"
         >
           <Send className="h-3.5 w-3.5" />
           {activating ? 'Activeren…' : 'Activeer portaal'}

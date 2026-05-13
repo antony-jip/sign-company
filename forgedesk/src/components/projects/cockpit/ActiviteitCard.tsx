@@ -117,7 +117,7 @@ export function ActiviteitCard({ events }: ActiviteitCardProps) {
           return (
             <div
               key={event.id}
-              className="flex items-start gap-3 px-2 py-2 rounded-lg hover:bg-[var(--cream-bg)] transition-colors"
+              className="flex items-start gap-3 px-2 py-2 rounded-lg hover:bg-[#FAFAF8] transition-colors"
             >
               <div
                 className="flex-shrink-0 h-[26px] w-[26px] rounded-full flex items-center justify-center mt-0.5"

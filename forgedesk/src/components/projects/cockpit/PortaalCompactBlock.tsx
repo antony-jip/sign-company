@@ -7,7 +7,7 @@ import {
   Bold, Italic, Underline, List, Link2, FileCheck,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { getPortaalByProject, getPortaalItems, createPortaalItem, getOffertesByProject, getFacturenByProject, createPortaal } from '@/services/supabaseService'
+import { getPortaalByProject, getPortaalItems, createPortaalItem, getOffertesByProject, getFacturenByProject } from '@/services/supabaseService'
 import { uploadFile } from '@/services/storageService'
 import { useAuth } from '@/contexts/AuthContext'
 import { offerteTokenExpiry } from '@/lib/tokenExpiry'
@@ -734,18 +734,6 @@ export function PortaalCompactBlock({ projectId }: { projectId: string }) {
     if (!collapsed && feedEndRef.current) feedEndRef.current.scrollIntoView({ behavior: 'smooth' })
   }, [items.length, collapsed])
 
-  const handleActiveerPortaal = async () => {
-    if (!user?.id) return
-    try {
-      const nieuwPortaal = await createPortaal(projectId, user.id)
-      setPortaal(nieuwPortaal)
-      setCollapsed(false)
-      toast.success('Portaal geactiveerd')
-    } catch (err) {
-      logger.error('activeerPortaal:', err)
-      toast.error('Kon portaal niet activeren')
-    }
-  }
 
   if (loading) return null
 
