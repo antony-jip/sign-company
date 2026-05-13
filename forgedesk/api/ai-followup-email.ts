@@ -26,7 +26,7 @@ Regels:
   - Of: "Laat me weten of u nog vragen heeft, dan bel ik u graag even."
 - Houd de mail kort: max 6-8 zinnen
 - Geen "Hierbij stuur ik u een herinnering" of andere saaie openers
-- Geen "Met vriendelijke groet" boilerplate — alleen de naam
+- Voor de afsluiting: als er een Handtekening is meegegeven, eindig de email met die exacte handtekening-tekst (letterlijk overnemen, inclusief eventuele "Met vriendelijke groet"-regel en naam/functie/contactgegevens). Als er geen Handtekening is, eindig met alleen de Afzender naam zonder boilerplate.
 
 Geef het resultaat als JSON:
 {
@@ -48,6 +48,7 @@ interface FollowUpContext {
   status: string
   bedrijfsnaam_afzender: string
   afzender_naam: string
+  email_handtekening?: string
 }
 
 async function verifyUser(req: VercelRequest): Promise<string> {
@@ -151,7 +152,7 @@ Dagen tot verlopen: ${context.dagen_tot_verlopen}
 Aantal eerdere follow-ups: ${context.aantal_eerdere_followups}
 Status: ${context.status}
 Afzender bedrijf: ${context.bedrijfsnaam_afzender}
-Afzender naam: ${context.afzender_naam}`
+Afzender naam: ${context.afzender_naam}${context.email_handtekening?.trim() ? `\nHandtekening:\n${context.email_handtekening}` : ''}`
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
