@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import {
   Send, Receipt, CreditCard, ClipboardCheck, Camera,
-  CheckCircle2, Wrench, FolderPlus,
+  CheckCircle2, Wrench, FolderPlus, ChevronDown, ChevronRight,
 } from 'lucide-react'
 import type { ActivityEvent } from './ActiviteitFeed'
+
+const STORAGE_KEY = 'doen_activiteit_collapsed'
 
 type Icon = typeof Send
 
@@ -56,6 +58,16 @@ const EXPAND_LIMIT = 20
 
 export function ActiviteitCard({ events }: ActiviteitCardProps) {
   const [showAll, setShowAll] = useState(false)
+  const [collapsed, setCollapsed] = useState(() => {
+    try { return localStorage.getItem(STORAGE_KEY) === 'true' } catch { return false }
+  })
+
+  const toggleCollapsed = () => {
+    const next = !collapsed
+    setCollapsed(next)
+    try { localStorage.setItem(STORAGE_KEY, String(next)) } catch {}
+  }
+
   const limit = showAll ? EXPAND_LIMIT : IDLE_LIMIT
   const visible = events.slice(0, limit)
   const hasMore = events.length > IDLE_LIMIT
@@ -63,7 +75,7 @@ export function ActiviteitCard({ events }: ActiviteitCardProps) {
   if (events.length === 0) {
     return (
       <div className="rounded-xl bg-[#FFFFFF] shadow-[0_1px_3px_rgba(130,100,60,0.04)] p-6">
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between">
           <h3 className="text-[11px] font-semibold text-[#6B6B66] uppercase tracking-[0.08em]">Activiteit</h3>
         </div>
         <p className="text-[12px] text-[#9B9B95] py-4 text-center">Nog geen activiteit</p>
@@ -73,16 +85,23 @@ export function ActiviteitCard({ events }: ActiviteitCardProps) {
 
   return (
     <div className="rounded-xl bg-[#FFFFFF] shadow-[0_1px_3px_rgba(130,100,60,0.04)] p-6">
-      <div className="flex items-center justify-between mb-3">
+      <div
+        className={`flex items-center justify-between cursor-pointer select-none group ${collapsed ? '' : 'mb-3'}`}
+        onClick={toggleCollapsed}
+      >
         <div className="flex items-center gap-2">
+          {collapsed
+            ? <ChevronRight className="h-3.5 w-3.5 text-[#9B9B95] group-hover:text-[#1A1A1A] transition-colors" />
+            : <ChevronDown className="h-3.5 w-3.5 text-[#9B9B95] group-hover:text-[#1A1A1A] transition-colors" />
+          }
           <h3 className="text-[11px] font-semibold text-[#6B6B66] uppercase tracking-[0.08em]">Activiteit</h3>
           <span className="font-mono text-[10px] font-medium bg-[var(--cream-bg)] text-[var(--cream-text)] rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
             {events.length}
           </span>
         </div>
-        {hasMore && (
+        {!collapsed && hasMore && (
           <button
-            onClick={() => setShowAll(v => !v)}
+            onClick={(e) => { e.stopPropagation(); setShowAll(v => !v) }}
             className="text-[12px] text-[#6B6B66] hover:text-[#1A1A1A] transition-colors"
           >
             {showAll ? 'Toon minder' : 'Alles bekijken'}
@@ -90,6 +109,7 @@ export function ActiviteitCard({ events }: ActiviteitCardProps) {
         )}
       </div>
 
+      {!collapsed && (
       <div className="-mx-2">
         {visible.map((event) => {
           const Icon = typeIcon[event.type]
@@ -130,6 +150,7 @@ export function ActiviteitCard({ events }: ActiviteitCardProps) {
           )
         })}
       </div>
+      )}
     </div>
   )
 }
