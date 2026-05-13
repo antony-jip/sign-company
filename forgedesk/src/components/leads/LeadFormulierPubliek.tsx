@@ -100,7 +100,7 @@ export function LeadFormulierPubliek() {
             stad: '',
             land: 'Nederland',
             website: '',
-            kvk_nummer: '',
+            debiteurennummer: '',
             btw_nummer: '',
             status: 'prospect',
             tags: ['lead-capture'],

@@ -79,7 +79,7 @@ const KOLOM_HERKENNING: Record<string, string> = {
   'city': 'stad', 'stad': 'stad', 'plaats': 'stad', 'woonplaats': 'stad', 'location': 'stad',
   'country': 'land', 'land': 'land',
   'website': 'website', 'url': 'website',
-  'coc': 'kvk_nummer', 'kvk': 'kvk_nummer', 'kvk_nummer': 'kvk_nummer', 'kvk nummer': 'kvk_nummer',
+  'coc': 'debiteurennummer', 'kvk': 'debiteurennummer', 'kvk_nummer': 'debiteurennummer', 'kvk nummer': 'debiteurennummer', 'kvknummer': 'debiteurennummer', 'debiteurennummer': 'debiteurennummer', 'debiteur': 'debiteurennummer', 'deb_nr': 'debiteurennummer', 'deb nr': 'debiteurennummer',
   'vat': 'btw_nummer', 'btw': 'btw_nummer', 'btw_nummer': 'btw_nummer', 'btw nummer': 'btw_nummer',
   // Projecten
   'project': 'naam', 'projectnaam': 'naam', 'project name': 'naam',
@@ -587,7 +587,7 @@ function mapKlant(row: Record<string, string>, userId: string, importBron: strin
     stad: getField(row, 'city', 'stad', 'Stad', 'location', 'Location', 'plaats', 'Plaats', 'woonplaats', 'Woonplaats'),
     land: getField(row, 'country', 'land', 'Land', 'Country') || 'Nederland',
     website: getField(row, 'website', 'Website', 'url', 'URL'),
-    kvk_nummer: getField(row, 'COC', 'coc', 'kvk', 'kvk_nummer', 'KVK', 'kvk nummer', 'KVK nummer'),
+    debiteurennummer: getField(row, 'debiteurennummer', 'Debiteurennummer', 'deb_nr', 'deb nr', 'debiteur', 'COC', 'coc', 'kvk', 'kvk_nummer', 'KVK', 'kvk nummer', 'KVK nummer', 'kvknummer'),
     btw_nummer: getField(row, 'VAT', 'vat', 'btw', 'btw_nummer', 'BTW', 'btw nummer', 'BTW nummer'),
     status: 'actief' as const,
     tags: [] as string[],

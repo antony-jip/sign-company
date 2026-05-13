@@ -22,10 +22,9 @@ import { createKlant, updateKlant } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import { toast } from 'sonner'
 import { Building2, Loader2 } from 'lucide-react'
-import type { Klant, KvkResultaat } from '@/types'
+import type { Klant } from '@/types'
 import { klantStatusConfig } from '@/types'
 import { getAllKlantLabels } from '@/services/supabaseService'
-import { KvkZoekVeld } from '@/components/shared/KvkZoekVeld'
 import supabase from '@/services/supabaseClient'
 
 interface AddEditClientProps {
@@ -52,7 +51,7 @@ interface FormData {
   postcode: string
   stad: string
   website: string
-  kvk_nummer: string
+  debiteurennummer: string
   btw_nummer: string
   status: 'actief' | 'inactief' | 'prospect'
   tags: string
@@ -73,7 +72,7 @@ const initialFormData: FormData = {
   postcode: '',
   stad: '',
   website: '',
-  kvk_nummer: '',
+  debiteurennummer: '',
   btw_nummer: '',
   status: 'actief',
   tags: '',
@@ -141,7 +140,6 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
         setFormData((prev: FormData) => ({
           ...prev,
           bedrijfsnaam: profiel.naam || prev.bedrijfsnaam,
-          kvk_nummer: profiel.kvkNummer,
           adres: adresStr || prev.adres,
           postcode: profiel.adres.postcode || prev.postcode,
           stad: profiel.adres.stad || prev.stad,
@@ -152,7 +150,6 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
         setFormData((prev: FormData) => ({
           ...prev,
           bedrijfsnaam: result.naam || prev.bedrijfsnaam,
-          kvk_nummer: result.kvkNummer,
           adres: result.adres.straat || prev.adres,
           stad: result.adres.plaats || prev.stad,
           postcode: result.postcode || prev.postcode,
@@ -163,7 +160,6 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
       setFormData((prev: FormData) => ({
         ...prev,
         bedrijfsnaam: result.naam || prev.bedrijfsnaam,
-        kvk_nummer: result.kvkNummer,
         adres: result.adres.straat || prev.adres,
         stad: result.adres.plaats || prev.stad,
         postcode: result.postcode || prev.postcode,
@@ -204,7 +200,7 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
         postcode: klant.postcode,
         stad: klant.stad,
         website: klant.website,
-        kvk_nummer: klant.kvk_nummer,
+        debiteurennummer: klant.debiteurennummer,
         btw_nummer: klant.btw_nummer,
         status: klant.status,
         tags: klant.tags.join(', '),
@@ -273,7 +269,7 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
         stad: formData.stad.trim(),
         land: 'Nederland',
         website: formData.website.trim(),
-        kvk_nummer: formData.kvk_nummer.trim(),
+        debiteurennummer: formData.debiteurennummer.trim(),
         btw_nummer: formData.btw_nummer.trim(),
         status: formData.status,
         tags: tagsArray,
@@ -591,23 +587,17 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
             </div>
           </div>
 
-          {/* Row 5: KvK + BTW */}
+          {/* Row 5: Debiteurennummer + BTW */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <KvkZoekVeld
-              kvkNummer={formData.kvk_nummer}
-              onKvkChange={(v) => handleChange('kvk_nummer', v)}
-              onResultSelect={(r: KvkResultaat) => {
-                setFormData((prev) => ({
-                  ...prev,
-                  bedrijfsnaam: r.bedrijfsnaam || prev.bedrijfsnaam,
-                  adres: r.adres || prev.adres,
-                  postcode: r.postcode || prev.postcode,
-                  stad: r.stad || prev.stad,
-                  btw_nummer: r.btw_nummer || prev.btw_nummer,
-                  kvk_nummer: r.kvk_nummer,
-                }))
-              }}
-            />
+            <div className="space-y-2">
+              <Label htmlFor="debiteurennummer">Debiteurennummer</Label>
+              <Input
+                id="debiteurennummer"
+                value={formData.debiteurennummer}
+                onChange={(e) => handleChange('debiteurennummer', e.target.value)}
+                placeholder="Bijv. 26650"
+              />
+            </div>
             <div className="space-y-2">
               <Label htmlFor="btw_nummer">BTW Nummer</Label>
               <Input

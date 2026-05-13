@@ -794,13 +794,13 @@ export function ClientProfile() {
                 <p className="text-sm font-medium font-mono text-foreground">{klant.btw_nummer}</p>
               </div>
             )}
-            {klant.kvk_nummer && (
+            {klant.debiteurennummer && (
               <div>
-                <p className="text-xs text-muted-foreground">KvK</p>
-                <p className="text-sm font-medium font-mono text-foreground">{klant.kvk_nummer}</p>
+                <p className="text-xs text-muted-foreground">Debiteurennummer</p>
+                <p className="text-sm font-medium font-mono text-foreground">{klant.debiteurennummer}</p>
               </div>
             )}
-            {!klant.btw_nummer && !klant.kvk_nummer && (
+            {!klant.btw_nummer && !klant.debiteurennummer && (
               <p className="text-sm text-muted-foreground">Geen financiele gegevens</p>
             )}
             <button
@@ -1578,7 +1578,7 @@ export function ClientProfile() {
                     { Veld: 'Email', Waarde: klant.email },
                     { Veld: 'Telefoon', Waarde: klant.telefoon },
                     { Veld: 'Adres', Waarde: [klant.adres, klant.postcode, klant.stad].filter(Boolean).join(', ') },
-                    { Veld: 'KvK', Waarde: klant.kvk_nummer },
+                    { Veld: 'Debiteurennummer', Waarde: klant.debiteurennummer },
                     { Veld: 'BTW', Waarde: klant.btw_nummer },
                     { Veld: 'Status', Waarde: klant.status },
                     { Veld: 'Tags', Waarde: klant.tags.join(', ') },

@@ -200,7 +200,7 @@ export function EmailContextSidebar({
         email: klantForm.email, telefoon: klantForm.telefoon,
         adres: '', postcode: '', stad: '', land: 'Nederland',
         website: domain ? `www.${domain}` : '',
-        kvk_nummer: '', btw_nummer: '', status: 'actief', tags: [], notities: '',
+        debiteurennummer: '', btw_nummer: '', status: 'actief', tags: [], notities: '',
         contactpersonen: [{ id: crypto.randomUUID(), naam: klantForm.contactpersoon, functie: '', email: klantForm.email, telefoon: klantForm.telefoon, is_primair: true }],
       })
       setLinkedKlant(newKlant)

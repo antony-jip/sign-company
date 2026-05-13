@@ -115,9 +115,9 @@ export function DataImportPage() {
         </p>
         <p className="mt-2 text-xs text-muted-foreground bg-muted/50 p-3 rounded-lg italic leading-relaxed">
           &quot;Zet deze data om naar CSV met ; als scheidingsteken en deze kolommen:
-          type;bedrijfsnaam;naam;nummer;datum;bedrag;adres;postcode;plaats;telefoon;email;kvk_nummer;btw_nummer;verantwoordelijke.
+          type;bedrijfsnaam;naam;nummer;datum;bedrag;adres;postcode;plaats;telefoon;email;debiteurennummer;btw_nummer;verantwoordelijke.
           Type is: relatie, project, offerte, of factuur.
-          Bij relatie: vul bedrijfsnaam + adres/postcode/plaats/telefoon/email/kvk/btw in.
+          Bij relatie: vul bedrijfsnaam + adres/postcode/plaats/telefoon/email/debiteurennummer/btw in.
           Bij project/offerte/factuur: vul bedrijfsnaam + naam/nummer/datum/bedrag in.&quot;
         </p>
       </div>

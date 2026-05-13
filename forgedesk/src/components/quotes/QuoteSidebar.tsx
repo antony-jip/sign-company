@@ -323,9 +323,9 @@ export function QuoteSidebar({
                                   </div>
                                 )}
 
-                                {(selectedKlant.kvk_nummer || selectedKlant.btw_nummer) && (
+                                {(selectedKlant.debiteurennummer || selectedKlant.btw_nummer) && (
                                   <div className="text-[11px] font-mono space-y-0.5 pt-2" style={{ color: '#6B6B66', borderTop: '0.5px solid #EBEBEB' }}>
-                                    {selectedKlant.kvk_nummer && <p>KvK: {selectedKlant.kvk_nummer}</p>}
+                                    {selectedKlant.debiteurennummer && <p>Deb.nr: {selectedKlant.debiteurennummer}</p>}
                                     {selectedKlant.btw_nummer && <p>BTW: {selectedKlant.btw_nummer}</p>}
                                   </div>
                                 )}

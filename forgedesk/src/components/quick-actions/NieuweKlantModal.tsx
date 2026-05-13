@@ -28,7 +28,7 @@ export function NieuweKlantModal({ open, onOpenChange }: Props) {
   const [postcode, setPostcode] = useState('')
   const [stad, setStad] = useState('')
   const [website, setWebsite] = useState('')
-  const [kvkNummer, setKvkNummer] = useState('')
+  const [debiteurennummer, setDebiteurennummer] = useState('')
   const [btwNummer, setBtwNummer] = useState('')
   const [saving, setSaving] = useState(false)
   const suggestionsRef = useRef<HTMLDivElement>(null)
@@ -120,7 +120,7 @@ export function NieuweKlantModal({ open, onOpenChange }: Props) {
           stad: stad.trim(),
           land: 'Nederland',
           website: website.trim(),
-          kvk_nummer: kvkNummer.trim(),
+          debiteurennummer: debiteurennummer.trim(),
           btw_nummer: btwNummer.trim(),
           status: 'actief',
           tags: [],
@@ -268,7 +268,7 @@ export function NieuweKlantModal({ open, onOpenChange }: Props) {
                 className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors pt-0.5"
               >
                 <ChevronDown className={`h-3 w-3 transition-transform ${showExtra ? 'rotate-180' : ''}`} />
-                Meer info (adres, KVK, BTW)
+                Meer info (adres, btw)
               </button>
 
               {showExtra && (
@@ -306,15 +306,15 @@ export function NieuweKlantModal({ open, onOpenChange }: Props) {
                       />
                     </div>
                   </div>
-                  {/* KVK / BTW / Website row */}
+                  {/* Debiteurennummer / BTW / Website row */}
                   <div className="flex gap-3">
                     <div className="flex-[2] min-w-0">
-                      <label className="text-[10px] text-muted-foreground mb-1 block">KVK-nummer</label>
+                      <label className="text-[10px] text-muted-foreground mb-1 block">Debiteurennummer</label>
                       <input
                         type="text"
-                        value={kvkNummer}
-                        onChange={e => setKvkNummer(e.target.value)}
-                        placeholder="12345678"
+                        value={debiteurennummer}
+                        onChange={e => setDebiteurennummer(e.target.value)}
+                        placeholder="Bijv. 26650"
                         className={`${inputClass} font-mono`}
                       />
                     </div>
