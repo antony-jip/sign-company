@@ -173,9 +173,11 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     pipelineStappen: settings.pipeline_stappen || [],
     // Handtekening-velden staan sinds migratie 091 op profiles (per-user).
     // Fallback op settings voor rijen die nog niet gebackfilld zijn.
-    emailHandtekening: profile?.email_handtekening ?? settings.email_handtekening ?? '',
-    handtekeningAfbeelding: profile?.handtekening_afbeelding ?? settings.handtekening_afbeelding ?? '',
-    handtekeningAfbeeldingGrootte: profile?.handtekening_afbeelding_grootte ?? settings.handtekening_afbeelding_grootte ?? 64,
+    // `||` ipv `??` zodat een lege string (DEFAULT '' uit migratie 091) ook
+    // doorvalt naar de oude org-brede waarde in app_settings.
+    emailHandtekening: (profile?.email_handtekening?.trim() ? profile.email_handtekening : null) || settings.email_handtekening || '',
+    handtekeningAfbeelding: profile?.handtekening_afbeelding || settings.handtekening_afbeelding || '',
+    handtekeningAfbeeldingGrootte: profile?.handtekening_afbeelding_grootte || settings.handtekening_afbeelding_grootte || 64,
     primaireKleur: settings.primaire_kleur || '#1A535C',
     secundaireKleur: settings.secundaire_kleur || '#7c3aed',
     toonConversieRate: settings.toon_conversie_rate ?? true,

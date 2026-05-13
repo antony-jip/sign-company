@@ -594,10 +594,10 @@ export function EmailTab() {
       // Fallback op app_settings voor profiles die nog geen waarde hebben.
       const userProfile = await getProfile(user.id)
       const data = await getAppSettings(user.id)
-      setEmailHandtekening(userProfile?.email_handtekening ?? data.email_handtekening ?? '')
-      setAfzenderNaam(userProfile?.afzender_naam ?? data.afzender_naam ?? '')
-      setHandtekeningAfbeelding(userProfile?.handtekening_afbeelding ?? data.handtekening_afbeelding ?? '')
-      setAfbeeldingGrootte(userProfile?.handtekening_afbeelding_grootte ?? data.handtekening_afbeelding_grootte ?? 64)
+      setEmailHandtekening((userProfile?.email_handtekening?.trim() ? userProfile.email_handtekening : null) || data.email_handtekening || '')
+      setAfzenderNaam((userProfile?.afzender_naam?.trim() ? userProfile.afzender_naam : null) || data.afzender_naam || '')
+      setHandtekeningAfbeelding(userProfile?.handtekening_afbeelding || data.handtekening_afbeelding || '')
+      setAfbeeldingGrootte(userProfile?.handtekening_afbeelding_grootte || data.handtekening_afbeelding_grootte || 64)
     } catch (err) {
       logger.error('Fout bij laden e-mailinstellingen:', err)
     } finally {
