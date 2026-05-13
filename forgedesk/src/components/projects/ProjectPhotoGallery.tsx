@@ -158,7 +158,7 @@ export function ProjectPhotoGallery({
 
   return (
     <>
-      <div className="bg-[#FFFFFF] rounded-lg p-4 border border-[#EBEBEB]">
+      <div className="bg-[#FFFFFF] rounded-xl p-6 shadow-[0_1px_3px_rgba(130,100,60,0.04)]">
           {/* Header */}
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-xs font-semibold text-[#1A1A1A] uppercase tracking-wider">
