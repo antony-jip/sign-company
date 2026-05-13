@@ -17,16 +17,15 @@ interface ActieTile {
   sublabel: string
   icon: Icon
   color: string
-  hint: string
   onClick: () => void
 }
 
 export function ActiesCard({ onOfferte, onWerkbon, onMontage, onFactuur, onPakbon, onBevestiging }: ActiesCardProps) {
   const tiles: ActieTile[] = [
-    { key: 'offerte',  label: 'Offerte',  sublabel: 'Stuur een prijsopgave', icon: Receipt,         color: '#F15025', hint: 'O', onClick: onOfferte },
-    { key: 'werkbon',  label: 'Werkbon',  sublabel: 'Voor de monteur',       icon: ClipboardCheck,  color: '#C44830', hint: 'W', onClick: onWerkbon },
-    { key: 'montage',  label: 'Montage',  sublabel: 'Plan de uitvoering',    icon: Wrench,          color: '#9A5A48', hint: 'M', onClick: onMontage },
-    { key: 'factuur',  label: 'Factuur',  sublabel: 'Verstuur de rekening',  icon: CreditCard,      color: '#2D6B48', hint: 'F', onClick: onFactuur },
+    { key: 'offerte',  label: 'Offerte',  sublabel: 'Stuur een prijsopgave', icon: Receipt,         color: '#F15025', onClick: onOfferte },
+    { key: 'werkbon',  label: 'Werkbon',  sublabel: 'Voor de monteur',       icon: ClipboardCheck,  color: '#C44830', onClick: onWerkbon },
+    { key: 'montage',  label: 'Montage',  sublabel: 'Plan de uitvoering',    icon: Wrench,          color: '#9A5A48', onClick: onMontage },
+    { key: 'factuur',  label: 'Factuur',  sublabel: 'Verstuur de rekening',  icon: CreditCard,      color: '#2D6B48', onClick: onFactuur },
   ]
 
   return (
@@ -45,13 +44,8 @@ export function ActiesCard({ onOfferte, onWerkbon, onMontage, onFactuur, onPakbo
               onClick={tile.onClick}
               className="acties-tile group relative overflow-hidden rounded-lg bg-[var(--surface-soft)] hover:bg-white p-3 text-left transition-all hover:-translate-y-px hover:shadow-[0_2px_6px_rgba(130,100,60,0.08)]"
             >
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex items-center justify-center h-6 w-6 rounded-md" style={{ background: 'rgba(255,255,255,0.6)' }}>
-                  <Icon className="h-3.5 w-3.5" style={{ color: tile.color }} />
-                </div>
-                <span className="font-mono text-[10px] font-semibold text-[#9B9B95] bg-white border border-[#EBEBEB] rounded px-1 py-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                  {tile.hint}
-                </span>
+              <div className="flex items-center justify-center h-6 w-6 rounded-md" style={{ background: 'rgba(255,255,255,0.6)' }}>
+                <Icon className="h-3.5 w-3.5" style={{ color: tile.color }} />
               </div>
               <div className="mt-2.5">
                 <p className="text-[14px] font-semibold text-[#1A1A1A] leading-tight">{tile.label}</p>

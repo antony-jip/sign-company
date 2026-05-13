@@ -1014,7 +1014,7 @@ export function ProjectDetail() {
               const activeOfferte = projectOffertes.find(o => !['afgewezen', 'verlopen', 'gefactureerd'].includes(o.status)) || projectOffertes[0]
               if (!activeOfferte) {
                 return (
-                  <button onClick={openNieuweOfferte} className="btn-primary-flame-dot">
+                  <button onClick={openNieuweOfferte} className="btn-primary-flame">
                     <Pencil className="h-3.5 w-3.5" />
                     Offerte maken
                   </button>
@@ -1023,7 +1023,7 @@ export function ProjectDetail() {
               return (
                 <button
                   onClick={() => navigate(`/offertes/${activeOfferte.id}/bewerken`, { state: { from: location.pathname } })}
-                  className="btn-primary-flame-dot"
+                  className="btn-primary-flame"
                 >
                   <Pencil className="h-3.5 w-3.5" />
                   Offerte bewerken
