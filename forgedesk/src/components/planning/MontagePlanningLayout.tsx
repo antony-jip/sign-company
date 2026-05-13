@@ -53,6 +53,7 @@ import {
   ArrowUpRight,
   Check,
   Flame,
+  ChevronDown,
 } from "lucide-react";
 import {
   getMontageAfspraken,
@@ -75,6 +76,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { getNederlandseFeestdagen, isFeestdag } from "@/utils/feestdagen";
 import { confirm } from '@/components/shared/ConfirmDialog';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { useAuth } from "@/contexts/AuthContext";
 import { logCreate, logWijziging } from "@/utils/auditLogger";
 import { getFase } from "@/utils/projectFases";
@@ -184,6 +186,36 @@ function getMondayOfWeek(date: Date): Date {
   d.setDate(diff);
   d.setHours(0, 0, 0, 0);
   return d;
+}
+
+function stripSeconden(t: string | null | undefined): string {
+  if (!t) return '';
+  return t.slice(0, 5);
+}
+
+function formatTijdspanne(start: string | null | undefined, eind: string | null | undefined): string {
+  const s = stripSeconden(start);
+  const e = stripSeconden(eind);
+  if (!s && !e) return '';
+  if (!e || s === e) return s;
+  if (!s) return e;
+  return `${s} – ${e}`;
+}
+
+function getDurationMinutes(start: string | null | undefined, eind: string | null | undefined): number {
+  const s = stripSeconden(start);
+  const e = stripSeconden(eind);
+  if (!s || !e || s === e) return 0;
+  const [sh, sm] = s.split(':').map(Number);
+  const [eh, em] = e.split(':').map(Number);
+  if ([sh, sm, eh, em].some((n) => isNaN(n))) return 0;
+  return Math.max(0, (eh * 60 + em) - (sh * 60 + sm));
+}
+
+function getCardMinHeight(start: string | null | undefined, eind: string | null | undefined): number {
+  const mins = getDurationMinutes(start, eind);
+  if (mins === 0) return 72;
+  return Math.min(280, Math.max(72, Math.round(mins * 1.2)));
 }
 
 function getWeekDates(monday: Date): Date[] {
@@ -311,11 +343,17 @@ export function MontagePlanningLayout() {
     writeScopeToStorage('mijn', null);
   }, []);
   const [statusFilter, setStatusFilter] = useState<Set<MontageAfspraak["status"]>>(
-    new Set(["gepland", "onderweg", "bezig", "uitgesteld"])
+    new Set(["gepland", "onderweg", "bezig", "afgerond", "uitgesteld"])
   );
   const [draggingAfspraakId, setDraggingAfspraakId] = useState<string | null>(null);
   const [draggingProjectId, setDraggingProjectId] = useState<string | null>(null);
   const [dragOverDate, setDragOverDate] = useState<string | null>(null);
+  const [nowTick, setNowTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setNowTick((t) => t + 1), 60_000);
+    return () => clearInterval(id);
+  }, []);
+  const [afrondenMenuOpen, setAfrondenMenuOpen] = useState(false);
   const [resizingId, setResizingId] = useState<string | null>(null);
   const resizeStartY = useRef(0);
   const resizeStartMinutes = useRef(0);
@@ -447,6 +485,28 @@ export function MontagePlanningLayout() {
       setSelectedMonteurState(eigenMedewerker.id);
     }
   }, [scopeMode, eigenMedewerker, selectedMonteur]);
+
+  // V-shortcut: open Afronden-menu wanneer dialog editmode + afspraak niet al afgerond
+  useEffect(() => {
+    if (!dialogOpen || !editingAfspraak) return;
+    if (formData.status === 'afgerond') return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() !== 'v') return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const target = e.target as HTMLElement | null;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return;
+      const project = projecten.find((p) => p.id === formData.project_id);
+      const blocking = project ? FASES_BLOKKEREN_AFRONDEN.includes(project.status) : false;
+      e.preventDefault();
+      if (blocking) {
+        handleAfronden();
+      } else {
+        setAfrondenMenuOpen(true);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [dialogOpen, editingAfspraak, formData.status, formData.project_id, projecten]);
 
   // All afspraken for this week (unfiltered, needed for conflict detection)
   const weekAfsprakenAll = useMemo(() => {
@@ -875,6 +935,96 @@ export function MontagePlanningLayout() {
     }
   }
 
+  async function handleAfronden() {
+    if (!editingAfspraak) return;
+
+    const ok = await confirm({
+      title: 'Montage afronden?',
+      message: 'Montage wordt op \'afgerond\' gezet. Het project blijft in dezelfde fase staan.',
+      confirmLabel: 'Afronden',
+    });
+    if (!ok) return;
+
+    const oudeStatus = formData.status;
+    const medewerkerNaam = medewerkers.find((m) => m.user_id === user?.id)?.naam ?? user?.email ?? '';
+
+    try {
+      await updateMontageAfspraak(editingAfspraak.id, { status: 'afgerond' });
+      setAfspraken((prev) => prev.map((a) => a.id === editingAfspraak.id ? { ...a, status: 'afgerond' } : a));
+
+      if (user?.id) {
+        await logWijziging({
+          userId: user.id,
+          entityType: 'montage',
+          entityId: editingAfspraak.id,
+          actie: 'status_gewijzigd',
+          medewerkerNaam,
+          veld: 'status',
+          oudeWaarde: oudeStatus,
+          nieuweWaarde: 'afgerond',
+          omschrijving: 'Afronden vanuit planning-dialog',
+        });
+      }
+
+      setDialogOpen(false);
+    } catch (err) {
+      logger.error('Fout bij afronden:', err);
+      toast.error('Kon montage niet afronden');
+    }
+  }
+
+  async function afrondenAfspraak(afspraak: MontageAfspraak, ookFactureren: boolean) {
+    const oudeMontageStatus = afspraak.status;
+    const medewerkerNaam = medewerkers.find((m) => m.user_id === user?.id)?.naam ?? user?.email ?? '';
+    const omschrijving = ookFactureren ? 'Afronden & factureren vanuit kaart' : 'Afronden vanuit kaart';
+
+    try {
+      await updateMontageAfspraak(afspraak.id, { status: 'afgerond' });
+      setAfspraken((prev) => prev.map((a) => a.id === afspraak.id ? { ...a, status: 'afgerond' } : a));
+
+      let project: Project | undefined;
+      let oudeProjectStatus: Project['status'] | undefined;
+      if (ookFactureren && afspraak.project_id) {
+        project = projecten.find((p) => p.id === afspraak.project_id);
+        if (project && !FASES_BLOKKEREN_AFRONDEN.includes(project.status)) {
+          oudeProjectStatus = project.status;
+          await updateProject(afspraak.project_id, { status: 'te-factureren' });
+          setProjecten((prev) => prev.map((p) => p.id === afspraak.project_id ? { ...p, status: 'te-factureren' as const } : p));
+        }
+      }
+
+      if (user?.id) {
+        await logWijziging({
+          userId: user.id,
+          entityType: 'montage',
+          entityId: afspraak.id,
+          actie: 'status_gewijzigd',
+          medewerkerNaam,
+          veld: 'status',
+          oudeWaarde: oudeMontageStatus,
+          nieuweWaarde: 'afgerond',
+          omschrijving,
+        });
+        if (oudeProjectStatus && afspraak.project_id) {
+          await logWijziging({
+            userId: user.id,
+            entityType: 'project',
+            entityId: afspraak.project_id,
+            actie: 'status_gewijzigd',
+            medewerkerNaam,
+            veld: 'status',
+            oudeWaarde: oudeProjectStatus,
+            nieuweWaarde: 'te-factureren',
+            omschrijving,
+          });
+        }
+      }
+    } catch (err) {
+      logger.error('Fout bij afronden vanuit kaart:', err);
+      toast.error('Kon montage niet afronden');
+    }
+  }
+
   async function handleAfrondenEnFactureren() {
     if (!editingAfspraak || !formData.project_id) return;
     const project = projecten.find((p) => p.id === formData.project_id);
@@ -1173,11 +1323,18 @@ export function MontagePlanningLayout() {
   }
 
   // ── Card with colored left border — DOEN style ──
-  function renderMontageCard(afspraak: MontageAfspraak) {
+  function renderMontageCard(afspraak: MontageAfspraak, opts?: { variant?: 'personal' | 'timegrid' }) {
     const hasConflict = conflictAfspraakIds.has(afspraak.id);
     const cfg = STATUS_CONFIG[afspraak.status];
     const isAfgerond = afspraak.status === 'afgerond';
     const isFadingOut = isAfgerond && recentlyAfgerond.has(afspraak.id);
+    const isPersonal = opts?.variant === 'personal';
+    const isTimegrid = opts?.variant === 'timegrid';
+    const isCompact = isPersonal || isTimegrid;
+    const tijdspanne = formatTijdspanne(afspraak.start_tijd, afspraak.eind_tijd);
+
+    const cardStyle: React.CSSProperties = { borderLeftColor: cfg.dot };
+    if (isPersonal) cardStyle.minHeight = `${getCardMinHeight(afspraak.start_tijd, afspraak.eind_tijd)}px`;
 
     return (
       <div
@@ -1203,48 +1360,104 @@ export function MontagePlanningLayout() {
         }}
         onDragEnd={() => { setDraggingAfspraakId(null); setDragOverDate(null); }}
         className={cn(
-          "bg-white rounded-lg border border-[#F0EFEC] border-l-[3px] px-2.5 py-2 mb-1.5 cursor-grab active:cursor-grabbing transition-all duration-700 hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] group/card relative",
+          "bg-white border border-[#F0EFEC] border-l-[3px] px-2.5 py-2 cursor-grab active:cursor-grabbing transition-all duration-200 hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] group/card relative",
+          isTimegrid ? "h-full overflow-hidden rounded-none" : "rounded-lg mb-1.5 hover:-translate-y-[1px]",
+          isAfgerond && "[background:linear-gradient(135deg,#E2F0F0_0%,#FFFFFF_70%)]",
           hasConflict && "ring-1 ring-[#F0C8BC]",
-          draggingAfspraakId === afspraak.id && "opacity-30 scale-[0.97] ring-2 ring-[#1A535C]/30",
-          isFadingOut && "opacity-0"
+          draggingAfspraakId === afspraak.id && "opacity-30 scale-[0.97] ring-2 ring-[#1A535C]/30"
         )}
-        style={{ borderLeftColor: cfg.dot }}
+        style={cardStyle}
         onClick={() => openEditDialog(afspraak)}
       >
-        <button
-          type="button"
-          onClick={(e) => { e.stopPropagation(); toggleAfgerond(afspraak); }}
-          title={isAfgerond ? 'Markeer als gepland' : 'Markeer als afgerond'}
-          aria-label={isAfgerond ? 'Markeer als gepland' : 'Markeer als afgerond'}
-          className={cn(
-            "absolute top-1 right-1 rounded-full p-0.5 transition-opacity z-10",
-            isAfgerond
-              ? 'opacity-100 text-[#2A8A8A] hover:bg-[#2A8A8A]/10'
-              : 'opacity-0 group-hover/card:opacity-100 text-[#9B9B95] hover:text-[#2A8A8A] hover:bg-[#2A8A8A]/10'
-          )}
-        >
-          <CheckCircle2 className={cn("h-3.5 w-3.5", isAfgerond && "fill-[#2A8A8A] text-white")} />
-        </button>
+        {isAfgerond ? (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); toggleAfgerond(afspraak); }}
+            title="Markeer als gepland"
+            aria-label="Markeer als gepland"
+            className="absolute top-1 right-1 rounded-full p-0.5 transition-opacity z-10 opacity-100 text-[#2A8A8A] hover:bg-[#2A8A8A]/10"
+          >
+            <CheckCircle2 className="h-3.5 w-3.5 fill-[#2A8A8A] text-white" />
+          </button>
+        ) : (() => {
+          const project = afspraak.project_id ? projecten.find((p) => p.id === afspraak.project_id) : null;
+          const projectBlocking = project ? FASES_BLOKKEREN_AFRONDEN.includes(project.status) : false;
+          return (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  onClick={(e) => e.stopPropagation()}
+                  title="Markeer als afgerond"
+                  aria-label="Markeer als afgerond"
+                  className="absolute top-1 right-1 rounded-full p-0.5 transition-opacity z-10 opacity-0 group-hover/card:opacity-100 data-[state=open]:opacity-100 text-[#9B9B95] hover:text-[#2A8A8A] hover:bg-[#2A8A8A]/10"
+                >
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-[200px]" onClick={(e) => e.stopPropagation()}>
+                <DropdownMenuItem
+                  onClick={(e) => { e.stopPropagation(); afrondenAfspraak(afspraak, false); }}
+                  className="flex flex-col items-start gap-0.5 py-1.5 data-[highlighted]:bg-[#F8F7F5] data-[highlighted]:text-[#1A1A1A]"
+                >
+                  <span className="text-[12px] font-medium">Alleen afronden</span>
+                  <span className="text-[10px] opacity-60">Project blijft in huidige fase</span>
+                </DropdownMenuItem>
+                {!projectBlocking && afspraak.project_id && (
+                  <DropdownMenuItem
+                    onClick={(e) => { e.stopPropagation(); afrondenAfspraak(afspraak, true); }}
+                    className="flex flex-col items-start gap-0.5 py-1.5 data-[highlighted]:bg-[#F8F7F5] data-[highlighted]:text-[#1A1A1A]"
+                  >
+                    <span className="text-[12px] font-medium">
+                      Afronden &amp; factureren<span className="text-[#F15025]">.</span>
+                    </span>
+                    <span className="text-[10px] opacity-60">Project naar 'Te factureren'</span>
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          );
+        })()}
         <div className={cn("min-w-0", isAfgerond && "opacity-60")}>
           <div className="flex items-start justify-between gap-1 pr-5">
             <div className={cn(
               "text-[12px] font-semibold text-[#1A1A1A] leading-tight truncate",
               isAfgerond && "line-through"
             )}>{afspraak.titel}</div>
-            {hasConflict && <AlertTriangle className="h-3 w-3 text-[#C03A18] shrink-0 mt-0.5" />}
           </div>
           {afspraak.klant_naam && (
             <div className="text-[11px] text-[#9B9B95] truncate">{afspraak.klant_naam}</div>
           )}
-          {/* Time + Location inline */}
+          {/* Time + Werkbon + Location inline (top-row, altijd zichtbaar) */}
           <div className="flex items-center gap-2 mt-1 flex-wrap">
-            {afspraak.start_tijd && (
-              <span className="inline-flex items-center gap-0.5 text-[10px] rounded px-1 py-px font-mono tabular-nums" style={{ backgroundColor: cfg.bg, color: cfg.text }}>
-                <Clock className="h-2 w-2" />
-                {afspraak.start_tijd} – {afspraak.eind_tijd}
+            {tijdspanne && (
+              <span
+                className={cn(
+                  "inline-flex items-center gap-0.5 text-[10px] rounded px-1 py-px font-mono tabular-nums",
+                  hasConflict && "ring-1 ring-[#F0C8BC]"
+                )}
+                style={{ backgroundColor: hasConflict ? '#FDE8E2' : cfg.bg, color: hasConflict ? '#C03A18' : cfg.text }}
+                title={hasConflict ? 'Overlap met andere afspraak' : undefined}
+              >
+                {hasConflict ? <AlertTriangle className="h-2 w-2" /> : <Clock className="h-2 w-2" />}
+                {tijdspanne}
               </span>
             )}
-            {afspraak.locatie && (
+            {afspraak.werkbon_id && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.open(`/werkbonnen/${afspraak.werkbon_id}`, "_blank");
+                }}
+                className="inline-flex items-center gap-0.5 text-[10px] font-mono tabular-nums text-[#6B6B66] hover:text-[#1A535C] transition-colors"
+                title={`Open werkbon ${afspraak.werkbon_nummer || ''}`}
+              >
+                <FileText className="h-2.5 w-2.5 opacity-70" />
+                {afspraak.werkbon_nummer || "WB"}
+              </button>
+            )}
+            {!isCompact && afspraak.locatie && (
               <a
                 href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(afspraak.locatie)}`}
                 target="_blank"
@@ -1257,24 +1470,10 @@ export function MontagePlanningLayout() {
               </a>
             )}
           </div>
-          {/* Monteur avatars + Werkbon inline */}
-          {(afspraak.monteurs.length > 0 || afspraak.werkbon_id) && (
+          {/* Monteur avatars (alleen in multi-monteur view, werkbon zit nu in top-row) */}
+          {!isCompact && afspraak.monteurs.length > 0 && (
             <div className="flex items-center gap-1.5 mt-1">
-              {afspraak.monteurs.length > 0 && renderMonteurAvatars(afspraak.monteurs)}
-              {afspraak.werkbon_id && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    window.open(`/werkbonnen/${afspraak.werkbon_id}`, "_blank");
-                  }}
-                  className="inline-flex items-center gap-1 text-[10px] rounded px-1.5 py-0.5 font-medium font-mono transition-colors ml-auto"
-                  style={{ backgroundColor: '#FDE8E2', color: '#C03A18' }}
-                >
-                  <ClipboardCheck className="h-2.5 w-2.5 shrink-0" />
-                  {afspraak.werkbon_nummer || "WB"}
-                  <Eye className="h-2 w-2 shrink-0 opacity-50" />
-                </button>
-              )}
+              {renderMonteurAvatars(afspraak.monteurs)}
             </div>
           )}
         </div>
@@ -1308,7 +1507,7 @@ export function MontagePlanningLayout() {
     );
   }
 
-  // === MEMBER WEEK VIEW (5 day columns like screenshot) ===
+  // === MEMBER WEEK VIEW (time-grid: hour rail × 5 day columns) ===
   function renderMemberWeekView() {
     const werkdagen = weekDates.slice(0, 5); // Ma t/m Vr
     const selectedName = selectedMonteur === "alle"
@@ -1319,6 +1518,20 @@ export function MontagePlanningLayout() {
     const viewAfspraken = selectedMonteur === "alle"
       ? weekAfspraken
       : weekAfspraken.filter((a) => a.monteurs.includes(selectedMonteur));
+
+    const HOUR_HEIGHT = 72;
+    const START_HOUR = 6;
+    const END_HOUR = 19;
+    const totalHours = END_HOUR - START_HOUR;
+    const gridHeight = totalHours * HOUR_HEIGHT;
+    const gridTemplate = '60px repeat(5, minmax(0, 1fr))';
+
+    const now = new Date();
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+    const nowY = (nowMinutes - START_HOUR * 60) * (HOUR_HEIGHT / 60);
+    const nowInRange = nowY >= 0 && nowY <= gridHeight;
+    // Reference nowTick so this re-renders every minute
+    void nowTick;
 
     return (
       <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
@@ -1350,7 +1563,7 @@ export function MontagePlanningLayout() {
               Print
             </button>
             <button
-              onClick={openNewDialog}
+              onClick={() => openNewDialog()}
               className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-semibold text-white bg-[#F15025] shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35)] hover:-translate-y-[1px] active:translate-y-0 active:shadow-[0_1px_4px_rgba(241,80,37,0.2)] transition-all"
             >
               <Plus className="h-3.5 w-3.5" />
@@ -1367,7 +1580,8 @@ export function MontagePlanningLayout() {
         </div>
 
         {/* Weather strip */}
-        <div className="grid grid-cols-5 border-b border-[#F0EFEC] bg-[#F8F7F5]">
+        <div className="grid border-b border-[#F0EFEC] bg-[#F8F7F5]" style={{ gridTemplateColumns: gridTemplate }}>
+          <div className="border-r border-[#F0EFEC]" />
           {werkdagen.map((date) => {
             const w = getWeatherForDate(weather, date);
             return (
@@ -1378,8 +1592,11 @@ export function MontagePlanningLayout() {
           })}
         </div>
 
-        {/* Day column headers */}
-        <div className="grid grid-cols-5 border-b border-[#F0EFEC]">
+        {/* Day column headers (sticky) */}
+        <div className="grid border-b border-[#F0EFEC] bg-white sticky top-0 z-20" style={{ gridTemplateColumns: gridTemplate }}>
+          <div className="border-r border-[#F0EFEC] py-1.5 px-2 flex items-center">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#9B9B95]">Tijd</span>
+          </div>
           {werkdagen.map((date) => {
             const dateStr = formatDate(date);
             const isToday = dateStr === todayStr;
@@ -1393,7 +1610,8 @@ export function MontagePlanningLayout() {
                 key={dateStr}
                 className={cn(
                   "group relative text-center py-1.5 border-r last:border-r-0 border-[#F0EFEC]",
-                  feestdagInfo ? "bg-[#FDE8E2]/40" : isToday ? "bg-[#1A535C]/[0.04]" : "bg-white"
+                  feestdagInfo ? "bg-[#FDE8E2]/40" : isToday ? "bg-[#1A535C]/[0.04]" : "bg-white",
+                  isToday && "border-t-2 border-t-[#F15025]"
                 )}
               >
                 <div className="flex items-baseline justify-center gap-1.5">
@@ -1409,9 +1627,18 @@ export function MontagePlanningLayout() {
                   )}>
                     {date.getDate()} {date.toLocaleDateString("nl-NL", { month: "short" })}
                   </span>
-                  {!feestdagInfo && (
-                    <span className="text-[10px] text-[#B0ADA8] font-mono tabular-nums">
-                      {afgerond}/{dayAfspraken.length}
+                  {!feestdagInfo && dayAfspraken.length > 0 && (
+                    <span
+                      className="inline-flex items-center gap-0.5 text-[10px] font-mono tabular-nums"
+                      title={`${afgerond} van ${dayAfspraken.length} afgerond`}
+                    >
+                      <CheckCircle2 className={cn(
+                        "h-3 w-3",
+                        afgerond === dayAfspraken.length ? "text-[#0F6E56]" : "text-[#B0ADA8]"
+                      )} />
+                      <span className={cn(afgerond === dayAfspraken.length ? "text-[#0F6E56]" : "text-[#B0ADA8]")}>
+                        {afgerond}/{dayAfspraken.length}
+                      </span>
                     </span>
                   )}
                 </div>
@@ -1433,8 +1660,25 @@ export function MontagePlanningLayout() {
           })}
         </div>
 
-        {/* Day columns with cards — scrollable area */}
-        <div className="grid grid-cols-5 flex-1 overflow-y-auto">
+        {/* Time-grid: hour rail + 5 day columns with absolute-positioned cards */}
+        <div className="grid flex-1 overflow-y-auto" style={{ gridTemplateColumns: gridTemplate }}>
+          {/* Hour rail */}
+          <div className="border-r border-[#F0EFEC] relative bg-white" style={{ height: gridHeight }}>
+            {Array.from({ length: totalHours + 1 }, (_, i) => {
+              const hour = START_HOUR + i;
+              return (
+                <div
+                  key={hour}
+                  className="absolute left-0 right-0 px-2 text-[10px] font-mono tabular-nums text-[#B0ADA8]"
+                  style={{ top: i * HOUR_HEIGHT - 6 }}
+                >
+                  {String(hour).padStart(2, '0')}:00
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Day columns */}
           {werkdagen.map((date) => {
             const dateStr = formatDate(date);
             const isToday = dateStr === todayStr;
@@ -1447,11 +1691,12 @@ export function MontagePlanningLayout() {
               <div
                 key={dateStr}
                 className={cn(
-                  "border-r last:border-r-0 border-[#F0EFEC] p-1.5 min-h-[200px] transition-all duration-200",
-                  feestdagInfo ? "bg-[#FDE8E2]/20" : isToday ? "bg-[#1A535C]/[0.02]" : "bg-[#F8F7F5]/50",
-                  !feestdagInfo && dragOverDate === dateStr && "bg-[#1A535C]/[0.08] ring-2 ring-[#1A535C]/25 ring-inset scale-[1.01]",
+                  "relative border-r last:border-r-0 border-[#F0EFEC] transition-colors",
+                  feestdagInfo ? "bg-[#FDE8E2]/20" : isToday ? "bg-[#1A535C]/[0.02]" : "bg-white",
+                  !feestdagInfo && dragOverDate === dateStr && "bg-[#1A535C]/[0.08] ring-2 ring-[#1A535C]/25 ring-inset",
                   feestdagInfo && dragOverDate === dateStr && "ring-2 ring-[#C03A18]/30 ring-inset"
                 )}
+                style={{ height: gridHeight }}
                 onDragOver={(e) => {
                   e.preventDefault();
                   e.dataTransfer.dropEffect = feestdagInfo ? "none" : draggingProjectId ? "copy" : "move";
@@ -1473,22 +1718,64 @@ export function MontagePlanningLayout() {
                   if (id) handleDragDrop(id, dateStr);
                 }}
               >
-                {feestdagInfo && dayAfspraken.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-32 text-xs text-[#C03A18]/40 gap-1">
-                    <AlertTriangle className="h-5 w-5" />
-                    <span className="font-medium">Geblokt</span>
+                {/* Hour grid lines */}
+                {Array.from({ length: totalHours }, (_, i) => (
+                  <div
+                    key={i}
+                    className="absolute left-0 right-0 border-t border-[#F0EFEC]/50 pointer-events-none"
+                    style={{ top: i * HOUR_HEIGHT }}
+                  />
+                ))}
+
+                {/* Current time indicator */}
+                {isToday && nowInRange && (
+                  <div
+                    className="absolute left-0 right-0 pointer-events-none z-10"
+                    style={{ top: nowY }}
+                  >
+                    <div className="relative h-px bg-[#F15025]">
+                      <div className="absolute -left-1 -top-1 h-2 w-2 rounded-full bg-[#F15025]" />
+                    </div>
                   </div>
-                ) : dayAfspraken.length === 0 ? (
-                  <div className={cn(
-                    "flex items-center justify-center h-32 text-xs transition-all duration-200",
-                    dragOverDate === dateStr
-                      ? "text-[#1A535C] font-medium border-2 border-dashed border-[#1A535C]/30 rounded-xl bg-[#1A535C]/[0.04]"
-                      : "text-[#B0ADA8]/50"
-                  )}>
-                    {(draggingAfspraakId || draggingProjectId) ? "Hier neerzetten" : "Geen montages"}
+                )}
+
+                {/* Feestdag overlay */}
+                {feestdagInfo && (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="flex flex-col items-center gap-1 text-[#C03A18]/40">
+                      <AlertTriangle className="h-5 w-5" />
+                      <span className="text-xs font-medium">Geblokt</span>
+                    </div>
                   </div>
-                ) : (
-                  dayAfspraken.map((a) => renderMontageCard(a))
+                )}
+
+                {/* Cards positioned by time */}
+                {!feestdagInfo && dayAfspraken.map((a) => {
+                  const startStr = stripSeconden(a.start_tijd);
+                  if (!startStr) return null;
+                  const startMin = timeToMinutes(startStr);
+                  const eindStr = stripSeconden(a.eind_tijd);
+                  const endMin = eindStr ? timeToMinutes(eindStr) : startMin + 60;
+                  const top = Math.max(0, (startMin - START_HOUR * 60) * (HOUR_HEIGHT / 60));
+                  const rawHeight = Math.max(1, endMin - startMin) * (HOUR_HEIGHT / 60);
+                  const height = Math.min(gridHeight - top, Math.max(40, rawHeight));
+
+                  return (
+                    <div
+                      key={a.id}
+                      className="absolute left-0 right-0"
+                      style={{ top, height }}
+                    >
+                      {renderMontageCard(a, { variant: 'timegrid' })}
+                    </div>
+                  );
+                })}
+
+                {/* Empty-state hint */}
+                {!feestdagInfo && dayAfspraken.length === 0 && (draggingAfspraakId || draggingProjectId) && (
+                  <div className="absolute inset-2 flex items-center justify-center text-[#1A535C] text-xs font-medium border-2 border-dashed border-[#1A535C]/30 rounded-xl bg-[#1A535C]/[0.04] pointer-events-none">
+                    Hier neerzetten
+                  </div>
                 )}
               </div>
             );
@@ -1575,7 +1862,7 @@ export function MontagePlanningLayout() {
                   !isCurrentMonth && "bg-[#F8F7F5]/40",
                   isCurrentMonth && isWeekend && "bg-[#F8F7F5]/60",
                   feestdagInfo && "bg-[#FDE8E2]/40",
-                  isToday && "bg-[#1A535C]/[0.04]"
+                  isToday && "bg-[#1A535C]/[0.04] border-t-2 border-t-[#F15025]"
                 )}
               >
                 <div className="flex items-center justify-between">
@@ -1741,7 +2028,8 @@ export function MontagePlanningLayout() {
                 key={dateStr}
                 className={cn(
                   "group relative text-center py-1.5 border-l border-[#F0EFEC]",
-                  feestdagInfo ? "bg-[#FDE8E2]/40" : isToday ? "bg-[#1A535C]/[0.04]" : "bg-white"
+                  feestdagInfo ? "bg-[#FDE8E2]/40" : isToday ? "bg-[#1A535C]/[0.04]" : "bg-white",
+                  isToday && "border-t-2 border-t-[#F15025]"
                 )}
               >
                 <div className="flex items-baseline justify-center gap-1.5">
@@ -1848,9 +2136,11 @@ export function MontagePlanningLayout() {
                     {getInitials(monteur.naam)}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="text-[12px] font-semibold text-[#1A1A1A] truncate">{monteur.naam}</div>
+                    <div className="text-[13px] font-bold text-[#1A1A1A] truncate leading-tight">{monteur.naam}</div>
                     {!isCollapsed && (
-                      <div className="text-[10px] text-[#9B9B95]">{monteurAfspraken.length} deze week</div>
+                      <div className="text-[10px] text-[#9B9B95] mt-0.5">
+                        <span className="font-mono tabular-nums">{monteurAfspraken.length}</span> deze week
+                      </div>
                     )}
                   </div>
                   {isCollapsed && (
@@ -1880,6 +2170,7 @@ export function MontagePlanningLayout() {
                         "border-l border-[#F0EFEC] transition-all duration-200",
                         isCollapsed ? "min-h-[30px]" : "p-1 min-h-[60px]",
                         feestdagInfo ? "bg-[#FDE8E2]/15" : isToday && "bg-[#1A535C]/[0.02]",
+                        !feestdagInfo && !isCollapsed && dragOverDate !== dragKey && "hover:bg-[#1A535C]/[0.03]",
                         !feestdagInfo && dragOverDate === dragKey && "bg-[#1A535C]/[0.08] ring-2 ring-[#1A535C]/25 ring-inset",
                         feestdagInfo && dragOverDate === dragKey && "ring-2 ring-[#C03A18]/30 ring-inset"
                       )}
@@ -2030,22 +2321,6 @@ export function MontagePlanningLayout() {
                     Open project
                     <ArrowUpRight className="h-3.5 w-3.5" />
                   </button>
-                  {editingAfspraak && formData.status !== 'afgerond' && (() => {
-                    const project = projecten.find((p) => p.id === formData.project_id);
-                    const blocking = project ? FASES_BLOKKEREN_AFRONDEN.includes(project.status) : false;
-                    if (blocking) return null;
-                    return (
-                      <Button
-                        type="button"
-                        size="sm"
-                        onClick={handleAfrondenEnFactureren}
-                        className="shrink-0 text-white [background:#F15025] hover:[background:#D4452A] [box-shadow:0_2px_8px_rgba(241,80,37,0.25)] hover:[box-shadow:0_4px_12px_rgba(241,80,37,0.35)]"
-                      >
-                        <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
-                        Afronden & factureren
-                      </Button>
-                    );
-                  })()}
                 </div>
               )}
             </div>
@@ -2376,6 +2651,54 @@ export function MontagePlanningLayout() {
               </button>
             )}
             <div className="flex-1" />
+            {editingAfspraak && formData.status !== 'afgerond' && (() => {
+              const project = projecten.find((p) => p.id === formData.project_id);
+              const blocking = project ? FASES_BLOKKEREN_AFRONDEN.includes(project.status) : false;
+              if (blocking) {
+                return (
+                  <button
+                    type="button"
+                    onClick={handleAfronden}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-[13px] font-medium text-[#1A535C] border border-[#1A535C]/30 hover:bg-[#1A535C] hover:text-white hover:border-[#1A535C] transition-all"
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    Afronden
+                  </button>
+                );
+              }
+              return (
+                <DropdownMenu open={afrondenMenuOpen} onOpenChange={setAfrondenMenuOpen}>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-[13px] font-medium text-[#1A535C] border border-[#1A535C]/30 hover:bg-[#1A535C] hover:text-white hover:border-[#1A535C] transition-all"
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      Afronden
+                      <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-[220px]">
+                    <DropdownMenuItem
+                      onClick={handleAfronden}
+                      className="flex flex-col items-start gap-0.5 py-1.5 data-[highlighted]:bg-[#F8F7F5] data-[highlighted]:text-[#1A1A1A]"
+                    >
+                      <span className="text-[13px] font-medium">Alleen afronden</span>
+                      <span className="text-[11px] opacity-60">Project blijft in huidige fase</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={handleAfrondenEnFactureren}
+                      className="flex flex-col items-start gap-0.5 py-1.5 data-[highlighted]:bg-[#F8F7F5] data-[highlighted]:text-[#1A1A1A]"
+                    >
+                      <span className="text-[13px] font-medium">
+                        Afronden &amp; factureren<span className="text-[#F15025]">.</span>
+                      </span>
+                      <span className="text-[11px] opacity-60">Project naar 'Te factureren'</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              );
+            })()}
             <Button onClick={handleSubmit}>
               {editingAfspraak ? "Opslaan" : "Aanmaken"}
             </Button>
@@ -2444,7 +2767,7 @@ export function MontagePlanningLayout() {
   return (
     <div className="flex h-[calc(100vh-60px)] overflow-hidden bg-[#F8F7F5]">
       {/* ── Left sidebar: Team ── */}
-      <div className="w-[200px] shrink-0 bg-white border-r border-[#F0EFEC] flex flex-col rounded-tr-2xl">
+      <div className="w-[200px] shrink-0 bg-[#F8F7F5] border-r border-[#F0EFEC] flex flex-col rounded-tr-2xl">
         {/* Compacte paginatitel */}
         <div className="px-4 pt-5 pb-3 flex items-baseline gap-2 shrink-0">
           <h1 className="text-[18px] font-extrabold tracking-[-0.3px] text-[#1A1A1A] leading-none">
@@ -2531,9 +2854,13 @@ export function MontagePlanningLayout() {
         </div>
 
         {/* Sidebar footer: stats */}
-        <div className="px-3 py-2.5 border-t border-[#F0EFEC] bg-[#F8F7F5] text-[11px] text-[#9B9B95] space-y-0.5">
-          <div>{stats.totaalWeek} montages deze week</div>
-          <div>{stats.monteursBeschikbaar} beschikbaar vandaag</div>
+        <div className="px-3 py-2.5 border-t border-[#F0EFEC] text-[11px] text-[#6B6B66] space-y-0.5">
+          <div>
+            <span className="font-mono tabular-nums">{stats.totaalWeek}</span> montages<span className="text-[#F15025]">.</span>
+          </div>
+          <div>
+            <span className="font-mono tabular-nums">{stats.monteursBeschikbaar}</span> beschikbaar<span className="text-[#F15025]">.</span>
+          </div>
         </div>
       </div>
 
@@ -2541,16 +2868,16 @@ export function MontagePlanningLayout() {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Scope pills */}
         <div className="flex items-center gap-2 px-4 py-2 border-b border-[#F0EFEC] bg-white">
+          <div className="inline-flex items-center gap-0.5 rounded-lg p-0.5 bg-[#F8F7F5] border border-[#EBEBEB]">
           <button
             type="button"
             onClick={setScopeAlle}
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-md text-[13px] font-medium transition-all",
+              "inline-flex items-center gap-1.5 rounded-md text-[13px] font-medium px-3 py-1 transition-all",
               scopeMode === 'alle'
-                ? "bg-[#1A535C] text-white"
-                : "bg-transparent text-[#6B6B66] border border-[#E5E3DE] hover:bg-[#F0EFEC]"
+                ? "bg-[#1A535C] text-white shadow-[0_1px_2px_rgba(26,83,92,0.2)]"
+                : "text-[#6B6B66] hover:text-[#1A1A1A]"
             )}
-            style={{ padding: '6px 12px' }}
           >
             <Users className="h-3.5 w-3.5" />
             Iedereen
@@ -2561,13 +2888,12 @@ export function MontagePlanningLayout() {
             disabled={!eigenMedewerker}
             title={!eigenMedewerker ? 'Geen gekoppeld medewerker-profiel' : undefined}
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-md text-[13px] font-medium transition-all",
+              "inline-flex items-center gap-1.5 rounded-md text-[13px] font-medium px-3 py-1 transition-all",
               scopeMode === 'mijn'
-                ? "bg-[#1A535C] text-white"
-                : "bg-transparent text-[#6B6B66] border border-[#E5E3DE] hover:bg-[#F0EFEC]",
-              !eigenMedewerker && "opacity-50 cursor-not-allowed hover:bg-transparent"
+                ? "bg-[#1A535C] text-white shadow-[0_1px_2px_rgba(26,83,92,0.2)]"
+                : "text-[#6B6B66] hover:text-[#1A1A1A]",
+              !eigenMedewerker && "opacity-50 cursor-not-allowed hover:text-[#6B6B66]"
             )}
-            style={{ padding: '6px 12px' }}
           >
             <User className="h-3.5 w-3.5" />
             Mijn week
@@ -2578,12 +2904,11 @@ export function MontagePlanningLayout() {
           >
             <SelectTrigger
               className={cn(
-                "inline-flex items-center gap-1.5 h-auto w-auto rounded-md text-[13px] font-medium transition-all focus:ring-0 focus:ring-offset-0",
+                "inline-flex items-center gap-1.5 h-auto w-auto rounded-md text-[13px] font-medium px-3 py-1 border-0 transition-all focus:ring-0 focus:ring-offset-0",
                 scopeMode === 'medewerker'
-                  ? "bg-[#1A535C] text-white border-0 hover:bg-[#143F46]"
-                  : "bg-transparent text-[#6B6B66] border border-[#E5E3DE] hover:bg-[#F0EFEC]"
+                  ? "bg-[#1A535C] text-white shadow-[0_1px_2px_rgba(26,83,92,0.2)] hover:bg-[#143F46]"
+                  : "text-[#6B6B66] hover:text-[#1A1A1A] bg-transparent"
               )}
-              style={{ padding: '6px 12px' }}
             >
               <User className="h-3.5 w-3.5 mr-1" />
               <SelectValue placeholder="Per persoon" />
@@ -2596,10 +2921,11 @@ export function MontagePlanningLayout() {
               ))}
             </SelectContent>
           </Select>
+          </div>
 
           <div className="flex-1" />
 
-          <div className="inline-flex rounded-md border border-[#E5E3DE] p-0.5 bg-white">
+          <div className="inline-flex rounded-md border border-[#EBEBEB] p-0.5 bg-[#F8F7F5]">
             <button
               type="button"
               onClick={() => setViewMode('week')}
