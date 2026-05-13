@@ -126,6 +126,8 @@ import { PakbonVanProjectDialog } from '@/components/leveringsbonnen/PakbonVanPr
 import { getFase } from '@/utils/projectFases'
 // ProjectKaart removed — using inline sticky header
 import { PortaalCompactBlock } from './cockpit/PortaalCompactBlock'
+import { PortaalPreviewCard } from './cockpit/PortaalPreviewCard'
+import { ActiviteitCard } from './cockpit/ActiviteitCard'
 import { confirm } from '@/components/shared/ConfirmDialog'
 import { TaskChecklistView } from './cockpit/TaskChecklistView'
 import { BriefingCard } from './cockpit/BriefingCard'
@@ -1006,13 +1008,6 @@ export function ProjectDetail() {
 
           {/* Right: CTA + menu */}
           <div className="flex items-center gap-2 flex-shrink-0">
-            {/* TODO Stap 3: vervangen door activity-card in linkerkolom */}
-            {/* Oude activity-widget code uitgecommenteerd — wordt in Stap 3 vervangen door card onderaan linkerkolom
-            {recenteActiviteiten.length > 0 && (
-              <div className="relative hidden lg:block">...</div>
-            )}
-            */}
-
             {/* Offerte CTA — petrol primary met flame-dot */}
             {(() => {
               const activeOfferte = projectOffertes.find(o => !['afgewezen', 'verlopen', 'gefactureerd'].includes(o.status)) || projectOffertes[0]
@@ -1165,10 +1160,18 @@ export function ProjectDetail() {
             onOpdrachtbevestiging={(offerte) => setObPreviewOfferte(offerte)}
           />
 
-          {/* Portaal — pronkstuk */}
-          <div className="rounded-xl p-5">
-            <PortaalCompactBlock projectId={id!} />
-          </div>
+          {/* Activiteit */}
+          <ActiviteitCard events={recenteActiviteiten} />
+
+          {/* Portaal — preview voor inactief, compact-feed voor actief (beide checken intern) */}
+          <PortaalPreviewCard
+            projectId={id!}
+            klant={klant}
+            offertes={projectOffertes}
+            bestanden={projectDocumenten}
+            fotos={projectFotos}
+          />
+          <PortaalCompactBlock projectId={id!} />
 
           {/* Verzonden emails */}
           {(() => {

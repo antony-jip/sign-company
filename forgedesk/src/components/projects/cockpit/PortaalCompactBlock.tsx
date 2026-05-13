@@ -750,23 +750,8 @@ export function PortaalCompactBlock({ projectId }: { projectId: string }) {
   if (loading) return null
 
   if (!portaal) {
-    return (
-      <div className="bg-[#1A535C] rounded-lg px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <Send className="h-4 w-4 text-white/50" />
-          <div>
-            <h3 className="text-[12px] font-semibold text-white uppercase tracking-widest">Portaal</h3>
-            <p className="text-[11px] text-white/40 mt-0.5">Deel offertes, tekeningen en updates met je klant</p>
-          </div>
-        </div>
-        <button
-          onClick={handleActiveerPortaal}
-          className="text-[12px] font-semibold px-3 py-1.5 rounded-lg bg-white/15 text-white hover:bg-white/25 transition-colors"
-        >
-          Activeer
-        </button>
-      </div>
-    )
+    // Inactive state wordt nu door PortaalPreviewCard getoond; PortaalCompactBlock blijft null.
+    return null
   }
 
   const isVerlopen = new Date(portaal.verloopt_op) < new Date()
@@ -774,10 +759,10 @@ export function PortaalCompactBlock({ projectId }: { projectId: string }) {
   const sharedCount = items.filter(i => i.type !== 'bericht').length
 
   return (
-    <div>
+    <div className="rounded-xl shadow-[0_1px_3px_rgba(130,100,60,0.04)] overflow-hidden">
       {/* Header bar */}
       <div
-        className="flex items-center justify-between cursor-pointer select-none group bg-[#1A535C] rounded-t-lg px-4 py-2.5"
+        className="flex items-center justify-between cursor-pointer select-none group bg-[#1A535C] rounded-t-xl px-5 py-4"
         onClick={toggleCollapsed}
       >
         <div className="flex items-center gap-2.5">
@@ -809,7 +794,7 @@ export function PortaalCompactBlock({ projectId }: { projectId: string }) {
 
       {/* Content */}
       {!collapsed && (
-        <div className="bg-[#F8F7F5] rounded-b-lg px-4 pb-1 pt-2">
+        <div className="bg-[#F8F7F5] rounded-b-xl px-5 py-4">
           <Feed items={items} feedEndRef={feedEndRef} />
 
           {portaal && user?.id && (
