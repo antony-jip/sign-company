@@ -59,8 +59,8 @@ export interface CustomerSelectorProps {
   selectedKlant: Klant | undefined
   klantWrapperRef: React.RefObject<HTMLDivElement | null>
   filteredKlanten: Klant[]
-  nbData: { bedrijfsnaam: string; contactpersoon: string; email: string; telefoon: string; adres: string; postcode: string; stad: string; website: string; kvk_nummer: string; btw_nummer: string }
-  setNbData: React.Dispatch<React.SetStateAction<{ bedrijfsnaam: string; contactpersoon: string; email: string; telefoon: string; adres: string; postcode: string; stad: string; website: string; kvk_nummer: string; btw_nummer: string }>>
+  nbData: { bedrijfsnaam: string; contactpersoon: string; email: string; telefoon: string; adres: string; postcode: string; stad: string; website: string; debiteurennummer: string; btw_nummer: string }
+  setNbData: React.Dispatch<React.SetStateAction<{ bedrijfsnaam: string; contactpersoon: string; email: string; telefoon: string; adres: string; postcode: string; stad: string; website: string; debiteurennummer: string; btw_nummer: string }>>
   showNbUitgebreid: boolean
   setShowNbUitgebreid: (v: boolean) => void
   nbCreating: boolean
@@ -217,7 +217,7 @@ export function CustomerSelector({
                           <Input value={nbData.stad} onChange={(e) => setNbData({ ...nbData, stad: e.target.value })} placeholder="Stad" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} />
                         </div>
                         <button onClick={() => setShowNbUitgebreid(!showNbUitgebreid)} className="flex items-center gap-1.5 text-[11px] font-medium" style={{ color: '#9B9B95' }}>
-                          {showNbUitgebreid ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}{showNbUitgebreid ? 'Minder gegevens' : 'Meer gegevens (adres, KvK, etc.)'}
+                          {showNbUitgebreid ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}{showNbUitgebreid ? 'Minder gegevens' : 'Meer gegevens (adres, btw, etc.)'}
                         </button>
                         {showNbUitgebreid && (
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -227,7 +227,7 @@ export function CustomerSelector({
                             <Input value={nbData.adres} onChange={(e) => setNbData({ ...nbData, adres: e.target.value })} placeholder="Adres" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} />
                             <Input value={nbData.postcode} onChange={(e) => setNbData({ ...nbData, postcode: e.target.value })} placeholder="Postcode" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} />
                             <Input value={nbData.website} onChange={(e) => setNbData({ ...nbData, website: e.target.value })} placeholder="Website" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} />
-                            <Input value={nbData.kvk_nummer} onChange={(e) => setNbData({ ...nbData, kvk_nummer: e.target.value })} placeholder="KvK-nummer" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} />
+                            <Input value={nbData.debiteurennummer} onChange={(e) => setNbData({ ...nbData, debiteurennummer: e.target.value })} placeholder="Debiteurennummer" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} />
                             <Input value={nbData.btw_nummer} onChange={(e) => setNbData({ ...nbData, btw_nummer: e.target.value })} placeholder="BTW-nummer" className="h-9 text-[13px] rounded-lg" style={{ border: '1px solid #EBEBEB' }} />
                           </div>
                         )}

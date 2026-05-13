@@ -130,8 +130,8 @@ export function KlantCard({ klant, project, contactpersonen, onContactpersoonCha
           >
             {klant.bedrijfsnaam || klant.contactpersoon}
           </Link>
-          {klant.kvk_nummer && (
-            <p className="font-mono text-[11px] text-[#9B9B95] mt-1">KvK · {klant.kvk_nummer}</p>
+          {klant.debiteurennummer && (
+            <p className="font-mono text-[11px] text-[#9B9B95] mt-1">Deb.nr · {klant.debiteurennummer}</p>
           )}
         </div>
       </div>
