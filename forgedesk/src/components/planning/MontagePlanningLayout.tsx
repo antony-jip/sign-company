@@ -51,6 +51,8 @@ import {
   Upload,
   Eye,
   ArrowUpRight,
+  Check,
+  Flame,
 } from "lucide-react";
 import {
   getMontageAfspraken,
@@ -75,6 +77,7 @@ import { getNederlandseFeestdagen, isFeestdag } from "@/utils/feestdagen";
 import { confirm } from '@/components/shared/ConfirmDialog';
 import { useAuth } from "@/contexts/AuthContext";
 import { logCreate, logWijziging } from "@/utils/auditLogger";
+import { getFase } from "@/utils/projectFases";
 import { getAvatarStyle } from "@/utils/medewerkerAvatar";
 import { isAdminUser } from "@/utils/authHelpers";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -86,6 +89,39 @@ const SWIMLANE_UNASSIGNED_KEY = '__ongetoewezen__';
 const HIDE_EMPTY_LANES_KEY = 'doen_planning_hide_empty_lanes';
 const LANE_GROUPING_KEY = 'doen_planning_lane_grouping';
 const PLANNING_FILTER_KEY = 'doen_planning_filter_v1';
+const PLANNING_SCOPE_KEY = 'doen_planning_scope_v1';
+const PLANNING_VIEWMODE_KEY = 'doen_planning_viewmode_v1';
+
+type ViewMode = 'week' | 'maand';
+const FASES_BLOKKEREN_AFRONDEN: Array<Project['status']> = ['te-factureren', 'gefactureerd', 'afgerond'];
+
+type ScopeMode = 'alle' | 'mijn' | 'medewerker';
+
+function readScopeFromStorage(): { mode: ScopeMode; monteurId: string | null } {
+  try {
+    const raw = localStorage.getItem(PLANNING_SCOPE_KEY);
+    if (raw === 'alle') return { mode: 'alle', monteurId: null };
+    if (raw === 'mijn') return { mode: 'mijn', monteurId: null };
+    if (raw) return { mode: 'medewerker', monteurId: raw };
+    const legacy = localStorage.getItem(PLANNING_FILTER_KEY);
+    if (legacy === 'alle' || !legacy) return { mode: 'alle', monteurId: null };
+    return { mode: 'medewerker', monteurId: legacy };
+  } catch {
+    return { mode: 'alle', monteurId: null };
+  }
+}
+
+function writeScopeToStorage(mode: ScopeMode, monteurId: string | null) {
+  try {
+    if (mode === 'alle') {
+      localStorage.setItem(PLANNING_SCOPE_KEY, 'alle');
+    } else if (mode === 'mijn') {
+      localStorage.setItem(PLANNING_SCOPE_KEY, 'mijn');
+    } else if (monteurId) {
+      localStorage.setItem(PLANNING_SCOPE_KEY, monteurId);
+    }
+  } catch { /* ignore */ }
+}
 
 type LaneGrouping = 'none' | 'rol';
 
@@ -219,7 +255,18 @@ export function MontagePlanningLayout() {
   const [currentMonday, setCurrentMonday] = useState<Date>(() =>
     getMondayOfWeek(new Date())
   );
-  const [viewMode, setViewMode] = useState<"week" | "list" | "raster">("week");
+  const [viewMode, setViewModeState] = useState<ViewMode>(() => {
+    try {
+      const raw = localStorage.getItem(PLANNING_VIEWMODE_KEY);
+      return raw === 'maand' ? 'maand' : 'week';
+    } catch {
+      return 'week';
+    }
+  });
+  const setViewMode = useCallback((mode: ViewMode) => {
+    setViewModeState(mode);
+    try { localStorage.setItem(PLANNING_VIEWMODE_KEY, mode); } catch { /* ignore */ }
+  }, []);
   const [afspraken, setAfspraken] = useState<MontageAfspraak[]>([]);
   const runOptimistic = useOptimisticState(setAfspraken);
   const [medewerkers, setMedewerkers] = useState<Medewerker[]>([]);
@@ -229,28 +276,39 @@ export function MontagePlanningLayout() {
     useState<MontageAfspraak | null>(null);
   const [formData, setFormData] = useState<MontageFormData>(EMPTY_FORM);
   const [loading, setLoading] = useState(true);
-  const [selectedMonteur, setSelectedMonteurState] = useState<string>(() => {
-    try {
-      const raw = localStorage.getItem(PLANNING_FILTER_KEY);
-      if (raw) return raw;
-    } catch (err) { /* ignore */ }
-    return "alle";
-  });
+  const initialScope = useMemo(() => readScopeFromStorage(), []);
+  const [scopeMode, setScopeModeState] = useState<ScopeMode>(initialScope.mode);
+  const [selectedMonteur, setSelectedMonteurState] = useState<string>(
+    initialScope.mode === 'medewerker' && initialScope.monteurId ? initialScope.monteurId : 'alle'
+  );
   const [filterInitialized, setFilterInitialized] = useState<boolean>(() => {
     try {
-      return localStorage.getItem(PLANNING_FILTER_KEY) !== null;
-    } catch (err) { return false; }
+      return localStorage.getItem(PLANNING_SCOPE_KEY) !== null
+        || localStorage.getItem(PLANNING_FILTER_KEY) !== null;
+    } catch { return false; }
   });
   const setSelectedMonteur = useCallback((value: string) => {
     setSelectedMonteurState(value);
     setFilterInitialized(true);
-    try {
-      if (value === "alle") {
-        localStorage.removeItem(PLANNING_FILTER_KEY);
-      } else {
-        localStorage.setItem(PLANNING_FILTER_KEY, value);
-      }
-    } catch (err) { /* ignore */ }
+    if (value === 'alle') {
+      setScopeModeState('alle');
+      writeScopeToStorage('alle', null);
+    } else {
+      setScopeModeState('medewerker');
+      writeScopeToStorage('medewerker', value);
+    }
+  }, []);
+  const setScopeAlle = useCallback(() => {
+    setScopeModeState('alle');
+    setSelectedMonteurState('alle');
+    setFilterInitialized(true);
+    writeScopeToStorage('alle', null);
+  }, []);
+  const setScopeMijn = useCallback((eigenId: string | null) => {
+    setScopeModeState('mijn');
+    setSelectedMonteurState(eigenId ?? 'alle');
+    setFilterInitialized(true);
+    writeScopeToStorage('mijn', null);
   }, []);
   const [statusFilter, setStatusFilter] = useState<Set<MontageAfspraak["status"]>>(
     new Set(["gepland", "onderweg", "bezig", "uitgesteld"])
@@ -312,6 +370,20 @@ export function MontagePlanningLayout() {
   }, []);
 
   const weekDates = useMemo(() => getWeekDates(currentMonday), [currentMonday]);
+  const monthGridDates = useMemo(() => {
+    const firstOfMonth = new Date(currentMonday.getFullYear(), currentMonday.getMonth(), 1);
+    const firstMonday = getMondayOfWeek(firstOfMonth);
+    const lastOfMonth = new Date(currentMonday.getFullYear(), currentMonday.getMonth() + 1, 0);
+    const totalDays = Math.ceil((lastOfMonth.getTime() - firstMonday.getTime()) / 86400000) + (7 - lastOfMonth.getDay() || 7);
+    const rows = Math.max(5, Math.ceil(totalDays / 7));
+    const dates: Date[] = [];
+    for (let i = 0; i < rows * 7; i++) {
+      const d = new Date(firstMonday);
+      d.setDate(firstMonday.getDate() + i);
+      dates.push(d);
+    }
+    return dates;
+  }, [currentMonday]);
   const weekNumber = useMemo(
     () => getWeekNumber(currentMonday),
     [currentMonday]
@@ -350,18 +422,31 @@ export function MontagePlanningLayout() {
     loadData();
   }, [loadData]);
 
+  const eigenMedewerker = useMemo(() => {
+    if (!user?.id || medewerkers.length === 0) return null;
+    return medewerkers.find((m) => m.user_id === user.id)
+      || medewerkers.find((m) => m.email?.toLowerCase() === user.email?.toLowerCase())
+      || null;
+  }, [user, medewerkers]);
+
   // Auto-default filter: monteur ziet eigen agenda bij eerste bezoek
   useEffect(() => {
     if (filterInitialized) return;
-    if (!user?.id || medewerkers.length === 0) return;
-    const eigenMedewerker = medewerkers.find((m) => m.user_id === user.id)
-      || medewerkers.find((m) => m.email?.toLowerCase() === user.email?.toLowerCase());
     if (!eigenMedewerker) return;
     if (eigenMedewerker.rol !== 'monteur') return;
     if (isAdminUser(eigenMedewerker, user)) return;
     setSelectedMonteurState(eigenMedewerker.id);
     setFilterInitialized(true);
-  }, [filterInitialized, user, medewerkers]);
+  }, [filterInitialized, user, eigenMedewerker]);
+
+  // Sync: scope=mijn met geladen eigenMedewerker → selectedMonteur op id zetten
+  useEffect(() => {
+    if (scopeMode !== 'mijn') return;
+    if (!eigenMedewerker) return;
+    if (selectedMonteur !== eigenMedewerker.id) {
+      setSelectedMonteurState(eigenMedewerker.id);
+    }
+  }, [scopeMode, eigenMedewerker, selectedMonteur]);
 
   // All afspraken for this week (unfiltered, needed for conflict detection)
   const weekAfsprakenAll = useMemo(() => {
@@ -483,10 +568,24 @@ export function MontagePlanningLayout() {
   }, [weekAfsprakenAll, afspraken, todayStr, monteurs]);
 
   // Projects with status "te-plannen" for the sidebar
-  const tePlannenProjecten = useMemo(
-    () => projecten.filter((p) => p.status === "te-plannen"),
-    [projecten]
-  );
+  const tePlannenProjecten = useMemo(() => {
+    const prioOrder: Record<Project['prioriteit'], number> = { kritiek: 0, hoog: 1, medium: 2, laag: 3 };
+    return projecten
+      .filter((p) => p.status === "te-plannen")
+      .sort((a, b) => (prioOrder[a.prioriteit] ?? 2) - (prioOrder[b.prioriteit] ?? 2));
+  }, [projecten]);
+
+  async function toggleProjectPrio(project: Project) {
+    const newPrio: Project['prioriteit'] = (project.prioriteit === 'hoog' || project.prioriteit === 'kritiek') ? 'medium' : 'hoog';
+    setProjecten((prev) => prev.map((p) => p.id === project.id ? { ...p, prioriteit: newPrio } : p));
+    try {
+      await updateProject(project.id, { prioriteit: newPrio });
+    } catch (err) {
+      logger.error('Prio updaten mislukt:', err);
+      toast.error('Kon prioriteit niet bijwerken');
+      setProjecten((prev) => prev.map((p) => p.id === project.id ? { ...p, prioriteit: project.prioriteit } : p));
+    }
+  }
 
   function navigateWeek(direction: -1 | 1) {
     setCurrentMonday((prev) => {
@@ -498,6 +597,14 @@ export function MontagePlanningLayout() {
 
   function goToCurrentWeek() {
     setCurrentMonday(getMondayOfWeek(new Date()));
+  }
+
+  function navigateMonth(direction: -1 | 1) {
+    setCurrentMonday((prev) => {
+      const mid = new Date(prev.getFullYear(), prev.getMonth(), 15);
+      const targetMid = new Date(mid.getFullYear(), mid.getMonth() + direction, 15);
+      return getMondayOfWeek(targetMid);
+    });
   }
 
   function toggleStatusFilter(status: MontageAfspraak["status"]) {
@@ -580,13 +687,17 @@ export function MontagePlanningLayout() {
     }
   }
 
-  function openNewDialog() {
+  function openNewDialog(datum?: string, prefillMonteurId?: string | null) {
     setEditingAfspraak(null);
-    setFormData({ ...EMPTY_FORM, datum: todayStr });
+    setFormData({
+      ...EMPTY_FORM,
+      datum: datum || todayStr,
+      monteurs: prefillMonteurId ? [prefillMonteurId] : [],
+    });
     setDialogOpen(true);
   }
 
-  function openNewDialogFromProject(project: Project, datum?: string) {
+  function openNewDialogFromProject(project: Project, datum?: string, prefillMonteurId?: string | null) {
     setEditingAfspraak(null);
     // Auto-fill locatie vanuit klant adres
     const klant = klanten.find((k) => k.id === project.klant_id);
@@ -599,6 +710,7 @@ export function MontagePlanningLayout() {
       titel: project.naam,
       datum: datum || todayStr,
       locatie,
+      monteurs: prefillMonteurId ? [prefillMonteurId] : [],
     });
     if (project.id) {
       getWerkbonnenByProject(project.id).then((wbs) => {
@@ -614,19 +726,23 @@ export function MontagePlanningLayout() {
 
   function openEditDialog(afspraak: MontageAfspraak) {
     setEditingAfspraak(afspraak);
+    const samengevoegdeNotities = [afspraak.beschrijving, afspraak.notities]
+      .map((s) => (s || '').trim())
+      .filter(Boolean)
+      .join('\n\n');
     setFormData({
       project_id: afspraak.project_id,
       klant_id: afspraak.klant_id,
       klant_naam: afspraak.klant_naam || "",
       titel: afspraak.titel,
-      beschrijving: afspraak.beschrijving,
+      beschrijving: samengevoegdeNotities,
       datum: afspraak.datum,
       start_tijd: afspraak.start_tijd,
       eind_tijd: afspraak.eind_tijd,
       locatie: afspraak.locatie,
       monteurs: [...afspraak.monteurs],
       materialen: afspraak.materialen.join(", "),
-      notities: afspraak.notities,
+      notities: '',
       bijlagen: afspraak.bijlagen ? [...afspraak.bijlagen] : [],
       werkbon_id: afspraak.werkbon_id || "",
     });
@@ -759,6 +875,63 @@ export function MontagePlanningLayout() {
     }
   }
 
+  async function handleAfrondenEnFactureren() {
+    if (!editingAfspraak || !formData.project_id) return;
+    const project = projecten.find((p) => p.id === formData.project_id);
+    if (!project) return;
+    if (FASES_BLOKKEREN_AFRONDEN.includes(project.status)) return;
+
+    const ok = await confirm({
+      title: 'Montage afronden?',
+      message: `Montage wordt op 'afgerond' gezet en project '${project.naam}' op 'Te factureren'.`,
+      confirmLabel: 'Afronden',
+    });
+    if (!ok) return;
+
+    const oudeMontageStatus = formData.status;
+    const oudeProjectStatus = project.status;
+    const medewerkerNaam = medewerkers.find((m) => m.user_id === user?.id)?.naam ?? user?.email ?? '';
+    const omschrijving = 'Afronden & factureren vanuit planning-dialog';
+
+    try {
+      await updateMontageAfspraak(editingAfspraak.id, { status: 'afgerond' });
+      await updateProject(formData.project_id, { status: 'te-factureren' });
+
+      setAfspraken((prev) => prev.map((a) => a.id === editingAfspraak.id ? { ...a, status: 'afgerond' } : a));
+      setProjecten((prev) => prev.map((p) => p.id === formData.project_id ? { ...p, status: 'te-factureren' as const } : p));
+
+      if (user?.id) {
+        await logWijziging({
+          userId: user.id,
+          entityType: 'montage',
+          entityId: editingAfspraak.id,
+          actie: 'status_gewijzigd',
+          medewerkerNaam,
+          veld: 'status',
+          oudeWaarde: oudeMontageStatus,
+          nieuweWaarde: 'afgerond',
+          omschrijving,
+        });
+        await logWijziging({
+          userId: user.id,
+          entityType: 'project',
+          entityId: formData.project_id,
+          actie: 'status_gewijzigd',
+          medewerkerNaam,
+          veld: 'status',
+          oudeWaarde: oudeProjectStatus,
+          nieuweWaarde: 'te-factureren',
+          omschrijving,
+        });
+      }
+
+      setDialogOpen(false);
+    } catch (err) {
+      logger.error('Fout bij afronden & factureren:', err);
+      toast.error('Kon montage niet afronden');
+    }
+  }
+
   async function handleStatusUpdate(
     afspraak: MontageAfspraak,
     newStatus: MontageAfspraak["status"]
@@ -783,13 +956,17 @@ export function MontagePlanningLayout() {
     toast.success(`Status bijgewerkt naar ${STATUS_CONFIG[newStatus].label}`);
   }
 
-  async function handleDragDrop(dragId: string, newDate: string) {
+  async function handleDragDrop(dragId: string, newDate: string, targetMonteurId?: string) {
     // Handle dragging a "te plannen" project onto a day column
     if (dragId.startsWith("project:")) {
       const projectId = dragId.replace("project:", "");
       const project = projecten.find((p) => p.id === projectId);
       if (!project) return;
-      openNewDialogFromProject(project, newDate);
+      const prefillMonteur = targetMonteurId
+        ?? (scopeMode === 'mijn' ? eigenMedewerker?.id ?? null
+          : scopeMode === 'medewerker' && selectedMonteur !== 'alle' ? selectedMonteur
+          : null);
+      openNewDialogFromProject(project, newDate, prefillMonteur);
       return;
     }
 
@@ -1215,7 +1392,7 @@ export function MontagePlanningLayout() {
               <div
                 key={dateStr}
                 className={cn(
-                  "text-center py-1.5 border-r last:border-r-0 border-[#F0EFEC]",
+                  "group relative text-center py-1.5 border-r last:border-r-0 border-[#F0EFEC]",
                   feestdagInfo ? "bg-[#FDE8E2]/40" : isToday ? "bg-[#1A535C]/[0.04]" : "bg-white"
                 )}
               >
@@ -1240,6 +1417,16 @@ export function MontagePlanningLayout() {
                 </div>
                 {feestdagInfo && (
                   <div className="text-[10px] font-semibold text-[#C03A18] mt-0.5">{feestdagInfo.naam}</div>
+                )}
+                {!feestdagInfo && (
+                  <button
+                    type="button"
+                    onClick={() => openNewDialog(dateStr)}
+                    title={`Nieuwe afspraak op ${dateStr}`}
+                    className="absolute top-1 right-1 h-5 w-5 rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 text-[#9B9B95] hover:text-[#F15025] hover:bg-[#F0EFEC] transition-all"
+                  >
+                    <Plus className="h-3 w-3" />
+                  </button>
                 )}
               </div>
             );
@@ -1303,6 +1490,140 @@ export function MontagePlanningLayout() {
                 ) : (
                   dayAfspraken.map((a) => renderMontageCard(a))
                 )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  // === MAAND-VIEW (grid van weken × dagen) ===
+  function renderMonthView() {
+    const monthName = currentMonday.toLocaleDateString("nl-NL", { month: "long" });
+    const year = currentMonday.getFullYear();
+    const currentMonthIdx = currentMonday.getMonth();
+
+    const monthStartStr = formatDate(monthGridDates[0]);
+    const monthEndStr = formatDate(monthGridDates[monthGridDates.length - 1]);
+    const monthAfspraken = afspraken.filter((a) => {
+      if (a.datum < monthStartStr || a.datum > monthEndStr) return false;
+      if (selectedMonteur !== 'alle' && !a.monteurs.includes(selectedMonteur)) return false;
+      if (!statusFilter.has(a.status) && !recentlyAfgerond.has(a.id)) return false;
+      return true;
+    });
+
+    return (
+      <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-3 border-b border-[#F0EFEC] bg-white">
+          <div className="flex items-center gap-2">
+            <CalendarDays className="h-5 w-5 text-[#9B9B95] mr-1" />
+            <button className="p-1.5 rounded-lg hover:bg-[#F0EFEC] transition-all" onClick={() => navigateMonth(-1)} title="Vorige maand">
+              <ChevronLeft className="h-4 w-4 text-[#6B6B66]" />
+            </button>
+            <button
+              onClick={goToCurrentWeek}
+              className="text-[15px] font-semibold text-[#1A1A1A] capitalize px-2 py-1 rounded-lg hover:bg-[#F0EFEC] transition-all tabular-nums"
+              title="Naar deze maand"
+            >
+              {monthName} {year}
+            </button>
+            <button className="p-1.5 rounded-lg hover:bg-[#F0EFEC] transition-all" onClick={() => navigateMonth(1)} title="Volgende maand">
+              <ChevronRight className="h-4 w-4 text-[#6B6B66]" />
+            </button>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => openNewDialog()}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-semibold text-white bg-[#F15025] shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35)] hover:-translate-y-[1px] active:translate-y-0 transition-all"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Nieuw
+            </button>
+          </div>
+        </div>
+
+        {/* Day-of-week labels */}
+        <div className="grid grid-cols-7 border-b border-[#F0EFEC] bg-[#F8F7F5]">
+          {['Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag', 'Zaterdag', 'Zondag'].map((d) => (
+            <div key={d} className="px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#9B9B95]">
+              {d}
+            </div>
+          ))}
+        </div>
+
+        {/* Month grid */}
+        <div className="grid grid-cols-7 auto-rows-fr flex-1 overflow-y-auto">
+          {monthGridDates.map((date) => {
+            const dateStr = formatDate(date);
+            const isToday = dateStr === todayStr;
+            const isCurrentMonth = date.getMonth() === currentMonthIdx;
+            const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+            const feestdagInfo = isFeestdag(dateStr, feestdagen);
+            const dayItems = monthAfspraken
+              .filter((a) => a.datum === dateStr)
+              .sort((a, b) => a.start_tijd.localeCompare(b.start_tijd));
+            const visibleItems = dayItems.slice(0, 3);
+            const remaining = dayItems.length - visibleItems.length;
+
+            return (
+              <div
+                key={dateStr}
+                className={cn(
+                  "group relative border-b border-r border-[#F0EFEC] p-1.5 min-h-[96px] flex flex-col gap-0.5 transition-colors",
+                  !isCurrentMonth && "bg-[#F8F7F5]/40",
+                  isCurrentMonth && isWeekend && "bg-[#F8F7F5]/60",
+                  feestdagInfo && "bg-[#FDE8E2]/40",
+                  isToday && "bg-[#1A535C]/[0.04]"
+                )}
+              >
+                <div className="flex items-center justify-between">
+                  <span
+                    className={cn(
+                      "text-[12px] font-mono tabular-nums",
+                      isToday && "text-[#1A535C] font-bold",
+                      !isToday && isCurrentMonth && "text-[#1A1A1A]",
+                      !isToday && !isCurrentMonth && "text-[#B0ADA8]",
+                      feestdagInfo && "text-[#C03A18] font-semibold"
+                    )}
+                  >
+                    {date.getDate()}
+                  </span>
+                  {!feestdagInfo && (
+                    <button
+                      type="button"
+                      onClick={() => openNewDialog(dateStr)}
+                      title="Nieuwe afspraak"
+                      className="opacity-0 group-hover:opacity-100 h-5 w-5 rounded flex items-center justify-center text-[#9B9B95] hover:text-[#F15025] hover:bg-[#F0EFEC] transition-all"
+                    >
+                      <Plus className="h-3 w-3" />
+                    </button>
+                  )}
+                </div>
+                {feestdagInfo && (
+                  <span className="text-[9px] font-semibold text-[#C03A18] truncate">{feestdagInfo.naam}</span>
+                )}
+                <div className="flex flex-col gap-0.5">
+                  {visibleItems.map((a) => {
+                    const cfg = STATUS_CONFIG[a.status];
+                    return (
+                      <button
+                        key={a.id}
+                        type="button"
+                        onClick={() => openEditDialog(a)}
+                        className="text-left text-[10px] truncate rounded px-1 py-0.5 hover:opacity-80 transition-opacity"
+                        style={{ backgroundColor: cfg?.bg || '#F0EFEC', color: cfg?.text || '#1A1A1A' }}
+                        title={`${a.titel} (${a.start_tijd}–${a.eind_tijd})`}
+                      >
+                        <span className="font-mono mr-1 opacity-70">{a.start_tijd}</span>{a.titel}
+                      </button>
+                    );
+                  })}
+                  {remaining > 0 && (
+                    <span className="text-[10px] text-[#9B9B95] px-1">+{remaining} meer</span>
+                  )}
+                </div>
               </div>
             );
           })}
@@ -1419,7 +1740,7 @@ export function MontagePlanningLayout() {
               <div
                 key={dateStr}
                 className={cn(
-                  "text-center py-1.5 border-l border-[#F0EFEC]",
+                  "group relative text-center py-1.5 border-l border-[#F0EFEC]",
                   feestdagInfo ? "bg-[#FDE8E2]/40" : isToday ? "bg-[#1A535C]/[0.04]" : "bg-white"
                 )}
               >
@@ -1433,6 +1754,16 @@ export function MontagePlanningLayout() {
                 </div>
                 {feestdagInfo && (
                   <div className="text-[9px] font-semibold text-[#C03A18] truncate px-1">{feestdagInfo.naam}</div>
+                )}
+                {!feestdagInfo && (
+                  <button
+                    type="button"
+                    onClick={() => openNewDialog(dateStr)}
+                    title={`Nieuwe afspraak op ${dateStr}`}
+                    className="absolute top-1 right-1 h-5 w-5 rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 text-[#9B9B95] hover:text-[#F15025] hover:bg-[#F0EFEC] transition-all"
+                  >
+                    <Plus className="h-3 w-3" />
+                  </button>
                 )}
               </div>
             );
@@ -1573,7 +1904,7 @@ export function MontagePlanningLayout() {
                           toggleLaneCollapsed(monteur.id);
                           toast.info(`Baan uitgeklapt: ${monteur.naam}`);
                         }
-                        handleDragDrop(id, dateStr);
+                        handleDragDrop(id, dateStr, monteur.id);
                       }}
                     >
                       {!isCollapsed && dayAfspraken.map((a) => renderMontageCard(a))}
@@ -1658,101 +1989,104 @@ export function MontagePlanningLayout() {
   function renderDialog() {
     return (
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-[560px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <div className="flex items-center justify-between gap-3 pr-6">
-              <DialogTitle>
-                {editingAfspraak
-                  ? "Montage afspraak bewerken"
-                  : "Nieuwe montage afspraak"}
-              </DialogTitle>
+        <DialogContent className="max-w-[600px] max-h-[90vh] overflow-y-auto rounded-2xl p-6">
+          <DialogHeader className="pb-1">
+            <div className="flex items-start justify-between gap-3 pr-6 flex-wrap">
+              <div className="flex-1 min-w-0 space-y-0.5">
+                <DialogTitle className="m-0">
+                  <div className="group relative">
+                    <input
+                      type="text"
+                      value={formData.titel}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, titel: e.target.value }))}
+                      placeholder={editingAfspraak ? "Montage afspraak" : "Nieuwe montage afspraak"}
+                      aria-label="Titel van montage afspraak"
+                      className="bg-transparent border-0 outline-none w-full text-[24px] font-extrabold tracking-[-0.3px] text-[#1A1A1A] placeholder:text-[#9B9B95] hover:bg-[#F8F7F5] focus:bg-[#F8F7F5] rounded-lg px-2 -mx-2 py-0.5 pr-7 transition-colors truncate leading-tight"
+                    />
+                    <Pencil className="absolute right-1 top-1/2 -translate-y-1/2 h-3 w-3 text-[#9B9B95] opacity-0 group-hover:opacity-100 group-focus-within:opacity-0 transition-opacity pointer-events-none" />
+                  </div>
+                </DialogTitle>
+                {editingAfspraak && STATUS_CONFIG[formData.status] && (
+                  <div className="text-[13px] text-[#6B6B66] font-medium px-0">
+                    {STATUS_CONFIG[formData.status].label}<span className="text-[#F15025]">.</span>
+                  </div>
+                )}
+              </div>
               {formData.project_id && (
-                <button
-                  type="button"
-                  onClick={() => {
+                <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const project = projecten.find((p) => p.id === formData.project_id);
+                      setDialogOpen(false);
+                      navigateWithTab({
+                        path: `/projecten/${formData.project_id}`,
+                        label: project?.naam || 'Project',
+                        id: `/projecten/${formData.project_id}`,
+                      });
+                    }}
+                    className="inline-flex items-center gap-1 text-[12px] font-medium text-[#1A535C] hover:text-[#143F46] hover:underline shrink-0 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1A535C]/30 focus-visible:ring-offset-1"
+                  >
+                    Open project
+                    <ArrowUpRight className="h-3.5 w-3.5" />
+                  </button>
+                  {editingAfspraak && formData.status !== 'afgerond' && (() => {
                     const project = projecten.find((p) => p.id === formData.project_id);
-                    setDialogOpen(false);
-                    navigateWithTab({
-                      path: `/projecten/${formData.project_id}`,
-                      label: project?.naam || 'Project',
-                      id: `/projecten/${formData.project_id}`,
-                    });
-                  }}
-                  className="inline-flex items-center gap-1 text-[12px] font-medium text-[#1A535C] hover:text-[#143F46] hover:underline shrink-0"
-                >
-                  Open project
-                  <ArrowUpRight className="h-3.5 w-3.5" />
-                </button>
+                    const blocking = project ? FASES_BLOKKEREN_AFRONDEN.includes(project.status) : false;
+                    if (blocking) return null;
+                    return (
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={handleAfrondenEnFactureren}
+                        className="shrink-0 text-white [background:#F15025] hover:[background:#D4452A] [box-shadow:0_2px_8px_rgba(241,80,37,0.25)] hover:[box-shadow:0_4px_12px_rgba(241,80,37,0.35)]"
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                        Afronden & factureren
+                      </Button>
+                    );
+                  })()}
+                </div>
               )}
             </div>
           </DialogHeader>
 
-          <div className="space-y-4 py-2">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="project">Project</Label>
-                <Select
-                  value={formData.project_id}
-                  onValueChange={handleProjectChange}
-                >
-                  <SelectTrigger id="project">
-                    <SelectValue placeholder="Selecteer project" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {projecten.map((project) => (
-                      <SelectItem key={project.id} value={project.id}>
-                        {project.naam}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="klant">Klant</Label>
-                <Input
-                  id="klant"
-                  value={formData.klant_naam}
-                  disabled
-                  placeholder="Wordt automatisch ingevuld"
-                  className="bg-background"
-                />
-              </div>
+          <div className="space-y-6 py-2">
+            {/* Project — context bovenin */}
+            <div className="space-y-1.5">
+              <Label htmlFor="project" className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#9B9B95]">Project</Label>
+              <Select value={formData.project_id} onValueChange={handleProjectChange}>
+                <SelectTrigger id="project">
+                  {formData.project_id ? (
+                    <span className="truncate inline-flex items-baseline gap-1.5">
+                      <span>{projecten.find((p) => p.id === formData.project_id)?.naam}</span>
+                      {formData.klant_naam && (
+                        <span className="text-[#9B9B95] text-[12px] truncate">· {formData.klant_naam}</span>
+                      )}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">Selecteer project</span>
+                  )}
+                </SelectTrigger>
+                <SelectContent>
+                  {projecten.map((project) => (
+                    <SelectItem key={project.id} value={project.id}>
+                      <div className="flex flex-col leading-tight">
+                        <span className="text-[13px]">{project.naam}</span>
+                        {project.klant_naam && (
+                          <span className="text-[11px] text-[#9B9B95]">{project.klant_naam}</span>
+                        )}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="titel">Titel</Label>
-              <Input
-                id="titel"
-                value={formData.titel}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, titel: e.target.value }))
-                }
-                placeholder="Bijv. Gevelreclame montage"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="beschrijving">Beschrijving</Label>
-              <Textarea
-                id="beschrijving"
-                value={formData.beschrijving}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    beschrijving: e.target.value,
-                  }))
-                }
-                placeholder="Beschrijf de werkzaamheden..."
-                rows={3}
-              />
-            </div>
-
-            <Separator />
-
-            <div className="grid grid-cols-3 gap-4">
+            {/* Wanneer */}
+            <div className="grid grid-cols-3 gap-3">
               <div className="space-y-2">
-                <Label htmlFor="datum">Datum</Label>
+                <Label htmlFor="datum" className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#9B9B95]">Datum</Label>
                 <DatePicker
                   value={formData.datum}
                   onChange={(v) => setFormData((prev) => ({ ...prev, datum: v }))}
@@ -1767,7 +2101,7 @@ export function MontagePlanningLayout() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="start_tijd">Start tijd</Label>
+                <Label htmlFor="start_tijd" className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#9B9B95]">Start</Label>
                 <Input
                   id="start_tijd"
                   type="time"
@@ -1782,7 +2116,7 @@ export function MontagePlanningLayout() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="eind_tijd">Eind tijd</Label>
+                <Label htmlFor="eind_tijd" className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#9B9B95]">Eind</Label>
                 <Input
                   id="eind_tijd"
                   type="time"
@@ -1797,114 +2131,43 @@ export function MontagePlanningLayout() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="locatie">Locatie</Label>
-                <Input
-                  id="locatie"
-                  className="h-9"
-                  value={formData.locatie}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, locatie: e.target.value }))
-                  }
-                  placeholder="Adres montage"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="flex items-center gap-1">
-                  <ClipboardCheck className="h-3.5 w-3.5" />
-                  Werkbon
-                </Label>
-                <div className="flex gap-1.5">
-                  <Select
-                    value={formData.werkbon_id || "__none__"}
-                    onValueChange={async (v) => {
-                      if (v === "__new__") {
-                        if (!formData.project_id) {
-                          toast.error("Selecteer eerst een project");
-                          return;
-                        }
-                        try {
-                          const wb = await createWerkbon({
-                            user_id: user?.id || "",
-                            klant_id: formData.klant_id,
-                            project_id: formData.project_id,
-                            titel: formData.titel || "",
-                            datum: formatDate(new Date()),
-                            status: "concept",
-                            toon_briefpapier: false,
-                          });
-                          logCreate({ user, entityType: 'werkbon', entityId: wb.id });
-                          setProjectWerkbonnen((prev) => [...prev, wb]);
-                          setFormData((prev) => ({ ...prev, werkbon_id: wb.id }));
-                          toast.success(`Werkbon ${wb.werkbon_nummer} aangemaakt`);
-                        } catch (err) {
-                          logger.error('Werkbon aanmaken mislukt:', err)
-                          toast.error("Kon werkbon niet aanmaken");
-                        }
-                      } else {
-                        setFormData((prev) => ({ ...prev, werkbon_id: v === "__none__" ? "" : v }));
-                      }
-                    }}
-                  >
-                    <SelectTrigger className="h-9 flex-1">
-                      <SelectValue placeholder="Geen werkbon" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none__">Geen werkbon</SelectItem>
-                      {projectWerkbonnen.map((wb) => (
-                        <SelectItem key={wb.id} value={wb.id}>
-                          <span className="font-mono text-xs">{wb.werkbon_nummer}</span>
-                          <span className="ml-1 text-xs text-muted-foreground truncate">{wb.titel}</span>
-                        </SelectItem>
-                      ))}
-                      {formData.project_id && (
-                        <SelectItem value="__new__">
-                          <span className="flex items-center gap-1 text-primary font-medium">
-                            <Plus className="h-3 w-3" /> Nieuwe werkbon
-                          </span>
-                        </SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
-                  {formData.werkbon_id && formData.werkbon_id !== "__none__" && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      className="h-9 w-9 shrink-0"
-                      title="Werkbon openen in nieuw tabblad"
-                      onClick={() => window.open(`/werkbonnen/${formData.werkbon_id}`, "_blank")}
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              </div>
+            {/* Locatie */}
+            <div className="space-y-1.5">
+              <Label htmlFor="locatie" className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#9B9B95]">Locatie</Label>
+              <Input
+                id="locatie"
+                value={formData.locatie}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, locatie: e.target.value }))
+                }
+                placeholder="Adres montage"
+              />
             </div>
 
-            <Separator />
-
             <div className="space-y-2">
-              <Label>Medewerkers</Label>
-              <div className="flex flex-wrap gap-1.5">
-                {monteurs.map((monteur, idx) => (
-                  <button
-                    key={monteur.id}
-                    type="button"
-                    onClick={() => toggleMonteur(monteur.id)}
-                    className={cn(
-                      "h-7 w-7 rounded-full flex items-center justify-center text-[9px] font-bold transition-colors",
-                      formData.monteurs.includes(monteur.id)
-                        ? "text-white ring-2 ring-primary/30"
-                        : "bg-muted text-muted-foreground hover:bg-muted/80"
-                    )}
-                    style={formData.monteurs.includes(monteur.id) ? getAvatarStyle(idx) : undefined}
-                    title={monteur.naam}
-                  >
-                    {getInitials(monteur.naam)}
-                  </button>
-                ))}
+              <Label className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#9B9B95]">Medewerkers</Label>
+              <div className="flex flex-wrap gap-2">
+                {monteurs.map((monteur, idx) => {
+                  const selected = formData.monteurs.includes(monteur.id);
+                  return (
+                    <button
+                      key={monteur.id}
+                      type="button"
+                      onClick={() => toggleMonteur(monteur.id)}
+                      className={cn(
+                        "h-8 w-8 rounded-full flex items-center justify-center text-[10px] font-bold transition-all",
+                        selected
+                          ? "text-white ring-2 ring-offset-1 ring-[#1A535C]"
+                          : "bg-[#F0EFEC] text-[#9B9B95] hover:bg-[#E5E3DE]"
+                      )}
+                      style={selected ? getAvatarStyle(idx) : undefined}
+                      title={monteur.naam}
+                      aria-pressed={selected}
+                    >
+                      {getInitials(monteur.naam)}
+                    </button>
+                  );
+                })}
               </div>
 
               {/* Live conflict warning in form */}
@@ -1918,8 +2181,8 @@ export function MontagePlanningLayout() {
                 });
                 if (formConflicts.length === 0) return null;
                 return (
-                  <div className="mt-2 rounded-lg border border-red-200 bg-red-50 p-3">
-                    <div className="flex items-center gap-1.5 text-xs font-semibold text-red-700 mb-1">
+                  <div className="mt-2 rounded-lg border border-[#F0C8BC] bg-[#FDE8E2]/60 p-3">
+                    <div className="flex items-center gap-1.5 text-[12px] font-semibold text-[#C03A18] mb-1">
                       <AlertTriangle className="h-3.5 w-3.5" />
                       Overlap gedetecteerd
                     </div>
@@ -1929,8 +2192,8 @@ export function MontagePlanningLayout() {
                         .map((m) => monteurMap[m]?.naam || "?")
                         .join(", ");
                       return (
-                        <p key={a.id} className="text-xs text-red-600">
-                          {overlappingMonteurs} heeft al &quot;{a.titel}&quot; ({a.start_tijd}–{a.eind_tijd})
+                        <p key={a.id} className="text-[11px] text-[#C03A18]/85">
+                          {overlappingMonteurs} heeft al &quot;{a.titel}&quot; van {a.start_tijd} tot {a.eind_tijd}
                         </p>
                       );
                     })}
@@ -1939,67 +2202,106 @@ export function MontagePlanningLayout() {
               })()}
             </div>
 
-            <Separator />
-
-            <div className="space-y-2">
-              <Label htmlFor="materialen">Materialen</Label>
-              <Input
-                id="materialen"
-                value={formData.materialen}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    materialen: e.target.value,
-                  }))
-                }
-                placeholder="Gescheiden door komma's, bijv. Gevelletters, LED-verlichting"
-              />
-              {formData.materialen && (
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {formData.materialen
-                    .split(",")
-                    .map((m) => m.trim())
-                    .filter(Boolean)
-                    .map((mat, idx) => (
-                      <Badge key={idx} variant="secondary" className="text-xs">
-                        <Package className="h-3 w-3 mr-1" />
-                        {mat}
-                      </Badge>
-                    ))}
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="notities">Notities</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="notities" className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#9B9B95]">Notities</Label>
               <Textarea
                 id="notities"
-                value={formData.notities}
+                value={formData.beschrijving}
                 onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, notities: e.target.value }))
+                  setFormData((prev) => ({ ...prev, beschrijving: e.target.value }))
                 }
-                placeholder="Aanvullende opmerkingen..."
+                placeholder="Werkzaamheden, materialen, bijzonderheden..."
                 rows={3}
               />
             </div>
 
-            <Separator />
+            {/* Werkbon — koppelen aan een werkbon (optioneel) */}
+            <div className="space-y-1.5">
+              <Label className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#9B9B95]">
+                <ClipboardCheck className="h-3 w-3" />
+                Werkbon
+              </Label>
+              <div className="flex gap-1.5">
+                <Select
+                  value={formData.werkbon_id || "__none__"}
+                  onValueChange={async (v) => {
+                    if (v === "__new__") {
+                      if (!formData.project_id) {
+                        toast.error("Selecteer eerst een project");
+                        return;
+                      }
+                      try {
+                        const wb = await createWerkbon({
+                          user_id: user?.id || "",
+                          klant_id: formData.klant_id,
+                          project_id: formData.project_id,
+                          titel: formData.titel || "",
+                          datum: formatDate(new Date()),
+                          status: "concept",
+                          toon_briefpapier: false,
+                        });
+                        logCreate({ user, entityType: 'werkbon', entityId: wb.id });
+                        setProjectWerkbonnen((prev) => [...prev, wb]);
+                        setFormData((prev) => ({ ...prev, werkbon_id: wb.id }));
+                        toast.success(`Werkbon ${wb.werkbon_nummer} aangemaakt`);
+                      } catch (err) {
+                        logger.error('Werkbon aanmaken mislukt:', err)
+                        toast.error("Kon werkbon niet aanmaken");
+                      }
+                    } else {
+                      setFormData((prev) => ({ ...prev, werkbon_id: v === "__none__" ? "" : v }));
+                    }
+                  }}
+                >
+                  <SelectTrigger className="h-9 flex-1">
+                    <SelectValue placeholder="Geen werkbon" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Geen werkbon</SelectItem>
+                    {projectWerkbonnen.map((wb) => (
+                      <SelectItem key={wb.id} value={wb.id}>
+                        <span className="font-mono text-xs">{wb.werkbon_nummer}</span>
+                        <span className="ml-1 text-xs text-muted-foreground truncate">{wb.titel}</span>
+                      </SelectItem>
+                    ))}
+                    {formData.project_id && (
+                      <SelectItem value="__new__">
+                        <span className="flex items-center gap-1 text-primary font-medium">
+                          <Plus className="h-3 w-3" /> Nieuwe werkbon
+                        </span>
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+                {formData.werkbon_id && formData.werkbon_id !== "__none__" && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="h-9 w-9 shrink-0"
+                    title="Werkbon openen in nieuw tabblad"
+                    onClick={() => window.open(`/werkbonnen/${formData.werkbon_id}`, "_blank")}
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
 
-            {/* Bijlagen */}
-            <div className="space-y-2">
-              <Label className="flex items-center gap-1.5">
-                <Paperclip className="h-3.5 w-3.5" />
+            {/* Bijlagen — compact */}
+            <div className="space-y-1.5">
+              <Label className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#9B9B95]">
+                <Paperclip className="h-3 w-3" />
                 Bijlagen
+                {formData.bijlagen.length > 0 && (
+                  <span className="text-[10px] font-mono text-[#9B9B95] normal-case tracking-normal">{formData.bijlagen.length}</span>
+                )}
               </Label>
 
-              {/* Bestaande bijlagen */}
               {formData.bijlagen.length > 0 && (
                 <div className="space-y-1.5">
                   {formData.bijlagen.map((bijlage) => (
-                    <div
-                      key={bijlage.id}
-                      className="flex items-center gap-2 p-2 rounded-lg border border-[#E6E4E0] bg-[#FAFAF8]"
-                    >
+                    <div key={bijlage.id} className="flex items-center gap-2 p-2 rounded-lg border border-[#E6E4E0] bg-[#FAFAF8]">
                       {bijlage.type === 'pdf' ? (
                         <FileText className="h-4 w-4 text-[#C03A18] flex-shrink-0" />
                       ) : bijlage.type === 'tekening' || bijlage.type === 'foto' ? (
@@ -2009,31 +2311,20 @@ export function MontagePlanningLayout() {
                       )}
                       <span className="text-[13px] text-foreground truncate flex-1">{bijlage.naam}</span>
                       <span className="text-[10px] text-[#A0A098] uppercase font-medium flex-shrink-0">{bijlage.type}</span>
-                      <button
-                        type="button"
-                        title="Bekijken"
-                        onClick={() => window.open(bijlage.url, '_blank')}
-                        className="text-[#A0A098] hover:text-[#1A535C] transition-colors flex-shrink-0"
-                      >
+                      <button type="button" title="Bekijken" onClick={() => window.open(bijlage.url, '_blank')} className="text-[#A0A098] hover:text-[#1A535C] transition-colors flex-shrink-0">
                         <Eye className="h-3.5 w-3.5" />
                       </button>
                       <button
                         type="button"
                         title="Printen"
-                        onClick={() => {
-                          const w = window.open(bijlage.url, '_blank')
-                          if (w) { w.addEventListener('load', () => w.print()) }
-                        }}
+                        onClick={() => { const w = window.open(bijlage.url, '_blank'); if (w) { w.addEventListener('load', () => w.print()) } }}
                         className="text-[#A0A098] hover:text-[#1A535C] transition-colors flex-shrink-0"
                       >
                         <Printer className="h-3.5 w-3.5" />
                       </button>
                       <button
                         type="button"
-                        onClick={() => setFormData((prev) => ({
-                          ...prev,
-                          bijlagen: prev.bijlagen.filter((b) => b.id !== bijlage.id),
-                        }))}
+                        onClick={() => setFormData((prev) => ({ ...prev, bijlagen: prev.bijlagen.filter((b) => b.id !== bijlage.id) }))}
                         className="text-[#A0A098] hover:text-[#C03A18] transition-colors flex-shrink-0"
                       >
                         <X className="h-3.5 w-3.5" />
@@ -2043,17 +2334,9 @@ export function MontagePlanningLayout() {
                 </div>
               )}
 
-              {/* Upload zone */}
-              <label
-                className="flex flex-col items-center gap-1.5 p-4 rounded-lg border-2 border-dashed border-[#E6E4E0] hover:border-[#1A535C] hover:bg-[#F4F2EE] transition-colors cursor-pointer"
-              >
-                <Upload className="h-5 w-5 text-[#A0A098]" />
-                <span className="text-[12px] text-[#5A5A55]">
-                  PDF, tekening of foto uploaden
-                </span>
-                <span className="text-[10px] text-[#A0A098]">
-                  PDF, PNG, JPG, WEBP (max 10MB)
-                </span>
+              <label className="inline-flex items-center gap-1 cursor-pointer text-[13px] font-medium text-[#F15025] hover:text-[#D4452A] transition-colors w-fit">
+                <span className="font-semibold">+</span>
+                {formData.bijlagen.length === 0 ? 'Bestand toevoegen' : 'Nog een bestand'}
                 <input
                   type="file"
                   className="hidden"
@@ -2065,10 +2348,7 @@ export function MontagePlanningLayout() {
                     for (const file of Array.from(files)) {
                       try {
                         const bijlage = await uploadMontageBijlage(file)
-                        setFormData((prev) => ({
-                          ...prev,
-                          bijlagen: [...prev.bijlagen, bijlage],
-                        }))
+                        setFormData((prev) => ({ ...prev, bijlagen: [...prev.bijlagen, bijlage] }))
                       } catch (err) {
                         logger.error('Bijlage uploaden mislukt:', err)
                         toast.error(`Kon ${file.name} niet uploaden`)
@@ -2083,21 +2363,19 @@ export function MontagePlanningLayout() {
 
           <DialogFooter className="gap-2">
             {editingAfspraak && (
-              <Button
-                variant="destructive"
+              <button
+                type="button"
                 onClick={() => {
                   handleDelete(editingAfspraak.id);
                   setDialogOpen(false);
                 }}
+                className="inline-flex items-center gap-1.5 text-[12px] text-[#9B9B95] hover:text-[#C03A18] transition-colors"
               >
-                <Trash2 className="h-4 w-4 mr-2" />
+                <Trash2 className="h-3.5 w-3.5" />
                 Verwijderen
-              </Button>
+              </button>
             )}
             <div className="flex-1" />
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
-              Annuleren
-            </Button>
             <Button onClick={handleSubmit}>
               {editingAfspraak ? "Opslaan" : "Aanmaken"}
             </Button>
@@ -2109,7 +2387,7 @@ export function MontagePlanningLayout() {
 
   if (loading) {
     return (
-      <div className="flex h-[calc(100vh-120px)] overflow-hidden bg-[#F8F7F5]">
+      <div className="flex h-[calc(100vh-60px)] overflow-hidden bg-[#F8F7F5]">
         {/* Sidebar (Te plannen) */}
         <div className="hidden md:flex flex-col w-64 flex-shrink-0 border-r border-[#F0EFEC] bg-white p-3 gap-2">
           <Skeleton className="h-5 w-28 mb-2" />
@@ -2164,116 +2442,92 @@ export function MontagePlanningLayout() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-120px)] overflow-hidden bg-[#F8F7F5]">
+    <div className="flex h-[calc(100vh-60px)] overflow-hidden bg-[#F8F7F5]">
       {/* ── Left sidebar: Team ── */}
       <div className="w-[200px] shrink-0 bg-white border-r border-[#F0EFEC] flex flex-col rounded-tr-2xl">
-        {/* Te plannen section */}
-        {tePlannenProjecten.length > 0 && (
-          <div className="border-b border-[#F0EFEC]">
-            <div className="px-3 py-2.5 flex items-center justify-between">
-              <h2 className="text-[11px] font-bold text-[#F15025] uppercase tracking-wider">Te plannen</h2>
-              <span className="text-[10px] font-bold rounded-md px-1.5 py-0.5" style={{ backgroundColor: '#FDE8E2', color: '#F15025' }}>
-                {tePlannenProjecten.length}
-              </span>
-            </div>
-            <div className="max-h-[200px] overflow-y-auto">
-              {tePlannenProjecten.map((project) => (
-                <div
-                  key={project.id}
-                  draggable
-                  onDragStart={(e) => {
-                    setDraggingProjectId(project.id);
-                    e.dataTransfer.effectAllowed = "copyMove";
-                    e.dataTransfer.setData("text/plain", `project:${project.id}`);
-                    // Custom drag image
-                    const ghost = e.currentTarget.cloneNode(true) as HTMLElement;
-                    ghost.style.width = `${e.currentTarget.offsetWidth}px`;
-                    ghost.style.background = '#fff';
-                    ghost.style.borderRadius = '8px';
-                    ghost.style.boxShadow = '0 8px 24px rgba(0,0,0,0.15)';
-                    ghost.style.opacity = '0.95';
-                    ghost.style.position = 'absolute';
-                    ghost.style.top = '-1000px';
-                    document.body.appendChild(ghost);
-                    e.dataTransfer.setDragImage(ghost, 20, 20);
-                    requestAnimationFrame(() => document.body.removeChild(ghost));
-                  }}
-                  onDragEnd={() => { setDraggingProjectId(null); setDragOverDate(null); }}
-                  onClick={() => openNewDialogFromProject(project)}
-                  className={cn(
-                    "w-full text-left px-3 py-2 border-l-[3px] border-l-[#F15025] hover:bg-[#FDE8E2]/40 transition-all duration-200 cursor-grab active:cursor-grabbing select-none",
-                    draggingProjectId === project.id && "opacity-40 scale-95"
-                  )}
-                >
-                  <div className="text-[13px] font-semibold truncate leading-tight text-[#1A1A1A]">{project.naam}</div>
-                  {project.klant_naam && (
-                    <div className="text-[11px] text-[#9B9B95] truncate">{project.klant_naam}</div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Sidebar header */}
-        <div className="px-3 py-2.5 border-b border-[#F0EFEC]">
-          <h2 className="text-[11px] font-semibold text-[#9B9B95] uppercase tracking-widest">Team</h2>
+        {/* Compacte paginatitel */}
+        <div className="px-4 pt-5 pb-3 flex items-baseline gap-2 shrink-0">
+          <h1 className="text-[18px] font-extrabold tracking-[-0.3px] text-[#1A1A1A] leading-none">
+            Planning<span className="text-[#F15025]">.</span>
+          </h1>
+          <span className="text-[11px] font-mono tabular-nums text-[#9B9B95]">
+            {stats.totaalWeek}
+          </span>
         </div>
 
-        {/* Sidebar items */}
-        <div className="flex-1 overflow-y-auto">
-          {/* Overzicht option */}
-          <button
-            onClick={() => setSelectedMonteur("alle")}
-            className={cn(
-              "w-full text-left px-3 py-2.5 flex items-center gap-2 transition-all border-l-2 text-sm",
-              selectedMonteur === "alle"
-                ? "bg-[#1A535C]/[0.05] border-l-[#1A535C] text-[#1A535C] font-semibold"
-                : "border-l-transparent hover:bg-[#F8F7F4] text-[#6B6B66]"
-            )}
-          >
-            <List className="h-4 w-4 shrink-0" />
-            <span>Overzicht</span>
-          </button>
-
-          {/* Team members */}
-          {monteurs.map((monteur, idx) => {
-            const isSelected = selectedMonteur === monteur.id;
-            const todayCount = weekAfspraken.filter(
-              (a) => a.datum === todayStr && a.monteurs.includes(monteur.id) && a.status !== "afgerond"
-            ).length;
-
-            return (
-              <button
-                key={monteur.id}
-                onClick={() => setSelectedMonteur(monteur.id)}
-                className={cn(
-                  "w-full text-left px-3 py-2.5 flex items-center gap-2 transition-all border-l-2",
-                  isSelected
-                    ? "bg-[#1A535C]/[0.05] border-l-[#1A535C]"
-                    : "border-l-transparent hover:bg-[#F8F7F4]"
-                )}
-              >
-                <div
-                  className="h-7 w-7 rounded-lg flex items-center justify-center text-[10px] font-bold shrink-0"
-                  style={getAvatarStyle(idx)}
-                >
-                  {getInitials(monteur.naam)}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className={cn(
-                    "text-[13px] truncate leading-tight",
-                    isSelected ? "font-semibold text-[#1A1A1A]" : "text-[#4A4A46]"
-                  )}>
-                    {monteur.naam}
+        {/* Te plannen section */}
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          <div className="px-3 py-2.5 flex items-center justify-between border-l-2 border-l-[#1A535C] shrink-0">
+            <h2 className="text-[11px] font-bold text-[#F15025] uppercase tracking-wider">Te plannen</h2>
+            <span
+              className="text-[11px] font-bold flex items-center justify-center rounded-md"
+              style={{ backgroundColor: '#FDE8E2', color: '#F15025', minWidth: '24px', height: '24px', padding: '0 6px' }}
+            >
+              {tePlannenProjecten.length}
+            </span>
+          </div>
+          {tePlannenProjecten.length === 0 ? (
+            <div className="flex items-center gap-2 px-3 py-3 text-[11px] text-[#B0ADA8]">
+              <Check className="h-3.5 w-3.5" />
+              <span>Niets te plannen</span>
+            </div>
+          ) : (
+            <div className="flex-1 overflow-y-auto px-2 py-2 flex flex-col gap-2">
+              {tePlannenProjecten.map((project) => {
+                const isPrio = project.prioriteit === 'hoog' || project.prioriteit === 'kritiek';
+                return (
+                  <div
+                    key={project.id}
+                    draggable
+                    onDragStart={(e) => {
+                      setDraggingProjectId(project.id);
+                      e.dataTransfer.effectAllowed = "copyMove";
+                      e.dataTransfer.setData("text/plain", `project:${project.id}`);
+                      const ghost = e.currentTarget.cloneNode(true) as HTMLElement;
+                      ghost.style.width = `${e.currentTarget.offsetWidth}px`;
+                      ghost.style.background = '#fff';
+                      ghost.style.borderRadius = '8px';
+                      ghost.style.boxShadow = '0 8px 24px rgba(0,0,0,0.15)';
+                      ghost.style.opacity = '0.95';
+                      ghost.style.position = 'absolute';
+                      ghost.style.top = '-1000px';
+                      document.body.appendChild(ghost);
+                      e.dataTransfer.setDragImage(ghost, 20, 20);
+                      requestAnimationFrame(() => document.body.removeChild(ghost));
+                    }}
+                    onDragEnd={() => { setDraggingProjectId(null); setDragOverDate(null); }}
+                    onClick={() => openNewDialogFromProject(project)}
+                    className={cn(
+                      "group/card relative w-full text-left bg-white border rounded-lg hover:bg-[#1A535C]/[0.05] transition-all duration-200 cursor-grab active:cursor-grabbing select-none",
+                      isPrio ? "border-l-[3px] border-l-[#F15025] border-y-[#F0EFEC] border-r-[#F0EFEC]" : "border-[#F0EFEC]",
+                      draggingProjectId === project.id && "opacity-50"
+                    )}
+                    style={{ padding: '8px 10px' }}
+                  >
+                    <div className="pr-5">
+                      <div className="text-[13px] font-medium truncate leading-tight text-[#1A1A1A]">{project.naam}</div>
+                      {project.klant_naam && (
+                        <div className="text-[11px] text-[#9B9B95] truncate mt-0.5">{project.klant_naam}</div>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); toggleProjectPrio(project); }}
+                      title={isPrio ? "Prioriteit weghalen" : "Prioriteit geven"}
+                      className={cn(
+                        "absolute top-1.5 right-1.5 h-5 w-5 rounded flex items-center justify-center transition-all",
+                        isPrio
+                          ? "text-[#F15025] opacity-100"
+                          : "text-[#B0ADA8] opacity-0 group-hover/card:opacity-100 hover:text-[#F15025]"
+                      )}
+                    >
+                      <Flame className={cn("h-3.5 w-3.5", isPrio && "fill-[#F15025]")} />
+                    </button>
                   </div>
-                  {todayCount > 0 && (
-                    <div className="text-[10px] text-[#9B9B95]">{todayCount} vandaag</div>
-                  )}
-                </div>
-              </button>
-            );
-          })}
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Sidebar footer: stats */}
@@ -2285,6 +2539,89 @@ export function MontagePlanningLayout() {
 
       {/* ── Right content: member's week planning ── */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Scope pills */}
+        <div className="flex items-center gap-2 px-4 py-2 border-b border-[#F0EFEC] bg-white">
+          <button
+            type="button"
+            onClick={setScopeAlle}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-md text-[13px] font-medium transition-all",
+              scopeMode === 'alle'
+                ? "bg-[#1A535C] text-white"
+                : "bg-transparent text-[#6B6B66] border border-[#E5E3DE] hover:bg-[#F0EFEC]"
+            )}
+            style={{ padding: '6px 12px' }}
+          >
+            <Users className="h-3.5 w-3.5" />
+            Iedereen
+          </button>
+          <button
+            type="button"
+            onClick={() => eigenMedewerker && setScopeMijn(eigenMedewerker.id)}
+            disabled={!eigenMedewerker}
+            title={!eigenMedewerker ? 'Geen gekoppeld medewerker-profiel' : undefined}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-md text-[13px] font-medium transition-all",
+              scopeMode === 'mijn'
+                ? "bg-[#1A535C] text-white"
+                : "bg-transparent text-[#6B6B66] border border-[#E5E3DE] hover:bg-[#F0EFEC]",
+              !eigenMedewerker && "opacity-50 cursor-not-allowed hover:bg-transparent"
+            )}
+            style={{ padding: '6px 12px' }}
+          >
+            <User className="h-3.5 w-3.5" />
+            Mijn week
+          </button>
+          <Select
+            value={scopeMode === 'medewerker' && selectedMonteur !== 'alle' ? selectedMonteur : ''}
+            onValueChange={(v) => setSelectedMonteur(v)}
+          >
+            <SelectTrigger
+              className={cn(
+                "inline-flex items-center gap-1.5 h-auto w-auto rounded-md text-[13px] font-medium transition-all focus:ring-0 focus:ring-offset-0",
+                scopeMode === 'medewerker'
+                  ? "bg-[#1A535C] text-white border-0 hover:bg-[#143F46]"
+                  : "bg-transparent text-[#6B6B66] border border-[#E5E3DE] hover:bg-[#F0EFEC]"
+              )}
+              style={{ padding: '6px 12px' }}
+            >
+              <User className="h-3.5 w-3.5 mr-1" />
+              <SelectValue placeholder="Per persoon" />
+            </SelectTrigger>
+            <SelectContent>
+              {monteurs.map((m) => (
+                <SelectItem key={m.id} value={m.id}>
+                  {m.naam}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <div className="flex-1" />
+
+          <div className="inline-flex rounded-md border border-[#E5E3DE] p-0.5 bg-white">
+            <button
+              type="button"
+              onClick={() => setViewMode('week')}
+              className={cn(
+                "px-2.5 py-1 rounded text-[12px] font-medium transition-all",
+                viewMode === 'week' ? "bg-[#1A535C] text-white" : "text-[#6B6B66] hover:text-[#1A1A1A]"
+              )}
+            >
+              Week
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('maand')}
+              className={cn(
+                "px-2.5 py-1 rounded text-[12px] font-medium transition-all",
+                viewMode === 'maand' ? "bg-[#1A535C] text-white" : "text-[#6B6B66] hover:text-[#1A1A1A]"
+              )}
+            >
+              Maand
+            </button>
+          </div>
+        </div>
         {/* Conflict banner */}
         {conflicts.length > 0 && (
           <div className="bg-[#FDE8E2] border-b border-[#F0C8BC] px-4 py-2 flex items-center gap-2">
@@ -2300,7 +2637,11 @@ export function MontagePlanningLayout() {
 
         {/* Main view */}
         <div className="flex-1 overflow-auto">
-          {selectedMonteur === "alle" ? renderMultiMonteurView() : renderMemberWeekView()}
+          {viewMode === 'maand'
+            ? renderMonthView()
+            : selectedMonteur === "alle"
+              ? renderMultiMonteurView()
+              : renderMemberWeekView()}
         </div>
       </div>
 

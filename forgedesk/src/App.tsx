@@ -248,7 +248,7 @@ function AppContent() {
         <Route path="email/compose" element={<EmailLayout />} />
         <Route path="planning" element={<PlanningRoute />} />
         <Route path="kalender" element={<Navigate to="/planning" replace />} />
-        <Route path="montage" element={<Navigate to="/planning?modus=montage" replace />} />
+        <Route path="montage" element={<Navigate to="/planning" replace />} />
         <Route path="inkoopfacturen" element={<Navigate to="/facturen?tab=inkoop" replace />} />
         <Route path="inkoopfacturen/:id" element={<Navigate to="/facturen?tab=inkoop" replace />} />
         <Route path="financieel" element={<FinancialLayout />} />

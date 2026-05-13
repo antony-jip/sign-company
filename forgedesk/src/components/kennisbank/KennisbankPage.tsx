@@ -227,7 +227,7 @@ const ARTICLES: KbArticle[] = [
       'Gebruik het "Overzicht" filter om alle monteurs tegelijk te zien',
       'Klik op een afspraak om details te bewerken of een werkbon te koppelen',
     ],
-    link: '/planning?modus=montage',
+    link: '/planning',
   },
   {
     id: 'taken',
