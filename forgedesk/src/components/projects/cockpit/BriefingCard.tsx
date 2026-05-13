@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Textarea } from '@/components/ui/textarea'
 import { Sparkles, Loader2 } from 'lucide-react'
 import { chatCompletion, isAIConfigured } from '@/services/aiService'
-import { cn } from '@/lib/utils'
 
 interface BriefingCardProps {
   beschrijving: string
@@ -11,26 +10,58 @@ interface BriefingCardProps {
   onSave: (text: string) => Promise<void>
 }
 
+const AUTOSAVE_DELAY_MS = 800
+
 export function BriefingCard({ beschrijving, projectNaam, klantNaam, onSave }: BriefingCardProps) {
   const [text, setText] = useState(beschrijving)
   const [isSaving, setIsSaving] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
+  const savedRef = useRef(beschrijving)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     setText(beschrijving)
+    savedRef.current = beschrijving
   }, [beschrijving])
 
-  const isDirty = text !== beschrijving
-  const hasContent = text.trim().length > 0
-  const showDaan = isAIConfigured() && hasContent && !isDirty
-
-  const handleSave = async () => {
+  const flush = async (value: string) => {
+    if (value === savedRef.current) return
     setIsSaving(true)
     try {
-      await onSave(text)
+      await onSave(value)
+      savedRef.current = value
     } finally {
       setIsSaving(false)
     }
+  }
+
+  useEffect(() => {
+    if (text === savedRef.current) return
+    if (timerRef.current) clearTimeout(timerRef.current)
+    timerRef.current = setTimeout(() => { flush(text) }, AUTOSAVE_DELAY_MS)
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    }
+  }, [text]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current)
+        if (text !== savedRef.current) {
+          onSave(text).catch(() => {})
+        }
+      }
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const hasContent = text.trim().length > 0
+  const isDirty = text !== savedRef.current
+  const showDaan = isAIConfigured() && hasContent && !isDirty && !isSaving
+
+  const handleBlur = () => {
+    if (timerRef.current) clearTimeout(timerRef.current)
+    if (text !== savedRef.current) flush(text)
   }
 
   const handleDaan = async () => {
@@ -66,56 +97,42 @@ Antwoord ALLEEN met de briefing, niets anders.`
       <div className="flex items-center justify-between mb-3 min-h-[24px]">
         <h3 className="text-[11px] font-semibold text-[#6B6B66] uppercase tracking-[0.08em]">Briefing</h3>
 
-        {/* Save-bar — alleen bij dirty */}
-        <div
-          className={cn(
-            'flex items-center gap-2 transition-all duration-150',
-            isDirty
-              ? 'opacity-100 visible'
-              : 'opacity-0 invisible pointer-events-none'
-          )}
-        >
-          <button
-            disabled={isSaving}
-            onClick={() => setText(beschrijving)}
-            className="text-[12px] text-[#9B9B95] hover:text-[#1A1A1A] transition-colors disabled:opacity-40"
-          >
-            Annuleren
-          </button>
-          <button
-            disabled={isSaving}
-            onClick={handleSave}
-            className="text-[12px] font-semibold text-white bg-[#1A535C] hover:bg-[#237580] transition-colors px-3 py-1 rounded-md disabled:opacity-40"
-          >
-            {isSaving ? 'Opslaan…' : 'Opslaan'}
-          </button>
-        </div>
-
-        {/* Daan ghost-button — alleen bij content + clean */}
-        {showDaan && (
-          <button
-            disabled={isGenerating}
-            onClick={handleDaan}
-            className="flex items-center gap-1.5 text-[11px] text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[var(--cream-bg)] transition-colors rounded-md px-2 py-1 disabled:opacity-50"
-          >
-            {isGenerating ? (
+        <div className="flex items-center gap-3">
+          {isSaving && (
+            <span className="flex items-center gap-1.5 text-[11px] text-[#9B9B95]">
               <Loader2 className="h-3 w-3 animate-spin" />
-            ) : (
-              <Sparkles className="h-3 w-3" style={{ color: 'var(--lavender-text)' }} />
-            )}
-            {isGenerating ? 'Daan schrijft…' : 'Daan'}
-          </button>
-        )}
+              Opslaan…
+            </span>
+          )}
+
+          {showDaan && (
+            <button
+              disabled={isGenerating}
+              onClick={handleDaan}
+              className="flex items-center gap-1.5 text-[11px] text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[var(--cream-bg)] transition-colors rounded-md px-2 py-1 disabled:opacity-50"
+            >
+              {isGenerating ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Sparkles className="h-3 w-3" style={{ color: 'var(--lavender-text)' }} />
+              )}
+              {isGenerating ? 'Daan schrijft…' : 'Daan'}
+            </button>
+          )}
+        </div>
       </div>
 
       <Textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
+        onBlur={handleBlur}
         placeholder="Wat moet er gemaakt worden? Waar? Welke materialen?"
         className="resize-y text-[14px] leading-relaxed w-full min-h-[110px] px-4 py-3.5 bg-[var(--cream-bg)] border-[var(--cream-border)] focus-visible:bg-white focus-visible:border-[var(--amber)] focus-visible:ring-[3px] focus-visible:ring-[rgba(204,138,63,0.18)] focus-visible:shadow-none"
         onKeyDown={(e) => {
-          if (e.key === 'Escape') setText(beschrijving)
-          if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && isDirty) handleSave()
+          if (e.key === 'Escape') {
+            setText(savedRef.current)
+            ;(e.target as HTMLTextAreaElement).blur()
+          }
         }}
       />
     </div>
