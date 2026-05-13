@@ -78,7 +78,7 @@ export function SendOfferteDialog({
   onTrialBlocked,
   medewerkerNaam,
 }: SendOfferteDialogProps) {
-  const { bedrijfsnaam, primaireKleur, emailHandtekening, profile } = useAppSettings()
+  const { bedrijfsnaam, primaireKleur, emailHandtekening, afzenderNaam, profile } = useAppSettings()
   const documentStyle = useDocumentStyle()
 
   const [sendTo, setSendTo] = useState('')
@@ -99,7 +99,7 @@ export function SendOfferteDialog({
   const buildFallbackFollowUp = useCallback((): { onderwerp: string; body: string } => {
     const naam = resolveContactNaam(offerte, klant)
     const voornaam = naam.split(' ')[0] || naam
-    const afzender = (emailHandtekening?.trim()) || bedrijfsnaam || ''
+    const afzender = (emailHandtekening?.trim()) || (afzenderNaam?.trim()) || bedrijfsnaam || ''
     const bedrag = formatCurrency(offerte.totaal || 0)
     const pogingen = offerte.contact_pogingen || 0
     const aanhef = voornaam ? `Beste ${voornaam}` : 'Beste'
@@ -119,7 +119,7 @@ export function SendOfferteDialog({
         : `Opvolging offerte ${offerte.nummer} — ${offerte.titel}`,
       body,
     }
-  }, [offerte, klant, bedrijfsnaam, emailHandtekening, dagenOpen, dagenTotVerlopen])
+  }, [offerte, klant, bedrijfsnaam, emailHandtekening, afzenderNaam, dagenOpen, dagenTotVerlopen])
 
   const generateFollowUp = useCallback(async () => {
     setIsGenerating(true)
@@ -139,7 +139,7 @@ export function SendOfferteDialog({
         aantal_eerdere_followups: offerte.contact_pogingen || 0,
         status: offerte.status,
         bedrijfsnaam_afzender: bedrijfsnaam || '',
-        afzender_naam: bedrijfsnaam || '',
+        afzender_naam: afzenderNaam || bedrijfsnaam || '',
         email_handtekening: emailHandtekening || '',
       }
       const result = await generateFollowUpEmail(context)
@@ -152,7 +152,7 @@ export function SendOfferteDialog({
     } finally {
       setIsGenerating(false)
     }
-  }, [offerte, klant, project, bedrijfsnaam, emailHandtekening, dagenOpen, dagenTotVerlopen, buildFallbackFollowUp])
+  }, [offerte, klant, project, bedrijfsnaam, emailHandtekening, afzenderNaam, dagenOpen, dagenTotVerlopen, buildFallbackFollowUp])
 
   useEffect(() => {
     if (!open) {
@@ -170,7 +170,7 @@ export function SendOfferteDialog({
       setSendSubject(`Offerte ${offerte.nummer} · ${offerte.titel}`)
       const afsluiting = emailHandtekening?.trim()
         ? emailHandtekening
-        : `Met vriendelijke groet,\n${bedrijfsnaam || 'Uw bedrijf'}`
+        : `Met vriendelijke groet,\n${afzenderNaam?.trim() || bedrijfsnaam || 'Uw bedrijf'}`
       setSendBody(
         `Beste ${contactNaam},\n\nHierbij ontvangt u onze offerte ${offerte.nummer} voor "${offerte.titel}".\n\nWij zien uw reactie graag tegemoet.\n\n${afsluiting}`
       )
@@ -179,7 +179,7 @@ export function SendOfferteDialog({
       setSendBody('')
       generateFollowUp()
     }
-  }, [open, mode, offerte, klant, bedrijfsnaam, emailHandtekening, generateFollowUp])
+  }, [open, mode, offerte, klant, bedrijfsnaam, emailHandtekening, afzenderNaam, generateFollowUp])
 
   const handleSend = useCallback(async () => {
     if (isTrialBlocked) {
