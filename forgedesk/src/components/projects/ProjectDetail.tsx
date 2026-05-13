@@ -1296,14 +1296,6 @@ export function ProjectDetail() {
             </div>
           )}
 
-          {/* Montage — Pad B shell-tweaks op wrapper (radius 12, shadow warm, padding 6) */}
-          <div className="rounded-xl bg-[#FFFFFF] shadow-[0_1px_3px_rgba(130,100,60,0.04)] p-6">
-            <MontageSection
-              montageAfspraken={projectMontages}
-              onInplannen={handleOpenMontageDialog}
-            />
-          </div>
-
           {/* Bestanden — eigen card-shell */}
           <BestandenSection
             documenten={projectDocumenten}
