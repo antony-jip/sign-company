@@ -78,7 +78,7 @@ export function SendOfferteDialog({
   onTrialBlocked,
   medewerkerNaam,
 }: SendOfferteDialogProps) {
-  const { bedrijfsnaam, primaireKleur, emailHandtekening, afzenderNaam, profile } = useAppSettings()
+  const { bedrijfsnaam, primaireKleur, emailHandtekening, afzenderNaam, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, profile } = useAppSettings()
   const documentStyle = useDocumentStyle()
 
   const [sendTo, setSendTo] = useState('')
@@ -101,8 +101,9 @@ export function SendOfferteDialog({
     const voornaam = naam.split(' ')[0] || naam
     const handtekeningTekst = emailHandtekening?.trim() || ''
     const naamRegel = afzenderNaam?.trim() || bedrijfsnaam || ''
+    // Bij handtekening-afbeelding: laat afzender leeg, de afbeelding wordt in HTML toegevoegd.
     const afzender = handtekeningTekst
-      || (naamRegel ? `Met vriendelijke groet,\n${naamRegel}` : '')
+      || (handtekeningAfbeelding ? '' : (naamRegel ? `Met vriendelijke groet,\n${naamRegel}` : ''))
     const bedrag = formatCurrency(offerte.totaal || 0)
     const pogingen = offerte.contact_pogingen || 0
     const aanhef = voornaam ? `Beste ${voornaam}` : 'Beste'
@@ -122,7 +123,7 @@ export function SendOfferteDialog({
         : `Opvolging offerte ${offerte.nummer} — ${offerte.titel}`,
       body,
     }
-  }, [offerte, klant, bedrijfsnaam, emailHandtekening, afzenderNaam, dagenOpen, dagenTotVerlopen])
+  }, [offerte, klant, bedrijfsnaam, emailHandtekening, afzenderNaam, handtekeningAfbeelding, dagenOpen, dagenTotVerlopen])
 
   const generateFollowUp = useCallback(async () => {
     setIsGenerating(true)
@@ -173,16 +174,19 @@ export function SendOfferteDialog({
       setSendSubject(`Offerte ${offerte.nummer} · ${offerte.titel}`)
       const afsluiting = emailHandtekening?.trim()
         ? emailHandtekening
-        : `Met vriendelijke groet,\n${afzenderNaam?.trim() || bedrijfsnaam || 'Uw bedrijf'}`
+        : handtekeningAfbeelding
+          ? ''
+          : `Met vriendelijke groet,\n${afzenderNaam?.trim() || bedrijfsnaam || 'Uw bedrijf'}`
+      const slot = afsluiting ? `\n\n${afsluiting}` : ''
       setSendBody(
-        `Beste ${contactNaam},\n\nHierbij ontvangt u onze offerte ${offerte.nummer} voor "${offerte.titel}".\n\nWij zien uw reactie graag tegemoet.\n\n${afsluiting}`
+        `Beste ${contactNaam},\n\nHierbij ontvangt u onze offerte ${offerte.nummer} voor "${offerte.titel}".\n\nWij zien uw reactie graag tegemoet.${slot}`
       )
     } else {
       setSendSubject('')
       setSendBody('')
       generateFollowUp()
     }
-  }, [open, mode, offerte, klant, bedrijfsnaam, emailHandtekening, afzenderNaam, generateFollowUp])
+  }, [open, mode, offerte, klant, bedrijfsnaam, emailHandtekening, afzenderNaam, handtekeningAfbeelding, generateFollowUp])
 
   const handleSend = useCallback(async () => {
     if (isTrialBlocked) {
@@ -241,6 +245,8 @@ export function SendOfferteDialog({
         bedrijfsnaam: bedrijfsnaam || 'Uw bedrijf',
         primaireKleur,
         handtekening: emailHandtekening || undefined,
+        handtekeningAfbeelding: handtekeningAfbeelding || undefined,
+        handtekeningAfbeeldingGrootte: handtekeningAfbeeldingGrootte || undefined,
         logoUrl: profile?.logo_url || undefined,
         bekijkUrl: publiekeUrl,
         customBody: sendBody || undefined,
@@ -329,7 +335,8 @@ export function SendOfferteDialog({
     }
   }, [
     offerte, klant, items, userId, mode, sendTo, sendSubject, sendBody,
-    bedrijfsnaam, primaireKleur, emailHandtekening, profile, documentStyle,
+    bedrijfsnaam, primaireKleur, emailHandtekening, handtekeningAfbeelding,
+    handtekeningAfbeeldingGrootte, profile, documentStyle,
     isTrialBlocked, onTrialBlocked, onOpenChange, onPortaalCreated, onSent,
     medewerkerNaam,
   ])
