@@ -69,7 +69,15 @@ export async function getOrgId(): Promise<string | undefined> {
   if (!supabase) return undefined
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return undefined
-  const { data: profile } = await supabase.from('profiles').select('organisatie_id').eq('id', user.id).maybeSingle()
+  let { data: profile } = await supabase.from('profiles').select('organisatie_id').eq('id', user.id).maybeSingle()
+  if (!profile?.organisatie_id) {
+    // Race bij re-login: auth-header nog niet door supabase-client gepropageerd
+    // naar RLS-protected profile-query. Retry één keer (zelfde patroon als
+    // AuthContext.handleOnboardingRedirect).
+    await new Promise(r => setTimeout(r, 250))
+    const retry = await supabase.from('profiles').select('organisatie_id').eq('id', user.id).maybeSingle()
+    profile = retry.data
+  }
   if (profile?.organisatie_id) { _cachedOrgId = profile.organisatie_id; return _cachedOrgId }
   return undefined
 }
