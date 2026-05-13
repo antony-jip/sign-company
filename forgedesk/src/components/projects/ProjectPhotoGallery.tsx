@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import {
   Camera,
   X,
@@ -293,7 +294,7 @@ export function ProjectPhotoGallery({
       </div>
 
       {/* ── Lightbox ── */}
-      {lightboxIndex !== null && currentPhoto && (
+      {lightboxIndex !== null && currentPhoto && createPortal(
         <div
           className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-sm flex flex-col"
           onClick={(e) => {
@@ -417,7 +418,8 @@ export function ProjectPhotoGallery({
               </div>
             </div>
           )}
-        </div>
+        </div>,
+        document.body
       )}
     </>
   )
