@@ -161,12 +161,6 @@ export function generateUBLInvoice({ factuur, items, klant, profiel }: UBLInput)
   lines.push(`          <cbc:IdentificationCode>${esc(klant.land || 'NL')}</cbc:IdentificationCode>`)
   lines.push('        </cac:Country>')
   lines.push('      </cac:PostalAddress>')
-  if (klant.kvk_nummer) {
-    lines.push('      <cac:PartyLegalEntity>')
-    lines.push(`        <cbc:RegistrationName>${esc(klant.bedrijfsnaam)}</cbc:RegistrationName>`)
-    lines.push(`        <cbc:CompanyID schemeID="0106">${esc(klant.kvk_nummer)}</cbc:CompanyID>`)
-    lines.push('      </cac:PartyLegalEntity>')
-  }
   if (klant.btw_nummer) {
     lines.push('      <cac:PartyTaxScheme>')
     lines.push(`        <cbc:CompanyID>${esc(klant.btw_nummer)}</cbc:CompanyID>`)

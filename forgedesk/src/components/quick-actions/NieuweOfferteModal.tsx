@@ -172,7 +172,7 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
     try {
       const klant = await createKlant({
         bedrijfsnaam: klantQuery.trim(), contactpersoon: '', email: '', telefoon: '',
-        adres: '', postcode: '', stad: '', land: 'Nederland', website: '', kvk_nummer: '', btw_nummer: '',
+        adres: '', postcode: '', stad: '', land: 'Nederland', website: '', debiteurennummer: '', btw_nummer: '',
         status: 'prospect', tags: [], notities: '', contactpersonen: [],
       })
       setKlanten(prev => [klant, ...prev])
@@ -190,7 +190,7 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
         bedrijfsnaam: newKlant.bedrijfsnaam.trim(), contactpersoon: newKlant.contactpersoon.trim(),
         email: newKlant.email.trim(), telefoon: newKlant.telefoon.trim(),
         adres: newKlant.adres.trim(), postcode: newKlant.postcode.trim(), stad: newKlant.stad.trim(),
-        land: 'Nederland', website: '', kvk_nummer: '', btw_nummer: '',
+        land: 'Nederland', website: '', debiteurennummer: '', btw_nummer: '',
         status: 'prospect', tags: [], notities: '', contactpersonen: [],
       })
       setKlanten(prev => [klant, ...prev])

@@ -42,7 +42,7 @@ export function KlantContactSelector({
   const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number; width: number } | null>(null)
 
   // Nieuw bedrijf state
-  const [nb, setNb] = useState({ bedrijfsnaam: '', contactpersoon: '', email: '', telefoon: '', adres: '', postcode: '', stad: '', website: '', kvk_nummer: '', btw_nummer: '' })
+  const [nb, setNb] = useState({ bedrijfsnaam: '', contactpersoon: '', email: '', telefoon: '', adres: '', postcode: '', stad: '', website: '', debiteurennummer: '', btw_nummer: '' })
   // Nieuw contact state
   const [nc, setNc] = useState({ naam: '', functie: '', email: '', telefoon: '' })
 
@@ -169,7 +169,7 @@ export function KlantContactSelector({
         stad: nb.stad.trim(),
         land: 'Nederland',
         website: nb.website.trim(),
-        kvk_nummer: nb.kvk_nummer.trim(),
+        debiteurennummer: nb.debiteurennummer.trim(),
         btw_nummer: nb.btw_nummer.trim(),
         status: 'actief',
         tags: [],
@@ -180,7 +180,7 @@ export function KlantContactSelector({
 
       onKlantenRefresh?.()
       onKlantChange(nieuw.id, nieuw)
-      setNb({ bedrijfsnaam: '', contactpersoon: '', email: '', telefoon: '', adres: '', postcode: '', stad: '', website: '', kvk_nummer: '', btw_nummer: '' })
+      setNb({ bedrijfsnaam: '', contactpersoon: '', email: '', telefoon: '', adres: '', postcode: '', stad: '', website: '', debiteurennummer: '', btw_nummer: '' })
       setShowNieuwBedrijf(false)
       setShowUitgebreid(false)
       setShowResults(false)
@@ -359,7 +359,7 @@ export function KlantContactSelector({
                     <Input value={nb.adres} onChange={(e) => setNb({ ...nb, adres: e.target.value })} placeholder="Adres" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
                     <Input value={nb.postcode} onChange={(e) => setNb({ ...nb, postcode: e.target.value })} placeholder="Postcode" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
                     <Input value={nb.website} onChange={(e) => setNb({ ...nb, website: e.target.value })} placeholder="Website" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
-                    <Input value={nb.kvk_nummer} onChange={(e) => setNb({ ...nb, kvk_nummer: e.target.value })} placeholder="KvK-nummer" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
+                    <Input value={nb.debiteurennummer} onChange={(e) => setNb({ ...nb, debiteurennummer: e.target.value })} placeholder="Debiteurennummer" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
                     <Input value={nb.btw_nummer} onChange={(e) => setNb({ ...nb, btw_nummer: e.target.value })} placeholder="BTW-nummer" className="h-9 text-[13px] rounded-lg" style={{ border: '0.5px solid #E6E4E0' }} />
                   </div>
                 )}

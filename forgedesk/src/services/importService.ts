@@ -331,7 +331,7 @@ export async function importeerBedrijfsdata(
           stad: rij.plaats || '',
           land: 'Nederland',
           website: '',
-          kvk_nummer: rij.kvk_nummer || '',
+          debiteurennummer: rij.debiteurennummer || '',
           btw_nummer: rij.btw_nummer || '',
           status: 'actief',
           tags: [],
@@ -574,7 +574,7 @@ export async function importeerContactpersonen(
 
 export function generateBedrijfsdataTemplate(): string {
   const BOM = '\uFEFF'
-  const header = 'type;bedrijfsnaam;naam;nummer;datum;bedrag;adres;postcode;plaats;telefoon;email;kvk_nummer;btw_nummer;verantwoordelijke'
+  const header = 'type;bedrijfsnaam;naam;nummer;datum;bedrag;adres;postcode;plaats;telefoon;email;debiteurennummer;btw_nummer;verantwoordelijke'
   const rows = [
     'relatie;Bakkerij Janssen;;;;;Hoofdstraat 1;1234 AB;Amsterdam;020-1234567;info@bakkerij-janssen.nl;12345678;NL123456789B01;',
     'relatie;Bouwbedrijf De Groot B.V.;;;;;Industrieweg 88;5678 CD;Rotterdam;010-9876543;info@degroot-bouw.nl;87654321;;',
