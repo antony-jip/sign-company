@@ -9,6 +9,10 @@ export function formatCurrency(amount: number, currency: string = 'EUR', locale:
   return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(amount)
 }
 
+export function formatAmount(amount: number, locale: string = 'nl-NL'): string {
+  return new Intl.NumberFormat(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount)
+}
+
 export function formatDate(date: string | Date): string {
   try {
     const d = typeof date === 'string' ? new Date(date) : date

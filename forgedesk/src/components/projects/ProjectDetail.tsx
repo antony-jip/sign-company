@@ -1110,6 +1110,8 @@ export function ProjectDetail() {
           {/* Fase indicator */}
           <ProjectFaseBar
             status={project.status}
+            totaalBedrag={totaalBedrag}
+            deadline={project.deadline}
             onStatusChange={async (newStatus) => {
               try {
                 const oudeStatus = project.status

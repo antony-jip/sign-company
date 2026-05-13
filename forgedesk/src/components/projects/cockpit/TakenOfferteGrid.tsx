@@ -1,27 +1,17 @@
-import { Plus } from 'lucide-react'
+import { ClipboardList, FileText } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { formatCurrency } from '@/lib/utils'
+import { formatAmount } from '@/lib/utils'
+import { getStatusPillClass, getStatusPillTone, getStatusLabel, type PillTone } from '@/utils/statusColors'
 import { TaskChecklistView } from './TaskChecklistView'
 import type { Taak, Offerte, Medewerker } from '@/types'
 
-const offerteStatusLabel: Record<string, string> = {
-  concept: 'Concept',
-  verzonden: 'Verzonden',
-  bekeken: 'Bekeken',
-  goedgekeurd: 'Goedgekeurd',
-  afgewezen: 'Afgewezen',
-  verlopen: 'Verlopen',
-  gefactureerd: 'Gefactureerd',
-}
-
-const offerteStatusColor: Record<string, string> = {
-  concept: '#8A7A4A',
-  verzonden: '#3A5A9A',
-  bekeken: '#3A5A9A',
-  goedgekeurd: '#3A7D52',
-  afgewezen: '#C0451A',
-  verlopen: '#C0451A',
-  gefactureerd: '#1A535C',
+const toneAccent: Record<PillTone, string> = {
+  cream:    'var(--cream-text)',
+  mist:     'var(--mist-text)',
+  blush:    'var(--blush-text)',
+  sage:     'var(--sage-text)',
+  lavender: 'var(--lavender-text)',
+  coral:    'var(--coral-text)',
 }
 
 interface TakenOfferteGridProps {
@@ -39,24 +29,24 @@ export function TakenOfferteGrid({
   taken,
   offertes,
   medewerkers,
-  projectId,
   onNewTaak,
   onNewOfferte,
   onTaakStatusChange,
 }: TakenOfferteGridProps) {
   const navigate = useNavigate()
-  const takenKlaar = taken.filter(t => t.status === 'klaar').length
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      {/* Taken */}
-      <div className="rounded-xl bg-[#FFFFFF] shadow-[0_1px_3px_rgba(0,0,0,0.03)] p-5">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* ── Taken ── */}
+      <div className="rounded-xl bg-[#FFFFFF] shadow-[0_1px_3px_rgba(130,100,60,0.04)] p-6">
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-baseline gap-2">
-            <h3 className="text-[13px] font-bold text-[#1A1A1A] tracking-[-0.2px]">Taken</h3>
-            <span className="text-[12px] font-mono text-[#9B9B95]">{takenKlaar}/{taken.length}</span>
+          <div className="flex items-center gap-2">
+            <h3 className="text-[11px] font-semibold text-[#6B6B66] uppercase tracking-[0.08em]">Taken</h3>
+            <span className="font-mono text-[10px] font-medium bg-[var(--cream-bg)] text-[var(--cream-text)] rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
+              {taken.length}
+            </span>
           </div>
-          <button onClick={onNewTaak} className="text-[12px] font-semibold text-[#F15025] hover:underline">
+          <button onClick={onNewTaak} className="text-[12px] text-[#6B6B66] hover:text-[#1A1A1A] transition-colors">
             + Taak
           </button>
         </div>
@@ -70,47 +60,64 @@ export function TakenOfferteGrid({
             />
           </div>
         ) : (
-          <div
+          <button
             onClick={onNewTaak}
-            className="cursor-pointer rounded-lg px-4 py-8 bg-[#F8F7F5] hover:bg-[#F4F2EE] transition-all text-center"
+            className="w-full rounded-lg border border-dashed border-[#D8D5CF] bg-transparent hover:bg-[var(--cream-bg)] hover:border-[var(--cream-border)] transition-all px-4 py-7 flex flex-col items-center gap-2 text-center group"
           >
-            <p className="text-[13px] text-[#9B9B95]">Nog geen taken</p>
-            <p className="text-[12px] text-[#F15025] font-medium mt-1">+ Eerste taak toevoegen</p>
-          </div>
+            <ClipboardList className="h-6 w-6 text-[#B0ADA8] group-hover:text-[var(--cream-text)] transition-colors" />
+            <div>
+              <p className="text-[13px] font-semibold text-[#1A1A1A]">Eerste taak toevoegen</p>
+              <p className="text-[12px] text-[#9B9B95] mt-0.5">Wat moet er gebeuren?</p>
+            </div>
+          </button>
         )}
       </div>
 
-      {/* Offertes */}
-      <div className="rounded-xl bg-[#FFFFFF] shadow-[0_1px_3px_rgba(0,0,0,0.03)] p-5">
+      {/* ── Offertes ── */}
+      <div className="rounded-xl bg-[#FFFFFF] shadow-[0_1px_3px_rgba(130,100,60,0.04)] p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-[13px] font-bold text-[#1A1A1A] tracking-[-0.2px]">Offertes</h3>
-          <button onClick={onNewOfferte} className="text-[12px] font-semibold text-[#F15025] hover:underline">
+          <div className="flex items-center gap-2">
+            <h3 className="text-[11px] font-semibold text-[#6B6B66] uppercase tracking-[0.08em]">Offertes</h3>
+            <span className="font-mono text-[10px] font-medium bg-[var(--cream-bg)] text-[var(--cream-text)] rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
+              {offertes.length}
+            </span>
+          </div>
+          <button onClick={onNewOfferte} className="text-[12px] text-[#6B6B66] hover:text-[#1A1A1A] transition-colors">
             + Offerte
           </button>
         </div>
 
         {offertes.length > 0 ? (
-          <div className="space-y-1">
+          <div className="space-y-0.5 -mx-2">
             {offertes.map((offerte) => {
-              const statusColor = offerteStatusColor[offerte.status] || '#6B6B66'
+              const tone = getStatusPillTone(offerte.status)
+              const accent = toneAccent[tone]
               return (
                 <div
                   key={offerte.id}
                   onClick={() => navigate(`/offertes/${offerte.id}/bewerken`)}
-                  className="rounded-lg px-4 py-3.5 hover:bg-[#F8F7F5] cursor-pointer transition-all group"
+                  className="group relative cursor-pointer rounded-lg px-3 py-3 hover:bg-[#FAFAF8] transition-colors"
                 >
+                  <span
+                    aria-hidden
+                    className="absolute left-0 top-2 bottom-2 w-[3px] rounded-r-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    style={{ background: accent }}
+                  />
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
-                      <p className="text-[14px] font-semibold text-[#1A1A1A] truncate group-hover:text-[#1A535C] transition-colors">{offerte.titel}</p>
-                      <div className="flex items-center gap-3 mt-1">
-                        <span className="text-[11px] font-mono text-[#9B9B95]">{offerte.nummer}</span>
-                        <span className="text-[11px] font-medium" style={{ color: statusColor }}>
-                          {offerteStatusLabel[offerte.status] || offerte.status}<span className="text-[#F15025]">.</span>
+                      <p className="text-[14px] font-semibold text-[#1A1A1A] truncate">
+                        {offerte.titel || 'Offerte zonder titel'}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="font-mono text-[11px] text-[#9B9B95]">{offerte.nummer}</span>
+                        <span className={getStatusPillClass(offerte.status)} style={{ fontSize: 11, padding: '2px 8px' }}>
+                          {getStatusLabel(offerte.status)}
                         </span>
                       </div>
                     </div>
-                    <span className="text-[17px] font-mono font-bold text-[#1A1A1A] flex-shrink-0 mt-0.5">
-                      {formatCurrency(offerte.totaal)}
+                    <span className="font-mono text-[15px] tabular-nums flex-shrink-0 mt-0.5">
+                      <span className="text-[#9B9B95]">€</span>
+                      <span className="text-[#1A1A1A] font-semibold ml-0.5">{formatAmount(offerte.totaal)}</span>
                     </span>
                   </div>
                 </div>
@@ -118,13 +125,16 @@ export function TakenOfferteGrid({
             })}
           </div>
         ) : (
-          <div
+          <button
             onClick={onNewOfferte}
-            className="cursor-pointer rounded-lg px-4 py-8 bg-[#F8F7F5] hover:bg-[#F4F2EE] transition-all text-center"
+            className="w-full rounded-lg border border-dashed border-[#D8D5CF] bg-transparent hover:bg-[var(--cream-bg)] hover:border-[var(--cream-border)] transition-all px-4 py-7 flex flex-col items-center gap-2 text-center group"
           >
-            <p className="text-[13px] text-[#9B9B95]">Nog geen offertes</p>
-            <p className="text-[12px] text-[#F15025] font-medium mt-1">+ Offerte maken</p>
-          </div>
+            <FileText className="h-6 w-6 text-[#B0ADA8] group-hover:text-[var(--cream-text)] transition-colors" />
+            <div>
+              <p className="text-[13px] font-semibold text-[#1A1A1A]">Offerte maken</p>
+              <p className="text-[12px] text-[#9B9B95] mt-0.5">Stuur een prijsopgave</p>
+            </div>
+          </button>
         )}
       </div>
     </div>

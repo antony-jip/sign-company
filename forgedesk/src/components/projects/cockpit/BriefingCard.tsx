@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Textarea } from '@/components/ui/textarea'
 import { Sparkles, Loader2 } from 'lucide-react'
 import { chatCompletion, isAIConfigured } from '@/services/aiService'
+import { cn } from '@/lib/utils'
 
 interface BriefingCardProps {
   beschrijving: string
@@ -20,6 +21,8 @@ export function BriefingCard({ beschrijving, projectNaam, klantNaam, onSave }: B
   }, [beschrijving])
 
   const isDirty = text !== beschrijving
+  const hasContent = text.trim().length > 0
+  const showDaan = isAIConfigured() && hasContent && !isDirty
 
   const handleSave = async () => {
     setIsSaving(true)
@@ -59,53 +62,62 @@ Antwoord ALLEEN met de briefing, niets anders.`
   }
 
   return (
-    <div className="rounded-xl bg-[#FFFFFF] shadow-[0_1px_3px_rgba(0,0,0,0.03)] p-5">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-[13px] font-bold text-[#1A1A1A] tracking-[-0.2px]">Briefing</h3>
-        <div className="flex items-center gap-3">
+    <div className="rounded-xl bg-[#FFFFFF] shadow-[0_1px_3px_rgba(130,100,60,0.04)] p-6">
+      <div className="flex items-center justify-between mb-3 min-h-[24px]">
+        <h3 className="text-[11px] font-semibold text-[#6B6B66] uppercase tracking-[0.08em]">Briefing</h3>
+
+        {/* Save-bar — alleen bij dirty */}
+        <div
+          className={cn(
+            'flex items-center gap-2 transition-all duration-150',
+            isDirty
+              ? 'opacity-100 visible'
+              : 'opacity-0 invisible pointer-events-none'
+          )}
+        >
           <button
-            disabled={!isDirty || isSaving}
+            disabled={isSaving}
             onClick={() => setText(beschrijving)}
-            className="text-[12px] text-[#9B9B95] hover:text-[#1A1A1A] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="text-[12px] text-[#9B9B95] hover:text-[#1A1A1A] transition-colors disabled:opacity-40"
           >
             Annuleren
           </button>
           <button
-            disabled={!isDirty || isSaving}
+            disabled={isSaving}
             onClick={handleSave}
-            className="text-[12px] text-[#1A535C] font-semibold hover:underline disabled:opacity-40 disabled:cursor-not-allowed disabled:no-underline transition-colors"
+            className="text-[12px] font-semibold text-white bg-[#1A535C] hover:bg-[#237580] transition-colors px-3 py-1 rounded-md disabled:opacity-40"
           >
-            {isSaving ? 'Opslaan...' : 'Opslaan'}
+            {isSaving ? 'Opslaan…' : 'Opslaan'}
           </button>
         </div>
-      </div>
 
-      <div>
-        <Textarea
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="Wat moet er gemaakt worden? Waar? Welke materialen?"
-          rows={4}
-          className="resize-y text-[14px] leading-relaxed bg-[#F8F7F5] rounded-lg p-4 border border-[#EBEBEB] focus:ring-1 focus:ring-[#1A535C]/20 focus:border-[#1A535C]/30"
-          onKeyDown={(e) => {
-            if (e.key === 'Escape') setText(beschrijving)
-            if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && isDirty) handleSave()
-          }}
-        />
-        {isAIConfigured() && text.trim() && (
+        {/* Daan ghost-button — alleen bij content + clean */}
+        {showDaan && (
           <button
             disabled={isGenerating}
             onClick={handleDaan}
-            className="mt-2 text-[11px] text-[#9B9B95] hover:text-[#1A535C] transition-colors flex items-center gap-1 disabled:opacity-50"
+            className="flex items-center gap-1.5 text-[11px] text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[var(--cream-bg)] transition-colors rounded-md px-2 py-1 disabled:opacity-50"
           >
             {isGenerating ? (
-              <><Loader2 className="h-3 w-3 animate-spin" /> Daan schrijft...</>
+              <Loader2 className="h-3 w-3 animate-spin" />
             ) : (
-              <><Sparkles className="h-3 w-3" /> Laat Daan herschrijven</>
+              <Sparkles className="h-3 w-3" style={{ color: 'var(--lavender-text)' }} />
             )}
+            {isGenerating ? 'Daan schrijft…' : 'Daan'}
           </button>
         )}
       </div>
+
+      <Textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="Wat moet er gemaakt worden? Waar? Welke materialen?"
+        className="resize-y text-[14px] leading-relaxed w-full min-h-[110px] px-4 py-3.5 bg-[var(--cream-bg)] border-[var(--cream-border)] focus-visible:bg-white focus-visible:border-[var(--amber)] focus-visible:ring-[3px] focus-visible:ring-[rgba(204,138,63,0.18)] focus-visible:shadow-none"
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') setText(beschrijving)
+          if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && isDirty) handleSave()
+        }}
+      />
     </div>
   )
 }
