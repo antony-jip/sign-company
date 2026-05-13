@@ -34,6 +34,8 @@ import {
   Printer,
   MoreHorizontal,
   ChevronDown,
+  ChevronRight,
+  Pencil,
   Bell,
   BellOff,
   Clock,
@@ -124,12 +126,15 @@ import { PakbonVanProjectDialog } from '@/components/leveringsbonnen/PakbonVanPr
 import { getFase } from '@/utils/projectFases'
 // ProjectKaart removed — using inline sticky header
 import { PortaalCompactBlock } from './cockpit/PortaalCompactBlock'
+import { PortaalPreviewCard } from './cockpit/PortaalPreviewCard'
+import { ActiviteitCard } from './cockpit/ActiviteitCard'
+import { KlantCard } from './cockpit/KlantCard'
+import { ActiesCard } from './cockpit/ActiesCard'
 import { confirm } from '@/components/shared/ConfirmDialog'
 import { TaskChecklistView } from './cockpit/TaskChecklistView'
 import { BriefingCard } from './cockpit/BriefingCard'
 import { TakenOfferteGrid } from './cockpit/TakenOfferteGrid'
 import { ProjectFaseBar } from './cockpit/ProjectFaseBar'
-import { MontageSection } from './cockpit/MontageSection'
 import { BestandenSection } from './cockpit/BestandenSection'
 import { ActiviteitFeed, buildActivityFeed, type ActivityEvent } from './cockpit/ActiviteitFeed'
 const PdfPreviewDialog = React.lazy(() => import('@/components/shared/PdfPreviewDialog').then(m => ({ default: m.PdfPreviewDialog })))
@@ -141,6 +146,7 @@ import { logger } from '../../utils/logger'
 import { logWijziging, logCreate } from '@/utils/auditLogger'
 import { getAuditLogForProject } from '@/services/supabaseService'
 import { useMedewerkers } from '@/contexts/MedewerkersContext'
+import { getStatusPillClass } from '@/utils/statusColors'
 
 const statusLabels: Record<string, string> = {
   gepland: 'Gepland',
@@ -934,186 +940,133 @@ export function ProjectDetail() {
       {/* ══════════ STICKY HEADER + TABS ══════════ */}
       <div className="sticky top-0 z-10 bg-[#F8F7F5]/95 backdrop-blur-md px-8 pt-4 flex-shrink-0">
         <div className="flex items-start justify-between gap-6">
-          <div className="min-w-0 flex-1">
-            {/* Row 1: back + name + status + number */}
-            <div className="flex items-center gap-3">
-              <Link to="/projecten" className="text-[#9B9B95] hover:text-[#1A1A1A] transition-colors flex-shrink-0 -ml-1 p-1 rounded-lg hover:bg-[#EBEBEB]/50">
-                <ArrowLeft className="h-4 w-4" />
-              </Link>
-              <h1 className="text-[24px] font-extrabold text-[#1A1A1A] truncate tracking-[-0.5px]">{project.naam}</h1>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="text-sm text-[#1A1A1A] flex-shrink-0 flex items-center gap-1 cursor-pointer hover:bg-[#EBEBEB]/40 rounded-md px-2 py-0.5 -mx-2 transition-colors group">
-                    <span className={cn('w-1.5 h-1.5 rounded-full', getStatusDotColor(project.status))} />
-                    {statusLabels[project.status] || project.status}<span className="text-[#F15025]">.</span>
-                    <ChevronDown className="h-3 w-3 text-[#9B9B95] opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-44">
-                  {statusOpties.map((s) => (
-                    <DropdownMenuItem
-                      key={s.value}
-                      onClick={() => {
-                        if (s.value !== project.status) handleCockpitStatusChange(s.value as Project['status'])
-                      }}
-                      className={cn('flex items-center gap-2 text-xs', s.value === project.status && 'font-semibold')}
-                    >
-                      <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0', getStatusDotColor(s.value))} />
-                      {s.label}
-                      {s.value === project.status && <CheckCircle2 className="w-3 h-3 ml-auto text-[#1A535C]" />}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-              {project.project_nummer && (
-                <span className="font-mono text-[13px] text-[#9B9B95] flex-shrink-0">{project.project_nummer}</span>
-              )}
-            </div>
-            {/* Row 2: klant + bedrag + deadline */}
-            <div className="flex items-center gap-2.5 ml-8 mt-1 text-[13px]">
-              {klant && (
-                <Link to={`/klanten/${klant.id}`} className="text-[#6B6B66] hover:text-[#1A1A1A] transition-colors font-medium">
-                  {klant.bedrijfsnaam || klant.contactpersoon}
-                  {klant.stad && <span className="text-[#9B9B95] font-normal"> · {klant.stad}</span>}
+          <div className="flex items-start gap-3 min-w-0 flex-1">
+            {/* Back-button ghost */}
+            <Link
+              to="/projecten"
+              className="flex items-center justify-center h-8 w-8 -ml-1 rounded-lg text-[#9B9B95] hover:bg-[var(--cream-bg)] hover:text-[#1A1A1A] transition-colors flex-shrink-0"
+              aria-label="Terug naar projecten"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+
+            <div className="min-w-0 flex-1">
+              {/* Row 0: subtle breadcrumb */}
+              <div className="flex items-center gap-1.5 text-[12px] text-[#9B9B95] mb-1">
+                <Link to="/projecten" className="hover:text-[#1A1A1A] transition-colors">
+                  Projecten
                 </Link>
-              )}
-              {totaalBedrag > 0 && (
-                <>
-                  <span className="text-[#D4D2CE]">·</span>
-                  <span className="font-mono font-semibold text-[#1A1A1A]">{formatCurrency(totaalBedrag)}</span>
-                </>
-              )}
-              {isValidDate && daysLeft !== null && (
-                <>
-                  <span className="text-[#D4D2CE]">·</span>
-                  <span className={cn(
-                    'font-mono text-[12px] px-1.5 py-0.5 rounded-md',
-                    daysLeft < 0 ? 'text-[#C03A18] bg-[#C03A18]/[0.06] font-semibold' : daysLeft <= 7 ? 'text-[#8A6A00] bg-[#F5EDD8]' : 'text-[#9B9B95]',
-                  )}>
-                    {daysLeft < 0 ? `${Math.abs(daysLeft)}d over deadline` : `${daysLeft}d`}
-                  </span>
-                </>
-              )}
+                <ChevronRight className="h-3 w-3 text-[#C0BDB8] flex-shrink-0" />
+                <span className="font-mono">
+                  {project.project_nummer || `PRJ-${id?.slice(0, 8).toUpperCase()}`}
+                </span>
+              </div>
+
+              {/* Row 1: H1 + status pill */}
+              <div className="flex items-center gap-3 min-w-0">
+                <h1 className="text-[26px] font-bold text-[#1A1A1A] truncate tracking-[-0.5px] leading-tight">
+                  {project.naam}
+                </h1>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      className={cn(getStatusPillClass(project.status), 'cursor-pointer hover:brightness-95 transition-all flex-shrink-0 group')}
+                      aria-label="Status wijzigen"
+                    >
+                      {statusLabels[project.status] || project.status}
+                      <ChevronDown className="h-2.5 w-2.5 -mr-1 opacity-0 group-hover:opacity-60 transition-opacity" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-44">
+                    {statusOpties.map((s) => (
+                      <DropdownMenuItem
+                        key={s.value}
+                        onClick={() => {
+                          if (s.value !== project.status) handleCockpitStatusChange(s.value as Project['status'])
+                        }}
+                        className={cn('flex items-center gap-2 text-xs', s.value === project.status && 'font-semibold')}
+                      >
+                        <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0', getStatusDotColor(s.value))} />
+                        {s.label}
+                        {s.value === project.status && <CheckCircle2 className="w-3 h-3 ml-auto text-[#1A535C]" />}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+
+              {/* Row 2: subline — alleen klant · plaats */}
+              <div className="mt-1 text-[14px]">
+                {klant && (
+                  <Link to={`/klanten/${klant.id}`} className="text-[#6B6B66] hover:text-[#1A1A1A] transition-colors">
+                    <span className="font-medium">{klant.bedrijfsnaam || klant.contactpersoon}</span>
+                    {klant.stad && <span className="text-[#9B9B95] font-normal"> · {klant.stad}</span>}
+                  </Link>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Right: Activiteit + CTA + menu */}
-          <div className="flex items-center gap-3 flex-shrink-0">
-            {/* Recente activiteit — compact in header */}
-            {recenteActiviteiten.length > 0 && (
-              <div className="relative hidden lg:block">
-                <span className="text-[9px] font-semibold text-[#B0ADA8] uppercase tracking-[0.1em] ml-1 mb-0.5 block">Activiteit</span>
-                <button
-                  onClick={() => setShowActivityDropdown(s => !s)}
-                  className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-[#F0EFEC]/60 hover:bg-[#F0EFEC] transition-colors text-left max-w-[320px]"
-                >
-                  <div className="w-2 h-2 rounded-full bg-[#1A535C] flex-shrink-0 animate-pulse" />
-                  <div className="min-w-0">
-                    <p className="text-[12px] font-medium text-[#4A4A46] truncate">
-                      {recenteActiviteiten[0].medewerker && recenteActiviteiten[0].bron === 'audit'
-                        ? `${recenteActiviteiten[0].medewerker.split(' ')[0]} heeft ${recenteActiviteiten[0].tekst}`
-                        : recenteActiviteiten[0].tekst}
-                    </p>
-                    <p className="text-[10px] text-[#9B9B95]">
-                      {new Date(recenteActiviteiten[0].datum).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })} · {recenteActiviteiten.length} activiteiten
-                    </p>
-                  </div>
-                  <ChevronDown className={cn('h-3.5 w-3.5 text-[#9B9B95] flex-shrink-0 transition-transform', showActivityDropdown && 'rotate-180')} />
-                </button>
-
-                {showActivityDropdown && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => setShowActivityDropdown(false)} />
-                    <div className="absolute right-0 top-full mt-1.5 w-[360px] bg-white rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.1)] z-50 overflow-hidden border border-[#EBEBEB]">
-                      <div className="px-4 py-3 border-b border-[#F0EFEC] flex items-center justify-between bg-[#FAFAF8]">
-                        <span className="text-[13px] font-bold text-[#1A1A1A]">Projectactiviteit</span>
-                        <span className="text-[10px] text-[#9B9B95] bg-[#F0EFEC] rounded-md px-1.5 py-0.5 font-medium">{recenteActiviteiten.length}</span>
-                      </div>
-                      <div className="max-h-[360px] overflow-y-auto">
-                        {recenteActiviteiten.slice(0, 20).map((ev, i) => {
-                          const typeColors: Record<string, string> = {
-                            project: '#1A535C', offerte: '#F15025', montage: '#2B6E44',
-                            werkbon: '#3A5A9A', factuur: '#8A3D6E', taak: '#7D6A2E',
-                            foto: '#B05C2E', portaal: '#5A4E91',
-                          }
-                          return (
-                            <div key={ev.id} className={cn('flex items-start gap-3 px-4 py-3 hover:bg-[#F8F7F5] transition-colors', i > 0 && 'border-t border-[#F0EFEC]')}>
-                              <div className="w-2 h-2 rounded-full flex-shrink-0 mt-1.5" style={{ backgroundColor: typeColors[ev.type] || '#9B9B95' }} />
-                              <div className="min-w-0 flex-1">
-                                <p className="text-[13px] text-[#1A1A1A] leading-snug">
-                                  {ev.medewerker && ev.bron === 'audit' ? (
-                                    <><span className="font-semibold">{ev.medewerker.split(' ')[0]}</span> heeft {ev.tekst}</>
-                                  ) : (
-                                    ev.tekst
-                                  )}
-                                </p>
-                                <p className="text-[11px] text-[#9B9B95] mt-0.5">
-                                  {new Date(ev.datum).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })} om {new Date(ev.datum).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}
-                                </p>
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-
-            {/* Offerte CTA — altijd zichtbaar */}
+          {/* Right: CTA + menu */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {/* Offerte CTA — petrol primary met flame-dot */}
             {(() => {
               const activeOfferte = projectOffertes.find(o => !['afgewezen', 'verlopen', 'gefactureerd'].includes(o.status)) || projectOffertes[0]
               if (!activeOfferte) {
                 return (
-                  <button onClick={openNieuweOfferte} className="bg-[#F15025] hover:bg-[#D94520] text-white text-[13px] font-semibold px-5 py-2.5 rounded-xl transition-all duration-150 shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_12px_rgba(241,80,37,0.35)] hover:-translate-y-px active:translate-y-0">
+                  <button onClick={openNieuweOfferte} className="btn-primary-flame">
+                    <Pencil className="h-3.5 w-3.5" />
                     Offerte maken
                   </button>
                 )
               }
               return (
-                <button onClick={() => navigate(`/offertes/${activeOfferte.id}/bewerken`, { state: { from: location.pathname } })} className="bg-[#F15025] hover:bg-[#D94520] text-white text-[13px] font-semibold px-5 py-2.5 rounded-xl transition-all duration-150 shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_12px_rgba(241,80,37,0.35)] hover:-translate-y-px active:translate-y-0">
+                <button
+                  onClick={() => navigate(`/offertes/${activeOfferte.id}/bewerken`, { state: { from: location.pathname } })}
+                  className="btn-primary-flame"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
                   Offerte bewerken
                 </button>
               )
             })()}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="h-8 w-8 rounded-lg flex items-center justify-center text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#EBEBEB]/50 transition-colors">
+                <button className="h-9 w-9 rounded-lg border border-[#EBEBEB] bg-white flex items-center justify-center text-[#6B6B66] hover:bg-[var(--cream-bg)] hover:text-[#1A1A1A] transition-colors">
                   <MoreHorizontal className="h-4 w-4" />
                 </button>
               </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={openKopieDialog}>
-                <Copy className="mr-2 h-3.5 w-3.5" />
-                Kopiëren
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleAiAnalysis}>
-                <Sparkles className="mr-2 h-3.5 w-3.5" />
-                AI Analyse
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={async () => {
-                try {
-                  const oudeStatus = project.status
-                  const updated = await updateProject(id!, { status: 'afgerond' })
-                  setProject(updated)
-                  if (user?.id) {
-                    const naam = medewerkers.find(m => m.user_id === user.id)?.naam ?? user.email ?? ''
-                    logWijziging({ userId: user.id, entityType: 'project', entityId: id!, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: oudeStatus, nieuweWaarde: 'afgerond' })
-                  }
-                  toast.success('Project gearchiveerd')
-                } catch (err) { logger.error('Kon project niet archiveren:', err); toast.error('Kon project niet archiveren') }
-              }}>
-                <CheckCircle2 className="mr-2 h-3.5 w-3.5" />
-                Archiveren
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={openKopieDialog}>
+                  <Copy className="mr-2 h-3.5 w-3.5" />
+                  Kopiëren
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleAiAnalysis}>
+                  <Sparkles className="mr-2 h-3.5 w-3.5" />
+                  AI Analyse
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={async () => {
+                  try {
+                    const oudeStatus = project.status
+                    const updated = await updateProject(id!, { status: 'afgerond' })
+                    setProject(updated)
+                    if (user?.id) {
+                      const naam = medewerkers.find(m => m.user_id === user.id)?.naam ?? user.email ?? ''
+                      logWijziging({ userId: user.id, entityType: 'project', entityId: id!, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: oudeStatus, nieuweWaarde: 'afgerond' })
+                    }
+                    toast.success('Project gearchiveerd')
+                  } catch (err) { logger.error('Kon project niet archiveren:', err); toast.error('Kon project niet archiveren') }
+                }}>
+                  <CheckCircle2 className="mr-2 h-3.5 w-3.5" />
+                  Archiveren
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
-        {/* TAB BAR — inside sticky header */}
-        <div className="flex items-center gap-7 border-b border-[#EBEBEB] mt-3">
+        {/* TAB BAR — amber underline */}
+        <div className="flex items-center gap-7 border-b border-[#EBEBEB] mt-4">
         {([
           { key: 'overzicht' as ProjectTab, label: 'Overzicht', count: 0 },
           { key: 'werkbon' as ProjectTab, label: 'Werkbon', count: projectWerkbonnen.length },
@@ -1124,18 +1077,18 @@ export function ProjectDetail() {
             key={tab.key}
             onClick={() => handleTabChange(tab.key)}
             className={cn(
-              'relative py-3.5 text-[14px] transition-colors flex items-center gap-1.5',
+              'relative py-3 text-[14px] transition-colors flex items-center gap-1.5',
               activeTab === tab.key
-                ? 'text-[#1A1A1A] font-bold'
+                ? 'text-[#1A1A1A] font-semibold'
                 : 'text-[#6B6B66] hover:text-[#1A1A1A]'
             )}
           >
             {tab.label}
             {tab.count > 0 && (
-              <span className="text-[10px] font-mono font-bold bg-[#F0EFEC] text-[#6B6B66] rounded-full px-1.5 py-0.5 min-w-[18px] text-center">{tab.count}</span>
+              <span className="font-mono text-[10px] font-medium bg-[var(--cream-bg)] text-[var(--cream-text)] rounded-full px-1.5 py-0.5 min-w-[18px] text-center">{tab.count}</span>
             )}
             {activeTab === tab.key && (
-              <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#1A535C] rounded-t-full" />
+              <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[var(--amber)] rounded-t-full" />
             )}
           </button>
         ))}
@@ -1153,6 +1106,8 @@ export function ProjectDetail() {
           {/* Fase indicator */}
           <ProjectFaseBar
             status={project.status}
+            totaalBedrag={totaalBedrag}
+            deadline={project.deadline}
             onStatusChange={async (newStatus) => {
               try {
                 const oudeStatus = project.status
@@ -1206,10 +1161,18 @@ export function ProjectDetail() {
             onOpdrachtbevestiging={(offerte) => setObPreviewOfferte(offerte)}
           />
 
-          {/* Portaal — pronkstuk */}
-          <div className="rounded-xl p-5">
-            <PortaalCompactBlock projectId={id!} />
-          </div>
+          {/* Activiteit */}
+          <ActiviteitCard events={recenteActiviteiten} />
+
+          {/* Portaal — preview voor inactief, compact-feed voor actief (beide checken intern) */}
+          <PortaalPreviewCard
+            projectId={id!}
+            klant={klant}
+            offertes={projectOffertes}
+            bestanden={projectDocumenten}
+            fotos={projectFotos}
+          />
+          <PortaalCompactBlock projectId={id!} />
 
           {/* Verzonden emails */}
           {(() => {
@@ -1274,252 +1237,81 @@ export function ProjectDetail() {
         </div>
 
         {/* ── Right column (sidebar, 35%) ── */}
-        <div className="w-full lg:w-[300px] xl:w-[320px] flex-shrink-0 space-y-5 lg:self-start lg:sticky lg:top-20">
+        <div className="w-full lg:w-[300px] xl:w-[320px] flex-shrink-0 space-y-4 lg:self-start lg:sticky lg:top-20">
 
-          {/* Klant & Contactpersoon */}
           {klant && (
-            <div className="rounded-xl bg-[#FFFFFF] shadow-[0_1px_3px_rgba(0,0,0,0.03)] p-5">
-              {/* Bedrijfsgegevens */}
-              <div className="flex items-start gap-3 mb-4">
-                <div className="h-10 w-10 rounded-lg bg-[#1A535C] flex items-center justify-center text-white text-[14px] font-bold flex-shrink-0">
-                  {(klant.bedrijfsnaam || klant.contactpersoon || '?').charAt(0).toUpperCase()}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <Link to={`/klanten/${klant.id}`} className="text-[14px] font-bold text-[#1A1A1A] hover:text-[#1A535C] transition-colors truncate block tracking-[-0.2px]">
-                    {klant.bedrijfsnaam || klant.contactpersoon}
-                  </Link>
-                  {klant.contactpersoon && klant.bedrijfsnaam && (
-                    <p className="text-[12px] text-[#6B6B66] mt-0.5">{klant.contactpersoon}</p>
-                  )}
-                </div>
-              </div>
-              {(() => {
-                const projectCp = project.contactpersoon_id ? gemergedeContactpersonen.find(c => c.id === project.contactpersoon_id) : null
-                const displayEmail = projectCp?.email || klant.email
-                const displayTelefoon = projectCp?.telefoon || klant.telefoon
-                return (
-                  <div className="space-y-1.5 text-[12px] text-[#6B6B66] mb-4">
-                    {klant.adres && (
-                      <p>{klant.adres}{klant.postcode || klant.stad ? `, ${[klant.postcode, klant.stad].filter(Boolean).join(' ')}` : ''}</p>
-                    )}
-                    {displayTelefoon && (
-                      <p>
-                        <a href={`tel:${displayTelefoon}`} className="hover:text-[#1A1A1A] transition-colors">{displayTelefoon}</a>
-                      </p>
-                    )}
-                    {displayEmail && (
-                      <p>
-                        <a href="#" onClick={(e) => { e.preventDefault(); navigateWithTab({ path: `/email/compose?to=${encodeURIComponent(displayEmail)}`, label: 'Nieuwe email', id: `/email/compose-${displayEmail}` }) }} className="hover:text-[#1A535C] transition-colors cursor-pointer">{displayEmail}</a>
-                        {projectCp && klant.email && projectCp.email !== klant.email && (
-                          <span className="block text-[10px] text-[#9B9B95] mt-0.5">Bedrijf: {klant.email}</span>
-                        )}
-                      </p>
-                    )}
-                  </div>
-                )
-              })()}
-
-              {/* Contactpersoon selectie */}
-              <div className="border-t border-[#EBEBEB]/60 pt-4 mt-4">
-                <h4 className="text-[11px] font-semibold text-[#9B9B95] uppercase tracking-wider mb-2">Contactpersoon</h4>
-                {(() => {
-                  const activeCp = gemergedeContactpersonen.find(cp => cp.id === project.contactpersoon_id)
-                  return (
-                    <div className="space-y-2">
-                      <select
-                        value={project.contactpersoon_id || ''}
-                        onChange={async (e) => {
-                          const cpId = e.target.value
-                          const cp = cpId ? gemergedeContactpersonen.find(c => c.id === cpId) : null
-                          try {
-                            const updated = await updateProject(id!, { contactpersoon_id: cpId || undefined })
-                            setProject(updated)
-                            toast.success(cp ? `Contactpersoon: ${cp.naam}` : 'Contactpersoon verwijderd')
-                          } catch (err) {
-                            logger.error('Kon contactpersoon niet wijzigen:', err)
-                          }
-                        }}
-                        className="w-full text-[13px] font-medium text-[#1A1A1A] bg-[#F8F7F5] rounded-lg px-3 py-2.5 border-none outline-none cursor-pointer hover:bg-[#F4F2EE] transition-colors appearance-none"
-                        style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239B9B95' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center' }}
-                      >
-                        <option value="">Selecteer contactpersoon...</option>
-                        {gemergedeContactpersonen.map((cp) => (
-                          <option key={cp.id} value={cp.id}>{cp.naam}{cp.functie ? ` · ${cp.functie}` : ''}</option>
-                        ))}
-                      </select>
-                      {activeCp && (activeCp.email || activeCp.telefoon) && (
-                        <div className="px-3 py-2 rounded-lg bg-[#E2F0F0]/40 text-[11px] text-[#1A535C] space-y-0.5">
-                          {activeCp.email && <p><a href="#" onClick={(e) => { e.preventDefault(); navigateWithTab({ path: `/email/compose?to=${encodeURIComponent(activeCp.email)}`, label: 'Nieuwe email', id: `/email/compose-${activeCp.email}` }) }} className="hover:underline cursor-pointer">{activeCp.email}</a></p>}
-                          {activeCp.telefoon && <p><a href={`tel:${activeCp.telefoon}`} className="hover:underline">{activeCp.telefoon}</a></p>}
-                        </div>
-                      )}
-                      {!showNieuwCp ? (
-                        <button
-                          onClick={() => setShowNieuwCp(true)}
-                          className="text-[11px] font-medium text-[#1A535C] hover:underline"
-                        >
-                          + Nieuw contactpersoon
-                        </button>
-                      ) : (
-                        <div className="space-y-1.5">
-                          <input
-                            value={nieuwCpNaam}
-                            onChange={(e) => setNieuwCpNaam(e.target.value)}
-                            placeholder="Naam"
-                            className="w-full text-[12px] text-[#1A1A1A] placeholder:text-[#9B9B95] bg-[#F8F7F5] rounded-lg px-3 py-2 border-none focus:outline-none focus:ring-2 focus:ring-[#1A535C]/20"
-                            autoFocus
-                          />
-                          <input
-                            value={nieuwCpEmail}
-                            onChange={(e) => setNieuwCpEmail(e.target.value)}
-                            placeholder="Email"
-                            className="w-full text-[12px] text-[#1A1A1A] placeholder:text-[#9B9B95] bg-[#F8F7F5] rounded-lg px-3 py-2 border-none focus:outline-none focus:ring-2 focus:ring-[#1A535C]/20"
-                          />
-                          <div className="flex gap-1.5">
-                            <input
-                              value={nieuwCpTelefoon}
-                              onChange={(e) => setNieuwCpTelefoon(e.target.value)}
-                              placeholder="Telefoon"
-                              className="flex-1 min-w-0 text-[12px] text-[#1A1A1A] placeholder:text-[#9B9B95] bg-[#F8F7F5] rounded-lg px-3 py-2 border-none focus:outline-none focus:ring-2 focus:ring-[#1A535C]/20"
-                            />
-                            <input
-                              value={nieuwCpFunctie}
-                              onChange={(e) => setNieuwCpFunctie(e.target.value)}
-                              placeholder="Functie"
-                              className="flex-1 min-w-0 text-[12px] text-[#1A1A1A] placeholder:text-[#9B9B95] bg-[#F8F7F5] rounded-lg px-3 py-2 border-none focus:outline-none focus:ring-2 focus:ring-[#1A535C]/20"
-                            />
-                          </div>
-                          <div className="flex items-center justify-end gap-3 pt-1">
-                            <button
-                              onClick={() => { setShowNieuwCp(false); setNieuwCpNaam(''); setNieuwCpEmail(''); setNieuwCpTelefoon(''); setNieuwCpFunctie('') }}
-                              className="text-[11px] text-[#9B9B95] hover:text-[#1A1A1A] transition-colors"
-                            >
-                              Annuleren
-                            </button>
-                            <button
-                              disabled={!nieuwCpNaam.trim()}
-                              onClick={async () => {
-                                if (!nieuwCpNaam.trim()) return
-                                try {
-                                  const newCp = { id: crypto.randomUUID(), naam: nieuwCpNaam.trim(), email: nieuwCpEmail.trim(), telefoon: nieuwCpTelefoon.trim(), functie: nieuwCpFunctie.trim(), is_primair: (klant.contactpersonen?.length || 0) === 0 }
-                                  const updatedCps = [...(klant.contactpersonen || []), newCp]
-                                  await updateKlant(klant.id, { contactpersonen: updatedCps })
-                                  setKlant({ ...klant, contactpersonen: updatedCps })
-                                  const updated = await updateProject(id!, { contactpersoon_id: newCp.id })
-                                  setProject(updated)
-                                  setShowNieuwCp(false); setNieuwCpNaam(''); setNieuwCpEmail(''); setNieuwCpTelefoon(''); setNieuwCpFunctie('')
-                                  toast.success(`${newCp.naam} toegevoegd en geselecteerd`)
-                                } catch (err) {
-                                  logger.error('Kon contactpersoon niet aanmaken:', err)
-                                  toast.error('Kon contactpersoon niet aanmaken')
-                                }
-                              }}
-                              className="text-[11px] font-semibold text-[#1A535C] hover:underline disabled:opacity-30 disabled:no-underline transition-colors"
-                            >
-                              Toevoegen
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )
-                })()}
-              </div>
-            </div>
+            <KlantCard
+              klant={klant}
+              project={project}
+              contactpersonen={gemergedeContactpersonen}
+              onContactpersoonChange={async (cpId) => {
+                const updated = await updateProject(id!, { contactpersoon_id: cpId || undefined })
+                setProject(updated)
+              }}
+              onContactpersoonAdd={async (cp) => {
+                const updatedCps = [...(klant.contactpersonen || []), cp]
+                await updateKlant(klant.id, { contactpersonen: updatedCps })
+                setKlant({ ...klant, contactpersonen: updatedCps })
+                const updated = await updateProject(id!, { contactpersoon_id: cp.id })
+                setProject(updated)
+              }}
+            />
           )}
 
-          {/* Acties */}
-          <div className="rounded-xl bg-[#FFFFFF] shadow-[0_1px_3px_rgba(0,0,0,0.03)] p-5">
-            <h3 className="text-[13px] font-bold text-[#1A1A1A] tracking-[-0.2px] mb-3">Acties</h3>
-            <div className="space-y-1">
-              {[
-                { label: 'Taak aanmaken', bg: '#E8F5F6', color: '#1A535C', icon: <Plus className="h-4 w-4" />, onClick: () => setNieuweTaakOpen(true) },
-                { label: 'Offerte maken', bg: '#FDE8E2', color: '#F15025', icon: <Receipt className="h-4 w-4" />, onClick: openNieuweOfferte },
-                { label: 'Werkbon aanmaken', bg: '#E8EEF9', color: '#3A5A9A', icon: <ClipboardCheck className="h-4 w-4" />, onClick: () => setShowWerkbonDialog(true) },
-                { label: 'Pakbon aanmaken', bg: '#F5EDD8', color: '#7D6A2E', icon: <Package className="h-4 w-4" />, onClick: () => setShowPakbonDialog(true) },
-                { label: 'Montage inplannen', bg: '#DCF0E4', color: '#2B6E44', icon: <Wrench className="h-4 w-4" />, onClick: handleOpenMontageDialog },
-                { label: 'Factuur aanmaken', bg: '#F2E4EC', color: '#8A3D6E', icon: <CreditCard className="h-4 w-4" />, onClick: () => {
-                  const params = new URLSearchParams({ klant_id: project.klant_id || '', project_id: id || '', titel: project.naam || '' })
-                  navigate(`/facturen/nieuw?${params.toString()}`, { state: { from: location.pathname } })
-                }},
-                ...(() => {
-                  const cpEmail = project.contactpersoon_id ? gemergedeContactpersonen.find(c => c.id === project.contactpersoon_id)?.email : undefined
-                  const emailTo = cpEmail || klant?.email
-                  return emailTo ? [{ label: 'Email versturen', bg: '#E2DFF5', color: '#5A4E91', icon: <Mail className="h-4 w-4" />, onClick: () => navigateWithTab({ path: `/email/compose?to=${encodeURIComponent(emailTo)}`, label: 'Nieuwe email', id: `/email/compose-${emailTo}` }) }] : []
-                })(),
-              ].map((btn) => (
-                <button
-                  key={btn.label}
-                  onClick={btn.onClick}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:brightness-[0.97] active:scale-[0.995] transition-all duration-100"
-                  style={{ backgroundColor: btn.bg }}
-                >
-                  <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 bg-white/60">
-                    <span style={{ color: btn.color }}>{btn.icon}</span>
-                  </div>
-                  <span className="text-[13px] font-semibold" style={{ color: btn.color }}>{btn.label}</span>
-                </button>
-              ))}
-            </div>
-            <div className="mt-3 pt-3 border-t border-[#EBEBEB]/60">
-              <button
-                onClick={() => setShowObOfferteSelect(!showObOfferteSelect)}
-                className="w-full flex items-center gap-3 px-3 py-2.5 text-[13px] font-semibold rounded-xl text-[#1A535C] bg-[#E8F5F6] hover:brightness-[0.97] transition-all duration-100"
-              >
-                <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 bg-white/60">
-                  <FileCheck className="h-4 w-4" />
-                </div>
-                Opdrachtbevestiging
-                <ChevronDown className={`h-3.5 w-3.5 ml-auto transition-transform ${showObOfferteSelect ? 'rotate-180' : ''}`} />
-              </button>
-              {showObOfferteSelect && (
-                <div className="mt-1.5 rounded-xl bg-[#F8F7F5] overflow-hidden border border-[#EBEBEB]/60">
-                  {projectOffertes.length === 0 ? (
-                    <p className="text-[12px] text-[#9B9B95] text-center py-5">Maak eerst een offerte</p>
-                  ) : (
-                    projectOffertes.map((o) => (
-                      <button
-                        key={o.id}
-                        onClick={() => { setObPreviewOfferte(o); setShowObOfferteSelect(false) }}
-                        className="w-full flex items-center justify-between px-3.5 py-3 hover:bg-[#F0EFEC] transition-colors text-left border-b border-[#EBEBEB]/40 last:border-0"
-                      >
-                        <span className="text-[13px] font-medium text-[#1A1A1A] truncate">{o.titel || o.nummer}</span>
-                        <span className="text-[11px] font-mono text-[#9B9B95] ml-2 flex-shrink-0">{o.nummer}</span>
-                      </button>
-                    ))
-                  )}
+          <ActiesCard
+            onOfferte={openNieuweOfferte}
+            onWerkbon={() => setShowWerkbonDialog(true)}
+            onMontage={handleOpenMontageDialog}
+            onFactuur={() => {
+              const params = new URLSearchParams({ klant_id: project.klant_id || '', project_id: id || '', titel: project.naam || '' })
+              navigate(`/facturen/nieuw?${params.toString()}`, { state: { from: location.pathname } })
+            }}
+            onPakbon={() => setShowPakbonDialog(true)}
+            onBevestiging={() => setShowObOfferteSelect(s => !s)}
+          />
+
+          {/* Opdrachtbevestiging — uitklap onder Acties */}
+          {showObOfferteSelect && (
+            <div className="rounded-xl bg-[#FFFFFF] shadow-[0_1px_3px_rgba(130,100,60,0.04)] overflow-hidden">
+              <div className="px-5 py-3 border-b border-[#F0EFEC]">
+                <h4 className="text-[11px] font-semibold text-[#6B6B66] uppercase tracking-[0.08em]">Kies offerte voor bevestiging</h4>
+              </div>
+              {projectOffertes.length === 0 ? (
+                <p className="text-[12px] text-[#9B9B95] text-center py-6">Maak eerst een offerte</p>
+              ) : (
+                <div>
+                  {projectOffertes.map((o) => (
+                    <button
+                      key={o.id}
+                      onClick={() => { setObPreviewOfferte(o); setShowObOfferteSelect(false) }}
+                      className="w-full flex items-center justify-between px-5 py-3 hover:bg-[var(--cream-bg)] transition-colors text-left border-b border-[#F0EFEC] last:border-0"
+                    >
+                      <span className="text-[13px] font-medium text-[#1A1A1A] truncate">{o.titel || o.nummer}</span>
+                      <span className="font-mono text-[11px] text-[#9B9B95] ml-2 flex-shrink-0">{o.nummer}</span>
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
-          </div>
+          )}
 
-          {/* Montage */}
-          <div className="rounded-xl bg-[#FFFFFF] shadow-[0_1px_3px_rgba(0,0,0,0.03)] p-5">
-            <MontageSection
-              montageAfspraken={projectMontages}
-              onInplannen={handleOpenMontageDialog}
-            />
-          </div>
+          {/* Bestanden — eigen card-shell */}
+          <BestandenSection
+            documenten={projectDocumenten}
+            onUpload={() => fileInputRef.current?.click()}
+            onDelete={async (docId, naam) => {
+              try {
+                await deleteDocument(docId)
+                toast.success(`"${naam}" verwijderd`)
+                await fetchDocumenten()
+              } catch (err) {
+                logger.error('Kon bestand niet verwijderen:', err)
+                toast.error('Kon bestand niet verwijderen')
+              }
+            }}
+          />
 
-          {/* Bestanden */}
-          <div className="rounded-xl bg-[#FFFFFF] shadow-[0_1px_3px_rgba(0,0,0,0.03)] p-5">
-            <BestandenSection
-              documenten={projectDocumenten}
-              onUpload={() => fileInputRef.current?.click()}
-              onDelete={async (docId, naam) => {
-                try {
-                  await deleteDocument(docId)
-                  toast.success(`"${naam}" verwijderd`)
-                  await fetchDocumenten()
-                } catch (err) {
-                  logger.error('Kon bestand niet verwijderen:', err)
-                  toast.error('Kon bestand niet verwijderen')
-                }
-              }}
-            />
-          </div>
-
-          {/* Situatiefoto's */}
+          {/* Situatiefoto's — eigen card-shell (Pad B shell-tweaks toegepast) */}
           <ProjectPhotoGallery
             projectId={id!}
             userId={user?.id || ''}
@@ -1527,14 +1319,13 @@ export function ProjectDetail() {
             onPhotosChanged={fetchProjectFotos}
           />
 
-          {/* Visualisaties (conditioneel) */}
+          {/* Visualisaties (conditioneel, behouden) */}
           {hasVisualisaties && (
             <div>
-              <h3 className="text-xs font-semibold text-[#1A1A1A] uppercase tracking-wider mb-3">Visualizer</h3>
+              <h3 className="text-[11px] font-semibold text-[#6B6B66] uppercase tracking-[0.08em] mb-3">Visualizer</h3>
               <VisualisatieGallery project_id={project.id} klant_id={project.klant_id} compact />
             </div>
           )}
-
 
         </div>
       </div>

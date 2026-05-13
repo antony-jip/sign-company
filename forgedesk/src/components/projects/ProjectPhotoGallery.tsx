@@ -158,29 +158,32 @@ export function ProjectPhotoGallery({
 
   return (
     <>
-      <div className="bg-[#FFFFFF] rounded-lg p-4 border border-[#EBEBEB]">
+      <div className="bg-[#FFFFFF] rounded-xl p-6 shadow-[0_1px_3px_rgba(130,100,60,0.04)]">
           {/* Header */}
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-xs font-semibold text-[#1A1A1A] uppercase tracking-wider">
-              Situatiefoto's
-              {photos.length > 0 && <span className="font-mono text-[#9B9B95] ml-1.5">{photos.length}</span>}
-            </h3>
-            <div className="flex items-center gap-1.5">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <h3 className="text-[11px] font-semibold text-[#6B6B66] uppercase tracking-[0.08em]">Situatiefoto's</h3>
+              {photos.length > 0 && (
+                <span className="font-mono text-[10px] font-medium bg-[var(--cream-bg)] text-[var(--cream-text)] rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
+                  {photos.length}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-3">
               {photos.length > 0 && (
                 <>
                   <button
-                    className="text-[12px] font-medium text-[#1A535C] hover:underline"
+                    className="text-[12px] text-[#6B6B66] hover:text-[#1A1A1A] transition-colors"
                     onClick={() => setLightboxIndex(0)}
                   >
                     Bekijken
                   </button>
-                  <span className="text-[#EBEBEB]">·</span>
                   <button
-                    className="text-[12px] font-medium text-[#1A535C] hover:underline disabled:opacity-40"
+                    className="text-[12px] text-[#6B6B66] hover:text-[#1A1A1A] transition-colors disabled:opacity-40"
                     onClick={handleBulkDownload}
                     disabled={isDownloading}
                   >
-                    {isDownloading ? 'Downloaden...' : 'Download'}
+                    {isDownloading ? 'Downloaden…' : 'Download'}
                   </button>
                 </>
               )}
