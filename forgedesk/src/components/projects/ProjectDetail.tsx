@@ -992,13 +992,14 @@ export function ProjectDetail() {
                       if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur() }
                       if (e.key === 'Escape') { setNaamDraft(project.naam); setEditingNaam(false) }
                     }}
-                    className="text-[26px] font-bold text-[#1A1A1A] tracking-[-0.5px] leading-tight bg-transparent border-b-2 border-[#F15025] outline-none flex-1 min-w-0 py-0.5"
+                    className="text-[26px] font-bold text-[#1A1A1A] tracking-[-0.5px] leading-tight flex-1 min-w-0"
+                    style={{ background: 'transparent', border: 'none', outline: 'none', boxShadow: 'none', padding: 0, margin: 0, caretColor: '#F15025' }}
                   />
                 ) : (
                   <h1
                     onClick={() => { setNaamDraft(project.naam); setEditingNaam(true) }}
                     title="Klik om te wijzigen"
-                    className="text-[26px] font-bold text-[#1A1A1A] truncate tracking-[-0.5px] leading-tight cursor-text hover:bg-[#F0EFEC]/60 rounded-md px-1 -mx-1 transition-colors"
+                    className="text-[26px] font-bold text-[#1A1A1A] truncate tracking-[-0.5px] leading-tight cursor-text"
                   >
                     {project.naam}
                   </h1>
