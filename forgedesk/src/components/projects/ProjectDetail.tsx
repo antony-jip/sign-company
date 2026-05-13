@@ -249,6 +249,8 @@ export function ProjectDetail() {
   const [obPreviewOfferte, setObPreviewOfferte] = useState<Offerte | null>(null)
   const [showObOfferteSelect, setShowObOfferteSelect] = useState(false)
   const [showActivityDropdown, setShowActivityDropdown] = useState(false)
+  const [editingNaam, setEditingNaam] = useState(false)
+  const [naamDraft, setNaamDraft] = useState('')
   const [showNieuwCp, setShowNieuwCp] = useState(false)
   const [nieuwCpNaam, setNieuwCpNaam] = useState('')
   const [nieuwCpEmail, setNieuwCpEmail] = useState('')
@@ -963,9 +965,44 @@ export function ProjectDetail() {
 
               {/* Row 1: H1 + status pill */}
               <div className="flex items-center gap-3 min-w-0">
-                <h1 className="text-[26px] font-bold text-[#1A1A1A] truncate tracking-[-0.5px] leading-tight">
-                  {project.naam}
-                </h1>
+                {editingNaam ? (
+                  <input
+                    autoFocus
+                    value={naamDraft}
+                    onChange={(e) => setNaamDraft(e.target.value)}
+                    onFocus={(e) => e.target.select()}
+                    onBlur={async () => {
+                      const trimmed = naamDraft.trim()
+                      if (!trimmed || trimmed === project.naam) {
+                        setEditingNaam(false)
+                        return
+                      }
+                      try {
+                        const updated = await updateProject(id!, { naam: trimmed })
+                        setProject(updated)
+                        toast.success('Projectnaam gewijzigd')
+                      } catch (err) {
+                        logger.error('updateProject naam:', err)
+                        toast.error('Kon naam niet wijzigen')
+                      } finally {
+                        setEditingNaam(false)
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur() }
+                      if (e.key === 'Escape') { setNaamDraft(project.naam); setEditingNaam(false) }
+                    }}
+                    className="text-[26px] font-bold text-[#1A1A1A] tracking-[-0.5px] leading-tight bg-transparent border-b-2 border-[#F15025] outline-none flex-1 min-w-0 py-0.5"
+                  />
+                ) : (
+                  <h1
+                    onClick={() => { setNaamDraft(project.naam); setEditingNaam(true) }}
+                    title="Klik om te wijzigen"
+                    className="text-[26px] font-bold text-[#1A1A1A] truncate tracking-[-0.5px] leading-tight cursor-text hover:bg-[#F0EFEC]/60 rounded-md px-1 -mx-1 transition-colors"
+                  >
+                    {project.naam}
+                  </h1>
+                )}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button
