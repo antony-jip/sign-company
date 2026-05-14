@@ -1494,14 +1494,14 @@ export function TasksLayout() {
         return (
         <div className="flex-1 flex flex-col min-h-0">
           <div
-            className="flex-1 min-h-0 grid grid-cols-5 gap-px bg-[#EBE9E4] border-t border-[#EBE9E4]"
+            className="flex-1 min-h-0 grid grid-cols-5 gap-px bg-[#EBE9E4]"
             style={{ gridTemplateRows: `auto repeat(${visibleWeeks}, minmax(0, 1fr))` }}
           >
             {/* Day headers — werkweek */}
             {DAY_LABELS.slice(0, 5).map((d) => (
               <div
                 key={d}
-                className="bg-white text-center py-3 text-[12px] font-medium tracking-[0.02em] text-[#6B6B66] border-b border-[#F0EFEC]"
+                className="bg-white text-center py-4 text-[13px] font-semibold tracking-[0.02em] text-[#5A5A55] border-b border-[#F0EFEC]"
               >
                 {d.charAt(0).toUpperCase() + d.slice(1)}
               </div>
