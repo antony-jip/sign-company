@@ -1479,36 +1479,37 @@ export function TasksLayout() {
         </>)}
         {viewMode === 'maand' && (() => {
         /* === MONTH VIEW — DOEN === */
-        const lastDayOfMonth = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0)
-        const lastDayIndex = monthDays.findIndex((d) => isSameDay(d, lastDayOfMonth))
-        const visibleWeeks = lastDayIndex >= 0 ? Math.ceil((lastDayIndex + 1) / 7) : 6
-        const visibleDays = monthDays.slice(0, visibleWeeks * 7)
+        // Show working days only (Mon-Fri). Compute the visible week count
+        // from the last current-month day in the 42-day grid, then drop
+        // weekend cells.
+        const monthIdx = monthDate.getMonth()
+        let lastCurrentIdx = monthDays.length - 1
+        for (let k = monthDays.length - 1; k >= 0; k--) {
+          if (monthDays[k].getMonth() === monthIdx) { lastCurrentIdx = k; break }
+        }
+        const visibleWeeks = Math.ceil((lastCurrentIdx + 1) / 7)
+        const visibleDays = monthDays
+          .slice(0, visibleWeeks * 7)
+          .filter((d) => d.getDay() !== 0 && d.getDay() !== 6)
         return (
         <div className="flex-1 flex flex-col min-h-0 px-6 pb-4 pt-2">
           <div
-            className="flex-1 min-h-0 grid grid-cols-7 gap-px bg-[#EEEDEA] overflow-hidden"
+            className="flex-1 min-h-0 grid grid-cols-5 gap-px bg-[#EEEDEA] overflow-hidden"
             style={{ gridTemplateRows: `auto repeat(${visibleWeeks}, minmax(0, 1fr))` }}
           >
-            {/* Day headers */}
-            {DAY_LABELS.map((d, idx) => {
-              const isWeekendHeader = idx >= 5
-              return (
-                <div
-                  key={d}
-                  className={cn(
-                    'text-center py-2 text-[10px] font-semibold lowercase tracking-[0.06em]',
-                    isWeekendHeader ? 'bg-[#FBFAF8] text-[#B0ADA8]' : 'bg-white text-[#9B9B95]'
-                  )}
-                >
-                  {d.toLowerCase()}
-                </div>
-              )
-            })}
+            {/* Day headers — werkweek */}
+            {DAY_LABELS.slice(0, 5).map((d) => (
+              <div
+                key={d}
+                className="bg-white text-center py-2 text-[10px] font-semibold lowercase tracking-[0.06em] text-[#9B9B95]"
+              >
+                {d.toLowerCase()}
+              </div>
+            ))}
             {/* Day cells */}
             {visibleDays.map((day, i) => {
               const isCurrentMonth = day.getMonth() === monthDate.getMonth()
               const isToday = isSameDay(day, today)
-              const isWeekend = day.getDay() === 0 || day.getDay() === 6
               const isPastInMonth = isCurrentMonth && day < today && !isToday
               const dayTasks = allTasksByDay.get(day.toDateString()) || []
               const dayKey = day.toDateString()
@@ -1519,7 +1520,7 @@ export function TasksLayout() {
                   key={i}
                   className={cn(
                     'group/cell relative p-2 transition-colors flex flex-col min-h-0',
-                    !isCurrentMonth ? 'bg-[#FAFAF8] text-[#C4C2BD]' : isWeekend ? 'bg-[#FBFAF8]' : 'bg-white',
+                    !isCurrentMonth ? 'bg-[#FAFAF8] text-[#C4C2BD]' : 'bg-white',
                     isToday && '!bg-[#1A535C]/[0.04]',
                     isDropHere && '!bg-[#1A535C]/[0.12]'
                   )}
