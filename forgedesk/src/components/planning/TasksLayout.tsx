@@ -2568,10 +2568,10 @@ function TaskCard({
       onDragStart={handleDragStart}
       onDragEnd={(e) => { const el = e.currentTarget as HTMLElement; el.style.opacity = '1'; el.style.transform = ''; onDragEnd() }}
       className={cn(
-        'group relative border-l-2 rounded-[5px] transition-all duration-200 ease-out select-none',
+        'group relative rounded-lg transition-all duration-200 ease-out select-none',
         scheduled ? 'h-full' : '',
         !isResizing && 'cursor-grab active:cursor-grabbing',
-        'hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] hover:z-10',
+        'hover:shadow-[0_4px_12px_-2px_rgba(0,0,0,0.08)] hover:z-10',
         isPast && !isDone && 'opacity-55',
         justCompleted && 'scale-[0.98] opacity-40 transition-all duration-500',
         isResizing && 'ring-2 ring-[#1A535C]/30 z-30',
@@ -2581,8 +2581,7 @@ function TaskCard({
       )}
       style={{
         ...(heightPx !== undefined ? { height: heightPx, overflow: 'hidden' } : {}),
-        borderLeftColor: isDone ? '#1A535C' : pc.border,
-        ...(isDone ? {} : { backgroundColor: pc.bg }),
+        ...(isDone ? {} : { backgroundColor: pc.bg, boxShadow: `inset 0 0 0 1px ${pc.border}33` }),
       }}
       onClick={onEdit}
     >
@@ -2607,13 +2606,16 @@ function TaskCard({
       </button>
 
       {/* Content — pl-7 voor ruimte naast checkbox (iets breder dan voorheen) */}
-      <div className={cn('h-full', isCompact ? 'pl-7 pr-1.5 py-1' : 'pl-7 pr-1.5 py-1.5', isDone && 'opacity-60')}>
+      <div className={cn('h-full', isCompact ? 'pl-7 pr-1.5 py-1' : 'pl-7 pr-1.5 py-2', isDone && 'opacity-60')}>
         <div className="flex items-center gap-1.5">
-          <p className={cn(
-            'text-[13px] font-medium leading-tight text-[#1A1A1A] truncate flex-1',
-            isDone && 'line-through text-[#9B9B95]',
-            isCompact && 'text-[11px]'
-          )}>
+          <p
+            className={cn(
+              'text-[13px] font-semibold leading-tight truncate flex-1',
+              isDone && 'line-through',
+              isCompact && 'text-[11px]'
+            )}
+            style={{ color: isDone ? '#6B6B66' : pc.text }}
+          >
             {taak.titel}
           </p>
           {/* Delete — hover only, ruimte + grotere hit area */}
@@ -2626,18 +2628,15 @@ function TaskCard({
           </button>
         </div>
         {!isCompact && (
-          <div className="flex items-center gap-2 mt-1 overflow-hidden">
-            {projectNaam && (
-              <span className="text-[11px] text-[#9B9B95] truncate max-w-[100px] flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: getProjectColor(projectNaam) }} />
-                {projectNaam}
-              </span>
-            )}
+          <div className="flex items-center gap-2 mt-1 overflow-hidden" style={{ color: isDone ? '#9B9B95' : pc.text, opacity: isDone ? 1 : 0.7 }}>
             {scheduled && hour !== null && (
-              <span className="text-[11px] text-[#9B9B95] font-mono tabular-nums">{formatHourLabel(hour)}</span>
+              <span className="text-[11px] font-mono tabular-nums">{formatHourLabel(hour)}</span>
             )}
             {durationLabel && (
-              <span className="text-[11px] text-[#9B9B95] font-mono tabular-nums">{durationLabel}</span>
+              <span className="text-[11px] font-mono tabular-nums">{durationLabel}</span>
+            )}
+            {projectNaam && (
+              <span className="text-[11px] truncate max-w-[100px]">{projectNaam}</span>
             )}
           </div>
         )}
