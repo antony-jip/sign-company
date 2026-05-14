@@ -1492,9 +1492,9 @@ export function TasksLayout() {
           .slice(0, visibleWeeks * 7)
           .filter((d) => d.getDay() !== 0 && d.getDay() !== 6)
         return (
-        <div className="flex-1 flex flex-col min-h-0">
+        <div className="flex-1 flex flex-col min-h-0 pt-3">
           <div
-            className="flex-1 min-h-0 grid grid-cols-5 gap-px bg-[#EBE9E4]"
+            className="flex-1 min-h-0 grid grid-cols-5 gap-px bg-[#EBE9E4] border-t border-[#EBE9E4]"
             style={{ gridTemplateRows: `auto repeat(${visibleWeeks}, minmax(0, 1fr))` }}
           >
             {/* Day headers — werkweek */}
