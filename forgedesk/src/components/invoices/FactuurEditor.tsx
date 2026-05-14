@@ -1987,27 +1987,6 @@ export function FactuurEditor() {
                   Vanuit offerte geimporteerd
                 </div>
               )}
-              {kostenplaatsen.length > 0 && (
-                <div>
-                  <Label className="text-xs">Kostenplaats</Label>
-                  <Select
-                    value={kostenplaatsId || '_geen'}
-                    onValueChange={(val) => setKostenplaatsId(val === '_geen' ? '' : val)}
-                  >
-                    <SelectTrigger className="text-sm">
-                      <SelectValue placeholder="Geen kostenplaats" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="_geen">Geen kostenplaats</SelectItem>
-                      {kostenplaatsen.map((kp) => (
-                        <SelectItem key={kp.id} value={kp.id}>
-                          {kp.code} - {kp.naam}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
               {isCreditFactuur && creditVoorNummer && (
                 <div className="flex items-center gap-2 text-xs text-flame bg-flame-light rounded-lg px-3 py-2">
                   <MinusCircle className="h-3 w-3" />
