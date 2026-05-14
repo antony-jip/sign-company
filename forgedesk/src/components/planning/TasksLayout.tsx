@@ -286,6 +286,7 @@ export function TasksLayout() {
   const [monthAddingDay, setMonthAddingDay] = useState<string | null>(null)
   const [monthAddTitle, setMonthAddTitle] = useState('')
   const monthAddInputRef = useRef<HTMLInputElement>(null)
+  const [monthDropDay, setMonthDropDay] = useState<string | null>(null)
 
   // Drag state
   const [draggingTaakId, setDraggingTaakId] = useState<string | null>(null)
@@ -1110,6 +1111,26 @@ export function TasksLayout() {
     toast.success(`Verplaatst naar ${DAY_LABELS[dayIndex]} ${formatHourLabel(hour)}`)
   }
 
+  // Month-view drag-drop: move a taak to a different day, preserve the
+  // time portion of the deadline if one was set.
+  async function handleMonthDropTask(taakId: string, day: Date) {
+    const taak = taken.find((t) => t.id === taakId)
+    if (!taak) return
+    const sameDay = taak.deadline && taak.deadline.startsWith(toDateStr(day))
+    if (sameDay) return
+    const timePart = taak.deadline && taak.deadline.includes('T') ? taak.deadline.split('T')[1] : null
+    const newDeadline = timePart ? `${toDateStr(day)}T${timePart}` : toDateStr(day)
+    const snapshot = taken
+    setTaken((prev) => prev.map((t) => t.id === taakId ? { ...t, deadline: newDeadline } : t))
+    try {
+      await updateTaak(taakId, { deadline: newDeadline })
+    } catch (err) {
+      logger.error('Month drop failed:', err)
+      setTaken(snapshot)
+      toast.error('Kon taak niet verplaatsen')
+    }
+  }
+
   // Quick add for a specific day column (unscheduled)
   async function handleDayQuickAdd(day: Date, title: string) {
     await handleQuickAdd(title, 'medium', toDateStr(day), '')
@@ -1458,8 +1479,8 @@ export function TasksLayout() {
         </>)}
         {viewMode === 'maand' && (
         /* === MONTH VIEW — DOEN === */
-        <div className="flex-1 overflow-y-auto px-8 pb-4">
-          <div className="grid grid-cols-7 gap-px bg-[#F0EFEC] rounded-2xl overflow-hidden ring-1 ring-black/[0.03] shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)]">
+        <div className="flex-1 flex flex-col min-h-0 px-6 pb-4 pt-2">
+          <div className="flex-1 min-h-0 grid grid-cols-7 grid-rows-[auto_repeat(6,minmax(0,1fr))] gap-px bg-[#F0EFEC] rounded-2xl overflow-hidden ring-1 ring-black/[0.03] shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)]">
             {/* Day headers */}
             {DAY_LABELS.map((d) => (
               <div key={d} className="bg-white text-center py-1.5 text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">{d}</div>
@@ -1471,16 +1492,36 @@ export function TasksLayout() {
               const dayTasks = allTasksByDay.get(day.toDateString()) || []
               const dayKey = day.toDateString()
               const isAddingHere = monthAddingDay === dayKey
+              const isDropHere = monthDropDay === dayKey
               return (
                 <div
                   key={i}
                   className={cn(
-                    'bg-[#FFFFFF] min-h-[80px] p-1.5 transition-colors border-b border-r border-[#EBEBEB]/20',
-                    !isCurrentMonth && 'opacity-25',
-                    isToday && 'bg-[#1A535C]/[0.02]'
+                    'group/cell bg-[#FFFFFF] p-1.5 transition-colors flex flex-col min-h-0',
+                    !isCurrentMonth && 'opacity-30',
+                    isToday && 'bg-[#1A535C]/[0.02]',
+                    isDropHere && 'bg-[#1A535C]/[0.08] ring-1 ring-inset ring-[#1A535C]/40'
                   )}
+                  onDragOver={(e) => {
+                    if (!isCurrentMonth) return
+                    e.preventDefault()
+                    e.dataTransfer.dropEffect = 'move'
+                    if (monthDropDay !== dayKey) setMonthDropDay(dayKey)
+                  }}
+                  onDragLeave={(e) => {
+                    if (e.currentTarget.contains(e.relatedTarget as Node)) return
+                    if (monthDropDay === dayKey) setMonthDropDay(null)
+                  }}
+                  onDrop={async (e) => {
+                    e.preventDefault()
+                    const taakId = e.dataTransfer.getData('text/plain')
+                    setMonthDropDay(null)
+                    if (taakId && isCurrentMonth) {
+                      await handleMonthDropTask(taakId, day)
+                    }
+                  }}
                 >
-                  <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center justify-between mb-1 flex-shrink-0">
                     <span className={cn(
                       'text-xs font-mono font-bold',
                       isToday ? 'w-6 h-6 rounded-full bg-[#1A535C] text-white flex items-center justify-center' : 'text-[#9B9B95]'
@@ -1490,7 +1531,7 @@ export function TasksLayout() {
                     {isCurrentMonth && !isAddingHere && (
                       <button
                         onClick={() => { setMonthAddingDay(dayKey); setMonthAddTitle(''); setTimeout(() => monthAddInputRef.current?.focus(), 50) }}
-                        className="p-0.5 rounded text-[#B0ADA8]/40 hover:text-[#1A535C] hover:bg-[#1A535C]/10 transition-all duration-200"
+                        className="p-0.5 rounded text-[#B0ADA8]/40 opacity-0 group-hover/cell:opacity-100 hover:text-[#1A535C] hover:bg-[#1A535C]/10 transition-all duration-200"
                       >
                         <Plus className="w-3 h-3" />
                       </button>
@@ -1502,7 +1543,7 @@ export function TasksLayout() {
                       value={monthAddTitle}
                       onChange={(e) => setMonthAddTitle(e.target.value)}
                       placeholder="Taak..."
-                      className="w-full text-[10px] px-1.5 py-1 rounded-lg border border-[#1A535C]/30 bg-white focus:outline-none focus:border-[#1A535C] focus:ring-1 focus:ring-[#1A535C]/20 text-[#1A1A1A] placeholder:text-[#B0ADA8] mb-0.5"
+                      className="w-full text-[11px] px-1.5 py-1 rounded-lg border border-[#1A535C]/30 bg-white focus:outline-none focus:border-[#1A535C] focus:ring-1 focus:ring-[#1A535C]/20 text-[#1A1A1A] placeholder:text-[#B0ADA8] mb-1 flex-shrink-0"
                       onKeyDown={async (e) => {
                         if (e.key === 'Enter' && monthAddTitle.trim()) {
                           await handleQuickAdd(monthAddTitle.trim(), 'medium', toDateStr(day), '')
@@ -1514,26 +1555,35 @@ export function TasksLayout() {
                       onBlur={() => { if (!monthAddTitle.trim()) { setMonthAddingDay(null); setMonthAddTitle('') } }}
                     />
                   )}
-                  <div className="space-y-0.5">
-                    {dayTasks.slice(0, 3).map((t) => {
+                  <div className="flex-1 min-h-0 overflow-y-auto space-y-1 pr-0.5">
+                    {dayTasks.map((t) => {
                       const pc = PRIORITEIT_COLORS[t.prioriteit]
+                      const isDone = t.status === 'klaar'
                       return (
                         <button
                           key={t.id}
+                          draggable={isCurrentMonth}
+                          onDragStart={(e) => {
+                            e.dataTransfer.effectAllowed = 'move'
+                            e.dataTransfer.setData('text/plain', t.id)
+                            const el = e.currentTarget as HTMLElement
+                            requestAnimationFrame(() => { el.style.opacity = '0.4' })
+                          }}
+                          onDragEnd={(e) => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
                           className={cn(
-                            'w-full text-left text-[10px] leading-tight truncate px-1 py-0.5 rounded-md border-l-2',
-                            t.status === 'klaar' && 'line-through opacity-50'
+                            'group/pill relative w-full text-left text-[11px] leading-tight truncate px-1.5 py-1 rounded-md border-l-2 cursor-grab active:cursor-grabbing hover:shadow-[0_1px_3px_rgba(0,0,0,0.06)] transition-shadow',
+                            isDone && '[background:linear-gradient(135deg,#E2F0F0_0%,#FFFFFF_70%)] line-through opacity-60'
                           )}
-                          style={{ borderLeftColor: pc.border, backgroundColor: pc.bg, color: pc.text }}
+                          style={isDone
+                            ? { borderLeftColor: '#1A535C', color: '#6B6B66' }
+                            : { borderLeftColor: pc.border, backgroundColor: pc.bg, color: pc.text }}
                           onClick={() => openEditDialog(taken.find((tt) => tt.id === t.id) || t)}
+                          title={t.titel}
                         >
                           {t.titel}
                         </button>
                       )
                     })}
-                    {dayTasks.length > 3 && (
-                      <span className="text-[10px] text-[#B0ADA8] px-1">+{dayTasks.length - 3}</span>
-                    )}
                   </div>
                 </div>
               )
