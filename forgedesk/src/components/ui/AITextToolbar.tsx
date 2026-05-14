@@ -20,6 +20,7 @@ import {
 import { cn } from '@/lib/utils'
 import { rewriteText, type RewriteAction } from '@/services/aiRewriteService'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { toast } from 'sonner'
 
 interface AITextToolbarProps {
@@ -303,6 +304,32 @@ export function AITextToolbar({ textareaRef, onReplace, disabled, skipTone }: AI
           {/* Action grid */}
           {showActions && (
             <div className="mb-2 w-[280px] bg-card/95 backdrop-blur-xl border border-border/60 rounded-xl shadow-2xl overflow-hidden p-1.5">
+              {!skipTone && (
+                <TooltipProvider delayDuration={150}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={heeftSchrijfstijl ? () => handleAction('eigen-stijl') : undefined}
+                        disabled={!heeftSchrijfstijl}
+                        className={cn(
+                          'w-full flex items-center justify-center gap-2 px-3 py-2.5 mb-1.5 rounded-lg bg-[#1A535C] text-white text-xs font-medium transition-colors',
+                          heeftSchrijfstijl ? 'hover:bg-[#1A535C]/90 cursor-pointer' : 'opacity-50 cursor-not-allowed'
+                        )}
+                      >
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Mijn stijl</span>
+                      </button>
+                    </TooltipTrigger>
+                    {!heeftSchrijfstijl && (
+                      <TooltipContent side="top" className="max-w-[240px] text-xs">
+                        Vul je schrijfstijl in via{' '}
+                        <Link to="/instellingen?tab=daan" className="underline font-medium">instellingen</Link>
+                        {' '}om dit te gebruiken
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+                </TooltipProvider>
+              )}
               <div className="grid grid-cols-3 gap-1">
                 {ACTIONS.map(action => {
                   const Icon = action.icon
