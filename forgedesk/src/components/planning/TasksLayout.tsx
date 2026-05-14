@@ -490,6 +490,7 @@ export function TasksLayout() {
     if (target.closest('[data-taak-id], [data-add-hour-btn], input, textarea, button')) return
     rectStartRef.current = { x: e.clientX, y: e.clientY }
     rectMovedRef.current = false
+    e.preventDefault()
   }, [viewMode])
 
   useEffect(() => {
@@ -501,6 +502,7 @@ export function TasksLayout() {
       if (!rectMovedRef.current) {
         if (Math.abs(dx) < DRAG_RECT_THRESHOLD_PX && Math.abs(dy) < DRAG_RECT_THRESHOLD_PX) return
         rectMovedRef.current = true
+        document.body.style.userSelect = 'none'
       }
       setRectBox({
         left: Math.min(start.x, e.clientX),
@@ -513,6 +515,7 @@ export function TasksLayout() {
       const start = rectStartRef.current
       if (!start) return
       rectStartRef.current = null
+      document.body.style.userSelect = ''
       if (!rectMovedRef.current) {
         setRectBox(null)
         setSelectedTaskIds(new Set())
