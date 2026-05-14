@@ -1523,6 +1523,14 @@ export function TasksLayout() {
                     isToday && '!bg-[#1A535C]/[0.04]',
                     isDropHere && '!bg-[#1A535C]/[0.12]'
                   )}
+                  onClick={(e) => {
+                    if (!isCurrentMonth || isAddingHere) return
+                    const target = e.target as HTMLElement
+                    if (target.closest('button, input, [data-taak-id]')) return
+                    setMonthAddingDay(dayKey)
+                    setMonthAddTitle('')
+                    setTimeout(() => monthAddInputRef.current?.focus(), 50)
+                  }}
                   onDragOver={(e) => {
                     if (!isCurrentMonth) return
                     e.preventDefault()
@@ -1544,14 +1552,19 @@ export function TasksLayout() {
                 >
                   <div className="flex items-center justify-between mb-1.5 flex-shrink-0 h-5">
                     <span className={cn(
-                      'text-[12px] font-mono font-semibold tabular-nums',
+                      'flex items-baseline gap-1 text-[12px] font-mono font-semibold tabular-nums',
                       isToday
-                        ? 'w-5 h-5 rounded-full bg-[#1A535C] text-white flex items-center justify-center text-[10px]'
+                        ? 'w-5 h-5 rounded-full bg-[#1A535C] text-white flex items-center justify-center text-[10px] gap-0'
                         : isPastInMonth ? 'text-[#9B9B95]'
                         : isCurrentMonth ? 'text-[#1A1A1A]'
                         : 'text-[#C4C2BD]'
                     )}>
                       {day.getDate()}
+                      {!isCurrentMonth && day.getDate() === 1 && (
+                        <span className="text-[10px] font-sans font-medium uppercase tracking-wider">
+                          {MONTH_NAMES[day.getMonth()]}
+                        </span>
+                      )}
                     </span>
                     {isCurrentMonth && !isAddingHere && (
                       <button
@@ -1580,20 +1593,10 @@ export function TasksLayout() {
                       onBlur={() => { if (!monthAddTitle.trim()) { setMonthAddingDay(null); setMonthAddTitle('') } }}
                     />
                   )}
-                  <div
-                    className={cn(
-                      'flex-1 min-h-0 overflow-y-auto scrollbar-hide space-y-1 [mask-image:linear-gradient(to_bottom,black_calc(100%-10px),transparent_100%)]',
-                      isCurrentMonth && !isAddingHere && 'cursor-text',
-                      isPastInMonth && 'opacity-60'
-                    )}
-                    onClick={(e) => {
-                      if (e.target !== e.currentTarget) return
-                      if (!isCurrentMonth || isAddingHere) return
-                      setMonthAddingDay(dayKey)
-                      setMonthAddTitle('')
-                      setTimeout(() => monthAddInputRef.current?.focus(), 50)
-                    }}
-                  >
+                  <div className={cn(
+                    'flex-1 min-h-0 overflow-y-auto scrollbar-hide space-y-1 [mask-image:linear-gradient(to_bottom,black_calc(100%-10px),transparent_100%)]',
+                    isPastInMonth && 'opacity-60'
+                  )}>
                     {dayTasks.map((t) => {
                       const pc = PRIORITEIT_COLORS[t.prioriteit]
                       const isDone = t.status === 'klaar'
