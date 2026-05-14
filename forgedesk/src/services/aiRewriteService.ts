@@ -19,7 +19,8 @@ export interface RewriteResult {
 export async function rewriteText(
   action: RewriteAction,
   text: string,
-  customInstruction?: string
+  customInstruction?: string,
+  skipTone?: boolean
 ): Promise<RewriteResult> {
   const session = await supabase?.auth.getSession()
   const token = session?.data?.session?.access_token
@@ -31,7 +32,7 @@ export async function rewriteText(
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ action, text, customInstruction }),
+    body: JSON.stringify({ action, text, customInstruction, skipTone }),
   })
 
   if (!res.ok) {

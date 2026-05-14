@@ -6,10 +6,12 @@ export interface TextareaProps
   extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   /** Set to false to disable the AI rewrite toolbar. Defaults to true. */
   enableAI?: boolean
+  /** Set to false to suppress tone-of-voice injection on this field (kept for risico-velden zoals werkbon, factuur-voorwaarden). Defaults to true. */
+  enableAiTone?: boolean
 }
 
 const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({ className, enableAI = true, onChange, value, ...props }, ref) => {
+  ({ className, enableAI = true, enableAiTone = true, onChange, value, ...props }, ref) => {
     const internalRef = React.useRef<HTMLTextAreaElement | null>(null)
     const combinedRef = React.useCallback(
       (node: HTMLTextAreaElement | null) => {
@@ -64,6 +66,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           <AITextToolbar
             textareaRef={internalRef}
             onReplace={handleReplace}
+            skipTone={!enableAiTone}
           />
         )}
       </div>
