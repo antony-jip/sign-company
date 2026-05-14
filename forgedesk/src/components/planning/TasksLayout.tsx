@@ -1582,7 +1582,7 @@ export function TasksLayout() {
                   )}
                   <div
                     className={cn(
-                      'flex-1 min-h-0 overflow-y-auto scrollbar-hide space-y-1',
+                      'flex-1 min-h-0 overflow-y-auto scrollbar-hide space-y-1 [mask-image:linear-gradient(to_bottom,black_calc(100%-10px),transparent_100%)]',
                       isCurrentMonth && !isAddingHere && 'cursor-text',
                       isPastInMonth && 'opacity-60'
                     )}
@@ -1610,7 +1610,7 @@ export function TasksLayout() {
                           }}
                           onDragEnd={(e) => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
                           className={cn(
-                            'group/pill relative w-full text-left flex items-center gap-1.5 text-[11px] leading-tight px-2 py-[3px] rounded-md cursor-grab active:cursor-grabbing hover:shadow-[0_2px_4px_rgba(0,0,0,0.10)] hover:-translate-y-px transition-[transform,box-shadow]',
+                            'group/pill relative w-full text-left flex items-center gap-1.5 text-[11px] font-medium leading-tight px-2 py-[3px] rounded-md cursor-grab active:cursor-grabbing hover:shadow-[0_2px_4px_rgba(0,0,0,0.10)] hover:-translate-y-px transition-[transform,box-shadow]',
                             isDone && '[background:linear-gradient(135deg,#E2F0F0_0%,#FFFFFF_70%)] line-through opacity-65'
                           )}
                           style={isDone
