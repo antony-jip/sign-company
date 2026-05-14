@@ -91,13 +91,22 @@ export function TakenBulkActionBar({
 
   const barButtonClass = 'flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-semibold bg-white ring-1 ring-[#1A535C]/20 text-[#1A535C] hover:shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed'
 
+  if (compact) {
+    return (
+      <button
+        onClick={onDelete}
+        disabled={busy}
+        title={`Verwijder ${count} ${count === 1 ? 'taak' : 'taken'}  ·  Del = sneltoets  ·  Esc = annuleren`}
+        className="flex items-center gap-2 h-10 px-4 rounded-full bg-white ring-1 ring-[#C03A18]/25 text-[#C03A18] hover:ring-[#C03A18]/55 hover:shadow-md transition-all shadow-[0_8px_28px_rgba(0,0,0,0.14)] disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <Trash2 className="w-4 h-4" />
+        <span className="text-sm font-semibold tabular-nums">{count}</span>
+      </button>
+    )
+  }
+
   return (
-    <div className={cn(
-      'flex items-center gap-3',
-      compact
-        ? 'rounded-xl bg-white ring-1 ring-[#1A535C]/15 px-4 py-2 shadow-[0_8px_28px_rgba(0,0,0,0.14)]'
-        : 'flex-shrink-0 bg-[#1A535C]/[0.06] ring-1 ring-[#1A535C]/10 px-5 py-2.5'
-    )}>
+    <div className="flex-shrink-0 bg-[#1A535C]/[0.06] ring-1 ring-[#1A535C]/10 px-5 py-2.5 flex items-center gap-3">
       <div className="flex items-center gap-2.5">
         <span className="w-7 h-7 rounded-lg bg-[#1A535C] text-white flex items-center justify-center text-xs font-bold">{count}</span>
         <span className="text-sm font-semibold text-[#1A535C]">
@@ -106,7 +115,7 @@ export function TakenBulkActionBar({
       </div>
       <div className="flex-1" />
 
-      {!compact && onMove && (
+      {onMove && (
       <Popover open={moveOpen} onOpenChange={(o) => { setMoveOpen(o); if (!o) setMoveDate('') }}>
         <PopoverTrigger asChild>
           <button disabled={busy} className={barButtonClass}>
@@ -141,7 +150,7 @@ export function TakenBulkActionBar({
       </Popover>
       )}
 
-      {!compact && onAssign && (
+      {onAssign && (
       <Popover open={assignOpen} onOpenChange={(o) => { setAssignOpen(o); if (!o) setAssignQuery('') }}>
         <PopoverTrigger asChild>
           <button disabled={busy} className={barButtonClass}>
@@ -188,7 +197,7 @@ export function TakenBulkActionBar({
       </Popover>
       )}
 
-      {!compact && onStatus && (
+      {onStatus && (
       <Popover open={statusOpen} onOpenChange={setStatusOpen}>
         <PopoverTrigger asChild>
           <button disabled={busy} className={barButtonClass}>
@@ -220,13 +229,8 @@ export function TakenBulkActionBar({
       >
         <Trash2 className="w-3 h-3" />
         Verwijderen
-        {compact && (
-          <kbd className="ml-1 px-1 py-0 rounded text-[9px] font-mono leading-[14px] bg-[#C03A18]/10 text-[#C03A18]/80">
-            Del
-          </kbd>
-        )}
       </button>
-      <button onClick={onClear} className="p-1.5 rounded-lg text-[#1A535C] hover:bg-white/40 transition-all" title={compact ? 'Deselecteer (Esc)' : 'Deselecteer alles'}>
+      <button onClick={onClear} className="p-1.5 rounded-lg text-[#1A535C] hover:bg-white/40 transition-all" title="Deselecteer alles">
         <X className="w-3.5 h-3.5" />
       </button>
     </div>
