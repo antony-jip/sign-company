@@ -1233,38 +1233,34 @@ export function TasksLayout() {
         {/* === Sticky toolbar — 1 rij === */}
         <div className="sticky top-0 z-20 bg-white/75 backdrop-blur-xl border-b border-[#E6E4DE] shadow-[0_1px_8px_-2px_rgba(0,0,0,0.05)] px-6 py-2.5 flex-shrink-0 flex items-center gap-3 flex-wrap">
           {/* Titel + counter */}
-          <div className="flex items-baseline gap-2.5">
+          <div className="flex items-baseline gap-2">
             <h1 className="text-[17px] font-bold text-[#1A1A1A] tracking-[-0.3px]">
               Taken<span className="text-[#F15025]">.</span>
             </h1>
             <span
-              className="inline-flex items-center gap-1 text-[11px] font-medium text-[#6B6B66] tabular-nums px-2 py-0.5 rounded-full bg-[#F4F2EE]"
+              className="text-[12px] text-[#9B9B95] tabular-nums"
               title={`${klaartaken} van ${totalTaken} taken voltooid`}
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-[#1A535C]" />
-              {klaartaken}<span className="text-[#9B9B95]">/{totalTaken}</span>
+              {klaartaken}<span className="text-[#C4C2BD]">/{totalTaken}</span>
             </span>
           </div>
 
-          {/* Scheidingsstreep */}
-          <span className="w-px h-5 bg-[#E6E4DE]" />
-
-          {/* Filter pills */}
-          <div className="flex items-center gap-0.5 overflow-x-auto scrollbar-hide">
+          {/* Filter pills — text-only met onderlijn-actief */}
+          <div className="flex items-center gap-3 overflow-x-auto scrollbar-hide">
             {([['alle', 'Alle'], ['project', 'Project'], ['los', 'Los']] as const).map(([key, label]) => (
               <button key={key} onClick={() => setTaskFilter(key)} className={cn(
-                'text-[13px] px-3 py-1 rounded-full transition-all whitespace-nowrap font-medium',
+                'text-[13px] py-1 transition-colors whitespace-nowrap',
                 taskFilter === key
-                  ? 'text-[#1A535C] bg-[#1A535C]/[0.08]'
-                  : 'text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F4F2EE]'
+                  ? 'text-[#1A1A1A] font-semibold'
+                  : 'text-[#9B9B95] hover:text-[#1A1A1A]'
               )}>{label}</button>
             ))}
-            <span className="w-px h-4 bg-[#E6E4DE] mx-1" />
+            <span className="w-px h-3.5 bg-[#E6E4DE]" />
             <button onClick={() => setShowMontage(!showMontage)} className={cn(
-              'text-[13px] px-3 py-1 rounded-full transition-all whitespace-nowrap font-medium flex items-center gap-1.5',
+              'text-[13px] py-1 transition-colors whitespace-nowrap flex items-center gap-1.5',
               showMontage
-                ? 'text-[#1A535C] bg-[#1A535C]/[0.08]'
-                : 'text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F4F2EE]'
+                ? 'text-[#1A1A1A] font-semibold'
+                : 'text-[#9B9B95] hover:text-[#1A1A1A]'
             )}><Wrench className="w-3.5 h-3.5" />Montage</button>
           </div>
 
@@ -1301,18 +1297,18 @@ export function TasksLayout() {
             />
           )}
 
-          {/* View toggle */}
-          <div className="inline-flex items-center rounded-full bg-[#F4F2EE] p-0.5 flex-shrink-0 ring-1 ring-[#E6E4DE]">
+          {/* View toggle — text-only met onderlijn-actief */}
+          <div className="inline-flex items-center gap-3 flex-shrink-0">
             {([
               ['week', 'Week'],
               ['maand', 'Maand'],
               ['swimlane', 'Team'],
             ] as const).map(([v, label]) => (
               <button key={v} onClick={() => setViewMode(v)} className={cn(
-                'text-[12px] px-3 py-1 rounded-full transition-all font-semibold',
+                'text-[13px] py-1 transition-colors',
                 viewMode === v
-                  ? 'bg-white text-[#1A535C] shadow-[0_1px_3px_rgba(0,0,0,0.08)]'
-                  : 'text-[#6B6B66] hover:text-[#1A1A1A]'
+                  ? 'text-[#1A1A1A] font-semibold'
+                  : 'text-[#9B9B95] hover:text-[#1A1A1A]'
               )}>{label}</button>
             ))}
           </div>
@@ -1327,7 +1323,7 @@ export function TasksLayout() {
               <ChevronLeft className="w-4 h-4 text-[#6B6B66]" />
             </button>
             <button
-              className="text-[13px] px-3 py-1 rounded-full font-semibold text-[#1A1A1A] min-w-[140px] text-center hover:bg-[#F4F2EE] transition-colors"
+              className="text-[13px] px-2 py-1 font-semibold text-[#1A1A1A] min-w-[140px] text-center hover:text-[#1A535C] transition-colors"
               onClick={() => viewMode === 'maand' ? setMonthOffset(0) : setWeekOffset(0)}
               title="Spring naar vandaag"
             >
@@ -1343,17 +1339,17 @@ export function TasksLayout() {
           </div>
           {!(viewMode === 'maand' ? monthOffset === 0 : isCurrentWeek) && (
             <button
-              className="text-[12px] px-3 py-1 rounded-full font-semibold text-white bg-[#1A535C] hover:bg-[#0F3A40] transition-all shadow-[0_1px_3px_rgba(26,83,92,0.25)]"
+              className="text-[12px] py-1 font-medium text-[#1A535C] hover:text-[#0F3A40] transition-colors"
               onClick={() => viewMode === 'maand' ? setMonthOffset(0) : setWeekOffset(0)}
             >
               Vandaag
             </button>
           )}
 
-          {/* Zoom */}
-          <div className="flex items-center gap-0.5 rounded-full bg-[#F4F2EE] ring-1 ring-[#E6E4DE] overflow-hidden h-7 px-0.5">
-            <button onClick={() => handleZoom(-4)} className="px-2 h-full text-[11px] text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-white rounded-full transition-colors" title="Kleiner">A</button>
-            <button onClick={() => handleZoom(4)} className="px-2 h-full text-[13px] text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-white rounded-full transition-colors font-semibold" title="Groter">A</button>
+          {/* Zoom — twee subtiele text-knoppen */}
+          <div className="flex items-center gap-1">
+            <button onClick={() => handleZoom(-4)} className="px-1 text-[11px] text-[#9B9B95] hover:text-[#1A1A1A] transition-colors" title="Kleiner">A</button>
+            <button onClick={() => handleZoom(4)} className="px-1 text-[13px] text-[#9B9B95] hover:text-[#1A1A1A] transition-colors font-medium" title="Groter">A</button>
           </div>
         </div>
 
@@ -1401,7 +1397,7 @@ export function TasksLayout() {
                     <span className={cn(
                       'tabular-nums font-bold',
                       isToday
-                        ? 'w-7 h-7 rounded-full bg-[#1A535C] text-white flex items-center justify-center text-[13px] shadow-[0_2px_8px_-2px_rgba(26,83,92,0.25)]'
+                        ? 'w-7 h-7 rounded-full bg-[#1A535C] text-white flex items-center justify-center text-[13px] shadow-[0_1px_3px_rgba(26,83,92,0.20)]'
                         : isPast ? 'text-[#C4C2BD] text-[16px]'
                         : 'text-[#1A1A1A] text-[16px]'
                     )}>
@@ -1593,7 +1589,7 @@ export function TasksLayout() {
                     <span className={cn(
                       'text-[14px] font-semibold tabular-nums',
                       isToday
-                        ? 'w-6 h-6 rounded-full bg-[#1A535C] text-white flex items-center justify-center text-[11px] shadow-[0_2px_8px_-2px_rgba(26,83,92,0.25)]'
+                        ? 'w-6 h-6 rounded-full bg-[#1A535C] text-white flex items-center justify-center text-[11px] shadow-[0_1px_3px_rgba(26,83,92,0.20)]'
                         : isPastInMonth ? 'text-[#9B9B95]'
                         : isCurrentMonth ? 'text-[#1A1A1A]'
                         : 'text-[#C4C2BD]'
@@ -1732,7 +1728,7 @@ export function TasksLayout() {
                         <span className={cn(
                           'tabular-nums font-bold',
                           isToday
-                            ? 'w-7 h-7 rounded-full bg-[#1A535C] text-white flex items-center justify-center text-[13px] shadow-[0_2px_8px_-2px_rgba(26,83,92,0.25)]'
+                            ? 'w-7 h-7 rounded-full bg-[#1A535C] text-white flex items-center justify-center text-[13px] shadow-[0_1px_3px_rgba(26,83,92,0.20)]'
                             : 'text-[#1A1A1A] text-[16px]'
                         )}>
                           {day.getDate()}
