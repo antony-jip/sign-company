@@ -2458,12 +2458,13 @@ function TaskCard({
         justCompleted && 'scale-[0.98] opacity-40 transition-all duration-500',
         isResizing && 'ring-2 ring-[#1A535C]/30 z-30',
         isSelected && 'ring-2 ring-[#1A535C] z-20',
-        isDimmedForBulkDrag && 'opacity-40'
+        isDimmedForBulkDrag && 'opacity-40',
+        isDone && '[background:linear-gradient(135deg,#E2F0F0_0%,#FFFFFF_70%)]'
       )}
       style={{
         ...(heightPx !== undefined ? { height: heightPx, overflow: 'hidden' } : {}),
-        borderLeftColor: pc.border,
-        backgroundColor: pc.bg,
+        borderLeftColor: isDone ? '#1A535C' : pc.border,
+        ...(isDone ? {} : { backgroundColor: pc.bg }),
       }}
       onClick={onEdit}
     >
