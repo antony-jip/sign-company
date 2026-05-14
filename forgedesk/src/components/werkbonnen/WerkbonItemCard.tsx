@@ -87,6 +87,7 @@ export const WerkbonItemCard = React.memo(function WerkbonItemCard({
             onChange={(e) => setOmschrijving(e.target.value)}
             className="text-base font-medium min-h-[60px]"
             placeholder="Omschrijving van het item"
+            enableAiTone={false}
           />
         </div>
 
@@ -190,6 +191,7 @@ export const WerkbonItemCard = React.memo(function WerkbonItemCard({
             placeholder="Bijv. Let op: rechts 5mm extra voor omslag"
             className="bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-800 min-h-[50px]"
             rows={2}
+            enableAiTone={false}
           />
         </div>
       </CardContent>

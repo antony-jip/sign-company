@@ -2145,6 +2145,7 @@ export function FactuurEditor() {
                 placeholder="Optionele intro tekst bovenaan de factuur..."
                 rows={2}
                 className="text-sm"
+                enableAiTone={false}
               />
             </CardContent>
           </Card>
@@ -2345,6 +2346,7 @@ export function FactuurEditor() {
                 placeholder="Optionele outro tekst onder de factuurregels..."
                 rows={2}
                 className="text-sm"
+                enableAiTone={false}
               />
             </CardContent>
           </Card>
@@ -2362,6 +2364,7 @@ export function FactuurEditor() {
                   placeholder="Betaalvoorwaarden..."
                   rows={3}
                   className="text-sm"
+                  enableAiTone={false}
                 />
               </CardContent>
             </Card>
@@ -2559,6 +2562,7 @@ export function FactuurEditor() {
                 placeholder="Bijv. Foutieve facturatie, retour, annulering..."
                 rows={3}
                 className="text-sm mt-1"
+                enableAiTone={false}
               />
             </div>
           </div>

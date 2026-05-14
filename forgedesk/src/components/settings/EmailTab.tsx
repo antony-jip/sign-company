@@ -807,6 +807,7 @@ export function EmailTab() {
                   onChange={(e) => setEmailHandtekening(e.target.value)}
                   placeholder={"Met vriendelijke groet,\n\nJan de Vries\nSales Manager\nSign Company B.V.\nTel: 020-1234567"}
                   rows={6}
+                  enableAiTone={false}
                 />
                 <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">
                   Naam, functie, telefoonnummer en bedrijfsgegevens
