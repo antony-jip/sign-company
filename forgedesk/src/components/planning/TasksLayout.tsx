@@ -1494,16 +1494,16 @@ export function TasksLayout() {
         return (
         <div className="flex-1 flex flex-col min-h-0 px-6 pb-4 pt-2">
           <div
-            className="flex-1 min-h-0 grid grid-cols-5 gap-px bg-[#F0EFEC] overflow-hidden"
+            className="flex-1 min-h-0 grid grid-cols-5 gap-px bg-[#EBE9E4] overflow-hidden rounded-2xl ring-1 ring-[#EBE9E4] shadow-[0_1px_2px_rgba(0,0,0,0.02),0_8px_24px_-12px_rgba(0,0,0,0.06)]"
             style={{ gridTemplateRows: `auto repeat(${visibleWeeks}, minmax(0, 1fr))` }}
           >
             {/* Day headers — werkweek */}
             {DAY_LABELS.slice(0, 5).map((d) => (
               <div
                 key={d}
-                className="bg-white text-center py-2 text-[10px] font-semibold lowercase tracking-[0.06em] text-[#9B9B95]"
+                className="bg-white text-center py-3 text-[12px] font-medium tracking-[0.02em] text-[#6B6B66] border-b border-[#F0EFEC]"
               >
-                {d.toLowerCase()}
+                {d.charAt(0).toUpperCase() + d.slice(1)}
               </div>
             ))}
             {/* Day cells */}
@@ -1521,8 +1521,8 @@ export function TasksLayout() {
                   className={cn(
                     'group/cell relative p-2 transition-colors flex flex-col min-h-0',
                     !isCurrentMonth ? 'bg-[#FAFAF8] text-[#C4C2BD]' : 'bg-white',
-                    isToday && '!bg-[#1A535C]/[0.04]',
-                    isDropHere && '!bg-[#1A535C]/[0.12]'
+                    isToday && '[background:linear-gradient(180deg,rgba(26,83,92,0.06)_0%,rgba(26,83,92,0)_55%)]',
+                    isDropHere && '[background:linear-gradient(180deg,rgba(241,80,37,0.10)_0%,rgba(241,80,37,0.03)_100%)] shadow-[inset_0_2px_0_#F15025]'
                   )}
                   onClick={(e) => {
                     if (!isCurrentMonth || isAddingHere) return
@@ -1560,7 +1560,7 @@ export function TasksLayout() {
                     <span className={cn(
                       'text-[13px] font-semibold tabular-nums',
                       isToday
-                        ? 'w-6 h-6 rounded-full bg-[#1A535C] text-white flex items-center justify-center text-[11px]'
+                        ? 'w-6 h-6 rounded-full bg-[#1A535C] text-white flex items-center justify-center text-[11px] shadow-[0_4px_12px_-2px_rgba(26,83,92,0.35)]'
                         : isPastInMonth ? 'text-[#9B9B95]'
                         : isCurrentMonth ? 'text-[#1A1A1A]'
                         : 'text-[#C4C2BD]'
@@ -1604,12 +1604,12 @@ export function TasksLayout() {
                             requestAnimationFrame(() => { el.style.opacity = '0.4' })
                           }}
                           onDragEnd={(e) => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
-                          className="group/pill relative w-full text-left flex items-center gap-2 text-[11px] font-medium leading-tight px-1 py-[2px] rounded-[2px] cursor-grab active:cursor-grabbing hover:bg-[#F4F2EE] transition-colors"
+                          className="group/pill relative w-full text-left flex items-center gap-2 text-[11px] font-medium leading-tight px-1.5 py-[3px] rounded-md cursor-grab active:cursor-grabbing hover:bg-[#1A535C]/[0.05] transition-colors"
                           onClick={() => openEditDialog(taken.find((tt) => tt.id === t.id) || t)}
                           title={t.titel}
                         >
                           <span
-                            className="w-[3px] h-3 rounded-[1px] flex-shrink-0"
+                            className="w-[3px] h-3.5 rounded-[2px] flex-shrink-0"
                             style={{ backgroundColor: isDone ? '#1A535C' : pc.dot }}
                           />
                           <span className={cn(
