@@ -201,6 +201,7 @@ export interface ContactpersoonRecord {
   telefoon: string;
   functie: string;
   notities: string;
+  is_factuur_standaard?: boolean;
   created_at: string;
   updated_at: string;
   user_id: string;

@@ -269,6 +269,7 @@ export function FactuurEditor() {
   const [klantId, setKlantId] = useState('')
   const [contactpersoonId, setContactpersoonId] = useState('')
   const [resolvedCp, setResolvedCp] = useState<ResolvedContactpersoon | null>(null)
+  const [factuurStandaardCpId, setFactuurStandaardCpId] = useState<string | null>(null)
   const [klantSearch, setKlantSearch] = useState('')
   const [showKlantSelector, setShowKlantSelector] = useState(true)
   const [offerteId, setOfferteId] = useState('')
@@ -636,6 +637,21 @@ export function FactuurEditor() {
     if (!klantId) { setWerkbonnen([]); return }
     getWerkbonnenByKlant(klantId).then(setWerkbonnen).catch(() => setWerkbonnen([]))
   }, [klantId])
+
+  // Standaard factuur-contact ophalen bij klant-selectie; voorvullen alleen voor nieuwe facturen.
+  useEffect(() => {
+    if (!klantId) { setFactuurStandaardCpId(null); return }
+    let cancelled = false
+    getContactpersonenByKlant(klantId).then((cps) => {
+      if (cancelled) return
+      const std = cps.find((c) => c.is_factuur_standaard)
+      setFactuurStandaardCpId(std?.id || null)
+      if (!isEditMode && std) {
+        setContactpersoonId(std.id)
+      }
+    }).catch(() => { if (!cancelled) setFactuurStandaardCpId(null) })
+    return () => { cancelled = true }
+  }, [klantId, isEditMode])
 
   // Laad bijlagen voor de verzend-dialog. Default alle bijlagen aangevinkt.
   useEffect(() => {
@@ -1100,6 +1116,53 @@ export function FactuurEditor() {
       toast.error('Kon UBL XML niet genereren')
     }
   }, [selectedKlant, profile, nummer, titel, factuurdatum, vervaldatum, subtotaal, btwBedrag, totaal, notities, voorwaarden, validItems, existingFactuur])
+
+  // ============ STANDAARD FACTUUR-CONTACT ============
+
+  const handleToggleStandaard = useCallback(async (newValue: boolean) => {
+    if (!resolvedCp || !klantId || !user?.id) return
+    try {
+      if (newValue) {
+        if (factuurStandaardCpId && factuurStandaardCpId !== resolvedCp.id) {
+          await updateContactpersoonDB(factuurStandaardCpId, { is_factuur_standaard: false })
+        }
+        if (resolvedCp.source === 'jsonb') {
+          const klant = klanten.find((k) => k.id === klantId)
+          const jsonbCp = klant?.contactpersonen?.find((c) => c.id === resolvedCp.id)
+          if (!klant || !jsonbCp) return
+          const parts = (jsonbCp.naam || '').trim().split(/\s+/)
+          const created = await createContactpersoonDB({
+            klant_id: klantId,
+            voornaam: parts[0] || '',
+            achternaam: parts.slice(1).join(' '),
+            email: jsonbCp.email || '',
+            telefoon: jsonbCp.telefoon || '',
+            functie: jsonbCp.functie || '',
+            notities: '',
+            user_id: user.id,
+            is_factuur_standaard: true,
+          })
+          const cleaned = (klant.contactpersonen || []).filter((c) => c.id !== resolvedCp.id)
+          await updateKlant(klantId, { contactpersonen: cleaned })
+          const fresh = await getKlanten()
+          setKlanten(fresh)
+          setContactpersoonId(created.id)
+          setFactuurStandaardCpId(created.id)
+        } else {
+          await updateContactpersoonDB(resolvedCp.id, { is_factuur_standaard: true })
+          setFactuurStandaardCpId(resolvedCp.id)
+        }
+        toast.success(`${resolvedCp.naam} is nu de standaard factuur-contact`)
+      } else if (resolvedCp.source === 'db' && factuurStandaardCpId === resolvedCp.id) {
+        await updateContactpersoonDB(resolvedCp.id, { is_factuur_standaard: false })
+        setFactuurStandaardCpId(null)
+        toast.success('Standaard factuur-contact verwijderd')
+      }
+    } catch (err) {
+      logger.error('Standaard factuur-contact opslaan mislukt:', err)
+      toast.error('Kon standaard niet opslaan')
+    }
+  }, [resolvedCp, klantId, factuurStandaardCpId, klanten, user])
 
   // ============ SEND EMAIL ============
 
@@ -1852,6 +1915,20 @@ export function FactuurEditor() {
                 klanten={klanten}
                 onKlantenRefresh={() => getKlanten().then(setKlanten).catch(() => {})}
               />
+              {resolvedCp && (
+                <label className="mt-3 flex items-center gap-2 text-xs cursor-pointer text-muted-foreground">
+                  <Checkbox
+                    checked={factuurStandaardCpId === resolvedCp.id}
+                    onCheckedChange={(v) => handleToggleStandaard(v === true)}
+                  />
+                  Altijd gebruiken voor facturen van deze klant
+                </label>
+              )}
+              {selectedKlant && !resolvedCp?.email && !selectedKlant.email && (
+                <p className="mt-2 text-[11px] text-flame">
+                  Geen email-adres bekend — voeg een contactpersoon met email toe.
+                </p>
+              )}
               {selectedKlant && (
                 <KlantStatusWarning klant={selectedKlant} className="mt-3" />
               )}
