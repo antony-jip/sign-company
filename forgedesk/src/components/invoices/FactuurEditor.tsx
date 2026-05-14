@@ -1912,6 +1912,7 @@ export function FactuurEditor() {
                 contactpersoonId={contactpersoonId}
                 onContactpersoonChange={setContactpersoonId}
                 onContactpersoonResolved={setResolvedCp}
+                pinnedContactpersoonId={factuurStandaardCpId || undefined}
                 klanten={klanten}
                 onKlantenRefresh={() => getKlanten().then(setKlanten).catch(() => {})}
               />

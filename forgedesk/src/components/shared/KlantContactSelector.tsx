@@ -22,6 +22,7 @@ interface KlantContactSelectorProps {
   contactpersoonId?: string
   onContactpersoonChange?: (cpId: string) => void
   onContactpersoonResolved?: (cp: ResolvedContactpersoon | null) => void
+  pinnedContactpersoonId?: string
   vestigingId?: string
   onVestigingChange?: (vId: string) => void
   klanten: Klant[]
@@ -34,6 +35,7 @@ export function KlantContactSelector({
   contactpersoonId = '',
   onContactpersoonChange,
   onContactpersoonResolved,
+  pinnedContactpersoonId,
   vestigingId = '',
   onVestigingChange,
   klanten,
@@ -57,7 +59,10 @@ export function KlantContactSelector({
 
   const selectedKlant = useMemo(() => klanten.find((k) => k.id === klantId) || null, [klanten, klantId])
   const [dbContacten, setDbContacten] = useState<ContactpersoonRecord[]>([])
+  const [expandedContacts, setExpandedContacts] = useState(false)
   const vestigingen = selectedKlant?.vestigingen || []
+
+  useEffect(() => { setExpandedContacts(false) }, [klantId])
 
   // Merge JSONB contactpersonen + DB contactpersonen into one list
   const contactpersonen: Contactpersoon[] = useMemo(() => {
@@ -427,41 +432,60 @@ export function KlantContactSelector({
             Contactpersoon
           </Label>
 
-          {contactpersonen.length > 0 && (
-            <div className="space-y-1 mb-2">
-              {contactpersonen.map((cp) => (
-                <button
-                  key={cp.id}
-                  onClick={() => onContactpersoonChange(cp.id)}
-                  className="w-full text-left rounded-lg px-3 py-2 transition-all flex items-center gap-2"
-                  style={{
-                    border: contactpersoonId === cp.id ? '1px solid #1A535C' : '0.5px solid #E6E4E0',
-                    backgroundColor: contactpersoonId === cp.id ? '#E2F0F0' : 'transparent',
-                  }}
-                >
-                  <div
-                    className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold"
+          {contactpersonen.length > 0 && (() => {
+            const isPinnedSelected = !!pinnedContactpersoonId && contactpersoonId === pinnedContactpersoonId
+            const collapseList = isPinnedSelected && !expandedContacts
+            const visibleCps = collapseList
+              ? contactpersonen.filter((c) => c.id === contactpersoonId)
+              : contactpersonen
+            return (
+              <div className="space-y-1 mb-2">
+                {visibleCps.map((cp) => (
+                  <button
+                    key={cp.id}
+                    onClick={() => onContactpersoonChange(cp.id)}
+                    className="w-full text-left rounded-lg px-3 py-2 transition-all flex items-center gap-2"
                     style={{
-                      backgroundColor: contactpersoonId === cp.id ? '#1A535C' : '#EEEEED',
-                      color: contactpersoonId === cp.id ? '#FFFFFF' : '#5A5A55',
+                      border: contactpersoonId === cp.id ? '1px solid #1A535C' : '0.5px solid #E6E4E0',
+                      backgroundColor: contactpersoonId === cp.id ? '#E2F0F0' : 'transparent',
                     }}
                   >
-                    {cp.naam[0]?.toUpperCase()}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <span className="text-[13px] font-medium" style={{ color: '#191919' }}>{cp.naam}</span>
-                    {cp.functie && <span className="text-[11px] ml-1.5" style={{ color: '#A0A098' }}>({cp.functie})</span>}
-                  </div>
-                  {cp.is_primair && (
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: '#E2F0F0', color: '#1A535C' }}>
-                      primair
-                    </span>
-                  )}
-                  {contactpersoonId === cp.id && <Check className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#1A535C' }} />}
-                </button>
-              ))}
-            </div>
-          )}
+                    <div
+                      className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold"
+                      style={{
+                        backgroundColor: contactpersoonId === cp.id ? '#1A535C' : '#EEEEED',
+                        color: contactpersoonId === cp.id ? '#FFFFFF' : '#5A5A55',
+                      }}
+                    >
+                      {cp.naam[0]?.toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[13px] font-medium" style={{ color: '#191919' }}>{cp.naam}</span>
+                      {cp.email && <span className="text-[11px] ml-1.5 truncate" style={{ color: '#5A5A55' }}>{cp.email}</span>}
+                      {cp.functie && <span className="text-[11px] ml-1.5" style={{ color: '#A0A098' }}>({cp.functie})</span>}
+                    </div>
+                    {cp.is_primair && (
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: '#E2F0F0', color: '#1A535C' }}>
+                        primair
+                      </span>
+                    )}
+                    {contactpersoonId === cp.id && <Check className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#1A535C' }} />}
+                  </button>
+                ))}
+                {collapseList && (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.preventDefault(); setExpandedContacts(true) }}
+                    className="w-full flex items-center justify-center gap-1.5 text-[11px] py-1.5 rounded-lg transition-colors hover:bg-[#FAFAF8]"
+                    style={{ color: '#5A5A55' }}
+                  >
+                    <ChevronDown className="h-3.5 w-3.5" />
+                    Andere contactpersoon
+                  </button>
+                )}
+              </div>
+            )
+          })()}
 
           {!showNieuwContact ? (
             <button
