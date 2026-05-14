@@ -1,11 +1,65 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { createClient } from '@supabase/supabase-js'
-import { buildDaanContext } from './_helpers/daanContext'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL || '',
   process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 )
+
+// ── Daan context helper (inline; Vercel bundelt geen api/_helpers/ imports) ──
+interface DaanContext {
+  bedrijfscontext: string
+  schrijfstijl: string
+  hasContext: boolean
+}
+
+const DAAN_CONTEXT_TIMEOUT_MS = 3000
+const LEGE_DAAN_CONTEXT: DaanContext = { bedrijfscontext: '', schrijfstijl: '', hasContext: false }
+
+async function buildDaanContext(client: SupabaseClient, userId: string): Promise<DaanContext> {
+  if (!userId) return LEGE_DAAN_CONTEXT
+  return Promise.race([
+    loadDaanContext(client, userId),
+    new Promise<DaanContext>(resolve => setTimeout(() => resolve(LEGE_DAAN_CONTEXT), DAAN_CONTEXT_TIMEOUT_MS)),
+  ])
+}
+
+async function loadDaanContext(client: SupabaseClient, userId: string): Promise<DaanContext> {
+  let bedrijfscontext = ''
+  let schrijfstijl = ''
+
+  const { data: profile } = await client
+    .from('profiles')
+    .select('organisatie_id')
+    .eq('id', userId)
+    .maybeSingle()
+
+  const orgId = (profile?.organisatie_id as string | null) ?? null
+
+  if (orgId) {
+    const { data } = await client
+      .from('app_settings')
+      .select('forgie_bedrijfscontext, ai_tone_of_voice')
+      .eq('organisatie_id', orgId)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    bedrijfscontext = (data?.forgie_bedrijfscontext as string | null) || ''
+    schrijfstijl = (data?.ai_tone_of_voice as string | null) || ''
+  }
+
+  if (!bedrijfscontext || !schrijfstijl) {
+    const { data } = await client
+      .from('app_settings')
+      .select('forgie_bedrijfscontext, ai_tone_of_voice')
+      .eq('user_id', userId)
+      .maybeSingle()
+    if (!bedrijfscontext) bedrijfscontext = (data?.forgie_bedrijfscontext as string | null) || ''
+    if (!schrijfstijl) schrijfstijl = (data?.ai_tone_of_voice as string | null) || ''
+  }
+
+  return { bedrijfscontext, schrijfstijl, hasContext: !!(bedrijfscontext || schrijfstijl) }
+}
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || ''
 const MONTHLY_LIMIT = 5.0
