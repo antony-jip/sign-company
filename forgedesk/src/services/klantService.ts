@@ -39,6 +39,60 @@ function normalizeKlant(raw: unknown): Klant {
   } as Klant
 }
 
+// ============ DEBITEURENNUMMER GENERATIE ============
+
+async function getDebiteurSettings(): Promise<{ prefix: string; volgnummer: number }> {
+  if (!isSupabaseConfigured() || !supabase) return { prefix: '', volgnummer: 1000 }
+  const orgId = await getOrgId()
+  if (!orgId) return { prefix: '', volgnummer: 1000 }
+  const { data } = await supabase
+    .from('app_settings')
+    .select('debiteur_prefix, debiteur_volgnummer')
+    .eq('organisatie_id', orgId)
+    .maybeSingle()
+  return {
+    prefix: ((data?.debiteur_prefix as string) ?? '') || '',
+    volgnummer: (data?.debiteur_volgnummer as number) || 1000,
+  }
+}
+
+// Strict: alleen entries die exact "${prefix}<digits>" matchen tellen mee.
+// Legacy/handmatige waardes (bv. import-strings met letters) blijven met
+// rust, zodat de generator alleen z'n eigen output telt.
+async function getMaxDebiteurennummer(prefix: string): Promise<number> {
+  if (!isSupabaseConfigured() || !supabase) return 0
+  const orgId = await getOrgId()
+  if (!orgId) return 0
+  let query = supabase
+    .from('klanten')
+    .select('debiteurennummer')
+    .neq('debiteurennummer', '')
+    .eq('organisatie_id', orgId)
+  if (prefix) query = query.like('debiteurennummer', `${prefix}%`)
+  const { data } = await query
+  if (!data || data.length === 0) return 0
+
+  const escapedPrefix = prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const pattern = new RegExp(`^${escapedPrefix}(\\d+)$`)
+  let maxNr = 0
+  for (const row of data) {
+    const val = ((row as Record<string, unknown>).debiteurennummer as string) || ''
+    const match = val.match(pattern)
+    if (match) {
+      const n = parseInt(match[1], 10)
+      if (!isNaN(n) && n > maxNr) maxNr = n
+    }
+  }
+  return maxNr
+}
+
+export async function generateDebiteurennummer(): Promise<string> {
+  const { prefix, volgnummer } = await getDebiteurSettings()
+  const maxNr = await getMaxDebiteurennummer(prefix)
+  const nextNr = Math.max(maxNr, Math.max(0, volgnummer - 1)) + 1
+  return `${prefix}${nextNr}`
+}
+
 // ============ KLANTEN ============
 
 export async function getAllKlantLabels(userId: string): Promise<string[]> {
@@ -115,6 +169,9 @@ export async function createKlant(klant: Omit<Klant, 'id' | 'created_at' | 'upda
     const klantInsert = { ...klant, user_id, organisatie_id: orgId }
     if (!Array.isArray(klantInsert.tags)) klantInsert.tags = []
     if (!Array.isArray(klantInsert.klant_labels)) klantInsert.klant_labels = []
+    if (!klantInsert.debiteurennummer) {
+      klantInsert.debiteurennummer = await generateDebiteurennummer()
+    }
     const { data, error } = await supabase
       .from('klanten')
       .insert(klantInsert)

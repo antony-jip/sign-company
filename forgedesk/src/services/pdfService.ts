@@ -386,6 +386,10 @@ function addClientInfo(
     doc.text(`${klant.postcode || ''} ${klant.stad || ''}`.trim(), margins.left, y)
     y += 5
   }
+  if (klant.debiteurennummer) {
+    doc.text(`Debiteurnr. ${klant.debiteurennummer}`, margins.left, y)
+    y += 5
+  }
   if (klant.land && klant.land !== 'Nederland') {
     doc.text(klant.land, margins.left, y)
     y += 5
