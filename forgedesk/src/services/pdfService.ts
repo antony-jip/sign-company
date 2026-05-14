@@ -1183,6 +1183,7 @@ export function generateFactuurPDF(
     factuur_type?: string
     betaal_link?: string
     credit_voor_nummer?: string
+    outro_tekst?: string
   },
   items: OfferteItem[],
   klant: Partial<Klant>,
@@ -1436,6 +1437,16 @@ export function generateFactuurPDF(
   }
 
   const contentWidth = pageWidth - margins.left - margins.right
+
+  // Outro tekst (optioneel) — staat na de totalen, voor betaalinformatie
+  if (factuurData.outro_tekst && factuurData.outro_tekst.trim()) {
+    advanceY(15)
+    doc.setFont(bodyFont, 'normal')
+    doc.setFontSize(baseFontSize)
+    doc.setTextColor(...textColor)
+    const outroLines = doc.splitTextToSize(factuurData.outro_tekst.trim(), contentWidth) as string[]
+    totalsY = flowText(outroLines, margins.left, totalsY, 5)
+  }
 
   // Payment info
   advanceY(15)

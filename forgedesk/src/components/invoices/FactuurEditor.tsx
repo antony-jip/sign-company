@@ -1018,6 +1018,7 @@ export function FactuurEditor() {
       factuur_type: (isCreditFactuur ? 'creditnota' : existingFactuur?.factuur_type || 'standaard') as string,
       betaal_link: existingFactuur?.betaal_link || undefined,
       credit_voor_nummer: creditVoorNummer || undefined,
+      outro_tekst: outroTekst || undefined,
     }
 
     const pdfItems: OfferteItem[] = validItems.map((item, idx) => ({
@@ -1139,6 +1140,7 @@ export function FactuurEditor() {
           betaalvoorwaarden: voorwaarden || undefined,
           factuur_type: (isCreditFactuur ? 'creditnota' : existingFactuur.factuur_type || 'standaard') as string,
           betaal_link: existingFactuur.betaal_link || undefined,
+          outro_tekst: outroTekst || undefined,
         }
         const pdfItems: OfferteItem[] = validItems.map((item, idx) => ({
           id: item.id,
@@ -1506,6 +1508,7 @@ export function FactuurEditor() {
             betaalvoorwaarden: voorwaarden || undefined,
             factuur_type: (isCreditFactuur ? 'creditnota' : existingFactuur.factuur_type || 'standaard') as string,
             betaal_link: existingFactuur.betaal_link || undefined,
+            outro_tekst: outroTekst || undefined,
           }
           const pdfItems: OfferteItem[] = validItems.map((item, idx) => ({
             id: item.id,
