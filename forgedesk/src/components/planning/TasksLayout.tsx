@@ -1158,7 +1158,7 @@ export function TasksLayout() {
     return (
       <div className="flex flex-col h-[calc(100vh-56px)] -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 bg-[#F8F7F5]">
         {/* Sticky toolbar skeleton */}
-        <div className="sticky top-0 z-20 bg-[#FFFFFF] border-b border-[#F0EFEC] shadow-[0_1px_3px_rgba(0,0,0,0.03)] px-6 py-2 flex-shrink-0 flex items-center gap-3 flex-wrap">
+        <div className="sticky top-0 z-20 bg-[#FFFFFF] border-b border-[#E6E4DE] shadow-[0_1px_3px_rgba(0,0,0,0.03)] px-6 py-2 flex-shrink-0 flex items-center gap-3 flex-wrap">
           <div className="flex items-baseline gap-2">
             <h1 className="text-[17px] font-bold text-[#1A1A1A] tracking-[-0.3px]">
               Taken<span className="text-[#F15025]">.</span>
@@ -1196,7 +1196,7 @@ export function TasksLayout() {
         <div className="flex-1 overflow-hidden bg-[#FFFFFF]">
           <div className="flex h-full">
             {/* Time gutter */}
-            <div className="w-14 flex-shrink-0 border-r border-[#F0EFEC] py-3 space-y-12">
+            <div className="w-14 flex-shrink-0 border-r border-[#E6E4DE] py-3 space-y-12">
               {Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="px-2 flex justify-end">
                   <Skeleton className="h-2.5 w-6" />
@@ -1422,7 +1422,7 @@ export function TasksLayout() {
         <div ref={scrollRef} onMouseDown={handleGridMouseDown} className="flex-1 overflow-y-auto overflow-x-hidden relative bg-[#FFFFFF]">
           <div className="flex" style={{ minHeight: HOURS.length * HOUR_HEIGHT }}>
             {/* Time gutter */}
-            <div className="w-14 flex-shrink-0 relative border-r border-[#F0EFEC]">
+            <div className="w-14 flex-shrink-0 relative border-r border-[#E6E4DE]">
               {HOURS.map((hour) => (
                 <div key={hour} style={{ height: HOUR_HEIGHT }} className="relative">
                   <span className="absolute -top-2.5 right-3 text-[11px] text-[#9B9B95] font-mono tabular-nums font-medium">
@@ -1515,7 +1515,7 @@ export function TasksLayout() {
             {DAY_LABELS.slice(0, 5).map((d) => (
               <div
                 key={d}
-                className="bg-white text-center py-4 text-[13px] font-semibold tracking-[0.02em] text-[#5A5A55] border-b border-[#F0EFEC]"
+                className="bg-white text-center py-4 text-[13px] font-semibold tracking-[0.02em] text-[#5A5A55] border-b border-[#E6E4DE]"
               >
                 {d.charAt(0).toUpperCase() + d.slice(1)}
               </div>
@@ -1668,10 +1668,10 @@ export function TasksLayout() {
         <div className="flex-1 overflow-y-auto bg-[#FFFFFF]">
           <div className="min-w-[720px]">
             <div
-              className="sticky top-0 z-10 flex border-b-2 border-[#F0EFEC] bg-[#FAFAF9]"
+              className="sticky top-0 z-10 flex border-b border-[#E6E4DE] bg-white"
               style={{ gridTemplateColumns: '180px repeat(5, 1fr)' }}
             >
-              <div className="w-[180px] flex-shrink-0 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">
+              <div className="w-[180px] flex-shrink-0 px-4 py-4 text-[11px] font-semibold tracking-[0.06em] uppercase text-[#9B9B95]">
                 Medewerker
               </div>
               {weekDays.map((day, i) => {
@@ -1684,31 +1684,35 @@ export function TasksLayout() {
                   <div
                     key={i}
                     className={cn(
-                      'flex-1 min-w-0 text-center py-2.5 border-l border-[#EBEBEB]/30',
+                      'flex-1 min-w-0 text-center py-4 border-l border-[#E6E4DE]',
                       isToday && 'bg-[#1A535C]/[0.04]'
                     )}
                   >
-                    <div className="flex items-center justify-center gap-1.5">
-                      {hasDayTasks && (
-                        <Checkbox
-                          checked={allDaySelected}
-                          onCheckedChange={() => toggleTaskGroupSelected(dayTaskIds)}
-                          aria-label={`Selecteer alle taken op ${DAY_LABELS[i]} ${day.getDate()}`}
-                          className="h-3.5 w-3.5"
-                        />
-                      )}
+                    <div className="flex flex-col items-center gap-1">
                       <span className={cn(
-                        'text-[11px] uppercase tracking-widest font-semibold',
+                        'text-[11px] font-semibold tracking-[0.06em] uppercase',
                         isToday ? 'text-[#1A535C]' : 'text-[#9B9B95]'
                       )}>
                         {DAY_LABELS[i]}{isToday && <span className="text-[#F15025]">.</span>}
                       </span>
-                      <span className={cn(
-                        'text-[13px] font-bold font-mono tabular-nums',
-                        isToday ? 'text-[#1A535C]' : 'text-[#1A1A1A]'
-                      )}>
-                        {day.getDate()}
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        {hasDayTasks && (
+                          <Checkbox
+                            checked={allDaySelected}
+                            onCheckedChange={() => toggleTaskGroupSelected(dayTaskIds)}
+                            aria-label={`Selecteer alle taken op ${DAY_LABELS[i]} ${day.getDate()}`}
+                            className="h-3.5 w-3.5"
+                          />
+                        )}
+                        <span className={cn(
+                          'tabular-nums font-bold',
+                          isToday
+                            ? 'w-7 h-7 rounded-full bg-[#1A535C] text-white flex items-center justify-center text-[13px] shadow-[0_2px_8px_-2px_rgba(26,83,92,0.25)]'
+                            : 'text-[#1A1A1A] text-[16px]'
+                        )}>
+                          {day.getDate()}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 )
@@ -1725,8 +1729,8 @@ export function TasksLayout() {
                 const laneTaskIds = [...lane.tasksByDay.values()].flat().map((t) => t.id)
                 const allLaneSelected = laneTaskIds.length > 0 && laneTaskIds.every((id) => selectedTaskIds.has(id))
                 return (
-                  <div key={lane.key} className="flex border-b border-[#F0EFEC] hover:bg-[#FAFAF9]/40 transition-colors">
-                    <div className="w-[180px] flex-shrink-0 flex items-center gap-2 px-3 py-3 border-r border-[#F0EFEC]">
+                  <div key={lane.key} className="flex border-b border-[#E6E4DE] hover:bg-[#FAFAF9]/40 transition-colors">
+                    <div className="w-[180px] flex-shrink-0 flex items-center gap-2 px-3 py-3 border-r border-[#E6E4DE]">
                       <Checkbox
                         checked={allLaneSelected}
                         disabled={laneTaskIds.length === 0}
@@ -1771,7 +1775,7 @@ export function TasksLayout() {
                         <div
                           key={dayIdx}
                           className={cn(
-                            'flex-1 min-w-0 border-l border-[#EBEBEB]/30 p-1.5 min-h-[56px]',
+                            'flex-1 min-w-0 border-l border-[#E6E4DE] p-1.5 min-h-[56px]',
                             isToday && 'bg-[#1A535C]/[0.02]'
                           )}
                         >
