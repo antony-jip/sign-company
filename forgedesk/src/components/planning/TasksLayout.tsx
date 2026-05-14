@@ -1227,17 +1227,21 @@ export function TasksLayout() {
         {/* === Sticky toolbar — 1 rij === */}
         <div className="sticky top-0 z-20 bg-white/75 backdrop-blur-xl border-b border-[#E6E4DE] shadow-[0_1px_8px_-2px_rgba(0,0,0,0.05)] px-6 py-2.5 flex-shrink-0 flex items-center gap-3 flex-wrap">
           {/* Titel + counter */}
-          <div className="flex items-baseline gap-2">
+          <div className="flex items-baseline gap-2.5">
             <h1 className="text-[17px] font-bold text-[#1A1A1A] tracking-[-0.3px]">
               Taken<span className="text-[#F15025]">.</span>
             </h1>
-            <span className="text-[12px] text-[#9B9B95] font-mono tabular-nums">
-              {klaartaken}/{totalTaken}
+            <span
+              className="inline-flex items-center gap-1 text-[11px] font-medium text-[#6B6B66] tabular-nums px-2 py-0.5 rounded-full bg-[#F4F2EE]"
+              title={`${klaartaken} van ${totalTaken} taken voltooid`}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-[#1A535C]" />
+              {klaartaken}<span className="text-[#9B9B95]">/{totalTaken}</span>
             </span>
           </div>
 
           {/* Scheidingsstreep */}
-          <span className="w-px h-5 bg-[#EBEBEB]" />
+          <span className="w-px h-5 bg-[#E6E4DE]" />
 
           {/* Filter pills */}
           <div className="flex items-center gap-0.5 overflow-x-auto scrollbar-hide">
