@@ -93,6 +93,10 @@ import {
   getWerkbon,
   getWerkbonItems,
   getWerkbonFotos,
+  getContactpersonenByKlant,
+  createContactpersoonDB,
+  updateContactpersoonDB,
+  updateKlant,
 } from '@/services/supabaseService'
 import { generateWerkbonInstructiePDF } from '@/services/werkbonPdfService'
 import { useAuth } from '@/contexts/AuthContext'
@@ -111,6 +115,7 @@ import { cn, formatCurrency, formatDate } from '@/lib/utils'
 import { factuurBetaalTokenExpiry } from '@/lib/tokenExpiry'
 import { logger } from '../../utils/logger'
 import { KlantStatusWarning } from '@/components/shared/KlantStatusWarning'
+import { KlantContactSelector, type ResolvedContactpersoon } from '@/components/shared/KlantContactSelector'
 import { FactuurBijlagenSectie } from '@/components/invoices/FactuurBijlagenSectie'
 import { getFactuurBijlagen } from '@/services/factuurBijlagenService'
 import { useUnsavedWarning } from '@/hooks/useUnsavedWarning'
@@ -262,6 +267,8 @@ export function FactuurEditor() {
 
   // Form state
   const [klantId, setKlantId] = useState('')
+  const [contactpersoonId, setContactpersoonId] = useState('')
+  const [resolvedCp, setResolvedCp] = useState<ResolvedContactpersoon | null>(null)
   const [klantSearch, setKlantSearch] = useState('')
   const [showKlantSelector, setShowKlantSelector] = useState(true)
   const [offerteId, setOfferteId] = useState('')
@@ -359,6 +366,7 @@ export function FactuurEditor() {
               setExistingFactuur(factuur)
               setIsEditMode(true)
               setKlantId(factuur.klant_id)
+              setContactpersoonId(factuur.contactpersoon_id || '')
               setShowKlantSelector(false)
               setOfferteId(factuur.offerte_id || '')
               setProjectId(factuur.project_id || '')
@@ -788,6 +796,7 @@ export function FactuurEditor() {
         const updates: Partial<Factuur> = {
           klant_id: klantId,
           klant_naam: selectedKlant?.bedrijfsnaam || '',
+          contactpersoon_id: contactpersoonId || undefined,
           titel,
           factuurdatum,
           vervaldatum,
@@ -813,6 +822,7 @@ export function FactuurEditor() {
           user_id: user?.id || '',
           klant_id: klantId,
           klant_naam: selectedKlant?.bedrijfsnaam || '',
+          contactpersoon_id: contactpersoonId || undefined,
           offerte_id: offerteId || undefined,
           project_id: projectId || undefined,
           nummer,
@@ -964,7 +974,7 @@ export function FactuurEditor() {
       setIsSaving(false)
     }
   }, [
-    klantId, selectedKlant, titel, validItems, isEditMode, existingFactuur,
+    klantId, contactpersoonId, selectedKlant, titel, validItems, isEditMode, existingFactuur,
     factuurdatum, vervaldatum, voorwaarden, notities, introTekst, outroTekst,
     subtotaal, btwBedrag, totaal, nummer, offerteId, projectId, user, navigate,
     kostenplaatsId, isCreditFactuur, creditVoorFactuurId,
@@ -1094,8 +1104,10 @@ export function FactuurEditor() {
   // ============ SEND EMAIL ============
 
   const handleSendFactuur = useCallback(async () => {
-    if (!existingFactuur || !selectedKlant?.email) {
-      toast.error('Geen emailadres gevonden voor deze klant')
+    if (!existingFactuur || !selectedKlant) return
+    const ontvangerEmail = resolvedCp?.email || selectedKlant.email || ''
+    if (!ontvangerEmail) {
+      toast.error('Geen email-adres bekend voor deze klant — voeg een contactpersoon toe.')
       return
     }
 
@@ -1103,7 +1115,7 @@ export function FactuurEditor() {
       setIsSending(true)
 
       const { subject, html } = factuurVerzendTemplate({
-        klantNaam: selectedKlant.contactpersoon || selectedKlant.bedrijfsnaam,
+        klantNaam: resolvedCp?.naam || selectedKlant.contactpersoon || selectedKlant.bedrijfsnaam,
         factuurNummer: nummer,
         factuurTitel: titel,
         totaalBedrag: new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(totaal),
@@ -1248,7 +1260,7 @@ export function FactuurEditor() {
         }
       }
 
-      await sendEmail(selectedKlant.email, subject, '', { html, attachments })
+      await sendEmail(ontvangerEmail, subject, '', { html, attachments })
 
       const updated = await updateFactuur(existingFactuur.id, { status: 'verzonden' })
       setExistingFactuur({ ...existingFactuur, ...updated, status: 'verzonden' })
@@ -1266,14 +1278,14 @@ export function FactuurEditor() {
       }
 
       setSendDialogOpen(false)
-      toast.success(`Factuur ${nummer} verzonden naar ${selectedKlant.email}`)
+      toast.success(`Factuur ${nummer} verzonden naar ${ontvangerEmail}`)
     } catch (err) {
       logger.error('Fout bij verzenden factuur:', err)
       toast.error('Kon factuur niet verzenden')
     } finally {
       setIsSending(false)
     }
-  }, [existingFactuur, selectedKlant, nummer, titel, totaal, vervaldatum, bedrijfsnaam, primaireKleur, emailHandtekening, profile, factuurdatum, subtotaal, btwBedrag, notities, voorwaarden, validItems, isCreditFactuur, documentStyle, werkbonId, projectId, dialogBijlagen, selectedBijlageIds])
+  }, [existingFactuur, selectedKlant, resolvedCp, nummer, titel, totaal, vervaldatum, bedrijfsnaam, primaireKleur, emailHandtekening, profile, factuurdatum, subtotaal, btwBedrag, notities, voorwaarden, validItems, isCreditFactuur, documentStyle, werkbonId, projectId, dialogBijlagen, selectedBijlageIds])
 
   // ============ MARK AS PAID ============
 
@@ -1828,78 +1840,20 @@ export function FactuurEditor() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {showKlantSelector ? (
-                <div className="space-y-3">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Zoek klant..."
-                      value={klantSearch}
-                      onChange={(e) => setKlantSearch(e.target.value)}
-                      className="pl-9"
-                      autoFocus
-                    />
-                  </div>
-                  <div className="max-h-48 overflow-y-auto space-y-1">
-                    {filteredKlanten.map((klant) => (
-                      <button
-                        key={klant.id}
-                        onClick={() => handleSelectKlant(klant.id)}
-                        className={cn(
-                          'w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-accent transition-colors',
-                          klant.id === klantId && 'bg-accent'
-                        )}
-                      >
-                        <div className="font-medium">{klant.bedrijfsnaam}</div>
-                        {klant.contactpersoon && (
-                          <div className="text-xs text-muted-foreground">{klant.contactpersoon}</div>
-                        )}
-                      </button>
-                    ))}
-                    {filteredKlanten.length === 0 && (
-                      <p className="text-sm text-muted-foreground text-center py-4">
-                        Geen klanten gevonden
-                      </p>
-                    )}
-                  </div>
-                </div>
-              ) : selectedKlant ? (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-sm">{selectedKlant.bedrijfsnaam}</span>
-                    <Button variant="ghost" size="sm" onClick={handleChangeKlant}>
-                      <X className="h-3 w-3 mr-1" />
-                      Wijzig
-                    </Button>
-                  </div>
-                  {selectedKlant.contactpersoon && (
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <User className="h-3 w-3" />
-                      {selectedKlant.contactpersoon}
-                    </div>
-                  )}
-                  {selectedKlant.email && (
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Mail className="h-3 w-3" />
-                      {selectedKlant.email}
-                    </div>
-                  )}
-                  {selectedKlant.telefoon && (
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Phone className="h-3 w-3" />
-                      {selectedKlant.telefoon}
-                    </div>
-                  )}
-                  {selectedKlant.adres && (
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <MapPin className="h-3 w-3" />
-                      {selectedKlant.adres}{selectedKlant.stad ? `, ${selectedKlant.stad}` : ''}
-                    </div>
-                  )}
-                  <KlantStatusWarning klant={selectedKlant} className="mt-2" />
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">Geen klant geselecteerd</p>
+              <KlantContactSelector
+                klantId={klantId}
+                onKlantChange={(id) => {
+                  setKlantId(id)
+                  setContactpersoonId('')
+                }}
+                contactpersoonId={contactpersoonId}
+                onContactpersoonChange={setContactpersoonId}
+                onContactpersoonResolved={setResolvedCp}
+                klanten={klanten}
+                onKlantenRefresh={() => getKlanten().then(setKlanten).catch(() => {})}
+              />
+              {selectedKlant && (
+                <KlantStatusWarning klant={selectedKlant} className="mt-3" />
               )}
             </CardContent>
           </Card>
