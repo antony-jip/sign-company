@@ -2357,8 +2357,8 @@ function DayColumn({
             className={cn('absolute z-10 transition-[left,width] duration-200 ease-out', isResizing && 'z-30')}
             style={{
               top: topPx,
-              left: `calc(${leftPercent}% + ${colCount > 1 ? 2 : 4}px)`,
-              width: `calc(${widthPercent}% - ${colCount > 1 ? 4 : 8}px)`,
+              left: `${leftPercent}%`,
+              width: `${widthPercent}%`,
               height: heightPx !== null ? `${heightPx}px` : undefined,
             }}
           >
@@ -2568,10 +2568,10 @@ function TaskCard({
       onDragStart={handleDragStart}
       onDragEnd={(e) => { const el = e.currentTarget as HTMLElement; el.style.opacity = '1'; el.style.transform = ''; onDragEnd() }}
       className={cn(
-        'group relative rounded-lg transition-all duration-200 ease-out select-none',
+        'group relative rounded-none transition-all duration-200 ease-out select-none',
         scheduled ? 'h-full' : '',
         !isResizing && 'cursor-grab active:cursor-grabbing',
-        'hover:shadow-[0_4px_12px_-2px_rgba(0,0,0,0.08)] hover:z-10',
+        'hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] hover:z-10',
         isPast && !isDone && 'opacity-55',
         justCompleted && 'scale-[0.98] opacity-40 transition-all duration-500',
         isResizing && 'ring-2 ring-[#1A535C]/30 z-30',
@@ -2581,7 +2581,7 @@ function TaskCard({
       )}
       style={{
         ...(heightPx !== undefined ? { height: heightPx, overflow: 'hidden' } : {}),
-        ...(isDone ? {} : { backgroundColor: pc.bg, boxShadow: `inset 0 0 0 1px ${pc.border}33` }),
+        ...(isDone ? {} : { backgroundColor: pc.bg, boxShadow: `inset 2px 0 0 0 ${pc.border}` }),
       }}
       onClick={onEdit}
     >
