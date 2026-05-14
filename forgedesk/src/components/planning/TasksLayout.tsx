@@ -1580,10 +1580,20 @@ export function TasksLayout() {
                       onBlur={() => { if (!monthAddTitle.trim()) { setMonthAddingDay(null); setMonthAddTitle('') } }}
                     />
                   )}
-                  <div className={cn(
-                    'flex-1 min-h-0 overflow-y-auto scrollbar-hide space-y-1',
-                    isPastInMonth && 'opacity-60'
-                  )}>
+                  <div
+                    className={cn(
+                      'flex-1 min-h-0 overflow-y-auto scrollbar-hide space-y-1',
+                      isCurrentMonth && !isAddingHere && 'cursor-text',
+                      isPastInMonth && 'opacity-60'
+                    )}
+                    onClick={(e) => {
+                      if (e.target !== e.currentTarget) return
+                      if (!isCurrentMonth || isAddingHere) return
+                      setMonthAddingDay(dayKey)
+                      setMonthAddTitle('')
+                      setTimeout(() => monthAddInputRef.current?.focus(), 50)
+                    }}
+                  >
                     {dayTasks.map((t) => {
                       const pc = PRIORITEIT_COLORS[t.prioriteit]
                       const isDone = t.status === 'klaar'
