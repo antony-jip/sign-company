@@ -1162,7 +1162,7 @@ export function TasksLayout() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col h-[calc(100vh-56px)] -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 bg-[#F8F7F5]">
+      <div className="flex flex-col h-[calc(100vh-56px)] -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 bg-white">
         {/* Sticky toolbar skeleton */}
         <div className="sticky top-0 z-20 bg-[#FFFFFF] border-b border-[#E6E4DE] shadow-[0_1px_3px_rgba(0,0,0,0.03)] px-6 py-2 flex-shrink-0 flex items-center gap-3 flex-wrap">
           <div className="flex items-baseline gap-2">
@@ -1229,7 +1229,7 @@ export function TasksLayout() {
 
   return (
     <>
-      <div className="flex flex-col h-[calc(100vh-56px)] -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 bg-[#F8F7F5]">
+      <div className="flex flex-col h-[calc(100vh-56px)] -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 bg-white">
         {/* === Sticky toolbar — 1 rij === */}
         <div className="sticky top-0 z-20 bg-white/75 backdrop-blur-xl border-b border-[#E6E4DE] shadow-[0_1px_8px_-2px_rgba(0,0,0,0.05)] px-6 py-2.5 flex-shrink-0 flex items-center gap-3 flex-wrap">
           {/* Titel + counter */}
@@ -1639,7 +1639,13 @@ export function TasksLayout() {
                             requestAnimationFrame(() => { el.style.opacity = '0.4' })
                           }}
                           onDragEnd={(e) => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
-                          className="group/pill relative w-full text-left flex items-center gap-1.5 text-[11px] font-medium leading-tight px-1.5 py-[3px] rounded-md cursor-grab active:cursor-grabbing hover:bg-[#1A535C]/[0.05] transition-colors"
+                          className={cn(
+                            'group/pill relative w-full text-left flex items-center gap-1.5 text-[11px] font-semibold leading-tight px-2 py-[3px] rounded-none cursor-grab active:cursor-grabbing hover:shadow-[0_2px_4px_rgba(0,0,0,0.06)] transition-shadow',
+                            isDone && '[background:linear-gradient(135deg,#E2F0F0_0%,#FFFFFF_70%)] line-through'
+                          )}
+                          style={isDone
+                            ? { color: '#6B6B66', boxShadow: 'inset 2px 0 0 0 #1A535C' }
+                            : { backgroundColor: pc.bg, color: pc.text, boxShadow: `inset 2px 0 0 0 ${pc.border}` }}
                           onClick={() => openEditDialog(taken.find((tt) => tt.id === t.id) || t)}
                           title={t.titel}
                         >
@@ -1656,7 +1662,10 @@ export function TasksLayout() {
                                 <Check className="w-1.5 h-1.5 text-white" strokeWidth={4} />
                               </div>
                             ) : (
-                              <div className="w-3 h-3 rounded-full border-[1.5px] border-[#B0ADA8]/55 flex items-center justify-center transition-[transform,border-color] duration-150 group-hover/check:border-[#1A535C] group-hover/check:scale-110 group-active/check:scale-95">
+                              <div
+                                className="w-3 h-3 rounded-full border-[1.5px] flex items-center justify-center transition-[transform,border-color] duration-150 group-hover/check:scale-110 group-active/check:scale-95"
+                                style={{ borderColor: `${pc.border}55` }}
+                              >
                                 <span
                                   className="block rounded-full w-[3px] h-[3px] opacity-55 transition-all duration-150 ease-out group-hover/check:w-[6px] group-hover/check:h-[6px] group-hover/check:opacity-100"
                                   style={{ backgroundColor: pc.dot }}
@@ -1664,10 +1673,7 @@ export function TasksLayout() {
                               </div>
                             )}
                           </button>
-                          <span className={cn(
-                            'truncate',
-                            isDone ? 'text-[#9B9B95] line-through' : 'text-[#1A1A1A]'
-                          )}>
+                          <span className="truncate">
                             {t.titel}
                           </span>
                         </div>
