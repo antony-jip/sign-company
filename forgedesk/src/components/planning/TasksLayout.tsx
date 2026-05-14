@@ -1223,7 +1223,7 @@ export function TasksLayout() {
 
   return (
     <>
-      <div className="flex flex-col h-[calc(100vh-56px)] -mt-4 sm:-mt-5 md:-mt-8 -mx-3 sm:-mx-4 md:-mx-6 -mb-20 md:-mb-6 bg-[#F8F7F5]">
+      <div className="flex flex-col h-[calc(100vh-56px)] -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 bg-[#F8F7F5]">
         {/* === Sticky toolbar — 1 rij === */}
         <div className="sticky top-0 z-20 bg-white/75 backdrop-blur-xl border-b border-[#E6E4DE] shadow-[0_1px_8px_-2px_rgba(0,0,0,0.05)] px-6 py-2.5 flex-shrink-0 flex items-center gap-3 flex-wrap">
           {/* Titel + counter */}
@@ -1352,7 +1352,7 @@ export function TasksLayout() {
         {/* Ongepland verborgen — taken zonder deadline worden niet getoond */}
 
         {/* === DAY HEADERS === */}
-        <div className="flex border-b border-[#E6E4DE] bg-white flex-shrink-0">
+        <div className="sticky top-[52px] z-10 flex border-b border-[#E6E4DE] bg-white flex-shrink-0">
           <div className="w-14 flex-shrink-0" />
           {weekDays.map((day, i) => {
             const isToday = isSameDay(day, today)

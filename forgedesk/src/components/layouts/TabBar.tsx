@@ -151,7 +151,7 @@ export function TabBar() {
 
   return (
     <>
-      <div className="tab-bar flex items-center gap-0.5 px-2 py-1 border-b border-border/30">
+      <div className="tab-bar flex items-center gap-0.5 px-2 py-1 bg-white border-b border-[#E6E4DE]">
         {/* Scroll left */}
         {showScrollButtons && (
           <button
