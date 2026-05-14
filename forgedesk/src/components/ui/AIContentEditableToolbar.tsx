@@ -241,17 +241,17 @@ export function AIContentEditableToolbar({ editorRef, onContentChange, disabled,
     >
       {/* Preview panel */}
       {(preview || loading) && (
-        <div className="mb-2 w-[320px] bg-card/95 backdrop-blur-xl border border-border/60 rounded-xl shadow-2xl overflow-hidden">
-          <div className="px-3 py-2 border-b border-border/40 flex items-center gap-2">
-            <Sparkles className="w-3.5 h-3.5 text-primary" />
-            <span className="text-xs font-medium text-foreground">AI Suggestie</span>
+        <div className="mb-2 w-[320px] bg-white rounded-xl shadow-[0_8px_24px_rgba(0,0,0,0.06)] overflow-hidden">
+          <div className="px-3 py-2 border-b border-[#EBEBEB] flex items-center gap-2">
+            <Sparkles className="w-3.5 h-3.5 text-[#9B9B95]" />
+            <span className="text-xs font-medium text-[#1A1A1A]">AI Suggestie</span>
           </div>
           {!heeftSchrijfstijl && !loading && (
-            <div className="px-3 py-1.5 bg-muted/40 border-b border-border/40 flex items-center gap-1.5">
-              <Pen className="w-3 h-3 text-muted-foreground shrink-0" />
-              <span className="text-[11px] text-muted-foreground">
+            <div className="px-3 py-1.5 bg-[#F8F7F5] border-b border-[#EBEBEB] flex items-center gap-1.5">
+              <Pen className="w-3 h-3 text-[#9B9B95] shrink-0" />
+              <span className="text-[11px] text-[#6B6B66]">
                 Tip · stel je schrijfstijl in via{' '}
-                <Link to="/instellingen?tab=daan" className="underline hover:text-foreground">Instellingen</Link>
+                <Link to="/instellingen?tab=daan" className="underline hover:text-[#1A1A1A]">Instellingen</Link>
                 {' '}voor resultaten die meer als jou klinken
               </span>
             </div>
@@ -259,39 +259,39 @@ export function AIContentEditableToolbar({ editorRef, onContentChange, disabled,
           <div className="px-3 py-2.5 max-h-[200px] overflow-y-auto">
             {loading ? (
               <div className="flex items-center gap-2 py-3 justify-center">
-                <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                <span className="text-sm text-muted-foreground">Bezig met herschrijven...</span>
+                <Loader2 className="w-4 h-4 animate-spin text-[#F15025]" />
+                <span className="text-sm text-[#6B6B66]">Bezig met herschrijven...</span>
               </div>
             ) : (
-              <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{preview}</p>
+              <p className="text-sm text-[#1A1A1A] whitespace-pre-wrap leading-relaxed">{preview}</p>
             )}
           </div>
           {preview && !loading && (
-            <div className="px-3 py-2 border-t border-border/40 flex items-center gap-1.5">
+            <div className="px-3 py-2 border-t border-[#EBEBEB] flex items-center gap-1.5">
               <button
                 onClick={handleAccept}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#F15025] text-white text-xs font-medium hover:bg-[#F15025]/90 transition-colors"
               >
                 <Check className="w-3 h-3" />
                 Toepassen
               </button>
               <button
                 onClick={handleRetry}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-muted text-foreground text-xs font-medium hover:bg-muted/80 transition-colors"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[#1A1A1A] text-xs font-medium hover:bg-[#F8F7F5] transition-colors"
               >
                 <RefreshCw className="w-3 h-3" />
                 Opnieuw
               </button>
               <button
                 onClick={() => { setShowActions(true); setPreview(null) }}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-muted text-foreground text-xs font-medium hover:bg-muted/80 transition-colors"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[#1A1A1A] text-xs font-medium hover:bg-[#F8F7F5] transition-colors"
               >
                 <Wand2 className="w-3 h-3" />
                 Ander
               </button>
               <button
                 onClick={hideToolbar}
-                className="ml-auto flex items-center justify-center w-7 h-7 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                className="ml-auto flex items-center justify-center w-7 h-7 rounded-lg text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] transition-colors"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -304,7 +304,7 @@ export function AIContentEditableToolbar({ editorRef, onContentChange, disabled,
       {!preview && !loading && (
         <>
           {showCustomInput && (
-            <div className="mb-2 w-[280px] bg-card/95 backdrop-blur-xl border border-border/60 rounded-xl shadow-2xl overflow-hidden">
+            <div className="mb-2 w-[280px] bg-white rounded-xl shadow-[0_8px_24px_rgba(0,0,0,0.06)] overflow-hidden">
               <div className="p-2 flex items-center gap-2">
                 <input
                   ref={customInputRef}
@@ -313,12 +313,12 @@ export function AIContentEditableToolbar({ editorRef, onContentChange, disabled,
                   onChange={e => setCustomInstruction(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') handleCustomSubmit(); if (e.key === 'Escape') setShowCustomInput(false) }}
                   placeholder="Bijv: maak het vriendelijker..."
-                  className="flex-1 text-sm bg-transparent border-none outline-none placeholder:text-muted-foreground/50"
+                  className="flex-1 text-sm bg-transparent border-none outline-none text-[#1A1A1A] placeholder:text-[#9B9B95]"
                 />
                 <button
                   onClick={handleCustomSubmit}
                   disabled={!customInstruction.trim()}
-                  className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary text-primary-foreground disabled:opacity-40 hover:bg-primary/90 transition-colors"
+                  className="flex items-center justify-center w-7 h-7 rounded-lg bg-[#F15025] text-white disabled:opacity-40 hover:bg-[#F15025]/90 transition-colors"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
                 </button>
@@ -327,7 +327,7 @@ export function AIContentEditableToolbar({ editorRef, onContentChange, disabled,
           )}
 
           {showActions && (
-            <div className="mb-2 w-[280px] bg-card/95 backdrop-blur-xl border border-border/60 rounded-xl shadow-2xl overflow-hidden p-1.5">
+            <div className="mb-2 w-[280px] bg-white rounded-xl shadow-[0_8px_24px_rgba(0,0,0,0.06)] overflow-hidden p-1.5">
               {!skipTone && (
                 <TooltipProvider delayDuration={150}>
                   <Tooltip>
@@ -336,12 +336,14 @@ export function AIContentEditableToolbar({ editorRef, onContentChange, disabled,
                         onClick={heeftSchrijfstijl ? () => handleAction('eigen-stijl') : undefined}
                         disabled={!heeftSchrijfstijl}
                         className={cn(
-                          'w-full flex items-center justify-center gap-2 px-3 py-2.5 mb-1.5 rounded-lg bg-[#1A535C] text-white text-xs font-medium transition-colors',
-                          heeftSchrijfstijl ? 'hover:bg-[#1A535C]/90 cursor-pointer' : 'opacity-50 cursor-not-allowed'
+                          'w-full flex items-center justify-center gap-2 px-3 py-2.5 mb-1.5 rounded-lg bg-[#1A535C] text-white text-xs font-medium transition-all',
+                          heeftSchrijfstijl
+                            ? 'hover:bg-[#1A535C]/95 hover:shadow-[0_0_18px_rgba(241,80,37,0.18)] cursor-pointer'
+                            : 'opacity-50 cursor-not-allowed'
                         )}
                       >
                         <Sparkles className="w-3.5 h-3.5" />
-                        <span>Mijn stijl</span>
+                        <span>Mijn stijl<span className="text-[#F15025]">.</span></span>
                       </button>
                     </TooltipTrigger>
                     {!heeftSchrijfstijl && (
@@ -361,18 +363,18 @@ export function AIContentEditableToolbar({ editorRef, onContentChange, disabled,
                     <button
                       key={action.id}
                       onClick={() => handleAction(action.id)}
-                      className="flex flex-col items-center gap-1 px-2 py-2 rounded-lg text-xs text-foreground hover:bg-muted/80 transition-colors"
+                      className="flex flex-col items-center gap-1 px-2 py-2 rounded-lg text-xs text-[#1A1A1A] hover:bg-[#F8F7F5] transition-colors"
                     >
-                      <Icon className="w-3.5 h-3.5 text-muted-foreground" />
+                      <Icon className="w-3.5 h-3.5 text-[#9B9B95]" />
                       <span className="font-medium leading-tight">{action.label}</span>
                     </button>
                   )
                 })}
                 <button
                   onClick={() => { setShowCustomInput(true); setShowActions(false) }}
-                  className="flex flex-col items-center gap-1 px-2 py-2 rounded-lg text-xs text-foreground hover:bg-muted/80 transition-colors"
+                  className="flex flex-col items-center gap-1 px-2 py-2 rounded-lg text-xs text-[#1A1A1A] hover:bg-[#F8F7F5] transition-colors"
                 >
-                  <MessageSquarePlus className="w-3.5 h-3.5 text-muted-foreground" />
+                  <MessageSquarePlus className="w-3.5 h-3.5 text-[#9B9B95]" />
                   <span className="font-medium leading-tight">Eigen</span>
                 </button>
               </div>
@@ -382,7 +384,7 @@ export function AIContentEditableToolbar({ editorRef, onContentChange, disabled,
           {!showActions && !showCustomInput && (
             <button
               onClick={() => setShowActions(true)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-card/95 backdrop-blur-xl border border-border/60 shadow-2xl text-xs font-medium text-foreground hover:bg-muted/80 transition-all hover:shadow-lg group"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-white shadow-[0_4px_12px_rgba(0,0,0,0.06)] text-xs font-medium text-[#1A1A1A] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] transition-all group"
               title={
                 toneActive
                   ? 'AI herschrijven · jouw schrijfstijl actief'
@@ -391,9 +393,9 @@ export function AIContentEditableToolbar({ editorRef, onContentChange, disabled,
                     : 'AI herschrijven · geen schrijfstijl ingesteld'
               }
             >
-              <Sparkles className="w-3.5 h-3.5 text-primary group-hover:scale-110 transition-transform" />
+              <Sparkles className="w-3.5 h-3.5 text-[#F15025] group-hover:scale-110 transition-transform" />
               <span>AI herschrijven</span>
-              <Pen className={cn('w-3 h-3 transition-colors', toneActive ? 'text-primary' : 'text-muted-foreground/40')} />
+              <Pen className={cn('w-3 h-3 transition-colors', toneActive ? 'text-[#1A535C]' : 'text-[#9B9B95]/50')} />
             </button>
           )}
         </>
