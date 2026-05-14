@@ -1035,6 +1035,36 @@ export function TasksLayout() {
 
     const day = weekDays[dayIndex]
     const newDeadline = toDateTimeStr(day, hour)
+
+    // Bulk move: if the dropped taak is part of a multi-selection, shift the
+    // whole group by the same delta (snapped to 15 min) so offsets are kept.
+    const isBulkMove = selectedTaskIds.has(taakId) && selectedTaskIds.size > 1
+    const droppedTaak = taken.find((t) => t.id === taakId)
+    if (isBulkMove && droppedTaak?.deadline) {
+      const FIFTEEN_MIN_MS = 15 * 60 * 1000
+      const deltaMs = new Date(newDeadline).getTime() - new Date(droppedTaak.deadline).getTime()
+      const moves = new Map<string, string>()
+      selectedTaskIds.forEach((id) => {
+        const t = taken.find((x) => x.id === id)
+        if (!t || !t.deadline) return
+        const targetMs = Math.round((new Date(t.deadline).getTime() + deltaMs) / FIFTEEN_MIN_MS) * FIFTEEN_MIN_MS
+        const d = new Date(targetMs)
+        const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}T${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:00`
+        moves.set(id, iso)
+      })
+      const snapshot = taken
+      setTaken((prev) => prev.map((t) => moves.has(t.id) ? { ...t, deadline: moves.get(t.id)! } : t))
+      try {
+        await Promise.all(Array.from(moves.entries()).map(([id, dl]) => updateTaak(id, { deadline: dl })))
+        toast.success(`${moves.size} taken verplaatst`)
+      } catch (err) {
+        logger.error('Bulk move failed:', err)
+        setTaken(snapshot)
+        toast.error('Kon taken niet verplaatsen')
+      }
+      return
+    }
+
     const ok = await runOptimistic({
       snapshot: taken,
       apply: (prev) => prev.map((t) => t.id === taakId ? { ...t, deadline: newDeadline } : t),
@@ -1361,7 +1391,12 @@ export function TasksLayout() {
                   nowLineTop={isCurrentWeek && isToday ? nowLineTop : null}
                   draggingTaakId={draggingTaakId}
                   dropTarget={dropTarget}
-                  onDragStart={setDraggingTaakId}
+                  onDragStart={(id) => {
+                    setDraggingTaakId(id)
+                    if (!selectedTaskIds.has(id) && selectedTaskIds.size > 0) {
+                      setSelectedTaskIds(new Set())
+                    }
+                  }}
                   onDragEnd={() => { setDraggingTaakId(null); setDropTarget(null) }}
                   onDropTargetChange={setDropTarget}
                   onDrop={handleDropTask}
@@ -2179,6 +2214,14 @@ function DayColumn({
               heightPx={heightPx !== null ? heightPx : undefined}
               isResizing={isResizing}
               isSelected={selectedTaskIds?.has(taak.id)}
+              isDimmedForBulkDrag={
+                draggingTaakId != null
+                && selectedTaskIds != null
+                && selectedTaskIds.has(draggingTaakId)
+                && selectedTaskIds.size > 1
+                && selectedTaskIds.has(taak.id)
+                && taak.id !== draggingTaakId
+              }
               onDragStart={() => onDragStart(taak.id)}
               onDragEnd={onDragEnd}
               onToggle={() => onToggle(taak)}
@@ -2297,7 +2340,7 @@ function DayColumn({
 // === TASK CARD ===
 
 function TaskCard({
-  taak, projectNaam, klantNaam, offerteInfo, isPast, scheduled, heightPx, isResizing, isSelected, onDragStart, onDragEnd, onToggle, onEdit, onDelete, onResizeStart,
+  taak, projectNaam, klantNaam, offerteInfo, isPast, scheduled, heightPx, isResizing, isSelected, isDimmedForBulkDrag, onDragStart, onDragEnd, onToggle, onEdit, onDelete, onResizeStart,
 }: {
   taak: Taak
   projectNaam?: string
@@ -2308,6 +2351,7 @@ function TaskCard({
   heightPx?: number
   isResizing?: boolean
   isSelected?: boolean
+  isDimmedForBulkDrag?: boolean
   onDragStart: () => void
   onDragEnd: () => void
   onToggle: () => void
@@ -2374,7 +2418,8 @@ function TaskCard({
         isPast && !isDone && 'opacity-55',
         justCompleted && 'scale-[0.98] opacity-40 transition-all duration-500',
         isResizing && 'ring-2 ring-[#1A535C]/30 z-30',
-        isSelected && 'ring-2 ring-[#1A535C] z-20'
+        isSelected && 'ring-2 ring-[#1A535C] z-20',
+        isDimmedForBulkDrag && 'opacity-40'
       )}
       style={{
         ...(heightPx !== undefined ? { height: heightPx, overflow: 'hidden' } : {}),
