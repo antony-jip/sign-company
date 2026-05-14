@@ -2454,7 +2454,6 @@ function TaskCard({
         scheduled ? 'h-full' : '',
         !isResizing && 'cursor-grab active:cursor-grabbing',
         'hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] hover:z-10',
-        isDone && 'opacity-40 hover:opacity-60',
         isPast && !isDone && 'opacity-55',
         justCompleted && 'scale-[0.98] opacity-40 transition-all duration-500',
         isResizing && 'ring-2 ring-[#1A535C]/30 z-30',
@@ -2464,7 +2463,7 @@ function TaskCard({
       style={{
         ...(heightPx !== undefined ? { height: heightPx, overflow: 'hidden' } : {}),
         borderLeftColor: pc.border,
-        backgroundColor: isDone ? '#EEEDEB' : pc.bg,
+        backgroundColor: pc.bg,
       }}
       onClick={onEdit}
     >
@@ -2489,7 +2488,7 @@ function TaskCard({
       </button>
 
       {/* Content — pl-7 voor ruimte naast checkbox (iets breder dan voorheen) */}
-      <div className={cn('h-full', isCompact ? 'pl-7 pr-1.5 py-1' : 'pl-7 pr-1.5 py-1.5')}>
+      <div className={cn('h-full', isCompact ? 'pl-7 pr-1.5 py-1' : 'pl-7 pr-1.5 py-1.5', isDone && 'opacity-60')}>
         <div className="flex items-center gap-1.5">
           <p className={cn(
             'text-[13px] font-medium leading-tight text-[#1A1A1A] truncate flex-1',
