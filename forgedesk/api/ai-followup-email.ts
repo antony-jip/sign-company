@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
+import { buildDaanContext } from './_helpers/daanContext'
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL || '',
@@ -153,6 +154,14 @@ Status: ${context.status}
 Afzender bedrijf: ${context.bedrijfsnaam_afzender}
 Afzender naam: ${context.afzender_naam}`
 
+    const { bedrijfscontext, schrijfstijl } = await buildDaanContext(supabase, userId)
+    const contextBlokken: string[] = []
+    if (bedrijfscontext) contextBlokken.push(`Over het bedrijf: ${bedrijfscontext}`)
+    if (schrijfstijl) contextBlokken.push(`Schrijfstijl van de afzender (overneem):\n${schrijfstijl}`)
+    const systemPrompt = contextBlokken.length > 0
+      ? `${contextBlokken.join('\n\n')}\n\n${SYSTEM_PROMPT}`
+      : SYSTEM_PROMPT
+
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -163,7 +172,7 @@ Afzender naam: ${context.afzender_naam}`
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
         max_tokens: 1024,
-        system: SYSTEM_PROMPT,
+        system: systemPrompt,
         messages: [{ role: 'user', content: userPrompt }],
       }),
     })

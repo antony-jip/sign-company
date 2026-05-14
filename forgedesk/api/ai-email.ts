@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
+import { buildDaanContext, type DaanContext } from './_helpers/daanContext'
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL || '',
@@ -81,6 +82,16 @@ async function updateUsage(userId: string, inputTokens: number, outputTokens: nu
   }
 }
 
+function buildSystemPrompt(action: string, context: DaanContext): string {
+  if (!context.hasContext) return ''
+  if (action === 'translate-en' || action === 'translate-nl') return ''
+
+  const onderdelen: string[] = []
+  if (context.bedrijfscontext) onderdelen.push(`Over het bedrijf: ${context.bedrijfscontext}`)
+  if (context.schrijfstijl) onderdelen.push(`Schrijfstijl van de gebruiker (overneem):\n${context.schrijfstijl}`)
+  return onderdelen.join('\n\n')
+}
+
 async function getUsage(userId: string): Promise<{ geschatte_kosten: number }> {
   const maand = getCurrentMonth()
   const { data } = await supabase
@@ -134,7 +145,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .replace('{text}', text)
       .replace('{context}', context || '7')
 
-    // Call Anthropic API
+    const daanContext = await buildDaanContext(supabase, userId)
+    const systemPrompt = buildSystemPrompt(action, daanContext)
+
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -145,6 +158,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
         max_tokens: 1024,
+        ...(systemPrompt ? { system: systemPrompt } : {}),
         messages: [{ role: 'user', content: prompt }],
       }),
     })
