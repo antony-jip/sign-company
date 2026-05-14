@@ -759,6 +759,12 @@ export function TasksLayout() {
     return map
   }, [filteredTaken, weekDays])
 
+  // Totaal aantal zichtbare taken in de week — voor empty-state
+  const weekTotal = useMemo(
+    () => [...tasksByDay.values()].reduce((s, a) => s + a.length, 0),
+    [tasksByDay]
+  )
+
   // Tasks grouped by day for month view
   const allTasksByDay = useMemo(() => {
     const map = new Map<string, Taak[]>()
@@ -1424,6 +1430,15 @@ export function TasksLayout() {
 
         {/* === CALENDAR GRID — DOEN === */}
         <div ref={scrollRef} onMouseDown={handleGridMouseDown} className="flex-1 overflow-y-auto overflow-x-hidden relative bg-[#FFFFFF]">
+          {weekTotal === 0 && !isLoading && (
+            <div className="sticky top-24 z-10 flex flex-col items-center pointer-events-none mx-auto max-w-md text-center">
+              <div className="w-12 h-12 rounded-full bg-[#1A535C]/[0.08] flex items-center justify-center mb-3">
+                <CalendarIcon className="w-5 h-5 text-[#1A535C]" />
+              </div>
+              <p className="text-[15px] font-semibold text-[#1A1A1A]">Geen taken deze week</p>
+              <p className="text-[12px] text-[#6B6B66] mt-1 max-w-[280px]">Klik op een tijdslot om er een in te plannen, of sleep een taak hierheen.</p>
+            </div>
+          )}
           <div className="flex" style={{ minHeight: HOURS.length * HOUR_HEIGHT }}>
             {/* Time gutter */}
             <div className="w-14 flex-shrink-0 relative border-r border-[#E6E4DE]">
