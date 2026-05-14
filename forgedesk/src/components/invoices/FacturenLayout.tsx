@@ -804,7 +804,8 @@ export function FacturenLayout() {
         await deleteFactuur(factuur.id)
       } catch (err) {
         logger.error('Fout bij verwijderen factuur:', err)
-        toast.error('Kon factuur niet verwijderen')
+        const msg = err instanceof Error ? err.message : String(err)
+        toast.error(`Kon factuur niet verwijderen: ${msg}`)
         return
       }
       setFacturen((prev) => prev.filter((f) => f.id !== factuur.id))
