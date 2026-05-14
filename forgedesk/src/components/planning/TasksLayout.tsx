@@ -1914,9 +1914,20 @@ export function TasksLayout() {
       <EditTaskDialog
         open={editDialogOpen} onOpenChange={setEditDialogOpen}
         formData={formData} setFormData={setFormData}
-        onSave={handleSave} isSaving={isSaving} projecten={projecten} klanten={klanten}
+        onSave={handleSave} isSaving={isSaving} projecten={projecten}
         medewerkers={medewerkers}
-        editingTaakId={editingTaak?.id}
+        editingTaak={editingTaak}
+        onDelete={() => {
+          if (!editingTaak) return
+          setEditDialogOpen(false)
+          setDeletingTaak(editingTaak)
+          setDeleteDialogOpen(true)
+        }}
+        onAfronden={() => {
+          if (!editingTaak) return
+          handleToggleComplete(editingTaak)
+          setEditDialogOpen(false)
+        }}
       />
 
       {/* Delete dialog */}
@@ -2656,21 +2667,21 @@ function TaskCard({
 // === EDIT DIALOG ===
 
 function EditTaskDialog({
-  open, onOpenChange, formData, setFormData, onSave, isSaving, projecten, klanten, medewerkers, editingTaakId,
+  open, onOpenChange, formData, setFormData, onSave, isSaving, projecten, medewerkers, editingTaak, onDelete, onAfronden,
 }: {
   open: boolean; onOpenChange: (open: boolean) => void
   formData: TaakFormData; setFormData: React.Dispatch<React.SetStateAction<TaakFormData>>
-  onSave: () => void; isSaving: boolean; projecten: Project[]; klanten: Klant[]; medewerkers: Medewerker[]
-  editingTaakId?: string
+  onSave: () => void; isSaving: boolean; projecten: Project[]; medewerkers: Medewerker[]
+  editingTaak?: Taak | null
+  onDelete?: () => void
+  onAfronden?: () => void
 }) {
   function updateField<K extends keyof TaakFormData>(field: K, value: TaakFormData[K]) {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
-  const [selectedType, setSelectedType] = useState<'intern' | 'project' | 'klant'>(
-    formData.project_id ? 'project' : formData.klant_id ? 'klant' : 'intern'
-  )
-  const type = selectedType
+  const editingTaakId = editingTaak?.id
+  const isDone = editingTaak?.status === 'klaar'
   const beschrijvingRef = useRef<HTMLTextAreaElement>(null)
   const navigate = useNavigate()
 
@@ -2693,14 +2704,25 @@ function EditTaskDialog({
         <DialogHeader className="sr-only"><DialogTitle>Taak bewerken</DialogTitle></DialogHeader>
 
         <div className="flex-1 overflow-y-auto">
-        {/* Titel — prominent, echt borderless */}
-        <div className="px-7 pt-7 pb-2">
+        {/* Titel + Open project rechtsboven */}
+        <div className="px-7 pt-7 pb-2 flex items-start justify-between gap-3">
           <Input
             value={formData.titel}
             onChange={(e) => updateField('titel', e.target.value)}
             placeholder="Titel van de taak"
-            className="border-0 shadow-none px-0 h-auto py-0 bg-transparent text-[20px] font-bold text-[#1A1A1A] placeholder:text-[#9B9B95] placeholder:font-medium focus-visible:ring-0 tracking-[-0.3px]"
+            className="border-0 shadow-none px-0 h-auto py-0 bg-transparent text-[20px] font-bold text-[#1A1A1A] placeholder:text-[#9B9B95] placeholder:font-medium focus-visible:ring-0 tracking-[-0.3px] flex-1 min-w-0"
           />
+          {formData.project_id && (
+            <button
+              type="button"
+              onClick={() => { onOpenChange(false); navigate(`/projecten/${formData.project_id}`) }}
+              className="flex-shrink-0 inline-flex items-center gap-1 text-[12px] font-medium text-[#1A535C] hover:text-[#0F3A40] transition-colors mt-1"
+              title="Open project in nieuw tabblad"
+            >
+              Open project
+              <ExternalLink className="w-3 h-3" />
+            </button>
+          )}
         </div>
 
         {/* Meta-pill rij — alles op 1 lijn, type-segment inline */}
@@ -2761,64 +2783,24 @@ function EditTaskDialog({
             </div>
           )}
 
-          {/* Type-segment — inline in pill rij */}
-          <div className="flex items-center gap-0.5 p-0.5 rounded-full bg-[#F0EFEC] border border-[#E0DED8]">
-            <button
-              type="button"
-              onClick={() => { setSelectedType('intern'); updateField('project_id', ''); updateField('klant_id', '') }}
-              className={cn('px-2.5 h-6 text-[11px] font-medium rounded-full transition-colors', type === 'intern' ? 'bg-white text-[#1A1A1A] shadow-sm' : 'text-[#6B6B66] hover:text-[#1A1A1A]')}
-            >
-              Intern
-            </button>
-            <button
-              type="button"
-              onClick={() => { setSelectedType('project'); updateField('klant_id', '') }}
-              className={cn('px-2.5 h-6 text-[11px] font-medium rounded-full transition-colors', type === 'project' ? 'bg-white text-[#1A1A1A] shadow-sm' : 'text-[#6B6B66] hover:text-[#1A1A1A]')}
-            >
-              Project
-            </button>
-            <button
-              type="button"
-              onClick={() => { setSelectedType('klant'); updateField('project_id', '') }}
-              className={cn('px-2.5 h-6 text-[11px] font-medium rounded-full transition-colors', type === 'klant' ? 'bg-white text-[#1A1A1A] shadow-sm' : 'text-[#6B6B66] hover:text-[#1A1A1A]')}
-            >
-              Klant
-            </button>
-          </div>
         </div>
 
-        {/* Contextuele project/klant selector */}
-        {type === 'project' && (
-          <div className="px-7 pb-3 space-y-1.5">
-            <Select value={formData.project_id || 'geen'} onValueChange={(v) => updateField('project_id', v === 'geen' ? '' : v)}>
-              <SelectTrigger className="h-9 text-sm border-[#E0DED8] bg-[#F8F7F5]"><SelectValue placeholder="Kies project..." /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="geen">Geen project</SelectItem>
-                {projecten.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.naam}
-                    {p.klant_naam ? <span className="text-[#9B9B95] ml-2">· {p.klant_naam}</span> : null}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {formData.project_id && (
-              <button
-                type="button"
-                onClick={() => { onOpenChange(false); navigate(`/projecten/${formData.project_id}`) }}
-                className="inline-flex items-center gap-1 text-xs text-[#1A535C] hover:text-[#0F3A40] transition-colors"
-              >
-                <ExternalLink className="w-3 h-3" />
-                Open project
-              </button>
-            )}
-          </div>
-        )}
-        {type === 'klant' && (
-          <div className="px-7 pb-3">
-            <KlantSearchField klanten={klanten} value={formData.klant_id} onChange={(v) => updateField('klant_id', v)} />
-          </div>
-        )}
+        {/* Project — altijd zichtbaar, geen type-toggle meer */}
+        <div className="px-7 pb-4 space-y-1.5">
+          <Label className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#9B9B95]">Project</Label>
+          <Select value={formData.project_id || 'geen'} onValueChange={(v) => updateField('project_id', v === 'geen' ? '' : v)}>
+            <SelectTrigger className="h-9 text-sm border-[#E0DED8] bg-[#F8F7F5]"><SelectValue placeholder="Geen project" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="geen">Geen project</SelectItem>
+              {projecten.map((p) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {p.naam}
+                  {p.klant_naam ? <span className="text-[#9B9B95] ml-2">· {p.klant_naam}</span> : null}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
         {/* Briefing — dominant field, auto-grow tot 400px, daarna scroll */}
         <div className="px-7 pb-5 space-y-2">
@@ -2906,15 +2888,37 @@ function EditTaskDialog({
         )}
         </div>
 
-        <DialogFooter className="px-7 py-4 border-t border-[#EBEBEB] bg-[#F8F7F5]/60">
-          <Button
-            onClick={onSave}
-            disabled={isSaving}
-            size="sm"
-            className="h-9 px-5 bg-[#F15025] hover:bg-[#D8421F] text-white shadow-sm"
-          >
-            {isSaving && <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />}Opslaan
-          </Button>
+        <DialogFooter className="px-7 py-4 border-t border-[#EBEBEB] bg-[#F8F7F5]/60 flex items-center sm:justify-between gap-2">
+          {editingTaakId && onDelete ? (
+            <button
+              type="button"
+              onClick={onDelete}
+              className="inline-flex items-center gap-1.5 text-[12px] text-[#9B9B95] hover:text-[#C03A18] transition-colors"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Verwijderen
+            </button>
+          ) : <span />}
+          <div className="flex items-center gap-2">
+            {editingTaakId && onAfronden && !isDone && (
+              <button
+                type="button"
+                onClick={onAfronden}
+                className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md text-[13px] font-medium text-[#1A535C] border border-[#1A535C]/30 hover:bg-[#1A535C] hover:text-white hover:border-[#1A535C] transition-all"
+              >
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                Afronden
+              </button>
+            )}
+            <Button
+              onClick={onSave}
+              disabled={isSaving}
+              size="sm"
+              className="h-9 px-5 bg-[#1A535C] hover:bg-[#0F3A40] text-white shadow-sm"
+            >
+              {isSaving && <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />}Opslaan
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
