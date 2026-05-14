@@ -1243,16 +1243,18 @@ export function TasksLayout() {
           <div className="flex items-center gap-0.5 overflow-x-auto scrollbar-hide">
             {([['alle', 'Alle'], ['project', 'Project'], ['los', 'Los']] as const).map(([key, label]) => (
               <button key={key} onClick={() => setTaskFilter(key)} className={cn(
-                'text-[13px] px-2.5 py-1 rounded-md transition-all whitespace-nowrap font-medium',
+                'text-[13px] px-3 py-1 rounded-full transition-all whitespace-nowrap font-medium',
                 taskFilter === key
-                  ? 'text-[#1A1A1A] bg-[#F3F2F0]'
-                  : 'text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F8F7F5]'
+                  ? 'text-[#1A535C] bg-[#1A535C]/[0.08]'
+                  : 'text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F4F2EE]'
               )}>{label}</button>
             ))}
-            <span className="w-px h-4 bg-[#EBEBEB] mx-1" />
+            <span className="w-px h-4 bg-[#E6E4DE] mx-1" />
             <button onClick={() => setShowMontage(!showMontage)} className={cn(
-              'text-[13px] px-2.5 py-1 rounded-md transition-all whitespace-nowrap font-medium flex items-center gap-1.5',
-              showMontage ? 'text-[#1A1A1A] bg-[#F3F2F0]' : 'text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F8F7F5]'
+              'text-[13px] px-3 py-1 rounded-full transition-all whitespace-nowrap font-medium flex items-center gap-1.5',
+              showMontage
+                ? 'text-[#1A535C] bg-[#1A535C]/[0.08]'
+                : 'text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F4F2EE]'
             )}><Wrench className="w-3.5 h-3.5" />Montage</button>
           </div>
 
@@ -1290,37 +1292,48 @@ export function TasksLayout() {
           )}
 
           {/* View toggle */}
-          <div className="inline-flex items-center rounded-md bg-[#F3F2F0] p-0.5 flex-shrink-0">
+          <div className="inline-flex items-center rounded-full bg-[#F4F2EE] p-0.5 flex-shrink-0 ring-1 ring-[#E6E4DE]">
             {([
               ['week', 'Week'],
               ['maand', 'Maand'],
               ['swimlane', 'Team'],
             ] as const).map(([v, label]) => (
               <button key={v} onClick={() => setViewMode(v)} className={cn(
-                'text-[12px] px-2.5 py-1 rounded-[4px] transition-all font-medium',
-                viewMode === v ? 'bg-white text-[#1A1A1A] shadow-[0_1px_2px_rgba(0,0,0,0.06)]' : 'text-[#9B9B95] hover:text-[#6B6B66]'
+                'text-[12px] px-3 py-1 rounded-full transition-all font-semibold',
+                viewMode === v
+                  ? 'bg-white text-[#1A535C] shadow-[0_1px_3px_rgba(0,0,0,0.08)]'
+                  : 'text-[#6B6B66] hover:text-[#1A1A1A]'
               )}>{label}</button>
             ))}
           </div>
 
           {/* Date nav */}
           <div className="flex items-center gap-0.5">
-            <button className="p-1 rounded-md hover:bg-[#F3F2F0] transition-all" onClick={() => viewMode === 'maand' ? setMonthOffset((m) => m - 1) : setWeekOffset((w) => w - 1)}>
-              <ChevronLeft className="w-4 h-4 text-[#9B9B95]" />
+            <button
+              className="p-1 rounded-full hover:bg-[#F4F2EE] transition-all"
+              onClick={() => viewMode === 'maand' ? setMonthOffset((m) => m - 1) : setWeekOffset((w) => w - 1)}
+              title="Vorige"
+            >
+              <ChevronLeft className="w-4 h-4 text-[#6B6B66]" />
             </button>
             <button
-              className="text-[13px] px-2 py-1 rounded-md font-semibold text-[#1A1A1A] min-w-[130px] text-center hover:bg-[#F3F2F0] transition-colors"
+              className="text-[13px] px-3 py-1 rounded-full font-semibold text-[#1A1A1A] min-w-[140px] text-center hover:bg-[#F4F2EE] transition-colors"
               onClick={() => viewMode === 'maand' ? setMonthOffset(0) : setWeekOffset(0)}
+              title="Spring naar vandaag"
             >
               {viewMode === 'maand' ? monthLabel : weekLabel}
             </button>
-            <button className="p-1 rounded-md hover:bg-[#F3F2F0] transition-all" onClick={() => viewMode === 'maand' ? setMonthOffset((m) => m + 1) : setWeekOffset((w) => w + 1)}>
-              <ChevronRight className="w-4 h-4 text-[#9B9B95]" />
+            <button
+              className="p-1 rounded-full hover:bg-[#F4F2EE] transition-all"
+              onClick={() => viewMode === 'maand' ? setMonthOffset((m) => m + 1) : setWeekOffset((w) => w + 1)}
+              title="Volgende"
+            >
+              <ChevronRight className="w-4 h-4 text-[#6B6B66]" />
             </button>
           </div>
           {!(viewMode === 'maand' ? monthOffset === 0 : isCurrentWeek) && (
             <button
-              className="text-[12px] px-2 py-1 rounded-md font-medium text-[#1A535C] hover:bg-[#1A535C]/[0.05] transition-all"
+              className="text-[12px] px-3 py-1 rounded-full font-semibold text-white bg-[#1A535C] hover:bg-[#0F3A40] transition-all shadow-[0_1px_3px_rgba(26,83,92,0.25)]"
               onClick={() => viewMode === 'maand' ? setMonthOffset(0) : setWeekOffset(0)}
             >
               Vandaag
@@ -1328,10 +1341,9 @@ export function TasksLayout() {
           )}
 
           {/* Zoom */}
-          <div className="flex items-center gap-0.5 border border-[#E0DED8] rounded-md overflow-hidden h-7">
-            <button onClick={() => handleZoom(-4)} className="px-1.5 h-full text-[11px] text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] transition-colors" title="Kleiner">A</button>
-            <span className="w-px h-full bg-[#E0DED8]" />
-            <button onClick={() => handleZoom(4)} className="px-1.5 h-full text-[13px] text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] transition-colors font-medium" title="Groter">A</button>
+          <div className="flex items-center gap-0.5 rounded-full bg-[#F4F2EE] ring-1 ring-[#E6E4DE] overflow-hidden h-7 px-0.5">
+            <button onClick={() => handleZoom(-4)} className="px-2 h-full text-[11px] text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-white rounded-full transition-colors" title="Kleiner">A</button>
+            <button onClick={() => handleZoom(4)} className="px-2 h-full text-[13px] text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-white rounded-full transition-colors font-semibold" title="Groter">A</button>
           </div>
         </div>
 
