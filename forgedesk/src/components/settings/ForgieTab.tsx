@@ -612,14 +612,17 @@ export function ForgieTab() {
         <CardContent className="space-y-4">
           <Textarea
             value={bedrijfscontext}
-            onChange={e => setBedrijfscontext(e.target.value.slice(0, 500))}
+            onChange={e => setBedrijfscontext(e.target.value)}
             placeholder="Bijv: Wij zijn een signbedrijf in Enkhuizen, gespecialiseerd in lichtreclames en gevelbelettering. We werken met 4 monteurs."
             rows={4}
             className="resize-none bg-[#F4F2EE] dark:bg-muted border-[#E6E4E0] focus-visible:ring-[#1A535C]"
           />
           <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground"><span className="font-mono">{bedrijfscontext.length}/500</span> tekens</span>
-            <Button size="sm" onClick={handleSaveContext} disabled={saving} className="gap-1.5">
+            <span className={`text-xs ${bedrijfscontext.length > 500 ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>
+              <span className="font-mono">{bedrijfscontext.length}/500</span> tekens
+              {bedrijfscontext.length > 500 && <span className="ml-2">· {bedrijfscontext.length - 500} teveel</span>}
+            </span>
+            <Button size="sm" onClick={handleSaveContext} disabled={saving || bedrijfscontext.length > 500} className="gap-1.5">
               {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
               Opslaan
             </Button>
@@ -641,15 +644,18 @@ export function ForgieTab() {
         <CardContent className="space-y-4">
           <Textarea
             value={toneOfVoice}
-            onChange={e => setToneOfVoice(e.target.value.slice(0, 1000))}
+            onChange={e => setToneOfVoice(e.target.value)}
             placeholder="Bijv: Ik schrijf zakelijk maar toegankelijk. Ik gebruik 'u' voor klanten. Korte zinnen, geen jargon. Altijd positief en oplossingsgericht."
             rows={5}
             className="resize-none"
             enableAI={false}
           />
           <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground"><span className="font-mono">{toneOfVoice.length}/1000</span> tekens</span>
-            <Button size="sm" onClick={handleSaveTone} disabled={savingTone} className="gap-1.5">
+            <span className={`text-xs ${toneOfVoice.length > 1000 ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>
+              <span className="font-mono">{toneOfVoice.length}/1000</span> tekens
+              {toneOfVoice.length > 1000 && <span className="ml-2">· {toneOfVoice.length - 1000} teveel</span>}
+            </span>
+            <Button size="sm" onClick={handleSaveTone} disabled={savingTone || toneOfVoice.length > 1000} className="gap-1.5">
               {savingTone ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
               Opslaan
             </Button>
