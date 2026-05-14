@@ -544,6 +544,26 @@ export function TasksLayout() {
     }
   }, [])
 
+  // Keyboard bulk-delete in week-view: Delete / Backspace removes the
+  // currently selected taken via the existing undo flow. Skipped when the
+  // user is typing in an input/textarea so Backspace still deletes chars.
+  const handleBulkDeleteRef = useRef(handleBulkDelete)
+  useEffect(() => { handleBulkDeleteRef.current = handleBulkDelete })
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (viewMode !== 'week') return
+      if (e.key !== 'Delete' && e.key !== 'Backspace') return
+      if (selectedTaskIds.size === 0) return
+      const ae = document.activeElement as HTMLElement | null
+      const tag = ae?.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || ae?.isContentEditable) return
+      e.preventDefault()
+      handleBulkDeleteRef.current()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [viewMode, selectedTaskIds])
+
 
   // Now-line timer
   const [nowMinutes, setNowMinutes] = useState(() => {
