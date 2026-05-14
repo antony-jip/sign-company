@@ -9,11 +9,19 @@ import type { Klant, Contactpersoon, ContactpersoonRecord } from '@/types'
 import { toast } from 'sonner'
 import { logger } from '../../utils/logger'
 
+export type ResolvedContactpersoon = {
+  id: string
+  naam: string
+  email: string | null
+  source: 'jsonb' | 'db'
+}
+
 interface KlantContactSelectorProps {
   klantId: string
   onKlantChange: (klantId: string, klant: Klant | null) => void
   contactpersoonId?: string
   onContactpersoonChange?: (cpId: string) => void
+  onContactpersoonResolved?: (cp: ResolvedContactpersoon | null) => void
   vestigingId?: string
   onVestigingChange?: (vId: string) => void
   klanten: Klant[]
@@ -25,6 +33,7 @@ export function KlantContactSelector({
   onKlantChange,
   contactpersoonId = '',
   onContactpersoonChange,
+  onContactpersoonResolved,
   vestigingId = '',
   onVestigingChange,
   klanten,
@@ -67,6 +76,28 @@ export function KlantContactSelector({
       }))
     return [...jsonbCps, ...fromDb]
   }, [selectedKlant, dbContacten])
+
+  const jsonbIds = useMemo(
+    () => new Set((selectedKlant?.contactpersonen || []).map((c) => c.id)),
+    [selectedKlant],
+  )
+
+  const resolvedCallbackRef = useRef(onContactpersoonResolved)
+  useEffect(() => { resolvedCallbackRef.current = onContactpersoonResolved })
+
+  useEffect(() => {
+    const cb = resolvedCallbackRef.current
+    if (!cb) return
+    if (!contactpersoonId) { cb(null); return }
+    const cp = contactpersonen.find((c) => c.id === contactpersoonId)
+    if (!cp) { cb(null); return }
+    cb({
+      id: cp.id,
+      naam: cp.naam,
+      email: cp.email || null,
+      source: jsonbIds.has(cp.id) ? 'jsonb' : 'db',
+    })
+  }, [contactpersoonId, contactpersonen, jsonbIds])
 
   // Fetch DB contactpersonen when klant changes
   useEffect(() => {
