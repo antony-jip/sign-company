@@ -1594,8 +1594,10 @@ export function TasksLayout() {
                       const pc = PRIORITEIT_COLORS[t.prioriteit]
                       const isDone = t.status === 'klaar'
                       return (
-                        <button
+                        <div
                           key={t.id}
+                          data-taak-id={t.id}
+                          role="button"
                           draggable={isCurrentMonth}
                           onDragStart={(e) => {
                             e.dataTransfer.effectAllowed = 'move'
@@ -1604,21 +1606,38 @@ export function TasksLayout() {
                             requestAnimationFrame(() => { el.style.opacity = '0.4' })
                           }}
                           onDragEnd={(e) => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
-                          className="group/pill relative w-full text-left flex items-center gap-2 text-[11px] font-medium leading-tight px-1.5 py-[3px] rounded-md cursor-grab active:cursor-grabbing hover:bg-[#1A535C]/[0.05] transition-colors"
+                          className="group/pill relative w-full text-left flex items-center gap-1.5 text-[11px] font-medium leading-tight px-1.5 py-[3px] rounded-md cursor-grab active:cursor-grabbing hover:bg-[#1A535C]/[0.05] transition-colors"
                           onClick={() => openEditDialog(taken.find((tt) => tt.id === t.id) || t)}
                           title={t.titel}
                         >
-                          <span
-                            className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                            style={{ backgroundColor: isDone ? '#1A535C' : pc.dot }}
-                          />
+                          <button
+                            type="button"
+                            draggable={false}
+                            onClick={(e) => { e.stopPropagation(); handleToggleComplete(t) }}
+                            className="group/check flex-shrink-0"
+                            title={isDone ? 'Markeer als open' : 'Markeer als klaar'}
+                            aria-label={isDone ? 'Markeer als open' : 'Markeer als klaar'}
+                          >
+                            {isDone ? (
+                              <div className="w-3 h-3 rounded-full bg-[#1A535C] flex items-center justify-center transition-all duration-200">
+                                <Check className="w-1.5 h-1.5 text-white" strokeWidth={4} />
+                              </div>
+                            ) : (
+                              <div className="w-3 h-3 rounded-full border-[1.5px] border-[#B0ADA8]/55 flex items-center justify-center transition-[transform,border-color] duration-150 group-hover/check:border-[#1A535C] group-hover/check:scale-110 group-active/check:scale-95">
+                                <span
+                                  className="block rounded-full w-[3px] h-[3px] opacity-55 transition-all duration-150 ease-out group-hover/check:w-[6px] group-hover/check:h-[6px] group-hover/check:opacity-100"
+                                  style={{ backgroundColor: pc.dot }}
+                                />
+                              </div>
+                            )}
+                          </button>
                           <span className={cn(
                             'truncate',
                             isDone ? 'text-[#9B9B95] line-through' : 'text-[#1A1A1A]'
                           )}>
                             {t.titel}
                           </span>
-                        </button>
+                        </div>
                       )
                     })}
                   </div>
