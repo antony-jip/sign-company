@@ -111,4 +111,14 @@ describe('AI-routes wiring', () => {
     const source = readFileSync(join(__dirname, '..', 'api/ai-email.ts'), 'utf8')
     expect(source).toMatch(/translate-en|translate-nl/)
   })
+
+  it("ai-rewrite registreert 'eigen-stijl' action", () => {
+    const source = readFileSync(join(__dirname, '..', 'api/ai-rewrite.ts'), 'utf8')
+    expect(source).toMatch(/'eigen-stijl':\s*\{/)
+  })
+
+  it("aiRewriteService union bevat 'eigen-stijl'", () => {
+    const source = readFileSync(join(__dirname, '..', 'src/services/aiRewriteService.ts'), 'utf8')
+    expect(source).toMatch(/'eigen-stijl'/)
+  })
 })
