@@ -1349,9 +1349,6 @@ export function TasksLayout() {
         )}
 
         {viewMode === 'week' && (<>
-        {/* === NIET VERGETEN — sticky note === */}
-        <NietVergetenStrip />
-
         {/* Ongepland verborgen — taken zonder deadline worden niet getoond */}
 
         {/* === DAY HEADERS === */}
@@ -1367,7 +1364,7 @@ export function TasksLayout() {
               <div
                 key={i}
                 className={cn(
-                  'flex-1 min-w-0 text-center py-3 border-l border-[#EBEBEB]/30 transition-colors',
+                  'flex-1 min-w-0 text-center py-3 border-l border-[#E6E4DE] transition-colors',
                   isToday && 'bg-[#1A535C]/[0.04]'
                 )}
               >
@@ -2242,7 +2239,7 @@ function DayColumn({
 
   return (
     <div className={cn(
-      'flex-1 min-w-0 border-l border-[#EBEBEB]/20 relative',
+      'flex-1 min-w-0 border-l border-[#E6E4DE] relative',
       isToday && 'bg-[#1A535C]/[0.015]'
     )}>
       {/* Hour grid lines + drop zones */}
@@ -2260,7 +2257,7 @@ function DayColumn({
             key={hour}
             style={{ height: HOUR_HEIGHT }}
             className={cn(
-              'group/hour border-b border-[#EBEBEB]/30 transition-all duration-200 relative',
+              'group/hour border-b border-[#E6E4DE] transition-all duration-200 relative',
               isDropHere && 'bg-[#1A535C]/[0.06]'
             )}
             onDragOver={(e) => handleDragOver(e, hour)}
