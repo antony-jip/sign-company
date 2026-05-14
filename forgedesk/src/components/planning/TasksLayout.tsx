@@ -1352,7 +1352,7 @@ export function TasksLayout() {
         {/* Ongepland verborgen — taken zonder deadline worden niet getoond */}
 
         {/* === DAY HEADERS === */}
-        <div className="flex border-b border-[#E6E4DE] bg-white flex-shrink-0 mt-3">
+        <div className="flex border-b border-[#E6E4DE] bg-white flex-shrink-0">
           <div className="w-14 flex-shrink-0" />
           {weekDays.map((day, i) => {
             const isToday = isSameDay(day, today)
