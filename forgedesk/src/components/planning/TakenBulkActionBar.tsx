@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { DatePicker } from '@/components/ui/date-picker'
+import { Input } from '@/components/ui/input'
 import {
   Calendar as CalendarIcon,
   CheckCircle2,
@@ -17,13 +18,14 @@ type TaakStatus = Taak['status']
 
 interface Props {
   count: number
-  medewerkers: Medewerker[]
+  medewerkers?: Medewerker[]
   busy: boolean
-  onMove: (newDate: string) => void | Promise<void>
-  onAssign: (naam: string) => void | Promise<void>
-  onStatus: (status: TaakStatus) => void | Promise<void>
+  onMove?: (newDate: string) => void | Promise<void>
+  onAssign?: (naam: string) => void | Promise<void>
+  onStatus?: (status: TaakStatus) => void | Promise<void>
   onDelete: () => void
   onClear: () => void
+  compact?: boolean
 }
 
 const STATUS_OPTIONS: { value: TaakStatus; label: string; dot: string }[] = [
@@ -39,13 +41,14 @@ function toDateStr(d: Date): string {
 
 export function TakenBulkActionBar({
   count,
-  medewerkers,
+  medewerkers = [],
   busy,
   onMove,
   onAssign,
   onStatus,
   onDelete,
   onClear,
+  compact = false,
 }: Props) {
   const [moveOpen, setMoveOpen] = useState(false)
   const [assignOpen, setAssignOpen] = useState(false)
@@ -89,7 +92,12 @@ export function TakenBulkActionBar({
   const barButtonClass = 'flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-semibold bg-white ring-1 ring-[#1A535C]/20 text-[#1A535C] hover:shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed'
 
   return (
-    <div className="flex-shrink-0 bg-[#1A535C]/[0.06] ring-1 ring-[#1A535C]/10 px-5 py-2.5 flex items-center gap-3">
+    <div className={cn(
+      'flex items-center gap-3',
+      compact
+        ? 'rounded-xl bg-white ring-1 ring-[#1A535C]/15 px-4 py-2 shadow-[0_8px_28px_rgba(0,0,0,0.14)]'
+        : 'flex-shrink-0 bg-[#1A535C]/[0.06] ring-1 ring-[#1A535C]/10 px-5 py-2.5'
+    )}>
       <div className="flex items-center gap-2.5">
         <span className="w-7 h-7 rounded-lg bg-[#1A535C] text-white flex items-center justify-center text-xs font-bold">{count}</span>
         <span className="text-sm font-semibold text-[#1A535C]">
@@ -98,6 +106,7 @@ export function TakenBulkActionBar({
       </div>
       <div className="flex-1" />
 
+      {!compact && onMove && (
       <Popover open={moveOpen} onOpenChange={(o) => { setMoveOpen(o); if (!o) setMoveDate('') }}>
         <PopoverTrigger asChild>
           <button disabled={busy} className={barButtonClass}>
@@ -130,7 +139,9 @@ export function TakenBulkActionBar({
           </div>
         </PopoverContent>
       </Popover>
+      )}
 
+      {!compact && onAssign && (
       <Popover open={assignOpen} onOpenChange={(o) => { setAssignOpen(o); if (!o) setAssignQuery('') }}>
         <PopoverTrigger asChild>
           <button disabled={busy} className={barButtonClass}>
@@ -175,7 +186,9 @@ export function TakenBulkActionBar({
           </div>
         </PopoverContent>
       </Popover>
+      )}
 
+      {!compact && onStatus && (
       <Popover open={statusOpen} onOpenChange={setStatusOpen}>
         <PopoverTrigger asChild>
           <button disabled={busy} className={barButtonClass}>
@@ -196,6 +209,7 @@ export function TakenBulkActionBar({
           ))}
         </PopoverContent>
       </Popover>
+      )}
 
       <button
         onClick={onDelete}
@@ -206,8 +220,13 @@ export function TakenBulkActionBar({
       >
         <Trash2 className="w-3 h-3" />
         Verwijderen
+        {compact && (
+          <kbd className="ml-1 px-1 py-0 rounded text-[9px] font-mono leading-[14px] bg-[#C03A18]/10 text-[#C03A18]/80">
+            Del
+          </kbd>
+        )}
       </button>
-      <button onClick={onClear} className="p-1.5 rounded-lg text-[#1A535C] hover:bg-white/40 transition-all" title="Deselecteer alles">
+      <button onClick={onClear} className="p-1.5 rounded-lg text-[#1A535C] hover:bg-white/40 transition-all" title={compact ? 'Deselecteer (Esc)' : 'Deselecteer alles'}>
         <X className="w-3.5 h-3.5" />
       </button>
     </div>

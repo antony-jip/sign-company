@@ -552,11 +552,17 @@ export function TasksLayout() {
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if (viewMode !== 'week') return
-      if (e.key !== 'Delete' && e.key !== 'Backspace') return
       if (selectedTaskIds.size === 0) return
       const ae = document.activeElement as HTMLElement | null
       const tag = ae?.tagName
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || ae?.isContentEditable) return
+      const inEditable = tag === 'INPUT' || tag === 'TEXTAREA' || ae?.isContentEditable
+      if (e.key === 'Escape' && !inEditable) {
+        e.preventDefault()
+        setSelectedTaskIds(new Set())
+        return
+      }
+      if (e.key !== 'Delete' && e.key !== 'Backspace') return
+      if (inEditable) return
       e.preventDefault()
       handleBulkDeleteRef.current()
     }
@@ -1435,6 +1441,17 @@ export function TasksLayout() {
           </div>
         </div>
         {rectBox && <SelectionRectangle {...rectBox} />}
+        {selectedTaskIds.size > 0 && (
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
+            <TakenBulkActionBar
+              count={selectedTaskIds.size}
+              busy={bulkBusy}
+              onDelete={handleBulkDelete}
+              onClear={clearSelection}
+              compact
+            />
+          </div>
+        )}
         </>)}
         {viewMode === 'maand' && (
         /* === MONTH VIEW — DOEN === */
