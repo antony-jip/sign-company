@@ -1368,33 +1368,38 @@ export function TasksLayout() {
                   isToday && 'bg-[#1A535C]/[0.04]'
                 )}
               >
-                <div className="flex items-center justify-center gap-1.5">
+                <div className="flex flex-col items-center gap-1">
                   <span className={cn(
-                    'text-[12px] uppercase tracking-widest font-semibold',
-                    isToday ? 'text-[#1A535C]' : isPast ? 'text-[#C4C2BD]' : 'text-[#5A5A55]'
+                    'text-[11px] font-semibold tracking-[0.06em] uppercase',
+                    isToday ? 'text-[#1A535C]' : isPast ? 'text-[#C4C2BD]' : 'text-[#9B9B95]'
                   )}>
                     {DAY_LABELS[i]}{isToday && <span className="text-[#F15025]">.</span>}
                   </span>
-                  <span className={cn(
-                    'text-[15px] font-bold font-mono tabular-nums',
-                    isToday ? 'text-[#1A535C]' : isPast ? 'text-[#C4C2BD]' : 'text-[#1A1A1A]'
-                  )}>
-                    {day.getDate()}
-                  </span>
-                  {isPast && dayTasks.length > 0 ? (
-                    <button
-                      onClick={() => togglePastDay(dayKey)}
-                      className="inline-flex items-center gap-0.5 text-[10px] font-medium text-[#9B9B95] hover:text-[#1A535C] transition-colors px-1.5 py-0.5 rounded hover:bg-[#1A535C]/[0.06]"
-                      title={isExpanded ? 'Verberg verlopen taken' : 'Toon verlopen taken'}
-                    >
-                      <span className="font-mono">{dayTasks.length}</span>
-                      <ChevronRight className={cn('w-2.5 h-2.5 transition-transform', isExpanded && 'rotate-90')} />
-                    </button>
-                  ) : (
-                    dayTasks.length > 0 && !isToday && (
-                      <span className="text-[10px] font-mono text-[#9B9B95]">{dayTasks.length}</span>
-                    )
-                  )}
+                  <div className="flex items-baseline gap-1.5">
+                    <span className={cn(
+                      'tabular-nums font-bold',
+                      isToday
+                        ? 'w-7 h-7 rounded-full bg-[#1A535C] text-white flex items-center justify-center text-[13px] shadow-[0_2px_8px_-2px_rgba(26,83,92,0.25)]'
+                        : isPast ? 'text-[#C4C2BD] text-[16px]'
+                        : 'text-[#1A1A1A] text-[16px]'
+                    )}>
+                      {day.getDate()}
+                    </span>
+                    {isPast && dayTasks.length > 0 ? (
+                      <button
+                        onClick={() => togglePastDay(dayKey)}
+                        className="inline-flex items-center gap-0.5 text-[10px] font-medium text-[#9B9B95] hover:text-[#1A535C] transition-colors px-1 py-0.5 rounded hover:bg-[#1A535C]/[0.06]"
+                        title={isExpanded ? 'Verberg verlopen taken' : 'Toon verlopen taken'}
+                      >
+                        <span className="font-mono">{dayTasks.length}</span>
+                        <ChevronRight className={cn('w-2.5 h-2.5 transition-transform', isExpanded && 'rotate-90')} />
+                      </button>
+                    ) : (
+                      dayTasks.length > 0 && !isToday && (
+                        <span className="text-[10px] font-mono text-[#9B9B95]">{dayTasks.length}</span>
+                      )
+                    )}
+                  </div>
                 </div>
               </div>
             )
