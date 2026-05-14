@@ -1494,7 +1494,7 @@ export function TasksLayout() {
         return (
         <div className="flex-1 flex flex-col min-h-0 px-6 pb-4 pt-2">
           <div
-            className="flex-1 min-h-0 grid grid-cols-5 gap-px bg-[#EEEDEA] overflow-hidden"
+            className="flex-1 min-h-0 grid grid-cols-5 gap-px bg-[#F0EFEC] overflow-hidden"
             style={{ gridTemplateRows: `auto repeat(${visibleWeeks}, minmax(0, 1fr))` }}
           >
             {/* Day headers — werkweek */}
@@ -1587,7 +1587,7 @@ export function TasksLayout() {
                     />
                   )}
                   <div className={cn(
-                    'flex-1 min-h-0 overflow-y-auto scrollbar-hide space-y-1 [mask-image:linear-gradient(to_bottom,black_calc(100%-10px),transparent_100%)]',
+                    'flex-1 min-h-0 overflow-y-auto scrollbar-hide space-y-px [mask-image:linear-gradient(to_bottom,black_calc(100%-10px),transparent_100%)]',
                     isPastInMonth && 'opacity-60'
                   )}>
                     {dayTasks.map((t) => {
@@ -1604,21 +1604,20 @@ export function TasksLayout() {
                             requestAnimationFrame(() => { el.style.opacity = '0.4' })
                           }}
                           onDragEnd={(e) => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
-                          className={cn(
-                            'group/pill relative w-full text-left flex items-center gap-1.5 text-[11px] font-medium leading-tight px-2.5 py-[3px] rounded-full cursor-grab active:cursor-grabbing hover:shadow-[0_2px_4px_rgba(0,0,0,0.10)] transition-shadow',
-                            isDone && '[background:linear-gradient(135deg,#E2F0F0_0%,#FFFFFF_70%)] line-through opacity-65'
-                          )}
-                          style={isDone
-                            ? { color: '#6B6B66' }
-                            : { backgroundColor: pc.bg, color: pc.text }}
+                          className="group/pill relative w-full text-left flex items-center gap-2 text-[11px] font-medium leading-tight px-1 py-[2px] rounded-[2px] cursor-grab active:cursor-grabbing hover:bg-[#F4F2EE] transition-colors"
                           onClick={() => openEditDialog(taken.find((tt) => tt.id === t.id) || t)}
                           title={t.titel}
                         >
                           <span
-                            className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                            className="w-[3px] h-3 rounded-[1px] flex-shrink-0"
                             style={{ backgroundColor: isDone ? '#1A535C' : pc.dot }}
                           />
-                          <span className="truncate">{t.titel}</span>
+                          <span className={cn(
+                            'truncate',
+                            isDone ? 'text-[#9B9B95] line-through' : 'text-[#1A1A1A]'
+                          )}>
+                            {t.titel}
+                          </span>
                         </button>
                       )
                     })}
