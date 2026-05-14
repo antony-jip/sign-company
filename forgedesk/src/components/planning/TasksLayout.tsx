@@ -1225,7 +1225,7 @@ export function TasksLayout() {
     <>
       <div className="flex flex-col h-[calc(100vh-56px)] -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 bg-[#F8F7F5]">
         {/* === Sticky toolbar — 1 rij === */}
-        <div className="sticky top-0 z-20 bg-[#FFFFFF] border-b border-[#F0EFEC] shadow-[0_1px_3px_rgba(0,0,0,0.03)] px-6 py-2 flex-shrink-0 flex items-center gap-3 flex-wrap">
+        <div className="sticky top-0 z-20 bg-white/75 backdrop-blur-xl border-b border-[#E6E4DE] shadow-[0_1px_8px_-2px_rgba(0,0,0,0.05)] px-6 py-2.5 flex-shrink-0 flex items-center gap-3 flex-wrap">
           {/* Titel + counter */}
           <div className="flex items-baseline gap-2">
             <h1 className="text-[17px] font-bold text-[#1A1A1A] tracking-[-0.3px]">
@@ -1352,7 +1352,7 @@ export function TasksLayout() {
         {/* Ongepland verborgen — taken zonder deadline worden niet getoond */}
 
         {/* === DAY HEADERS === */}
-        <div className="flex border-b-2 border-[#F0EFEC] bg-[#FAFAF9] flex-shrink-0">
+        <div className="flex border-b border-[#E6E4DE] bg-white flex-shrink-0 mt-3">
           <div className="w-14 flex-shrink-0" />
           {weekDays.map((day, i) => {
             const isToday = isSameDay(day, today)
@@ -1364,20 +1364,20 @@ export function TasksLayout() {
               <div
                 key={i}
                 className={cn(
-                  'flex-1 min-w-0 text-center py-3 border-l border-[#E6E4DE] transition-colors',
+                  'flex-1 min-w-0 text-center py-4 border-l border-[#E6E4DE] transition-colors',
                   isToday && 'bg-[#1A535C]/[0.04]'
                 )}
               >
                 <div className="flex items-center justify-center gap-1.5">
                   <span className={cn(
-                    'text-[11px] uppercase tracking-widest font-semibold',
-                    isToday ? 'text-[#1A535C]' : isPast ? 'text-[#D0D0CC]' : 'text-[#9B9B95]'
+                    'text-[12px] uppercase tracking-widest font-semibold',
+                    isToday ? 'text-[#1A535C]' : isPast ? 'text-[#C4C2BD]' : 'text-[#5A5A55]'
                   )}>
                     {DAY_LABELS[i]}{isToday && <span className="text-[#F15025]">.</span>}
                   </span>
                   <span className={cn(
-                    'text-[14px] font-bold font-mono tabular-nums',
-                    isToday ? 'text-[#1A535C]' : isPast ? 'text-[#D0D0CC]' : 'text-[#1A1A1A]'
+                    'text-[15px] font-bold font-mono tabular-nums',
+                    isToday ? 'text-[#1A535C]' : isPast ? 'text-[#C4C2BD]' : 'text-[#1A1A1A]'
                   )}>
                     {day.getDate()}
                   </span>
