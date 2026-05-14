@@ -1,6 +1,7 @@
 import { supabase } from './supabaseClient'
 
 export type RewriteAction =
+  | 'eigen-stijl'
   | 'beknopt'
   | 'uitgebreid'
   | 'professioneel'

@@ -12,6 +12,10 @@ const MONTHLY_LIMIT = 5.0
 
 // Rewrite actions with Dutch prompts
 const ACTIONS: Record<string, { label: string; prompt: string }> = {
+  'eigen-stijl': {
+    label: 'Mijn stijl',
+    prompt: 'Herschrijf deze tekst in dezelfde betekenis, maar helderder en natuurlijker. Behoud de schrijfstijl uit de system-instructie. Antwoord ALLEEN met de herschreven tekst, geen uitleg.',
+  },
   'beknopt': {
     label: 'Maak beknopt',
     prompt: 'Maak deze tekst korter en bondiger. Behoud de kernboodschap. Antwoord ALLEEN met de herschreven tekst, geen uitleg.',
