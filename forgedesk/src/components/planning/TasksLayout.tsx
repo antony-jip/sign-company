@@ -2343,15 +2343,15 @@ function DayColumn({
         )
       })}
 
-      {/* Now-line — dun, translucent zodat tekst leesbaar blijft */}
+      {/* Now-line — flame indicator met soft glow */}
       {nowLineTop !== null && (
         <div
           className="absolute left-0 right-0 z-20 pointer-events-none"
           style={{ top: `${nowLineTop}%` }}
         >
           <div className="flex items-center">
-            <div className="w-1.5 h-1.5 rounded-full bg-[#F15025] -ml-1 flex-shrink-0" />
-            <div className="flex-1 h-px bg-[#F15025]/50" />
+            <div className="w-2 h-2 rounded-full bg-[#F15025] shadow-[0_0_0_3px_rgba(241,80,37,0.18)] -ml-1.5 flex-shrink-0" />
+            <div className="flex-1 h-[1.5px] bg-[#F15025]/70" />
           </div>
         </div>
       )}
