@@ -71,6 +71,7 @@ import { TakenBulkActionBar } from '@/components/planning/TakenBulkActionBar'
 import { getAvatarStyle as getLaneAvatarStyle } from '@/utils/medewerkerAvatar'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useOptimisticState } from '@/hooks/useOptimistic'
+import { SelectionRectangle } from '@/components/planning/SelectionRectangle'
 
 const TAKEN_FILTER_OVERRIDE_KEY = 'doen_taken_filter_override'
 const TAKEN_FILTER_MIGRATION_V2 = 'doen_taken_filter_migration_v2'
@@ -290,7 +291,7 @@ export function TasksLayout() {
   const [draggingTaakId, setDraggingTaakId] = useState<string | null>(null)
   const [dropTarget, setDropTarget] = useState<{ dayIndex: number; hour: number } | null>(null)
 
-  // Bulk-selectie (alleen actief in swimlane-view)
+  // Bulk-selectie: swimlane via per-row checkboxes; week via drag-rectangle.
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set())
 
   const toggleTaskSelected = useCallback((id: string) => {
@@ -476,6 +477,73 @@ export function TasksLayout() {
     })
   }, [selectedTaskIds, taken, clearSelection])
 
+  // === DRAG-RECTANGLE SELECT (week-view) ===
+  const rectStartRef = useRef<{ x: number; y: number } | null>(null)
+  const rectMovedRef = useRef(false)
+  const [rectBox, setRectBox] = useState<{ left: number; top: number; width: number; height: number } | null>(null)
+  const DRAG_RECT_THRESHOLD_PX = 5
+
+  const handleGridMouseDown = useCallback((e: React.MouseEvent) => {
+    if (viewMode !== 'week') return
+    if (e.button !== 0) return
+    const target = e.target as HTMLElement
+    if (target.closest('[data-taak-id], [data-add-hour-btn], input, textarea, button')) return
+    rectStartRef.current = { x: e.clientX, y: e.clientY }
+    rectMovedRef.current = false
+  }, [viewMode])
+
+  useEffect(() => {
+    function onMove(e: MouseEvent) {
+      const start = rectStartRef.current
+      if (!start) return
+      const dx = e.clientX - start.x
+      const dy = e.clientY - start.y
+      if (!rectMovedRef.current) {
+        if (Math.abs(dx) < DRAG_RECT_THRESHOLD_PX && Math.abs(dy) < DRAG_RECT_THRESHOLD_PX) return
+        rectMovedRef.current = true
+      }
+      setRectBox({
+        left: Math.min(start.x, e.clientX),
+        top: Math.min(start.y, e.clientY),
+        width: Math.abs(dx),
+        height: Math.abs(dy),
+      })
+    }
+    function onUp(e: MouseEvent) {
+      const start = rectStartRef.current
+      if (!start) return
+      rectStartRef.current = null
+      if (!rectMovedRef.current) {
+        setRectBox(null)
+        setSelectedTaskIds(new Set())
+        return
+      }
+      const box = {
+        left: Math.min(start.x, e.clientX),
+        top: Math.min(start.y, e.clientY),
+        right: Math.max(start.x, e.clientX),
+        bottom: Math.max(start.y, e.clientY),
+      }
+      const next = new Set<string>()
+      document.querySelectorAll<HTMLElement>('[data-taak-id]').forEach((el) => {
+        const r = el.getBoundingClientRect()
+        const overlaps = !(r.right < box.left || r.left > box.right || r.bottom < box.top || r.top > box.bottom)
+        if (overlaps) {
+          const id = el.getAttribute('data-taak-id')
+          if (id) next.add(id)
+        }
+      })
+      setRectBox(null)
+      setSelectedTaskIds(next)
+    }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+    return () => {
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+    }
+  }, [])
+
 
   // Now-line timer
   const [nowMinutes, setNowMinutes] = useState(() => {
@@ -560,10 +628,8 @@ export function TasksLayout() {
   }, [medewerkers, user])
 
   useEffect(() => {
-    if (viewMode !== 'swimlane' && selectedTaskIds.size > 0) {
-      setSelectedTaskIds(new Set())
-    }
-  }, [viewMode, selectedTaskIds.size])
+    setSelectedTaskIds(new Set())
+  }, [viewMode])
 
   useEffect(() => {
     if (filterInitialized) return
@@ -1259,7 +1325,7 @@ export function TasksLayout() {
         </div>
 
         {/* === CALENDAR GRID — DOEN === */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden relative bg-[#FFFFFF]">
+        <div ref={scrollRef} onMouseDown={handleGridMouseDown} className="flex-1 overflow-y-auto overflow-x-hidden relative bg-[#FFFFFF]">
           <div className="flex" style={{ minHeight: HOURS.length * HOUR_HEIGHT }}>
             {/* Time gutter */}
             <div className="w-14 flex-shrink-0 relative border-r border-[#F0EFEC]">
@@ -1305,6 +1371,7 @@ export function TasksLayout() {
                   onQuickAdd={(title) => handleDayQuickAdd(day, title)}
                   onQuickAddAtTime={(hour, title) => handleDayHourQuickAdd(day, hour, title)}
                   onResize={handleResizeTask}
+                  selectedTaskIds={selectedTaskIds}
                   montageAfspraken={montageByDay.get(day.toDateString()) || []}
                   hourHeight={HOUR_HEIGHT}
                 />
@@ -1312,6 +1379,7 @@ export function TasksLayout() {
             })}
           </div>
         </div>
+        {rectBox && <SelectionRectangle {...rectBox} />}
         </>)}
         {viewMode === 'maand' && (
         /* === MONTH VIEW — DOEN === */
@@ -1810,6 +1878,7 @@ function DayColumn({
   draggingTaakId, dropTarget,
   onDragStart, onDragEnd, onDropTargetChange, onDrop,
   onToggle, onEdit, onDelete, onQuickAdd, onQuickAddAtTime, onResize,
+  selectedTaskIds,
   montageAfspraken = [],
   hourHeight: HOUR_HEIGHT,
 }: {
@@ -1834,6 +1903,7 @@ function DayColumn({
   onQuickAdd: (title: string) => void
   onQuickAddAtTime: (hour: number, title: string) => void
   onResize: (taakId: string, newDurationHours: number) => void
+  selectedTaskIds?: Set<string>
   montageAfspraken?: MontageAfspraak[]
   hourHeight: number
 }) {
@@ -2047,6 +2117,7 @@ function DayColumn({
             {/* Plus button per hour slot — hide when the hour is occupied so it doesn't collide with the task's delete */}
             {!isDropHere && !isAddingHere && !hasTaskAtHour && (
               <button
+                data-add-hour-btn="true"
                 onClick={() => { setAddingAtHour(hour); setHourAddTitle(''); setTimeout(() => hourInputRef.current?.focus(), 50) }}
                 className="absolute top-1 right-1 z-20 opacity-0 group-hover/hour:opacity-100 p-1 rounded-lg text-[#F15025]/40 hover:text-[#F15025] hover:bg-[#F15025]/10 transition-all duration-200"
               >
@@ -2107,6 +2178,7 @@ function DayColumn({
               scheduled
               heightPx={heightPx !== null ? heightPx : undefined}
               isResizing={isResizing}
+              isSelected={selectedTaskIds?.has(taak.id)}
               onDragStart={() => onDragStart(taak.id)}
               onDragEnd={onDragEnd}
               onToggle={() => onToggle(taak)}
@@ -2225,7 +2297,7 @@ function DayColumn({
 // === TASK CARD ===
 
 function TaskCard({
-  taak, projectNaam, klantNaam, offerteInfo, isPast, scheduled, heightPx, isResizing, onDragStart, onDragEnd, onToggle, onEdit, onDelete, onResizeStart,
+  taak, projectNaam, klantNaam, offerteInfo, isPast, scheduled, heightPx, isResizing, isSelected, onDragStart, onDragEnd, onToggle, onEdit, onDelete, onResizeStart,
 }: {
   taak: Taak
   projectNaam?: string
@@ -2235,6 +2307,7 @@ function TaskCard({
   scheduled?: boolean
   heightPx?: number
   isResizing?: boolean
+  isSelected?: boolean
   onDragStart: () => void
   onDragEnd: () => void
   onToggle: () => void
@@ -2288,6 +2361,7 @@ function TaskCard({
 
   return (
     <div
+      data-taak-id={taak.id}
       draggable={!isResizing}
       onDragStart={handleDragStart}
       onDragEnd={(e) => { const el = e.currentTarget as HTMLElement; el.style.opacity = '1'; el.style.transform = ''; onDragEnd() }}
@@ -2299,7 +2373,8 @@ function TaskCard({
         isDone && 'opacity-40 hover:opacity-60',
         isPast && !isDone && 'opacity-55',
         justCompleted && 'scale-[0.98] opacity-40 transition-all duration-500',
-        isResizing && 'ring-2 ring-[#1A535C]/30 z-30'
+        isResizing && 'ring-2 ring-[#1A535C]/30 z-30',
+        isSelected && 'ring-2 ring-[#1A535C] z-20'
       )}
       style={{
         ...(heightPx !== undefined ? { height: heightPx, overflow: 'hidden' } : {}),
