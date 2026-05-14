@@ -19,6 +19,7 @@ Altijd eerst `cd ~/sign-company/forgedesk` voor commands.
 - **Geen nieuwe npm packages** zonder expliciete toestemming
 - **Geen unsolicited refactoring** — blijf binnen scope
 - **Vercel serverless functions zijn standalone** — geen imports uit src/
+- **Geen helpers in api/_helpers/** — alles inline in elk API-bestand, ook binnen api/ subdirectory geldt deze regel
 
 ## Database conventies
 - Alle tabellen hebben organisatie_id kolom
