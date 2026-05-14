@@ -315,7 +315,7 @@ function DocumentenTab() {
 
   const [factuurIntroTekst, setFactuurIntroTekst] = useState('')
   const [factuurOutroTekst, setFactuurOutroTekst] = useState('')
-  const [factuurPrefix, setFactuurPrefix] = useState('FAC')
+  const [factuurPrefix, setFactuurPrefix] = useState('')
   const [factuurStartNummer, setFactuurStartNummer] = useState('1')
   const [creditnotaPrefix, setCreditnotaPrefix] = useState('CN')
   const [werkbonPrefix, setWerkbonPrefix] = useState('WB')
@@ -512,8 +512,8 @@ function DocumentenTab() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="factuur-prefix">Factuur prefix</Label>
-                  <Input id="factuur-prefix" value={factuurPrefix} onChange={(e) => setFactuurPrefix(e.target.value.toUpperCase())} placeholder="FAC" maxLength={5} />
-                  <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Voorbeeld: {factuurPrefix}-{new Date().getFullYear()}-{String(parseInt(factuurStartNummer) || 1).padStart(3, '0')}</p>
+                  <Input id="factuur-prefix" value={factuurPrefix} onChange={(e) => setFactuurPrefix(e.target.value.toUpperCase())} placeholder="(geen)" maxLength={5} />
+                  <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Voorbeeld: {factuurPrefix ? `${factuurPrefix}-` : ''}{new Date().getFullYear()}-{String(parseInt(factuurStartNummer) || 1).padStart(3, '0')}</p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="factuur-startnummer">Begin nummer</Label>

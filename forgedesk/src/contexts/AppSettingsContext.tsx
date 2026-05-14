@@ -190,7 +190,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     logoUrl: profile?.logo_url || '',
     anthropicApiKey,
     // Factuur instellingen
-    factuurPrefix: settings.factuur_prefix || 'FAC',
+    factuurPrefix: settings.factuur_prefix ?? '',
     factuurStartNummer: settings.factuur_volgnummer ?? 1,
     factuurBetaaltermijnDagen: settings.factuur_betaaltermijn_dagen ?? 30,
     factuurVoorwaarden: settings.factuur_voorwaarden || 'Betaling binnen 30 dagen na factuurdatum.',
