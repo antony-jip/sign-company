@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
 import { Ratelimit } from '@upstash/ratelimit'
 import { Redis } from '@upstash/redis'
+import { buildDaanContext } from './_helpers/daanContext'
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL || '',
@@ -382,34 +383,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       })
     }
 
-    // Get bedrijfscontext from settings — org-first via profiles, user_id-fallback
-    const { data: callerProfile } = await supabase
-      .from('profiles')
-      .select('organisatie_id')
-      .eq('id', userId)
-      .maybeSingle()
-    const callerOrgId = (callerProfile?.organisatie_id as string | null) ?? null
-    let settingsData: { forgie_bedrijfscontext: string | null } | null = null
-    if (callerOrgId) {
-      const { data } = await supabase
-        .from('app_settings')
-        .select('forgie_bedrijfscontext')
-        .eq('organisatie_id', callerOrgId)
-        .order('updated_at', { ascending: false })
-        .limit(1)
-        .maybeSingle()
-      settingsData = data
-    }
-    if (!settingsData) {
-      const { data } = await supabase
-        .from('app_settings')
-        .select('forgie_bedrijfscontext')
-        .eq('user_id', userId)
-        .maybeSingle()
-      settingsData = data
-    }
-
-    const bedrijfscontext = settingsData?.forgie_bedrijfscontext || ''
+    const { bedrijfscontext, schrijfstijl } = await buildDaanContext(supabase, userId)
 
     // Get relevant data context
     const dataContext = await getRelevantContext(userId, question)
@@ -418,6 +392,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const systemPrompt = `Je bent Daan, de AI-assistent van Doen. Je bent het bedrijfsgeheugen van de gebruiker. Je bent direct, behulpzaam en een beetje eigenwijs — net als de vakmensen die je helpt.
 
 ${bedrijfscontext ? `Over het bedrijf: ${bedrijfscontext}` : ''}
+${schrijfstijl ? `\nSchrijfstijl van de gebruiker (overneem in je antwoorden):\n${schrijfstijl}` : ''}
 
 Je hebt toegang tot de volgende bedrijfsdata:
 

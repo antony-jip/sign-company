@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
+import { buildDaanContext } from './_helpers/daanContext'
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL || '',
@@ -114,32 +115,6 @@ async function updateUsage(userId: string, inputTokens: number, outputTokens: nu
   }
 }
 
-async function getToneOfVoice(userId: string): Promise<string> {
-  // Org-first via profiles, user_id-fallback voor legacy rijen
-  const { data: callerProfile } = await supabase
-    .from('profiles')
-    .select('organisatie_id')
-    .eq('id', userId)
-    .maybeSingle()
-  const callerOrgId = (callerProfile?.organisatie_id as string | null) ?? null
-  if (callerOrgId) {
-    const { data } = await supabase
-      .from('app_settings')
-      .select('ai_tone_of_voice')
-      .eq('organisatie_id', callerOrgId)
-      .order('updated_at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
-    if (data?.ai_tone_of_voice) return data.ai_tone_of_voice
-  }
-  const { data } = await supabase
-    .from('app_settings')
-    .select('ai_tone_of_voice')
-    .eq('user_id', userId)
-    .maybeSingle()
-  return data?.ai_tone_of_voice || ''
-}
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
@@ -151,7 +126,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(503).json({ error: 'AI niet geconfigureerd', configured: false })
     }
 
-    const { action, text, customInstruction } = req.body
+    const { action, text, customInstruction, skipTone } = req.body
 
     if (!action || !text) {
       return res.status(400).json({ error: 'Action en text zijn verplicht' })
@@ -170,13 +145,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       })
     }
 
-    // Get user tone of voice
-    const toneOfVoice = await getToneOfVoice(userId)
+    const { bedrijfscontext, schrijfstijl } = await buildDaanContext(supabase, userId)
 
-    // Build system prompt
     let systemPrompt = 'Je bent een schrijfassistent voor een Nederlands bedrijf. Je herschrijft teksten exact zoals gevraagd. Antwoord ALLEEN met de herschreven tekst, geen uitleg of inleiding.'
-    if (toneOfVoice) {
-      systemPrompt += `\n\nDe gebruiker heeft de volgende schrijfstijl/tone of voice:\n${toneOfVoice}\n\nPas deze stijl toe bij het herschrijven.`
+    if (bedrijfscontext) {
+      systemPrompt += `\n\nHet bedrijf: ${bedrijfscontext}`
+    }
+    if (schrijfstijl && !skipTone) {
+      systemPrompt += `\n\nDe gebruiker heeft de volgende schrijfstijl/tone of voice:\n${schrijfstijl}\n\nPas deze stijl toe bij het herschrijven.`
     }
 
     // Build user prompt
