@@ -1558,9 +1558,9 @@ export function TasksLayout() {
                       </span>
                     )}
                     <span className={cn(
-                      'text-[13px] font-semibold tabular-nums',
+                      'text-[14px] font-semibold tabular-nums',
                       isToday
-                        ? 'w-6 h-6 rounded-full bg-[#1A535C] text-white flex items-center justify-center text-[11px] shadow-[0_4px_12px_-2px_rgba(26,83,92,0.35)]'
+                        ? 'w-6 h-6 rounded-full bg-[#1A535C] text-white flex items-center justify-center text-[11px] shadow-[0_2px_8px_-2px_rgba(26,83,92,0.25)]'
                         : isPastInMonth ? 'text-[#9B9B95]'
                         : isCurrentMonth ? 'text-[#1A1A1A]'
                         : 'text-[#C4C2BD]'
@@ -1587,7 +1587,7 @@ export function TasksLayout() {
                     />
                   )}
                   <div className={cn(
-                    'flex-1 min-h-0 overflow-y-auto scrollbar-hide space-y-px [mask-image:linear-gradient(to_bottom,black_calc(100%-10px),transparent_100%)]',
+                    'flex-1 min-h-0 overflow-y-auto scrollbar-hide space-y-0.5 [mask-image:linear-gradient(to_bottom,black_calc(100%-10px),transparent_100%)]',
                     isPastInMonth && 'opacity-60'
                   )}>
                     {dayTasks.map((t) => {
@@ -1609,7 +1609,7 @@ export function TasksLayout() {
                           title={t.titel}
                         >
                           <span
-                            className="w-[3px] h-3.5 rounded-[2px] flex-shrink-0"
+                            className="w-1.5 h-1.5 rounded-full flex-shrink-0"
                             style={{ backgroundColor: isDone ? '#1A535C' : pc.dot }}
                           />
                           <span className={cn(
