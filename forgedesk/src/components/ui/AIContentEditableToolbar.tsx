@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
+import { Link } from 'react-router-dom'
 import {
   Sparkles,
   AlignLeft,
@@ -14,9 +15,11 @@ import {
   RefreshCw,
   Wand2,
   MessageSquarePlus,
+  Pen,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { rewriteText, type RewriteAction } from '@/services/aiRewriteService'
+import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { toast } from 'sonner'
 
 interface AIContentEditableToolbarProps {
@@ -25,6 +28,8 @@ interface AIContentEditableToolbarProps {
   /** Called after text is replaced so parent can sync state */
   onContentChange?: () => void
   disabled?: boolean
+  /** Suppress tone-of-voice for this field. Defaults to false (tone applied). */
+  skipTone?: boolean
 }
 
 const ACTIONS: { id: RewriteAction; label: string; icon: React.ElementType }[] = [
@@ -39,7 +44,10 @@ const ACTIONS: { id: RewriteAction; label: string; icon: React.ElementType }[] =
   { id: 'vertaal-nl', label: 'Nederlands', icon: Languages },
 ]
 
-export function AIContentEditableToolbar({ editorRef, onContentChange, disabled }: AIContentEditableToolbarProps) {
+export function AIContentEditableToolbar({ editorRef, onContentChange, disabled, skipTone }: AIContentEditableToolbarProps) {
+  const { settings } = useAppSettings()
+  const heeftSchrijfstijl = !!(settings.ai_tone_of_voice && settings.ai_tone_of_voice.trim())
+  const toneActive = heeftSchrijfstijl && !skipTone
   const [selectedText, setSelectedText] = useState('')
   const [savedRange, setSavedRange] = useState<Range | null>(null)
   const [showToolbar, setShowToolbar] = useState(false)
@@ -162,7 +170,7 @@ export function AIContentEditableToolbar({ editorRef, onContentChange, disabled 
     setShowCustomInput(false)
 
     try {
-      const result = await rewriteText(action, selectedText, instruction)
+      const result = await rewriteText(action, selectedText, instruction, skipTone)
       setPreview(result.result)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Herschrijven mislukt')
@@ -170,7 +178,7 @@ export function AIContentEditableToolbar({ editorRef, onContentChange, disabled 
     } finally {
       setLoading(false)
     }
-  }, [selectedText, loading, clearHideTimeout])
+  }, [selectedText, loading, clearHideTimeout, skipTone])
 
   const handleAccept = useCallback(() => {
     if (!preview || !savedRange) return
@@ -237,6 +245,16 @@ export function AIContentEditableToolbar({ editorRef, onContentChange, disabled 
             <Sparkles className="w-3.5 h-3.5 text-primary" />
             <span className="text-xs font-medium text-foreground">AI Suggestie</span>
           </div>
+          {!heeftSchrijfstijl && !loading && (
+            <div className="px-3 py-1.5 bg-muted/40 border-b border-border/40 flex items-center gap-1.5">
+              <Pen className="w-3 h-3 text-muted-foreground shrink-0" />
+              <span className="text-[11px] text-muted-foreground">
+                Tip · stel je schrijfstijl in via{' '}
+                <Link to="/instellingen?tab=daan" className="underline hover:text-foreground">Instellingen</Link>
+                {' '}voor resultaten die meer als jou klinken
+              </span>
+            </div>
+          )}
           <div className="px-3 py-2.5 max-h-[200px] overflow-y-auto">
             {loading ? (
               <div className="flex items-center gap-2 py-3 justify-center">
@@ -338,9 +356,17 @@ export function AIContentEditableToolbar({ editorRef, onContentChange, disabled 
             <button
               onClick={() => setShowActions(true)}
               className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-card/95 backdrop-blur-xl border border-border/60 shadow-2xl text-xs font-medium text-foreground hover:bg-muted/80 transition-all hover:shadow-lg group"
+              title={
+                toneActive
+                  ? 'AI herschrijven · jouw schrijfstijl actief'
+                  : skipTone && heeftSchrijfstijl
+                    ? 'AI herschrijven · schrijfstijl uit voor dit veld'
+                    : 'AI herschrijven · geen schrijfstijl ingesteld'
+              }
             >
               <Sparkles className="w-3.5 h-3.5 text-primary group-hover:scale-110 transition-transform" />
               <span>AI herschrijven</span>
+              <Pen className={cn('w-3 h-3 transition-colors', toneActive ? 'text-primary' : 'text-muted-foreground/40')} />
             </button>
           )}
         </>
