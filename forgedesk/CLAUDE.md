@@ -15,6 +15,7 @@ Altijd eerst `cd ~/sign-company/forgedesk` voor commands.
 - **Nederlands in code**: klant, offerte, werkbon, medewerker
 - **Engels in commit messages**, één concern per commit
 - **npm run build** na elke code-wijziging — verplicht
+- **Tests draaien met `npm run test`** (vitest, watch-mode) of `npm run test:run` (one-shot)
 - **Geen nieuwe npm packages** zonder expliciete toestemming
 - **Geen unsolicited refactoring** — blijf binnen scope
 - **Vercel serverless functions zijn standalone** — geen imports uit src/
