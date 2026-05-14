@@ -43,9 +43,9 @@ const ACTIONS: { id: RewriteAction; label: string; icon: React.ElementType }[] =
   { id: 'informeel', label: 'Informeler', icon: SmilePlus },
   { id: 'humor', label: 'Humor', icon: SmilePlus },
   { id: 'informatief', label: 'Informatief', icon: BookOpen },
-  { id: 'taalcheck', label: 'Taalcheck', icon: CheckCheck },
-  { id: 'vertaal-en', label: 'Engels', icon: Languages },
-  { id: 'vertaal-nl', label: 'Nederlands', icon: Languages },
+  { id: 'taalcheck', label: 'Spelling', icon: CheckCheck },
+  { id: 'vertaal-en', label: 'Naar Engels', icon: Languages },
+  { id: 'vertaal-nl', label: 'Naar Nederlands', icon: Languages },
 ]
 
 export function AITextToolbar({ textareaRef, onReplace, disabled, skipTone }: AITextToolbarProps) {

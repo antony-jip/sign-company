@@ -41,15 +41,15 @@ const ACTIONS: Record<string, { label: string; prompt: string }> = {
     prompt: 'Herschrijf deze tekst zodat het informatiever en leerzamer is. Voeg relevante details toe. Antwoord ALLEEN met de herschreven tekst, geen uitleg.',
   },
   'taalcheck': {
-    label: 'Verbeter taal',
+    label: 'Spelling',
     prompt: 'Corrigeer spelling, grammatica en zinsbouw in deze tekst. Verbeter de leesbaarheid. Antwoord ALLEEN met de gecorrigeerde tekst, geen uitleg.',
   },
   'vertaal-en': {
-    label: 'Vertaal naar Engels',
+    label: 'Naar Engels',
     prompt: 'Vertaal deze tekst naar het Engels. Behoud de toon en stijl. Antwoord ALLEEN met de vertaling, geen uitleg.',
   },
   'vertaal-nl': {
-    label: 'Vertaal naar Nederlands',
+    label: 'Naar Nederlands',
     prompt: 'Vertaal deze tekst naar het Nederlands. Behoud de toon en stijl. Antwoord ALLEEN met de vertaling, geen uitleg.',
   },
   'custom': {
