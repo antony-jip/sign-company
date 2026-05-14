@@ -1486,7 +1486,7 @@ export function TasksLayout() {
         return (
         <div className="flex-1 flex flex-col min-h-0 px-6 pb-4 pt-2">
           <div
-            className="flex-1 min-h-0 grid grid-cols-7 gap-px bg-[#EEEDEA] rounded-xl overflow-hidden ring-1 ring-[#EEEDEA]"
+            className="flex-1 min-h-0 grid grid-cols-7 gap-px bg-[#EEEDEA] overflow-hidden"
             style={{ gridTemplateRows: `auto repeat(${visibleWeeks}, minmax(0, 1fr))` }}
           >
             {/* Day headers */}
@@ -1496,11 +1496,11 @@ export function TasksLayout() {
                 <div
                   key={d}
                   className={cn(
-                    'text-center py-2 text-[10px] font-semibold uppercase tracking-[0.14em]',
+                    'text-center py-2 text-[10px] font-semibold lowercase tracking-[0.06em]',
                     isWeekendHeader ? 'bg-[#FBFAF8] text-[#B0ADA8]' : 'bg-white text-[#9B9B95]'
                   )}
                 >
-                  {d}
+                  {d.toLowerCase()}
                 </div>
               )
             })}
@@ -1550,30 +1550,22 @@ export function TasksLayout() {
                     }
                   }}
                 >
-                  <div className="flex items-center justify-between mb-1.5 flex-shrink-0 h-5">
+                  <div className="flex items-baseline justify-end gap-1 mb-1 flex-shrink-0 h-6">
+                    {!isCurrentMonth && day.getDate() === 1 && (
+                      <span className="text-[10px] font-medium uppercase tracking-wider text-[#C4C2BD]">
+                        {MONTH_NAMES[day.getMonth()]}
+                      </span>
+                    )}
                     <span className={cn(
-                      'flex items-baseline gap-1 text-[12px] font-mono font-semibold tabular-nums',
+                      'text-[13px] font-semibold tabular-nums',
                       isToday
-                        ? 'w-5 h-5 rounded-full bg-[#1A535C] text-white flex items-center justify-center text-[10px] gap-0'
+                        ? 'w-6 h-6 rounded-full bg-[#1A535C] text-white flex items-center justify-center text-[11px]'
                         : isPastInMonth ? 'text-[#9B9B95]'
                         : isCurrentMonth ? 'text-[#1A1A1A]'
                         : 'text-[#C4C2BD]'
                     )}>
                       {day.getDate()}
-                      {!isCurrentMonth && day.getDate() === 1 && (
-                        <span className="text-[10px] font-sans font-medium uppercase tracking-wider">
-                          {MONTH_NAMES[day.getMonth()]}
-                        </span>
-                      )}
                     </span>
-                    {isCurrentMonth && !isAddingHere && (
-                      <button
-                        onClick={() => { setMonthAddingDay(dayKey); setMonthAddTitle(''); setTimeout(() => monthAddInputRef.current?.focus(), 50) }}
-                        className="h-5 w-5 rounded-md text-[#B0ADA8] opacity-0 group-hover/cell:opacity-100 hover:text-[#1A535C] hover:bg-[#1A535C]/10 transition-all duration-150 flex items-center justify-center"
-                      >
-                        <Plus className="w-3 h-3" />
-                      </button>
-                    )}
                   </div>
                   {isAddingHere && (
                     <input
@@ -1600,7 +1592,6 @@ export function TasksLayout() {
                     {dayTasks.map((t) => {
                       const pc = PRIORITEIT_COLORS[t.prioriteit]
                       const isDone = t.status === 'klaar'
-                      const hour = getHourFromDeadline(t.deadline ?? '')
                       return (
                         <button
                           key={t.id}
@@ -1613,7 +1604,7 @@ export function TasksLayout() {
                           }}
                           onDragEnd={(e) => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
                           className={cn(
-                            'group/pill relative w-full text-left flex items-center gap-1.5 text-[11px] font-medium leading-tight px-2 py-[3px] rounded-md cursor-grab active:cursor-grabbing hover:shadow-[0_2px_4px_rgba(0,0,0,0.10)] hover:-translate-y-px transition-[transform,box-shadow]',
+                            'group/pill relative w-full text-left flex items-center gap-1.5 text-[11px] font-medium leading-tight px-2.5 py-[3px] rounded-full cursor-grab active:cursor-grabbing hover:shadow-[0_2px_4px_rgba(0,0,0,0.10)] transition-shadow',
                             isDone && '[background:linear-gradient(135deg,#E2F0F0_0%,#FFFFFF_70%)] line-through opacity-65'
                           )}
                           style={isDone
@@ -1626,9 +1617,6 @@ export function TasksLayout() {
                             className="w-1.5 h-1.5 rounded-full flex-shrink-0"
                             style={{ backgroundColor: isDone ? '#1A535C' : pc.dot }}
                           />
-                          {hour !== null && (
-                            <span className="font-mono text-[10px] opacity-60 tabular-nums flex-shrink-0">{formatHourLabel(hour)}</span>
-                          )}
                           <span className="truncate">{t.titel}</span>
                         </button>
                       )
