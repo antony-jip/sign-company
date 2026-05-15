@@ -52,15 +52,27 @@ function FORGEdeskDashboardInner() {
 
   const today = new Date()
   const dateStr = today.toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long' })
-  const formattedDate = dateStr.charAt(0).toUpperCase() + dateStr.slice(1)
+  const dateCaps = dateStr.toUpperCase()
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 space-y-6">
-      {/* ── Hero ── */}
-      <header className="pt-2">
+      {/* ── Hero — petrol-gradient card ── */}
+      <section
+        className="rounded-2xl px-8 py-8 sm:px-10 sm:py-10 overflow-hidden"
+        style={{
+          background:
+            'linear-gradient(135deg, #143E47 0%, #1A535C 55%, #2A6E78 100%)',
+        }}
+      >
+        <div className="flex items-center gap-2 mb-4">
+          <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#F15025]" aria-hidden />
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-white/70 font-mono">
+            {dateCaps}
+          </span>
+        </div>
         <h1
-          className="font-heading font-bold leading-[1.05] text-[28px] sm:text-[40px]"
-          style={{ letterSpacing: '-1.5px', color: '#1A1A1A' }}
+          className="font-heading font-bold leading-[1.05] text-[32px] sm:text-[44px] text-white"
+          style={{ letterSpacing: '-1.5px' }}
         >
           Klaar om te{' '}
           <span
@@ -68,7 +80,6 @@ function FORGEdeskDashboardInner() {
               fontFamily: '"Instrument Serif", serif',
               fontStyle: 'italic',
               fontWeight: 400,
-              color: '#5A5A55',
             }}
           >
             {verb}
@@ -76,8 +87,7 @@ function FORGEdeskDashboardInner() {
           {userName ? `, ${userName}` : ''}
           <span style={{ color: '#F15025' }}>.</span>
         </h1>
-        <p className="text-[13px] mt-2 text-[#9B9B95]">{formattedDate}</p>
-      </header>
+      </section>
 
       {/* ── Alerts ── */}
       {verlopenFacturen.count > 0 && (
