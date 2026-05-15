@@ -1,4 +1,5 @@
 import { Calendar } from 'lucide-react'
+import { getOrgColor } from '@/utils/orgTheme'
 
 interface PortaalHeaderProps {
   bedrijfNaam: string
@@ -6,6 +7,8 @@ interface PortaalHeaderProps {
   klantNaam?: string
   verlooptOp: string
   projectNaam?: string
+  primaireKleur?: string
+  bedrijfskleurenGebruiken?: boolean
 }
 
 function formatDate(dateStr: string): string {
@@ -16,18 +19,30 @@ function formatDate(dateStr: string): string {
   }).format(new Date(dateStr))
 }
 
-export function PortaalHeader({ bedrijfNaam, logoUrl, verlooptOp, projectNaam }: PortaalHeaderProps) {
+export function PortaalHeader({
+  bedrijfNaam,
+  logoUrl,
+  verlooptOp,
+  projectNaam,
+  primaireKleur,
+  bedrijfskleurenGebruiken,
+}: PortaalHeaderProps) {
+  const settings = { primaire_kleur: primaireKleur }
+  const portaal = { bedrijfskleuren_gebruiken: bedrijfskleurenGebruiken }
+  const bgColor = getOrgColor(settings, portaal, 'primary')
+  const accentColor = getOrgColor(settings, portaal, 'accent')
+
   return (
     <header
       className="flex-shrink-0 relative overflow-hidden"
-      style={{ backgroundColor: '#1A535C' }}
+      style={{ backgroundColor: bgColor }}
     >
       {/* Decorative dot pattern */}
       <div className="absolute inset-0 pointer-events-none" aria-hidden>
         <svg width="100%" height="100%" className="opacity-[0.08]">
           <defs>
             <pattern id="dots" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse">
-              <circle cx="4" cy="4" r="2" fill="#F15025" />
+              <circle cx="4" cy="4" r="2" style={{ fill: accentColor }} />
               <circle cx="16" cy="16" r="1.5" fill="#ffffff" />
             </pattern>
           </defs>

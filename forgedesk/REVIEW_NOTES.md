@@ -50,6 +50,35 @@ Tracking: [GitHub issue #16](https://github.com/antony-jip/sign-company/issues/1
 
 ---
 
+## Fase 3e / 3f — `feat/communicatie-tab` (2026-05-15)
+
+Scope-aanpassing op plan:
+
+- **orgTheme.ts is geland** met `getOrgColor(settings, portaalInstellingen, slot)`.
+  Defaults: petrol `#1A535C` / flame `#F15025` / light-bg `#E6F0F1`. Accent
+  blijft expliciet brand-only (Flame), conform plan-regel "alleen primary/light-bg
+  via white-label override".
+- **PortaalHeader gebruikt het patroon als bewijs**: twee nieuwe optionele
+  props (`primaireKleur`, `bedrijfskleurenGebruiken`); zonder props blijft
+  alles brand-default (backward-compatible). Toepassing op de andere ~14
+  hits in `src/components/portaal/` (PortaalSidebar, PortaalFeedItem*,
+  PortaalReactieFormInline, PortaalKlantReactie, PortaalPagina) is
+  uitgesteld — vereist prop-drilling vanaf `PortaalPagina` of een
+  PortaalThemeContext om de twee waarden naar alle nested components te
+  brengen. Pattern is bewezen, fan-out is mechanisch.
+- **Color-picker in branding tab (fase 3e commit 2)**: niet uitgevoerd.
+  HuisstijlTab heeft al een kleurpicker — plan zei "hergebruik component
+  of dupliceer met deep-link". Bevestigen welke route in een vervolg-PR.
+- **Fase 3f (per-project portaal-overrides UI)**: niet uitgevoerd. DB
+  ondersteunt `project_portalen.instructie_tekst` al, en welkomstboodschap
+  is een nieuwe kolom die nog niet bestaat. Per-project overrides + reset
+  knoppen vereisen nieuw component `ProjectPortaalSettings.tsx` plus
+  optionele DB-migration.
+
+Trackt onder [GitHub issue #16](https://github.com/antony-jip/sign-company/issues/16) — uitbreiden of split issue per fase indien gewenst.
+
+---
+
 ## Fase 3d — `feat/communicatie-tab` (2026-05-15)
 
 Scope-aanpassing op plan:
