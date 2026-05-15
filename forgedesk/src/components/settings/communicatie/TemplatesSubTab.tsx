@@ -1,12 +1,34 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { ChevronRight, FileText } from 'lucide-react'
 import { listDefaults } from '@/services/emailTemplateService'
 import { TemplateEditor } from './TemplateEditor'
+import { getOrgId } from '@/services/supabaseHelpers'
+
+// Deze 5 templates zijn doen.-platform-mails (doen. → org-admin). Voor
+// klant-orgs zijn ze irrelevant — alleen Sign Makers (de doen.-eigenaar)
+// ziet ze in de editor.
+const DOEN_PLATFORM_ORG_ID = '226bf02a-ebb2-4b4c-ae51-cdc9919e4229'
+const DOEN_PLATFORM_TRIGGERS = new Set([
+  'onboarding_dag3',
+  'onboarding_dag7',
+  'trial_reminder_5',
+  'trial_reminder_2',
+  'trial_reminder_0',
+])
 
 export function TemplatesSubTab() {
   const defaults = listDefaults()
-  const triggers = Object.keys(defaults)
   const [editing, setEditing] = useState<string | null>(null)
+  const [orgId, setOrgId] = useState<string | null>(null)
+
+  useEffect(() => {
+    getOrgId().then((id) => setOrgId(id ?? null)).catch(() => setOrgId(null))
+  }, [])
+
+  const isDoenPlatformOrg = orgId === DOEN_PLATFORM_ORG_ID
+  const triggers = Object.keys(defaults).filter(
+    (key) => isDoenPlatformOrg || !DOEN_PLATFORM_TRIGGERS.has(key),
+  )
 
   return (
     <div className="space-y-3">
