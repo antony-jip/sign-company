@@ -24,8 +24,9 @@ export function OpvolgenBlok() {
   const { offertes } = useDashboardData()
 
   const items = useMemo<OpvolgenItem[]>(() => {
+    const openStatussen = new Set(['verzonden', 'bekeken', 'wijziging_gevraagd'])
     return offertes
-      .filter(o => o.wacht_op_reactie === true && o.verstuurd_op)
+      .filter(o => openStatussen.has(o.status) && o.verstuurd_op)
       .map(o => ({
         id: o.id,
         klantNaam: o.klant_naam || 'Klant',
@@ -34,6 +35,7 @@ export function OpvolgenBlok() {
         dagen: daysSince(o.verstuurd_op as string),
       }))
       .sort((a, b) => b.dagen - a.dagen)
+      .slice(0, 5)
   }, [offertes])
 
   const totaalBedrag = useMemo(() => items.reduce((s, i) => s + i.bedrag, 0), [items])

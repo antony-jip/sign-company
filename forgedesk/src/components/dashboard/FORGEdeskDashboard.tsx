@@ -7,9 +7,8 @@ import { PortaalAlerts } from './PortaalAlerts'
 import { AanDeSlagSectie } from './AanDeSlagSectie'
 import { VandaagBlok } from './VandaagBlok'
 import { OpvolgenBlok } from './OpvolgenBlok'
-import { TeFacturerenBlok } from './TeFacturerenBlok'
 import { KpiStrip } from './KpiStrip'
-import { ActiviteitChart } from './ActiviteitChart'
+import { ActiviteitLog } from './ActiviteitLog'
 import { RightRail } from './RightRail'
 import { usePortaalHerinnering } from '@/hooks/usePortaalHerinnering'
 import { DashboardDataProvider, useDashboardData } from '@/contexts/DashboardDataContext'
@@ -172,23 +171,14 @@ function FORGEdeskDashboardInner() {
           {/* ── KPI-strip ── */}
           <KpiStrip />
 
-          {/* ── Tijdslagen — 2 kolommen ── */}
+          {/* ── Vandaag (links) | Opvolgen + Activiteit gestapeld (rechts) ── */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
             <div className="lg:col-span-7">
               <VandaagBlok />
             </div>
-            <div className="lg:col-span-5">
+            <div className="lg:col-span-5 space-y-5">
               <OpvolgenBlok />
-            </div>
-          </div>
-
-          {/* ── Factureren + Activiteit — 2 kolommen ── */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-            <div className="lg:col-span-5">
-              <TeFacturerenBlok />
-            </div>
-            <div className="lg:col-span-7">
-              <ActiviteitChart />
+              <ActiviteitLog />
             </div>
           </div>
 
