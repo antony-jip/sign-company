@@ -1,7 +1,9 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '@/contexts/AuthContext'
 import { useDashboardData } from '@/contexts/DashboardDataContext'
 import { getAvatarStyle } from '@/utils/medewerkerAvatar'
+import { isAdminUser } from '@/utils/authHelpers'
 import { formatCurrency, cn } from '@/lib/utils'
 import { formatDistanceToNow } from 'date-fns'
 import { nl } from 'date-fns/locale'
@@ -201,7 +203,14 @@ interface ActivityItem {
 
 function TeamCard() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const { montages, offertes, facturen, medewerkers } = useDashboardData()
+
+  const currentMedewerker = useMemo(
+    () => medewerkers.find(m => m.user_id === user?.id) ?? null,
+    [medewerkers, user?.id],
+  )
+  const admin = isAdminUser(currentMedewerker, user)
 
   const stats = useMemo(() => {
     const now = new Date()
@@ -296,8 +305,10 @@ function TeamCard() {
         })
       })
 
-    return out.sort((a, b) => b.sortDate.getTime() - a.sortDate.getTime()).slice(0, 3)
+    return out.sort((a, b) => b.sortDate.getTime() - a.sortDate.getTime()).slice(0, 30)
   }, [offertes, montages, facturen, medewerkers])
+
+  if (!admin) return null
 
   return (
     <section
@@ -344,7 +355,7 @@ function TeamCard() {
       {activiteit.length === 0 ? (
         <p className="text-sm text-[#9B9B95] py-2">Nog geen activiteit deze week.</p>
       ) : (
-        <ul className="space-y-3">
+        <ul className="space-y-3 max-h-[200px] overflow-y-auto pr-1 -mr-2">
           {activiteit.map(item => (
             <li key={item.id}>
               <button
