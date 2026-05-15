@@ -1,11 +1,22 @@
 import { useEffect, useState } from 'react'
 
+export interface ForecastDay {
+  date: string
+  weatherCode: number
+  iconKey: WeatherIconKey
+  label: string
+  isRaining: boolean
+  tempMax: number
+  tempMin: number
+}
+
 export interface WeatherSnapshot {
   temperature: number
   weatherCode: number
   isRaining: boolean
   label: string
   iconKey: WeatherIconKey
+  forecast: ForecastDay[]
 }
 
 export type WeatherIconKey =
@@ -60,20 +71,49 @@ export function useWeather(coords: Coords = DEFAULT_COORDS): WeatherSnapshot | n
       // localStorage unavailable or corrupt — fetch fresh
     }
 
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lon}&current=temperature_2m,weather_code&timezone=Europe/Amsterdam`
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lon}&current=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min&forecast_days=3&timezone=Europe/Amsterdam`
 
     fetch(url)
       .then(r => r.json())
-      .then((data: { current?: { temperature_2m?: number; weather_code?: number } }) => {
+      .then((data: {
+        current?: { temperature_2m?: number; weather_code?: number }
+        daily?: {
+          time?: string[]
+          weather_code?: number[]
+          temperature_2m_max?: number[]
+          temperature_2m_min?: number[]
+        }
+      }) => {
         if (cancelled || !data?.current) return
         const code = data.current.weather_code ?? 3
         const { label, iconKey, isRaining } = classify(code)
+
+        const forecast: ForecastDay[] = []
+        const dailyTime = data.daily?.time ?? []
+        const dailyCodes = data.daily?.weather_code ?? []
+        const dailyMax = data.daily?.temperature_2m_max ?? []
+        const dailyMin = data.daily?.temperature_2m_min ?? []
+        for (let i = 0; i < dailyTime.length; i++) {
+          const dayCode = dailyCodes[i] ?? 3
+          const dayClass = classify(dayCode)
+          forecast.push({
+            date: dailyTime[i],
+            weatherCode: dayCode,
+            iconKey: dayClass.iconKey,
+            label: dayClass.label,
+            isRaining: dayClass.isRaining,
+            tempMax: Math.round(dailyMax[i] ?? 0),
+            tempMin: Math.round(dailyMin[i] ?? 0),
+          })
+        }
+
         const snapshot: WeatherSnapshot = {
           temperature: Math.round(data.current.temperature_2m ?? 0),
           weatherCode: code,
           isRaining,
           label,
           iconKey,
+          forecast,
         }
         setWeather(snapshot)
         try {

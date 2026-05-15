@@ -184,7 +184,7 @@ function FORGEdeskDashboardInner() {
 
               {weather && WeatherIcon && (
                 <div
-                  className="hidden md:flex flex-col justify-center px-7 py-7 sm:px-8 w-[220px] relative overflow-hidden"
+                  className="hidden md:flex flex-col justify-center px-7 py-6 sm:px-8 w-[260px] relative overflow-hidden"
                   style={{
                     background: 'rgba(255,255,255,0.04)',
                     borderLeft: '1px solid rgba(255,255,255,0.08)',
@@ -218,23 +218,45 @@ function FORGEdeskDashboardInner() {
                   </svg>
 
                   <div className="relative z-10">
-                    <div className="flex items-center gap-3 mb-2">
+                    <div className="flex items-center gap-3 mb-1">
                       <WeatherIcon
                         className="w-8 h-8 flex-shrink-0"
                         strokeWidth={1.4}
                         style={{ color: weather.isRaining ? '#9DD3DA' : '#F5C460' }}
                       />
-                      <p className="font-heading font-bold text-white text-[40px] leading-none">
+                      <p className="font-heading font-bold text-white text-[36px] leading-none">
                         <span className="font-mono">{weather.temperature}</span>
-                        <span className="text-white/60 text-[24px] font-normal">°</span>
+                        <span className="text-white/60 text-[22px] font-normal">°</span>
                       </p>
                     </div>
                     <p
-                      className="text-[14px] text-white/80"
+                      className="text-[13px] text-white/80"
                       style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
                     >
                       {weather.label}
                     </p>
+
+                    {weather.forecast.length >= 3 && (
+                      <div className="mt-4 pt-3 grid grid-cols-2 gap-3" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                        {weather.forecast.slice(1, 3).map((day, idx) => {
+                          const Icon = WEATHER_ICONS[day.iconKey]
+                          const tint = day.isRaining ? '#9DD3DA' : '#F5C460'
+                          return (
+                            <div key={day.date} className="min-w-0">
+                              <p className="text-[10px] uppercase tracking-wider text-white/55 font-mono">
+                                {idx === 0 ? 'Morgen' : 'Overmorgen'}
+                              </p>
+                              <div className="flex items-center gap-1.5 mt-1">
+                                <Icon className="w-4 h-4 flex-shrink-0" strokeWidth={1.6} style={{ color: tint }} />
+                                <span className="text-[15px] text-white font-mono">
+                                  {day.tempMax}<span className="text-white/55 text-[11px]">°</span>
+                                </span>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
