@@ -33,14 +33,11 @@ import {
   Loader2,
   UserCircle,
   Trash2,
-  Send,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { getProfile, getAppSettings, updateAppSettings, getMedewerkers, updateMedewerker, getEmailTemplates, createEmailTemplate, updateEmailTemplate, deleteEmailTemplate, type EmailTemplate } from '@/services/supabaseService'
 import { isSupabaseConfigured } from '@/services/supabaseClient'
-import { sendEmail } from '@/services/gmailService'
-import { factuurHerinneringTemplate } from '@/services/emailTemplateService'
 import { uploadFile, downloadFile } from '@/services/storageService'
 import { toast } from 'sonner'
 import { logger } from '../../utils/logger'
