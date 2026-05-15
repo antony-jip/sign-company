@@ -781,22 +781,7 @@ export async function saveSystemTemplate(
   if (!supabase) throw new Error('Niet geconfigureerd')
   const def = DEFAULT_TEMPLATES[triggerTaskNaam]
   if (!def) throw new Error(`Onbekende trigger_task_naam: ${triggerTaskNaam}`)
-
-  const { error } = await supabase
-    .from('email_templates')
-    .upsert(
-      {
-        organisatie_id: orgId,
-        trigger_task_naam: triggerTaskNaam,
-        is_systeem: true,
-        naam: def.naam,
-        onderwerp: content.onderwerp,
-        body: content.body,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'organisatie_id,trigger_task_naam' },
-    )
-  if (error) throw error
+  await upsertSystemRow(orgId, triggerTaskNaam, def.naam, content)
 }
 
 export async function resetTemplateToDefault(
@@ -806,20 +791,64 @@ export async function resetTemplateToDefault(
   if (!supabase) throw new Error('Niet geconfigureerd')
   const def = DEFAULT_TEMPLATES[triggerTaskNaam]
   if (!def) throw new Error(`Onbekende trigger_task_naam: ${triggerTaskNaam}`)
+  await upsertSystemRow(orgId, triggerTaskNaam, def.naam, { onderwerp: def.onderwerp, body: def.body })
+}
 
-  const { error } = await supabase
+/**
+ * Handmatige SELECT-then-UPDATE-of-INSERT op de systeem-rij. PostgREST's
+ * upsert kan de partial UNIQUE (WHERE is_systeem=true) niet als arbiter
+ * gebruiken omdat de WHERE-clause niet meegestuurd wordt in ON CONFLICT,
+ * dus we omzeilen dat met twee gerichte calls. Race-condition-risico is
+ * verwaarloosbaar omdat alleen één user tegelijk een template bewerkt.
+ */
+async function upsertSystemRow(
+  orgId: string,
+  triggerTaskNaam: string,
+  naam: string,
+  content: { onderwerp: string; body: string },
+): Promise<void> {
+  if (!supabase) throw new Error('Niet geconfigureerd')
+
+  const { data: existing, error: selectError } = await supabase
     .from('email_templates')
-    .upsert(
-      {
+    .select('id')
+    .eq('organisatie_id', orgId)
+    .eq('trigger_task_naam', triggerTaskNaam)
+    .eq('is_systeem', true)
+    .maybeSingle()
+  if (selectError) {
+    console.error('[upsertSystemRow] select error:', selectError)
+    throw new Error(selectError.message || 'Kon bestaande template niet opzoeken')
+  }
+
+  if (existing) {
+    const { error } = await supabase
+      .from('email_templates')
+      .update({
+        naam,
+        onderwerp: content.onderwerp,
+        body: content.body,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', existing.id)
+    if (error) {
+      console.error('[upsertSystemRow] update error:', error)
+      throw new Error(error.message || 'Kon template niet bijwerken')
+    }
+  } else {
+    const { error } = await supabase
+      .from('email_templates')
+      .insert({
         organisatie_id: orgId,
         trigger_task_naam: triggerTaskNaam,
         is_systeem: true,
-        naam: def.naam,
-        onderwerp: def.onderwerp,
-        body: def.body,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'organisatie_id,trigger_task_naam' },
-    )
-  if (error) throw error
+        naam,
+        onderwerp: content.onderwerp,
+        body: content.body,
+      })
+    if (error) {
+      console.error('[upsertSystemRow] insert error:', error)
+      throw new Error(error.message || 'Kon template niet aanmaken')
+    }
+  }
 }
