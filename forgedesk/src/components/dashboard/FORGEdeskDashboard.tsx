@@ -55,7 +55,7 @@ function FORGEdeskDashboardInner() {
   const formattedDate = dateStr.charAt(0).toUpperCase() + dateStr.slice(1)
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 space-y-8">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 space-y-6">
       {/* ── Hero ── */}
       <header className="pt-2">
         <h1
@@ -99,10 +99,18 @@ function FORGEdeskDashboardInner() {
 
       <PortaalAlerts />
 
-      {/* ── Drie blokken — tijdslagen ── */}
-      <VandaagBlok />
-      <OpvolgenBlok />
-      <TeFacturerenBlok />
+      {/* ── Tijdslagen-grid ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="lg:col-span-7">
+          <VandaagBlok />
+        </div>
+        <div className="lg:col-span-5">
+          <OpvolgenBlok />
+        </div>
+        <div className="lg:col-span-12">
+          <TeFacturerenBlok />
+        </div>
+      </div>
 
       {/* ── Onboarding-checklist (alleen tijdens setup) ── */}
       <AanDeSlagSectie />
