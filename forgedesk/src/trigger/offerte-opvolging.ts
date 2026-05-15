@@ -311,6 +311,10 @@ export const offerteOpvolgingCron = schedules.task({
               });
 
               if (emailResult.skipped) {
+                logger.info("Offerte-opvolging mail overgeslagen (duplicaat)", {
+                  offerteId: offerte.id,
+                  stapId: stap.id,
+                });
                 continue;
               }
 

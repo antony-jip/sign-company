@@ -164,6 +164,10 @@ export const trialReminderCron = schedules.task({
           logger.error("Trial reminder verzenden mislukt", { msg });
         }
       }
+      // Partial success (sommige admins succesvol, andere fout): bewust geen
+      // rollback. De mark blijft staan, retries sturen niet opnieuw naar de
+      // wel-gemailde admins. Pas bij volledige fail terugdraaien zodat een
+      // latere cron-run alle admins opnieuw kan bereiken.
       if (sendErrors === recipients.length) {
         await rollbackKey(org.id, idempotencyKey);
       }
