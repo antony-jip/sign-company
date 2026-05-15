@@ -750,6 +750,10 @@ export interface AppSettings {
   /** @deprecated Verhuisd naar profiles (migratie 091). */
   afzender_naam: string;
   email_fetch_limit: number;
+  // Communicatie supertab (fase 3, achter feature flag)
+  onboarding_dag_offsets: number[];
+  trial_reminder_offsets: number[];
+  doen_communicatie_tab_enabled: boolean;
   // Daan
   forgie_enabled: boolean;
   forgie_bedrijfscontext: string;

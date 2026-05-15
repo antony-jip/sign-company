@@ -73,6 +73,10 @@ import { BeveiligingTab } from './BeveiligingTab'
 import { WeergaveTab } from './WeergaveTab'
 import { InkoopfactuurInboxSetup } from '../inkoopfacturen/InkoopfactuurInboxSetup'
 
+// Communicatie supertab (achter feature flag doen_communicatie_tab_enabled)
+import { CommunicatieTab } from './communicatie/CommunicatieTab'
+import { MessageSquare } from 'lucide-react'
+
 // Shared
 import { SubTabNav } from './SubTabNav'
 import type { SubTab } from './settingsShared'
@@ -113,6 +117,9 @@ const settingsSections: SettingsSection[] = [
   ]},
   { id: 'email-settings', label: 'E-mail', icon: Mail, tabs: [
     { id: 'email', label: 'E-mail', icon: Mail },
+  ]},
+  { id: 'communicatie', label: 'Communicatie', icon: MessageSquare, tabs: [
+    { id: 'communicatie', label: 'Communicatie', icon: MessageSquare },
   ]},
   { id: 'inkoopfacturen-settings', label: 'Inkoopfacturen', icon: Receipt, tabs: [
     { id: 'inkoopfactuur-inbox', label: 'Inbox Setup', icon: Mail },
@@ -168,6 +175,7 @@ function renderTabContent(tabId: string) {
     case 'btw-codes': return <VATCodesSettings />
     case 'kortingen': return <DiscountsSettings />
     case 'opvolging': return <OfferteOpvolgingTab />
+    case 'communicatie': return <CommunicatieTab />
     case 'factuur-opvolging': return <EmailTemplatesSubTab />
     case 'kb-artikelen': return <KennisbankTab />
     case 'changelog': return <ChangelogPage />
@@ -178,16 +186,21 @@ function renderTabContent(tabId: string) {
 }
 
 export function SettingsLayout() {
+  const { doenCommunicatieTabEnabled } = useAppSettings()
+  const visibleSections = settingsSections.filter(
+    (s) => s.id !== 'communicatie' || doenCommunicatieTabEnabled,
+  )
+
   const [searchParams] = useSearchParams()
   const initialTab = searchParams.get('tab') || 'algemeen'
   const resolvedSection = tabToSectionMap[initialTab] || initialTab
-  const validSection = settingsSections.some(s => s.id === resolvedSection) ? resolvedSection : 'algemeen'
+  const validSection = visibleSections.some((s) => s.id === resolvedSection) ? resolvedSection : 'algemeen'
 
   const [activeSection, setActiveSection] = useState(validSection)
   const [activeSubTabs, setActiveSubTabs] = useState<Record<string, string>>({})
   const navigate = useNavigate()
 
-  const currentSection = settingsSections.find(s => s.id === activeSection)
+  const currentSection = visibleSections.find((s) => s.id === activeSection)
   const currentSubTab = currentSection?.tabs.length
     ? (activeSubTabs[activeSection] || currentSection.tabs[0].id)
     : null
@@ -211,7 +224,7 @@ export function SettingsLayout() {
         <nav className="w-full md:w-48 flex-shrink-0">
           <div className="md:sticky md:top-6">
             <div className="md:hidden flex overflow-x-auto gap-0.5 p-1 bg-[#F3F2F0] rounded-lg">
-              {settingsSections.map((section) => {
+              {visibleSections.map((section) => {
                 const Icon = section.icon
                 const isActive = activeSection === section.id
                 return (
@@ -233,7 +246,7 @@ export function SettingsLayout() {
             </div>
 
             <div className="hidden md:block space-y-0.5">
-              {settingsSections.map((section) => {
+              {visibleSections.map((section) => {
                 const Icon = section.icon
                 const isActive = activeSection === section.id
                 return (

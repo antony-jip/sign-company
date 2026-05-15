@@ -63,6 +63,8 @@ interface AppSettingsContextType {
   // Quick Actions
   quickActionsEnabled: boolean
   quickActionItems: string[]
+  // Communicatie supertab (fase 3 feature flag)
+  doenCommunicatieTabEnabled: boolean
 }
 
 const AppSettingsContext = createContext<AppSettingsContextType | undefined>(undefined)
@@ -215,6 +217,8 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     // Quick Actions
     quickActionsEnabled: settings.quick_actions_enabled ?? true,
     quickActionItems: Array.isArray(settings.quick_action_items) ? settings.quick_action_items : ['project', 'mail', 'offerte', 'klant'],
+    // Communicatie supertab feature flag
+    doenCommunicatieTabEnabled: settings.doen_communicatie_tab_enabled ?? false,
   }
 
   return (
