@@ -794,7 +794,7 @@ export async function saveSystemTemplate(
         body: content.body,
         updated_at: new Date().toISOString(),
       },
-      { onConflict: 'uniq_email_templates_systeem_per_org' },
+      { onConflict: 'organisatie_id,trigger_task_naam' },
     )
   if (error) throw error
 }
@@ -819,7 +819,7 @@ export async function resetTemplateToDefault(
         body: def.body,
         updated_at: new Date().toISOString(),
       },
-      { onConflict: 'uniq_email_templates_systeem_per_org' },
+      { onConflict: 'organisatie_id,trigger_task_naam' },
     )
   if (error) throw error
 }
