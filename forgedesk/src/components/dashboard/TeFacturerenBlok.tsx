@@ -56,14 +56,31 @@ export function TeFacturerenBlok() {
     return `/facturen/nieuw?${params.toString()}`
   }
 
+  const totaalBedrag = useMemo(() => items.reduce((s, i) => s + i.bedrag, 0), [items])
+
   return (
     <section
       className="rounded-xl bg-white p-6 sm:p-8"
       style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}
     >
-      <h2 className="text-[11px] font-semibold uppercase tracking-wider text-[#9B9B95] mb-5">
-        Klaar om te factureren
-      </h2>
+      <header className="flex items-baseline justify-between gap-4 mb-5">
+        <div className="flex items-baseline gap-3 min-w-0">
+          <h2 className="text-[11px] font-semibold uppercase tracking-wider text-[#5A5A55]">
+            Klaar om te factureren
+          </h2>
+          <span
+            className="text-[14px] text-[#9B9B95] truncate"
+            style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+          >
+            — klaar om te versturen
+          </span>
+        </div>
+        {items.length > 0 && (
+          <span className="font-mono text-[12px] text-[#9B9B95] flex-shrink-0">
+            {formatCurrency(totaalBedrag)} klaar
+          </span>
+        )}
+      </header>
 
       {items.length === 0 ? (
         <p className="text-sm text-[#9B9B95] py-2">Niets klaar om te factureren.</p>
