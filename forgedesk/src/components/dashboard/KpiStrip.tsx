@@ -1,5 +1,17 @@
-import { useEffect, useMemo, useState } from 'react'
-import { FileText, CheckCircle2, Sparkles } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import {
+  FileText,
+  CheckCircle2,
+  Sparkles,
+  Receipt,
+  Wrench,
+  Mail,
+  Users,
+  Cloud,
+  Bot,
+  ArrowRight,
+  type LucideIcon,
+} from 'lucide-react'
 import { useDashboardData } from '@/contexts/DashboardDataContext'
 import { formatCurrency } from '@/lib/utils'
 
@@ -14,71 +26,126 @@ interface Kpi {
   urgent: boolean
 }
 
-const DOEN_VIBES = [
-  'Eén ding tegelijk.',
-  'Begin gewoon. De rest komt.',
-  'Niet praten, doen.',
-  'Een dag goed begonnen is half gedaan.',
-  'Wie wat doet, doet wat.',
-  'Klein beginnen, groot eindigen.',
-  'Liever klaar dan perfect.',
-  'Plannen is makkelijk, doen telt.',
-  'Geen klus te klein om af te maken.',
-  'Vandaag iets afronden is morgen ruimte.',
-  'Werk met aandacht, dan klopt het.',
-  'Niet wachten op morgen.',
-  'Klanten merken het verschil.',
-  'Eén goeie offerte is drie warme leads.',
-  'Vakwerk laat zich zien.',
-  'Geen dag zonder iets gedaan.',
-  'Helder werk, blije klant.',
-  'Vandaag is een doen-dag.',
-  'Doe wat het verschil maakt.',
-  'Eerst de hamer, dan de bel.',
-  'Mooi werk maakt zichzelf zichtbaar.',
-  'Stap voor stap komt het verst.',
-  'Klein gebaar, groot effect.',
-  'Beter eerlijk, dan handig.',
-  'Vakwerk is voelbaar.',
+type FactCategory = 'ai' | 'finance' | 'planning' | 'sales' | 'vibe'
+
+interface DoenFact {
+  cat: FactCategory
+  text: string
+}
+
+const CAT_META: Record<FactCategory, { icon: LucideIcon; color: string; bg: string; label: string }> = {
+  ai:       { icon: Bot,         color: '#6A5A8A', bg: 'linear-gradient(135deg, #EDE8F4 0%, #DDD3EA 100%)', label: 'Daan AI' },
+  finance:  { icon: Receipt,     color: '#3A7D52', bg: 'linear-gradient(135deg, #E8F2EC 0%, #D3E8DC 100%)', label: 'Geld' },
+  planning: { icon: Wrench,      color: '#F15025', bg: 'linear-gradient(135deg, #FDE8E4 0%, #FBD7CC 100%)', label: 'Planning' },
+  sales:    { icon: Mail,        color: '#1A535C', bg: 'linear-gradient(135deg, rgba(26,83,92,0.10) 0%, rgba(26,83,92,0.20) 100%)', label: 'Sales' },
+  vibe:     { icon: Sparkles,    color: '#8A7A4A', bg: 'linear-gradient(135deg, #F5F2E8 0%, #EDE6CE 100%)', label: 'Vibe' },
+}
+
+const DOEN_FACTS: DoenFact[] = [
+  // ── AI / Daan
+  { cat: 'ai', text: 'Daan vat hele e-mail-threads samen in twee zinnen. Niet doen — dit dus.' },
+  { cat: 'ai', text: 'Klant niet thuis? Daan schrijft de follow-up. Jij hoeft alleen op verzenden.' },
+  { cat: 'ai', text: 'Daan kent je schrijfstijl. Mail klinkt als jij, maar dan sneller. Doen ze.' },
+  { cat: 'ai', text: 'Tekst even in \'t Engels? Selecteer, vertaal, weg. Klaar.' },
+  { cat: 'ai', text: 'Daan kent je klanten, offertes en projecten. Vraag maar raak.' },
+  { cat: 'ai', text: 'Welkomstmail, status-update, social post — Daan tekent \'m voor.' },
+  { cat: 'ai', text: 'CSV erin slepen, Daan begrijpt \'m. Doe je zo.' },
+  // ── Finance / Inkoop
+  { cat: 'finance', text: 'Sleep een leveranciers-PDF erin. OCR pakt regels en BTW. Klaar.' },
+  { cat: 'finance', text: 'Inkoopfacturen worden vanuit je inbox automatisch opgehaald. Niet meer doen.' },
+  { cat: 'finance', text: 'Goedkeurings-flow in twee klikken. Of bulk. Doe je zo.' },
+  { cat: 'finance', text: 'Exact-sync regelt de boekhouding. Doen we voor je.' },
+  { cat: 'finance', text: 'Mollie-betaallink op elke factuur. iDEAL? Doen.' },
+  { cat: 'finance', text: 'Voorschot en eindafrekening — automatisch verrekend. Niks dubbel doen.' },
+  { cat: 'finance', text: 'Creditfactuur? Eén klik, hele historie erbij. Gedaan.' },
+  // ── Planning / Montage
+  { cat: 'planning', text: 'Sleep een montage naar morgen — de planning schikt zich. Doen.' },
+  { cat: 'planning', text: 'Twee monteurs dubbel ingepland? doen. signaleert vóór \'t fout gaat.' },
+  { cat: 'planning', text: 'Weerbericht per dag in de planning. Regent \'t? Schuif door.' },
+  { cat: 'planning', text: 'Montage afgerond? Werkbon met één klik — foto\'s en handtekening erbij.' },
+  { cat: 'planning', text: 'Swimlanes per rol: monteurs, productie, verkoop. Overzicht doen.' },
+  { cat: 'planning', text: 'Status van gepland tot afgerond in vijf stappen. Volg je zo.' },
+  // ── Sales / Klant
+  { cat: 'sales', text: 'Klant-portaal: bekijken, akkoord, wijziging vragen. Allemaal daar.' },
+  { cat: 'sales', text: 'Akkoord op offerte? Project draait automatisch op. Niks meer doen.' },
+  { cat: 'sales', text: 'Wacht-op-reactie-vlag laat geen offerte vergeten. Doen ze.' },
+  { cat: 'sales', text: 'Email-threading per klant. Hele historie in één scherm.' },
+  { cat: 'sales', text: 'Deals-pipeline met kanban-bord. Verschuiven en doen.' },
+  { cat: 'sales', text: 'Klant uploadt tekening via portaal — direct in \'t project.' },
+  { cat: 'sales', text: 'Akkoord op de telefoon, handtekening met de vinger. Gedaan.' },
+  // ── Vibes
+  { cat: 'vibe', text: 'Eén ding tegelijk.' },
+  { cat: 'vibe', text: 'Begin gewoon. De rest komt.' },
+  { cat: 'vibe', text: 'Liever klaar dan perfect.' },
+  { cat: 'vibe', text: 'Niet praten, doen.' },
+  { cat: 'vibe', text: 'Een dag goed begonnen is half gedaan.' },
+  { cat: 'vibe', text: 'Vandaag is een doen-dag.' },
 ]
+
+const AUTO_CYCLE_MS = 9000
 
 function DoenVibeCard() {
   const [idx, setIdx] = useState(0)
-  const [bumping, setBumping] = useState(false)
+  const [paused, setPaused] = useState(false)
+  const tickRef = useRef<number>(0)
 
+  // Deterministische start per dag
   useEffect(() => {
     const today = new Date()
     const start = new Date(today.getFullYear(), 0, 0).getTime()
     const dayOfYear = Math.floor((today.getTime() - start) / 86400000)
-    setIdx(dayOfYear % DOEN_VIBES.length)
+    setIdx(dayOfYear % DOEN_FACTS.length)
   }, [])
 
+  // Auto-cycle (gepauzeerd bij hover/focus)
+  useEffect(() => {
+    if (paused) return
+    const t = window.setInterval(() => {
+      setIdx(i => (i + 1) % DOEN_FACTS.length)
+    }, AUTO_CYCLE_MS)
+    return () => window.clearInterval(t)
+  }, [paused])
+
   const next = () => {
-    setBumping(true)
-    setIdx(i => (i + 1) % DOEN_VIBES.length)
-    setTimeout(() => setBumping(false), 220)
+    tickRef.current += 1
+    setIdx(i => (i + 1) % DOEN_FACTS.length)
   }
+
+  const fact = DOEN_FACTS[idx]
+  const meta = CAT_META[fact.cat]
+  const Icon = meta.icon
 
   return (
     <button
       type="button"
       onClick={next}
-      className="group rounded-xl p-5 flex flex-col gap-3 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F15025]/30 focus-visible:ring-offset-2"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onFocus={() => setPaused(true)}
+      onBlur={() => setPaused(false)}
+      className="group relative rounded-xl p-5 flex flex-col gap-3 text-left transition-all overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F15025]/30 focus-visible:ring-offset-2"
       style={{
         background: 'linear-gradient(135deg, #FCFAF5 0%, #F5EFE3 100%)',
         boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+        minHeight: 168,
       }}
-      aria-label="Volgende doen-vibe"
+      aria-label={`${meta.label} — klik voor volgende doen-fact`}
     >
-      <div className="flex items-start justify-between">
+      {/* Decoratief Sparkles drift-bg, héél subtiel */}
+      <span aria-hidden className="absolute -top-3 -right-3 opacity-[0.07] pointer-events-none">
+        <Icon className="w-24 h-24" style={{ color: meta.color }} strokeWidth={1.2} />
+      </span>
+
+      <div className="relative flex items-start justify-between">
         <span
-          className="inline-flex items-center justify-center w-9 h-9 rounded-lg flex-shrink-0"
+          key={`chip-${idx}`}
+          className="inline-flex items-center justify-center w-9 h-9 rounded-lg flex-shrink-0 doen-fact-chip"
           style={{
-            background: 'linear-gradient(135deg, #FDE8E4 0%, #FBD7CC 100%)',
+            background: meta.bg,
             boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.5)',
           }}
         >
-          <Sparkles className="w-4 h-4" style={{ color: '#F15025' }} />
+          <Icon className="w-4 h-4" style={{ color: meta.color }} />
         </span>
         <span className="text-[11px] uppercase tracking-wider text-[#9B9B95] font-semibold">
           doen<span className="text-[#F15025]">.</span>
@@ -86,20 +153,34 @@ function DoenVibeCard() {
       </div>
 
       <p
-        className={`flex-1 text-[18px] leading-[1.25] text-[#1A1A1A] transition-all duration-200 ${bumping ? 'opacity-0 translate-y-0.5' : 'opacity-100 translate-y-0'}`}
+        key={`text-${idx}`}
+        className="relative flex-1 text-[16px] leading-[1.3] text-[#1A1A1A] doen-fact-text"
         style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
       >
-        {DOEN_VIBES[idx]}
+        {fact.text}
       </p>
 
-      <div className="flex items-end justify-between gap-3 mt-auto">
-        <span className="text-[11px] text-[#9B9B95] opacity-0 group-hover:opacity-100 transition-opacity">
-          Klik voor de volgende
+      <div className="relative flex items-end justify-between gap-3 mt-auto">
+        <span className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-[#9B9B95] font-semibold">
+          {meta.label}
+          <ArrowRight className="w-3 h-3 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
         </span>
         <span className="text-[10px] font-mono text-[#9B9B95]">
-          {String(idx + 1).padStart(2, '0')}/{String(DOEN_VIBES.length).padStart(2, '0')}
+          {String(idx + 1).padStart(2, '0')}/{String(DOEN_FACTS.length).padStart(2, '0')}
         </span>
       </div>
+
+      {/* Auto-cycle progress bar */}
+      <span
+        aria-hidden
+        key={`bar-${idx}-${paused ? 'p' : 'r'}`}
+        className="absolute left-0 bottom-0 h-[2px] doen-fact-bar"
+        style={{
+          background: `linear-gradient(90deg, ${meta.color}40 0%, ${meta.color} 100%)`,
+          animationDuration: `${AUTO_CYCLE_MS}ms`,
+          animationPlayState: paused ? 'paused' : 'running',
+        }}
+      />
     </button>
   )
 }
