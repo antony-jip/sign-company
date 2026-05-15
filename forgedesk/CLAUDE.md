@@ -50,6 +50,31 @@ freelancers of gevoelige cross-org scenarios.
 Voor complexe features: @Planner → plan → akkoord → @dev → commits → 
 @QAA → review. Zie LOG.md voor recente beslissingen per module.
 
+## Review-loop (verplicht na elke commit op feature-branches)
+
+Na elke commit op een feature-branch, vóórdat naar de volgende stap 
+overgegaan wordt:
+
+1. Spawn `senior-backend-reviewer` subagent met instructie:
+   "Review de laatste commit op branch <branch-naam>. Lees de diff via 
+    `git show HEAD`. Lever GATE-REVIEW volgens jouw format."
+
+2. Bij Verdict = BLOKKADE: fix de blokkades, commit als 
+   `"fix(review): address <topic> from senior review"`, spawn reviewer 
+   opnieuw. Herhaal tot AKKOORD of AKKOORD-MET-OPMERKINGEN.
+
+3. Bij Verdict = AKKOORD-MET-OPMERKINGEN: log opmerkingen in 
+   REVIEW_NOTES.md, ga door.
+
+4. Bij Verdict = AKKOORD: ga direct door.
+
+Aan het einde van elke FASE (voor de gate naar Antony): spawn de reviewer 
+nog één keer met instructie "review de hele fase, niet alleen de laatste 
+commit". Rapporteer Antony's gate-update mét reviewer's eindoordeel.
+
+Antony ziet dus per gate: status + reviewer-verdict + eventuele 
+opmerkingen-lijst. Hij hoeft de diff niet zelf te lezen.
+
 ## Niet aanraken zonder reden
 - src/components/planning/MontagePlanningLayout.tsx week/maand D&D logica
 - supabaseService.ts splitsen (5700 regels, blijft zoals het is)
