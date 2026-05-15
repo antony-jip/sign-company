@@ -281,6 +281,8 @@ export function PortaalPagina() {
         logoUrl={toonLogo ? bedrijf.logo_url : undefined}
         verlooptOp={portaal.verloopt_op}
         projectNaam={project?.naam}
+        primaireKleur={bedrijf.primaire_kleur}
+        bedrijfskleurenGebruiken={instellingen.bedrijfskleuren_gebruiken !== false}
       />
 
       {/* Project bar */}
