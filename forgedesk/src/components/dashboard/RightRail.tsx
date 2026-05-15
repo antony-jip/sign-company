@@ -218,24 +218,13 @@ function TeamCard() {
     const weekEnd = new Date(weekStart)
     weekEnd.setDate(weekStart.getDate() + 7)
 
-    const weekMontages = montages.filter(m => {
-      const d = new Date(m.datum)
-      return d >= weekStart && d < weekEnd
-    })
-    const afgerond = weekMontages.filter(m => m.status === 'afgerond').length
-    const onTime = weekMontages.length > 0 ? Math.round((afgerond / weekMontages.length) * 100) : 100
-
-    const weekFacturen = facturen.filter(f => {
-      const d = new Date(f.factuurdatum || f.created_at)
-      return d >= weekStart && d < weekEnd
-    })
-    const omzet = weekFacturen.reduce((s, f) => s + (f.totaal || 0), 0)
-
     const actief = new Set<string>()
-    weekMontages.forEach(m => m.monteurs?.forEach(id => actief.add(id)))
-
-    return { montages: weekMontages.length, onTime, omzet, actief: actief.size }
-  }, [montages, facturen])
+    montages.forEach(m => {
+      const d = new Date(m.datum)
+      if (d >= weekStart && d < weekEnd) m.monteurs?.forEach(id => actief.add(id))
+    })
+    return { actief: actief.size }
+  }, [montages])
 
   const activiteit = useMemo<ActivityItem[]>(() => {
     const out: ActivityItem[] = []
@@ -315,42 +304,20 @@ function TeamCard() {
       className="rounded-xl bg-white p-6"
       style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}
     >
-      <header className="flex items-baseline justify-between mb-5">
+      <header className="flex items-baseline justify-between mb-4">
         <h2 className="text-[14px] font-bold text-[#1A1A1A]">
-          Team
+          Gedaan<span className="text-[#F15025]">.</span>
           <span
             className="text-[#9B9B95] ml-2 font-normal"
             style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
           >
-            — deze week
+            — team-log
           </span>
         </h2>
         <span className="text-[11px] font-mono text-[#9B9B95]">
           {stats.actief} actief
         </span>
       </header>
-
-      <div className="grid grid-cols-3 gap-3 mb-5 pb-5 border-b border-[#EBEBEB]">
-        <div>
-          <p className="font-heading font-bold text-[22px] text-[#1A1A1A] leading-none">
-            {stats.montages}
-          </p>
-          <p className="text-[10px] uppercase tracking-wider text-[#9B9B95] mt-1">Montages</p>
-        </div>
-        <div>
-          <p className="font-heading font-bold text-[22px] text-[#1A1A1A] leading-none">
-            {stats.onTime}%
-          </p>
-          <p className="text-[10px] uppercase tracking-wider text-[#9B9B95] mt-1">On-time</p>
-        </div>
-        <div>
-          <p className="font-heading font-bold text-[22px] text-[#1A1A1A] leading-none">
-            <span className="text-[14px] text-[#9B9B95] mr-0.5">€</span>
-            <span className="font-mono">{Math.round(stats.omzet / 1000)}k</span>
-          </p>
-          <p className="text-[10px] uppercase tracking-wider text-[#9B9B95] mt-1">Omzet</p>
-        </div>
-      </div>
 
       {activiteit.length === 0 ? (
         <p className="text-sm text-[#9B9B95] py-2">Nog geen activiteit deze week.</p>
