@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useDashboardData } from '@/contexts/DashboardDataContext'
@@ -8,6 +8,7 @@ import { formatCurrency, cn } from '@/lib/utils'
 import { formatDistanceToNow } from 'date-fns'
 import { nl } from 'date-fns/locale'
 import { ActiviteitLog } from './ActiviteitLog'
+import { MedewerkerFilterCombobox } from '@/components/shared/MedewerkerFilterCombobox'
 import type { Medewerker, Klant } from '@/types'
 
 const DAG_HEADERS = ['M', 'D', 'W', 'D', 'V', 'Z', 'Z']
@@ -65,7 +66,20 @@ interface WeekEvent {
 
 function DezeWeekCard() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const { montages, events, klanten, medewerkers } = useDashboardData()
+
+  const currentMedewerker = useMemo(
+    () => medewerkers.find(m => m.user_id === user?.id) ?? null,
+    [medewerkers, user?.id],
+  )
+
+  const [filterNaam, setFilterNaam] = useState<string>('')
+
+  // Default to the current user's medewerker zodra die bekend is
+  useEffect(() => {
+    if (currentMedewerker && !filterNaam) setFilterNaam(currentMedewerker.naam)
+  }, [currentMedewerker, filterNaam])
 
   const today = new Date()
   const weekStart = startOfWeek(today)
@@ -75,6 +89,14 @@ function DezeWeekCard() {
 
   const items = useMemo<WeekEvent[]>(() => {
     const klantById = new Map<string, Klant>(klanten.map(k => [k.id, k]))
+    const target = filterNaam ? medewerkers.find(m => m.naam === filterNaam) : null
+    const matchesFilter = (people: string[] | undefined): boolean => {
+      if (!filterNaam) return true
+      if (!target) return false
+      if (!people || people.length === 0) return false
+      return people.some(p => p === target.id || p === target.naam)
+    }
+
     const list: WeekEvent[] = []
     const weekEnd = new Date(weekStart)
     weekEnd.setDate(weekStart.getDate() + 7)
@@ -82,6 +104,7 @@ function DezeWeekCard() {
     montages.forEach(m => {
       const d = new Date(m.datum)
       if (d < weekStart || d >= weekEnd) return
+      if (!matchesFilter(m.monteurs)) return
       const tijd = m.start_tijd ? m.start_tijd.slice(0, 5) : null
       const monteur = findMedewerker(m.monteurs?.[0], medewerkers)
       const klant = klantById.get(m.klant_id)
@@ -100,6 +123,7 @@ function DezeWeekCard() {
     events.forEach(e => {
       const d = new Date(e.start_datum)
       if (d < weekStart || d >= weekEnd) return
+      if (!matchesFilter(e.deelnemers)) return
       const hours = String(d.getHours()).padStart(2, '0')
       const mins = String(d.getMinutes()).padStart(2, '0')
       const tijd = hours === '00' && mins === '00' ? null : `${hours}:${mins}`
@@ -117,20 +141,31 @@ function DezeWeekCard() {
 
     return list
       .sort((a, b) => a.date.getTime() - b.date.getTime())
-      .slice(0, 5)
-  }, [montages, events, klanten, medewerkers, weekStart])
+      .slice(0, 8)
+  }, [montages, events, klanten, medewerkers, weekStart, filterNaam])
 
   return (
     <section
       className="rounded-xl bg-white p-6"
       style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}
     >
-      <header className="flex items-baseline justify-between mb-4">
+      <header className="flex items-baseline justify-between mb-3">
         <h2 className="text-[14px] font-bold text-[#1A1A1A]">Deze week</h2>
         <span className="text-[11px] font-mono uppercase tracking-wider text-[#9B9B95]">
           {monthLabel}
         </span>
       </header>
+
+      <div className="mb-4">
+        <MedewerkerFilterCombobox
+          medewerkers={medewerkers}
+          value={filterNaam}
+          onChange={setFilterNaam}
+          allLabel="Iedereen"
+          placeholder="Zoek medewerker…"
+          className="w-full"
+        />
+      </div>
 
       <div className="grid grid-cols-7 gap-1 mb-5">
         {DAG_HEADERS.map((d, i) => {
@@ -364,8 +399,8 @@ function TeamCard() {
 export function RightRail() {
   return (
     <aside className="space-y-4 w-full xl:w-[320px] xl:flex-shrink-0">
-      <ActiviteitLog />
       <DezeWeekCard />
+      <ActiviteitLog />
       <TeamCard />
     </aside>
   )
