@@ -135,15 +135,12 @@ export function ActiviteitLog() {
                     <Icon className="h-3.5 w-3.5" style={{ color: style.color }} />
                   </span>
                   <span className="flex-1 min-w-0">
-                    <span className="block text-[13px] text-[#1A1A1A] truncate">
-                      <span className="font-medium">{style.label}</span>
-                      <span className="text-[#6B6B66]"> — {e.klant}</span>
+                    <span className="block text-[13px] font-medium text-[#1A1A1A] truncate">
+                      {style.label}
                     </span>
-                    {e.detail && (
-                      <span className="block text-[11px] font-mono text-[#9B9B95] truncate">
-                        {e.detail}
-                      </span>
-                    )}
+                    <span className="block text-[12px] text-[#6B6B66] truncate">
+                      {e.klant}
+                    </span>
                   </span>
                   <span className="text-[11px] font-mono text-[#9B9B95] flex-shrink-0">
                     {formatDistanceToNow(e.date, { addSuffix: false, locale: nl })}
