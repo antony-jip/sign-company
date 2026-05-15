@@ -369,6 +369,8 @@ export interface EmailTemplate {
   naam: string
   onderwerp: string
   body: string
+  trigger_task_naam: string | null
+  is_systeem: boolean
   created_at: string
   updated_at: string
 }

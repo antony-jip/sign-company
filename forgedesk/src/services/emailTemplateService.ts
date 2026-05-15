@@ -1,6 +1,8 @@
 // Email template service for Doen.
 // All templates are in Dutch and return { subject, html, text } objects
 
+import { supabase, isSupabaseConfigured } from './supabaseHelpers'
+
 // ---------------------------------------------------------------------------
 // Interfaces
 // ---------------------------------------------------------------------------
@@ -572,3 +574,221 @@ export function tekeningGoedkeuringTemplate(data: TekeningGoedkeuringData): Emai
   return { subject, html, text }
 }
 
+// ---------------------------------------------------------------------------
+// Systeem-templates uit email_templates (DB-driven, fase 3 communicatie-tab)
+// ---------------------------------------------------------------------------
+
+export interface DefaultTemplate {
+  naam: string
+  onderwerp: string
+  body: string
+}
+
+/**
+ * Canonieke default-content voor systeem-templates. Identiek aan de seed
+ * in `supabase/migrations/103_email_templates_activeren.sql`; dient als
+ * fallback wanneer DB onbereikbaar is en als bron voor de "Herstel
+ * standaard"-knop in de template-editor. Bij wijziging hier OOK 103
+ * bijwerken zodat nieuwe orgs niet met verouderde content seeden.
+ */
+export const DEFAULT_TEMPLATES: Record<string, DefaultTemplate> = {
+  offerte_opvolging_dag1: {
+    naam: 'Offerte-opvolging dag 1',
+    onderwerp: 'Herinnering: offerte {{offerte_nummer}}',
+    body: `Hoi {{contactpersoon}},
+
+Een paar dagen geleden stuurden we je offerte {{offerte_nummer}}. Heb je de offerte kunnen bekijken? We horen graag of je nog vragen hebt.
+
+Bekijk de offerte hier: {{portaal_url}}
+
+Met vriendelijke groet,
+{{bedrijfsnaam}}`,
+  },
+  offerte_opvolging_dag7: {
+    naam: 'Offerte-opvolging dag 7',
+    onderwerp: 'Vraag over offerte {{offerte_nummer}}',
+    body: `Hoi {{contactpersoon}},
+
+We hebben nog geen reactie ontvangen op offerte {{offerte_nummer}}. Past het tarief, of zijn er onderdelen die we kunnen aanpassen? Laat het ons gerust weten.
+
+Bekijk de offerte hier: {{portaal_url}}
+
+Met vriendelijke groet,
+{{bedrijfsnaam}}`,
+  },
+  factuur_herinnering_1: {
+    naam: 'Factuur-herinnering 1',
+    onderwerp: 'Vriendelijke herinnering factuur {{factuur_nummer}}',
+    body: `Hoi {{contactpersoon}},
+
+Factuur {{factuur_nummer}} van {{factuur_bedrag}} stond vervallen op {{verval_datum}}. Wil je het bedrag overmaken? Heb je de factuur al voldaan, dan kun je dit bericht negeren.
+
+Bekijk de factuur hier: {{portaal_url}}
+
+Met vriendelijke groet,
+{{bedrijfsnaam}}`,
+  },
+  factuur_herinnering_2: {
+    naam: 'Factuur-herinnering 2',
+    onderwerp: 'Tweede herinnering factuur {{factuur_nummer}}',
+    body: `Hoi {{contactpersoon}},
+
+Factuur {{factuur_nummer}} van {{factuur_bedrag}} is nog niet voldaan. We willen je vriendelijk verzoeken het bedrag binnen 7 dagen over te maken.
+
+Bekijk de factuur hier: {{portaal_url}}
+
+Met vriendelijke groet,
+{{bedrijfsnaam}}`,
+  },
+  factuur_herinnering_3: {
+    naam: 'Factuur-herinnering 3',
+    onderwerp: 'Laatste herinnering factuur {{factuur_nummer}}',
+    body: `Hoi {{contactpersoon}},
+
+Dit is de laatste herinnering voor factuur {{factuur_nummer}} van {{factuur_bedrag}}. We ontvangen graag binnen 7 dagen je betaling. Mocht er iets in de weg staan, neem dan contact met ons op.
+
+Bekijk de factuur hier: {{portaal_url}}
+
+Met vriendelijke groet,
+{{bedrijfsnaam}}`,
+  },
+  portaal_uitnodiging: {
+    naam: 'Portaal-uitnodiging',
+    onderwerp: 'Welkom in het klantportaal van {{bedrijfsnaam}}',
+    body: `Hoi {{contactpersoon}},
+
+Hierbij je persoonlijke toegang tot het klantportaal van {{bedrijfsnaam}}. Je vindt hier alle documenten, offertes en facturen voor project {{project_naam}}.
+
+Open het portaal: {{portaal_url}}
+
+Met vriendelijke groet,
+{{bedrijfsnaam}}`,
+  },
+  portaal_herinnering: {
+    naam: 'Portaal-herinnering',
+    onderwerp: 'Herinnering: actie nodig in je portaal',
+    body: `Hoi {{contactpersoon}},
+
+Er staat nog een openstaande actie voor je klaar in het portaal van {{bedrijfsnaam}}. Wil je even kijken wanneer het je uitkomt?
+
+Open het portaal: {{portaal_url}}
+
+Met vriendelijke groet,
+{{bedrijfsnaam}}`,
+  },
+  onboarding_dag3: {
+    naam: 'Onboarding dag 3',
+    onderwerp: 'Aan de slag met doen.',
+    body: `Hey {{voornaam}},
+
+Drie dagen geleden ben je begonnen met doen. Hoe bevalt het? We helpen je graag verder als je ergens vastloopt.
+
+Open je dashboard: {{app_url}}
+
+Vragen? Mail ons op hello@doen.team.`,
+  },
+  onboarding_dag7: {
+    naam: 'Onboarding dag 7',
+    onderwerp: 'Hoe gaat het met doen.?',
+    body: `Hey {{voornaam}},
+
+Een week onderweg met doen. Veel gebruikers vinden de combinatie offertes plus portaal de grootste tijdwinst. Heb je dat al uitgeprobeerd?
+
+Open je dashboard: {{app_url}}
+
+Vragen? Mail ons op hello@doen.team.`,
+  },
+  trial_reminder_5: {
+    naam: 'Trial-reminder 5d',
+    onderwerp: 'Nog 5 dagen in je proefperiode',
+    body: `Hey {{voornaam}},
+
+Je hebt nog 5 dagen in je proefperiode van doen. Activeer je abonnement wanneer je klaar bent om door te gaan. Je houdt al je data.
+
+Bekijk abonnement: {{abonnement_url}}`,
+  },
+  trial_reminder_2: {
+    naam: 'Trial-reminder 2d',
+    onderwerp: 'Je proefperiode loopt bijna af',
+    body: `Hey {{voornaam}},
+
+Je proefperiode van doen. loopt over 2 dagen af. Activeer nu je abonnement om zonder onderbreking door te werken.
+
+Activeer abonnement: {{abonnement_url}}`,
+  },
+  trial_reminder_0: {
+    naam: 'Trial-reminder 0d',
+    onderwerp: 'Je proefperiode is vandaag afgelopen',
+    body: `Hey {{voornaam}},
+
+Je proefperiode van doen. is vandaag afgelopen. Je data blijft bewaard. Activeer je abonnement om weer verder te kunnen werken.
+
+Activeer abonnement: {{abonnement_url}}`,
+  },
+}
+
+export function listDefaults(): typeof DEFAULT_TEMPLATES {
+  return DEFAULT_TEMPLATES
+}
+
+/**
+ * Lees de systeem-template uit DB; fallback op DEFAULT_TEMPLATES bij
+ * offline of ontbrekende rij. Werpt alleen op onbekende trigger-naam.
+ */
+export async function getTemplate(
+  orgId: string,
+  triggerTaskNaam: string,
+): Promise<{ onderwerp: string; body: string }> {
+  const fallback = DEFAULT_TEMPLATES[triggerTaskNaam]
+  if (!fallback) {
+    throw new Error(`Onbekende trigger_task_naam: ${triggerTaskNaam}`)
+  }
+
+  if (!isSupabaseConfigured() || !supabase) {
+    return { onderwerp: fallback.onderwerp, body: fallback.body }
+  }
+
+  const { data, error } = await supabase
+    .from('email_templates')
+    .select('onderwerp, body')
+    .eq('organisatie_id', orgId)
+    .eq('trigger_task_naam', triggerTaskNaam)
+    .eq('is_systeem', true)
+    .maybeSingle()
+
+  if (error || !data) {
+    return { onderwerp: fallback.onderwerp, body: fallback.body }
+  }
+  return { onderwerp: data.onderwerp, body: data.body }
+}
+
+/**
+ * Zet de systeem-template terug naar DEFAULT_TEMPLATES. UPSERT op de
+ * partial UNIQUE `(organisatie_id, trigger_task_naam) WHERE is_systeem`
+ * zodat zowel een ontbrekende rij (nieuwe org) als een door de user
+ * aangepaste rij gladgestreken worden.
+ */
+export async function resetTemplateToDefault(
+  orgId: string,
+  triggerTaskNaam: string,
+): Promise<void> {
+  if (!supabase) throw new Error('Niet geconfigureerd')
+  const def = DEFAULT_TEMPLATES[triggerTaskNaam]
+  if (!def) throw new Error(`Onbekende trigger_task_naam: ${triggerTaskNaam}`)
+
+  const { error } = await supabase
+    .from('email_templates')
+    .upsert(
+      {
+        organisatie_id: orgId,
+        trigger_task_naam: triggerTaskNaam,
+        is_systeem: true,
+        naam: def.naam,
+        onderwerp: def.onderwerp,
+        body: def.body,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'organisatie_id,trigger_task_naam' },
+    )
+  if (error) throw error
+}
