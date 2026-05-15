@@ -121,29 +121,58 @@ function FORGEdeskDashboardInner() {
 
               {weather && WeatherIcon && (
                 <div
-                  className="hidden md:flex flex-col justify-center px-7 py-7 sm:px-8 w-[220px]"
+                  className="hidden md:flex flex-col justify-center px-7 py-7 sm:px-8 w-[220px] relative overflow-hidden"
                   style={{
                     background: 'rgba(255,255,255,0.04)',
                     borderLeft: '1px solid rgba(255,255,255,0.08)',
                   }}
                 >
-                  <div className="flex items-center gap-3 mb-2">
-                    <WeatherIcon
-                      className="w-8 h-8 flex-shrink-0"
-                      strokeWidth={1.4}
-                      style={{ color: weather.isRaining ? '#9DD3DA' : '#F5C460' }}
-                    />
-                    <p className="font-heading font-bold text-white text-[40px] leading-none">
-                      <span className="font-mono">{weather.temperature}</span>
-                      <span className="text-white/60 text-[24px] font-normal">°</span>
+                  {/* drifting cloud silhouettes — rustig parallax-effect */}
+                  <svg
+                    className="hero-cloud-a absolute pointer-events-none"
+                    style={{ top: '18%', left: 0, width: '140%', height: 'auto', opacity: 0.05 }}
+                    viewBox="0 0 200 60"
+                    aria-hidden
+                  >
+                    <g fill="#FFFFFF">
+                      <ellipse cx="40" cy="38" rx="32" ry="20" />
+                      <ellipse cx="78" cy="28" rx="34" ry="22" />
+                      <ellipse cx="118" cy="32" rx="30" ry="20" />
+                      <ellipse cx="152" cy="38" rx="26" ry="18" />
+                    </g>
+                  </svg>
+                  <svg
+                    className="hero-cloud-b absolute pointer-events-none"
+                    style={{ top: '55%', left: 0, width: '110%', height: 'auto', opacity: 0.035 }}
+                    viewBox="0 0 200 60"
+                    aria-hidden
+                  >
+                    <g fill="#FFFFFF">
+                      <ellipse cx="50" cy="35" rx="36" ry="22" />
+                      <ellipse cx="100" cy="28" rx="42" ry="24" />
+                      <ellipse cx="150" cy="36" rx="34" ry="22" />
+                    </g>
+                  </svg>
+
+                  <div className="relative z-10">
+                    <div className="flex items-center gap-3 mb-2">
+                      <WeatherIcon
+                        className="w-8 h-8 flex-shrink-0"
+                        strokeWidth={1.4}
+                        style={{ color: weather.isRaining ? '#9DD3DA' : '#F5C460' }}
+                      />
+                      <p className="font-heading font-bold text-white text-[40px] leading-none">
+                        <span className="font-mono">{weather.temperature}</span>
+                        <span className="text-white/60 text-[24px] font-normal">°</span>
+                      </p>
+                    </div>
+                    <p
+                      className="text-[14px] text-white/80"
+                      style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+                    >
+                      {weather.label}
                     </p>
                   </div>
-                  <p
-                    className="text-[14px] text-white/80"
-                    style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
-                  >
-                    {weather.label}
-                  </p>
                 </div>
               )}
             </div>

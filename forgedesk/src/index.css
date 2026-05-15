@@ -2768,3 +2768,17 @@ button, a, [role="button"], summary, label, input[type="checkbox"], input[type="
 .dark .amount-value {
   color: #E8E6E0;
 }
+
+@keyframes hero-cloud-drift-a {
+  from { transform: translate3d(120%, 0, 0); }
+  to   { transform: translate3d(-160%, 0, 0); }
+}
+@keyframes hero-cloud-drift-b {
+  from { transform: translate3d(120%, 4px, 0); }
+  to   { transform: translate3d(-160%, 4px, 0); }
+}
+.hero-cloud-a { animation: hero-cloud-drift-a 95s linear infinite; }
+.hero-cloud-b { animation: hero-cloud-drift-b 140s linear infinite; animation-delay: -30s; }
+@media (prefers-reduced-motion: reduce) {
+  .hero-cloud-a, .hero-cloud-b { animation: none; }
+}
