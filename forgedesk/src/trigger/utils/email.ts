@@ -2,6 +2,7 @@ import { createTransport } from "nodemailer";
 import crypto from "crypto";
 import { logger } from "@trigger.dev/sdk/v3";
 import { getSupabaseAdmin } from "./supabase";
+import { checkAndMark, rollbackKey } from "./idempotency";
 
 const ENCRYPTION_KEY = process.env.EMAIL_ENCRYPTION_KEY;
 
@@ -69,6 +70,10 @@ export async function getUserEmailCredentials(userId: string): Promise<UserEmail
 
 /**
  * Send email via SMTP using a user's stored credentials.
+ *
+ * Optioneel `idempotencyKey` + `organisatieId` samen meegeven om dubbele
+ * sends (retries, parallel runs) te voorkomen. De pre-send mark wordt
+ * teruggedraaid bij een send-fout zodat een latere retry alsnog werkt.
  */
 export async function sendEmailForUser(params: {
   userId: string;
@@ -76,11 +81,25 @@ export async function sendEmailForUser(params: {
   subject: string;
   text: string;
   html?: string;
-}): Promise<{ success: boolean; error?: string }> {
+  organisatieId?: string;
+  idempotencyKey?: string;
+}): Promise<{ success: boolean; error?: string; skipped?: boolean }> {
+  const useIdempotency = !!(params.idempotencyKey && params.organisatieId);
   try {
     const creds = await getUserEmailCredentials(params.userId);
     if (!creds) {
       return { success: false, error: "Geen email instellingen gevonden" };
+    }
+
+    if (useIdempotency) {
+      const fresh = await checkAndMark(params.organisatieId!, params.idempotencyKey!);
+      if (!fresh) {
+        logger.warn("Email-send overgeslagen (duplicaat)", {
+          to: params.to,
+          key: params.idempotencyKey,
+        });
+        return { success: true, skipped: true };
+      }
     }
 
     const transporter = createTransport({
@@ -97,13 +116,20 @@ export async function sendEmailForUser(params: {
     // If `to` is empty, send to the user's own email (self-notification)
     const toAddress = params.to || creds.gmail_address;
 
-    await transporter.sendMail({
-      from: fromAddress,
-      to: toAddress,
-      subject: params.subject,
-      text: params.text,
-      html: params.html,
-    });
+    try {
+      await transporter.sendMail({
+        from: fromAddress,
+        to: toAddress,
+        subject: params.subject,
+        text: params.text,
+        html: params.html,
+      });
+    } catch (sendErr) {
+      if (useIdempotency) {
+        await rollbackKey(params.organisatieId!, params.idempotencyKey!);
+      }
+      throw sendErr;
+    }
 
     logger.info("Email verzonden", { to: params.to, subject: params.subject });
     return { success: true };
