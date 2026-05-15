@@ -67,6 +67,55 @@ export async function getUserEmailCredentials(userId: string): Promise<UserEmail
   };
 }
 
+function isWrappedHtml(html: string): boolean {
+  const trimmed = html.trimStart().toLowerCase();
+  return trimmed.startsWith("<!doctype") || trimmed.startsWith("<html");
+}
+
+function wrapHtmlDocument(html: string): string {
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body>${html}</body></html>`;
+}
+
+function htmlToPlainText(html: string): string {
+  return html
+    .replace(/<head[\s\S]*?<\/head>/gi, "")
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/(p|div|h[1-6]|li|tr|td)>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&(?:#39|apos);/g, "'")
+    .replace(/&(?:ldquo|rdquo);/g, '"')
+    .replace(/&(?:lsquo|rsquo);/g, "'")
+    .replace(/&#(\d+);/g, (_m, code: string) => String.fromCharCode(Number(code)))
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+/**
+ * Zorgt voor multipart/alternative bij HTML-mails: html-body wordt gewrapt
+ * met DOCTYPE + minimal head zodra dat ontbreekt, en plain-text alternatief
+ * wordt uit de uiteindelijke html afgeleid wanneer de caller geen text gaf,
+ * zodat clients zonder HTML-render geen letterlijke `<br/>` tags zien.
+ * Geëxporteerd zodat ook flows die niet via `sendEmailForUser` lopen
+ * (zoals reply-threading in email-opvolging) hier doorheen kunnen.
+ */
+export function prepareMailBodies(
+  html: string | undefined,
+  text: string,
+): { html: string | undefined; text: string } {
+  if (!html) return { html: undefined, text };
+  const wrappedHtml = isWrappedHtml(html) ? html : wrapHtmlDocument(html);
+  const finalText = text && text.trim().length > 0 ? text : htmlToPlainText(wrappedHtml);
+  return { html: wrappedHtml, text: finalText };
+}
+
 /**
  * Send email via SMTP using a user's stored credentials.
  */
@@ -97,12 +146,14 @@ export async function sendEmailForUser(params: {
     // If `to` is empty, send to the user's own email (self-notification)
     const toAddress = params.to || creds.gmail_address;
 
+    const { html: finalHtml, text: finalText } = prepareMailBodies(params.html, params.text);
+
     await transporter.sendMail({
       from: fromAddress,
       to: toAddress,
       subject: params.subject,
-      text: params.text,
-      html: params.html,
+      text: finalText,
+      html: finalHtml,
     });
 
     logger.info("Email verzonden", { to: params.to, subject: params.subject });
