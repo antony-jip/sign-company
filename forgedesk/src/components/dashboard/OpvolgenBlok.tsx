@@ -78,13 +78,15 @@ export function OpvolgenBlok() {
                 <button
                   type="button"
                   onClick={() => navigate(`/offertes/${item.id}`)}
-                  className="group w-full flex items-center gap-4 py-3 px-2 -mx-2 rounded-lg hover:bg-[#F8F7F5] transition-colors text-left focus-visible:outline-none focus-visible:bg-[#F8F7F5]"
+                  className="group w-full flex items-center gap-3 py-3 px-2 -mx-2 rounded-lg hover:bg-[#F8F7F5] transition-colors text-left focus-visible:outline-none focus-visible:bg-[#F8F7F5]"
                 >
-                  <span className="flex-1 min-w-0 truncate text-sm text-[#1A1A1A] font-medium">
-                    {item.klantNaam}
-                  </span>
-                  <span className="hidden sm:block font-mono text-[12px] text-[#6B6B66] w-24 flex-shrink-0">
-                    {item.nummer}
+                  <span className="flex-1 min-w-0">
+                    <span className="block text-sm text-[#1A1A1A] font-medium truncate">
+                      {item.klantNaam}
+                    </span>
+                    <span className="block text-[11px] font-mono text-[#9B9B95] truncate">
+                      {item.nummer}
+                    </span>
                   </span>
                   <span className="font-mono text-sm text-[#1A1A1A] w-24 text-right flex-shrink-0">
                     {formatCurrency(item.bedrag)}
