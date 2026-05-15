@@ -788,7 +788,7 @@ export async function resetTemplateToDefault(
         body: def.body,
         updated_at: new Date().toISOString(),
       },
-      { onConflict: 'organisatie_id,trigger_task_naam' },
+      { onConflict: 'uniq_email_templates_systeem_per_org' },
     )
   if (error) throw error
 }

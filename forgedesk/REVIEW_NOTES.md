@@ -27,6 +27,36 @@ Open punten uit eindreview commit `fa400894`:
 
 ---
 
+## Fase 3a — `feat/communicatie-tab` (2026-05-15)
+
+Open punten uit per-commit reviews:
+
+- **getTemplateAdmin in `src/trigger/utils/`** (fase 3d-prerequisite):
+  `emailTemplateService.getTemplate` gebruikt de browser/SSR
+  supabase-client met RLS. Trigger.dev runs hebben geen sessie-cookie en
+  zouden via die client lege resultaten krijgen → silent fallback naar
+  DEFAULT_TEMPLATES, terwijl org-customisaties genegeerd worden. Vóór
+  fase 3d: maak een trigger-vriendelijke `getTemplateAdmin(orgId, key)`
+  in `src/trigger/utils/` die `getSupabaseAdmin()` gebruikt en
+  `DEFAULT_TEMPLATES` importeert uit `emailTemplateService`.
+- **Logging bij fallback in `getTemplate`** (fase 3d): in trigger-context
+  helpt `logger.warn` bij DB-error of missing-row zodat
+  org-fallback-events zichtbaar zijn in Trigger.dev-dashboard.
+- **Drift-test DEFAULT_TEMPLATES vs migration 103**: 12 strings staan
+  byte-voor-byte op twee plekken. Toekomstige wijziging riskeert drift
+  zonder dat iemand het merkt. Niet urgent, te overwegen vóór release:
+  test die 103 parset en met `DEFAULT_TEMPLATES` vergelijkt.
+- **Discriminated union voor idempotency-params** (cosmetic): in plaats
+  van twee `!`-asserties op `params.idempotencyKey!`/`organisatieId!`,
+  een `idempotency?: { key: string; organisatieId: string }` object dat
+  de "alleen samen geldig"-invariant typevangt. Doe als de helper in
+  meer call-sites geïntegreerd wordt (fase 3d).
+- **TTL/cleanup op `email_send_idempotency`**: monotonische groei. Cron
+  die rijen > 90 dagen verwijdert, of partitioneren op maand. Niet
+  urgent, plan voor operations-item.
+
+---
+
 ## Fase 2 — `feat/communicatie-tab` (2026-05-15)
 
 Commits: `31b086ce`, `b512f569`, plus fase-eind tweaks.
