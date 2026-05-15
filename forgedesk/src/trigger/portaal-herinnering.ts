@@ -253,15 +253,19 @@ async function processUserHerinneringen(params: {
       }
     }
 
+    // heading komt uit een echte template (DB of legacy instellingen) zodra
+    // organisatieId is gevonden of de legacy template_herinnering ingevuld is;
+    // anders fallback op een literal-heading + heading-als-beschrijving.
+    const heeftBodyTemplate = !!organisatieId || !!template?.inhoud;
     const emailResult = await sendClientEmail({
       to: klant.email,
       replyTo,
       subject: onderwerp,
       bedrijfsnaam,
       fromName,
-      heading: template?.inhoud ? heading : `Herinnering: ${item.titel}`,
+      heading: heeftBodyTemplate ? heading : `Herinnering: ${item.titel}`,
       itemTitel: item.titel,
-      beschrijving: template?.inhoud ? undefined : heading,
+      beschrijving: heeftBodyTemplate ? undefined : heading,
       ctaUrl: portaalUrl,
       ctaLabel: "Bekijk in portaal →",
       logoUrl,
