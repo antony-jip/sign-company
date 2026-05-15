@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useDashboardData } from '@/contexts/DashboardDataContext'
 import { getAvatarStyle } from '@/utils/medewerkerAvatar'
@@ -7,8 +8,8 @@ import { isAdminUser } from '@/utils/authHelpers'
 import { formatCurrency, cn } from '@/lib/utils'
 import { formatDistanceToNow } from 'date-fns'
 import { nl } from 'date-fns/locale'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { ActiviteitLog } from './ActiviteitLog'
-import { MedewerkerFilterCombobox } from '@/components/shared/MedewerkerFilterCombobox'
 import type { Medewerker, Klant } from '@/types'
 
 const DAG_HEADERS = ['M', 'D', 'W', 'D', 'V', 'Z', 'Z']
@@ -64,6 +65,113 @@ interface WeekEvent {
   date: Date
 }
 
+const DAY_LABELS = ['ma', 'di', 'wo', 'do', 'vr', 'za', 'zo']
+
+function MedewerkerToggleRow({
+  medewerkers,
+  value,
+  onChange,
+}: {
+  medewerkers: Medewerker[]
+  value: string
+  onChange: (v: string) => void
+}) {
+  const [overflowOpen, setOverflowOpen] = useState(false)
+  const actief = useMemo(() => medewerkers.filter(m => m.status === 'actief'), [medewerkers])
+  const visible = actief.slice(0, 3)
+  const overflow = actief.slice(3)
+  const overflowSelected = overflow.find(m => m.naam === value) ?? null
+
+  return (
+    <div className="flex items-center gap-1.5 flex-wrap">
+      <button
+        type="button"
+        onClick={() => onChange('')}
+        className={cn(
+          'h-7 px-2.5 rounded-full text-[11px] font-semibold transition-colors',
+          value === ''
+            ? 'bg-[#1A535C] text-white'
+            : 'bg-[#F8F7F5] text-[#6B6B66] hover:bg-[#EBEBEB]',
+        )}
+      >
+        Iedereen
+      </button>
+      {visible.map((m, idx) => {
+        const style = getAvatarStyle(idx)
+        const isActive = value === m.naam
+        return (
+          <button
+            key={m.id}
+            type="button"
+            onClick={() => onChange(m.naam)}
+            title={m.naam}
+            aria-pressed={isActive}
+            className={cn(
+              'inline-flex items-center justify-center w-7 h-7 rounded-full text-[10px] font-semibold transition-all',
+              isActive
+                ? 'ring-2 ring-[#1A535C] ring-offset-1 ring-offset-white'
+                : 'opacity-75 hover:opacity-100',
+            )}
+            style={{ backgroundColor: style.backgroundColor, color: style.color }}
+          >
+            {initialen(m.naam)}
+          </button>
+        )
+      })}
+      {overflow.length > 0 && (
+        <Popover open={overflowOpen} onOpenChange={setOverflowOpen}>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              className={cn(
+                'inline-flex items-center justify-center h-7 px-1.5 rounded-full text-[11px] transition-colors gap-0.5',
+                overflowSelected
+                  ? 'bg-[#1A535C] text-white'
+                  : 'bg-[#F8F7F5] text-[#6B6B66] hover:bg-[#EBEBEB]',
+              )}
+              title="Meer medewerkers"
+            >
+              {overflowSelected ? initialen(overflowSelected.naam) : <span>+{overflow.length}</span>}
+              <ChevronDown className="w-3 h-3" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-44 p-1">
+            <ul className="space-y-0.5">
+              {overflow.map((m, idx) => {
+                const style = getAvatarStyle((visible.length + idx) % 5)
+                const isActive = value === m.naam
+                return (
+                  <li key={m.id}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onChange(m.naam)
+                        setOverflowOpen(false)
+                      }}
+                      className={cn(
+                        'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-[12px] transition-colors',
+                        isActive ? 'bg-[#F8F7F5] font-semibold text-[#1A535C]' : 'hover:bg-[#F8F7F5] text-[#1A1A1A]',
+                      )}
+                    >
+                      <span
+                        className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[9px] font-semibold"
+                        style={{ backgroundColor: style.backgroundColor, color: style.color }}
+                      >
+                        {initialen(m.naam)}
+                      </span>
+                      <span className="truncate">{m.naam}</span>
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
+          </PopoverContent>
+        </Popover>
+      )}
+    </div>
+  )
+}
+
 function DezeWeekCard() {
   const navigate = useNavigate()
   const { user } = useAuth()
@@ -75,6 +183,7 @@ function DezeWeekCard() {
   )
 
   const [filterNaam, setFilterNaam] = useState<string>('')
+  const [weekOffset, setWeekOffset] = useState(0)
 
   // Default to the current user's medewerker zodra die bekend is
   useEffect(() => {
@@ -82,10 +191,18 @@ function DezeWeekCard() {
   }, [currentMedewerker, filterNaam])
 
   const today = new Date()
-  const weekStart = startOfWeek(today)
-  const todayIdx = (today.getDay() + 6) % 7
+  const reference = useMemo(() => {
+    const d = new Date()
+    d.setDate(d.getDate() + weekOffset * 7)
+    return d
+  }, [weekOffset])
 
-  const monthLabel = today.toLocaleDateString('nl-NL', { month: 'long', year: 'numeric' }).toLowerCase()
+  const weekStart = useMemo(() => startOfWeek(reference), [reference])
+  const todayIdx = weekOffset === 0 ? (today.getDay() + 6) % 7 : -1
+
+  const monthLabel = reference
+    .toLocaleDateString('nl-NL', { month: 'long', year: 'numeric' })
+    .toLowerCase()
 
   const items = useMemo<WeekEvent[]>(() => {
     const klantById = new Map<string, Klant>(klanten.map(k => [k.id, k]))
@@ -149,21 +266,46 @@ function DezeWeekCard() {
       className="rounded-xl bg-white p-6"
       style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}
     >
-      <header className="flex items-baseline justify-between mb-3">
-        <h2 className="text-[14px] font-bold text-[#1A1A1A]">Deze week</h2>
-        <span className="text-[11px] font-mono uppercase tracking-wider text-[#9B9B95]">
-          {monthLabel}
-        </span>
+      <header className="flex items-center justify-between mb-3">
+        <h2 className="text-[14px] font-bold text-[#1A1A1A]">
+          {weekOffset === 0 ? 'Deze week' : weekOffset === -1 ? 'Vorige week' : weekOffset === 1 ? 'Volgende week' : `Week ${weekOffset > 0 ? '+' : ''}${weekOffset}`}
+        </h2>
+        <div className="flex items-center gap-0.5">
+          <button
+            type="button"
+            onClick={() => setWeekOffset(o => o - 1)}
+            className="p-1 rounded-md hover:bg-[#F8F7F5] transition-colors"
+            aria-label="Vorige week"
+          >
+            <ChevronLeft className="w-3.5 h-3.5 text-[#6B6B66]" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setWeekOffset(0)}
+            className={cn(
+              'text-[11px] font-mono uppercase tracking-wider px-1.5 transition-colors',
+              weekOffset === 0 ? 'text-[#9B9B95] cursor-default' : 'text-[#1A535C] hover:underline',
+            )}
+            title="Naar deze week"
+          >
+            {monthLabel}
+          </button>
+          <button
+            type="button"
+            onClick={() => setWeekOffset(o => o + 1)}
+            className="p-1 rounded-md hover:bg-[#F8F7F5] transition-colors"
+            aria-label="Volgende week"
+          >
+            <ChevronRight className="w-3.5 h-3.5 text-[#6B6B66]" />
+          </button>
+        </div>
       </header>
 
       <div className="mb-4">
-        <MedewerkerFilterCombobox
+        <MedewerkerToggleRow
           medewerkers={medewerkers}
           value={filterNaam}
           onChange={setFilterNaam}
-          allLabel="Iedereen"
-          placeholder="Zoek medewerker…"
-          className="w-full"
         />
       </div>
 
@@ -191,30 +333,38 @@ function DezeWeekCard() {
       {items.length === 0 ? (
         <p className="text-sm text-[#9B9B95] py-2">Geen afspraken deze week.</p>
       ) : (
-        <ul className="space-y-3">
-          {items.map(item => (
-            <li key={item.id}>
-              <button
-                type="button"
-                onClick={() => navigate(item.href)}
-                className="w-full flex items-start gap-3 text-left hover:bg-[#F8F7F5] rounded-md -mx-2 px-2 py-1 transition-colors"
-              >
-                <span className="font-mono text-[11px] text-[#6B6B66] w-10 pt-0.5 flex-shrink-0">
-                  {item.tijd ?? '—'}
-                </span>
-                <span className="flex-1 min-w-0">
-                  <span className="block text-[13px] text-[#1A1A1A] truncate">{item.titel}</span>
-                  {item.sub && (
-                    <span className="block text-[11px] text-[#9B9B95] truncate">{item.sub}</span>
-                  )}
-                </span>
-                <span
-                  className="w-1.5 h-1.5 rounded-full flex-shrink-0 mt-2"
-                  style={{ backgroundColor: item.dotColor }}
-                />
-              </button>
-            </li>
-          ))}
+        <ul className="space-y-3 max-h-[280px] overflow-y-auto pr-1 -mr-2">
+          {items.map(item => {
+            const dayIdx = (item.date.getDay() + 6) % 7
+            return (
+              <li key={item.id}>
+                <button
+                  type="button"
+                  onClick={() => navigate(item.href)}
+                  className="w-full flex items-start gap-3 text-left hover:bg-[#F8F7F5] rounded-md -mx-2 px-2 py-1 transition-colors"
+                >
+                  <span className="w-10 pt-0.5 flex-shrink-0 leading-tight">
+                    <span className="block text-[10px] uppercase text-[#9B9B95] font-semibold">
+                      {DAY_LABELS[dayIdx]}
+                    </span>
+                    <span className="block font-mono text-[11px] text-[#6B6B66]">
+                      {item.tijd ?? '—'}
+                    </span>
+                  </span>
+                  <span className="flex-1 min-w-0">
+                    <span className="block text-[13px] text-[#1A1A1A] truncate">{item.titel}</span>
+                    {item.sub && (
+                      <span className="block text-[11px] text-[#9B9B95] truncate">{item.sub}</span>
+                    )}
+                  </span>
+                  <span
+                    className="w-1.5 h-1.5 rounded-full flex-shrink-0 mt-2"
+                    style={{ backgroundColor: item.dotColor }}
+                  />
+                </button>
+              </li>
+            )
+          })}
         </ul>
       )}
     </section>
