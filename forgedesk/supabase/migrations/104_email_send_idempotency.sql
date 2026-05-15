@@ -21,19 +21,24 @@ ALTER TABLE email_send_idempotency ENABLE ROW LEVEL SECURITY;
 -- service_role (Trigger.dev getSupabaseAdmin) bypasst RLS al volledig,
 -- dus de policies hieronder zijn alleen relevant voor auth-users die
 -- via de app de log inzien (read-only) of een rij willen opruimen.
+-- DROP IF EXISTS vóór CREATE houdt het script idempotent (CLAUDE.md §3).
 
+DROP POLICY IF EXISTS "Org leden zien eigen idempotency" ON email_send_idempotency;
 CREATE POLICY "Org leden zien eigen idempotency"
   ON email_send_idempotency FOR SELECT
   USING (organisatie_id IN (SELECT organisatie_id FROM profiles WHERE id = auth.uid()));
 
+DROP POLICY IF EXISTS "Org leden inserten eigen idempotency" ON email_send_idempotency;
 CREATE POLICY "Org leden inserten eigen idempotency"
   ON email_send_idempotency FOR INSERT
   WITH CHECK (organisatie_id IN (SELECT organisatie_id FROM profiles WHERE id = auth.uid()));
 
+DROP POLICY IF EXISTS "Org leden updaten eigen idempotency" ON email_send_idempotency;
 CREATE POLICY "Org leden updaten eigen idempotency"
   ON email_send_idempotency FOR UPDATE
   USING (organisatie_id IN (SELECT organisatie_id FROM profiles WHERE id = auth.uid()));
 
+DROP POLICY IF EXISTS "Org leden verwijderen eigen idempotency" ON email_send_idempotency;
 CREATE POLICY "Org leden verwijderen eigen idempotency"
   ON email_send_idempotency FOR DELETE
   USING (organisatie_id IN (SELECT organisatie_id FROM profiles WHERE id = auth.uid()));
