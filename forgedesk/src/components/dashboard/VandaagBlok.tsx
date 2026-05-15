@@ -21,12 +21,6 @@ const TYPE_STYLES: Record<ItemType, TypeStyle> = {
   event: { icon: CalendarDays, iconColor: '#8A7A4A', bg: '#F5F2E8' },
 }
 
-const TYPE_LABEL: Record<ItemType, string> = {
-  montage: 'Montage',
-  taak: 'Taak',
-  event: 'Afspraak',
-}
-
 interface VandaagItem {
   id: string
   type: ItemType
@@ -208,9 +202,9 @@ export function VandaagBlok() {
       </header>
 
       {items.length === 0 ? (
-        <p className="text-sm text-[#9B9B95] py-2">Niets ingepland voor vandaag.</p>
+        <p className="text-sm text-[#9B9B95] py-3">Niets ingepland voor vandaag.</p>
       ) : (
-        <ul className="divide-y divide-[#EBEBEB]">
+        <ul className="space-y-1">
           {items.map(item => {
             const typeStyle = TYPE_STYLES[item.type]
             const TypeIcon = typeStyle.icon
@@ -219,33 +213,39 @@ export function VandaagBlok() {
                 <button
                   type="button"
                   onClick={() => navigate(item.href)}
-                  className="group w-full flex items-center gap-3 sm:gap-4 py-3 px-2 -mx-2 rounded-lg hover:bg-[#F8F7F5] transition-colors text-left focus-visible:outline-none focus-visible:bg-[#F8F7F5]"
+                  className="group relative w-full flex items-center gap-3 sm:gap-4 py-3 px-3 -mx-2 rounded-lg hover:bg-[#F8F7F5] transition-colors text-left focus-visible:outline-none focus-visible:bg-[#F8F7F5]"
                 >
                   <span
-                    className="inline-flex items-center justify-center w-[30px] h-[30px] flex-shrink-0"
-                    style={{ backgroundColor: typeStyle.bg, borderRadius: 9 }}
+                    aria-hidden
+                    className="absolute left-0 top-2 bottom-2 w-[3px] rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    style={{ backgroundColor: typeStyle.iconColor }}
+                  />
+                  <span
+                    className="inline-flex items-center justify-center w-[32px] h-[32px] flex-shrink-0"
+                    style={{ backgroundColor: typeStyle.bg, borderRadius: 10 }}
                     aria-hidden
                   >
                     <TypeIcon className="h-4 w-4" style={{ color: typeStyle.iconColor }} />
                   </span>
                   <span
                     className={cn(
-                      'font-mono text-[13px] w-12 flex-shrink-0',
-                      item.tijd ? 'text-[#1A1A1A]' : 'text-[#9B9B95]',
+                      'font-mono text-[13px] w-11 flex-shrink-0 tabular-nums',
+                      item.tijd ? 'text-[#1A1A1A]' : 'text-transparent',
                     )}
                   >
-                    {item.tijd ?? '—'}
+                    {item.tijd ?? '00:00'}
                   </span>
-                  <span className="hidden md:inline text-[11px] uppercase tracking-wider text-[#9B9B95] w-20 flex-shrink-0">
-                    {TYPE_LABEL[item.type]}
+                  <span className="flex-1 min-w-0">
+                    <span className="block text-[14px] text-[#1A1A1A] truncate leading-tight">
+                      {item.titel}
+                    </span>
+                    {item.context && (
+                      <span className="block text-[11px] text-[#9B9B95] truncate leading-tight mt-0.5">
+                        {item.context}
+                      </span>
+                    )}
                   </span>
-                  <span className="flex-1 min-w-0 truncate text-sm text-[#1A1A1A]">
-                    {item.titel}
-                  </span>
-                  <span className="hidden sm:block text-sm text-[#6B6B66] truncate max-w-[30%]">
-                    {item.context}
-                  </span>
-                  <span className="w-[22px] flex-shrink-0 flex justify-center">
+                  <span className="w-[24px] flex-shrink-0 flex justify-center">
                     {item.toegewezenAan && (
                       <Avatar medewerker={item.toegewezenAan} medewerkers={medewerkers} />
                     )}
