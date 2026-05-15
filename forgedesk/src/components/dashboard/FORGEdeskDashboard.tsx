@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -44,6 +44,48 @@ function getDagdeel(): { greet: string; verb: string } {
   return { greet: 'Goeienavond', verb: 'afronden' }
 }
 
+const PLAYFUL_OCHTEND = [
+  'Goedemorgen — zin om wat te doen?',
+  'Wat ga jij vandaag doen?',
+  'Welke is jouw eerste win vandaag?',
+  'Slim begin — wat staat bovenaan?',
+  'Eerst koffie, dan de wereld?',
+  'Frisse start, frisse blik.',
+  'Mooie dag om iets af te maken.',
+]
+const PLAYFUL_MIDDAG = [
+  'Goedemiddag — nog energie voor één klus?',
+  'Halverwege de dag — hoe staan we ervoor?',
+  'Tijd voor het volgende?',
+  'Wat krijgt vanmiddag jouw aandacht?',
+  'Eén klus van de lijst, kom op.',
+  'Productieve middag op de planning?',
+]
+const PLAYFUL_AVOND = [
+  'Goedenavond — afronden of doortrekken?',
+  'Laatste klusje voor je gaat?',
+  'Was \'t een goede dag?',
+  'Pak je nog één taakje mee?',
+  'Tijd om rustig af te ronden.',
+]
+const PLAYFUL_GENERIC = [
+  'Klaar voor de volgende stap?',
+  'Zin om wat te doen?',
+  'Eén ding tegelijk, kom op.',
+  'Wat wil je vandaag écht afmaken?',
+  'Welke klus krijgt jouw aandacht?',
+]
+
+function pickPlayfulGreeting(): string {
+  const hour = new Date().getHours()
+  const bucket =
+    hour < 12 ? PLAYFUL_OCHTEND :
+    hour < 18 ? PLAYFUL_MIDDAG :
+    PLAYFUL_AVOND
+  const pool = [...bucket, ...PLAYFUL_GENERIC]
+  return pool[Math.floor(Math.random() * pool.length)]
+}
+
 export function FORGEdeskDashboard() {
   return (
     <DashboardDataProvider>
@@ -77,6 +119,14 @@ function FORGEdeskDashboardInner() {
   const WeatherIcon = weather ? WEATHER_ICONS[weather.iconKey] : null
 
   const { verb } = useMemo(() => getDagdeel(), [])
+
+  const [playfulGreeting] = useState<string>(() => pickPlayfulGreeting())
+  const [greetingVisible, setGreetingVisible] = useState(true)
+
+  useEffect(() => {
+    const t = setTimeout(() => setGreetingVisible(false), 5000)
+    return () => clearTimeout(t)
+  }, [])
 
   const today = new Date()
   const dateStr = today.toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long' })
@@ -117,6 +167,19 @@ function FORGEdeskDashboardInner() {
                   {userName ? `, ${userName}` : ''}
                   <span style={{ color: '#F15025' }}>.</span>
                 </h1>
+                <p
+                  aria-hidden={!greetingVisible}
+                  className="text-[14px] sm:text-[15px] text-white/70 mt-3"
+                  style={{
+                    fontFamily: '"Instrument Serif", serif',
+                    fontStyle: 'italic',
+                    opacity: greetingVisible ? 1 : 0,
+                    transition: 'opacity 800ms ease-out',
+                    minHeight: '1.2em',
+                  }}
+                >
+                  {playfulGreeting}
+                </p>
               </div>
 
               {weather && WeatherIcon && (
