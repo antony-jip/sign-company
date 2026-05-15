@@ -46,6 +46,8 @@ Scope-aanpassing op plan:
   toont voorlopig alleen Offerte-opvolging + Factuur-opvolging +
   Templates-lijst echt werkend (achter feature flag).
 
+Tracking: [GitHub issue #16](https://github.com/antony-jip/sign-company/issues/16).
+
 ---
 
 ## Fase 3a — `feat/communicatie-tab` (2026-05-15)
