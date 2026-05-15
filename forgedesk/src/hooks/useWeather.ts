@@ -62,7 +62,8 @@ export function useWeather(coords: Coords = DEFAULT_COORDS): WeatherSnapshot | n
       const cached = localStorage.getItem(cacheKey)
       if (cached) {
         const parsed = JSON.parse(cached) as { ts: number; data: WeatherSnapshot }
-        if (Date.now() - parsed.ts < STALE_MS) {
+        // Re-fetch if the cached snapshot pre-dates the forecast field
+        if (Date.now() - parsed.ts < STALE_MS && Array.isArray(parsed.data?.forecast)) {
           setWeather(parsed.data)
           return
         }

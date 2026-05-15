@@ -236,9 +236,9 @@ function FORGEdeskDashboardInner() {
                       {weather.label}
                     </p>
 
-                    {weather.forecast.length >= 3 && (
+                    {(weather.forecast?.length ?? 0) >= 3 && (
                       <div className="mt-4 pt-3 grid grid-cols-2 gap-3" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                        {weather.forecast.slice(1, 3).map((day, idx) => {
+                        {weather.forecast!.slice(1, 3).map((day, idx) => {
                           const Icon = WEATHER_ICONS[day.iconKey]
                           const tint = day.isRaining ? '#9DD3DA' : '#F5C460'
                           return (
