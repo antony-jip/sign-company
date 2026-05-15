@@ -52,7 +52,6 @@ import { PortaalTab } from './PortaalTab'
 import { SidebarTab } from './SidebarTab'
 import { TeamledenTab } from './TeamledenTab'
 import { AbonnementTab } from './AbonnementTab'
-import { OfferteOpvolgingTab } from './OfferteOpvolgingTab'
 import { GeneralLedgerSettings } from '../financial/GeneralLedgerSettings'
 import { VATCodesSettings } from '../financial/VATCodesSettings'
 import { DiscountsSettings } from '../financial/DiscountsSettings'
@@ -67,7 +66,7 @@ function ImportTab() {
 // Newly-extracted tab components
 import { ProfielTab } from './ProfielTab'
 import { BedrijfTab } from './BedrijfTab'
-import { EmailTab, EmailTemplatesSubTab } from './EmailTab'
+import { EmailTab } from './EmailTab'
 import { IntegratiesTab } from './IntegratiesTab'
 import { BeveiligingTab } from './BeveiligingTab'
 import { WeergaveTab } from './WeergaveTab'
@@ -107,13 +106,9 @@ const settingsSections: SettingsSection[] = [
   ]},
   { id: 'offertes', label: 'Offertes', icon: FileText, tabs: [
     { id: 'calculatie', label: 'Calculatie', icon: Calculator },
-    { id: 'opvolging', label: 'Opvolging', icon: Clock },
   ]},
   { id: 'projecten', label: 'Projecten', icon: LayoutGrid, tabs: [
     { id: 'sidebar', label: 'Sidebar', icon: PanelLeft },
-  ]},
-  { id: 'facturen', label: 'Facturen', icon: Receipt, tabs: [
-    { id: 'factuur-opvolging', label: 'Opvolging', icon: Bell },
   ]},
   { id: 'email-settings', label: 'E-mail', icon: Mail, tabs: [
     { id: 'email', label: 'E-mail', icon: Mail },
@@ -174,9 +169,7 @@ function renderTabContent(tabId: string) {
     case 'grootboek': return <GeneralLedgerSettings />
     case 'btw-codes': return <VATCodesSettings />
     case 'kortingen': return <DiscountsSettings />
-    case 'opvolging': return <OfferteOpvolgingTab />
     case 'communicatie': return <CommunicatieTab />
-    case 'factuur-opvolging': return <EmailTemplatesSubTab />
     case 'kb-artikelen': return <KennisbankTab />
     case 'changelog': return <ChangelogPage />
     case 'import': return <ImportTab />
