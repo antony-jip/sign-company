@@ -91,15 +91,15 @@ export function ActiviteitLog() {
       }
     })
 
-    return out.sort((a, b) => b.date.getTime() - a.date.getTime()).slice(0, 6)
+    return out.sort((a, b) => b.date.getTime() - a.date.getTime()).slice(0, 25)
   }, [offertes, facturen])
 
   return (
     <section
-      className="rounded-xl bg-white p-6 sm:p-7 h-full"
+      className="rounded-xl bg-white p-5"
       style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}
     >
-      <header className="flex items-baseline justify-between gap-4 mb-5">
+      <header className="flex items-baseline justify-between gap-4 mb-3">
         <div className="flex items-baseline gap-3 min-w-0">
           <h2 className="text-[11px] font-semibold uppercase tracking-wider text-[#5A5A55]">
             Activiteit
@@ -116,7 +116,7 @@ export function ActiviteitLog() {
       {events.length === 0 ? (
         <p className="text-sm text-[#9B9B95] py-2">Nog geen activiteit.</p>
       ) : (
-        <ul className="space-y-1">
+        <ul className="space-y-1 max-h-[220px] overflow-y-auto pr-1 -mr-2">
           {events.map(e => {
             const style = STYLES[e.type]
             const Icon = style.icon

@@ -1,12 +1,11 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '@/contexts/AuthContext'
-import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useDashboardData } from '@/contexts/DashboardDataContext'
 import { getAvatarStyle } from '@/utils/medewerkerAvatar'
 import { formatCurrency, cn } from '@/lib/utils'
 import { formatDistanceToNow } from 'date-fns'
 import { nl } from 'date-fns/locale'
+import { ActiviteitLog } from './ActiviteitLog'
 import type { Medewerker, Klant } from '@/types'
 
 const DAG_HEADERS = ['M', 'D', 'W', 'D', 'V', 'Z', 'Z']
@@ -46,43 +45,6 @@ function Avatar({ medewerker, medewerkers, size = 24 }: { medewerker: Medewerker
     >
       {initialen(medewerker.naam)}
     </span>
-  )
-}
-
-// ─────────────────────────────────────────────────────────
-// User profile
-
-function UserProfileCard() {
-  const { user } = useAuth()
-  const { profile } = useAppSettings()
-  const naam = profile?.voornaam
-    ? `${profile.voornaam} ${profile.achternaam || ''}`.trim()
-    : user?.user_metadata?.voornaam || user?.email?.split('@')[0] || 'Antony'
-  const functie = profile?.functie || 'Eigenaar'
-  const inits = initialen(naam)
-
-  return (
-    <section
-      className="rounded-xl bg-white p-6 text-center"
-      style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}
-    >
-      <div className="relative inline-block mb-3">
-        <span
-          className="inline-flex items-center justify-center w-16 h-16 rounded-full text-white text-[24px] font-bold"
-          style={{ background: 'linear-gradient(135deg, #1A535C, #2A6E78)' }}
-        >
-          {inits}
-        </span>
-        <span className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-[#3A7D52] border-2 border-white" />
-      </div>
-      <p className="font-heading font-bold text-[16px] text-[#1A1A1A]">{naam}</p>
-      <p
-        className="text-[13px] text-[#9B9B95] mt-0.5"
-        style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
-      >
-        {functie}
-      </p>
-    </section>
   )
 }
 
@@ -424,7 +386,7 @@ function TeamCard() {
 export function RightRail() {
   return (
     <aside className="space-y-4 w-full xl:w-[320px] xl:flex-shrink-0">
-      <UserProfileCard />
+      <ActiviteitLog />
       <DezeWeekCard />
       <TeamCard />
     </aside>

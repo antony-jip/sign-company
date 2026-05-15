@@ -8,7 +8,6 @@ import { AanDeSlagSectie } from './AanDeSlagSectie'
 import { VandaagBlok } from './VandaagBlok'
 import { OpvolgenBlok } from './OpvolgenBlok'
 import { KpiStrip } from './KpiStrip'
-import { ActiviteitLog } from './ActiviteitLog'
 import { RightRail } from './RightRail'
 import { usePortaalHerinnering } from '@/hooks/usePortaalHerinnering'
 import { DashboardDataProvider, useDashboardData } from '@/contexts/DashboardDataContext'
@@ -171,14 +170,13 @@ function FORGEdeskDashboardInner() {
           {/* ── KPI-strip ── */}
           <KpiStrip />
 
-          {/* ── Vandaag (links) | Opvolgen + Activiteit gestapeld (rechts) ── */}
+          {/* ── Vandaag (links) | Opvolgen (rechts) ── */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
             <div className="lg:col-span-7">
               <VandaagBlok />
             </div>
-            <div className="lg:col-span-5 space-y-5">
+            <div className="lg:col-span-5">
               <OpvolgenBlok />
-              <ActiviteitLog />
             </div>
           </div>
 
