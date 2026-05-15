@@ -2,7 +2,7 @@ import { task, wait, logger } from "@trigger.dev/sdk/v3";
 import { ImapFlow } from "imapflow";
 import crypto from "crypto";
 import { getSupabaseAdmin } from "./utils/supabase";
-import { sendEmailForUser, getUserEmailCredentials } from "./utils/email";
+import { sendEmailForUser, getUserEmailCredentials, prepareMailBodies } from "./utils/email";
 
 const ENCRYPTION_KEY = process.env.EMAIL_ENCRYPTION_KEY;
 
@@ -302,12 +302,14 @@ ${volledigeTekst.replace(/\n/g, "<br/>")}
       ? opvolging.ontvanger.match(/<([^>]+)>/)?.[1] || opvolging.ontvanger
       : opvolging.ontvanger;
 
+    const { html: preparedHtml, text: preparedText } = prepareMailBodies(htmlBody, volledigeTekst);
+
     const mailOptions: Record<string, unknown> = {
       from: fromAddress,
       to: toAddress,
       subject: replySubject,
-      text: volledigeTekst,
-      html: htmlBody,
+      text: preparedText,
+      html: preparedHtml,
       headers: {} as Record<string, string>,
     };
 

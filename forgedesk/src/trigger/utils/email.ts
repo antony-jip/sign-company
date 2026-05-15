@@ -99,12 +99,25 @@ function htmlToPlainText(html: string): string {
 }
 
 /**
- * Send email via SMTP using a user's stored credentials.
- *
  * Zorgt voor multipart/alternative bij HTML-mails: html-body wordt gewrapt
  * met DOCTYPE + minimal head zodra dat ontbreekt, en plain-text alternatief
- * wordt uit de uiteindelijke html afgeleid zodat clients zonder HTML-render
- * niet de letterlijke `<br/>` tags te zien krijgen.
+ * wordt uit de uiteindelijke html afgeleid wanneer de caller geen text gaf,
+ * zodat clients zonder HTML-render geen letterlijke `<br/>` tags zien.
+ * Geëxporteerd zodat ook flows die niet via `sendEmailForUser` lopen
+ * (zoals reply-threading in email-opvolging) hier doorheen kunnen.
+ */
+export function prepareMailBodies(
+  html: string | undefined,
+  text: string,
+): { html: string | undefined; text: string } {
+  if (!html) return { html: undefined, text };
+  const wrappedHtml = isWrappedHtml(html) ? html : wrapHtmlDocument(html);
+  const finalText = text && text.trim().length > 0 ? text : htmlToPlainText(wrappedHtml);
+  return { html: wrappedHtml, text: finalText };
+}
+
+/**
+ * Send email via SMTP using a user's stored credentials.
  */
 export async function sendEmailForUser(params: {
   userId: string;
@@ -133,12 +146,7 @@ export async function sendEmailForUser(params: {
     // If `to` is empty, send to the user's own email (self-notification)
     const toAddress = params.to || creds.gmail_address;
 
-    let finalHtml: string | undefined = params.html;
-    let finalText: string = params.text;
-    if (params.html) {
-      finalHtml = isWrappedHtml(params.html) ? params.html : wrapHtmlDocument(params.html);
-      finalText = htmlToPlainText(finalHtml);
-    }
+    const { html: finalHtml, text: finalText } = prepareMailBodies(params.html, params.text);
 
     await transporter.sendMail({
       from: fromAddress,
