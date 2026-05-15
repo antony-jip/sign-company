@@ -47,13 +47,11 @@ export function PortaalHeader({
       <div className="relative max-w-5xl mx-auto px-4 sm:px-6 py-5 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3 min-w-0">
           {logoUrl ? (
-            <div className="bg-white rounded-lg px-3 py-1.5 shadow-sm flex items-center">
-              <img
-                src={logoUrl}
-                alt={bedrijfNaam}
-                className="h-8 w-auto max-w-[160px] object-contain"
-              />
-            </div>
+            <img
+              src={logoUrl}
+              alt={bedrijfNaam}
+              className="h-8 w-auto max-w-[160px] object-contain"
+            />
           ) : (
             <span
               className="text-lg font-extrabold text-white tracking-tight"
