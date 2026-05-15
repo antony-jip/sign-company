@@ -27,6 +27,27 @@ Open punten uit eindreview commit `fa400894`:
 
 ---
 
+## Fase 3b — `feat/communicatie-tab` (2026-05-15)
+
+Scope-aanpassing op plan:
+
+- **MijnEmailSubTab fysieke verhuizing uitgesteld**: plan zei
+  handtekening (EmailTab regel 770-826) + SMTP (940-988) + voorkeuren
+  (990-1041) verhuizen naar `MijnEmailSubTab`. Die blokken zijn diep
+  verweven in `EmailTab` met gedeelde state en sub-nav. Voor commit 3
+  bleef het bij een placeholder-stub. Plan-uitvoering: aparte
+  vervolg-iteratie, niet binnen GATE 4 scope.
+- **PortaalEmailsSubTab fysieke verhuizing uitgesteld**: plan zei
+  PortaalTab regel 356-472 (template_herinnering + timing) verhuizen.
+  Idem reden: het zit inline in `PortaalTab`-functie. Placeholder-stub
+  blijft tot vervolg-iteratie.
+- **Email-shrink en portaal-split** zijn ook uitgesteld om dezelfde
+  reden — de oude tabs blijven volledig functioneel, communicatie
+  toont voorlopig alleen Offerte-opvolging + Factuur-opvolging +
+  Templates-lijst echt werkend (achter feature flag).
+
+---
+
 ## Fase 3a — `feat/communicatie-tab` (2026-05-15)
 
 Open punten uit per-commit reviews:
