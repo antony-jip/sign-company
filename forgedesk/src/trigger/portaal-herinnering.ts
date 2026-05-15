@@ -1,6 +1,7 @@
 import { logger, schedules, metadata } from "@trigger.dev/sdk/v3";
 import { getSupabaseAdmin } from "./utils/supabase";
 import { sendClientEmail } from "./utils/resend";
+import { buildKey, checkAndMark, rollbackKey } from "./utils/idempotency";
 import { replaceTemplateVariables } from "./utils/emailTemplate";
 
 /**
@@ -141,11 +142,11 @@ async function processUserHerinneringen(params: {
   const projectIds = [...new Set(portalen.map((p: { project_id: string }) => p.project_id))];
   const { data: projecten } = await supabase
     .from("projecten")
-    .select("id, naam, klant_id")
+    .select("id, naam, klant_id, organisatie_id")
     .in("id", projectIds);
 
   const projectMap = new Map(
-    (projecten || []).map((p: { id: string; naam: string; klant_id: string }) => [p.id, p])
+    (projecten || []).map((p: { id: string; naam: string; klant_id: string; organisatie_id: string }) => [p.id, p])
   );
 
   const klantIds = [
@@ -233,6 +234,16 @@ async function processUserHerinneringen(params: {
 
     const replyTo = emailSettings?.gmail_address || "";
 
+    const organisatieId = (project as { organisatie_id?: string } | undefined)?.organisatie_id;
+    const idempotencyKey = buildKey("portaal_herinnering", item.project_id);
+    if (organisatieId) {
+      const fresh = await checkAndMark(organisatieId, idempotencyKey);
+      if (!fresh) {
+        result.overgeslagen++;
+        continue;
+      }
+    }
+
     const emailResult = await sendClientEmail({
       to: klant.email,
       replyTo,
@@ -251,6 +262,7 @@ async function processUserHerinneringen(params: {
     if (emailResult.success) {
       result.verstuurd++;
     } else {
+      if (organisatieId) await rollbackKey(organisatieId, idempotencyKey);
       result.errors.push(`${item.titel}: ${emailResult.error}`);
     }
 

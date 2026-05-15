@@ -50,6 +50,39 @@ Tracking: [GitHub issue #16](https://github.com/antony-jip/sign-company/issues/1
 
 ---
 
+## Fase 3d — `feat/communicatie-tab` (2026-05-15)
+
+Scope-aanpassing op plan:
+
+- **Template-fetch alleen voor trial-reminder volledig geïmplementeerd.**
+  Plan wilde alle 5 trigger-files koppelen aan `email_templates`.
+  Trial-reminder gebruikt nu `getTemplateAdmin` + `renderTriggerTemplate`
+  met DB-content; onderwerp en body komen uit de tabel. Voor de andere
+  vier (offerte-opvolging, email-opvolging, portaal-herinnering,
+  onboarding-sequence) zou template-koppeling significante refactor
+  vragen omdat die flows óf AI-generated body hebben (email-opvolging),
+  óf HTML-builders met losse heading/cta-velden (onboarding,
+  portaal-herinnering), óf hardcoded subject/body verspreid over
+  meerdere stappen (offerte-opvolging). Template-content blijft daar
+  vooralsnog hardcoded; idempotency-laag is wel doorgevoerd.
+- **Idempotency-keys overal toegevoegd:**
+  - offerte-opvolging via `sendEmailForUser` (organisatieId +
+    idempotencyKey params toegevoegd, skipped pad behandeld).
+  - email-opvolging via `checkAndMark` / `rollbackKey` rond eigen
+    `transporter.sendMail` (orgId via profiles-lookup).
+  - portaal-herinnering: `portaal_herinnering:{projectId}` key.
+  - trial-reminder: `trial_reminder:{orgId}:{daysUntilEnd}` key.
+- **Onboarding-sequence niet aangeraakt.** Huidige sequential
+  wait.for-flow is incompatibel met de plan-vereiste offset-array-loop
+  zonder een grote refactor naar een cron-based dispatcher. Beide
+  blijven in een follow-up iteratie. `app_settings.onboarding_dag_offsets`
+  wordt nog niet gelezen.
+- **offsets-loop alleen op trial-reminder gedaan.**
+
+Trackt onder [GitHub issue #16](https://github.com/antony-jip/sign-company/issues/16) als deel van vervolg-iteratie.
+
+---
+
 ## Fase 3a — `feat/communicatie-tab` (2026-05-15)
 
 Open punten uit per-commit reviews:

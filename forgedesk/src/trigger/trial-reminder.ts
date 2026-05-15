@@ -1,40 +1,16 @@
 import { logger, schedules, metadata } from "@trigger.dev/sdk/v3";
 import { getSupabaseAdmin } from "./utils/supabase";
 import { sendSystemEmail } from "./utils/resend";
+import { getTemplateAdmin, renderTriggerTemplate } from "./utils/templates";
+import { buildKey, checkAndMark, rollbackKey } from "./utils/idempotency";
 
 const APP_URL =
   process.env.VITE_APP_URL || process.env.APP_URL || "https://app.doen.team";
 
-interface ReminderConfig {
-  subject: string;
-  heading: string;
-  ctaLabel: string;
-}
+const DEFAULT_OFFSETS = [5, 2, 0];
 
-function buildReminder(dagenOver: number, voornaam: string): ReminderConfig | null {
-  const naam = voornaam || "daar";
-  if (dagenOver === 5) {
-    return {
-      subject: "Nog 5 dagen in je proefperiode",
-      heading: `Hey ${naam}, je hebt nog 5 dagen in je proefperiode van doen. Activeer je abonnement wanneer je klaar bent om door te gaan — je houdt al je data.`,
-      ctaLabel: "Bekijk abonnement",
-    };
-  }
-  if (dagenOver === 2) {
-    return {
-      subject: "Je proefperiode loopt bijna af",
-      heading: `Hey ${naam}, je proefperiode van doen. loopt over 2 dagen af. Activeer nu je abonnement om zonder onderbreking door te werken.`,
-      ctaLabel: "Activeer abonnement",
-    };
-  }
-  if (dagenOver === 0) {
-    return {
-      subject: "Je proefperiode is vandaag afgelopen",
-      heading: `Hey ${naam}, je proefperiode van doen. is vandaag afgelopen. Je data blijft bewaard — activeer je abonnement om weer verder te kunnen werken.`,
-      ctaLabel: "Activeer abonnement — €79/maand",
-    };
-  }
-  return null;
+function triggerNaamVoorOffset(dagenOver: number): string {
+  return `trial_reminder_${dagenOver}`;
 }
 
 async function getAdminRecipients(
@@ -118,25 +94,60 @@ export const trialReminderCron = schedules.task({
         (einde.getTime() - vandaag.getTime()) / (1000 * 60 * 60 * 24)
       );
 
+      const { data: settings } = await supabase
+        .from("app_settings")
+        .select("trial_reminder_offsets")
+        .eq("organisatie_id", org.id)
+        .maybeSingle();
+      const offsets: number[] = (settings?.trial_reminder_offsets as number[] | null) ?? DEFAULT_OFFSETS;
+      if (!offsets.includes(dagenOver)) {
+        overgeslagen++;
+        continue;
+      }
+
       const recipients = await getAdminRecipients(supabase, org.id);
       if (recipients.length === 0) {
         overgeslagen++;
         continue;
       }
 
+      const idempotencyKey = buildKey("trial_reminder", org.id, dagenOver);
+      const fresh = await checkAndMark(org.id, idempotencyKey);
+      if (!fresh) {
+        logger.info("Trial reminder al verzonden vandaag, overgeslagen", {
+          organisatieId: org.id,
+          dagenOver,
+        });
+        overgeslagen++;
+        continue;
+      }
+
+      let template: { onderwerp: string; body: string };
+      try {
+        template = await getTemplateAdmin(org.id, triggerNaamVoorOffset(dagenOver));
+      } catch (err) {
+        await rollbackKey(org.id, idempotencyKey);
+        const msg = `org=${org.id}: ${err instanceof Error ? err.message : "template-fetch failed"}`;
+        errors.push(msg);
+        logger.error("Trial reminder template-fetch mislukt", { msg });
+        continue;
+      }
+
+      let sendErrors = 0;
       for (const recipient of recipients) {
-        const reminder = buildReminder(dagenOver, recipient.voornaam);
-        if (!reminder) {
-          overgeslagen++;
-          continue;
-        }
+        const vars: Record<string, string> = {
+          voornaam: recipient.voornaam || "daar",
+          abonnement_url: `${APP_URL}/instellingen?tab=abonnement`,
+        };
+        const onderwerp = renderTriggerTemplate(template.onderwerp, vars);
+        const heading = renderTriggerTemplate(template.body, vars);
 
         const result = await sendSystemEmail({
           to: recipient.email,
-          subject: reminder.subject,
-          heading: reminder.heading,
+          subject: onderwerp,
+          heading,
           ctaUrl: `${APP_URL}/instellingen?tab=abonnement`,
-          ctaLabel: reminder.ctaLabel,
+          ctaLabel: "Bekijk abonnement",
         });
 
         if (result.success) {
@@ -147,10 +158,14 @@ export const trialReminderCron = schedules.task({
             email: recipient.email,
           });
         } else {
+          sendErrors++;
           const msg = `org=${org.id}: ${result.error}`;
           errors.push(msg);
           logger.error("Trial reminder verzenden mislukt", { msg });
         }
+      }
+      if (sendErrors === recipients.length) {
+        await rollbackKey(org.id, idempotencyKey);
       }
     }
 

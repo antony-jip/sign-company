@@ -306,7 +306,13 @@ export const offerteOpvolgingCron = schedules.task({
                 subject: onderwerp,
                 text: plainBody,
                 html: htmlBody,
+                organisatieId: schema.organisatie_id,
+                idempotencyKey: `offerte_opvolging:${offerte.id}:${stap.id}`,
               });
+
+              if (emailResult.skipped) {
+                continue;
+              }
 
               if (!emailResult.success) {
                 await logOpvolgActie(supabase, offerte.id, stap.id, stap.actie, "fout", { error: emailResult.error });

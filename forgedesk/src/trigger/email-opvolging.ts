@@ -3,6 +3,7 @@ import { ImapFlow } from "imapflow";
 import crypto from "crypto";
 import { getSupabaseAdmin } from "./utils/supabase";
 import { sendEmailForUser, getUserEmailCredentials } from "./utils/email";
+import { buildKey, checkAndMark, rollbackKey } from "./utils/idempotency";
 
 const ENCRYPTION_KEY = process.env.EMAIL_ENCRYPTION_KEY;
 
@@ -279,9 +280,29 @@ export const emailOpvolgingTask = task({
 ${volledigeTekst.replace(/\n/g, "<br/>")}
 </div>`;
 
+    // Idempotency: orgId via profiles om dubbele sends te voorkomen
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("organisatie_id")
+      .eq("id", opvolging.user_id)
+      .maybeSingle();
+    const organisatieId = profile?.organisatie_id as string | undefined;
+    const idempotencyKey = buildKey("email_opvolging", opvolging.id);
+    if (organisatieId) {
+      const fresh = await checkAndMark(organisatieId, idempotencyKey);
+      if (!fresh) {
+        logger.warn("Email opvolging al verzonden, overgeslagen", {
+          id: opvolging.id,
+          ontvanger: opvolging.ontvanger,
+        });
+        return { status: "skipped", reason: "duplicate" };
+      }
+    }
+
     // Gebruik sendEmailForUser met extra headers voor threading
     const creds = await getUserEmailCredentials(opvolging.user_id);
     if (!creds) {
+      if (organisatieId) await rollbackKey(organisatieId, idempotencyKey);
       throw new Error("Geen email instellingen gevonden voor user");
     }
 
@@ -317,7 +338,12 @@ ${volledigeTekst.replace(/\n/g, "<br/>")}
       (mailOptions.headers as Record<string, string>)["References"] = opvolging.message_id;
     }
 
-    await transporter.sendMail(mailOptions);
+    try {
+      await transporter.sendMail(mailOptions);
+    } catch (sendErr) {
+      if (organisatieId) await rollbackKey(organisatieId, idempotencyKey);
+      throw sendErr;
+    }
 
     // 7. Update Supabase record
     await supabase
