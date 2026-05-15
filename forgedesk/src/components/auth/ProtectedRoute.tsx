@@ -1,7 +1,6 @@
 import React from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
-import { Loader2 } from 'lucide-react'
 
 const ONBOARDING_ROUTES = ['/welkom', '/team-welkom', '/onboarding']
 
@@ -12,10 +11,30 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   const loader = (
     <div className="flex items-center justify-center h-screen bg-background dark:bg-background">
-      <div className="flex flex-col items-center gap-4">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-        <p className="text-muted-foreground">Laden...</p>
-      </div>
+      <style>{`
+        @keyframes doen-loader-pulse {
+          0%, 100% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.45); opacity: 0.55; }
+        }
+        .doen-loader-dot {
+          display: inline-block;
+          animation: doen-loader-pulse 1.35s ease-in-out infinite;
+          transform-origin: center;
+        }
+      `}</style>
+      <p
+        aria-label="Laden"
+        style={{
+          fontFamily: '"Bricolage Grotesque", sans-serif',
+          fontWeight: 800,
+          fontSize: 72,
+          color: '#1A535C',
+          letterSpacing: '-0.04em',
+          lineHeight: 1,
+        }}
+      >
+        doen<span className="doen-loader-dot" style={{ color: '#F15025' }}>.</span>
+      </p>
     </div>
   )
 
