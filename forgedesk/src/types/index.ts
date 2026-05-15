@@ -1897,6 +1897,7 @@ export interface PortaalInstellingen {
   herinnering_na_dagen: number;
   bedrijfslogo_op_portaal: boolean;
   bedrijfskleuren_gebruiken: boolean;
+  portaal_header_kleur: string;
   contactgegevens_tonen: boolean;
   template_portaallink: PortaalEmailTemplate;
   template_nieuw_item: PortaalEmailTemplate;

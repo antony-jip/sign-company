@@ -1,5 +1,4 @@
 import { Calendar } from 'lucide-react'
-import { getOrgColor } from '@/utils/orgTheme'
 
 interface PortaalHeaderProps {
   bedrijfNaam: string
@@ -7,8 +6,7 @@ interface PortaalHeaderProps {
   klantNaam?: string
   verlooptOp: string
   projectNaam?: string
-  primaireKleur?: string
-  bedrijfskleurenGebruiken?: boolean
+  headerKleur?: string
 }
 
 function formatDate(dateStr: string): string {
@@ -24,13 +22,9 @@ export function PortaalHeader({
   logoUrl,
   verlooptOp,
   projectNaam,
-  primaireKleur,
-  bedrijfskleurenGebruiken,
+  headerKleur,
 }: PortaalHeaderProps) {
-  const settings = { primaire_kleur: primaireKleur }
-  const portaal = { bedrijfskleuren_gebruiken: bedrijfskleurenGebruiken }
-  const bgColor = getOrgColor(settings, portaal, 'primary')
-  const accentColor = getOrgColor(settings, portaal, 'accent')
+  const bgColor = headerKleur?.trim() || '#1A535C'
 
   return (
     <header
@@ -42,7 +36,7 @@ export function PortaalHeader({
         <svg width="100%" height="100%" className="opacity-[0.08]">
           <defs>
             <pattern id="dots" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse">
-              <circle cx="4" cy="4" r="2" style={{ fill: accentColor }} />
+              <circle cx="4" cy="4" r="2" fill="#F15025" />
               <circle cx="16" cy="16" r="1.5" fill="#ffffff" />
             </pattern>
           </defs>

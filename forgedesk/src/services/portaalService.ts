@@ -135,6 +135,7 @@ const DEFAULT_PORTAAL_INSTELLINGEN: PortaalInstellingen = {
   herinnering_na_dagen: 3,
   bedrijfslogo_op_portaal: true,
   bedrijfskleuren_gebruiken: true,
+  portaal_header_kleur: '#1A535C',
   contactgegevens_tonen: true,
   template_portaallink: {
     onderwerp: 'Uw projectportaal bij {{bedrijfsnaam}}',

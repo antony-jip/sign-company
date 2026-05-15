@@ -135,6 +135,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       herinnering_na_dagen: 3,
       bedrijfslogo_op_portaal: true,
       bedrijfskleuren_gebruiken: true,
+      portaal_header_kleur: '#1A535C',
       contactgegevens_tonen: true,
     }
     const instellingenData = { ...DEFAULT_INSTELLINGEN, ...((appSettingsEarly?.portaal_instellingen as Record<string, unknown>) || {}) }

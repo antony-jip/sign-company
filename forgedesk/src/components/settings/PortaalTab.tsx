@@ -541,13 +541,26 @@ export function PortaalTab() {
 
             <div className="flex items-center justify-between">
               <div>
-                <Label className="text-sm font-medium">Bedrijfskleuren gebruiken</Label>
-                <p className="text-xs text-muted-foreground">Gebruik uw primaire kleur op het portaal</p>
+                <Label className="text-sm font-medium">Header achtergrond</Label>
+                <p className="text-xs text-muted-foreground">Kleur van de bovenbalk op het klantportaal</p>
               </div>
-              <Switch
-                checked={settings.bedrijfskleuren_gebruiken}
-                onCheckedChange={(v) => update('bedrijfskleuren_gebruiken', v)}
-              />
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  value={settings.portaal_header_kleur || '#1A535C'}
+                  onChange={(e) => update('portaal_header_kleur', e.target.value)}
+                  className="w-8 h-8 rounded-md border border-border cursor-pointer appearance-none bg-transparent [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-md [&::-webkit-color-swatch]:border-0"
+                />
+                <Input
+                  value={settings.portaal_header_kleur || ''}
+                  onChange={(e) => {
+                    const v = e.target.value
+                    if (/^#[0-9a-fA-F]{0,6}$/.test(v)) update('portaal_header_kleur', v)
+                  }}
+                  className="w-24 h-8 text-xs font-mono"
+                  placeholder="#1A535C"
+                />
+              </div>
             </div>
 
             <div className="flex items-center justify-between">
