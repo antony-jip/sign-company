@@ -276,7 +276,7 @@ export function PortaalPagina() {
     )
 
   return (
-    <div className="min-h-screen bg-[#FAF9F7] flex flex-col relative">
+    <div className="min-h-screen bg-[#FAF9F7] flex flex-col relative isolate">
       <PortaalBackground />
       <PortaalHeader
         bedrijfNaam={bedrijf.naam}

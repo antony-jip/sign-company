@@ -1,60 +1,123 @@
+import { useEffect, useRef } from 'react'
+
+const COLOR = '#1A535C'
+const NUM_DOTS = 38
+const MAX_DIST = 150
+const SPEED = 0.18
+
+interface Dot {
+  x: number
+  y: number
+  vx: number
+  vy: number
+  r: number
+}
+
 export function PortaalBackground() {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    let width = window.innerWidth
+    let height = window.innerHeight
+    let dpr = window.devicePixelRatio || 1
+    let running = true
+    let frameId = 0
+
+    function resize() {
+      if (!canvas || !ctx) return
+      width = window.innerWidth
+      height = window.innerHeight
+      dpr = window.devicePixelRatio || 1
+      canvas.width = Math.floor(width * dpr)
+      canvas.height = Math.floor(height * dpr)
+      canvas.style.width = `${width}px`
+      canvas.style.height = `${height}px`
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+    }
+    resize()
+
+    const dots: Dot[] = Array.from({ length: NUM_DOTS }, () => ({
+      x: Math.random() * width,
+      y: Math.random() * height,
+      vx: (Math.random() - 0.5) * SPEED * 2,
+      vy: (Math.random() - 0.5) * SPEED * 2,
+      r: 1.4 + Math.random() * 1.6,
+    }))
+
+    function frame() {
+      if (!running || !ctx) return
+      ctx.clearRect(0, 0, width, height)
+
+      for (const d of dots) {
+        d.x += d.vx
+        d.y += d.vy
+        if (d.x < 0) { d.x = 0; d.vx = Math.abs(d.vx) }
+        if (d.x > width) { d.x = width; d.vx = -Math.abs(d.vx) }
+        if (d.y < 0) { d.y = 0; d.vy = Math.abs(d.vy) }
+        if (d.y > height) { d.y = height; d.vy = -Math.abs(d.vy) }
+      }
+
+      ctx.strokeStyle = COLOR
+      ctx.lineWidth = 0.6
+      for (let i = 0; i < dots.length; i++) {
+        for (let j = i + 1; j < dots.length; j++) {
+          const dx = dots[i].x - dots[j].x
+          const dy = dots[i].y - dots[j].y
+          const dist = Math.sqrt(dx * dx + dy * dy)
+          if (dist < MAX_DIST) {
+            ctx.globalAlpha = (1 - dist / MAX_DIST) * 0.14
+            ctx.beginPath()
+            ctx.moveTo(dots[i].x, dots[i].y)
+            ctx.lineTo(dots[j].x, dots[j].y)
+            ctx.stroke()
+          }
+        }
+      }
+
+      ctx.fillStyle = COLOR
+      ctx.globalAlpha = 0.22
+      for (const d of dots) {
+        ctx.beginPath()
+        ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2)
+        ctx.fill()
+      }
+
+      frameId = requestAnimationFrame(frame)
+    }
+    frame()
+
+    function onVisibility() {
+      if (document.hidden) {
+        running = false
+        cancelAnimationFrame(frameId)
+      } else if (!running) {
+        running = true
+        frame()
+      }
+    }
+
+    window.addEventListener('resize', resize)
+    document.addEventListener('visibilitychange', onVisibility)
+
+    return () => {
+      running = false
+      cancelAnimationFrame(frameId)
+      window.removeEventListener('resize', resize)
+      document.removeEventListener('visibilitychange', onVisibility)
+    }
+  }, [])
+
   return (
-    <svg
+    <canvas
+      ref={canvasRef}
       className="fixed inset-0 w-full h-full pointer-events-none"
-      style={{ zIndex: 0 }}
-      viewBox="0 0 1920 1080"
-      preserveAspectRatio="xMidYMid slice"
+      style={{ zIndex: -1 }}
       aria-hidden
-      focusable="false"
-    >
-      <g stroke="#1A535C" strokeWidth="0.6" opacity="0.07" fill="none">
-        <line x1="120" y1="180" x2="340" y2="90" />
-        <line x1="580" y1="230" x2="820" y2="140" />
-        <line x1="1080" y1="200" x2="1340" y2="120" />
-        <line x1="200" y1="420" x2="480" y2="380" />
-        <line x1="760" y1="500" x2="1020" y2="440" />
-        <line x1="1280" y1="380" x2="1560" y2="480" />
-        <line x1="400" y1="720" x2="680" y2="640" />
-        <line x1="940" y1="760" x2="1220" y2="680" />
-        <line x1="600" y1="980" x2="880" y2="920" />
-        <line x1="1180" y1="960" x2="1480" y2="880" />
-        <line x1="340" y1="90" x2="580" y2="230" />
-        <line x1="820" y1="140" x2="1080" y2="200" />
-        <line x1="1620" y1="220" x2="1820" y2="100" />
-        <line x1="480" y1="380" x2="760" y2="500" />
-        <line x1="1560" y1="480" x2="1780" y2="420" />
-      </g>
-      <g fill="#1A535C" opacity="0.14">
-        <circle cx="120" cy="180" r="2" />
-        <circle cx="340" cy="90" r="3" />
-        <circle cx="580" cy="230" r="2" />
-        <circle cx="820" cy="140" r="2.5" />
-        <circle cx="1080" cy="200" r="2" />
-        <circle cx="1340" cy="120" r="3" />
-        <circle cx="1620" cy="220" r="2" />
-        <circle cx="1820" cy="100" r="2.5" />
-        <circle cx="200" cy="420" r="2.5" />
-        <circle cx="480" cy="380" r="2" />
-        <circle cx="760" cy="500" r="3" />
-        <circle cx="1020" cy="440" r="2" />
-        <circle cx="1280" cy="380" r="2.5" />
-        <circle cx="1560" cy="480" r="2" />
-        <circle cx="1780" cy="420" r="3" />
-        <circle cx="140" cy="660" r="2" />
-        <circle cx="400" cy="720" r="2.5" />
-        <circle cx="680" cy="640" r="2" />
-        <circle cx="940" cy="760" r="3" />
-        <circle cx="1220" cy="680" r="2" />
-        <circle cx="1500" cy="740" r="2.5" />
-        <circle cx="1740" cy="660" r="2" />
-        <circle cx="280" cy="900" r="2.5" />
-        <circle cx="600" cy="980" r="2" />
-        <circle cx="880" cy="920" r="3" />
-        <circle cx="1180" cy="960" r="2" />
-        <circle cx="1480" cy="880" r="2.5" />
-        <circle cx="1700" cy="940" r="2" />
-      </g>
-    </svg>
+    />
   )
 }
