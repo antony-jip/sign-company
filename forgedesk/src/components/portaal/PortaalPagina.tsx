@@ -7,6 +7,7 @@ import { PortaalHeader } from './PortaalHeader'
 import { PortaalSidebar } from './PortaalSidebar'
 import { PortaalFeed } from './PortaalFeed'
 import { PortaalLightbox } from './PortaalLightbox'
+import { PortaalBackground } from './PortaalBackground'
 
 // ── API Response Types ────────────────────────────────────────────────────
 
@@ -275,7 +276,8 @@ export function PortaalPagina() {
     )
 
   return (
-    <div className="min-h-screen bg-[#FAF9F7] flex flex-col">
+    <div className="min-h-screen bg-[#FAF9F7] flex flex-col relative">
+      <PortaalBackground />
       <PortaalHeader
         bedrijfNaam={bedrijf.naam}
         logoUrl={toonLogo ? bedrijf.logo_url : undefined}

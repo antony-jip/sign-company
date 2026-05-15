@@ -214,9 +214,15 @@ function SidebarContent({
       {/* Footer */}
       <div className="pt-4 border-t" style={{ borderColor: '#E8E6E1' }}>
         <p className="text-center" style={{ fontSize: 11, color: '#C0BDB8' }}>
-          <span style={{ fontFamily: '"Bricolage Grotesque", sans-serif', fontWeight: 800 }}>
+          <a
+            href="https://www.doen.team"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:opacity-80 transition-opacity"
+            style={{ fontFamily: '"Bricolage Grotesque", sans-serif', fontWeight: 800, color: 'inherit' }}
+          >
             doen<span style={{ color: '#F15025' }}>.</span>
-          </span>
+          </a>
           {' '}slim gedaan.
         </p>
       </div>
