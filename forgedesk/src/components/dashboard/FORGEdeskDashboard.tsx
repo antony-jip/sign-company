@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, useRef } from 'react'
+import React, { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -7,13 +7,9 @@ import { usePortaalHerinnering } from '@/hooks/usePortaalHerinnering'
 import { WeekStripWidget } from './WeekStripWidget'
 import { WeatherWidget } from './WeatherWidget'
 import { MontagePlanningWidget } from './MontagePlanningWidget'
-import { VisualizerDashboardWidget } from './VisualizerDashboardWidget'
 import { CalendarMiniWidget } from './CalendarMiniWidget'
 import { TeFacturerenWidget } from './TeFacturerenWidget'
 import { ClockWidget } from './ClockWidget'
-import { NotitieWidget } from './NotitieWidget'
-import { InboxPreviewWidget } from './InboxPreviewWidget'
-import { NieuwsWidget } from './NieuwsWidget'
 import { StatisticsCards } from './StatisticsCards'
 import { RecenteActiviteitWidget } from './RecenteActiviteitWidget'
 import { TodayPlanningWidget } from './TodayPlanningWidget'
@@ -23,8 +19,6 @@ import { AanDeSlagSectie } from './AanDeSlagSectie'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   AlertTriangle,
-  GripVertical,
-  Plus,
   BarChart3,
   Activity,
   CalendarDays,
@@ -32,22 +26,14 @@ import {
   FileText,
   Cloud,
   Wrench,
-  Sparkles,
   Calendar,
   Receipt,
   Clock,
-  StickyNote,
-  Mail,
-  Newspaper,
-  EyeOff,
-  Columns3,
   ArrowRight,
   type LucideIcon,
 } from 'lucide-react'
 import { DashboardDataProvider, useDashboardData } from '@/contexts/DashboardDataContext'
 import { formatCurrency, cn } from '@/lib/utils'
-import { logger } from '../../utils/logger'
-import { useDashboardLayout, type DashboardWidgetId, type WidgetSize } from '@/hooks/useDashboardLayout'
 
 // ============ GREETING ============
 
@@ -59,33 +45,29 @@ function getGreeting(): string {
   return 'Goeienavond'
 }
 
-// ============ WIDGET REGISTRY ============
+// ============ WIDGET REGISTRY (transitional — internal, not exported) ============
+
+type WidgetSize = 1 | 2 | 3 | 4
 
 interface WidgetDef {
   component: React.FC
   label: string
   icon: LucideIcon
   defaultSize: WidgetSize
-  description: string
   noCard?: boolean
-  fixedSize?: boolean // true = no resize control (e.g. statistieken)
 }
 
-export const WIDGET_REGISTRY: Record<DashboardWidgetId, WidgetDef> = {
-  statistieken: { component: StatisticsCards, label: 'Statistieken', icon: BarChart3, defaultSize: 4, description: 'Openstaand, projecten, offertes, hit rate', noCard: true, fixedSize: true },
-  activiteit: { component: RecenteActiviteitWidget, label: 'Recente activiteit', icon: Activity, defaultSize: 2, description: 'Laatste goedkeuringen, verzendingen en betalingen', noCard: true },
-  planning: { component: TodayPlanningWidget, label: 'Planning vandaag', icon: CalendarDays, defaultSize: 2, description: 'Taken, events en montages voor vandaag', noCard: true },
-  taken: { component: PriorityTasks, label: 'Prioriteit taken', icon: CheckSquare, defaultSize: 2, description: 'Top 5 taken op prioriteit', noCard: true },
-  offertes: { component: OpenstaandeOffertesWidget, label: 'Openstaande offertes', icon: FileText, defaultSize: 2, description: 'Recente openstaande offertes', noCard: true },
-  weer: { component: WeatherWidget, label: 'Weer', icon: Cloud, defaultSize: 1, description: 'Actueel weer en 4-daagse voorspelling', noCard: true },
-  montage: { component: MontagePlanningWidget, label: 'Montage planning', icon: Wrench, defaultSize: 3, description: 'Weekplanning montage-afspraken', noCard: true },
-  visualizer: { component: VisualizerDashboardWidget, label: 'Visualizer', icon: Sparkles, defaultSize: 2, description: 'AI visualizer statistieken', noCard: true },
-  kalender: { component: CalendarMiniWidget, label: 'Mini kalender', icon: Calendar, defaultSize: 1, description: 'Compacte maandkalender met events', noCard: true },
-  te_factureren: { component: TeFacturerenWidget, label: 'Te factureren', icon: Receipt, defaultSize: 2, description: 'Goedgekeurde offertes om te factureren', noCard: true },
-  klok: { component: ClockWidget, label: 'Klok', icon: Clock, defaultSize: 1, description: 'Digitale klok met datum' },
-  notities: { component: NotitieWidget, label: 'Notities', icon: StickyNote, defaultSize: 1, description: 'Snelle notities en memo\'s' },
-  inbox: { component: InboxPreviewWidget, label: 'Inbox', icon: Mail, defaultSize: 2, description: 'Recente emails uit je inbox' },
-  nieuws: { component: NieuwsWidget, label: 'Nieuws', icon: Newspaper, defaultSize: 2, description: 'Laatste nieuwskoppen' },
+const WIDGET_REGISTRY: Record<string, WidgetDef> = {
+  statistieken: { component: StatisticsCards, label: 'Statistieken', icon: BarChart3, defaultSize: 4, noCard: true },
+  planning: { component: TodayPlanningWidget, label: 'Planning vandaag', icon: CalendarDays, defaultSize: 2, noCard: true },
+  taken: { component: PriorityTasks, label: 'Prioriteit taken', icon: CheckSquare, defaultSize: 2, noCard: true },
+  montage: { component: MontagePlanningWidget, label: 'Montage planning', icon: Wrench, defaultSize: 3, noCard: true },
+  weer: { component: WeatherWidget, label: 'Weer', icon: Cloud, defaultSize: 1, noCard: true },
+  te_factureren: { component: TeFacturerenWidget, label: 'Te factureren', icon: Receipt, defaultSize: 2, noCard: true },
+  kalender: { component: CalendarMiniWidget, label: 'Mini kalender', icon: Calendar, defaultSize: 1, noCard: true },
+  klok: { component: ClockWidget, label: 'Klok', icon: Clock, defaultSize: 1 },
+  activiteit: { component: RecenteActiviteitWidget, label: 'Recente activiteit', icon: Activity, defaultSize: 2, noCard: true },
+  offertes: { component: OpenstaandeOffertesWidget, label: 'Openstaande offertes', icon: FileText, defaultSize: 2, noCard: true },
 }
 
 function getSizeClass(size: WidgetSize): string {
@@ -95,84 +77,6 @@ function getSizeClass(size: WidgetSize): string {
     case 2: return 'sm:col-span-2 lg:col-span-2'
     default: return ''
   }
-}
-
-// ============ RESIZE CONTROL ============
-
-const SIZE_OPTIONS: { value: WidgetSize; label: string; bars: number }[] = [
-  { value: 1, label: 'Smal', bars: 1 },
-  { value: 2, label: 'Half', bars: 2 },
-  { value: 3, label: 'Breed', bars: 3 },
-  { value: 4, label: 'Volledig', bars: 4 },
-]
-
-function WidgetResizeControl({
-  currentSize,
-  onResize,
-}: {
-  currentSize: WidgetSize
-  onResize: (size: WidgetSize) => void
-}) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!open) return
-    function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
-    }
-    const timer = setTimeout(() => document.addEventListener('mousedown', handleClick), 0)
-    return () => { clearTimeout(timer); document.removeEventListener('mousedown', handleClick) }
-  }, [open])
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        onClick={(e) => { e.stopPropagation(); setOpen(!open) }}
-        className="p-1 rounded-md text-muted-foreground/40 hover:text-muted-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1A535C]/40 focus-visible:ring-offset-1"
-        title="Breedte aanpassen"
-        aria-label="Widget-breedte aanpassen"
-      >
-        <Columns3 className="h-3.5 w-3.5" />
-      </button>
-      {open && (
-        <div
-          className="absolute right-0 top-full mt-1 z-50 bg-card border border-border rounded-xl shadow-elevation-md py-1.5 min-w-[150px]"
-          onClick={e => e.stopPropagation()}
-        >
-          {SIZE_OPTIONS.map(opt => (
-            <button
-              key={opt.value}
-              onClick={() => { onResize(opt.value); setOpen(false) }}
-              aria-label={`Breedte ${opt.label}`}
-              aria-pressed={currentSize === opt.value}
-              className={cn(
-                'w-full flex items-center gap-3 px-3 py-2 text-left text-xs transition-colors focus-visible:outline-none focus-visible:bg-[#1A535C]/[0.08]',
-                currentSize === opt.value
-                  ? 'bg-[#1A535C]/[0.06] font-semibold text-[#1A535C]'
-                  : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
-              )}
-            >
-              <div className="flex gap-0.5">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className={cn(
-                      'w-2.5 h-1.5 rounded-[2px] transition-colors',
-                      i < opt.bars
-                        ? currentSize === opt.value ? 'bg-[#1A535C]' : 'bg-muted-foreground/40'
-                        : 'bg-muted-foreground/10'
-                    )}
-                  />
-                ))}
-              </div>
-              <span>{opt.label}</span>
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  )
 }
 
 // ============ MAIN COMPONENT ============
@@ -190,7 +94,6 @@ function FORGEdeskDashboardInner() {
   const { user } = useAuth()
   const { profile } = useAppSettings()
   const userName = profile?.voornaam || user?.user_metadata?.voornaam || user?.email?.split('@')[0] || ''
-  const layout = useDashboardLayout()
 
   usePortaalHerinnering()
 
@@ -212,9 +115,6 @@ function FORGEdeskDashboardInner() {
   const today = new Date()
   const dateStr = today.toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long' })
   const formattedDate = dateStr.charAt(0).toUpperCase() + dateStr.slice(1)
-
-  const [showAddMenu, setShowAddMenu] = useState(false)
-  const hiddenWidgets = layout.allWidgets.filter(id => layout.hidden.has(id))
 
   return (
     <div className="space-y-8 sm:space-y-10 pb-12 overflow-x-hidden">
@@ -259,105 +159,42 @@ function FORGEdeskDashboardInner() {
 
       <PortaalAlerts />
 
-      {/* ── Configurable widget grid — 4 columns on lg+ ── */}
+      {/* ── Widget grid (transitional fixed-order render — drag/resize/hide removed) ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
-        {layout.order.map((widgetId, index) => {
-          const def = WIDGET_REGISTRY[widgetId]
-          if (!def) return null
-
+        {Object.entries(WIDGET_REGISTRY).map(([id, def], index) => {
           const WidgetComponent = def.component
-          const size = layout.sizes[widgetId] || def.defaultSize
-          const isDragging = layout.draggedWidget === widgetId
-          const isDragOver = layout.dragOverWidget === widgetId
-          const showResize = !def.fixedSize
+          const size = def.defaultSize
 
-          // Widgets that already render their own Card
           if (def.noCard) {
             return (
               <div
-                key={widgetId}
-                draggable
-                onDragStart={(e) => layout.handleDragStart(e, widgetId)}
-                onDragEnd={layout.handleDragEnd}
-                onDragEnter={(e) => layout.handleDragEnter(e, widgetId)}
-                onDragLeave={layout.handleDragLeave}
-                onDragOver={layout.handleDragOver}
-                onDrop={(e) => layout.handleDrop(e, widgetId)}
+                key={id}
                 className={cn(
-                  'group/widget relative transition-all duration-300 ease-smooth animate-stagger-item',
+                  'transition-all duration-300 ease-smooth animate-stagger-item',
                   getSizeClass(size),
-                  isDragging && 'opacity-40 scale-[0.98]',
                 )}
                 style={{ animationDelay: `${index * 50}ms` }}
               >
-                {isDragOver && !isDragging && (
-                  <div className="h-1 bg-[#1A535C]/40 rounded-full mb-3 animate-pulse" />
-                )}
-                {showResize && (
-                  <div className="absolute top-2 right-2 z-10 opacity-0 group-hover/widget:opacity-100 transition-opacity duration-200">
-                    <WidgetResizeControl
-                      currentSize={size}
-                      onResize={(s) => layout.resizeWidget(widgetId, s)}
-                    />
-                  </div>
-                )}
                 <WidgetComponent />
               </div>
             )
           }
 
-          // New widgets that need a Card wrapper
           return (
             <div
-              key={widgetId}
-              draggable
-              onDragStart={(e) => layout.handleDragStart(e, widgetId)}
-              onDragEnd={layout.handleDragEnd}
-              onDragEnter={(e) => layout.handleDragEnter(e, widgetId)}
-              onDragLeave={layout.handleDragLeave}
-              onDragOver={layout.handleDragOver}
-              onDrop={(e) => layout.handleDrop(e, widgetId)}
+              key={id}
               className={cn(
-                'group/widget transition-all duration-300 ease-smooth animate-stagger-item',
+                'transition-all duration-300 ease-smooth animate-stagger-item',
                 getSizeClass(size),
-                isDragging && 'opacity-40 scale-[0.98]',
               )}
               style={{ animationDelay: `${index * 50}ms` }}
             >
-              {isDragOver && !isDragging && (
-                <div className="h-1 bg-[#1A535C]/40 rounded-full mb-3 animate-pulse" />
-              )}
               <Card className="h-full overflow-hidden rounded-2xl bg-[#FEFDFB] hover:shadow-elevation-md transition-shadow duration-300" style={{ border: '0.5px solid hsl(35, 15%, 87%)' }}>
                 <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.06em]">
-                      <def.icon className="h-4 w-4 text-muted-foreground" />
-                      <span>{def.label}</span>
-                    </CardTitle>
-                    <div className="flex items-center gap-1 opacity-0 group-hover/widget:opacity-100 transition-opacity">
-                      {showResize && (
-                        <WidgetResizeControl
-                          currentSize={size}
-                          onResize={(s) => layout.resizeWidget(widgetId, s)}
-                        />
-                      )}
-                      <button
-                        onClick={() => layout.toggleWidget(widgetId)}
-                        className="p-1 rounded-md text-muted-foreground/40 hover:text-muted-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1A535C]/40 focus-visible:ring-offset-1"
-                        title="Verbergen"
-                        aria-label={`${def.label} verbergen`}
-                      >
-                        <EyeOff className="h-3.5 w-3.5" />
-                      </button>
-                      <div
-                        className="cursor-grab active:cursor-grabbing p-1 rounded-md text-muted-foreground/40 hover:text-muted-foreground hover:bg-muted transition-colors"
-                        aria-label={`${def.label} verslepen`}
-                        role="button"
-                      >
-                        <GripVertical className="h-3.5 w-3.5" />
-                      </div>
-                    </div>
-                  </div>
+                  <CardTitle className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.06em]">
+                    <def.icon className="h-4 w-4 text-muted-foreground" />
+                    <span>{def.label}</span>
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <WidgetComponent />
@@ -367,54 +204,6 @@ function FORGEdeskDashboardInner() {
           )
         })}
       </div>
-
-      {/* ── Add widget ── */}
-      {hiddenWidgets.length > 0 && (
-        <div className="relative">
-          <button
-            onClick={() => setShowAddMenu(!showAddMenu)}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-dashed border-border/60 hover:border-[#1A535C]/30 text-muted-foreground hover:text-[#1A535C] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1A535C]/40 focus-visible:ring-offset-2"
-            aria-label="Verborgen widgets tonen"
-            aria-expanded={showAddMenu}
-          >
-            <Plus className="h-4 w-4" />
-            <span className="text-sm font-medium">Widget toevoegen</span>
-          </button>
-          {showAddMenu && (
-            <>
-              <div className="fixed inset-0 z-10" onClick={() => setShowAddMenu(false)} />
-              <div className="absolute bottom-full left-0 right-0 mb-2 bg-card border border-border rounded-2xl shadow-elevation-lg p-4 z-20 max-h-[300px] overflow-y-auto">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {hiddenWidgets.map((id) => {
-                    const def = WIDGET_REGISTRY[id]
-                    if (!def) return null
-                    return (
-                      <button
-                        key={id}
-                        onClick={() => {
-                          layout.toggleWidget(id)
-                          setShowAddMenu(false)
-                        }}
-                        aria-label={`${def.label} toevoegen`}
-                        className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#1A535C]/[0.04] transition-all duration-150 text-left group/add focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1A535C]/40 focus-visible:ring-offset-1"
-                      >
-                        <div className="flex items-center justify-center h-10 w-10 rounded-xl flex-shrink-0 transition-colors" style={{ backgroundColor: 'rgba(26, 83, 92, 0.06)' }}>
-                          <def.icon className="h-4.5 w-4.5 text-[#1A535C]" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-semibold text-foreground">{def.label}</p>
-                          <p className="text-xs text-muted-foreground truncate">{def.description}</p>
-                        </div>
-                        <Plus className="h-4 w-4 text-[#1A535C] opacity-0 group-hover/add:opacity-100 transition-opacity flex-shrink-0" />
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-      )}
     </div>
   )
 }
