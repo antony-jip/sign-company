@@ -768,6 +768,37 @@ export async function getTemplate(
  * zodat zowel een ontbrekende rij (nieuwe org) als een door de user
  * aangepaste rij gladgestreken worden.
  */
+/**
+ * Sla user-aangepaste systeem-template op. UPSERT op de partial UNIQUE
+ * zodat een ontbrekende rij (nieuwe org) ook aangemaakt wordt zonder
+ * dat de caller eerst hoeft te SELECT-checken.
+ */
+export async function saveSystemTemplate(
+  orgId: string,
+  triggerTaskNaam: string,
+  content: { onderwerp: string; body: string },
+): Promise<void> {
+  if (!supabase) throw new Error('Niet geconfigureerd')
+  const def = DEFAULT_TEMPLATES[triggerTaskNaam]
+  if (!def) throw new Error(`Onbekende trigger_task_naam: ${triggerTaskNaam}`)
+
+  const { error } = await supabase
+    .from('email_templates')
+    .upsert(
+      {
+        organisatie_id: orgId,
+        trigger_task_naam: triggerTaskNaam,
+        is_systeem: true,
+        naam: def.naam,
+        onderwerp: content.onderwerp,
+        body: content.body,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'uniq_email_templates_systeem_per_org' },
+    )
+  if (error) throw error
+}
+
 export async function resetTemplateToDefault(
   orgId: string,
   triggerTaskNaam: string,
