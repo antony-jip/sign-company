@@ -2,7 +2,19 @@ import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
-import { AlertTriangle, ArrowRight, TrendingUp } from 'lucide-react'
+import {
+  AlertTriangle,
+  ArrowRight,
+  Sun,
+  Cloud,
+  CloudSun,
+  CloudFog,
+  CloudDrizzle,
+  CloudRain,
+  CloudSnow,
+  CloudLightning,
+  type LucideIcon,
+} from 'lucide-react'
 import { PortaalAlerts } from './PortaalAlerts'
 import { AanDeSlagSectie } from './AanDeSlagSectie'
 import { VandaagBlok } from './VandaagBlok'
@@ -10,8 +22,20 @@ import { OpvolgenBlok } from './OpvolgenBlok'
 import { KpiStrip } from './KpiStrip'
 import { RightRail } from './RightRail'
 import { usePortaalHerinnering } from '@/hooks/usePortaalHerinnering'
+import { useWeather, type WeatherIconKey } from '@/hooks/useWeather'
 import { DashboardDataProvider, useDashboardData } from '@/contexts/DashboardDataContext'
 import { formatCurrency } from '@/lib/utils'
+
+const WEATHER_ICONS: Record<WeatherIconKey, LucideIcon> = {
+  sun: Sun,
+  'cloud-sun': CloudSun,
+  cloud: Cloud,
+  'cloud-fog': CloudFog,
+  'cloud-drizzle': CloudDrizzle,
+  'cloud-rain': CloudRain,
+  'cloud-snow': CloudSnow,
+  'cloud-lightning': CloudLightning,
+}
 
 function getDagdeel(): { greet: string; verb: string } {
   const hour = new Date().getHours()
@@ -49,31 +73,8 @@ function FORGEdeskDashboardInner() {
     }
   }, [facturen])
 
-  const omzetMaand = useMemo(() => {
-    const now = new Date()
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
-    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1)
-    const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-
-    const inDeze = facturen
-      .filter(f => {
-        const d = new Date(f.factuurdatum || f.created_at)
-        return d >= monthStart && d < monthEnd
-      })
-      .reduce((s, f) => s + (f.totaal || 0), 0)
-
-    const inVorige = facturen
-      .filter(f => {
-        const d = new Date(f.factuurdatum || f.created_at)
-        return d >= prevMonthStart && d < monthStart
-      })
-      .reduce((s, f) => s + (f.totaal || 0), 0)
-
-    const trend = inVorige > 0 ? Math.round(((inDeze - inVorige) / inVorige) * 100) : null
-    const monthLabel = now.toLocaleDateString('nl-NL', { month: 'long' }).toUpperCase()
-
-    return { bedrag: inDeze, trend, monthLabel }
-  }, [facturen])
+  const weather = useWeather()
+  const WeatherIcon = weather ? WEATHER_ICONS[weather.iconKey] : null
 
   const { verb } = useMemo(() => getDagdeel(), [])
 
@@ -118,32 +119,33 @@ function FORGEdeskDashboardInner() {
                 </h1>
               </div>
 
-              <div
-                className="hidden md:flex flex-col justify-center px-7 py-7 sm:px-8 w-[260px]"
-                style={{
-                  background: 'rgba(255,255,255,0.04)',
-                  borderLeft: '1px solid rgba(255,255,255,0.08)',
-                }}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-[10px] uppercase tracking-wider text-white/60 font-mono">
-                    Omzet — {omzetMaand.monthLabel}
-                  </span>
-                  {omzetMaand.trend !== null && (
-                    <span className="flex items-center gap-1 text-[11px] font-mono text-white/80">
-                      <TrendingUp className="w-3 h-3" />
-                      {omzetMaand.trend > 0 ? '+' : ''}
-                      {omzetMaand.trend}%
-                    </span>
-                  )}
+              {weather && WeatherIcon && (
+                <div
+                  className="hidden md:flex flex-col justify-center px-7 py-7 sm:px-8 w-[220px]"
+                  style={{
+                    background: 'rgba(255,255,255,0.04)',
+                    borderLeft: '1px solid rgba(255,255,255,0.08)',
+                  }}
+                >
+                  <div className="flex items-center gap-3 mb-2">
+                    <WeatherIcon
+                      className="w-8 h-8 flex-shrink-0"
+                      strokeWidth={1.4}
+                      style={{ color: weather.isRaining ? '#9DD3DA' : '#F5C460' }}
+                    />
+                    <p className="font-heading font-bold text-white text-[40px] leading-none">
+                      <span className="font-mono">{weather.temperature}</span>
+                      <span className="text-white/60 text-[24px] font-normal">°</span>
+                    </p>
+                  </div>
+                  <p
+                    className="text-[14px] text-white/80"
+                    style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+                  >
+                    {weather.label}
+                  </p>
                 </div>
-                <p className="font-heading font-bold text-white text-[28px] leading-none">
-                  <span className="text-[18px] text-white/60 mr-1">€</span>
-                  <span className="font-mono">
-                    {formatCurrency(omzetMaand.bedrag).replace(/^€\s*/, '')}
-                  </span>
-                </p>
-              </div>
+              )}
             </div>
           </section>
 
