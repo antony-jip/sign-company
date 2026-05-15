@@ -109,7 +109,7 @@ Met vriendelijke groet,
   (
     'Portaal-herinnering',
     'portaal_herinnering',
-    $sub$Reminder: actie nodig in uw portaal$sub$,
+    $sub$Herinnering: actie nodig in uw portaal$sub$,
     $body$Beste {{contactpersoon}},
 
 Er staat nog een openstaande actie voor u klaar in het portaal van {{bedrijfsnaam}}. Wilt u even kijken wanneer het u uitkomt?
