@@ -32,9 +32,9 @@ CROSS JOIN (VALUES
     'Offerte-opvolging dag 1',
     'offerte_opvolging_dag1',
     $sub$Herinnering: offerte {{offerte_nummer}}$sub$,
-    $body$Beste {{contactpersoon}},
+    $body$Hoi {{contactpersoon}},
 
-Een paar dagen geleden stuurden wij u offerte {{offerte_nummer}}. Heeft u de offerte kunnen bekijken? We horen graag of u nog vragen heeft.
+Een paar dagen geleden stuurden we je offerte {{offerte_nummer}}. Heb je de offerte kunnen bekijken? We horen graag of je nog vragen hebt.
 
 Bekijk de offerte hier: {{portaal_url}}
 
@@ -45,7 +45,7 @@ Met vriendelijke groet,
     'Offerte-opvolging dag 7',
     'offerte_opvolging_dag7',
     $sub$Vraag over offerte {{offerte_nummer}}$sub$,
-    $body$Beste {{contactpersoon}},
+    $body$Hoi {{contactpersoon}},
 
 We hebben nog geen reactie ontvangen op offerte {{offerte_nummer}}. Past het tarief, of zijn er onderdelen die we kunnen aanpassen? Laat het ons gerust weten.
 
@@ -58,9 +58,9 @@ Met vriendelijke groet,
     'Factuur-herinnering 1',
     'factuur_herinnering_1',
     $sub$Vriendelijke herinnering factuur {{factuur_nummer}}$sub$,
-    $body$Beste {{contactpersoon}},
+    $body$Hoi {{contactpersoon}},
 
-Factuur {{factuur_nummer}} van {{factuur_bedrag}} stond vervallen op {{verval_datum}}. Wilt u het bedrag overmaken? Heeft u de factuur al voldaan, dan kunt u dit bericht negeren.
+Factuur {{factuur_nummer}} van {{factuur_bedrag}} stond vervallen op {{verval_datum}}. Wil je het bedrag overmaken? Heb je de factuur al voldaan, dan kun je dit bericht negeren.
 
 Bekijk de factuur hier: {{portaal_url}}
 
@@ -71,9 +71,9 @@ Met vriendelijke groet,
     'Factuur-herinnering 2',
     'factuur_herinnering_2',
     $sub$Tweede herinnering factuur {{factuur_nummer}}$sub$,
-    $body$Beste {{contactpersoon}},
+    $body$Hoi {{contactpersoon}},
 
-Factuur {{factuur_nummer}} van {{factuur_bedrag}} is nog niet voldaan. We willen u vriendelijk verzoeken het bedrag binnen 7 dagen over te maken.
+Factuur {{factuur_nummer}} van {{factuur_bedrag}} is nog niet voldaan. We willen je vriendelijk verzoeken het bedrag binnen 7 dagen over te maken.
 
 Bekijk de factuur hier: {{portaal_url}}
 
@@ -84,9 +84,9 @@ Met vriendelijke groet,
     'Factuur-herinnering 3',
     'factuur_herinnering_3',
     $sub$Laatste herinnering factuur {{factuur_nummer}}$sub$,
-    $body$Beste {{contactpersoon}},
+    $body$Hoi {{contactpersoon}},
 
-Dit is de laatste herinnering voor factuur {{factuur_nummer}} van {{factuur_bedrag}}. Wij ontvangen graag binnen 7 dagen uw betaling. Mocht er iets in de weg staan, neem dan contact met ons op.
+Dit is de laatste herinnering voor factuur {{factuur_nummer}} van {{factuur_bedrag}}. We ontvangen graag binnen 7 dagen je betaling. Mocht er iets in de weg staan, neem dan contact met ons op.
 
 Bekijk de factuur hier: {{portaal_url}}
 
@@ -97,9 +97,9 @@ Met vriendelijke groet,
     'Portaal-uitnodiging',
     'portaal_uitnodiging',
     $sub$Welkom in het klantportaal van {{bedrijfsnaam}}$sub$,
-    $body$Beste {{contactpersoon}},
+    $body$Hoi {{contactpersoon}},
 
-Hierbij uw persoonlijke toegang tot het klantportaal van {{bedrijfsnaam}}. U vindt hier alle documenten, offertes en facturen voor project {{project_naam}}.
+Hierbij je persoonlijke toegang tot het klantportaal van {{bedrijfsnaam}}. Je vindt hier alle documenten, offertes en facturen voor project {{project_naam}}.
 
 Open het portaal: {{portaal_url}}
 
@@ -109,10 +109,10 @@ Met vriendelijke groet,
   (
     'Portaal-herinnering',
     'portaal_herinnering',
-    $sub$Herinnering: actie nodig in uw portaal$sub$,
-    $body$Beste {{contactpersoon}},
+    $sub$Herinnering: actie nodig in je portaal$sub$,
+    $body$Hoi {{contactpersoon}},
 
-Er staat nog een openstaande actie voor u klaar in het portaal van {{bedrijfsnaam}}. Wilt u even kijken wanneer het u uitkomt?
+Er staat nog een openstaande actie voor je klaar in het portaal van {{bedrijfsnaam}}. Wil je even kijken wanneer het je uitkomt?
 
 Open het portaal: {{portaal_url}}
 
