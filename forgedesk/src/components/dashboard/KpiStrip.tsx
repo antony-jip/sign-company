@@ -61,7 +61,8 @@ export function KpiStrip() {
       return Math.max(max, d)
     }, 0)
 
-    const pijplijn = offertes.filter(o => o.wacht_op_reactie === true)
+    const openStatussen = new Set(['verzonden', 'bekeken', 'wijziging_gevraagd'])
+    const pijplijn = offertes.filter(o => openStatussen.has(o.status) && o.verstuurd_op)
     const pijplijnBedrag = pijplijn.reduce((s, o) => s + (o.totaal || 0), 0)
 
     const montagesWeek = montages.filter(m => {
