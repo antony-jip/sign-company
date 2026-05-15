@@ -13,12 +13,28 @@ interface TypeStyle {
   icon: LucideIcon
   iconColor: string
   bg: string
+  hoverBg: string
 }
 
 const TYPE_STYLES: Record<ItemType, TypeStyle> = {
-  montage: { icon: Wrench, iconColor: '#F15025', bg: '#FDE8E4' },
-  taak: { icon: CheckSquare, iconColor: '#1A535C', bg: 'rgba(26,83,92,0.08)' },
-  event: { icon: CalendarDays, iconColor: '#8A7A4A', bg: '#F5F2E8' },
+  montage: {
+    icon: Wrench,
+    iconColor: '#F15025',
+    bg: 'linear-gradient(135deg, #FDE8E4 0%, #FBD7CC 100%)',
+    hoverBg: 'linear-gradient(90deg, rgba(241,80,37,0.04) 0%, rgba(241,80,37,0.00) 100%)',
+  },
+  taak: {
+    icon: CheckSquare,
+    iconColor: '#1A535C',
+    bg: 'linear-gradient(135deg, rgba(26,83,92,0.07) 0%, rgba(26,83,92,0.14) 100%)',
+    hoverBg: 'linear-gradient(90deg, rgba(26,83,92,0.04) 0%, rgba(26,83,92,0.00) 100%)',
+  },
+  event: {
+    icon: CalendarDays,
+    iconColor: '#8A7A4A',
+    bg: 'linear-gradient(135deg, #F5F2E8 0%, #EDE6CE 100%)',
+    hoverBg: 'linear-gradient(90deg, rgba(138,122,74,0.04) 0%, rgba(138,122,74,0.00) 100%)',
+  },
 }
 
 interface VandaagItem {
@@ -179,8 +195,11 @@ export function VandaagBlok() {
 
   return (
     <section
-      className="rounded-xl bg-white p-6 sm:p-8"
-      style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}
+      className="rounded-xl p-6 sm:p-7"
+      style={{
+        background: 'linear-gradient(180deg, #FFFFFF 0%, #FBFAF7 100%)',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.03), 0 4px 16px rgba(20,62,71,0.025)',
+      }}
     >
       <header className="flex items-baseline justify-between gap-4 mb-5">
         <div className="flex items-baseline gap-3 min-w-0">
@@ -204,7 +223,7 @@ export function VandaagBlok() {
       {items.length === 0 ? (
         <p className="text-sm text-[#9B9B95] py-3">Niets ingepland voor vandaag.</p>
       ) : (
-        <ul className="space-y-1">
+        <ul className="-mx-2">
           {items.map(item => {
             const typeStyle = TYPE_STYLES[item.type]
             const TypeIcon = typeStyle.icon
@@ -213,34 +232,51 @@ export function VandaagBlok() {
                 <button
                   type="button"
                   onClick={() => navigate(item.href)}
-                  className="group relative w-full flex items-center gap-3 sm:gap-4 py-3 px-3 -mx-2 rounded-lg hover:bg-[#F8F7F5] transition-colors text-left focus-visible:outline-none focus-visible:bg-[#F8F7F5]"
+                  className="group relative w-full flex items-center gap-3 sm:gap-3.5 py-2 px-3 rounded-lg text-left transition-colors focus-visible:outline-none"
+                  style={{ background: 'transparent' }}
+                  onMouseEnter={e => {
+                    ;(e.currentTarget as HTMLButtonElement).style.background = typeStyle.hoverBg
+                  }}
+                  onMouseLeave={e => {
+                    ;(e.currentTarget as HTMLButtonElement).style.background = 'transparent'
+                  }}
+                  onFocus={e => {
+                    ;(e.currentTarget as HTMLButtonElement).style.background = typeStyle.hoverBg
+                  }}
+                  onBlur={e => {
+                    ;(e.currentTarget as HTMLButtonElement).style.background = 'transparent'
+                  }}
                 >
                   <span
                     aria-hidden
-                    className="absolute left-0 top-2 bottom-2 w-[3px] rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                    style={{ backgroundColor: typeStyle.iconColor }}
+                    className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity"
+                    style={{ background: `linear-gradient(180deg, ${typeStyle.iconColor} 0%, ${typeStyle.iconColor}99 100%)` }}
                   />
                   <span
-                    className="inline-flex items-center justify-center w-[32px] h-[32px] flex-shrink-0"
-                    style={{ backgroundColor: typeStyle.bg, borderRadius: 10 }}
+                    className="inline-flex items-center justify-center w-[30px] h-[30px] flex-shrink-0 transition-transform group-hover:scale-[1.04]"
+                    style={{
+                      background: typeStyle.bg,
+                      borderRadius: 9,
+                      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.5)',
+                    }}
                     aria-hidden
                   >
-                    <TypeIcon className="h-4 w-4" style={{ color: typeStyle.iconColor }} />
+                    <TypeIcon className="h-[15px] w-[15px]" style={{ color: typeStyle.iconColor }} strokeWidth={2} />
                   </span>
                   <span
                     className={cn(
-                      'font-mono text-[13px] w-11 flex-shrink-0 tabular-nums',
-                      item.tijd ? 'text-[#1A1A1A]' : 'text-transparent',
+                      'font-mono text-[12px] w-10 flex-shrink-0 tabular-nums',
+                      item.tijd ? 'text-[#1A1A1A] font-semibold' : 'text-transparent',
                     )}
                   >
                     {item.tijd ?? '00:00'}
                   </span>
                   <span className="flex-1 min-w-0">
-                    <span className="block text-[14px] text-[#1A1A1A] truncate leading-tight">
+                    <span className="block text-[13.5px] font-medium text-[#1A1A1A] truncate leading-[1.25]">
                       {item.titel}
                     </span>
                     {item.context && (
-                      <span className="block text-[11px] text-[#9B9B95] truncate leading-tight mt-0.5">
+                      <span className="block text-[11px] text-[#9B9B95] truncate leading-tight mt-[2px]">
                         {item.context}
                       </span>
                     )}
@@ -250,7 +286,7 @@ export function VandaagBlok() {
                       <Avatar medewerker={item.toegewezenAan} medewerkers={medewerkers} />
                     )}
                   </span>
-                  <ArrowRight className="h-3.5 w-3.5 text-[#9B9B95] opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                  <ArrowRight className="h-3.5 w-3.5 text-[#9B9B95] opacity-0 group-hover:opacity-100 -translate-x-1 group-hover:translate-x-0 transition-all flex-shrink-0" />
                 </button>
               </li>
             )
