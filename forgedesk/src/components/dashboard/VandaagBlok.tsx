@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowRight, Wrench, CheckSquare, CalendarDays, type LucideIcon } from 'lucide-react'
+import { useAuth } from '@/contexts/AuthContext'
 import { useDashboardData } from '@/contexts/DashboardDataContext'
 import { getAvatarStyle } from '@/utils/medewerkerAvatar'
 import { cn } from '@/lib/utils'
@@ -92,14 +93,33 @@ function Avatar({ medewerker, medewerkers }: { medewerker: Medewerker; medewerke
 
 export function VandaagBlok() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const { taken, montages, events, klanten, projecten, medewerkers } = useDashboardData()
+
+  const currentMedewerker = useMemo(
+    () => medewerkers.find(m => m.user_id === user?.id) ?? null,
+    [medewerkers, user?.id],
+  )
 
   const items = useMemo<VandaagItem[]>(() => {
     const klantById = new Map<string, Klant>(klanten.map(k => [k.id, k]))
     const projectById = new Map<string, Project>(projecten.map(p => [p.id, p]))
 
+    // Strict "alleen jouw planning" wanneer we de huidige medewerker kennen;
+    // fallback naar iedereen voor admins die niet in de medewerkers-tabel staan.
+    const matchesSelf = (people: string[] | undefined | null): boolean => {
+      if (!currentMedewerker) return true
+      if (!people || people.length === 0) return false
+      return people.some(p => p === currentMedewerker.id || p === currentMedewerker.naam)
+    }
+    const matchesSelfSingle = (val: string | undefined | null): boolean => {
+      if (!currentMedewerker) return true
+      if (!val) return false
+      return val === currentMedewerker.id || val === currentMedewerker.naam
+    }
+
     const montageItems: VandaagItem[] = montages
-      .filter(m => isToday(m.datum) && m.status !== 'afgerond')
+      .filter(m => isToday(m.datum) && m.status !== 'afgerond' && matchesSelf(m.monteurs))
       .map(m => {
         const tijd = timeFromMontage(m)
         const locatie = m.locatie || m.klant_naam || ''
@@ -116,7 +136,7 @@ export function VandaagBlok() {
       })
 
     const takenItems: VandaagItem[] = taken
-      .filter(t => isToday(t.deadline) && t.status !== 'klaar')
+      .filter(t => isToday(t.deadline) && t.status !== 'klaar' && matchesSelfSingle(t.toegewezen_aan))
       .map(t => {
         const klant = t.klant_id ? klantById.get(t.klant_id) : null
         const project = t.project_id ? projectById.get(t.project_id) : null
@@ -134,7 +154,7 @@ export function VandaagBlok() {
       })
 
     const eventItems: VandaagItem[] = events
-      .filter(e => isToday(e.start_datum))
+      .filter(e => isToday(e.start_datum) && matchesSelf(e.deelnemers))
       .map(e => {
         const tijd = timeFromEvent(e)
         return {
@@ -150,7 +170,7 @@ export function VandaagBlok() {
       })
 
     return [...montageItems, ...takenItems, ...eventItems].sort((a, b) => a.sortKey - b.sortKey)
-  }, [taken, montages, events, klanten, projecten, medewerkers])
+  }, [taken, montages, events, klanten, projecten, medewerkers, currentMedewerker])
 
   const counts = useMemo(() => {
     const m = items.filter(i => i.type === 'montage').length
