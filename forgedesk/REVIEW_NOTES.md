@@ -79,21 +79,32 @@ Trackt onder [GitHub issue #16](https://github.com/antony-jip/sign-company/issue
 
 ---
 
-## Fase 3d — `feat/communicatie-tab` (2026-05-15)
+## Fase 3d — `feat/communicatie-tab` (2026-05-15, bijgewerkt na Antony's GATE 4 feedback)
 
-Scope-aanpassing op plan:
+Status na opvolg-iteratie:
 
-- **Template-fetch alleen voor trial-reminder volledig geïmplementeerd.**
-  Plan wilde alle 5 trigger-files koppelen aan `email_templates`.
-  Trial-reminder gebruikt nu `getTemplateAdmin` + `renderTriggerTemplate`
-  met DB-content; onderwerp en body komen uit de tabel. Voor de andere
-  vier (offerte-opvolging, email-opvolging, portaal-herinnering,
-  onboarding-sequence) zou template-koppeling significante refactor
-  vragen omdat die flows óf AI-generated body hebben (email-opvolging),
-  óf HTML-builders met losse heading/cta-velden (onboarding,
-  portaal-herinnering), óf hardcoded subject/body verspreid over
-  meerdere stappen (offerte-opvolging). Template-content blijft daar
-  vooralsnog hardcoded; idempotency-laag is wel doorgevoerd.
+- **Template-fetch voor 4 van 5 trigger-flows nu geland**:
+  - trial-reminder, offerte-opvolging, portaal-herinnering: volledig
+    template-driven via `getTemplateAdmin` + `renderTriggerTemplate`.
+  - offerte-opvolging gebruikt per-stap custom content (uit
+    `offerte_opvolg_stappen`) wanneer ingevuld; bij lege stap-velden
+    valt het terug op `offerte_opvolging_dag1` (stap.dagen_na_versturen
+    ≤ 3) of `offerte_opvolging_dag7` (anders).
+  - portaal-herinnering gebruikt nu uniform `email_templates` als
+    primaire bron; oude `portaal_instellingen.template_herinnering`
+    blijft alleen als fallback wanneer organisatie_id niet kan worden
+    opgelost (zou nooit moeten voorkomen in normaal verkeer).
+- **R2-quickfix** gedaan in `src/trigger/utils/templates.ts`:
+  `FALLBACK_TEMPLATES` const dupliceert de 12 systeem-templates uit
+  migration 103, zodat `getTemplateAdmin` fail-soft kan zijn voor nieuwe
+  trial-orgs die nog niet geseed zijn.
+- **email-opvolging blijft AI-driven**: onderwerp is `Re: {origineel}`
+  voor threading, body komt uit Anthropic. Een template-fetch hier zou
+  óf threading breken (subject) óf de AI-feature elimineren (body). Per
+  Antony's wens "copy-paste-patroon waar zinvol" niet gekoppeld.
+  Idempotency-key + rollback is wel aanwezig.
+- **Onboarding-sequence en color-picker**: per Antony's eigen instructie
+  doorgeschoven naar [issue #16](https://github.com/antony-jip/sign-company/issues/16).
 - **Idempotency-keys overal toegevoegd:**
   - offerte-opvolging via `sendEmailForUser` (organisatieId +
     idempotencyKey params toegevoegd, skipped pad behandeld).

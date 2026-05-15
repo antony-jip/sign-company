@@ -2,7 +2,7 @@ import { logger, schedules, metadata } from "@trigger.dev/sdk/v3";
 import { getSupabaseAdmin } from "./utils/supabase";
 import { sendClientEmail } from "./utils/resend";
 import { buildKey, checkAndMark, rollbackKey } from "./utils/idempotency";
-import { replaceTemplateVariables } from "./utils/emailTemplate";
+import { getTemplateAdmin, renderTriggerTemplate } from "./utils/templates";
 
 /**
  * Scheduled task: checks all users' active portalen for unanswered items
@@ -206,24 +206,34 @@ async function processUserHerinneringen(params: {
     const klantNaam = klant.contactpersoon || "klant";
     const projectNaam = project?.naam || "project";
 
-    // Template variable replacement
+    // Template variable replacement: zelfde keys als DEFAULT_TEMPLATES.portaal_herinnering.
     const vars: Record<string, string> = {
+      contactpersoon: klantNaam,
       klant_naam: klantNaam,
       klantnaam: klantNaam,
       bedrijfsnaam,
       project_naam: projectNaam,
       projectnaam: projectNaam,
+      portaal_url: portaalUrl,
       portaal_link: portaalUrl,
       item_type: item.titel,
     };
 
-    const onderwerp = template?.onderwerp
-      ? replaceTemplateVariables(template.onderwerp, vars)
-      : `Herinnering: ${item.titel} wacht op uw reactie`;
-
-    const heading = template?.inhoud
-      ? replaceTemplateVariables(template.inhoud, vars)
-      : `U heeft nog niet gereageerd op ${item.titel} voor project ${projectNaam}.`;
+    const organisatieId = (project as { organisatie_id?: string } | undefined)?.organisatie_id;
+    let onderwerp: string;
+    let heading: string;
+    if (organisatieId) {
+      const dbTemplate = await getTemplateAdmin(organisatieId, "portaal_herinnering");
+      onderwerp = renderTriggerTemplate(dbTemplate.onderwerp, vars);
+      heading = renderTriggerTemplate(dbTemplate.body, vars);
+    } else {
+      onderwerp = template?.onderwerp
+        ? renderTriggerTemplate(template.onderwerp, vars)
+        : `Herinnering: ${item.titel} wacht op je reactie`;
+      heading = template?.inhoud
+        ? renderTriggerTemplate(template.inhoud, vars)
+        : `Je hebt nog niet gereageerd op ${item.titel} voor project ${projectNaam}.`;
+    }
 
     // Get user's email for reply-to
     const { data: emailSettings } = await supabase
@@ -234,7 +244,6 @@ async function processUserHerinneringen(params: {
 
     const replyTo = emailSettings?.gmail_address || "";
 
-    const organisatieId = (project as { organisatie_id?: string } | undefined)?.organisatie_id;
     const idempotencyKey = buildKey("portaal_herinnering", item.project_id);
     if (organisatieId) {
       const fresh = await checkAndMark(organisatieId, idempotencyKey);

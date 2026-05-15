@@ -1,6 +1,7 @@
 import { logger, schedules, metadata } from "@trigger.dev/sdk/v3";
 import { getSupabaseAdmin } from "./utils/supabase";
 import { sendEmailForUser } from "./utils/email";
+import { getTemplateAdmin, renderTriggerTemplate } from "./utils/templates";
 import { buildPortalEmailHtml, replaceTemplateVariables } from "./utils/emailTemplate";
 
 /**
@@ -252,8 +253,15 @@ export const offerteOpvolgingCron = schedules.task({
             portaal_link: offerteLink,
           };
 
-          const onderwerp = replaceTemplateVariables(stap.onderwerp, vars);
-          const inhoud = replaceTemplateVariables(stap.inhoud, vars);
+          // Per-stap custom content wint; bij lege velden fallback op het
+          // bijbehorende systeem-template uit email_templates (dag1 of dag7
+          // afhankelijk van stap.dagen_na_versturen).
+          const triggerNaam = stap.dagen_na_versturen <= 3
+            ? "offerte_opvolging_dag1"
+            : "offerte_opvolging_dag7";
+          const fallbackTemplate = await getTemplateAdmin(schema.organisatie_id, triggerNaam);
+          const onderwerp = renderTriggerTemplate(stap.onderwerp || fallbackTemplate.onderwerp, vars);
+          const inhoud = renderTriggerTemplate(stap.inhoud || fallbackTemplate.body, vars);
 
           try {
             // Email naar klant — via portaal herinnering
