@@ -484,26 +484,6 @@ export function EmailLayout() {
     return 'Vorig jaar of ouder'
   }, [])
 
-  const rowVirtualizer = useVirtualizer({
-    count: flatItems.length,
-    getScrollElement: () => emailListRef.current,
-    estimateSize: (i) => {
-      const it = flatItems[i]
-      if (!it) return 46
-      if (it.type === 'header-pinned' || it.type === 'header-group') return 36
-      // Stacked desktop = 46, inline / mobile = ~70
-      return isDesktop && listStyle === 'stacked' ? 46 : 70
-    },
-    overscan: 10,
-    getItemKey: (i) => {
-      const it = flatItems[i]
-      if (!it) return i
-      if (it.type === 'header-pinned') return 'header-pinned'
-      if (it.type === 'header-group') return `group-${it.group}`
-      return `email-${it.email.id}`
-    },
-  })
-
   const emailsByGroup = useMemo(() => {
     const map = new Map<string, string[]>()
     for (const email of threadedEmails) {
@@ -545,6 +525,26 @@ export function EmailLayout() {
     })
     return items
   }, [threadedEmails, getDateGroup])
+
+  const rowVirtualizer = useVirtualizer({
+    count: flatItems.length,
+    getScrollElement: () => emailListRef.current,
+    estimateSize: (i) => {
+      const it = flatItems[i]
+      if (!it) return 46
+      if (it.type === 'header-pinned' || it.type === 'header-group') return 36
+      // Stacked desktop = 46, inline / mobile = ~70
+      return isDesktop && listStyle === 'stacked' ? 46 : 70
+    },
+    overscan: 10,
+    getItemKey: (i) => {
+      const it = flatItems[i]
+      if (!it) return i
+      if (it.type === 'header-pinned') return 'header-pinned'
+      if (it.type === 'header-group') return `group-${it.group}`
+      return `email-${it.email.id}`
+    },
+  })
 
   const toggleCheckGroup = useCallback((group: string) => {
     const groupIds = emailsByGroup.get(group) || []
@@ -1651,6 +1651,29 @@ export function EmailLayout() {
           )}
         </div>
 
+        {/* Sales-banner zit BUITEN de scroll-container zodat de virtualizer
+            niet hoeft te compenseren voor een non-virtual element binnen
+            zijn scroll-element (was bron van overlap-bug bij sales-folders). */}
+        {(selectedFolder === 'sales-wacht' || selectedFolder === 'sales-beantwoord') && !salesBannerDismissed && !isLoading && threadedEmails.length > 0 && (
+          <div className="mx-4 mt-3 px-4 py-3 bg-amber-50/80 border border-amber-200 rounded-lg text-[12px] text-amber-900 leading-relaxed flex-shrink-0">
+            <p className="font-medium mb-1">Hoe werkt Opvolgen?</p>
+            <p>
+              "Beantwoord" wordt bepaald op basis van het afzender-emailadres, niet op echte
+              email-threads. Bij koude acquisitie kan een antwoord van een ander adres komen
+              (zoals info@) — die blijft dan in "Opvolgen". Andersom kan een mail over een
+              ander onderwerp ten onrechte als reactie tellen. Gebruik de per-rij knoppen om
+              dit te corrigeren.
+            </p>
+            <button
+              type="button"
+              onClick={dismissSalesBanner}
+              className="mt-2 text-amber-700 hover:text-amber-900 underline text-[11px]"
+            >
+              Begrepen, niet meer tonen
+            </button>
+          </div>
+        )}
+
         {/* Email list */}
         <div
           ref={emailListRef}
@@ -1695,25 +1718,6 @@ export function EmailLayout() {
             </div>
           ) : (
             <div>
-              {(selectedFolder === 'sales-wacht' || selectedFolder === 'sales-beantwoord') && !salesBannerDismissed && (
-                <div className="mx-4 mt-3 px-4 py-3 bg-amber-50/80 border border-amber-200 rounded-lg text-[12px] text-amber-900 leading-relaxed">
-                  <p className="font-medium mb-1">Hoe werkt Opvolgen?</p>
-                  <p>
-                    "Beantwoord" wordt bepaald op basis van het afzender-emailadres, niet op echte
-                    email-threads. Bij koude acquisitie kan een antwoord van een ander adres komen
-                    (zoals info@) — die blijft dan in "Opvolgen". Andersom kan een mail over een
-                    ander onderwerp ten onrechte als reactie tellen. Gebruik de per-rij knoppen om
-                    dit te corrigeren.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={dismissSalesBanner}
-                    className="mt-2 text-amber-700 hover:text-amber-900 underline text-[11px]"
-                  >
-                    Begrepen, niet meer tonen
-                  </button>
-                </div>
-              )}
               <div
                 style={{
                   height: rowVirtualizer.getTotalSize(),
