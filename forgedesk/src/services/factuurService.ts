@@ -228,21 +228,28 @@ export async function deleteHerinneringTemplate(id: string): Promise<void> {
 
 // ============ NUMMER GENERATIE ============
 
+function buildFactuurNummer(prefix: string, volgnummer: number): string {
+  const jaar = new Date().getFullYear().toString()
+  const resolvedPrefix = prefix.replace('{jaar}', jaar)
+  return `${resolvedPrefix}${volgnummer}`
+}
+
 export async function generateFactuurNummer(prefix: string = '', startNummer = 1): Promise<string> {
-  const jaar = new Date().getFullYear()
-  const trimmed = prefix.replace(/-+$/, '').trim()
-  const jaarPrefix = trimmed ? `${trimmed}-${jaar}-` : `${jaar}-`
-  let maxNr = await getMaxNummer('facturen', 'nummer', jaarPrefix)
+  const jaar = new Date().getFullYear().toString()
+  const resolvedPrefix = prefix.replace('{jaar}', jaar)
+  let maxNr = await getMaxNummer('facturen', 'nummer', resolvedPrefix)
   if (maxNr === 0) {
     const facturen = isSupabaseConfigured() ? [] : getLocalData<Factuur>('facturen')
     maxNr = facturen
-      .filter((f) => f.nummer.startsWith(jaarPrefix))
-      .reduce((max, f) => Math.max(max, parseInt(f.nummer.replace(jaarPrefix, ''), 10) || 0), 0)
+      .filter((f) => f.nummer.startsWith(resolvedPrefix))
+      .reduce((max, f) => {
+        const tail = f.nummer.slice(resolvedPrefix.length)
+        const n = /^\d+$/.test(tail) ? parseInt(tail, 10) : 0
+        return Math.max(max, n)
+      }, 0)
   }
-  // startNummer fungeert als floor: handig bij overstap vanuit een ander
-  // systeem zodat de nummering doorloopt vanaf een specifiek beginpunt.
   const nextNr = Math.max(maxNr, Math.max(0, startNummer - 1)) + 1
-  return `${jaarPrefix}${String(nextNr).padStart(3, '0')}`
+  return buildFactuurNummer(prefix, nextNr)
 }
 
 export async function generateCreditnotaNummer(): Promise<string> {
