@@ -82,9 +82,17 @@ export function ProjectFaseBar({ status, onStatusChange, totaalBedrag, deadline 
               <button
                 key={fase.key}
                 onClick={() => onStatusChange(fase.key as Project['status'])}
-                className="group text-left transition-opacity hover:opacity-80"
+                className={
+                  'group relative text-left px-3 py-2 rounded-lg border transition-all duration-150 ' +
+                  'hover:-translate-y-[1px] hover:shadow-[0_2px_8px_rgba(20,62,71,0.08)] ' +
+                  (isActive
+                    ? 'bg-white border-[rgba(26,83,92,0.22)] shadow-[0_1px_3px_rgba(20,62,71,0.06)]'
+                    : isPast
+                      ? 'bg-[#2D6B48]/[0.03] border-[rgba(45,107,72,0.18)] hover:border-[rgba(45,107,72,0.32)] hover:bg-[#2D6B48]/[0.06]'
+                      : 'bg-white/60 border-[rgba(26,83,92,0.10)] hover:border-[rgba(26,83,92,0.22)] hover:bg-white')
+                }
                 aria-current={isActive ? 'step' : undefined}
-                title={`Status wijzigen naar ${fase.label}`}
+                title={`Naar fase: ${fase.label}`}
               >
                 <div
                   className="h-[4px] rounded-full transition-all duration-300"
