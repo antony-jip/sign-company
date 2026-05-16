@@ -1,10 +1,13 @@
-import { memo, useCallback, useMemo, useRef } from 'react'
+import { memo, useCallback, useMemo, useRef, useState } from 'react'
 import { Pin, Paperclip, Archive, Trash2, MailOpen, Mail } from 'lucide-react'
 import type { Email } from '@/types'
 import { extractSenderName, cleanEmailPreview, formatShortDate, fontSizeClasses, getAvatarColor, getAvatarStyle } from './emailHelpers'
 import type { FontSize } from './emailTypes'
 import { cn } from '@/lib/utils'
-import { hapticLight } from '@/utils/haptic'
+import { hapticLight, hapticMedium } from '@/utils/haptic'
+
+const SWIPE_THRESHOLD = 80
+const SWIPE_CLAMP = 160
 
 const desktopSizeClasses: Record<FontSize, { name: string; subject: string; preview: string; date: string }> = {
   small: { name: 'md:text-base', subject: 'md:text-base', preview: 'md:text-sm', date: 'md:text-xs' },
@@ -89,6 +92,48 @@ export const EmailListItem = memo(function EmailListItem({
     e.stopPropagation()
     onToggleRead?.(email)
   }, [email, onToggleRead])
+
+  // Mobile swipe: rechts → archief, links → verwijder. Alleen actief op
+  // touch-events (mobile). Niet swipen tijdens selection-mode (checkbox aan).
+  const [swipeX, setSwipeX] = useState(0)
+  const touchStartX = useRef(0)
+  const touchActive = useRef(false)
+  const hapticFired = useRef<'archive' | 'delete' | null>(null)
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (isChecked) return
+    touchStartX.current = e.touches[0].clientX
+    touchActive.current = true
+    hapticFired.current = null
+  }, [isChecked])
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!touchActive.current) return
+    const delta = e.touches[0].clientX - touchStartX.current
+    const clamped = Math.max(-SWIPE_CLAMP, Math.min(SWIPE_CLAMP, delta))
+    setSwipeX(clamped)
+    // Eén haptic-tick bij overschrijden van de threshold (in beide richtingen)
+    if (clamped > SWIPE_THRESHOLD && hapticFired.current !== 'archive') {
+      hapticLight()
+      hapticFired.current = 'archive'
+    } else if (clamped < -SWIPE_THRESHOLD && hapticFired.current !== 'delete') {
+      hapticLight()
+      hapticFired.current = 'delete'
+    } else if (Math.abs(clamped) < SWIPE_THRESHOLD) {
+      hapticFired.current = null
+    }
+  }, [])
+  const handleTouchEnd = useCallback(() => {
+    if (!touchActive.current) return
+    touchActive.current = false
+    if (swipeX > SWIPE_THRESHOLD) {
+      hapticMedium()
+      onArchive?.(email)
+    } else if (swipeX < -SWIPE_THRESHOLD) {
+      hapticMedium()
+      onDelete?.(email)
+    }
+    setSwipeX(0)
+    hapticFired.current = null
+  }, [swipeX, email, onArchive, onDelete])
 
   // Prefetch on hover met 150ms debounce zodat snel scrollen niet ALLES prefetcht
   const prefetchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -270,6 +315,9 @@ export const EmailListItem = memo(function EmailListItem({
       onClick={handleClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
       className={cn(
         'group relative flex items-center gap-3 px-4 py-3.5 md:py-2.5 cursor-pointer transition-colors duration-100 ease-out select-none',
         'border-b border-[#EBEBEB]/40 last:border-b-0 md:border-b-0',
@@ -278,8 +326,14 @@ export const EmailListItem = memo(function EmailListItem({
           : 'hover:bg-[#F0EFEC]/50 active:bg-[#F0EFEC]/60 md:active:bg-[#1A535C]/[0.05]',
         isFocused && !isActive && 'bg-[#F0EFEC]/30',
         !isActive && (isUnread ? 'bg-white' : 'bg-white md:bg-transparent'),
+        swipeX > SWIPE_THRESHOLD && 'bg-emerald-100',
+        swipeX < -SWIPE_THRESHOLD && 'bg-red-100',
       )}
-      style={{ WebkitTapHighlightColor: 'transparent' }}
+      style={{
+        WebkitTapHighlightColor: 'transparent',
+        transform: swipeX !== 0 ? `translateX(${swipeX}px)` : undefined,
+        transition: touchActive.current ? 'none' : 'transform 150ms ease-out, background-color 100ms ease-out',
+      }}
     >
       {/* Mobile-only Flame strip on unread rows */}
       {isUnread && !isActive && (
