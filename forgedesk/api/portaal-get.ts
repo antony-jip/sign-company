@@ -232,14 +232,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .update({ bekeken_op: nu })
         .in('id', onbekekenIds)
 
+      let klantNaam = 'Klant'
+      if (project?.klant_id) {
+        const { data: klant } = await supabaseAdmin
+          .from('klanten')
+          .select('bedrijfsnaam')
+          .eq('id', project.klant_id)
+          .maybeSingle()
+        if (klant?.bedrijfsnaam?.trim()) klantNaam = klant.bedrijfsnaam.trim()
+      }
+
       // Stuur 1 notificatie als er items bekeken worden (niet per item)
       await supabaseAdmin.from('notificaties').insert({
         user_id: portaal.user_id,
         type: 'portaal_bekeken',
-        titel: 'Klant heeft portaal bekeken',
+        titel: `${klantNaam} heeft portaal bekeken`,
         bericht: `${onbekekenItems.length} item${onbekekenItems.length !== 1 ? 's' : ''} bekeken`,
         link: `/projecten/${portaal.project_id}`,
         project_id: portaal.project_id,
+        klant_id: project?.klant_id || null,
         gelezen: false,
       }).then(() => {}, () => {}) // fire-and-forget
     }
