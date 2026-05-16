@@ -273,6 +273,7 @@ function DezeWeekCard() {
       <header className="flex items-center justify-between mb-3">
         <h2 className="font-heading text-[14px] font-bold text-[#1A1A1A]">
           {weekOffset === 0 ? 'Deze week' : weekOffset === -1 ? 'Vorige week' : weekOffset === 1 ? 'Volgende week' : `Week ${weekOffset > 0 ? '+' : ''}${weekOffset}`}
+          <span className="text-[#F15025]">.</span>
         </h2>
         <div className="flex items-center gap-0.5">
           <button
