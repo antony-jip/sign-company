@@ -74,6 +74,11 @@ export const EmailListItem = memo(function EmailListItem({
   }, [email.body_text, email.inhoud])
 
   const handleClick = useCallback((e: React.MouseEvent) => {
+    // Skip de synthetic-click die direct na een touchend kan vuren bij swipes
+    if (suppressNextClick.current) {
+      suppressNextClick.current = false
+      return
+    }
     hapticLight()
     onSelect(email, e)
   }, [email, onSelect])
@@ -96,17 +101,20 @@ export const EmailListItem = memo(function EmailListItem({
   // Mobile swipe: rechts → archief, links → verwijder. Alleen actief op
   // touch-events (mobile). Niet swipen tijdens selection-mode (checkbox aan).
   const [swipeX, setSwipeX] = useState(0)
+  const [isDragging, setIsDragging] = useState(false)
   const touchStartX = useRef(0)
-  const touchActive = useRef(false)
   const hapticFired = useRef<'archive' | 'delete' | null>(null)
+  // Onderdrukt de synthetic-click die de browser na een touchend afvuurt,
+  // zodat een swipe die archive/delete trigger niet ook nog de mail opent.
+  const suppressNextClick = useRef(false)
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     if (isChecked) return
     touchStartX.current = e.touches[0].clientX
-    touchActive.current = true
+    setIsDragging(true)
     hapticFired.current = null
   }, [isChecked])
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (!touchActive.current) return
+    if (isChecked) return
     const delta = e.touches[0].clientX - touchStartX.current
     const clamped = Math.max(-SWIPE_CLAMP, Math.min(SWIPE_CLAMP, delta))
     setSwipeX(clamped)
@@ -120,10 +128,13 @@ export const EmailListItem = memo(function EmailListItem({
     } else if (Math.abs(clamped) < SWIPE_THRESHOLD) {
       hapticFired.current = null
     }
-  }, [])
+  }, [isChecked])
   const handleTouchEnd = useCallback(() => {
-    if (!touchActive.current) return
-    touchActive.current = false
+    setIsDragging(false)
+    // Onderdruk de aankomende click als de finger meer dan 8px is bewogen
+    // (tap-vs-swipe heuristiek). Zonder dit triggert na een swipe ook nog
+    // de mail-open via onClick.
+    if (Math.abs(swipeX) > 8) suppressNextClick.current = true
     if (swipeX > SWIPE_THRESHOLD) {
       hapticMedium()
       onArchive?.(email)
@@ -332,7 +343,7 @@ export const EmailListItem = memo(function EmailListItem({
       style={{
         WebkitTapHighlightColor: 'transparent',
         transform: swipeX !== 0 ? `translateX(${swipeX}px)` : undefined,
-        transition: touchActive.current ? 'none' : 'transform 150ms ease-out, background-color 100ms ease-out',
+        transition: isDragging ? 'none' : 'transform 150ms ease-out, background-color 100ms ease-out',
       }}
     >
       {/* Mobile-only Flame strip on unread rows */}
