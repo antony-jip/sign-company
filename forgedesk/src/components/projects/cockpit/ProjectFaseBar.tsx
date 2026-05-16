@@ -8,7 +8,7 @@ const FASES = [
   { key: 'gepland',        label: 'Gepland',        caption: 'wacht op start',   Icon: Calendar },
   { key: 'actief',         label: 'Actief',         caption: 'aan het werk',     Icon: Hammer   },
   { key: 'in-review',      label: 'Review',         caption: 'wacht goedkeuring', Icon: Eye     },
-  { key: 'te-factureren',  label: 'Factuur',        caption: 'klaar om te incasseren', Icon: Receipt },
+  { key: 'te-factureren',  label: 'Te factureren',  caption: 'klaar om te incasseren', Icon: Receipt },
   { key: 'afgerond',       label: 'Gedaan',         caption: 'voltooid',         Icon: Smile    },
 ] as const
 
