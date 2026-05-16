@@ -1,15 +1,15 @@
 import { motion } from 'framer-motion'
-import { Calendar, Hammer, Eye, Receipt, Flag, Check } from 'lucide-react'
+import { Calendar, Hammer, Eye, Receipt, Smile } from 'lucide-react'
 import type { Project } from '@/types'
 import { formatAmount, cn } from '@/lib/utils'
 import { CalendarBlank as PhCalendar } from '@phosphor-icons/react'
 
 const FASES = [
-  { key: 'gepland',        label: 'Gepland',        color: '#3A5A9A', Icon: Calendar },
-  { key: 'actief',         label: 'Actief',         color: '#1A535C', Icon: Hammer   },
-  { key: 'in-review',      label: 'Review',         color: '#9A5A48', Icon: Eye      },
-  { key: 'te-factureren',  label: 'Te factureren',  color: '#F15025', Icon: Receipt  },
-  { key: 'afgerond',       label: 'Afgerond',       color: '#2D6B48', Icon: Flag     },
+  { key: 'gepland',        label: 'Gepland',        caption: 'wacht op start',   Icon: Calendar },
+  { key: 'actief',         label: 'Actief',         caption: 'aan het werk',     Icon: Hammer   },
+  { key: 'in-review',      label: 'Review',         caption: 'wacht goedkeuring', Icon: Eye     },
+  { key: 'te-factureren',  label: 'Factuur',        caption: 'klaar om te incasseren', Icon: Receipt },
+  { key: 'afgerond',       label: 'Gedaan',         caption: 'voltooid',         Icon: Smile    },
 ] as const
 
 function faseIndex(status: string): number {
@@ -39,15 +39,19 @@ interface ProjectFaseBarProps {
   deadline?: string | null
 }
 
+const PETROL = '#1A535C'
+const FLAME = '#F15025'
+
 export function ProjectFaseBar({ status, onStatusChange, totaalBedrag, deadline }: ProjectFaseBarProps) {
   const currentIdx = faseIndex(status)
   const hasMeta = (totaalBedrag !== undefined && totaalBedrag > 0) || !!deadline
   const deadlineInfo = deadline ? formatDeadline(deadline) : null
   const currentFase = FASES[currentIdx] ?? FASES[0]
+  const isCompleted = currentIdx === FASES.length - 1
 
   return (
-    <div className="doen-slate-surface rounded-2xl p-5">
-      <div className="flex items-baseline justify-between mb-5">
+    <div className="rounded-2xl p-7 bg-white border border-[rgba(26,83,92,0.08)]">
+      <div className="flex items-baseline justify-between mb-8">
         <h3 className="font-heading text-[15px] font-bold text-[#1A1A1A]">
           Voortgang<span className="text-[#F15025]">.</span>
         </h3>
@@ -59,126 +63,156 @@ export function ProjectFaseBar({ status, onStatusChange, totaalBedrag, deadline 
         </span>
       </div>
 
-      <div className="flex flex-col md:flex-row md:items-end gap-6">
-        {/* Stepper — orbs + connectoren */}
-        <div className="flex items-start flex-1 min-w-0">
+      <div className="flex flex-col lg:flex-row lg:items-end gap-8">
+        {/* Stepper in doen.team-stijl: outlined cirkels + connector-lijnen + Flame-dot labels */}
+        <div className="flex items-start flex-1 min-w-0 pt-2 pb-4">
           {FASES.map((fase, i) => {
             const isActive = i === currentIdx
             const isPast = i < currentIdx
             const isFuture = i > currentIdx
             const FaseIcon = fase.Icon
             const isLast = i === FASES.length - 1
+            // Connector tussen i en i+1: solid wanneer beide gepasseerd; dashed
+            // vanaf actief-segment naar future
+            const connectorSolid = i < currentIdx
+            const connectorActive = i === currentIdx - 1 || (isActive && !isLast)
 
-            const orbBg = isActive
-              ? fase.color
+            // Speciale staat: laatste cirkel is een gevulde "celebrate"-orb zodra
+            // hij bereikt is — past bij doen.team's "Gedaan."-marker.
+            const isFinalCompleted = isLast && (isPast || isActive)
+
+            // Stijl-vars per cirkel
+            const circleBg = isFinalCompleted
+              ? '#0F3C44'                 // donker Petrol "celebrate"
               : isPast
-                ? '#2D6B48'
-                : 'rgba(26,83,92,0.06)'
-            const orbBorder = isActive
-              ? fase.color
+                ? PETROL                  // solid Petrol
+                : '#FFFFFF'                // outline-only
+            const circleBorder = isFinalCompleted
+              ? '#0F3C44'
+              : isActive
+                ? PETROL
+                : isPast
+                  ? PETROL
+                  : 'rgba(26,83,92,0.30)'
+            const iconColor = isFinalCompleted
+              ? '#FFFFFF'
               : isPast
-                ? '#2D6B48'
-                : 'rgba(26,83,92,0.15)'
-            const iconColor = isFuture ? '#9B9B95' : '#FFFFFF'
+                ? '#FFFFFF'
+                : isActive
+                  ? PETROL
+                  : 'rgba(26,83,92,0.55)'
 
             return (
               <div key={fase.key} className="flex items-start flex-1 last:flex-initial min-w-0">
-                {/* Orb-button */}
+                {/* Fase-blok: cirkel + label + caption */}
                 <motion.button
                   type="button"
                   onClick={() => onStatusChange(fase.key as Project['status'])}
-                  initial={{ opacity: 0, y: 8 }}
+                  initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.07, type: 'spring', stiffness: 240, damping: 22 }}
-                  whileHover={{ y: -2 }}
-                  whileTap={{ scale: 0.94 }}
-                  className="group flex flex-col items-center gap-2 flex-shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-[#1A535C]/40 rounded-xl"
+                  transition={{ delay: i * 0.06, duration: 0.4, ease: [0.22, 0.61, 0.36, 1] }}
+                  className="group relative flex flex-col items-center gap-3 flex-shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-[#1A535C]/30 rounded-xl"
                   aria-current={isActive ? 'step' : undefined}
                   title={`Naar fase: ${fase.label}`}
                 >
+                  {/* Sparkles rondom de eindfase wanneer voltooid */}
+                  {isFinalCompleted && (
+                    <>
+                      <Sparkle delay={0.2} top="-6px" left="-10px" />
+                      <Sparkle delay={0.35} top="4px" left="58px" />
+                      <Sparkle delay={0.5} top="42px" left="-8px" small />
+                    </>
+                  )}
+
                   <motion.div
-                    className={cn(
-                      'relative w-11 h-11 rounded-full flex items-center justify-center',
-                      'transition-[background-color,border-color,box-shadow] duration-300',
-                    )}
+                    className="relative w-14 h-14 rounded-full flex items-center justify-center transition-[background,border-color,box-shadow] duration-300"
                     style={{
-                      backgroundColor: orbBg,
+                      backgroundColor: circleBg,
                       borderWidth: 2,
                       borderStyle: 'solid',
-                      borderColor: orbBorder,
-                      boxShadow: isActive ? `0 0 0 4px ${fase.color}1A, 0 4px 14px ${fase.color}33` : undefined,
+                      borderColor: circleBorder,
+                      boxShadow: isActive
+                        ? `0 0 0 4px ${FLAME}1A`
+                        : isFinalCompleted
+                          ? '0 4px 14px rgba(15,60,68,0.22)'
+                          : undefined,
                     }}
-                    animate={isActive ? {
-                      boxShadow: [
-                        `0 0 0 0 ${fase.color}55, 0 4px 14px ${fase.color}33`,
-                        `0 0 0 10px ${fase.color}00, 0 4px 14px ${fase.color}33`,
-                      ],
-                    } : undefined}
-                    transition={isActive ? { repeat: Infinity, duration: 1.8, ease: 'easeOut' } : undefined}
-                    whileHover={{ scale: 1.08 }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.96 }}
                   >
-                    {isPast ? (
+                    <FaseIcon
+                      className="h-5 w-5"
+                      style={{ color: iconColor }}
+                      strokeWidth={isActive ? 2.2 : 1.8}
+                    />
+                    {/* Flame-dot rechtsonder voor de huidige fase */}
+                    {isActive && (
                       <motion.span
-                        initial={{ scale: 0, rotate: -90 }}
-                        animate={{ scale: 1, rotate: 0 }}
-                        transition={{ delay: i * 0.07 + 0.12, type: 'spring', stiffness: 320, damping: 18 }}
-                        className="flex items-center justify-center"
-                      >
-                        <Check className="h-5 w-5" style={{ color: iconColor }} strokeWidth={3} />
-                      </motion.span>
-                    ) : (
-                      <FaseIcon
-                        className={cn('h-[18px] w-[18px]', isFuture && 'opacity-70')}
-                        style={{ color: iconColor }}
-                        strokeWidth={isActive ? 2.4 : 2}
+                        aria-hidden
+                        className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full ring-2 ring-white"
+                        style={{ background: FLAME }}
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ delay: 0.25, type: 'spring', stiffness: 360, damping: 20 }}
                       />
                     )}
-                    {/* Index-pip rechtsboven voor toegankelijkheid */}
+                  </motion.div>
+
+                  {/* Label — heading-style met Flame-dot, conform doen.team */}
+                  <div className="flex flex-col items-center gap-1 leading-none">
                     <span
                       className={cn(
-                        'absolute -top-1 -right-1 w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center font-mono tabular-nums',
-                        isActive
-                          ? 'bg-white text-[#1A1A1A] shadow-sm'
-                          : isPast
-                            ? 'bg-white text-[#2D6B48] shadow-sm'
-                            : 'bg-[#F0EFEC] text-[#9B9B95]',
+                        'font-heading font-bold text-[15px] tracking-[-0.01em] transition-colors duration-200',
+                        isActive ? 'text-[#1A1A1A]' : isPast || isFinalCompleted ? 'text-[#1A535C]' : 'text-[rgba(26,83,92,0.45)] group-hover:text-[#1A535C]',
                       )}
-                      aria-hidden
                     >
-                      {i + 1}
+                      {fase.label}<span className="text-[#F15025]">.</span>
                     </span>
-                  </motion.div>
-                  <span
-                    className={cn(
-                      'text-[11px] uppercase tracking-[0.08em] transition-colors duration-200 max-w-[80px] text-center leading-tight',
-                      isActive
-                        ? 'text-[#1A1A1A] font-bold'
-                        : isPast
-                          ? 'text-[#6B6B66] font-medium group-hover:text-[#1A1A1A]'
-                          : 'text-[#9B9B95] font-medium group-hover:text-[#6B6B66]',
-                    )}
-                  >
-                    {fase.label}
-                  </span>
+                    <span
+                      className={cn(
+                        'text-[9.5px] uppercase tracking-[0.16em] font-semibold transition-colors duration-200 text-center max-w-[110px] leading-[1.4]',
+                        isActive ? 'text-[#6B6B66]' : isPast || isFinalCompleted ? 'text-[#9B9B95]' : 'text-[rgba(26,83,92,0.30)] group-hover:text-[#9B9B95]',
+                      )}
+                    >
+                      {fase.caption}
+                    </span>
+                  </div>
                 </motion.button>
 
-                {/* Connector tussen orbs (niet na de laatste) */}
+                {/* Connector — solid past, dashed future, Flame-overgang bij actief */}
                 {!isLast && (
-                  <div className="flex-1 mt-[21px] mx-2 h-[3px] rounded-full bg-[rgba(26,83,92,0.08)] relative overflow-hidden">
+                  <div className="flex-1 mt-[27px] mx-3 relative">
+                    {/* Achtergrondlijn — dashed pattern voor "nog niet bereikt" */}
+                    <div
+                      className="absolute inset-x-0 top-0 h-px"
+                      style={{
+                        backgroundImage: `linear-gradient(90deg, rgba(26,83,92,0.25) 50%, transparent 50%)`,
+                        backgroundSize: '8px 1px',
+                        backgroundRepeat: 'repeat-x',
+                      }}
+                    />
+                    {/* Solid vulling die meegroeit voor bereikte segmenten */}
                     <motion.div
                       initial={{ scaleX: 0 }}
-                      animate={{ scaleX: isPast ? 1 : 0 }}
-                      transition={{
-                        delay: i * 0.07 + 0.15,
-                        duration: 0.55,
-                        ease: [0.65, 0, 0.35, 1],
-                      }}
+                      animate={{ scaleX: connectorSolid ? 1 : 0 }}
+                      transition={{ delay: i * 0.06 + 0.18, duration: 0.55, ease: [0.65, 0, 0.35, 1] }}
+                      className="absolute inset-x-0 top-0 h-px"
                       style={{
                         transformOrigin: 'left center',
-                        background: 'linear-gradient(90deg, #2D6B48 0%, #2D6B48 100%)',
+                        background: PETROL,
                       }}
-                      className="absolute inset-0 rounded-full"
                     />
+                    {/* Flame-puntje aan het einde van het bereikte stuk (= voor de huidige fase) */}
+                    {connectorActive && (
+                      <motion.span
+                        aria-hidden
+                        className="absolute -top-[2px] right-0 w-1 h-[5px] rounded-full"
+                        style={{ background: FLAME }}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: i * 0.06 + 0.5 }}
+                      />
+                    )}
                   </div>
                 )}
               </div>
@@ -188,12 +222,10 @@ export function ProjectFaseBar({ status, onStatusChange, totaalBedrag, deadline 
 
         {/* Rechter-meta: bedrag + deadline */}
         {hasMeta && (
-          <div className="flex items-center gap-4 md:flex-shrink-0 md:border-l md:border-[rgba(26,83,92,0.1)] md:pl-6 pt-3 md:pt-0 border-t md:border-t-0 border-[rgba(26,83,92,0.08)]">
+          <div className="flex items-center gap-4 lg:flex-shrink-0 lg:border-l lg:border-[rgba(26,83,92,0.1)] lg:pl-6 pt-3 lg:pt-0 border-t lg:border-t-0 border-[rgba(26,83,92,0.08)]">
             {totaalBedrag !== undefined && totaalBedrag > 0 && (
               <div className="flex flex-col gap-0.5">
-                <span
-                  className="text-[10px] uppercase tracking-widest text-[#9B9B95] font-semibold"
-                >
+                <span className="text-[10px] uppercase tracking-widest text-[#9B9B95] font-semibold">
                   Bedrag
                 </span>
                 <span className="font-mono text-[15px] tabular-nums font-bold text-[#1A1A1A]">
@@ -225,5 +257,28 @@ export function ProjectFaseBar({ status, onStatusChange, totaalBedrag, deadline 
         )}
       </div>
     </div>
+  )
+}
+
+// Kleine Flame-sparkle die rondom de eind-orb verschijnt zodra die bereikt is
+function Sparkle({ delay, top, left, small }: { delay: number; top: string; left: string; small?: boolean }) {
+  const size = small ? 6 : 9
+  return (
+    <motion.svg
+      aria-hidden
+      width={size}
+      height={size}
+      viewBox="0 0 12 12"
+      className="absolute pointer-events-none"
+      style={{ top, left }}
+      initial={{ opacity: 0, scale: 0 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ delay, duration: 0.4, ease: 'easeOut' }}
+    >
+      <path
+        d="M6 0L7.2 4.8L12 6L7.2 7.2L6 12L4.8 7.2L0 6L4.8 4.8L6 0Z"
+        fill="#F15025"
+      />
+    </motion.svg>
   )
 }
