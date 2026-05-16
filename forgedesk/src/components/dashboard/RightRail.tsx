@@ -348,7 +348,7 @@ function DezeWeekCard() {
                       {DAY_LABELS[dayIdx]}
                     </span>
                     <span className="block font-mono text-[11px] text-[#6B6B66]">
-                      {item.tijd ?? '—'}
+                      {item.tijd ?? '·'}
                     </span>
                   </span>
                   <span className="flex-1 min-w-0">
@@ -423,7 +423,7 @@ function TeamCard() {
           fallbackInitials: (o.klant_naam || '?').slice(0, 2).toUpperCase(),
           fallbackBg: 'rgba(26,83,92,0.08)',
           fallbackColor: '#1A535C',
-          tekst: `Offerte verstuurd — ${o.klant_naam || 'Onbekend'}`,
+          tekst: `Offerte verstuurd · ${o.klant_naam || 'Onbekend'}`,
           tijd: formatDistanceToNow(new Date(o.verstuurd_op!), { addSuffix: false, locale: nl }),
           sortDate: new Date(o.verstuurd_op!),
           href: `/offertes/${o.id}`,
@@ -439,7 +439,7 @@ function TeamCard() {
           fallbackInitials: (o.klant_naam || '?').slice(0, 2).toUpperCase(),
           fallbackBg: '#E8F2EC',
           fallbackColor: '#3A7D52',
-          tekst: `Offerte goedgekeurd — ${o.klant_naam || 'Onbekend'}`,
+          tekst: `Offerte goedgekeurd · ${o.klant_naam || 'Onbekend'}`,
           tijd: formatDistanceToNow(new Date(o.akkoord_op!), { addSuffix: false, locale: nl }),
           sortDate: new Date(o.akkoord_op!),
           href: `/offertes/${o.id}`,
@@ -456,7 +456,7 @@ function TeamCard() {
           fallbackInitials: 'MO',
           fallbackBg: '#FDE8E4',
           fallbackColor: '#F15025',
-          tekst: `Montage afgerond — ${m.klant_naam || m.titel}`,
+          tekst: `Montage afgerond · ${m.klant_naam || m.titel}`,
           tijd: formatDistanceToNow(new Date(m.updated_at), { addSuffix: false, locale: nl }),
           sortDate: new Date(m.updated_at),
           href: '/planning',
@@ -472,7 +472,7 @@ function TeamCard() {
           fallbackInitials: '€',
           fallbackBg: '#E8F2EC',
           fallbackColor: '#3A7D52',
-          tekst: `Factuur betaald — ${formatCurrency(f.totaal || 0)}`,
+          tekst: `Factuur betaald · ${formatCurrency(f.totaal || 0)}`,
           tijd: formatDistanceToNow(new Date(f.betaaldatum!), { addSuffix: false, locale: nl }),
           sortDate: new Date(f.betaaldatum!),
           href: `/facturen/${f.id}`,
@@ -496,7 +496,7 @@ function TeamCard() {
             className="text-[#9B9B95] ml-2 font-normal"
             style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
           >
-            — team-log
+            · team-log
           </span>
         </h2>
         <span className="text-[11px] font-mono text-[#9B9B95]">
@@ -527,7 +527,7 @@ function TeamCard() {
                 )}
                 <span className="flex-1 min-w-0">
                   <span className="block text-[12px] text-[#1A1A1A] truncate">
-                    <span className="font-medium">{item.medewerker?.naam.split(' ')[0] || '—'}</span>
+                    <span className="font-medium">{item.medewerker?.naam.split(' ')[0] || '·'}</span>
                   </span>
                   <span className="block text-[11px] text-[#9B9B95] truncate">{item.tekst}</span>
                 </span>
