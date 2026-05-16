@@ -69,6 +69,98 @@ async function getEmailCredentials(userId: string): Promise<EmailCredentials> {
   }
 }
 
+// ───── Persistent attachment-cache (sprint 3) ─────
+const STORAGE_BUCKET = 'email-attachments'
+const SIGNED_URL_TTL = 60 * 60 // 1 uur — voldoende voor reading-sessie
+const MAX_CACHE_IMAGE_BYTES = 10 * 1024 * 1024
+const MAX_CACHE_PDF_BYTES = 25 * 1024 * 1024
+
+interface RawAttachmentBuffer {
+  filename: string
+  contentType: string
+  size: number
+  buffer: Buffer
+  isInlineCid: boolean
+}
+
+function isCacheableAttachment(rb: RawAttachmentBuffer): boolean {
+  if (rb.isInlineCid || !rb.filename) return false
+  if (!rb.buffer.length) return false
+  const contentType = rb.contentType.toLowerCase()
+  const ext = rb.filename.split('.').pop()?.toLowerCase() || ''
+  const isImage = contentType.startsWith('image/') || ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext)
+  const isPdf = contentType === 'application/pdf' || ext === 'pdf'
+  return (isImage && rb.size <= MAX_CACHE_IMAGE_BYTES) || (isPdf && rb.size <= MAX_CACHE_PDF_BYTES)
+}
+
+async function cacheAttachmentsToStorage(
+  user_id: string,
+  email_uuid: string,
+  rawBuffers: RawAttachmentBuffer[],
+): Promise<Map<string, string>> {
+  const signedMap = new Map<string, string>()
+  const cacheable = rawBuffers.filter(isCacheableAttachment)
+  if (cacheable.length === 0) return signedMap
+
+  const uploadResults = await Promise.all(cacheable.map(async (rb) => {
+    const path = `${user_id}/${email_uuid}/${rb.filename}`
+    const { error } = await supabaseAdmin.storage
+      .from(STORAGE_BUCKET)
+      .upload(path, rb.buffer, { contentType: rb.contentType, upsert: true })
+    if (error) {
+      console.warn('[email-attachment-cache] upload mislukt voor', rb.filename, error.message)
+      return null
+    }
+    return { filename: rb.filename, content_type: rb.contentType, size: rb.buffer.length, storage_path: path }
+  }))
+
+  const uploaded = uploadResults.filter((r): r is NonNullable<typeof r> => r !== null)
+  if (uploaded.length === 0) return signedMap
+
+  const { error: insertErr } = await supabaseAdmin
+    .from('email_attachment_cache')
+    .upsert(
+      uploaded.map((u) => ({
+        user_id,
+        email_uuid,
+        filename: u.filename,
+        content_type: u.content_type,
+        size: u.size,
+        storage_path: u.storage_path,
+        cached_at: new Date().toISOString(),
+      })),
+      { onConflict: 'email_uuid,filename' },
+    )
+  if (insertErr) {
+    console.warn('[email-attachment-cache] insert mislukt:', insertErr.message)
+  }
+
+  await Promise.all(uploaded.map(async (u) => {
+    const { data } = await supabaseAdmin.storage
+      .from(STORAGE_BUCKET)
+      .createSignedUrl(u.storage_path, SIGNED_URL_TTL)
+    if (data?.signedUrl) signedMap.set(u.filename, data.signedUrl)
+  }))
+  return signedMap
+}
+
+async function readCachedSignedUrls(user_id: string, email_uuid: string): Promise<Map<string, string>> {
+  const signedMap = new Map<string, string>()
+  const { data: rows } = await supabaseAdmin
+    .from('email_attachment_cache')
+    .select('filename, storage_path')
+    .eq('user_id', user_id)
+    .eq('email_uuid', email_uuid)
+  if (!rows?.length) return signedMap
+  await Promise.all(rows.map(async (row) => {
+    const { data } = await supabaseAdmin.storage
+      .from(STORAGE_BUCKET)
+      .createSignedUrl(row.storage_path, SIGNED_URL_TTL)
+    if (data?.signedUrl) signedMap.set(row.filename, data.signedUrl)
+  }))
+  return signedMap
+}
+
 export const config = { maxDuration: 30 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -136,6 +228,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             .eq('id', cached.id)
         }
 
+        // Lookup gecachde bijlagen voor signed URLs (instant previews/downloads).
+        const cachedSigned = await readCachedSignedUrls(user_id, cached.id)
+        const meta = (cached.attachment_meta as Array<{ filename: string; contentType: string; size: number }> | null) || []
+        const attachmentsOut = meta.map((a) => ({
+          ...a,
+          storage_url: cachedSigned.get(a.filename),
+        }))
+
         return res.status(200).json({
           uid,
           from: cached.van || '',
@@ -145,7 +245,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           date: cached.datum || '',
           bodyHtml: cached.body_html || '',
           bodyText: cached.body_text || '',
-          attachments: cached.attachment_meta || [],
+          attachments: attachmentsOut,
           messageId: cached.message_id || '',
           inReplyTo: '',
           fromCache: true,
@@ -163,6 +263,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const attachmentMetaForDb = result.attachments.map(({ filename, contentType, size }) => ({
         filename, contentType, size,
       }))
+      let email_uuid: string | null = null
       if (cached) {
         // Update existing row with body
         await supabaseAdmin
@@ -175,11 +276,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             cached_at: new Date().toISOString(),
           })
           .eq('id', cached.id)
+        email_uuid = cached.id
       } else {
-        // Insert new row
+        // Insert new row + select id terug voor de cache-FK
         const from = result.from
         const fromMatch = from.match(/^([^<]*)<([^>]+)>/)
-        await supabaseAdmin
+        const { data: upserted } = await supabaseAdmin
           .from('emails')
           .upsert({
             user_id,
@@ -205,10 +307,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             onConflict: 'user_id,message_id',
             ignoreDuplicates: false,
           })
+          .select('id')
+          .single()
+        email_uuid = upserted?.id || null
         // Silently ignore cache write failures — user still gets the email
       }
 
-      return res.status(200).json(result)
+      // Step 4: Cache binaries naar Storage (parallel) — alleen images < 10MB
+      // en PDFs < 25MB. Bouw signed URLs voor de response.
+      let signedMap = new Map<string, string>()
+      if (email_uuid) {
+        signedMap = await cacheAttachmentsToStorage(user_id, email_uuid, result.rawBuffers)
+      }
+
+      const attachmentsOut = result.attachments.map((a) => ({
+        ...a,
+        storage_url: signedMap.get(a.filename),
+      }))
+
+      return res.status(200).json({
+        uid: result.uid,
+        from: result.from,
+        to: result.to,
+        cc: result.cc,
+        subject: result.subject,
+        date: result.date,
+        bodyHtml: result.bodyHtml,
+        bodyText: result.bodyText,
+        attachments: attachmentsOut,
+        messageId: result.messageId,
+        inReplyTo: result.inReplyTo,
+      })
     }
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Email ophalen mislukt'
@@ -304,6 +433,16 @@ async function fetchFromIMAP(opts: {
     }
   }
 
+  // Raw buffers voor de handler-laag (Storage-cache). Niet in de JSON-response;
+  // wordt gestript voor we naar de client serializen.
+  const rawBuffers = (parsed.attachments || []).map((a) => ({
+    filename: a.filename || 'bijlage',
+    contentType: a.contentType || 'application/octet-stream',
+    size: a.size || 0,
+    buffer: Buffer.isBuffer(a.content) ? a.content : Buffer.from(a.content || ''),
+    isInlineCid: !!a.contentId || a.contentDisposition === 'inline',
+  }))
+
   return {
     uid: opts.uid,
     from: parsed.from?.text || '',
@@ -314,6 +453,7 @@ async function fetchFromIMAP(opts: {
     bodyHtml,
     bodyText: parsed.text || '',
     attachments,
+    rawBuffers,
     messageId: parsed.messageId || '',
     inReplyTo: parsed.inReplyTo || '',
   }
