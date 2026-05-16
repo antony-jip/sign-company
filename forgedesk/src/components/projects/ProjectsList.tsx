@@ -116,6 +116,18 @@ function getStatusDotColor(status: string): string {
   }
 }
 
+/** Workflow-proximity ordering — given a current status, which transitions are most likely next */
+const STATUS_WORKFLOW: Record<string, string[]> = {
+  'te-plannen':    ['gepland', 'actief', 'on-hold'],
+  gepland:         ['actief', 'te-plannen', 'on-hold'],
+  actief:          ['in-review', 'te-factureren', 'on-hold', 'te-plannen'],
+  'in-review':     ['actief', 'te-factureren', 'te-plannen'],
+  'te-factureren': ['gefactureerd', 'actief'],
+  gefactureerd:    ['afgerond', 'te-factureren'],
+  'on-hold':       ['actief', 'te-plannen'],
+  afgerond:        ['actief'],
+}
+
 /** Hex codes for status indicators — unified across left-edge stripe and inline dot */
 const STATUS_HEX: Record<string, string> = {
   actief: '#2D6B48',
@@ -1420,26 +1432,54 @@ export function ProjectsList() {
                                   <ChevronDown className="w-3 h-3 text-[#C0BDB8] opacity-0 group-hover/status:opacity-100 transition-opacity" />
                                 </button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="start" className="w-40">
-                                {statusOpties.filter(s => s.value !== 'alle').map((s) => (
-                                  <DropdownMenuItem
-                                    key={s.value}
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      if (s.value !== project.status) {
-                                        handleStatusChange(project.id, s.value as Project['status'])
-                                      }
-                                    }}
-                                    className={cn(
-                                      'flex items-center gap-2 text-xs',
-                                      s.value === project.status && 'font-semibold'
-                                    )}
-                                  >
-                                    <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0', getStatusDotColor(s.value))} />
-                                    {s.label}
-                                    {s.value === project.status && <CheckCircle2 className="w-3 h-3 ml-auto text-[#1A535C]" />}
-                                  </DropdownMenuItem>
-                                ))}
+                              <DropdownMenuContent align="start" className="w-44">
+                                {(() => {
+                                  const all = statusOpties.filter(s => s.value !== 'alle')
+                                  const current = project.status
+                                  const next = STATUS_WORKFLOW[current] || []
+                                  const ordered = [
+                                    ...all.filter(s => s.value === current),
+                                    ...all.filter(s => next.includes(s.value)),
+                                    ...all.filter(s => s.value !== current && !next.includes(s.value)),
+                                  ]
+                                  return ordered.map((s, idx) => {
+                                    const isCurrent = s.value === current
+                                    const isSuggested = next.includes(s.value)
+                                    const firstSuggestedIdx = ordered.findIndex(o => next.includes(o.value))
+                                    const firstOtherIdx = ordered.findIndex((o, i) => i > 0 && !next.includes(o.value) && o.value !== current)
+                                    return (
+                                      <React.Fragment key={s.value}>
+                                        {isSuggested && idx === firstSuggestedIdx && (
+                                          <div className="px-2 pt-1.5 pb-1 text-[10px] uppercase tracking-wider text-[#9B9B95] font-semibold">
+                                            Volgende stap
+                                          </div>
+                                        )}
+                                        {!isSuggested && !isCurrent && firstOtherIdx === idx && (
+                                          <div className="px-2 pt-1.5 pb-1 text-[10px] uppercase tracking-wider text-[#9B9B95] font-semibold border-t border-[#F0EFEC] mt-1">
+                                            Andere
+                                          </div>
+                                        )}
+                                        <DropdownMenuItem
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            if (!isCurrent) {
+                                              handleStatusChange(project.id, s.value as Project['status'])
+                                            }
+                                          }}
+                                          className={cn(
+                                            'flex items-center gap-2 text-xs',
+                                            isCurrent && 'font-semibold',
+                                            isSuggested && 'text-[#1A1A1A]'
+                                          )}
+                                        >
+                                          <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: statusHex(s.value) }} />
+                                          {s.label}
+                                          {isCurrent && <CheckCircle2 className="w-3 h-3 ml-auto text-[#1A535C]" />}
+                                        </DropdownMenuItem>
+                                      </React.Fragment>
+                                    )
+                                  })
+                                })()}
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </td>
