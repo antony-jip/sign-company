@@ -302,9 +302,9 @@ export function TopNav() {
               end={item.path === '/'}
               data-active={isActive}
               className={cn(
-                'group/tab relative flex flex-1 items-center justify-center text-[13px] transition-all duration-200 whitespace-nowrap',
+                'group/tab relative flex flex-1 items-center justify-center font-heading text-[13px] font-bold transition-all duration-200 whitespace-nowrap',
                 isActive
-                  ? 'text-[#1A1A1A] font-semibold'
+                  ? 'text-[#1A1A1A]'
                   : 'text-[#6B6B66] hover:text-[#1A1A1A]',
               )}
             >
@@ -319,7 +319,7 @@ export function TopNav() {
                   className={cn('w-[16px] h-[16px] transition-all duration-200', isActive ? '' : 'opacity-55')}
                   style={isActive ? { color: item.color, filter: `drop-shadow(0 1px 3px ${item.color}40)` } : undefined}
                 />
-                <span>{item.label}</span>
+                <span>{item.label}<span className="text-[#F15025]">.</span></span>
               </span>
             </NavLink>
           )
@@ -340,8 +340,8 @@ export function TopNav() {
                   to={item.path}
                   end={item.path === '/'}
                   className={cn(
-                    'flex items-center gap-3 px-3 py-3 rounded-[12px] text-[14px] font-medium transition-all duration-200',
-                    isActive ? 'font-semibold' : 'text-muted-foreground/60 hover:text-foreground',
+                    'flex items-center gap-3 px-3 py-3 rounded-[12px] font-heading text-[14px] font-bold transition-all duration-200',
+                    isActive ? '' : 'text-muted-foreground/60 hover:text-foreground',
                   )}
                   style={isActive ? { background: `${item.color}10`, color: item.color } : undefined}
                 >
@@ -351,7 +351,7 @@ export function TopNav() {
                   >
                     <Icon className="w-[18px] h-[18px]" style={isActive ? { color: item.color } : { opacity: 0.4 }} />
                   </div>
-                  {item.label}
+                  <span>{item.label}<span className="text-[#F15025]">.</span></span>
                 </NavLink>
               )
             })}
@@ -361,14 +361,14 @@ export function TopNav() {
             <NavLink
               to="/instellingen"
               className={cn(
-                'flex items-center gap-3 px-3 py-3 rounded-[12px] text-[14px] font-medium transition-colors',
+                'flex items-center gap-3 px-3 py-3 rounded-[12px] font-heading text-[14px] font-bold transition-colors',
                 location.pathname.startsWith('/instellingen') ? 'text-foreground bg-muted/50' : 'text-muted-foreground/50 hover:text-foreground',
               )}
             >
               <div className="w-9 h-9 rounded-[10px] flex items-center justify-center bg-muted/30">
                 <Settings className="w-[18px] h-[18px]" style={{ opacity: 0.4 }} />
               </div>
-              Instellingen
+              <span>Instellingen<span className="text-[#F15025]">.</span></span>
             </NavLink>
           </nav>
 
