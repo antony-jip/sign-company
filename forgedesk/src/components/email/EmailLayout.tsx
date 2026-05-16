@@ -24,7 +24,7 @@ import { EmailMobileTopBar } from './EmailMobileTopBar'
 import type { Email, EmailAttachment } from '@/types'
 import { logger } from '../../utils/logger'
 import type { EmailFolder, FilterType, FontSize, ViewMode } from './emailTypes'
-import { extractSenderEmail, extractSenderName, parseSearchQuery, IMAP_FOLDER_MAP, KEYBOARD_SHORTCUTS, calculateSnoozeDate, getAvatarStyle } from './emailHelpers'
+import { extractSenderEmail, extractSenderName, parseSearchQuery, IMAP_FOLDER_MAP, KEYBOARD_SHORTCUTS, SEARCH_OPERATORS, calculateSnoozeDate, getAvatarStyle, formatRelativeSync } from './emailHelpers'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -85,7 +85,12 @@ export function EmailLayout() {
   const [viewMode, setViewMode] = useState<ViewMode>('idle')
   const [searchQuery, setSearchQuery] = useState('')
   const [searchInput, setSearchInput] = useState('')
+  const [searchFocused, setSearchFocused] = useState(false)
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // 5s undo-buffer voor delete: pending DB-mutaties worden hier vastgehouden
+  // zodat undo-toast de mutatie kan annuleren. Flush (= alsnog uitvoeren)
+  // op unmount, anders zou de UI-delete niet persisten.
+  const pendingDeleteTimersRef = useRef<Map<string, { timer: ReturnType<typeof setTimeout>; flush: () => void }>>(new Map())
   const [searchResults, setSearchResults] = useState<Email[] | null>(null)
   const [isSearching, setIsSearching] = useState(false)
   const [filter, setFilter] = useState<FilterType>('alle')
@@ -98,6 +103,8 @@ export function EmailLayout() {
   // ─── Loading state ───
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [lastSyncAt, setLastSyncAt] = useState<number | null>(null)
+  const [nowTick, setNowTick] = useState(() => Date.now())
   const [isLoadingBody, setIsLoadingBody] = useState(false)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [useIMAP, setUseIMAP] = useState(false)
@@ -151,6 +158,10 @@ export function EmailLayout() {
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const bodyCacheRef = useRef<Map<string, string>>(new Map())
   const attachmentCacheRef = useRef<Map<string, EmailAttachment[]>>(new Map())
+  // Inline image-bytes meegestuurd door /api/read-email (cold-pad first-open).
+  // Bewaard per email-id zodat EmailReader meteen thumbnails kan tonen
+  // zonder tweede IMAP-roundtrip naar /api/email-attachment.
+  const attachmentBytesCacheRef = useRef<Map<string, Record<string, string>>>(new Map())
 
   const fetchLimit = emailFetchLimit || 200
 
@@ -588,12 +599,22 @@ export function EmailLayout() {
       setSelectedEmail(null)
       setViewMode('idle')
     }, 'back')
-    toast.success('Email gearchiveerd')
+    toast.success('Email gearchiveerd', {
+      duration: 5000,
+      action: {
+        label: 'Ongedaan maken',
+        onClick: () => {
+          setEmails((prev) => (prev.some((e) => e.id === email.id) ? prev : [email, ...prev]))
+        },
+      },
+    })
   }, [])
 
   const handleDelete = useCallback((email: Email) => {
+    const wasInTrash = email.map === 'prullenbak'
+    const snapshot = { map: email.map, labels: email.labels }
     viewTransition(() => {
-      if (email.map === 'prullenbak') {
+      if (wasInTrash) {
         setEmails((prev) => prev.filter((e) => e.id !== email.id))
       } else {
         setEmails((prev) => prev.map((e) => e.id === email.id ? { ...e, map: 'prullenbak', labels: ['prullenbak'] } : e))
@@ -601,12 +622,36 @@ export function EmailLayout() {
       setSelectedEmail(null)
       setViewMode('idle')
     }, 'back')
-    if (email.map === 'prullenbak') {
-      deleteEmailDb(email.id).catch(() => {})
-    } else {
-      updateEmail(email.id, { map: 'prullenbak', labels: ['prullenbak'] }).catch(() => {})
+    // Vertraag de DB-mutatie met 5s zodat undo nog kan ingrijpen
+    const flush = () => {
+      if (wasInTrash) {
+        deleteEmailDb(email.id).catch(() => {})
+      } else {
+        updateEmail(email.id, { map: 'prullenbak', labels: ['prullenbak'] }).catch(() => {})
+      }
+      pendingDeleteTimersRef.current.delete(email.id)
     }
-    toast.success('Email verwijderd')
+    const timer = setTimeout(flush, 5000)
+    pendingDeleteTimersRef.current.set(email.id, { timer, flush })
+    toast.success(wasInTrash ? 'Definitief verwijderd' : 'Email verwijderd', {
+      duration: 5000,
+      action: {
+        label: 'Ongedaan maken',
+        onClick: () => {
+          const existing = pendingDeleteTimersRef.current.get(email.id)
+          if (existing) {
+            clearTimeout(existing.timer)
+            pendingDeleteTimersRef.current.delete(email.id)
+          }
+          setEmails((prev) => {
+            if (wasInTrash) {
+              return prev.some((e) => e.id === email.id) ? prev : [email, ...prev]
+            }
+            return prev.map((e) => e.id === email.id ? { ...e, ...snapshot } : e)
+          })
+        },
+      },
+    })
   }, [])
 
   // ─── Sales Inbox v1: per-rij correctie-acties ───
@@ -660,6 +705,7 @@ export function EmailLayout() {
         setImapTotal(total)
         const fresh = await readFromSupabase()
         if (fresh.length > 0) setEmails(fresh)
+        setLastSyncAt(Date.now())
         if (!silent) toast.success('Inbox vernieuwd')
       })
       .catch(() => {
@@ -744,7 +790,15 @@ export function EmailLayout() {
         const imapBody = detail.bodyHtml || detail.bodyText || ''
         bodyCacheRef.current.set(email.id, imapBody)
         if (detail.attachments?.length) {
-          attachmentCacheRef.current.set(email.id, detail.attachments)
+          const inlineBytes: Record<string, string> = {}
+          const metaOnly: EmailAttachment[] = detail.attachments.map((a) => {
+            if (a.content) inlineBytes[a.filename] = a.content
+            return { filename: a.filename, contentType: a.contentType, size: a.size }
+          })
+          attachmentCacheRef.current.set(email.id, metaOnly)
+          if (Object.keys(inlineBytes).length > 0) {
+            attachmentBytesCacheRef.current.set(email.id, inlineBytes)
+          }
         }
         return imapBody
       } catch (err: unknown) {
@@ -778,8 +832,16 @@ export function EmailLayout() {
       if (isNaN(uid)) return undefined
       const detail = await readEmailFromIMAP(uid, IMAP_FOLDER_MAP[folder] || 'INBOX')
       if (detail.attachments?.length) {
-        attachmentCacheRef.current.set(email.id, detail.attachments)
-        return detail.attachments
+        const inlineBytes: Record<string, string> = {}
+        const metaOnly: EmailAttachment[] = detail.attachments.map((a) => {
+          if (a.content) inlineBytes[a.filename] = a.content
+          return { filename: a.filename, contentType: a.contentType, size: a.size }
+        })
+        attachmentCacheRef.current.set(email.id, metaOnly)
+        if (Object.keys(inlineBytes).length > 0) {
+          attachmentBytesCacheRef.current.set(email.id, inlineBytes)
+        }
+        return metaOnly
       }
     } catch (err) {
       logger.error('Attachment meta-fetch mislukt:', err)
@@ -858,8 +920,17 @@ export function EmailLayout() {
   }, [selectedFolder, handleRefresh])
 
   // ─── Keyboard shortcuts (inline from useEmailKeyboard) ───
-  const callbacksRef = useRef({ handleTogglePin, handleArchive, handleDelete })
-  callbacksRef.current = { handleTogglePin, handleArchive, handleDelete }
+  // callbacksRef wordt aan onder via useEffect na declaratie van alle
+  // handlers gevuld (handleReply / handleForward worden later gedeclareerd
+  // dus we kunnen ze niet op top-level lezen — TDZ).
+  const searchInputRef = useRef<HTMLInputElement | null>(null)
+  const callbacksRef = useRef<{
+    handleTogglePin: (e: Email) => void
+    handleArchive: (e: Email) => void
+    handleDelete: (e: Email) => void
+    handleReply: (e: Email) => void
+    handleForward: (e: Email) => void
+  } | null>(null)
   const emailsRef = useRef(threadedEmails)
   emailsRef.current = threadedEmails
   const focusedRef = useRef(focusedIndex)
@@ -869,9 +940,16 @@ export function EmailLayout() {
     if (viewMode !== 'idle') return
     function handleKeyDown(e: KeyboardEvent) {
       const target = e.target as HTMLElement
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+        // Escape op zoekveld: wis focus zodat globale shortcuts weer werken
+        if (e.key === 'Escape' && target === searchInputRef.current) {
+          target.blur()
+        }
+        return
+      }
       const idx = focusedRef.current
       const cb = callbacksRef.current
+      if (!cb) return
       const list = emailsRef.current
       switch (e.key) {
         case 'j': e.preventDefault(); setFocusedIndex((prev) => Math.min(prev + 1, list.length - 1)); break
@@ -883,6 +961,15 @@ export function EmailLayout() {
         case 'p': e.preventDefault(); if (idx >= 0 && idx < list.length) cb.handleTogglePin(list[idx]); break
         case 'e': e.preventDefault(); if (idx >= 0 && idx < list.length) cb.handleArchive(list[idx]); break
         case '#': e.preventDefault(); if (idx >= 0 && idx < list.length) cb.handleDelete(list[idx]); break
+        case 'r': case 'a':
+          e.preventDefault()
+          if (idx >= 0 && idx < list.length) cb.handleReply(list[idx])
+          break
+        case 'f': e.preventDefault(); if (idx >= 0 && idx < list.length) cb.handleForward(list[idx]); break
+        case '/':
+          e.preventDefault()
+          searchInputRef.current?.focus()
+          break
         case 'c': e.preventDefault(); handleCompose(); break
         case '?': e.preventDefault(); setShowShortcuts((prev) => !prev); break
         case 'Escape':
@@ -896,6 +983,35 @@ export function EmailLayout() {
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [viewMode])
+
+  // Houd de focused-row in view bij j/k-navigatie
+  useEffect(() => {
+    if (focusedIndex < 0 || viewMode !== 'idle') return
+    const email = threadedEmails[focusedIndex]
+    if (!email) return
+    const el = document.querySelector(`[data-email-id="${email.id}"]`) as HTMLElement | null
+    el?.scrollIntoView({ block: 'nearest' })
+  }, [focusedIndex, threadedEmails, viewMode])
+
+  // Tick elke 30s zodat "Bijgewerkt X min geleden"-indicator vanzelf doorloopt
+  useEffect(() => {
+    if (!lastSyncAt) return
+    const interval = setInterval(() => setNowTick(Date.now()), 30_000)
+    return () => clearInterval(interval)
+  }, [lastSyncAt])
+
+  // Bij unmount: alle pending delete-timers direct flushen, zodat de UI-mutatie
+  // ook in de DB blijft staan na pagina-wissel.
+  useEffect(() => {
+    const pending = pendingDeleteTimersRef.current
+    return () => {
+      pending.forEach(({ timer, flush }) => {
+        clearTimeout(timer)
+        flush()
+      })
+      pending.clear()
+    }
+  }, [])
 
   // ─── Handlers ───
   const handleSelectEmail = useCallback(async (email: Email, e?: React.MouseEvent) => {
@@ -940,6 +1056,9 @@ export function EmailLayout() {
       body: `\n\n---------- Doorgestuurd bericht ----------\nVan: ${email.van}\nDatum: ${email.datum}\nOnderwerp: ${email.onderwerp}\n\n${email.inhoud?.replace(/<[^>]*>/g, '') || ''}`,
     })
   }, [handleCompose])
+
+  // Vul de callbacks-ref nu alle handlers gedeclareerd zijn (zie keyboard-handler hierboven).
+  callbacksRef.current = { handleTogglePin, handleArchive, handleDelete, handleReply, handleForward }
 
   const handleSendEmail = useCallback(async (data: { to: string; subject: string; body: string; html?: string; scheduledAt?: string; wacht_op_reactie?: boolean; attachments?: Array<{ filename: string; content: string; encoding: 'base64' }> }) => {
     try {
@@ -1300,6 +1419,7 @@ export function EmailLayout() {
             emailTotal={threadedEmails.length}
             allEmails={emails}
             imapFolder={IMAP_FOLDER_MAP[selectedFolder] || 'INBOX'}
+            prefetchedAttachmentBytes={attachmentBytesCacheRef.current.get(selectedEmail.id)}
             onTogglePin={handleTogglePin}
             onToggleRead={handleToggleRead}
             onDelete={handleDeleteAndNavigate}
@@ -1400,6 +1520,15 @@ export function EmailLayout() {
 
             <span className="w-px h-5 bg-[#EBEBEB] mx-1" />
 
+            {lastSyncAt && (
+              <span
+                className="text-[11px] text-[#9B9B95] tabular-nums whitespace-nowrap"
+                title={new Date(lastSyncAt).toLocaleString('nl-NL')}
+              >
+                {formatRelativeSync(lastSyncAt, nowTick)}
+              </span>
+            )}
+
             <Button
               variant="ghost"
               size="icon"
@@ -1417,9 +1546,12 @@ export function EmailLayout() {
           <div className="flex items-center gap-2 h-9 px-3 bg-[#F8F7F5] rounded-lg focus-within:ring-2 focus-within:ring-[#1A535C]/20 transition-shadow">
             <Search className="h-4 w-4 text-[#9B9B95] flex-shrink-0" />
             <input
+              ref={searchInputRef}
               type="text"
               value={searchInput}
               onChange={(e) => handleSearchChange(e.target.value)}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setTimeout(() => setSearchFocused(false), 150)}
               placeholder="Zoek in emails..."
               className="flex-1 bg-transparent text-[14px] text-[#1A1A1A] outline-none placeholder:text-[#9B9B95]"
             />
@@ -1429,6 +1561,26 @@ export function EmailLayout() {
               </button>
             )}
           </div>
+          {searchFocused && !searchInput && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {SEARCH_OPERATORS.map((op) => (
+                <button
+                  key={op.key}
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => {
+                    setSearchInput(op.key)
+                    searchInputRef.current?.focus()
+                  }}
+                  title={op.example}
+                  className="px-2 py-0.5 rounded-md bg-[#F0EFEC] hover:bg-[#1A535C]/[0.08] text-[11px] text-[#6B6B66] hover:text-[#1A535C] transition-colors duration-150 inline-flex items-center gap-1"
+                >
+                  <span className="font-mono">{op.key}</span>
+                  <span className="text-[#9B9B95]">{op.description}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Email list */}

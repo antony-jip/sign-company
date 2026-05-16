@@ -103,6 +103,17 @@ export function getAvatarStyle(name: string): { bg: string; text: string } {
   return style
 }
 
+export function formatRelativeSync(timestamp: number, now: number): string {
+  const diffSec = Math.max(0, Math.floor((now - timestamp) / 1000))
+  if (diffSec < 30) return 'Bijgewerkt zojuist'
+  if (diffSec < 60) return 'Bijgewerkt 1 min geleden'
+  const diffMin = Math.floor(diffSec / 60)
+  if (diffMin < 60) return `Bijgewerkt ${diffMin} min geleden`
+  const diffHr = Math.floor(diffMin / 60)
+  if (diffHr < 24) return `Bijgewerkt ${diffHr} u geleden`
+  return `Bijgewerkt ${Math.floor(diffHr / 24)} d geleden`
+}
+
 export function formatShortDate(dateStr: string): string {
   const date = new Date(dateStr)
   if (isNaN(date.getTime())) return ''

@@ -118,6 +118,7 @@ export const EmailListItem = memo(function EmailListItem({
   if (stacked) {
     return (
       <div
+        data-email-id={email.id}
         onClick={handleClick}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
@@ -265,6 +266,7 @@ export const EmailListItem = memo(function EmailListItem({
   return (
     <>
     <div
+      data-email-id={email.id}
       onClick={handleClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}

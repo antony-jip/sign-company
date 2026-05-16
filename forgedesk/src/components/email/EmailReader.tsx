@@ -16,7 +16,7 @@ import { hapticLight, hapticMedium } from '@/utils/haptic'
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { callForgie } from '@/services/forgieService'
-import { downloadEmailAttachment } from '@/services/gmailService'
+import { downloadEmailAttachment, downloadAllEmailAttachments } from '@/services/gmailService'
 import { uploadEmailBijlage } from '@/services/storageService'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
@@ -34,6 +34,14 @@ function formatFileSize(bytes: number): string {
   if (!bytes || bytes < 1024) return `${bytes || 0} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+function isImageAttachment(filename: string, contentType?: string): boolean {
+  const ext = (filename.split('.').pop() || '').toLowerCase()
+  return (
+    (contentType || '').toLowerCase().startsWith('image/') ||
+    ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'svg'].includes(ext)
+  )
 }
 
 // Bepaal label + kleur voor een bijlage op basis van content type / extensie
@@ -60,6 +68,10 @@ interface EmailReaderProps {
   emailTotal?: number
   allEmails?: Email[]
   imapFolder?: string
+  // Optionele inline image-bytes (base64) per filename, vooraf opgehaald
+  // door /api/read-email. Wanneer aanwezig slaat de reader de tweede
+  // IMAP-roundtrip over voor thumbnails.
+  prefetchedAttachmentBytes?: Record<string, string>
   onTogglePin?: (email: Email) => void
   onToggleRead?: (email: Email) => void
   onDelete?: (email: Email) => void
@@ -78,6 +90,7 @@ export function EmailReader({
   emailTotal,
   allEmails,
   imapFolder = 'INBOX',
+  prefetchedAttachmentBytes,
   onTogglePin,
   onToggleRead,
   onDelete,
@@ -154,46 +167,100 @@ export function EmailReader({
   const [downloadingAll, setDownloadingAll] = useState(false)
   const [previewAtt, setPreviewAtt] = useState<{ filename: string; url: string; contentType: string } | null>(null)
   // Cache van blob-URLs voor image-thumbnails per filename. Wordt gevuld bij open van email
-  // voor alle image-bijlagen onder 10MB, en wordt gerevoked bij email-switch / unmount.
+  // voor alle image-bijlagen, en wordt gerevoked bij email-switch / unmount.
   const [attachmentThumbnails, setAttachmentThumbnails] = useState<Record<string, string>>({})
+  const [thumbnailsLoading, setThumbnailsLoading] = useState(false)
 
   // ─── Auto-fetch image-thumbnails voor ontvangen bijlagen ───
-  // Haalt alle image-bijlagen (< 10MB) op via IMAP zodra de email opent, en
-  // bouwt blob-URLs voor inline-preview in de bijlagen-cards.
+  // Snelste pad: prefetchedAttachmentBytes uit /api/read-email (server stuurde
+  // image-bytes < 5 MB al inline mee). Anders: bulk-call naar
+  // /api/email-attachment met all=true die de hele mail één keer parsed.
   useEffect(() => {
     if (!email?.attachment_meta?.length) {
       setAttachmentThumbnails({})
+      setThumbnailsLoading(false)
       return
     }
-    const uid = Number(email.gmail_id || email.id)
-    if (Number.isNaN(uid)) return
+    const imageAtts = email.attachment_meta.filter((a) => isImageAttachment(a.filename, a.contentType))
+    if (!imageAtts.length) {
+      setAttachmentThumbnails({})
+      setThumbnailsLoading(false)
+      return
+    }
 
     let cancelled = false
     const createdUrls: string[] = []
-    const MAX_THUMB_BYTES = 10 * 1024 * 1024
 
-    const fetchThumbs = async () => {
-      for (const att of email.attachment_meta!) {
-        if (cancelled) return
-        const ext = (att.filename.split('.').pop() || '').toLowerCase()
-        const isImage =
-          (att.contentType || '').toLowerCase().startsWith('image/') ||
-          ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'svg'].includes(ext)
-        if (!isImage) continue
-        if (att.size && att.size > MAX_THUMB_BYTES) continue
-        try {
-          const result = await downloadEmailAttachment(uid, imapFolder, att.filename)
-          if (cancelled) return
-          const binary = atob(result.content)
-          const bytes = new Uint8Array(binary.length)
-          for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
-          const blob = new Blob([bytes], { type: result.contentType || att.contentType || 'image/jpeg' })
-          const url = URL.createObjectURL(blob)
+    const decodeToBlobUrl = (base64: string, contentType: string): string | null => {
+      try {
+        const binary = atob(base64)
+        const bytes = new Uint8Array(binary.length)
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+        const blob = new Blob([bytes], { type: contentType || 'image/jpeg' })
+        return URL.createObjectURL(blob)
+      } catch {
+        return null
+      }
+    }
+
+    // Pad A: bytes zijn al binnen via read-email. Decoderen is sync en snel —
+    // toon thumbnails direct, zonder roundtrip B.
+    if (prefetchedAttachmentBytes && Object.keys(prefetchedAttachmentBytes).length > 0) {
+      const next: Record<string, string> = {}
+      for (const att of imageAtts) {
+        const b64 = prefetchedAttachmentBytes[att.filename]
+        if (!b64) continue
+        const url = decodeToBlobUrl(b64, att.contentType)
+        if (url) {
           createdUrls.push(url)
-          setAttachmentThumbnails((prev) => ({ ...prev, [att.filename]: url }))
-        } catch {
-          /* stil: gebruiker kan altijd via klik de full preview ophalen */
+          next[att.filename] = url
         }
+      }
+      setAttachmentThumbnails(next)
+      setThumbnailsLoading(false)
+      // Als prefetch alle images dekt: klaar. Anders fallback naar bulk-fetch
+      // voor de ontbrekende (typisch wanneer mail > 5 MB images bevat).
+      if (Object.keys(next).length === imageAtts.length) {
+        return () => {
+          cancelled = true
+          createdUrls.forEach((url) => URL.revokeObjectURL(url))
+          setAttachmentThumbnails({})
+        }
+      }
+    }
+
+    const uid = Number(email.gmail_id || email.id)
+    if (Number.isNaN(uid)) {
+      setThumbnailsLoading(false)
+      return () => {
+        cancelled = true
+        createdUrls.forEach((url) => URL.revokeObjectURL(url))
+        setAttachmentThumbnails({})
+      }
+    }
+
+    // Pad B: bulk-fetch fallback voor wanneer prefetch niet beschikbaar is
+    // (cached body, of images > 5 MB die de server niet inline meestuurt).
+    setThumbnailsLoading(true)
+    const fetchThumbs = async () => {
+      try {
+        const results = await downloadAllEmailAttachments(uid, imapFolder)
+        if (cancelled) return
+        const next: Record<string, string> = { ...attachmentThumbnails }
+        for (const result of results) {
+          if (!isImageAttachment(result.filename, result.contentType)) continue
+          if (next[result.filename]) continue
+          const url = decodeToBlobUrl(result.content, result.contentType || 'image/jpeg')
+          if (url) {
+            createdUrls.push(url)
+            next[result.filename] = url
+          }
+        }
+        if (!cancelled) setAttachmentThumbnails(next)
+      } catch (err) {
+        logger.warn('Bulk-thumbnail fetch mislukt:', err)
+      } finally {
+        if (!cancelled) setThumbnailsLoading(false)
       }
     }
     fetchThumbs()
@@ -202,8 +269,12 @@ export function EmailReader({
       cancelled = true
       createdUrls.forEach((url) => URL.revokeObjectURL(url))
       setAttachmentThumbnails({})
+      setThumbnailsLoading(false)
     }
-  }, [email?.id, email?.attachment_meta?.length, imapFolder])
+    // attachmentThumbnails opzettelijk weggelaten — de effect lifecycle hoort
+    // aan de email/meta gekoppeld te zijn, niet aan tussentijdse updates.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [email?.id, email?.attachment_meta?.length, imapFolder, prefetchedAttachmentBytes])
 
   // ─── Draft persistence ───
   const draftKey = email ? `email-draft-${email.id}` : null
@@ -337,33 +408,40 @@ export function EmailReader({
     }
     setDownloadingAll(true)
     let success = 0
-    for (const att of email.attachment_meta) {
-      try {
-        const result = await downloadEmailAttachment(uid, imapFolder, att.filename)
-        const binary = atob(result.content)
-        const bytes = new Uint8Array(binary.length)
-        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
-        const blob = new Blob([bytes], { type: result.contentType || 'application/octet-stream' })
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = result.filename || att.filename
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-        setTimeout(() => URL.revokeObjectURL(url), 1000)
-        success++
-        // Korte pauze zodat de browser elke download apart kan verwerken
-        await new Promise((r) => setTimeout(r, 350))
-      } catch (err) {
-        logger.error(`Download mislukt voor ${att.filename}:`, err)
+    try {
+      const results = await downloadAllEmailAttachments(uid, imapFolder)
+      const expected = email.attachment_meta.length
+      for (const result of results) {
+        try {
+          const binary = atob(result.content)
+          const bytes = new Uint8Array(binary.length)
+          for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+          const blob = new Blob([bytes], { type: result.contentType || 'application/octet-stream' })
+          const url = URL.createObjectURL(blob)
+          const a = document.createElement('a')
+          a.href = url
+          a.download = result.filename
+          document.body.appendChild(a)
+          a.click()
+          document.body.removeChild(a)
+          setTimeout(() => URL.revokeObjectURL(url), 1000)
+          success++
+          // Korte pauze zodat de browser elke download apart kan verwerken
+          await new Promise((r) => setTimeout(r, 200))
+        } catch (err) {
+          logger.error(`Download-decode mislukt voor ${result.filename}:`, err)
+        }
       }
-    }
-    setDownloadingAll(false)
-    if (success === email.attachment_meta.length) {
-      toast.success(`${success} bijlage${success > 1 ? 'n' : ''} gedownload`)
-    } else {
-      toast.warning(`${success}/${email.attachment_meta.length} bijlagen gedownload`)
+      if (success === expected) {
+        toast.success(`${success} bijlage${success > 1 ? 'n' : ''} gedownload`)
+      } else {
+        toast.warning(`${success}/${expected} bijlagen gedownload`)
+      }
+    } catch (err) {
+      logger.error('Bulk-download mislukt:', err)
+      toast.error(err instanceof Error ? err.message : 'Bijlagen downloaden mislukt')
+    } finally {
+      setDownloadingAll(false)
     }
   }, [email, imapFolder])
 
@@ -1159,14 +1237,6 @@ export function EmailReader({
               {forgieLoading ? <Loader2 className="h-[18px] w-[18px] md:h-3.5 md:w-3.5 animate-spin" /> : <Sparkles className="h-[18px] w-[18px] md:h-3.5 md:w-3.5" />}
               <span>Daan</span>
             </Button>
-            <button
-              onClick={() => { hapticLight(); handleReply('reply') }}
-              title="Beantwoorden (r)"
-              className="tap-press ml-1 h-10 w-10 md:h-8 md:w-auto md:px-3.5 rounded-md bg-[#1A535C] hover:bg-[#0F3C44] text-white text-[13px] font-semibold transition-colors duration-150 flex items-center justify-center gap-1.5"
-            >
-              <Reply className="h-[18px] w-[18px] md:h-3.5 md:w-3.5" />
-              <span className="hidden md:inline">Beantwoorden</span>
-            </button>
             {emailIndex !== undefined && emailTotal !== undefined && (
               <span className="hidden md:contents">
                 <div className="w-px h-5 bg-[#EBEBEB] mx-2" />
@@ -1372,8 +1442,11 @@ export function EmailReader({
                 </div>
               )}
 
-              {/* Attachments — echte file cards op basis van attachment_meta */}
-              {email.attachment_meta && email.attachment_meta.length > 0 && (
+              {/* Attachments — image-grid + losse rij-cards voor non-images */}
+              {email.attachment_meta && email.attachment_meta.length > 0 && (() => {
+                const imageAtts = email.attachment_meta.filter((a) => isImageAttachment(a.filename, a.contentType))
+                const fileAtts = email.attachment_meta.filter((a) => !isImageAttachment(a.filename, a.contentType))
+                return (
                 <div className="mt-6 pt-5 border-t border-[#F0EFEC]">
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-[12px] text-[#9B9B95]">
@@ -1396,72 +1469,138 @@ export function EmailReader({
                       </button>
                     )}
                   </div>
-                  <div className="flex flex-wrap gap-2.5">
-                    {email.attachment_meta.map((att, i) => {
-                      const visual = getAttachmentVisual(att.filename, att.contentType)
-                      const isDownloading = downloadingAttachment === att.filename
-                      const isPreviewing = previewLoading === att.filename
-                      const thumbUrl = attachmentThumbnails[att.filename]
-                      return (
-                        <div
-                          key={`${att.filename}-${i}`}
-                          role="button"
-                          tabIndex={0}
-                          onClick={() => handlePreviewAttachment(att)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault()
-                              handlePreviewAttachment(att)
-                            }
-                          }}
-                          className={cn(
-                            'flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-[#F8F7F5] hover:bg-[#F0EFEC] transition-colors duration-150 cursor-pointer group/att text-left max-w-[280px]',
-                            (isDownloading || isPreviewing) && 'opacity-60 cursor-wait',
-                          )}
-                          title={`Preview ${att.filename}`}
-                        >
-                          {thumbUrl ? (
-                            <img
-                              src={thumbUrl}
-                              alt={att.filename}
-                              className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
-                            />
-                          ) : (
+
+                  {imageAtts.length > 0 && (
+                    <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-3 mb-3">
+                      {imageAtts.map((att, i) => {
+                        const isPreviewing = previewLoading === att.filename
+                        const isDownloading = downloadingAttachment === att.filename
+                        const thumbUrl = attachmentThumbnails[att.filename]
+                        return (
+                          <div
+                            key={`img-${att.filename}-${i}`}
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => handlePreviewAttachment(att)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault()
+                                handlePreviewAttachment(att)
+                              }
+                            }}
+                            className={cn(
+                              'group/att relative flex flex-col rounded-xl overflow-hidden bg-[#F8F7F5] hover:bg-[#F0EFEC] transition-colors duration-150 cursor-pointer text-left',
+                              (isDownloading || isPreviewing) && 'opacity-60 cursor-wait',
+                            )}
+                            title={`Preview ${att.filename}`}
+                          >
+                            <div className="relative aspect-square w-full bg-[#EFEEEA] flex items-center justify-center">
+                              {thumbUrl ? (
+                                <img
+                                  src={thumbUrl}
+                                  alt={att.filename}
+                                  className="w-full h-full object-cover"
+                                  loading="lazy"
+                                />
+                              ) : thumbnailsLoading ? (
+                                <Loader2 className="h-5 w-5 text-[#9B9B95] animate-spin" />
+                              ) : (
+                                <div className="w-10 h-10 rounded-lg bg-violet-500/90 text-white text-[10px] font-bold flex items-center justify-center">
+                                  IMG
+                                </div>
+                              )}
+                              {(isPreviewing || isDownloading) && (
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                                  <Loader2 className="h-5 w-5 text-white animate-spin" />
+                                </div>
+                              )}
+                              {!isPreviewing && !isDownloading && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleDownloadAttachment(att.filename)
+                                  }}
+                                  className="absolute top-1.5 right-1.5 p-1.5 rounded-lg bg-white/85 hover:bg-white opacity-0 group-hover/att:opacity-100 transition-opacity duration-150 shadow-sm"
+                                  title={`Download ${att.filename}`}
+                                  aria-label={`Download ${att.filename}`}
+                                >
+                                  <Download className="h-3.5 w-3.5 text-[#6B6B66]" />
+                                </button>
+                              )}
+                            </div>
+                            <div className="px-2.5 py-2 min-w-0">
+                              <div className="text-[12px] text-[#6B6B66] truncate" title={att.filename}>
+                                {att.filename}
+                              </div>
+                              <div className="text-[11px] text-[#9B9B95]">{formatFileSize(att.size)}</div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+
+                  {fileAtts.length > 0 && (
+                    <div className="flex flex-wrap gap-2.5">
+                      {fileAtts.map((att, i) => {
+                        const visual = getAttachmentVisual(att.filename, att.contentType)
+                        const isDownloading = downloadingAttachment === att.filename
+                        const isPreviewing = previewLoading === att.filename
+                        return (
+                          <div
+                            key={`file-${att.filename}-${i}`}
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => handlePreviewAttachment(att)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault()
+                                handlePreviewAttachment(att)
+                              }
+                            }}
+                            className={cn(
+                              'flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-[#F8F7F5] hover:bg-[#F0EFEC] transition-colors duration-150 cursor-pointer group/att text-left max-w-[280px]',
+                              (isDownloading || isPreviewing) && 'opacity-60 cursor-wait',
+                            )}
+                            title={`Preview ${att.filename}`}
+                          >
                             <div className={cn(
                               'w-8 h-8 rounded-lg text-white text-[9px] font-bold flex items-center justify-center flex-shrink-0',
                               visual.bg,
                             )}>
                               {visual.label}
                             </div>
-                          )}
-                          <div className="min-w-0 flex-1">
-                            <span className="text-[13px] text-[#6B6B66] group-hover/att:text-[#4A4A46] transition-colors duration-150 block truncate">
-                              {att.filename}
-                            </span>
-                            <span className="text-[11px] text-[#9B9B95]">{formatFileSize(att.size)}</span>
+                            <div className="min-w-0 flex-1">
+                              <span className="text-[13px] text-[#6B6B66] group-hover/att:text-[#4A4A46] transition-colors duration-150 block truncate">
+                                {att.filename}
+                              </span>
+                              <span className="text-[11px] text-[#9B9B95]">{formatFileSize(att.size)}</span>
+                            </div>
+                            {isPreviewing || isDownloading ? (
+                              <Loader2 className="h-3.5 w-3.5 text-[#1A535C]/60 animate-spin ml-1 flex-shrink-0" />
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleDownloadAttachment(att.filename)
+                                }}
+                                className="ml-1 p-1 rounded hover:bg-[#E8E7E4] flex-shrink-0"
+                                title={`Download ${att.filename}`}
+                                aria-label={`Download ${att.filename}`}
+                              >
+                                <Download className="h-3.5 w-3.5 text-[#B0ADA8] group-hover/att:text-[#6B6B66] transition-colors duration-150" />
+                              </button>
+                            )}
                           </div>
-                          {isPreviewing || isDownloading ? (
-                            <Loader2 className="h-3.5 w-3.5 text-[#1A535C]/60 animate-spin ml-1 flex-shrink-0" />
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleDownloadAttachment(att.filename)
-                              }}
-                              className="ml-1 p-1 rounded hover:bg-[#E8E7E4] flex-shrink-0"
-                              title={`Download ${att.filename}`}
-                              aria-label={`Download ${att.filename}`}
-                            >
-                              <Download className="h-3.5 w-3.5 text-[#B0ADA8] group-hover/att:text-[#6B6B66] transition-colors duration-150" />
-                            </button>
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
+                        )
+                      })}
+                    </div>
+                  )}
                 </div>
-              )}
+                )
+              })()}
 
               {/* Fallback: count > 0 maar geen metadata (auto-fetch faalde,
                   bv. IMAP timeout of geen verbinding). EmailLayout doet bij
