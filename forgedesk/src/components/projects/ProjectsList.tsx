@@ -1172,7 +1172,7 @@ export function ProjectsList() {
                                       {project.naam}
                                     </Link>
                                     {project.project_nummer && (
-                                      <span className="text-[10px] text-[#B0ADA8] font-mono flex-shrink-0 tabular-nums bg-[#F8F7F5] px-1.5 py-0.5 rounded">{project.project_nummer}</span>
+                                      <span className="text-[11px] text-[#C0BDB8] font-mono flex-shrink-0 tabular-nums">{project.project_nummer}</span>
                                     )}
                                   </div>
                                   {project.beschrijving && (
