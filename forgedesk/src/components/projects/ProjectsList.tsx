@@ -371,6 +371,12 @@ export function ProjectsList() {
     return Math.floor((Date.now() - created.getTime()) / (1000 * 60 * 60 * 24))
   }
 
+  function needsAttention(project: Project): boolean {
+    if (project.status === 'in-review') return true
+    const dagen = getDagenOpen(project)
+    return dagen !== null && dagen > 30
+  }
+
   const gefilterdeProjecten = useMemo(() => {
     let result = [...projecten]
 
@@ -383,7 +389,9 @@ export function ProjectsList() {
       )
     }
 
-    if (statusFilter !== 'alle') {
+    if (statusFilter === 'met-aandacht') {
+      result = result.filter(needsAttention)
+    } else if (statusFilter !== 'alle') {
       result = result.filter((p) => p.status === statusFilter)
     }
 
@@ -553,7 +561,8 @@ export function ProjectsList() {
     const actief = projecten.filter((p) => p.status === 'actief').length
     const teFactureren = projecten.filter((p) => p.status === 'te-factureren').length
     const afgerond = projecten.filter((p) => p.status === 'afgerond').length
-    return { actief, teFactureren, afgerond }
+    const metAandacht = projecten.filter(needsAttention).length
+    return { actief, teFactureren, afgerond, metAandacht }
   }, [projecten])
 
   if (isLoading) {
@@ -716,11 +725,12 @@ export function ProjectsList() {
             </div>
 
             {/* KPI tiles — triage entry-points, clickable filter targets */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {([
-                { key: 'actief',        label: 'Actief',        sub: 'in uitvoering',  count: stats.actief,        dot: '#2D6B48' },
-                { key: 'te-factureren', label: 'Te factureren', sub: 'wachten op factuur', count: stats.teFactureren, dot: '#3A5A9A' },
-                { key: 'afgerond',      label: 'Afgerond',      sub: 'klaar.',         count: stats.afgerond,      dot: '#8A7A4A' },
+                { key: 'met-aandacht',  label: 'Met aandacht',  sub: 'in-review of >30d open',  count: stats.metAandacht,   dot: '#F15025' },
+                { key: 'actief',        label: 'Actief',        sub: 'in uitvoering',           count: stats.actief,        dot: '#2D6B48' },
+                { key: 'te-factureren', label: 'Te factureren', sub: 'wachten op factuur',      count: stats.teFactureren,  dot: '#3A5A9A' },
+                { key: 'afgerond',      label: 'Afgerond',      sub: 'klaar.',                  count: stats.afgerond,      dot: '#8A7A4A' },
               ] as const).map(tile => {
                 const isActive = statusFilter === tile.key
                 return (
@@ -1137,6 +1147,7 @@ export function ProjectsList() {
                           key={project.id}
                           className={cn(
                             'doen-row border-b border-[#F0EFEC] last:border-0 cursor-pointer transition-all duration-200 group',
+                            needsAttention(project) && !selectedIds.has(project.id) && 'bg-[rgba(241,80,37,0.025)]',
                             'hover:bg-[#F8F7F4]',
                             selectedIds.has(project.id) && 'bg-[#1A535C]/[0.03]'
                           )}
