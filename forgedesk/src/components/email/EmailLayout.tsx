@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import {
   Search, Pencil, Inbox, Send, FileEdit, Trash2,
   Loader2, Archive, RefreshCw, CheckCheck, X, Mail, MailOpen,
-  Rows3, StretchHorizontal, Clock, Menu, Edit3,
+  Rows3, StretchHorizontal, Clock, Moon, Menu, Edit3,
 } from 'lucide-react'
 import { IngeplandeBerichtenLijst } from './IngeplandeBerichtenLijst'
 import { sendEmail as sendEmailViaApi, fetchEmailsFromIMAP, readEmailFromIMAP } from '@/services/gmailService'
@@ -38,6 +38,7 @@ const folderTabs: { id: EmailFolder; label: string; icon: React.ElementType }[] 
   { id: 'verzonden', label: 'Verzonden', icon: Send },
   { id: 'sales-wacht', label: 'Opvolgen', icon: Clock },
   { id: 'sales-beantwoord', label: 'Beantwoord', icon: CheckCheck },
+  { id: 'gesnoozed', label: 'Gesnoozed', icon: Moon },
   { id: 'concepten', label: 'Concepten', icon: FileEdit },
   { id: 'prullenbak', label: 'Prullenbak', icon: Trash2 },
 ]
@@ -95,7 +96,16 @@ export function EmailLayout() {
   const [searchResults, setSearchResults] = useState<Email[] | null>(null)
   const [isSearching, setIsSearching] = useState(false)
   const [filter, setFilter] = useState<FilterType>('alle')
-  const fontSize: FontSize = 'medium'
+  const [fontSize, setFontSize] = useState<FontSize>(() => {
+    try {
+      const stored = localStorage.getItem('doen_email_font_size')
+      if (stored === 'small' || stored === 'medium' || stored === 'large') return stored
+    } catch { /* localStorage geblokkeerd, val terug op default */ }
+    return 'medium'
+  })
+  useEffect(() => {
+    try { localStorage.setItem('doen_email_font_size', fontSize) } catch { /* no-op */ }
+  }, [fontSize])
   const [listStyle, setListStyle] = useState<'inline' | 'stacked'>(() => {
     try { return (localStorage.getItem('email_list_style') as 'inline' | 'stacked') || 'stacked' } catch (err) { return 'stacked' }
   })
@@ -1615,6 +1625,28 @@ export function EmailLayout() {
               >
                 <Rows3 className="h-3.5 w-3.5" />
               </button>
+            </div>
+
+            {/* Font-size toggle */}
+            <div className="hidden md:flex items-center mr-1">
+              {(['small', 'medium', 'large'] as const).map((size) => (
+                <button
+                  key={size}
+                  onClick={() => setFontSize(size)}
+                  className={cn(
+                    'h-8 w-8 rounded-md flex items-center justify-center transition-colors duration-150 font-semibold',
+                    size === 'small' && 'text-[10px]',
+                    size === 'medium' && 'text-[12px]',
+                    size === 'large' && 'text-[14px]',
+                    fontSize === size
+                      ? 'text-[#1A1A1A] bg-[#F0EFEC]'
+                      : 'text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC]/60',
+                  )}
+                  title={`Tekstgrootte: ${size === 'small' ? 'klein' : size === 'medium' ? 'normaal' : 'groot'}`}
+                >
+                  A
+                </button>
+              ))}
             </div>
 
             <span className="w-px h-5 bg-[#EBEBEB] mx-1" />
