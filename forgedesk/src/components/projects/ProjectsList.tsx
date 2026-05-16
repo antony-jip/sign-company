@@ -161,6 +161,16 @@ export function ProjectsList() {
   const [photoUploadKlantId, setPhotoUploadKlantId] = useState<string | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [dagenOpenFilter, setDagenOpenFilter] = useState<string>('alle')
+  const [groupBy, setGroupBy] = useState<'none' | 'status' | 'klant'>(() => {
+    if (typeof window === 'undefined') return 'none'
+    const stored = window.localStorage.getItem('doen_projecten_groupby')
+    return (stored === 'status' || stored === 'klant') ? stored : 'none'
+  })
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('doen_projecten_groupby', groupBy)
+    }
+  }, [groupBy])
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false)
   const [medewerkers, setMedewerkers] = useState<Medewerker[]>([])
   const zoekInputRef = useRef<HTMLInputElement>(null)
@@ -410,7 +420,28 @@ export function ProjectsList() {
       })
     }
 
+    const STATUS_GROUP_ORDER: string[] = ['actief', 'in-review', 'te-plannen', 'gepland', 'te-factureren', 'gefactureerd', 'on-hold', 'afgerond']
+    const groupKey = (p: Project): string => {
+      if (groupBy === 'status') return p.status
+      if (groupBy === 'klant') return (p.klant_naam || getKlantNaam(p.klant_id) || '·').toLowerCase()
+      return ''
+    }
+    const groupRank = (p: Project): number => {
+      if (groupBy !== 'status') return 0
+      const idx = STATUS_GROUP_ORDER.indexOf(p.status)
+      return idx === -1 ? 999 : idx
+    }
+
     result.sort((a, b) => {
+      if (groupBy !== 'none') {
+        if (groupBy === 'status') {
+          const r = groupRank(a) - groupRank(b)
+          if (r !== 0) return r
+        } else {
+          const k = groupKey(a).localeCompare(groupKey(b), 'nl')
+          if (k !== 0) return k
+        }
+      }
       let cmp = 0
       switch (sortField) {
         case 'naam':
@@ -430,9 +461,19 @@ export function ProjectsList() {
     })
 
     return result
-  }, [projecten, klanten, offertes, zoekterm, statusFilter, dagenOpenFilter, sortField, sortDir])
+  }, [projecten, klanten, offertes, zoekterm, statusFilter, dagenOpenFilter, sortField, sortDir, groupBy])
 
-  useEffect(() => { setCurrentPage(1) }, [zoekterm, statusFilter, dagenOpenFilter, sortField, sortDir])
+  useEffect(() => { setCurrentPage(1) }, [zoekterm, statusFilter, dagenOpenFilter, sortField, sortDir, groupBy])
+
+  function projectGroupKey(p: Project): string {
+    if (groupBy === 'status') return p.status
+    if (groupBy === 'klant') return p.klant_naam || getKlantNaam(p.klant_id) || '·'
+    return ''
+  }
+  function projectGroupLabel(key: string): string {
+    if (groupBy === 'status') return statusLabels[key] || key
+    return key
+  }
 
   const totalPages = Math.ceil(gefilterdeProjecten.length / PAGE_SIZE)
   const paginatedProjecten = useMemo(
@@ -870,38 +911,69 @@ export function ProjectsList() {
                 })}
               </div>
 
-              {/* Open sinds — subordinate sub-filter */}
-              <div className="hidden lg:flex items-center gap-1.5">
-                <span
-                  className="text-[12px] text-[#9B9B95] mr-1"
-                  style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
-                >
-                  open sinds ·
-                </span>
-                {([
-                  { value: 'alle', label: 'alles' },
-                  { value: '<7', label: '<7d' },
-                  { value: '7-14', label: '7-14d' },
-                  { value: '14-30', label: '14-30d' },
-                  { value: '30-90', label: '30-90d' },
-                  { value: '>90', label: '>90d' },
-                ] as const).map((optie) => {
-                  const isActive = dagenOpenFilter === optie.value
-                  return (
-                    <button
-                      key={optie.value}
-                      onClick={() => setDagenOpenFilter(optie.value)}
-                      className={cn(
-                        'px-1.5 py-0.5 rounded text-[11px] font-mono transition-colors',
-                        isActive
-                          ? 'text-[#1A535C] font-bold'
-                          : 'text-[#B0ADA8] hover:text-[#6B6B66]'
-                      )}
-                    >
-                      {optie.label}
-                    </button>
-                  )
-                })}
+              {/* Sub-filters — open sinds + groep */}
+              <div className="hidden lg:flex items-center gap-5">
+                <div className="flex items-center gap-1.5">
+                  <span
+                    className="text-[12px] text-[#9B9B95] mr-1"
+                    style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+                  >
+                    open sinds ·
+                  </span>
+                  {([
+                    { value: 'alle', label: 'alles' },
+                    { value: '<7', label: '<7d' },
+                    { value: '7-14', label: '7-14d' },
+                    { value: '14-30', label: '14-30d' },
+                    { value: '30-90', label: '30-90d' },
+                    { value: '>90', label: '>90d' },
+                  ] as const).map((optie) => {
+                    const isActive = dagenOpenFilter === optie.value
+                    return (
+                      <button
+                        key={optie.value}
+                        onClick={() => setDagenOpenFilter(optie.value)}
+                        className={cn(
+                          'px-1.5 py-0.5 rounded text-[11px] font-mono transition-colors',
+                          isActive
+                            ? 'text-[#1A535C] font-bold'
+                            : 'text-[#B0ADA8] hover:text-[#6B6B66]'
+                        )}
+                      >
+                        {optie.label}
+                      </button>
+                    )
+                  })}
+                </div>
+                <div className="flex items-center gap-1.5 ml-auto">
+                  <span
+                    className="text-[12px] text-[#9B9B95] mr-1"
+                    style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+                  >
+                    groep ·
+                  </span>
+                  {([
+                    { value: 'none', label: 'geen' },
+                    { value: 'status', label: 'status' },
+                    { value: 'klant', label: 'klant' },
+                  ] as const).map((optie) => {
+                    const isActive = groupBy === optie.value
+                    return (
+                      <button
+                        key={optie.value}
+                        onClick={() => setGroupBy(optie.value)}
+                        className={cn(
+                          'px-1.5 py-0.5 rounded text-[11px] font-mono transition-colors',
+                          isActive
+                            ? 'text-[#1A535C] font-bold'
+                            : 'text-[#B0ADA8] hover:text-[#6B6B66]'
+                        )}
+                      >
+                        {optie.label}
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
             </div>
           </div>
@@ -1141,10 +1213,28 @@ export function ProjectsList() {
                     {paginatedProjecten.map((project, i) => {
                       const klantNaam = project.klant_naam || getKlantNaam(project.klant_id)
                       const contactpersoon = getKlantContactpersoon(project.klant_id)
+                      const isGrouped = groupBy !== 'none'
+                      const currentGroupKey = isGrouped ? projectGroupKey(project) : ''
+                      const showGroupHeader = isGrouped && (i === 0 || projectGroupKey(paginatedProjecten[i - 1]) !== currentGroupKey)
+                      const groupCount = showGroupHeader
+                        ? gefilterdeProjecten.filter((p) => projectGroupKey(p) === currentGroupKey).length
+                        : 0
 
                       return (
+                        <React.Fragment key={project.id}>
+                          {showGroupHeader && (
+                            <tr>
+                              <td colSpan={9} className="py-2.5 pl-5 pr-5 bg-[#F0F3F4]/60 border-b border-[#E5EAEC]">
+                                <span className="inline-flex items-baseline gap-2">
+                                  <span className="font-heading text-[12px] font-bold text-[#3A6770] uppercase tracking-wider">
+                                    {projectGroupLabel(currentGroupKey)}
+                                  </span>
+                                  <span className="font-mono text-[11px] text-[#9B9B95] tabular-nums">{groupCount}</span>
+                                </span>
+                              </td>
+                            </tr>
+                          )}
                         <tr
-                          key={project.id}
                           className={cn(
                             'doen-row border-b border-[#F0EFEC] last:border-0 cursor-pointer transition-all duration-200 group',
                             needsAttention(project) && !selectedIds.has(project.id) && 'bg-[rgba(241,80,37,0.025)]',
@@ -1412,6 +1502,7 @@ export function ProjectsList() {
                           </td>
 
                         </tr>
+                        </React.Fragment>
                       )
                     })}
                   </tbody>
