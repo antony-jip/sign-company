@@ -901,7 +901,7 @@ export function ProjectDetail() {
   const fase = getFase(project.status)
 
   return (
-    <div className="relative -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 h-[calc(100dvh-122px)] flex flex-col bg-[#F8F7F5]">
+    <div className="relative -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 bg-[#F8F7F5]">
 
       {/* ── Hidden file inputs ── */}
       <input
@@ -950,8 +950,8 @@ export function ProjectDetail() {
         </label>
       </div>
 
-      {/* ══════════ SCROLL AREA ══════════ */}
-      <div ref={scrollAreaRef} className="flex-1 overflow-y-auto">
+      {/* ══════════ CONTENT AREA — scrolls with main, no inner scroll ══════════ */}
+      <div ref={scrollAreaRef}>
 
       {/* ══════════ HEADER + TABS ══════════ */}
       <div className="bg-[#F8F7F5] px-8 pt-4">
