@@ -125,8 +125,9 @@ function DoenVibeCard() {
       onBlur={() => setPaused(false)}
       className="group relative rounded-xl p-5 flex flex-col gap-3 text-left transition-all overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F15025]/30 focus-visible:ring-offset-2"
       style={{
-        background: 'linear-gradient(135deg, #FCFAF5 0%, #F5EFE3 100%)',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+        background: 'linear-gradient(180deg, #FFFFFF 0%, #FAF7F3 100%)',
+        border: '1px solid rgba(26,83,92,0.08)',
+        boxShadow: '0 1px 2px rgba(20,62,71,0.04), 0 8px 24px rgba(20,62,71,0.025)',
         minHeight: 168,
       }}
       aria-label={`${meta.label} — klik voor volgende doen-fact`}
@@ -271,8 +272,9 @@ export function KpiStrip() {
             key={kpi.label}
             className="rounded-xl p-5 flex flex-col gap-3"
             style={{
-              background: 'linear-gradient(180deg, #FFFFFF 0%, #FBFAF7 100%)',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.03), 0 4px 16px rgba(20,62,71,0.025)',
+              background: 'linear-gradient(180deg, #FFFFFF 0%, #F6F8F9 100%)',
+              border: '1px solid rgba(26,83,92,0.08)',
+              boxShadow: '0 1px 2px rgba(20,62,71,0.04), 0 8px 24px rgba(20,62,71,0.025)',
             }}
           >
             <div className="flex items-start justify-between">
