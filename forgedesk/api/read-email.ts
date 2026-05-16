@@ -157,7 +157,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         gmail_address, app_password, uid, imapFolder, imap_host, imap_port,
       })
 
-      // Step 3: Cache the result in Supabase
+      // Step 3: Cache the result in Supabase. Strip inline image-bytes uit
+      // attachment_meta — die zijn alleen voor de directe response, niet
+      // bedoeld om in de DB-row te persisten (zou rijen onnodig opblazen).
+      const attachmentMetaForDb = result.attachments.map(({ filename, contentType, size }) => ({
+        filename, contentType, size,
+      }))
       if (cached) {
         // Update existing row with body
         await supabaseAdmin
@@ -165,7 +170,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           .update({
             body_html: result.bodyHtml || null,
             body_text: result.bodyText || null,
-            attachment_meta: result.attachments.length > 0 ? result.attachments : null,
+            attachment_meta: attachmentMetaForDb.length > 0 ? attachmentMetaForDb : null,
             gelezen: true,
             cached_at: new Date().toISOString(),
           })
@@ -189,8 +194,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             onderwerp: result.subject || '(geen onderwerp)',
             datum: result.date || new Date().toISOString(),
             gelezen: true,
-            bijlagen: result.attachments.length,
-            attachment_meta: result.attachments.length > 0 ? result.attachments : null,
+            bijlagen: attachmentMetaForDb.length,
+            attachment_meta: attachmentMetaForDb.length > 0 ? attachmentMetaForDb : null,
             body_html: result.bodyHtml || null,
             body_text: result.bodyText || null,
             inhoud: result.bodyHtml || result.bodyText || '',
@@ -255,22 +260,33 @@ async function fetchFromIMAP(opts: {
   await client.messageFlagsAdd({ uid: `${opts.uid}:${opts.uid}` }, ['\\Seen'])
   await client.logout()
 
-  // Parse de email maar skip de bijlage-INHOUD. We hoeven alleen de body
-  // tekst + attachment metadata (naam/type/grootte). De daadwerkelijke
-  // bijlage-data wordt apart opgehaald via /api/email-attachment wanneer
-  // de gebruiker op download klikt. Dit scheelt enorm bij mails met veel
-  // of grote bijlages (een 20MB mail parst nu in ~100ms ipv seconden).
+  // Parse de email — we hebben de hele bytes al in handen. Body + meta voor
+  // alle bijlagen, en optioneel inline base64-content voor image-bijlagen
+  // onder 5 MB zodat de reader meteen thumbnails kan tonen zonder een tweede
+  // IMAP-roundtrip via /api/email-attachment.
   const parsed = await simpleParser(message.source as Buffer, {
     skipImageLinks: true,
     skipTextLinks: true,
     skipTextToHtml: true,
   })
 
-  const attachments = (parsed.attachments || []).map((a) => ({
-    filename: a.filename || 'bijlage',
-    contentType: a.contentType || 'application/octet-stream',
-    size: a.size || 0,
-  }))
+  const MAX_INLINE_IMAGE_BYTES = 5 * 1024 * 1024
+  const inlineImageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg']
+  const attachments = (parsed.attachments || []).map((a) => {
+    const filename = a.filename || 'bijlage'
+    const contentType = a.contentType || 'application/octet-stream'
+    const size = a.size || 0
+    const ext = filename.split('.').pop()?.toLowerCase() || ''
+    const isImage = contentType.toLowerCase().startsWith('image/') || inlineImageExts.includes(ext)
+    let inlineContent: string | undefined
+    if (isImage && size > 0 && size <= MAX_INLINE_IMAGE_BYTES && a.content) {
+      const buf = Buffer.isBuffer(a.content) ? a.content : Buffer.from(a.content)
+      inlineContent = buf.toString('base64')
+    }
+    return inlineContent
+      ? { filename, contentType, size, content: inlineContent }
+      : { filename, contentType, size }
+  })
 
   let bodyHtml = parsed.html || ''
   if (bodyHtml && parsed.attachments?.length) {

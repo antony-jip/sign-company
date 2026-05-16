@@ -285,9 +285,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const threadMap = new Map<string, string>() // message_id → thread_id
 
     if (inReplyTos.length > 0) {
+      // Scope op user_id: service-role omzeilt RLS, dus zonder filter
+      // zou de scan globaal over alle organisaties gaan.
       const { data: parentRows } = await supabaseAdmin
         .from('emails')
         .select('message_id, thread_id')
+        .eq('user_id', user_id)
         .in('message_id', inReplyTos)
         .not('thread_id', 'is', null)
 

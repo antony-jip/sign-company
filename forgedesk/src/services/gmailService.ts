@@ -177,7 +177,10 @@ export interface IMAPEmailDetail extends IMAPEmailSummary {
   cc?: string
   bodyHtml: string
   bodyText: string
-  attachments: { filename: string; contentType: string; size: number }[]
+  // `content` is optioneel: aanwezig voor image-bijlagen onder 5 MB die de
+  // server inline meeleverde, zodat de reader meteen previews kan tonen
+  // zonder tweede IMAP-roundtrip.
+  attachments: { filename: string; contentType: string; size: number; content?: string }[]
   messageId?: string
   inReplyTo?: string
 }
@@ -319,6 +322,30 @@ export async function downloadEmailAttachment(
   }
 
   return response.json()
+}
+
+export async function downloadAllEmailAttachments(
+  uid: number,
+  folder: string,
+): Promise<EmailAttachmentDownload[]> {
+  const token = await getAuthToken()
+
+  const response = await fetch('/api/email-attachment', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify({ uid, folder, all: true }),
+  })
+
+  if (!response.ok) {
+    const error: { error?: string } = await response.json().catch(() => ({}))
+    throw new Error(error?.error || `Bijlagen ophalen mislukt: ${response.status}`)
+  }
+
+  const data: { attachments?: EmailAttachmentDownload[] } = await response.json()
+  return data.attachments || []
 }
 
 // ============ EMAIL SETTINGS (via API endpoint — server-side encryptie) ============

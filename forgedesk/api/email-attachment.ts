@@ -68,9 +68,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   try {
-    const { uid, folder = 'INBOX', filename } = req.body
-    if (!uid || !filename) {
-      return res.status(400).json({ error: 'uid en filename zijn verplicht' })
+    const { uid, folder = 'INBOX', filename, all } = req.body as {
+      uid?: number | string
+      folder?: string
+      filename?: string
+      all?: boolean
+    }
+    if (!uid || (!all && !filename)) {
+      return res.status(400).json({ error: 'uid en filename (of all=true) zijn verplicht' })
     }
 
     const user_id = await verifyUser(req)
@@ -106,9 +111,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const parsed = await simpleParser(message.source as Buffer)
-    const attachment = (parsed.attachments || []).find(
-      (a) => a.filename === filename
-    )
+    const allAttachments = parsed.attachments || []
+
+    if (all) {
+      const payload = allAttachments
+        .filter((a) => a.content)
+        .map((a) => {
+          const buf = Buffer.isBuffer(a.content) ? a.content : Buffer.from(a.content)
+          return {
+            filename: a.filename || 'bijlage',
+            contentType: a.contentType || 'application/octet-stream',
+            size: buf.length,
+            content: buf.toString('base64'),
+          }
+        })
+      return res.status(200).json({ attachments: payload })
+    }
+
+    const attachment = allAttachments.find((a) => a.filename === filename)
 
     if (!attachment || !attachment.content) {
       return res.status(404).json({ error: 'Bijlage niet gevonden' })

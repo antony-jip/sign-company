@@ -24,21 +24,21 @@ export async function getCachedEmails(
 
 // ============ EMAILS ============
 
+// Lijst-kolommen voor de inbox-rendering. body_text wordt server-side
+// getrunc'd via de emails_list_view (migration 106). body_html en inhoud
+// blijven uit — die zijn groot en alleen relevant bij body-open.
+const LIST_VIEW_COLUMNS = 'id,user_id,gmail_id,uid,message_id,van,aan,onderwerp,datum,gelezen,starred,labels,bijlagen,map,from_name,from_address,imap_folder,pinned,snoozed_until,thread_id,attachment_meta,has_attachments,body_text,created_at,updated_at,cached_at'
+
 export async function getEmails(limit = 200): Promise<Email[]> {
   if (isSupabaseConfigured() && supabase) {
-    // List-view columns + body_text (voor de preview snippet in de rij).
-    // body_html en inhoud blijven uitgesloten — die zijn groot. body_text wordt
-    // direct getrunc'd in JS naar 200 chars zodat de in-memory state niet bloat.
     const { data, error } = await supabase
-      .from('emails')
-      .select('id,user_id,gmail_id,uid,message_id,van,aan,onderwerp,datum,gelezen,starred,labels,bijlagen,map,from_name,from_address,imap_folder,pinned,snoozed_until,thread_id,attachment_meta,has_attachments,body_text,created_at,updated_at,cached_at')
+      .from('emails_list_view')
+      .select(LIST_VIEW_COLUMNS)
       .order('datum', { ascending: false })
       .limit(limit)
     if (error) throw error
     return (data || []).map(e => ({
       ...e,
-      // Truncate body_text naar 200 chars voor de preview snippet
-      body_text: e.body_text ? String(e.body_text).slice(0, 200) : null,
       inhoud: '',
       body_html: null,
     }))
@@ -50,15 +50,14 @@ export async function searchEmailsFTS(query: string, limit = 50): Promise<Email[
   if (!query.trim() || !isSupabaseConfigured() || !supabase) return []
   const tsQuery = query.trim().split(/\s+/).map(w => `${w}:*`).join(' & ')
   const { data, error } = await supabase
-    .from('emails')
-    .select('id,user_id,gmail_id,uid,message_id,van,aan,onderwerp,datum,gelezen,starred,labels,bijlagen,map,from_name,from_address,imap_folder,pinned,snoozed_until,thread_id,attachment_meta,has_attachments,body_text,created_at,updated_at,cached_at')
+    .from('emails_list_view')
+    .select(LIST_VIEW_COLUMNS)
     .textSearch('fts', tsQuery)
     .order('datum', { ascending: false })
     .limit(limit)
   if (error) throw error
   return (data || []).map(e => ({
     ...e,
-    body_text: e.body_text ? String(e.body_text).slice(0, 200) : null,
     inhoud: '',
     body_html: null,
   }))
