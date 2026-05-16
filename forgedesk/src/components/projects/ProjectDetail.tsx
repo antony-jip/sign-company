@@ -1092,7 +1092,6 @@ export function ProjectDetail() {
                 >
                   <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0', getStatusDotColor(s.value))} />
                   {s.label}
-                  {s.value === project.status && <CheckCircle2 className="w-3 h-3 ml-auto text-[#1A535C]" />}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
