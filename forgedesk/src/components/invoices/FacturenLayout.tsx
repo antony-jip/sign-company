@@ -259,18 +259,24 @@ function getTodayString(): string {
   return new Date().toISOString().split('T')[0]
 }
 
+function buildFactuurNummer(prefix: string, volgnummer: number): string {
+  const jaar = new Date().getFullYear().toString()
+  const resolvedPrefix = prefix.replace('{jaar}', jaar)
+  return `${resolvedPrefix}${volgnummer}`
+}
+
 function generateFactuurNummer(existing: Factuur[], factuurPrefix = '', startNummer = 1): string {
-  const year = new Date().getFullYear()
-  const trimmed = factuurPrefix.replace(/-+$/, '').trim()
-  const prefix = trimmed ? `${trimmed}-${year}-` : `${year}-`
+  const jaar = new Date().getFullYear().toString()
+  const resolvedPrefix = factuurPrefix.replace('{jaar}', jaar)
   const maxNum = existing
-    .filter((f) => f.nummer.startsWith(prefix))
+    .filter((f) => f.nummer.startsWith(resolvedPrefix))
     .reduce((max, f) => {
-      const num = parseInt(f.nummer.replace(prefix, ''), 10)
-      return isNaN(num) ? max : Math.max(max, num)
+      const tail = f.nummer.slice(resolvedPrefix.length)
+      const n = /^\d+$/.test(tail) ? parseInt(tail, 10) : 0
+      return Math.max(max, n)
     }, 0)
   const nextNr = Math.max(maxNum, Math.max(0, startNummer - 1)) + 1
-  return `${prefix}${String(nextNr).padStart(3, '0')}`
+  return buildFactuurNummer(factuurPrefix, nextNr)
 }
 
 function generateTypedNummer(existing: Factuur[], prefix: string): string {

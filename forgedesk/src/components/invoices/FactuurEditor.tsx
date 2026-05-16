@@ -184,15 +184,24 @@ function getDefaultVervaldatum(factuurdatum: string, dagen: number = 30): string
   return d.toISOString().split('T')[0]
 }
 
+function buildFactuurNummer(prefix: string, volgnummer: number): string {
+  const jaar = new Date().getFullYear().toString()
+  const resolvedPrefix = prefix.replace('{jaar}', jaar)
+  return `${resolvedPrefix}${volgnummer}`
+}
+
 function generateFactuurNummer(prefix: string, existing: { nummer: string }[], startNummer = 1): string {
-  const year = new Date().getFullYear()
-  const trimmed = prefix.replace(/-+$/, '').trim()
-  const jaarPrefix = trimmed ? `${trimmed}-${year}-` : `${year}-`
+  const jaar = new Date().getFullYear().toString()
+  const resolvedPrefix = prefix.replace('{jaar}', jaar)
   const maxNr = existing
-    .filter((f) => f.nummer.startsWith(jaarPrefix))
-    .reduce((max, f) => Math.max(max, parseInt(f.nummer.replace(jaarPrefix, ''), 10) || 0), 0)
+    .filter((f) => f.nummer.startsWith(resolvedPrefix))
+    .reduce((max, f) => {
+      const tail = f.nummer.slice(resolvedPrefix.length)
+      const n = /^\d+$/.test(tail) ? parseInt(tail, 10) : 0
+      return Math.max(max, n)
+    }, 0)
   const nextNr = Math.max(maxNr, Math.max(0, startNummer - 1)) + 1
-  return `${jaarPrefix}${String(nextNr).padStart(3, '0')}`
+  return buildFactuurNummer(prefix, nextNr)
 }
 
 function generateTypedNummer(existing: { nummer: string }[], prefix: string): string {
