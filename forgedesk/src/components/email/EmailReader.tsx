@@ -72,10 +72,6 @@ interface EmailReaderProps {
   // door /api/read-email. Wanneer aanwezig slaat de reader de tweede
   // IMAP-roundtrip over voor thumbnails.
   prefetchedAttachmentBytes?: Record<string, string>
-  // Optionele signed Storage URLs per filename, uit de persistent
-  // attachment-cache (sprint 3). Snelste pad: direct als img src,
-  // geen decode-stap nodig.
-  prefetchedAttachmentUrls?: Record<string, string>
   onTogglePin?: (email: Email) => void
   onToggleRead?: (email: Email) => void
   onDelete?: (email: Email) => void
@@ -95,7 +91,6 @@ export function EmailReader({
   allEmails,
   imapFolder = 'INBOX',
   prefetchedAttachmentBytes,
-  prefetchedAttachmentUrls,
   onTogglePin,
   onToggleRead,
   onDelete,
@@ -208,38 +203,24 @@ export function EmailReader({
       }
     }
 
-    // Pad 0: signed Storage URLs uit de persistent cache (sprint 3). Snelst
-    // van allemaal — direct als <img src>, geen decode-stap. URL.revokeObjectURL
-    // is een no-op voor https-URLs dus we hoeven hier niets te cleanen.
-    const initial: Record<string, string> = {}
-    if (prefetchedAttachmentUrls) {
-      for (const att of imageAtts) {
-        const url = prefetchedAttachmentUrls[att.filename]
-        if (url) initial[att.filename] = url
-      }
-    }
-
     // Pad A: bytes zijn al binnen via read-email. Decoderen is sync en snel —
     // toon thumbnails direct, zonder roundtrip B.
     if (prefetchedAttachmentBytes && Object.keys(prefetchedAttachmentBytes).length > 0) {
+      const next: Record<string, string> = {}
       for (const att of imageAtts) {
-        if (initial[att.filename]) continue
         const b64 = prefetchedAttachmentBytes[att.filename]
         if (!b64) continue
         const url = decodeToBlobUrl(b64, att.contentType)
         if (url) {
           createdUrls.push(url)
-          initial[att.filename] = url
+          next[att.filename] = url
         }
       }
-    }
-
-    if (Object.keys(initial).length > 0) {
-      setAttachmentThumbnails(initial)
+      setAttachmentThumbnails(next)
       setThumbnailsLoading(false)
-      // Als pad 0 + A samen alle images dekken: klaar. Anders verder naar
-      // bulk-fetch B voor het verschil.
-      if (Object.keys(initial).length === imageAtts.length) {
+      // Als prefetch alle images dekt: klaar. Anders fallback naar bulk-fetch
+      // voor de ontbrekende (typisch wanneer mail > 5 MB images bevat).
+      if (Object.keys(next).length === imageAtts.length) {
         return () => {
           cancelled = true
           createdUrls.forEach((url) => URL.revokeObjectURL(url))
@@ -265,18 +246,14 @@ export function EmailReader({
       try {
         const results = await downloadAllEmailAttachments(uid, imapFolder)
         if (cancelled) return
-        const next: Record<string, string> = { ...initial }
+        const next: Record<string, string> = { ...attachmentThumbnails }
         for (const result of results) {
           if (!isImageAttachment(result.filename, result.contentType)) continue
           if (next[result.filename]) continue
-          if (result.storage_url) {
-            next[result.filename] = result.storage_url
-          } else if (result.content) {
-            const url = decodeToBlobUrl(result.content, result.contentType || 'image/jpeg')
-            if (url) {
-              createdUrls.push(url)
-              next[result.filename] = url
-            }
+          const url = decodeToBlobUrl(result.content, result.contentType || 'image/jpeg')
+          if (url) {
+            createdUrls.push(url)
+            next[result.filename] = url
           }
         }
         if (!cancelled) setAttachmentThumbnails(next)
@@ -297,7 +274,7 @@ export function EmailReader({
     // attachmentThumbnails opzettelijk weggelaten — de effect lifecycle hoort
     // aan de email/meta gekoppeld te zijn, niet aan tussentijdse updates.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [email?.id, email?.attachment_meta?.length, imapFolder, prefetchedAttachmentBytes, prefetchedAttachmentUrls])
+  }, [email?.id, email?.attachment_meta?.length, imapFolder, prefetchedAttachmentBytes])
 
   // ─── Draft persistence ───
   const draftKey = email ? `email-draft-${email.id}` : null
@@ -365,24 +342,20 @@ export function EmailReader({
     setDownloadingAttachment(filename)
     try {
       const result = await downloadEmailAttachment(uid, imapFolder, filename)
+      // Convert base64 → Blob → trigger download
+      const binary = atob(result.content)
+      const bytes = new Uint8Array(binary.length)
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+      const blob = new Blob([bytes], { type: result.contentType || 'application/octet-stream' })
+      const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
+      a.href = url
       a.download = result.filename || filename
-      if (result.storage_url) {
-        // Cache-hit: signed URL direct gebruiken, geen base64-decode
-        a.href = result.storage_url
-      } else if (result.content) {
-        const binary = atob(result.content)
-        const bytes = new Uint8Array(binary.length)
-        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
-        const blob = new Blob([bytes], { type: result.contentType || 'application/octet-stream' })
-        a.href = URL.createObjectURL(blob)
-        setTimeout(() => URL.revokeObjectURL(a.href), 1000)
-      } else {
-        throw new Error('Geen content of storage_url ontvangen')
-      }
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
+      // Iets later cleanup zodat browser de download heeft kunnen verwerken
+      setTimeout(() => URL.revokeObjectURL(url), 1000)
     } catch (err) {
       logger.error('Bijlage downloaden mislukt:', err)
       toast.error(err instanceof Error ? err.message : 'Bijlage downloaden mislukt')
@@ -401,21 +374,14 @@ export function EmailReader({
     setPreviewLoading(att.filename)
     try {
       const result = await downloadEmailAttachment(uid, imapFolder, att.filename)
+      const binary = atob(result.content)
+      const bytes = new Uint8Array(binary.length)
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
       const contentType = result.contentType || att.contentType || 'application/octet-stream'
-      let url: string
-      if (result.storage_url) {
-        url = result.storage_url
-      } else if (result.content) {
-        const binary = atob(result.content)
-        const bytes = new Uint8Array(binary.length)
-        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
-        const blob = new Blob([bytes], { type: contentType })
-        url = URL.createObjectURL(blob)
-      } else {
-        throw new Error('Geen content of storage_url ontvangen')
-      }
+      const blob = new Blob([bytes], { type: contentType })
+      const url = URL.createObjectURL(blob)
       setPreviewAtt((prev) => {
-        if (prev && prev.url.startsWith('blob:')) URL.revokeObjectURL(prev.url)
+        if (prev) URL.revokeObjectURL(prev.url)
         return { filename: result.filename || att.filename, url, contentType }
       })
     } catch (err) {
