@@ -700,29 +700,54 @@ export function ProjectsList() {
               </div>
             </div>
 
-            {/* Status overview — text + dot, design-system stijl */}
-            <div className="flex items-center gap-5 flex-wrap min-h-[20px] text-[12.5px]">
-              {stats.actief > 0 && (
-                <span className="inline-flex items-center gap-1.5 text-[#2D6B48]">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#2D6B48] doen-pulse" />
-                  <span className="font-mono font-medium">{stats.actief}</span>
-                  <span className="text-[#6B6B66]">actief</span>
-                </span>
-              )}
-              {stats.teFactureren > 0 && (
-                <span className="inline-flex items-center gap-1.5 text-[#3A5A9A]">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#3A5A9A]" />
-                  <span className="font-mono font-medium">{stats.teFactureren}</span>
-                  <span className="text-[#6B6B66]">te factureren</span>
-                </span>
-              )}
-              {stats.afgerond > 0 && (
-                <span className="inline-flex items-center gap-1.5 text-[#8A7A4A]">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#8A7A4A]" />
-                  <span className="font-mono font-medium">{stats.afgerond}</span>
-                  <span className="text-[#6B6B66]">klaar</span>
-                </span>
-              )}
+            {/* KPI tiles — triage entry-points, clickable filter targets */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {([
+                { key: 'actief',        label: 'Actief',        sub: 'in uitvoering',  count: stats.actief,        dot: '#2D6B48' },
+                { key: 'te-factureren', label: 'Te factureren', sub: 'wachten op factuur', count: stats.teFactureren, dot: '#3A5A9A' },
+                { key: 'afgerond',      label: 'Afgerond',      sub: 'klaar.',         count: stats.afgerond,      dot: '#8A7A4A' },
+              ] as const).map(tile => {
+                const isActive = statusFilter === tile.key
+                return (
+                  <button
+                    key={tile.key}
+                    type="button"
+                    onClick={() => setStatusFilter(isActive ? 'alle' : tile.key)}
+                    className="group relative rounded-xl px-5 py-4 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F15025]/30 focus-visible:ring-offset-2"
+                    style={{
+                      background: 'radial-gradient(ellipse 85% 65% at 0% 0%, rgba(26,83,92,0.07), transparent 65%), radial-gradient(ellipse 85% 65% at 100% 100%, rgba(241,80,37,0.055), transparent 65%), linear-gradient(180deg, #FFFFFF 0%, #F6F8F9 100%)',
+                      border: isActive ? '1px solid rgba(26,83,92,0.22)' : '1px solid rgba(26,83,92,0.08)',
+                      boxShadow: isActive
+                        ? '0 1px 2px rgba(20,62,71,0.04), 0 8px 24px rgba(20,62,71,0.06)'
+                        : '0 1px 2px rgba(20,62,71,0.04), 0 8px 24px rgba(20,62,71,0.025)',
+                    }}
+                    aria-pressed={isActive}
+                  >
+                    <div className="flex items-baseline justify-between gap-3 mb-2">
+                      <span className="inline-flex items-center gap-2">
+                        <span
+                          className={cn('w-1.5 h-1.5 rounded-full', tile.key === 'actief' && 'doen-pulse')}
+                          style={{ backgroundColor: tile.dot }}
+                        />
+                        <span className="font-heading text-[14px] font-bold text-[#1A1A1A]">
+                          {tile.label}<span className="text-[#F15025]">.</span>
+                        </span>
+                      </span>
+                    </div>
+                    <div className="flex items-baseline gap-2">
+                      <span className="font-heading font-bold text-[28px] leading-none text-[#1A1A1A] tabular-nums">
+                        {tile.count}
+                      </span>
+                      <span
+                        className="text-[13px] text-[#9B9B95] truncate"
+                        style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+                      >
+                        · {tile.sub}
+                      </span>
+                    </div>
+                  </button>
+                )
+              })}
             </div>
           </div>
 
