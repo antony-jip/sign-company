@@ -108,7 +108,7 @@ export function ActiviteitLog() {
             className="text-[14px] text-[#9B9B95]"
             style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
           >
-            — portaal-logs
+            · portaal-logs
           </span>
         </div>
       </header>

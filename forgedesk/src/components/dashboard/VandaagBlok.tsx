@@ -210,7 +210,7 @@ export function VandaagBlok() {
             className="text-[14px] text-[#9B9B95] truncate"
             style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
           >
-            — wat staat er klaar
+            · wat staat er klaar
           </span>
         </div>
         {counts && (

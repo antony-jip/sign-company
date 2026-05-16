@@ -54,7 +54,7 @@ export function OpvolgenBlok() {
             className="text-[14px] text-[#9B9B95] truncate"
             style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
           >
-            — wacht op antwoord
+            · wacht op antwoord
           </span>
         </div>
         {items.length > 0 && (
