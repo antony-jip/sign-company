@@ -64,7 +64,10 @@ export function AanDeSlagSectie() {
 
   return (
     <div className="rounded-xl bg-white shadow-[0_2px_20px_rgba(0,0,0,0.03)] overflow-hidden">
-      <div className="relative bg-[#1A535C] px-7 py-7 sm:px-9 sm:py-8">
+      <div
+        className="relative px-7 py-7 sm:px-9 sm:py-8"
+        style={{ background: 'linear-gradient(135deg, #143E47 0%, #1A535C 55%, #2A6E78 100%)' }}
+      >
         <button
           type="button"
           onClick={() => { void status.dismiss() }}
