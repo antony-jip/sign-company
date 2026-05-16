@@ -856,7 +856,7 @@ export function ProjectDetail() {
 
   if (isLoading) {
     return (
-      <div className="h-[calc(100vh-56px)] flex flex-col items-center justify-center bg-[#F8F7F5]">
+      <div className="h-[calc(100dvh-122px)] flex flex-col items-center justify-center bg-[#F8F7F5]">
         <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#1A535C] border-t-transparent" />
         <p className="text-sm text-[#9B9B95] mt-4">Project laden...</p>
       </div>
@@ -865,7 +865,7 @@ export function ProjectDetail() {
 
   if (!project) {
     return (
-      <div className="h-[calc(100vh-56px)] flex flex-col items-center justify-center bg-[#F8F7F5]">
+      <div className="h-[calc(100dvh-122px)] flex flex-col items-center justify-center bg-[#F8F7F5]">
         <p className="text-lg font-semibold text-[#1A1A1A]">Project niet gevonden</p>
         <p className="text-sm text-[#9B9B95] mt-1">Het project met ID "{id}" bestaat niet.</p>
         <Link to="/projecten" className="text-sm text-[#1A535C] hover:underline mt-4">Terug naar projecten</Link>
@@ -901,7 +901,7 @@ export function ProjectDetail() {
   const fase = getFase(project.status)
 
   return (
-    <div className="relative -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 h-[calc(100vh-56px)] flex flex-col bg-[#F8F7F5]">
+    <div className="relative -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 h-[calc(100dvh-122px)] flex flex-col bg-[#F8F7F5]">
 
       {/* ── Hidden file inputs ── */}
       <input

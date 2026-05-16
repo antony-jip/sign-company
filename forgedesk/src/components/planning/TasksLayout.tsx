@@ -1162,7 +1162,7 @@ export function TasksLayout() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col h-[calc(100vh-56px)] -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 bg-white">
+      <div className="flex flex-col h-[calc(100dvh-122px)] -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 bg-white">
         {/* Sticky toolbar skeleton */}
         <div className="sticky top-0 z-20 bg-[#FFFFFF] border-b border-[#E6E4DE] shadow-[0_1px_3px_rgba(0,0,0,0.03)] px-6 py-2 flex-shrink-0 flex items-center gap-3 flex-wrap">
           <div className="flex items-baseline gap-2">
@@ -1229,7 +1229,7 @@ export function TasksLayout() {
 
   return (
     <>
-      <div className="flex flex-col h-[calc(100vh-56px)] -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 bg-white">
+      <div className="flex flex-col h-[calc(100dvh-122px)] -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 bg-white">
         {/* === Sticky toolbar — 1 rij === */}
         <div className="sticky top-0 z-20 bg-white/75 backdrop-blur-xl border-b border-[#E6E4DE] shadow-[0_1px_8px_-2px_rgba(0,0,0,0.05)] px-6 py-2.5 flex-shrink-0 flex items-center gap-3 flex-wrap">
           {/* Titel + counter */}
