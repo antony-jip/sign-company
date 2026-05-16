@@ -1121,9 +1121,6 @@ export function ProjectsList() {
                           )}
                         </button>
                       </th>
-                      <th className="text-right py-3.5 pr-4 w-[70px] hidden xl:table-cell">
-                        <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Open</span>
-                      </th>
                       <th className="text-left py-3.5 pr-4 w-[120px] hidden xl:table-cell">
                         <span className="text-[11px] font-semibold uppercase tracking-widest text-[#9B9B95]">Team</span>
                       </th>
@@ -1376,28 +1373,6 @@ export function ProjectsList() {
                                 </button>
                               }
                             />
-                          </td>
-
-                          {/* Dagen open */}
-                          <td className="py-3.5 pr-4 text-right hidden xl:table-cell">
-                            {(() => {
-                              const dagen = getDagenOpen(project)
-                              if (dagen === null) return <span className="text-xs text-[#C0BDB8]">&mdash;</span>
-                              const urgent = dagen > 90
-                              const warning = dagen > 30
-                              return (
-                                <span
-                                  className={cn(
-                                    'inline-flex items-center justify-center text-[11px] font-mono font-semibold tabular-nums rounded-md px-2 py-0.5',
-                                    urgent ? 'bg-[#FDE8E4] text-[#C03A18]' :
-                                    warning ? 'bg-[#FEF3E8] text-[#D4621A]' :
-                                    'text-[#9B9B95]'
-                                  )}
-                                >
-                                  {dagen}d
-                                </span>
-                              )
-                            })()}
                           </td>
 
                           {/* Team */}
