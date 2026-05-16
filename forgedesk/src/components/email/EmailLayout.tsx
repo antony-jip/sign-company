@@ -656,6 +656,16 @@ export function EmailLayout() {
     toast.success('Niet meer gesnoozed')
   }, [])
 
+  const handleToggleLabel = useCallback((email: Email, label: string) => {
+    const current = email.labels || []
+    const next = current.includes(label)
+      ? current.filter((l) => l !== label)
+      : [...current, label]
+    setEmails((prev) => prev.map((e) => (e.id === email.id ? { ...e, labels: next } : e)))
+    setSelectedEmail((prev) => prev?.id === email.id ? { ...prev, labels: next } : prev)
+    updateEmail(email.id, { labels: next }).catch(() => {})
+  }, [])
+
   const handleToggleRead = useCallback((email: Email) => {
     const newGelezen = !email.gelezen
     setEmails((prev) => prev.map((e) => (e.id === email.id ? { ...e, gelezen: newGelezen } : e)))
@@ -1507,6 +1517,7 @@ export function EmailLayout() {
             onTogglePin={handleTogglePin}
             onSnooze={handleSnooze}
             onUnsnooze={handleUnsnooze}
+            onToggleLabel={handleToggleLabel}
             onToggleRead={handleToggleRead}
             onDelete={handleDeleteAndNavigate}
             onArchive={handleArchiveAndNavigate}

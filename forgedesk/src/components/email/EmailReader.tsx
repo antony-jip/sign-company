@@ -7,11 +7,11 @@ import {
   ChevronUp, ChevronDown, Reply, ReplyAll, Forward,
   Paperclip, Send, Bold, Italic, Underline,
   List, ListOrdered, Link2, Sparkles, Loader2, Download,
-  Undo2, Redo2, X, Clock,
+  Undo2, Redo2, X, Clock, Tag,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Email, EmailAttachment } from '@/types'
-import { extractSenderName, extractSenderEmail, formatShortDate, getAvatarColor, getAvatarRingColor, getAvatarStyle, SNOOZE_OPTIONS } from './emailHelpers'
+import { extractSenderName, extractSenderEmail, formatShortDate, getAvatarColor, getAvatarRingColor, getAvatarStyle, SNOOZE_OPTIONS, labelColors } from './emailHelpers'
 import { hapticLight, hapticMedium } from '@/utils/haptic'
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -79,6 +79,7 @@ interface EmailReaderProps {
   onTogglePin?: (email: Email) => void
   onSnooze?: (email: Email, hours: number) => void
   onUnsnooze?: (email: Email) => void
+  onToggleLabel?: (email: Email, label: string) => void
   onToggleRead?: (email: Email) => void
   onDelete?: (email: Email) => void
   onArchive?: (email: Email) => void
@@ -101,6 +102,7 @@ export function EmailReader({
   onTogglePin,
   onSnooze,
   onUnsnooze,
+  onToggleLabel,
   onToggleRead,
   onDelete,
   onArchive,
@@ -175,6 +177,8 @@ export function EmailReader({
   const [previewLoading, setPreviewLoading] = useState<string | null>(null)
   const [snoozeMenuOpen, setSnoozeMenuOpen] = useState(false)
   const snoozeMenuRef = useRef<HTMLDivElement | null>(null)
+  const [labelMenuOpen, setLabelMenuOpen] = useState(false)
+  const labelMenuRef = useRef<HTMLDivElement | null>(null)
 
   // Sluit het snooze-menu bij klik buiten het popover-bereik
   useEffect(() => {
@@ -185,6 +189,16 @@ export function EmailReader({
     document.addEventListener('mousedown', onDocClick)
     return () => document.removeEventListener('mousedown', onDocClick)
   }, [snoozeMenuOpen])
+
+  // Sluit het label-menu bij klik buiten het popover-bereik
+  useEffect(() => {
+    if (!labelMenuOpen) return
+    const onDocClick = (e: MouseEvent) => {
+      if (!labelMenuRef.current?.contains(e.target as Node)) setLabelMenuOpen(false)
+    }
+    document.addEventListener('mousedown', onDocClick)
+    return () => document.removeEventListener('mousedown', onDocClick)
+  }, [labelMenuOpen])
   const [downloadingAll, setDownloadingAll] = useState(false)
   const [previewAtt, setPreviewAtt] = useState<{ filename: string; url: string; contentType: string } | null>(null)
   // Cache van blob-URLs voor image-thumbnails per filename. Wordt gevuld bij open van email
@@ -366,6 +380,7 @@ export function EmailReader({
     setSummaryLoading(false)
     setSummaryExpanded(true)
     setSnoozeMenuOpen(false)
+    setLabelMenuOpen(false)
     setPreviewAtt((prev) => {
       if (prev) URL.revokeObjectURL(prev.url)
       return null
@@ -1302,6 +1317,42 @@ export function EmailReader({
                       {opt.label}
                     </button>
                   ))}
+                </div>
+              )}
+            </div>
+            <div ref={labelMenuRef} className="relative">
+              <Tooltip><TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={cn(
+                    'tap-press h-10 w-10 md:h-8 md:w-8 transition-colors duration-150',
+                    (email?.labels?.length ?? 0) > 0
+                      ? 'text-[#1A535C] hover:bg-[#1A535C]/[0.08]'
+                      : 'text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC]',
+                  )}
+                  onClick={() => { hapticLight(); setLabelMenuOpen((v) => !v) }}
+                >
+                  <Tag className="h-[18px] w-[18px] md:h-4 md:w-4" />
+                </Button>
+              </TooltipTrigger><TooltipContent side="bottom" className="text-[12px]">Labels</TooltipContent></Tooltip>
+              {labelMenuOpen && email && (
+                <div className="absolute top-full right-0 mt-1 min-w-[180px] bg-white rounded-lg shadow-[0_8px_30px_rgba(0,0,0,0.08)] border border-[#F0EFEC] py-1 z-50">
+                  {Object.entries(labelColors).map(([label, color]) => {
+                    const active = email.labels?.includes(label) ?? false
+                    return (
+                      <button
+                        key={label}
+                        type="button"
+                        onClick={() => onToggleLabel?.(email, label)}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-[#6B6B66] hover:bg-[#F0EFEC] transition-colors duration-150"
+                      >
+                        <span className={cn('w-2.5 h-2.5 rounded-full flex-shrink-0', color)} />
+                        <span className="flex-1 text-left capitalize">{label}</span>
+                        {active && <span className="text-[11px] text-[#1A535C]">●</span>}
+                      </button>
+                    )
+                  })}
                 </div>
               )}
             </div>
