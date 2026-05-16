@@ -14,6 +14,7 @@ import { logCreate } from '@/utils/auditLogger'
 import { KlantContactSelector } from '@/components/shared/KlantContactSelector'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { getAvatarStyle, extractSenderName } from './emailHelpers'
+import { EmailProjectKoppelingPanel } from './EmailProjectKoppelingPanel'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
 
@@ -789,6 +790,14 @@ export function EmailContextSidebar({
             </p>
           </div>
         ) : null}
+
+        {/* ── PROJECT KOPPELING (alleen tijdens lezen, alleen als thread bekend) ── */}
+        {mode === 'reading' && email?.thread_id && (
+          <EmailProjectKoppelingPanel
+            threadId={email.thread_id}
+            senderEmail={contactEmail}
+          />
+        )}
 
         {/* ── QUICK ACTIONS ── */}
         {activePanel === 'none' && (
