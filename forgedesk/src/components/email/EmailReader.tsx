@@ -1277,6 +1277,7 @@ export function EmailReader({
                 <MailOpen className="h-[18px] w-[18px] md:h-4 md:w-4" />
               </Button>
             </TooltipTrigger><TooltipContent side="bottom" className="text-[12px]">Markeer als ongelezen</TooltipContent></Tooltip>
+            <div className="w-px h-5 bg-[#EBEBEB] mx-1.5 hidden md:block" />
             <div ref={snoozeMenuRef} className="relative">
               <Tooltip><TooltipTrigger asChild>
                 <Button

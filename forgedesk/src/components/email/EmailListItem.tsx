@@ -1,7 +1,7 @@
 import { memo, useCallback, useMemo, useRef, useState } from 'react'
 import { Pin, Paperclip, Archive, Trash2, MailOpen, Mail } from 'lucide-react'
 import type { Email } from '@/types'
-import { extractSenderName, cleanEmailPreview, formatShortDate, fontSizeClasses, getAvatarColor, getAvatarStyle } from './emailHelpers'
+import { extractSenderName, cleanEmailPreview, formatShortDate, fontSizeClasses, getAvatarColor, getAvatarStyle, labelColors } from './emailHelpers'
 import type { FontSize } from './emailTypes'
 import { cn } from '@/lib/utils'
 import { hapticLight, hapticMedium } from '@/utils/haptic'
@@ -238,6 +238,13 @@ export const EmailListItem = memo(function EmailListItem({
 
         {/* Subject + preview */}
         <div className="flex-1 min-w-0 truncate leading-none text-[15px]">
+          {email.labels?.filter((l) => labelColors[l]).slice(0, 3).map((l) => (
+            <span
+              key={l}
+              className={cn('inline-block w-[6px] h-[6px] rounded-full mr-1.5 align-middle', labelColors[l])}
+              title={l}
+            />
+          ))}
           <span className={cn(
             'transition-colors duration-200',
             isUnread ? 'font-semibold text-[#1A1A1A]' : 'font-normal text-[#3A3A36]',
@@ -417,6 +424,13 @@ export const EmailListItem = memo(function EmailListItem({
 
         {/* Line 2: subject + preview */}
         <div className="flex items-center gap-1.5">
+          {email.labels?.filter((l) => labelColors[l]).slice(0, 3).map((l) => (
+            <span
+              key={l}
+              className={cn('inline-block w-[6px] h-[6px] rounded-full flex-shrink-0', labelColors[l])}
+              title={l}
+            />
+          ))}
           <span className={cn(
             'truncate leading-snug text-[14px] transition-colors duration-200',
             mdSizes.subject,
