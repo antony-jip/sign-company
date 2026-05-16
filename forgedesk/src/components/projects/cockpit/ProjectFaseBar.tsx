@@ -1,13 +1,15 @@
+import { motion } from 'framer-motion'
+import { Calendar, Hammer, Eye, Receipt, Flag, Check } from 'lucide-react'
 import type { Project } from '@/types'
-import { formatAmount } from '@/lib/utils'
+import { formatAmount, cn } from '@/lib/utils'
 import { CalendarBlank as PhCalendar } from '@phosphor-icons/react'
 
 const FASES = [
-  { key: 'gepland',        label: 'Gepland',        color: '#3A5A9A' },
-  { key: 'actief',         label: 'Actief',         color: '#1A535C' },
-  { key: 'in-review',      label: 'Review',         color: '#9A5A48' },
-  { key: 'te-factureren',  label: 'Te factureren',  color: '#F15025' },
-  { key: 'afgerond',       label: 'Afgerond',       color: '#2D6B48' },
+  { key: 'gepland',        label: 'Gepland',        color: '#3A5A9A', Icon: Calendar },
+  { key: 'actief',         label: 'Actief',         color: '#1A535C', Icon: Hammer   },
+  { key: 'in-review',      label: 'Review',         color: '#9A5A48', Icon: Eye      },
+  { key: 'te-factureren',  label: 'Te factureren',  color: '#F15025', Icon: Receipt  },
+  { key: 'afgerond',       label: 'Afgerond',       color: '#2D6B48', Icon: Flag     },
 ] as const
 
 function faseIndex(status: string): number {
@@ -45,7 +47,7 @@ export function ProjectFaseBar({ status, onStatusChange, totaalBedrag, deadline 
 
   return (
     <div className="doen-slate-surface rounded-2xl p-5">
-      <div className="flex items-baseline justify-between mb-4">
+      <div className="flex items-baseline justify-between mb-5">
         <h3 className="font-heading text-[15px] font-bold text-[#1A1A1A]">
           Voortgang<span className="text-[#F15025]">.</span>
         </h3>
@@ -57,67 +59,129 @@ export function ProjectFaseBar({ status, onStatusChange, totaalBedrag, deadline 
         </span>
       </div>
 
-      <div className="flex flex-col md:flex-row md:items-end gap-5 md:gap-6">
-        {/* Fase-strip — segmented stappenbalk */}
-        <div className="grid grid-cols-5 gap-2 flex-1 min-w-0">
+      <div className="flex flex-col md:flex-row md:items-end gap-6">
+        {/* Stepper — orbs + connectoren */}
+        <div className="flex items-start flex-1 min-w-0">
           {FASES.map((fase, i) => {
             const isActive = i === currentIdx
             const isPast = i < currentIdx
+            const isFuture = i > currentIdx
+            const FaseIcon = fase.Icon
+            const isLast = i === FASES.length - 1
 
-            const barColor = isActive
+            const orbBg = isActive
               ? fase.color
               : isPast
                 ? '#2D6B48'
-                : 'rgba(26,83,92,0.12)'
-            const barOpacity = isPast ? 0.55 : 1
-
-            const labelColor = isActive
-              ? '#1A1A1A'
+                : 'rgba(26,83,92,0.06)'
+            const orbBorder = isActive
+              ? fase.color
               : isPast
-                ? '#6B6B66'
-                : '#9B9B95'
-            const labelWeight = isActive ? 700 : isPast ? 500 : 500
+                ? '#2D6B48'
+                : 'rgba(26,83,92,0.15)'
+            const iconColor = isFuture ? '#9B9B95' : '#FFFFFF'
 
             return (
-              <button
-                key={fase.key}
-                onClick={() => onStatusChange(fase.key as Project['status'])}
-                className={
-                  'group relative text-left px-3 py-2 rounded-lg border transition-all duration-150 ' +
-                  'hover:-translate-y-[1px] hover:shadow-[0_2px_8px_rgba(20,62,71,0.08)] ' +
-                  (isActive
-                    ? 'bg-white border-[rgba(26,83,92,0.22)] shadow-[0_1px_3px_rgba(20,62,71,0.06)]'
-                    : isPast
-                      ? 'bg-[#2D6B48]/[0.03] border-[rgba(45,107,72,0.18)] hover:border-[rgba(45,107,72,0.32)] hover:bg-[#2D6B48]/[0.06]'
-                      : 'bg-white/60 border-[rgba(26,83,92,0.10)] hover:border-[rgba(26,83,92,0.22)] hover:bg-white')
-                }
-                aria-current={isActive ? 'step' : undefined}
-                title={`Naar fase: ${fase.label}`}
-              >
-                <div
-                  className="h-[4px] rounded-full transition-all duration-300"
-                  style={{
-                    backgroundColor: barColor,
-                    opacity: barOpacity,
-                    boxShadow: isActive ? `0 0 8px ${fase.color}55` : undefined,
-                  }}
-                />
-                <div className="mt-2 flex items-center gap-1.5">
-                  {isActive && (
+              <div key={fase.key} className="flex items-start flex-1 last:flex-initial min-w-0">
+                {/* Orb-button */}
+                <motion.button
+                  type="button"
+                  onClick={() => onStatusChange(fase.key as Project['status'])}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.07, type: 'spring', stiffness: 240, damping: 22 }}
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.94 }}
+                  className="group flex flex-col items-center gap-2 flex-shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-[#1A535C]/40 rounded-xl"
+                  aria-current={isActive ? 'step' : undefined}
+                  title={`Naar fase: ${fase.label}`}
+                >
+                  <motion.div
+                    className={cn(
+                      'relative w-11 h-11 rounded-full flex items-center justify-center',
+                      'transition-[background-color,border-color,box-shadow] duration-300',
+                    )}
+                    style={{
+                      backgroundColor: orbBg,
+                      borderWidth: 2,
+                      borderStyle: 'solid',
+                      borderColor: orbBorder,
+                      boxShadow: isActive ? `0 0 0 4px ${fase.color}1A, 0 4px 14px ${fase.color}33` : undefined,
+                    }}
+                    animate={isActive ? {
+                      boxShadow: [
+                        `0 0 0 0 ${fase.color}55, 0 4px 14px ${fase.color}33`,
+                        `0 0 0 10px ${fase.color}00, 0 4px 14px ${fase.color}33`,
+                      ],
+                    } : undefined}
+                    transition={isActive ? { repeat: Infinity, duration: 1.8, ease: 'easeOut' } : undefined}
+                    whileHover={{ scale: 1.08 }}
+                  >
+                    {isPast ? (
+                      <motion.span
+                        initial={{ scale: 0, rotate: -90 }}
+                        animate={{ scale: 1, rotate: 0 }}
+                        transition={{ delay: i * 0.07 + 0.12, type: 'spring', stiffness: 320, damping: 18 }}
+                        className="flex items-center justify-center"
+                      >
+                        <Check className="h-5 w-5" style={{ color: iconColor }} strokeWidth={3} />
+                      </motion.span>
+                    ) : (
+                      <FaseIcon
+                        className={cn('h-[18px] w-[18px]', isFuture && 'opacity-70')}
+                        style={{ color: iconColor }}
+                        strokeWidth={isActive ? 2.4 : 2}
+                      />
+                    )}
+                    {/* Index-pip rechtsboven voor toegankelijkheid */}
                     <span
+                      className={cn(
+                        'absolute -top-1 -right-1 w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center font-mono tabular-nums',
+                        isActive
+                          ? 'bg-white text-[#1A1A1A] shadow-sm'
+                          : isPast
+                            ? 'bg-white text-[#2D6B48] shadow-sm'
+                            : 'bg-[#F0EFEC] text-[#9B9B95]',
+                      )}
                       aria-hidden
-                      className="w-1.5 h-1.5 rounded-full flex-shrink-0 doen-pulse"
-                      style={{ backgroundColor: fase.color }}
-                    />
-                  )}
-                  <p
-                    className="text-[11px] uppercase tracking-[0.08em] truncate transition-colors"
-                    style={{ color: labelColor, fontWeight: labelWeight }}
+                    >
+                      {i + 1}
+                    </span>
+                  </motion.div>
+                  <span
+                    className={cn(
+                      'text-[11px] uppercase tracking-[0.08em] transition-colors duration-200 max-w-[80px] text-center leading-tight',
+                      isActive
+                        ? 'text-[#1A1A1A] font-bold'
+                        : isPast
+                          ? 'text-[#6B6B66] font-medium group-hover:text-[#1A1A1A]'
+                          : 'text-[#9B9B95] font-medium group-hover:text-[#6B6B66]',
+                    )}
                   >
                     {fase.label}
-                  </p>
-                </div>
-              </button>
+                  </span>
+                </motion.button>
+
+                {/* Connector tussen orbs (niet na de laatste) */}
+                {!isLast && (
+                  <div className="flex-1 mt-[21px] mx-2 h-[3px] rounded-full bg-[rgba(26,83,92,0.08)] relative overflow-hidden">
+                    <motion.div
+                      initial={{ scaleX: 0 }}
+                      animate={{ scaleX: isPast ? 1 : 0 }}
+                      transition={{
+                        delay: i * 0.07 + 0.15,
+                        duration: 0.55,
+                        ease: [0.65, 0, 0.35, 1],
+                      }}
+                      style={{
+                        transformOrigin: 'left center',
+                        background: 'linear-gradient(90deg, #2D6B48 0%, #2D6B48 100%)',
+                      }}
+                      className="absolute inset-0 rounded-full"
+                    />
+                  </div>
+                )}
+              </div>
             )
           })}
         </div>
