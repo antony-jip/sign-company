@@ -6,7 +6,7 @@ import { useDashboardData } from '@/contexts/DashboardDataContext'
 import { getAvatarStyle } from '@/utils/medewerkerAvatar'
 import { isAdminUser } from '@/utils/authHelpers'
 import { formatCurrency, cn } from '@/lib/utils'
-import { formatDistanceToNow } from 'date-fns'
+import { formatDistanceToNow, getISOWeek } from 'date-fns'
 import { nl } from 'date-fns/locale'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { ActiviteitLog } from './ActiviteitLog'
@@ -270,11 +270,19 @@ function DezeWeekCard() {
         boxShadow: '0 1px 2px rgba(20,62,71,0.04), 0 8px 24px rgba(20,62,71,0.025)',
       }}
     >
-      <header className="flex items-center justify-between mb-3">
-        <h2 className="font-heading text-[14px] font-bold text-[#1A1A1A]">
-          {weekOffset === 0 ? 'Deze week' : weekOffset === -1 ? 'Vorige week' : weekOffset === 1 ? 'Volgende week' : `Week ${weekOffset > 0 ? '+' : ''}${weekOffset}`}
-          <span className="text-[#F15025]">.</span>
-        </h2>
+      <header className="flex items-center justify-between gap-3 mb-3">
+        <div className="flex items-baseline gap-2 min-w-0">
+          <h2 className="font-heading text-[14px] font-bold text-[#1A1A1A]">
+            {weekOffset === 0 ? 'Deze week' : weekOffset === -1 ? 'Vorige week' : weekOffset === 1 ? 'Volgende week' : `Week ${weekOffset > 0 ? '+' : ''}${weekOffset}`}
+            <span className="text-[#F15025]">.</span>
+          </h2>
+          <span
+            className="text-[14px] text-[#9B9B95] truncate"
+            style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+          >
+            · week {getISOWeek(weekStart)}
+          </span>
+        </div>
         <div className="flex items-center gap-0.5">
           <button
             type="button"
