@@ -113,7 +113,10 @@ export async function getMaxNummer(table: string, field: string, prefix: string)
     if (orgId) query = query.eq('organisatie_id', orgId)
     const { data } = await query
     if (data && data.length > 0) {
-      const nr = parseInt(String((data[0] as unknown as Record<string, unknown>)[field]).replace(prefix, ''), 10)
+      const value = String((data[0] as unknown as Record<string, unknown>)[field])
+      const tail = value.slice(prefix.length)
+      if (!/^\d+$/.test(tail)) return 0
+      const nr = parseInt(tail, 10)
       return isNaN(nr) ? 0 : nr
     }
     return 0
