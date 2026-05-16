@@ -2804,3 +2804,59 @@ button, a, [role="button"], summary, label, input[type="checkbox"], input[type="
   .doen-fact-text, .doen-fact-chip { animation: none; }
   .doen-fact-bar { animation: none; width: 100%; }
 }
+
+/* ============================================================
+   doen. slate-surface — gedeeld kaart-recept voor list-pages
+   Petrol glow linksboven, flame glow rechtsonder, off-white grond.
+   Gebruikt op: KPI-tiles, toolbar-cards, tabel-cards, empty-states,
+   mobile rij-cards. Eerst ontwikkeld in projecten-list, gepromoveerd
+   tot system-token zodat alle list-pages coherent zijn.
+   ============================================================ */
+.doen-slate-surface {
+  background:
+    radial-gradient(ellipse 65% 50% at 0% 0%, rgba(26,83,92,0.04), transparent 70%),
+    radial-gradient(ellipse 85% 65% at 100% 100%, rgba(241,80,37,0.055), transparent 65%),
+    linear-gradient(180deg, #FFFFFF 0%, #F6F8F9 100%);
+  border: 1px solid rgba(26,83,92,0.08);
+  box-shadow:
+    0 1px 2px rgba(20,62,71,0.04),
+    0 8px 24px rgba(20,62,71,0.025);
+}
+
+.doen-slate-surface-active {
+  border-color: rgba(26,83,92,0.22);
+  box-shadow:
+    0 1px 2px rgba(20,62,71,0.04),
+    0 8px 24px rgba(20,62,71,0.06);
+}
+
+/* Shared row + pulse animaties (waren eerder per-component inline <style>) */
+@keyframes doen-pulse { 0%,100% { opacity:1 } 50% { opacity:.35 } }
+@keyframes doen-fade-up { from { opacity:0; transform:translateY(8px) } to { opacity:1; transform:translateY(0) } }
+.doen-pulse { animation: doen-pulse 2.5s ease-in-out infinite; }
+.doen-row { animation: doen-fade-up .35s cubic-bezier(.22,1,.36,1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .doen-pulse, .doen-row { animation: none; }
+}
+
+/* ============================================================
+   doen-duo-icon — Phosphor duotone iconen met EIGEN twee-kleurige
+   schema (petrol body + flame accent). Phosphor levert standaard
+   één basiskleur met een 0.2-opacity laag; deze override scheidt
+   beide lagen in twee distinct kleuren.
+
+   Standaard: petrol als body-fill (subtiel), flame als detail-stroke.
+   Override via CSS-variabelen op de wrapper: --duo-pri en --duo-sec.
+   ============================================================ */
+.doen-duo-icon {
+  display: inline-flex;
+  line-height: 0;
+}
+.doen-duo-icon svg path[opacity] {
+  fill: var(--duo-pri, #1A535C);
+  opacity: var(--duo-pri-opacity, 0) !important;
+}
+.doen-duo-icon svg path:not([opacity]) {
+  fill: var(--duo-sec, #F15025);
+  opacity: var(--duo-sec-opacity, 1);
+}
