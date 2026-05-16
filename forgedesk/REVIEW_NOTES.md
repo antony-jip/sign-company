@@ -217,3 +217,43 @@ tijdens de FESPA-week:
 - Swipe werkt alleen in inline-mode (mobile default), niet in stacked
   desktop. Bewuste keuze.
 
+
+---
+
+## Mail-Project-Koppeling — feat/email-ux-batch (5 commits M1-M5)
+
+**Eindverdict senior-backend-reviewer:** AKKOORD-MET-OPMERKINGEN. Geen
+blokkades. Vijf observaties voor de backlog:
+
+1. **Scheduled-send orphan-link.** `EmailLayout.handleSendEmail` schrijft
+   de project-koppeling direct na inplannen, maar
+   `api/cron-verzend-geplande-berichten.ts` schrijft de verzonden mail
+   niet in de `emails`-tabel. De koppel-rij wijst naar een thread_id die
+   pas zichtbaar wordt zodra IMAP de Sent-folder ververst. Tot dan toont
+   de project-tab een lege lijst. Niet corrupt — wel verwarrend voor de
+   geplande-verzend-flow. Fix-richting later: cron-worker insert óók een
+   `emails`-rij met dezelfde thread_id, of skip de koppeling bij
+   `scheduledAt`.
+
+2. **RLS-asymmetrie tussen koppel-tabel en emails.** `email_project_koppelingen`
+   is org-scoped, `emails` blijft user-scoped (mailbox-credentials zijn
+   persoonlijk). `getEmailsVoorProject` JOIN'd beide; resultaat: een
+   collega die de mail nooit zelf gefetched heeft via IMAP, ziet hem niet
+   in de project-tab — ook al staat de koppeling er. De copy in
+   migratie 108 ("toont de mail-communicatie van het hele team") is dus
+   gedeeltelijk waar. Twee opties later: (a) copy aanpassen aan
+   werkelijkheid, of (b) een org-zichtbare projectie-tabel voor
+   gekoppelde mails maken.
+
+3. **`getProjectSuggestiesVoorEmail` escapet `%`/`_` niet** vóór
+   `.ilike`. Theoretisch issue bij afzender met die tekens in local part
+   (RFC laat het toe, in praktijk zeldzaam).
+
+4. **`ontkoppelEmailVanProject` filtert alleen op `thread_id`.** RLS
+   dekt het af, maar `eq('organisatie_id', orgId)` toevoegen zou
+   defense-in-depth zijn — consistent met `koppelEmailAanProject`.
+
+5. **Picker-popover sluit op `mousedown` buiten** — als een sonner-toast
+   verschijnt tijdens een open picker kan dat verwarrend voelen.
+   Edge-case, niet bevestigd.
+
