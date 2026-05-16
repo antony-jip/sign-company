@@ -116,6 +116,21 @@ function getStatusDotColor(status: string): string {
   }
 }
 
+/** Hex codes for status indicators — unified across left-edge stripe and inline dot */
+const STATUS_HEX: Record<string, string> = {
+  actief: '#2D6B48',
+  gepland: '#2A5580',
+  'te-plannen': '#F15025',
+  'in-review': '#5A5A55',
+  afgerond: '#1A535C',
+  'on-hold': '#5A5A55',
+  'te-factureren': '#2D6B48',
+  gefactureerd: '#2D6B48',
+}
+function statusHex(s: string): string {
+  return STATUS_HEX[s] ?? '#5A5A55'
+}
+
 /** Map database statuses to spectrum fases for correct colors */
 const STATUS_TO_FASE: Record<string, string> = {
   gepland: 'goedgekeurd',
@@ -1102,8 +1117,12 @@ export function ProjectsList() {
                           style={{ animationDelay: `${i * 25}ms` }}
                           onClick={() => navigateWithTab({ path: `/projecten/${project.id}`, label: project.naam || 'Project', id: `/projecten/${project.id}` })}
                         >
-                          {/* Checkbox */}
-                          <td className="py-3.5 pl-5 pr-3 align-middle" onClick={(e) => e.stopPropagation()}>
+                          {/* Checkbox + left-edge status stripe */}
+                          <td
+                            className="py-3.5 pl-5 pr-3 align-middle"
+                            style={{ boxShadow: `inset 3px 0 0 0 ${statusHex(project.status)}` }}
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <Checkbox
                               checked={selectedIds.has(project.id)}
                               onCheckedChange={() => toggleProjectSelection(project.id)}
@@ -1255,24 +1274,22 @@ export function ProjectsList() {
                             return [cell]
                           })}
 
-                          {/* Status chip with bg tint + Flame punt */}
+                          {/* Status — colored dot + label, no pill bg */}
                           <td className="py-3.5 pr-4" onClick={(e) => e.stopPropagation()}>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <button className="text-left group/status inline-flex items-center gap-1">
+                                <button className="text-left group/status inline-flex items-center gap-2 hover:bg-[#F0EFEC]/60 rounded-md px-1.5 py-1 -mx-1.5 -my-1 transition-colors">
                                   <span
-                                    className="inline-flex items-center gap-1.5 text-[13px] font-semibold px-2.5 py-1 rounded-lg transition-all group-hover/status:shadow-sm"
-                                    style={{
-                                      color: getStatusTextColor(project.status),
-                                      backgroundColor: statusBg[project.status] || '#F0EFEC',
-                                    }}
+                                    className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0', project.status === 'actief' && 'doen-pulse')}
+                                    style={{ backgroundColor: statusHex(project.status) }}
+                                  />
+                                  <span
+                                    className="text-[13px] font-medium"
+                                    style={{ color: getStatusTextColor(project.status) }}
                                   >
-                                    {(project.status === 'actief') && (
-                                      <span className="w-1.5 h-1.5 rounded-full bg-current doen-pulse" />
-                                    )}
                                     {statusLabels[project.status] || project.status}<span className="text-[#F15025]">.</span>
                                   </span>
-                                  <ChevronDown className="w-3 h-3 text-[#C0BDB8] opacity-0 group-hover/status:opacity-100 transition-opacity -ml-0.5" />
+                                  <ChevronDown className="w-3 h-3 text-[#C0BDB8] opacity-0 group-hover/status:opacity-100 transition-opacity" />
                                 </button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="start" className="w-40">
