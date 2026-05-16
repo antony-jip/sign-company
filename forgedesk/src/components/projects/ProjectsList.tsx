@@ -824,10 +824,10 @@ export function ProjectsList() {
               </div>
             </div>
 
-            {/* Filters row */}
-            <div className="flex items-center gap-6 mt-4 pt-4 border-t border-[#F0EFEC]">
-              {/* Status tabs with active indicator */}
-              <div className="flex items-center gap-1 flex-1 flex-nowrap md:flex-wrap overflow-x-auto">
+            {/* Filters — primary status tabs, secondary age sub-filter */}
+            <div className="mt-4 pt-4 border-t border-[#F0EFEC] space-y-3">
+              {/* Status tabs (primary) */}
+              <div className="flex items-center gap-1 flex-nowrap md:flex-wrap overflow-x-auto">
                 {statusOpties.map((optie) => {
                   const count = optie.value === 'alle'
                     ? projecten.length
@@ -853,13 +853,16 @@ export function ProjectsList() {
                 })}
               </div>
 
-              {/* Dagen open filter */}
-              <div className="hidden lg:flex items-center gap-2 pl-4 border-l border-[#F0EFEC]">
-                <span className="text-[10px] font-semibold uppercase tracking-widest text-[#9B9B95]">
-                  Open
+              {/* Open sinds — subordinate sub-filter */}
+              <div className="hidden lg:flex items-center gap-1.5">
+                <span
+                  className="text-[12px] text-[#9B9B95] mr-1"
+                  style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+                >
+                  open sinds ·
                 </span>
                 {([
-                  { value: 'alle', label: 'Alle' },
+                  { value: 'alle', label: 'alles' },
                   { value: '<7', label: '<7d' },
                   { value: '7-14', label: '7-14d' },
                   { value: '14-30', label: '14-30d' },
@@ -872,10 +875,10 @@ export function ProjectsList() {
                       key={optie.value}
                       onClick={() => setDagenOpenFilter(optie.value)}
                       className={cn(
-                        'px-2 py-1 rounded-md text-[11px] font-mono transition-all duration-150',
+                        'px-1.5 py-0.5 rounded text-[11px] font-mono transition-colors',
                         isActive
-                          ? 'font-bold text-[#1A1A1A] bg-[#1A1A1A]/[0.06]'
-                          : 'text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F8F7F5]'
+                          ? 'text-[#1A535C] font-bold'
+                          : 'text-[#B0ADA8] hover:text-[#6B6B66]'
                       )}
                     >
                       {optie.label}
