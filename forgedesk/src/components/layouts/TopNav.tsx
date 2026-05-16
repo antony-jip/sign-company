@@ -171,7 +171,7 @@ export function TopNav() {
 
         {/* Search — desktop */}
         <div className="relative hidden md:flex flex-1 justify-center mx-6">
-          <GlobalSearch className="w-full max-w-[220px]" />
+          <GlobalSearch className="w-full max-w-[420px]" />
         </div>
 
         {/* Mobile search */}

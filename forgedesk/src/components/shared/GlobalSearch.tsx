@@ -442,11 +442,11 @@ export function GlobalSearch({ className, compact }: GlobalSearchProps) {
       {/* Search input */}
       <div
         className={cn(
-          'flex items-center w-full border transition-all duration-300',
+          'flex items-center w-full border transition-all duration-200',
           'rounded-lg',
           focused
-            ? 'border-primary/40 bg-background shadow-lg shadow-primary/5 ring-2 ring-primary/10'
-            : 'border-[#E6E4E0] bg-[#F4F2EE] hover:bg-[#EDEAE5]'
+            ? 'border-[#1A535C]/25 bg-white shadow-[0_2px_12px_rgba(20,62,71,0.08)]'
+            : 'border-[#E6E4E0] bg-[#F4F2EE] hover:bg-[#EFECE5] hover:border-[#DCD9D2]'
         )}
       >
         <Search className={cn('text-muted-foreground flex-shrink-0', compact ? 'w-3.5 h-3.5 ml-2.5' : 'w-4 h-4 ml-3')} />
