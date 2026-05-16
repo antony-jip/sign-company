@@ -6,6 +6,7 @@ import {
   Receipt, CheckSquare, ClipboardCheck, Inbox,
   LogOut, ChevronDown, Menu, X, Search,
   Plus, Moon, Sun, Monitor, CreditCard, Sparkles, PiggyBank, BookOpen,
+  Pin, PinOff,
   type LucideIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -110,13 +111,23 @@ export function TopNav() {
     return () => window.removeEventListener('resize', updateIndicator)
   }, [updateIndicator])
 
+  const [stickyHeader, setStickyHeader] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false
+    return window.localStorage.getItem('doen_topnav_sticky') === '1'
+  })
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('doen_topnav_sticky', stickyHeader ? '1' : '0')
+    }
+  }, [stickyHeader])
+
   const userInitial = (user?.user_metadata?.voornaam?.[0] || user?.email?.[0] || 'U').toUpperCase()
   const userName = user?.user_metadata?.voornaam
     ? `${user.user_metadata.voornaam}${user.user_metadata.achternaam ? ' ' + user.user_metadata.achternaam : ''}`
     : user?.email?.split('@')[0] || 'Gebruiker'
 
   return (
-    <header className="flex-shrink-0" style={{ position: 'relative', zIndex: 30 }}>
+    <header className="flex-shrink-0" style={{ position: stickyHeader ? 'sticky' : 'relative', top: stickyHeader ? 0 : undefined, zIndex: 30 }}>
       {/* ── Row 1: Utility bar ── */}
       <div
         className="relative flex items-center h-[50px] px-5 md:px-6"
@@ -196,6 +207,17 @@ export function TopNav() {
           <div className="order-3 md:order-none">
             <NotificatieCenter />
           </div>
+
+          <button
+            onClick={() => setStickyHeader((s) => !s)}
+            className="hidden md:inline-flex w-7 h-7 rounded-md items-center justify-center hover:bg-black/[0.04] transition-colors"
+            title={stickyHeader ? 'Top-menu losmaken' : 'Top-menu vastpinnen'}
+            aria-label={stickyHeader ? 'Top-menu losmaken' : 'Top-menu vastpinnen'}
+          >
+            {stickyHeader
+              ? <Pin className="w-3.5 h-3.5 text-[#1A535C]" />
+              : <PinOff className="w-3.5 h-3.5 text-[#9B9B95]" />}
+          </button>
 
           <div className="hidden md:block w-px h-4 bg-[#E5E4E0] mx-2" />
 
