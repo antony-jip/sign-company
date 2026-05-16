@@ -152,7 +152,7 @@ export function TabBar() {
   return (
     <>
       <div
-        className="tab-bar flex items-center gap-0.5 px-2 py-1.5"
+        className="tab-bar flex items-center gap-0.5 px-2 py-1"
         style={{
           background: 'linear-gradient(180deg, #FCFCFA 0%, #F8F7F5 100%)',
           borderBottom: '1px solid #E6E4DE',

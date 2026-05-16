@@ -119,7 +119,7 @@ export function TopNav() {
     <header className="flex-shrink-0" style={{ position: 'relative', zIndex: 30 }}>
       {/* ── Row 1: Utility bar ── */}
       <div
-        className="relative flex items-center h-[56px] px-5 md:px-6"
+        className="relative flex items-center h-[50px] px-5 md:px-6"
         style={{ background: 'linear-gradient(180deg, #FCFCFA 0%, #F8F7F5 100%)' }}
       >
         {/* Subtle Flame warmth from right (notifications/avatar zone) */}
@@ -176,7 +176,7 @@ export function TopNav() {
 
         {/* Mobile search */}
         {mobileSearchOpen && (
-          <div className="absolute inset-x-0 top-0 h-[52px] z-40 bg-[#F8F7F5] flex items-center gap-2 px-4 md:hidden">
+          <div className="absolute inset-x-0 top-0 h-[50px] z-40 bg-[#F8F7F5] flex items-center gap-2 px-4 md:hidden">
             <GlobalSearch className="flex flex-1" />
             <button onClick={() => setMobileSearchOpen(false)} className="w-7 h-7 rounded-md flex items-center justify-center text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-black/[0.04]">
               <X className="w-4 h-4" />
@@ -282,7 +282,7 @@ export function TopNav() {
       {/* ── Row 2: Navigation tabs — desktop ── */}
       <nav
         ref={navRef}
-        className="hidden lg:flex items-stretch relative h-11 px-2 bg-[#F8F7F5] overflow-x-auto scrollbar-none"
+        className="hidden lg:flex items-stretch relative h-10 px-2 bg-[#F8F7F5] overflow-x-auto scrollbar-none"
         style={{ boxShadow: '0 1px 0 #EBEBEB, 0 6px 14px -6px rgba(20, 30, 40, 0.04)' }}
       >
         {/* Sliding indicator */}
