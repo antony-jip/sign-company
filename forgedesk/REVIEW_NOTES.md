@@ -177,3 +177,43 @@ Open punten uit eindreview:
   PK + partial UNIQUE, maar `ON CONFLICT (organisatie_id, trigger_task_naam)
   WHERE is_systeem = true DO NOTHING` zou de intentie expliciet maken.
   Stijl-puntje, niet functioneel.
+
+---
+
+## Email UX batch — feat/email-ux-batch (7 commits)
+
+**Eind-verdict senior-backend-reviewer:** AKKOORD-MET-OPMERKINGEN. Geen
+blokkades. Twee items verdienen een conscious-decision moment vóór merge
+tijdens de FESPA-week:
+
+1. **Geen feature-flag op de virtualization** (EmailLayout.tsx:521-561).
+   Hot path. Bij regressie alleen revert+deploy als kill-switch. Overweeg
+   `email_virtualization_enabled` in `app_settings` met fall-through naar
+   het oude render-pad.
+
+2. **Snooze/unsnooze silent-fail** (EmailLayout.tsx:655-666).
+   `updateEmail(...).catch(() => {})` slikt netwerk-fouten — UI blijft in
+   "gesnoozed"-staat, DB ongewijzigd. Consistent met bestaande
+   pin/read/archive-patronen in dit bestand, dus binnen-pattern. Bredere
+   fix verdient een aparte refactor-pas (toast + revert).
+
+**Niet-blokkerende observaties uit per-commit reviews:**
+
+- `estimateSize` 46/70 is een grove gok; bij snel scrollen door 500+ mails
+  kan eerste-paint flicker zichtbaar zijn voor measureElement de echte
+  hoogte oppakt.
+- Sales-banner is nu buiten de scroll-container (juiste fix) maar telt mee
+  voor de viewport-hoogte; dismiss laat de lijst plotseling 80px omhoog
+  schuiven.
+- Swipe-threshold 80px is gehard-coded — werkt op telefoons, op brede
+  tablets had % van rij-breedte fijner geweest.
+- `gesnoozed`-folder telt ook mee op mobile tab-bar (voller, geen probleem).
+- `email.labels || []` op EmailLayout:660 is defensief; type-def zegt
+  `labels: string[]` (niet optional). Harmless.
+- Click-outside boilerplate voor snooze + label popovers is verdubbeld;
+  bij meer popovers overweeg een `useClickOutside`-hook (out of scope nu).
+- `bg-emerald-100`/`bg-red-100` voor swipe-feedback zijn Tailwind-defaults
+  i.p.v. brand-tokens — universele iOS/Gmail-conventie, OK om te houden.
+- Swipe werkt alleen in inline-mode (mobile default), niet in stacked
+  desktop. Bewuste keuze.
+
