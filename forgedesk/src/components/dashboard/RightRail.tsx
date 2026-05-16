@@ -265,8 +265,9 @@ function DezeWeekCard() {
     <section
       className="rounded-xl p-6"
       style={{
-        background: 'linear-gradient(180deg, #FFFFFF 0%, #FBFAF7 100%)',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.03), 0 4px 16px rgba(20,62,71,0.025)',
+        background: 'linear-gradient(180deg, #FFFFFF 0%, #F6F8F9 100%)',
+        border: '1px solid rgba(26,83,92,0.08)',
+        boxShadow: '0 1px 2px rgba(20,62,71,0.04), 0 8px 24px rgba(20,62,71,0.025)',
       }}
     >
       <header className="flex items-center justify-between mb-3">
@@ -491,8 +492,9 @@ function TeamCard() {
     <section
       className="rounded-xl p-6"
       style={{
-        background: 'linear-gradient(180deg, #FFFFFF 0%, #FBFAF7 100%)',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.03), 0 4px 16px rgba(20,62,71,0.025)',
+        background: 'linear-gradient(180deg, #FFFFFF 0%, #F6F8F9 100%)',
+        border: '1px solid rgba(26,83,92,0.08)',
+        boxShadow: '0 1px 2px rgba(20,62,71,0.04), 0 8px 24px rgba(20,62,71,0.025)',
       }}
     >
       <header className="flex items-baseline justify-between mb-4">
