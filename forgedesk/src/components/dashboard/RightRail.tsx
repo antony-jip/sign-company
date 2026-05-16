@@ -263,8 +263,11 @@ function DezeWeekCard() {
 
   return (
     <section
-      className="rounded-xl bg-white p-6"
-      style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}
+      className="rounded-xl p-6"
+      style={{
+        background: 'linear-gradient(180deg, #FFFFFF 0%, #FBFAF7 100%)',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.03), 0 4px 16px rgba(20,62,71,0.025)',
+      }}
     >
       <header className="flex items-center justify-between mb-3">
         <h2 className="text-[14px] font-bold text-[#1A1A1A]">
@@ -486,8 +489,11 @@ function TeamCard() {
 
   return (
     <section
-      className="rounded-xl bg-white p-6"
-      style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}
+      className="rounded-xl p-6"
+      style={{
+        background: 'linear-gradient(180deg, #FFFFFF 0%, #FBFAF7 100%)',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.03), 0 4px 16px rgba(20,62,71,0.025)',
+      }}
     >
       <header className="flex items-baseline justify-between mb-4">
         <h2 className="text-[14px] font-bold text-[#1A1A1A]">
