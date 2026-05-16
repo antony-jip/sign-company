@@ -96,8 +96,11 @@ export function ActiviteitLog() {
 
   return (
     <section
-      className="rounded-xl bg-white p-5"
-      style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}
+      className="rounded-xl p-5"
+      style={{
+        background: 'linear-gradient(180deg, #FFFFFF 0%, #FBFAF7 100%)',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.03), 0 4px 16px rgba(20,62,71,0.025)',
+      }}
     >
       <header className="flex items-baseline justify-between gap-4 mb-3">
         <div className="flex items-baseline gap-3 min-w-0">

@@ -269,8 +269,11 @@ export function KpiStrip() {
         return (
           <div
             key={kpi.label}
-            className="rounded-xl bg-white p-5 flex flex-col gap-3"
-            style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}
+            className="rounded-xl p-5 flex flex-col gap-3"
+            style={{
+              background: 'linear-gradient(180deg, #FFFFFF 0%, #FBFAF7 100%)',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.03), 0 4px 16px rgba(20,62,71,0.025)',
+            }}
           >
             <div className="flex items-start justify-between">
               <span
