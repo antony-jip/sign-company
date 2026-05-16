@@ -1104,17 +1104,18 @@ export function ProjectsList() {
                 })}
               </div>
 
-              {/* Desktop table — slate surface */}
+              {/* Desktop table — slate surface, clip-path for rounded corners without breaking sticky */}
               <div
-                className="hidden md:block rounded-2xl overflow-hidden"
+                className="hidden md:block rounded-2xl"
                 style={{
                   background: 'radial-gradient(ellipse 85% 65% at 0% 0%, rgba(26,83,92,0.07), transparent 65%), radial-gradient(ellipse 85% 65% at 100% 100%, rgba(241,80,37,0.055), transparent 65%), linear-gradient(180deg, #FFFFFF 0%, #F6F8F9 100%)',
                   border: '1px solid rgba(26,83,92,0.08)',
                   boxShadow: '0 1px 2px rgba(20,62,71,0.04), 0 8px 24px rgba(20,62,71,0.025)',
+                  clipPath: 'inset(0 round 16px)',
                 }}
               >
                 <table className="w-full">
-                  <thead>
+                  <thead className="sticky top-0 z-10" style={{ backgroundColor: '#FFFFFF', backdropFilter: 'blur(4px)' }}>
                     <tr className="border-b-2 border-[#F0EFEC]">
                       <th className="py-3.5 pl-5 pr-3 w-10 text-left">
                         <Checkbox
