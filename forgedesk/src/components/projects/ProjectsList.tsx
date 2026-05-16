@@ -558,7 +558,7 @@ export function ProjectsList() {
 
   if (isLoading) {
     return (
-      <div className="h-full flex flex-col bg-[#F8F7F5] -m-3 sm:-m-4 md:-m-6">
+      <div className="h-full flex flex-col bg-[#EEF1F3] -m-3 sm:-m-4 md:-m-6">
         <div className="flex-1 min-h-0 overflow-y-auto">
           <div className="px-4 py-4 md:px-8 md:py-8 space-y-6">
             {/* Header */}
@@ -650,7 +650,7 @@ export function ProjectsList() {
   }
 
   return (
-    <div className="h-full flex flex-col bg-[#F8F7F5] -m-3 sm:-m-4 md:-m-6">
+    <div className="h-full flex flex-col bg-[#EEF1F3] -m-3 sm:-m-4 md:-m-6">
       {/* Inline keyframes for pulse + stagger + hover glow */}
       <style>{`
         @keyframes doen-pulse { 0%,100% { opacity:1 } 50% { opacity:.35 } }
@@ -766,8 +766,15 @@ export function ProjectsList() {
             </div>
           </div>
 
-          {/* Toolbar card — search, filters, export in one white surface */}
-          <div className="bg-white rounded-2xl p-5 shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03]">
+          {/* Toolbar card — search, filters, export in one slate surface */}
+          <div
+            className="rounded-2xl p-5"
+            style={{
+              background: 'radial-gradient(ellipse 85% 65% at 0% 0%, rgba(26,83,92,0.07), transparent 65%), radial-gradient(ellipse 85% 65% at 100% 100%, rgba(241,80,37,0.055), transparent 65%), linear-gradient(180deg, #FFFFFF 0%, #F6F8F9 100%)',
+              border: '1px solid rgba(26,83,92,0.08)',
+              boxShadow: '0 1px 2px rgba(20,62,71,0.04), 0 8px 24px rgba(20,62,71,0.025)',
+            }}
+          >
             <div className="flex items-center gap-5">
               {/* Search with keyboard hint */}
               <div className="relative max-w-[280px] flex-1">
@@ -940,7 +947,14 @@ export function ProjectsList() {
 
           {/* Table */}
           {gefilterdeProjecten.length === 0 ? (
-            <div className="py-20 text-center bg-white rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+            <div
+              className="py-20 text-center rounded-2xl"
+              style={{
+                background: 'radial-gradient(ellipse 85% 65% at 0% 0%, rgba(26,83,92,0.07), transparent 65%), radial-gradient(ellipse 85% 65% at 100% 100%, rgba(241,80,37,0.055), transparent 65%), linear-gradient(180deg, #FFFFFF 0%, #F6F8F9 100%)',
+                border: '1px solid rgba(26,83,92,0.08)',
+                boxShadow: '0 1px 2px rgba(20,62,71,0.04), 0 8px 24px rgba(20,62,71,0.025)',
+              }}
+            >
               <EmptyState
                 module="projecten"
                 title="Nog geen projecten"
@@ -969,8 +983,13 @@ export function ProjectsList() {
                     <div
                       key={`mobile-${project.id}`}
                       onClick={() => navigateWithTab({ path: `/projecten/${project.id}`, label: project.naam || 'Project', id: `/projecten/${project.id}` })}
-                      className="doen-row bg-white rounded-xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)] cursor-pointer active:scale-[0.99] transition-all"
-                      style={{ animationDelay: `${i * 30}ms` }}
+                      className="doen-row rounded-xl p-4 cursor-pointer active:scale-[0.99] transition-all"
+                      style={{
+                        animationDelay: `${i * 30}ms`,
+                        background: 'radial-gradient(ellipse 85% 65% at 0% 0%, rgba(26,83,92,0.07), transparent 65%), radial-gradient(ellipse 85% 65% at 100% 100%, rgba(241,80,37,0.055), transparent 65%), linear-gradient(180deg, #FFFFFF 0%, #F6F8F9 100%)',
+                        border: `1px solid rgba(26,83,92,0.08)`,
+                        boxShadow: `0 1px 2px rgba(20,62,71,0.04), 0 8px 24px rgba(20,62,71,0.025), inset 3px 0 0 0 ${statusHex(project.status)}`,
+                      }}
                     >
                       <div className="flex items-start justify-between gap-3 mb-2">
                         <div className="min-w-0 flex-1">
@@ -1003,8 +1022,15 @@ export function ProjectsList() {
                 })}
               </div>
 
-              {/* Desktop table in white card */}
-              <div className="hidden md:block bg-white rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03] overflow-hidden">
+              {/* Desktop table — slate surface */}
+              <div
+                className="hidden md:block rounded-2xl overflow-hidden"
+                style={{
+                  background: 'radial-gradient(ellipse 85% 65% at 0% 0%, rgba(26,83,92,0.07), transparent 65%), radial-gradient(ellipse 85% 65% at 100% 100%, rgba(241,80,37,0.055), transparent 65%), linear-gradient(180deg, #FFFFFF 0%, #F6F8F9 100%)',
+                  border: '1px solid rgba(26,83,92,0.08)',
+                  boxShadow: '0 1px 2px rgba(20,62,71,0.04), 0 8px 24px rgba(20,62,71,0.025)',
+                }}
+              >
                 <table className="w-full">
                   <thead>
                     <tr className="border-b-2 border-[#F0EFEC]">
