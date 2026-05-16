@@ -21,25 +21,25 @@ function TabItem({
   return (
     <button
       className={cn(
-        'tab-bar-item group relative flex items-center gap-1.5 px-3 py-1 text-xs font-medium transition-all duration-150 whitespace-nowrap max-w-[200px] min-w-[80px] select-none rounded-md',
+        'tab-bar-item group relative flex items-center gap-1.5 px-2.5 py-1 font-heading text-[12px] font-bold transition-colors duration-150 whitespace-nowrap max-w-[200px] min-w-[80px] select-none rounded-md',
         isActive
-          ? 'bg-card text-foreground shadow-sm'
-          : 'text-muted-foreground hover:text-foreground hover:bg-card/50'
+          ? 'bg-[#1A535C]/[0.07] text-[#1A535C]'
+          : 'text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-black/[0.04]'
       )}
       onClick={onActivate}
       onContextMenu={onContextMenu}
       title={tab.label}
     >
       {tab.isDirty && (
-        <span className="w-1.5 h-1.5 rounded-full bg-mod-werkbonnen-text flex-shrink-0" />
+        <span className="w-1.5 h-1.5 rounded-full bg-[#F15025] flex-shrink-0" />
       )}
       <span className="truncate flex-1 text-left">{tab.label}</span>
       <span
         className={cn(
-          'flex-shrink-0 rounded-sm p-0.5 transition-opacity',
+          'flex-shrink-0 rounded p-0.5 transition-all hover:bg-black/[0.08]',
           isActive
-            ? 'opacity-40 hover:opacity-100 hover:bg-muted'
-            : 'opacity-0 group-hover:opacity-40 hover:!opacity-100 hover:bg-muted'
+            ? 'opacity-50 hover:opacity-100'
+            : 'opacity-0 group-hover:opacity-50 hover:!opacity-100'
         )}
         onClick={onClose}
         role="button"
@@ -151,11 +151,17 @@ export function TabBar() {
 
   return (
     <>
-      <div className="tab-bar flex items-center gap-0.5 px-2 py-1 bg-white border-b border-[#E6E4DE]">
+      <div
+        className="tab-bar flex items-center gap-0.5 px-2 py-1.5"
+        style={{
+          background: 'linear-gradient(180deg, #FCFCFA 0%, #F8F7F5 100%)',
+          borderBottom: '1px solid #E6E4DE',
+        }}
+      >
         {/* Scroll left */}
         {showScrollButtons && (
           <button
-            className="flex-shrink-0 p-0.5 text-muted-foreground/50 hover:text-foreground transition-colors rounded"
+            className="flex-shrink-0 w-5 h-5 rounded text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-black/[0.04] flex items-center justify-center transition-colors"
             onClick={() => scroll('left')}
           >
             <ChevronLeft className="w-3.5 h-3.5" />
@@ -190,7 +196,7 @@ export function TabBar() {
         {/* Scroll right */}
         {showScrollButtons && (
           <button
-            className="flex-shrink-0 p-0.5 text-muted-foreground/50 hover:text-foreground transition-colors rounded"
+            className="flex-shrink-0 w-5 h-5 rounded text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-black/[0.04] flex items-center justify-center transition-colors"
             onClick={() => scroll('right')}
           >
             <ChevronRight className="w-3.5 h-3.5" />
@@ -199,11 +205,11 @@ export function TabBar() {
 
         {/* New tab */}
         <button
-          className="flex-shrink-0 w-5 h-5 rounded bg-[#F15025] text-white hover:bg-[#D94520] flex items-center justify-center transition-colors"
+          className="flex-shrink-0 w-6 h-6 rounded-md text-[#9B9B95] hover:text-[#F15025] hover:bg-[#F15025]/[0.08] flex items-center justify-center transition-colors ml-0.5"
           onClick={newTab}
           title="Nieuw tabblad (Cmd+T)"
         >
-          <Plus className="w-3 h-3" />
+          <Plus className="w-3.5 h-3.5" />
         </button>
       </div>
 
