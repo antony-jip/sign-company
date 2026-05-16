@@ -23,10 +23,17 @@
 -- Wat dit script doet:
 --   1. STAP 1 (read-only): toont per organisatie het huidige aantal
 --      klanten zonder debiteurennummer, met huidige prefix en
---      volgnummer. Lees deze output voor je STAP 2 draait.
+--      volgnummer. Flagt orgs die geen app_settings-rij hebben via
+--      kolom `settings_status` — die worden in STAP 2 overgeslagen
+--      door de INNER JOIN. Lees deze output voor je STAP 2 draait en
+--      maak indien nodig handmatig app_settings-rijen aan voor orgs
+--      met status 'MIST app_settings'.
 --   2. STAP 2 (write, in transactie): wijst nummers toe via
 --      ROW_NUMBER() OVER (PARTITION BY organisatie_id ORDER BY
---      created_at). Werkt debiteur_volgnummer bij. ROLLBACK bij fout.
+--      created_at). Werkt debiteur_volgnummer bij. Gebruikt INNER
+--      JOIN op app_settings zodat orgs zonder settings-rij worden
+--      overgeslagen — anders zou de in-app generator later vanaf
+--      1000 herstarten en duplicaten maken. ROLLBACK bij fout.
 --   3. STAP 3 (read-only): verificatie — toont per organisatie hoeveel
 --      klanten een nummer kregen, het hoogste uitgegeven nummer en
 --      het nieuwe debiteur_volgnummer.
@@ -35,13 +42,16 @@
 --   - Klanten met een al ingevulde debiteurennummer overschrijven.
 --     Legacy/handmatige waardes blijven met rust (de WHERE-clause
 --     in STAP 2 sluit non-lege rijen uit).
---   - Organisaties zonder app_settings-rij verwerken. Die worden
---     overgeslagen — eerst app_settings aanmaken voor die org.
+--   - Organisaties zonder app_settings-rij verwerken (zie STAP 2
+--     INNER JOIN).
+--   - De zombie-org 08352d84-e2be-4760-9436-f468b4327438 verwerken
+--     (geparkeerd voor handmatige opruim — security sprint backlog).
 --
 -- Verifiëren achteraf:
 --   - STAP 3-output: aantal_gekregen + max_nieuw_nummer + nieuw_volgnummer
 --   - SELECT COUNT(*) FROM klanten WHERE debiteurennummer = ''
---     moet 0 zijn voor elke org waar je dit hebt gedraaid.
+--     moet 0 zijn voor elke org waar je dit hebt gedraaid (m.u.v.
+--     orgs zonder app_settings en de zombie-org).
 --   - Maak een nieuwe testklant via de app: het toegekende nummer
 --     moet één hoger zijn dan max_nieuw_nummer uit STAP 3.
 -- ============================================================
@@ -49,6 +59,8 @@
 
 -- ============ STAP 1: Pre-flight inventaris ============
 -- Read-only. Geen wijzigingen.
+-- LEFT JOIN: orgs zonder app_settings worden zichtbaar via
+-- settings_status = 'MIST app_settings'.
 
 SELECT
   k.organisatie_id,
@@ -57,15 +69,21 @@ SELECT
   COUNT(*) FILTER (WHERE k.debiteurennummer IS NOT NULL AND k.debiteurennummer <> '')
     AS klanten_met_nummer,
   s.debiteur_prefix,
-  s.debiteur_volgnummer
+  s.debiteur_volgnummer,
+  CASE WHEN s.organisatie_id IS NULL THEN 'MIST app_settings' ELSE 'OK' END
+    AS settings_status
 FROM klanten k
 LEFT JOIN app_settings s ON s.organisatie_id = k.organisatie_id
-GROUP BY k.organisatie_id, s.debiteur_prefix, s.debiteur_volgnummer
+WHERE k.organisatie_id <> '08352d84-e2be-4760-9436-f468b4327438'
+GROUP BY k.organisatie_id, s.organisatie_id, s.debiteur_prefix, s.debiteur_volgnummer
 ORDER BY k.organisatie_id;
 
 
 -- ============ STAP 2: Backfill in transactie ============
 -- Wijst nummers toe en update debiteur_volgnummer per organisatie.
+-- INNER JOIN: orgs zonder app_settings worden overgeslagen (anders
+-- zou de in-app generator later vanaf 1000 herstarten en duplicaten
+-- maken). Zombie-org wordt expliciet uitgesloten.
 -- Bij elke fout: ROLLBACK; herstel handmatig.
 
 BEGIN;
@@ -74,15 +92,16 @@ WITH te_nummeren AS (
   SELECT
     k.id,
     k.organisatie_id,
-    COALESCE(s.debiteur_prefix, '') AS prefix,
-    COALESCE(s.debiteur_volgnummer, 1000) AS start_volgnummer,
+    s.debiteur_prefix AS prefix,
+    s.debiteur_volgnummer AS start_volgnummer,
     ROW_NUMBER() OVER (
       PARTITION BY k.organisatie_id
       ORDER BY k.created_at, k.id
     ) - 1 AS offset
   FROM klanten k
-  LEFT JOIN app_settings s ON s.organisatie_id = k.organisatie_id
-  WHERE k.debiteurennummer IS NULL OR k.debiteurennummer = ''
+  INNER JOIN app_settings s ON s.organisatie_id = k.organisatie_id
+  WHERE (k.debiteurennummer IS NULL OR k.debiteurennummer = '')
+    AND k.organisatie_id <> '08352d84-e2be-4760-9436-f468b4327438'
 ),
 nummer_toewijzing AS (
   SELECT
@@ -116,6 +135,9 @@ COMMIT;
 
 -- ============ STAP 3: Verificatie ============
 -- Read-only. Visuele check op het resultaat.
+-- LEFT JOIN behouden zodat orgs zonder app_settings óók zichtbaar
+-- blijven (verwacht: nog steeds 0 klanten met nummer).
+-- Zombie-org wordt uitgesloten zoals in STAP 1 en 2.
 
 SELECT
   k.organisatie_id,
@@ -127,5 +149,6 @@ SELECT
   s.debiteur_volgnummer AS nieuw_volgnummer
 FROM klanten k
 LEFT JOIN app_settings s ON s.organisatie_id = k.organisatie_id
+WHERE k.organisatie_id <> '08352d84-e2be-4760-9436-f468b4327438'
 GROUP BY k.organisatie_id, s.debiteur_prefix, s.debiteur_volgnummer
 ORDER BY k.organisatie_id;

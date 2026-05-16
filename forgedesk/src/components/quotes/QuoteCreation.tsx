@@ -85,6 +85,7 @@ import { offerteVerzendTemplate } from '@/services/emailTemplateService'
 import { cn, formatCurrency } from '@/lib/utils'
 import { initAutofillDefaults, saveAutofillValue, labelToAutofillField } from '@/utils/autofillUtils'
 import { QuoteItemsTable, type QuoteLineItem, type DetailRegel, type PrijsVariant, type OmschrijvingSuggestie, DEFAULT_DETAIL_LABELS } from './QuoteItemsTable'
+import { RegelTemplateEditor } from './RegelTemplateEditor'
 import { ForgeQuotePreview } from './ForgeQuotePreview'
 import { InkoopOffertePaneel } from './InkoopOffertePaneel'
 import { useSidebarLayout, type SidebarSectionId } from '@/hooks/useSidebarLayout'
@@ -226,7 +227,10 @@ export function QuoteCreation() {
   const { id: routeId } = useParams<{ id: string }>()
   const { user } = useAuth()
   const { isBlocked: isTrialBlocked, showDialog: showTrialDialog, setShowDialog: setShowTrialDialog } = useTrialGuard()
-  const { settings, offertePrefix, offerteStartNummer, offerteGeldigheidDagen, standaardBtw, bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur, logoUrl, profile, offerteToonM2, offerteIntroTekst, offerteOutroTekst, emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte } = useAppSettings()
+  const { settings, updateSettings, offertePrefix, offerteStartNummer, offerteGeldigheidDagen, standaardBtw, bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur, logoUrl, profile, offerteToonM2, offerteIntroTekst, offerteOutroTekst, emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte } = useAppSettings()
+  const regelTemplateLabels = settings.offerte_regel_velden && settings.offerte_regel_velden.length > 0
+    ? settings.offerte_regel_velden
+    : DEFAULT_DETAIL_LABELS
   const documentStyle = useDocumentStyle()
   const [showKlantSelector, setShowKlantSelector] = useState(true)
   const [klanten, setKlanten] = useState<Klant[]>([])
@@ -928,6 +932,35 @@ export function QuoteCreation() {
 
   const handleRemoveItem = (id: string) => {
     setItems(prev => prev.filter((item) => item.id !== id))
+  }
+
+  // Pas template-labels toe op alle huidige items. Bestaande waarden blijven
+  // behouden waar het label overeenkomt. Hidden labels worden gereset.
+  const handleApplyTemplate = (templateLabels: string[]) => {
+    if (items.length === 0) {
+      toast.error('Geen items om template op toe te passen')
+      return
+    }
+    setItems(prev =>
+      prev.map((item) => {
+        const existingByLabel = new Map<string, DetailRegel>()
+        for (const r of item.detail_regels || []) {
+          if (r.label) existingByLabel.set(r.label, r)
+        }
+        const next: DetailRegel[] = templateLabels.map((label, i) => {
+          const existing = existingByLabel.get(label)
+          return existing || {
+            id: `dr-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 7)}`,
+            label,
+            waarde: '',
+          }
+        })
+        const nextExtra = { ...(item.extra_velden || {}) }
+        if (nextExtra._hidden_labels) nextExtra._hidden_labels = ''
+        return { ...item, detail_regels: next, extra_velden: nextExtra }
+      })
+    )
+    toast.success(`Template toegepast op ${items.length} item${items.length === 1 ? '' : 's'}`)
   }
 
   // ── Clipboard helpers ──
@@ -2104,13 +2137,26 @@ export function QuoteCreation() {
           {/* ── Items ── */}
           <div className="doen-slate-surface rounded-2xl p-5">
             <div className="flex items-baseline justify-between mb-4">
-              <h3 className="font-heading text-[15px] font-bold text-[#1A1A1A]">
-                Offerte-items<span className="text-[#F15025]">.</span>
+              <h3 className="font-heading text-[15px] font-bold text-[#1A1A1A] flex items-center">
+                <span>
+                  Offerte-items<span className="text-[#F15025]">.</span>
+                </span>
                 {items.length > 0 && (
                   <span className="ml-2 font-mono text-[10px] font-semibold bg-[rgba(241,80,37,0.1)] text-[#F15025] rounded-full px-1.5 py-0.5 min-w-[18px] text-center tabular-nums">
                     {items.length}
                   </span>
                 )}
+                <RegelTemplateEditor
+                  labels={regelTemplateLabels}
+                  templates={settings.offerte_regel_templates || []}
+                  onSaveDefault={async (next) => {
+                    await updateSettings({ offerte_regel_velden: next })
+                  }}
+                  onSaveTemplates={async (next) => {
+                    await updateSettings({ offerte_regel_templates: next })
+                  }}
+                  onApplyTemplate={handleApplyTemplate}
+                />
               </h3>
             </div>
             <div>
@@ -2132,6 +2178,7 @@ export function QuoteCreation() {
                 projectId={selectedProjectId || undefined}
                 klantId={selectedKlantId || undefined}
                 offerteId={editOfferteId || autoSaveIdRef.current || undefined}
+                templateLabels={regelTemplateLabels}
               />
             </div>
           </div>

@@ -713,6 +713,9 @@ export interface AppSettings {
   // Offerte regel velden - welke tekstvelden wil je per offerte-item?
   // Bijv. ["Materiaal", "Lay-out", "Montage", "Opmerking"]
   offerte_regel_velden: string[];
+  // Named templates voor offerte-regel-labels. User kan ze laden in de
+  // tandwieltje-popover om de huidige labelset snel te vervangen.
+  offerte_regel_templates?: Array<{ naam: string; labels: string[] }>;
   // Offerte layout instellingen
   offerte_toon_m2?: boolean;  // Toon m² berekening achter afmetingen (default: true)
   // KvK integratie

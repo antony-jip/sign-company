@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Trash2, Plus, Calculator, ChevronDown, ChevronUp, Copy, Check, X, ToggleLeft, ToggleRight, Lock, AlertTriangle, Paperclip, Clipboard, Upload, Image as ImageIcon } from 'lucide-react'
+import { Trash2, Plus, Calculator, ChevronDown, ChevronUp, Copy, Check, X, ToggleLeft, ToggleRight, Lock, AlertTriangle, Paperclip, Clipboard, Upload, Image as ImageIcon, GripVertical } from 'lucide-react'
 import { cn, formatCurrency } from '@/lib/utils'
 import { CalculatieModal } from './CalculatieModal'
 import { AutofillInput } from './AutofillInput'
@@ -27,7 +27,7 @@ import type { SigningVisualisatie } from '@/types'
 // Elk item is 1 complete "calculatie":
 //   1. Item naam (titel bovenaan)
 //   2. Beschrijving-regels — dynamisch: toevoegen, verwijderen, aanpassen
-//      Default: Omschrijving, Aantal, Afmeting, Materiaal, Lay-out, Montage, Opmerking
+//      Default: Aantal, Materiaal, Formaat, Lay-out, Montage, Opmerking
 //   3. Prijsberekening — Aantal × Prijs [Calculator] | BTW | Korting | = Totaal
 //
 // De Calculator (CalculatieModal) zit achter de prijs voor
@@ -44,7 +44,6 @@ export const DEFAULT_DETAIL_LABELS = [
   'Aantal',
   'Materiaal',
   'Formaat',
-  'Afmeting',
   'Lay-out',
   'Montage',
   'Opmerking',
@@ -133,6 +132,8 @@ interface QuoteItemsTableProps {
   projectId?: string
   klantId?: string
   offerteId?: string
+  /** Standaard label-set voor detail-regels (uit settings.offerte_regel_velden). */
+  templateLabels?: string[]
 }
 
 function calculateLineTotaal(item: QuoteLineItem): number {
@@ -598,7 +599,11 @@ export function QuoteItemsTable({
   projectId,
   klantId,
   offerteId,
+  templateLabels: templateLabelsProp,
 }: QuoteItemsTableProps) {
+  const templateLabels = templateLabelsProp && templateLabelsProp.length > 0
+    ? templateLabelsProp
+    : DEFAULT_DETAIL_LABELS
   // Calculatie modal
   const [calculatieOpen, setCalculatieOpen] = useState(false)
   const [activeItemId, setActiveItemId] = useState<string | null>(null)
@@ -607,6 +612,9 @@ export function QuoteItemsTable({
   const [collapsedItems, setCollapsedItems] = useState<Set<string>>(new Set())
   // Inkoop drag-drop state
   const [inkoopDropTargetId, setInkoopDropTargetId] = useState<string | null>(null)
+  // Detail-regel drag-reorder state (per item)
+  const [dragRegel, setDragRegel] = useState<{ itemId: string; regelId: string } | null>(null)
+  const [dragOverRegelId, setDragOverRegelId] = useState<string | null>(null)
   // Bijlage upload state
   const [dragOverItemId, setDragOverItemId] = useState<string | null>(null)
   const [uploadingItemId, setUploadingItemId] = useState<string | null>(null)
@@ -823,9 +831,9 @@ export function QuoteItemsTable({
   }
 
   // ── Detail regels handlers ──
-  // Merge bestaande detail_regels met DEFAULT_DETAIL_LABELS zodat bestaande items
-  // ook nieuwe default-rijen tonen (zoals Formaat/Afmeting). Bestaande waarden
-  // blijven behouden. Verwijderde defaults zijn opgenomen in extra_velden._hidden_labels.
+  // User-volgorde van item.detail_regels heeft voorrang. Defaults die nog niet in
+  // de array zitten worden achteraan ge-append als placeholders. Verwijderde defaults
+  // staan in extra_velden._hidden_labels.
   const PLACEHOLDER_PREFIX = 'default-'
 
   const getHiddenLabels = (item: QuoteLineItem): Set<string> => {
@@ -836,32 +844,21 @@ export function QuoteItemsTable({
   const getDetailRegels = (item: QuoteLineItem): DetailRegel[] => {
     const existing = item.detail_regels || []
     const hidden = getHiddenLabels(item)
-    const byLabel = new Map<string, DetailRegel>()
-    existing.forEach((r) => {
-      if (r.label && !byLabel.has(r.label)) byLabel.set(r.label, r)
-    })
+    const seenLabels = new Set<string>()
     const merged: DetailRegel[] = []
-    for (const label of DEFAULT_DETAIL_LABELS) {
-      if (hidden.has(label)) continue
-      const found = byLabel.get(label)
-      if (found) {
-        merged.push(found)
-        byLabel.delete(label)
-      } else {
-        const slug = label.replace(/[^a-z0-9]+/gi, '_').toLowerCase()
-        merged.push({
-          id: `${PLACEHOLDER_PREFIX}${item.id}-${slug}`,
-          label,
-          waarde: '',
-        })
-      }
-    }
-    // Custom labels die geen default zijn — append achteraan, originele volgorde
     for (const r of existing) {
-      if (byLabel.has(r.label) && !hidden.has(r.label)) {
-        merged.push(r)
-        byLabel.delete(r.label)
-      }
+      if (r.label && hidden.has(r.label)) continue
+      merged.push(r)
+      if (r.label) seenLabels.add(r.label)
+    }
+    for (const label of templateLabels) {
+      if (hidden.has(label) || seenLabels.has(label)) continue
+      const slug = label.replace(/[^a-z0-9]+/gi, '_').toLowerCase()
+      merged.push({
+        id: `${PLACEHOLDER_PREFIX}${item.id}-${slug}`,
+        label,
+        waarde: '',
+      })
     }
     return merged
   }
@@ -884,7 +881,7 @@ export function QuoteItemsTable({
     // Placeholder-rij (default die nog geen waarde heeft): verberg via _hidden_labels
     if (regelId.startsWith(`${PLACEHOLDER_PREFIX}${item.id}-`)) {
       const slug = regelId.replace(`${PLACEHOLDER_PREFIX}${item.id}-`, '')
-      const label = DEFAULT_DETAIL_LABELS.find(
+      const label = templateLabels.find(
         (l) => l.replace(/[^a-z0-9]+/gi, '_').toLowerCase() === slug,
       )
       if (label) {
@@ -902,7 +899,7 @@ export function QuoteItemsTable({
     // markeer ook hidden zodat de placeholder niet meteen terugkomt.
     const target = (item.detail_regels || []).find((r) => r.id === regelId)
     const regels = (item.detail_regels || []).filter((r) => r.id !== regelId)
-    const isDefaultLabel = target && DEFAULT_DETAIL_LABELS.includes(target.label)
+    const isDefaultLabel = target && templateLabels.includes(target.label)
     if (isDefaultLabel) {
       const hidden = getHiddenLabels(item)
       hidden.add(target.label)
@@ -939,6 +936,48 @@ export function QuoteItemsTable({
       r.id === regelId ? { ...r, [field]: value } : r
     )
     updateDetailRegels(itemId, regels)
+  }
+
+  // ── Detail regel reorder via drag-handle ──
+  // Bij drop snapshot we de gemerged getDetailRegels (incl. placeholders) naar detail_regels
+  // zodat de user-volgorde concreet vastgelegd wordt.
+  const handleRegelDragStart = (e: React.DragEvent, itemId: string, regelId: string) => {
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/x-detail-regel', `${itemId}|${regelId}`)
+    setDragRegel({ itemId, regelId })
+  }
+
+  const handleRegelDragOver = (e: React.DragEvent, itemId: string, regelId: string) => {
+    if (!dragRegel || dragRegel.itemId !== itemId || dragRegel.regelId === regelId) return
+    e.preventDefault()
+    e.stopPropagation()
+    e.dataTransfer.dropEffect = 'move'
+    if (dragOverRegelId !== regelId) setDragOverRegelId(regelId)
+  }
+
+  const handleRegelDrop = (e: React.DragEvent, itemId: string, targetRegelId: string) => {
+    if (!dragRegel || dragRegel.itemId !== itemId) return
+    e.preventDefault()
+    e.stopPropagation()
+    const srcRegelId = dragRegel.regelId
+    setDragRegel(null)
+    setDragOverRegelId(null)
+    if (srcRegelId === targetRegelId) return
+    const item = items.find((i) => i.id === itemId)
+    if (!item) return
+    const regels = getDetailRegels(item)
+    const fromIdx = regels.findIndex((r) => r.id === srcRegelId)
+    const toIdx = regels.findIndex((r) => r.id === targetRegelId)
+    if (fromIdx === -1 || toIdx === -1) return
+    const reordered = [...regels]
+    const [moved] = reordered.splice(fromIdx, 1)
+    reordered.splice(toIdx, 0, moved)
+    updateDetailRegels(itemId, reordered)
+  }
+
+  const handleRegelDragEnd = () => {
+    setDragRegel(null)
+    setDragOverRegelId(null)
   }
 
   return (
@@ -1178,36 +1217,39 @@ export function QuoteItemsTable({
                 </div>
 
                 {/* Beschrijving-regels (dynamisch) */}
-                <div className="px-4 py-2 space-y-1 border-b border-border dark:border-border">
+                <div className="px-4 py-3 space-y-0.5 border-b border-border dark:border-border">
                   {detailRegels.map((regel) => (
-                    <div key={regel.id} className="flex items-center gap-1.5 group">
-                      {/* Verwijder knop */}
+                    <div
+                      key={regel.id}
+                      className={cn(
+                        "flex items-center gap-2 group rounded-md transition-colors",
+                        dragOverRegelId === regel.id && dragRegel?.itemId === item.id
+                          ? "bg-[rgba(241,80,37,0.04)] ring-1 ring-[rgba(241,80,37,0.25)]"
+                          : "",
+                        dragRegel?.regelId === regel.id ? "opacity-40" : ""
+                      )}
+                      onDragOver={(e) => handleRegelDragOver(e, item.id, regel.id)}
+                      onDrop={(e) => handleRegelDrop(e, item.id, regel.id)}
+                    >
+                      {/* Drag-handle */}
                       <button
-                        onClick={() => removeDetailRegel(item.id, regel.id)}
-                        className="text-muted-foreground/50 hover:text-red-500 dark:text-muted-foreground dark:hover:text-red-400 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-0.5"
-                        title="Verwijder rij"
+                        draggable
+                        onDragStart={(e) => handleRegelDragStart(e, item.id, regel.id)}
+                        onDragEnd={handleRegelDragEnd}
+                        className="text-[#9B9B95]/0 hover:text-[#6B6B66] flex-shrink-0 group-hover:text-[#9B9B95]/70 transition-colors p-0.5 cursor-grab active:cursor-grabbing"
+                        title="Sleep om volgorde te wijzigen"
+                        type="button"
                       >
-                        <Trash2 className="h-3 w-3" />
-                      </button>
-
-                      {/* Dupliceer knop */}
-                      <button
-                        onClick={() => duplicateDetailRegel(item.id, regel.id)}
-                        className="text-muted-foreground/50 hover:text-blue-500 dark:text-muted-foreground dark:hover:text-blue-400 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-0.5"
-                        title="Dupliceer rij"
-                      >
-                        <Copy className="h-3 w-3" />
+                        <GripVertical className="h-3.5 w-3.5" />
                       </button>
 
                       {/* Label */}
                       <Input
                         value={regel.label}
                         onChange={(e) => updateDetailRegelField(item.id, regel.id, 'label', e.target.value)}
-                        placeholder="Label..."
-                        className="w-28 flex-shrink-0 h-8 text-xs font-medium border-transparent bg-transparent hover:border-border dark:hover:border-border focus-visible:border-border shadow-none text-muted-foreground"
+                        placeholder="LABEL"
+                        className="w-32 flex-shrink-0 h-7 text-[11px] uppercase tracking-wider font-semibold text-[#9B9B95] bg-transparent border-transparent hover:bg-[rgba(26,83,92,0.04)] focus-visible:bg-[rgba(26,83,92,0.06)] focus-visible:ring-0 focus-visible:border-transparent shadow-none px-2 placeholder:text-[#9B9B95]/50 placeholder:font-semibold placeholder:tracking-wider"
                       />
-
-                      <span className="text-muted-foreground/50 dark:text-muted-foreground flex-shrink-0">:</span>
 
                       {/* Waarde — with autofill for omschrijving/materiaal/lay-out/montage */}
                       {labelToAutofillField(regel.label) ? (
@@ -1226,16 +1268,33 @@ export function QuoteItemsTable({
                           className="flex-1 h-8 text-sm"
                         />
                       )}
+
+                      {/* Acties rechts */}
+                      <div className="flex items-center gap-0.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => duplicateDetailRegel(item.id, regel.id)}
+                          className="text-[#9B9B95] hover:text-[#1A535C] p-1 rounded transition-colors"
+                          title="Dupliceer rij"
+                        >
+                          <Copy className="h-3 w-3" />
+                        </button>
+                        <button
+                          onClick={() => removeDetailRegel(item.id, regel.id)}
+                          className="text-[#9B9B95] hover:text-[#C44830] p-1 rounded transition-colors"
+                          title="Verwijder rij"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </div>
                     </div>
                   ))}
 
-                  {/* Rij toevoegen */}
+                  {/* Rij toevoegen — Flame text-link stijl */}
                   <button
                     onClick={() => addDetailRegel(item.id)}
-                    className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-accent transition-colors pt-1"
+                    className="text-xs font-medium text-[#F15025] hover:text-[#D9421C] transition-colors pt-2 pl-2"
                   >
-                    <Plus className="h-3 w-3" />
-                    Beschrijving toevoegen
+                    + Beschrijving toevoegen
                   </button>
                 </div>
 
