@@ -1247,9 +1247,8 @@ export function EmailReader({
         {/* Top action bar — sticky, grouped */}
         <TooltipProvider delayDuration={300}>
         <div className="flex items-center justify-between px-2 md:px-5 h-12 border-b border-[#F0EFEC] flex-shrink-0 bg-white sticky top-0 z-10">
-          {/* Left: Back */}
-          <div className="flex items-center gap-1">
-            <Button
+          {/* Left: Back + email-acties (markeer + organize) */}
+          <div className="flex items-center gap-0.5"><Button
               variant="ghost"
               size="sm"
               className="tap-press h-10 md:h-8 w-10 md:w-auto px-0 md:px-3 gap-1.5 text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F0EFEC]"
@@ -1258,10 +1257,7 @@ export function EmailReader({
               <ArrowLeft className="h-5 w-5 md:h-4 md:w-4" />
               <span className="text-[14px] hidden md:inline">Terug</span>
             </Button>
-          </div>
-
-          {/* Center: Action buttons with tooltips */}
-          <div className="flex items-center gap-0.5">
+            <div className="w-px h-5 bg-[#EBEBEB] mx-1.5 hidden md:block" />
             <Tooltip><TooltipTrigger asChild>
               <Button variant="ghost" size="icon" className="tap-press h-10 w-10 md:h-8 md:w-8 text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC] transition-colors duration-150" onClick={() => { hapticLight(); if (email) onArchive?.(email) }}>
                 <Archive className="h-[18px] w-[18px] md:h-4 md:w-4" />
