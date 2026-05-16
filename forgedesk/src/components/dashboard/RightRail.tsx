@@ -327,6 +327,7 @@ function DezeWeekCard() {
           const date = new Date(weekStart)
           date.setDate(weekStart.getDate() + i)
           const isToday = i === todayIdx
+          const hasActivity = items.some(it => ((it.date.getDay() + 6) % 7) === i)
           return (
             <div key={i} className="flex flex-col items-center gap-1">
               <span className="text-[10px] uppercase text-[#9B9B95]">{d}</span>
@@ -338,6 +339,11 @@ function DezeWeekCard() {
               >
                 {date.getDate()}
               </span>
+              <span
+                className="w-1 h-1 rounded-full"
+                style={{ backgroundColor: hasActivity ? '#F15025' : 'transparent' }}
+                aria-hidden
+              />
             </div>
           )
         })}
