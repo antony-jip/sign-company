@@ -25,6 +25,7 @@ import type { Email, EmailAttachment } from '@/types'
 import { logger } from '../../utils/logger'
 import type { EmailFolder, FilterType, FontSize, ViewMode } from './emailTypes'
 import { extractSenderEmail, extractSenderName, parseSearchQuery, IMAP_FOLDER_MAP, KEYBOARD_SHORTCUTS, SEARCH_OPERATORS, calculateSnoozeDate, getAvatarStyle, formatRelativeSync } from './emailHelpers'
+import { useVirtualizer } from '@tanstack/react-virtual'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -483,6 +484,26 @@ export function EmailLayout() {
     return 'Vorig jaar of ouder'
   }, [])
 
+  const rowVirtualizer = useVirtualizer({
+    count: flatItems.length,
+    getScrollElement: () => emailListRef.current,
+    estimateSize: (i) => {
+      const it = flatItems[i]
+      if (!it) return 46
+      if (it.type === 'header-pinned' || it.type === 'header-group') return 36
+      // Stacked desktop = 46, inline / mobile = ~70
+      return isDesktop && listStyle === 'stacked' ? 46 : 70
+    },
+    overscan: 10,
+    getItemKey: (i) => {
+      const it = flatItems[i]
+      if (!it) return i
+      if (it.type === 'header-pinned') return 'header-pinned'
+      if (it.type === 'header-group') return `group-${it.group}`
+      return `email-${it.email.id}`
+    },
+  })
+
   const emailsByGroup = useMemo(() => {
     const map = new Map<string, string[]>()
     for (const email of threadedEmails) {
@@ -493,6 +514,36 @@ export function EmailLayout() {
       map.set(group, ids)
     }
     return map
+  }, [threadedEmails, getDateGroup])
+
+  // Platte items-array voor virtualization: één entry per zichtbare rij
+  // (header of email). Headers blijven scrollen mee — geen sticky meer,
+  // want absolute positioning binnen de virtualizer maakt CSS-sticky stuk.
+  type FlatRow =
+    | { type: 'header-pinned' }
+    | { type: 'header-group'; group: string }
+    | { type: 'email'; email: Email; index: number }
+  const flatItems = useMemo<FlatRow[]>(() => {
+    if (threadedEmails.length === 0) return []
+    const items: FlatRow[] = []
+    let lastGroup: string | null = null
+    let inPinnedSection = !!threadedEmails[0].pinned
+    if (inPinnedSection) items.push({ type: 'header-pinned' })
+    threadedEmails.forEach((email, idx) => {
+      if (inPinnedSection && !email.pinned) {
+        inPinnedSection = false
+        lastGroup = null
+      }
+      if (!inPinnedSection) {
+        const group = getDateGroup(email.datum)
+        if (group !== lastGroup) {
+          items.push({ type: 'header-group', group })
+          lastGroup = group
+        }
+      }
+      items.push({ type: 'email', email, index: idx })
+    })
+    return items
   }, [threadedEmails, getDateGroup])
 
   const toggleCheckGroup = useCallback((group: string) => {
@@ -997,14 +1048,17 @@ export function EmailLayout() {
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [viewMode])
 
-  // Houd de focused-row in view bij j/k-navigatie
+  // Houd de focused-row in view bij j/k-navigatie. Virtualizer scrolt
+  // gericht naar het flat-item (header of email) dat overeenkomt met het
+  // gefocuste email-id — gewoon scrollIntoView werkt niet bij absolute
+  // positioning.
   useEffect(() => {
     if (focusedIndex < 0 || viewMode !== 'idle') return
     const email = threadedEmails[focusedIndex]
     if (!email) return
-    const el = document.querySelector(`[data-email-id="${email.id}"]`) as HTMLElement | null
-    el?.scrollIntoView({ block: 'nearest' })
-  }, [focusedIndex, threadedEmails, viewMode])
+    const flatIdx = flatItems.findIndex((it) => it.type === 'email' && it.email.id === email.id)
+    if (flatIdx >= 0) rowVirtualizer.scrollToIndex(flatIdx, { align: 'auto' })
+  }, [focusedIndex, threadedEmails, viewMode, flatItems, rowVirtualizer])
 
   // Tick elke 30s zodat "Bijgewerkt X min geleden"-indicator vanzelf doorloopt
   useEffect(() => {
@@ -1660,81 +1714,80 @@ export function EmailLayout() {
                   </button>
                 </div>
               )}
-              {(() => {
-                const nodes: React.ReactNode[] = []
-                let lastGroup: string | null = null
-                let inPinnedSection = threadedEmails.length > 0 && !!threadedEmails[0].pinned
-                if (inPinnedSection) {
-                  nodes.push(
+              <div
+                style={{
+                  height: rowVirtualizer.getTotalSize(),
+                  position: 'relative',
+                  width: '100%',
+                }}
+              >
+                {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                  const it = flatItems[virtualRow.index]
+                  if (!it) return null
+                  return (
                     <div
-                      key="pinned-header"
-                      className="px-4 pt-5 pb-2 text-[11px] md:text-[10px] font-semibold md:uppercase md:tracking-[0.1em] text-[#6B6B66] bg-white/85 md:bg-gradient-to-b md:from-white md:to-transparent backdrop-blur-md md:backdrop-blur-none sticky top-0 z-[1]"
+                      key={virtualRow.key}
+                      data-index={virtualRow.index}
+                      ref={rowVirtualizer.measureElement}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        transform: `translateY(${virtualRow.start}px)`,
+                      }}
                     >
-                      Vastgepind
+                      {it.type === 'header-pinned' ? (
+                        <div className="px-4 pt-5 pb-2 text-[11px] md:text-[10px] font-semibold md:uppercase md:tracking-[0.1em] text-[#6B6B66]">
+                          Vastgepind
+                        </div>
+                      ) : it.type === 'header-group' ? (() => {
+                        const groupIds = emailsByGroup.get(it.group) || []
+                        const allGroupChecked = groupIds.length > 0 && groupIds.every(id => checkedEmails.has(id))
+                        const someGroupChecked = !allGroupChecked && groupIds.some(id => checkedEmails.has(id))
+                        return (
+                          <div className="px-4 pt-5 pb-2 text-[11px] md:text-[10px] font-semibold md:uppercase md:tracking-[0.1em] text-[#6B6B66] flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={allGroupChecked}
+                              ref={(el) => { if (el) el.indeterminate = someGroupChecked }}
+                              onChange={() => toggleCheckGroup(it.group)}
+                              className="h-3.5 w-3.5 rounded border-foreground/20 cursor-pointer accent-[#1A535C]"
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                            {it.group === 'Vandaag' ? (
+                              <>
+                                <span className="md:hidden">Eerder vandaag</span>
+                                <span className="hidden md:inline">{it.group}</span>
+                              </>
+                            ) : it.group}
+                          </div>
+                        )
+                      })() : (
+                        <EmailListItem
+                          email={it.email}
+                          isActive={selectedEmail?.id === it.email.id}
+                          isChecked={checkedEmails.has(it.email.id)}
+                          isFocused={focusedIndex === it.index}
+                          fontSize={fontSize}
+                          stacked={isDesktop && listStyle === 'stacked'}
+                          onSelect={handleSelectEmail}
+                          onTogglePin={handleTogglePin}
+                          onToggleCheck={toggleCheckEmail}
+                          onPrefetch={prefetchEmailBody}
+                          onArchive={handleArchive}
+                          onDelete={handleDelete}
+                          onToggleRead={handleToggleRead}
+                          salesMode={selectedFolder === 'sales-wacht' ? 'wacht' : selectedFolder === 'sales-beantwoord' ? 'beantwoord' : undefined}
+                          onMarkeerBeantwoord={selectedFolder === 'sales-wacht' ? handleSalesMarkeerBeantwoord : undefined}
+                          onWisWacht={selectedFolder === 'sales-wacht' ? handleSalesWisWacht : undefined}
+                          onTerugNaarWacht={selectedFolder === 'sales-beantwoord' ? handleSalesTerugNaarWacht : undefined}
+                        />
+                      )}
                     </div>
                   )
-                }
-                threadedEmails.forEach((email, index) => {
-                  if (inPinnedSection && !email.pinned) {
-                    inPinnedSection = false
-                    lastGroup = null
-                  }
-
-                  if (!inPinnedSection) {
-                    const group = getDateGroup(email.datum)
-                    if (group !== lastGroup) {
-                      const groupIds = emailsByGroup.get(group) || []
-                      const allGroupChecked = groupIds.length > 0 && groupIds.every(id => checkedEmails.has(id))
-                      const someGroupChecked = !allGroupChecked && groupIds.some(id => checkedEmails.has(id))
-                      nodes.push(
-                        <div
-                          key={`group-${group}-${index}`}
-                          className="px-4 pt-5 pb-2 text-[11px] md:text-[10px] font-semibold md:uppercase md:tracking-[0.1em] text-[#6B6B66] bg-white/85 md:bg-gradient-to-b md:from-white md:to-transparent backdrop-blur-md md:backdrop-blur-none sticky top-0 z-[1] flex items-center gap-2"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={allGroupChecked}
-                            ref={(el) => { if (el) el.indeterminate = someGroupChecked }}
-                            onChange={() => toggleCheckGroup(group)}
-                            className="h-3.5 w-3.5 rounded border-foreground/20 cursor-pointer accent-[#1A535C]"
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                          {group === 'Vandaag' ? (
-                            <>
-                              <span className="md:hidden">Eerder vandaag</span>
-                              <span className="hidden md:inline">{group}</span>
-                            </>
-                          ) : group}
-                        </div>
-                      )
-                      lastGroup = group
-                    }
-                  }
-                  nodes.push(
-                    <EmailListItem
-                      key={email.id}
-                      email={email}
-                      isActive={selectedEmail?.id === email.id}
-                      isChecked={checkedEmails.has(email.id)}
-                      isFocused={focusedIndex === index}
-                      fontSize={fontSize}
-                      stacked={isDesktop && listStyle === 'stacked'}
-                      onSelect={handleSelectEmail}
-                      onTogglePin={handleTogglePin}
-                      onToggleCheck={toggleCheckEmail}
-                      onPrefetch={prefetchEmailBody}
-                      onArchive={handleArchive}
-                      onDelete={handleDelete}
-                      onToggleRead={handleToggleRead}
-                      salesMode={selectedFolder === 'sales-wacht' ? 'wacht' : selectedFolder === 'sales-beantwoord' ? 'beantwoord' : undefined}
-                      onMarkeerBeantwoord={selectedFolder === 'sales-wacht' ? handleSalesMarkeerBeantwoord : undefined}
-                      onWisWacht={selectedFolder === 'sales-wacht' ? handleSalesWisWacht : undefined}
-                      onTerugNaarWacht={selectedFolder === 'sales-beantwoord' ? handleSalesTerugNaarWacht : undefined}
-                    />
-                  )
-                })
-                return nodes
-              })()}
+                })}
+              </div>
               {isLoadingMore && (
                 <div className="flex items-center justify-center py-5">
                   <Loader2 className="h-4 w-4 animate-spin text-[#1A535C]/40 mr-2" />

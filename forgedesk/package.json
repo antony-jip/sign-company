@@ -37,6 +37,7 @@
     "@sentry/react": "^10.49.0",
     "@stripe/stripe-js": "^5.5.0",
     "@supabase/supabase-js": "^2.39.3",
+    "@tanstack/react-virtual": "^3.13.24",
     "@trigger.dev/sdk": "^4.4.3",
     "@types/zxcvbn": "^4.4.5",
     "@upstash/ratelimit": "^2.0.8",
