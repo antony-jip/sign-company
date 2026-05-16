@@ -1254,6 +1254,9 @@ export function EmailLayout() {
   const handleBack = useCallback(() => {
     viewTransition(() => {
       setSelectedEmail(null)
+      // Reset compose-keuzes zodat een afgebroken sessie niet bij een
+      // volgende compose (bv. via /email/compose deeplink) door-lekt.
+      setComposeProjectId(null)
       setViewMode('idle')
     }, 'back')
   }, [])

@@ -49,7 +49,9 @@ import {
   Wrench as PhWrenchTab,
   CurrencyEur as PhCurrencyEur,
   NotePencil as PhNotePencil,
+  EnvelopeSimple as PhEnvelope,
 } from '@phosphor-icons/react'
+import { getEmailsVoorProject, type ProjectMail } from '@/services/emailProjectService'
 import { DatePicker } from '@/components/ui/date-picker'
 // Card/Badge removed — using DOEN text-based styling
 import { Button } from '@/components/ui/button'
@@ -194,7 +196,7 @@ function getStatusDotColor(status: string): string {
   }
 }
 
-type ProjectTab = 'overzicht' | 'werkbon' | 'financieel' | 'notities'
+type ProjectTab = 'overzicht' | 'werkbon' | 'financieel' | 'email' | 'notities'
 
 
 
@@ -243,7 +245,7 @@ export function ProjectDetail() {
   }, [])
   const [activeTab, setActiveTab] = useState<ProjectTab>(() => {
     const tabParam = new URLSearchParams(window.location.search).get('tab')
-    return (['overzicht', 'werkbon', 'financieel', 'notities'].includes(tabParam || '') ? tabParam : 'overzicht') as ProjectTab
+    return (['overzicht', 'werkbon', 'financieel', 'email', 'notities'].includes(tabParam || '') ? tabParam : 'overzicht') as ProjectTab
   })
   const handleTabChange = (tab: ProjectTab) => {
     setActiveTab(tab)
@@ -329,6 +331,8 @@ export function ProjectDetail() {
   const [projectMontages, setProjectMontages] = useState<MontageAfspraak[]>([])
   const [projectFacturen, setProjectFacturen] = useState<Factuur[]>([])
   const [projectUitgaven, setProjectUitgaven] = useState<Uitgave[]>([])
+  const [projectEmails, setProjectEmails] = useState<ProjectMail[]>([])
+  const [emailsLoading, setEmailsLoading] = useState(false)
   const [hasVisualisaties, setHasVisualisaties] = useState(false)
   const [montageDialogOpen, setMontageDialogOpen] = useState(false)
   const [montageTitel, setMontageTitel] = useState('')
@@ -654,6 +658,13 @@ export function ProjectDetail() {
           setProjectFotos(fotosData || [])
           setProjectFacturen(facturenData || [])
           setProjectUitgaven(uitgavenData || [])
+
+          // Gekoppelde email-threads (laad onafhankelijk, los van overige Promise.all)
+          setEmailsLoading(true)
+          getEmailsVoorProject(id)
+            .then((mails) => { if (!cancelled) setProjectEmails(mails) })
+            .catch(() => { /* stil — RLS kan niets opleveren */ })
+            .finally(() => { if (!cancelled) setEmailsLoading(false) })
 
           // Check if visualisaties exist for conditional rendering
           getSigningVisualisatiesByProject(id).then(viz => {
@@ -1082,6 +1093,7 @@ export function ProjectDetail() {
             { key: 'overzicht' as ProjectTab,  label: 'Overzicht',  count: 0,                          Icon: PhListBullets },
             { key: 'werkbon' as ProjectTab,    label: 'Werkbon',    count: projectWerkbonnen.length,   Icon: PhWrenchTab   },
             { key: 'financieel' as ProjectTab, label: 'Financieel', count: projectFacturen.length,     Icon: PhCurrencyEur },
+            { key: 'email' as ProjectTab,      label: 'E-mail',     count: projectEmails.length,       Icon: PhEnvelope    },
             { key: 'notities' as ProjectTab,   label: 'Notities',   count: 0,                          Icon: PhNotePencil  },
           ]).map((tab) => {
             const TabIcon = tab.Icon
@@ -1668,6 +1680,67 @@ export function ProjectDetail() {
                 )
               })}
             </div>
+          </div>
+        )}
+      </div>
+      )}
+
+      {/* ══════════ E-MAIL TAB ══════════
+          Alle e-mailthreads die aan dit project gekoppeld zijn (via de
+          read-sidebar of compose-sidebar). Eén rij per mail, klikbaar
+          om naar de email-module te navigeren. */}
+      {activeTab === 'email' && (
+      <div className="px-8 py-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold text-[#1A1A1A] tracking-[-0.3px]">E-mailcommunicatie</h2>
+          <button
+            type="button"
+            onClick={() => navigate('/email')}
+            className="text-[12px] text-[#1A535C] hover:underline"
+          >
+            Open mail-module
+          </button>
+        </div>
+        {emailsLoading ? (
+          <p className="text-[13px] text-[#9B9B95]">Laden.</p>
+        ) : projectEmails.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-[#EBEBEB] p-8 text-center">
+            <PhEnvelope size={28} weight="duotone" className="mx-auto text-[#B0ADA8] mb-2" />
+            <p className="text-[13px] text-[#6B6B66]">Nog geen e-mails gekoppeld aan dit project.</p>
+            <p className="text-[11px] text-[#9B9B95] mt-1">
+              Open een mail in de mail-module, kies "Koppel aan project" in de zijbalk en selecteer dit project.
+            </p>
+          </div>
+        ) : (
+          <div className="rounded-xl border border-[#EBEBEB] bg-white divide-y divide-[#F0EFEC] overflow-hidden">
+            {projectEmails.map((mail) => {
+              const senderLabel = (mail.from_name || mail.van || '').replace(/<[^>]+>/g, '').trim() || mail.van
+              const preview = (mail.body_text || '').replace(/\s+/g, ' ').trim().slice(0, 140)
+              return (
+                <button
+                  key={mail.id}
+                  type="button"
+                  onClick={() => navigate('/email')}
+                  className="w-full text-left px-4 py-3 hover:bg-[#F8F7F5] transition-colors duration-150 flex items-start gap-3"
+                >
+                  <div className="w-9 h-9 rounded-lg bg-[#1A535C]/[0.06] flex items-center justify-center flex-shrink-0">
+                    <PhEnvelope size={16} weight="duotone" className="text-[#1A535C]" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className={cn('text-[13px] text-[#1A1A1A] truncate', !mail.gelezen && 'font-semibold')}>
+                        {senderLabel}
+                      </span>
+                      <span className="text-[11px] text-[#9B9B95] tabular-nums whitespace-nowrap ml-auto flex-shrink-0">
+                        {new Date(mail.datum).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}
+                      </span>
+                    </div>
+                    <div className="text-[13px] text-[#3A3A36] truncate">{mail.onderwerp || '(geen onderwerp)'}</div>
+                    {preview && <div className="text-[12px] text-[#9B9B95] truncate mt-0.5">{preview}</div>}
+                  </div>
+                </button>
+              )
+            })}
           </div>
         )}
       </div>

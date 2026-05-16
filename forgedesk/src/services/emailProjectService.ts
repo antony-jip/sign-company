@@ -70,6 +70,39 @@ export async function getThreadsVoorProject(projectId: string): Promise<string[]
   return data.map((r) => r.thread_id as string)
 }
 
+export interface ProjectMail {
+  id: string
+  thread_id: string
+  van: string
+  aan: string
+  onderwerp: string
+  datum: string
+  body_text: string | null
+  gelezen: boolean
+  bijlagen: number
+  from_name: string | null
+}
+
+/**
+ * Alle mails die aan een project gekoppeld zijn via thread_id.
+ * Geeft één rij per email, chronologisch nieuwste eerst. Het projectteam
+ * krijgt zo de volledige communicatie te zien — past bij de transparantie-
+ * conventie binnen één organisatie.
+ */
+export async function getEmailsVoorProject(projectId: string, limit = 100): Promise<ProjectMail[]> {
+  if (!projectId || !isSupabaseConfigured() || !supabase) return []
+  const threadIds = await getThreadsVoorProject(projectId)
+  if (threadIds.length === 0) return []
+  const { data, error } = await supabase
+    .from('emails')
+    .select('id, thread_id, van, aan, onderwerp, datum, body_text, gelezen, bijlagen, from_name')
+    .in('thread_id', threadIds)
+    .order('datum', { ascending: false })
+    .limit(limit)
+  if (error || !data) return []
+  return (data as ProjectMail[])
+}
+
 /**
  * Project-suggesties bij een email-afzender:
  * - Probeer eerst klant te matchen op email (klanten.email of contactpersonen)
