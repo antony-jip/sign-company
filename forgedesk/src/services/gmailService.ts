@@ -177,10 +177,12 @@ export interface IMAPEmailDetail extends IMAPEmailSummary {
   cc?: string
   bodyHtml: string
   bodyText: string
-  // `content` is optioneel: aanwezig voor image-bijlagen onder 5 MB die de
-  // server inline meeleverde, zodat de reader meteen previews kan tonen
-  // zonder tweede IMAP-roundtrip.
-  attachments: { filename: string; contentType: string; size: number; content?: string }[]
+  // `content` (base64) is optioneel: aanwezig voor image-bijlagen onder 5 MB
+  // die de server inline meeleverde voor de cold-pad (eerste open).
+  // `storage_url` is een signed URL naar Supabase Storage: aanwezig voor
+  // bijlagen die in de persistent cache zitten (sprint 3). Voorkeur:
+  // storage_url > content > tweede roundtrip.
+  attachments: { filename: string; contentType: string; size: number; content?: string; storage_url?: string }[]
   messageId?: string
   inReplyTo?: string
 }
@@ -297,7 +299,10 @@ export interface EmailAttachmentDownload {
   filename: string
   contentType: string
   size: number
-  content: string // base64
+  // Ofwel `content` (base64, IMAP-pad) ofwel `storage_url` (signed URL,
+  // cache-hit). Caller geeft voorkeur aan storage_url indien aanwezig.
+  content?: string
+  storage_url?: string
 }
 
 export async function downloadEmailAttachment(

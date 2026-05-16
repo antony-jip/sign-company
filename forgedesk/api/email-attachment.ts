@@ -61,6 +61,49 @@ async function getEmailCredentials(userId: string): Promise<EmailCredentials> {
   }
 }
 
+// ───── Persistent attachment-cache (sprint 3) ─────
+const STORAGE_BUCKET = 'email-attachments'
+const SIGNED_URL_TTL = 60 * 60 // 1 uur
+const MAX_CACHE_IMAGE_BYTES = 10 * 1024 * 1024
+const MAX_CACHE_PDF_BYTES = 25 * 1024 * 1024
+
+function isCacheable(filename: string, contentType: string, size: number, isInlineCid: boolean): boolean {
+  if (isInlineCid || !filename || size === 0) return false
+  const ct = contentType.toLowerCase()
+  const ext = filename.split('.').pop()?.toLowerCase() || ''
+  const isImage = ct.startsWith('image/') || ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext)
+  const isPdf = ct === 'application/pdf' || ext === 'pdf'
+  return (isImage && size <= MAX_CACHE_IMAGE_BYTES) || (isPdf && size <= MAX_CACHE_PDF_BYTES)
+}
+
+async function writeAttachmentToCache(
+  user_id: string,
+  email_uuid: string,
+  filename: string,
+  contentType: string,
+  buffer: Buffer,
+): Promise<void> {
+  const path = `${user_id}/${email_uuid}/${filename}`
+  const { error: uploadErr } = await supabaseAdmin.storage
+    .from(STORAGE_BUCKET)
+    .upload(path, buffer, { contentType, upsert: true })
+  if (uploadErr) {
+    console.warn('[email-attachment-cache] upload mislukt voor', filename, uploadErr.message)
+    return
+  }
+  await supabaseAdmin
+    .from('email_attachment_cache')
+    .upsert({
+      user_id,
+      email_uuid,
+      filename,
+      content_type: contentType,
+      size: buffer.length,
+      storage_path: path,
+      cached_at: new Date().toISOString(),
+    }, { onConflict: 'email_uuid,filename' })
+}
+
 export const config = { maxDuration: 30 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -79,6 +122,42 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const user_id = await verifyUser(req)
+
+    // Resolve email_uuid voor cache-lookup (snel pad bij hits).
+    const { data: emailRow } = await supabaseAdmin
+      .from('emails')
+      .select('id')
+      .eq('user_id', user_id)
+      .eq('uid', Number(uid))
+      .eq('imap_folder', folder)
+      .maybeSingle()
+    const email_uuid = emailRow?.id || null
+
+    // Cache-shortcut: single-filename via signed URL als attachment in cache zit.
+    if (email_uuid && filename && !all) {
+      const { data: row } = await supabaseAdmin
+        .from('email_attachment_cache')
+        .select('content_type, size, storage_path')
+        .eq('user_id', user_id)
+        .eq('email_uuid', email_uuid)
+        .eq('filename', filename)
+        .maybeSingle()
+      if (row) {
+        const { data: signed } = await supabaseAdmin.storage
+          .from(STORAGE_BUCKET)
+          .createSignedUrl(row.storage_path, SIGNED_URL_TTL)
+        if (signed?.signedUrl) {
+          return res.status(200).json({
+            filename,
+            contentType: row.content_type,
+            size: row.size,
+            storage_url: signed.signedUrl,
+          })
+        }
+      }
+    }
+
+    // IMAP-fallback: bestaande pad + cache-write voor volgende keer.
     const creds = await getEmailCredentials(user_id)
 
     const client = new ImapFlow({
@@ -123,9 +202,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             contentType: a.contentType || 'application/octet-stream',
             size: buf.length,
             content: buf.toString('base64'),
+            buffer: buf,
+            isInlineCid: !!a.contentId || a.contentDisposition === 'inline',
           }
         })
-      return res.status(200).json({ attachments: payload })
+
+      // Fire-and-forget cache-write parallel met response: gebruikers daarna
+      // krijgen signed URLs zonder nieuwe IMAP-roundtrip.
+      if (email_uuid) {
+        const cacheable = payload.filter((p) => isCacheable(p.filename, p.contentType, p.size, p.isInlineCid))
+        void Promise.all(cacheable.map((p) =>
+          writeAttachmentToCache(user_id, email_uuid, p.filename, p.contentType, p.buffer),
+        )).catch((err) => console.warn('[email-attachment-cache] bulk-write mislukt:', err))
+      }
+
+      return res.status(200).json({
+        attachments: payload.map(({ filename, contentType, size, content }) => ({
+          filename, contentType, size, content,
+        })),
+      })
     }
 
     const attachment = allAttachments.find((a) => a.filename === filename)
@@ -137,10 +232,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const contentBuffer = Buffer.isBuffer(attachment.content)
       ? attachment.content
       : Buffer.from(attachment.content)
+    const ct = attachment.contentType || 'application/octet-stream'
+    const fname = attachment.filename || filename!
+    const isInlineCid = !!attachment.contentId || attachment.contentDisposition === 'inline'
+
+    // Cache-write voor volgende keer (fire-and-forget)
+    if (email_uuid && isCacheable(fname, ct, contentBuffer.length, isInlineCid)) {
+      void writeAttachmentToCache(user_id, email_uuid, fname, ct, contentBuffer)
+        .catch((err) => console.warn('[email-attachment-cache] single-write mislukt:', err))
+    }
 
     return res.status(200).json({
-      filename: attachment.filename || filename,
-      contentType: attachment.contentType || 'application/octet-stream',
+      filename: fname,
+      contentType: ct,
       size: contentBuffer.length,
       content: contentBuffer.toString('base64'),
     })

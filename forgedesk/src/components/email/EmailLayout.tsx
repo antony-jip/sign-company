@@ -162,6 +162,9 @@ export function EmailLayout() {
   // Bewaard per email-id zodat EmailReader meteen thumbnails kan tonen
   // zonder tweede IMAP-roundtrip naar /api/email-attachment.
   const attachmentBytesCacheRef = useRef<Map<string, Record<string, string>>>(new Map())
+  // Signed URLs uit de persistent attachment-cache (sprint 3). Snelst van
+  // alledrie: direct als <img src>, geen base64-decode of bulk-fetch nodig.
+  const attachmentUrlsCacheRef = useRef<Map<string, Record<string, string>>>(new Map())
 
   const fetchLimit = emailFetchLimit || 200
 
@@ -791,13 +794,18 @@ export function EmailLayout() {
         bodyCacheRef.current.set(email.id, imapBody)
         if (detail.attachments?.length) {
           const inlineBytes: Record<string, string> = {}
+          const signedUrls: Record<string, string> = {}
           const metaOnly: EmailAttachment[] = detail.attachments.map((a) => {
             if (a.content) inlineBytes[a.filename] = a.content
+            if (a.storage_url) signedUrls[a.filename] = a.storage_url
             return { filename: a.filename, contentType: a.contentType, size: a.size }
           })
           attachmentCacheRef.current.set(email.id, metaOnly)
           if (Object.keys(inlineBytes).length > 0) {
             attachmentBytesCacheRef.current.set(email.id, inlineBytes)
+          }
+          if (Object.keys(signedUrls).length > 0) {
+            attachmentUrlsCacheRef.current.set(email.id, signedUrls)
           }
         }
         return imapBody
@@ -833,13 +841,18 @@ export function EmailLayout() {
       const detail = await readEmailFromIMAP(uid, IMAP_FOLDER_MAP[folder] || 'INBOX')
       if (detail.attachments?.length) {
         const inlineBytes: Record<string, string> = {}
+        const signedUrls: Record<string, string> = {}
         const metaOnly: EmailAttachment[] = detail.attachments.map((a) => {
           if (a.content) inlineBytes[a.filename] = a.content
+          if (a.storage_url) signedUrls[a.filename] = a.storage_url
           return { filename: a.filename, contentType: a.contentType, size: a.size }
         })
         attachmentCacheRef.current.set(email.id, metaOnly)
         if (Object.keys(inlineBytes).length > 0) {
           attachmentBytesCacheRef.current.set(email.id, inlineBytes)
+        }
+        if (Object.keys(signedUrls).length > 0) {
+          attachmentUrlsCacheRef.current.set(email.id, signedUrls)
         }
         return metaOnly
       }
@@ -1420,6 +1433,7 @@ export function EmailLayout() {
             allEmails={emails}
             imapFolder={IMAP_FOLDER_MAP[selectedFolder] || 'INBOX'}
             prefetchedAttachmentBytes={attachmentBytesCacheRef.current.get(selectedEmail.id)}
+            prefetchedAttachmentUrls={attachmentUrlsCacheRef.current.get(selectedEmail.id)}
             onTogglePin={handleTogglePin}
             onToggleRead={handleToggleRead}
             onDelete={handleDeleteAndNavigate}
