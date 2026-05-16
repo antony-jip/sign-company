@@ -1378,10 +1378,10 @@ export function EmailReader({
               className="h-10 md:h-8 px-2.5 md:px-3 gap-1.5 text-[13px] text-[#6B6B66] hover:text-[#F15025] hover:bg-[#F15025]/[0.06] rounded-md transition-colors duration-150 disabled:opacity-50"
               onClick={handleGenerateReplyFromReader}
               disabled={forgieLoading}
-              title="Daan schrijft antwoord (⌘⇧R)"
+              title="Beantwoord met AI (⌘⇧R)"
             >
               {forgieLoading ? <Loader2 className="h-[18px] w-[18px] md:h-3.5 md:w-3.5 animate-spin" /> : <Sparkles className="h-[18px] w-[18px] md:h-3.5 md:w-3.5" />}
-              <span>Daan</span>
+              <span>Beantwoord</span>
             </Button>
             {emailIndex !== undefined && emailTotal !== undefined && (
               <span className="hidden md:contents">
@@ -1443,9 +1443,9 @@ export function EmailReader({
               {/* Reply/Forward — primary on mobile is dominant, secondaries flank */}
               <div className="flex items-stretch md:items-center gap-2 md:gap-1.5">
                 <button onClick={() => { hapticLight(); handleReply('reply') }}
-                  className="tap-press flex-1 md:flex-none flex items-center justify-center gap-1.5 h-10 md:h-8 px-3 rounded-lg text-[14px] md:text-[13px] font-semibold text-[#1A535C] bg-[#1A535C]/[0.08] md:bg-[#1A535C]/[0.06] hover:bg-[#1A535C]/[0.12] transition-colors duration-150"
+                  className="tap-press flex-1 md:flex-none flex items-center justify-center gap-1.5 h-10 md:h-9 px-4 md:px-4 rounded-lg text-[14px] md:text-[13px] font-semibold text-white bg-[#1A535C] hover:bg-[#0F3C44] shadow-sm transition-colors duration-150"
                   title="Beantwoorden (r)">
-                  <Reply className="h-4 w-4 md:h-3.5 md:w-3.5" />
+                  <Reply className="h-4 w-4" />
                   <span>Beantwoorden</span>
                 </button>
                 <button onClick={() => { hapticLight(); handleReply('reply-all') }}
