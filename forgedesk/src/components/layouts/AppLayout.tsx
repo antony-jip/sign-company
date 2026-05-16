@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { Sidebar } from './Sidebar'
@@ -35,6 +35,20 @@ export function AppLayout() {
   const hideTopNav = !isDesktop && location.pathname.startsWith('/email')
   useTabShortcuts()
 
+  const [stickyHeader, setStickyHeader] = useState<boolean>(() =>
+    typeof window !== 'undefined' && window.localStorage.getItem('doen_topnav_sticky') === '1'
+  )
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const sync = () => setStickyHeader(window.localStorage.getItem('doen_topnav_sticky') === '1')
+    window.addEventListener('storage', sync)
+    window.addEventListener('doen-sticky-changed', sync)
+    return () => {
+      window.removeEventListener('storage', sync)
+      window.removeEventListener('doen-sticky-changed', sync)
+    }
+  }, [])
+
   if (layoutMode === 'topnav') {
     return (
       <>
@@ -42,9 +56,11 @@ export function AppLayout() {
           <OfflineBanner />
           <TrialBanner />
           <InkoopAILimietBanner variant="globaal" />
-          {!hideTopNav && <TopNav />}
-          <TabBar />
           <main className="flex-1 overflow-y-auto overflow-x-hidden" style={{ position: 'relative', zIndex: 0 }}>
+            <div className={stickyHeader ? 'sticky top-0 z-30' : ''}>
+              {!hideTopNav && <TopNav />}
+              <TabBar />
+            </div>
             <div className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-8 py-3 sm:py-4 md:py-6 pb-20 md:pb-6 w-full max-w-full overflow-hidden page-content-enter">
               <Outlet />
             </div>

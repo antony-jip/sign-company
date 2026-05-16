@@ -115,11 +115,16 @@ export function TopNav() {
     if (typeof window === 'undefined') return false
     return window.localStorage.getItem('doen_topnav_sticky') === '1'
   })
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem('doen_topnav_sticky', stickyHeader ? '1' : '0')
-    }
-  }, [stickyHeader])
+  const toggleStickyHeader = useCallback(() => {
+    setStickyHeader((prev) => {
+      const next = !prev
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem('doen_topnav_sticky', next ? '1' : '0')
+        window.dispatchEvent(new Event('doen-sticky-changed'))
+      }
+      return next
+    })
+  }, [])
 
   const userInitial = (user?.user_metadata?.voornaam?.[0] || user?.email?.[0] || 'U').toUpperCase()
   const userName = user?.user_metadata?.voornaam
@@ -127,7 +132,7 @@ export function TopNav() {
     : user?.email?.split('@')[0] || 'Gebruiker'
 
   return (
-    <header className="flex-shrink-0" style={{ position: stickyHeader ? 'sticky' : 'relative', top: stickyHeader ? 0 : undefined, zIndex: 30 }}>
+    <header className="flex-shrink-0" style={{ position: 'relative', zIndex: 30 }}>
       {/* ── Row 1: Utility bar ── */}
       <div
         className="relative flex items-center h-[50px] px-5 md:px-6"
@@ -209,7 +214,7 @@ export function TopNav() {
           </div>
 
           <button
-            onClick={() => setStickyHeader((s) => !s)}
+            onClick={toggleStickyHeader}
             className="hidden md:inline-flex w-7 h-7 rounded-md items-center justify-center hover:bg-black/[0.04] transition-colors"
             title={stickyHeader ? 'Top-menu losmaken' : 'Top-menu vastpinnen'}
             aria-label={stickyHeader ? 'Top-menu losmaken' : 'Top-menu vastpinnen'}
