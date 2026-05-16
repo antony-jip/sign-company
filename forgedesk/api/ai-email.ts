@@ -70,6 +70,7 @@ const PROMPTS: Record<string, string> = {
   'formalize': 'Herschrijf deze informele tekst als een zakelijke email in het Nederlands met aanhef en afsluiting. Antwoord alleen met de email tekst.\n\nInformele tekst:\n{text}',
   'write-followup': 'Schrijf een korte, beleefde follow-up email in het Nederlands. Er is {context} dagen geen reactie geweest. Niet opdringerig maar wel duidelijk. Antwoord alleen met de email tekst.\n\nOriginele email:\n{text}',
   'summarize': 'Vat deze email samen in 2-3 korte zinnen in het Nederlands. Antwoord alleen met de samenvatting.\n\nEmail:\n{text}',
+  'summarize-thread': 'Je vat een e-mailconversatie samen voor het projectteam van een signing-bedrijf. Focus op: (1) wat de klant heeft gevraagd of bevestigd, (2) welke afspraken zijn gemaakt — data, prijzen, leveringen, materialen, (3) welke openstaande vragen er nog zijn, (4) huidige status. Schrijf maximaal 5 korte bullets, in het Nederlands. Begin elke bullet met een gedachtenstreepje. Antwoord alleen met de bullets, geen aanhef of slotzin.\n\nConversatie (chronologisch, oudste eerst):\n{text}',
   'translate-en': 'Vertaal deze email naar het Engels. Behoud de toon. Antwoord alleen met de vertaling.\n\nEmail:\n{text}',
   'translate-nl': 'Vertaal deze email naar het Nederlands. Behoud de toon. Antwoord alleen met de vertaling.\n\nEmail:\n{text}',
   'generate-reply': 'Schrijf een kort en professioneel antwoord op deze email in het Nederlands. Antwoord alleen met de reply-tekst.\n\nEmail:\n{text}',

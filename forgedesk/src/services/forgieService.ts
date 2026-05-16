@@ -6,6 +6,7 @@ export type ForgieAction =
   | 'formalize'
   | 'write-followup'
   | 'summarize'
+  | 'summarize-thread'
   | 'translate-en'
   | 'translate-nl'
   | 'generate-reply'

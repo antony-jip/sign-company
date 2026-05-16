@@ -53,6 +53,8 @@ import {
 } from '@phosphor-icons/react'
 import { getEmailsVoorProject, type ProjectMail } from '@/services/emailProjectService'
 import { sanitizeEmailHTML } from '@/lib/sanitize'
+import { callForgie } from '@/services/forgieService'
+import { Sparkles, Loader2 as Loader2Icon, RefreshCw } from 'lucide-react'
 import { DatePicker } from '@/components/ui/date-picker'
 // Card/Badge removed — using DOEN text-based styling
 import { Button } from '@/components/ui/button'
@@ -335,6 +337,36 @@ export function ProjectDetail() {
   const [projectEmails, setProjectEmails] = useState<ProjectMail[]>([])
   const [emailsLoading, setEmailsLoading] = useState(false)
   const [expandedMailId, setExpandedMailId] = useState<string | null>(null)
+  const [aiSummary, setAiSummary] = useState<string | null>(null)
+  const [aiSummaryLoading, setAiSummaryLoading] = useState(false)
+
+  const handleSamenvatThread = useCallback(async () => {
+    if (aiSummaryLoading || projectEmails.length === 0) return
+    setAiSummaryLoading(true)
+    try {
+      const sorted = [...projectEmails].sort((a, b) =>
+        new Date(a.datum).getTime() - new Date(b.datum).getTime(),
+      )
+      const text = sorted
+        .map((m) => {
+          const datumLabel = new Date(m.datum).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' })
+          const sender = (m.from_name || m.van || '').replace(/<[^>]+>/g, '').trim() || m.van
+          const body = (m.body_text || (m.body_html || '').replace(/<[^>]*>/g, ' '))
+            .replace(/\s+/g, ' ')
+            .trim()
+          return `[${datumLabel}] ${sender}\nOnderwerp: ${m.onderwerp || '(geen)'}\n${body}`
+        })
+        .join('\n\n---\n\n')
+        .slice(0, 8000)
+      const res = await callForgie('summarize-thread', text)
+      if (res?.result) setAiSummary(res.result.trim())
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Onbekende fout'
+      toast.error(`Daan kon de thread niet samenvatten: ${msg}`)
+    } finally {
+      setAiSummaryLoading(false)
+    }
+  }, [aiSummaryLoading, projectEmails])
   const [hasVisualisaties, setHasVisualisaties] = useState(false)
   const [montageDialogOpen, setMontageDialogOpen] = useState(false)
   const [montageTitel, setMontageTitel] = useState('')
@@ -1697,6 +1729,66 @@ export function ProjectDetail() {
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-[#1A1A1A] tracking-[-0.3px]">E-mailcommunicatie</h2>
         </div>
+
+        {/* Daan-samenvatting bovenin — vat hele thread samen vanuit project-perspectief */}
+        {projectEmails.length > 0 && !emailsLoading && (
+          <div className="mb-5 rounded-xl border border-[#1A535C]/15 bg-gradient-to-br from-[#1A535C]/[0.04] to-[#F15025]/[0.03] p-4">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-lg bg-white shadow-sm flex items-center justify-center flex-shrink-0">
+                {aiSummaryLoading ? (
+                  <Loader2Icon className="h-4 w-4 text-[#F15025] animate-spin" />
+                ) : (
+                  <Sparkles className="h-4 w-4 text-[#F15025]" />
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <span className="text-[12px] font-semibold text-[#1A1A1A]">
+                    Daan
+                    <span className="text-[10px] font-normal text-[#9B9B95] ml-1.5 uppercase tracking-[0.06em]">
+                      Projectsamenvatting
+                    </span>
+                  </span>
+                  {aiSummary && !aiSummaryLoading && (
+                    <button
+                      type="button"
+                      onClick={handleSamenvatThread}
+                      className="text-[11px] text-[#1A535C] hover:text-[#0F3C44] inline-flex items-center gap-1 transition-colors"
+                      title="Opnieuw samenvatten"
+                    >
+                      <RefreshCw className="h-3 w-3" />
+                      Opnieuw
+                    </button>
+                  )}
+                </div>
+                {aiSummaryLoading ? (
+                  <p className="text-[13px] text-[#6B6B66]">
+                    Daan analyseert {projectEmails.length} bericht{projectEmails.length === 1 ? '' : 'en'}.
+                  </p>
+                ) : aiSummary ? (
+                  <div className="text-[13px] text-[#1A1A1A] leading-relaxed whitespace-pre-wrap">
+                    {aiSummary}
+                  </div>
+                ) : (
+                  <div>
+                    <p className="text-[12px] text-[#6B6B66] mb-2">
+                      Laat Daan deze {projectEmails.length} bericht{projectEmails.length === 1 ? '' : 'en'} samenvatten — afspraken, openstaande vragen en status in één blik.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleSamenvatThread}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#1A535C] text-white text-[12px] font-medium hover:bg-[#0F3C44] transition-colors"
+                    >
+                      <Sparkles className="h-3.5 w-3.5" />
+                      Samenvatten
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {emailsLoading ? (
           <p className="text-[13px] text-[#9B9B95]">Laden.</p>
         ) : projectEmails.length === 0 ? (
