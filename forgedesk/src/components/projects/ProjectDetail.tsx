@@ -1079,7 +1079,6 @@ export function ProjectDetail() {
                 <span className="text-[13px] font-semibold text-[#1A1A1A]">
                   {statusLabels[project.status] || project.status}<span className="text-[#F15025]">.</span>
                 </span>
-                <ChevronDown className="h-3 w-3 text-[#9B9B95] opacity-50 group-hover:opacity-100 transition-opacity" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-44">
