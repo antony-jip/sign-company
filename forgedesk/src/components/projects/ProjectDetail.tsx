@@ -52,6 +52,7 @@ import {
   EnvelopeSimple as PhEnvelope,
 } from '@phosphor-icons/react'
 import { getEmailsVoorProject, type ProjectMail } from '@/services/emailProjectService'
+import { sanitizeEmailHTML } from '@/lib/sanitize'
 import { DatePicker } from '@/components/ui/date-picker'
 // Card/Badge removed — using DOEN text-based styling
 import { Button } from '@/components/ui/button'
@@ -333,6 +334,7 @@ export function ProjectDetail() {
   const [projectUitgaven, setProjectUitgaven] = useState<Uitgave[]>([])
   const [projectEmails, setProjectEmails] = useState<ProjectMail[]>([])
   const [emailsLoading, setEmailsLoading] = useState(false)
+  const [expandedMailId, setExpandedMailId] = useState<string | null>(null)
   const [hasVisualisaties, setHasVisualisaties] = useState(false)
   const [montageDialogOpen, setMontageDialogOpen] = useState(false)
   const [montageTitel, setMontageTitel] = useState('')
@@ -1687,19 +1689,13 @@ export function ProjectDetail() {
 
       {/* ══════════ E-MAIL TAB ══════════
           Alle e-mailthreads die aan dit project gekoppeld zijn (via de
-          read-sidebar of compose-sidebar). Eén rij per mail, klikbaar
-          om naar de email-module te navigeren. */}
+          read-sidebar of compose-sidebar). Eén rij per mail, klikken
+          opent de body inline zodat het team de communicatie hier
+          kan lezen zonder naar de email-module te schakelen. */}
       {activeTab === 'email' && (
       <div className="px-8 py-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-[#1A1A1A] tracking-[-0.3px]">E-mailcommunicatie</h2>
-          <button
-            type="button"
-            onClick={() => navigate('/email')}
-            className="text-[12px] text-[#1A535C] hover:underline"
-          >
-            Open mail-module
-          </button>
         </div>
         {emailsLoading ? (
           <p className="text-[13px] text-[#9B9B95]">Laden.</p>
@@ -1716,29 +1712,63 @@ export function ProjectDetail() {
             {projectEmails.map((mail) => {
               const senderLabel = (mail.from_name || mail.van || '').replace(/<[^>]+>/g, '').trim() || mail.van
               const preview = (mail.body_text || '').replace(/\s+/g, ' ').trim().slice(0, 140)
+              const isExpanded = expandedMailId === mail.id
+              const bodyHtml = mail.body_html ? sanitizeEmailHTML(mail.body_html) : ''
               return (
-                <button
-                  key={mail.id}
-                  type="button"
-                  onClick={() => navigate('/email')}
-                  className="w-full text-left px-4 py-3 hover:bg-[#F8F7F5] transition-colors duration-150 flex items-start gap-3"
-                >
-                  <div className="w-9 h-9 rounded-lg bg-[#1A535C]/[0.06] flex items-center justify-center flex-shrink-0">
-                    <PhEnvelope size={16} weight="duotone" className="text-[#1A535C]" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <span className={cn('text-[13px] text-[#1A1A1A] truncate', !mail.gelezen && 'font-semibold')}>
-                        {senderLabel}
-                      </span>
-                      <span className="text-[11px] text-[#9B9B95] tabular-nums whitespace-nowrap ml-auto flex-shrink-0">
-                        {new Date(mail.datum).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}
-                      </span>
+                <div key={mail.id}>
+                  <button
+                    type="button"
+                    onClick={() => setExpandedMailId(isExpanded ? null : mail.id)}
+                    className={cn(
+                      'w-full text-left px-4 py-3 hover:bg-[#F8F7F5] transition-colors duration-150 flex items-start gap-3',
+                      isExpanded && 'bg-[#F8F7F5]',
+                    )}
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-[#1A535C]/[0.06] flex items-center justify-center flex-shrink-0">
+                      <ChevronDown
+                        className={cn(
+                          'h-4 w-4 text-[#1A535C] transition-transform duration-150',
+                          !isExpanded && '-rotate-90',
+                        )}
+                      />
                     </div>
-                    <div className="text-[13px] text-[#3A3A36] truncate">{mail.onderwerp || '(geen onderwerp)'}</div>
-                    {preview && <div className="text-[12px] text-[#9B9B95] truncate mt-0.5">{preview}</div>}
-                  </div>
-                </button>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className={cn('text-[13px] text-[#1A1A1A] truncate', !mail.gelezen && 'font-semibold')}>
+                          {senderLabel}
+                        </span>
+                        <span className="text-[11px] text-[#9B9B95] tabular-nums whitespace-nowrap ml-auto flex-shrink-0">
+                          {new Date(mail.datum).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}
+                        </span>
+                      </div>
+                      <div className="text-[13px] text-[#3A3A36] truncate">{mail.onderwerp || '(geen onderwerp)'}</div>
+                      {!isExpanded && preview && (
+                        <div className="text-[12px] text-[#9B9B95] truncate mt-0.5">{preview}</div>
+                      )}
+                    </div>
+                  </button>
+                  {isExpanded && (
+                    <div className="px-4 pb-5 pt-1 bg-[#FAFAF8]">
+                      <div className="ml-12 mr-2 text-[11px] text-[#9B9B95] mb-3">
+                        van {mail.van}  ·  aan {mail.aan}
+                      </div>
+                      {bodyHtml ? (
+                        <div
+                          className="ml-12 mr-2 text-[13px] text-[#1A1A1A] leading-relaxed prose prose-sm max-w-none [&_a]:text-[#1A535C] [&_a]:underline"
+                          dangerouslySetInnerHTML={{ __html: bodyHtml }}
+                        />
+                      ) : mail.body_text ? (
+                        <pre className="ml-12 mr-2 text-[13px] text-[#1A1A1A] leading-relaxed whitespace-pre-wrap font-sans">
+                          {mail.body_text}
+                        </pre>
+                      ) : (
+                        <p className="ml-12 mr-2 text-[12px] text-[#9B9B95] italic">
+                          Geen body opgeslagen — open de mail in de e-mailmodule om te lezen.
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
               )
             })}
           </div>

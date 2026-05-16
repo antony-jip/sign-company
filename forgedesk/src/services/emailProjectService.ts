@@ -78,6 +78,7 @@ export interface ProjectMail {
   onderwerp: string
   datum: string
   body_text: string | null
+  body_html: string | null
   gelezen: boolean
   bijlagen: number
   from_name: string | null
@@ -95,7 +96,7 @@ export async function getEmailsVoorProject(projectId: string, limit = 100): Prom
   if (threadIds.length === 0) return []
   const { data, error } = await supabase
     .from('emails')
-    .select('id, thread_id, van, aan, onderwerp, datum, body_text, gelezen, bijlagen, from_name')
+    .select('id, thread_id, van, aan, onderwerp, datum, body_text, body_html, gelezen, bijlagen, from_name')
     .in('thread_id', threadIds)
     .order('datum', { ascending: false })
     .limit(limit)
