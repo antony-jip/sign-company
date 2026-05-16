@@ -1461,8 +1461,10 @@ export function EmailLayout() {
       )}
 
       {/* Mobile floating "Opstellen" pill — bottom-right above MobileBottomNav.
-          Portaled to body to escape main's stacking context. */}
-      {viewMode === 'idle' && createPortal(
+          Portaled to body to escape main's stacking context. Verberg tijdens
+          bulk-selectie zodat de bulk action-bar (zelfde y-positie) niet
+          overlapt met de pill. */}
+      {viewMode === 'idle' && checkedEmails.size === 0 && createPortal(
         <button
           type="button"
           onClick={() => { hapticLight(); handleCompose() }}
