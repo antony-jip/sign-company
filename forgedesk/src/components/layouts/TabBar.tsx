@@ -168,7 +168,7 @@ export function TabBar() {
           </button>
         )}
 
-        {/* Tabs */}
+        {/* Tabs (with inline new-tab button right after the last tab) */}
         <div
           ref={scrollRef}
           className="tab-bar-scroll flex items-center gap-0.5 flex-1 overflow-x-auto"
@@ -191,6 +191,14 @@ export function TabBar() {
               />
             </div>
           ))}
+
+          <button
+            className="flex-shrink-0 w-6 h-6 rounded-md text-[#9B9B95] hover:text-[#F15025] hover:bg-[#F15025]/[0.08] flex items-center justify-center transition-colors ml-0.5"
+            onClick={newTab}
+            title="Nieuw tabblad (Cmd+T)"
+          >
+            <Plus className="w-3.5 h-3.5" />
+          </button>
         </div>
 
         {/* Scroll right */}
@@ -202,15 +210,6 @@ export function TabBar() {
             <ChevronRight className="w-3.5 h-3.5" />
           </button>
         )}
-
-        {/* New tab */}
-        <button
-          className="flex-shrink-0 w-6 h-6 rounded-md text-[#9B9B95] hover:text-[#F15025] hover:bg-[#F15025]/[0.08] flex items-center justify-center transition-colors ml-0.5"
-          onClick={newTab}
-          title="Nieuw tabblad (Cmd+T)"
-        >
-          <Plus className="w-3.5 h-3.5" />
-        </button>
       </div>
 
       {contextMenu && (
