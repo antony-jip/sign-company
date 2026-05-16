@@ -101,6 +101,8 @@ export function sanitizeDates<T extends object>(data: T): T {
   return result as T
 }
 
+const TYPED_PREFIXES = ['CN', 'CR', 'VS', 'EA']
+
 export async function getMaxNummer(table: string, field: string, prefix: string): Promise<number> {
   if (isSupabaseConfigured() && supabase) {
     const orgId = await getOrgId()
@@ -108,18 +110,20 @@ export async function getMaxNummer(table: string, field: string, prefix: string)
       .from(table)
       .select(field)
       .like(field, `${prefix}%`)
-      .order(field, { ascending: false })
-      .limit(1)
     if (orgId) query = query.eq('organisatie_id', orgId)
-    const { data } = await query
-    if (data && data.length > 0) {
-      const value = String((data[0] as unknown as Record<string, unknown>)[field])
+    const { data, error } = await query
+    if (error) throw error
+    if (!data) return 0
+    return data.reduce<number>((max, row) => {
+      const value = String((row as unknown as Record<string, unknown>)[field])
+      const collidesWithTyped = TYPED_PREFIXES.some(
+        (tp) => value.startsWith(tp) && !prefix.startsWith(tp)
+      )
+      if (collidesWithTyped) return max
       const tail = value.slice(prefix.length)
-      if (!/^\d+$/.test(tail)) return 0
-      const nr = parseInt(tail, 10)
-      return isNaN(nr) ? 0 : nr
-    }
-    return 0
+      if (!/^\d+$/.test(tail)) return max
+      return Math.max(max, parseInt(tail, 10))
+    }, 0)
   }
   return 0
 }
