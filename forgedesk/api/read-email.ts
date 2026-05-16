@@ -278,8 +278,12 @@ async function fetchFromIMAP(opts: {
     const size = a.size || 0
     const ext = filename.split('.').pop()?.toLowerCase() || ''
     const isImage = contentType.toLowerCase().startsWith('image/') || inlineImageExts.includes(ext)
+    // CID-inline images (logo's in HTML-mails) zitten al in body_html als
+    // data-URI; nogmaals meesturen blaast de response op tot tientallen MB
+    // bij newsletters met veel inline beeldjes.
+    const isInlineCid = !!a.contentId || a.contentDisposition === 'inline'
     let inlineContent: string | undefined
-    if (isImage && size > 0 && size <= MAX_INLINE_IMAGE_BYTES && a.content) {
+    if (isImage && !isInlineCid && size > 0 && size <= MAX_INLINE_IMAGE_BYTES && a.content) {
       const buf = Buffer.isBuffer(a.content) ? a.content : Buffer.from(a.content)
       inlineContent = buf.toString('base64')
     }
