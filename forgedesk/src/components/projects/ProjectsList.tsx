@@ -608,7 +608,7 @@ export function ProjectsList() {
 
   if (isLoading) {
     return (
-      <div className="h-full flex flex-col bg-[#EEF1F3] -m-3 sm:-m-4 md:-m-6">
+      <div className="h-full flex flex-col -m-3 sm:-m-4 md:-m-6">
         <div className="flex-1 min-h-0 overflow-y-auto">
           <div className="px-4 py-4 md:px-8 md:py-8 space-y-6">
             {/* Header */}
@@ -700,7 +700,7 @@ export function ProjectsList() {
   }
 
   return (
-    <div className="h-full flex flex-col bg-[#EEF1F3] -m-3 sm:-m-4 md:-m-6">
+    <div className="h-full flex flex-col -m-3 sm:-m-4 md:-m-6">
       {/* Inline keyframes for pulse + stagger + hover glow */}
       <style>{`
         @keyframes doen-pulse { 0%,100% { opacity:1 } 50% { opacity:.35 } }
