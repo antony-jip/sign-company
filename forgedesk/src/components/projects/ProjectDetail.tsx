@@ -1068,34 +1068,8 @@ export function ProjectDetail() {
             </h1>
           )}
 
-          {/* Status — dot + label + dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white border border-[rgba(26,83,92,0.1)] shadow-[0_1px_2px_rgba(20,62,71,0.04)] hover:border-[rgba(26,83,92,0.22)] hover:shadow-[0_2px_8px_rgba(20,62,71,0.08)] transition-all flex-shrink-0"
-                aria-label="Status wijzigen"
-              >
-                <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0', getStatusDotColor(project.status), project.status === 'actief' && 'doen-pulse')} />
-                <span className="text-[13px] font-semibold text-[#1A1A1A]">
-                  {statusLabels[project.status] || project.status}<span className="text-[#F15025]">.</span>
-                </span>
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-44">
-              {statusOpties.map((s) => (
-                <DropdownMenuItem
-                  key={s.value}
-                  onClick={() => {
-                    if (s.value !== project.status) handleCockpitStatusChange(s.value as Project['status'])
-                  }}
-                  className={cn('flex items-center gap-2 text-xs', s.value === project.status && 'font-semibold')}
-                >
-                  <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0', getStatusDotColor(s.value))} />
-                  {s.label}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {/* Status verwijderd uit header — al wijzigbaar via de
+              Voortgang-strip in het Overzicht-tab. */}
         </div>
 
         {/* Row 2: subline — klant · plaats + datum-hint */}
