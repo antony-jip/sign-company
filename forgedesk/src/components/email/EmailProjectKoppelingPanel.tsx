@@ -149,18 +149,40 @@ export function EmailProjectKoppelingPanel({
     }
   }
 
-  // De getoonde lijst combineert suggesties (boven) en zoekresultaten (onder)
-  const items = useMemo(() => {
-    if (query.trim().length > 0) return searchResults
-    const seen = new Set<string>()
-    const list: Array<{ p: Project; suggestion: boolean }> = []
-    for (const p of suggestions) {
-      if (!seen.has(p.id)) { seen.add(p.id); list.push({ p, suggestion: true }) }
+  const renderProjectRow = (p: Project) => {
+    const active = linkedProject?.id === p.id
+    return (
+      <button
+        key={p.id}
+        type="button"
+        onClick={() => handleSelect(p)}
+        disabled={saving}
+        className={cn(
+          'w-full flex items-center gap-2 px-2 py-2 rounded-md text-left disabled:opacity-50 transition-colors duration-150',
+          active ? 'bg-[#1A535C]/[0.06]' : 'hover:bg-[#F0EFEC]',
+        )}
+      >
+        <Briefcase className={cn('h-3.5 w-3.5 flex-shrink-0', active ? 'text-[#1A535C]' : 'text-[#9B9B95]')} />
+        <div className="min-w-0 flex-1">
+          <div className="text-[12px] font-medium text-[#1A1A1A] truncate">{p.naam}</div>
+          {p.project_nummer && (
+            <div className="text-[10px] text-[#9B9B95] font-mono">{p.project_nummer}</div>
+          )}
+        </div>
+        {active && <Check className="h-3.5 w-3.5 text-[#1A535C] flex-shrink-0" />}
+      </button>
+    )
+  }
+
+  // Lijst gesplitst in twee groepen zodat de UI per groep een header toont
+  // ("Voorgesteld op basis van afzender" + "Alle actieve projecten").
+  const { suggestieItems, restItems } = useMemo(() => {
+    if (query.trim().length > 0) {
+      return { suggestieItems: [] as Project[], restItems: searchResults }
     }
-    for (const p of searchResults) {
-      if (!seen.has(p.id)) { seen.add(p.id); list.push({ p, suggestion: false }) }
-    }
-    return list.map(({ p }) => p)
+    const seen = new Set<string>(suggestions.map((p) => p.id))
+    const rest = searchResults.filter((p) => !seen.has(p.id))
+    return { suggestieItems: suggestions, restItems: rest }
   }, [query, suggestions, searchResults])
 
   return (
@@ -240,42 +262,36 @@ export function EmailProjectKoppelingPanel({
               </button>
             )}
           </div>
-          {suggestions.length > 0 && query.trim().length === 0 && (
-            <p className="mt-2 text-[10px] text-[#9B9B95] uppercase tracking-[0.08em]">Suggesties van deze klant</p>
-          )}
-          <div className="mt-1 max-h-[220px] overflow-y-auto -mx-1">
-            {searching && items.length === 0 ? (
+          <div className="mt-1 max-h-[260px] overflow-y-auto -mx-1">
+            {searching && suggestieItems.length === 0 && restItems.length === 0 ? (
               <div className="flex items-center gap-2 px-2 py-3 text-[12px] text-[#9B9B95]">
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 Zoeken.
               </div>
-            ) : items.length === 0 ? (
+            ) : suggestieItems.length === 0 && restItems.length === 0 ? (
               <p className="px-2 py-3 text-[12px] text-[#9B9B95]">Geen projecten gevonden.</p>
             ) : (
-              items.map((p) => {
-                const active = linkedProject?.id === p.id
-                return (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => handleSelect(p)}
-                    disabled={saving}
-                    className={cn(
-                      'w-full flex items-center gap-2 px-2 py-2 rounded-md text-left disabled:opacity-50 transition-colors duration-150',
-                      active ? 'bg-[#1A535C]/[0.06]' : 'hover:bg-[#F0EFEC]',
-                    )}
-                  >
-                    <Briefcase className={cn('h-3.5 w-3.5 flex-shrink-0', active ? 'text-[#1A535C]' : 'text-[#9B9B95]')} />
-                    <div className="min-w-0 flex-1">
-                      <div className="text-[12px] font-medium text-[#1A1A1A] truncate">{p.naam}</div>
-                      {p.project_nummer && (
-                        <div className="text-[10px] text-[#9B9B95] font-mono">{p.project_nummer}</div>
-                      )}
-                    </div>
-                    {active && <Check className="h-3.5 w-3.5 text-[#1A535C] flex-shrink-0" />}
-                  </button>
-                )
-              })
+              <>
+                {suggestieItems.length > 0 && (
+                  <>
+                    <p className="px-2 pt-1 pb-1 text-[10px] text-[#9B9B95] uppercase tracking-[0.08em]">
+                      Voorgesteld op basis van afzender
+                    </p>
+                    {suggestieItems.map((p) => renderProjectRow(p))}
+                  </>
+                )}
+                {restItems.length > 0 && (
+                  <>
+                    <p className={cn(
+                      'px-2 pb-1 text-[10px] text-[#9B9B95] uppercase tracking-[0.08em]',
+                      suggestieItems.length > 0 ? 'pt-3 mt-1 border-t border-[#F0EFEC]' : 'pt-1',
+                    )}>
+                      {query.trim().length > 0 ? 'Zoekresultaten' : 'Andere actieve projecten'}
+                    </p>
+                    {restItems.map((p) => renderProjectRow(p))}
+                  </>
+                )}
+              </>
             )}
           </div>
         </div>

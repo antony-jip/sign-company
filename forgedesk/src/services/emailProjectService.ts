@@ -106,32 +106,57 @@ export async function getEmailsVoorProject(projectId: string, limit = 100): Prom
 
 /**
  * Project-suggesties bij een email-afzender:
- * - Probeer eerst klant te matchen op email (klanten.email of contactpersonen)
- * - Retourneer actieve projecten van die klant
- * Lege array = geen suggestie. UI valt dan terug op handmatig zoeken.
+ * 1. Exacte email-match op klanten.email of contactpersonen.email
+ * 2. Fallback: domein-match (claudia@spandershoek.nl → @spandershoek.nl)
+ *    omdat één klant vaak meerdere contactpersonen heeft die niet allemaal
+ *    in contactpersonen-tabel staan.
+ * Retourneert actieve projecten van die klanten. Lege array = geen match
+ * gevonden; de picker valt dan terug op "zoekProjecten" voor alle actieve.
  */
 export async function getProjectSuggestiesVoorEmail(emailAdres: string): Promise<Project[]> {
   if (!emailAdres || !isSupabaseConfigured() || !supabase) return []
-  const lower = emailAdres.toLowerCase()
-  // Match klanten op email (case-insensitive)
-  const { data: klantenViaEmail } = await supabase
-    .from('klanten')
-    .select('id')
-    .ilike('email', lower)
-    .limit(5)
-  // Match contactpersonen op email → terug naar klant_id
-  const { data: contacten } = await supabase
-    .from('contactpersonen')
-    .select('klant_id')
-    .ilike('email', lower)
-    .limit(5)
+  // Extract pure email uit "Naam <email@host>" formaat
+  const match = emailAdres.match(/<([^>]+)>/)
+  const cleanEmail = (match ? match[1] : emailAdres).toLowerCase().trim()
+  if (!cleanEmail.includes('@')) return []
+  const domain = cleanEmail.split('@')[1] || ''
+
+  // Generieke mail-providers zijn nutteloos voor klant-match (zou alle
+  // gmail-users aan elkaar koppelen). Skip domein-match in dat geval.
+  const genericDomains = new Set([
+    'gmail.com', 'hotmail.com', 'outlook.com', 'yahoo.com', 'live.nl',
+    'ziggo.nl', 'kpnmail.nl', 'xs4all.nl', 'planet.nl', 'hetnet.nl',
+    'home.nl', 'upcmail.nl', 'icloud.com', 'me.com',
+  ])
+  const allowDomainMatch = domain && !genericDomains.has(domain)
+
   const klantIds = new Set<string>()
-  for (const k of (klantenViaEmail as Array<{ id: string }> | null) || []) klantIds.add(k.id)
-  for (const c of (contacten as Array<{ klant_id: string | null }> | null) || []) {
+
+  // Stap 1: exacte match
+  const [klantenExact, contactenExact] = await Promise.all([
+    supabase.from('klanten').select('id').ilike('email', cleanEmail).limit(5),
+    supabase.from('contactpersonen').select('klant_id').ilike('email', cleanEmail).limit(5),
+  ])
+  for (const k of (klantenExact.data as Array<{ id: string }> | null) || []) klantIds.add(k.id)
+  for (const c of (contactenExact.data as Array<{ klant_id: string | null }> | null) || []) {
     if (c.klant_id) klantIds.add(c.klant_id)
   }
+
+  // Stap 2: domein-match (alleen als exact niets opleverde én domein zinvol is)
+  if (klantIds.size === 0 && allowDomainMatch) {
+    const domainPattern = `%@${domain}`
+    const [klantenDomein, contactenDomein] = await Promise.all([
+      supabase.from('klanten').select('id').ilike('email', domainPattern).limit(10),
+      supabase.from('contactpersonen').select('klant_id').ilike('email', domainPattern).limit(10),
+    ])
+    for (const k of (klantenDomein.data as Array<{ id: string }> | null) || []) klantIds.add(k.id)
+    for (const c of (contactenDomein.data as Array<{ klant_id: string | null }> | null) || []) {
+      if (c.klant_id) klantIds.add(c.klant_id)
+    }
+  }
+
   if (klantIds.size === 0) return []
-  // Actieve projecten van die klanten
+
   const { data: projecten } = await supabase
     .from('projecten')
     .select('*')
