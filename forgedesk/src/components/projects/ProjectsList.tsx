@@ -1388,11 +1388,11 @@ export function ProjectsList() {
                             />
                           </td>
 
-                          {/* Delete */}
+                          {/* Delete — hover-only */}
                           <td className="py-3.5 pr-5 align-middle" onClick={(e) => e.stopPropagation()}>
                             <button
                               onClick={() => handleDeleteProject(project)}
-                              className="h-7 w-7 rounded-md flex items-center justify-center transition-colors text-[#C0BDB8] hover:bg-[#FDE8E4] hover:text-[#C03A18]"
+                              className="h-7 w-7 rounded-md flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 focus-visible:opacity-100 text-[#C0BDB8] hover:bg-[#FDE8E4] hover:text-[#C03A18]"
                               title="Project verwijderen"
                               aria-label={`Verwijder ${project.naam || 'project'}`}
                             >
