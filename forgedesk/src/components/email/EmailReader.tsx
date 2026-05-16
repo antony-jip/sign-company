@@ -11,7 +11,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Email, EmailAttachment } from '@/types'
-import { extractSenderName, extractSenderEmail, formatShortDate, getAvatarColor, getAvatarRingColor, getAvatarStyle } from './emailHelpers'
+import { extractSenderName, extractSenderEmail, formatShortDate, getAvatarColor, getAvatarRingColor, getAvatarStyle, SNOOZE_OPTIONS } from './emailHelpers'
 import { hapticLight, hapticMedium } from '@/utils/haptic'
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -77,6 +77,8 @@ interface EmailReaderProps {
   // geen decode-stap nodig.
   prefetchedAttachmentUrls?: Record<string, string>
   onTogglePin?: (email: Email) => void
+  onSnooze?: (email: Email, hours: number) => void
+  onUnsnooze?: (email: Email) => void
   onToggleRead?: (email: Email) => void
   onDelete?: (email: Email) => void
   onArchive?: (email: Email) => void
@@ -97,6 +99,8 @@ export function EmailReader({
   prefetchedAttachmentBytes,
   prefetchedAttachmentUrls,
   onTogglePin,
+  onSnooze,
+  onUnsnooze,
   onToggleRead,
   onDelete,
   onArchive,
@@ -169,6 +173,18 @@ export function EmailReader({
   // Track per-attachment download state (alleen visueel — losse spinner per bijlage)
   const [downloadingAttachment, setDownloadingAttachment] = useState<string | null>(null)
   const [previewLoading, setPreviewLoading] = useState<string | null>(null)
+  const [snoozeMenuOpen, setSnoozeMenuOpen] = useState(false)
+  const snoozeMenuRef = useRef<HTMLDivElement | null>(null)
+
+  // Sluit het snooze-menu bij klik buiten het popover-bereik
+  useEffect(() => {
+    if (!snoozeMenuOpen) return
+    const onDocClick = (e: MouseEvent) => {
+      if (!snoozeMenuRef.current?.contains(e.target as Node)) setSnoozeMenuOpen(false)
+    }
+    document.addEventListener('mousedown', onDocClick)
+    return () => document.removeEventListener('mousedown', onDocClick)
+  }, [snoozeMenuOpen])
   const [downloadingAll, setDownloadingAll] = useState(false)
   const [previewAtt, setPreviewAtt] = useState<{ filename: string; url: string; contentType: string } | null>(null)
   // Cache van blob-URLs voor image-thumbnails per filename. Wordt gevuld bij open van email
@@ -349,6 +365,7 @@ export function EmailReader({
     setSummary(null)
     setSummaryLoading(false)
     setSummaryExpanded(true)
+    setSnoozeMenuOpen(false)
     setPreviewAtt((prev) => {
       if (prev) URL.revokeObjectURL(prev.url)
       return null
@@ -1245,6 +1262,49 @@ export function EmailReader({
                 <MailOpen className="h-[18px] w-[18px] md:h-4 md:w-4" />
               </Button>
             </TooltipTrigger><TooltipContent side="bottom" className="text-[12px]">Markeer als ongelezen</TooltipContent></Tooltip>
+            <div ref={snoozeMenuRef} className="relative">
+              <Tooltip><TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={cn(
+                    'tap-press h-10 w-10 md:h-8 md:w-8 transition-colors duration-150',
+                    email?.snoozed_until
+                      ? 'text-[#1A535C] hover:bg-[#1A535C]/[0.08]'
+                      : 'text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC]',
+                  )}
+                  onClick={() => { hapticLight(); setSnoozeMenuOpen((v) => !v) }}
+                >
+                  <Clock className="h-[18px] w-[18px] md:h-4 md:w-4" />
+                </Button>
+              </TooltipTrigger><TooltipContent side="bottom" className="text-[12px]">{email?.snoozed_until ? 'Gesnoozed' : 'Snooze'}</TooltipContent></Tooltip>
+              {snoozeMenuOpen && email && (
+                <div className="absolute top-full right-0 mt-1 min-w-[180px] bg-white rounded-lg shadow-[0_8px_30px_rgba(0,0,0,0.08)] border border-[#F0EFEC] py-1 z-50">
+                  {email.snoozed_until && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => { setSnoozeMenuOpen(false); onUnsnooze?.(email) }}
+                        className="w-full text-left px-3 py-2 text-[13px] text-[#C0451A] hover:bg-[#F0EFEC] transition-colors duration-150"
+                      >
+                        Niet meer snoozen
+                      </button>
+                      <div className="border-t border-[#F0EFEC] my-1" />
+                    </>
+                  )}
+                  {SNOOZE_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.hours}
+                      type="button"
+                      onClick={() => { setSnoozeMenuOpen(false); onSnooze?.(email, opt.hours) }}
+                      className="w-full text-left px-3 py-2 text-[13px] text-[#6B6B66] hover:bg-[#F0EFEC] transition-colors duration-150"
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Right: AI + Primary reply + Navigation */}

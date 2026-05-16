@@ -24,7 +24,7 @@ import { EmailMobileTopBar } from './EmailMobileTopBar'
 import type { Email, EmailAttachment } from '@/types'
 import { logger } from '../../utils/logger'
 import type { EmailFolder, FilterType, FontSize, ViewMode } from './emailTypes'
-import { extractSenderEmail, extractSenderName, parseSearchQuery, IMAP_FOLDER_MAP, KEYBOARD_SHORTCUTS, SEARCH_OPERATORS, calculateSnoozeDate, getAvatarStyle, formatRelativeSync } from './emailHelpers'
+import { extractSenderEmail, extractSenderName, parseSearchQuery, IMAP_FOLDER_MAP, KEYBOARD_SHORTCUTS, SEARCH_OPERATORS, SNOOZE_OPTIONS, calculateSnoozeDate, getAvatarStyle, formatRelativeSync } from './emailHelpers'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -638,6 +638,22 @@ export function EmailLayout() {
     setEmails((prev) => prev.map((e) => (e.id === email.id ? { ...e, pinned: newPinned } : e)))
     setSelectedEmail((prev) => prev?.id === email.id ? { ...prev, pinned: newPinned } : prev)
     updateEmail(email.id, { pinned: newPinned }).catch(() => {})
+  }, [])
+
+  const handleSnooze = useCallback((email: Email, hours: number) => {
+    const wakeAt = calculateSnoozeDate(hours).toISOString()
+    setEmails((prev) => prev.map((e) => (e.id === email.id ? { ...e, snoozed_until: wakeAt } : e)))
+    setSelectedEmail((prev) => prev?.id === email.id ? { ...prev, snoozed_until: wakeAt } : prev)
+    updateEmail(email.id, { snoozed_until: wakeAt }).catch(() => {})
+    const opt = SNOOZE_OPTIONS.find((o) => o.hours === hours)
+    toast.success(opt ? `Gesnoozed: ${opt.label.toLowerCase()}` : 'Gesnoozed')
+  }, [])
+
+  const handleUnsnooze = useCallback((email: Email) => {
+    setEmails((prev) => prev.map((e) => (e.id === email.id ? { ...e, snoozed_until: undefined } : e)))
+    setSelectedEmail((prev) => prev?.id === email.id ? { ...prev, snoozed_until: undefined } : prev)
+    updateEmail(email.id, { snoozed_until: null }).catch(() => {})
+    toast.success('Niet meer gesnoozed')
   }, [])
 
   const handleToggleRead = useCallback((email: Email) => {
@@ -1489,6 +1505,8 @@ export function EmailLayout() {
             prefetchedAttachmentBytes={attachmentBytesCacheRef.current.get(selectedEmail.id)}
             prefetchedAttachmentUrls={attachmentUrlsCacheRef.current.get(selectedEmail.id)}
             onTogglePin={handleTogglePin}
+            onSnooze={handleSnooze}
+            onUnsnooze={handleUnsnooze}
             onToggleRead={handleToggleRead}
             onDelete={handleDeleteAndNavigate}
             onArchive={handleArchiveAndNavigate}
