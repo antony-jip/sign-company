@@ -24,6 +24,7 @@ import {
   CheckCheck,
   Sparkles,
   Loader2,
+  RefreshCw,
   CreditCard,
   AlertTriangle,
   ClipboardCheck,
@@ -54,7 +55,6 @@ import {
 import { getEmailsVoorProject, type ProjectMail } from '@/services/emailProjectService'
 import { sanitizeEmailHTML } from '@/lib/sanitize'
 import { callForgie } from '@/services/forgieService'
-import { Sparkles, Loader2 as Loader2Icon, RefreshCw } from 'lucide-react'
 import { DatePicker } from '@/components/ui/date-picker'
 // Card/Badge removed — using DOEN text-based styling
 import { Button } from '@/components/ui/button'
@@ -1736,7 +1736,7 @@ export function ProjectDetail() {
             <div className="flex items-start gap-3">
               <div className="w-9 h-9 rounded-lg bg-white shadow-sm flex items-center justify-center flex-shrink-0">
                 {aiSummaryLoading ? (
-                  <Loader2Icon className="h-4 w-4 text-[#F15025] animate-spin" />
+                  <Loader2 className="h-4 w-4 text-[#F15025] animate-spin" />
                 ) : (
                   <Sparkles className="h-4 w-4 text-[#F15025]" />
                 )}
