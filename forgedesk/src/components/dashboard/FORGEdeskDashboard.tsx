@@ -1,10 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import {
-  AlertTriangle,
-  ArrowRight,
   Sun,
   Cloud,
   CloudSun,
@@ -23,8 +20,7 @@ import { KpiStrip } from './KpiStrip'
 import { RightRail } from './RightRail'
 import { usePortaalHerinnering } from '@/hooks/usePortaalHerinnering'
 import { useWeather, type WeatherIconKey } from '@/hooks/useWeather'
-import { DashboardDataProvider, useDashboardData } from '@/contexts/DashboardDataContext'
-import { formatCurrency } from '@/lib/utils'
+import { DashboardDataProvider } from '@/contexts/DashboardDataContext'
 
 const WEATHER_ICONS: Record<WeatherIconKey, LucideIcon> = {
   sun: Sun,
@@ -95,25 +91,11 @@ export function FORGEdeskDashboard() {
 }
 
 function FORGEdeskDashboardInner() {
-  const navigate = useNavigate()
   const { user } = useAuth()
   const { profile } = useAppSettings()
   const userName = profile?.voornaam || user?.user_metadata?.voornaam || user?.email?.split('@')[0] || ''
 
   usePortaalHerinnering()
-
-  const { facturen } = useDashboardData()
-
-  const verlopenFacturen = useMemo(() => {
-    const now = new Date()
-    const verlopen = facturen.filter(
-      f => (f.status === 'verzonden' || f.status === 'vervallen') && new Date(f.vervaldatum) < now,
-    )
-    return {
-      count: verlopen.length,
-      bedrag: verlopen.reduce((sum, f) => sum + (f.totaal - f.betaald_bedrag), 0),
-    }
-  }, [facturen])
 
   const weather = useWeather()
   const WeatherIcon = weather ? WEATHER_ICONS[weather.iconKey] : null
@@ -262,24 +244,6 @@ function FORGEdeskDashboardInner() {
               )}
             </div>
           </section>
-
-          {/* ── Alerts ── */}
-          {verlopenFacturen.count > 0 && (
-            <button
-              type="button"
-              onClick={() => navigate('/facturen')}
-              className="w-full flex items-center gap-3 px-5 py-3 rounded-xl bg-[#FDE8E4] hover:bg-[#FBDDD6] transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F15025]/40 focus-visible:ring-offset-2"
-              aria-label={`${verlopenFacturen.count} verlopen facturen openen`}
-            >
-              <AlertTriangle className="h-4 w-4 text-[#F15025] flex-shrink-0" />
-              <span className="flex-1 text-sm text-[#1A1A1A]">
-                <span className="font-semibold">{verlopenFacturen.count} facturen verlopen</span>
-                <span className="text-[#6B6B66]"> · </span>
-                <span className="font-mono text-[#6B6B66]">{formatCurrency(verlopenFacturen.bedrag)}</span>
-              </span>
-              <ArrowRight className="h-4 w-4 text-[#6B6B66] flex-shrink-0" />
-            </button>
-          )}
 
           <PortaalAlerts />
 
