@@ -534,15 +534,14 @@ export function NotificatieCenter({ variant = 'bell', userInitial }: Notificatie
           </button>
         </>
       ) : (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="relative"
+        <button
+          type="button"
           onClick={() => setOpen((prev) => !prev)}
           aria-label="Notificaties openen"
+          className="relative w-9 h-9 rounded-full flex items-center justify-center transition-colors hover:bg-black/[0.04] focus-visible:outline-none focus-visible:bg-black/[0.04]"
         >
           <Bell className="h-[18px] w-[18px]" style={{ color: '#5A5A55' }} />
-        </Button>
+        </button>
       )}
 
       {open && (

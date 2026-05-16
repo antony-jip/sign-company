@@ -129,7 +129,7 @@ export function TopNav() {
         />
 
         {/* Logo */}
-        <NavLink to="/" className="relative flex items-center mr-5 flex-shrink-0 opacity-90 hover:opacity-100 transition-opacity">
+        <NavLink to="/" className="relative flex items-center mr-5 flex-shrink-0 opacity-95 hover:opacity-100 transition-opacity">
           <img src="/logos/doen-logo.svg" alt="doen." className="h-[22px]" />
         </NavLink>
 
@@ -197,7 +197,7 @@ export function TopNav() {
             <NotificatieCenter />
           </div>
 
-          <div className="hidden md:block w-px h-4 bg-[#EBEBEB] mx-1.5" />
+          <div className="hidden md:block w-px h-4 bg-[#E5E4E0] mx-2" />
 
           {/* User dropdown — desktop */}
           <div ref={userMenuRef} className="relative hidden md:block">
@@ -212,11 +212,11 @@ export function TopNav() {
               <div
                 className="w-7 h-7 rounded-full flex items-center justify-center"
                 style={{
-                  background: 'linear-gradient(145deg, rgba(26,83,92,0.14), rgba(26,83,92,0.05))',
-                  border: '1.5px solid rgba(241, 80, 37, 0.18)',
+                  background: 'linear-gradient(145deg, #1A535C 0%, #143E47 100%)',
+                  boxShadow: '0 1px 2px rgba(20,62,71,0.15), inset 0 1px 0 rgba(255,255,255,0.12)',
                 }}
               >
-                <span className="text-[11px] font-bold text-[#1A535C]">{userInitial}</span>
+                <span className="text-[11px] font-bold text-white">{userInitial}</span>
               </div>
               <div className="hidden xl:block text-left min-w-0">
                 <p className="text-[11px] font-medium text-[#1A1A1A] truncate max-w-[90px] leading-tight">{userName}</p>
