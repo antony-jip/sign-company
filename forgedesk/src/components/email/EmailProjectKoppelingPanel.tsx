@@ -7,6 +7,7 @@ import {
   koppelEmailAanProject,
   ontkoppelEmailVanProject,
   getProjectSuggestiesVoorEmail,
+  getProjectById,
   zoekProjecten,
 } from '@/services/emailProjectService'
 import { toast } from 'sonner'
@@ -64,12 +65,13 @@ export function EmailProjectKoppelingPanel({
       setLinkedProject(null)
       return
     }
-    // Haal projectdetails op zodra parent een id doorgeeft
+    // Haal projectdetails op via gerichte SELECT zodat nieuwe of zelden
+    // gebruikte projecten ook resolven (vroeger: zoekProjecten('').find()
+    // miste ze als ze niet in top-12 actief zaten).
     let cancelled = false
-    zoekProjecten('').then((all) => {
+    getProjectById(selectedProjectId).then((p) => {
       if (cancelled) return
-      const match = all.find((p) => p.id === selectedProjectId)
-      if (match) setLinkedProject(match)
+      setLinkedProject(p)
     })
     return () => { cancelled = true }
   }, [composeMode, selectedProjectId])

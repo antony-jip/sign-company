@@ -23,6 +23,11 @@ interface EmailContextSidebarProps {
   composeToAddress?: string
   composeReminder?: string | null
   onComposeReminderChange?: (value: string | null) => void
+  // Compose-mode project-koppeling: parent houdt de selectie bij omdat
+  // thread_id pas na verzenden bestaat. Bij send wordt de koppeling
+  // alsnog gepersisteerd door de parent.
+  composeProjectId?: string | null
+  onComposeProjectChange?: (projectId: string | null) => void
   allEmails?: Email[]
   email?: Email | null
   senderName?: string
@@ -70,6 +75,8 @@ export function EmailContextSidebar({
   composeToAddress,
   composeReminder,
   onComposeReminderChange,
+  composeProjectId,
+  onComposeProjectChange,
   allEmails = [],
   email,
   senderName: propSenderName,
@@ -791,11 +798,22 @@ export function EmailContextSidebar({
           </div>
         ) : null}
 
-        {/* ── PROJECT KOPPELING (alleen tijdens lezen, alleen als thread bekend) ── */}
+        {/* ── PROJECT KOPPELING ──
+            Read-mode: live koppeling, write-through via service.
+            Compose-mode: parent houdt selectie bij; koppeling wordt na
+            verzenden geschreven met een client-side gegenereerd thread_id. */}
         {mode === 'reading' && email?.thread_id && (
           <EmailProjectKoppelingPanel
             threadId={email.thread_id}
             senderEmail={contactEmail}
+          />
+        )}
+        {mode === 'compose' && composeToAddress && (
+          <EmailProjectKoppelingPanel
+            composeMode
+            senderEmail={composeToAddress}
+            selectedProjectId={composeProjectId ?? null}
+            onSelectProject={(p) => onComposeProjectChange?.(p?.id ?? null)}
           />
         )}
 

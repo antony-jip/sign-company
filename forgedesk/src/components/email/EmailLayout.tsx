@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { EmailReader } from './EmailReader'
 import { EmailContextSidebar } from './EmailContextSidebar'
+import { koppelEmailAanProject } from '@/services/emailProjectService'
 import { EmailCompose } from './EmailCompose'
 import type { ComposeActions } from './EmailCompose'
 import { EmailListItem } from './EmailListItem'
@@ -125,6 +126,10 @@ export function EmailLayout() {
   const [composeDefaults, setComposeDefaults] = useState<{
     to?: string; subject?: string; body?: string
   }>({})
+  const [composeProjectId, setComposeProjectId] = useState<string | null>(null)
+  // Ref-mirror zodat handleSendEmail (lege deps) de actuele waarde leest
+  const composeProjectIdRef = useRef<string | null>(null)
+  composeProjectIdRef.current = composeProjectId
 
   // ─── Compose-sidebar communication ───
   const [composeToAddress, setComposeToAddress] = useState('')
@@ -1140,6 +1145,8 @@ export function EmailLayout() {
   const handleCompose = useCallback((defaults?: { to?: string; subject?: string; body?: string }) => {
     viewTransition(() => {
       setComposeDefaults(defaults || {})
+      // Verse compose-sessie: vorige project-koppelingskeuze niet hergebruiken
+      setComposeProjectId(null)
       setViewMode('composing')
       setSelectedEmail(null)
     }, 'forward')
@@ -1165,12 +1172,26 @@ export function EmailLayout() {
 
   const handleSendEmail = useCallback(async (data: { to: string; subject: string; body: string; html?: string; scheduledAt?: string; wacht_op_reactie?: boolean; attachments?: Array<{ filename: string; content: string; encoding: 'base64' }> }) => {
     try {
+      // Genereer thread_id client-side zodat we een eventueel gekoppeld
+      // project direct na verzenden kunnen aanhaken — de backend accepteert
+      // deze waarde en gebruikt 'm als de thread_id van de nieuwe mail.
+      const pendingProjectId = composeProjectIdRef.current
+      const clientThreadId = pendingProjectId ? crypto.randomUUID() : undefined
       await sendEmailViaApi(data.to, data.subject, data.body, {
         html: data.html,
         scheduledAt: data.scheduledAt,
         wacht_op_reactie: data.wacht_op_reactie,
         attachments: data.attachments,
+        thread_id: clientThreadId,
       })
+      if (pendingProjectId && clientThreadId) {
+        try {
+          await koppelEmailAanProject(clientThreadId, pendingProjectId)
+        } catch (e) {
+          logger.warn('Project-koppeling na compose mislukt:', e)
+        }
+        setComposeProjectId(null)
+      }
     } catch (err) {
       logger.error('Email verzenden mislukt:', err)
       throw err
@@ -1963,6 +1984,8 @@ export function EmailLayout() {
           composeToAddress={composeToAddress}
           composeReminder={composeReminder}
           onComposeReminderChange={setComposeReminder}
+          composeProjectId={composeProjectId}
+          onComposeProjectChange={setComposeProjectId}
           allEmails={emails}
           email={selectedEmail}
           senderName={readerSenderName}

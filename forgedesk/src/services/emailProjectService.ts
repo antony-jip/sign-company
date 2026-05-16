@@ -108,6 +108,17 @@ export async function getProjectSuggestiesVoorEmail(emailAdres: string): Promise
   return (projecten as Project[] | null) || []
 }
 
+/** Eén project ophalen op id. Voor de compose-mode om parent-controlled selectie te resolven. */
+export async function getProjectById(id: string): Promise<Project | null> {
+  if (!id || !isSupabaseConfigured() || !supabase) return null
+  const { data } = await supabase
+    .from('projecten')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle()
+  return (data as Project | null) || null
+}
+
 /** Zoek projecten op vrije query (titel / klant-naam). Voor de picker als suggesties leeg zijn. */
 export async function zoekProjecten(query: string, limit = 12): Promise<Project[]> {
   if (!isSupabaseConfigured() || !supabase) return []
