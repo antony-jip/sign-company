@@ -5,10 +5,8 @@ import {
   ArrowLeft,
   Check,
   Save,
-  Send,
   Download,
   Building2,
-  Mail,
   ChevronDown,
   Clock,
   Copy,
@@ -19,7 +17,13 @@ import {
   Search,
   X,
 } from 'lucide-react'
+import {
+  PaperPlaneRight as PhSend,
+  EnvelopeSimple as PhEnvelope,
+  Globe as PhGlobe,
+} from '@phosphor-icons/react'
 import type { Klant } from '@/types'
+import { cn } from '@/lib/utils'
 import { hapticLight, hapticMedium } from '@/utils/haptic'
 
 export interface QuoteHeaderProps {
@@ -98,191 +102,323 @@ export function QuoteHeader({
   const navigate = useNavigate()
   const from = (location.state as { from?: string })?.from
 
+  // Geldig-tot indicator
+  const geldigInfo = (() => {
+    if (!geldigTot) return null
+    const days = Math.floor((new Date(geldigTot).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+    const datumLabel = new Date(geldigTot).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })
+    if (days < 0) return { label: 'Verlopen', accent: 'flame' as const, sub: datumLabel }
+    if (days < 7) return { label: `Nog ${days} dagen`, accent: 'amber' as const, sub: datumLabel }
+    return { label: `t/m ${datumLabel}`, accent: 'muted' as const, sub: null }
+  })()
+
   return (
-      <div className="sticky top-0 z-10 bg-[#F8F7F5]/80 backdrop-blur-sm border-b border-[#EBEBEB] px-4 md:px-6 py-3 mb-6 -mx-4 md:-mx-6">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4">
-          {/* Left: Title + meta */}
-          <div className="min-w-0">
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <button onClick={() => { hapticLight(); navigate(from || '/offertes') }} className="tap-press text-[#9B9B95] hover:text-[#6B6B66] transition-colors flex-shrink-0 -ml-1 p-1" aria-label="Terug"><ArrowLeft className="h-5 w-5 md:h-4 md:w-4" /></button>
-              <h1 className="text-lg md:text-xl font-bold text-[#1A1A1A] tracking-[-0.3px] truncate">{isEditMode ? 'Offerte bewerken' : 'Nieuwe offerte'}</h1>
-              <span className="text-[13px] font-mono text-[#9B9B95] flex-shrink-0">{offerteNummer}</span>
-              {versioning.versieNummer > 1 && (
-                <button onClick={() => versioning.setShowVersieHistorie(!versioning.showVersieHistorie)} className="text-[11px] font-mono text-[#6A5A8A] hover:underline flex-shrink-0">v{versioning.versieNummer}</button>
-              )}
-              {verstuurdOp && (
-                <span className="hidden md:inline-flex items-center gap-1 text-[11px] font-semibold text-[#3A5A9A] bg-[#E8EEF9] px-2 py-0.5 rounded-full flex-shrink-0">
-                  <Mail className="h-2.5 w-2.5" />
-                  Verstuurd{verstuurdNaar ? ` naar ${verstuurdNaar}` : ''} · {new Date(verstuurdOp).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}
-                </span>
-              )}
-              {geldigTot && (() => {
-                const days = Math.floor((new Date(geldigTot).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-                if (days < 0) return <span className="text-xs text-[#C0451A] font-medium flex-shrink-0">Verlopen<span className="text-[#F15025]">.</span></span>
-                if (days < 7) return <span className="text-xs text-[#C0451A] flex-shrink-0">Nog {days}d</span>
-                return <span className="hidden md:inline text-xs text-[#9B9B95] flex-shrink-0">t/m <span className="font-mono">{new Date(geldigTot).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}</span></span>
-              })()}
-            </div>
-            <div className="flex items-center gap-2 mt-0.5">
-              {autoSaveStatus === 'saving' && <span className="flex items-center gap-1.5 text-xs text-[#8A7A4A]"><div className="h-1.5 w-1.5 rounded-full bg-[#8A7A4A] animate-pulse" />Opslaan...</span>}
-              {autoSaveStatus === 'saved' && <span className="flex items-center gap-1.5 text-xs text-[#3A7D52]"><Check className="h-3 w-3" />Opgeslagen</span>}
-              {!autoSaveStatus && <p className="text-[13px] text-[#9B9B95] truncate">{isEditMode ? selectedKlant?.bedrijfsnaam || '' : 'Selecteer een klant en vul de details in'}</p>}
-            </div>
+    <div className="sticky top-0 z-10 bg-[#F8F7F5]/90 backdrop-blur-md border-b border-[rgba(26,83,92,0.08)] px-4 md:px-8 py-4 mb-6 -mx-4 md:-mx-6">
+
+      {/* Row 0: breadcrumb */}
+      <div className="flex items-center gap-1.5 text-[12px] mb-2">
+        <button
+          onClick={() => { hapticLight(); navigate(from || '/offertes') }}
+          className="inline-flex items-center gap-1 text-[#9B9B95] hover:text-[#1A535C] transition-colors group"
+        >
+          <ArrowLeft className="h-3 w-3 group-hover:-translate-x-0.5 transition-transform" />
+          Offertes
+        </button>
+        <span className="text-[#C0BDB8]">·</span>
+        <span className="font-mono text-[11px] font-medium text-[#6B6B66] bg-[rgba(26,83,92,0.05)] border border-[rgba(26,83,92,0.08)] rounded-md px-1.5 py-0.5">
+          {offerteNummer}
+        </span>
+        {versioning.versieNummer > 1 && (
+          <button
+            onClick={() => versioning.setShowVersieHistorie(!versioning.showVersieHistorie)}
+            className="font-mono text-[11px] font-medium text-[#6A5A8A] bg-[#EEE8F5] border border-[#6A5A8A]/15 rounded-md px-1.5 py-0.5 hover:bg-[#E0D6EC] transition-colors"
+          >
+            v{versioning.versieNummer}
+          </button>
+        )}
+      </div>
+
+      <div className="flex flex-col md:flex-row md:items-baseline md:justify-between gap-3 md:gap-6">
+
+        {/* Left: H1 + status meta */}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-baseline gap-3 flex-wrap">
+            <h1 className="text-[28px] md:text-[32px] font-extrabold text-[#1A1A1A] tracking-[-0.5px] leading-none truncate">
+              {isEditMode ? 'Offerte bewerken' : 'Nieuwe offerte'}<span className="text-[#F15025]">.</span>
+            </h1>
+
+            {/* Verstuurd-status pill */}
+            {verstuurdOp && (
+              <span className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold text-[#3A5A9A] bg-[#E8EEF9] border border-[#3A5A9A]/20 px-2 py-0.5 rounded-md">
+                <PhSend size={11} weight="duotone" />
+                Verstuurd{verstuurdNaar ? ` · ${verstuurdNaar}` : ''} · {new Date(verstuurdOp).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}
+              </span>
+            )}
+
+            {/* Geldigheid */}
+            {geldigInfo && (
+              <span className={cn(
+                'inline-flex items-center gap-1 text-[11.5px] font-medium px-2 py-0.5 rounded-md',
+                geldigInfo.accent === 'flame' && 'text-[#C0451A] bg-[#FDE8E2] border border-[#C0451A]/20 font-semibold',
+                geldigInfo.accent === 'amber' && 'text-[#8A6A2A] bg-[#F5F2E8] border border-[#8A6A2A]/15',
+                geldigInfo.accent === 'muted' && 'text-[#6B6B66]',
+              )}>
+                {geldigInfo.label}
+              </span>
+            )}
           </div>
 
-          {/* Right: Action buttons — full row on mobile, inline on desktop */}
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <button onClick={() => { hapticLight(); handleDownloadPdf() }} className="tap-press inline-flex items-center justify-center gap-1.5 h-10 md:h-8 w-10 md:w-auto md:px-3 text-[12px] font-medium rounded-lg border border-[#EBEBEB] text-[#6B6B66] hover:text-[#1A1A1A] hover:border-[#EBEBEB] hover:bg-[#F8F7F5] transition-colors" aria-label="PDF downloaden">
-              <Download className="h-4 w-4 md:h-3.5 md:w-3.5" />
-              <span className="hidden md:inline">PDF</span>
-            </button>
-            <button onClick={() => { hapticLight(); saveOfferte('concept') }} disabled={isSaving} className="tap-press inline-flex items-center justify-center gap-1.5 h-10 md:h-8 w-10 md:w-auto md:px-4 text-[12px] font-medium rounded-lg bg-[#1A535C] text-white hover:bg-[#164850] transition-colors disabled:opacity-50" aria-label="Opslaan">
-              <Save className="h-4 w-4 md:h-3.5 md:w-3.5" />
-              <span className="hidden md:inline">{isSaving ? 'Opslaan...' : 'Opslaan'}</span>
-            </button>
-            {/* Verstuur split button */}
-            <div className="relative flex items-center flex-1 md:flex-none">
-              <button onClick={() => { hapticMedium(); handleVerstuurOfferte() }} disabled={isSaving} className="tap-press inline-flex items-center justify-center gap-1.5 flex-1 md:flex-none h-10 md:h-9 px-4 md:px-5 text-[14px] md:text-sm font-semibold rounded-l-lg bg-[#F15025] text-white hover:bg-[#D94520] transition-colors disabled:opacity-50">
-                <Send className="h-4 w-4 md:h-3.5 md:w-3.5" />
-                <span>Verstuur</span>
-              </button>
-              <button
-                onClick={() => { hapticLight(); email.setShowVerstuurKeuze(!email.showVerstuurKeuze) }}
-                disabled={isSaving}
-                className="tap-press inline-flex items-center h-10 md:h-9 px-2 md:px-1.5 text-sm font-semibold rounded-r-lg bg-[#D94520] text-white hover:bg-[#C03A18] transition-colors disabled:opacity-50 border-l border-white/20"
-                aria-label="Versturen via..."
+          {/* Subline: klant + autosave-status */}
+          <div className="mt-2 text-[13.5px] flex items-center gap-2 flex-wrap">
+            {selectedKlant ? (
+              <span className="inline-flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#3A6B8C]" />
+                <span className="font-semibold text-[#4A4A46]">{selectedKlant.bedrijfsnaam || selectedKlant.contactpersoon}</span>
+                {selectedKlant.stad && <span className="text-[#9B9B95] font-normal"> · {selectedKlant.stad}</span>}
+              </span>
+            ) : (
+              <span
+                className="text-[#9B9B95]"
+                style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
               >
-                <ChevronDown className="h-4 w-4 md:h-3.5 md:w-3.5" />
-              </button>
-              {email.showVerstuurKeuze && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => email.setShowVerstuurKeuze(false)} />
-                  <div className="absolute right-0 top-full mt-1.5 z-50 w-64 bg-[#FFFFFF] rounded-xl border border-[#EBEBEB] shadow-[0_4px_20px_rgba(0,0,0,0.12)] overflow-hidden">
-                    <button
-                      onClick={handleKeuzePortaal}
-                      disabled={email.isSendingPortaal || !selectedProjectId}
-                      className="w-full text-left px-4 py-3 hover:bg-[#F8F7F5] transition-colors disabled:opacity-40 disabled:cursor-not-allowed border-b border-[#EBEBEB]/40"
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <div className="h-7 w-7 rounded-md bg-[#1A535C] flex items-center justify-center flex-shrink-0">
-                          <Send className="h-3.5 w-3.5 text-white" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-[#1A1A1A]">Via portaal</p>
-                          <p className="text-[11px] text-[#9B9B95] leading-snug">Klant bekijkt online + email notificatie</p>
-                        </div>
-                      </div>
-                      {!selectedProjectId && <p className="text-[10px] text-[#C0451A] mt-1 ml-9">Koppel eerst een project</p>}
-                      {email.isSendingPortaal && <p className="text-[10px] text-[#1A535C] mt-1 ml-9 flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-[#1A535C] animate-pulse" />Delen...</p>}
-                    </button>
-                    <button
-                      onClick={handleKeuzeEmail}
-                      className="w-full text-left px-4 py-3 hover:bg-[#F8F7F5] transition-colors"
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <div className="h-7 w-7 rounded-md bg-[#F15025] flex items-center justify-center flex-shrink-0">
-                          <Mail className="h-3.5 w-3.5 text-white" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-[#1A1A1A]">Via email</p>
-                          <p className="text-[11px] text-[#9B9B95] leading-snug">PDF bijlage + gepersonaliseerde email</p>
-                        </div>
-                      </div>
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Actions dropdown */}
-            {isEditMode && (
-              <div className="relative">
-                <Button variant="outline" size="icon" className="tap-press h-10 w-10 md:h-8 md:w-8" onClick={() => { hapticLight(); setShowActionsMenu(!showActionsMenu) }} aria-label="Meer acties">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-                {showActionsMenu && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => setShowActionsMenu(false)} />
-                    <div className="absolute right-0 top-full mt-1 z-50 bg-card rounded-lg border border-border dark:border-border shadow-lg py-1 w-48">
-                      <button onClick={() => { handleDupliceerOfferte(); setShowActionsMenu(false) }} disabled={isDuplicating} className="w-full text-left px-3 py-2 text-sm hover:bg-background dark:hover:bg-muted flex items-center gap-2 disabled:opacity-50">
-                        <Copy className="h-3.5 w-3.5" />{isDuplicating ? 'Dupliceren...' : 'Dupliceer offerte'}
-                      </button>
-                      <button onClick={() => { setShowKopieerNaarKlant?.(true); setShowActionsMenu(false) }} disabled={isDuplicating} className="w-full text-left px-3 py-2 text-sm hover:bg-background dark:hover:bg-muted flex items-center gap-2 disabled:opacity-50">
-                        <ArrowRight className="h-3.5 w-3.5" />Kopieer naar andere klant
-                      </button>
-                      <button onClick={() => { versioning.handleNieuweVersie(); setShowActionsMenu(false) }} disabled={versioning.isSavingVersie} className="w-full text-left px-3 py-2 text-sm hover:bg-background dark:hover:bg-muted flex items-center gap-2 disabled:opacity-50">
-                        <Clock className="h-3.5 w-3.5" />{versioning.isSavingVersie ? 'Opslaan...' : `Nieuwe versie (v${versioning.versieNummer})`}
-                      </button>
-                      <button onClick={() => { setShowKlantSelector(true); setShowActionsMenu(false) }} className="w-full text-left px-3 py-2 text-sm hover:bg-background dark:hover:bg-muted flex items-center gap-2">
-                        <Building2 className="h-3.5 w-3.5" />Klant wijzigen
-                      </button>
-                      {onWerkbon && (
-                        <button onClick={() => { onWerkbon(); setShowActionsMenu(false) }} className="w-full text-left px-3 py-2 text-sm hover:bg-background dark:hover:bg-muted flex items-center gap-2">
-                          <ClipboardList className="h-3.5 w-3.5" />Werkbon maken
-                        </button>
-                      )}
-                      {onOpdrachtbevestiging && (
-                        <button onClick={() => { onOpdrachtbevestiging(); setShowActionsMenu(false) }} className="w-full text-left px-3 py-2 text-sm hover:bg-background dark:hover:bg-muted flex items-center gap-2">
-                          <FileCheck className="h-3.5 w-3.5" />Opdrachtbevestiging
-                        </button>
-                      )}
-                    </div>
-                  </>
-                )}
-              </div>
+                · selecteer een klant en vul de details in
+              </span>
+            )}
+            {autoSaveStatus === 'saving' && (
+              <span className="inline-flex items-center gap-1.5 text-[12px] text-[#8A7A4A] ml-auto md:ml-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#8A7A4A] animate-pulse" />
+                Opslaan…
+              </span>
+            )}
+            {autoSaveStatus === 'saved' && (
+              <span className="inline-flex items-center gap-1 text-[12px] text-[#2D6B48] ml-auto md:ml-2">
+                <Check className="h-3 w-3" />
+                Opgeslagen
+              </span>
             )}
           </div>
         </div>
 
-        {/* Kopieer naar andere klant — klant selector modal */}
-        {showKopieerNaarKlant && klanten && setShowKopieerNaarKlant && setKopieerZoek && (
-          <>
-            <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm" onClick={() => setShowKopieerNaarKlant(false)} />
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
-              <div className="pointer-events-auto bg-white rounded-xl shadow-2xl w-full max-w-md border border-[#EBEBEB] animate-in fade-in zoom-in-95 duration-200">
-                <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#EBEBEB]">
-                  <h3 className="text-base font-semibold text-[#1A1A1A]">Kopieer naar andere klant</h3>
-                  <button onClick={() => setShowKopieerNaarKlant(false)} className="h-7 w-7 rounded-md flex items-center justify-center hover:bg-[#F0EFEC] transition-colors">
-                    <X className="h-4 w-4 text-[#6B6B66]" />
+        {/* Right: actions */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {/* PDF */}
+          <button
+            onClick={() => { hapticLight(); handleDownloadPdf() }}
+            className="inline-flex items-center justify-center gap-1.5 h-10 md:h-9 w-10 md:w-auto md:px-3.5 text-[13px] font-medium rounded-xl border border-[rgba(26,83,92,0.12)] bg-white text-[#6B6B66] hover:text-[#1A535C] hover:border-[rgba(26,83,92,0.25)] hover:shadow-[0_2px_8px_rgba(20,62,71,0.06)] transition-all"
+            aria-label="PDF downloaden"
+          >
+            <Download className="h-4 w-4 md:h-3.5 md:w-3.5" />
+            <span className="hidden md:inline">PDF</span>
+          </button>
+
+          {/* Opslaan */}
+          <button
+            onClick={() => { hapticLight(); saveOfferte('concept') }}
+            disabled={isSaving}
+            className="inline-flex items-center justify-center gap-1.5 h-10 md:h-9 w-10 md:w-auto md:px-4 text-[13px] font-semibold rounded-xl bg-[#1A535C] text-white hover:bg-[#0F3D44] hover:shadow-[0_2px_8px_rgba(20,62,71,0.18)] transition-all disabled:opacity-50"
+            aria-label="Opslaan"
+          >
+            <Save className="h-4 w-4 md:h-3.5 md:w-3.5" />
+            <span className="hidden md:inline">{isSaving ? 'Opslaan…' : 'Opslaan'}</span>
+          </button>
+
+          {/* Verstuur — Flame split-button */}
+          <div className="relative flex items-center">
+            <button
+              onClick={() => { hapticMedium(); handleVerstuurOfferte() }}
+              disabled={isSaving}
+              className="inline-flex items-center justify-center gap-2 h-10 md:h-9 px-4 md:px-5 text-[13px] md:text-sm font-semibold rounded-l-xl bg-[#F15025] text-white hover:bg-[#E04520] shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35)] hover:-translate-y-[1px] active:translate-y-0 transition-all disabled:opacity-50 disabled:hover:translate-y-0"
+            >
+              <PhSend size={15} weight="duotone" />
+              <span>Verstuur</span>
+            </button>
+            <button
+              onClick={() => { hapticLight(); email.setShowVerstuurKeuze(!email.showVerstuurKeuze) }}
+              disabled={isSaving}
+              className="inline-flex items-center h-10 md:h-9 px-2 md:px-2 text-sm rounded-r-xl bg-[#E04520] text-white hover:bg-[#D03A18] transition-colors disabled:opacity-50 border-l border-white/25 shadow-[0_2px_8px_rgba(241,80,37,0.25)]"
+              aria-label="Versturen via…"
+            >
+              <ChevronDown className="h-4 w-4 md:h-3.5 md:w-3.5" />
+            </button>
+            {email.showVerstuurKeuze && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => email.setShowVerstuurKeuze(false)} />
+                <div className="absolute right-0 top-full mt-2 z-50 w-72 doen-slate-surface rounded-xl shadow-[0_8px_28px_rgba(20,62,71,0.12)] overflow-hidden">
+                  <button
+                    onClick={handleKeuzePortaal}
+                    disabled={email.isSendingPortaal || !selectedProjectId}
+                    className="w-full text-left px-4 py-3 hover:bg-white/60 transition-colors disabled:opacity-40 disabled:cursor-not-allowed border-b border-[rgba(26,83,92,0.08)]"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="h-9 w-9 rounded-lg bg-[#1A535C] flex items-center justify-center flex-shrink-0 shadow-[0_2px_6px_rgba(20,62,71,0.2)]">
+                        <PhGlobe size={17} weight="duotone" color="#FFFFFF" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[13.5px] font-semibold text-[#1A1A1A]">Via portaal</p>
+                        <p className="text-[11.5px] text-[#9B9B95] leading-snug mt-0.5">Klant bekijkt online + email-notificatie</p>
+                        {!selectedProjectId && (
+                          <p className="text-[10.5px] text-[#C0451A] mt-1">⚠ Koppel eerst een project</p>
+                        )}
+                        {email.isSendingPortaal && (
+                          <p className="text-[10.5px] text-[#1A535C] mt-1 flex items-center gap-1">
+                            <span className="h-1.5 w-1.5 rounded-full bg-[#1A535C] animate-pulse" />
+                            Delen…
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                  <button
+                    onClick={handleKeuzeEmail}
+                    className="w-full text-left px-4 py-3 hover:bg-white/60 transition-colors"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="h-9 w-9 rounded-lg bg-[#F15025] flex items-center justify-center flex-shrink-0 shadow-[0_2px_6px_rgba(241,80,37,0.25)]">
+                        <PhEnvelope size={17} weight="duotone" color="#FFFFFF" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[13.5px] font-semibold text-[#1A1A1A]">Via email</p>
+                        <p className="text-[11.5px] text-[#9B9B95] leading-snug mt-0.5">PDF-bijlage + gepersonaliseerde email</p>
+                      </div>
+                    </div>
                   </button>
                 </div>
-                <div className="p-4">
-                  <div className="relative mb-3">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9B9B95]" />
-                    <input
-                      type="text"
-                      autoFocus
-                      placeholder="Zoek klant..."
-                      value={kopieerZoek || ''}
-                      onChange={(e) => setKopieerZoek(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2.5 text-sm border border-[#EBEBEB] rounded-lg bg-[#F8F7F5] focus:bg-white focus:border-[#1A535C]/30 outline-none transition-colors"
-                    />
-                  </div>
-                  <div className="max-h-[280px] overflow-y-auto space-y-0.5">
-                    {klanten
-                      .filter((k) => !kopieerZoek || (k.bedrijfsnaam || '').toLowerCase().includes(kopieerZoek.toLowerCase()))
-                      .slice(0, 50)
-                      .map((k) => (
-                        <button
-                          key={k.id}
-                          onClick={() => handleDupliceerOfferte(k.id)}
-                          disabled={isDuplicating}
-                          className="w-full text-left px-3 py-2.5 text-sm rounded-lg hover:bg-[#1A535C]/[0.05] transition-colors disabled:opacity-50 flex items-center gap-2"
-                        >
-                          <Building2 className="h-3.5 w-3.5 text-[#9B9B95] flex-shrink-0" />
-                          <span className="truncate text-[#1A1A1A]">{k.bedrijfsnaam || '(naamloos)'}</span>
-                        </button>
-                      ))
-                    }
-                    {klanten.filter((k) => !kopieerZoek || (k.bedrijfsnaam || '').toLowerCase().includes(kopieerZoek.toLowerCase())).length === 0 && (
-                      <p className="text-center text-sm text-[#9B9B95] py-4">Geen klanten gevonden</p>
+              </>
+            )}
+          </div>
+
+          {/* Actions dropdown */}
+          {isEditMode && (
+            <div className="relative">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-10 w-10 md:h-9 md:w-9 rounded-xl border-[rgba(26,83,92,0.12)] hover:border-[rgba(26,83,92,0.25)] hover:bg-white hover:shadow-[0_2px_8px_rgba(20,62,71,0.06)] transition-all"
+                onClick={() => { hapticLight(); setShowActionsMenu(!showActionsMenu) }}
+                aria-label="Meer acties"
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+              {showActionsMenu && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowActionsMenu(false)} />
+                  <div className="absolute right-0 top-full mt-1 z-50 doen-slate-surface rounded-xl shadow-[0_8px_28px_rgba(20,62,71,0.12)] py-1 w-52">
+                    <button
+                      onClick={() => { handleDupliceerOfferte(); setShowActionsMenu(false) }}
+                      disabled={isDuplicating}
+                      className="w-full text-left px-3 py-2 text-[13px] hover:bg-white/60 flex items-center gap-2 disabled:opacity-50 transition-colors"
+                    >
+                      <Copy className="h-3.5 w-3.5 text-[#9B9B95]" />
+                      {isDuplicating ? 'Dupliceren…' : 'Dupliceer offerte'}
+                    </button>
+                    <button
+                      onClick={() => { setShowKopieerNaarKlant?.(true); setShowActionsMenu(false) }}
+                      disabled={isDuplicating}
+                      className="w-full text-left px-3 py-2 text-[13px] hover:bg-white/60 flex items-center gap-2 disabled:opacity-50 transition-colors"
+                    >
+                      <ArrowRight className="h-3.5 w-3.5 text-[#9B9B95]" />
+                      Kopieer naar andere klant
+                    </button>
+                    <button
+                      onClick={() => { versioning.handleNieuweVersie(); setShowActionsMenu(false) }}
+                      disabled={versioning.isSavingVersie}
+                      className="w-full text-left px-3 py-2 text-[13px] hover:bg-white/60 flex items-center gap-2 disabled:opacity-50 transition-colors"
+                    >
+                      <Clock className="h-3.5 w-3.5 text-[#9B9B95]" />
+                      {versioning.isSavingVersie ? 'Opslaan…' : `Nieuwe versie (v${versioning.versieNummer})`}
+                    </button>
+                    <button
+                      onClick={() => { setShowKlantSelector(true); setShowActionsMenu(false) }}
+                      className="w-full text-left px-3 py-2 text-[13px] hover:bg-white/60 flex items-center gap-2 transition-colors"
+                    >
+                      <Building2 className="h-3.5 w-3.5 text-[#9B9B95]" />
+                      Klant wijzigen
+                    </button>
+                    {onWerkbon && (
+                      <button
+                        onClick={() => { onWerkbon(); setShowActionsMenu(false) }}
+                        className="w-full text-left px-3 py-2 text-[13px] hover:bg-white/60 flex items-center gap-2 transition-colors"
+                      >
+                        <ClipboardList className="h-3.5 w-3.5 text-[#9B9B95]" />
+                        Werkbon maken
+                      </button>
+                    )}
+                    {onOpdrachtbevestiging && (
+                      <button
+                        onClick={() => { onOpdrachtbevestiging(); setShowActionsMenu(false) }}
+                        className="w-full text-left px-3 py-2 text-[13px] hover:bg-white/60 flex items-center gap-2 transition-colors"
+                      >
+                        <FileCheck className="h-3.5 w-3.5 text-[#9B9B95]" />
+                        Opdrachtbevestiging
+                      </button>
                     )}
                   </div>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Kopieer naar andere klant — modal */}
+      {showKopieerNaarKlant && klanten && setShowKopieerNaarKlant && setKopieerZoek && (
+        <>
+          <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm" onClick={() => setShowKopieerNaarKlant(false)} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+            <div className="pointer-events-auto doen-slate-surface rounded-2xl shadow-[0_8px_32px_rgba(20,62,71,0.16)] w-full max-w-md animate-in fade-in zoom-in-95 duration-200">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(26,83,92,0.08)]">
+                <h3 className="font-heading text-[16px] font-bold text-[#1A1A1A]">
+                  Kopieer naar klant<span className="text-[#F15025]">.</span>
+                </h3>
+                <button
+                  onClick={() => setShowKopieerNaarKlant(false)}
+                  className="h-7 w-7 rounded-md flex items-center justify-center hover:bg-white/60 transition-colors"
+                >
+                  <X className="h-4 w-4 text-[#6B6B66]" />
+                </button>
+              </div>
+              <div className="p-4">
+                <div className="relative mb-3">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9B9B95]" />
+                  <input
+                    type="text"
+                    autoFocus
+                    placeholder="Zoek klant…"
+                    value={kopieerZoek || ''}
+                    onChange={(e) => setKopieerZoek(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2.5 text-sm border border-[rgba(26,83,92,0.12)] rounded-lg bg-white focus:border-[#1A535C] focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] outline-none transition-colors"
+                  />
+                </div>
+                <div className="max-h-[280px] overflow-y-auto space-y-0.5">
+                  {klanten
+                    .filter((k) => !kopieerZoek || (k.bedrijfsnaam || '').toLowerCase().includes(kopieerZoek.toLowerCase()))
+                    .slice(0, 50)
+                    .map((k) => (
+                      <button
+                        key={k.id}
+                        onClick={() => handleDupliceerOfferte(k.id)}
+                        disabled={isDuplicating}
+                        className="w-full text-left px-3 py-2.5 text-sm rounded-lg hover:bg-white/60 transition-colors disabled:opacity-50 flex items-center gap-2"
+                      >
+                        <Building2 className="h-3.5 w-3.5 text-[#9B9B95] flex-shrink-0" />
+                        <span className="truncate text-[#1A1A1A]">{k.bedrijfsnaam || '(naamloos)'}</span>
+                      </button>
+                    ))
+                  }
+                  {klanten.filter((k) => !kopieerZoek || (k.bedrijfsnaam || '').toLowerCase().includes(kopieerZoek.toLowerCase())).length === 0 && (
+                    <p
+                      className="text-center text-sm text-[#9B9B95] py-4"
+                      style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+                    >
+                      geen klanten gevonden
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
-          </>
-        )}
-      </div>
+          </div>
+        </>
+      )}
+    </div>
   )
 }

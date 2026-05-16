@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Textarea } from '@/components/ui/textarea'
-import { Sparkles, Loader2 } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
+import { Sparkle as PhSparkle, FileText as PhFileText } from '@phosphor-icons/react'
 import { chatCompletion, isAIConfigured } from '@/services/aiService'
 
 interface BriefingCardProps {
@@ -93,9 +94,22 @@ Antwoord ALLEEN met de briefing, niets anders.`
   }
 
   return (
-    <div className="rounded-xl bg-[#FFFFFF] shadow-[0_1px_3px_rgba(130,100,60,0.04)] p-6">
-      <div className="flex items-center justify-between mb-3 min-h-[24px]">
-        <h3 className="text-[11px] font-semibold text-[#6B6B66] uppercase tracking-[0.08em]">Briefing</h3>
+    <div className="doen-slate-surface rounded-2xl p-5">
+      <div className="flex items-center justify-between mb-4 min-h-[24px]">
+        <div className="flex items-center gap-2">
+          <span className="doen-duo-icon" style={{ '--duo-sec': '#1A535C' } as React.CSSProperties}>
+            <PhFileText size={16} weight="duotone" />
+          </span>
+          <h3 className="font-heading text-[15px] font-bold text-[#1A1A1A]">
+            Briefing<span className="text-[#F15025]">.</span>
+          </h3>
+          <span
+            className="text-[12px] text-[#9B9B95] hidden sm:inline"
+            style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+          >
+            · wat moet er gebeuren
+          </span>
+        </div>
 
         <div className="flex items-center gap-3">
           {isSaving && (
@@ -109,14 +123,16 @@ Antwoord ALLEEN met de briefing, niets anders.`
             <button
               disabled={isGenerating}
               onClick={handleDaan}
-              className="flex items-center gap-1.5 text-[11px] text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[var(--cream-bg)] transition-colors rounded-md px-2 py-1 disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#6B6B66] hover:text-[#1A1A1A] bg-white border border-[rgba(26,83,92,0.1)] hover:border-[rgba(26,83,92,0.22)] transition-all rounded-lg px-2.5 py-1.5 shadow-[0_1px_2px_rgba(20,62,71,0.04)] hover:shadow-[0_2px_8px_rgba(20,62,71,0.08)] disabled:opacity-50"
             >
               {isGenerating ? (
                 <Loader2 className="h-3 w-3 animate-spin" />
               ) : (
-                <Sparkles className="h-3 w-3" style={{ color: 'var(--lavender-text)' }} />
+                <span className="doen-duo-icon">
+                  <PhSparkle size={13} weight="duotone" />
+                </span>
               )}
-              {isGenerating ? 'Daan schrijft…' : 'Daan'}
+              {isGenerating ? 'Daan schrijft…' : 'Daan AI'}
             </button>
           )}
         </div>
@@ -127,7 +143,7 @@ Antwoord ALLEEN met de briefing, niets anders.`
         onChange={(e) => setText(e.target.value)}
         onBlur={handleBlur}
         placeholder="Wat moet er gemaakt worden? Waar? Welke materialen?"
-        className="resize-y text-[14px] leading-relaxed w-full min-h-[110px] px-4 py-3.5 bg-[var(--surface-soft)] border-[var(--surface-soft-border)] focus-visible:bg-white focus-visible:border-[var(--amber)] focus-visible:ring-[3px] focus-visible:ring-[rgba(204,138,63,0.18)] focus-visible:shadow-none"
+        className="resize-y text-[14px] leading-relaxed w-full min-h-[110px] px-4 py-3.5 bg-white border border-[rgba(26,83,92,0.12)] rounded-lg focus-visible:bg-white focus-visible:border-[#1A535C] focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] focus-visible:shadow-none transition-colors"
         onKeyDown={(e) => {
           if (e.key === 'Escape') {
             setText(savedRef.current)

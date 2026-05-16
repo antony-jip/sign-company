@@ -126,23 +126,45 @@ export function BedrijfTab() {
     }
   }
 
+  const flameSaveButton = (
+    <button
+      type="button"
+      onClick={handleSave}
+      disabled={isSaving || isLoading}
+      className="inline-flex items-center gap-2 bg-[#F15025] text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_2px_8px_rgba(241,80,37,0.25),0_0_0_1px_rgba(241,80,37,0.1)] hover:bg-[#E04520] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35),0_0_0_1px_rgba(241,80,37,0.15)] hover:-translate-y-[1px] active:translate-y-0 active:bg-[#D03A18] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+    >
+      {isSaving ? 'Opslaan...' : 'Opslaan'}
+    </button>
+  )
+
   const saveButton = (
-    <div className="flex justify-end mt-6">
-      <Button onClick={handleSave} disabled={isSaving || isLoading}>{isSaving ? 'Opslaan...' : 'Opslaan'}</Button>
+    <div className="flex justify-end pt-4 border-t border-[rgba(26,83,92,0.08)]">
+      {flameSaveButton}
     </div>
   )
 
   return (
     <>
-      <SubTabNav tabs={BEDRIJF_TABS} active={subTab} onChange={setSubTab} />
+      <SubTabNav tabs={BEDRIJF_TABS} active={subTab} onChange={setSubTab} variant="underline" />
 
       {subTab === 'algemeen' && (
-        <Card className="border-border/50 rounded-xl">
-          <CardContent className="space-y-6 pt-6">
+        <div className="doen-slate-surface rounded-2xl p-6 md:p-8 space-y-6">
+          <div className="space-y-1">
+            <h2 className="text-[20px] font-bold tracking-[-0.3px] text-[#1A1A1A]">
+              Bedrijfsgegevens<span className="text-[#F15025]">.</span>
+            </h2>
+            <p
+              className="text-[14px] text-[#6B6B66]"
+              style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+            >
+              logo, naam, adres en email-kleur
+            </p>
+          </div>
+          <div className="space-y-6">
             {bedrijfsnaam && (
-              <h2 className="text-[18px] font-bold tracking-[-0.03em] font-display text-foreground">
+              <h3 className="text-[16px] font-semibold text-[#6B6B66]">
                 {bedrijfsnaam}
-              </h2>
+              </h3>
             )}
 
             <div className="flex items-center gap-6">
@@ -218,65 +240,71 @@ export function BedrijfTab() {
                 <Input id="stad" value={stad} onChange={(e) => setStad(e.target.value)} className="bg-[#F4F2EE] dark:bg-muted border-[#E6E4E0] rounded-lg focus-visible:ring-[#1A535C]" />
               </div>
             </div>
-            <div className="flex justify-end">
-              <Button onClick={handleSave} disabled={isSaving || isLoading} className="bg-[#1A535C] hover:bg-[#1A535C]/90 text-white">{isSaving ? 'Opslaan...' : 'Opslaan'}</Button>
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+          {saveButton}
+        </div>
       )}
 
       {subTab === 'contact' && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Contactgegevens</CardTitle>
-            <CardDescription>Telefoon, e-mail en website van uw bedrijf</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="bedrijfs-telefoon">Telefoon</Label>
-                <Input id="bedrijfs-telefoon" type="tel" value={bedrijfsTelefoon} onChange={(e) => setBedrijfsTelefoon(e.target.value)} placeholder="+31 (0)20 1234567" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="bedrijfs-email">E-mail</Label>
-                <Input id="bedrijfs-email" type="email" value={bedrijfsEmail} onChange={(e) => setBedrijfsEmail(e.target.value)} placeholder="info@bedrijf.nl" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="bedrijfs-website">Website</Label>
-                <Input id="bedrijfs-website" value={bedrijfsWebsite} onChange={(e) => setBedrijfsWebsite(e.target.value)} placeholder="www.bedrijf.nl" />
-              </div>
+        <div className="doen-slate-surface rounded-2xl p-6 md:p-8 space-y-6">
+          <div className="space-y-1">
+            <h2 className="text-[20px] font-bold tracking-[-0.3px] text-[#1A1A1A]">
+              Contactgegevens<span className="text-[#F15025]">.</span>
+            </h2>
+            <p
+              className="text-[14px] text-[#6B6B66]"
+              style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+            >
+              telefoon, e-mail en website
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="bedrijfs-telefoon" className="text-[12px] font-semibold uppercase tracking-widest text-[#6B6B66]">Telefoon</Label>
+              <Input id="bedrijfs-telefoon" type="tel" value={bedrijfsTelefoon} onChange={(e) => setBedrijfsTelefoon(e.target.value)} placeholder="+31 (0)20 1234567" className="bg-white" />
             </div>
-            {saveButton}
-          </CardContent>
-        </Card>
+            <div className="space-y-1.5">
+              <Label htmlFor="bedrijfs-email" className="text-[12px] font-semibold uppercase tracking-widest text-[#6B6B66]">E-mail</Label>
+              <Input id="bedrijfs-email" type="email" value={bedrijfsEmail} onChange={(e) => setBedrijfsEmail(e.target.value)} placeholder="info@bedrijf.nl" className="bg-white" />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="bedrijfs-website" className="text-[12px] font-semibold uppercase tracking-widest text-[#6B6B66]">Website</Label>
+              <Input id="bedrijfs-website" value={bedrijfsWebsite} onChange={(e) => setBedrijfsWebsite(e.target.value)} placeholder="www.bedrijf.nl" className="bg-white" />
+            </div>
+          </div>
+          {saveButton}
+        </div>
       )}
 
       {subTab === 'financieel' && (
-        <Card className="border-border/50 rounded-xl">
-          <CardHeader>
-            <CardTitle className="text-[20px] font-bold font-display tracking-[-0.03em]">Juridisch &amp; Financieel</CardTitle>
-            <CardDescription className="text-[13px]">Deze gegevens worden weergegeven op facturen en offertes</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="space-y-1.5">
-                <label htmlFor="kvk" className="text-[11px] text-[#A0A098] block">KvK Nummer</label>
-                <Input id="kvk" value={kvkNummer} onChange={(e) => setKvkNummer(e.target.value)} placeholder="12345678" className="font-mono bg-[#F4F2EE] dark:bg-muted border-[#E6E4E0] rounded-lg focus-visible:ring-[#1A535C]" />
-              </div>
-              <div className="space-y-1.5">
-                <label htmlFor="btw" className="text-[11px] text-[#A0A098] block">BTW Nummer</label>
-                <Input id="btw" value={btwNummer} onChange={(e) => setBtwNummer(e.target.value)} placeholder="NL123456789B01" className="font-mono bg-[#F4F2EE] dark:bg-muted border-[#E6E4E0] rounded-lg focus-visible:ring-[#1A535C]" />
-              </div>
-              <div className="space-y-1.5">
-                <label htmlFor="iban" className="text-[11px] text-[#A0A098] block">IBAN</label>
-                <Input id="iban" value={iban} onChange={(e) => setIban(e.target.value)} placeholder="NL00 BANK 0123 4567 89" className="font-mono bg-[#F4F2EE] dark:bg-muted border-[#E6E4E0] rounded-lg focus-visible:ring-[#1A535C]" />
-              </div>
+        <div className="doen-slate-surface rounded-2xl p-6 md:p-8 space-y-6">
+          <div className="space-y-1">
+            <h2 className="text-[20px] font-bold tracking-[-0.3px] text-[#1A1A1A]">
+              Juridisch &amp; financieel<span className="text-[#F15025]">.</span>
+            </h2>
+            <p
+              className="text-[14px] text-[#6B6B66]"
+              style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+            >
+              wordt op facturen en offertes weergegeven
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="kvk" className="text-[12px] font-semibold uppercase tracking-widest text-[#6B6B66]">KvK Nummer</Label>
+              <Input id="kvk" value={kvkNummer} onChange={(e) => setKvkNummer(e.target.value)} placeholder="12345678" className="font-mono bg-white" />
             </div>
-            <div className="flex justify-end mt-6">
-              <Button onClick={handleSave} disabled={isSaving || isLoading} className="bg-[#1A535C] hover:bg-[#1A535C]/90 text-white">{isSaving ? 'Opslaan...' : 'Opslaan'}</Button>
+            <div className="space-y-1.5">
+              <Label htmlFor="btw" className="text-[12px] font-semibold uppercase tracking-widest text-[#6B6B66]">BTW Nummer</Label>
+              <Input id="btw" value={btwNummer} onChange={(e) => setBtwNummer(e.target.value)} placeholder="NL123456789B01" className="font-mono bg-white" />
             </div>
-          </CardContent>
-        </Card>
+            <div className="space-y-1.5">
+              <Label htmlFor="iban" className="text-[12px] font-semibold uppercase tracking-widest text-[#6B6B66]">IBAN</Label>
+              <Input id="iban" value={iban} onChange={(e) => setIban(e.target.value)} placeholder="NL00 BANK 0123 4567 89" className="font-mono bg-white" />
+            </div>
+          </div>
+          {saveButton}
+        </div>
       )}
 
       <DemoDataSection />

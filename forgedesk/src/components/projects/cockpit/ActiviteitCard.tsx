@@ -1,23 +1,30 @@
 import { useState } from 'react'
+import { ChevronDown, ChevronRight } from 'lucide-react'
 import {
-  Send, Receipt, CreditCard, ClipboardCheck, Camera,
-  CheckCircle2, Wrench, FolderPlus, ChevronDown, ChevronRight,
-} from 'lucide-react'
+  PaperPlaneRight as PhSend,
+  Receipt as PhReceipt,
+  CreditCard as PhCreditCard,
+  ClipboardText as PhClipboard,
+  Camera as PhCamera,
+  CheckCircle as PhCheckCircle,
+  Wrench as PhWrench,
+  FolderPlus as PhFolderPlus,
+  Pulse as PhPulse,
+  type Icon as PhosphorIcon,
+} from '@phosphor-icons/react'
 import type { ActivityEvent } from './ActiviteitFeed'
 
 const STORAGE_KEY = 'doen_activiteit_collapsed'
 
-type Icon = typeof Send
-
-const typeIcon: Record<ActivityEvent['type'], Icon> = {
-  project:  FolderPlus,
-  offerte:  Receipt,
-  montage:  Wrench,
-  werkbon:  ClipboardCheck,
-  factuur:  CreditCard,
-  taak:     CheckCircle2,
-  foto:     Camera,
-  portaal:  Send,
+const typeIcon: Record<ActivityEvent['type'], PhosphorIcon> = {
+  project:  PhFolderPlus,
+  offerte:  PhReceipt,
+  montage:  PhWrench,
+  werkbon:  PhClipboard,
+  factuur:  PhCreditCard,
+  taak:     PhCheckCircle,
+  foto:     PhCamera,
+  portaal:  PhSend,
 }
 
 const typeColor: Record<ActivityEvent['type'], string> = {
@@ -74,17 +81,27 @@ export function ActiviteitCard({ events }: ActiviteitCardProps) {
 
   if (events.length === 0) {
     return (
-      <div className="rounded-xl bg-[#FFFFFF] shadow-[0_1px_3px_rgba(130,100,60,0.04)] p-6">
-        <div className="flex items-center justify-between">
-          <h3 className="text-[11px] font-semibold text-[#6B6B66] uppercase tracking-[0.08em]">Activiteit</h3>
+      <div className="doen-slate-surface rounded-2xl p-5">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="doen-duo-icon" style={{ '--duo-sec': '#1A535C' } as React.CSSProperties}>
+            <PhPulse size={16} weight="duotone" />
+          </span>
+          <h3 className="font-heading text-[15px] font-bold text-[#1A1A1A]">
+            Activiteit<span className="text-[#F15025]">.</span>
+          </h3>
         </div>
-        <p className="text-[12px] text-[#9B9B95] py-4 text-center">Nog geen activiteit</p>
+        <p
+          className="text-[12px] text-[#9B9B95] py-3 text-center"
+          style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+        >
+          nog geen activiteit
+        </p>
       </div>
     )
   }
 
   return (
-    <div className="rounded-xl bg-[#FFFFFF] shadow-[0_1px_3px_rgba(130,100,60,0.04)] p-6">
+    <div className="doen-slate-surface rounded-2xl p-5">
       <div
         className={`flex items-center justify-between cursor-pointer select-none group ${collapsed ? '' : 'mb-3'}`}
         onClick={toggleCollapsed}
@@ -94,15 +111,20 @@ export function ActiviteitCard({ events }: ActiviteitCardProps) {
             ? <ChevronRight className="h-3.5 w-3.5 text-[#9B9B95] group-hover:text-[#1A1A1A] transition-colors" />
             : <ChevronDown className="h-3.5 w-3.5 text-[#9B9B95] group-hover:text-[#1A1A1A] transition-colors" />
           }
-          <h3 className="text-[11px] font-semibold text-[#6B6B66] uppercase tracking-[0.08em]">Activiteit</h3>
-          <span className="font-mono text-[10px] font-medium bg-[var(--cream-bg)] text-[var(--cream-text)] rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
+          <span className="doen-duo-icon" style={{ '--duo-sec': '#1A535C' } as React.CSSProperties}>
+            <PhPulse size={16} weight="duotone" />
+          </span>
+          <h3 className="font-heading text-[15px] font-bold text-[#1A1A1A]">
+            Activiteit<span className="text-[#F15025]">.</span>
+          </h3>
+          <span className="font-mono text-[10px] font-semibold bg-[rgba(26,83,92,0.08)] text-[#1A535C] rounded-full px-1.5 py-0.5 min-w-[18px] text-center tabular-nums">
             {events.length}
           </span>
         </div>
         {!collapsed && hasMore && (
           <button
             onClick={(e) => { e.stopPropagation(); setShowAll(v => !v) }}
-            className="text-[12px] text-[#6B6B66] hover:text-[#1A1A1A] transition-colors"
+            className="text-[12px] font-medium text-[#1A535C] hover:text-[#0F3D44] hover:underline transition-colors"
           >
             {showAll ? 'Toon minder' : 'Alles bekijken'}
           </button>
@@ -110,20 +132,26 @@ export function ActiviteitCard({ events }: ActiviteitCardProps) {
       </div>
 
       {!collapsed && (
-      <div className="-mx-2">
+      <div className="-mx-2 relative">
+        {/* Verticale timeline-lijn */}
+        <span
+          aria-hidden
+          className="absolute left-[24px] top-3 bottom-3 w-px"
+          style={{ background: 'rgba(26,83,92,0.1)' }}
+        />
         {visible.map((event) => {
           const Icon = typeIcon[event.type]
           const color = typeColor[event.type]
           return (
             <div
               key={event.id}
-              className="flex items-start gap-3 px-2 py-2 rounded-lg hover:bg-[#FAFAF8] transition-colors"
+              className="relative flex items-start gap-3 px-2 py-2 rounded-lg hover:bg-white/60 transition-colors"
             >
               <div
-                className="flex-shrink-0 h-[26px] w-[26px] rounded-full flex items-center justify-center mt-0.5"
-                style={{ background: 'var(--cream-bg)' }}
+                className="relative flex-shrink-0 h-[28px] w-[28px] rounded-full flex items-center justify-center mt-0.5 bg-white border z-10"
+                style={{ borderColor: `${color}33` }}
               >
-                <Icon className="h-3 w-3" style={{ color }} />
+                <Icon size={14} weight="duotone" color={color} />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-[13px] text-[#4A4A46] leading-snug">

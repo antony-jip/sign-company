@@ -64,6 +64,12 @@ import { round2 } from '@/utils/budgetUtils'
 import { logger } from '../../utils/logger'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useOptimisticState } from '@/hooks/useOptimistic'
+import {
+  ClockCountdown as PhClockCountdown,
+  PencilSimple as PhPencilSimple,
+  HandHeart as PhHandHeart,
+  HourglassMedium as PhHourglass,
+} from '@phosphor-icons/react'
 
 type ViewMode = 'pipeline' | 'lijst'
 type SortOption = 'newest' | 'oldest' | 'highest' | 'expiring'
@@ -130,6 +136,31 @@ function getOfferteStatusDotColor(status: string): string {
     case 'wijziging_gevraagd': return 'bg-[#C03A18]'
     default: return 'bg-[#5A5A55]'
   }
+}
+
+const OFFERTE_STATUS_HEX: Record<string, string> = {
+  concept: '#5A5A55',
+  verzonden: '#F15025',
+  bekeken: '#6A5A8A',
+  goedgekeurd: '#1A535C',
+  afgewezen: '#C03A18',
+  verlopen: '#9B9B95',
+  gefactureerd: '#2D6B48',
+  wijziging_gevraagd: '#C03A18',
+}
+function offerteStatusHex(s: string): string {
+  return OFFERTE_STATUS_HEX[s] ?? '#5A5A55'
+}
+function offerteNeedsAttention(o: Offerte): boolean {
+  if (o.status === 'wijziging_gevraagd') return true
+  if (o.status === 'verzonden' || o.status === 'bekeken') {
+    const sentDate = o.verstuurd_op || o.created_at
+    if (!sentDate) return false
+    const dagen = Math.floor((Date.now() - new Date(sentDate).getTime()) / 86400000)
+    if (dagen > 7) return true
+  }
+  if (getFollowUpState(o) === 'overdue') return true
+  return false
 }
 
 function formatEur(amount: number): string {
@@ -386,6 +417,14 @@ export function QuotesPipeline() {
     const thisMonthCount = eigenOffertes.filter(o => isThisMonth(o.created_at)).length
     return { openCount, openValue, conversionRate, avgValue, overdueFollowUps, thisMonthCount }
   }, [eigenOffertes])
+
+  const offerteKpis = useMemo(() => {
+    const opvolgen = offertes.filter(o => o.status === 'verzonden' || o.status === 'bekeken').length
+    const concept = offertes.filter(o => o.status === 'concept').length
+    const akkoord = offertes.filter(o => o.status === 'goedgekeurd').length
+    const verlopen = offertes.filter(o => o.status === 'verlopen').length
+    return { opvolgen, concept, akkoord, verlopen }
+  }, [offertes])
 
   // Drag & drop handlers
   const handleDragStart = useCallback((e: React.DragEvent, offerteId: string) => {
@@ -807,19 +846,12 @@ export function QuotesPipeline() {
   )
 
   return (
-    <div className="h-full flex flex-col bg-[#F8F7F5] -m-3 sm:-m-4 md:-m-6">
-      {/* Animations */}
-      <style>{`
-        @keyframes doen-pulse { 0%,100% { opacity:1 } 50% { opacity:.35 } }
-        @keyframes doen-fade-up { from { opacity:0; transform:translateY(8px) } to { opacity:1; transform:translateY(0) } }
-        .doen-pulse { animation: doen-pulse 2.5s ease-in-out infinite }
-        .doen-row { animation: doen-fade-up .35s cubic-bezier(.22,1,.36,1) both }
-      `}</style>
+    <div className="h-full flex flex-col -m-3 sm:-m-4 md:-m-6">
 
       <div className="flex-1 min-h-0 overflow-y-auto">
         <div className="px-4 py-4 md:px-8 md:py-8 space-y-6">
 
-          {/* ── Header + Stats ── */}
+          {/* ── Header + KPI tiles ── */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-baseline gap-4">
@@ -846,15 +878,60 @@ export function QuotesPipeline() {
               </Link>
             </div>
 
-            {/* Status overview — text + dot */}
-            <div className="flex items-center gap-5 flex-wrap min-h-[20px] text-[12.5px]">
-              {kpis.openCount > 0 && (
-                <span className="inline-flex items-center gap-1.5 text-[#C03A18]">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#F15025] doen-pulse" />
-                  <span className="font-mono font-medium">{kpis.openCount}</span>
-                  <span className="text-[#6B6B66]">open</span>
-                </span>
-              )}
+            {/* KPI tiles — clickable status-filter shortcuts */}
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {([
+                { key: 'wacht_op_reactie', label: 'Opvolgen',  sub: 'wacht op reactie',         count: offerteKpis.opvolgen, Icon: PhClockCountdown },
+                { key: 'concept',          label: 'Concept',   sub: 'nog niet verstuurd',       count: offerteKpis.concept,  Icon: PhPencilSimple   },
+                { key: 'goedgekeurd',      label: 'Akkoord',   sub: 'klaar om te factureren',   count: offerteKpis.akkoord,  Icon: PhHandHeart      },
+                { key: 'verlopen',         label: 'Verlopen',  sub: 'geldigheid voorbij.',      count: offerteKpis.verlopen, Icon: PhHourglass      },
+              ] as const).map((tile) => {
+                const isActive = statusFilter === tile.key
+                const TileIcon = tile.Icon
+                return (
+                  <button
+                    key={tile.key}
+                    type="button"
+                    onClick={() => setStatusFilter(isActive ? 'alle' : tile.key as StatusFilter)}
+                    className={cn(
+                      'group doen-slate-surface relative rounded-xl px-5 py-4 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F15025]/30 focus-visible:ring-offset-2',
+                      isActive && 'doen-slate-surface-active'
+                    )}
+                    aria-pressed={isActive}
+                  >
+                    <div className="flex items-baseline justify-between gap-3 mb-2">
+                      <span className="inline-flex items-center gap-2">
+                        <span className={cn('doen-duo-icon flex-shrink-0', tile.key === 'wacht_op_reactie' && 'doen-pulse')}>
+                          <TileIcon size={18} weight="duotone" />
+                        </span>
+                        <span className="font-heading text-[14px] font-bold text-[#1A1A1A]">
+                          {tile.label}<span className="text-[#F15025]">.</span>
+                        </span>
+                      </span>
+                    </div>
+                    <div className="flex items-baseline gap-2">
+                      <span className="font-heading font-bold text-[28px] leading-none text-[#1A1A1A] tabular-nums">
+                        {tile.count}
+                      </span>
+                      <span
+                        className="text-[13px] text-[#9B9B95] truncate"
+                        style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+                      >
+                        · {tile.sub}
+                      </span>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Business fact-strip — pipeline waarde + conversie */}
+            <div className="flex items-center gap-5 flex-wrap text-[12.5px]">
+              <span className="inline-flex items-center gap-1.5 text-[#3A5A9A]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#3A5A9A]" />
+                <span className="text-[#6B6B66]">Pipeline</span>
+                <span className="font-mono font-medium">{formatEur(financialSummary.pipelineTotaal)}</span>
+              </span>
               <span className="inline-flex items-center gap-1.5 text-[#2D6B48]">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#2D6B48]" />
                 <span className="font-mono font-medium">{kpis.conversionRate}%</span>
@@ -864,19 +941,14 @@ export function QuotesPipeline() {
                 <span className="inline-flex items-center gap-1.5 text-[#C0451A]">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#F15025] doen-pulse" />
                   <span className="font-mono font-medium">{kpis.overdueFollowUps}</span>
-                  <span className="text-[#6B6B66]">achterstallig</span>
+                  <span className="text-[#6B6B66]">achterstallige follow-up</span>
                 </span>
               )}
-              <span className="inline-flex items-center gap-1.5 text-[#3A5A9A]">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#3A5A9A]" />
-                <span className="text-[#6B6B66]">Pipeline</span>
-                <span className="font-mono font-medium">{formatEur(financialSummary.pipelineTotaal)}</span>
-              </span>
             </div>
           </div>
 
           {/* ── Toolbar card ── */}
-          <div className="bg-white rounded-2xl p-5 shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03]">
+          <div className="doen-slate-surface rounded-2xl p-5">
               <div className="flex items-center gap-5">
                 {/* Search */}
                 <div className="relative max-w-[280px] flex-1">
@@ -1000,7 +1072,7 @@ export function QuotesPipeline() {
                 ]).map(col => {
                   const data = financialSummary.statusTotals[col.key] || { count: 0, totaal: 0 }
                   return (
-                    <div key={col.key} className="bg-white rounded-2xl p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04)] ring-1 ring-black/[0.03]">
+                    <div key={col.key} className="doen-slate-surface rounded-2xl p-5">
                       <div className="flex items-center gap-2 mb-2">
                         <span className="w-2 h-2 rounded-full" style={{ backgroundColor: col.dot }} />
                         <span className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: col.text }}>{col.label}<span className="text-[#F15025]">.</span></span>
@@ -1013,7 +1085,7 @@ export function QuotesPipeline() {
               </div>
 
               {/* Sales summary */}
-              <div className="bg-white rounded-2xl px-6 py-4 shadow-[0_1px_2px_rgba(0,0,0,0.04)] ring-1 ring-black/[0.03] flex flex-wrap items-center gap-6">
+              <div className="doen-slate-surface rounded-2xl px-6 py-4 flex flex-wrap items-center gap-6">
                 <div className="flex items-center gap-2">
                   <DollarSign className="h-4 w-4 text-[#9B9B95]" />
                   <span className="text-[13px] text-[#6B6B66]">Pipeline</span>
@@ -1260,7 +1332,7 @@ export function QuotesPipeline() {
           {viewMode === 'lijst' && (
             <>
               {sortedListOffertes.length === 0 ? (
-                <div className="bg-white rounded-2xl p-12 ring-1 ring-black/[0.03] text-center">
+                <div className="doen-slate-surface rounded-2xl p-12 text-center">
                   <EmptyState
                     module="offertes"
                     title="Geen offertes gevonden"
@@ -1278,11 +1350,15 @@ export function QuotesPipeline() {
                   <div className="md:hidden space-y-2">
                     {sortedListOffertes.map((offerte, i) => {
                       const expiryStatus = getExpiryStatus(offerte.geldig_tot)
+                      const stripeHex = offerteStatusHex(offerte.status)
                       return (
                         <div
                           key={offerte.id}
-                          className="doen-row bg-white rounded-xl p-4 ring-1 ring-black/[0.03] shadow-[0_1px_2px_rgba(0,0,0,0.04)] active:scale-[0.99] transition-transform"
-                          style={{ animationDelay: `${i * 30}ms` }}
+                          className="doen-row doen-slate-surface rounded-xl p-4 active:scale-[0.99] transition-transform"
+                          style={{
+                            animationDelay: `${i * 30}ms`,
+                            boxShadow: `0 1px 2px rgba(20,62,71,0.04), 0 8px 24px rgba(20,62,71,0.025), inset 3px 0 0 0 ${stripeHex}`,
+                          }}
                           onClick={() => navigateWithTab({ path: `/offertes/${offerte.id}/bewerken`, label: offerte.nummer || offerte.titel || 'Offerte', id: `/offertes/${offerte.id}` })}
                         >
                           <div className="flex items-center justify-between mb-2">
@@ -1307,10 +1383,13 @@ export function QuotesPipeline() {
                   </div>
 
                   {/* Desktop table */}
-                  <div className="hidden md:block bg-white rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03] overflow-hidden">
+                  <div
+                    className="hidden md:block doen-slate-surface rounded-2xl"
+                    style={{ clipPath: 'inset(0 round 16px)' }}
+                  >
                     <div className="overflow-x-auto">
                       <table className="w-full">
-                        <thead>
+                        <thead className="sticky top-0 z-10" style={{ backgroundColor: '#FFFFFF', backdropFilter: 'blur(4px)' }}>
                           <tr className="border-b-2 border-[#F0EFEC]">
                             <th className="py-3.5 pl-5 pr-3 w-10 text-left">
                               <Checkbox
@@ -1332,18 +1411,25 @@ export function QuotesPipeline() {
                           {sortedListOffertes.map((offerte, i) => {
                             const expiryStatus = getExpiryStatus(offerte.geldig_tot)
                             const klantInitial = (offerte.klant_naam || 'O')[0].toUpperCase()
+                            const stripeHex = offerteStatusHex(offerte.status)
+                            const attention = offerteNeedsAttention(offerte)
                             return (
                               <tr
                                 key={offerte.id}
                                 className={cn(
                                   'doen-row border-b border-[#F0EFEC] last:border-0 cursor-pointer transition-all duration-200 group',
+                                  attention && !selectedIds.has(offerte.id) && 'bg-[rgba(241,80,37,0.025)]',
                                   'hover:bg-[#F8F7F4]',
                                   selectedIds.has(offerte.id) && 'bg-[#1A535C]/[0.03]',
                                 )}
                                 style={{ animationDelay: `${i * 25}ms` }}
                                 onClick={() => navigateWithTab({ path: `/offertes/${offerte.id}/bewerken`, label: offerte.nummer || offerte.titel || 'Offerte', id: `/offertes/${offerte.id}` })}
                               >
-                                <td className="py-3.5 pl-5 pr-3 align-middle" onClick={e => e.stopPropagation()}>
+                                <td
+                                  className="py-3.5 pl-5 pr-3 align-middle"
+                                  style={{ boxShadow: `inset 3px 0 0 0 ${stripeHex}` }}
+                                  onClick={e => e.stopPropagation()}
+                                >
                                   <Checkbox checked={selectedIds.has(offerte.id)} onCheckedChange={() => toggleSelect(offerte.id)} />
                                 </td>
                                 {/* Offerte */}

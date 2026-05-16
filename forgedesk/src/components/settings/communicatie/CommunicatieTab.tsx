@@ -23,7 +23,7 @@ export function CommunicatieTab() {
 
   return (
     <div>
-      <SubTabNav tabs={COMMUNICATIE_SUBTABS} active={active} onChange={setActive} />
+      <SubTabNav tabs={COMMUNICATIE_SUBTABS} active={active} onChange={setActive} variant="underline" />
       {active === 'mijn-email' && <MijnEmailSubTab />}
       {active === 'templates' && <TemplatesSubTab />}
       {active === 'offerte-opvolging' && <OfferteOpvolgingSubTab />}

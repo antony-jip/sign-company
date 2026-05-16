@@ -234,7 +234,7 @@ export function IntegratiesTab() {
 
   return (
     <>
-    <SubTabNav tabs={INTEGRATIES_TABS} active={subTab} onChange={setSubTab} />
+    <SubTabNav tabs={INTEGRATIES_TABS} active={subTab} onChange={setSubTab} variant="underline" />
     <div className="space-y-4">
       {/* ── Mollie Instellingen ── */}
       <Card>

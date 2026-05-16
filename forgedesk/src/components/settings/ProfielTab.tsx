@@ -1,8 +1,13 @@
-import { useState, useEffect, useCallback } from 'react'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import {
+  EnvelopeSimple as PhEnvelope,
+  Phone as PhPhone,
+  Sparkle as PhSparkle,
+  CheckCircle as PhCheckCircle,
+  IdentificationCard as PhIdCard,
+} from '@phosphor-icons/react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { getProfile, updateProfile } from '@/services/supabaseService'
@@ -72,44 +77,242 @@ export function ProfielTab() {
     }
   }
 
+  const initials = useMemo(() => {
+    const v = (voornaam.trim()[0] || '').toUpperCase()
+    const a = (achternaam.trim()[0] || '').toUpperCase()
+    return (v + a) || '·'
+  }, [voornaam, achternaam])
+
+  const volledigeNaam = `${voornaam} ${achternaam}`.trim()
+
+  const completionFields = [
+    { key: 'voornaam', value: voornaam },
+    { key: 'achternaam', value: achternaam },
+    { key: 'functie', value: functie },
+    { key: 'telefoon', value: telefoon },
+  ]
+  const completed = completionFields.filter(f => f.value.trim().length > 0).length
+  const completionPct = Math.round((completed / completionFields.length) * 100)
+
+  const greeting = useMemo(() => {
+    const hour = new Date().getHours()
+    if (hour < 6) return 'Goedenacht'
+    if (hour < 12) return 'Goedemorgen'
+    if (hour < 18) return 'Goedemiddag'
+    return 'Goedenavond'
+  }, [])
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Persoonlijke Gegevens</CardTitle>
-        <CardDescription>Uw naam, functie en contactinformatie</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="voornaam">Voornaam</Label>
-            <Input id="voornaam" value={voornaam} onChange={(e) => setVoornaam(e.target.value)} />
+    <div className="grid grid-cols-1 lg:grid-cols-[1fr_minmax(280px,360px)] gap-6">
+      {/* ── Left column: form ─────────────────────────────────────────── */}
+      <div className="doen-slate-surface rounded-2xl p-6 md:p-8 space-y-7">
+        {/* Hero: avatar + greeting */}
+        <div className="flex items-start gap-5">
+          <div className="relative flex-shrink-0">
+            <div
+              className="w-20 h-20 rounded-2xl flex items-center justify-center text-[28px] font-extrabold text-white shadow-[0_4px_16px_rgba(26,83,92,0.25)] select-none"
+              style={{
+                background: 'linear-gradient(135deg, #1A535C 0%, #2D6B72 45%, #F15025 130%)',
+              }}
+            >
+              {initials}
+            </div>
+            <span className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-white border-2 border-white shadow-sm flex items-center justify-center">
+              <span className="w-2 h-2 rounded-full bg-[#2D6B48] doen-pulse" aria-hidden />
+            </span>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="achternaam">Achternaam</Label>
-            <Input id="achternaam" value={achternaam} onChange={(e) => setAchternaam(e.target.value)} />
+          <div className="min-w-0 flex-1 pt-1">
+            <p
+              className="text-[14px] text-[#6B6B66]"
+              style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+            >
+              {greeting}<span className="text-[#F15025]">·</span>
+            </p>
+            <h2 className="text-[24px] font-extrabold tracking-[-0.3px] text-[#1A1A1A] mt-0.5 truncate">
+              {volledigeNaam || 'Jouw naam'}<span className="text-[#F15025]">.</span>
+            </h2>
+            <p className="text-[13px] text-[#6B6B66] truncate">
+              {functie || 'Voeg je functie toe'} <span className="text-[#C0BDB8]">·</span> {email}
+            </p>
           </div>
         </div>
+
+        {/* Completeness bar */}
         <div className="space-y-2">
-          <Label htmlFor="functie">Functie</Label>
-          <Input id="functie" value={functie} onChange={(e) => setFunctie(e.target.value)} placeholder="Bijv. Eigenaar, Projectleider, Verkoper" />
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" value={email} readOnly disabled className="bg-background dark:bg-muted cursor-not-allowed" />
-            <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Email kan niet worden gewijzigd</p>
+          <div className="flex items-baseline justify-between">
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-[#6B6B66]">Profiel</span>
+            <span className="text-[13px] font-mono tabular-nums text-[#1A535C] font-semibold">
+              {completionPct}%
+            </span>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="telefoon">Telefoon</Label>
-            <Input id="telefoon" value={telefoon} onChange={(e) => setTelefoon(e.target.value)} />
+          <div className="h-1.5 rounded-full bg-[#E5E4E0] overflow-hidden">
+            <div
+              className="h-full rounded-full transition-all duration-500 ease-out"
+              style={{
+                width: `${completionPct}%`,
+                background: completionPct === 100
+                  ? 'linear-gradient(90deg, #2D6B48, #1A535C)'
+                  : 'linear-gradient(90deg, #1A535C, #F15025)',
+              }}
+            />
           </div>
         </div>
-        <div className="flex justify-end">
-          <Button onClick={handleSave} disabled={isSaving || isLoading}>
+
+        {/* Form fields */}
+        <div className="space-y-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="voornaam" className="text-[12px] font-semibold uppercase tracking-widest text-[#6B6B66]">Voornaam</Label>
+              <Input id="voornaam" value={voornaam} onChange={(e) => setVoornaam(e.target.value)} className="bg-white" />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="achternaam" className="text-[12px] font-semibold uppercase tracking-widest text-[#6B6B66]">Achternaam</Label>
+              <Input id="achternaam" value={achternaam} onChange={(e) => setAchternaam(e.target.value)} className="bg-white" />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="functie" className="text-[12px] font-semibold uppercase tracking-widest text-[#6B6B66]">Functie</Label>
+            <Input id="functie" value={functie} onChange={(e) => setFunctie(e.target.value)} placeholder="Bijv. Eigenaar, Projectleider, Verkoper" className="bg-white" />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="email" className="text-[12px] font-semibold uppercase tracking-widest text-[#6B6B66]">Email</Label>
+              <Input id="email" value={email} readOnly disabled className="bg-[#F8F7F5] text-[#6B6B66] cursor-not-allowed" />
+              <p className="text-[12px] text-[#9B9B95]">Email kan niet worden gewijzigd</p>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="telefoon" className="text-[12px] font-semibold uppercase tracking-widest text-[#6B6B66]">Telefoon</Label>
+              <Input id="telefoon" value={telefoon} onChange={(e) => setTelefoon(e.target.value)} className="bg-white" />
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between pt-4 border-t border-[rgba(26,83,92,0.08)]">
+          <p
+            className="text-[12px] text-[#9B9B95]"
+            style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+          >
+            wijzigingen zijn direct zichtbaar in jouw verzonden offertes en emails.
+          </p>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={isSaving || isLoading}
+            className="inline-flex items-center gap-2 bg-[#F15025] text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_2px_8px_rgba(241,80,37,0.25),0_0_0_1px_rgba(241,80,37,0.1)] hover:bg-[#E04520] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35),0_0_0_1px_rgba(241,80,37,0.15)] hover:-translate-y-[1px] active:translate-y-0 active:bg-[#D03A18] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+          >
             {isSaving ? 'Opslaan...' : 'Opslaan'}
-          </Button>
+          </button>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+
+      {/* ── Right column: live identity preview ───────────────────────── */}
+      <aside className="space-y-3">
+        <div className="flex items-center gap-2">
+          <span className="doen-duo-icon">
+            <PhSparkle size={16} weight="duotone" />
+          </span>
+          <span className="text-[11px] font-semibold uppercase tracking-widest text-[#6B6B66]">
+            Hoe anderen je zien
+          </span>
+        </div>
+
+        {/* Visitekaart preview */}
+        <div
+          className="doen-slate-surface rounded-2xl p-5 relative overflow-hidden"
+          style={{ minHeight: 220 }}
+        >
+          {/* Decorative flame-dot pattern (subtle) */}
+          <div
+            aria-hidden
+            className="absolute -top-8 -right-8 w-32 h-32 rounded-full opacity-[0.07]"
+            style={{ background: 'radial-gradient(circle, #F15025 0%, transparent 70%)' }}
+          />
+          <div className="relative flex items-center gap-3 mb-4">
+            <div
+              className="w-12 h-12 rounded-xl flex items-center justify-center text-[16px] font-extrabold text-white select-none"
+              style={{
+                background: 'linear-gradient(135deg, #1A535C 0%, #2D6B72 50%, #F15025 130%)',
+              }}
+            >
+              {initials}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[15px] font-bold text-[#1A1A1A] truncate">
+                {volledigeNaam || 'Jouw naam'}<span className="text-[#F15025]">.</span>
+              </p>
+              {functie && (
+                <p className="text-[12px] text-[#6B6B66] truncate">{functie}</p>
+              )}
+            </div>
+          </div>
+
+          <div className="relative space-y-2 text-[12.5px]">
+            <div className="flex items-center gap-2 text-[#4A4A46]">
+              <span className="doen-duo-icon flex-shrink-0">
+                <PhEnvelope size={16} weight="duotone" />
+              </span>
+              <span className="truncate font-mono">{email || 'jouw@email.nl'}</span>
+            </div>
+            {telefoon ? (
+              <div className="flex items-center gap-2 text-[#4A4A46]">
+                <span className="doen-duo-icon flex-shrink-0">
+                  <PhPhone size={16} weight="duotone" />
+                </span>
+                <span className="truncate font-mono">{telefoon}</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 text-[#C0BDB8]">
+                <span className="doen-duo-icon flex-shrink-0" style={{ '--duo-sec': '#C0BDB8' } as React.CSSProperties}>
+                  <PhPhone size={16} weight="duotone" />
+                </span>
+                <span className="italic" style={{ fontFamily: '"Instrument Serif", serif' }}>geen telefoonnummer</span>
+              </div>
+            )}
+          </div>
+
+          <div className="relative mt-4 pt-3 border-t border-[rgba(26,83,92,0.1)] flex items-center gap-2">
+            <span className="doen-duo-icon flex-shrink-0" style={{ '--duo-sec': '#9B9B95' } as React.CSSProperties}>
+              <PhIdCard size={14} weight="duotone" />
+            </span>
+            <p
+              className="text-[11px] text-[#9B9B95]"
+              style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+            >
+              afzender · offertes, facturen en mails
+            </p>
+          </div>
+        </div>
+
+        {/* Checklist */}
+        <div className="doen-slate-surface rounded-2xl p-4 space-y-2">
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-[#6B6B66] mb-2">
+            Voltooien
+          </p>
+          {completionFields.map(f => {
+            const labels: Record<string, string> = {
+              voornaam: 'Voornaam',
+              achternaam: 'Achternaam',
+              functie: 'Functie',
+              telefoon: 'Telefoonnummer',
+            }
+            const done = f.value.trim().length > 0
+            return (
+              <div key={f.key} className="flex items-center gap-2.5 text-[13px]">
+                {done ? (
+                  <span className="doen-duo-icon flex-shrink-0" style={{ '--duo-sec': '#2D6B48' } as React.CSSProperties}>
+                    <PhCheckCircle size={18} weight="duotone" />
+                  </span>
+                ) : (
+                  <span className="w-[18px] h-[18px] rounded-full bg-[#E5E4E0] flex-shrink-0" />
+                )}
+                <span className={done ? 'text-[#4A4A46] line-through decoration-[#C0BDB8]' : 'text-[#1A1A1A] font-medium'}>
+                  {labels[f.key]}
+                </span>
+              </div>
+            )
+          })}
+        </div>
+      </aside>
+    </div>
   )
 }

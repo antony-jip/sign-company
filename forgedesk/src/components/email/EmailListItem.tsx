@@ -168,7 +168,7 @@ export const EmailListItem = memo(function EmailListItem({
         <div className="flex items-center gap-1.5 w-[120px] md:w-[170px] flex-shrink-0 min-w-0">
           <span className={cn(
             'truncate leading-none text-[15px] transition-colors duration-200',
-            isUnread ? 'font-medium text-[#1A1A1A]' : 'font-normal text-[#6B6B66]',
+            isUnread ? 'font-semibold text-[#1A1A1A]' : 'font-normal text-[#4A4A46]',
           )}>
             {senderName}
           </span>
@@ -183,14 +183,14 @@ export const EmailListItem = memo(function EmailListItem({
         <div className="flex-1 min-w-0 truncate leading-none text-[15px]">
           <span className={cn(
             'transition-colors duration-200',
-            isUnread ? 'font-medium text-[#1A1A1A]' : 'font-normal text-[#6B6B66]',
+            isUnread ? 'font-semibold text-[#1A1A1A]' : 'font-normal text-[#3A3A36]',
           )}>
             {email.onderwerp || '(geen onderwerp)'}
           </span>
           {preview && (
             <span className={cn(
               'font-normal hidden md:inline ml-2 transition-colors duration-200',
-              isUnread ? 'text-[#9B9B95]' : 'text-[#C5C2BD]',
+              isUnread ? 'text-[#7A7975]' : 'text-[#9B9B95]',
             )}>
               {preview}
             </span>
@@ -206,7 +206,7 @@ export const EmailListItem = memo(function EmailListItem({
             )}
             <span className={cn(
               'tabular-nums min-w-[52px] text-right text-[13px] transition-colors duration-200',
-              isUnread ? 'text-[#1A535C] font-medium' : 'text-[#B0ADA8]',
+              isUnread ? 'text-[#1A535C] font-semibold' : 'text-[#8A8985]',
             )}>
               {formatShortDate(email.datum)}
             </span>
@@ -322,7 +322,7 @@ export const EmailListItem = memo(function EmailListItem({
             <span className={cn(
               'truncate leading-snug text-[14.5px] transition-colors duration-200',
               mdSizes.name,
-              isUnread ? 'font-medium text-[#1A1A1A]' : 'font-normal text-[#7A7975]',
+              isUnread ? 'font-semibold text-[#1A1A1A]' : 'font-normal text-[#4A4A46]',
             )}>
               {senderName}
             </span>
@@ -340,8 +340,8 @@ export const EmailListItem = memo(function EmailListItem({
               'tabular-nums font-mono text-[12px] transition-colors duration-200',
               mdSizes.date,
               isUnread
-                ? 'text-[#9B9B95] md:text-[#6B6B66] md:font-medium'
-                : 'text-[#9B9B95] md:text-[#B0ADA8]',
+                ? 'text-[#6B6B66] md:text-[#1A535C] md:font-semibold'
+                : 'text-[#7A7975] md:text-[#8A8985]',
             )}>
               {formatShortDate(email.datum)}
             </span>
@@ -355,20 +355,20 @@ export const EmailListItem = memo(function EmailListItem({
             mdSizes.subject,
             compact ? 'max-w-full' : 'max-w-full md:max-w-[55%] md:flex-shrink-0',
             isUnread
-              ? 'font-medium text-[#1A1A1A]'
-              : 'font-normal text-[#1A1A1A]/85 md:text-[#9B9B95]',
+              ? 'font-semibold text-[#1A1A1A]'
+              : 'font-normal text-[#1A1A1A]/85 md:text-[#3A3A36]',
           )}>
             {email.onderwerp || '(geen onderwerp)'}
           </span>
           {!compact && preview && (
             <span className="hidden md:contents">
-              <span className={cn('text-[#B0ADA8] truncate ml-2', sizes.preview)}>{preview}</span>
+              <span className={cn('text-[#7A7975] truncate ml-2', sizes.preview)}>{preview}</span>
             </span>
           )}
         </div>
         {/* Mobile-only third line: preview text below subject */}
         {!compact && preview && (
-          <p className="md:hidden truncate mt-0.5 text-[13px] font-normal text-[#9B9B95]">
+          <p className="md:hidden truncate mt-0.5 text-[13px] font-normal text-[#6B6B66]">
             {preview}
           </p>
         )}

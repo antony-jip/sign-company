@@ -15,17 +15,38 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { cn } from '@/lib/utils'
 // ModuleHeader removed — using DOEN inline header
 import { EmptyState } from '@/components/ui/empty-state'
+import { Skeleton } from '@/components/ui/skeleton'
+import {
+  Wrench as PhWrench,
+  Sun as PhSun,
+  Clipboard as PhClipboard,
+  FlagBanner as PhFlag,
+} from '@phosphor-icons/react'
 import type { Werkbon, Klant, Project, Offerte } from '@/types'
 import {
   getWerkbonnen, deleteWerkbon, getKlanten, getProjecten, getOffertes, getWerkbonItems,
 } from '@/services/supabaseService'
 
-type FilterStatus = 'alle' | 'concept' | 'definitief' | 'afgerond'
+type FilterStatus = 'alle' | 'concept' | 'definitief' | 'afgerond' | 'vandaag'
 
 const STATUS_CONFIG: Record<string, { label: string; text: string; bg: string }> = {
   concept: { label: 'Open', text: '#5A5A55', bg: '#EEEEED' },
   definitief: { label: 'In uitvoering', text: '#C03A18', bg: '#FDE8E2' },
   afgerond: { label: 'Afgetekend', text: '#1A535C', bg: '#E2F0F0' },
+}
+
+const WERKBON_STATUS_HEX: Record<string, string> = {
+  concept: '#5A5A55',
+  definitief: '#F15025',
+  afgerond: '#2D6B48',
+}
+function werkbonStatusHex(s: string): string {
+  return WERKBON_STATUS_HEX[s] ?? '#5A5A55'
+}
+function isToday(dateStr?: string | null): boolean {
+  if (!dateStr) return false
+  const today = new Date().toISOString().split('T')[0]
+  return dateStr === today || dateStr.startsWith(today)
 }
 
 export function WerkbonnenLayout() {
@@ -110,7 +131,9 @@ export function WerkbonnenLayout() {
         (wb.titel || '').toLowerCase().includes(q)
       )
     }
-    if (filterStatus !== 'alle') {
+    if (filterStatus === 'vandaag') {
+      result = result.filter((wb) => isToday(wb.datum))
+    } else if (filterStatus !== 'alle') {
       result = result.filter((wb) => wb.status === filterStatus)
     }
     result.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''))
@@ -190,28 +213,82 @@ export function WerkbonnenLayout() {
     toast.success('CSV geëxporteerd')
   }, [gefilterd, getKlantNaam, getProjectNaam, getOfferteNummer, itemCounts])
 
+  const vandaagCount = useMemo(() => werkbonnen.filter((wb) => isToday(wb.datum)).length, [werkbonnen])
+
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="h-full flex flex-col -m-3 sm:-m-4 md:-m-6">
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <div className="px-4 py-4 md:px-8 md:py-8 space-y-6">
+            {/* Header */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-baseline gap-4">
+                  <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-[#1A1A1A]">
+                    Werkbonnen<span className="text-[#F15025]">.</span>
+                  </h1>
+                  <Skeleton className="h-4 w-12" />
+                </div>
+                <Skeleton className="h-10 w-36 rounded-xl" />
+              </div>
+              {/* KPI tile skeletons */}
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="doen-slate-surface rounded-xl px-5 py-4 space-y-2.5">
+                    <div className="flex items-center gap-2">
+                      <Skeleton className="h-1.5 w-1.5 rounded-full" />
+                      <Skeleton className="h-3.5 w-24" />
+                    </div>
+                    <div className="flex items-baseline gap-2">
+                      <Skeleton className="h-7 w-10" />
+                      <Skeleton className="h-3 w-28" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* Toolbar card skeleton */}
+            <div className="doen-slate-surface rounded-2xl p-5 space-y-4">
+              <div className="flex items-center gap-5">
+                <Skeleton className="h-9 w-[280px] rounded-lg" />
+                <div className="hidden sm:flex items-center gap-1 ml-auto">
+                  <Skeleton className="h-8 w-16 rounded-lg" />
+                </div>
+              </div>
+              <div className="flex items-center gap-2 pt-4 border-t border-[#F0EFEC]">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Skeleton key={i} className="h-7 w-20 rounded-lg" />
+                ))}
+              </div>
+            </div>
+            {/* Table skeleton */}
+            <div className="doen-slate-surface rounded-2xl" style={{ clipPath: 'inset(0 round 16px)' }}>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-4 px-5 py-4 border-b border-[#F0EFEC] last:border-b-0">
+                  <Skeleton className="h-4 w-4 rounded" />
+                  <div className="flex-1 min-w-0 space-y-2">
+                    <Skeleton className="h-4 w-2/5" />
+                    <Skeleton className="h-3 w-1/4" />
+                  </div>
+                  <Skeleton className="h-6 w-24 rounded-full" />
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-4 w-12" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="h-full flex flex-col bg-[#F8F7F5] -m-3 sm:-m-4 md:-m-6">
-      {/* Inline keyframes for pulse + stagger */}
-      <style>{`
-        @keyframes doen-pulse { 0%,100% { opacity:1 } 50% { opacity:.35 } }
-        @keyframes doen-fade-up { from { opacity:0; transform:translateY(8px) } to { opacity:1; transform:translateY(0) } }
-        .doen-pulse { animation: doen-pulse 2.5s ease-in-out infinite }
-        .doen-row { animation: doen-fade-up .35s cubic-bezier(.22,1,.36,1) both }
-      `}</style>
+    <div className="h-full flex flex-col -m-3 sm:-m-4 md:-m-6">
 
       <div className="flex-1 min-h-0 overflow-y-auto">
       <div className="px-4 py-4 md:px-8 md:py-8 space-y-6">
 
-      {/* ── Header + Stats ── */}
+      {/* ── Header + KPI tiles ── */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-baseline gap-4">
@@ -238,34 +315,56 @@ export function WerkbonnenLayout() {
           </button>
         </div>
 
-        {/* Status overview — text + dot */}
-        <div className="flex items-center gap-5 flex-wrap min-h-[20px] text-[12.5px]">
-          {(statusCounts['concept'] || 0) > 0 && (
-            <span className="inline-flex items-center gap-1.5 text-[#5A5A55]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#5A5A55]" />
-              <span className="font-mono font-medium">{statusCounts['concept']}</span>
-              <span className="text-[#6B6B66]">open</span>
-            </span>
-          )}
-          {(statusCounts['definitief'] || 0) > 0 && (
-            <span className="inline-flex items-center gap-1.5 text-[#C03A18]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#F15025] doen-pulse" />
-              <span className="font-mono font-medium">{statusCounts['definitief']}</span>
-              <span className="text-[#6B6B66]">in uitvoering</span>
-            </span>
-          )}
-          {(statusCounts['afgerond'] || 0) > 0 && (
-            <span className="inline-flex items-center gap-1.5 text-[#2D6B48]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#2D6B48]" />
-              <span className="font-mono font-medium">{statusCounts['afgerond']}</span>
-              <span className="text-[#6B6B66]">afgetekend</span>
-            </span>
-          )}
+        {/* KPI tiles — clickable triage entry-points */}
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {([
+            { key: 'definitief' as FilterStatus, label: 'In uitvoering', sub: 'lopende werkbonnen',  count: statusCounts['definitief'] || 0, Icon: PhWrench,    pulse: true  },
+            { key: 'vandaag'    as FilterStatus, label: 'Vandaag',       sub: 'ingepland vandaag',   count: vandaagCount,                    Icon: PhSun,       pulse: false },
+            { key: 'concept'    as FilterStatus, label: 'Open',          sub: 'wacht op uitvoering', count: statusCounts['concept'] || 0,    Icon: PhClipboard, pulse: false },
+            { key: 'afgerond'   as FilterStatus, label: 'Afgetekend',    sub: 'klaar.',              count: statusCounts['afgerond'] || 0,   Icon: PhFlag,      pulse: false },
+          ]).map((tile) => {
+            const isActive = filterStatus === tile.key
+            const TileIcon = tile.Icon
+            return (
+              <button
+                key={tile.key}
+                type="button"
+                onClick={() => setFilterStatus(isActive ? 'alle' : tile.key)}
+                className={cn(
+                  'group doen-slate-surface relative rounded-xl px-5 py-4 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F15025]/30 focus-visible:ring-offset-2',
+                  isActive && 'doen-slate-surface-active'
+                )}
+                aria-pressed={isActive}
+              >
+                <div className="flex items-baseline justify-between gap-3 mb-2">
+                  <span className="inline-flex items-center gap-2">
+                    <span className={cn('doen-duo-icon flex-shrink-0', tile.pulse && 'doen-pulse')}>
+                      <TileIcon size={18} weight="duotone" />
+                    </span>
+                    <span className="font-heading text-[14px] font-bold text-[#1A1A1A]">
+                      {tile.label}<span className="text-[#F15025]">.</span>
+                    </span>
+                  </span>
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="font-heading font-bold text-[28px] leading-none text-[#1A1A1A] tabular-nums">
+                    {tile.count}
+                  </span>
+                  <span
+                    className="text-[13px] text-[#9B9B95] truncate"
+                    style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+                  >
+                    · {tile.sub}
+                  </span>
+                </div>
+              </button>
+            )
+          })}
         </div>
       </div>
 
       {/* ── Toolbar card ── */}
-      <div className="bg-white rounded-2xl p-5 shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03]">
+      <div className="doen-slate-surface rounded-2xl p-5">
         <div className="flex items-center gap-5">
           {/* Search with keyboard hint */}
           <div className="relative max-w-[280px] flex-1">
@@ -295,9 +394,9 @@ export function WerkbonnenLayout() {
         {/* Filter tabs */}
         <div className="flex items-center gap-6 mt-4 pt-4 border-t border-[#F0EFEC]">
           <div className="flex items-center gap-1 flex-1 flex-nowrap md:flex-wrap overflow-x-auto">
-            {(['alle', 'concept', 'definitief', 'afgerond'] as const).map((status) => {
-              const labels: Record<string, string> = { alle: 'Alle', concept: 'Open', definitief: 'In uitvoering', afgerond: 'Afgetekend' }
-              const count = statusCounts[status] || 0
+            {(['alle', 'vandaag', 'concept', 'definitief', 'afgerond'] as const).map((status) => {
+              const labels: Record<string, string> = { alle: 'Alle', vandaag: 'Vandaag', concept: 'Open', definitief: 'In uitvoering', afgerond: 'Afgetekend' }
+              const count = status === 'vandaag' ? vandaagCount : (statusCounts[status] || 0)
               const isActive = filterStatus === status
               return (
                 <button
@@ -351,7 +450,7 @@ export function WerkbonnenLayout() {
 
       {/* ── Table ── */}
       {gefilterd.length === 0 ? (
-        <div className="bg-white rounded-2xl p-12 ring-1 ring-black/[0.03] text-center">
+        <div className="doen-slate-surface rounded-2xl p-12 text-center">
           <EmptyState
             module="werkbonnen"
             title="Nog geen werkbonnen"
@@ -359,9 +458,12 @@ export function WerkbonnenLayout() {
           />
         </div>
       ) : (
-        <div className="bg-white rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03] overflow-hidden">
+        <div
+          className="doen-slate-surface rounded-2xl"
+          style={{ clipPath: 'inset(0 round 16px)' }}
+        >
             <table className="w-full table-fixed">
-              <thead>
+              <thead className="sticky top-0 z-10" style={{ backgroundColor: '#FFFFFF', backdropFilter: 'blur(4px)' }}>
                 <tr className="border-b-2 border-[#F0EFEC]">
                   <th className="w-[44px] py-3.5 pl-5 pr-0">
                     <Checkbox
@@ -396,18 +498,25 @@ export function WerkbonnenLayout() {
                   const offerteRef = getOfferteNummer(wb.offerte_id)
                   const projectRef = getProjectNaam(wb.project_id)
                   const ref = offerteRef !== '-' ? offerteRef : projectRef
+                  const stripeHex = werkbonStatusHex(wb.status)
+                  const attention = wb.status === 'definitief'
                   return (
                     <tr
                       key={wb.id}
                       className={cn(
                         'doen-row border-b border-[#F0EFEC] last:border-0 cursor-pointer transition-all duration-200 group',
+                        attention && !selectedIds.has(wb.id) && 'bg-[rgba(241,80,37,0.025)]',
                         'hover:bg-[#F8F7F4]',
                         selectedIds.has(wb.id) && 'bg-[#1A535C]/[0.03]',
                       )}
                       style={{ animationDelay: `${i * 25}ms` }}
                       onClick={() => navigateWithTab({ path: `/werkbonnen/${wb.id}`, label: wb.werkbon_nummer || 'Werkbon', id: `/werkbonnen/${wb.id}` })}
                     >
-                      <td className="py-3.5 pl-5 pr-0" onClick={(e) => e.stopPropagation()}>
+                      <td
+                        className="py-3.5 pl-5 pr-0"
+                        style={{ boxShadow: `inset 3px 0 0 0 ${stripeHex}` }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <Checkbox
                           checked={selectedIds.has(wb.id)}
                           onCheckedChange={() => toggleWerkbonSelection(wb.id)}

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
+import { cn } from '@/lib/utils'
 import {
   PiggyBank,
   TrendingUp,
@@ -169,44 +170,39 @@ export function FinancialLayout() {
     {
       label: 'Gefactureerd',
       value: formatCurrency(gefactureerd),
-      sub: `${facturen.filter((f) => f.status !== 'concept' && f.status !== 'gecrediteerd').length} facturen`,
-      icon: TrendingUp,
-      color: 'text-[#1A535C]',
-      bg: 'bg-[#E2F0F0]',
+      sub: `${facturen.filter((f) => f.status !== 'concept' && f.status !== 'gecrediteerd').length} facturen.`,
+      dot: '#1A535C',
+      pulse: false,
     },
     {
       label: 'Ontvangen',
       value: formatCurrency(totaleOmzet),
-      sub: `${facturen.filter((f) => f.status === 'betaald').length} betaald`,
-      icon: Euro,
-      color: 'text-[#2D6B48]',
-      bg: 'bg-[#E4F0EA]',
+      sub: `${facturen.filter((f) => f.status === 'betaald').length} betaald.`,
+      dot: '#2D6B48',
+      pulse: false,
     },
     {
       label: 'Openstaand',
       value: formatCurrency(openstaandBedrag),
       sub: vervallenFacturen.length > 0
-        ? `${vervallenFacturen.length} vervallen`
-        : `${facturen.filter((f) => f.status === 'verzonden').length} wachtend`,
-      icon: Clock,
-      color: vervallenFacturen.length > 0 ? 'text-[#C03A18]' : 'text-[#8A7A4A]',
-      bg: vervallenFacturen.length > 0 ? 'bg-[#FDE8E2]' : 'bg-[#F5F2E8]',
+        ? `${vervallenFacturen.length} vervallen.`
+        : `${facturen.filter((f) => f.status === 'verzonden').length} wachtend.`,
+      dot: vervallenFacturen.length > 0 ? '#F15025' : '#8A7A4A',
+      pulse: vervallenFacturen.length > 0,
     },
     {
       label: 'Inkoopkosten',
       value: formatCurrency(totaleInkoopkosten),
       sub: `${inkoopGoedgekeurd.length} goedgekeurd${inkoopOpenstaand > 0 ? ` · ${formatCurrency(inkoopOpenstaand)} open` : ''}`,
-      icon: TrendingDown,
-      color: 'text-[#C44830]',
-      bg: 'bg-[#FDE8E2]',
+      dot: '#C44830',
+      pulse: false,
     },
     {
       label: 'Netto resultaat',
       value: formatCurrency(nettoResultaat),
-      sub: 'ontvangen - inkoopkosten',
-      icon: PiggyBank,
-      color: nettoResultaat >= 0 ? 'text-[#2D6B48]' : 'text-[#C03A18]',
-      bg: nettoResultaat >= 0 ? 'bg-[#E4F0EA]' : 'bg-[#FDE8E2]',
+      sub: 'ontvangen min inkoopkosten',
+      dot: nettoResultaat >= 0 ? '#2D6B48' : '#C03A18',
+      pulse: false,
     },
   ]
 
@@ -220,20 +216,21 @@ export function FinancialLayout() {
   }
 
   return (
-    <div className="space-y-6 mod-strip mod-strip-financieel">
-      {/* Page Header */}
-      <div className="flex items-center gap-3">
-        <div className="p-2 bg-[#1A535C]/10 rounded-lg flex-shrink-0">
-          <PiggyBank className="w-6 h-6 text-[#1A535C]" />
-        </div>
-        <div className="min-w-0">
-          <h1 className="text-xl font-bold text-[#1A1A1A] tracking-[-0.3px]">
-            Financieel<span className="text-[#F15025]">.</span>
-          </h1>
-          <p className="text-sm text-[#9B9B95]">
-            Overzicht van facturen, omzet en openstaande posten
-          </p>
-        </div>
+    <div className="h-full flex flex-col -m-3 sm:-m-4 md:-m-6">
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        <div className="px-4 py-4 md:px-8 md:py-8 space-y-6">
+
+      {/* Page Header — DOEN inline style */}
+      <div className="flex items-baseline gap-4">
+        <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-[#1A1A1A]">
+          Financieel<span className="text-[#F15025]">.</span>
+        </h1>
+        <span
+          className="text-[13px] text-[#9B9B95]"
+          style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+        >
+          omzet, openstaand, inkoop · {currentYear}
+        </span>
       </div>
 
       {/* Tabs */}
@@ -247,37 +244,40 @@ export function FinancialLayout() {
 
         {/* Overzicht Tab */}
         <TabsContent value="overzicht" className="space-y-6">
-          {/* Stat Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {statCards.map((stat) => {
-              const Icon = stat.icon
-              return (
-                <Card key={stat.label} className="shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-                  <CardContent className="p-5">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-1">
-                        <p className="text-[13px] font-medium text-[#9B9B95]">
-                          {stat.label}
-                        </p>
-                        <p className="text-2xl font-bold font-mono text-[#1A1A1A]">
-                          {stat.value}
-                        </p>
-                        <p className="text-[11px] text-[#B0ADA8]">{stat.sub}</p>
-                      </div>
-                      <div className={`p-3 rounded-lg ${stat.bg}`}>
-                        <Icon className={`w-5 h-5 ${stat.color}`} />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )
-            })}
+          {/* Stat tiles — readouts in slate-surface */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            {statCards.map((stat) => (
+              <div key={stat.label} className="doen-slate-surface rounded-xl px-5 py-4">
+                <div className="flex items-baseline justify-between gap-3 mb-2">
+                  <span className="inline-flex items-center gap-2">
+                    <span
+                      className={cn('w-1.5 h-1.5 rounded-full', stat.pulse && 'doen-pulse')}
+                      style={{ backgroundColor: stat.dot }}
+                    />
+                    <span className="font-heading text-[14px] font-bold text-[#1A1A1A]">
+                      {stat.label}<span className="text-[#F15025]">.</span>
+                    </span>
+                  </span>
+                </div>
+                <div className="flex items-baseline gap-2 flex-wrap">
+                  <span className="font-mono font-bold text-[22px] leading-none text-[#1A1A1A] tabular-nums">
+                    {stat.value}
+                  </span>
+                </div>
+                <span
+                  className="block mt-1 text-[12px] text-[#9B9B95] truncate"
+                  style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+                >
+                  · {stat.sub}
+                </span>
+              </div>
+            ))}
           </div>
 
           {/* Charts */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Bar Chart - Monthly Revenue */}
-            <Card className="lg:col-span-2 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+            <Card className="lg:col-span-2 doen-slate-surface border-0 shadow-none">
               <CardHeader>
                 <CardTitle className="text-lg text-[#1A1A1A]">Maandelijks Overzicht {currentYear}</CardTitle>
               </CardHeader>
@@ -330,7 +330,7 @@ export function FinancialLayout() {
             </Card>
 
             {/* Pie Chart - Factuur status verdeling */}
-            <Card className="shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+            <Card className="doen-slate-surface border-0 shadow-none">
               <CardHeader>
                 <CardTitle className="text-lg text-[#1A1A1A]">Factuurstatus</CardTitle>
               </CardHeader>
@@ -380,7 +380,7 @@ export function FinancialLayout() {
           </div>
 
           {/* Openstaande Offertes Table */}
-          <Card className="shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+          <Card className="doen-slate-surface border-0 shadow-none">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg flex items-center gap-2 text-[#1A1A1A]">
@@ -464,6 +464,9 @@ export function FinancialLayout() {
           <DiscountsSettings />
         </TabsContent>
       </Tabs>
+
+        </div>
+      </div>
     </div>
   )
 }

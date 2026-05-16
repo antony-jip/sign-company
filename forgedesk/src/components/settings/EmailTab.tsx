@@ -613,7 +613,7 @@ export function EmailTab() {
 
   return (
     <>
-      <SubTabNav tabs={EMAIL_TABS} active={subTab} onChange={setSubTab} />
+      <SubTabNav tabs={EMAIL_TABS} active={subTab} onChange={setSubTab} variant="underline" />
 
       {subTab === 'handtekening' && (
         <div className="space-y-6">

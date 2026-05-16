@@ -44,6 +44,12 @@ import {
 import { exportCSV, exportExcel } from '@/lib/export'
 import { PaginationControls } from '@/components/ui/pagination-controls'
 import { DatePicker } from '@/components/ui/date-picker'
+import {
+  WarningCircle as PhWarningCircle,
+  Pulse as PhPulse,
+  Receipt as PhReceipt,
+  CheckCircle as PhCheckCircle,
+} from '@phosphor-icons/react'
 import { getProjecten, getKlanten, getOffertes, updateProject, createProjectFoto, deleteProject, getMedewerkers as fetchMedewerkers } from '@/services/supabaseService'
 import { ProjectImportDialog } from './ProjectImportDialog'
 import { useAuth } from '@/contexts/AuthContext'
@@ -780,12 +786,13 @@ export function ProjectsList() {
             {/* KPI tiles — triage entry-points, clickable filter targets */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {([
-                { key: 'met-aandacht',  label: 'Met aandacht',  sub: 'in-review of >30d open',  count: stats.metAandacht,   dot: '#F15025' },
-                { key: 'actief',        label: 'Actief',        sub: 'in uitvoering',           count: stats.actief,        dot: '#2D6B48' },
-                { key: 'te-factureren', label: 'Te factureren', sub: 'wachten op factuur',      count: stats.teFactureren,  dot: '#3A5A9A' },
-                { key: 'afgerond',      label: 'Afgerond',      sub: 'klaar.',                  count: stats.afgerond,      dot: '#8A7A4A' },
+                { key: 'met-aandacht',  label: 'Met aandacht',  sub: 'in-review of >30d open',  count: stats.metAandacht,   Icon: PhWarningCircle },
+                { key: 'actief',        label: 'Actief',        sub: 'in uitvoering',           count: stats.actief,        Icon: PhPulse         },
+                { key: 'te-factureren', label: 'Te factureren', sub: 'wachten op factuur',      count: stats.teFactureren,  Icon: PhReceipt       },
+                { key: 'afgerond',      label: 'Afgerond',      sub: 'klaar.',                  count: stats.afgerond,      Icon: PhCheckCircle   },
               ] as const).map(tile => {
                 const isActive = statusFilter === tile.key
+                const TileIcon = tile.Icon
                 return (
                   <button
                     key={tile.key}
@@ -803,10 +810,9 @@ export function ProjectsList() {
                   >
                     <div className="flex items-baseline justify-between gap-3 mb-2">
                       <span className="inline-flex items-center gap-2">
-                        <span
-                          className={cn('w-1.5 h-1.5 rounded-full', tile.key === 'actief' && 'doen-pulse')}
-                          style={{ backgroundColor: tile.dot }}
-                        />
+                        <span className={cn('doen-duo-icon flex-shrink-0', tile.key === 'actief' && 'doen-pulse')}>
+                          <TileIcon size={18} weight="duotone" />
+                        </span>
                         <span className="font-heading text-[14px] font-bold text-[#1A1A1A]">
                           {tile.label}<span className="text-[#F15025]">.</span>
                         </span>

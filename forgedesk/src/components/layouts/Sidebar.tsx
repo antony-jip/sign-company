@@ -1,14 +1,26 @@
 import React, { useEffect, useRef, useMemo, useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import {
-  Hammer, Building2, FileSignature,
-  Send, CalendarRange, SlidersHorizontal, ChevronLeft,
-  ChevronRight, LogOut, Menu, X, ListChecks,
-  Banknote, Wrench, Globe2, ArrowUpFromLine, Inbox,
-  Moon, Sun, CreditCard, TrendingUp, PanelTop,
-  LayoutDashboard, Wand2, CircleUserRound, BookOpen,
-  type LucideIcon
+  ChevronLeft, ChevronRight, LogOut, Menu, X,
+  Moon, Sun, CreditCard, PanelTop,
+  LayoutDashboard, CircleUserRound, BookOpen,
 } from 'lucide-react'
+import {
+  Hammer as PhHammer,
+  FileText as PhFileSignature,
+  Buildings as PhBuildings,
+  Wrench as PhWrench,
+  MagicWand as PhMagicWand,
+  Money as PhMoney,
+  Tray as PhTray,
+  TrendUp as PhTrendUp,
+  CalendarBlank as PhCalendar,
+  ListChecks as PhListChecks,
+  PaperPlaneRight as PhPaperPlane,
+  GlobeHemisphereWest as PhGlobe,
+  SlidersHorizontal as PhSliders,
+  type Icon as PhosphorIcon,
+} from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 import { useSidebar, RAIL_WIDTH, EXPANDED_WIDTH } from '@/contexts/SidebarContext'
 import { useAuth } from '@/contexts/AuthContext'
@@ -18,7 +30,7 @@ import { Button } from '@/components/ui/button'
 
 interface NavItem {
   label: string
-  icon: LucideIcon
+  icon: PhosphorIcon
   path: string
   color: string
 }
@@ -30,31 +42,30 @@ interface NavGroup {
 
 // Module colors per the DOEN design system
 const WERK_ITEMS: NavItem[] = [
-  { label: 'Projecten', icon: Hammer, path: '/projecten', color: '#1A535C' },
-  { label: 'Offertes', icon: FileSignature, path: '/offertes', color: '#F15025' },
-  { label: 'Klanten', icon: Building2, path: '/klanten', color: '#3A6B8C' },
-  { label: 'Werkbonnen', icon: Wrench, path: '/werkbonnen', color: '#C44830' },
-  { label: 'Visualizer', icon: Wand2, path: '/visualizer', color: '#9A5A48' },
+  { label: 'Projecten', icon: PhHammer, path: '/projecten', color: '#1A535C' },
+  { label: 'Offertes', icon: PhFileSignature, path: '/offertes', color: '#F15025' },
+  { label: 'Klanten', icon: PhBuildings, path: '/klanten', color: '#3A6B8C' },
+  { label: 'Werkbonnen', icon: PhWrench, path: '/werkbonnen', color: '#C44830' },
+  { label: 'Visualizer', icon: PhMagicWand, path: '/visualizer', color: '#9A5A48' },
 ]
 
 const FINANCIEEL_ITEMS: NavItem[] = [
-  { label: 'Facturen', icon: Banknote, path: '/facturen', color: '#2D6B48' },
-  { label: 'Inkoopfacturen', icon: Inbox, path: '/inkoopfacturen', color: '#C44830' },
-  { label: 'Financieel', icon: TrendingUp, path: '/financieel', color: '#2D6B48' },
+  { label: 'Facturen', icon: PhMoney, path: '/facturen', color: '#2D6B48' },
+  { label: 'Inkoopfacturen', icon: PhTray, path: '/inkoopfacturen', color: '#C44830' },
+  { label: 'Financieel', icon: PhTrendUp, path: '/financieel', color: '#2D6B48' },
 ]
 
 const PLANNING_ITEMS: NavItem[] = [
-  { label: 'Planning', icon: CalendarRange, path: '/planning', color: '#9A5A48' },
-  { label: 'Taken', icon: ListChecks, path: '/taken', color: '#5A5A55' },
+  { label: 'Planning', icon: PhCalendar, path: '/planning', color: '#9A5A48' },
+  { label: 'Taken', icon: PhListChecks, path: '/taken', color: '#5A5A55' },
 ]
 
 const COMMUNICATIE_ITEMS: NavItem[] = [
-  { label: 'Email', icon: Send, path: '/email', color: '#6A5A8A' },
-  { label: 'Portaal', icon: Globe2, path: '/portalen', color: '#6A5A8A' },
+  { label: 'Email', icon: PhPaperPlane, path: '/email', color: '#6A5A8A' },
+  { label: 'Portaal', icon: PhGlobe, path: '/portalen', color: '#6A5A8A' },
 ]
 
-const IMPORTEREN_ITEM: NavItem = { label: 'Importeren', icon: ArrowUpFromLine, path: '/importeren', color: '#1A535C' }
-const SETTINGS_ITEM: NavItem = { label: 'Instellingen', icon: SlidersHorizontal, path: '/instellingen', color: '#5A5A55' }
+const SETTINGS_ITEM: NavItem = { label: 'Instellingen', icon: PhSliders, path: '/instellingen', color: '#5A5A55' }
 
 const NAV_GROUPS: NavGroup[] = [
   { section: 'WERK', items: WERK_ITEMS },
@@ -64,7 +75,7 @@ const NAV_GROUPS: NavGroup[] = [
 ]
 
 // Flat list for rail mode
-const ALL_NAV_ITEMS: NavItem[] = [...WERK_ITEMS, ...FINANCIEEL_ITEMS, ...PLANNING_ITEMS, ...COMMUNICATIE_ITEMS, IMPORTEREN_ITEM]
+const ALL_NAV_ITEMS: NavItem[] = [...WERK_ITEMS, ...FINANCIEEL_ITEMS, ...PLANNING_ITEMS, ...COMMUNICATIE_ITEMS]
 
 function useIsDesktop() {
   const [isDesktop, setIsDesktop] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 768)
@@ -182,15 +193,13 @@ export function Sidebar() {
 
         {active && <div className="doen-sidebar-flame-accent" />}
 
-        <div className="relative z-10">
-          <Icon
-            className={cn(
-              'w-[22px] h-[22px] transition-all duration-300 ease-out',
-              !active && 'group-hover/rail:scale-110',
-            )}
-            style={{ color: item.color }}
-            strokeWidth={active ? 2 : 1.6}
-          />
+        <div
+          className={cn(
+            'relative z-10 transition-all duration-300 ease-out',
+            !active && 'group-hover/rail:scale-110',
+          )}
+        >
+          <Icon size={22} weight="duotone" color={item.color} />
         </div>
 
         <span
@@ -249,9 +258,9 @@ export function Sidebar() {
           }}
         >
           <Icon
-            className="w-[17px] h-[17px] transition-all duration-300 ease-out"
-            style={{ color: item.color }}
-            strokeWidth={active ? 2.2 : 1.5}
+            size={17}
+            weight={active ? 'fill' : 'duotone'}
+            color={item.color}
           />
         </div>
 
@@ -297,8 +306,8 @@ export function Sidebar() {
           <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.07) 20%, rgba(0,0,0,0.07) 80%, transparent 100%)' }} />
         </div>
 
-        {/* Main navigation — NO scroll, flex-distributed */}
-        <nav className="flex-1 flex flex-col justify-start pt-4 overflow-hidden">
+        {/* Main navigation — scrollt bij overflow (veel items / kleine viewport) */}
+        <nav className="flex-1 flex flex-col justify-start pt-4 overflow-y-auto min-h-0">
           {collapsed ? (
             <div className="flex flex-col items-center gap-0">
               {filteredNavItems.filter(i => WERK_ITEMS.some(w => w.path === i.path)).map(renderRailItem)}
@@ -333,9 +342,7 @@ export function Sidebar() {
             <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.05) 20%, rgba(0,0,0,0.05) 80%, transparent 100%)' }} />
           </div>
 
-          {/* Importeren */}
-          {collapsed ? renderRailItem(IMPORTEREN_ITEM) : renderExpandedItem(IMPORTEREN_ITEM, true)}
-          {/* Instellingen */}
+          {/* Instellingen — Importeren leeft nu onder Instellingen → Importeren */}
           {collapsed ? renderRailItem(SETTINGS_ITEM) : renderExpandedItem(SETTINGS_ITEM, true)}
 
           {/* Collapse toggle */}
@@ -407,7 +414,7 @@ export function Sidebar() {
                       onClick={() => { setUserPopoverOpen(false); navigate('/instellingen') }}
                       className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F8F7F5] transition-all duration-200"
                     >
-                      <SlidersHorizontal className="w-4 h-4 text-[#9B9B95]" />
+                      <PhSliders size={16} weight="duotone" color="#9B9B95" />
                       Profiel
                     </button>
                     <button

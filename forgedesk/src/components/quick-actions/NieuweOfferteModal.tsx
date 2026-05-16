@@ -92,8 +92,6 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
   const taakFileRef = useRef<HTMLInputElement>(null)
   const klantInputRef = useRef<HTMLInputElement>(null)
 
-  // Snelkoppeling template IDs from settings
-  const snelkoppelingIds = settings.snelofferte_templates || []
 
   useEffect(() => {
     if (open) {
@@ -128,12 +126,7 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
     ? klanten.filter(k => k.bedrijfsnaam.toLowerCase().includes(klantQuery.toLowerCase()))
     : []
 
-  // Active templates, prioritize snelkoppelingen
   const activeTemplates = useMemo(() => templates.filter(t => t.actief), [templates])
-  const snelkoppelingen = useMemo(
-    () => snelkoppelingIds.map(id => activeTemplates.find(t => t.id === id)).filter(Boolean) as CalculatieTemplate[],
-    [snelkoppelingIds, activeTemplates]
-  )
 
   // Calculate totals from regels
   const totalen = useMemo(() => {
@@ -780,22 +773,6 @@ export function NieuweOfferteModal({ open, onOpenChange }: Props) {
                     <BookTemplate className="h-3.5 w-3.5" />
                     Template laden
                   </button>
-
-                  {/* Snelkoppeling chips */}
-                  {snelkoppelingen.length > 0 && (
-                    <div className="flex items-center gap-1 ml-1">
-                      {snelkoppelingen.map(t => (
-                        <button
-                          key={t.id}
-                          type="button"
-                          onClick={() => laadTemplate(t)}
-                          className="px-2 py-0.5 text-[10px] font-medium border border-petrol/30 text-petrol rounded-full bg-petrol/5 hover:bg-petrol/10 transition-colors whitespace-nowrap"
-                        >
-                          {t.naam}
-                        </button>
-                      ))}
-                    </div>
-                  )}
 
                   {/* Template dropdown */}
                   {showTemplates && (

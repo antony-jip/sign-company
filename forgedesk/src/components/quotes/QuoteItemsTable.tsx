@@ -41,10 +41,10 @@ export interface DetailRegel {
 }
 
 export const DEFAULT_DETAIL_LABELS = [
-  'Omschrijving',
   'Aantal',
-  'Afmeting',
   'Materiaal',
+  'Formaat',
+  'Afmeting',
   'Lay-out',
   'Montage',
   'Opmerking',
@@ -823,8 +823,47 @@ export function QuoteItemsTable({
   }
 
   // ── Detail regels handlers ──
+  // Merge bestaande detail_regels met DEFAULT_DETAIL_LABELS zodat bestaande items
+  // ook nieuwe default-rijen tonen (zoals Formaat/Afmeting). Bestaande waarden
+  // blijven behouden. Verwijderde defaults zijn opgenomen in extra_velden._hidden_labels.
+  const PLACEHOLDER_PREFIX = 'default-'
+
+  const getHiddenLabels = (item: QuoteLineItem): Set<string> => {
+    const raw = item.extra_velden?._hidden_labels || ''
+    return new Set(raw.split('|').filter(Boolean))
+  }
+
   const getDetailRegels = (item: QuoteLineItem): DetailRegel[] => {
-    return item.detail_regels || []
+    const existing = item.detail_regels || []
+    const hidden = getHiddenLabels(item)
+    const byLabel = new Map<string, DetailRegel>()
+    existing.forEach((r) => {
+      if (r.label && !byLabel.has(r.label)) byLabel.set(r.label, r)
+    })
+    const merged: DetailRegel[] = []
+    for (const label of DEFAULT_DETAIL_LABELS) {
+      if (hidden.has(label)) continue
+      const found = byLabel.get(label)
+      if (found) {
+        merged.push(found)
+        byLabel.delete(label)
+      } else {
+        const slug = label.replace(/[^a-z0-9]+/gi, '_').toLowerCase()
+        merged.push({
+          id: `${PLACEHOLDER_PREFIX}${item.id}-${slug}`,
+          label,
+          waarde: '',
+        })
+      }
+    }
+    // Custom labels die geen default zijn — append achteraan, originele volgorde
+    for (const r of existing) {
+      if (byLabel.has(r.label) && !hidden.has(r.label)) {
+        merged.push(r)
+        byLabel.delete(r.label)
+      }
+    }
+    return merged
   }
 
   const updateDetailRegels = (itemId: string, regels: DetailRegel[]) => {
@@ -841,7 +880,37 @@ export function QuoteItemsTable({
   const removeDetailRegel = (itemId: string, regelId: string) => {
     const item = items.find((i) => i.id === itemId)
     if (!item) return
-    const regels = getDetailRegels(item).filter((r) => r.id !== regelId)
+
+    // Placeholder-rij (default die nog geen waarde heeft): verberg via _hidden_labels
+    if (regelId.startsWith(`${PLACEHOLDER_PREFIX}${item.id}-`)) {
+      const slug = regelId.replace(`${PLACEHOLDER_PREFIX}${item.id}-`, '')
+      const label = DEFAULT_DETAIL_LABELS.find(
+        (l) => l.replace(/[^a-z0-9]+/gi, '_').toLowerCase() === slug,
+      )
+      if (label) {
+        const hidden = getHiddenLabels(item)
+        hidden.add(label)
+        onUpdateItem(itemId, 'extra_velden', {
+          ...item.extra_velden,
+          _hidden_labels: Array.from(hidden).join('|'),
+        })
+      }
+      return
+    }
+
+    // Echte detail_regel: verwijder uit de array. Als het label een default is,
+    // markeer ook hidden zodat de placeholder niet meteen terugkomt.
+    const target = (item.detail_regels || []).find((r) => r.id === regelId)
+    const regels = (item.detail_regels || []).filter((r) => r.id !== regelId)
+    const isDefaultLabel = target && DEFAULT_DETAIL_LABELS.includes(target.label)
+    if (isDefaultLabel) {
+      const hidden = getHiddenLabels(item)
+      hidden.add(target.label)
+      onUpdateItem(itemId, 'extra_velden', {
+        ...item.extra_velden,
+        _hidden_labels: Array.from(hidden).join('|'),
+      })
+    }
     updateDetailRegels(itemId, regels)
   }
 

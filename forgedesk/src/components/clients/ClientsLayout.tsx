@@ -34,6 +34,12 @@ import {
   CheckSquare,
   X,
 } from 'lucide-react'
+import {
+  WarningCircle as PhWarningCircle,
+  Pulse as PhPulse,
+  Handshake as PhHandshake,
+  MoonStars as PhMoonStars,
+} from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 import { exportCSV, exportExcel } from '@/lib/export'
 import { getKlanten, getProjecten, deleteKlant } from '@/services/supabaseService'
@@ -48,9 +54,22 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { confirm } from '@/components/shared/ConfirmDialog'
 
 type ViewMode = 'grid' | 'list'
-type StatusFilter = 'alle' | 'actief' | 'inactief' | 'prospect'
+type StatusFilter = 'alle' | 'actief' | 'inactief' | 'prospect' | 'met-aandacht'
 type SortField = 'bedrijfsnaam' | 'contactpersoon' | 'stad' | 'status' | 'created_at'
 type SortDir = 'asc' | 'desc'
+
+const KLANT_STATUS_HEX: Record<string, string> = {
+  actief: '#2D6B48',
+  prospect: '#3A5A9A',
+  inactief: '#8A7A4A',
+}
+function klantStatusHex(s?: string): string {
+  return KLANT_STATUS_HEX[s || ''] ?? '#5A5A55'
+}
+function klantNeedsAttention(k: Klant): boolean {
+  const ks = k.klant_status || 'normaal'
+  return ks === 'niet_helpen' || ks === 'geblokkeerd'
+}
 
 export function ClientsLayout() {
   const navigate = useNavigate()
@@ -109,7 +128,9 @@ export function ClientsLayout() {
     let result = [...klanten]
 
     // Status filter
-    if (statusFilter !== 'alle') {
+    if (statusFilter === 'met-aandacht') {
+      result = result.filter(klantNeedsAttention)
+    } else if (statusFilter !== 'alle') {
       result = result.filter((k) => k.status === statusFilter)
     }
 
@@ -302,21 +323,21 @@ export function ClientsLayout() {
     )
   }
 
+  const kpiCounts = useMemo(() => ({
+    metAandacht: klanten.filter(klantNeedsAttention).length,
+    actief: klanten.filter((k) => k.status === 'actief').length,
+    prospect: klanten.filter((k) => k.status === 'prospect').length,
+    inactief: klanten.filter((k) => k.status === 'inactief').length,
+  }), [klanten])
+
   return (
-    <div className="h-full flex flex-col bg-[#F8F7F5] -m-3 sm:-m-4 md:-m-6">
-      {/* Inline keyframes for pulse + stagger */}
-      <style>{`
-        @keyframes doen-pulse { 0%,100% { opacity:1 } 50% { opacity:.35 } }
-        @keyframes doen-fade-up { from { opacity:0; transform:translateY(8px) } to { opacity:1; transform:translateY(0) } }
-        .doen-pulse { animation: doen-pulse 2.5s ease-in-out infinite }
-        .doen-row { animation: doen-fade-up .35s cubic-bezier(.22,1,.36,1) both }
-      `}</style>
+    <div className="h-full flex flex-col -m-3 sm:-m-4 md:-m-6">
 
       {/* Content */}
       <div className="flex-1 min-h-0 overflow-y-auto">
       <div className="px-4 py-4 md:px-8 md:py-8 space-y-6">
 
-      {/* ── Header + Stats ── */}
+      {/* ── Header + KPI tiles ── */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-baseline gap-4">
@@ -343,34 +364,56 @@ export function ClientsLayout() {
           </Button>
         </div>
 
-        {/* Status overview — text + dot */}
-        <div className="flex items-center gap-5 flex-wrap min-h-[20px] text-[12.5px]">
-          {klanten.filter((k) => k.status === 'actief').length > 0 && (
-            <span className="inline-flex items-center gap-1.5 text-[#2D6B48]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#2D6B48] doen-pulse" />
-              <span className="font-mono font-medium">{klanten.filter((k) => k.status === 'actief').length}</span>
-              <span className="text-[#6B6B66]">actief</span>
-            </span>
-          )}
-          {klanten.filter((k) => k.status === 'prospect').length > 0 && (
-            <span className="inline-flex items-center gap-1.5 text-[#3A5A9A]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#3A5A9A]" />
-              <span className="font-mono font-medium">{klanten.filter((k) => k.status === 'prospect').length}</span>
-              <span className="text-[#6B6B66]">prospect</span>
-            </span>
-          )}
-          {klanten.filter((k) => k.status === 'inactief').length > 0 && (
-            <span className="inline-flex items-center gap-1.5 text-[#8A7A4A]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#8A7A4A]" />
-              <span className="font-mono font-medium">{klanten.filter((k) => k.status === 'inactief').length}</span>
-              <span className="text-[#6B6B66]">inactief</span>
-            </span>
-          )}
+        {/* KPI tiles — clickable triage entry-points */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {([
+            { key: 'met-aandacht' as StatusFilter, label: 'Met aandacht',  sub: 'niet helpen of geblokkeerd', count: kpiCounts.metAandacht, Icon: PhWarningCircle },
+            { key: 'actief'       as StatusFilter, label: 'Actief',        sub: 'lopende klanten',            count: kpiCounts.actief,      Icon: PhPulse         },
+            { key: 'prospect'     as StatusFilter, label: 'Prospect',      sub: 'in opvolging',               count: kpiCounts.prospect,    Icon: PhHandshake     },
+            { key: 'inactief'     as StatusFilter, label: 'Inactief',      sub: 'rust.',                      count: kpiCounts.inactief,    Icon: PhMoonStars     },
+          ]).map((tile) => {
+            const isActive = statusFilter === tile.key
+            const TileIcon = tile.Icon
+            return (
+              <button
+                key={tile.key}
+                type="button"
+                onClick={() => setStatusFilter(isActive ? 'alle' : tile.key)}
+                className={cn(
+                  'group doen-slate-surface relative rounded-xl px-5 py-4 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F15025]/30 focus-visible:ring-offset-2',
+                  isActive && 'doen-slate-surface-active'
+                )}
+                aria-pressed={isActive}
+              >
+                <div className="flex items-baseline justify-between gap-3 mb-2">
+                  <span className="inline-flex items-center gap-2">
+                    <span className={cn('doen-duo-icon flex-shrink-0', tile.key === 'actief' && 'doen-pulse')}>
+                      <TileIcon size={18} weight="duotone" />
+                    </span>
+                    <span className="font-heading text-[14px] font-bold text-[#1A1A1A]">
+                      {tile.label}<span className="text-[#F15025]">.</span>
+                    </span>
+                  </span>
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="font-heading font-bold text-[28px] leading-none text-[#1A1A1A] tabular-nums">
+                    {tile.count}
+                  </span>
+                  <span
+                    className="text-[13px] text-[#9B9B95] truncate"
+                    style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+                  >
+                    · {tile.sub}
+                  </span>
+                </div>
+              </button>
+            )
+          })}
         </div>
       </div>
 
       {/* ── Toolbar card ── */}
-      <div className="bg-white rounded-2xl p-5 shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03]">
+      <div className="doen-slate-surface rounded-2xl p-5">
         <div className="flex items-center gap-5">
           {/* Search with keyboard hint */}
           <div className="relative max-w-[280px] flex-1">
@@ -458,18 +501,20 @@ export function ClientsLayout() {
         {/* Filter tabs */}
         <div className="flex items-center gap-6 mt-4 pt-4 border-t border-[#F0EFEC]">
           <div className="flex items-center gap-1 flex-1 flex-nowrap md:flex-wrap overflow-x-auto">
-            {(['alle', 'actief', 'inactief', 'prospect'] as StatusFilter[]).map((f) => {
+            {(['alle', 'actief', 'inactief', 'prospect', 'met-aandacht'] as StatusFilter[]).map((f) => {
               const labels: Record<StatusFilter, string> = {
                 alle: 'Alle',
                 actief: 'Actief',
                 inactief: 'Inactief',
                 prospect: 'Prospect',
+                'met-aandacht': 'Met aandacht',
               }
               const counts: Record<StatusFilter, number> = {
                 alle: klanten.length,
-                actief: klanten.filter((k) => k.status === 'actief').length,
-                inactief: klanten.filter((k) => k.status === 'inactief').length,
-                prospect: klanten.filter((k) => k.status === 'prospect').length,
+                actief: kpiCounts.actief,
+                inactief: kpiCounts.inactief,
+                prospect: kpiCounts.prospect,
+                'met-aandacht': kpiCounts.metAandacht,
               }
               const isActive = statusFilter === f
               return (
@@ -550,7 +595,7 @@ export function ClientsLayout() {
       {loading ? (
         <SkeletonTable rows={6} cols={4} />
       ) : filteredKlanten.length === 0 ? (
-        <div className="bg-white rounded-2xl p-12 ring-1 ring-black/[0.03] text-center">
+        <div className="doen-slate-surface rounded-2xl p-12 text-center">
           <EmptyState
             module="klanten"
             title={searchQuery || statusFilter !== 'alle' ? 'Geen klanten gevonden' : 'Nog geen klanten'}
@@ -624,9 +669,12 @@ export function ClientsLayout() {
           </div>
         )}
 
-        <div className="bg-white rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03] overflow-hidden">
+        <div
+          className="doen-slate-surface rounded-2xl"
+          style={{ clipPath: 'inset(0 round 16px)' }}
+        >
             <table className="w-full table-fixed">
-              <thead>
+              <thead className="sticky top-0 z-10" style={{ backgroundColor: '#FFFFFF', backdropFilter: 'blur(4px)' }}>
                 <tr className="border-b-2 border-[#F0EFEC]">
                   <th className="py-3.5 pl-5 pr-3 w-10 text-left">
                     <Checkbox
@@ -654,18 +702,25 @@ export function ClientsLayout() {
                 </tr>
               </thead>
               <tbody>
-                {filteredKlanten.map((klant, i) => (
+                {filteredKlanten.map((klant, i) => {
+                  const stripeHex = klantNeedsAttention(klant) ? '#F15025' : klantStatusHex(klant.status)
+                  return (
                   <tr
                     key={klant.id}
                     className={cn(
                       'doen-row border-b border-[#F0EFEC] last:border-0 cursor-pointer transition-all duration-200 group',
+                      klantNeedsAttention(klant) && !selectedIds.has(klant.id) && 'bg-[rgba(241,80,37,0.025)]',
                       'hover:bg-[#F8F7F4]',
                       selectedIds.has(klant.id) && 'bg-[#1A535C]/[0.03]'
                     )}
                     style={{ animationDelay: `${i * 25}ms` }}
                     onClick={() => navigateWithTab({ path: `/klanten/${klant.id}`, label: klant.bedrijfsnaam || 'Klant', id: `/klanten/${klant.id}` })}
                   >
-                    <td className="py-3.5 pl-5 pr-3 align-middle" onClick={(e) => e.stopPropagation()}>
+                    <td
+                      className="py-3.5 pl-5 pr-3 align-middle"
+                      style={{ boxShadow: `inset 3px 0 0 0 ${stripeHex}` }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <Checkbox
                         checked={selectedIds.has(klant.id)}
                         onCheckedChange={() => toggleSelect(klant.id)}
@@ -739,7 +794,8 @@ export function ClientsLayout() {
                       {renderRowActions(klant)}
                     </td>
                   </tr>
-                ))}
+                  )
+                })}
               </tbody>
             </table>
         </div>

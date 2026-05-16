@@ -202,19 +202,22 @@ export function SettingsLayout() {
 
   return (
     <div className="space-y-6">
-      <div className="min-w-0">
-        <h1 className="text-xl font-bold tracking-[-0.3px] text-[#1A1A1A]">
+      <div className="flex items-baseline gap-4 min-w-0">
+        <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-[#1A1A1A]">
           Instellingen<span className="text-[#F15025]">.</span>
         </h1>
-        <p className="text-[13px] text-[#9B9B95] mt-0.5">
-          Beheer je profiel, bedrijfsgegevens en voorkeuren
-        </p>
+        <span
+          className="text-[14px] text-[#6B6B66] hidden sm:inline truncate"
+          style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+        >
+          profiel, bedrijf, voorkeuren · alles op één plek
+        </span>
       </div>
 
       <div className="flex flex-col md:flex-row gap-8 min-h-[calc(100vh-12rem)]">
-        <nav className="w-full md:w-48 flex-shrink-0">
+        <nav className="w-full md:w-52 flex-shrink-0">
           <div className="md:sticky md:top-6">
-            <div className="md:hidden flex overflow-x-auto gap-0.5 p-1 bg-[#F3F2F0] rounded-lg">
+            <div className="md:hidden flex overflow-x-auto gap-0.5 p-1 doen-slate-surface rounded-xl">
               {visibleSections.map((section) => {
                 const Icon = section.icon
                 const isActive = activeSection === section.id
@@ -223,10 +226,10 @@ export function SettingsLayout() {
                     key={section.id}
                     onClick={() => setActiveSection(section.id)}
                     className={cn(
-                      'flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[13px] font-medium transition-all whitespace-nowrap',
+                      'flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[13px] font-semibold transition-all whitespace-nowrap',
                       isActive
-                        ? 'bg-[#FFFFFF] text-[#1A1A1A] shadow-[0_1px_3px_rgba(0,0,0,0.06)]'
-                        : 'text-[#9B9B95] hover:text-[#6B6B66]'
+                        ? 'bg-[#FFFFFF] text-[#1A1A1A] shadow-[0_1px_3px_rgba(20,62,71,0.08)]'
+                        : 'text-[#6B6B66] hover:text-[#1A1A1A]'
                     )}
                   >
                     <Icon className="w-3.5 h-3.5" />
@@ -236,7 +239,15 @@ export function SettingsLayout() {
               })}
             </div>
 
-            <div className="hidden md:block space-y-0.5">
+            <div className="hidden md:block doen-slate-surface rounded-2xl p-1.5 space-y-0.5">
+              <div className="px-3 pt-2 pb-1.5 flex items-baseline justify-between">
+                <span className="text-[10px] font-semibold uppercase tracking-widest text-[#9B9B95]">
+                  Categorieën
+                </span>
+                <span className="text-[10px] font-mono tabular-nums text-[#C0BDB8]">
+                  {visibleSections.length}
+                </span>
+              </div>
               {visibleSections.map((section) => {
                 const Icon = section.icon
                 const isActive = activeSection === section.id
@@ -245,13 +256,19 @@ export function SettingsLayout() {
                     key={section.id}
                     onClick={() => setActiveSection(section.id)}
                     className={cn(
-                      'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-all duration-150',
+                      'group w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-all duration-150 relative',
                       isActive
-                        ? 'text-[#1A1A1A] font-semibold bg-[#FFFFFF] shadow-[0_1px_3px_rgba(0,0,0,0.05)]'
-                        : 'text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#FFFFFF]/50'
+                        ? 'text-[#1A1A1A] font-semibold bg-[#FFFFFF] shadow-[0_1px_3px_rgba(20,62,71,0.08),0_0_0_1px_rgba(26,83,92,0.06)]'
+                        : 'text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-white/50'
                     )}
                   >
-                    <Icon className={cn('w-4 h-4', isActive ? 'text-[#1A535C]' : 'text-[#9B9B95]')} />
+                    {isActive && (
+                      <span
+                        aria-hidden
+                        className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[2.5px] rounded-r-full bg-[#F15025]"
+                      />
+                    )}
+                    <Icon className={cn('w-4 h-4 transition-colors', isActive ? 'text-[#1A535C]' : 'text-[#9B9B95] group-hover:text-[#6B6B66]')} />
                     <span className="text-[13px] truncate">{section.label}</span>
                   </button>
                 )
@@ -429,7 +446,7 @@ function DocumentenTab() {
 
   return (
     <>
-      <SubTabNav tabs={DOCUMENTEN_TABS} active={subTab} onChange={setSubTab} />
+      <SubTabNav tabs={DOCUMENTEN_TABS} active={subTab} onChange={setSubTab} variant="underline" />
 
       {subTab === 'offertes' && (
         <div className="space-y-6">

@@ -27,6 +27,17 @@ const STATUS_CONFIG: Record<InkoopFactuurStatus, { label: string; bg: string; te
   afgewezen: { label: 'Afgewezen', bg: '#EEEEED', text: '#5A5A55', dot: false },
 }
 
+const INKOOP_STATUS_HEX: Record<string, string> = {
+  nieuw: '#F15025',
+  verwerkt: '#D4621A',
+  toegewezen: '#3A5A9A',
+  goedgekeurd: '#2D6B48',
+  afgewezen: '#5A5A55',
+}
+function inkoopStatusHex(s: string): string {
+  return INKOOP_STATUS_HEX[s] ?? '#5A5A55'
+}
+
 type FilterStatus = 'alle' | InkoopFactuurStatus
 
 const FILTER_OPTIONS: { value: FilterStatus; label: string }[] = [
@@ -390,14 +401,8 @@ export function InkoopfacturenLayout() {
 
   return (
     <div className="space-y-6">
-      <style>{`
-        @keyframes doen-fade-up { from { opacity: 0; transform: translateY(6px) } to { opacity: 1; transform: translateY(0) } }
-        @keyframes doen-pulse-kf { 0%, 100% { opacity: 1 } 50% { opacity: 0.35 } }
-        .doen-pulse { animation: doen-pulse-kf 2.5s ease-in-out infinite }
-        .doen-row { animation: doen-fade-up .35s cubic-bezier(.22,1,.36,1) both }
-      `}</style>
       <InkoopAILimietBanner variant="lokaal" route="extract" />
-      {/* ── Header + Stats ── */}
+      {/* ── Header + KPI tiles ── */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-baseline gap-4">
@@ -429,41 +434,64 @@ export function InkoopfacturenLayout() {
           </div>
         </div>
 
-        {/* Status overview — text + dot */}
-        <div className="flex items-center gap-5 flex-wrap min-h-[20px] text-[12.5px]">
-          {wachtendCount > 0 && (
-            <span className="inline-flex items-center gap-1.5 text-[#C03A18]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#F15025] doen-pulse" />
-              <span className="font-mono font-medium">{wachtendCount}</span>
-              <span className="text-[#6B6B66]">wachten op review</span>
-            </span>
-          )}
-          {statistics.totaalOpen > 0 && (
-            <span className="inline-flex items-center gap-1.5 text-[#D4621A]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#D4621A]" />
-              <span className="font-mono font-medium">{formatCurrency(statistics.totaalOpen)}</span>
-              <span className="text-[#6B6B66]">open</span>
-            </span>
-          )}
-          {statistics.goedgekeurdCount > 0 && (
-            <span className="inline-flex items-center gap-1.5 text-[#2D6B48]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#2D6B48]" />
-              <span className="font-mono font-medium">{statistics.goedgekeurdCount}</span>
-              <span className="text-[#6B6B66]">goedgekeurd</span>
-            </span>
-          )}
-          {maandStats.totaalDezeMaand > 0 && (
-            <span className="inline-flex items-center gap-1.5 text-[#8A7A4A]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#8A7A4A]" />
-              <span className="font-mono font-medium">{formatCurrency(maandStats.totaalDezeMaand)}</span>
-              <span className="text-[#6B6B66]">deze maand ({maandStats.aantalDezeMaand})</span>
-            </span>
-          )}
+        {/* KPI tiles — clickable triage entry-points */}
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {([
+            { key: 'verwerkt' as FilterStatus,    label: 'Te reviewen',    sub: 'wacht op goedkeuring',   count: wachtendCount,                          isMoney: false, dot: '#F15025', pulse: true },
+            { key: 'nieuw' as FilterStatus,       label: 'Open',           sub: 'totaal openstaand',      count: statistics.totaalOpen,                  isMoney: true,  dot: '#D4621A', pulse: false },
+            { key: 'goedgekeurd' as FilterStatus, label: 'Goedgekeurd',    sub: 'verwerkt.',              count: statistics.goedgekeurdCount,            isMoney: false, dot: '#2D6B48', pulse: false },
+            { key: 'alle' as FilterStatus,        label: 'Deze maand',     sub: `${maandStats.aantalDezeMaand} stuks`, count: maandStats.totaalDezeMaand, isMoney: true,  dot: '#8A7A4A', pulse: false },
+          ]).map((tile) => {
+            const isActive = filterStatus === tile.key && tile.key !== 'alle'
+            const display = tile.isMoney ? formatCurrency(tile.count) : tile.count
+            return (
+              <button
+                key={tile.label}
+                type="button"
+                onClick={() => {
+                  if (tile.key === 'alle') return
+                  setFilterStatus(isActive ? 'alle' : tile.key)
+                }}
+                className={cn(
+                  'group doen-slate-surface relative rounded-xl px-5 py-4 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F15025]/30 focus-visible:ring-offset-2',
+                  isActive && 'doen-slate-surface-active',
+                  tile.key === 'alle' && 'cursor-default'
+                )}
+                aria-pressed={isActive}
+              >
+                <div className="flex items-baseline justify-between gap-3 mb-2">
+                  <span className="inline-flex items-center gap-2">
+                    <span
+                      className={cn('w-1.5 h-1.5 rounded-full', tile.pulse && 'doen-pulse')}
+                      style={{ backgroundColor: tile.dot }}
+                    />
+                    <span className="font-heading text-[14px] font-bold text-[#1A1A1A]">
+                      {tile.label}<span className="text-[#F15025]">.</span>
+                    </span>
+                  </span>
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className={cn(
+                    'font-heading font-bold leading-none text-[#1A1A1A] tabular-nums',
+                    tile.isMoney ? 'text-[22px] font-mono' : 'text-[28px]'
+                  )}>
+                    {display}
+                  </span>
+                  <span
+                    className="text-[13px] text-[#9B9B95] truncate"
+                    style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+                  >
+                    · {tile.sub}
+                  </span>
+                </div>
+              </button>
+            )
+          })}
         </div>
       </div>
 
       {/* ── Toolbar card ── */}
-      <div className="bg-white rounded-2xl p-5 shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03]">
+      <div className="doen-slate-surface rounded-2xl p-5">
         <div className="flex items-center gap-5">
           <div className="relative max-w-[280px] flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9B9B95]" />
@@ -524,10 +552,13 @@ export function InkoopfacturenLayout() {
       </div>
 
       {/* ── Table ── */}
-      <div className="bg-white rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03] overflow-hidden">
+      <div
+        className="doen-slate-surface rounded-2xl"
+        style={{ clipPath: 'inset(0 round 16px)' }}
+      >
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead>
+            <thead className="sticky top-0 z-10" style={{ backgroundColor: '#FFFFFF', backdropFilter: 'blur(4px)' }}>
               <tr className="border-b-2 border-[#F0EFEC]">
                 <th className="py-3.5 pl-5 pr-3 w-10">
                   <Checkbox
@@ -609,16 +640,25 @@ export function InkoopfacturenLayout() {
                 filtered.map((factuur, idx) => {
                   const config = STATUS_CONFIG[factuur.status]
                   const isDimmed = factuur.status === 'goedgekeurd' || factuur.status === 'afgewezen'
+                  const stripeHex = inkoopStatusHex(factuur.status)
+                  const attention = factuur.status === 'verwerkt' || factuur.status === 'nieuw'
                   return (
                     <tr
                       key={factuur.id}
                       onClick={() => openLightbox(factuur, idx)}
+                      style={{ animationDelay: `${idx * 25}ms` }}
                       className={cn(
-                        'border-b border-[#F0EFEC] last:border-0 hover:bg-[#FAFAF8] cursor-pointer transition-colors doen-row',
+                        'border-b border-[#F0EFEC] last:border-0 hover:bg-[#F8F7F4] cursor-pointer transition-colors doen-row group',
+                        attention && !selectedIds.has(factuur.id) && 'bg-[rgba(241,80,37,0.025)]',
+                        selectedIds.has(factuur.id) && 'bg-[#1A535C]/[0.03]',
                         isDimmed && 'opacity-45'
                       )}
                     >
-                      <td className="py-3.5 pl-5 pr-3 w-10" onClick={e => e.stopPropagation()}>
+                      <td
+                        className="py-3.5 pl-5 pr-3 w-10"
+                        style={{ boxShadow: `inset 3px 0 0 0 ${stripeHex}` }}
+                        onClick={e => e.stopPropagation()}
+                      >
                         <Checkbox
                           checked={selectedIds.has(factuur.id)}
                           onCheckedChange={() => toggleSelect(factuur.id)}

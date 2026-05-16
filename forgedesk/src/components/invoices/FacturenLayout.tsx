@@ -198,6 +198,26 @@ const SORT_OPTIONS: { value: SortField; label: string }[] = [
   { value: 'klantnaam', label: 'Klantnaam' },
 ]
 
+const FACTUUR_STATUS_HEX: Record<string, string> = {
+  concept: '#5A5A55',
+  verzonden: '#3A5A9A',
+  betaald: '#2D6B48',
+  vervallen: '#F15025',
+  gecrediteerd: '#6A5A8A',
+  gedeeltelijk_betaald: '#8A7A4A',
+}
+function factuurStatusHex(s: string): string {
+  return FACTUUR_STATUS_HEX[s] ?? '#5A5A55'
+}
+function factuurNeedsAttention(f: Factuur): boolean {
+  if (f.status === 'vervallen') return true
+  if (f.status === 'verzonden' && f.vervaldatum) {
+    const today = new Date().toISOString().split('T')[0]
+    if (f.vervaldatum < today) return true
+  }
+  return false
+}
+
 
 // ============ HELPERS ============
 
@@ -1425,14 +1445,7 @@ export function FacturenLayout() {
   }
 
   return (
-    <div className="h-full flex flex-col bg-[#F8F7F5] -m-3 sm:-m-4 md:-m-6">
-      {/* Inline keyframes for pulse + stagger */}
-      <style>{`
-        @keyframes doen-pulse { 0%,100% { opacity:1 } 50% { opacity:.35 } }
-        @keyframes doen-fade-up { from { opacity:0; transform:translateY(8px) } to { opacity:1; transform:translateY(0) } }
-        .doen-pulse { animation: doen-pulse 2.5s ease-in-out infinite }
-        .doen-row { animation: doen-fade-up .35s cubic-bezier(.22,1,.36,1) both }
-      `}</style>
+    <div className="h-full flex flex-col -m-3 sm:-m-4 md:-m-6">
 
       {/* ── Content ── */}
       <div className="flex-1 min-h-0 overflow-y-auto">
@@ -1494,42 +1507,69 @@ export function FacturenLayout() {
           </div>
         </div>
 
-        {/* Status overview — text + dot */}
-        <div className="flex items-center gap-5 flex-wrap min-h-[20px] text-[12.5px]">
-          {statistics.totaalOpenstaand > 0 && (
-            <span className="inline-flex items-center gap-1.5 text-[#C03A18]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#F15025] doen-pulse" />
-              <span className="font-mono font-medium">{formatCurrency(statistics.totaalOpenstaand)}</span>
-              <span className="text-[#6B6B66]">open</span>
-            </span>
-          )}
-          {statistics.betaaldDezeMaand > 0 && (
-            <span className="inline-flex items-center gap-1.5 text-[#2D6B48]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#2D6B48]" />
-              <span className="font-mono font-medium">{formatCurrency(statistics.betaaldDezeMaand)}</span>
-              <span className="text-[#6B6B66]">betaald</span>
-            </span>
-          )}
-          {verlopenCount > 0 && (
-            <button
-              onClick={() => setFilterStatus('verlopen')}
-              className="inline-flex items-center gap-1.5 text-[#C0451A] hover:text-[#9A3814] transition-colors"
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-[#F15025] doen-pulse" />
-              <span className="font-mono font-medium">{verlopenCount}</span>
-              <span className="text-[#6B6B66]">vervallen</span>
-            </button>
-          )}
+        {/* KPI tiles — clickable triage entry-points */}
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {([
+            { key: 'verlopen' as FilterStatus,      label: 'Vervallen',        sub: 'achterstallig',         count: verlopenCount,                              isMoney: false, dot: '#F15025', pulse: true },
+            { key: 'verzonden' as FilterStatus,     label: 'Openstaand',       sub: 'wacht op betaling',     count: statistics.totaalOpenstaand,                isMoney: true,  dot: '#3A5A9A', pulse: false },
+            { key: 'te_factureren' as FilterStatus, label: 'Te factureren',    sub: 'projecten klaar',       count: teFacturerenProjecten.length,               isMoney: false, dot: '#8A7A4A', pulse: false },
+            { key: 'betaald' as FilterStatus,       label: 'Betaald',          sub: 'deze maand.',           count: statistics.betaaldDezeMaand,                isMoney: true,  dot: '#2D6B48', pulse: false },
+          ]).map((tile) => {
+            const isActive = filterStatus === tile.key
+            const display = tile.isMoney ? formatCurrency(tile.count) : tile.count
+            return (
+              <button
+                key={tile.key}
+                type="button"
+                onClick={() => setFilterStatus(isActive ? 'alle' : tile.key)}
+                className={cn(
+                  'group doen-slate-surface relative rounded-xl px-5 py-4 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F15025]/30 focus-visible:ring-offset-2',
+                  isActive && 'doen-slate-surface-active'
+                )}
+                aria-pressed={isActive}
+              >
+                <div className="flex items-baseline justify-between gap-3 mb-2">
+                  <span className="inline-flex items-center gap-2">
+                    <span
+                      className={cn('w-1.5 h-1.5 rounded-full', tile.pulse && 'doen-pulse')}
+                      style={{ backgroundColor: tile.dot }}
+                    />
+                    <span className="font-heading text-[14px] font-bold text-[#1A1A1A]">
+                      {tile.label}<span className="text-[#F15025]">.</span>
+                    </span>
+                  </span>
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className={cn(
+                    'font-heading font-bold leading-none text-[#1A1A1A] tabular-nums',
+                    tile.isMoney ? 'text-[22px] font-mono' : 'text-[28px]'
+                  )}>
+                    {display}
+                  </span>
+                  <span
+                    className="text-[13px] text-[#9B9B95] truncate"
+                    style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+                  >
+                    · {tile.sub}
+                  </span>
+                </div>
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Business fact-strip */}
+        <div className="flex items-center gap-5 flex-wrap text-[12.5px]">
           <span className="inline-flex items-center gap-1.5 text-[#8A7A4A]">
             <span className="w-1.5 h-1.5 rounded-full bg-[#8A7A4A]" />
             <span className="font-mono font-medium">{statistics.gemiddeldeBetaaltermijn}</span>
-            <span className="text-[#6B6B66]">dgn termijn</span>
+            <span className="text-[#6B6B66]">gem. betaaltermijn (dgn)</span>
           </span>
         </div>
       </div>
 
       {/* ── Toolbar card ── */}
-      <div className="bg-white rounded-2xl p-5 shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03]">
+      <div className="doen-slate-surface rounded-2xl p-5">
         <div className="flex items-center gap-5">
           {/* Search with keyboard hint */}
           <div className="relative max-w-[280px] flex-1">
@@ -1705,12 +1745,16 @@ export function FacturenLayout() {
             : (factuur.status === 'verzonden' || factuur.status === 'vervallen')
               ? getAgingColor(mobileDagenOpen)
               : config.text
+          const mobileStripeHex = factuurStatusHex(factuur.status)
           return (
             <div
               key={`mobile-${factuur.id}`}
               onClick={() => setViewingFactuur(factuur)}
-              className="doen-row p-4 rounded-xl bg-white ring-1 ring-black/[0.03] cursor-pointer active:bg-[#F8F7F4] transition-all"
-              style={{ animationDelay: `${paginatedFacturen.indexOf(factuur) * 25}ms` }}
+              className="doen-row doen-slate-surface p-4 rounded-xl cursor-pointer active:scale-[0.99] transition-all"
+              style={{
+                animationDelay: `${paginatedFacturen.indexOf(factuur) * 25}ms`,
+                boxShadow: `0 1px 2px rgba(20,62,71,0.04), 0 8px 24px rgba(20,62,71,0.025), inset 3px 0 0 0 ${mobileStripeHex}`,
+              }}
             >
               <div className="flex items-start justify-between gap-2 mb-2">
                 <div className="min-w-0 flex-1">
@@ -1768,10 +1812,13 @@ export function FacturenLayout() {
       </div>
 
       {/* ── Desktop Table ─────────────────────────────────────────────────── */}
-      <div className="hidden md:block bg-white rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.03] overflow-hidden">
+      <div
+        className="hidden md:block doen-slate-surface rounded-2xl"
+        style={{ clipPath: 'inset(0 round 16px)' }}
+      >
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead>
+            <thead className="sticky top-0 z-10" style={{ backgroundColor: '#FFFFFF', backdropFilter: 'blur(4px)' }}>
               <tr className="border-b-2 border-[#F0EFEC]">
                 <th className="py-3.5 pl-5 pr-3 w-10 text-left">
                   <Checkbox
@@ -1844,16 +1891,23 @@ export function FacturenLayout() {
                     ? getAgingColor(dagenOpen)
                     : config.text
 
+                const stripeHex = factuurStatusHex(factuur.status)
+                const attention = factuurNeedsAttention(factuur)
                 return (
                   <tr
                     key={factuur.id}
                     className={cn(
                       'doen-row border-b border-[#F0EFEC] last:border-0 cursor-pointer transition-all duration-200 group',
+                      attention && !selectedIds.has(factuur.id) && 'bg-[rgba(241,80,37,0.025)]',
                       'hover:bg-[#F8F7F4]',
                       selectedIds.has(factuur.id) && 'bg-[#1A535C]/[0.03]'
                     )}
                   >
-                    <td className="py-3.5 pl-5 pr-3 align-middle" onClick={(e) => e.stopPropagation()}>
+                    <td
+                      className="py-3.5 pl-5 pr-3 align-middle"
+                      style={{ boxShadow: `inset 3px 0 0 0 ${stripeHex}` }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <Checkbox
                         checked={selectedIds.has(factuur.id)}
                         onCheckedChange={() => toggleSelect(factuur.id)}

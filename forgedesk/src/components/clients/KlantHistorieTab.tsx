@@ -8,6 +8,7 @@ import {
   Calendar,
   Filter,
 } from 'lucide-react'
+import { FolderSimple as PhFolderSimple } from '@phosphor-icons/react'
 import { getKlantHistorie } from '@/services/supabaseService'
 import { cn } from '@/lib/utils'
 import { logger } from '../../utils/logger'
@@ -106,10 +107,15 @@ export function KlantHistorieTab({ klantId, klantNaam }: KlantHistorieTabProps) 
     return (
       <Card className="border-dashed">
         <CardContent className="py-12 text-center">
-          <FolderKanban className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
-          <p className="text-sm font-medium text-foreground">Geen activiteiten</p>
-          <p className="text-xs text-muted-foreground mt-1">
-            Importeer historie via Klanten &gt; Importeren.
+          <span className="doen-duo-icon mb-3 inline-flex" style={{ '--duo-sec': '#1A535C', '--duo-sec-opacity': 0.5 } as React.CSSProperties}>
+            <PhFolderSimple size={42} weight="duotone" />
+          </span>
+          <p className="text-sm font-semibold text-[#1A1A1A]">Geen activiteiten</p>
+          <p
+            className="text-xs text-[#9B9B95] mt-1"
+            style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+          >
+            importeer historie via Klanten · Importeren
           </p>
           <Button
             variant="link"
@@ -154,8 +160,11 @@ export function KlantHistorieTab({ klantId, klantNaam }: KlantHistorieTabProps) 
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-bold tracking-[-0.02em] flex items-center gap-2">
-            <FolderKanban className="w-4 h-4 text-blue-500" />
-            Activiteiten ({filteredItems.length})
+            <span className="doen-duo-icon" style={{ '--duo-sec': '#3A6B8C' } as React.CSSProperties}>
+              <PhFolderSimple size={16} weight="duotone" />
+            </span>
+            Activiteiten <span className="text-[#F15025]">.</span>{' '}
+            <span className="text-[#9B9B95] font-mono text-[12px]">{filteredItems.length}</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-0">

@@ -1,5 +1,9 @@
-import { ClipboardList, FileText } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import {
+  ListChecks as PhListChecks,
+  Receipt as PhReceipt,
+  Plus as PhPlus,
+} from '@phosphor-icons/react'
 import { formatAmount } from '@/lib/utils'
 import { getStatusPillClass, getStatusPillTone, getStatusLabel, type PillTone } from '@/utils/statusColors'
 import { TaskChecklistView } from './TaskChecklistView'
@@ -38,16 +42,27 @@ export function TakenOfferteGrid({
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {/* ── Taken ── */}
-      <div className="rounded-xl bg-[#FFFFFF] shadow-[0_1px_3px_rgba(130,100,60,0.04)] p-6">
+      <div className="doen-slate-surface rounded-2xl p-5">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <h3 className="text-[11px] font-semibold text-[#6B6B66] uppercase tracking-[0.08em]">Taken</h3>
-            <span className="font-mono text-[10px] font-medium bg-[var(--cream-bg)] text-[var(--cream-text)] rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
-              {taken.length}
+            <span className="doen-duo-icon" style={{ '--duo-sec': '#1A535C' } as React.CSSProperties}>
+              <PhListChecks size={16} weight="duotone" />
             </span>
+            <h3 className="font-heading text-[15px] font-bold text-[#1A1A1A]">
+              Taken<span className="text-[#F15025]">.</span>
+            </h3>
+            {taken.length > 0 && (
+              <span className="font-mono text-[10px] font-semibold bg-[rgba(26,83,92,0.08)] text-[#1A535C] rounded-full px-1.5 py-0.5 min-w-[18px] text-center tabular-nums">
+                {taken.length}
+              </span>
+            )}
           </div>
-          <button onClick={onNewTaak} className="text-[12px] text-[#6B6B66] hover:text-[#1A1A1A] transition-colors">
-            + Taak
+          <button
+            onClick={onNewTaak}
+            className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#1A535C] hover:text-[#0F3D44] hover:underline transition-colors"
+          >
+            <PhPlus size={12} weight="bold" />
+            Taak
           </button>
         </div>
 
@@ -62,33 +77,51 @@ export function TakenOfferteGrid({
         ) : (
           <button
             onClick={onNewTaak}
-            className="w-full rounded-lg border border-dashed border-[#D8D5CF] bg-transparent hover:bg-[var(--cream-bg)] hover:border-[var(--cream-border)] transition-all px-4 py-7 flex flex-col items-center gap-2 text-center group"
+            className="w-full rounded-xl border border-dashed border-[rgba(26,83,92,0.18)] bg-transparent hover:bg-white/40 hover:border-[rgba(26,83,92,0.3)] transition-all px-4 py-8 flex flex-col items-center gap-2.5 text-center group"
           >
-            <ClipboardList className="h-6 w-6 text-[#B0ADA8] group-hover:text-[var(--cream-text)] transition-colors" />
+            <span className="doen-duo-icon" style={{ '--duo-sec': '#1A535C', '--duo-sec-opacity': 0.45 } as React.CSSProperties}>
+              <PhListChecks size={28} weight="duotone" className="transition-transform group-hover:scale-110" />
+            </span>
             <div>
               <p className="text-[13px] font-semibold text-[#1A1A1A]">Eerste taak toevoegen</p>
-              <p className="text-[12px] text-[#9B9B95] mt-0.5">Wat moet er gebeuren?</p>
+              <p
+                className="text-[12px] text-[#9B9B95] mt-0.5"
+                style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+              >
+                wat moet er gebeuren?
+              </p>
             </div>
           </button>
         )}
       </div>
 
       {/* ── Offertes ── */}
-      <div className="rounded-xl bg-[#FFFFFF] shadow-[0_1px_3px_rgba(130,100,60,0.04)] p-6">
+      <div className="doen-slate-surface rounded-2xl p-5">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <h3 className="text-[11px] font-semibold text-[#6B6B66] uppercase tracking-[0.08em]">Offertes</h3>
-            <span className="font-mono text-[10px] font-medium bg-[var(--cream-bg)] text-[var(--cream-text)] rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
-              {offertes.length}
+            <span className="doen-duo-icon">
+              <PhReceipt size={16} weight="duotone" />
             </span>
+            <h3 className="font-heading text-[15px] font-bold text-[#1A1A1A]">
+              Offertes<span className="text-[#F15025]">.</span>
+            </h3>
+            {offertes.length > 0 && (
+              <span className="font-mono text-[10px] font-semibold bg-[rgba(241,80,37,0.1)] text-[#F15025] rounded-full px-1.5 py-0.5 min-w-[18px] text-center tabular-nums">
+                {offertes.length}
+              </span>
+            )}
           </div>
-          <button onClick={onNewOfferte} className="text-[12px] text-[#6B6B66] hover:text-[#1A1A1A] transition-colors">
-            + Offerte
+          <button
+            onClick={onNewOfferte}
+            className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#F15025] hover:text-[#D03A18] hover:underline transition-colors"
+          >
+            <PhPlus size={12} weight="bold" />
+            Offerte
           </button>
         </div>
 
         {offertes.length > 0 ? (
-          <div className="space-y-0.5 -mx-2">
+          <div className="space-y-1 -mx-2">
             {offertes.map((offerte) => {
               const tone = getStatusPillTone(offerte.status)
               const accent = toneAccent[tone]
@@ -96,7 +129,7 @@ export function TakenOfferteGrid({
                 <div
                   key={offerte.id}
                   onClick={() => navigate(`/offertes/${offerte.id}/bewerken`)}
-                  className="group relative cursor-pointer rounded-lg px-3 py-3 hover:bg-[#FAFAF8] transition-colors"
+                  className="group relative cursor-pointer rounded-lg px-3 py-2.5 hover:bg-white/70 transition-colors"
                 >
                   <span
                     aria-hidden
@@ -105,11 +138,11 @@ export function TakenOfferteGrid({
                   />
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
-                      <p className="text-[14px] font-semibold text-[#1A1A1A] truncate">
+                      <p className="text-[14px] font-semibold text-[#1A1A1A] truncate group-hover:text-[#1A535C] transition-colors">
                         {offerte.titel || 'Offerte zonder titel'}
                       </p>
                       <div className="flex items-center gap-2 mt-1">
-                        <span className="font-mono text-[11px] text-[#9B9B95]">{offerte.nummer}</span>
+                        <span className="font-mono text-[10.5px] text-[#9B9B95] bg-[rgba(26,83,92,0.05)] px-1.5 py-0.5 rounded">{offerte.nummer}</span>
                         <span className={getStatusPillClass(offerte.status)} style={{ fontSize: 11, padding: '2px 8px' }}>
                           {getStatusLabel(offerte.status)}
                         </span>
@@ -117,7 +150,7 @@ export function TakenOfferteGrid({
                     </div>
                     <span className="font-mono text-[15px] tabular-nums flex-shrink-0 mt-0.5">
                       <span className="text-[#9B9B95]">€</span>
-                      <span className="text-[#1A1A1A] font-semibold ml-0.5">{formatAmount(offerte.totaal)}</span>
+                      <span className="text-[#1A1A1A] font-bold ml-0.5">{formatAmount(offerte.totaal)}</span>
                     </span>
                   </div>
                 </div>
@@ -127,12 +160,19 @@ export function TakenOfferteGrid({
         ) : (
           <button
             onClick={onNewOfferte}
-            className="w-full rounded-lg border border-dashed border-[#D8D5CF] bg-transparent hover:bg-[var(--cream-bg)] hover:border-[var(--cream-border)] transition-all px-4 py-7 flex flex-col items-center gap-2 text-center group"
+            className="w-full rounded-xl border border-dashed border-[rgba(241,80,37,0.22)] bg-transparent hover:bg-white/40 hover:border-[rgba(241,80,37,0.4)] transition-all px-4 py-8 flex flex-col items-center gap-2.5 text-center group"
           >
-            <FileText className="h-6 w-6 text-[#B0ADA8] group-hover:text-[var(--cream-text)] transition-colors" />
+            <span className="doen-duo-icon" style={{ '--duo-sec-opacity': 0.5 } as React.CSSProperties}>
+              <PhReceipt size={28} weight="duotone" className="transition-transform group-hover:scale-110" />
+            </span>
             <div>
               <p className="text-[13px] font-semibold text-[#1A1A1A]">Offerte maken</p>
-              <p className="text-[12px] text-[#9B9B95] mt-0.5">Stuur een prijsopgave</p>
+              <p
+                className="text-[12px] text-[#9B9B95] mt-0.5"
+                style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+              >
+                stuur een prijsopgave
+              </p>
             </div>
           </button>
         )}

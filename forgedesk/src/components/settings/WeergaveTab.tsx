@@ -1,10 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Separator } from '@/components/ui/separator'
-import { Badge } from '@/components/ui/badge'
 import {
   Settings,
   Palette,
@@ -15,21 +13,14 @@ import {
   Type,
   Monitor,
   Plus,
-  Zap,
-  BookTemplate,
   Mail,
 } from 'lucide-react'
-import { useLanguage } from '@/contexts/LanguageContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { usePalette, APP_THEMES, ACCENT_PALETTES } from '@/contexts/PaletteContext'
 import { useSidebar } from '@/contexts/SidebarContext'
-import { getCalculatieTemplates } from '@/services/supabaseService'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
-import { logger } from '../../utils/logger'
 import { QUICK_ACTIONS, type QuickActionsPosition } from '@/components/dashboard/FloatingQuickActions'
-import { useNavigate } from 'react-router-dom'
-import type { CalculatieTemplate } from '@/types'
 import { SubTabNav } from './SubTabNav'
 import type { SubTab } from './settingsShared'
 import {
@@ -41,7 +32,7 @@ import {
 } from './settingsShared'
 
 const ALL_SIDEBAR_ITEMS = [
-  { label: 'Dashboard', section: 'Overzicht' },
+  // Dashboard staat alleen achter het doen.-logo, niet als nav-item — niet toggable
   { label: 'Projecten', section: 'Werk' },
   { label: 'Offertes', section: 'Werk' },
   { label: 'Facturen', section: 'Werk' },
@@ -52,19 +43,18 @@ const ALL_SIDEBAR_ITEMS = [
   { label: 'Email', section: 'Communicatie' },
   { label: 'Portaal', section: 'Communicatie' },
   { label: 'Financieel', section: 'Beheer' },
-  { label: 'Visualizer', section: 'Beheer' },
+  { label: 'Inkoopfacturen', section: 'Beheer' },
+  // Visualizer: tijdelijk verborgen tot feature wordt gelanceerd
 ]
 
 const WEERGAVE_TABS: SubTab[] = [
   { id: 'layout', label: 'Layout', icon: Monitor },
   { id: 'voorkeuren', label: 'Voorkeuren', icon: Sliders },
   { id: 'navigatie', label: 'Navigatie', icon: Settings },
-  { id: 'snelkoppelingen', label: 'Snelkoppelingen', icon: Zap },
 ]
 
 export function WeergaveTab() {
-  const { language, setLanguage } = useLanguage()
-  const { settings, updateSettings, profile, updateUserProfile } = useAppSettings()
+  const { settings, updateSettings } = useAppSettings()
   const { appThemeId, setAppThemeId, accentId, setAccentId } = usePalette()
   // Lees opgeslagen sidebar_items en filter items eruit die niet meer bestaan
   // in ALL_SIDEBAR_ITEMS (bijv. verwijderde tools). Als er nog niets is
@@ -94,7 +84,7 @@ export function WeergaveTab() {
     try {
       setIsSavingSidebar(true)
       await updateSettings({ sidebar_items: sidebarItems })
-      toast.success(<>Opgeslagen<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success('Navigatie opgeslagen — sidebar bijgewerkt')
     } catch (err) {
       logger.error(err)
       toast.error('Kon navigatie niet opslaan')
@@ -106,6 +96,17 @@ export function WeergaveTab() {
   const handleResetSidebar = () => {
     setSidebarItems(ALL_SIDEBAR_ITEMS.map((i) => i.label))
   }
+
+  /** Heeft de gebruiker iets gewijzigd t.o.v. de opgeslagen waarde? */
+  const hasUnsavedNavChanges = useMemo(() => {
+    const savedRaw = settings.sidebar_items
+    const saved = Array.isArray(savedRaw) && savedRaw.length > 0
+      ? mergeSidebarItems(savedRaw)
+      : ALL_SIDEBAR_ITEMS.map(i => i.label)
+    if (saved.length !== sidebarItems.length) return true
+    const a = new Set(saved)
+    return sidebarItems.some(item => !a.has(item))
+  }, [sidebarItems, settings.sidebar_items, mergeSidebarItems])
 
   const [subTab, setSubTab] = useState('layout')
   // Font size state (font family is fixed to Inter)
@@ -124,17 +125,13 @@ export function WeergaveTab() {
     const stored = localStorage.getItem('doen_autoCollapse')
     return stored !== null ? JSON.parse(stored) : true
   })
-  const [compactMode, setCompactMode] = useState(() => {
-    const stored = localStorage.getItem('doen_compactMode')
-    return stored !== null ? JSON.parse(stored) : false
-  })
 
   return (
     <>
-    <SubTabNav tabs={WEERGAVE_TABS} active={subTab} onChange={setSubTab} />
+    <SubTabNav tabs={WEERGAVE_TABS} active={subTab} onChange={setSubTab} variant="underline" />
 
     {false && subTab === 'thema' && (
-    <Card>
+    <Card className="doen-slate-surface border-0 shadow-none rounded-2xl">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Palette className="w-5 h-5" />
@@ -279,7 +276,7 @@ export function WeergaveTab() {
     )}
 
     {subTab === 'layout' && (
-    <Card>
+    <Card className="doen-slate-surface border-0 shadow-none rounded-2xl">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Monitor className="w-5 h-5" />
@@ -435,52 +432,28 @@ export function WeergaveTab() {
 
     {subTab === 'voorkeuren' && (
     <>
-    <Card>
+    {/* Eén kaart met alle aan/uit-toggles — UI-zichtbaarheid */}
+    <Card className="doen-slate-surface border-0 shadow-none rounded-2xl">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Sliders className="w-5 h-5" />
           Voorkeuren
         </CardTitle>
-        <CardDescription>Taal en gedrag van de applicatie</CardDescription>
+        <CardDescription>Gedrag van de applicatie</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Language Toggle */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-5 h-5 flex items-center justify-center text-sm font-bold text-muted-foreground">
-              {language === 'nl' ? 'NL' : 'EN'}
-            </div>
+      <CardContent className="divide-y divide-[rgba(26,83,92,0.08)]">
+        {/* Auto-collapse Sidebar */}
+        <div className="flex items-center justify-between py-4 first:pt-0">
+          <div className="flex items-start gap-3">
+            <PanelLeft className="w-4 h-4 text-[#9B9B95] mt-0.5 flex-shrink-0" />
             <div>
               <p className="text-sm font-medium text-foreground">
-                Taal
+                Sidebar automatisch inklappen
               </p>
-              <p className="text-xs text-muted-foreground">
-                {language === 'nl' ? 'Nederlands' : 'English'}
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Klap de sidebar automatisch in op mobiele apparaten
               </p>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">
-              {language === 'nl' ? 'NL' : 'EN'}
-            </span>
-            <Switch
-              checked={language === 'en'}
-              onCheckedChange={(checked) => setLanguage(checked ? 'en' : 'nl')}
-            />
-          </div>
-        </div>
-
-        <Separator />
-
-        {/* Auto-collapse Sidebar */}
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-foreground">
-              Sidebar automatisch inklappen
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Klap de sidebar automatisch in op mobiele apparaten
-            </p>
           </div>
           <Switch
             checked={autoCollapse}
@@ -496,73 +469,18 @@ export function WeergaveTab() {
           />
         </div>
 
-        <Separator />
-
-        {/* Compact Mode */}
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-foreground">
-              Compacte modus
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Verminder witruimte en gebruik kleinere elementen
-            </p>
-          </div>
-          <Switch
-            checked={compactMode}
-            onCheckedChange={(checked) => {
-              setCompactMode(checked)
-              localStorage.setItem('doen_compactMode', JSON.stringify(checked))
-              toast.success(
-                checked
-                  ? 'Compacte modus ingeschakeld'
-                  : 'Standaard modus ingeschakeld'
-              )
-            }}
-          />
-        </div>
-
-        <Separator />
-
-        {/* UI Hints */}
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-foreground">
-              Toon info-icoontjes bij onderdelen
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Kleine vraagteken-icoontjes naast titels en instellingen die uitleg geven over wat een functie doet.
-            </p>
-          </div>
-          <Switch
-            checked={profile?.ui_hints_tonen ?? false}
-            onCheckedChange={async (checked) => {
-              try {
-                await updateUserProfile({ ui_hints_tonen: checked })
-                toast.success(
-                  checked
-                    ? 'Info-icoontjes ingeschakeld'
-                    : 'Info-icoontjes uitgeschakeld'
-                )
-              } catch (err) {
-                toast.error('Kon voorkeur niet opslaan')
-              }
-            }}
-          />
-        </div>
-      </CardContent>
-    </Card>
-
-    {/* Email knop */}
-    <Card className="mt-4">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Mail className="w-5 h-5" />
-              Email snelknop
-            </CardTitle>
-            <CardDescription className="mt-1.5">Toon een envelopje aan de rechterrand om snel naar je inbox te gaan</CardDescription>
+        {/* Email snelknop */}
+        <div className="flex items-center justify-between py-4">
+          <div className="flex items-start gap-3">
+            <Mail className="w-4 h-4 text-[#9B9B95] mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-foreground">
+                Email snelknop
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Envelopje aan de rechterrand om snel naar de inbox te springen
+              </p>
+            </div>
           </div>
           <Switch
             checked={settings.email_edge_button ?? true}
@@ -572,19 +490,19 @@ export function WeergaveTab() {
             }}
           />
         </div>
-      </CardHeader>
-    </Card>
 
-    {/* Snelkoppelingen */}
-    <Card className="mt-4">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Plus className="w-5 h-5" />
-              Snelkoppelingen (+)
-            </CardTitle>
-            <CardDescription className="mt-1.5">Snelle acties via een floating + knop</CardDescription>
+        {/* Snelkoppelingen aan/uit */}
+        <div className="flex items-center justify-between py-4 last:pb-0">
+          <div className="flex items-start gap-3">
+            <Plus className="w-4 h-4 text-[#9B9B95] mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-foreground">
+                Snelkoppelingen (+)
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Floating + knop voor snelle acties als nieuw project of factuur
+              </p>
+            </div>
           </div>
           <Switch
             checked={settings.quick_actions_enabled ?? true}
@@ -594,8 +512,19 @@ export function WeergaveTab() {
             }}
           />
         </div>
+      </CardContent>
+    </Card>
+
+    {/* Tweede kaart: details van snelkoppelingen — alleen als aan */}
+    {(settings.quick_actions_enabled ?? true) && (
+    <Card className="mt-4 doen-slate-surface border-0 shadow-none rounded-2xl">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Plus className="w-5 h-5" />
+          Snelkoppelingen aanpassen
+        </CardTitle>
+        <CardDescription>Positie en welke acties op de + knop verschijnen</CardDescription>
       </CardHeader>
-      {(settings.quick_actions_enabled ?? true) && (
       <CardContent className="space-y-5">
         {/* Positie kiezer */}
         <div>
@@ -686,211 +615,135 @@ export function WeergaveTab() {
           </div>
         </div>
       </CardContent>
-      )}
     </Card>
+    )}
     </>
     )}
 
     {subTab === 'navigatie' && (
-    <Card>
+    <Card className="doen-slate-surface border-0 shadow-none rounded-2xl">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Sliders className="w-5 h-5" />
           Navigatie aanpassen
         </CardTitle>
         <CardDescription>
-          Kies welke menu-items zichtbaar zijn in de sidebar. Schakel items uit die je niet gebruikt,
-          zodat de navigatie overzichtelijker wordt. Instellingen is altijd zichtbaar.
+          Klik items aan of uit. Wat hier aan staat verschijnt in je sidebar.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Groepeer per sectie */}
-        {['Overzicht', 'Werk', 'Planning', 'Communicatie', 'Beheer'].map((section) => {
+      <CardContent className="space-y-5">
+        {/* Aan-count summary */}
+        <div className="flex items-baseline justify-between pb-3 border-b border-[rgba(26,83,92,0.1)]">
+          <span className="text-[13px] text-[#6B6B66]">
+            <span className="font-mono font-bold text-[#1A535C] tabular-nums">{sidebarItems.length}</span>
+            <span className="text-[#C0BDB8]"> / </span>
+            <span className="font-mono tabular-nums text-[#9B9B95]">{ALL_SIDEBAR_ITEMS.length}</span>
+            <span className="ml-1.5">items zichtbaar</span>
+          </span>
+          {sidebarItems.length < ALL_SIDEBAR_ITEMS.length && (
+            <button
+              type="button"
+              onClick={handleResetSidebar}
+              className="text-[12px] font-medium text-[#1A535C] hover:text-[#0F3D44] hover:underline"
+            >
+              Alles aanzetten
+            </button>
+          )}
+        </div>
+
+        {/* Groepeer per sectie — chip-style */}
+        {['Werk', 'Planning', 'Communicatie', 'Beheer'].map((section) => {
           const sectionItems = ALL_SIDEBAR_ITEMS.filter((i) => i.section === section)
+          if (sectionItems.length === 0) return null
+          const aanInSection = sectionItems.filter(i => sidebarItems.includes(i.label)).length
           return (
             <div key={section}>
-              <h4 className="text-xs font-bold text-text-tertiary uppercase tracking-label mb-2">
-                {section}
-              </h4>
-              <div className="space-y-2">
-                {sectionItems.map((item) => (
-                  <div
-                    key={item.label}
-                    className="flex items-center justify-between py-1.5 px-3 rounded-lg hover:bg-background dark:hover:bg-muted/30"
-                  >
-                    <span className="text-sm text-foreground dark:text-white">{item.label}</span>
-                    <Switch
-                      checked={sidebarItems.includes(item.label)}
-                      onCheckedChange={() => toggleSidebarItem(item.label)}
-                    />
-                  </div>
-                ))}
+              <div className="flex items-baseline gap-2 mb-2.5">
+                <h4 className="text-[11px] font-semibold uppercase tracking-widest text-[#6B6B66]">
+                  {section}
+                </h4>
+                <span className="text-[10px] font-mono tabular-nums text-[#9B9B95]">
+                  · {aanInSection}/{sectionItems.length}
+                </span>
               </div>
-              <Separator className="my-3" />
+              <div className="flex flex-wrap gap-1.5">
+                {sectionItems.map((item) => {
+                  const isOn = sidebarItems.includes(item.label)
+                  return (
+                    <button
+                      key={item.label}
+                      type="button"
+                      onClick={() => toggleSidebarItem(item.label)}
+                      className={cn(
+                        'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium transition-all duration-150 border',
+                        isOn
+                          ? 'bg-white text-[#1A1A1A] border-[rgba(26,83,92,0.18)] shadow-[0_1px_2px_rgba(20,62,71,0.06)] hover:border-[rgba(26,83,92,0.3)]'
+                          : 'bg-transparent text-[#9B9B95] border-[rgba(26,83,92,0.12)] border-dashed hover:text-[#6B6B66] hover:bg-white/50 hover:border-[rgba(26,83,92,0.2)]',
+                      )}
+                      aria-pressed={isOn}
+                    >
+                      {isOn && (
+                        <span
+                          aria-hidden
+                          className="w-1.5 h-1.5 rounded-full bg-[#2D6B48] flex-shrink-0"
+                        />
+                      )}
+                      {item.label}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
           )
         })}
 
-        {/* Instellingen (altijd aan) */}
-        <div className="flex items-center justify-between py-1.5 px-3 rounded-lg bg-background dark:bg-muted/30">
-          <span className="text-sm text-foreground dark:text-white">Instellingen</span>
-          <span className="text-xs text-muted-foreground dark:text-muted-foreground/60">Altijd zichtbaar</span>
+        {/* Instellingen (altijd aan) — kleine fixed-footer */}
+        <div className="flex items-center gap-2 pt-2 border-t border-[rgba(26,83,92,0.08)]">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium bg-[rgba(26,83,92,0.05)] text-[#6B6B66] border border-[rgba(26,83,92,0.08)]">
+            <span aria-hidden className="w-1.5 h-1.5 rounded-full bg-[#9B9B95] flex-shrink-0" />
+            Instellingen
+          </span>
+          <span
+            className="text-[12px] text-[#9B9B95]"
+            style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+          >
+            · altijd zichtbaar
+          </span>
         </div>
 
-        <div className="flex items-center justify-between pt-2">
-          <Button variant="outline" size="sm" onClick={handleResetSidebar}>
-            Alles aanzetten
-          </Button>
-          <Button size="sm" onClick={handleSaveSidebar} disabled={isSavingSidebar}>
-            <Save className="h-4 w-4 mr-1.5" />
-            {isSavingSidebar ? 'Opslaan...' : 'Navigatie opslaan'}
-          </Button>
+        {/* Notice: alleen voor sidebar-modus */}
+        <p
+          className="text-[12px] text-[#9B9B95]"
+          style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+        >
+          · deze instellingen gelden alleen voor de zijbalk-navigatie. Met top-navigatie als layout zijn alle items altijd zichtbaar.
+        </p>
+
+        {/* Save action */}
+        <div className="flex items-center justify-between pt-2 border-t border-[rgba(26,83,92,0.08)]">
+          <span className="text-[12px] text-[#9B9B95]">
+            {hasUnsavedNavChanges
+              ? <span className="text-[#F15025] font-semibold">Onopgeslagen wijzigingen</span>
+              : 'Alle wijzigingen opgeslagen'}
+          </span>
+          <button
+            type="button"
+            onClick={handleSaveSidebar}
+            disabled={isSavingSidebar || !hasUnsavedNavChanges}
+            className="inline-flex items-center gap-2 bg-[#F15025] text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_2px_8px_rgba(241,80,37,0.25),0_0_0_1px_rgba(241,80,37,0.1)] hover:bg-[#E04520] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35),0_0_0_1px_rgba(241,80,37,0.15)] hover:-translate-y-[1px] active:translate-y-0 active:bg-[#D03A18] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:bg-[#9B9B95] disabled:shadow-none"
+          >
+            {isSavingSidebar
+              ? <>Opslaan...</>
+              : hasUnsavedNavChanges
+                ? <><Save className="h-4 w-4" />Navigatie opslaan</>
+                : <><CheckCircle2 className="h-4 w-4" />Opgeslagen</>}
+          </button>
         </div>
       </CardContent>
     </Card>
     )}
 
-    {subTab === 'snelkoppelingen' && <SnelkoppelingenTab />}
     </>
   )
 }
 
-function SnelkoppelingenTab() {
-  const { settings, updateSettings } = useAppSettings()
-  const [templates, setTemplates] = useState<CalculatieTemplate[]>([])
-  const [selected, setSelected] = useState<string[]>(settings.snelofferte_templates || [])
-  const [isSaving, setIsSaving] = useState(false)
-  const navigate = useNavigate()
-
-  useEffect(() => {
-    getCalculatieTemplates().then(setTemplates).catch(logger.error)
-  }, [])
-
-  useEffect(() => {
-    setSelected(settings.snelofferte_templates || [])
-  }, [settings.snelofferte_templates])
-
-  const activeTemplates = templates.filter(t => t.actief)
-
-  const toggleTemplate = (id: string) => {
-    setSelected(prev =>
-      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-    )
-  }
-
-  const handleSave = async () => {
-    try {
-      setIsSaving(true)
-      await updateSettings({ snelofferte_templates: selected })
-      toast.success('Snelkoppelingen opgeslagen')
-    } catch (err) {
-      logger.error('Snelkoppelingen opslaan mislukt:', err)
-      toast.error('Kon snelkoppelingen niet opslaan')
-    } finally {
-      setIsSaving(false)
-    }
-  }
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Zap className="w-5 h-5" />
-          Snelkoppelingen
-        </CardTitle>
-        <CardDescription>
-          Kies welke calculatie-templates als snelkoppeling verschijnen in het &ldquo;Nieuwe offerte&rdquo; formulier.
-          Geselecteerde templates worden als chips getoond voor snel laden.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {activeTemplates.length === 0 ? (
-          <div className="text-center py-8 space-y-3">
-            <BookTemplate className="h-10 w-10 mx-auto text-muted-foreground/40" />
-            <p className="text-sm text-muted-foreground">
-              Je hebt nog geen calculatie-templates.
-            </p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate('/instellingen?tab=calculatie')}
-            >
-              Templates aanmaken
-            </Button>
-          </div>
-        ) : (
-          <>
-            <div className="space-y-1.5">
-              {activeTemplates.map(t => {
-                const isSelected = selected.includes(t.id)
-                return (
-                  <div
-                    key={t.id}
-                    className={cn(
-                      'flex items-center gap-3 py-2.5 px-3 rounded-lg transition-colors cursor-pointer',
-                      isSelected
-                        ? 'bg-petrol/5 border border-petrol/20'
-                        : 'hover:bg-muted/50 border border-transparent'
-                    )}
-                    onClick={() => toggleTemplate(t.id)}
-                  >
-                    <Switch
-                      checked={isSelected}
-                      onCheckedChange={() => toggleTemplate(t.id)}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium">{t.naam}</p>
-                      {t.beschrijving && (
-                        <p className="text-xs text-muted-foreground truncate">{t.beschrijving}</p>
-                      )}
-                    </div>
-                    <Badge variant="secondary" className="text-[10px]">
-                      {t.regels.length} regels
-                    </Badge>
-                  </div>
-                )
-              })}
-            </div>
-
-            {selected.length > 0 && (
-              <div>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-2">
-                  Voorbeeld snelkoppelingen
-                </p>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  {selected.map(id => {
-                    const t = activeTemplates.find(x => x.id === id)
-                    if (!t) return null
-                    return (
-                      <span
-                        key={id}
-                        className="px-2.5 py-1 text-[11px] font-medium border border-petrol/30 text-petrol rounded-full bg-petrol/5"
-                      >
-                        {t.naam}
-                      </span>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
-
-            <div className="flex items-center justify-between pt-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate('/instellingen?tab=calculatie')}
-              >
-                <BookTemplate className="h-4 w-4 mr-1.5" />
-                Templates beheren
-              </Button>
-              <Button size="sm" onClick={handleSave} disabled={isSaving}>
-                <Save className="h-4 w-4 mr-1.5" />
-                {isSaving ? 'Opslaan...' : 'Opslaan'}
-              </Button>
-            </div>
-          </>
-        )}
-      </CardContent>
-    </Card>
-  )
-}

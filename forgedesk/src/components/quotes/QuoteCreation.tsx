@@ -2065,9 +2065,17 @@ export function QuoteCreation() {
         {/* ════════════════════════════════════════════════════════════════ */}
         <div className="space-y-5 min-w-0">
           {/* ── Introductietekst ── */}
-          <div className="bg-[#FFFFFF] rounded-xl p-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-xs font-semibold text-[#1A1A1A] uppercase tracking-wider">Introductietekst <span className="font-normal text-[#9B9B95] normal-case tracking-normal">optioneel</span></h3>
+          <div className="doen-slate-surface rounded-2xl p-5">
+            <div className="flex items-baseline justify-between mb-3">
+              <h3 className="font-heading text-[15px] font-bold text-[#1A1A1A]">
+                Introductietekst<span className="text-[#F15025]">.</span>
+                <span
+                  className="ml-2 text-[12px] text-[#9B9B95] font-normal"
+                  style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+                >
+                  optioneel
+                </span>
+              </h3>
             </div>
             <div className="flex flex-wrap gap-1.5 mb-3">
               {[
@@ -2075,17 +2083,34 @@ export function QuoteCreation() {
                 { label: 'Na gesprek', tekst: `Geachte heer/mevrouw ${selectedKlant?.contactpersoon || selectedKlant?.bedrijfsnaam || '{klant_naam}'}, naar aanleiding van ons gesprek sturen wij u hierbij onze offerte.` },
                 { label: 'Bedankt', tekst: `Beste ${selectedKlant?.contactpersoon || selectedKlant?.bedrijfsnaam || '{klant_naam}'}, bedankt voor uw aanvraag. Hierbij onze offerte.` },
               ].map((tmpl) => (
-                <button key={tmpl.label} onClick={() => setIntroTekst(tmpl.tekst)} className="text-xs px-2.5 py-1 border border-[#EBEBEB] rounded-md hover:bg-[#F8F7F5] text-[#6B6B66] transition-colors">{tmpl.label}</button>
+                <button
+                  key={tmpl.label}
+                  onClick={() => setIntroTekst(tmpl.tekst)}
+                  className="text-[12px] font-medium px-2.5 py-1 rounded-full border border-[rgba(26,83,92,0.12)] bg-white hover:bg-[rgba(26,83,92,0.05)] hover:border-[rgba(26,83,92,0.22)] text-[#6B6B66] hover:text-[#1A535C] transition-colors"
+                >
+                  {tmpl.label}
+                </button>
               ))}
             </div>
-            <Textarea value={introTekst} onChange={(e) => setIntroTekst(e.target.value)} placeholder="Beste ..., hierbij ontvangt u onze offerte voor..." rows={3} className="resize-y text-sm border-[#EBEBEB] bg-[#F8F7F5] focus:bg-white focus:border-[#1A535C]/30 rounded-lg transition-colors" />
+            <Textarea
+              value={introTekst}
+              onChange={(e) => setIntroTekst(e.target.value)}
+              placeholder="Beste ..., hierbij ontvangt u onze offerte voor..."
+              rows={3}
+              className="resize-y text-sm bg-white border border-[rgba(26,83,92,0.12)] focus:bg-white focus-visible:border-[#1A535C] focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] rounded-lg transition-colors"
+            />
           </div>
 
           {/* ── Items ── */}
-          <div className="bg-[#FFFFFF] rounded-xl p-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xs font-semibold text-[#1A1A1A] uppercase tracking-wider">
-                Offerte items <span className="font-mono text-[#9B9B95] font-normal">{items.length}</span>
+          <div className="doen-slate-surface rounded-2xl p-5">
+            <div className="flex items-baseline justify-between mb-4">
+              <h3 className="font-heading text-[15px] font-bold text-[#1A1A1A]">
+                Offerte-items<span className="text-[#F15025]">.</span>
+                {items.length > 0 && (
+                  <span className="ml-2 font-mono text-[10px] font-semibold bg-[rgba(241,80,37,0.1)] text-[#F15025] rounded-full px-1.5 py-0.5 min-w-[18px] text-center tabular-nums">
+                    {items.length}
+                  </span>
+                )}
               </h3>
             </div>
             <div>
@@ -2112,9 +2137,17 @@ export function QuoteCreation() {
           </div>
 
           {/* ── Afsluittekst ── */}
-          <div className="bg-[#FFFFFF] rounded-xl p-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-xs font-semibold text-[#1A1A1A] uppercase tracking-wider">Afsluittekst <span className="font-normal text-[#9B9B95] normal-case tracking-normal">optioneel</span></h3>
+          <div className="doen-slate-surface rounded-2xl p-5">
+            <div className="flex items-baseline justify-between mb-3">
+              <h3 className="font-heading text-[15px] font-bold text-[#1A1A1A]">
+                Afsluittekst<span className="text-[#F15025]">.</span>
+                <span
+                  className="ml-2 text-[12px] text-[#9B9B95] font-normal"
+                  style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+                >
+                  optioneel
+                </span>
+              </h3>
             </div>
             <div className="flex flex-wrap gap-1.5 mb-3">
               {[
@@ -2122,26 +2155,51 @@ export function QuoteCreation() {
                 { label: 'Met vragen', tekst: 'Mocht u vragen hebben of aanvullende informatie wensen, neem dan gerust contact met ons op.' },
                 { label: 'Dank', tekst: 'Wij danken u voor uw vertrouwen en hopen u van dienst te mogen zijn.' },
               ].map((tmpl) => (
-                <button key={tmpl.label} onClick={() => setOutroTekst(tmpl.tekst)} className="text-xs px-2.5 py-1 border border-[#EBEBEB] rounded-md hover:bg-[#F8F7F5] text-[#6B6B66] transition-colors">{tmpl.label}</button>
+                <button
+                  key={tmpl.label}
+                  onClick={() => setOutroTekst(tmpl.tekst)}
+                  className="text-[12px] font-medium px-2.5 py-1 rounded-full border border-[rgba(26,83,92,0.12)] bg-white hover:bg-[rgba(26,83,92,0.05)] hover:border-[rgba(26,83,92,0.22)] text-[#6B6B66] hover:text-[#1A535C] transition-colors"
+                >
+                  {tmpl.label}
+                </button>
               ))}
             </div>
-            <Textarea value={outroTekst} onChange={(e) => setOutroTekst(e.target.value)} placeholder="Wij zien uw reactie graag tegemoet." rows={2} className="resize-y text-sm border-[#EBEBEB] bg-[#F8F7F5] focus:bg-white focus:border-[#1A535C]/30 rounded-lg transition-colors" />
+            <Textarea
+              value={outroTekst}
+              onChange={(e) => setOutroTekst(e.target.value)}
+              placeholder="Wij zien uw reactie graag tegemoet."
+              rows={2}
+              className="resize-y text-sm bg-white border border-[rgba(26,83,92,0.12)] focus:bg-white focus-visible:border-[#1A535C] focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] rounded-lg transition-colors"
+            />
           </div>
 
           {/* ── Notities & Voorwaarden ── */}
-          <div className="bg-[#FFFFFF] rounded-xl p-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-xs font-semibold text-[#1A1A1A] uppercase tracking-wider">Notities & Voorwaarden</h3>
+          <div className="doen-slate-surface rounded-2xl p-5">
+            <div className="flex items-baseline justify-between mb-3">
+              <h3 className="font-heading text-[15px] font-bold text-[#1A1A1A]">
+                Notities &amp; voorwaarden<span className="text-[#F15025]">.</span>
+              </h3>
             </div>
             <div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-[11px] font-semibold text-[#6B6B66] uppercase tracking-wider">Notities</label>
-                  <Textarea value={notities} onChange={(e) => setNotities(e.target.value)} placeholder="Interne notities of opmerkingen voor de klant..." rows={4} className="text-sm border-[#EBEBEB] bg-[#F8F7F5] focus:bg-white focus:border-[#1A535C]/30 rounded-lg transition-colors" />
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-semibold uppercase tracking-widest text-[#6B6B66]">Notities</label>
+                  <Textarea
+                    value={notities}
+                    onChange={(e) => setNotities(e.target.value)}
+                    placeholder="Interne notities of opmerkingen voor de klant..."
+                    rows={4}
+                    className="text-sm bg-white border border-[rgba(26,83,92,0.12)] focus:bg-white focus-visible:border-[#1A535C] focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] rounded-lg transition-colors"
+                  />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[11px] font-semibold text-[#6B6B66] uppercase tracking-wider">Voorwaarden</label>
-                  <Textarea value={voorwaarden} onChange={(e) => setVoorwaarden(e.target.value)} rows={4} className="text-sm border-[#EBEBEB] bg-[#F8F7F5] focus:bg-white focus:border-[#1A535C]/30 rounded-lg transition-colors" />
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-semibold uppercase tracking-widest text-[#6B6B66]">Voorwaarden</label>
+                  <Textarea
+                    value={voorwaarden}
+                    onChange={(e) => setVoorwaarden(e.target.value)}
+                    rows={4}
+                    className="text-sm bg-white border border-[rgba(26,83,92,0.12)] focus:bg-white focus-visible:border-[#1A535C] focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] rounded-lg transition-colors"
+                  />
                 </div>
               </div>
             </div>
@@ -2152,35 +2210,39 @@ export function QuoteCreation() {
           {/* ════════════════════════════════════════════════════════════════ */}
           <div ref={email.emailSectionRef}>
             {email.showEmailCompose && (
-              <div className="bg-[#FFFFFF] rounded-xl border border-[#EBEBEB] shadow-[0_1px_4px_rgba(0,0,0,0.06)] overflow-hidden">
+              <div className="doen-slate-surface rounded-2xl overflow-hidden">
                 {/* Header */}
-                <div className="flex items-center justify-between px-5 py-3 border-b border-[#EBEBEB]/60">
-                  <h3 className="text-sm font-semibold text-[#1A1A1A]">Email versturen</h3>
-                  <button onClick={() => email.setShowEmailCompose(false)} className="text-[#9B9B95] hover:text-[#1A1A1A] transition-colors"><X className="h-4 w-4" /></button>
+                <div className="flex items-center justify-between px-5 py-3.5 border-b border-[rgba(26,83,92,0.08)]">
+                  <h3 className="font-heading text-[15px] font-bold text-[#1A1A1A]">
+                    Email versturen<span className="text-[#F15025]">.</span>
+                  </h3>
+                  <button onClick={() => email.setShowEmailCompose(false)} className="text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-white/60 transition-colors h-7 w-7 rounded-md flex items-center justify-center">
+                    <X className="h-4 w-4" />
+                  </button>
                 </div>
 
                 <div className="px-5 py-4 space-y-3">
                   {/* Email velden */}
                   <div className="space-y-2">
                     <div className="flex items-center gap-3">
-                      <span className="text-xs font-medium text-[#9B9B95] w-16 flex-shrink-0">Aan</span>
-                      <input value={email.emailTo} onChange={(e) => email.setEmailTo(e.target.value)} placeholder="email@voorbeeld.nl" type="email" className="flex-1 text-sm px-3 py-2 border border-[#EBEBEB] rounded-lg bg-[#F8F7F5] focus:outline-none focus:border-[#1A535C]/40 focus:bg-white transition-colors" />
+                      <span className="text-[10px] font-semibold uppercase tracking-widest text-[#6B6B66] w-12 flex-shrink-0">Aan</span>
+                      <input value={email.emailTo} onChange={(e) => email.setEmailTo(e.target.value)} placeholder="email@voorbeeld.nl" type="email" className="flex-1 text-sm px-3 py-2 border border-[rgba(26,83,92,0.12)] rounded-lg bg-white focus:outline-none focus:border-[#1A535C] focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] transition-colors" />
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-xs font-medium text-[#9B9B95] w-16 flex-shrink-0">CC</span>
-                      <input value={email.emailCc} onChange={(e) => email.setEmailCc(e.target.value)} placeholder="Optioneel" className="flex-1 text-sm px-3 py-2 border border-[#EBEBEB] rounded-lg bg-[#F8F7F5] focus:outline-none focus:border-[#1A535C]/40 focus:bg-white transition-colors" />
+                      <span className="text-[10px] font-semibold uppercase tracking-widest text-[#6B6B66] w-12 flex-shrink-0">CC</span>
+                      <input value={email.emailCc} onChange={(e) => email.setEmailCc(e.target.value)} placeholder="Optioneel" className="flex-1 text-sm px-3 py-2 border border-[rgba(26,83,92,0.12)] rounded-lg bg-white focus:outline-none focus:border-[#1A535C] focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] transition-colors" />
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-xs font-medium text-[#9B9B95] w-16 flex-shrink-0">BCC</span>
-                      <input value={email.emailBcc} onChange={(e) => email.setEmailBcc(e.target.value)} placeholder="Optioneel" className="flex-1 text-sm px-3 py-2 border border-[#EBEBEB] rounded-lg bg-[#F8F7F5] focus:outline-none focus:border-[#1A535C]/40 focus:bg-white transition-colors" />
+                      <span className="text-[10px] font-semibold uppercase tracking-widest text-[#6B6B66] w-12 flex-shrink-0">BCC</span>
+                      <input value={email.emailBcc} onChange={(e) => email.setEmailBcc(e.target.value)} placeholder="Optioneel" className="flex-1 text-sm px-3 py-2 border border-[rgba(26,83,92,0.12)] rounded-lg bg-white focus:outline-none focus:border-[#1A535C] focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] transition-colors" />
                     </div>
                   </div>
 
                   {/* Onderwerp */}
-                  <input value={email.emailSubject} onChange={(e) => email.setEmailSubject(e.target.value)} placeholder="Onderwerp..." className="w-full text-sm font-medium px-3 py-2 border border-[#EBEBEB] rounded-lg focus:outline-none focus:border-[#1A535C]/40 transition-colors" />
+                  <input value={email.emailSubject} onChange={(e) => email.setEmailSubject(e.target.value)} placeholder="Onderwerp…" className="w-full text-[14px] font-semibold px-3 py-2.5 border border-[rgba(26,83,92,0.12)] rounded-lg bg-white focus:outline-none focus:border-[#1A535C] focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] transition-colors" />
 
                   {/* Bericht */}
-                  <div className="border border-[#EBEBEB] rounded-lg bg-[#F8F7F5] focus-within:border-[#1A535C]/40 focus-within:bg-white transition-colors overflow-hidden">
+                  <div className="border border-[rgba(26,83,92,0.12)] rounded-lg bg-white focus-within:border-[#1A535C] focus-within:ring-[3px] focus-within:ring-[rgba(26,83,92,0.12)] transition-colors overflow-hidden">
                     {/* Toolbar */}
                     <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-[#EBEBEB]/30">
                       {[

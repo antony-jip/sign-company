@@ -57,6 +57,11 @@ import {
   History,
   ArrowRightLeft,
 } from 'lucide-react'
+import {
+  FolderSimple as PhFolderSimple,
+  FileText as PhFileText,
+  EnvelopeSimple as PhEnvelope,
+} from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import {
   cn,
@@ -881,8 +886,15 @@ export function ClientProfile() {
             <Card>
               {clientProjecten.length === 0 ? (
                 <CardContent className="py-12 text-center">
-                  <FolderKanban className="w-12 h-12 text-muted-foreground/50 dark:text-muted-foreground mx-auto mb-3" />
-                  <p className="text-muted-foreground">Geen projecten voor deze klant</p>
+                  <span className="doen-duo-icon mb-3 inline-flex" style={{ '--duo-sec': '#1A535C', '--duo-sec-opacity': 0.5 } as React.CSSProperties}>
+                    <PhFolderSimple size={48} weight="duotone" />
+                  </span>
+                  <p
+                    className="text-[#9B9B95]"
+                    style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+                  >
+                    geen projecten voor deze klant
+                  </p>
                 </CardContent>
               ) : (
                 <div className="overflow-x-auto">
@@ -1016,8 +1028,15 @@ export function ClientProfile() {
             <Card>
               {clientOffertes.length === 0 ? (
                 <CardContent className="py-12 text-center">
-                  <FileText className="w-12 h-12 text-muted-foreground/50 dark:text-muted-foreground mx-auto mb-3" />
-                  <p className="text-muted-foreground">Geen offertes voor deze klant</p>
+                  <span className="doen-duo-icon mb-3 inline-flex">
+                    <PhFileText size={48} weight="duotone" />
+                  </span>
+                  <p
+                    className="text-[#9B9B95]"
+                    style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+                  >
+                    geen offertes voor deze klant
+                  </p>
                 </CardContent>
               ) : (
                 <div className="overflow-x-auto">
@@ -1221,8 +1240,15 @@ export function ClientProfile() {
               {clientEmails.length === 0 ? (
                 <Card>
                   <CardContent className="py-12 text-center">
-                    <Mail className="w-12 h-12 text-muted-foreground/50 dark:text-muted-foreground mx-auto mb-3" />
-                    <p className="text-muted-foreground">Geen emailcommunicatie gevonden</p>
+                    <span className="doen-duo-icon mb-3 inline-flex" style={{ '--duo-sec': '#1A535C', '--duo-sec-opacity': 0.5 } as React.CSSProperties}>
+                      <PhEnvelope size={48} weight="duotone" />
+                    </span>
+                    <p
+                      className="text-[#9B9B95]"
+                      style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+                    >
+                      geen emailcommunicatie gevonden
+                    </p>
                   </CardContent>
                 </Card>
               ) : (

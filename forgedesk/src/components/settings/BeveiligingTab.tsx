@@ -110,7 +110,7 @@ export function BeveiligingTab() {
 
   return (
     <>
-      <SubTabNav tabs={BEVEILIGING_TABS} active={subTab} onChange={setSubTab} />
+      <SubTabNav tabs={BEVEILIGING_TABS} active={subTab} onChange={setSubTab} variant="underline" />
 
       {subTab === 'wachtwoord' && (
       <Card>

@@ -1,4 +1,12 @@
-import { Receipt, ClipboardCheck, Wrench, CreditCard } from 'lucide-react'
+import {
+  Receipt as PhReceipt,
+  ClipboardText as PhClipboard,
+  Wrench as PhWrench,
+  CreditCard as PhCreditCard,
+  Package as PhPackage,
+  Handshake as PhHandshake,
+  type Icon as PhosphorIcon,
+} from '@phosphor-icons/react'
 
 interface ActiesCardProps {
   onOfferte: () => void
@@ -9,51 +17,87 @@ interface ActiesCardProps {
   onBevestiging: () => void
 }
 
-type Icon = typeof Receipt
-
 interface ActieTile {
   key: string
   label: string
   sublabel: string
-  icon: Icon
+  icon: PhosphorIcon
   color: string
   onClick: () => void
 }
 
 export function ActiesCard({ onOfferte, onWerkbon, onMontage, onFactuur, onPakbon, onBevestiging }: ActiesCardProps) {
   const tiles: ActieTile[] = [
-    { key: 'offerte',  label: 'Offerte',  sublabel: 'Stuur een prijsopgave', icon: Receipt,         color: '#F15025', onClick: onOfferte },
-    { key: 'werkbon',  label: 'Werkbon',  sublabel: 'Voor de monteur',       icon: ClipboardCheck,  color: '#C44830', onClick: onWerkbon },
-    { key: 'montage',  label: 'Montage',  sublabel: 'Plan de uitvoering',    icon: Wrench,          color: '#9A5A48', onClick: onMontage },
-    { key: 'factuur',  label: 'Factuur',  sublabel: 'Verstuur de rekening',  icon: CreditCard,      color: '#2D6B48', onClick: onFactuur },
+    { key: 'offerte',  label: 'Offerte',  sublabel: 'Stuur een prijsopgave', icon: PhReceipt,    color: '#F15025', onClick: onOfferte },
+    { key: 'werkbon',  label: 'Werkbon',  sublabel: 'Voor de monteur',       icon: PhClipboard,  color: '#C44830', onClick: onWerkbon },
+    { key: 'montage',  label: 'Montage',  sublabel: 'Plan de uitvoering',    icon: PhWrench,     color: '#9A5A48', onClick: onMontage },
+    { key: 'factuur',  label: 'Factuur',  sublabel: 'Verstuur de rekening',  icon: PhCreditCard, color: '#2D6B48', onClick: onFactuur },
   ]
 
   return (
-    <div className="rounded-xl bg-[#FFFFFF] shadow-[0_1px_3px_rgba(130,100,60,0.04)] p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-[11px] font-semibold text-[#6B6B66] uppercase tracking-[0.08em]">Acties</h3>
+    <div className="doen-slate-surface rounded-2xl p-5">
+      {/* Header */}
+      <div className="flex items-baseline justify-between mb-4">
+        <h3 className="font-heading text-[15px] font-bold text-[#1A1A1A]">
+          Acties<span className="text-[#F15025]">.</span>
+        </h3>
+        <span
+          className="text-[12px] text-[#9B9B95]"
+          style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+        >
+          wat is de volgende stap?
+        </span>
       </div>
 
-      {/* 2x2 grid */}
-      <div className="grid grid-cols-2 gap-2">
+      {/* 2x2 grid van actie-tiles */}
+      <div className="grid grid-cols-2 gap-2.5">
         {tiles.map((tile) => {
           const Icon = tile.icon
           return (
             <button
               key={tile.key}
               onClick={tile.onClick}
-              className="acties-tile group relative overflow-hidden rounded-lg bg-[var(--surface-soft)] hover:bg-white p-3 text-left transition-all hover:-translate-y-px hover:shadow-[0_2px_6px_rgba(130,100,60,0.08)]"
+              className="group relative overflow-hidden rounded-xl bg-white p-3.5 text-left transition-all duration-200 hover:-translate-y-[1px] hover:shadow-[0_4px_14px_rgba(20,62,71,0.08)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+              style={{
+                border: `1px solid ${tile.color}1F`,
+                ['--tw-ring-color' as string]: `${tile.color}55`,
+              }}
             >
-              <div className="flex items-center justify-center h-6 w-6 rounded-md" style={{ background: 'rgba(255,255,255,0.6)' }}>
-                <Icon className="h-3.5 w-3.5" style={{ color: tile.color }} />
-              </div>
-              <div className="mt-2.5">
-                <p className="text-[14px] font-semibold text-[#1A1A1A] leading-tight">{tile.label}</p>
-                <p className="text-[11.5px] text-[#9B9B95] mt-0.5 leading-tight">{tile.sublabel}</p>
-              </div>
+              {/* Decorative gradient halo in tile-color */}
               <span
                 aria-hidden
-                className="acties-tile-bar absolute bottom-0 left-0 h-[2px] w-4 group-hover:w-full transition-all duration-[250ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] motion-reduce:transition-none motion-reduce:duration-0"
+                className="absolute -top-8 -right-8 w-24 h-24 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                style={{
+                  background: `radial-gradient(circle, ${tile.color}22 0%, transparent 70%)`,
+                }}
+              />
+
+              <div className="relative flex items-start gap-3">
+                {/* Icon-vlak met module-color tint */}
+                <div
+                  className="flex items-center justify-center w-9 h-9 rounded-lg flex-shrink-0 transition-transform duration-300 group-hover:scale-105"
+                  style={{
+                    background: `${tile.color}14`,
+                    border: `1px solid ${tile.color}1A`,
+                  }}
+                >
+                  <Icon size={20} weight="duotone" color={tile.color} />
+                </div>
+
+                <div className="min-w-0 flex-1 pt-0.5">
+                  <p className="text-[14px] font-bold text-[#1A1A1A] leading-tight tracking-[-0.01em] truncate">
+                    {tile.label}
+                  </p>
+                  <p className="text-[11.5px] text-[#6B6B66] mt-0.5 leading-tight truncate">
+                    {tile.sublabel}
+                  </p>
+                </div>
+              </div>
+
+              {/* Hover accent-stripe links */}
+              <span
+                aria-hidden
+                className="absolute left-0 top-3 bottom-3 w-[2px] rounded-r-full opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                 style={{ background: tile.color }}
               />
             </button>
@@ -61,28 +105,27 @@ export function ActiesCard({ onOfferte, onWerkbon, onMontage, onFactuur, onPakbo
         })}
       </div>
 
-      {/* Footer-pillen */}
-      <div className="mt-4 pt-3 border-t border-[#EBEBEB] flex items-center justify-around">
+      {/* Footer — secundaire acties */}
+      <div className="mt-4 pt-3 border-t border-[rgba(26,83,92,0.08)] flex items-center justify-center gap-4">
         <button
           onClick={onPakbon}
-          className="footer-pill group flex items-center gap-1.5 text-[12px] text-[#6B6B66] hover:text-[#1A1A1A] transition-colors px-2 py-1 rounded-md"
+          className="group inline-flex items-center gap-1.5 text-[12px] font-medium text-[#6B6B66] hover:text-[#1A535C] transition-colors px-2 py-1 rounded-md"
         >
-          <span className="h-1.5 w-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: 'var(--cream-text)' }} />
+          <span className="doen-duo-icon" style={{ '--duo-sec': '#1A535C' } as React.CSSProperties}>
+            <PhPackage size={14} weight="duotone" />
+          </span>
           Pakbon
         </button>
-        <button
-          disabled
-          title="Bestelbon — binnenkort beschikbaar"
-          className="flex items-center gap-1.5 text-[12px] text-[#9B9B95] opacity-50 cursor-not-allowed px-2 py-1 rounded-md"
-        >
-          <span className="h-1.5 w-1.5 rounded-full" style={{ background: 'var(--lavender-text)', opacity: 0.5 }} />
-          Bestelbon
-        </button>
+
+        <span aria-hidden className="text-[10px] text-[#C0BDB8] font-mono">·</span>
+
         <button
           onClick={onBevestiging}
-          className="footer-pill group flex items-center gap-1.5 text-[12px] text-[#6B6B66] hover:text-[#1A1A1A] transition-colors px-2 py-1 rounded-md"
+          className="group inline-flex items-center gap-1.5 text-[12px] font-medium text-[#6B6B66] hover:text-[#1A535C] transition-colors px-2 py-1 rounded-md"
         >
-          <span className="h-1.5 w-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: '#5A5A55' }} />
+          <span className="doen-duo-icon" style={{ '--duo-sec': '#1A535C' } as React.CSSProperties}>
+            <PhHandshake size={14} weight="duotone" />
+          </span>
           Bevestiging
         </button>
       </div>

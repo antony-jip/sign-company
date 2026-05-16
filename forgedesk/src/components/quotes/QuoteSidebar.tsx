@@ -280,16 +280,16 @@ export function QuoteSidebar({
                     {sectionId === 'klant' && (
                       <>
                         {selectedKlant ? (
-                          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#FFFFFF', border: '1px solid #EBEBEB' }}>
-                            <button onClick={() => setKlantPanelOpen(!klantPanelOpen)} className="w-full flex items-center gap-2.5 px-4 py-2.5 hover:bg-[#F8F7F5] transition-colors" style={{ borderBottom: '0.5px solid #EBEBEB' }}>
-                              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#8BAFD4] to-[#6B8FB4] flex items-center justify-center flex-shrink-0">
-                                <span className="text-white font-bold text-[10px]">{selectedKlant.bedrijfsnaam[0]?.toUpperCase()}</span>
+                          <div className="doen-slate-surface rounded-2xl overflow-hidden">
+                            <button onClick={() => setKlantPanelOpen(!klantPanelOpen)} className="w-full flex items-center gap-2.5 px-4 py-3 hover:bg-white/50 transition-colors" style={{ borderBottom: '1px solid rgba(26,83,92,0.08)' }}>
+                              <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 shadow-[0_2px_6px_rgba(58,107,140,0.2)]" style={{ background: 'linear-gradient(135deg, #3A6B8C 0%, #2A5580 50%, #F15025 200%)' }}>
+                                <span className="text-white font-extrabold text-[12px]">{selectedKlant.bedrijfsnaam[0]?.toUpperCase()}</span>
                               </div>
                               <div className="flex-1 text-left min-w-0">
-                                <p className="text-[13px] font-semibold truncate" style={{ color: '#1A1A1A' }}>{selectedKlant.bedrijfsnaam}</p>
-                                <p className="text-[11px] truncate" style={{ color: '#9B9B95' }}>{contactpersoon ? `t.a.v. ${contactpersoon}` : 'Geen contactpersoon'}</p>
+                                <p className="text-[13.5px] font-bold truncate text-[#1A1A1A]">{selectedKlant.bedrijfsnaam}</p>
+                                <p className="text-[11px] truncate text-[#9B9B95]">{contactpersoon ? `t.a.v. ${contactpersoon}` : 'Geen contactpersoon'}</p>
                               </div>
-                              {klantPanelOpen ? <ChevronUp className="h-3.5 w-3.5 flex-shrink-0" style={{ color: '#9B9B95' }} /> : <ChevronDown className="h-3.5 w-3.5 flex-shrink-0" style={{ color: '#9B9B95' }} />}
+                              {klantPanelOpen ? <ChevronUp className="h-3.5 w-3.5 flex-shrink-0 text-[#9B9B95]" /> : <ChevronDown className="h-3.5 w-3.5 flex-shrink-0 text-[#9B9B95]" />}
                             </button>
 
                             {klantPanelOpen && (
@@ -350,23 +350,25 @@ export function QuoteSidebar({
 
                     {/* ── FACTUREREN ── */}
                     {sectionId === 'factureren' && (
-                      <div className="rounded-xl border border-border dark:border-border bg-card overflow-hidden shadow-sm">
+                      <div className="doen-slate-surface rounded-2xl overflow-hidden">
                         {geconverteerdNaarFactuurId ? (
                           <>
-                            <div className="bg-[#E8F5EC] dark:bg-[#162018] p-4">
+                            <div className="p-4" style={{ background: 'linear-gradient(135deg, #2D6B48 0%, #1A535C 100%)' }}>
                               <div className="flex items-center gap-2 mb-2">
-                                <CheckCircle2 className="h-4 w-4 text-[#4A9960] dark:text-[#6ACA80]" />
-                                <p className="text-2xs uppercase tracking-label text-[#4A9960]/80 dark:text-[#6ACA80]/80 font-medium">Gefactureerd</p>
+                                <CheckCircle2 className="h-4 w-4 text-white" />
+                                <p className="text-[10px] uppercase tracking-widest text-white/80 font-semibold">
+                                  Gefactureerd<span className="text-[#F15025]">.</span>
+                                </p>
                               </div>
                               <div className="flex items-center gap-2">
                                 <div className="flex-1">
-                                  <p className="text-2xs text-[#4A9960]/60 dark:text-[#6ACA80]/60">Offerte bedrag</p>
-                                  <p className="text-sm font-bold text-[#4A9960] dark:text-[#6ACA80]">{formatCurrency(round2(subtotaal + btwBedrag))}</p>
+                                  <p className="text-[10px] text-white/60 uppercase tracking-wider">Offerte bedrag</p>
+                                  <p className="text-[14px] font-mono font-bold text-white tabular-nums">{formatCurrency(round2(subtotaal + btwBedrag))}</p>
                                 </div>
-                                <ArrowRight className="h-4 w-4 text-[#4A9960]/40 dark:text-[#6ACA80]/40 flex-shrink-0" />
+                                <ArrowRight className="h-4 w-4 text-white/40 flex-shrink-0" />
                                 <div className="flex-1 text-right">
-                                  <p className="text-2xs text-[#4A9960]/60 dark:text-[#6ACA80]/60">Factuur</p>
-                                  <p className="text-sm font-bold text-[#4A9960] dark:text-[#6ACA80]">{linkedFactuur ? formatCurrency(linkedFactuur.totaal) : '...'}</p>
+                                  <p className="text-[10px] text-white/60 uppercase tracking-wider">Factuur</p>
+                                  <p className="text-[14px] font-mono font-bold text-white tabular-nums">{linkedFactuur ? formatCurrency(linkedFactuur.totaal) : '…'}</p>
                                 </div>
                               </div>
                             </div>
@@ -374,54 +376,62 @@ export function QuoteSidebar({
                               {linkedFactuur && (
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-2">
-                                    <Receipt className="h-3.5 w-3.5 text-muted-foreground" />
-                                    <span className="text-xs font-medium">{linkedFactuur.nummer}</span>
+                                    <Receipt className="h-3.5 w-3.5 text-[#9B9B95]" />
+                                    <span className="text-[12.5px] font-semibold text-[#1A1A1A]">{linkedFactuur.nummer}</span>
                                   </div>
-                                  <Badge className={cn('text-2xs',
-                                    linkedFactuur.status === 'betaald' && 'bg-emerald-100 text-emerald-700 border-emerald-200',
-                                    linkedFactuur.status === 'verzonden' && 'bg-blue-100 text-blue-700 border-blue-200',
-                                    linkedFactuur.status === 'concept' && 'bg-muted text-foreground/70 border-border',
-                                    linkedFactuur.status === 'vervallen' && 'bg-red-100 text-red-700 border-red-200',
-                                    linkedFactuur.status === 'gecrediteerd' && 'bg-orange-100 text-orange-700 border-orange-200',
+                                  <Badge className={cn('text-[10px] font-semibold',
+                                    linkedFactuur.status === 'betaald' && 'bg-[#E8F2EC] text-[#2D6B48] border-[#2D6B48]/20',
+                                    linkedFactuur.status === 'verzonden' && 'bg-[#E8EEF9] text-[#3A5A9A] border-[#3A5A9A]/20',
+                                    linkedFactuur.status === 'concept' && 'bg-[#F0EFEC] text-[#6B6B66] border-[#6B6B66]/15',
+                                    linkedFactuur.status === 'vervallen' && 'bg-[#FDE8E2] text-[#C03A18] border-[#C03A18]/20',
+                                    linkedFactuur.status === 'gecrediteerd' && 'bg-[#FEF3E8] text-[#D4621A] border-[#D4621A]/20',
                                   )}>
                                     {linkedFactuur.status.charAt(0).toUpperCase() + linkedFactuur.status.slice(1)}
                                   </Badge>
                                 </div>
                               )}
                               {linkedFactuur && linkedFactuur.status !== 'betaald' && linkedFactuur.betaald_bedrag > 0 && (
-                                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                <div className="flex items-center justify-between text-[12px] text-[#6B6B66]">
                                   <span>Betaald</span>
-                                  <span className="font-medium text-emerald-600">{formatCurrency(linkedFactuur.betaald_bedrag)}</span>
+                                  <span className="font-mono font-semibold text-[#2D6B48]">{formatCurrency(linkedFactuur.betaald_bedrag)}</span>
                                 </div>
                               )}
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="w-full text-xs h-8 gap-1.5 text-emerald-700 border-emerald-200 hover:bg-emerald-50 dark:text-emerald-400 dark:border-emerald-800 dark:hover:bg-emerald-900/30"
+                              <button
                                 onClick={() => navigate(`/facturen/${geconverteerdNaarFactuurId}`)}
+                                className="w-full inline-flex items-center justify-center gap-1.5 text-[12.5px] font-semibold h-9 rounded-xl border border-[#2D6B48]/25 text-[#2D6B48] hover:bg-[#2D6B48]/[0.05] hover:border-[#2D6B48]/40 transition-all"
                               >
-                                <Receipt className="h-3.5 w-3.5" />Bekijk factuur
-                              </Button>
+                                <Receipt className="h-3.5 w-3.5" />
+                                Bekijk factuur
+                              </button>
                             </div>
                           </>
                         ) : (
                           <>
-                            <div className="bg-gradient-to-br from-amber-500 to-orange-500 p-4">
-                              <div className="flex items-center gap-2 mb-2">
-                                <Receipt className="h-4 w-4 text-white" />
-                                <p className="text-2xs uppercase tracking-label text-white/80 font-medium">Klaar om te factureren</p>
-                              </div>
-                              <p className="text-2xs text-white/60">Offerte bedrag incl BTW</p>
-                              <p className="text-xl font-bold text-white font-mono">{formatCurrency(round2(subtotaal + btwBedrag))}</p>
-                              <div className="flex items-center gap-3 mt-1">
-                                <p className="text-2xs text-white/60"><span className="font-mono">{formatCurrency(subtotaal)}</span> excl BTW</p>
-                                <p className="text-2xs text-white/60">+<span className="font-mono">{formatCurrency(btwBedrag)}</span> BTW</p>
+                            <div className="p-4 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #F15025 0%, #D03A18 100%)' }}>
+                              {/* Decorative glow */}
+                              <div
+                                aria-hidden
+                                className="absolute -top-8 -right-8 w-32 h-32 rounded-full"
+                                style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%)' }}
+                              />
+                              <div className="relative">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Receipt className="h-4 w-4 text-white" />
+                                  <p className="text-[10px] uppercase tracking-widest text-white/85 font-semibold">
+                                    Klaar om te factureren<span className="text-white">.</span>
+                                  </p>
+                                </div>
+                                <p className="text-[10px] text-white/70 uppercase tracking-wider">Offerte bedrag incl BTW</p>
+                                <p className="text-[22px] font-extrabold text-white font-mono tabular-nums leading-tight">{formatCurrency(round2(subtotaal + btwBedrag))}</p>
+                                <div className="flex items-center gap-3 mt-1">
+                                  <p className="text-[11px] text-white/70"><span className="font-mono">{formatCurrency(subtotaal)}</span> excl BTW</p>
+                                  <span className="text-white/40">·</span>
+                                  <p className="text-[11px] text-white/70"><span className="font-mono">+{formatCurrency(btwBedrag)}</span> BTW</p>
+                                </div>
                               </div>
                             </div>
                             <div className="p-3">
-                              <Button
-                                size="sm"
-                                className="w-full h-9 bg-emerald-600 hover:bg-emerald-700 text-white gap-2 font-medium"
+                              <button
                                 onClick={() => {
                                   const quoteId = editOfferteId || autoSaveIdRef.current
                                   if (!quoteId) return
@@ -430,10 +440,12 @@ export function QuoteSidebar({
                                   if (selectedProjectId) params.set('project_id', selectedProjectId)
                                   navigate(`/facturen/nieuw?${params.toString()}`)
                                 }}
+                                className="w-full inline-flex items-center justify-center gap-2 h-10 rounded-xl bg-[#2D6B48] text-white text-[13px] font-semibold shadow-[0_2px_8px_rgba(45,107,72,0.25)] hover:bg-[#235A3B] hover:shadow-[0_4px_14px_rgba(45,107,72,0.35)] hover:-translate-y-[1px] active:translate-y-0 transition-all"
                               >
-                                <Receipt className="h-4 w-4" />Factuur aanmaken
+                                <Receipt className="h-4 w-4" />
+                                Factuur aanmaken
                                 <ArrowRight className="h-3.5 w-3.5 ml-auto" />
-                              </Button>
+                              </button>
                             </div>
                           </>
                         )}
@@ -442,13 +454,21 @@ export function QuoteSidebar({
 
                     {/* ── SAMENVATTING ── */}
                     {sectionId === 'samenvatting' && (
-                      <div className="rounded-xl border border-border dark:border-border bg-card overflow-hidden shadow-sm">
-                        <div className="bg-mod-klanten-light dark:bg-mod-klanten-light/15 p-4">
-                          <p className="text-2xs uppercase tracking-label text-foreground/70 font-medium">Totaal incl BTW</p>
+                      <div className="doen-slate-surface rounded-2xl overflow-hidden">
+                        <div className="p-4 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #1A535C 0%, #0F3D44 100%)' }}>
+                          {/* Decorative flame glow */}
+                          <div
+                            aria-hidden
+                            className="absolute -top-8 -right-8 w-32 h-32 rounded-full"
+                            style={{ background: 'radial-gradient(circle, rgba(241,80,37,0.18) 0%, transparent 70%)' }}
+                          />
+                          <p className="relative text-[10px] uppercase tracking-widest text-white/75 font-semibold">
+                            Totaal incl BTW<span className="text-[#F15025]">.</span>
+                          </p>
                           {isEditingTotaal ? (
-                            <div className="mt-1">
+                            <div className="relative mt-1">
                               <div className="flex items-center gap-1">
-                                <span className="text-foreground font-bold text-lg">€</span>
+                                <span className="text-white font-extrabold text-[22px]">€</span>
                                 <input
                                   type="number"
                                   value={gewenstTotaal}
@@ -467,11 +487,11 @@ export function QuoteSidebar({
                                   }}
                                   autoFocus
                                   step={0.01}
-                                  className="bg-foreground/10 text-foreground font-bold text-lg rounded px-2 py-0.5 w-32 border-0 outline-none placeholder:text-foreground/40"
+                                  className="bg-white/15 text-white font-extrabold font-mono tabular-nums text-[22px] rounded px-2 py-0.5 w-36 border-0 outline-none placeholder:text-white/40"
                                   placeholder={round2(subtotaal + btwBedrag).toFixed(2)}
                                 />
                               </div>
-                              <p className="text-2xs text-foreground/50 mt-0.5">Enter = bevestig, Esc = annuleer</p>
+                              <p className="text-[10px] text-white/55 mt-0.5">Enter = bevestig · Esc = annuleer</p>
                             </div>
                           ) : (
                             <button
@@ -479,77 +499,100 @@ export function QuoteSidebar({
                                 setGewenstTotaal(round2(subtotaal + btwBedrag + ((afrondingskorting + urenCorrectieBedrag) * (1 + (subtotaal > 0 ? btwBedrag / subtotaal : 0.21)))).toFixed(2))
                                 setIsEditingTotaal(true)
                               }}
-                              className="text-xl font-bold font-mono text-foreground mt-0.5 hover:underline underline-offset-2 decoration-foreground/40 cursor-pointer text-left"
+                              className="relative text-[24px] font-extrabold font-mono tabular-nums text-white mt-0.5 hover:text-white/85 transition-colors cursor-pointer text-left block"
                               title="Klik om totaal aan te passen"
                             >
                               {formatCurrency(round2(subtotaal + btwBedrag + ((afrondingskorting + urenCorrectieBedrag) * (1 + (subtotaal > 0 ? btwBedrag / subtotaal : 0.21)))))}
                             </button>
                           )}
                           {afrondingskorting !== 0 && (
-                            <div className="flex items-center justify-between mt-1">
-                              <p className="text-2xs text-white/60">Korting: {formatCurrency(afrondingskorting)} excl BTW</p>
-                              <button onClick={() => setAfrondingskorting(0)} className="text-2xs text-white/50 hover:text-white underline">Herstel</button>
+                            <div className="relative flex items-center justify-between mt-1.5">
+                              <p className="text-[11px] text-white/70">Korting: <span className="font-mono">{formatCurrency(afrondingskorting)}</span> excl BTW</p>
+                              <button onClick={() => setAfrondingskorting(0)} className="text-[11px] text-white/60 hover:text-white underline">Herstel</button>
                             </div>
                           )}
                           {urenCorrectieBedrag !== 0 && (
-                            <div className="flex items-center justify-between mt-1">
-                              <p className="text-2xs text-white/60">Uren correctie: {urenCorrectieBedrag > 0 ? '+' : ''}{formatCurrency(urenCorrectieBedrag)} excl BTW</p>
-                              <button onClick={() => setUrenCorrectie({})} className="text-2xs text-white/50 hover:text-white underline">Herstel</button>
+                            <div className="relative flex items-center justify-between mt-1.5">
+                              <p className="text-[11px] text-white/70">Uren correctie: <span className="font-mono">{urenCorrectieBedrag > 0 ? '+' : ''}{formatCurrency(urenCorrectieBedrag)}</span> excl BTW</p>
+                              <button onClick={() => setUrenCorrectie({})} className="text-[11px] text-white/60 hover:text-white underline">Herstel</button>
                             </div>
                           )}
                           {optionelSubtotaal > 0 && (
-                            <p className="text-2xs text-white/60 mt-1">+ {formatCurrency(round2(optionelSubtotaal + optionelBtw))} aan opties</p>
+                            <p className="relative text-[11px] text-white/70 mt-1.5">+ <span className="font-mono">{formatCurrency(round2(optionelSubtotaal + optionelBtw))}</span> aan opties</p>
                           )}
                         </div>
 
-                        <div className="p-4 space-y-4">
+                        <div className="p-4 space-y-3">
                           <div className="grid grid-cols-2 gap-2">
-                            <div className="rounded-lg bg-background/80 dark:bg-muted/50 p-2.5">
-                              <p className="text-2xs uppercase tracking-label text-muted-foreground font-medium">Subtotaal</p>
-                              <p className="text-sm font-medium font-mono text-foreground mt-0.5">{formatCurrency(round2(subtotaal + afrondingskorting + urenCorrectieBedrag))}</p>
+                            <div className="rounded-lg bg-white border border-[rgba(26,83,92,0.08)] p-2.5">
+                              <p className="text-[10px] uppercase tracking-widest text-[#9B9B95] font-semibold">Subtotaal</p>
+                              <p className="text-[13.5px] font-bold font-mono text-[#1A1A1A] mt-0.5 tabular-nums">{formatCurrency(round2(subtotaal + afrondingskorting + urenCorrectieBedrag))}</p>
                             </div>
-                            <div className="rounded-lg bg-background/80 dark:bg-muted/50 p-2.5">
-                              <p className="text-2xs uppercase tracking-label text-muted-foreground font-medium">BTW</p>
-                              <p className="text-sm font-medium font-mono text-foreground mt-0.5">{formatCurrency(round2(btwBedrag + (afrondingskorting + urenCorrectieBedrag) * (subtotaal > 0 ? btwBedrag / subtotaal : 0.21)))}</p>
+                            <div className="rounded-lg bg-white border border-[rgba(26,83,92,0.08)] p-2.5">
+                              <p className="text-[10px] uppercase tracking-widest text-[#9B9B95] font-semibold">BTW</p>
+                              <p className="text-[13.5px] font-bold font-mono text-[#1A1A1A] mt-0.5 tabular-nums">{formatCurrency(round2(btwBedrag + (afrondingskorting + urenCorrectieBedrag) * (subtotaal > 0 ? btwBedrag / subtotaal : 0.21)))}</p>
                             </div>
                           </div>
                           {afrondingskorting !== 0 && (
-                            <div className="rounded-lg bg-amber-50/80 dark:bg-amber-900/20 p-2.5 border border-amber-200/50 dark:border-amber-800/30">
-                              <p className="text-2xs uppercase tracking-label text-amber-600 font-medium">Afrondingskorting</p>
-                              <p className="text-sm font-medium font-mono text-amber-700 mt-0.5">{formatCurrency(afrondingskorting)}</p>
+                            <div className="rounded-lg bg-[#F5F2E8] border border-[#8A6A2A]/15 p-2.5">
+                              <p className="text-[10px] uppercase tracking-widest text-[#8A6A2A] font-semibold">Afrondingskorting</p>
+                              <p className="text-[13.5px] font-bold font-mono text-[#8A6A2A] mt-0.5 tabular-nums">{formatCurrency(afrondingskorting)}</p>
                             </div>
                           )}
 
-                          <Separator className="opacity-50" />
+                          <div className="h-px bg-[rgba(26,83,92,0.08)]" />
 
-                          <div className="space-y-2">
-                            <p className="text-2xs uppercase tracking-label text-muted-foreground font-medium">Inkoop / Verkoop</p>
-                            <div className="space-y-1.5">
+                          {/* Inkoop / Verkoop / Winst */}
+                          <div className="space-y-2.5">
+                            <h4 className="text-[10px] font-semibold uppercase tracking-widest text-[#6B6B66]">
+                              Inkoop &amp; verkoop<span className="text-[#F15025]">.</span>
+                            </h4>
+                            <div className="space-y-1.5 text-[13px]">
                               <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-1.5"><TrendingDown className="h-3.5 w-3.5 text-red-400" /><span className="text-xs text-muted-foreground">Inkoop</span></div>
-                                <span className="text-xs font-medium font-mono text-red-600 dark:text-red-400">{totaalInkoop > 0 ? formatCurrency(totaalInkoop) : '—'}</span>
+                                <div className="flex items-center gap-2">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-[#C03A18] flex-shrink-0" />
+                                  <span className="text-[#6B6B66]">Inkoop</span>
+                                </div>
+                                <span className="font-mono tabular-nums font-semibold text-[#C03A18]">{totaalInkoop > 0 ? formatCurrency(totaalInkoop) : '—'}</span>
                               </div>
                               <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-1.5"><TrendingUp className="h-3.5 w-3.5 text-green-400" /><span className="text-xs text-muted-foreground">Verkoop</span></div>
-                                <span className="text-xs font-medium font-mono text-foreground">{formatCurrency(round2(subtotaal + afrondingskorting + urenCorrectieBedrag))}</span>
+                                <div className="flex items-center gap-2">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-[#1A535C] flex-shrink-0" />
+                                  <span className="text-[#6B6B66]">Verkoop</span>
+                                </div>
+                                <span className="font-mono tabular-nums font-semibold text-[#1A1A1A]">{formatCurrency(round2(subtotaal + afrondingskorting + urenCorrectieBedrag))}</span>
                               </div>
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-1.5"><DollarSign className="h-3.5 w-3.5 text-emerald-500" /><span className="text-xs text-muted-foreground">Winst</span></div>
-                                <span className="text-xs font-medium font-mono text-emerald-600 dark:text-emerald-400">{totaalInkoop > 0 ? formatCurrency(winstExBtw) : '—'}</span>
+                              <div className="flex items-center justify-between pt-1.5 border-t border-[rgba(26,83,92,0.08)]">
+                                <div className="flex items-center gap-2">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-[#2D6B48] flex-shrink-0" />
+                                  <span className="text-[#1A1A1A] font-semibold">Winst</span>
+                                </div>
+                                <span className="font-mono tabular-nums font-bold text-[#2D6B48]">{totaalInkoop > 0 ? formatCurrency(winstExBtw) : '—'}</span>
                               </div>
                             </div>
                           </div>
 
+                          {/* Marge */}
                           <div className="space-y-2">
-                            <p className="text-2xs uppercase tracking-label text-muted-foreground font-medium">Marge</p>
-                            <div className={cn('rounded-lg p-3', margeColor.bg)}>
-                              <div className="flex items-center justify-between">
-                                <Percent className={cn('h-4 w-4', margeColor.text)} />
-                                <span className={cn('text-lg font-bold font-mono', margeColor.text)}>{totaalInkoop > 0 ? `${margePercentage.toFixed(1)}%` : '—'}</span>
+                            <h4 className="text-[10px] font-semibold uppercase tracking-widest text-[#6B6B66]">
+                              Marge<span className="text-[#F15025]">.</span>
+                            </h4>
+                            <div className="doen-slate-surface rounded-xl p-3 relative overflow-hidden">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-[11px] font-semibold text-[#6B6B66] uppercase tracking-widest">%</span>
+                                <span className={cn('text-[18px] font-extrabold font-mono tabular-nums', margeColor.text)}>
+                                  {totaalInkoop > 0 ? `${margePercentage.toFixed(1)}%` : '—'}
+                                </span>
                               </div>
                               {totaalInkoop > 0 && (
-                                <div className="mt-2 h-1.5 rounded-full bg-secondary dark:bg-muted">
-                                  <div className={cn('h-full rounded-full transition-all', margeColor.bar)} style={{ width: `${Math.min(100, Math.max(0, margePercentage))}%` }} />
+                                <div className="h-2 rounded-full bg-[rgba(26,83,92,0.08)] overflow-hidden">
+                                  <div
+                                    className={cn('h-full rounded-full transition-all', margeColor.bar)}
+                                    style={{
+                                      width: `${Math.min(100, Math.max(0, margePercentage))}%`,
+                                      boxShadow: '0 0 8px rgba(45,107,72,0.45)',
+                                    }}
+                                  />
                                 </div>
                               )}
                             </div>
@@ -557,17 +600,19 @@ export function QuoteSidebar({
 
                           {itemMarges.some(m => m.hasCalc) && (
                             <>
-                              <Separator className="opacity-50" />
+                              <div className="h-px bg-[rgba(26,83,92,0.08)]" />
                               <div className="space-y-2">
-                                <p className="text-2xs uppercase tracking-label text-muted-foreground font-medium">Per item</p>
-                                <div className="space-y-1.5">
+                                <h4 className="text-[10px] font-semibold uppercase tracking-widest text-[#6B6B66]">
+                                  Per item<span className="text-[#F15025]">.</span>
+                                </h4>
+                                <div className="space-y-1">
                                   {itemMarges.map((m, idx) => {
                                     if (!m.hasCalc) return null
                                     const c = getMargeColorSidebar(m.pct)
                                     return (
-                                      <div key={idx} className="flex items-center justify-between">
-                                        <span className="text-xs text-muted-foreground truncate max-w-[200px]">{m.beschrijving || `Item ${idx + 1}`}</span>
-                                        <span className={cn('text-xs font-medium font-mono', c.text)}>{m.pct.toFixed(1)}%</span>
+                                      <div key={idx} className="flex items-center justify-between text-[12.5px] py-1 px-2 rounded hover:bg-white/60 transition-colors">
+                                        <span className="text-[#6B6B66] truncate max-w-[200px]">{m.beschrijving || `Item ${idx + 1}`}</span>
+                                        <span className={cn('font-mono font-semibold tabular-nums', c.text)}>{m.pct.toFixed(1)}%</span>
                                       </div>
                                     )
                                   })}
@@ -578,10 +623,12 @@ export function QuoteSidebar({
 
                           {(totaalUren > 0 || effectieveTotaalUren > 0 || materiaalKosten > 0) && (
                             <>
-                              <Separator className="opacity-50" />
+                              <div className="h-px bg-[rgba(26,83,92,0.08)]" />
                               <div className="space-y-2">
-                                <p className="text-2xs uppercase tracking-label text-muted-foreground font-medium">{materiaalKosten > 0 ? 'Uren & Materiaal' : 'Uren'}</p>
-                                <div className="space-y-1.5">
+                                <h4 className="text-[10px] font-semibold uppercase tracking-widest text-[#6B6B66]">
+                                  {materiaalKosten > 0 ? 'Uren & materiaal' : 'Uren'}<span className="text-[#F15025]">.</span>
+                                </h4>
+                                <div className="space-y-1.5 text-[13px]">
                                   {urenVelden.map((veld) => {
                                     const basisUren = urenPerVeld[veld] || 0
                                     const correctie = urenCorrectie[veld] || 0
@@ -590,28 +637,28 @@ export function QuoteSidebar({
                                     if (effectief <= 0 && basisUren <= 0) return null
                                     return (
                                       <div key={veld} className="flex items-center justify-between">
-                                        <div className="flex items-center gap-1.5">
-                                          <Clock className="h-3.5 w-3.5 text-purple-500" />
-                                          <span className="text-xs text-muted-foreground">{veld}</span>
+                                        <div className="flex items-center gap-2">
+                                          <Clock className="h-3.5 w-3.5 text-[#1A535C]" />
+                                          <span className="text-[#6B6B66]">{veld}</span>
                                         </div>
                                         <div className="flex items-center gap-1">
                                           {tarief > 0 && (
                                             <button
                                               onClick={() => setUrenCorrectie(prev => ({ ...prev, [veld]: (prev[veld] || 0) - 1 }))}
                                               disabled={effectief <= 0}
-                                              className="h-5 w-5 rounded flex items-center justify-center bg-purple-100 hover:bg-purple-200 dark:bg-purple-900/40 dark:hover:bg-purple-800/60 text-purple-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                              className="h-6 w-6 rounded-md flex items-center justify-center bg-white border border-[rgba(26,83,92,0.12)] hover:border-[#1A535C] hover:bg-[rgba(26,83,92,0.04)] text-[#1A535C] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                                               title={`-1 uur ${veld} (${formatCurrency(tarief)}/u)`}
                                             >
                                               <Minus className="h-3 w-3" />
                                             </button>
                                           )}
-                                          <span className={cn('text-xs font-medium font-mono min-w-[3rem] text-right', correctie !== 0 ? 'text-purple-700 dark:text-purple-400' : 'text-purple-600')}>
+                                          <span className={cn('font-mono font-semibold tabular-nums min-w-[3.25rem] text-right', correctie !== 0 ? 'text-[#F15025]' : 'text-[#1A1A1A]')}>
                                             {effectief} uur
                                           </span>
                                           {tarief > 0 && (
                                             <button
                                               onClick={() => setUrenCorrectie(prev => ({ ...prev, [veld]: (prev[veld] || 0) + 1 }))}
-                                              className="h-5 w-5 rounded flex items-center justify-center bg-purple-100 hover:bg-purple-200 dark:bg-purple-900/40 dark:hover:bg-purple-800/60 text-purple-600 transition-colors"
+                                              className="h-6 w-6 rounded-md flex items-center justify-center bg-white border border-[rgba(26,83,92,0.12)] hover:border-[#1A535C] hover:bg-[rgba(26,83,92,0.04)] text-[#1A535C] transition-colors"
                                               title={`+1 uur ${veld} (${formatCurrency(tarief)}/u)`}
                                             >
                                               <Plus className="h-3 w-3" />
@@ -622,23 +669,29 @@ export function QuoteSidebar({
                                     )
                                   })}
                                   {effectieveTotaalUren > 0 && (
-                                    <div className="flex items-center justify-between pt-1 border-t border-border dark:border-border">
-                                      <div className="flex items-center gap-1.5"><Wrench className="h-3.5 w-3.5 text-amber-500" /><span className="text-xs font-medium text-foreground">Totaal uren</span></div>
-                                      <span className="text-xs font-bold text-amber-600">{effectieveTotaalUren} uur</span>
+                                    <div className="flex items-center justify-between pt-1.5 border-t border-[rgba(26,83,92,0.08)]">
+                                      <div className="flex items-center gap-2">
+                                        <Wrench className="h-3.5 w-3.5 text-[#F15025]" />
+                                        <span className="font-semibold text-[#1A1A1A]">Totaal uren</span>
+                                      </div>
+                                      <span className="font-mono tabular-nums font-bold text-[#F15025]">{effectieveTotaalUren} uur</span>
                                     </div>
                                   )}
                                   {urenCorrectieBedrag !== 0 && (
-                                    <div className="flex items-center justify-between">
-                                      <span className="text-2xs text-muted-foreground">Uren correctie</span>
-                                      <span className={cn('text-2xs font-medium', urenCorrectieBedrag > 0 ? 'text-green-600' : 'text-red-500')}>
+                                    <div className="flex items-center justify-between text-[11.5px]">
+                                      <span className="text-[#9B9B95]">Uren correctie</span>
+                                      <span className={cn('font-mono font-semibold', urenCorrectieBedrag > 0 ? 'text-[#2D6B48]' : 'text-[#C03A18]')}>
                                         {urenCorrectieBedrag > 0 ? '+' : ''}{formatCurrency(urenCorrectieBedrag)}
                                       </span>
                                     </div>
                                   )}
                                   {materiaalKosten > 0 && (
-                                    <div className="flex items-center justify-between">
-                                      <div className="flex items-center gap-1.5"><ShoppingCart className="h-3.5 w-3.5 text-blue-500" /><span className="text-xs text-muted-foreground">Materiaal</span></div>
-                                      <span className="text-xs font-medium font-mono text-blue-600">{formatCurrency(materiaalKosten)}</span>
+                                    <div className="flex items-center justify-between pt-1.5 border-t border-[rgba(26,83,92,0.08)]">
+                                      <div className="flex items-center gap-2">
+                                        <ShoppingCart className="h-3.5 w-3.5 text-[#1A535C]" />
+                                        <span className="text-[#6B6B66]">Materiaal</span>
+                                      </div>
+                                      <span className="font-mono tabular-nums font-semibold text-[#1A535C]">{formatCurrency(materiaalKosten)}</span>
                                     </div>
                                   )}
                                 </div>
@@ -646,17 +699,27 @@ export function QuoteSidebar({
                             </>
                           )}
 
-                          <Separator className="opacity-50" />
-                          <div className="flex flex-wrap gap-1.5">
-                            <Button variant="outline" size="sm" className="text-xs h-7 gap-1" onClick={handleVerstuurOfferte}>
-                              <Send className="h-3 w-3" />Verstuur
-                            </Button>
-                            <Button variant="outline" size="sm" className="text-xs h-7 gap-1" onClick={handleDownloadPdf}>
-                              <Download className="h-3 w-3" />PDF
-                            </Button>
-                            <Button variant="outline" size="sm" className="text-xs h-7 gap-1" onClick={() => saveOfferte('concept')} disabled={isSaving}>
-                              <Save className="h-3 w-3" />{isSaving ? '...' : 'Opslaan'}
-                            </Button>
+                          {/* Action-buttons in doen-stijl */}
+                          <div className="pt-3 border-t border-[rgba(26,83,92,0.08)] grid grid-cols-3 gap-2">
+                            <button
+                              onClick={handleVerstuurOfferte}
+                              className="inline-flex items-center justify-center gap-1.5 h-9 rounded-xl bg-[#F15025] text-white text-[12px] font-semibold shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:bg-[#E04520] hover:shadow-[0_4px_14px_rgba(241,80,37,0.35)] hover:-translate-y-[1px] active:translate-y-0 transition-all"
+                            >
+                              <Send className="h-3.5 w-3.5" />Verstuur
+                            </button>
+                            <button
+                              onClick={handleDownloadPdf}
+                              className="inline-flex items-center justify-center gap-1.5 h-9 rounded-xl bg-white border border-[rgba(26,83,92,0.12)] text-[#6B6B66] hover:text-[#1A535C] hover:border-[rgba(26,83,92,0.25)] hover:shadow-[0_2px_8px_rgba(20,62,71,0.06)] text-[12px] font-semibold transition-all"
+                            >
+                              <Download className="h-3.5 w-3.5" />PDF
+                            </button>
+                            <button
+                              onClick={() => saveOfferte('concept')}
+                              disabled={isSaving}
+                              className="inline-flex items-center justify-center gap-1.5 h-9 rounded-xl bg-[#1A535C] text-white text-[12px] font-semibold hover:bg-[#0F3D44] hover:shadow-[0_2px_8px_rgba(20,62,71,0.18)] transition-all disabled:opacity-50"
+                            >
+                              <Save className="h-3.5 w-3.5" />{isSaving ? '…' : 'Opslaan'}
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -664,19 +727,32 @@ export function QuoteSidebar({
 
                     {/* ── INKOOPOFFERTES ── */}
                     {sectionId === 'inkoop' && (
-                      <div className="rounded-xl border border-border dark:border-border bg-card overflow-hidden shadow-sm">
+                      <div className="doen-slate-surface rounded-2xl overflow-hidden">
                         <button
                           onClick={() => setInkoopPaneelOpen(!inkoopPaneelOpen)}
-                          className="w-full flex items-center gap-2 px-4 py-3 bg-background/80 dark:bg-muted/50 border-b border-border dark:border-border hover:bg-muted dark:hover:bg-muted transition-colors"
+                          className="w-full flex items-center gap-2.5 px-4 py-3 hover:bg-white/50 transition-colors"
+                          style={{ borderBottom: inkoopPaneelOpen ? '1px solid rgba(26,83,92,0.08)' : 'none' }}
                         >
-                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center flex-shrink-0">
+                          <div
+                            className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 shadow-[0_2px_6px_rgba(196,72,48,0.25)]"
+                            style={{ background: 'linear-gradient(135deg, #F15025 0%, #C44830 100%)' }}
+                          >
                             <ShoppingCart className="h-4 w-4 text-white" />
                           </div>
                           <div className="flex-1 text-left min-w-0">
-                            <p className="text-sm font-bold text-foreground">Inkoopoffertes</p>
-                            <p className="text-xs text-muted-foreground">Leveranciersprijzen</p>
+                            <p className="text-[14px] font-bold text-[#1A1A1A]">
+                              Inkoop<span className="text-[#F15025]">.</span>
+                            </p>
+                            <p
+                              className="text-[11.5px] text-[#9B9B95]"
+                              style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+                            >
+                              leveranciersprijzen
+                            </p>
                           </div>
-                          {inkoopPaneelOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground flex-shrink-0" /> : <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
+                          {inkoopPaneelOpen
+                            ? <ChevronUp className="h-4 w-4 text-[#9B9B95] flex-shrink-0" />
+                            : <ChevronDown className="h-4 w-4 text-[#9B9B95] flex-shrink-0" />}
                         </button>
                         {inkoopPaneelOpen && (
                           <div className="p-4">

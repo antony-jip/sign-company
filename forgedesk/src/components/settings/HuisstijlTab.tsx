@@ -846,7 +846,7 @@ export function HuisstijlTab({ lockedSubTab }: HuisstijlTabProps = {}) {
         </div>
       </div>
 
-      {!lockedSubTab && <SubTabNav tabs={HUISSTIJL_TABS} active={subTab} onChange={setSubTab} />}
+      {!lockedSubTab && <SubTabNav tabs={HUISSTIJL_TABS} active={subTab} onChange={setSubTab} variant="underline" />}
 
       {/* Two column layout: editor + preview */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">

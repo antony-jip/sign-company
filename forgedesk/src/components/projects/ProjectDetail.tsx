@@ -6,6 +6,7 @@ import { useTabDirtyState } from '@/hooks/useTabDirtyState'
 import { toast } from 'sonner'
 import {
   ArrowLeft,
+  ArrowRight,
   Plus,
   Upload,
   FileText,
@@ -40,7 +41,16 @@ import {
   BellOff,
   Clock,
   Package,
+  User2,
+  CalendarDays,
 } from 'lucide-react'
+import {
+  ListBullets as PhListBullets,
+  Wrench as PhWrenchTab,
+  CurrencyEur as PhCurrencyEur,
+  NotePencil as PhNotePencil,
+} from '@phosphor-icons/react'
+import { DatePicker } from '@/components/ui/date-picker'
 // Card/Badge removed — using DOEN text-based styling
 import { Button } from '@/components/ui/button'
 import {
@@ -954,140 +964,160 @@ export function ProjectDetail() {
       <div ref={scrollAreaRef}>
 
       {/* ══════════ HEADER + TABS ══════════ */}
-      <div className="bg-[#F8F7F5] px-8 pt-4">
-        <div className="flex items-start justify-between gap-6">
-          <div className="flex items-start gap-3 min-w-0 flex-1">
-            {/* Back-button ghost */}
-            <Link
-              to="/projecten"
-              className="flex items-center justify-center h-8 w-8 -ml-1 rounded-lg text-[#9B9B95] hover:bg-[var(--cream-bg)] hover:text-[#1A1A1A] transition-colors flex-shrink-0"
-              aria-label="Terug naar projecten"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Link>
+      <div className="px-8 pt-5">
 
-            <div className="min-w-0 flex-1">
-              {/* Row 0: subtle breadcrumb */}
-              <div className="flex items-center gap-1.5 text-[12px] text-[#9B9B95] mb-1">
-                <Link to="/projecten" className="hover:text-[#1A1A1A] transition-colors">
-                  Projecten
-                </Link>
-                <ChevronRight className="h-3 w-3 text-[#C0BDB8] flex-shrink-0" />
-                <span className="font-mono">
-                  {project.project_nummer || `PRJ-${id?.slice(0, 8).toUpperCase()}`}
-                </span>
-              </div>
-
-              {/* Row 1: H1 + status pill */}
-              <div className="flex items-center gap-3 min-w-0">
-                {editingNaam ? (
-                  <input
-                    autoFocus
-                    value={naamDraft}
-                    onChange={(e) => setNaamDraft(e.target.value)}
-                    onFocus={(e) => e.target.select()}
-                    onBlur={async () => {
-                      const trimmed = naamDraft.trim()
-                      if (!trimmed || trimmed === project.naam) {
-                        setEditingNaam(false)
-                        return
-                      }
-                      try {
-                        const updated = await updateProject(id!, { naam: trimmed })
-                        setProject(updated)
-                        toast.success('Projectnaam gewijzigd')
-                      } catch (err) {
-                        logger.error('updateProject naam:', err)
-                        toast.error('Kon naam niet wijzigen')
-                      } finally {
-                        setEditingNaam(false)
-                      }
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur() }
-                      if (e.key === 'Escape') { setNaamDraft(project.naam); setEditingNaam(false) }
-                    }}
-                    className="text-[26px] font-bold text-[#1A1A1A] tracking-[-0.5px] leading-tight flex-1 min-w-0"
-                    style={{ background: 'transparent', border: 'none', outline: 'none', boxShadow: 'none', padding: 0, margin: 0, caretColor: '#F15025' }}
-                  />
-                ) : (
-                  <h1
-                    onClick={() => { setNaamDraft(project.naam); setEditingNaam(true) }}
-                    title="Klik om te wijzigen"
-                    className="text-[26px] font-bold text-[#1A1A1A] truncate tracking-[-0.5px] leading-tight cursor-text"
-                  >
-                    {project.naam}
-                  </h1>
-                )}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      className={cn(getStatusPillClass(project.status), 'cursor-pointer hover:brightness-95 transition-all flex-shrink-0 group')}
-                      aria-label="Status wijzigen"
-                    >
-                      {statusLabels[project.status] || project.status}
-                      <ChevronDown className="h-2.5 w-2.5 -mr-1 opacity-0 group-hover:opacity-60 transition-opacity" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="w-44">
-                    {statusOpties.map((s) => (
-                      <DropdownMenuItem
-                        key={s.value}
-                        onClick={() => {
-                          if (s.value !== project.status) handleCockpitStatusChange(s.value as Project['status'])
-                        }}
-                        className={cn('flex items-center gap-2 text-xs', s.value === project.status && 'font-semibold')}
-                      >
-                        <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0', getStatusDotColor(s.value))} />
-                        {s.label}
-                        {s.value === project.status && <CheckCircle2 className="w-3 h-3 ml-auto text-[#1A535C]" />}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-
-              {/* Row 2: subline — alleen klant · plaats */}
-              <div className="mt-1 text-[14px]">
-                {klant && (
-                  <Link to={`/klanten/${klant.id}`} className="text-[#6B6B66] hover:text-[#1A1A1A] transition-colors">
-                    <span className="font-medium">{klant.bedrijfsnaam || klant.contactpersoon}</span>
-                    {klant.stad && <span className="text-[#9B9B95] font-normal"> · {klant.stad}</span>}
-                  </Link>
-                )}
-              </div>
-            </div>
-          </div>
-
+        {/* Row 0: breadcrumb */}
+        <div className="flex items-center gap-1.5 text-[12px] mb-2">
+          <Link
+            to="/projecten"
+            className="inline-flex items-center gap-1 text-[#9B9B95] hover:text-[#1A535C] transition-colors group"
+          >
+            <ArrowLeft className="h-3 w-3 group-hover:-translate-x-0.5 transition-transform" />
+            Projecten
+          </Link>
+          <span className="text-[#C0BDB8]">·</span>
+          <span className="font-mono text-[11px] font-medium text-[#6B6B66] bg-[rgba(26,83,92,0.05)] border border-[rgba(26,83,92,0.08)] rounded-md px-1.5 py-0.5">
+            {project.project_nummer || `PRJ-${id?.slice(0, 8).toUpperCase()}`}
+          </span>
         </div>
 
-        {/* TAB BAR — amber underline, sticky binnen scroll-area */}
-        <div className="flex items-center gap-7 border-b border-[#EBEBEB] mt-4 sticky top-0 z-10 bg-[#F8F7F5]">
-        {([
-          { key: 'overzicht' as ProjectTab, label: 'Overzicht', count: 0 },
-          { key: 'werkbon' as ProjectTab, label: 'Werkbon', count: projectWerkbonnen.length },
-          { key: 'financieel' as ProjectTab, label: 'Financieel', count: projectFacturen.length },
-          { key: 'notities' as ProjectTab, label: 'Notities', count: 0 },
-        ]).map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => handleTabChange(tab.key)}
-            className={cn(
-              'relative py-3 text-[14px] transition-colors flex items-center gap-1.5',
-              activeTab === tab.key
-                ? 'text-[#1A1A1A] font-semibold'
-                : 'text-[#6B6B66] hover:text-[#1A1A1A]'
-            )}
-          >
-            {tab.label}
-            {tab.count > 0 && (
-              <span className="font-mono text-[10px] font-medium bg-[var(--cream-bg)] text-[var(--cream-text)] rounded-full px-1.5 py-0.5 min-w-[18px] text-center">{tab.count}</span>
-            )}
-            {activeTab === tab.key && (
-              <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[var(--amber)] rounded-t-full" />
-            )}
-          </button>
-        ))}
+        {/* Row 1: H1 + status pill */}
+        <div className="flex items-baseline gap-4 min-w-0 flex-wrap">
+          {editingNaam ? (
+            <input
+              autoFocus
+              value={naamDraft}
+              onChange={(e) => setNaamDraft(e.target.value)}
+              onFocus={(e) => e.target.select()}
+              onBlur={async () => {
+                const trimmed = naamDraft.trim()
+                if (!trimmed || trimmed === project.naam) {
+                  setEditingNaam(false)
+                  return
+                }
+                try {
+                  const updated = await updateProject(id!, { naam: trimmed })
+                  setProject(updated)
+                  toast.success('Projectnaam gewijzigd')
+                } catch (err) {
+                  logger.error('updateProject naam:', err)
+                  toast.error('Kon naam niet wijzigen')
+                } finally {
+                  setEditingNaam(false)
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur() }
+                if (e.key === 'Escape') { setNaamDraft(project.naam); setEditingNaam(false) }
+              }}
+              className="text-[32px] font-extrabold text-[#1A1A1A] tracking-[-0.5px] leading-none flex-1 min-w-0"
+              style={{ background: 'transparent', border: 'none', outline: 'none', boxShadow: 'none', padding: 0, margin: 0, caretColor: '#F15025' }}
+            />
+          ) : (
+            <h1
+              onClick={() => { setNaamDraft(project.naam); setEditingNaam(true) }}
+              title="Klik om te wijzigen"
+              className="text-[32px] font-extrabold text-[#1A1A1A] truncate tracking-[-0.5px] leading-none cursor-text"
+            >
+              {project.naam}<span className="text-[#F15025]">.</span>
+            </h1>
+          )}
+
+          {/* Status — dot + label + dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white border border-[rgba(26,83,92,0.1)] shadow-[0_1px_2px_rgba(20,62,71,0.04)] hover:border-[rgba(26,83,92,0.22)] hover:shadow-[0_2px_8px_rgba(20,62,71,0.08)] transition-all flex-shrink-0"
+                aria-label="Status wijzigen"
+              >
+                <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0', getStatusDotColor(project.status), project.status === 'actief' && 'doen-pulse')} />
+                <span className="text-[13px] font-semibold text-[#1A1A1A]">
+                  {statusLabels[project.status] || project.status}<span className="text-[#F15025]">.</span>
+                </span>
+                <ChevronDown className="h-3 w-3 text-[#9B9B95] opacity-50 group-hover:opacity-100 transition-opacity" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-44">
+              {statusOpties.map((s) => (
+                <DropdownMenuItem
+                  key={s.value}
+                  onClick={() => {
+                    if (s.value !== project.status) handleCockpitStatusChange(s.value as Project['status'])
+                  }}
+                  className={cn('flex items-center gap-2 text-xs', s.value === project.status && 'font-semibold')}
+                >
+                  <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0', getStatusDotColor(s.value))} />
+                  {s.label}
+                  {s.value === project.status && <CheckCircle2 className="w-3 h-3 ml-auto text-[#1A535C]" />}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        {/* Row 2: subline — klant · plaats + datum-hint */}
+        <div className="mt-2 text-[13.5px] flex items-center gap-2 flex-wrap">
+          {klant && (
+            <Link to={`/klanten/${klant.id}`} className="inline-flex items-center gap-1.5 text-[#4A4A46] hover:text-[#1A535C] transition-colors">
+              <span className="font-semibold">{klant.bedrijfsnaam || klant.contactpersoon}</span>
+              {klant.stad && <span className="text-[#9B9B95] font-normal"> · {klant.stad}</span>}
+            </Link>
+          )}
+          {project.created_at && (
+            <>
+              <span className="text-[#C0BDB8]">·</span>
+              <span
+                className="text-[12.5px] text-[#9B9B95]"
+                style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+              >
+                aangemaakt {new Date(project.created_at).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })}
+              </span>
+            </>
+          )}
+        </div>
+
+        {/* TAB BAR — flame underline, duotone icoon per tab */}
+        <div className="flex items-center gap-1 border-b border-[rgba(26,83,92,0.12)] mt-5 sticky top-0 z-10 bg-[#F8F7F5]">
+          {([
+            { key: 'overzicht' as ProjectTab,  label: 'Overzicht',  count: 0,                          Icon: PhListBullets },
+            { key: 'werkbon' as ProjectTab,    label: 'Werkbon',    count: projectWerkbonnen.length,   Icon: PhWrenchTab   },
+            { key: 'financieel' as ProjectTab, label: 'Financieel', count: projectFacturen.length,     Icon: PhCurrencyEur },
+            { key: 'notities' as ProjectTab,   label: 'Notities',   count: 0,                          Icon: PhNotePencil  },
+          ]).map((tab) => {
+            const TabIcon = tab.Icon
+            const isActive = activeTab === tab.key
+            return (
+              <button
+                key={tab.key}
+                onClick={() => handleTabChange(tab.key)}
+                className={cn(
+                  'relative inline-flex items-center gap-2 px-3 py-2.5 text-[13.5px] transition-colors -mb-px',
+                  isActive
+                    ? 'text-[#1A1A1A] font-semibold'
+                    : 'text-[#6B6B66] hover:text-[#1A1A1A]'
+                )}
+              >
+                <span className="doen-duo-icon flex-shrink-0">
+                  <TabIcon size={15} weight="duotone" />
+                </span>
+                {tab.label}
+                {tab.count > 0 && (
+                  <span className={cn(
+                    'font-mono text-[10px] font-semibold rounded-full px-1.5 py-0.5 min-w-[18px] text-center tabular-nums',
+                    isActive
+                      ? 'bg-[#1A535C] text-white'
+                      : 'bg-[rgba(26,83,92,0.08)] text-[#6B6B66]'
+                  )}>{tab.count}</span>
+                )}
+                {isActive && (
+                  <span
+                    aria-hidden
+                    className="absolute bottom-0 left-2 right-2 h-[2px] rounded-t-full bg-[#F15025]"
+                  />
+                )}
+              </button>
+            )
+          })}
         </div>
       </div>
 
@@ -1182,21 +1212,29 @@ export function ProjectDetail() {
             const verzonden = projectOffertes.filter(o => o.verstuurd_op && o.verstuurd_naar)
             if (verzonden.length === 0) return null
             return (
-              <div className="rounded-xl bg-white shadow-[0_1px_3px_rgba(0,0,0,0.03)] p-5">
-                <h3 className="text-[13px] font-bold text-[#1A1A1A] tracking-[-0.2px] mb-3 flex items-center gap-2">
-                  <Send className="h-3.5 w-3.5 text-[#9B9B95]" />
-                  Verzonden
-                  <span className="text-[10px] font-mono text-[#9B9B95] bg-[#F0EFEC] px-1.5 py-0.5 rounded-full">{verzonden.length}</span>
-                </h3>
-                <div className="space-y-2">
+              <div className="doen-slate-surface rounded-2xl p-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="doen-duo-icon" style={{ '--duo-sec': '#1A535C' } as React.CSSProperties}>
+                    <Send className="h-4 w-4" />
+                  </span>
+                  <h3 className="font-heading text-[15px] font-bold text-[#1A1A1A]">
+                    Verzonden<span className="text-[#F15025]">.</span>
+                  </h3>
+                  <span className="font-mono text-[10px] font-semibold bg-[rgba(26,83,92,0.08)] text-[#1A535C] rounded-full px-1.5 py-0.5 min-w-[18px] text-center tabular-nums">{verzonden.length}</span>
+                </div>
+                <div className="space-y-1">
                   {verzonden.slice(0, 5).map((o) => (
-                    <div key={`email-${o.id}`} className="flex items-center gap-3 text-[12px]">
-                      <div className="w-7 h-7 rounded-lg bg-[#E8EEF9] flex items-center justify-center flex-shrink-0">
+                    <div key={`email-${o.id}`} className="flex items-center gap-3 text-[12.5px] px-2 py-2 rounded-lg hover:bg-white/60 transition-colors">
+                      <div className="w-8 h-8 rounded-lg bg-[#E8EEF9] border border-[#3A5A9A]/20 flex items-center justify-center flex-shrink-0">
                         <Send className="h-3 w-3 text-[#3A5A9A]" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="font-medium text-[#1A1A1A] truncate">Offerte {o.nummer}</div>
-                        <div className="text-[#9B9B95] truncate">{o.verstuurd_naar} · {new Date(o.verstuurd_op!).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}</div>
+                        <div className="font-semibold text-[#1A1A1A] truncate">Offerte {o.nummer}</div>
+                        <div className="text-[#6B6B66] truncate text-[11.5px]">
+                          {o.verstuurd_naar}
+                          <span className="text-[#C0BDB8]"> · </span>
+                          <span className="font-mono">{new Date(o.verstuurd_op!).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}</span>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -1228,10 +1266,21 @@ export function ProjectDetail() {
 
             if (!suggestion) return null
             return (
-              <div className="flex items-center justify-between py-3">
-                <span className="text-[13px] text-[#6B6B66]">{suggestion.text}</span>
-                <button className="text-[13px] font-semibold text-[#F15025] hover:underline" onClick={suggestion.action}>
-                  Doen<span className="text-[#F15025]">.</span>
+              <div className="doen-slate-surface rounded-2xl p-4 flex items-center justify-between gap-4 doen-slate-surface-active">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span className="w-2 h-2 rounded-full bg-[#F15025] doen-pulse flex-shrink-0" aria-hidden />
+                  <span
+                    className="text-[13.5px] text-[#1A1A1A] font-medium"
+                  >
+                    {suggestion.text}
+                  </span>
+                </div>
+                <button
+                  className="inline-flex items-center gap-1.5 text-[13px] font-semibold bg-[#F15025] text-white px-4 py-2 rounded-xl shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:bg-[#E04520] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35)] hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 flex-shrink-0"
+                  onClick={suggestion.action}
+                >
+                  Doen<span>.</span>
+                  <ArrowRight className="h-3.5 w-3.5" />
                 </button>
               </div>
             )
@@ -1755,7 +1804,7 @@ export function ProjectDetail() {
         />
       )}
 
-      {/* Nieuwe taak dialog */}
+      {/* Nieuwe taak dialog — zelfde stijl als /taken edit-dialog */}
       <Dialog open={nieuweTaakOpen} onOpenChange={(open) => {
         setNieuweTaakOpen(open)
         if (!open) {
@@ -1767,89 +1816,149 @@ export function ProjectDetail() {
           setNieuweTaakPrioriteit('medium')
         }
       }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Nieuwe taak toevoegen</DialogTitle>
-            <DialogDescription>
-              Voeg een nieuwe taak toe aan dit project.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="taak-titel">Titel</Label>
+        <DialogContent className="sm:max-w-[540px] p-0 gap-0 max-h-[85vh] flex flex-col overflow-hidden">
+          <DialogHeader className="sr-only"><DialogTitle>Nieuwe taak</DialogTitle></DialogHeader>
+
+          <div className="flex-1 overflow-y-auto">
+            {/* Titel als inline groot input */}
+            <div className="px-7 pt-7 pb-2 flex items-start justify-between gap-3">
               <Input
-                id="taak-titel"
-                placeholder="Titel van de taak..."
+                autoFocus
                 value={nieuweTaakTitel}
                 onChange={(e) => setNieuweTaakTitel(e.target.value)}
+                placeholder="Titel van de taak"
+                className="border-0 shadow-none px-0 h-auto py-0 bg-transparent text-[20px] font-bold text-[#1A1A1A] placeholder:text-[#9B9B95] placeholder:font-medium focus-visible:ring-0 tracking-[-0.3px] flex-1 min-w-0"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="taak-beschrijving">Beschrijving</Label>
-              <Input
-                id="taak-beschrijving"
-                placeholder="Beschrijving..."
+
+            {/* Toewijzen — avatar-bolletjes */}
+            <div className="px-7 pb-4">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-[#9B9B95] mb-1.5">Toewijzen aan</p>
+              <div className="flex flex-wrap gap-1.5">
+                {alleMedewerkers.filter((m) => m.status === 'actief').map((mw) => {
+                  const selected = nieuweTaakToegewezen === mw.naam
+                  const c = mw.naam.charCodeAt(0) % 5
+                  const colors = [
+                    'bg-[#E8F2EC] text-[#3A7D52]',
+                    'bg-[#E8EEF9] text-[#3A5A9A]',
+                    'bg-[#F5F2E8] text-[#8A7A4A]',
+                    'bg-[#F0EFEC] text-[#6B6B66]',
+                    'bg-[#EDE8F4] text-[#6A5A8A]',
+                  ]
+                  return (
+                    <button
+                      key={mw.id}
+                      type="button"
+                      onClick={() => setNieuweTaakToegewezen(selected ? '' : mw.naam)}
+                      className={cn(
+                        'inline-flex items-center gap-1.5 pl-1 pr-2.5 py-1 rounded-full text-[12px] font-medium transition-all border',
+                        selected
+                          ? 'border-[#1A535C] bg-[#1A535C]/[0.08] text-[#1A535C]'
+                          : 'border-transparent bg-[#F8F7F5] text-[#6B6B66] hover:bg-[#F0EFEC]'
+                      )}
+                    >
+                      <span className={cn('w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold uppercase flex-shrink-0', colors[c])}>
+                        {mw.naam.charAt(0)}
+                      </span>
+                      {mw.naam.split(' ')[0]}
+                    </button>
+                  )
+                })}
+                {alleMedewerkers.filter((m) => m.status === 'actief').length === 0 && (
+                  <span
+                    className="text-[12px] text-[#9B9B95]"
+                    style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
+                  >
+                    geen medewerkers beschikbaar
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Deadline — eigen sectie met snel-pillen */}
+            <div className="px-7 pb-4">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-[#9B9B95] mb-1.5">Deadline</p>
+              <div className="flex items-center gap-2 flex-wrap">
+                <DatePicker
+                  value={nieuweTaakDeadline}
+                  onChange={(v) => setNieuweTaakDeadline(v || '')}
+                  trigger={
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-[#EBEBEB] text-[13px] font-medium hover:border-[#1A535C]/30 transition-colors"
+                    >
+                      <CalendarDays className="w-3.5 h-3.5 text-[#6B6B66]" />
+                      <span className={cn(!nieuweTaakDeadline && 'text-[#9B9B95]')}>
+                        {nieuweTaakDeadline
+                          ? new Date(nieuweTaakDeadline).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })
+                          : 'Kies datum'}
+                      </span>
+                    </button>
+                  }
+                />
+                <div className="flex items-center gap-1">
+                  {[
+                    { label: 'Vandaag', days: 0 },
+                    { label: 'Morgen',  days: 1 },
+                    { label: '+3d',     days: 3 },
+                    { label: '+7d',     days: 7 },
+                  ].map(({ label, days }) => {
+                    const d = new Date()
+                    d.setDate(d.getDate() + days)
+                    const val = d.toISOString().split('T')[0]
+                    const isSelected = nieuweTaakDeadline === val
+                    return (
+                      <button
+                        key={days}
+                        type="button"
+                        onClick={() => setNieuweTaakDeadline(isSelected ? '' : val)}
+                        className={cn(
+                          'px-2.5 py-1.5 rounded-md text-[11.5px] font-semibold transition-all',
+                          isSelected
+                            ? 'bg-[#1A535C] text-white shadow-[0_1px_3px_rgba(20,62,71,0.2)]'
+                            : 'bg-[#F8F7F5] text-[#6B6B66] hover:bg-[#F0EFEC] hover:text-[#1A1A1A]'
+                        )}
+                      >
+                        {label}
+                      </button>
+                    )
+                  })}
+                  {nieuweTaakDeadline && (
+                    <button
+                      type="button"
+                      onClick={() => setNieuweTaakDeadline('')}
+                      className="ml-1 text-[11px] font-medium text-[#9B9B95] hover:text-[#C03A18] hover:underline transition-colors"
+                    >
+                      Wissen
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Briefing textarea */}
+            <div className="px-7 pb-6">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-[#9B9B95] mb-1.5">Briefing</p>
+              <Textarea
                 value={nieuweTaakBeschrijving}
                 onChange={(e) => setNieuweTaakBeschrijving(e.target.value)}
+                placeholder="Briefing toevoegen…"
+                rows={5}
+                className="resize-y bg-[#F8F7F5] border border-[#EBEBEB] focus-visible:border-[#1A535C] focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] text-[14px] leading-relaxed rounded-lg"
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Status</Label>
-                <Select value={nieuweTaakStatus} onValueChange={(v) => setNieuweTaakStatus(v as Taak['status'])}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="todo">Todo</SelectItem>
-                    <SelectItem value="bezig">Bezig</SelectItem>
-                    <SelectItem value="review">Review</SelectItem>
-                    <SelectItem value="klaar">Klaar</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Prioriteit</Label>
-                <Select value={nieuweTaakPrioriteit} onValueChange={(v) => setNieuweTaakPrioriteit(v as Taak['prioriteit'])}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="laag">Laag</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="hoog">Hoog</SelectItem>
-                    <SelectItem value="kritiek">Kritiek</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="taak-toegewezen">Toegewezen aan</Label>
-                <Select value={nieuweTaakToegewezen} onValueChange={setNieuweTaakToegewezen}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecteer teamlid..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {alleMedewerkers.map((m) => (
-                      <SelectItem key={m.id} value={m.naam}>
-                        {m.naam}
-                      </SelectItem>
-                    ))}
-                    {projectToewijzingen.length > 0 && alleMedewerkers.length === 0 && (
-                      <SelectItem value="_empty" disabled>Geen medewerkers gevonden</SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="taak-deadline">Deadline</Label>
-                <Input
-                  id="taak-deadline"
-                  type="date"
-                  value={nieuweTaakDeadline}
-                  onChange={(e) => setNieuweTaakDeadline(e.target.value)}
-                />
-              </div>
-            </div>
           </div>
-          <DialogFooter>
+
+          {/* Footer — project-context links + acties rechts */}
+          <div className="border-t border-[#EBEBEB] px-7 py-4 flex items-center justify-between gap-3">
+            <div className="min-w-0 flex-1 flex items-center gap-2 text-[12px] text-[#9B9B95]">
+              <span aria-hidden className="w-1.5 h-1.5 rounded-full bg-[#1A535C] flex-shrink-0" />
+              <span className="truncate">
+                <span className="font-semibold text-[#6B6B66]">{project?.naam}</span>
+                {klant && <span className="text-[#C0BDB8]"> · {klant.bedrijfsnaam || klant.contactpersoon}</span>}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
             <Button variant="outline" onClick={() => setNieuweTaakOpen(false)}>
               Annuleren
             </Button>
@@ -1887,7 +1996,8 @@ export function ProjectDetail() {
             >
               Taak toevoegen
             </Button>
-          </DialogFooter>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 

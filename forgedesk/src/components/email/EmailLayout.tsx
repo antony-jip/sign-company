@@ -1205,7 +1205,7 @@ export function EmailLayout() {
 
   // ─── UNIFIED 3-COLUMN LAYOUT ───
   return (
-    <div className={cn('h-full flex flex-col -m-3 sm:-m-4 md:-m-6 overflow-hidden', viewMode === 'idle' ? 'bg-[#F8F7F5]' : 'bg-white')}>
+    <div className={cn('h-full flex flex-col -m-3 sm:-m-4 md:-m-6 overflow-hidden antialiased', viewMode === 'idle' ? 'bg-[#F8F7F5]' : 'bg-white')}>
       {viewMode === 'idle' && (
         <EmailMobileTopBar
           onOpenDrawer={() => setFolderDrawerOpen(true)}
@@ -1461,10 +1461,10 @@ export function EmailLayout() {
               <div className="w-14 h-14 rounded-2xl bg-[#F0EFEC] flex items-center justify-center mb-5">
                 <Inbox className="h-6 w-6 text-[#B0ADA8]" />
               </div>
-              <h3 className="text-[14px] font-medium text-[#6B6B66] mb-1.5">
+              <h3 className="text-[14px] font-semibold text-[#1A1A1A] mb-1.5">
                 {searchQuery ? 'Geen resultaten' : filter !== 'alle' ? 'Geen emails met dit filter' : 'Inbox is leeg'}
               </h3>
-              <p className="text-[13px] text-[#9B9B95] max-w-[260px] leading-relaxed">
+              <p className="text-[13px] text-[#6B6B66] max-w-[260px] leading-relaxed">
                 {searchQuery
                   ? `Geen emails gevonden voor "${searchQuery}"`
                   : filter !== 'alle'
@@ -1502,7 +1502,7 @@ export function EmailLayout() {
                   nodes.push(
                     <div
                       key="pinned-header"
-                      className="px-4 pt-5 pb-2 text-[11px] md:text-[10px] font-medium md:font-semibold md:uppercase md:tracking-[0.1em] text-[#B0ADA8] bg-white/85 md:bg-gradient-to-b md:from-white md:to-transparent backdrop-blur-md md:backdrop-blur-none sticky top-0 z-[1]"
+                      className="px-4 pt-5 pb-2 text-[11px] md:text-[10px] font-semibold md:uppercase md:tracking-[0.1em] text-[#6B6B66] bg-white/85 md:bg-gradient-to-b md:from-white md:to-transparent backdrop-blur-md md:backdrop-blur-none sticky top-0 z-[1]"
                     >
                       Vastgepind
                     </div>
@@ -1523,7 +1523,7 @@ export function EmailLayout() {
                       nodes.push(
                         <div
                           key={`group-${group}-${index}`}
-                          className="px-4 pt-5 pb-2 text-[11px] md:text-[10px] font-medium md:font-semibold md:uppercase md:tracking-[0.1em] text-[#B0ADA8] bg-white/85 md:bg-gradient-to-b md:from-white md:to-transparent backdrop-blur-md md:backdrop-blur-none sticky top-0 z-[1] flex items-center gap-2"
+                          className="px-4 pt-5 pb-2 text-[11px] md:text-[10px] font-semibold md:uppercase md:tracking-[0.1em] text-[#6B6B66] bg-white/85 md:bg-gradient-to-b md:from-white md:to-transparent backdrop-blur-md md:backdrop-blur-none sticky top-0 z-[1] flex items-center gap-2"
                         >
                           <input
                             type="checkbox"
