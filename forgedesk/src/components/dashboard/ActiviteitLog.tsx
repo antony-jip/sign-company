@@ -98,7 +98,7 @@ export function ActiviteitLog() {
     <section
       className="rounded-xl p-5"
       style={{
-        background: 'radial-gradient(ellipse 80% 60% at 0% 0%, rgba(26,83,92,0.035), transparent 65%), radial-gradient(ellipse 80% 60% at 100% 100%, rgba(241,80,37,0.025), transparent 65%), linear-gradient(180deg, #FFFFFF 0%, #F6F8F9 100%)',
+        background: 'radial-gradient(ellipse 85% 65% at 0% 0%, rgba(26,83,92,0.07), transparent 65%), radial-gradient(ellipse 85% 65% at 100% 100%, rgba(241,80,37,0.055), transparent 65%), linear-gradient(180deg, #FFFFFF 0%, #F6F8F9 100%)',
         border: '1px solid rgba(26,83,92,0.08)',
         boxShadow: '0 1px 2px rgba(20,62,71,0.04), 0 8px 24px rgba(20,62,71,0.025)',
       }}
