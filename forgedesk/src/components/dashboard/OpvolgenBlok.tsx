@@ -51,7 +51,7 @@ export function OpvolgenBlok() {
     >
       <header className="flex items-baseline justify-between gap-4 mb-5">
         <div className="flex items-baseline gap-3 min-w-0">
-          <h2 className="text-[11px] font-semibold uppercase tracking-wider text-[#5A5A55]">
+          <h2 className="font-heading text-[11px] font-bold uppercase tracking-wider text-[#3A6770]">
             Opvolgen
           </h2>
           <span
