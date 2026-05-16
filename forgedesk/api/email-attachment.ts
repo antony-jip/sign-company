@@ -207,13 +207,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           }
         })
 
-      // Fire-and-forget cache-write parallel met response: gebruikers daarna
-      // krijgen signed URLs zonder nieuwe IMAP-roundtrip.
+      // Cache-write moet voltooien voordat we de response sluiten: Vercel
+      // freezet de Node-runtime na res.end() waardoor fire-and-forget halverwege
+      // kan stoppen en partial-objects in Storage achterlaat.
       if (email_uuid) {
         const cacheable = payload.filter((p) => isCacheable(p.filename, p.contentType, p.size, p.isInlineCid))
-        void Promise.all(cacheable.map((p) =>
-          writeAttachmentToCache(user_id, email_uuid, p.filename, p.contentType, p.buffer),
-        )).catch((err) => console.warn('[email-attachment-cache] bulk-write mislukt:', err))
+        try {
+          await Promise.all(cacheable.map((p) =>
+            writeAttachmentToCache(user_id, email_uuid!, p.filename, p.contentType, p.buffer),
+          ))
+        } catch (err) {
+          console.warn('[email-attachment-cache] bulk-write mislukt:', err)
+        }
       }
 
       return res.status(200).json({
@@ -236,10 +241,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const fname = attachment.filename || filename!
     const isInlineCid = !!attachment.contentId || attachment.contentDisposition === 'inline'
 
-    // Cache-write voor volgende keer (fire-and-forget)
+    // Cache-write voor volgende keer — await zodat Vercel het proces niet
+    // halverwege freezet en signed URLs straks daadwerkelijk werken.
     if (email_uuid && isCacheable(fname, ct, contentBuffer.length, isInlineCid)) {
-      void writeAttachmentToCache(user_id, email_uuid, fname, ct, contentBuffer)
-        .catch((err) => console.warn('[email-attachment-cache] single-write mislukt:', err))
+      try {
+        await writeAttachmentToCache(user_id, email_uuid, fname, ct, contentBuffer)
+      } catch (err) {
+        console.warn('[email-attachment-cache] single-write mislukt:', err)
+      }
     }
 
     return res.status(200).json({

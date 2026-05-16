@@ -308,8 +308,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             ignoreDuplicates: false,
           })
           .select('id')
-          .single()
+          .maybeSingle()
         email_uuid = upserted?.id || null
+        // Fallback: als upsert geen id terug gaf (bijv. message_id NULL),
+        // doe een gerichte SELECT zodat we alsnog kunnen cachen.
+        if (!email_uuid) {
+          const { data: refetched } = await supabaseAdmin
+            .from('emails')
+            .select('id')
+            .eq('user_id', user_id)
+            .eq('uid', Number(uid))
+            .eq('imap_folder', imapFolder)
+            .maybeSingle()
+          email_uuid = refetched?.id || null
+        }
         // Silently ignore cache write failures — user still gets the email
       }
 
@@ -320,10 +332,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         signedMap = await cacheAttachmentsToStorage(user_id, email_uuid, result.rawBuffers)
       }
 
-      const attachmentsOut = result.attachments.map((a) => ({
-        ...a,
-        storage_url: signedMap.get(a.filename),
-      }))
+      // Strip inline base64-`content` zodra storage_url beschikbaar is —
+      // anders levert de response twee paden voor dezelfde bytes en
+      // overschrijdt het de Vercel 4.5 MB body-limit (truncate → malformed JSON).
+      const attachmentsOut = result.attachments.map((a) => {
+        const storage_url = signedMap.get(a.filename)
+        if (storage_url) {
+          return { filename: a.filename, contentType: a.contentType, size: a.size, storage_url }
+        }
+        return a
+      })
 
       return res.status(200).json({
         uid: result.uid,
