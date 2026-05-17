@@ -1560,26 +1560,29 @@ export function EmailReader({
                   <div className="h-4 bg-[#F0EFEC] rounded w-[85%] animate-pulse" />
                 </div>
               ) : (
-                <div ref={emailBodyRef}>
-                  <div
-                    className="text-left text-[14px] leading-[1.75] text-[#4A4A46]
-                      [&>*:first-child]:!mt-0
-                      [&_body]:!m-0 [&_body]:!p-0
-                      [&_table]:!ml-0 [&_table]:max-w-full
-                      [&_div]:!ml-0
-                      [&_p]:!ml-0 [&_p]:mb-2
-                      [&_img]:max-w-full [&_img]:rounded-lg [&_img]:shadow-sm [&_img]:my-3
-                      [&_a]:text-[#1A535C] [&_a]:no-underline [&_a]:hover:underline [&_a]:underline-offset-2 [&_a]:transition-colors
-                      [&_blockquote]:border-l-2 [&_blockquote]:border-[#EBEBEB] [&_blockquote]:pl-4 [&_blockquote]:text-[14px] [&_blockquote]:text-[#9B9B95] [&_blockquote]:my-3
-                      [&_h1]:text-lg [&_h1]:font-semibold [&_h1]:mb-2 [&_h1]:!ml-0
-                      [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mb-2 [&_h2]:!ml-0
-                      [&_h3]:text-[14px] [&_h3]:font-semibold [&_h3]:mb-1.5 [&_h3]:!ml-0
-                      [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-2 [&_ul]:!ml-0
-                      [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-2 [&_ol]:!ml-0
-                      [&_li]:mb-0.5
-                      [&_.email-sig-dim]:text-[#9B9B95] [&_.email-sig-dim]:text-[13px]"
-                    dangerouslySetInnerHTML={{ __html: sanitizedBody }}
-                  />
+                <div ref={emailBodyRef} className="min-w-0 max-w-full">
+                  <div className="max-md:overflow-x-auto max-md:max-w-full">
+                    <div
+                      className="text-left text-[14px] leading-[1.75] text-[#4A4A46] break-words
+                        [&>*:first-child]:!mt-0
+                        [&_body]:!m-0 [&_body]:!p-0
+                        [&_table]:!ml-0 [&_table]:max-w-full max-md:[&_table]:!w-full
+                        [&_td]:break-words [&_th]:break-words
+                        [&_div]:!ml-0 [&_div]:max-w-full
+                        [&_p]:!ml-0 [&_p]:mb-2
+                        [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_img]:shadow-sm [&_img]:my-3
+                        [&_a]:text-[#1A535C] [&_a]:no-underline [&_a]:hover:underline [&_a]:underline-offset-2 [&_a]:transition-colors [&_a]:break-all
+                        [&_blockquote]:border-l-2 [&_blockquote]:border-[#EBEBEB] [&_blockquote]:pl-4 [&_blockquote]:text-[14px] [&_blockquote]:text-[#9B9B95] [&_blockquote]:my-3
+                        [&_h1]:text-lg [&_h1]:font-semibold [&_h1]:mb-2 [&_h1]:!ml-0
+                        [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mb-2 [&_h2]:!ml-0
+                        [&_h3]:text-[14px] [&_h3]:font-semibold [&_h3]:mb-1.5 [&_h3]:!ml-0
+                        [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-2 [&_ul]:!ml-0
+                        [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-2 [&_ol]:!ml-0
+                        [&_li]:mb-0.5
+                        [&_.email-sig-dim]:text-[#9B9B95] [&_.email-sig-dim]:text-[13px]"
+                      dangerouslySetInnerHTML={{ __html: sanitizedBody }}
+                    />
+                  </div>
                   <EmailReaderAIToolbar containerRef={emailBodyRef} />
                 </div>
               )}
