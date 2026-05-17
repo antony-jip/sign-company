@@ -123,7 +123,7 @@ export default function ContactContent() {
             <div className="lg:col-span-3">
               <SectionReveal delay={0.1}>
                 <div
-                  className="rounded-3xl p-8 md:p-12 relative overflow-hidden"
+                  className="rounded-3xl p-6 md:p-12 relative overflow-hidden"
                   style={{
                     backgroundColor: '#FFFFFF',
                     border: '1px solid rgba(26,83,92,0.08)',
@@ -349,7 +349,7 @@ function FloatingField({
   const hasValue = value.length > 0
   const isFloating = focused || hasValue
 
-  const commonClasses = `w-full px-4 rounded-xl outline-none transition-all duration-200 text-[14px]`
+  const commonClasses = `w-full px-4 rounded-xl outline-none transition-all duration-200 text-[16px]`
   const baseStyle: React.CSSProperties = {
     backgroundColor: '#FAFAF7',
     border: `1.5px solid ${focused ? FLAME : '#EBEBEB'}`,
