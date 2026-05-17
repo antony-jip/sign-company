@@ -1809,7 +1809,7 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
 
               {/* Detail section — card with mod-color accent */}
               <motion.div
-                className="mt-16 md:mt-20 rounded-[10px] p-7 md:p-10 bg-white relative overflow-hidden"
+                className="mt-16 md:mt-20 rounded-[10px] p-5 md:p-10 bg-white relative overflow-hidden"
                 style={{
                   border: '1px solid rgba(26,83,92,0.08)',
                   boxShadow: '0 1px 2px rgba(20,40,40,0.04), 0 12px 28px -14px rgba(20,40,40,0.14)',
@@ -1864,7 +1864,7 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
       <section className="pb-20 md:pb-28 pt-4">
         <div className="container-site">
           <div
-            className="relative rounded-[10px] p-10 md:p-16 text-center overflow-hidden"
+            className="relative rounded-[10px] p-6 md:p-16 text-center overflow-hidden"
             style={{ backgroundColor: '#0F3A42' }}
           >
             {/* Soft dark blobs + dot pattern */}
