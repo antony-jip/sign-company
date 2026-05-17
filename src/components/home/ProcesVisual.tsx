@@ -20,6 +20,8 @@ import {
   Check,
   type LucideIcon,
 } from 'lucide-react'
+import SerifItalic from '@/components/SerifItalic'
+import { TrimCorners } from '@/components/brand/BrandMarks'
 
 const PETROL = '#1A535C'
 const PETROL_DARK = '#143F46'
@@ -27,7 +29,7 @@ const PETROL_SOFT = '#C8D5D7'
 const FLAME = '#F15025'
 const LINE_SOFT = '#B8B3A8'
 const MUTED = '#6B6B66'
-const MUTED_SOFT = '#9B9B95'
+const MUTED_SOFT = '#6B6B66'
 
 function Sparkle({ cx, cy, size }: { cx: number; cy: number; size: number }) {
   const s = size
@@ -241,7 +243,7 @@ function PortaalNode({
           transformOrigin: 'center',
         }}
       >
-        <div className="mt-2 rounded-sm relative overflow-hidden" style={{ width: 54, height: 44, backgroundColor: '#F5F4F1' }}>
+        <div className="mt-2 rounded-sm relative overflow-hidden" style={{ width: 54, height: 44, backgroundColor: '#F3F2ED' }}>
           <svg viewBox="0 0 54 44" className="absolute inset-0 w-full h-full">
             <circle cx={11} cy={12} r={4} fill="#F6C24B" opacity={0.6} />
             <path d="M 0 38 L 16 22 L 28 30 L 42 18 L 54 28 L 54 44 L 0 44 Z" fill={PETROL} opacity={0.25} />
@@ -437,20 +439,23 @@ function MobileStep({ step, index, isLast }: { step: MobileStepData; index: numb
 function MobileFlow() {
   return (
     <div className="py-16 px-6">
-      <div className="text-center mb-10">
-        <p
-          className="font-mono text-[10px] font-bold tracking-[0.2em] uppercase mb-3"
-          style={{ color: FLAME }}
-        >
-          Hoe het werkt
-        </p>
-        <h2
-          className="font-heading text-[28px] font-extrabold tracking-[-1.5px] leading-[1.05]"
-          style={{ color: PETROL }}
-        >
-          Eén project. Alles geregeld<span style={{ color: FLAME }}>.</span>
+      <div className="mb-10">
+        <div className="inline-flex items-center gap-2 mb-5">
+          <span className="relative inline-flex items-center justify-center w-2 h-2">
+            <span className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: FLAME, opacity: 0.45 }} />
+            <span className="relative w-1.5 h-1.5 rounded-full" style={{ backgroundColor: FLAME }} />
+          </span>
+          <span className="font-mono text-[10px] font-medium tracking-[0.18em] uppercase" style={{ color: MUTED }}>
+            Hoe het werkt
+          </span>
+        </div>
+        <h2 className="font-heading text-[34px] font-bold tracking-[-1.5px] leading-[0.95]" style={{ color: PETROL }}>
+          <span className="block">Eén project<span style={{ color: FLAME }}>.</span></span>
+          <span className="block" style={{ color: '#6B6B66' }}>
+            Alles <SerifItalic>geregeld</SerifItalic><span style={{ color: FLAME }}>.</span>
+          </span>
         </h2>
-        <p className="text-[14px] mt-3 leading-relaxed" style={{ color: MUTED }}>
+        <p className="text-[14px] mt-4 leading-relaxed" style={{ color: MUTED }}>
           Van klant tot oplevering. In één cockpit.
         </p>
       </div>
@@ -468,10 +473,11 @@ function MobileFlow() {
 
 export default function ProcesVisual() {
   const sectionRef = useRef<HTMLElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
   const reduceMotion = useReducedMotion()
 
   const { scrollYProgress } = useScroll({
-    target: sectionRef,
+    target: scrollRef,
     offset: ['start start', 'end end'],
   })
 
@@ -531,15 +537,16 @@ export default function ProcesVisual() {
 
   if (reduceMotion) {
     return (
-      <section className="py-20 md:py-28 bg-white">
-        <div className="container-site text-center">
-          <p className="font-mono text-[12px] font-bold tracking-[0.2em] uppercase mb-4" style={{ color: FLAME }}>Hoe het werkt</p>
-          <h2 className="font-heading text-[28px] md:text-[40px] font-extrabold tracking-[-1.5px] leading-[1.05]" style={{ color: PETROL }}>
-            Eén project. Alles geregeld<span style={{ color: FLAME }}>.</span>
-          </h2>
-          <p className="text-[16px] md:text-[18px] mt-3 leading-relaxed" style={{ color: MUTED }}>
-            Van klant tot oplevering. In één cockpit.
-          </p>
+      <section className="py-20 md:py-28" style={{ backgroundColor: '#F3F2ED' }}>
+        <div className="container-site">
+          <div className="text-center">
+            <h2 className="font-heading text-[28px] md:text-[40px] font-bold tracking-[-1.5px] leading-[1.05]" style={{ color: PETROL }}>
+              Eén project. Alles <SerifItalic>geregeld</SerifItalic><span style={{ color: FLAME }}>.</span>
+            </h2>
+            <p className="text-[16px] md:text-[18px] mt-3 leading-relaxed" style={{ color: MUTED }}>
+              Van klant tot oplevering. In één cockpit.
+            </p>
+          </div>
           <ol className="mt-10 max-w-2xl mx-auto space-y-3 text-left">
             {[
               ['Klant', 'Doet aanvraag.'],
@@ -563,27 +570,65 @@ export default function ProcesVisual() {
   }
 
   return (
-    <section ref={sectionRef} className="bg-white relative">
+    <section ref={sectionRef} className="relative" style={{ backgroundColor: '#F3F2ED' }}>
+      {/* Backdrop layer — overflow-hidden scoped here so it does NOT break the sticky below */}
+      <div aria-hidden className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div
+          className="absolute -top-20 -right-20 w-[520px] h-[520px] rounded-full"
+          style={{ backgroundColor: '#E8E1D0', opacity: 0.6, filter: 'blur(80px)' }}
+        />
+        <div
+          className="absolute -bottom-20 -left-20 w-[460px] h-[460px] rounded-full"
+          style={{ backgroundColor: '#E4DBC6', opacity: 0.5, filter: 'blur(90px)' }}
+        />
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 22 22'><circle cx='11' cy='11' r='0.7' fill='%231A1A1A' opacity='0.08'/></svg>")`,
+            backgroundSize: '22px 22px',
+          }}
+        />
+      </div>
+
+      <TrimCorners inset={28} size={16} color="rgba(26,83,92,0.28)" />
+
       {/* Mobile vertical timeline — no sticky scroll-scrubbing */}
-      <div className="md:hidden">
+      <div className="md:hidden relative">
         <MobileFlow />
       </div>
 
-      {/* Desktop scroll-scrubbed animation */}
-      <div className="hidden md:block" style={{ height: '240vh' }}>
-        <div className="sticky top-0 h-screen flex flex-col items-center justify-center py-4 md:py-6 bg-white overflow-hidden">
+      {/* Desktop: Hero-style header in normal scroll */}
+      <div className="hidden md:block relative">
+        <div className="container-site pt-24 md:pt-32 pb-10 md:pb-12 max-w-3xl">
+          <div className="inline-flex items-center gap-2 mb-7">
+            <span className="relative inline-flex items-center justify-center w-2 h-2">
+              <span className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: FLAME, opacity: 0.45 }} />
+              <span className="relative w-1.5 h-1.5 rounded-full" style={{ backgroundColor: FLAME }} />
+            </span>
+            <span className="font-mono text-[11px] font-medium tracking-[0.18em] uppercase" style={{ color: '#6B6B66' }}>
+              Hoe het werkt · acht stappen
+            </span>
+          </div>
+          <h2
+            className="font-heading font-bold tracking-[-1.5px] md:tracking-[-2.5px] leading-[0.95]"
+            style={{ fontSize: 'clamp(36px, 5vw, 68px)', color: PETROL }}
+          >
+            <span className="block">Eén project<span style={{ color: FLAME }}>.</span></span>
+            <span className="block" style={{ color: '#6B6B66' }}>
+              Alles <SerifItalic style={{ letterSpacing: '-2px' }}>geregeld</SerifItalic>
+              <span style={{ color: FLAME }}>.</span>
+            </span>
+          </h2>
+          <p className="text-[16px] md:text-[18px] leading-[1.55] max-w-lg mt-6" style={{ color: '#3F3F3A' }}>
+            Klant tot oplevering. Scroll en kijk de flow live.
+          </p>
+        </div>
+      </div>
+
+      {/* Desktop scroll-scrubbed animation — clean sticky, only diagram */}
+      <div ref={scrollRef} className="hidden md:block relative" style={{ height: '200vh' }}>
+        <div className="sticky top-0 h-screen flex flex-col items-center justify-center py-4 md:py-6 overflow-hidden" style={{ backgroundColor: '#F3F2ED' }}>
           <div className="container-site w-full">
-            <div className="text-center mb-4 md:mb-6">
-              <p className="font-mono text-[11px] md:text-[12px] font-bold tracking-[0.2em] uppercase mb-2 md:mb-3" style={{ color: FLAME }}>
-                Hoe het werkt
-              </p>
-              <h2 className="font-heading text-[24px] md:text-[36px] font-extrabold tracking-[-1.5px] leading-[1.05]" style={{ color: PETROL }}>
-                Eén project. Alles geregeld<span style={{ color: FLAME }}>.</span>
-              </h2>
-              <motion.p className="text-[13px] md:text-[15px] mt-2 leading-relaxed" style={{ color: MUTED }}>
-                Van klant tot oplevering. In één cockpit.
-              </motion.p>
-            </div>
 
             <div
               className="relative w-full mx-auto"

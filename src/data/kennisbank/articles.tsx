@@ -477,7 +477,7 @@ export const articles: Article[] = [
             <P>Voorbeelden:</P>
             <UL>
               <LI>Offerte van vorige week opvolgen bij klant X</LI>
-              <LI>Drukproef binnenhalen bij Probo</LI>
+              <LI>Drukproef binnenhalen bij leverancier</LI>
               <LI>Klant herinneren om huisstijl-bestanden aan te leveren</LI>
               <LI>Btw-nummer navragen bij nieuwe klant</LI>
             </UL>

@@ -9,7 +9,7 @@ import AnimatedLink from '../AnimatedLink'
 const PETROL = '#1A535C'
 const FLAME = '#F15025'
 const MUTED = '#6B6B66'
-const MUTED_SOFT = '#9B9B95'
+const MUTED_SOFT = '#6B6B66'
 
 export default function ContactContent() {
   const [formState, setFormState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
@@ -41,23 +41,26 @@ export default function ContactContent() {
             {/* Left: info (2 cols) */}
             <div className="lg:col-span-2">
               <SectionReveal>
-                <p
-                  className="font-mono text-[12px] font-bold tracking-[0.2em] uppercase mb-4"
-                  style={{ color: FLAME }}
-                >
-                  Contact
-                </p>
+                <div className="inline-flex items-center gap-2 mb-6">
+                  <span className="relative inline-flex items-center justify-center w-2 h-2">
+                    <span className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: FLAME, opacity: 0.45 }} />
+                    <span className="relative w-1.5 h-1.5 rounded-full" style={{ backgroundColor: FLAME }} />
+                  </span>
+                  <span className="font-mono text-[11px] font-medium tracking-[0.22em] uppercase" style={{ color: MUTED }}>
+                    Contact
+                  </span>
+                </div>
                 <h1
-                  className="font-heading text-[44px] md:text-[56px] font-extrabold tracking-[-2.5px] leading-[0.95] mb-6"
-                  style={{ color: PETROL }}
+                  className="font-heading font-bold tracking-[-2px] md:tracking-[-3px] leading-[0.92] mb-6"
+                  style={{ fontSize: 'clamp(40px, 5vw, 72px)', color: PETROL }}
                 >
-                  Vraag stellen
-                  <span style={{ color: FLAME }}>?</span>
-                  <br />
-                  <span style={{ color: MUTED_SOFT }}>Gewoon doen</span>
-                  <span style={{ color: FLAME }}>.</span>
+                  <span className="block">Vraag stellen<span style={{ color: FLAME }}>?</span></span>
+                  <span className="block" style={{ color: '#6B6B66' }}>
+                    <span style={{ fontFamily: '"Instrument Serif", var(--font-instrument-serif), Georgia, serif', fontStyle: 'italic', fontWeight: 400 }}>Gewoon</span> doen
+                    <span style={{ color: FLAME }}>.</span>
+                  </span>
                 </h1>
-                <p className="text-[17px] leading-relaxed mb-10 max-w-md" style={{ color: MUTED }}>
+                <p className="text-[16px] md:text-[18px] leading-[1.55] mb-10 max-w-md" style={{ color: '#3F3F3A' }}>
                   Nieuwsgierig, een idee, of wil je weten of doen. bij je past? Vertel
                   wat je bezighoudt. We reageren binnen één werkdag.
                 </p>

@@ -10,7 +10,7 @@ html {
 }
 
 body {
-  background-color: #F5F4F1;
+  background-color: #F3F2ED;
   color: #1A1A1A;
 }
 
@@ -99,7 +99,7 @@ body {
   width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #F5F4F1;
+  background: #F3F2ED;
 }
 ::-webkit-scrollbar-thumb {
   background: #C0C0BA;
@@ -113,6 +113,61 @@ body {
 .accordion-content {
   overflow: hidden;
   transition: max-height 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ─── Paper + tech background ───
+   Used on cream sections to give a "engineering paper / krant" feel
+   with a subtle techy twist. Three layers stack on a single element:
+     1) Faint petrol graph-paper grid (24px)
+     2) Tiny crosshair marks at the 96px super-grid
+     3) Paper grain noise
+   Apply via:
+     <section className="paper-grid">...</section>
+   Combine with a bg color (e.g. style={{ backgroundColor: '#F3F2ED' }}).
+   IMPORTANT: wrapped in @layer components so Tailwind utilities (e.g. `sticky`)
+   still win in the cascade — otherwise our `position: relative` would override
+   `position: sticky` on child elements. */
+@layer components {
+  .paper-grid {
+    position: relative;
+    isolation: isolate;
+  }
+  .paper-grid::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    /* Subtle dot grid only — zeroheight-style techy paper, much lighter than before */
+    background-image:
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'><circle cx='10' cy='10' r='0.7' fill='%231A535C' opacity='0.18'/></svg>");
+    background-size: 20px 20px;
+    background-position: 0 0;
+    z-index: 0;
+  }
+  .paper-grid > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Dark variant — same grid but white-on-dark for petrol/teal sections */
+  .paper-grid-dark {
+    position: relative;
+    isolation: isolate;
+  }
+  .paper-grid-dark::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'><circle cx='10' cy='10' r='0.7' fill='white' opacity='0.08'/></svg>");
+    background-size: 20px 20px;
+    z-index: 0;
+  }
+  .paper-grid-dark > * {
+    position: relative;
+    z-index: 1;
+  }
 }
 
 /* ─── Container ─── */

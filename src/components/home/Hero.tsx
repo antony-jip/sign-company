@@ -1,346 +1,188 @@
 'use client'
 
-import { motion, useMotionValue, useTransform, useSpring, useScroll, AnimatePresence } from 'framer-motion'
-import { useRef, useState, useEffect, useCallback } from 'react'
+import { motion } from 'framer-motion'
+import { ArrowRight } from 'lucide-react'
+import ConstellationBackground from '@/components/ConstellationBackground'
+import SerifItalic from '@/components/SerifItalic'
+import HeroAppPreview from '@/components/home/HeroAppPreview'
+import { TrimCorners, MeasurementTag, FlameStamp } from '@/components/brand/BrandMarks'
 
-const FLOW = [
-  { label: 'Klant', color: '#3A6B8C' },
-  { label: 'Project', color: '#1A535C' },
-  { label: 'Offerte', color: '#F15025' },
-  { label: 'Portaal', color: '#6A5A8A' },
-  { label: 'Werkbon', color: '#9A5A48' },
-  { label: 'Planning', color: '#1A535C' },
-  { label: 'Factuur', color: '#2D6B48' },
-  { label: 'Gedaan', color: '#F15025' },
-]
+/**
+ * Hero — paul-factory + zeroheight inspired.
+ * Beige bg, soft tan blobs, MASSIVE uppercase display headline,
+ * playful staggered bounceUp entrance per word.
+ * Replace the placeholder photo block with:
+ *   <Image src="/images/hero/vakman.jpg" alt="..." fill className="object-cover" priority />
+ */
 
-// Scramble text effect
-function ScrambleText({ text, delay = 0 }: { text: string; delay?: number }) {
-  const [display, setDisplay] = useState('')
-  const [started, setStarted] = useState(false)
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
-
-  useEffect(() => {
-    const startTimeout = setTimeout(() => setStarted(true), delay)
-    return () => clearTimeout(startTimeout)
-  }, [delay])
-
-  useEffect(() => {
-    if (!started) return
-    let iteration = 0
-    const interval = setInterval(() => {
-      setDisplay(
-        text.split('').map((char, i) => {
-          if (char === ' ' || char === '.') return char
-          if (i < iteration) return text[i]
-          return chars[Math.floor(Math.random() * chars.length)]
-        }).join('')
-      )
-      iteration += 0.5
-      if (iteration >= text.length) clearInterval(interval)
-    }, 30)
-    return () => clearInterval(interval)
-  }, [started, text])
-
-  if (!started) return <span className="opacity-0">{text}</span>
-  return <>{display || text}</>
+// paul-factory bounceUp keyframe (Y+scale+skew+rotate)
+const bounceUp = {
+  hidden: { opacity: 0, y: 24, scale: 0.96, skewY: 3, rotate: 2 },
+  visible: { opacity: 1, y: 0, scale: 1, skewY: 0, rotate: 0 },
 }
 
-// Floating particles
-function Particles() {
-  return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {Array.from({ length: 30 }).map((_, i) => {
-        const size = Math.random() * 3 + 1
-        const x = Math.random() * 100
-        const y = Math.random() * 100
-        const duration = Math.random() * 20 + 15
-        const delay = Math.random() * 10
-        const isFlame = i % 7 === 0
-
-        return (
-          <motion.div
-            key={i}
-            className="absolute rounded-full"
-            style={{
-              width: size,
-              height: size,
-              left: `${x}%`,
-              top: `${y}%`,
-              backgroundColor: isFlame ? '#F15025' : 'white',
-            }}
-            animate={{
-              y: [0, -30, 0],
-              x: [0, Math.random() * 20 - 10, 0],
-              opacity: [0, isFlame ? 0.3 : 0.15, 0],
-            }}
-            transition={{
-              duration,
-              delay,
-              repeat: Infinity,
-              ease: 'easeInOut',
-            }}
-          />
-        )
-      })}
-    </div>
-  )
+const fadeUp = {
+  hidden: { opacity: 0, y: 16 },
+  visible: { opacity: 1, y: 0 },
 }
 
-// Animated flow with running highlight
-function FlowSteps() {
-  const [active, setActive] = useState(0)
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setActive(prev => (prev + 1) % FLOW.length)
-    }, 2000)
-    return () => clearInterval(interval)
-  }, [])
-
-  return (
-    <div className="flex items-center justify-center flex-wrap gap-1.5 md:gap-0">
-      {FLOW.map((step, i) => (
-        <div key={step.label} className="flex items-center">
-          <motion.span
-            className="text-[12px] md:text-[13px] font-medium px-3 py-1.5 rounded-full whitespace-nowrap transition-all duration-500"
-            animate={{
-              backgroundColor: i === active ? `${step.color}25` : 'rgba(255,255,255,0.03)',
-              color: i === active ? step.color : 'rgba(255,255,255,0.3)',
-              scale: i === active ? 1.08 : 1,
-            }}
-            style={{ fontWeight: i === active || i === FLOW.length - 1 ? 700 : 500 }}
-          >
-            {step.label}<span style={{ color: '#F15025', opacity: i === active ? 1 : 0.3 }}>.</span>
-          </motion.span>
-          {i < FLOW.length - 1 && (
-            <motion.svg
-              width="20" height="8" viewBox="0 0 20 8" fill="none"
-              className="mx-0.5 hidden md:block"
-              animate={{ opacity: i === active ? 0.4 : 0.08 }}
-              transition={{ duration: 0.3 }}
-            >
-              <path d="M0 4h16M14 1l3 3-3 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </motion.svg>
-          )}
-        </div>
-      ))}
-    </div>
-  )
-}
-
-// Counter that counts up
-function Counter({ value, suffix = '' }: { value: number; suffix?: string }) {
-  const [count, setCount] = useState(0)
-  const ref = useRef(null)
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      let start = 0
-      const duration = 2000
-      const startTime = Date.now()
-      const animate = () => {
-        const elapsed = Date.now() - startTime
-        const progress = Math.min(elapsed / duration, 1)
-        const eased = 1 - Math.pow(1 - progress, 3)
-        setCount(Math.floor(eased * value))
-        if (progress < 1) requestAnimationFrame(animate)
-      }
-      requestAnimationFrame(animate)
-    }, 1500)
-    return () => clearTimeout(timer)
-  }, [value])
-
-  return <>{count}{suffix}</>
-}
+const easing: [number, number, number, number] = [0.16, 1, 0.3, 1]
 
 export default function Hero() {
-  const sectionRef = useRef<HTMLElement>(null)
-  const mouseX = useMotionValue(0)
-  const mouseY = useMotionValue(0)
-
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ['start start', 'end start'],
-  })
-
-  const backgroundY = useTransform(scrollYProgress, [0, 1], ['0%', '30%'])
-  const contentOpacity = useTransform(scrollYProgress, [0, 0.5], [1, 0])
-  const contentY = useTransform(scrollYProgress, [0, 0.5], [0, -60])
-
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (!sectionRef.current) return
-    const rect = sectionRef.current.getBoundingClientRect()
-    mouseX.set((e.clientX - rect.left) / rect.width - 0.5)
-    mouseY.set((e.clientY - rect.top) / rect.height - 0.5)
-  }, [mouseX, mouseY])
-
-  const gradientX = useSpring(useTransform(mouseX, [-0.5, 0.5], [-15, 15]), { stiffness: 50, damping: 30 })
-  const gradientY = useSpring(useTransform(mouseY, [-0.5, 0.5], [-15, 15]), { stiffness: 50, damping: 30 })
-
   return (
     <section
       id="hero-section"
-      ref={sectionRef}
-      onMouseMove={handleMouseMove}
-      className="relative min-h-[100vh] flex items-center overflow-hidden"
-      style={{ background: 'linear-gradient(170deg, #0F3A42 0%, #1A535C 35%, #1F6068 65%, #1A535C 100%)' }}
+      className="relative overflow-hidden"
+      style={{ backgroundColor: '#F3F2ED' }}
     >
-      {/* Mouse-following gradient orb */}
-      <motion.div
-        className="absolute w-[800px] h-[800px] rounded-full pointer-events-none"
-        style={{
-          x: gradientX,
-          y: gradientY,
-          left: '50%',
-          top: '50%',
-          marginLeft: -400,
-          marginTop: -400,
-          background: 'radial-gradient(circle, rgba(241,80,37,0.06) 0%, transparent 70%)',
-        }}
+      {/* Soft blurred ambient blobs — edges dissolve, flow across section boundaries */}
+      <div
+        aria-hidden
+        className="absolute -top-32 -right-20 w-[560px] h-[560px] rounded-full pointer-events-none"
+        style={{ backgroundColor: '#E8E1D0', opacity: 0.65, filter: 'blur(80px)' }}
       />
-
-      {/* Floating particles */}
-      <Particles />
-
-      {/* Abstract forms with parallax */}
-      <motion.div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ y: backgroundY }}>
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8, rotate: -10 }}
-          animate={{ opacity: 0.06, scale: 1, rotate: 0 }}
-          transition={{ duration: 2, delay: 0.3 }}
-          className="absolute -top-20 -right-20 w-[600px] h-[600px]"
-        >
-          <svg viewBox="0 0 600 600" fill="none">
-            <path d="M 480 300 A 180 180 0 1 0 300 480" stroke="white" strokeWidth="40" strokeLinecap="round" />
-          </svg>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 0.04 }}
-          transition={{ duration: 2, delay: 0.6 }}
-          className="absolute bottom-10 -left-20 w-[400px] h-[400px]"
-        >
-          <svg viewBox="0 0 400 400" fill="none">
-            <path d="M 50 200 A 150 150 0 0 1 350 200" stroke="white" strokeWidth="30" strokeLinecap="round" />
-          </svg>
-        </motion.div>
-      </motion.div>
-
-      {/* Spectrum bar bottom */}
-      <motion.div
-        initial={{ scaleX: 0 }}
-        animate={{ scaleX: 1 }}
-        transition={{ duration: 1.5, delay: 1.5, ease: [0.16, 1, 0.3, 1] }}
-        className="absolute bottom-0 left-0 right-0 h-1 origin-left z-20"
-        style={{ background: 'linear-gradient(90deg, #1A535C, #3A6B8C, #6A5A8A, #9A5A48, #F15025)' }}
+      <div
+        aria-hidden
+        className="absolute top-[55%] -left-32 w-[460px] h-[460px] rounded-full pointer-events-none"
+        style={{ backgroundColor: '#E4DBC6', opacity: 0.55, filter: 'blur(80px)' }}
       />
+      {/* Subtle flame accent — adds warmth */}
+      <div
+        aria-hidden
+        className="absolute top-[20%] right-[15%] w-[280px] h-[280px] rounded-full pointer-events-none"
+        style={{ backgroundColor: '#F15025', opacity: 0.06, filter: 'blur(90px)' }}
+      />
+      {/* Constellation/network background — like the doen. app */}
+      <ConstellationBackground />
 
-      {/* Content with scroll parallax */}
-      <motion.div
-        className="container-site relative z-10 pt-32 pb-28 md:pt-40 md:pb-36"
-        style={{ opacity: contentOpacity, y: contentY }}
-      >
-        <div className="max-w-3xl mx-auto text-center">
+      {/* BRAND: trim corners (print registration marks) — signature of the craft */}
+      <TrimCorners inset={28} size={16} color="rgba(26,83,92,0.28)" />
 
-          {/* Badge */}
-          <motion.div
-            initial={{ opacity: 0, y: 15, filter: 'blur(10px)' }}
-            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-8"
-            style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}
-          >
-            <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: '#F15025' }} />
-            <span className="text-[12px] font-medium text-white/50">Nu beschikbaar. Eerste 30 dagen gratis.</span>
-          </motion.div>
+      {/* BRAND: massive flame stamp bleeding off bottom-right — doen. brand glyph */}
+      <FlameStamp size={420} opacity={0.05} style={{ bottom: -180, right: -180 }} />
 
-          {/* Headline with scramble */}
-          <h1 className="font-heading text-[48px] md:text-[72px] lg:text-[88px] font-bold tracking-[-4px] leading-[0.90] text-white mb-7">
-            <motion.span
-              className="block"
-              initial={{ opacity: 0, y: 40, filter: 'blur(10px)' }}
-              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-              transition={{ duration: 0.8, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+      <div className="container-site relative pt-32 pb-20 md:pt-44 md:pb-28">
+
+        <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-12 lg:gap-16 items-end">
+
+          {/* LEFT — text column */}
+          <div>
+            {/* Eyebrow tag — subtler, sits as a quiet brand-mark */}
+            <motion.div
+              initial="hidden"
+              animate="visible"
+              variants={fadeUp}
+              transition={{ duration: 0.5, delay: 0.05, ease: easing }}
+              className="inline-flex items-center gap-2 mb-7"
             >
-              <ScrambleText text="Jij maakt het" delay={300} /><span style={{ color: '#F15025' }}>.</span>
-            </motion.span>
-            <motion.span
-              className="block text-white/25"
-              initial={{ opacity: 0, y: 40, filter: 'blur(10px)' }}
-              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-              transition={{ duration: 0.8, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            >
-              doen<span style={{ color: '#F15025' }}>.</span> regelt de rest<span style={{ color: '#F15025' }}>.</span>
-            </motion.span>
-          </h1>
+              <span className="relative inline-flex items-center justify-center w-2 h-2">
+                <span
+                  className="absolute inset-0 rounded-full animate-ping"
+                  style={{ backgroundColor: '#F15025', opacity: 0.4 }}
+                />
+                <span className="relative w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#F15025' }} />
+              </span>
+              <span
+                className="font-mono text-[11px] font-medium tracking-[0.18em] uppercase"
+                style={{ color: '#6B6B66' }}
+              >
+                Nu beschikbaar · 30 dagen gratis
+              </span>
+            </motion.div>
 
-          {/* Subline */}
-          <motion.p
-            className="text-[18px] md:text-[21px] text-white/40 max-w-xl mx-auto leading-relaxed mb-10"
-            initial={{ opacity: 0, y: 20, filter: 'blur(8px)' }}
-            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-            transition={{ duration: 0.8, delay: 0.55, ease: [0.16, 1, 0.3, 1] }}
-          >
-            Alles-in-een voor <strong className="text-white/60">signmakers</strong> en creatieve maakbedrijven. Van eerste klantvraag tot oplevering.
-          </motion.p>
-
-          {/* Stats bar */}
-          <motion.div
-            className="flex items-center justify-center gap-8 md:gap-12 mb-10"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.7 }}
-          >
-            {[
-              { value: 10, suffix: '', label: 'modules' },
-              { value: 1, suffix: '', label: 'systeem' },
-              { value: 0, suffix: '', label: 'gedoe' },
-            ].map((stat, i) => (
-              <div key={stat.label} className="text-center">
-                <p className="font-heading text-[28px] md:text-[36px] font-bold text-white tracking-tight leading-none">
-                  <Counter value={stat.value} suffix={stat.suffix} />
-                </p>
-                <p className="text-[11px] text-white/25 mt-1">{stat.label}</p>
-              </div>
-            ))}
-          </motion.div>
-
-          {/* Signup */}
-          <motion.div
-            initial={{ opacity: 0, y: 20, filter: 'blur(8px)' }}
-            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-            transition={{ duration: 0.8, delay: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="max-w-md mx-auto flex flex-col items-center gap-4"
-          >
-            <a
-              href="https://app.doen.team/register"
-              className="inline-flex items-center justify-center gap-2 font-semibold text-[15px] text-white px-8 h-[56px] rounded-xl whitespace-nowrap transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+            {/* MASSIVE uppercase headline — bounceUp per line, staggered */}
+            <h1
+              className="font-heading font-bold tracking-[-2px] md:tracking-[-3px] leading-[0.95] mb-8 md:mb-10"
               style={{
-                backgroundColor: '#F15025',
-                boxShadow: '0 4px 14px rgba(241,80,37,0.3)',
+                fontSize: 'clamp(44px, 6vw, 92px)',
+                color: '#1A535C',
               }}
             >
-              <span>Start gratis</span>
-              <span aria-hidden>→</span>
-            </a>
-            <p className="text-[12px] text-white/20">
-              Eerste 30 dagen gratis. Geen creditcard nodig.
-            </p>
-          </motion.div>
+              <span className="block">Vakmanschap</span>
+              <span className="block" style={{ color: '#6B6B66' }}>
+                <SerifItalic style={{ letterSpacing: '-2px' }}>verdient</SerifItalic> beter
+              </span>
+              <span className="block">
+                gereedschap<span style={{ color: '#F15025' }}>.</span>
+              </span>
+            </h1>
 
-          {/* Flow steps with running highlight */}
+            <motion.p
+              initial="hidden"
+              animate="visible"
+              variants={fadeUp}
+              transition={{ duration: 0.6, delay: 0.5, ease: easing }}
+              className="text-[17px] md:text-[20px] leading-[1.55] max-w-lg mb-10 md:mb-12"
+              style={{ color: '#3F3F3A' }}
+            >
+              Software voor signmakers, gebouwd door iemand die zelf in de werkplaats stond.
+              Van eerste klantvraag tot betaalde factuur.
+            </motion.p>
+
+            <motion.div
+              initial="hidden"
+              animate="visible"
+              variants={fadeUp}
+              transition={{ duration: 0.6, delay: 0.62, ease: easing }}
+              className="flex flex-wrap items-center gap-5 md:gap-6"
+            >
+              <a
+                href="https://app.doen.team/register"
+                className="inline-flex items-center gap-2 text-[15px] font-semibold text-white px-7 h-[56px] rounded-[6px] transition-all duration-300 hover:scale-[1.03] active:scale-[0.97]"
+                style={{
+                  backgroundColor: '#F15025',
+                  boxShadow: '0 8px 24px rgba(241,80,37,0.28)',
+                }}
+              >
+                <span>Start gratis</span>
+                <ArrowRight className="w-4 h-4" strokeWidth={2.5} />
+              </a>
+              <a
+                href="/hoe-het-werkt"
+                className="inline-flex items-center gap-2 text-[15px] font-semibold transition-all group"
+                style={{ color: '#1A535C' }}
+              >
+                <span className="relative">
+                  Of zie hoe het werkt
+                  <span
+                    className="absolute left-0 -bottom-0.5 h-[2px] w-full origin-left scale-x-100 transition-transform duration-300 group-hover:scale-x-0"
+                    style={{ backgroundColor: '#1A535C' }}
+                  />
+                </span>
+                <span aria-hidden className="transition-transform duration-300 group-hover:translate-x-1">→</span>
+              </a>
+            </motion.div>
+
+            <motion.p
+              initial="hidden"
+              animate="visible"
+              variants={fadeUp}
+              transition={{ duration: 0.5, delay: 0.78, ease: easing }}
+              className="text-[12px] mt-6"
+              style={{ color: '#6B6B66' }}
+            >
+              Geen creditcard nodig. Maandelijks opzegbaar.
+            </motion.p>
+          </div>
+
+          {/* RIGHT — live app preview, stacked branded cards */}
           <motion.div
-            className="mt-16 md:mt-20"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 1, delay: 1.2 }}
+            initial={{ opacity: 0, y: 24, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.9, delay: 0.3, ease: easing }}
+            className="relative"
           >
-            <FlowSteps />
+            {/* Measurement tag above the preview — sign-maker craft signal */}
+            <div
+              className="absolute -top-6 left-0 right-0 flex justify-center pointer-events-none"
+              aria-hidden
+            >
+              <MeasurementTag label="Live preview · 4:5" width={160} />
+            </div>
+            <HeroAppPreview />
           </motion.div>
         </div>
-      </motion.div>
+      </div>
     </section>
   )
 }

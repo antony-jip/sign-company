@@ -1,102 +1,129 @@
 import Link from 'next/link'
+import { ArrowRight } from 'lucide-react'
 
 export default function Footer() {
   return (
-    <footer className="relative">
-      {/* Spectrum bar */}
-      <div className="h-[3px]" style={{ background: 'linear-gradient(90deg, #1A535C, #F15025)' }} />
+    <footer className="relative overflow-hidden" style={{ backgroundColor: '#0F3A42' }}>
+      {/* Dark blobs — match CTA section variant */}
+      <div aria-hidden className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div
+          className="absolute -top-20 -left-20 w-[460px] h-[460px] rounded-full"
+          style={{ backgroundColor: '#1A535C', opacity: 0.4, filter: 'blur(80px)' }}
+        />
+        <div
+          className="absolute -bottom-20 -right-20 w-[420px] h-[420px] rounded-full"
+          style={{ backgroundColor: '#1A535C', opacity: 0.35, filter: 'blur(90px)' }}
+        />
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 22 22'><circle cx='11' cy='11' r='0.7' fill='white' opacity='0.06'/></svg>")`,
+            backgroundSize: '22px 22px',
+          }}
+        />
+      </div>
 
-      <div style={{ backgroundColor: '#0F3A42' }}>
-        <div className="container-site py-16 md:py-20">
+      <div className="container-site relative py-16 md:py-20">
 
-          {/* Top: logo + tagline */}
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-14">
-            <div>
-              <div className="font-heading text-[32px] font-bold text-white tracking-tight leading-none mb-2">
-                doen<span style={{ color: '#F15025' }}>.</span>
-              </div>
-              <p className="text-[15px] text-white/30">
-                De kracht achter doeners<span style={{ color: '#F15025', opacity: 0.5 }}>.</span>
-              </p>
+        {/* Top: wordmark + CTA */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-14">
+          <div>
+            <div className="font-heading text-[40px] md:text-[48px] font-bold text-white tracking-tighter leading-none mb-2">
+              doen<span style={{ color: '#F15025' }}>.</span>
             </div>
-            <div>
-              <a
-                href="https://app.doen.team/register"
-                className="inline-flex items-center gap-2 text-[14px] font-semibold text-white px-6 py-3 rounded-lg transition-all duration-200 hover:scale-[1.02]"
-                style={{ backgroundColor: '#F15025' }}
-              >
-                Start gratis
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7h8M8 4l3 3-3 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-              </a>
-            </div>
+            <p
+              className="text-[15px] mt-3"
+              style={{
+                color: 'rgba(255,255,255,0.6)',
+                fontFamily: '"Instrument Serif", var(--font-instrument-serif), Georgia, serif',
+                fontStyle: 'italic',
+                fontWeight: 400,
+              }}
+            >
+              De kracht achter doeners<span style={{ color: '#F15025' }}>.</span>
+            </p>
           </div>
+          <a
+            href="https://app.doen.team/register"
+            className="inline-flex items-center justify-center gap-2 font-mono text-[12px] font-bold tracking-[0.2em] uppercase text-white px-7 h-[52px] rounded-[6px] transition-all duration-200 hover:scale-[1.03] active:scale-[0.97] self-start md:self-end"
+            style={{
+              backgroundColor: '#F15025',
+              boxShadow: '0 8px 24px rgba(241,80,37,0.32)',
+            }}
+          >
+            <span>Start gratis</span>
+            <ArrowRight className="w-4 h-4" strokeWidth={2.5} />
+          </a>
+        </div>
 
-          {/* Links grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-14">
-            <div>
-              <h4 className="font-mono text-[11px] font-bold text-white/40 uppercase tracking-[0.15em] mb-4">Product</h4>
+        {/* Links grid */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-14">
+          {[
+            {
+              title: 'Product',
+              items: [
+                { href: '/features', label: 'Cockpit' },
+                { href: '/prijzen', label: 'Prijzen' },
+                { href: '/hoe-het-werkt', label: 'Hoe het werkt' },
+              ],
+            },
+            {
+              title: 'Modules',
+              items: [
+                { href: '/features', label: 'Projecten' },
+                { href: '/features', label: 'Offertes' },
+                { href: '/features', label: 'Klantportaal' },
+                { href: '/features', label: 'Planning' },
+              ],
+            },
+            {
+              title: 'Bedrijf',
+              items: [
+                { href: '/over', label: 'Waarom doen.' },
+                { href: '/kennisbank', label: 'Kennisbank' },
+                { href: '/contact', label: 'Contact' },
+              ],
+            },
+            {
+              title: 'Contact',
+              items: [
+                { href: 'mailto:hello@doen.team', label: 'hello@doen.team' },
+              ],
+            },
+          ].map((col) => (
+            <div key={col.title}>
+              <h4 className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] mb-5" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                {col.title}
+              </h4>
               <ul className="space-y-3">
-                {[
-                  { href: '/features', label: 'Cockpit' },
-                  { href: '/prijzen', label: 'Prijzen' },
-                ].map((link) => (
-                  <li key={link.href}>
-                    <Link href={link.href} className="text-[14px] text-white/40 hover:text-white transition-colors duration-200">
+                {col.items.map((link) => (
+                  <li key={link.label}>
+                    <Link
+                      href={link.href}
+                      className="text-[14px] transition-colors duration-200 hover:text-white"
+                      style={{ color: 'rgba(255,255,255,0.65)' }}
+                    >
                       {link.label}
                     </Link>
                   </li>
                 ))}
               </ul>
             </div>
-            <div>
-              <h4 className="font-mono text-[11px] font-bold text-white/40 uppercase tracking-[0.15em] mb-4">Modules</h4>
-              <ul className="space-y-3">
-                {['Projecten', 'Offertes', 'Klantportaal', 'Planning'].map((m) => (
-                  <li key={m}>
-                    <Link href="/features" className="text-[14px] text-white/40 hover:text-white transition-colors duration-200">
-                      {m}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-mono text-[11px] font-bold text-white/40 uppercase tracking-[0.15em] mb-4">Bedrijf</h4>
-              <ul className="space-y-3">
-                {[
-                  { href: '/over', label: 'Waarom doen.' },
-                  { href: '/kennisbank', label: 'Kennisbank' },
-                  { href: '/contact', label: 'Contact' },
-                ].map((link) => (
-                  <li key={link.href}>
-                    <Link href={link.href} className="text-[14px] text-white/40 hover:text-white transition-colors duration-200">
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-mono text-[11px] font-bold text-white/40 uppercase tracking-[0.15em] mb-4">Contact</h4>
-              <ul className="space-y-3">
-                <li>
-                  <a href="mailto:hello@doen.team" className="text-[14px] text-white/40 hover:text-white transition-colors duration-200">
-                    hello@doen.team
-                  </a>
-                </li>
-              </ul>
-            </div>
-          </div>
+          ))}
+        </div>
 
-          {/* Bottom bar */}
-          <div className="pt-6 flex flex-col md:flex-row items-center justify-between gap-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-            <p className="text-[12px] text-white/20">
-              &copy; {new Date().getFullYear()} doen<span style={{ color: '#F15025', opacity: 0.4 }}>.</span> Alle rechten voorbehouden.
-            </p>
-            <p className="text-[12px] text-white/15">
-              Vakmanschap verdient beter gereedschap<span style={{ color: '#F15025', opacity: 0.3 }}>.</span>
-            </p>
-          </div>
+        {/* Bottom bar */}
+        <div
+          className="pt-6 flex flex-col md:flex-row items-center justify-between gap-3 font-mono text-[10px] tracking-[0.18em] uppercase"
+          style={{
+            borderTop: '1px solid rgba(255,255,255,0.08)',
+            color: 'rgba(255,255,255,0.35)',
+          }}
+        >
+          <p>
+            &copy; {new Date().getFullYear()} doen<span style={{ color: '#F15025' }}>.</span> Alle rechten voorbehouden
+          </p>
+          <p>Vakmanschap verdient beter gereedschap<span style={{ color: '#F15025' }}>.</span></p>
         </div>
       </div>
     </footer>

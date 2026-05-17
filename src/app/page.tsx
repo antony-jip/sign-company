@@ -1,12 +1,14 @@
 import Navbar from '@/components/Navbar'
 import Hero from '@/components/home/Hero'
+import ValueProps from '@/components/home/ValueProps'
 import ProcesVisual from '@/components/home/ProcesVisual'
 import ModulesCarousel from '@/components/home/ModulesCarousel'
-import ValueProps from '@/components/home/ValueProps'
-import VisualizerSection from '@/components/home/VisualizerSection'
+import SocialProof from '@/components/home/SocialProof'
 import PricingSection from '@/components/home/PricingSection'
+import FaqSection from '@/components/home/FaqSection'
 import CTASection from '@/components/home/CTASection'
 import Footer from '@/components/Footer'
+import SignTypesStrip from '@/components/SignTypesStrip'
 
 export default function Home() {
   return (
@@ -14,11 +16,13 @@ export default function Home() {
       <Navbar />
       <main id="main-content">
         <Hero />
-        <ProcesVisual />
         <ModulesCarousel />
+        <SignTypesStrip />
+        <ProcesVisual />
         <ValueProps />
-        <VisualizerSection />
+        <SocialProof />
         <PricingSection />
+        <FaqSection />
         <CTASection />
       </main>
       <Footer />

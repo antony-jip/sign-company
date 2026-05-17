@@ -112,7 +112,12 @@ const modules = [
 
 function PortaalDemo() {
   return (
-    <div style={{ background: '#0D2B30' }}>
+    <div style={{ backgroundColor: '#F3F2ED', position: 'relative', overflow: 'hidden' }}>
+      <div aria-hidden style={{position:'absolute',inset:0,overflow:'hidden',pointerEvents:'none'}}>
+        <div style={{position:'absolute',top:'-80px',right:'-80px',width:'500px',height:'500px',borderRadius:'50%',backgroundColor:'#E8E1D0',opacity:0.6,filter:'blur(80px)'}} />
+        <div style={{position:'absolute',bottom:'-80px',left:'-80px',width:'460px',height:'460px',borderRadius:'50%',backgroundColor:'#E4DBC6',opacity:0.5,filter:'blur(90px)'}} />
+      </div>
+      <div style={{position:'relative'}}>
       <div className="container-site py-16 md:py-24">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-20 items-center">
           <motion.div
@@ -124,10 +129,10 @@ function PortaalDemo() {
             <p className="font-mono text-[9px] font-bold tracking-[0.25em] uppercase" style={{ color: '#F15025' }}>
               Zo ziet je klant het
             </p>
-            <h2 className="text-[24px] md:text-[32px] font-bold text-white tracking-tight mt-2 mb-5">
+            <h2 className="text-[24px] md:text-[32px] font-bold tracking-tight mt-2 mb-5" style={{ color: '#1A535C' }}>
               Eén link<span className="text-flame">.</span> Alles erin<span className="text-flame">.</span>
             </h2>
-            <p className="text-[14px] md:text-[16px] leading-[1.7]" style={{ color: 'rgba(255,255,255,0.5)' }}>
+            <p className="text-[14px] md:text-[16px] leading-[1.7]" style={{ color: '#3F3F3A' }}>
               Je klant opent de link en ziet alles in chronologische volgorde. Tekeningen, offertes, opdrachtbevestigingen, facturen en foto's. Reageren kan direct. Geen inlog, geen app, geen gedoe.
             </p>
             <a
@@ -155,7 +160,7 @@ function PortaalDemo() {
               </div>
 
               {/* Info bar */}
-              <div className="px-5 py-2.5 text-[12px] border-b border-[#E6E4E0]" style={{ backgroundColor: '#FAFAF8', color: '#5A5A55' }}>
+              <div className="px-5 py-2.5 text-[12px] border-b border-[#E6E4E0]" style={{ backgroundColor: '#F3F2ED', color: '#5A5A55' }}>
                 Bekijk de items hieronder en geef uw reactie.
               </div>
 
@@ -167,7 +172,7 @@ function PortaalDemo() {
                     <span className="text-[13px] font-semibold text-[#191919]">De Vries Reclame</span>
                     <span className="font-mono text-[10px] text-[#A0A098]">1 apr, 09:15</span>
                   </div>
-                  <div className="bg-[#FAFAF8] rounded-lg p-3 mb-2 flex items-center gap-3">
+                  <div className="bg-[#F3F2ED] rounded-lg p-3 mb-2 flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#EEE8F5' }}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6A5A8A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M14.5 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V7.5L14.5 2z" />
@@ -268,6 +273,7 @@ function PortaalDemo() {
           </motion.div>
         </div>
       </div>
+      </div>
     </div>
   )
 }
@@ -276,7 +282,12 @@ function WerktekeningSection() {
   const [showResult, setShowResult] = useState(false)
 
   return (
-    <div style={{ background: '#0D2B30' }}>
+    <div style={{ backgroundColor: '#F3F2ED', position: 'relative', overflow: 'hidden' }}>
+      <div aria-hidden style={{position:'absolute',inset:0,overflow:'hidden',pointerEvents:'none'}}>
+        <div style={{position:'absolute',top:'-80px',right:'-80px',width:'500px',height:'500px',borderRadius:'50%',backgroundColor:'#E8E1D0',opacity:0.6,filter:'blur(80px)'}} />
+        <div style={{position:'absolute',bottom:'-80px',left:'-80px',width:'460px',height:'460px',borderRadius:'50%',backgroundColor:'#E4DBC6',opacity:0.5,filter:'blur(90px)'}} />
+      </div>
+      <div style={{position:'relative'}}>
       <div className="container-site py-16 md:py-24">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-20 items-center">
           <motion.div
@@ -288,10 +299,10 @@ function WerktekeningSection() {
             <p className="font-mono text-[9px] font-bold tracking-[0.25em] uppercase" style={{ color: '#F15025' }}>
               Werktekening
             </p>
-            <h2 className="text-[24px] md:text-[32px] font-bold text-white tracking-tight mt-2 mb-5">
+            <h2 className="text-[24px] md:text-[32px] font-bold tracking-tight mt-2 mb-5" style={{ color: '#1A535C' }}>
               Upload je tekening<span className="text-flame">.</span> doen<span className="text-flame">.</span> doet de rest<span className="text-flame">.</span>
             </h2>
-            <p className="text-[14px] md:text-[16px] leading-[1.7]" style={{ color: 'rgba(255,255,255,0.5)' }}>
+            <p className="text-[14px] md:text-[16px] leading-[1.7]" style={{ color: '#3F3F3A' }}>
               Sleep je werktekening in de offerte. De omschrijving van de offerteregel wordt automatisch overgenomen als titel. Je klant ziet een professionele tekening met uitleg. Geen Illustrator nodig.
             </p>
             <a
@@ -316,8 +327,8 @@ function WerktekeningSection() {
                 onClick={() => setShowResult(false)}
                 className="font-mono text-[10px] font-bold tracking-[0.1em] uppercase px-4 py-2 rounded-full transition-all duration-300"
                 style={{
-                  backgroundColor: !showResult ? '#F15025' : 'rgba(255,255,255,0.08)',
-                  color: !showResult ? '#fff' : 'rgba(255,255,255,0.4)',
+                  backgroundColor: !showResult ? '#F15025' : 'rgba(26,83,92,0.08)',
+                  color: !showResult ? '#fff' : '#6B6B66',
                 }}
               >
                 Upload
@@ -326,8 +337,8 @@ function WerktekeningSection() {
                 onClick={() => setShowResult(true)}
                 className="font-mono text-[10px] font-bold tracking-[0.1em] uppercase px-4 py-2 rounded-full transition-all duration-300"
                 style={{
-                  backgroundColor: showResult ? '#F15025' : 'rgba(255,255,255,0.08)',
-                  color: showResult ? '#fff' : 'rgba(255,255,255,0.4)',
+                  backgroundColor: showResult ? '#F15025' : 'rgba(26,83,92,0.08)',
+                  color: showResult ? '#fff' : '#6B6B66',
                 }}
               >
                 Resultaat
@@ -444,6 +455,7 @@ function WerktekeningSection() {
             </AnimatePresence>
           </motion.div>
         </div>
+      </div>
       </div>
     </div>
   )
@@ -598,89 +610,90 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
     <div className={showHero ? '' : 'pt-28 md:pt-36'}>
       {showHero ? (
         <section>
-          {/* Dark hero block — full bleed */}
-          <div className="relative overflow-hidden min-h-[90vh] md:min-h-[100vh] flex flex-col" style={{ background: 'linear-gradient(180deg, #0D2B30 0%, #143F46 25%, #1A535C 50%, #143F46 85%, #0D2B30 100%)' }}>
+          {/* Light hero block — beige bg, Hero-style chrome */}
+          <div className="relative overflow-hidden min-h-[80vh] md:min-h-[90vh] flex flex-col" style={{ backgroundColor: '#F3F2ED' }}>
 
-            {/* Animated glow orbs — flame dominant */}
-            <motion.div
-              className="absolute pointer-events-none"
-              style={{ width: '800px', height: '800px', top: '25%', left: '50%', x: '-50%', background: 'radial-gradient(circle, rgba(241,80,37,0.18) 0%, rgba(241,80,37,0.05) 40%, transparent 70%)', filter: 'blur(80px)' }}
-              animate={{ scale: [1, 1.15, 1], opacity: [0.5, 1, 0.5] }}
-              transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
-            />
-            <motion.div
-              className="absolute pointer-events-none"
-              style={{ width: '500px', height: '500px', top: '45%', left: '15%', background: 'radial-gradient(circle, rgba(241,80,37,0.12) 0%, transparent 60%)', filter: 'blur(70px)' }}
-              animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.7, 0.3] }}
-              transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
-            />
-            <motion.div
-              className="absolute pointer-events-none"
-              style={{ width: '500px', height: '500px', top: '40%', right: '10%', background: 'radial-gradient(circle, rgba(241,80,37,0.14) 0%, transparent 60%)', filter: 'blur(70px)' }}
-              animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0.8, 0.3] }}
-              transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut', delay: 4 }}
-            />
-            {/* Subtle warm ambient under the laptop */}
-            <div
-              className="absolute pointer-events-none"
-              style={{ width: '100%', height: '400px', bottom: '5%', left: 0, background: 'radial-gradient(ellipse 50% 80% at 50% 100%, rgba(241,80,37,0.08) 0%, transparent 70%)' }}
-            />
-
-            {/* Floating particles */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-              {Array.from({ length: 20 }).map((_, i) => (
-                <motion.div
-                  key={i}
-                  className="absolute rounded-full"
-                  style={{
-                    width: i % 4 === 0 ? 3 : 2,
-                    height: i % 4 === 0 ? 3 : 2,
-                    left: `${(i * 5.3 + 3) % 100}%`,
-                    top: `${(i * 7.1 + 10) % 90}%`,
-                    backgroundColor: i % 3 === 0 ? '#F15025' : 'rgba(255,255,255,0.2)',
-                  }}
-                  animate={{
-                    y: [0, -30, 0],
-                    opacity: [0.2, 0.7, 0.2],
-                  }}
-                  transition={{
-                    duration: 4 + (i % 3) * 2,
-                    repeat: Infinity,
-                    ease: 'easeInOut',
-                    delay: i * 0.3,
-                  }}
-                />
-              ))}
+            {/* Backdrop layer — scoped overflow-hidden so it doesn't break sticky descendants */}
+            <div aria-hidden className="absolute inset-0 overflow-hidden pointer-events-none">
+              <div
+                className="absolute -top-32 -right-20 w-[640px] h-[640px] rounded-full"
+                style={{ backgroundColor: '#E8E1D0', opacity: 0.6, filter: 'blur(80px)' }}
+              />
+              <div
+                className="absolute top-[55%] -left-32 w-[480px] h-[480px] rounded-full"
+                style={{ backgroundColor: '#E4DBC6', opacity: 0.5, filter: 'blur(90px)' }}
+              />
+              <div
+                className="absolute top-[25%] right-[15%] w-[320px] h-[320px] rounded-full"
+                style={{ backgroundColor: '#F15025', opacity: 0.06, filter: 'blur(100px)' }}
+              />
+              {/* Subtle dot pattern */}
+              <div
+                className="absolute inset-0"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 22 22'><circle cx='11' cy='11' r='0.7' fill='%231A1A1A' opacity='0.08'/></svg>")`,
+                  backgroundSize: '22px 22px',
+                }}
+              />
             </div>
 
-            {/* Grid pattern overlay */}
-            <div
-              className="absolute inset-0 pointer-events-none opacity-[0.03]"
-              style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.3) 1px, transparent 1px)', backgroundSize: '60px 60px' }}
-            />
-
             {/* Text content */}
-            <div className="container-site text-center pt-40 md:pt-48 relative z-10">
-              <motion.p
-                className="font-mono text-[11px] md:text-[12px] font-bold tracking-[0.3em] uppercase mb-6"
-                style={{ color: '#F15025' }}
+            <div className="container-site text-center pt-32 md:pt-40 relative z-10">
+              {/* Coming soon badge — for modules niet live */}
+              {moduleSlug === 'visualizer' && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.85, rotate: -8 }}
+                  animate={{ opacity: 1, scale: 1, rotate: -3 }}
+                  transition={{ duration: 0.7, type: 'spring', stiffness: 180, damping: 14 }}
+                  className="inline-flex items-center gap-2 px-4 py-2 mb-6 rounded-[4px]"
+                  style={{
+                    backgroundColor: '#1A1A1A',
+                    boxShadow: '0 6px 18px rgba(0,0,0,0.18)',
+                  }}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#F15025' }} />
+                  <span className="font-mono text-[10px] font-bold tracking-[0.22em] uppercase text-white">
+                    Binnenkort beschikbaar
+                  </span>
+                </motion.div>
+              )}
+
+              {/* Eyebrow — Hero pattern with ping dot */}
+              <motion.div
+                className="inline-flex items-center gap-2 mb-7"
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
               >
-                {heroConfig!.label}
-              </motion.p>
+                <span className="relative inline-flex items-center justify-center w-2 h-2">
+                  <span className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: '#F15025', opacity: 0.45 }} />
+                  <span className="relative w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#F15025' }} />
+                </span>
+                <span className="font-mono text-[11px] font-medium tracking-[0.22em] uppercase" style={{ color: '#6B6B66' }}>
+                  {heroConfig!.label}
+                </span>
+              </motion.div>
+
               <motion.h1
-                className="font-heading text-[44px] md:text-[64px] lg:text-[76px] font-extrabold tracking-[-3px] leading-[0.9] mb-7 text-white"
+                className="font-heading font-bold tracking-[-2px] md:tracking-[-3px] leading-[0.92] mb-7"
+                style={{ fontSize: 'clamp(40px, 5.5vw, 76px)', color: '#1A535C' }}
                 initial={{ opacity: 0, y: 25 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
               >
-                {heroConfig!.heading[0]}<span className="text-flame">.</span><br />{' '}{heroConfig!.heading[1]}<span className="text-flame">.</span>
+                <span className="block">{heroConfig!.heading[0]}<span className="text-flame">.</span></span>
+                <span className="block" style={{ color: '#6B6B66' }}>
+                  <span style={{ fontFamily: '"Instrument Serif", var(--font-instrument-serif), Georgia, serif', fontStyle: 'italic', fontWeight: 400 }}>
+                    {heroConfig!.heading[1].split(' ')[0]}
+                  </span>
+                  {heroConfig!.heading[1].split(' ').length > 1 ? ' ' + heroConfig!.heading[1].split(' ').slice(1).join(' ') : ''}
+                  <span className="text-flame">.</span>
+                </span>
               </motion.h1>
+
               <motion.p
-                className="text-[16px] md:text-[19px] max-w-lg mx-auto leading-relaxed mb-10 md:mb-14"
-                style={{ color: 'rgba(255,255,255,0.5)' }}
+                className="text-[16px] md:text-[19px] max-w-lg mx-auto leading-[1.55] mb-10 md:mb-14"
+                style={{ color: '#3F3F3A' }}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
@@ -706,7 +719,7 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
                     <span
                       key={item.label}
                       className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-[12px] font-medium"
-                      style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.1)' }}
+                      style={{ backgroundColor: 'rgba(26,83,92,0.06)', color: '#1A535C', border: '1px solid rgba(26,83,92,0.15)' }}
                     >
                       {item.icon}
                       {item.label}
@@ -1111,7 +1124,7 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
                         /* Planning team overzicht mockup — nagebouwd uit de app */
                         <div className="bg-white rounded-xl overflow-hidden" style={{ filter: 'drop-shadow(0 25px 60px rgba(0,0,0,0.5)) drop-shadow(0 8px 25px rgba(241,80,37,0.15))', width: '420px' }}>
                           {/* Top bar — tabs */}
-                          <div className="px-4 py-2.5 border-b border-[#E6E4E0] flex items-center justify-between bg-[#FAFAF8]">
+                          <div className="px-4 py-2.5 border-b border-[#E6E4E0] flex items-center justify-between bg-[#F3F2ED]">
                             <div className="flex items-center gap-4">
                               <span className="text-[10px] text-[#A0A098]">Kalender</span>
                               <span className="text-[10px] font-semibold text-[#191919] border-b-2 border-[#9A5A48] pb-0.5">Montage</span>
@@ -1124,7 +1137,7 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
                           {/* Team sidebar + grid */}
                           <div className="flex">
                             {/* Sidebar */}
-                            <div className="w-[100px] border-r border-[#E6E4E0] bg-[#FAFAF8]">
+                            <div className="w-[100px] border-r border-[#E6E4E0] bg-[#F3F2ED]">
                               <div className="px-3 py-2 border-b border-[#E6E4E0]">
                                 <span className="text-[8px] font-bold uppercase tracking-wider text-[#A0A098]">Team</span>
                               </div>
@@ -1224,7 +1237,7 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
                                 </div>
                               ))}
                               {/* Footer */}
-                              <div className="px-3 py-1.5 border-t border-[#E6E4E0] bg-[#FAFAF8]">
+                              <div className="px-3 py-1.5 border-t border-[#E6E4E0] bg-[#F3F2ED]">
                                 <span className="text-[8px] text-[#A0A098]">5 montages deze week</span>
                               </div>
                             </div>
@@ -1296,20 +1309,25 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
             )}
 
             {/* Bottom fade into page */}
-            <div className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none z-20" style={{ background: 'linear-gradient(to top, #0D2B30 0%, transparent 100%)' }} />
+            <div className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none z-20" style={{ background: 'linear-gradient(to top, #F3F2ED 0%, transparent 100%)' }} />
 
             {/* Spectrum bar */}
             <div className="absolute bottom-0 left-0 right-0 h-[3px] z-30" style={{ background: 'linear-gradient(90deg, #F15025 0%, #D4453A 18%, #9A4070 38%, #6A5A8A 50%, #3A6B8C 65%, #2D6B48 80%, #1A535C 100%)' }} />
           </div>
 
           {/* Three pillars section */}
-          {heroConfig!.pillars && <div style={{ background: '#0D2B30' }}>
+          {heroConfig!.pillars && <div style={{ backgroundColor: '#F3F2ED', position: 'relative', overflow: 'hidden' }}>
+            <div aria-hidden style={{position:'absolute',inset:0,overflow:'hidden',pointerEvents:'none'}}>
+              <div style={{position:'absolute',top:'-80px',right:'-80px',width:'500px',height:'500px',borderRadius:'50%',backgroundColor:'#E8E1D0',opacity:0.6,filter:'blur(80px)'}} />
+              <div style={{position:'absolute',bottom:'-80px',left:'-80px',width:'460px',height:'460px',borderRadius:'50%',backgroundColor:'#E4DBC6',opacity:0.5,filter:'blur(90px)'}} />
+            </div>
+            <div style={{position:'relative'}}>
             <div className="container-site py-16 md:py-24">
               <SectionReveal>
                 <p className="font-mono text-[11px] md:text-[12px] font-bold tracking-[0.3em] uppercase text-center mb-3" style={{ color: '#F15025' }}>
                   {heroConfig!.pillarsTitle}
                 </p>
-                <h2 className="font-heading text-[28px] md:text-[36px] font-bold text-white tracking-[-1.5px] text-center mb-14 md:mb-20">
+                <h2 className="font-heading text-[28px] md:text-[36px] font-bold tracking-[-1.5px] text-center mb-14 md:mb-20" style={{ color: '#1A535C' }}>
                   {heroConfig!.pillarsHeading![0]}<span className="text-flame">.</span> {heroConfig!.pillarsHeading![1]}<span className="text-flame">.</span>
                 </h2>
               </SectionReveal>
@@ -1324,25 +1342,51 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
                     transition={{ duration: 0.6, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
                   >
                     <div
-                      className="rounded-xl overflow-hidden h-[280px] md:h-[320px] flex items-center justify-center p-8"
-                      style={{ backgroundColor: '#143F46' }}
+                      className="rounded-xl overflow-hidden h-[280px] md:h-[320px] flex items-center justify-center p-8 relative group"
+                      style={{
+                        backgroundColor: '#F0E9D7',
+                        border: '1px solid rgba(26,83,92,0.10)',
+                        boxShadow: '0 4px 14px rgba(40,30,20,0.08), inset 0 1px 0 rgba(255,255,255,0.5)',
+                      }}
                     >
+                      {/* Top flame accent bar — brand status strip */}
+                      <div
+                        aria-hidden
+                        className="absolute top-0 left-0 right-0 h-[3px]"
+                        style={{ backgroundColor: '#F15025' }}
+                      />
+                      {/* Soft radial highlight for depth */}
+                      <div
+                        aria-hidden
+                        className="absolute inset-0 pointer-events-none"
+                        style={{
+                          background: 'radial-gradient(ellipse at 30% 20%, rgba(255,255,255,0.4) 0%, transparent 55%)',
+                        }}
+                      />
+                      {/* Mono numeral top-right */}
+                      <span
+                        aria-hidden
+                        className="absolute top-3 right-4 font-mono text-[10px] font-bold tracking-[0.18em] tabular-nums"
+                        style={{ color: 'rgba(26,83,92,0.45)' }}
+                      >
+                        {String(i + 1).padStart(2, '0')}
+                      </span>
                       <Image
                         src={item.image}
                         alt={item.alt}
                         width={item.width}
                         height={item.height}
-                        className="w-full h-full object-contain drop-shadow-[0_8px_24px_rgba(0,0,0,0.3)]"
+                        className="w-full h-full object-contain relative transition-transform duration-700 ease-out group-hover:scale-[1.08]"
                       />
                     </div>
                     <div className="mt-5">
                       <p className="font-mono text-[9px] font-bold tracking-[0.25em] uppercase" style={{ color: '#F15025' }}>
                         {item.label}
                       </p>
-                      <h3 className="text-[17px] md:text-[19px] font-bold text-white tracking-tight mt-1.5">
+                      <h3 className="text-[17px] md:text-[19px] font-bold tracking-tight mt-1.5" style={{ color: '#1A535C' }}>
                         {item.title}<span className="text-flame">.</span>
                       </h3>
-                      <p className="text-[13px] md:text-[14px] leading-[1.7] mt-2" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                      <p className="text-[13px] md:text-[14px] leading-[1.7] mt-2" style={{ color: '#3F3F3A' }}>
                         {item.description}
                       </p>
                     </div>
@@ -1366,10 +1410,11 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
                   Start gratis
                   <span className="text-[16px]">→</span>
                 </a>
-                <p className="text-[12px] mt-3" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                <p className="text-[12px] mt-3" style={{ color: '#6B6B66' }}>
                   30 dagen gratis. Geen creditcard nodig.
                 </p>
               </motion.div>
+            </div>
             </div>
           </div>}
 
@@ -1385,13 +1430,18 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
 
           {/* Visualizer flow — input → processing → output */}
           {moduleSlug === 'visualizer' && (
-            <div style={{ background: 'linear-gradient(180deg, #0D2B30 0%, #1A1A18 100%)' }}>
+            <div style={{ backgroundColor: '#F3F2ED', position: 'relative', overflow: 'hidden' }}>
+              <div aria-hidden style={{position:'absolute',inset:0,overflow:'hidden',pointerEvents:'none'}}>
+                <div style={{position:'absolute',top:'-80px',right:'-80px',width:'500px',height:'500px',borderRadius:'50%',backgroundColor:'#E8E1D0',opacity:0.6,filter:'blur(80px)'}} />
+                <div style={{position:'absolute',bottom:'-80px',left:'-80px',width:'460px',height:'460px',borderRadius:'50%',backgroundColor:'#E4DBC6',opacity:0.5,filter:'blur(90px)'}} />
+              </div>
+              <div style={{position:'relative'}}>
               <div className="container-site py-16 md:py-24">
                 <SectionReveal>
                   <p className="font-mono text-[11px] md:text-[12px] font-bold tracking-[0.3em] uppercase text-center mb-3" style={{ color: '#F15025' }}>
                     Hoe het werkt
                   </p>
-                  <h2 className="font-heading text-[28px] md:text-[36px] font-bold text-white tracking-[-1.5px] text-center mb-14 md:mb-20">
+                  <h2 className="font-heading text-[28px] md:text-[36px] font-bold tracking-[-1.5px] text-center mb-14 md:mb-20" style={{ color: '#1A535C' }}>
                     Foto erin<span className="text-flame">.</span> Visualisatie eruit<span className="text-flame">.</span>
                   </h2>
                 </SectionReveal>
@@ -1404,23 +1454,23 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
                     viewport={{ once: true, margin: '-60px' }}
                     transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
                   >
-                    <div className="rounded-xl p-6 h-[200px] md:h-[220px] flex items-center justify-center" style={{ background: 'linear-gradient(145deg, rgba(241,80,37,0.12), rgba(241,80,37,0.04))' }}>
+                    <div className="rounded-xl p-6 h-[200px] md:h-[220px] flex items-center justify-center" style={{ backgroundColor: '#ffffff', border: '1px solid rgba(26,83,92,0.08)', boxShadow: '0 4px 16px rgba(26,83,92,0.06)' }}>
                       <div className="text-center">
                         <div className="w-14 h-14 rounded-xl mx-auto mb-3 flex items-center justify-center" style={{ backgroundColor: 'rgba(241,80,37,0.15)' }}>
                           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F15025" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                             <rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" />
                           </svg>
                         </div>
-                        <p className="text-[13px] font-bold text-white">Upload je foto</p>
-                        <p className="text-[11px] text-white/40 mt-1">Bus, gevel, pand of schets</p>
+                        <p className="text-[13px] font-bold" style={{ color: '#1A1A1A' }}>Upload je foto</p>
+                        <p className="text-[11px] mt-1" style={{ color: '#6B6B66' }}>Bus, gevel, pand of schets</p>
                       </div>
                     </div>
                     <div className="mt-5">
                       <p className="font-mono text-[9px] font-bold tracking-[0.25em] uppercase" style={{ color: '#F15025' }}>Input</p>
-                      <h3 className="text-[17px] md:text-[19px] font-bold text-white tracking-tight mt-1.5">
+                      <h3 className="text-[17px] md:text-[19px] font-bold tracking-tight mt-1.5" style={{ color: '#1A535C' }}>
                         Foto en beschrijving<span className="text-flame">.</span>
                       </h3>
-                      <p className="text-[13px] md:text-[14px] leading-[1.7] mt-2" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                      <p className="text-[13px] md:text-[14px] leading-[1.7] mt-2" style={{ color: '#3F3F3A' }}>
                         Upload een foto van het voertuig, de gevel of het pand. Beschrijf wat je wilt zien. Kies de ratio en resolutie.
                       </p>
                     </div>
@@ -1433,23 +1483,23 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
                     viewport={{ once: true, margin: '-60px' }}
                     transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
                   >
-                    <div className="rounded-xl p-6 h-[200px] md:h-[220px] flex items-center justify-center" style={{ background: 'linear-gradient(145deg, rgba(26,83,92,0.15), rgba(26,83,92,0.05))' }}>
+                    <div className="rounded-xl p-6 h-[200px] md:h-[220px] flex items-center justify-center" style={{ backgroundColor: '#ffffff', border: '1px solid rgba(26,83,92,0.08)', boxShadow: '0 4px 16px rgba(26,83,92,0.06)' }}>
                       <div className="text-center">
                         <div className="w-14 h-14 rounded-xl mx-auto mb-3 flex items-center justify-center" style={{ backgroundColor: 'rgba(26,83,92,0.2)' }}>
                           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1A535C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                           </svg>
                         </div>
-                        <p className="text-[13px] font-bold text-white">Daan verwerkt</p>
-                        <p className="text-[11px] text-white/40 mt-1">Claude + Gemini</p>
+                        <p className="text-[13px] font-bold" style={{ color: '#1A1A1A' }}>Daan verwerkt</p>
+                        <p className="text-[11px] mt-1" style={{ color: '#6B6B66' }}>Claude + Gemini</p>
                       </div>
                     </div>
                     <div className="mt-5">
                       <p className="font-mono text-[9px] font-bold tracking-[0.25em] uppercase" style={{ color: '#F15025' }}>Processing</p>
-                      <h3 className="text-[17px] md:text-[19px] font-bold text-white tracking-tight mt-1.5">
+                      <h3 className="text-[17px] md:text-[19px] font-bold tracking-tight mt-1.5" style={{ color: '#1A535C' }}>
                         Daan maakt het visueel<span className="text-flame">.</span>
                       </h3>
-                      <p className="text-[13px] md:text-[14px] leading-[1.7] mt-2" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                      <p className="text-[13px] md:text-[14px] leading-[1.7] mt-2" style={{ color: '#3F3F3A' }}>
                         Daan verbetert je prompt, kiest de juiste stijl en genereert een realistische visualisatie. Binnen seconden klaar.
                       </p>
                     </div>
@@ -1462,23 +1512,23 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
                     viewport={{ once: true, margin: '-60px' }}
                     transition={{ duration: 0.6, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
                   >
-                    <div className="rounded-xl p-6 h-[200px] md:h-[220px] flex items-center justify-center" style={{ background: 'linear-gradient(145deg, rgba(241,80,37,0.12), rgba(45,107,72,0.08))' }}>
+                    <div className="rounded-xl p-6 h-[200px] md:h-[220px] flex items-center justify-center" style={{ backgroundColor: '#ffffff', border: '1px solid rgba(26,83,92,0.08)', boxShadow: '0 4px 16px rgba(26,83,92,0.06)' }}>
                       <div className="text-center">
                         <div className="w-14 h-14 rounded-xl mx-auto mb-3 flex items-center justify-center" style={{ backgroundColor: 'rgba(45,107,72,0.15)' }}>
                           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2D6B48" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M22 11.08V12a10 10 0 11-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" />
                           </svg>
                         </div>
-                        <p className="text-[13px] font-bold text-white">Klaar. Delen.</p>
-                        <p className="text-[11px] text-white/40 mt-1">Download, deel of regenereer</p>
+                        <p className="text-[13px] font-bold" style={{ color: '#1A1A1A' }}>Klaar. Delen.</p>
+                        <p className="text-[11px] mt-1" style={{ color: '#6B6B66' }}>Download, deel of regenereer</p>
                       </div>
                     </div>
                     <div className="mt-5">
                       <p className="font-mono text-[9px] font-bold tracking-[0.25em] uppercase" style={{ color: '#F15025' }}>Output</p>
-                      <h3 className="text-[17px] md:text-[19px] font-bold text-white tracking-tight mt-1.5">
+                      <h3 className="text-[17px] md:text-[19px] font-bold tracking-tight mt-1.5" style={{ color: '#1A535C' }}>
                         Delen via het portaal<span className="text-flame">.</span>
                       </h3>
-                      <p className="text-[13px] md:text-[14px] leading-[1.7] mt-2" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                      <p className="text-[13px] md:text-[14px] leading-[1.7] mt-2" style={{ color: '#3F3F3A' }}>
                         Koppel de visualisatie aan je project of offerte. Deel het via het klantportaal. Je klant ziet het resultaat voordat je begint.
                       </p>
                     </div>
@@ -1501,10 +1551,11 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
                     Start gratis
                     <span className="text-[16px]">→</span>
                   </a>
-                  <p className="text-[12px] mt-3" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                  <p className="text-[12px] mt-3" style={{ color: '#6B6B66' }}>
                     10 credits inbegrepen. Bijkopen wanneer je wilt.
                   </p>
                 </motion.div>
+              </div>
               </div>
             </div>
           )}
@@ -1533,18 +1584,26 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
 
           <div className="container-site text-center relative z-10">
             <SectionReveal>
-              <p className="font-mono text-[12px] font-bold tracking-[0.2em] uppercase text-flame mb-4 inline-flex items-center gap-2.5">
-                <span className="relative inline-flex w-2 h-2 items-center justify-center">
-                  <span className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: '#00C896', opacity: 0.55 }} />
-                  <span className="relative inline-block w-2 h-2 rounded-full" style={{ backgroundColor: '#00C896', boxShadow: '0 0 6px rgba(0,200,150,0.7)' }} />
+              <div className="inline-flex items-center gap-2 mb-6">
+                <span className="relative inline-flex items-center justify-center w-2 h-2">
+                  <span className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: '#F15025', opacity: 0.45 }} />
+                  <span className="relative w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#F15025' }} />
                 </span>
-                Welkom in de cockpit
-              </p>
-              <h1 className="font-heading text-[40px] md:text-[56px] font-bold text-petrol tracking-[-2.5px] leading-[0.95] mb-5">
-                Niet erover praten<span className="text-flame">.</span><br />
-                <span className="text-petrol/40">Gewoon</span> doen<span className="text-flame">.</span>
+                <span className="font-mono text-[11px] font-medium tracking-[0.22em] uppercase" style={{ color: '#6B6B66' }}>
+                  Welkom in de cockpit
+                </span>
+              </div>
+              <h1
+                className="font-heading font-bold tracking-[-2px] md:tracking-[-3px] leading-[0.92] mb-6"
+                style={{ fontSize: 'clamp(40px, 5.5vw, 76px)', color: '#1A535C' }}
+              >
+                <span className="block">Niet erover praten<span className="text-flame">.</span></span>
+                <span className="block" style={{ color: '#6B6B66' }}>
+                  <span style={{ fontFamily: '"Instrument Serif", var(--font-instrument-serif), Georgia, serif', fontStyle: 'italic', fontWeight: 400 }}>Gewoon</span> doen
+                  <span className="text-flame">.</span>
+                </span>
               </h1>
-              <p className="text-[17px] max-w-lg mx-auto leading-relaxed" style={{ color: '#6B6B66' }}>
+              <p className="text-[16px] md:text-[18px] max-w-lg mx-auto leading-[1.55]" style={{ color: '#3F3F3A' }}>
                 Elke module is gebouwd voor hoe jij werkt. Van eerste klantvraag tot oplevering. Klik op een module en stap in.
               </p>
             </SectionReveal>
@@ -1553,7 +1612,7 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
       )}
 
       {/* Module thumbnail grid */}
-      <section className="bg-white pt-4 pb-0">
+      <section className="pt-4 pb-0">
         <div className="container-site">
           <div
             ref={scrollRef}
@@ -1579,7 +1638,7 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
                   />
                 </div>
                 <p className={`text-[10px] md:text-[11px] mt-1.5 font-semibold transition-colors duration-300 ${
-                  activeModule === i ? '' : 'text-[#9B9B95]'
+                  activeModule === i ? '' : 'text-[#6B6B66]'
                 }`} style={activeModule === i ? { color: m.color } : {}}>
                   {m.name}<span style={{ color: m.color }}>.</span>
                 </p>
@@ -1592,9 +1651,25 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
         </div>
       </section>
 
-      {/* Active module content */}
-      <section className="py-16 md:py-24" style={{ background: 'linear-gradient(180deg, #FFFFFF 0%, #FAFAF7 30%, #FAFAF7 100%)' }}>
-        <div className="container-site">
+      {/* Active module content — Hero-style on beige */}
+      <section className="relative py-20 md:py-28" style={{ backgroundColor: '#F3F2ED' }}>
+        {/* Backdrop layer scoped */}
+        <div aria-hidden className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div
+            className="absolute -top-20 -right-20 w-[520px] h-[520px] rounded-full"
+            style={{ backgroundColor: '#E8E1D0', opacity: 0.55, filter: 'blur(80px)' }}
+          />
+          <div
+            className="absolute top-[50%] -left-20 w-[460px] h-[460px] rounded-full"
+            style={{ backgroundColor: '#E4DBC6', opacity: 0.45, filter: 'blur(90px)' }}
+          />
+          <div
+            className="absolute bottom-[10%] right-[15%] w-[300px] h-[300px] rounded-full"
+            style={{ backgroundColor: mod.color, opacity: 0.06, filter: 'blur(100px)' }}
+          />
+        </div>
+
+        <div className="container-site relative">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeModule}
@@ -1603,9 +1678,9 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
             >
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
-                {/* Left: illustration */}
-                <div>
+              <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.1fr] gap-12 lg:gap-20 items-center">
+                {/* Left: illustration — kept as the user requested */}
+                <div className="relative">
                   <Image
                     src={mod.image}
                     alt={mod.name}
@@ -1615,70 +1690,165 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
                   />
                 </div>
 
-                {/* Right: content */}
+                {/* Right: content — Hero-style chrome */}
                 <div>
-                  <span className="font-mono text-[11px] font-bold tracking-[0.15em] uppercase" style={{ color: mod.color }}>
-                    {mod.name}
-                  </span>
-                  <h2 className="font-heading text-[32px] md:text-[40px] font-bold text-petrol tracking-[-1.5px] leading-[1.05] mt-2 mb-5">
-                    {mod.headline.split('.').filter(Boolean).map((part, i, arr) => (
-                      <span key={i}>
-                        {part.trim()}
-                        {i < arr.length - 1 && <span className="text-flame">.</span>}
-                        {i < arr.length - 1 && ' '}
-                      </span>
-                    ))}
-                    <span className="text-flame">.</span>
+                  {/* Eyebrow with ping dot in module color */}
+                  <div className="inline-flex items-center gap-2 mb-6">
+                    <span className="relative inline-flex items-center justify-center w-2 h-2">
+                      <span
+                        className="absolute inset-0 rounded-full animate-ping"
+                        style={{ backgroundColor: mod.color, opacity: 0.45 }}
+                      />
+                      <span
+                        className="relative w-1.5 h-1.5 rounded-full"
+                        style={{ backgroundColor: mod.color }}
+                      />
+                    </span>
+                    <span
+                      className="font-mono text-[11px] font-medium tracking-[0.22em] uppercase"
+                      style={{ color: '#6B6B66' }}
+                    >
+                      Module · {mod.name}
+                    </span>
+                  </div>
+
+                  {/* H2 — Bricolage bold + serif italic on second part */}
+                  <h2
+                    className="font-heading font-bold tracking-[-1.5px] md:tracking-[-2.5px] leading-[0.95] mb-6"
+                    style={{
+                      fontSize: 'clamp(36px, 4.5vw, 60px)',
+                      color: '#1A535C',
+                    }}
+                  >
+                    {(() => {
+                      const parts = mod.headline.split('.').filter(Boolean).map((p) => p.trim())
+                      return parts.map((part, i) => {
+                        const isLast = i === parts.length - 1
+                        return (
+                          <span key={i} className="block">
+                            {i === parts.length - 1 && parts.length > 1 ? (
+                              <span style={{ color: '#6B6B66' }}>
+                                <span
+                                  style={{
+                                    fontFamily:
+                                      '"Instrument Serif", var(--font-instrument-serif), Georgia, serif',
+                                    fontStyle: 'italic',
+                                    fontWeight: 400,
+                                  }}
+                                >
+                                  {part.split(' ')[0]}
+                                </span>{' '}
+                                {part.split(' ').slice(1).join(' ')}
+                              </span>
+                            ) : (
+                              part
+                            )}
+                            <span style={{ color: '#F15025' }}>.</span>
+                          </span>
+                        )
+                      })
+                    })()}
                   </h2>
-                  <p className="text-[16px] leading-[1.7] mb-8" style={{ color: '#6B6B66' }}>
+
+                  <p
+                    className="text-[16px] md:text-[18px] leading-[1.55] mb-8 max-w-lg"
+                    style={{ color: '#3F3F3A' }}
+                  >
                     {mod.description}
                   </p>
 
-                  {/* Highlights */}
-                  <ul className="space-y-3.5">
+                  {/* Highlights — clean punt-bullet list */}
+                  <ul className="space-y-3 mb-9">
                     {mod.highlights.map((h, i) => (
                       <motion.li
                         key={h}
-                        className="flex items-start gap-3 text-[14px]"
-                        initial={{ opacity: 0, x: 10 }}
+                        className="flex items-start gap-3 text-[14px] md:text-[15px]"
+                        initial={{ opacity: 0, x: 8 }}
                         animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.3, delay: i * 0.05 }}
+                        transition={{ duration: 0.4, delay: i * 0.06 }}
                       >
-                        <span className="w-1.5 h-1.5 rounded-full mt-2 flex-shrink-0" style={{ backgroundColor: mod.color }} />
+                        <span
+                          className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0"
+                          style={{ backgroundColor: mod.color }}
+                        />
                         <span style={{ color: '#1A1A1A' }}>{h}</span>
                       </motion.li>
                     ))}
                   </ul>
 
-                  {/* CTA */}
-                  <a
-                    href="https://app.doen.team/register"
-                    className="inline-flex items-center gap-2 font-semibold text-[14px] px-6 py-3 rounded-full transition-all duration-200 hover:scale-[1.03] active:scale-[0.98] mt-8 text-white"
-                    style={{ backgroundColor: mod.color }}
-                  >
-                    Start gratis
-                    <span className="text-[16px]">→</span>
-                  </a>
+                  {/* CTA pair — Hero pattern */}
+                  <div className="flex flex-wrap items-center gap-5">
+                    <a
+                      href="https://app.doen.team/register"
+                      className="inline-flex items-center gap-2 font-mono text-[12px] font-bold tracking-[0.18em] uppercase text-white px-7 h-[52px] rounded-[6px] transition-all duration-300 hover:scale-[1.03] active:scale-[0.97]"
+                      style={{
+                        backgroundColor: '#F15025',
+                        boxShadow: '0 8px 24px rgba(241,80,37,0.28)',
+                      }}
+                    >
+                      <span>Start gratis</span>
+                      <span aria-hidden>→</span>
+                    </a>
+                    <a
+                      href="/contact"
+                      className="inline-flex items-center gap-2 text-[14px] font-semibold transition-opacity hover:opacity-60 group"
+                      style={{ color: '#1A535C' }}
+                    >
+                      <span className="relative">
+                        Vraag een demo
+                        <span
+                          className="absolute left-0 -bottom-0.5 h-[2px] w-full origin-left scale-x-100 transition-transform duration-300 group-hover:scale-x-0"
+                          style={{ backgroundColor: '#1A535C' }}
+                        />
+                      </span>
+                      <span aria-hidden>→</span>
+                    </a>
+                  </div>
                 </div>
               </div>
 
-              {/* Detail section */}
+              {/* Detail section — card with mod-color accent */}
               <motion.div
-                className="mt-14 md:mt-20 bg-white rounded-2xl p-8 md:p-10 border border-[#E6E4E0]/60"
-                style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.03)' }}
+                className="mt-16 md:mt-20 rounded-[10px] p-7 md:p-10 bg-white relative overflow-hidden"
+                style={{
+                  border: '1px solid rgba(26,83,92,0.08)',
+                  boxShadow: '0 1px 2px rgba(20,40,40,0.04), 0 12px 28px -14px rgba(20,40,40,0.14)',
+                }}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
               >
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${mod.color}12` }}>
-                    <span className="font-mono text-[13px] font-bold" style={{ color: mod.color }}>i</span>
-                  </div>
-                  <h3 className="font-heading text-[18px] md:text-[20px] font-bold text-petrol tracking-tight">
-                    Zo doe je het met doen<span className="text-flame">.</span>
-                  </h3>
+                {/* Top accent bar in module color */}
+                <div
+                  className="absolute top-0 left-0 right-0 h-1"
+                  style={{ backgroundColor: mod.color }}
+                />
+
+                <div className="flex items-center gap-3 mb-4 mt-2">
+                  <span
+                    className="font-mono text-[10px] font-bold tracking-[0.22em] uppercase"
+                    style={{ color: mod.color }}
+                  >
+                    Zo doe je het
+                  </span>
+                  <span className="w-4 h-px" style={{ backgroundColor: 'rgba(26,83,92,0.2)' }} />
+                  <span
+                    className="font-mono text-[10px] tracking-[0.18em] uppercase"
+                    style={{ color: '#6B6B66' }}
+                  >
+                    Met doen.
+                  </span>
                 </div>
-                <p className="text-[15px] leading-[1.8] max-w-3xl" style={{ color: '#6B6B66' }}>
+                <h3
+                  className="font-heading text-[22px] md:text-[26px] font-bold leading-[1.1] tracking-tight mb-4"
+                  style={{ color: '#1A535C' }}
+                >
+                  De praktijk<span style={{ color: '#F15025' }}>.</span>
+                </h3>
+                <p
+                  className="text-[15px] md:text-[16px] leading-[1.7] max-w-3xl"
+                  style={{ color: '#3F3F3A' }}
+                >
                   {mod.detail}
                 </p>
               </motion.div>
@@ -1690,29 +1860,85 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
       {/* FAQ — categorized (Prijs / Product / Security / Support / Technisch) */}
       <FaqSection />
 
-      {/* CTA */}
-      <section className="pb-20 md:pb-32">
+      {/* CTA — dark teal close card */}
+      <section className="pb-20 md:pb-28 pt-4">
         <div className="container-site">
-          <div className="rounded-2xl p-10 md:p-14 text-center" style={{ backgroundColor: '#1A535C' }}>
-            <p className="text-[13px] text-flame font-semibold mb-3 tracking-wide">Nu beschikbaar</p>
-            <h2 className="font-heading text-[24px] md:text-[32px] font-bold text-white tracking-tight mb-3">
-              Start vandaag<span className="text-flame">.</span>
-            </h2>
-            <p className="text-[15px] text-white/40 max-w-md mx-auto mb-8">
-              Alles zit erin. Geen add-ons. Eerste 30 dagen gratis.
-            </p>
-            <div className="flex justify-center">
-              <a
-                href="https://app.doen.team/register"
-                className="inline-flex items-center justify-center gap-2 font-semibold text-[15px] text-white px-8 h-[56px] rounded-xl whitespace-nowrap transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+          <div
+            className="relative rounded-[10px] p-10 md:p-16 text-center overflow-hidden"
+            style={{ backgroundColor: '#0F3A42' }}
+          >
+            {/* Soft dark blobs + dot pattern */}
+            <div aria-hidden className="absolute inset-0 overflow-hidden pointer-events-none">
+              <div
+                className="absolute -top-20 -left-20 w-[360px] h-[360px] rounded-full"
+                style={{ backgroundColor: '#1A535C', opacity: 0.4, filter: 'blur(80px)' }}
+              />
+              <div
+                className="absolute -bottom-20 -right-20 w-[300px] h-[300px] rounded-full"
+                style={{ backgroundColor: '#F15025', opacity: 0.08, filter: 'blur(100px)' }}
+              />
+              <div
+                className="absolute inset-0"
                 style={{
-                  backgroundColor: '#F15025',
-                  boxShadow: '0 4px 14px rgba(241,80,37,0.3)',
+                  backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 22 22'><circle cx='11' cy='11' r='0.7' fill='white' opacity='0.06'/></svg>")`,
+                  backgroundSize: '22px 22px',
                 }}
+              />
+            </div>
+
+            <div className="relative max-w-2xl mx-auto">
+              <div className="inline-flex items-center gap-2 mb-6">
+                <span className="relative inline-flex items-center justify-center w-2 h-2">
+                  <span className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: '#F15025', opacity: 0.45 }} />
+                  <span className="relative w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#F15025' }} />
+                </span>
+                <span className="font-mono text-[11px] font-medium tracking-[0.22em] uppercase" style={{ color: 'rgba(255,255,255,0.55)' }}>
+                  Nu beschikbaar
+                </span>
+              </div>
+
+              <h2
+                className="font-heading font-bold tracking-[-1.5px] md:tracking-[-2.5px] leading-[0.92] text-white mb-5"
+                style={{ fontSize: 'clamp(32px, 5vw, 56px)' }}
               >
-                <span>Start gratis</span>
-                <span aria-hidden>→</span>
-              </a>
+                <span className="block">Start vandaag<span style={{ color: '#F15025' }}>.</span></span>
+                <span className="block" style={{ color: 'rgba(255,255,255,0.55)' }}>
+                  Geen <span style={{ fontFamily: '"Instrument Serif", var(--font-instrument-serif), Georgia, serif', fontStyle: 'italic', fontWeight: 400 }}>creditcard</span> nodig
+                  <span style={{ color: '#F15025' }}>.</span>
+                </span>
+              </h2>
+
+              <p className="text-[15px] md:text-[17px] mb-9" style={{ color: 'rgba(255,255,255,0.55)' }}>
+                Alles zit erin. Geen add-ons. Eerste 30 dagen gratis.
+              </p>
+
+              <div className="flex flex-wrap items-center justify-center gap-5">
+                <a
+                  href="https://app.doen.team/register"
+                  className="inline-flex items-center gap-2 font-mono text-[12px] font-bold tracking-[0.18em] uppercase text-white px-7 h-[56px] rounded-[6px] transition-all duration-300 hover:scale-[1.03] active:scale-[0.97]"
+                  style={{
+                    backgroundColor: '#F15025',
+                    boxShadow: '0 10px 28px rgba(241,80,37,0.4)',
+                  }}
+                >
+                  <span>Start gratis</span>
+                  <span aria-hidden>→</span>
+                </a>
+                <a
+                  href="/contact"
+                  className="inline-flex items-center gap-2 text-[14px] font-semibold transition-opacity hover:opacity-70 group"
+                  style={{ color: 'rgba(255,255,255,0.85)' }}
+                >
+                  <span className="relative">
+                    Of stuur me een mailtje
+                    <span
+                      className="absolute left-0 -bottom-0.5 h-[2px] w-full origin-left scale-x-100 transition-transform duration-300 group-hover:scale-x-0"
+                      style={{ backgroundColor: 'rgba(255,255,255,0.5)' }}
+                    />
+                  </span>
+                  <span aria-hidden>→</span>
+                </a>
+              </div>
             </div>
           </div>
         </div>

@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 const PETROL = '#1A535C'
 const FLAME = '#F15025'
 const MUTED = '#6B6B66'
-const MUTED_SOFT = '#9B9B95'
+const MUTED_SOFT = '#6B6B66'
 
 export default function KennisbankPage() {
   return (
@@ -26,23 +26,26 @@ export default function KennisbankPage() {
         <div className="container-site">
           {/* Hero */}
           <div className="max-w-3xl mb-16 md:mb-20">
-            <p
-              className="font-mono text-[12px] font-bold tracking-[0.2em] uppercase mb-5"
-              style={{ color: FLAME }}
-            >
-              Kennisbank
-            </p>
+            <div className="inline-flex items-center gap-2 mb-6">
+              <span className="relative inline-flex items-center justify-center w-2 h-2">
+                <span className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: FLAME, opacity: 0.45 }} />
+                <span className="relative w-1.5 h-1.5 rounded-full" style={{ backgroundColor: FLAME }} />
+              </span>
+              <span className="font-mono text-[11px] font-medium tracking-[0.22em] uppercase" style={{ color: MUTED }}>
+                Kennisbank
+              </span>
+            </div>
             <h1
-              className="font-heading text-[44px] md:text-[64px] font-extrabold tracking-[-2.5px] leading-[0.98] mb-6"
-              style={{ color: PETROL }}
+              className="font-heading font-bold tracking-[-2px] md:tracking-[-3px] leading-[0.92] mb-6"
+              style={{ fontSize: 'clamp(40px, 5.5vw, 76px)', color: PETROL }}
             >
-              Alles over doen
-              <span style={{ color: FLAME }}>.</span>
-              <br />
-              <span style={{ color: MUTED_SOFT }}>Per module uitgelegd</span>
-              <span style={{ color: FLAME }}>.</span>
+              <span className="block">Alles over doen<span style={{ color: FLAME }}>.</span></span>
+              <span className="block" style={{ color: '#6B6B66' }}>
+                <span style={{ fontFamily: '"Instrument Serif", var(--font-instrument-serif), Georgia, serif', fontStyle: 'italic', fontWeight: 400 }}>Per</span> module uitgelegd
+                <span style={{ color: FLAME }}>.</span>
+              </span>
             </h1>
-            <p className="text-[17px] md:text-[19px] leading-relaxed max-w-2xl" style={{ color: MUTED }}>
+            <p className="text-[16px] md:text-[18px] leading-[1.55] max-w-2xl" style={{ color: '#3F3F3A' }}>
               Zoek je een antwoord? Begin hier. Per module de belangrijkste uitleg,
               praktijkvoorbeelden en tips. Niet gevonden wat je zoekt?{' '}
               <Link href="/contact" className="font-semibold underline decoration-2 underline-offset-2 hover:opacity-70 transition-opacity" style={{ color: PETROL, textDecorationColor: FLAME }}>

@@ -65,20 +65,34 @@ export default function OverContent() {
         <div className="container-site relative">
           <SectionReveal>
             <div className="max-w-3xl">
-              <motion.p
-                className="font-mono text-[12px] font-bold tracking-[0.3em] uppercase text-flame mb-6"
+              <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6 }}
+                className="inline-flex items-center gap-2 mb-7"
               >
-                Waarom doen. bestaat
-              </motion.p>
-              <h1 className="font-heading text-[44px] md:text-[64px] lg:text-[76px] font-bold text-petrol tracking-[-3px] leading-[0.92] mb-8">
-                Je werd ondernemer<br />
-                om te maken<span className="text-flame">.</span><br />
-                <span style={{ color: '#9B9B95' }}>Niet om te administreren</span><span className="text-flame">.</span>
+                <span className="relative inline-flex items-center justify-center w-2 h-2">
+                  <span className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: '#F15025', opacity: 0.45 }} />
+                  <span className="relative w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#F15025' }} />
+                </span>
+                <span className="font-mono text-[11px] font-medium tracking-[0.22em] uppercase" style={{ color: '#6B6B66' }}>
+                  Waarom doen. bestaat
+                </span>
+              </motion.div>
+              <h1
+                className="font-heading font-bold tracking-[-2px] md:tracking-[-3px] leading-[0.92] mb-8"
+                style={{ fontSize: 'clamp(44px, 6vw, 88px)', color: '#1A535C' }}
+              >
+                <span className="block">Je werd ondernemer</span>
+                <span className="block">
+                  om te <span style={{ fontFamily: '"Instrument Serif", var(--font-instrument-serif), Georgia, serif', fontStyle: 'italic', fontWeight: 400 }}>maken</span>
+                  <span className="text-flame">.</span>
+                </span>
+                <span className="block" style={{ color: '#6B6B66' }}>
+                  Niet om te administreren<span className="text-flame">.</span>
+                </span>
               </h1>
-              <p className="text-[18px] md:text-[21px] leading-[1.8] max-w-xl" style={{ color: '#6B6B66' }}>
+              <p className="text-[17px] md:text-[19px] leading-[1.6] max-w-xl" style={{ color: '#3F3F3A' }}>
                 Signing, wrapping, lichtreclame, belettering. Dat is waar je goed in bent. Maar elke dag gaat er uren op aan offertes, planning, facturen en klantcommunicatie. Dat moet anders.
               </p>
             </div>
@@ -87,13 +101,13 @@ export default function OverContent() {
       </section>
 
       {/* === TUSSENSTATEMENT === */}
-      <section className="py-20 md:py-28" style={{ backgroundColor: '#F8F8F6' }}>
+      <section className="py-20 md:py-28" style={{ backgroundColor: '#F3F2ED' }}>
         <div className="container-site">
           <SectionReveal>
             <blockquote className="max-w-3xl mx-auto text-center">
               <p className="font-heading text-[24px] md:text-[36px] lg:text-[42px] font-bold text-petrol tracking-[-1.5px] leading-[1.1]">
                 &ldquo;We hebben het altijd zo gedaan&rdquo;<br />
-                <span style={{ color: '#9B9B95' }}>is geen reden om het zo te blijven doen</span><span className="text-flame">.</span>
+                <span style={{ color: '#6B6B66' }}>is geen reden om het zo te blijven doen</span><span className="text-flame">.</span>
               </p>
             </blockquote>
           </SectionReveal>
@@ -101,7 +115,7 @@ export default function OverContent() {
       </section>
 
       {/* === ACT 2: HET PROBLEEM === */}
-      <section className="py-24 md:py-36 bg-white relative">
+      <section className="py-24 md:py-36 relative">
         <div className="container-site relative">
           <SectionReveal>
             <p className="font-mono text-[12px] font-bold tracking-[0.3em] uppercase text-flame mb-4">
@@ -109,9 +123,9 @@ export default function OverContent() {
             </p>
             <h2 className="font-heading text-[28px] md:text-[44px] font-bold text-petrol tracking-[-2px] leading-[0.92] mb-3">
               Zo werkte je<span className="text-flame">.</span><br />
-              <span style={{ color: '#9B9B95' }}>Zo werk je met doen</span><span className="text-flame">.</span>
+              <span style={{ color: '#6B6B66' }}>Zo werk je met doen</span><span className="text-flame">.</span>
             </h2>
-            <p className="text-[15px] mb-14" style={{ color: '#9B9B95' }}>Hover en herken je eigen werkdag.</p>
+            <p className="text-[15px] mb-14" style={{ color: '#6B6B66' }}>Hover en herken je eigen werkdag.</p>
           </SectionReveal>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -120,7 +134,7 @@ export default function OverContent() {
                 <motion.div
                   className="relative rounded-2xl p-6 cursor-default overflow-hidden min-h-[140px]"
                   style={{
-                    backgroundColor: hoveredPain === i ? '#1A535C' : '#F8F8F6',
+                    backgroundColor: hoveredPain === i ? '#1A535C' : '#F3F2ED',
                     transition: 'background-color 0.4s ease',
                   }}
                   onMouseEnter={() => setHoveredPain(i)}
@@ -142,7 +156,7 @@ export default function OverContent() {
                     left: hoveredPain === i ? '1.5rem' : undefined,
                     right: hoveredPain === i ? '1.5rem' : undefined,
                   }}>
-                    <p className="text-[15px] leading-[1.6] line-through" style={{ color: '#9B9B95' }}>
+                    <p className="text-[15px] leading-[1.6] line-through" style={{ color: '#6B6B66' }}>
                       {p.before}
                     </p>
                   </div>
@@ -207,7 +221,7 @@ export default function OverContent() {
       </section>
 
       {/* === ACT 3: DE OPLOSSING — PORTAAL === */}
-      <section ref={portalRef} className="py-24 md:py-36 bg-white relative overflow-hidden">
+      <section ref={portalRef} className="py-24 md:py-36 relative overflow-hidden">
         <div className="container-site relative">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
             <motion.div
@@ -220,7 +234,7 @@ export default function OverContent() {
               </span>
               <h2 className="font-heading text-[32px] md:text-[48px] font-bold text-petrol tracking-[-2.5px] leading-[0.92] mb-8">
                 Je klant doet mee<span className="text-flame">.</span><br />
-                <span style={{ color: '#9B9B95' }}>Zonder gedoe</span><span className="text-flame">.</span>
+                <span style={{ color: '#6B6B66' }}>Zonder gedoe</span><span className="text-flame">.</span>
               </h2>
               <p className="text-[16px] md:text-[17px] leading-[1.8] mb-10 max-w-lg" style={{ color: '#6B6B66' }}>
                 Geen WhatsApp-groepen. Geen eindeloze mailthreads. Je klant krijgt een link en ziet alles. Tekeningen goedkeuren, offertes accorderen, reageren op bestanden. Geen inlog nodig.
@@ -270,7 +284,7 @@ export default function OverContent() {
       </section>
 
       {/* === VERGELIJKING === */}
-      <section ref={compareRef} className="py-24 md:py-36" style={{ backgroundColor: '#F8F8F6' }}>
+      <section ref={compareRef} className="py-24 md:py-36" style={{ backgroundColor: '#F3F2ED' }}>
         <div className="container-site">
           <SectionReveal>
             <p className="font-mono text-[12px] font-bold tracking-[0.3em] uppercase text-flame mb-4">
@@ -278,7 +292,7 @@ export default function OverContent() {
             </p>
             <h2 className="font-heading text-[28px] md:text-[44px] font-bold text-petrol tracking-[-2px] leading-[0.92] mb-4">
               Je huidige software was ooit prima<span className="text-flame">.</span><br />
-              <span style={{ color: '#9B9B95' }}>Ooit</span><span className="text-flame">.</span>
+              <span style={{ color: '#6B6B66' }}>Ooit</span><span className="text-flame">.</span>
             </h2>
             <p className="text-[15px] md:text-[16px] max-w-xl mb-14" style={{ color: '#6B6B66' }}>
               Dezelfde knoppen, dezelfde beperkingen, al jaren. Software hoort mee te groeien met je bedrijf.
@@ -287,7 +301,7 @@ export default function OverContent() {
 
           <div className="max-w-3xl">
             <div className="grid grid-cols-[1fr,auto,1fr] gap-4 md:gap-6 pb-4 mb-2" style={{ borderBottom: '2px solid #1A535C' }}>
-              <p className="font-mono text-[11px] font-bold tracking-[0.15em] uppercase" style={{ color: '#9B9B95' }}>
+              <p className="font-mono text-[11px] font-bold tracking-[0.15em] uppercase" style={{ color: '#6B6B66' }}>
                 Wat je gewend bent
               </p>
               <div />
@@ -371,7 +385,7 @@ export default function OverContent() {
       </section>
 
       {/* === NUMBERS === */}
-      <section ref={numbersRef} className="py-20 md:py-28" style={{ backgroundColor: '#F8F8F6' }}>
+      <section ref={numbersRef} className="py-20 md:py-28" style={{ backgroundColor: '#F3F2ED' }}>
         <div className="container-site">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-3xl mx-auto text-center">
             {[
@@ -396,7 +410,7 @@ export default function OverContent() {
       </section>
 
       {/* === ACT 4: DE AFSLUITING === */}
-      <section className="py-24 md:py-36 bg-white">
+      <section className="py-24 md:py-36">
         <div className="container-site">
           <div className="max-w-2xl mx-auto text-center">
             <SectionReveal>
@@ -407,7 +421,7 @@ export default function OverContent() {
                 Stop met rommelen<span className="text-flame">.</span><br />
                 Begin met doen<span className="text-flame">.</span>
               </h2>
-              <p className="text-[16px] mb-10 max-w-md mx-auto" style={{ color: '#9B9B95' }}>
+              <p className="text-[16px] mb-10 max-w-md mx-auto" style={{ color: '#6B6B66' }}>
                 Eerste 30 dagen gratis. Geen creditcard. Maandelijks opzegbaar.
               </p>
               <div className="flex justify-center">

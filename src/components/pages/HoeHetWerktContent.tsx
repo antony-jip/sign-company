@@ -32,7 +32,7 @@ const PETROL = '#1A535C'
 const PETROL_DARK = '#143F46'
 const FLAME = '#F15025'
 const MUTED = '#6B6B66'
-const MUTED_SOFT = '#9B9B95'
+const MUTED_SOFT = '#6B6B66'
 const INK = '#1A1A1A'
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -78,9 +78,13 @@ function Act1Opening() {
             {/* Eyebrow — time + day */}
             <motion.div
               style={{ opacity: eyebrowOpacity }}
-              className="mb-6 inline-flex items-center gap-3 px-4 py-2 rounded-full"
+              className="mb-6 inline-flex items-center gap-2"
             >
-              <span className="font-mono text-[11px] md:text-[12px] font-bold tracking-[0.2em] uppercase" style={{ color: FLAME }}>
+              <span className="relative inline-flex items-center justify-center w-2 h-2">
+                <span className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: FLAME, opacity: 0.45 }} />
+                <span className="relative w-1.5 h-1.5 rounded-full" style={{ backgroundColor: FLAME }} />
+              </span>
+              <span className="font-mono text-[11px] md:text-[12px] font-medium tracking-[0.22em] uppercase" style={{ color: MUTED }}>
                 08:15 · Maandagochtend
               </span>
             </motion.div>
@@ -222,7 +226,7 @@ function Act2Pain() {
   const isInView = useInView(ref, { once: true, margin: '-100px' })
 
   return (
-    <section className="py-24 md:py-36 bg-white relative overflow-hidden">
+    <section className="py-24 md:py-36 relative overflow-hidden">
       <div className="container-site relative">
         <SectionReveal>
           <div className="max-w-3xl mb-16 md:mb-20">
@@ -697,7 +701,7 @@ function FlowStepBlock({ step, index, isLast }: { step: FlowStep; index: number;
             <div className="flex items-center gap-2 mb-2">
               <div
                 className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
-                style={{ backgroundColor: '#F8F7F5' }}
+                style={{ backgroundColor: '#F3F2ED' }}
               >
                 <X className="w-3 h-3" style={{ color: MUTED_SOFT }} strokeWidth={2.5} />
               </div>
@@ -1170,7 +1174,7 @@ export default function HoeHetWerktContent() {
   if (reduceMotion) {
     return (
       <div className="pt-28 md:pt-36">
-        <section className="py-16 bg-white">
+        <section className="py-16">
           <div className="container-site max-w-3xl">
             <p className="font-mono text-[12px] font-bold tracking-[0.2em] uppercase mb-4" style={{ color: FLAME }}>
               Hoe het werkt
@@ -1183,7 +1187,7 @@ export default function HoeHetWerktContent() {
             </p>
             <ol className="space-y-4">
               {flowSteps.map((s) => (
-                <li key={s.nr} className="p-5 rounded-xl" style={{ backgroundColor: '#F8F7F5' }}>
+                <li key={s.nr} className="p-5 rounded-xl" style={{ backgroundColor: '#F3F2ED' }}>
                   <p className="font-mono text-[11px] font-bold tracking-[0.18em]" style={{ color: FLAME }}>
                     {s.nr} · {s.when}
                   </p>

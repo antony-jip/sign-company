@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Bricolage_Grotesque, DM_Sans, DM_Mono } from 'next/font/google'
+import { Bricolage_Grotesque, IBM_Plex_Sans, IBM_Plex_Mono, Instrument_Serif } from 'next/font/google'
 import './globals.css'
 
 const bricolage = Bricolage_Grotesque({
@@ -9,17 +9,25 @@ const bricolage = Bricolage_Grotesque({
   display: 'swap',
 })
 
-const dmSans = DM_Sans({
+const plexSans = IBM_Plex_Sans({
   subsets: ['latin'],
-  weight: ['400', '500', '600'],
-  variable: '--font-dm-sans',
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-plex-sans',
   display: 'swap',
 })
 
-const dmMono = DM_Mono({
+const plexMono = IBM_Plex_Mono({
   subsets: ['latin'],
-  weight: ['400', '500'],
-  variable: '--font-dm-mono',
+  weight: ['400', '500', '600'],
+  variable: '--font-plex-mono',
+  display: 'swap',
+})
+
+const instrumentSerif = Instrument_Serif({
+  subsets: ['latin'],
+  weight: ['400'],
+  style: ['normal', 'italic'],
+  variable: '--font-instrument-serif',
   display: 'swap',
 })
 
@@ -58,7 +66,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="nl" className={`${bricolage.variable} ${dmSans.variable} ${dmMono.variable}`}>
+    <html lang="nl" className={`${bricolage.variable} ${plexSans.variable} ${plexMono.variable} ${instrumentSerif.variable}`}>
       <head>
         <link rel="canonical" href="https://doen.team" />
       </head>
