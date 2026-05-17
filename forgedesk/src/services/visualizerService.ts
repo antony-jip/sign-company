@@ -302,7 +302,7 @@ export async function getVisualizerCredits(user_id: string): Promise<VisualizerC
           type: 'handmatig_toegevoegd',
           aantal: DEMO_CREDITS,
           saldo_na: DEMO_CREDITS,
-          beschrijving: 'Welkomstcredits — probeer de Visualizer en Daan gratis uit',
+          beschrijving: 'Welkomstcredits. Probeer de Visualizer gratis uit.',
         })
 
         return {

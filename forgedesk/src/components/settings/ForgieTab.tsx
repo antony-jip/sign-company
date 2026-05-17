@@ -306,7 +306,7 @@ export function ForgieTab() {
             Jouw tegoed
           </CardTitle>
           <CardDescription>
-            Credits worden gedeeld tussen Visualizer en Daan AI.
+            Credits worden gebruikt voor de Visualizer.
             Nieuwe accounts starten met 10 gratis credits.
           </CardDescription>
         </CardHeader>
