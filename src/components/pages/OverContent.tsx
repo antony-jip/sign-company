@@ -366,7 +366,7 @@ export default function OverContent() {
             ].map((item, i) => (
               <SectionReveal key={i} delay={i * 0.08}>
                 <motion.div
-                  className="rounded-2xl p-8 h-full"
+                  className="rounded-2xl p-6 md:p-8 h-full"
                   style={{ backgroundColor: 'rgba(255,255,255,0.07)', borderLeft: '3px solid rgba(241, 80, 37, 0.4)' }}
                   whileHover={{ backgroundColor: 'rgba(255,255,255,0.12)' }}
                   transition={{ duration: 0.3 }}
