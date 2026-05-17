@@ -29,7 +29,7 @@ export const modules: Module[] = [
   { label: 'Klantportaal', sub: 'Deel, bespreek, accordeer', href: '/features/portaal', color: '#6A5A8A', icon: IconPortaal },
   { label: 'Planning', sub: 'Sleep je week in elkaar', href: '/features/planning', color: '#9A5A48', icon: IconPlanning },
   { label: 'Werkbonnen', sub: 'Digitaal op locatie', href: '/features/werkbonnen', color: '#1A535C', icon: IconWerkbonnen },
-  { label: 'Facturen', sub: 'Verkoop en inkoop, geregeld', href: '/features/facturen', color: '#2D6B48', icon: IconFacturen },
+  { label: 'Facturen', sub: 'Verkoop én inkoop, AI leest uit', href: '/features/facturen', color: '#2D6B48', icon: IconFacturen },
   { label: 'Email', sub: 'Jouw mailbox, slim gekoppeld', href: '/features/email', color: '#3A6B8C', icon: IconEmail },
   { label: 'Taken', sub: 'Alles naast de montage', href: '/features/taken', color: '#F15025', icon: IconTaken },
   { label: 'Visualizer', sub: 'AI toont het eindresultaat', href: '/features/visualizer', color: '#9A5A48', icon: IconVisualizer, comingSoon: true },
