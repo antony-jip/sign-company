@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { ArrowUpRight } from 'lucide-react'
 import SerifItalic from '@/components/SerifItalic'
 import { TrimCorners, TapePiece, MeasurementTag } from '@/components/brand/BrandMarks'
-import { modules } from '@/data/modules'
+import { modules, type Module } from '@/data/modules'
 
 // AI acties als werkwoorden — geen toverwoord maar doen
 const AI_ACTIES = [
