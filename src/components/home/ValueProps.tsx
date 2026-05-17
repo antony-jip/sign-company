@@ -61,7 +61,7 @@ const props: Prop[] = [
   {
     headline: 'AI die doet.',
     sub: 'Niet meepraat.',
-    text: 'Daan vat mails samen, leest inkoopfacturen uit, schrijft offertes. Werkwoord, geen toverwoord.',
+    text: 'Mail van leverancier binnen met PDF? Daan leest de inkoopfactuur uit en boekt hem klaar. Mail van klant? Samenvatten en beantwoorden in jouw toon. Werkwoord, geen toverwoord.',
     accent: '#1A535C',
     icon: Sparkles,
     caption: 'Daan AI · vervang me',
