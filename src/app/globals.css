@@ -7,11 +7,13 @@ html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: clip;
 }
 
 body {
   background-color: #F3F2ED;
   color: #1A1A1A;
+  overflow-x: clip;
 }
 
 ::selection {

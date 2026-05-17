@@ -61,9 +61,9 @@ export default function Hero() {
       {/* BRAND: massive flame stamp bleeding off bottom-right — doen. brand glyph */}
       <FlameStamp size={420} opacity={0.05} style={{ bottom: -180, right: -180 }} />
 
-      <div className="container-site relative pt-32 pb-20 md:pt-44 md:pb-28">
+      <div className="container-site relative pt-28 pb-16 md:pt-44 md:pb-28">
 
-        <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-12 lg:gap-16 items-end">
+        <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-10 lg:gap-16 items-end">
 
           {/* LEFT — text column */}
           <div>

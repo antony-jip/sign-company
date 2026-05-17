@@ -13,7 +13,7 @@ export default function CTASection() {
   return (
     <section
       ref={ref}
-      className="relative"
+      className="relative overflow-hidden"
       style={{ backgroundColor: '#F3F2ED' }}
     >
       {/* Backdrop layer scoped */}
