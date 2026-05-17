@@ -9,10 +9,12 @@ import { TrimCorners, FlameStamp } from '@/components/brand/BrandMarks'
 const FEATURES = [
   '10 modules · alles inbegrepen',
   'Tot 10 gebruikers',
-  'Daan AI · vat mails samen, schrijft offertes',
+  'Daan AI · vat mails samen, leest inkoopfacturen uit',
   'Mollie · Exact Online gekoppeld',
+  'Eigen mailbox · IMAP/SMTP per gebruiker',
   'Onbeperkt klanten en projecten',
   'Klantportaal · één link, geen inlog',
+  'EU-data · dagelijkse backups',
   'Geen opzetkosten · geen add-ons',
   'Maandelijks opzegbaar · data altijd jouw',
 ]
