@@ -29,6 +29,7 @@ import {
 import type { InkoopOfferte, InkoopRegel } from '@/types'
 import { logger } from '../../utils/logger'
 import { InkoopAILimietBanner } from '@/components/shared/InkoopAILimietBanner'
+import { gooiBijBudgetError } from '@/lib/aiBudgetError'
 
 // Drag data type for inkoop regels
 export const INKOOP_DRAG_TYPE = 'application/x-forgedesk-inkoop-regel'
@@ -174,6 +175,7 @@ export function InkoopOffertePaneel({ userId, offerteId, onRegelToevoegen, onReg
       })
 
       if (!response.ok) {
+        await gooiBijBudgetError(response)
         const err = await response.json().catch(() => ({})) as { error?: string }
         throw new Error(err.error || 'Analyse mislukt')
       }

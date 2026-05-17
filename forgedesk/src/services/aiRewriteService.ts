@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient'
+import { gooiBijBudgetError } from '@/lib/aiBudgetError'
 
 export type RewriteAction =
   | 'eigen-stijl'
@@ -37,6 +38,7 @@ export async function rewriteText(
   })
 
   if (!res.ok) {
+    await gooiBijBudgetError(res)
     const err = await res.json().catch(() => ({ error: 'Onbekende fout' }))
     throw new Error(err.error || err.message || 'AI herschrijven mislukt')
   }

@@ -1,4 +1,5 @@
 import supabase, { isSupabaseConfigured } from './supabaseClient'
+import { gooiBijBudgetError } from '@/lib/aiBudgetError'
 
 export type ForgieAction =
   | 'rewrite-professional'
@@ -52,6 +53,7 @@ export async function callForgie(
   })
 
   if (!response.ok) {
+    await gooiBijBudgetError(response)
     const error: { error?: string; message?: string } = await response.json().catch(() => ({}))
     throw new Error(error?.message || error?.error || `Daan fout: ${response.status}`)
   }

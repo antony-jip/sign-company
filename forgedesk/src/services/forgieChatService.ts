@@ -1,4 +1,5 @@
 import supabase from './supabaseClient'
+import { gooiBijBudgetError } from '@/lib/aiBudgetError'
 
 export interface ForgieChatMessage {
   role: 'user' | 'forgie'
@@ -46,6 +47,7 @@ export async function sendForgieChat(
 ): Promise<ForgieChatResult> {
   const response = await chatRequest({ action: 'chat', question, history })
   if (!response.ok) {
+    await gooiBijBudgetError(response)
     const error = await response.json().catch(() => ({})) as { message?: string; error?: string }
     throw new Error(error?.message || error?.error || `Daan fout: ${response.status}`)
   }

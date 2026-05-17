@@ -4,6 +4,7 @@ import {
   withUserId, getOrgId, sanitizeDates,
 } from './supabaseHelpers'
 import { createUitgave } from './boekhoudingService'
+import { gooiBijBudgetError } from '@/lib/aiBudgetError'
 import type {
   InkoopFactuur, InkoopFactuurRegel, InkoopFactuurInboxConfig,
   InkoopFactuurStatus,
@@ -241,6 +242,7 @@ export async function extractInkoopfactuur(id: string): Promise<{ success: boole
     body: JSON.stringify({ inkoopfactuur_id: id }),
   })
 
+  await gooiBijBudgetError(res)
   const body = await res.json()
   if (res.status === 429) {
     return { success: false, error: body?.message || body?.error || 'AI-limiet bereikt', capHit: true }

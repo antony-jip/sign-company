@@ -1,4 +1,5 @@
 import supabase from './supabaseClient'
+import { gooiBijBudgetError } from '@/lib/aiBudgetError'
 
 export interface FollowUpContext {
   klantnaam: string
@@ -43,6 +44,7 @@ export async function generateFollowUpEmail(context: FollowUpContext): Promise<F
   })
 
   if (!response.ok) {
+    await gooiBijBudgetError(response)
     const error: { error?: string; message?: string } = await response.json().catch(() => ({}))
     throw new Error(error?.message || error?.error || `AI follow-up fout: ${response.status}`)
   }
