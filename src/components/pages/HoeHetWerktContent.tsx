@@ -1110,7 +1110,7 @@ function Act5CTA() {
       <div className="container-site">
         <SectionReveal>
           <div
-            className="max-w-3xl mx-auto rounded-3xl p-10 md:p-16 text-center relative overflow-hidden"
+            className="max-w-3xl mx-auto rounded-3xl p-6 md:p-16 text-center relative overflow-hidden"
             style={{
               background: 'linear-gradient(180deg, #1A535C 0%, #143F46 100%)',
             }}
