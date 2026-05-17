@@ -45,7 +45,22 @@ const faqs: { category: CategoryId; q: string; a: string }[] = [
   {
     category: 'product',
     q: 'Zit AI echt overal in?',
-    a: 'Ja, overal waar het helpt. **Daan** is onze AI-assistent (draait op **Claude Sonnet 4.6**). Hij kent je bedrijfsdata, schrijft offerteteksten, vat binnengekomen mails samen, leest inkoopfacturen uit. **Geen extra kosten** — onderdeel van het abonnement.',
+    a: 'Ja, overal waar het helpt. **Daan** is onze AI-assistent (draait op het nieuwste **Claude**-model van Anthropic). Hij kent je bedrijfsdata, schrijft offerteteksten, vat binnengekomen mails samen, leest inkoopfacturen uit. **Geen extra kosten** — onderdeel van het abonnement.',
+  },
+  {
+    category: 'product',
+    q: 'Hoe werkt de inkoopfactuur-AI?',
+    a: 'Leverancier mailt een PDF naar je inkoop-inbox. **doen. haalt de mail elk kwartier op**, leest de factuur uit (leverancier, factuurnummer, datum, regels, btw) en zet hem klaar ter goedkeuring. Je controleert, keurt goed, klaar. **Boekhouding gaat one-way door naar Exact Online**.',
+  },
+  {
+    category: 'product',
+    q: 'Wat is Sales Inbox / "Opvolgen"?',
+    a: 'Een aparte view bovenop je mailbox. **Mails waarop nog geen antwoord kwam** krijgen automatisch de Opvolgen-vlag. Komt het antwoord binnen, vlag eraf. Zo zie je in één oogopslag wie er nog wacht op jou. Geen losse spreadsheet meer.',
+  },
+  {
+    category: 'product',
+    q: 'Kan mijn monteur alles vanaf zijn telefoon?',
+    a: 'Ja. **Planning, werkbonnen, taken en email** hebben dedicated mobiele weergaven. Werkbon openen, uren tikken, foto\'s erbij, klant laten tekenen — allemaal op een telefoon. Geen aparte app om te installeren.',
   },
   {
     category: 'product',
