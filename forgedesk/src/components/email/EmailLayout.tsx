@@ -22,6 +22,7 @@ import { EmailCompose } from './EmailCompose'
 import type { ComposeActions } from './EmailCompose'
 import { EmailListItem } from './EmailListItem'
 import { EmailMobileTopBar } from './EmailMobileTopBar'
+import { EmailFocusKaart } from './EmailFocusKaart'
 import type { Email, EmailAttachment } from '@/types'
 import { logger } from '../../utils/logger'
 import type { EmailFolder, FilterType, FontSize, ViewMode } from './emailTypes'
@@ -110,6 +111,12 @@ export function EmailLayout() {
   const [listStyle, setListStyle] = useState<'inline' | 'stacked'>(() => {
     try { return (localStorage.getItem('email_list_style') as 'inline' | 'stacked') || 'stacked' } catch (err) { return 'stacked' }
   })
+  const [focusModus, setFocusModus] = useState<boolean>(() => {
+    try { return localStorage.getItem('doen_email_focus_modus') === 'true' } catch { return false }
+  })
+  useEffect(() => {
+    try { localStorage.setItem('doen_email_focus_modus', String(focusModus)) } catch { /* no-op */ }
+  }, [focusModus])
   const [folderDrawerOpen, setFolderDrawerOpen] = useState(false)
 
   // ─── Loading state ───
@@ -1451,7 +1458,32 @@ export function EmailLayout() {
 
   // ─── UNIFIED 3-COLUMN LAYOUT ───
   return (
-    <div className={cn('h-full flex flex-col -m-3 sm:-m-4 md:-m-6 overflow-hidden antialiased', viewMode === 'idle' ? 'bg-[#F8F7F5]' : 'bg-white')}>
+    <div className={cn('h-full flex flex-col -m-3 sm:-m-4 md:-m-6 overflow-hidden antialiased', viewMode === 'idle' || focusModus ? 'bg-[#F8F7F5]' : 'bg-white')}>
+      <div className="flex items-center justify-end gap-2 px-4 py-1.5 bg-white border-b border-[#EBEBEB] flex-shrink-0">
+        <span className="text-[11px] text-[#5F5E5A]">Focus modus</span>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={focusModus}
+          aria-label="Focus modus aan/uit"
+          onClick={() => setFocusModus(!focusModus)}
+          className={cn(
+            'relative inline-flex h-5 w-9 items-center rounded-full transition-colors',
+            focusModus ? 'bg-[#1A535C]' : 'bg-[#D4D3CE]'
+          )}
+        >
+          <span
+            className={cn(
+              'inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform',
+              focusModus ? 'translate-x-[18px]' : 'translate-x-0.5'
+            )}
+          />
+        </button>
+      </div>
+      {focusModus ? (
+        <EmailFocusKaart onUitzetten={() => setFocusModus(false)} />
+      ) : (
+      <>
       {viewMode === 'idle' && (
         <EmailMobileTopBar
           onOpenDrawer={() => setFolderDrawerOpen(true)}
@@ -1999,6 +2031,8 @@ export function EmailLayout() {
         />
       )}
       </div>
+      </>
+      )}
     </div>
   )
 }
