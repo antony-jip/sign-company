@@ -173,6 +173,81 @@ async function updateUsage(userId: string, inputTokens: number, outputTokens: nu
   }
 }
 
+// Inline budget-check — niet verplaatsen naar helper (Vercel constraint)
+async function checkAIBudget(
+  organisatieId: string,
+  geschatteKosten: number
+): Promise<{ geblokkeerd: boolean; reden?: string }> {
+  const maand = getCurrentMonth()
+  const { data: rows } = await supabase
+    .from('ai_usage_org')
+    .select('geschatte_kosten, maandlimiet')
+    .eq('organisatie_id', organisatieId)
+    .eq('maand', maand)
+  const huidig = (rows ?? []).reduce((s, r) => s + Number(r.geschatte_kosten ?? 0), 0)
+  const limiet = rows && rows.length > 0
+    ? Math.max(...rows.map(r => Number(r.maandlimiet ?? 10)))
+    : 10
+  if (huidig + geschatteKosten > limiet) {
+    await supabase
+      .from('ai_usage_org')
+      .update({ geblokkeerd_op: new Date().toISOString() })
+      .eq('organisatie_id', organisatieId)
+      .eq('maand', maand)
+      .is('geblokkeerd_op', null)
+    return { geblokkeerd: true, reden: 'maandlimiet_bereikt' }
+  }
+  return { geblokkeerd: false }
+}
+
+async function resolveOrgId(userId: string): Promise<string | null> {
+  const { data } = await supabase
+    .from('profiles')
+    .select('organisatie_id')
+    .eq('id', userId)
+    .maybeSingle()
+  return (data?.organisatie_id as string | null) ?? null
+}
+
+async function logOrgUsage(
+  organisatieId: string,
+  route: string,
+  inputTokens: number,
+  outputTokens: number,
+  inputPrice: number,
+  outputPrice: number
+): Promise<void> {
+  const maand = getCurrentMonth()
+  const kostenDelta = (inputTokens / 1_000_000) * inputPrice + (outputTokens / 1_000_000) * outputPrice
+  const { data: existing } = await supabase
+    .from('ai_usage_org')
+    .select('id, aantal_calls, geschatte_kosten')
+    .eq('organisatie_id', organisatieId)
+    .eq('route', route)
+    .eq('maand', maand)
+    .maybeSingle()
+  if (existing) {
+    await supabase
+      .from('ai_usage_org')
+      .update({
+        aantal_calls: (existing.aantal_calls ?? 0) + 1,
+        geschatte_kosten: Number((Number(existing.geschatte_kosten ?? 0) + kostenDelta).toFixed(4)),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', existing.id)
+  } else {
+    await supabase
+      .from('ai_usage_org')
+      .insert({
+        organisatie_id: organisatieId,
+        route,
+        maand,
+        aantal_calls: 1,
+        geschatte_kosten: Number(kostenDelta.toFixed(4)),
+      })
+  }
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
@@ -201,6 +276,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         error: 'AI limiet bereikt',
         message: 'Je hebt het maximum van €5 aan AI-gebruik bereikt deze maand.',
       })
+    }
+
+    const orgIdForBudget = await resolveOrgId(userId)
+    if (orgIdForBudget) {
+      const budget = await checkAIBudget(orgIdForBudget, 0.01)
+      if (budget.geblokkeerd) {
+        return res.status(403).json({
+          error: 'ai_budget_bereikt',
+          bericht: 'Je maandbudget voor AI is bereikt. Koop extra credits om door te gaan.',
+          redirect: '/instellingen?tab=daan-ai',
+        })
+      }
     }
 
     const { bedrijfscontext, schrijfstijl } = await buildDaanContext(supabase, userId)
@@ -293,6 +380,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     } catch {
       // Usage tracking is niet-kritiek
+    }
+
+    if (orgIdForBudget) {
+      try {
+        // Haiku pricing: $1/M input, $5/M output
+        await logOrgUsage(orgIdForBudget, 'ai-rewrite', data.usage.input_tokens, data.usage.output_tokens, 1, 5)
+      } catch {
+        // Org-usage tracking is niet-kritiek
+      }
     }
 
     return res.status(200).json({ result: resultText })

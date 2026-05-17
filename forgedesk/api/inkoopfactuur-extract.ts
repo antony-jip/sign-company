@@ -116,6 +116,33 @@ async function incrementOrgUsage(orgId: string, inputTokens: number, outputToken
   }
 }
 
+// Inline budget-check — niet verplaatsen naar helper (Vercel constraint)
+async function checkAIBudget(
+  organisatieId: string,
+  geschatteKosten: number
+): Promise<{ geblokkeerd: boolean; reden?: string }> {
+  const maand = getCurrentMonth()
+  const { data: rows } = await supabase
+    .from('ai_usage_org')
+    .select('geschatte_kosten, maandlimiet')
+    .eq('organisatie_id', organisatieId)
+    .eq('maand', maand)
+  const huidig = (rows ?? []).reduce((s, r) => s + Number(r.geschatte_kosten ?? 0), 0)
+  const limiet = rows && rows.length > 0
+    ? Math.max(...rows.map(r => Number(r.maandlimiet ?? 10)))
+    : 10
+  if (huidig + geschatteKosten > limiet) {
+    await supabase
+      .from('ai_usage_org')
+      .update({ geblokkeerd_op: new Date().toISOString() })
+      .eq('organisatie_id', organisatieId)
+      .eq('maand', maand)
+      .is('geblokkeerd_op', null)
+    return { geblokkeerd: true, reden: 'maandlimiet_bereikt' }
+  }
+  return { geblokkeerd: false }
+}
+
 async function markCapHit(orgId: string): Promise<void> {
   const maand = getCurrentMonth()
   const { data: updated } = await supabase
@@ -194,6 +221,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const orgId = profile.organisatie_id
+
+    const budget = await checkAIBudget(orgId, 0.01)
+    if (budget.geblokkeerd) {
+      return res.status(403).json({
+        error: 'ai_budget_bereikt',
+        bericht: 'Je maandbudget voor AI is bereikt. Koop extra credits om door te gaan.',
+        redirect: '/instellingen?tab=daan-ai',
+      })
+    }
 
     const cap = await checkOrgCap(orgId)
     if (!cap.allowed) {
