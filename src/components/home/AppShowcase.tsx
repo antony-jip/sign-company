@@ -248,6 +248,20 @@ const viewMeta: Record<View, { titel: string; sub: string; bullets: string[] }> 
       'Volledige activiteit-timeline: wie deed wat, wanneer',
     ],
   },
+  klanten: {
+    titel: 'Klanten',
+    sub: 'Je hele klantenbestand op één plek, met status, labels en projecthistorie.',
+    bullets: [
+      'KPI-cards: met aandacht, actief, prospect, inactief',
+      'Filter op status, labels (vooruit betalen, niet helpen, voorrang, grote klant, wanbetaler)',
+      'Filter op statussen (normaal, geblokkeerd, voorrang)',
+      'Zoek op naam, email, stad of tag',
+      'Sorteer op naam, stad, status of datum',
+      'Per klant: contactpersonen, projecten, openstaand bedrag, communicatie',
+      'Importeer in bulk vanuit Excel of CSV',
+      'Export naar CSV of Excel',
+    ],
+  },
   offerte: {
     titel: 'Offerte',
     sub: 'Bouw je offerte zoals jij rekent — met inkoop, marge en tekening per regel.',
