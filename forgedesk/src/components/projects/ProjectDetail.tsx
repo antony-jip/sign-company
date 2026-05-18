@@ -97,6 +97,7 @@ import {
   updateTaak,
   getOffertesByProject,
   updateOfferte,
+  deleteOfferte,
   createDocument,
   deleteDocument,
   getProjectFotos,
@@ -1616,9 +1617,34 @@ export function ProjectDetail() {
                         {!offerte.geconverteerd_naar_factuur_id && (
                           <button
                             onClick={() => handleCreateFactuurFromOfferte(offerte)}
-                            className="text-sm font-medium text-[#2D6B48] hover:underline ml-auto"
+                            className="text-sm font-medium text-[#2D6B48] hover:underline"
                           >
                             Factureren
+                          </button>
+                        )}
+                        {!offerte.geconverteerd_naar_factuur_id && (
+                          <button
+                            onClick={async () => {
+                              const ok = await confirm({
+                                message: `Offerte ${offerte.nummer} verwijderen? Dit kan niet ongedaan worden gemaakt.`,
+                                variant: 'destructive',
+                                confirmLabel: 'Verwijderen',
+                              })
+                              if (!ok) return
+                              try {
+                                await deleteOfferte(offerte.id)
+                                setProjectOffertes((prev) => prev.filter((o) => o.id !== offerte.id))
+                                toast.success(`Offerte ${offerte.nummer} verwijderd`)
+                              } catch (err) {
+                                logger.error('Offerte verwijderen mislukt:', err)
+                                toast.error('Kon offerte niet verwijderen')
+                              }
+                            }}
+                            className="ml-auto inline-flex items-center justify-center h-7 w-7 rounded-md text-[#C0BDB8] hover:bg-[#FDE8E4] hover:text-[#C03A18] transition-colors"
+                            title={`Offerte ${offerte.nummer} verwijderen`}
+                            aria-label={`Offerte ${offerte.nummer} verwijderen`}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
                           </button>
                         )}
                       </div>
