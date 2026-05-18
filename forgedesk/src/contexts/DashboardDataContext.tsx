@@ -62,6 +62,31 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
     fetchAll()
   }, [fetchAll])
 
+  // Houd de dashboard-data fris zonder volledige page-refresh:
+  //  - bij tab-/window-focus (gebruiker komt terug uit een andere tab)
+  //  - en als de tab > 60s open blijft (achtergrond-polling)
+  // Polling pauzeert wanneer de tab niet zichtbaar is, om onnodig
+  // verkeer te voorkomen.
+  useEffect(() => {
+    if (!user?.id) return
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') fetchAll()
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+    window.addEventListener('focus', fetchAll)
+
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === 'visible') fetchAll()
+    }, 60_000)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility)
+      window.removeEventListener('focus', fetchAll)
+      window.clearInterval(interval)
+    }
+  }, [fetchAll, user?.id])
+
   return (
     <DashboardDataContext.Provider value={{ projecten, offertes, facturen, taken, montages, klanten, medewerkers, events, isLoading, refresh: fetchAll }}>
       {children}
