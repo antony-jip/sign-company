@@ -293,7 +293,7 @@ export function KlantCard({ klant, project, contactpersonen, onContactpersoonCha
               <button
                 disabled={!editNaam.trim() || saving}
                 onClick={handleSaveCp}
-                className="text-[11px] font-semibold text-white bg-[#1A535C] hover:bg-[#237580] transition-colors px-3 py-1 rounded-md disabled:opacity-40"
+                className="text-[11px] font-semibold text-white bg-[#F15025] hover:bg-[#D94520] transition-colors px-3 py-1 rounded-md disabled:opacity-40"
               >
                 {saving ? 'Bezig…' : 'Opslaan'}
               </button>
