@@ -6,7 +6,7 @@ import { useDebouncedCallback } from '@/hooks/useDebounce'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
 import {
-  ArrowLeft, Save, FileText, Plus, ClipboardCheck, Printer, Share2, Lock,
+  Save, FileText, Plus, ClipboardCheck, Printer, Share2, Lock,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -722,13 +722,7 @@ export function WerkbonDetail() {
       {/* Header */}
       <div className="flex items-center justify-between gap-3 mb-5 flex-wrap">
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate('/werkbonnen')}
-            className="h-9 w-9 rounded-xl flex items-center justify-center transition-colors"
-            style={{ backgroundColor: '#FFFFFF', border: '1px solid #EBEBEB' }}
-          >
-            <ArrowLeft className="h-3.5 w-3.5" style={{ color: '#6B6B66' }} />
-          </button>
+          <BackButton fallbackPath="/werkbonnen" />
           <div className="h-10 w-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#F15025' }}>
             <ClipboardCheck className="h-4 w-4 text-white" />
           </div>
