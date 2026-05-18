@@ -1702,18 +1702,36 @@ export function FactuurEditor() {
             {/* Edit mode actions */}
             {isEditMode && existingFactuur && (
               <>
-                {/* Send button */}
-                {(currentStatus === 'concept') && (
-                  <Button
-                    size="sm"
-                    onClick={() => setSendDialogOpen(true)}
-                    disabled={!selectedKlant?.email}
-                    className="bg-flame hover:bg-flame/90 text-white"
-                  >
-                    <Send className="h-4 w-4 mr-1" />
-                    Versturen
-                  </Button>
-                )}
+                {/* Send button + verzendadres-preview */}
+                {(currentStatus === 'concept') && (() => {
+                  const sendEmail = resolvedCp?.email || selectedKlant?.email || ''
+                  const sendName = resolvedCp?.naam || 'Hoofdadres'
+                  return (
+                    <div className="flex items-center gap-2">
+                      {sendEmail && (
+                        <span
+                          className="hidden xl:inline-flex items-center gap-1 text-xs text-muted-foreground max-w-[280px] truncate"
+                          title={`Versturen naar ${sendEmail}`}
+                        >
+                          <span aria-hidden>→</span>
+                          <span className="truncate">
+                            {sendName} · <span className="font-mono">{sendEmail}</span>
+                          </span>
+                        </span>
+                      )}
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => setSendDialogOpen(true)}
+                        disabled={!sendEmail}
+                        title={sendEmail ? `Versturen naar ${sendEmail}` : 'Geen verzendadres bekend'}
+                      >
+                        <Send className="h-4 w-4 mr-1" />
+                        Versturen
+                      </Button>
+                    </div>
+                  )
+                })()}
 
                 {/* Mark as paid */}
                 {(currentStatus === 'verzonden' || currentStatus === 'vervallen' || isVervallen) && (
