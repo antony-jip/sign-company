@@ -121,10 +121,34 @@ function FORGEdeskDashboardInner() {
         <main className="flex-1 min-w-0 space-y-5">
           {/* ── Hero — petrol-gradient card met omzet-overlay rechts ── */}
           <section
-            className="rounded-2xl overflow-hidden"
+            className="relative rounded-2xl overflow-hidden"
             style={{ background: 'linear-gradient(135deg, #143E47 0%, #1A535C 55%, #2A6E78 100%)' }}
           >
-            <div className="flex flex-col md:flex-row">
+            {/* Rustige Flame-orbs die langzaam over de banner drijven —
+                vult de open vlakke ruimte op brede schermen subtiel op. */}
+            <div
+              className="hero-orb-a absolute pointer-events-none rounded-full"
+              aria-hidden
+              style={{
+                top: '-30%',
+                left: '38%',
+                width: '420px',
+                height: '420px',
+                background: 'radial-gradient(closest-side, rgba(241,80,37,0.18), rgba(241,80,37,0) 70%)',
+              }}
+            />
+            <div
+              className="hero-orb-b absolute pointer-events-none rounded-full"
+              aria-hidden
+              style={{
+                bottom: '-40%',
+                left: '58%',
+                width: '520px',
+                height: '520px',
+                background: 'radial-gradient(closest-side, rgba(157,211,218,0.14), rgba(157,211,218,0) 70%)',
+              }}
+            />
+            <div className="relative flex flex-col md:flex-row">
               <div className="flex-1 px-7 py-7 sm:px-9 sm:py-9">
                 <div className="flex items-center gap-2 mb-4">
                   <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#F15025]" aria-hidden />
