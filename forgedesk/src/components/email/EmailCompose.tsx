@@ -6,11 +6,12 @@ import {
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
-import { getKlanten, getEmailTemplates, createEmailTemplate, deleteEmailTemplate, type EmailTemplate } from '@/services/supabaseService'
+import { getKlanten, getContactpersonenDB, getEmailTemplates, createEmailTemplate, deleteEmailTemplate, type EmailTemplate } from '@/services/supabaseService'
+import { useAuth } from '@/contexts/AuthContext'
 import { uploadEmailBijlage } from '@/services/storageService'
 import { toast } from 'sonner'
 import { cn, getInitials } from '@/lib/utils'
-import type { Klant, Contactpersoon, Email } from '@/types'
+import type { Klant, Contactpersoon, ContactpersoonRecord, Email } from '@/types'
 
 type ToSuggestion =
   | { kind: 'klant'; klant: Klant }
@@ -89,6 +90,7 @@ export function EmailCompose({
 }: EmailComposeProps) {
   const navigate = useNavigate()
   const { emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, bedrijfsnaam } = useAppSettings()
+  const { organisatieId } = useAuth()
 
   const [to, setTo] = useState(defaultTo)
   const [cc, setCc] = useState('')
@@ -105,6 +107,7 @@ export function EmailCompose({
 
   // Contacts autocomplete
   const [contacts, setContacts] = useState<Klant[]>([])
+  const [dbContacten, setDbContacten] = useState<ContactpersoonRecord[]>([])
   const [suggestions, setSuggestions] = useState<ToSuggestion[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
   const toInputRef = useRef<HTMLInputElement>(null)
@@ -199,8 +202,11 @@ export function EmailCompose({
     if (open) {
       getKlanten().then(setContacts).catch(() => {})
       getEmailTemplates().then(setDbTemplates).catch(() => {})
+      if (organisatieId) {
+        getContactpersonenDB(organisatieId).then(setDbContacten).catch(() => {})
+      }
     }
-  }, [open])
+  }, [open, organisatieId])
 
   // Auto-save concept every 30s
   useEffect(() => {
@@ -217,7 +223,7 @@ export function EmailCompose({
 
   const handleToChange = useCallback((value: string) => {
     setTo(value)
-    if (value.length >= 2 && contacts.length > 0) {
+    if (value.length >= 2 && (contacts.length > 0 || dbContacten.length > 0)) {
       const q = value.toLowerCase()
       const matches: ToSuggestion[] = []
       const seenEmails = new Set<string>()
@@ -244,14 +250,40 @@ export function EmailCompose({
             seenEmails.add(cpKey)
           }
         }
-        if (matches.length >= 8) break
+        if (matches.length >= 12) break
       }
+
+      // DB-contactpersonen (los van JSONB) — bv. losse cps die alleen via
+      // de contactpersonen-tabel zijn aangemaakt vinden we hier
+      for (const c of dbContacten) {
+        if (matches.length >= 12) break
+        if (!c.email) continue
+        const cpKey = c.email.toLowerCase()
+        if (seenEmails.has(cpKey)) continue
+        const naam = [c.voornaam, c.achternaam].filter(Boolean).join(' ').trim() || c.email
+        const klant = c.klant_id ? contacts.find((k) => k.id === c.klant_id) : undefined
+        const klantNaam = klant?.bedrijfsnaam || c.klant?.bedrijfsnaam || ''
+        const cpMatches =
+          naam.toLowerCase().includes(q) ||
+          c.email.toLowerCase().includes(q) ||
+          klantNaam.toLowerCase().includes(q)
+        if (cpMatches) {
+          matches.push({
+            kind: 'contactpersoon',
+            cp: { id: c.id, naam, functie: c.functie || '', email: c.email, telefoon: c.telefoon || '', is_primair: false },
+            klantNaam,
+            klantId: c.klant_id || '',
+          })
+          seenEmails.add(cpKey)
+        }
+      }
+
       setSuggestions(matches.slice(0, 8))
       setShowSuggestions(matches.length > 0)
     } else {
       setShowSuggestions(false)
     }
-  }, [contacts])
+  }, [contacts, dbContacten])
 
   const handleSelectSuggestion = useCallback((item: ToSuggestion) => {
     const email = item.kind === 'klant' ? item.klant.email : item.cp.email
