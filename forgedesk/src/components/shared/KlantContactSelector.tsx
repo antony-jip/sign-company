@@ -451,18 +451,24 @@ export function KlantContactSelector({
                 value={contactpersoonId || '__none__'}
                 onValueChange={(v) => onContactpersoonChange(v === '__none__' ? '' : v)}
               >
-                <SelectTrigger className="h-10 text-[13px]">
+                <SelectTrigger className="h-10 text-[13px] rounded-lg border-[#EBEBEB] bg-[#F8F7F5] focus:bg-white hover:bg-white transition-colors">
                   <SelectValue placeholder="Kies een contactpersoon" />
                 </SelectTrigger>
                 <SelectContent>
                   {selectedKlant?.email && (
-                    <SelectItem value="__none__">
-                      Hoofdadres{selectedKlant.email ? ` — ${selectedKlant.email}` : ''}
+                    <SelectItem value="__none__" textValue={`Hoofdadres ${selectedKlant.email}`}>
+                      <div className="flex flex-col">
+                        <span className="text-[13px]">Hoofdadres</span>
+                        <span className="text-[11px] text-muted-foreground">{selectedKlant.email}</span>
+                      </div>
                     </SelectItem>
                   )}
                   {contactpersonen.map((cp) => (
-                    <SelectItem key={cp.id} value={cp.id}>
-                      {cp.naam}{cp.email ? ` — ${cp.email}` : ''}
+                    <SelectItem key={cp.id} value={cp.id} textValue={`${cp.naam} ${cp.email || ''}`}>
+                      <div className="flex flex-col">
+                        <span className="text-[13px]">{cp.naam}</span>
+                        {cp.email && <span className="text-[11px] text-muted-foreground">{cp.email}</span>}
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
