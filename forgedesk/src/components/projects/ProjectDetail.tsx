@@ -1241,6 +1241,22 @@ export function ProjectDetail() {
               }
             }}
             onOpdrachtbevestiging={(offerte) => setObPreviewOfferte(offerte)}
+            onOfferteDelete={async (offerte) => {
+              const ok = await confirm({
+                message: `Offerte ${offerte.nummer} verwijderen? Dit kan niet ongedaan worden gemaakt.`,
+                variant: 'destructive',
+                confirmLabel: 'Verwijderen',
+              })
+              if (!ok) return
+              try {
+                await deleteOfferte(offerte.id)
+                setProjectOffertes((prev) => prev.filter((o) => o.id !== offerte.id))
+                toast.success(`Offerte ${offerte.nummer} verwijderd`)
+              } catch (err) {
+                logger.error('Offerte verwijderen mislukt:', err)
+                toast.error('Kon offerte niet verwijderen')
+              }
+            }}
           />
 
           {/* Activiteit */}

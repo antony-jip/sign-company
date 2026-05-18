@@ -3,6 +3,7 @@ import {
   ListChecks as PhListChecks,
   Receipt as PhReceipt,
   Plus as PhPlus,
+  Trash as PhTrash,
 } from '@phosphor-icons/react'
 import { formatAmount } from '@/lib/utils'
 import { getStatusPillClass, getStatusPillTone, getStatusLabel, type PillTone } from '@/utils/statusColors'
@@ -27,6 +28,7 @@ interface TakenOfferteGridProps {
   onNewOfferte: () => void
   onTaakStatusChange: (taakId: string, newStatus: Taak['status']) => Promise<void>
   onOpdrachtbevestiging?: (offerte: Offerte) => void
+  onOfferteDelete?: (offerte: Offerte) => Promise<void> | void
 }
 
 export function TakenOfferteGrid({
@@ -36,6 +38,7 @@ export function TakenOfferteGrid({
   onNewTaak,
   onNewOfferte,
   onTaakStatusChange,
+  onOfferteDelete,
 }: TakenOfferteGridProps) {
   const navigate = useNavigate()
 
@@ -152,6 +155,20 @@ export function TakenOfferteGrid({
                       <span className="text-[#9B9B95]">€</span>
                       <span className="text-[#1A1A1A] font-bold ml-0.5">{formatAmount(offerte.totaal)}</span>
                     </span>
+                    {onOfferteDelete && !offerte.geconverteerd_naar_factuur_id && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          void onOfferteDelete(offerte)
+                        }}
+                        title={`Offerte ${offerte.nummer} verwijderen`}
+                        aria-label={`Offerte ${offerte.nummer} verwijderen`}
+                        className="opacity-0 group-hover:opacity-100 focus:opacity-100 h-7 w-7 rounded-md flex items-center justify-center text-[#C0BDB8] hover:bg-[#FDE8E4] hover:text-[#C03A18] transition-all flex-shrink-0"
+                      >
+                        <PhTrash size={14} weight="duotone" />
+                      </button>
+                    )}
                   </div>
                 </div>
               )
