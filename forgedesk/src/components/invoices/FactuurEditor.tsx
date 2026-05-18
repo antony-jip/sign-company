@@ -1680,11 +1680,11 @@ export function FactuurEditor() {
 
   return (
     <div className="min-h-screen bg-[#F8F7F5]">
-      <div className="px-6 pt-3">
+      <div className="px-8 pt-3">
         <BackButton fallbackPath="/facturen" />
       </div>
       {/* Header */}
-      <div className="sticky top-0 z-30 bg-[#F8F7F5]/95 backdrop-blur border-b border-sand px-6 py-3">
+      <div className="sticky top-0 z-30 bg-[#F8F7F5]/95 backdrop-blur border-b border-[#EBEBEB] px-8 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div>
@@ -1879,32 +1879,36 @@ export function FactuurEditor() {
         </div>
       </div>
 
-      {/* Status bar for existing invoices */}
+      {/* Status bar for existing invoices — tekst + Flame punt, geen kleurig vlak */}
       {isEditMode && existingFactuur && (
-        <div className="px-6 pt-4">
-          <div className={cn(
-            'flex items-center gap-3 rounded-lg border px-4 py-2.5 text-sm',
-            currentStatus === 'betaald' && 'bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-900/20 dark:border-emerald-800 dark:text-emerald-300',
-            currentStatus === 'verzonden' && !isVervallen && 'bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-300',
-            currentStatus === 'concept' && 'bg-petrol text-white border-petrol dark:bg-petrol/90 dark:border-petrol dark:text-white',
-            currentStatus === 'gecrediteerd' && 'bg-purple-50 border-purple-200 text-purple-800 dark:bg-purple-900/20 dark:border-purple-800 dark:text-purple-300',
-            isVervallen && 'bg-red-50 border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-300',
-          )}>
-            {currentStatus === 'betaald' && <CheckCircle2 className="h-4 w-4" />}
-            {currentStatus === 'verzonden' && !isVervallen && <Send className="h-4 w-4" />}
-            {currentStatus === 'concept' && <FileText className="h-4 w-4" />}
-            {currentStatus === 'gecrediteerd' && <MinusCircle className="h-4 w-4" />}
-            {isVervallen && <AlertTriangle className="h-4 w-4" />}
-            <span>
-              {currentStatus === 'betaald' && <>Betaald op <span className="font-mono">{formatDate(existingFactuur.betaaldatum || '')}</span><span style={{ color: '#F15025' }}>.</span></>}
-              {currentStatus === 'verzonden' && !isVervallen && <>Verstuurd · wachtend op betaling<span style={{ color: '#F15025' }}>.</span></>}
-              {currentStatus === 'concept' && <>Concept · nog niet verstuurd<span style={{ color: '#F15025' }}>.</span></>}
-              {currentStatus === 'gecrediteerd' && <>Gecrediteerd<span style={{ color: '#F15025' }}>.</span></>}
-              {isVervallen && <>{dagenVervallen} dag{dagenVervallen !== 1 ? 'en' : ''} vervallen<span style={{ color: '#F15025' }}>.</span></>}
+        <div className="px-8 pt-3">
+          <div className="flex items-center gap-3 text-sm text-[#6B6B66]">
+            {(() => {
+              const iconClass = cn(
+                'h-3.5 w-3.5',
+                currentStatus === 'betaald' && 'text-[#3A7D52]',
+                currentStatus === 'verzonden' && !isVervallen && 'text-[#3A5A9A]',
+                currentStatus === 'concept' && 'text-[#8A7A4A]',
+                currentStatus === 'gecrediteerd' && 'text-[#6A5A8A]',
+                isVervallen && 'text-[#C0451A]',
+              )
+              if (currentStatus === 'betaald') return <CheckCircle2 className={iconClass} />
+              if (currentStatus === 'verzonden' && !isVervallen) return <Send className={iconClass} />
+              if (currentStatus === 'concept') return <FileText className={iconClass} />
+              if (currentStatus === 'gecrediteerd') return <MinusCircle className={iconClass} />
+              if (isVervallen) return <AlertTriangle className={iconClass} />
+              return null
+            })()}
+            <span className="text-[#1A1A1A]">
+              {currentStatus === 'betaald' && <>Betaald op <span className="font-mono">{formatDate(existingFactuur.betaaldatum || '')}</span><span className="text-[#F15025]">.</span></>}
+              {currentStatus === 'verzonden' && !isVervallen && <>Verstuurd · wachtend op betaling<span className="text-[#F15025]">.</span></>}
+              {currentStatus === 'concept' && <>Concept · nog niet verstuurd<span className="text-[#F15025]">.</span></>}
+              {currentStatus === 'gecrediteerd' && <>Gecrediteerd<span className="text-[#F15025]">.</span></>}
+              {isVervallen && <>{dagenVervallen} dag{dagenVervallen !== 1 ? 'en' : ''} vervallen<span className="text-[#F15025]">.</span></>}
             </span>
             {existingFactuur.betaal_link && currentStatus !== 'betaald' && (
-              <span className="ml-auto text-xs opacity-70">
-                Betaallink: {existingFactuur.betaal_link}
+              <span className="ml-auto text-xs text-[#9B9B95] truncate max-w-[420px]" title={existingFactuur.betaal_link}>
+                {existingFactuur.betaal_link}
               </span>
             )}
           </div>
@@ -1912,11 +1916,11 @@ export function FactuurEditor() {
       )}
 
       {/* Content: Two-column layout */}
-      <div className="px-6 py-6 grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-6 lg:items-start">
+      <div className="px-8 py-6 grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-6 lg:items-start">
         {/* LEFT PANEL: Klant & Meta — sticky met intern scroll bij lange inhoud */}
         <div className="space-y-4 lg:sticky lg:top-[88px] lg:self-start lg:max-h-[calc(100vh-104px)] lg:overflow-y-auto lg:pr-1">
           {/* Klant selectie */}
-          <Card className="bg-[#1A535C0D] border-petrol-border">
+          <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium flex items-center gap-2 text-petrol">
                 <Building2 className="h-4 w-4" />
@@ -1958,7 +1962,7 @@ export function FactuurEditor() {
           </Card>
 
           {/* Factuur gegevens */}
-          <Card className="bg-[#1A535C0D] border-petrol-border">
+          <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium flex items-center gap-2 text-petrol">
                 <FileText className="h-4 w-4" />
@@ -2018,7 +2022,7 @@ export function FactuurEditor() {
           </Card>
 
           {/* Financieel overzicht */}
-          <Card className="bg-[#F8F7F5] border-sand">
+          <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium flex items-center gap-2 text-petrol">
                 <Euro className="h-4 w-4" />
@@ -2065,7 +2069,7 @@ export function FactuurEditor() {
               exactDocumentId={existingFactuur.exact_document_id}
             />
           ) : (
-            <Card className="bg-[#F8F7F5] border-sand">
+            <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium flex items-center gap-2 text-petrol">
                   <Paperclip className="h-4 w-4" />
@@ -2214,8 +2218,8 @@ export function FactuurEditor() {
               </div>
             </CardHeader>
             <CardContent>
-              {/* Table header */}
-              <div className="hidden md:grid md:grid-cols-[1fr_70px_95px_60px_75px_100px_100px_36px] gap-2 px-3 py-2.5 mb-2 text-xs font-bold uppercase tracking-label text-white bg-petrol rounded-lg">
+              {/* Table header — kolomlabels in tertiary uppercase, geen gekleurd vlak */}
+              <div className="hidden md:grid md:grid-cols-[1fr_70px_95px_60px_75px_100px_100px_36px] gap-2 px-3 py-2 mb-1 text-[11px] font-bold uppercase tracking-wider text-[#9B9B95] border-b border-[#EBEBEB]">
                 <span>Omschrijving</span>
                 <span className="text-right">Aantal</span>
                 <span className="text-right">Prijs</span>
@@ -2226,14 +2230,11 @@ export function FactuurEditor() {
                 <span />
               </div>
 
-              <div className="space-y-1">
-                {items.map((item, idx) => (
+              <div className="divide-y divide-[#EBEBEB]">
+                {items.map((item) => (
                   <div
                     key={item.id}
-                    className={cn(
-                      "grid grid-cols-1 md:grid-cols-[1fr_70px_95px_60px_75px_100px_100px_36px] gap-2 p-2 rounded-lg border transition-colors hover:bg-petrol-light/60 hover:border-petrol-border",
-                      idx % 2 === 0 ? 'bg-card' : 'bg-[#F8F7F5]/50'
-                    )}
+                    className="grid grid-cols-1 md:grid-cols-[1fr_70px_95px_60px_75px_100px_100px_36px] gap-2 px-3 py-3 transition-colors hover:bg-[#F8F7F5]"
                   >
                     <Input
                       value={item.beschrijving}
@@ -2325,7 +2326,7 @@ export function FactuurEditor() {
 
               {/* Totaal rij */}
               {validItems.length > 0 && (
-                <div className="hidden md:grid md:grid-cols-[1fr_70px_95px_60px_75px_100px_100px_36px] gap-2 px-3 py-2.5 mt-2 bg-[#F8F7F5] rounded-lg border border-sand">
+                <div className="hidden md:grid md:grid-cols-[1fr_70px_95px_60px_75px_100px_100px_36px] gap-2 px-3 py-3 border-t-2 border-[#EBEBEB]">
                   <span className="text-sm font-semibold text-petrol">Totaal</span>
                   <span />
                   <span />
@@ -2337,15 +2338,14 @@ export function FactuurEditor() {
                 </div>
               )}
 
-              <Button
-                variant="ghost"
-                size="sm"
+              <button
+                type="button"
                 onClick={handleAddItem}
-                className="mt-3 w-full border-dashed border hover:border-petrol hover:text-petrol"
+                className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-[#F15025] hover:text-[#D94520] transition-colors"
               >
-                <Plus className="h-4 w-4 mr-1" />
+                <Plus className="h-4 w-4" />
                 Regel toevoegen
-              </Button>
+              </button>
             </CardContent>
           </Card>
 
