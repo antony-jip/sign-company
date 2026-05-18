@@ -2498,63 +2498,86 @@ export function FactuurEditor() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Send className="h-5 w-5 text-blue-500" />
+              <Send className="h-5 w-5 text-[#F15025]" />
               Factuur versturen
             </DialogTitle>
             <DialogDescription>
-              Verstuur factuur {nummer} naar {selectedKlant?.email || 'klant'}.
+              Factuur {nummer} gaat naar {resolvedCp?.naam || 'het hoofdadres'}.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-3 py-2">
-            <div className="text-sm">
-              <span className="text-muted-foreground">Aan:</span>{' '}
-              <span className="font-medium">{selectedKlant?.email}</span>
+          <div className="space-y-3 py-2 text-sm">
+            <div className="flex items-baseline justify-between">
+              <span className="text-muted-foreground">Aan</span>
+              <span className="text-right">
+                {resolvedCp?.naam && <span className="font-medium">{resolvedCp.naam}</span>}
+                <span className="font-mono text-xs text-muted-foreground">
+                  {resolvedCp?.naam ? ` · ` : ''}{resolvedCp?.email || selectedKlant?.email}
+                </span>
+              </span>
             </div>
-            <div className="text-sm">
-              <span className="text-muted-foreground">Bedrag:</span>{' '}
+            <div className="flex items-baseline justify-between">
+              <span className="text-muted-foreground">Bedrag</span>
               <span className="font-mono font-semibold">{formatCurrency(totaal)}</span>
             </div>
-            <div className="text-sm">
-              <span className="text-muted-foreground">Vervaldatum:</span>{' '}
+            <div className="flex items-baseline justify-between">
+              <span className="text-muted-foreground">Vervaldatum</span>
               <span className="font-mono">{formatDate(vervaldatum)}</span>
             </div>
-            {dialogBijlagen.length > 0 && (() => {
-              const totaalGrootte = dialogBijlagen
-                .filter((b) => selectedBijlageIds.has(b.id))
-                .reduce((sum, b) => sum + b.grootte, 0)
-              const totaalMb = totaalGrootte / 1024 / 1024
+            {(() => {
+              const werkbon = werkbonId ? werkbonnen.find((w) => w.id === werkbonId) : undefined
+              const extraSelected = dialogBijlagen.filter((b) => selectedBijlageIds.has(b.id))
+              const extraGrootte = extraSelected.reduce((sum, b) => sum + b.grootte, 0)
+              const totaalMb = extraGrootte / 1024 / 1024
               const tooGroot = totaalMb > 23
               return (
                 <div className="border-t pt-3 space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Extra bijlagen</span>
-                    <span className={cn('font-mono text-xs', tooGroot ? 'text-amber-600 font-semibold' : 'text-muted-foreground')}>
-                      {totaalMb.toFixed(1)} MB
-                    </span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground text-xs uppercase tracking-wider">Bijlagen</span>
+                    {extraSelected.length > 0 && (
+                      <span className={cn('font-mono text-xs', tooGroot ? 'text-amber-600 font-semibold' : 'text-muted-foreground')}>
+                        {totaalMb.toFixed(1)} MB
+                      </span>
+                    )}
                   </div>
-                  <div className="space-y-1.5 max-h-40 overflow-y-auto">
-                    {dialogBijlagen.map((bij) => (
-                      <label
-                        key={bij.id}
-                        className="flex items-center gap-2 text-xs cursor-pointer hover:bg-muted/40 rounded px-1.5 py-1"
-                      >
-                        <Checkbox
-                          checked={selectedBijlageIds.has(bij.id)}
-                          onCheckedChange={(checked) => {
-                            setSelectedBijlageIds((prev) => {
-                              const next = new Set(prev)
-                              if (checked) next.add(bij.id)
-                              else next.delete(bij.id)
-                              return next
-                            })
-                          }}
-                        />
-                        <span className="flex-1 truncate" title={bij.bestandsnaam}>{bij.bestandsnaam}</span>
-                        <span className="font-mono text-[10px] text-muted-foreground">
-                          {(bij.grootte / 1024 / 1024).toFixed(1)} MB
-                        </span>
-                      </label>
-                    ))}
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground px-1.5 py-1">
+                      <Paperclip className="h-3 w-3 shrink-0" />
+                      <span className="flex-1 truncate">Factuur-{nummer}.pdf</span>
+                      <span className="text-[10px] text-muted-foreground/70">automatisch</span>
+                    </div>
+                    {werkbon && (
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground px-1.5 py-1">
+                        <Paperclip className="h-3 w-3 shrink-0" />
+                        <span className="flex-1 truncate">Werkbon-{werkbon.werkbon_nummer}.pdf</span>
+                        <span className="text-[10px] text-muted-foreground/70">gekoppeld</span>
+                      </div>
+                    )}
+                    {dialogBijlagen.length > 0 && (
+                      <div className="max-h-40 overflow-y-auto space-y-0.5">
+                        {dialogBijlagen.map((bij) => (
+                          <label
+                            key={bij.id}
+                            className="flex items-center gap-2 text-xs cursor-pointer hover:bg-[#F8F7F5] rounded px-1.5 py-1"
+                          >
+                            <Checkbox
+                              checked={selectedBijlageIds.has(bij.id)}
+                              onCheckedChange={(checked) => {
+                                setSelectedBijlageIds((prev) => {
+                                  const next = new Set(prev)
+                                  if (checked) next.add(bij.id)
+                                  else next.delete(bij.id)
+                                  return next
+                                })
+                              }}
+                            />
+                            <span className="flex-1 truncate" title={bij.bestandsnaam}>{bij.bestandsnaam}</span>
+                            <span className="font-mono text-[10px] text-muted-foreground">
+                              {(bij.grootte / 1024 / 1024).toFixed(1)} MB
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   {tooGroot && (
                     <p className="text-[11px] text-amber-700 leading-snug">
@@ -2567,7 +2590,7 @@ export function FactuurEditor() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setSendDialogOpen(false)}>Annuleren</Button>
-            <Button onClick={handleSendFactuur} disabled={isSending}>
+            <Button variant="destructive" onClick={handleSendFactuur} disabled={isSending}>
               {isSending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Send className="h-4 w-4 mr-1" />}
               Versturen
             </Button>
