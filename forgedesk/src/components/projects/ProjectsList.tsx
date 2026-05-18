@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react'
-import { Link } from 'react-router-dom'
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useNavigateWithTab } from '@/hooks/useNavigateWithTab'
 import {
   Plus,
@@ -171,7 +171,19 @@ export function ProjectsList() {
   const [statusFilter, setStatusFilter] = useState('alle')
   const [sortField, setSortField] = useState<'naam' | 'bedrag' | 'created_at'>('created_at')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
-  const [currentPage, setCurrentPage] = useState(1)
+  // Pagina-nummer leeft in de URL (?page=N) zodat het bewaard blijft bij
+  // navigatie naar een detail-pagina en weer terug via de browser back-knop.
+  const [searchParams, setSearchParams] = useSearchParams()
+  const currentPage = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1)
+  const setCurrentPage = useCallback((next: number | ((prev: number) => number)) => {
+    const value = typeof next === 'function' ? next(currentPage) : next
+    setSearchParams((prev) => {
+      const params = new URLSearchParams(prev)
+      if (value <= 1) params.delete('page')
+      else params.set('page', String(value))
+      return params
+    }, { replace: true })
+  }, [currentPage, setSearchParams])
   const PAGE_SIZE = 50
   const photoInputRef = React.useRef<HTMLInputElement>(null)
   const [photoUploadProjectId, setPhotoUploadProjectId] = useState<string | null>(null)
@@ -481,7 +493,18 @@ export function ProjectsList() {
     return result
   }, [projecten, klanten, offertes, zoekterm, statusFilter, dagenOpenFilter, sortField, sortDir, groupBy])
 
-  useEffect(() => { setCurrentPage(1) }, [zoekterm, statusFilter, dagenOpenFilter, sortField, sortDir, groupBy])
+  // Reset paginanummer als de gebruiker filtert. Skip de allereerste render
+  // zodat een via de URL hersteld pagina-nummer (?page=N) niet meteen
+  // teruggezet wordt naar 1.
+  const filterResetSkippedRef = useRef(false)
+  useEffect(() => {
+    if (!filterResetSkippedRef.current) {
+      filterResetSkippedRef.current = true
+      return
+    }
+    setCurrentPage(1)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zoekterm, statusFilter, dagenOpenFilter, sortField, sortDir, groupBy])
 
   function projectGroupKey(p: Project): string {
     if (groupBy === 'status') return p.status
