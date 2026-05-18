@@ -173,35 +173,6 @@ function FORGEdeskDashboardInner() {
                 background: 'radial-gradient(closest-side, rgba(157,211,218,0.14), rgba(157,211,218,0) 70%)',
               }}
             />
-            {/* Rustige Flame-goudvis die langzaam door de banner zwemt */}
-            <div
-              className="hero-fish absolute pointer-events-none"
-              aria-hidden
-              style={{ top: '46%', left: 0, width: '64px', opacity: 0.85 }}
-            >
-              <svg
-                className="hero-fish-inner"
-                viewBox="0 0 64 28"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                style={{ display: 'block' }}
-              >
-                {/* Body */}
-                <ellipse cx="26" cy="14" rx="18" ry="9" fill="#F15025" />
-                {/* Belly highlight */}
-                <ellipse cx="22" cy="17" rx="12" ry="4" fill="#FF6B3D" opacity="0.55" />
-                {/* Tail */}
-                <path d="M44 14 L60 4 L58 14 L60 24 Z" fill="#F15025" />
-                <path d="M48 14 L58 8 L57 14 L58 20 Z" fill="#FF6B3D" opacity="0.6" />
-                {/* Top fin */}
-                <path d="M24 6 Q28 0 34 5 L30 7 Z" fill="#D94520" />
-                {/* Bottom fin */}
-                <path d="M22 22 Q26 27 32 22 L28 21 Z" fill="#D94520" />
-                {/* Eye */}
-                <circle cx="14" cy="12" r="2" fill="#1A1A1A" />
-                <circle cx="13.4" cy="11.4" r="0.6" fill="#FFFFFF" />
-              </svg>
-            </div>
             <div className="relative flex flex-col md:flex-row">
               <div className="flex-1 px-7 py-7 sm:px-9 sm:py-9">
                 <div className="flex items-center gap-2 mb-4">
@@ -244,7 +215,7 @@ function FORGEdeskDashboardInner() {
 
               {weather && WeatherIcon && (
                 <div
-                  className="hidden md:flex flex-col justify-center px-7 py-6 sm:px-8 w-[260px] relative overflow-hidden"
+                  className="hidden md:flex flex-col justify-center px-7 py-6 sm:px-8 w-[280px] lg:w-[420px] xl:w-[480px] relative overflow-hidden"
                   style={{
                     background: 'rgba(255,255,255,0.04)',
                     borderLeft: '1px solid rgba(255,255,255,0.08)',
@@ -296,17 +267,21 @@ function FORGEdeskDashboardInner() {
                       {weather.label}
                     </p>
 
-                    {(weather.forecast?.length ?? 0) >= 2 && (
+                    {(weather.forecast?.length ?? 0) >= 2 && (() => {
+                      const hasOverflow = !(forecastScroll.atStart && forecastScroll.atEnd)
+                      return (
                       <div className="mt-4 pt-3 flex items-center gap-2" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                        <button
-                          type="button"
-                          onClick={() => scrollForecast(-1)}
-                          disabled={forecastScroll.atStart}
-                          aria-label="Eerdere dagen"
-                          className="h-7 w-7 flex-shrink-0 rounded-full bg-white/10 hover:bg-white/20 text-white/80 flex items-center justify-center transition-all disabled:opacity-30 disabled:cursor-default disabled:hover:bg-white/10"
-                        >
-                          <ChevronLeft className="w-3.5 h-3.5" />
-                        </button>
+                        {hasOverflow && (
+                          <button
+                            type="button"
+                            onClick={() => scrollForecast(-1)}
+                            disabled={forecastScroll.atStart}
+                            aria-label="Eerdere dagen"
+                            className="h-7 w-7 flex-shrink-0 rounded-full bg-white/10 hover:bg-white/20 text-white/80 flex items-center justify-center transition-all disabled:opacity-30 disabled:cursor-default disabled:hover:bg-white/10"
+                          >
+                            <ChevronLeft className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                         <div
                           ref={forecastScrollerRef}
                           className="flex-1 min-w-0 flex gap-4 overflow-x-auto scroll-smooth"
@@ -323,7 +298,7 @@ function FORGEdeskDashboardInner() {
                                 ? 'Overmorgen'
                                 : `${dagNaam} ${dateObj.getDate()}`
                             return (
-                              <div key={day.date} className="min-w-[72px] flex-shrink-0">
+                              <div key={day.date} className="min-w-[64px] flex-shrink-0">
                                 <p className="text-[10px] uppercase tracking-wider text-white/55 font-mono whitespace-nowrap">
                                   {dagLabel}
                                 </p>
@@ -337,17 +312,20 @@ function FORGEdeskDashboardInner() {
                             )
                           })}
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => scrollForecast(1)}
-                          disabled={forecastScroll.atEnd}
-                          aria-label="Latere dagen"
-                          className="h-7 w-7 flex-shrink-0 rounded-full bg-white/10 hover:bg-white/20 text-white/80 flex items-center justify-center transition-all disabled:opacity-30 disabled:cursor-default disabled:hover:bg-white/10"
-                        >
-                          <ChevronRight className="w-3.5 h-3.5" />
-                        </button>
+                        {hasOverflow && (
+                          <button
+                            type="button"
+                            onClick={() => scrollForecast(1)}
+                            disabled={forecastScroll.atEnd}
+                            aria-label="Latere dagen"
+                            className="h-7 w-7 flex-shrink-0 rounded-full bg-white/10 hover:bg-white/20 text-white/80 flex items-center justify-center transition-all disabled:opacity-30 disabled:cursor-default disabled:hover:bg-white/10"
+                          >
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
-                    )}
+                      )
+                    })()}
                   </div>
                 </div>
               )}

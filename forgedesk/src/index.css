@@ -2795,28 +2795,9 @@ button, a, [role="button"], summary, label, input[type="checkbox"], input[type="
 .hero-orb-a { animation: hero-orb-drift-a 36s ease-in-out infinite; }
 .hero-orb-b { animation: hero-orb-drift-b 48s ease-in-out infinite; animation-delay: -12s; }
 
-/* Rustige goudvis die langzaam van rechts naar links door de hero-banner
-   zwemt. Twee samengestelde animaties:
-   - .hero-fish-swim:  baan over de banner (richting + lichte verticale bob)
-   - .hero-fish-wiggle: zachte yaw zodat het meer leeft dan glijdt */
-@keyframes hero-fish-swim {
-  0%   { transform: translate3d(105vw, 0, 0) scaleX(-1); }
-  48%  { transform: translate3d(-15vw, -14px, 0) scaleX(-1); }
-  50%  { transform: translate3d(-15vw, -14px, 0) scaleX(1); }
-  98%  { transform: translate3d(105vw, 8px, 0) scaleX(1); }
-  100% { transform: translate3d(105vw, 8px, 0) scaleX(-1); }
-}
-@keyframes hero-fish-wiggle {
-  0%, 100% { transform: rotate(-3deg); }
-  50%      { transform: rotate(3deg); }
-}
-.hero-fish        { animation: hero-fish-swim 64s linear infinite; }
-.hero-fish-inner  { animation: hero-fish-wiggle 1.6s ease-in-out infinite; transform-origin: 70% 50%; }
-
 @media (prefers-reduced-motion: reduce) {
   .hero-cloud-a, .hero-cloud-b,
-  .hero-orb-a, .hero-orb-b,
-  .hero-fish, .hero-fish-inner { animation: none; }
+  .hero-orb-a, .hero-orb-b { animation: none; }
 }
 
 /* Doen-vibe-card — slide-in animaties bij elke fact-rotate */
