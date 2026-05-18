@@ -61,6 +61,7 @@ import {
   MinusCircle,
   FileDown,
   ChevronRight,
+  ChevronDown,
   ClipboardList,
   RefreshCw,
   ClipboardCheck,
@@ -340,6 +341,7 @@ export function FactuurEditor() {
   const [herinneringTemplates, setHerinneringTemplates] = useState<HerinneringTemplate[]>([])
   const [herinneringType, setHerinneringType] = useState<HerinneringTemplate['type']>('herinnering_1')
   const [herinneringPreview, setHerinneringPreview] = useState('')
+  const [extraTekstOpen, setExtraTekstOpen] = useState(false)
 
   // ============ DATA LOADING ============
 
@@ -661,6 +663,15 @@ export function FactuurEditor() {
     }).catch(() => { if (!cancelled) setFactuurStandaardCpId(null) })
     return () => { cancelled = true }
   }, [klantId, isEditMode])
+
+  // Open "Extra tekst" automatisch zodra de data geladen is met aanwezige content.
+  // Voorwaarden wordt bewust uitgesloten — die wordt standaard gevuld vanuit settings.
+  useEffect(() => {
+    if (!isLoading && (introTekst.trim() || outroTekst.trim() || notities.trim())) {
+      setExtraTekstOpen(true)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading])
 
   // Laad bijlagen voor de verzend-dialog. Default alle bijlagen aangevinkt.
   useEffect(() => {
@@ -2154,23 +2165,6 @@ export function FactuurEditor() {
 
         {/* RIGHT PANEL: Items & Teksten */}
         <div className="space-y-4">
-          {/* Intro tekst */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">Intro tekst</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Textarea
-                value={introTekst}
-                onChange={(e) => setIntroTekst(e.target.value)}
-                placeholder="Optionele intro tekst bovenaan de factuur..."
-                rows={2}
-                className="text-sm"
-                enableAiTone={false}
-              />
-            </CardContent>
-          </Card>
-
           {/* Factureerpercentage (DEEL 2) */}
           {hasOfferteItems && paramProjectId && (
             <Card className={cn(
@@ -2355,55 +2349,76 @@ export function FactuurEditor() {
             </CardContent>
           </Card>
 
-          {/* Outro tekst */}
+          {/* Extra tekst (Intro, Outro, Voorwaarden, Notities) — standaard ingeklapt */}
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">Outro tekst</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Textarea
-                value={outroTekst}
-                onChange={(e) => setOutroTekst(e.target.value)}
-                placeholder="Optionele outro tekst onder de factuurregels..."
-                rows={2}
-                className="text-sm"
-                enableAiTone={false}
-              />
-            </CardContent>
+            <button
+              type="button"
+              onClick={() => setExtraTekstOpen((v) => !v)}
+              className="w-full flex items-center justify-between px-6 py-3 text-left hover:bg-muted/30 rounded-t-lg transition-colors"
+              aria-expanded={extraTekstOpen}
+            >
+              <span className="text-sm font-medium">
+                Extra tekst
+                <span className="ml-2 text-xs text-muted-foreground font-normal">
+                  intro, outro, voorwaarden en notities
+                </span>
+              </span>
+              {extraTekstOpen ? (
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              ) : (
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              )}
+            </button>
+            {extraTekstOpen && (
+              <CardContent className="space-y-4 pt-0">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Intro tekst (boven de regels op de PDF)</Label>
+                  <Textarea
+                    value={introTekst}
+                    onChange={(e) => setIntroTekst(e.target.value)}
+                    placeholder="Optionele intro tekst bovenaan de factuur..."
+                    rows={2}
+                    className="text-sm mt-1"
+                    enableAiTone={false}
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Outro tekst (onder de regels op de PDF)</Label>
+                  <Textarea
+                    value={outroTekst}
+                    onChange={(e) => setOutroTekst(e.target.value)}
+                    placeholder="Optionele outro tekst onder de factuurregels..."
+                    rows={2}
+                    className="text-sm mt-1"
+                    enableAiTone={false}
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Betaalvoorwaarden</Label>
+                    <Textarea
+                      value={voorwaarden}
+                      onChange={(e) => setVoorwaarden(e.target.value)}
+                      placeholder="Betaalvoorwaarden..."
+                      rows={3}
+                      className="text-sm mt-1"
+                      enableAiTone={false}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Interne notities (niet op PDF)</Label>
+                    <Textarea
+                      value={notities}
+                      onChange={(e) => setNotities(e.target.value)}
+                      placeholder="Notities (niet zichtbaar op factuur)..."
+                      rows={3}
+                      className="text-sm mt-1"
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            )}
           </Card>
-
-          {/* Voorwaarden & Notities */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium">Betaalvoorwaarden</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Textarea
-                  value={voorwaarden}
-                  onChange={(e) => setVoorwaarden(e.target.value)}
-                  placeholder="Betaalvoorwaarden..."
-                  rows={3}
-                  className="text-sm"
-                  enableAiTone={false}
-                />
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium">Interne notities</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Textarea
-                  value={notities}
-                  onChange={(e) => setNotities(e.target.value)}
-                  placeholder="Notities (niet zichtbaar op factuur)..."
-                  rows={3}
-                  className="text-sm"
-                />
-              </CardContent>
-            </Card>
-          </div>
         </div>
       </div>
 
