@@ -57,7 +57,8 @@ export function useWeather(coords: Coords = DEFAULT_COORDS): WeatherSnapshot | n
   useEffect(() => {
     let cancelled = false
 
-    const cacheKey = `doen_weather_${coords.lat.toFixed(2)}_${coords.lon.toFixed(2)}`
+    // v2 = forecast strip uitgebreid van 3 naar 8 dagen; oude v1-snapshots negeren.
+    const cacheKey = `doen_weather_v2_${coords.lat.toFixed(2)}_${coords.lon.toFixed(2)}`
     try {
       const cached = localStorage.getItem(cacheKey)
       if (cached) {
