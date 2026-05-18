@@ -1802,12 +1802,6 @@ export function FactuurEditor() {
                       <FileDown className="h-4 w-4 mr-2" />
                       Download UBL XML
                     </DropdownMenuItem>
-                    {currentStatus === 'concept' && selectedKlant?.email && (
-                      <DropdownMenuItem onClick={() => setSendDialogOpen(true)}>
-                        <Send className="h-4 w-4 mr-2" />
-                        Factuur versturen
-                      </DropdownMenuItem>
-                    )}
                     {(currentStatus === 'verzonden' || isVervallen) && (
                       <DropdownMenuItem onClick={handleMarkAsBetaald}>
                         <CreditCard className="h-4 w-4 mr-2" />
@@ -1841,20 +1835,9 @@ export function FactuurEditor() {
             )}
 
             <Button
-              variant="outline"
-              size="sm"
-              onClick={handleDownloadPdf}
-              disabled={validItems.length === 0}
-              className="border-petrol text-petrol hover:bg-petrol hover:text-white"
-            >
-              <Download className="h-4 w-4 mr-1" />
-              PDF
-            </Button>
-            <Button
               size="sm"
               onClick={handleSave}
               disabled={isSaving}
-              className="bg-petrol hover:bg-petrol/90 text-white"
             >
               {isSaving ? (
                 <Loader2 className="h-4 w-4 mr-1 animate-spin" />
