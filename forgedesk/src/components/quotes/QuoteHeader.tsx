@@ -117,13 +117,32 @@ export function QuoteHeader({
 
       {/* Row 0: breadcrumb */}
       <div className="flex items-center gap-1.5 text-[12px] mb-2">
-        <button
-          onClick={() => { hapticLight(); navigate(from || '/offertes') }}
-          className="inline-flex items-center gap-1 text-[#9B9B95] hover:text-[#1A535C] transition-colors group"
-        >
-          <ArrowLeft className="h-3 w-3 group-hover:-translate-x-0.5 transition-transform" />
-          Offertes
-        </button>
+        {(() => {
+          const backLabel = from
+            ? from.startsWith('/projecten/') ? 'Project'
+            : from.startsWith('/klanten/') ? 'Klant'
+            : from.startsWith('/facturen/') ? 'Factuur'
+            : from === '/projecten' ? 'Projecten'
+            : from === '/klanten' ? 'Klanten'
+            : from === '/facturen' ? 'Facturen'
+            : 'Offertes'
+            : 'Offertes'
+          const handleBack = () => {
+            hapticLight()
+            if (from) navigate(from)
+            else if (window.history.length > 2 && location.key !== 'default') navigate(-1)
+            else navigate('/offertes')
+          }
+          return (
+            <button
+              onClick={handleBack}
+              className="inline-flex items-center gap-1 text-[#9B9B95] hover:text-[#1A535C] transition-colors group"
+            >
+              <ArrowLeft className="h-3 w-3 group-hover:-translate-x-0.5 transition-transform" />
+              {backLabel}
+            </button>
+          )
+        })()}
         <span className="text-[#C0BDB8]">·</span>
         <span className="font-mono text-[11px] font-medium text-[#6B6B66] bg-[rgba(26,83,92,0.05)] border border-[rgba(26,83,92,0.08)] rounded-md px-1.5 py-0.5">
           {offerteNummer}

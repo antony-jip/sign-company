@@ -1013,13 +1013,36 @@ export function ProjectDetail() {
 
         {/* Row 0: breadcrumb */}
         <div className="flex items-center gap-1.5 text-[12px] mb-2">
-          <Link
-            to="/projecten"
-            className="inline-flex items-center gap-1 text-[#9B9B95] hover:text-[#1A535C] transition-colors group"
-          >
-            <ArrowLeft className="h-3 w-3 group-hover:-translate-x-0.5 transition-transform" />
-            Projecten
-          </Link>
+          {(() => {
+            const fromPath = (location.state as { from?: string } | null)?.from
+            const fromLabel = fromPath
+              ? fromPath.startsWith('/klanten/') ? 'Klant'
+              : fromPath.startsWith('/offertes/') ? 'Offerte'
+              : fromPath.startsWith('/facturen/') ? 'Factuur'
+              : fromPath.startsWith('/werkbonnen/') ? 'Werkbon'
+              : fromPath === '/klanten' ? 'Klanten'
+              : fromPath === '/offertes' ? 'Offertes'
+              : fromPath === '/facturen' ? 'Facturen'
+              : fromPath === '/werkbonnen' ? 'Werkbonnen'
+              : fromPath === '/taken' ? 'Taken'
+              : 'Projecten'
+              : 'Projecten'
+            const handleBack = () => {
+              if (fromPath) navigate(fromPath)
+              else if (window.history.length > 2 && location.key !== 'default') navigate(-1)
+              else navigate('/projecten')
+            }
+            return (
+              <button
+                type="button"
+                onClick={handleBack}
+                className="inline-flex items-center gap-1 text-[#9B9B95] hover:text-[#1A535C] transition-colors group"
+              >
+                <ArrowLeft className="h-3 w-3 group-hover:-translate-x-0.5 transition-transform" />
+                {fromLabel}
+              </button>
+            )
+          })()}
           <span className="text-[#C0BDB8]">·</span>
           <span className="font-mono text-[11px] font-medium text-[#6B6B66] bg-[rgba(26,83,92,0.05)] border border-[rgba(26,83,92,0.08)] rounded-md px-1.5 py-0.5">
             {project.project_nummer || `PRJ-${id?.slice(0, 8).toUpperCase()}`}
