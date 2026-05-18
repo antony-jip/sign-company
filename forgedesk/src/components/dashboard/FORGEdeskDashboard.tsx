@@ -256,19 +256,6 @@ function FORGEdeskDashboardInner() {
                   {userName ? `, ${userName}` : ''}
                   <span style={{ color: '#F15025' }}>.</span>
                 </h1>
-                <p
-                  aria-hidden={!greetingVisible}
-                  className="text-[14px] sm:text-[15px] text-white/70 mt-3"
-                  style={{
-                    fontFamily: '"Instrument Serif", serif',
-                    fontStyle: 'italic',
-                    opacity: greetingVisible ? 1 : 0,
-                    transition: 'opacity 800ms ease-out',
-                    minHeight: '1.2em',
-                  }}
-                >
-                  {playfulGreeting}
-                </p>
               </div>
 
               {weather && WeatherIcon && (
@@ -307,19 +294,33 @@ function FORGEdeskDashboardInner() {
                   </svg>
 
                   <div className="relative z-10">
-                    <div className="flex items-center gap-3 mb-1">
-                      <WeatherIcon
-                        className="w-8 h-8 flex-shrink-0"
-                        strokeWidth={1.4}
-                        style={{ color: weather.isRaining ? '#9DD3DA' : '#F5C460' }}
-                      />
-                      <p className="font-heading font-bold text-white text-[36px] leading-none">
-                        <span className="font-mono">{weather.temperature}</span>
-                        <span className="text-white/60 text-[22px] font-normal">°</span>
+                    <div className="flex items-center gap-4 mb-1">
+                      <div className="flex items-center gap-3 flex-shrink-0">
+                        <WeatherIcon
+                          className="w-8 h-8 flex-shrink-0"
+                          strokeWidth={1.4}
+                          style={{ color: weather.isRaining ? '#9DD3DA' : '#F5C460' }}
+                        />
+                        <p className="font-heading font-bold text-white text-[36px] leading-none">
+                          <span className="font-mono">{weather.temperature}</span>
+                          <span className="text-white/60 text-[22px] font-normal">°</span>
+                        </p>
+                      </div>
+                      <p
+                        aria-hidden={!greetingVisible}
+                        className="text-[14px] sm:text-[15px] text-white/80 leading-snug min-w-0"
+                        style={{
+                          fontFamily: '"Instrument Serif", serif',
+                          fontStyle: 'italic',
+                          opacity: greetingVisible ? 1 : 0,
+                          transition: 'opacity 800ms ease-out',
+                        }}
+                      >
+                        {playfulGreeting}
                       </p>
                     </div>
                     <p
-                      className="text-[13px] text-white/80"
+                      className="text-[13px] text-white/60"
                       style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic' }}
                     >
                       {weather.label}
