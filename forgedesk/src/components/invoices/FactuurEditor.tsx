@@ -1912,9 +1912,9 @@ export function FactuurEditor() {
       )}
 
       {/* Content: Two-column layout */}
-      <div className="px-6 py-6 grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-6">
-        {/* LEFT PANEL: Klant & Meta */}
-        <div className="space-y-4">
+      <div className="px-6 py-6 grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-6 lg:items-start">
+        {/* LEFT PANEL: Klant & Meta — sticky met intern scroll bij lange inhoud */}
+        <div className="space-y-4 lg:sticky lg:top-[88px] lg:self-start lg:max-h-[calc(100vh-104px)] lg:overflow-y-auto lg:pr-1">
           {/* Klant selectie */}
           <Card className="bg-[#1A535C0D] border-petrol-border">
             <CardHeader className="pb-3">
@@ -2017,29 +2017,6 @@ export function FactuurEditor() {
             </CardContent>
           </Card>
 
-          {/* Bijlagen */}
-          {existingFactuur?.id && existingFactuur?.organisatie_id ? (
-            <FactuurBijlagenSectie
-              factuurId={existingFactuur.id}
-              organisatieId={existingFactuur.organisatie_id}
-              exactDocumentId={existingFactuur.exact_document_id}
-            />
-          ) : (
-            <Card className="bg-[#F8F7F5] border-sand">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium flex items-center gap-2 text-petrol">
-                  <Paperclip className="h-4 w-4" />
-                  Bijlagen
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-xs text-muted-foreground">
-                  Sla eerst de factuur op om bijlagen toe te voegen.
-                </p>
-              </CardContent>
-            </Card>
-          )}
-
           {/* Financieel overzicht */}
           <Card className="bg-[#F8F7F5] border-sand">
             <CardHeader className="pb-3">
@@ -2079,6 +2056,29 @@ export function FactuurEditor() {
               )}
             </CardContent>
           </Card>
+
+          {/* Bijlagen */}
+          {existingFactuur?.id && existingFactuur?.organisatie_id ? (
+            <FactuurBijlagenSectie
+              factuurId={existingFactuur.id}
+              organisatieId={existingFactuur.organisatie_id}
+              exactDocumentId={existingFactuur.exact_document_id}
+            />
+          ) : (
+            <Card className="bg-[#F8F7F5] border-sand">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium flex items-center gap-2 text-petrol">
+                  <Paperclip className="h-4 w-4" />
+                  Bijlagen
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-xs text-muted-foreground">
+                  Sla eerst de factuur op om bijlagen toe te voegen.
+                </p>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Herinnering status (edit mode only) */}
           {isEditMode && existingFactuur && (currentStatus === 'verzonden' || isVervallen) && (
