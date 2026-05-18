@@ -54,10 +54,10 @@ export default function SystemStatusBar() {
             NL
           </span>
           <a
-            href="mailto:hello@doen.team"
+            href="mailto:info@signcompany.nl"
             className="whitespace-nowrap transition-colors hover:text-white"
           >
-            hello@doen.team
+            info@signcompany.nl
           </a>
         </div>
       </div>

@@ -265,7 +265,7 @@ export default function SocialProof() {
                 </p>
               </div>
               <a
-                href="mailto:hello@doen.team"
+                href="mailto:info@signcompany.nl"
                 className="inline-flex items-center gap-1.5 text-[13px] font-semibold transition-opacity hover:opacity-70 group"
                 style={{ color: '#F15025' }}
               >

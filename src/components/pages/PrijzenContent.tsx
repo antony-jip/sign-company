@@ -37,186 +37,205 @@ export default function PrijzenContent() {
   return (
     <div className="pt-24 md:pt-32" style={{ backgroundColor: '#F3F2ED' }}>
 
-      {/* HERO */}
+      {/* HERO + PRICING — left h1, right paragraph, then two cards */}
       <section className="relative overflow-hidden">
         <PageBackdrop variant="flame" />
         <TrimCorners inset={28} size={16} color="rgba(26,83,92,0.28)" />
         <FlameStamp size={420} opacity={0.05} style={{ top: '15%', right: '-180px' }} />
 
-        <div className="container-site relative py-20 md:py-28 text-center max-w-3xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="inline-flex items-center gap-2 mb-7"
-          >
-            <span className="relative inline-flex items-center justify-center w-2 h-2">
-              <span
-                className="absolute inset-0 rounded-full animate-ping"
-                style={{ backgroundColor: '#F15025', opacity: 0.45 }}
-              />
-              <span className="relative w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#F15025' }} />
-            </span>
-            <span
-              className="font-mono text-[11px] font-medium tracking-[0.18em] uppercase"
-              style={{ color: '#6B6B66' }}
+        <div className="container-site relative py-16 md:py-24">
+
+          {/* Header: H1 left, paragraph right */}
+          <div className="grid grid-cols-1 md:grid-cols-[1.25fr_1fr] gap-6 md:gap-12 mb-10 md:mb-14 items-end">
+            <motion.h1
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+              className="font-heading font-bold tracking-[-1.5px] md:tracking-[-3px] leading-[1.0] md:leading-[0.92]"
+              style={{ fontSize: 'clamp(36px, 6vw, 84px)', color: '#1A535C' }}
             >
-              Eenvoudig · eerlijk · alles erin
-            </span>
-          </motion.div>
+              Geen tiers, geen add-ons, geen verrassingen<span style={{ color: '#F15025' }}>.</span>
+            </motion.h1>
 
-          <motion.h1
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-            className="font-heading font-bold tracking-[-2px] md:tracking-[-3px] leading-[0.92]"
-            style={{ fontSize: 'clamp(44px, 6vw, 88px)', color: '#1A535C' }}
-          >
-            <span className="block">Eén prijs<span style={{ color: '#F15025' }}>.</span></span>
-            <span className="block" style={{ color: '#6B6B66' }}>
-              <SerifItalic style={{ letterSpacing: '-2px' }}>Alles</SerifItalic> erin
-              <span style={{ color: '#F15025' }}>.</span>
-            </span>
-          </motion.h1>
+            <motion.p
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.15 }}
+              className="text-[15px] md:text-[17px] leading-[1.6] max-w-md"
+              style={{ color: '#3F3F3A' }}
+            >
+              Wat je nu betaalt aan losse abonnementen voor offertes, planning en je boekhoudkoppeling? Waarschijnlijk meer. Met meer geklik.
+            </motion.p>
+          </div>
 
-          <motion.p
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.25 }}
-            className="text-[17px] md:text-[19px] mt-6 leading-[1.55] max-w-xl mx-auto"
-            style={{ color: '#3F3F3A' }}
-          >
-            Geen modules bijkopen. Geen verrassingen. Het enige verschil is je teamgrootte.
-          </motion.p>
-        </div>
-      </section>
+          {/* Two cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
 
-      {/* PRICING CARDS — two-tier */}
-      <section className="relative overflow-hidden">
-        <PageBackdrop variant="default" showDots />
-
-        <div className="container-site relative py-16 md:py-20">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
-
-            {/* Team — primary */}
+            {/* LEFT — doen. plan (white, recommended) */}
             <motion.div
               initial={{ opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-60px' }}
               transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-              className="rounded-[10px] p-6 md:p-10 h-full relative"
+              className="relative rounded-[16px] p-6 md:p-10 bg-white flex flex-col"
               style={{
-                backgroundColor: '#1A535C',
-                boxShadow: '0 16px 32px -12px rgba(20,40,40,0.25), 0 2px 6px rgba(0,0,0,0.06)',
+                border: '1.5px solid #1A535C',
+                boxShadow: '0 16px 32px -14px rgba(20,40,40,0.18), 0 2px 6px rgba(0,0,0,0.04)',
               }}
             >
-              <div className="absolute -top-3 left-8">
+              <div className="absolute top-5 right-5 md:top-6 md:right-6">
                 <span
-                  className="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-white px-3 py-1.5"
+                  className="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-white px-3 py-1.5 rounded-[4px]"
                   style={{ backgroundColor: '#F15025' }}
                 >
-                  Populair
+                  Aanbevolen<span className="opacity-90">.</span>
                 </span>
               </div>
-              <p className="font-mono text-[10px] font-bold tracking-[0.22em] uppercase mb-6 text-white/45">Team</p>
-              <div className="flex items-baseline gap-1 mb-1">
-                <span
-                  className="font-heading text-[60px] md:text-[68px] font-bold tracking-[-3px] text-white tabular-nums"
-                  style={{ textShadow: '2px 3px 0 rgba(0,0,0,0.15)' }}
-                >
-                  €79
-                  <span style={{ color: '#F15025' }}>.</span>
-                </span>
-              </div>
-              <p
-                className="text-[15px] mb-8 italic"
-                style={{
-                  color: 'rgba(255,255,255,0.6)',
-                  fontFamily: '"Instrument Serif", var(--font-instrument-serif), Georgia, serif',
-                }}
-              >
-                per maand ex. btw, tot 10 gebruikers
+
+              <h2 className="font-heading text-[36px] md:text-[44px] font-bold tracking-[-1.5px] leading-none mb-3" style={{ color: '#1A1A1A' }}>
+                doen<span style={{ color: '#F15025' }}>.</span>
+              </h2>
+
+              <p className="text-[14px] md:text-[15px] leading-[1.55] mb-8" style={{ color: '#6B6B66' }}>
+                Alles erin. Max 10 gebruikers. Onbeperkt projecten, offertes en facturen.
               </p>
 
-              <div className="h-px mb-7" style={{ backgroundColor: 'rgba(255,255,255,0.12)' }} />
+              {/* Price */}
+              <div className="mb-3 flex items-baseline gap-2">
+                <span className="font-heading text-[28px] md:text-[36px] font-bold" style={{ color: '#1A535C' }}>€</span>
+                <span
+                  className="font-heading font-bold tabular-nums relative"
+                  style={{ fontSize: 'clamp(72px, 9vw, 120px)', lineHeight: 0.85, color: '#1A1A1A', letterSpacing: '-3px' }}
+                >
+                  <span
+                    aria-hidden
+                    className="absolute left-0 right-0 bottom-[8%] h-[14%] -z-0"
+                    style={{ backgroundColor: 'rgba(241,80,37,0.22)' }}
+                  />
+                  <span className="relative">79</span>
+                </span>
+                <span className="font-mono text-[13px] md:text-[14px]" style={{ color: '#6B6B66' }}>
+                  / maand, flat
+                </span>
+              </div>
 
-              <ul className="space-y-3">
-                {allFeatures.map((f, i) => (
-                  <li key={i} className="flex items-start gap-3 text-[14px]">
-                    <Check className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: '#F15025' }} strokeWidth={2.6} />
-                    <span className="text-white/80">{f}</span>
+              <p className="font-mono text-[11px] md:text-[12px] tracking-[0.05em] mb-7 md:mb-8" style={{ color: '#6B6B66' }}>
+                ex BTW · per bedrijf · 30 dagen gratis · per maand opzegbaar
+              </p>
+
+              {/* Features grid */}
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 mb-8 flex-1">
+                {[
+                  'Alle 10 modules',
+                  'Daan AI inbegrepen',
+                  'IMAP/SMTP mailbox',
+                  'Klantportaal, eigen huisstijl',
+                  'Mobiel voor monteurs',
+                  'Boekhoudpakket-koppelingen',
+                  'Nederlandse support',
+                  'Migratie vanuit Excel',
+                ].map((f) => (
+                  <li key={f} className="flex items-start gap-2.5 text-[13.5px] md:text-[14.5px]">
+                    <Check className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: '#1A535C' }} strokeWidth={2.6} />
+                    <span style={{ color: '#1A1A1A' }}>{f}</span>
                   </li>
                 ))}
               </ul>
 
-              <a
-                href="https://app.doen.team/register"
-                className="mt-8 inline-flex items-center justify-center gap-2 w-full font-mono text-[12px] font-bold tracking-[0.2em] uppercase text-white px-7 h-[52px] rounded-[6px] transition-all duration-300 hover:scale-[1.02] active:scale-[0.97]"
-                style={{
-                  backgroundColor: '#F15025',
-                  boxShadow: '0 8px 24px rgba(241,80,37,0.32)',
-                }}
-              >
-                <span>Start 30 dagen gratis</span>
-                <ArrowRight className="w-4 h-4" strokeWidth={2.5} />
-              </a>
+              {/* CTAs */}
+              <div className="flex flex-col sm:flex-row items-stretch gap-3">
+                <a
+                  href="https://app.doen.team/register"
+                  className="inline-flex items-center justify-center gap-2 text-[14px] font-semibold text-white px-6 h-[52px] rounded-full transition-all duration-300 hover:scale-[1.02] active:scale-[0.97]"
+                  style={{ backgroundColor: '#F15025', boxShadow: '0 8px 24px rgba(241,80,37,0.32)' }}
+                >
+                  <span>Start 30 dagen gratis</span>
+                  <ArrowRight className="w-4 h-4" strokeWidth={2.5} />
+                </a>
+                <a
+                  href="/contact"
+                  className="inline-flex items-center justify-center gap-2 text-[14px] font-semibold px-6 h-[52px] rounded-full transition-colors"
+                  style={{ color: '#1A535C', border: '1.5px solid #1A535C' }}
+                >
+                  Demo plannen
+                </a>
+              </div>
             </motion.div>
 
-            {/* Groter team — op aanvraag */}
+            {/* RIGHT — compare card (dark petrol) */}
             <motion.div
               initial={{ opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-60px' }}
               transition={{ duration: 0.7, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-              className="rounded-[10px] p-6 md:p-10 h-full flex flex-col bg-white"
+              className="relative rounded-[16px] p-6 md:p-10 overflow-hidden flex flex-col"
               style={{
-                border: '1px solid rgba(26,83,92,0.08)',
-                boxShadow: '0 1px 2px rgba(20,40,40,0.04), 0 12px 24px -10px rgba(20,40,40,0.12)',
+                backgroundColor: '#0F3A42',
+                boxShadow: '0 16px 32px -14px rgba(20,40,40,0.30)',
               }}
             >
-              <p className="font-mono text-[10px] font-bold tracking-[0.22em] uppercase mb-6" style={{ color: '#6B6B66' }}>Groter team</p>
-              <div className="flex items-baseline gap-1 mb-1">
-                <span className="font-heading text-[36px] md:text-[42px] font-bold tracking-[-1.5px]" style={{ color: '#1A535C' }}>
-                  Op aanvraag
+              {/* Soft flame glow */}
+              <div
+                aria-hidden
+                className="absolute -top-20 -right-20 w-[360px] h-[360px] rounded-full pointer-events-none"
+                style={{ backgroundColor: '#F15025', opacity: 0.12, filter: 'blur(90px)' }}
+              />
+
+              <div className="relative flex items-center gap-2 mb-5">
+                <span className="w-6 h-px" style={{ backgroundColor: '#1A535C' }} />
+                <span className="font-mono text-[10px] font-bold tracking-[0.22em] uppercase" style={{ color: 'rgba(255,255,255,0.55)' }}>
+                  Vergelijken
                 </span>
               </div>
-              <p
-                className="text-[15px] mb-8 italic"
-                style={{
-                  color: '#6B6B66',
-                  fontFamily: '"Instrument Serif", var(--font-instrument-serif), Georgia, serif',
-                }}
-              >
-                meer dan 10 gebruikers
+
+              <h3 className="relative font-heading text-[26px] md:text-[32px] font-bold tracking-[-1px] leading-[1.1] text-white mb-4">
+                Wat je nu waarschijnlijk betaalt<span style={{ color: '#F15025' }}>.</span>
+              </h3>
+
+              <p className="relative text-[14px] md:text-[15px] leading-[1.65] mb-8 md:mb-10 max-w-md" style={{ color: 'rgba(255,255,255,0.65)' }}>
+                Gevestigde branchesoftware doet veel. Wij doen het schoner. En goedkoper.
               </p>
 
-              <div className="h-px mb-7" style={{ backgroundColor: 'rgba(26,83,92,0.08)' }} />
+              <div className="relative h-px mb-8 md:mb-10" style={{ backgroundColor: 'rgba(255,255,255,0.10)' }} />
 
-              <p className="text-[14px] leading-relaxed mb-8 flex-1" style={{ color: '#3F3F3A' }}>
-                Werkt je team met meer dan 10 mensen? Neem contact op voor een prijs op maat. Alles uit het Team-plan, geschikt voor grotere organisaties.
-              </p>
+              {/* Comparison row */}
+              <div className="relative grid grid-cols-2 gap-6 flex-1">
+                {/* Gangbaar */}
+                <div>
+                  <p className="font-mono text-[10px] font-bold tracking-[0.22em] uppercase mb-3" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                    Gangbaar
+                  </p>
+                  <p className="font-heading font-bold tabular-nums leading-none mb-3" style={{ fontSize: 'clamp(36px, 5vw, 56px)', color: '#FFFFFF', letterSpacing: '-1.5px' }}>
+                    €208<span className="font-mono text-[12px] tracking-normal" style={{ color: 'rgba(255,255,255,0.55)' }}>/mnd</span>
+                  </p>
+                  <p className="font-mono text-[12px] leading-[1.6]" style={{ color: 'rgba(255,255,255,0.55)' }}>
+                    + onboarding fee<br />
+                    + add-ons per module
+                  </p>
+                </div>
 
-              <a
-                href="/contact"
-                className="mt-auto inline-flex items-center justify-center gap-2 w-full font-mono text-[12px] font-bold tracking-[0.2em] uppercase text-white h-[52px] px-7 rounded-[6px] transition-all hover:scale-[1.02] active:scale-[0.97]"
-                style={{ backgroundColor: '#1A535C' }}
-              >
-                Neem contact op
-                <ArrowRight className="w-4 h-4" strokeWidth={2.5} />
-              </a>
+                {/* doen. */}
+                <div style={{ borderLeft: '1px solid rgba(255,255,255,0.10)', paddingLeft: '24px' }}>
+                  <p className="font-mono text-[10px] font-bold tracking-[0.22em] uppercase mb-3" style={{ color: '#F15025' }}>
+                    doen<span style={{ color: '#F15025' }}>.</span>
+                  </p>
+                  <p className="font-heading font-bold tabular-nums leading-none mb-3" style={{ fontSize: 'clamp(36px, 5vw, 56px)', color: '#F15025', letterSpacing: '-1.5px' }}>
+                    €79<span className="font-mono text-[12px] tracking-normal" style={{ color: 'rgba(255,255,255,0.55)' }}>/mnd</span>
+                  </p>
+                  <p className="font-mono text-[12px] leading-[1.6]" style={{ color: 'rgba(255,255,255,0.55)' }}>
+                    geen onboarding<br />
+                    geen add-ons
+                  </p>
+                </div>
+              </div>
+
+              <div className="relative mt-8 md:mt-10 pt-6" style={{ borderTop: '1px solid rgba(255,255,255,0.10)' }}>
+                <p className="font-mono text-[11px] md:text-[12px] font-bold tracking-[0.2em] uppercase" style={{ color: '#F15025' }}>
+                  · Bespaar €1.548 per jaar<span>.</span>
+                </p>
+              </div>
             </motion.div>
           </div>
-
-          <motion.p
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="text-center text-[13px] mt-8 font-mono tracking-wide"
-            style={{ color: '#6B6B66' }}
-          >
-            30 dagen gratis · geen creditcard · maandelijks opzegbaar
-          </motion.p>
         </div>
       </section>
 

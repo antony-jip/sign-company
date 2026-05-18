@@ -162,7 +162,7 @@ export const articles: Article[] = [
         content: (
           <>
             <P>
-              Vastgelopen? Stuur een mailtje naar <B>hello@doen.team</B>. We reageren meestal binnen een paar uur op
+              Vastgelopen? Stuur een mailtje naar <B>info@signcompany.nl</B>. We reageren meestal binnen een paar uur op
               werkdagen. Voor complexe vragen plannen we een scherm-deling-sessie.
             </P>
           </>
