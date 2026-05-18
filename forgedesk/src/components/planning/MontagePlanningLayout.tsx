@@ -1915,27 +1915,70 @@ export function MontagePlanningLayout() {
                   </div>
                 )}
 
-                {/* Cards positioned by time */}
-                {!feestdagInfo && dayAfspraken.map((a) => {
-                  const startStr = stripSeconden(a.start_tijd);
-                  if (!startStr) return null;
-                  const startMin = timeToMinutes(startStr);
-                  const eindStr = stripSeconden(a.eind_tijd);
-                  const endMin = eindStr ? timeToMinutes(eindStr) : startMin + 60;
-                  const top = Math.max(0, (startMin - START_HOUR * 60) * (HOUR_HEIGHT / 60));
-                  const rawHeight = Math.max(1, endMin - startMin) * (HOUR_HEIGHT / 60);
-                  const height = Math.min(gridHeight - top, Math.max(40, rawHeight));
-
-                  return (
-                    <div
-                      key={a.id}
-                      className="absolute left-0 right-0"
-                      style={{ top, height }}
-                    >
-                      {renderMontageCard(a, { variant: 'timegrid' })}
-                    </div>
-                  );
-                })}
+                {/* Cards positioned by time. Overlappende afspraken op dezelfde
+                    dag krijgen elk een eigen kolom binnen hun cluster zodat ze
+                    naast elkaar staan in plaats van bovenop elkaar. */}
+                {!feestdagInfo && (() => {
+                  type Cluster = { items: { id: string; col: number }[]; columns: number[] }
+                  const clusters: Cluster[] = [];
+                  const slotById = new Map<string, { col: number; total: number }>();
+                  const sorted = [...dayAfspraken].sort((a, b) => a.start_tijd.localeCompare(b.start_tijd));
+                  let current: Cluster | null = null;
+                  let currentMaxEnd = -1;
+                  for (const a of sorted) {
+                    const sStr = stripSeconden(a.start_tijd);
+                    const eStr = stripSeconden(a.eind_tijd);
+                    if (!sStr) continue;
+                    const start = timeToMinutes(sStr);
+                    const end = eStr ? timeToMinutes(eStr) : start + 60;
+                    if (current && start < currentMaxEnd) {
+                      let col = current.columns.findIndex((endMin) => endMin <= start);
+                      if (col === -1) {
+                        col = current.columns.length;
+                        current.columns.push(end);
+                      } else {
+                        current.columns[col] = end;
+                      }
+                      current.items.push({ id: a.id, col });
+                      currentMaxEnd = Math.max(currentMaxEnd, end);
+                    } else {
+                      current = { items: [{ id: a.id, col: 0 }], columns: [end] };
+                      clusters.push(current);
+                      currentMaxEnd = end;
+                    }
+                  }
+                  for (const c of clusters) {
+                    const total = c.columns.length;
+                    for (const it of c.items) slotById.set(it.id, { col: it.col, total });
+                  }
+                  return dayAfspraken.map((a) => {
+                    const startStr = stripSeconden(a.start_tijd);
+                    if (!startStr) return null;
+                    const startMin = timeToMinutes(startStr);
+                    const eindStr = stripSeconden(a.eind_tijd);
+                    const endMin = eindStr ? timeToMinutes(eindStr) : startMin + 60;
+                    const top = Math.max(0, (startMin - START_HOUR * 60) * (HOUR_HEIGHT / 60));
+                    const rawHeight = Math.max(1, endMin - startMin) * (HOUR_HEIGHT / 60);
+                    const height = Math.min(gridHeight - top, Math.max(40, rawHeight));
+                    const slot = slotById.get(a.id) || { col: 0, total: 1 };
+                    const widthPct = 100 / slot.total;
+                    const leftPct = slot.col * widthPct;
+                    return (
+                      <div
+                        key={a.id}
+                        className="absolute"
+                        style={{
+                          top,
+                          height,
+                          left: `calc(${leftPct}% + ${slot.col > 0 ? 2 : 0}px)`,
+                          width: `calc(${widthPct}% - ${slot.total > 1 ? 2 : 0}px)`,
+                        }}
+                      >
+                        {renderMontageCard(a, { variant: 'timegrid' })}
+                      </div>
+                    );
+                  });
+                })()}
 
                 {/* Empty-state hint */}
                 {!feestdagInfo && dayAfspraken.length === 0 && (draggingAfspraakId || draggingProjectId) && (
