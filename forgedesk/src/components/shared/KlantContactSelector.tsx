@@ -463,16 +463,25 @@ export function KlantContactSelector({
                   </SelectTrigger>
                   <SelectContent>
                     {selectedKlant?.email && (
-                      <SelectItem value="__none__" textValue={`Hoofdadres ${selectedKlant.email}`}>
-                        <div className="flex flex-col">
+                      <SelectItem
+                        value="__none__"
+                        textValue={`Hoofdadres ${selectedKlant.email}`}
+                        className="py-1.5 focus:bg-[#F8F7F5] focus:text-[#1A1A1A]"
+                      >
+                        <div className="flex flex-col leading-tight">
                           <span className="text-[13px]">Hoofdadres</span>
                           <span className="text-[11px] text-muted-foreground">{selectedKlant.email}</span>
                         </div>
                       </SelectItem>
                     )}
                     {contactpersonen.map((cp) => (
-                      <SelectItem key={cp.id} value={cp.id} textValue={`${cp.naam} ${cp.email || ''}`}>
-                        <div className="flex flex-col">
+                      <SelectItem
+                        key={cp.id}
+                        value={cp.id}
+                        textValue={`${cp.naam} ${cp.email || ''}`}
+                        className="py-1.5 focus:bg-[#F8F7F5] focus:text-[#1A1A1A]"
+                      >
+                        <div className="flex flex-col leading-tight">
                           <span className="text-[13px]">{cp.naam}</span>
                           {cp.email && <span className="text-[11px] text-muted-foreground">{cp.email}</span>}
                         </div>
