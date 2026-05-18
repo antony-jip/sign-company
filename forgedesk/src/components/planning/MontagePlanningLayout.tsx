@@ -67,8 +67,10 @@ import {
   getWerkbonnenByProject,
   createWerkbon,
   updateProject,
+  getTaken,
+  updateTaak,
 } from "@/services/supabaseService";
-import type { MontageAfspraak, MontageBijlage, Project, Medewerker, Klant, Offerte, Werkbon } from "@/types";
+import type { MontageAfspraak, MontageBijlage, Project, Medewerker, Klant, Offerte, Werkbon, Taak } from "@/types";
 import { ClipboardCheck } from "lucide-react";
 import { uploadMontageBijlage } from '@/services/storageService';
 import { WerkbonVanProjectDialog } from "@/components/werkbonnen/WerkbonVanProjectDialog";
@@ -303,6 +305,12 @@ export function MontagePlanningLayout() {
   const runOptimistic = useOptimisticState(setAfspraken);
   const [medewerkers, setMedewerkers] = useState<Medewerker[]>([]);
   const [projecten, setProjecten] = useState<Project[]>([]);
+  // Taken in /planning — sommige collega's plannen hier hun losse taken
+  // naast de montage-afspraken in.
+  const [taken, setTaken] = useState<Taak[]>([]);
+  // Drag-state voor taken (los van afspraak-drag bovenin).
+  const [draggingTaakId, setDraggingTaakId] = useState<string | null>(null);
+  const [taakDragOverDate, setTaakDragOverDate] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingAfspraak, setEditingAfspraak] =
     useState<MontageAfspraak | null>(null);
@@ -435,12 +443,13 @@ export function MontagePlanningLayout() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [afsprakenData, medewerkerData, projectData, klantenData, offertesData] = await Promise.all([
+      const [afsprakenData, medewerkerData, projectData, klantenData, offertesData, takenData] = await Promise.all([
         getMontageAfspraken().catch(() => []),
         getMedewerkers().catch(() => []),
         getProjecten().catch(() => []),
         getKlanten().catch(() => []),
         getOffertes().catch(() => []),
+        getTaken().catch(() => []),
       ]);
 
       setAfspraken(afsprakenData || []);
@@ -448,6 +457,7 @@ export function MontagePlanningLayout() {
       setProjecten(projectData || []);
       setKlanten(klantenData || []);
       setOffertes(offertesData || []);
+      setTaken(takenData || []);
     } catch (err) {
       logger.error('Kon montageplanning niet laden:', err)
       toast.error('Kon montageplanning niet laden');
@@ -539,6 +549,40 @@ export function MontagePlanningLayout() {
     );
     return map;
   }, [weekAfspraken, weekDates]);
+
+  // Taken per dag in de huidige week (alleen die met een deadline en
+  // status !== 'klaar' worden in de planning getoond).
+  const takenPerDag = useMemo(() => {
+    const startStr = formatDate(weekDates[0]);
+    const endStr = formatDate(weekDates[weekDates.length - 1]);
+    const map: Record<string, Taak[]> = {};
+    weekDates.forEach((d) => { map[formatDate(d)] = []; });
+    for (const t of taken) {
+      if (!t.deadline) continue;
+      if (t.status === 'klaar') continue;
+      const dl = t.deadline.slice(0, 10);
+      if (dl < startStr || dl > endStr) continue;
+      // Optionele monteur-filter zoals afspraken volgen
+      if (selectedMonteur !== 'alle' && t.toegewezen_aan !== selectedMonteur) continue;
+      if (map[dl]) map[dl].push(t);
+    }
+    return map;
+  }, [taken, weekDates, selectedMonteur]);
+
+  // Drop een taak op een dag → deadline updaten (optimistic).
+  const handleDropTaakOnDate = useCallback(async (taakId: string, dateStr: string) => {
+    const taak = taken.find(t => t.id === taakId);
+    if (!taak) return;
+    const oldDeadline = taak.deadline;
+    if (oldDeadline?.slice(0, 10) === dateStr) return;
+    setTaken(prev => prev.map(t => t.id === taakId ? { ...t, deadline: dateStr } : t));
+    try {
+      await updateTaak(taakId, { deadline: dateStr });
+    } catch (err) {
+      logger.error('Taak verplaatsen mislukt:', err);
+      setTaken(prev => prev.map(t => t.id === taakId ? { ...t, deadline: oldDeadline } : t));
+    }
+  }, [taken]);
 
   const monteurMap = useMemo(() => {
     const map: Record<string, Medewerker> = {};
@@ -1660,6 +1704,69 @@ export function MontagePlanningLayout() {
           })}
         </div>
 
+        {/* Taken-rij (member view) — taken met deadline op deze dag */}
+        {Object.values(takenPerDag).some(arr => arr.length > 0) && (
+          <div className="grid border-b border-[#F0EFEC] bg-[#FAF9F6]" style={{ gridTemplateColumns: gridTemplate }}>
+            <div className="border-r border-[#F0EFEC] py-2 px-2 flex items-center gap-1">
+              <CheckCircle2 className="h-3 w-3 text-[#1A535C]" />
+              <span className="text-[9px] font-semibold text-[#1A535C] uppercase tracking-widest">Taken</span>
+            </div>
+            {werkdagen.map((date) => {
+              const dateStr = formatDate(date);
+              const dayTaken = takenPerDag[dateStr] || [];
+              const isDragOver = taakDragOverDate === dateStr;
+              return (
+                <div
+                  key={dateStr}
+                  className={cn(
+                    "border-r last:border-r-0 border-[#F0EFEC] p-1.5 space-y-1 min-h-[42px] transition-colors",
+                    isDragOver && "bg-[#1A535C]/[0.06] ring-1 ring-inset ring-[#1A535C]/30"
+                  )}
+                  onDragOver={(e) => {
+                    if (!draggingTaakId) return;
+                    e.preventDefault();
+                    if (taakDragOverDate !== dateStr) setTaakDragOverDate(dateStr);
+                  }}
+                  onDragLeave={() => {
+                    if (taakDragOverDate === dateStr) setTaakDragOverDate(null);
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    if (draggingTaakId) handleDropTaakOnDate(draggingTaakId, dateStr);
+                    setDraggingTaakId(null);
+                    setTaakDragOverDate(null);
+                  }}
+                >
+                  {dayTaken.map((t) => (
+                    <div
+                      key={t.id}
+                      draggable
+                      onDragStart={(e) => {
+                        setDraggingTaakId(t.id);
+                        e.dataTransfer.effectAllowed = 'move';
+                        try { e.dataTransfer.setData('text/plain', t.id); } catch { /* sommige browsers eisen dit */ }
+                      }}
+                      onDragEnd={() => {
+                        setDraggingTaakId(null);
+                        setTaakDragOverDate(null);
+                      }}
+                      title={t.titel}
+                      className={cn(
+                        "flex items-center gap-1.5 px-2 py-1 rounded-md bg-white border border-[#EBEBEB] text-[11px] text-[#1A1A1A] cursor-grab active:cursor-grabbing hover:border-[#1A535C]/40 hover:shadow-sm transition-all",
+                        draggingTaakId === t.id && "opacity-50"
+                      )}
+                    >
+                      {t.prioriteit === 'kritiek' && <span className="w-1 h-1 rounded-full bg-[#F15025] flex-shrink-0" />}
+                      {t.prioriteit === 'hoog' && <span className="w-1 h-1 rounded-full bg-[#E89A3A] flex-shrink-0" />}
+                      <span className="flex-1 truncate">{t.titel}</span>
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
         {/* Time-grid: hour rail + 5 day columns with absolute-positioned cards */}
         <div className="grid flex-1 overflow-y-auto" style={{ gridTemplateColumns: gridTemplate }}>
           {/* Hour rail */}
@@ -1799,6 +1906,14 @@ export function MontagePlanningLayout() {
       if (!statusFilter.has(a.status) && !recentlyAfgerond.has(a.id)) return false;
       return true;
     });
+    const monthTakenByDate: Record<string, Taak[]> = {};
+    for (const t of taken) {
+      if (!t.deadline || t.status === 'klaar') continue;
+      const dl = t.deadline.slice(0, 10);
+      if (dl < monthStartStr || dl > monthEndStr) continue;
+      if (selectedMonteur !== 'alle' && t.toegewezen_aan !== selectedMonteur) continue;
+      (monthTakenByDate[dl] ||= []).push(t);
+    }
 
     return (
       <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
@@ -1854,6 +1969,8 @@ export function MontagePlanningLayout() {
             const visibleItems = dayItems.slice(0, 3);
             const remaining = dayItems.length - visibleItems.length;
 
+            const dayTaken = monthTakenByDate[dateStr] || [];
+            const isTaakDragOver = taakDragOverDate === dateStr;
             return (
               <div
                 key={dateStr}
@@ -1862,8 +1979,27 @@ export function MontagePlanningLayout() {
                   !isCurrentMonth && "bg-[#F8F7F5]/40",
                   isCurrentMonth && isWeekend && "bg-[#F8F7F5]/60",
                   feestdagInfo && "bg-[#FDE8E2]/40",
-                  isToday && "bg-[#1A535C]/[0.04] border-t-2 border-t-[#F15025]"
+                  isToday && "bg-[#1A535C]/[0.04] border-t-2 border-t-[#F15025]",
+                  isTaakDragOver && "bg-[#1A535C]/[0.08] ring-2 ring-[#1A535C]/30 ring-inset"
                 )}
+                onDragOver={(e) => {
+                  if (!draggingTaakId) return;
+                  e.preventDefault();
+                  if (taakDragOverDate !== dateStr) setTaakDragOverDate(dateStr);
+                }}
+                onDragLeave={(e) => {
+                  if (!draggingTaakId) return;
+                  if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                    if (taakDragOverDate === dateStr) setTaakDragOverDate(null);
+                  }
+                }}
+                onDrop={(e) => {
+                  if (!draggingTaakId) return;
+                  e.preventDefault();
+                  handleDropTaakOnDate(draggingTaakId, dateStr);
+                  setDraggingTaakId(null);
+                  setTaakDragOverDate(null);
+                }}
               >
                 <div className="flex items-center justify-between">
                   <span
@@ -1909,6 +2045,32 @@ export function MontagePlanningLayout() {
                   })}
                   {remaining > 0 && (
                     <span className="text-[10px] text-[#9B9B95] px-1">+{remaining} meer</span>
+                  )}
+                  {dayTaken.slice(0, 3).map((t) => (
+                    <div
+                      key={t.id}
+                      draggable
+                      onDragStart={(e) => {
+                        setDraggingTaakId(t.id);
+                        e.dataTransfer.effectAllowed = 'move';
+                        try { e.dataTransfer.setData('text/plain', t.id); } catch { /* sommige browsers */ }
+                      }}
+                      onDragEnd={() => {
+                        setDraggingTaakId(null);
+                        setTaakDragOverDate(null);
+                      }}
+                      title={`Taak: ${t.titel}`}
+                      className={cn(
+                        "flex items-center gap-1 text-[10px] truncate rounded px-1 py-0.5 bg-white border border-[#EBEBEB] text-[#1A1A1A] cursor-grab active:cursor-grabbing hover:border-[#1A535C]/40 transition-all",
+                        draggingTaakId === t.id && "opacity-50"
+                      )}
+                    >
+                      <CheckCircle2 className="h-2.5 w-2.5 text-[#1A535C] flex-shrink-0" />
+                      <span className="truncate">{t.titel}</span>
+                    </div>
+                  ))}
+                  {dayTaken.length > 3 && (
+                    <span className="text-[10px] text-[#9B9B95] px-1">+{dayTaken.length - 3} taken</span>
                   )}
                 </div>
               </div>
@@ -2057,6 +2219,82 @@ export function MontagePlanningLayout() {
             );
           })}
         </div>
+
+        {/* Taken-lane — losse taken (met deadline in deze week) verschijnen
+            hier zodat collega's hun planning + taken in één scherm hebben.
+            Drag-tussen-dagen werkt door deadline van de taak te updaten. */}
+        {Object.values(takenPerDag).some(arr => arr.length > 0) && (
+          <div
+            className="grid border-b border-[#F0EFEC] bg-[#FAF9F6]"
+            style={{ gridTemplateColumns: '140px repeat(5, 1fr)' }}
+          >
+            <div className="py-2 px-3 flex items-center gap-1.5 border-r border-[#F0EFEC]">
+              <CheckCircle2 className="h-3.5 w-3.5 text-[#1A535C]" />
+              <span className="text-[11px] font-semibold text-[#1A535C] uppercase tracking-widest">Taken</span>
+            </div>
+            {werkdagen.map((date) => {
+              const dateStr = formatDate(date);
+              const dayTaken = takenPerDag[dateStr] || [];
+              const isDragOver = taakDragOverDate === dateStr;
+              return (
+                <div
+                  key={dateStr}
+                  className={cn(
+                    "border-l border-[#F0EFEC] p-1.5 space-y-1 min-h-[42px] transition-colors",
+                    isDragOver && "bg-[#1A535C]/[0.06] ring-1 ring-inset ring-[#1A535C]/30"
+                  )}
+                  onDragOver={(e) => {
+                    if (!draggingTaakId) return;
+                    e.preventDefault();
+                    if (taakDragOverDate !== dateStr) setTaakDragOverDate(dateStr);
+                  }}
+                  onDragLeave={() => {
+                    if (taakDragOverDate === dateStr) setTaakDragOverDate(null);
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    if (draggingTaakId) {
+                      handleDropTaakOnDate(draggingTaakId, dateStr);
+                    }
+                    setDraggingTaakId(null);
+                    setTaakDragOverDate(null);
+                  }}
+                >
+                  {dayTaken.map((t) => {
+                    const monteur = monteurMap[t.toegewezen_aan];
+                    return (
+                      <div
+                        key={t.id}
+                        draggable
+                        onDragStart={(e) => {
+                          setDraggingTaakId(t.id);
+                          e.dataTransfer.effectAllowed = 'move';
+                          try { e.dataTransfer.setData('text/plain', t.id); } catch { /* sommige browsers eisen dit */ }
+                        }}
+                        onDragEnd={() => {
+                          setDraggingTaakId(null);
+                          setTaakDragOverDate(null);
+                        }}
+                        title={`${t.titel}${monteur ? ` · ${monteur.naam}` : ''}`}
+                        className={cn(
+                          "group flex items-center gap-1.5 px-2 py-1 rounded-md bg-white border border-[#EBEBEB] text-[11px] text-[#1A1A1A] cursor-grab active:cursor-grabbing hover:border-[#1A535C]/40 hover:shadow-sm transition-all",
+                          draggingTaakId === t.id && "opacity-50"
+                        )}
+                      >
+                        {t.prioriteit === 'kritiek' && <span className="w-1 h-1 rounded-full bg-[#F15025] flex-shrink-0" />}
+                        {t.prioriteit === 'hoog' && <span className="w-1 h-1 rounded-full bg-[#E89A3A] flex-shrink-0" />}
+                        <span className="flex-1 truncate">{t.titel}</span>
+                        {monteur && (
+                          <span className="text-[9px] text-[#9B9B95] flex-shrink-0">{monteur.naam.split(' ')[0]}</span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         {/* Monteur lanes — eventueel gegroepeerd per rol (laneGroups). Wanneer
             laneGrouping === 'none' bevat laneGroups één sentinel-groep '__all__'
