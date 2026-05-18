@@ -30,6 +30,10 @@ interface KlantContactSelectorProps {
   /** Tekent het Contactpersoon-label in Flame zodat het in een
    *  verzend-context (bv. factuur) als actie-emphasis leest. */
   contactLabelAccent?: boolean
+  /** Klap de contactpersonen-lijst standaard in zodra er één
+   *  geselecteerd is (i.p.v. alleen bij een gepinde contactpersoon).
+   *  Gebruiker kan altijd uitklappen via "Andere contactpersoon". */
+  compactContactList?: boolean
 }
 
 export function KlantContactSelector({
@@ -44,6 +48,7 @@ export function KlantContactSelector({
   klanten,
   onKlantenRefresh,
   contactLabelAccent = false,
+  compactContactList = false,
 }: KlantContactSelectorProps) {
   const { user } = useAuth()
   const [search, setSearch] = useState('')
@@ -441,7 +446,8 @@ export function KlantContactSelector({
 
           {contactpersonen.length > 0 && (() => {
             const isPinnedSelected = !!pinnedContactpersoonId && contactpersoonId === pinnedContactpersoonId
-            const collapseList = isPinnedSelected && !expandedContacts
+            const compactCollapsed = compactContactList && !!contactpersoonId
+            const collapseList = (isPinnedSelected || compactCollapsed) && !expandedContacts
             const visibleCps = collapseList
               ? contactpersonen.filter((c) => c.id === contactpersoonId)
               : contactpersonen

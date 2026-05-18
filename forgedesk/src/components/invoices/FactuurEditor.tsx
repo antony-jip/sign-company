@@ -1933,6 +1933,7 @@ export function FactuurEditor() {
                 klanten={klanten}
                 onKlantenRefresh={() => getKlanten().then(setKlanten).catch(() => {})}
                 contactLabelAccent
+                compactContactList
               />
               {resolvedCp && (
                 <label className="mt-3 flex items-center gap-2 text-xs cursor-pointer text-muted-foreground">
