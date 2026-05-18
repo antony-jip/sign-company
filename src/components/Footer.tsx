@@ -87,7 +87,7 @@ export default function Footer() {
             {
               title: 'Contact',
               items: [
-                { href: 'mailto:hello@doen.team', label: 'hello@doen.team' },
+                { href: 'mailto:info@signcompany.nl', label: 'info@signcompany.nl' },
               ],
             },
           ].map((col) => (

@@ -112,7 +112,7 @@ const faqs: { category: CategoryId; q: string; a: string }[] = [
   {
     category: 'support',
     q: 'Kan ik overstappen vanuit mijn huidige systeem?',
-    a: 'Ja. We hebben **migratiepaden voor de gangbare pakketten**. Stuur ons een export van je klanten en producten, dan zetten wij het netjes in doen. Laat het weten via **hello@doen.team**.',
+    a: 'Ja. We hebben **migratiepaden voor de gangbare pakketten**. Stuur ons een export van je klanten en producten, dan zetten wij het netjes in doen. Laat het weten via **info@signcompany.nl**.',
   },
   {
     category: 'support',

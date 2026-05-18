@@ -15,6 +15,7 @@ const modules = [
     image: '/images/modules/projecten-transparent.webp',
     headline: 'Eén cockpit. Alles gedaan.',
     description: 'Je opent een project en alles zit erin. Offerte, werkbon, planning, factuur, klantcommunicatie. Wat jij in de offerte schrijft, leest je monteur op de werkbon. Wat je klant goedkeurt in het portaal, zie jij direct terug. Niks valt tussen wal en schip.',
+    descriptionMobile: 'Open een project, zie alles. Offerte, werkbon, planning en factuur — gekoppeld.',
     highlights: ['Offerte, werkbon, factuur en planning in één project', 'Wat in de offerte staat, staat op de werkbon', 'Je klant volgt mee via het portaal', 'Situatiefoto\'s, bestanden en taken per project'],
     detail: 'Je maakt een project aan en koppelt alles eraan. Offerte verstuurd? Zit in het project. Werkbon voor de monteur? Komt uit het project. Factuur na oplevering? Eén klik vanuit het project. Je klant volgt mee via het portaal en keurt goed zonder in te loggen. Jij ziet in de activiteiten-timeline precies wat er wanneer is gebeurd.',
   },
@@ -25,6 +26,7 @@ const modules = [
     image: '/images/modules/offertes-transparent.webp',
     headline: 'Offerte? Zo gedaan.',
     description: 'Maak je eigen producten aan, sla templates op voor gevelreclame, autobelettering of lichtreclame. Stel je inkoopprijs en marge in. doen. berekent de verkoopprijs. Upload je werktekening en de omschrijving wordt er automatisch bij gezet.',
+    descriptionMobile: 'Eigen producten en templates. Inkoop + marge = verkoopprijs. Klaar.',
     highlights: ['Eigen producten en templates voor elk type werk', 'Inkoopprijs + marge = verkoopprijs, automatisch', 'Werktekening uploaden met automatische omschrijving', 'Verstuur als PDF of laat goedkeuren via het klantportaal'],
     detail: 'Je bouwt één keer je producten op. Daarna selecteer je ze bij elke offerte. Combineer losse onderdelen tot één prijs. Lever je inkoopofferte van de leverancier aan, doen. leest hem uit. Je klant keurt goed via het portaal of per mail. Wijzigingen? Versioning houdt alles bij.',
   },
@@ -35,6 +37,7 @@ const modules = [
     image: '/images/modules/klantportaal-transparent.webp',
     headline: 'Niet mailen. Gewoon delen.',
     description: 'Je klant krijgt een link en ziet alles. Tekeningen, offertes, opdrachtbevestigingen, facturen en foto\'s. Goedkeuren, reageren en betalen vanuit één plek. Geen bijlages, geen inlog.',
+    descriptionMobile: 'Eén link voor je klant. Alles erin, geen bijlages, geen inlog.',
     highlights: ['Tekening, offerte, opdrachtbevestiging, factuur en foto\'s delen', 'Klant keurt goed en betaalt direct vanuit het portaal', 'Automatische herinneringen bij geen reactie of open factuur', 'Meerdere contactpersonen per project uitnodigen'],
     detail: 'Stuur je tekening, je klant bekijkt en reageert. Stuur je offerte, je klant keurt goed met één klik. Stuur je opdrachtbevestiging, je klant tekent digitaal. Stuur je factuur, je klant betaalt via iDEAL. Stuur foto\'s van de montage, je klant ziet het resultaat. Alles in hetzelfde portaal. Geen losse mails, geen verloren bijlages.',
   },
@@ -45,6 +48,7 @@ const modules = [
     image: '/images/modules/planning-transparent.png',
     headline: 'Sleep. Drop. Gepland.',
     description: 'Sleep een project naar een dag en het staat ingepland. Per monteur of per ploeg. De werkbon zit er direct aan vast. Je monteur opent zijn telefoon en weet wat hij moet doen, waar hij moet zijn en wat het weerbericht is.',
+    descriptionMobile: 'Sleep naar een dag, ingepland. Werkbon en weer voor je monteur.',
     highlights: ['Sleep een project naar een dag in de kalender', 'Per monteur of per ploeg inplannen', 'Werkbon, locatie en contactgegevens direct zichtbaar', 'Weerbericht en waarschuwing bij dubbele boeking'],
     detail: 'Je ziet je hele week in één overzicht. Sleep een project naar maandag, wijs het toe aan Mark en Sophie. De werkbon wordt automatisch aangemaakt met alle offerteregels. Je monteur opent de app, ziet tijd, adres en werkbon. Buiten-montage bij regen? Het weerbericht staat erbij. Dubbel geboekt? doen. waarschuwt je voordat het misgaat.',
   },
@@ -55,6 +59,7 @@ const modules = [
     image: '/images/modules/werkbonnen-transparent.png',
     headline: 'Offerte in. Werkbon uit.',
     description: 'Alle offerteregels staan 1:1 op de werkbon. Je monteur opent zijn telefoon, ziet wat hij moet doen, registreert uren, maakt foto\'s en laat de klant tekenen. Alles komt direct terug in het project.',
+    descriptionMobile: 'Offerteregels 1:1 op de werkbon. Uren, foto\'s en handtekening op telefoon.',
     highlights: ['Offerteregels automatisch overgenomen op de werkbon', 'Uren registreren en foto\'s maken op locatie', 'Klant tekent digitaal op de werkbon', 'Opmerkingen en instructiefoto\'s per regel'],
     detail: 'De werkbon is het verlengstuk van je offerte. Wat jij aanbiedt, voert je monteur uit. Op locatie registreert hij uren, maakt foto\'s van het resultaat en laat de klant tekenen. Alles komt automatisch terug in het project. Jij ziet direct wat er is gedaan zonder te bellen.',
   },
@@ -65,6 +70,7 @@ const modules = [
     image: '/images/modules/facturen.jpg',
     headline: 'Verzonden. Ontvangen. Geboekt.',
     description: 'Verkoopfactuur één klik vanuit de offerte, met Mollie-betaallink en automatische herinneringen. Inkoopfactuur? Je leverancier mailt zijn PDF naar je inkoop-inbox, Daan leest hem uit en zet hem klaar ter goedkeuring.',
+    descriptionMobile: 'Verkoop: één klik, betaallink. Inkoop: Daan leest PDF\'s uit.',
     highlights: ['Verkoopfactuur vanuit offerte of vanaf scratch', 'Mollie betaallink (iDEAL, creditcard)', 'Inkoopfactuur per mail binnen, AI leest uit', 'Goedkeuren en doorboeken naar Exact Online'],
     detail: 'Twee kanten, één module. Aan de verkoopkant: factuur uit offerte, betaallink erbij, herinneringen automatisch. Aan de inkoopkant: je leverancier mailt zijn PDF naar de inkoop-inbox, Daan leest leverancier, factuurnummer, datum en regels uit, jij controleert en keurt goed. Factuurgegevens gaan one-way door naar Exact Online voor je boekhouding.',
   },
@@ -75,6 +81,7 @@ const modules = [
     image: '/images/modules/visualizer.jpg',
     headline: 'Laat zien. Niet vertellen.',
     description: 'Upload een schets, AI doet de rest. Autobelettering, gevelreclame, lichtreclame. Claude verbetert je input, Nano Banana visualiseert het. Koppel aan je project, deel via het portaal.',
+    descriptionMobile: 'Schets erin, visualisatie eruit. Deel via het portaal.',
     highlights: ['Schets uploaden → AI visualiseert', 'Claude Sonnet verbetert je input', 'Koppel aan project of offerte', '10 credits, bijkopen wanneer je wilt'],
     detail: 'Je klant ziet het eindresultaat voordat je begint. Upload een schets of foto. AI brengt het tot leven. Deel het via het portaal. Het beeld doet het verkoopwerk.',
   },
@@ -85,6 +92,7 @@ const modules = [
     image: '/images/modules/ai-assistant.jpg',
     headline: 'Daan doet het denkwerk.',
     description: 'Hoeveel staat er open? Wie is je grootste klant? Daan weet het. Selecteer tekst, Daan verbetert het. Mail binnengekomen? Daan vat samen. Vierkante meters uitrekenen? Daan doet het.',
+    descriptionMobile: 'Vraag wat je wilt. Daan kent je data en helpt.',
     highlights: ['Kent al je bedrijfsdata', 'Tekst verbeteren en verlengen', 'Mails samenvatten en schrijven', 'Draait op Claude Sonnet 4.6'],
     detail: 'Daan is de collega die nooit vrij neemt. Vraag wat je wilt, wanneer je wilt. Offerteteksten, calculaties, samenvattingen. Hoe meer je vraagt, hoe slimmer Daan wordt.',
   },
@@ -95,6 +103,7 @@ const modules = [
     image: '/images/modules/email.webp',
     headline: 'Jouw mailbox. Slim gekoppeld.',
     description: 'Iedere gebruiker werkt vanuit zijn eigen persoonlijke mailbox, met IMAP/SMTP direct gekoppeld aan doen. Inkomende en verzonden mails hangen automatisch aan de juiste klant en het juiste project. Jouw mail blijft van jou, maar de projectcontext is zichtbaar voor het team.',
+    descriptionMobile: 'Je eigen mailbox via IMAP. Mails automatisch aan project gekoppeld.',
     highlights: ['Persoonlijke mailbox per gebruiker (IMAP/SMTP)', 'Mails automatisch aan klant en project gekoppeld', 'Projectcommunicatie zichtbaar in de project-timeline', 'Daan vat binnengekomen mails samen'],
     detail: 'Koppel je eigen zakelijke emailadres aan doen. Je privé-inbox blijft privé. Alleen de mails die bij een klant of project horen worden in de projectcontext zichtbaar voor je team. Stuur vanuit een klant- of projectview en de mail zit meteen in het dossier.',
   },
@@ -105,6 +114,7 @@ const modules = [
     image: '/images/modules/taken.webp',
     headline: 'Alles naast de montage.',
     description: 'Montage inplannen doe je in de planning. Maar er is zoveel meer dat moet gebeuren: offertes opvolgen, inkoop regelen, bestanden opvragen bij de klant, drukproef laten goedkeuren. Daar is Taken voor. Koppel ze aan een project of klant, wijs toe, zet een deadline.',
+    descriptionMobile: 'Voor al het werk náást de montage. Per project of klant, met deadline.',
     highlights: ['Voor al het werk náást de montage', 'Taken per project of per klant', 'Toewijzen aan teamleden met deadline', 'Notificaties bij wijziging en vervaldatum'],
     detail: 'Planning is voor de montage. Sleep een project naar een dag, de werkbon hangt eraan. Taken zijn voor alle andere stappen: offerteopvolging, inkoop bij de leverancier, drukproef binnenhalen, bestanden opvragen bij de klant. Elke taak is gekoppeld aan een project of klant, met eigenaar en deadline.',
   },
@@ -478,13 +488,14 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
 
   type Overlay = { image: string; alt: string; w: number; h: number; label: string; pos: React.CSSProperties; from: { x: number; y: number } }
   type Pillar = { image: string; alt: string; label: string; title: string; description: string; width: number; height: number }
-  type HeroConfig = { label: string; heading: [string, string]; sub: string; image: string; imageW: number; imageH: number; overlays?: Overlay[]; pillarsTitle?: string; pillarsHeading?: [string, string]; pillars?: Pillar[] }
+  type HeroConfig = { label: string; heading: [string, string]; sub: string; subMobile?: string; image: string; imageW: number; imageH: number; overlays?: Overlay[]; pillarsTitle?: string; pillarsHeading?: [string, string]; pillars?: Pillar[] }
 
   const heroConfigs: Record<string, HeroConfig> = {
     projecten: {
       label: 'Projecten',
       heading: ['Eén cockpit', 'Alles gedaan'],
       sub: 'Eén plek waar offerte, werkbon, planning en factuur samenkomen. Je monteur weet wat hij moet doen. Je klant ziet wat er gebeurt.',
+      subMobile: 'Offerte, werkbon, planning en factuur. Eén plek.',
       image: '/images/features/hero-projecten-float.png',
       imageW: 2400, imageH: 1350,
       overlays: [
@@ -504,6 +515,7 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
       label: 'Offertes',
       heading: ['Offerte?', 'Zo gedaan'],
       sub: 'Eigen templates, eigen producten, eigen calculatie. Combineer elementen tot één prijs. Verstuur per mail of laat goedkeuren via het portaal.',
+      subMobile: 'Eigen templates en producten. Eén prijs in minuten.',
       image: '/images/features/hero-offertes.webp',
       imageW: 1536, imageH: 857,
       overlays: [
@@ -523,6 +535,7 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
       label: 'Klantportaal',
       heading: ['Niet mailen', 'Gewoon delen'],
       sub: 'Tekening, offerte, opdrachtbevestiging, factuur en foto\'s. Je klant ziet alles via één link. Goedkeuren, reageren en betalen zonder in te loggen.',
+      subMobile: 'Eén link voor je klant. Goedkeuren en betalen, geen inlog.',
       image: '/images/features/hero-portaal.webp',
       imageW: 1536, imageH: 857,
       overlays: [
@@ -541,6 +554,7 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
       label: 'Planning',
       heading: ['Sleep. Drop', 'Gepland'],
       sub: 'Sleep een project naar een dag. De werkbon zit er direct aan vast. Je monteur weet wat hij moet doen, waar hij moet zijn en hoe het weer wordt.',
+      subMobile: 'Sleep naar een dag. Werkbon en weer erbij.',
       image: '/images/features/hero-planning.webp',
       imageW: 1536, imageH: 857,
       overlays: [
@@ -559,6 +573,7 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
       label: 'Werkbonnen',
       heading: ['Offerte erin', 'Werkbon eruit'],
       sub: 'Alle offerteregels staan automatisch op de werkbon. Je monteur ziet wat hij moet doen, registreert uren, maakt foto\'s en laat de klant tekenen.',
+      subMobile: 'Offerteregels worden werkbon. Uren, foto\'s, handtekening.',
       image: '/images/features/hero-werkbonnen.webp',
       imageW: 1536, imageH: 857,
       overlays: [
@@ -576,6 +591,7 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
       label: 'Facturen',
       heading: ['Verzonden', 'én ontvangen'],
       sub: 'Verkoopfactuur één klik vanuit de offerte, Mollie-betaallink erbij. Inkoopfactuur per mail binnen, Daan leest hem uit en zet hem klaar ter goedkeuring. Daarna door naar Exact.',
+      subMobile: 'Verkoop één klik. Inkoop leest Daan uit. Door naar Exact.',
       image: '',
       imageW: 0, imageH: 0,
       overlays: [],
@@ -584,6 +600,7 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
       label: 'Visualizer',
       heading: ['Laat zien', 'Niet vertellen'],
       sub: 'Upload een foto van een bus, gevel of pand. Beschrijf wat je wilt. AI maakt een realistische visualisatie. Je klant ziet het eindresultaat voordat je begint.',
+      subMobile: 'Upload foto, beschrijf wat je wilt. AI maakt het beeld.',
       image: '/images/features/hero-visualizer.webp',
       imageW: 2400, imageH: 857,
       overlays: [],
@@ -592,6 +609,7 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
       label: 'AI-assistent',
       heading: ['Daan doet', 'het denkwerk'],
       sub: 'Hoeveel staat er open? Wie is je grootste klant? Daan weet het. Tekst verbeteren, mails samenvatten, vierkante meters uitrekenen. Vraag het en Daan doet het.',
+      subMobile: 'Vraag, Daan doet. Cijfers, teksten, calculaties.',
       image: '',
       imageW: 0, imageH: 0,
       overlays: [],
@@ -675,8 +693,8 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
               </motion.div>
 
               <motion.h1
-                className="font-heading font-bold tracking-[-2px] md:tracking-[-3px] leading-[0.92] mb-7"
-                style={{ fontSize: 'clamp(40px, 5.5vw, 76px)', color: '#1A535C' }}
+                className="font-heading font-bold tracking-[-1px] md:tracking-[-3px] leading-[1.0] md:leading-[0.92] mb-5 md:mb-7"
+                style={{ fontSize: 'clamp(32px, 8vw, 76px)', color: '#1A535C' }}
                 initial={{ opacity: 0, y: 25 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
@@ -692,13 +710,14 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
               </motion.h1>
 
               <motion.p
-                className="text-[16px] md:text-[19px] max-w-lg mx-auto leading-[1.55] mb-10 md:mb-14"
+                className="text-[15px] md:text-[19px] max-w-lg mx-auto leading-[1.55] mb-8 md:mb-14"
                 style={{ color: '#3F3F3A' }}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
               >
-                {heroConfig!.sub}
+                <span className="md:hidden">{heroConfig!.subMobile ?? heroConfig!.sub}</span>
+                <span className="hidden md:inline">{heroConfig!.sub}</span>
               </motion.p>
 
               {/* Portaal icon pills */}
@@ -1712,49 +1731,55 @@ export default function FeaturesContent({ initialModule = 0, moduleSlug }: { ini
                     </span>
                   </div>
 
-                  {/* H2 — Bricolage bold + serif italic on second part */}
+                  {/* H2 — "Hoe X werkt" intro voor het detail-blok */}
                   <h2
-                    className="font-heading font-bold tracking-[-1.5px] md:tracking-[-2.5px] leading-[0.95] mb-6"
+                    className="font-heading font-bold tracking-[-0.5px] md:tracking-[-2.5px] leading-[1.05] md:leading-[0.95] mb-5 md:mb-6"
                     style={{
-                      fontSize: 'clamp(36px, 4.5vw, 60px)',
+                      fontSize: 'clamp(24px, 6vw, 60px)',
                       color: '#1A535C',
                     }}
                   >
                     {(() => {
-                      const parts = mod.headline.split('.').filter(Boolean).map((p) => p.trim())
-                      return parts.map((part, i) => {
-                        const isLast = i === parts.length - 1
-                        return (
-                          <span key={i} className="block">
-                            {i === parts.length - 1 && parts.length > 1 ? (
-                              <span style={{ color: '#6B6B66' }}>
-                                <span
-                                  style={{
-                                    fontFamily:
-                                      '"Instrument Serif", var(--font-instrument-serif), Georgia, serif',
-                                    fontStyle: 'italic',
-                                    fontWeight: 400,
-                                  }}
-                                >
-                                  {part.split(' ')[0]}
-                                </span>{' '}
-                                {part.split(' ').slice(1).join(' ')}
-                              </span>
-                            ) : (
-                              part
-                            )}
-                            <span style={{ color: '#F15025' }}>.</span>
-                          </span>
-                        )
-                      })
+                      const processHeadlines: Record<string, { prefix: string; subject: string; verb: string }> = {
+                        projecten: { prefix: 'Hoe', subject: 'projecten', verb: 'werken' },
+                        offertes: { prefix: 'Hoe', subject: 'offertes', verb: 'werken' },
+                        portaal: { prefix: 'Hoe', subject: 'het portaal', verb: 'werkt' },
+                        planning: { prefix: 'Hoe', subject: 'planning', verb: 'werkt' },
+                        werkbonnen: { prefix: 'Hoe', subject: 'werkbonnen', verb: 'werken' },
+                        facturen: { prefix: 'Hoe', subject: 'facturen', verb: 'werken' },
+                        visualizer: { prefix: 'Hoe', subject: 'de visualizer', verb: 'werkt' },
+                        ai: { prefix: 'Hoe', subject: 'Daan', verb: 'werkt' },
+                        email: { prefix: 'Hoe', subject: 'mailen', verb: 'werkt' },
+                        taken: { prefix: 'Hoe', subject: 'taken', verb: 'werken' },
+                      }
+                      const h = processHeadlines[mod.id] ?? { prefix: 'Hoe het', subject: mod.name.toLowerCase(), verb: 'werkt' }
+                      return (
+                        <>
+                          {h.prefix}{' '}
+                          <span
+                            style={{
+                              fontFamily:
+                                '"Instrument Serif", var(--font-instrument-serif), Georgia, serif',
+                              fontStyle: 'italic',
+                              fontWeight: 400,
+                              color: '#6B6B66',
+                            }}
+                          >
+                            {h.subject}
+                          </span>{' '}
+                          {h.verb}
+                          <span style={{ color: '#F15025' }}>.</span>
+                        </>
+                      )
                     })()}
                   </h2>
 
                   <p
-                    className="text-[16px] md:text-[18px] leading-[1.55] mb-8 max-w-lg"
+                    className="text-[14px] md:text-[18px] leading-[1.6] mb-7 md:mb-8 max-w-lg"
                     style={{ color: '#3F3F3A' }}
                   >
-                    {mod.description}
+                    <span className="md:hidden">{(mod as { descriptionMobile?: string }).descriptionMobile ?? mod.description}</span>
+                    <span className="hidden md:inline">{mod.description}</span>
                   </p>
 
                   {/* Highlights — clean punt-bullet list */}

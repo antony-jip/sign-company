@@ -2,9 +2,12 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Mail, MessageCircle, Clock, type LucideIcon } from 'lucide-react'
+import { Mail, MessageCircle, Clock, ArrowRight, type LucideIcon } from 'lucide-react'
 import SectionReveal from '../SectionReveal'
 import AnimatedLink from '../AnimatedLink'
+import PageBackdrop from '../PageBackdrop'
+import { TrimCorners, FlameStamp } from '../brand/BrandMarks'
+import SerifItalic from '../SerifItalic'
 
 const PETROL = '#1A535C'
 const FLAME = '#F15025'
@@ -14,30 +17,41 @@ const MUTED_SOFT = '#6B6B66'
 export default function ContactContent() {
   const [formState, setFormState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [formData, setFormData] = useState({ naam: '', email: '', bericht: '' })
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setFormState('loading')
-    await new Promise((r) => setTimeout(r, 900))
-    setFormState('success')
-    setFormData({ naam: '', email: '', bericht: '' })
+    setErrorMsg(null)
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      })
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { error?: string }
+        setErrorMsg(data.error ?? 'Er ging iets mis. Probeer het opnieuw of mail direct naar info@signcompany.nl.')
+        setFormState('error')
+        return
+      }
+      setFormState('success')
+      setFormData({ naam: '', email: '', bericht: '' })
+    } catch {
+      setErrorMsg('Geen verbinding. Probeer het opnieuw of mail direct naar info@signcompany.nl.')
+      setFormState('error')
+    }
   }
 
   return (
-    <div className="pt-28 md:pt-36">
+    <div className="pt-28 md:pt-36" style={{ backgroundColor: '#F3F2ED' }}>
       <section className="pb-20 md:pb-32 relative overflow-hidden">
-        {/* Ambient radial behind */}
-        <div
-          aria-hidden
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background:
-              'radial-gradient(ellipse at 20% 0%, rgba(241,80,37,0.04) 0%, transparent 50%), radial-gradient(ellipse at 80% 100%, rgba(26,83,92,0.04) 0%, transparent 50%)',
-          }}
-        />
+        <PageBackdrop variant="flame" />
+        <TrimCorners inset={28} size={16} color="rgba(26,83,92,0.28)" />
+        <FlameStamp size={420} opacity={0.05} style={{ bottom: -180, right: -180 }} />
 
         <div className="container-site relative">
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-12 lg:gap-20">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-10 md:gap-12 lg:gap-20">
             {/* Left: info (2 cols) */}
             <div className="lg:col-span-2">
               <SectionReveal>
@@ -51,18 +65,21 @@ export default function ContactContent() {
                   </span>
                 </div>
                 <h1
-                  className="font-heading font-bold tracking-[-2px] md:tracking-[-3px] leading-[0.92] mb-6"
-                  style={{ fontSize: 'clamp(40px, 5vw, 72px)', color: PETROL }}
+                  className="font-heading font-bold tracking-[-1px] md:tracking-[-3px] leading-[1.0] md:leading-[0.92] mb-5 md:mb-6"
+                  style={{ fontSize: 'clamp(36px, 6.5vw, 72px)', color: PETROL }}
                 >
                   <span className="block">Vraag stellen<span style={{ color: FLAME }}>?</span></span>
                   <span className="block" style={{ color: '#6B6B66' }}>
-                    <span style={{ fontFamily: '"Instrument Serif", var(--font-instrument-serif), Georgia, serif', fontStyle: 'italic', fontWeight: 400 }}>Gewoon</span> doen
+                    <SerifItalic style={{ letterSpacing: '-1px' }}>Gewoon</SerifItalic> doen
                     <span style={{ color: FLAME }}>.</span>
                   </span>
                 </h1>
-                <p className="text-[16px] md:text-[18px] leading-[1.55] mb-10 max-w-md" style={{ color: '#3F3F3A' }}>
-                  Nieuwsgierig, een idee, of wil je weten of doen. bij je past? Vertel
-                  wat je bezighoudt. We reageren binnen één werkdag.
+                <p className="text-[15px] md:text-[18px] leading-[1.6] mb-8 md:mb-10 max-w-md" style={{ color: '#3F3F3A' }}>
+                  <span className="md:hidden">Vraag, idee of nieuwsgierig? Mail ons. Reactie binnen één werkdag.</span>
+                  <span className="hidden md:inline">
+                    Nieuwsgierig, een idee, of wil je weten of doen. bij je past? Vertel
+                    wat je bezighoudt. We reageren binnen één werkdag.
+                  </span>
                 </p>
               </SectionReveal>
 
@@ -71,8 +88,8 @@ export default function ContactContent() {
                   <ContactCard
                     icon={Mail}
                     label="Email"
-                    value="hello@doen.team"
-                    href="mailto:hello@doen.team"
+                    value="info@signcompany.nl"
+                    href="mailto:info@signcompany.nl"
                   />
                   <ContactCard
                     icon={Clock}
@@ -82,38 +99,46 @@ export default function ContactContent() {
                   <ContactCard
                     icon={MessageCircle}
                     label="Liever chatten"
-                    value="hello@doen.team"
-                    subtitle="Mail en we plannen direct een gesprek in"
-                    href="mailto:hello@doen.team?subject=Plan%20een%20demo"
+                    value="Plan een gesprek"
+                    subtitle="Mail ons, we plannen direct iets in"
+                    href="mailto:info@signcompany.nl?subject=Plan%20een%20demo"
                   />
                 </div>
               </SectionReveal>
 
-              {/* Inline register CTA */}
+              {/* Inline register CTA — branded petrol card */}
               <SectionReveal delay={0.25}>
                 <div
-                  className="mt-10 rounded-2xl p-6"
+                  className="mt-10 rounded-[14px] p-6 md:p-7 relative overflow-hidden"
                   style={{
-                    backgroundColor: 'rgba(26,83,92,0.04)',
-                    border: '1px solid rgba(26,83,92,0.08)',
+                    backgroundColor: '#0F3A42',
+                    boxShadow: '0 16px 32px -14px rgba(20,40,40,0.30)',
                   }}
                 >
-                  <p className="text-[13px] font-semibold mb-1" style={{ color: PETROL }}>
-                    Liever direct beginnen<span style={{ color: FLAME }}>?</span>
+                  <div
+                    aria-hidden
+                    className="absolute -top-16 -right-16 w-[220px] h-[220px] rounded-full pointer-events-none"
+                    style={{ backgroundColor: FLAME, opacity: 0.14, filter: 'blur(70px)' }}
+                  />
+                  <p className="relative font-mono text-[10px] font-bold tracking-[0.22em] uppercase mb-3" style={{ color: 'rgba(255,255,255,0.55)' }}>
+                    Liever direct
                   </p>
-                  <p className="text-[13px] mb-4" style={{ color: MUTED }}>
+                  <p className="relative font-heading text-[22px] md:text-[26px] font-bold tracking-[-0.5px] leading-[1.1] text-white mb-2">
+                    Begin nu<span style={{ color: FLAME }}>.</span>
+                  </p>
+                  <p className="relative text-[13.5px] mb-5" style={{ color: 'rgba(255,255,255,0.65)' }}>
                     Maak een account en zet je eerste offerte vandaag de deur uit.
                   </p>
                   <a
                     href="https://app.doen.team/register"
-                    className="inline-flex items-center justify-center gap-2 font-semibold text-[14px] text-white px-6 h-[48px] rounded-xl whitespace-nowrap transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                    className="relative inline-flex items-center justify-center gap-2 font-semibold text-[14px] text-white px-6 h-[48px] rounded-full whitespace-nowrap transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
                     style={{
                       backgroundColor: FLAME,
-                      boxShadow: '0 4px 14px rgba(241,80,37,0.3)',
+                      boxShadow: '0 8px 22px rgba(241,80,37,0.36)',
                     }}
                   >
                     <span>Start gratis</span>
-                    <span aria-hidden>→</span>
+                    <ArrowRight className="w-4 h-4" strokeWidth={2.5} />
                   </a>
                 </div>
               </SectionReveal>
@@ -123,19 +148,25 @@ export default function ContactContent() {
             <div className="lg:col-span-3">
               <SectionReveal delay={0.1}>
                 <div
-                  className="rounded-3xl p-6 md:p-12 relative overflow-hidden"
+                  className="rounded-[16px] p-6 md:p-12 relative overflow-hidden"
                   style={{
                     backgroundColor: '#FFFFFF',
-                    border: '1px solid rgba(26,83,92,0.08)',
+                    border: '1.5px solid #1A535C',
                     boxShadow:
-                      '0 1px 2px rgba(26,83,92,0.04), 0 8px 24px rgba(26,83,92,0.05), 0 24px 60px rgba(26,83,92,0.04)',
+                      '0 1px 2px rgba(26,83,92,0.04), 0 16px 32px -14px rgba(20,40,40,0.18)',
                   }}
                 >
-                  {/* Corner accent */}
+                  {/* Flame accent strip top */}
                   <div
                     aria-hidden
-                    className="absolute -top-24 -right-24 w-48 h-48 rounded-full pointer-events-none"
-                    style={{ background: `radial-gradient(circle, ${FLAME}11 0%, transparent 70%)` }}
+                    className="absolute top-0 left-0 right-0 h-[3px]"
+                    style={{ backgroundColor: FLAME }}
+                  />
+                  {/* Corner glow */}
+                  <div
+                    aria-hidden
+                    className="absolute -top-24 -right-24 w-56 h-56 rounded-full pointer-events-none"
+                    style={{ background: `radial-gradient(circle, ${FLAME}16 0%, transparent 70%)` }}
                   />
 
                   <AnimatePresence mode="wait">
@@ -151,11 +182,17 @@ export default function ContactContent() {
                         exit={{ opacity: 0, scale: 0.98 }}
                         transition={{ duration: 0.3 }}
                       >
-                        <p
-                          className="font-mono text-[10px] font-bold tracking-[0.18em] uppercase mb-6"
-                          style={{ color: MUTED_SOFT }}
-                        >
-                          Stuur een bericht
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="w-6 h-px" style={{ backgroundColor: FLAME }} />
+                          <p
+                            className="font-mono text-[10px] font-bold tracking-[0.22em] uppercase"
+                            style={{ color: MUTED_SOFT }}
+                          >
+                            Stuur een bericht
+                          </p>
+                        </div>
+                        <p className="font-heading text-[24px] md:text-[28px] font-bold tracking-[-0.5px] leading-[1.15] mb-6 md:mb-8" style={{ color: PETROL }}>
+                          Wat kunnen we voor je <SerifItalic>doen</SerifItalic><span style={{ color: FLAME }}>?</span>
                         </p>
 
                         <FloatingField
@@ -183,16 +220,30 @@ export default function ContactContent() {
                           multiline
                         />
 
+                        {formState === 'error' && errorMsg && (
+                          <p
+                            role="alert"
+                            className="text-[13px] leading-snug px-3 py-2 rounded-[8px]"
+                            style={{
+                              color: '#A03318',
+                              backgroundColor: 'rgba(241,80,37,0.08)',
+                              border: '1px solid rgba(241,80,37,0.25)',
+                            }}
+                          >
+                            {errorMsg}
+                          </p>
+                        )}
+
                         <motion.button
                           type="submit"
                           disabled={formState === 'loading'}
                           whileHover={{ scale: 1.01 }}
                           whileTap={{ scale: 0.98 }}
                           transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-                          className="w-full inline-flex items-center justify-center gap-2 font-semibold text-[15px] text-white h-14 rounded-xl disabled:opacity-70 disabled:cursor-not-allowed"
+                          className="w-full inline-flex items-center justify-center gap-2 font-semibold text-[15px] text-white h-14 rounded-full disabled:opacity-70 disabled:cursor-not-allowed"
                           style={{
                             backgroundColor: FLAME,
-                            boxShadow: '0 6px 18px rgba(241,80,37,0.3)',
+                            boxShadow: '0 8px 24px rgba(241,80,37,0.32)',
                           }}
                         >
                           {formState === 'loading' ? (
@@ -213,7 +264,7 @@ export default function ContactContent() {
                           ) : (
                             <>
                               <span>Verstuur bericht</span>
-                              <span aria-hidden>→</span>
+                              <ArrowRight className="w-4 h-4" strokeWidth={2.5} />
                             </>
                           )}
                         </motion.button>
@@ -306,20 +357,29 @@ function ContactCard({
     return (
       <motion.a
         href={href}
-        whileHover={{ x: 2 }}
+        whileHover={{ y: -2 }}
         transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-        className="flex items-center gap-4 rounded-xl p-4 group"
-        style={{ backgroundColor: '#FFFFFF', border: '1px solid rgba(26,83,92,0.06)' }}
+        className="flex items-center gap-4 rounded-[12px] p-4 group transition-shadow"
+        style={{
+          backgroundColor: '#FFFFFF',
+          border: '1px solid rgba(26,83,92,0.10)',
+          boxShadow: '0 1px 2px rgba(20,40,40,0.04), 0 6px 14px -8px rgba(20,40,40,0.10)',
+        }}
       >
         {content}
+        <span aria-hidden className="ml-auto opacity-0 -translate-x-1 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-0" style={{ color: FLAME }}>→</span>
       </motion.a>
     )
   }
 
   return (
     <div
-      className="flex items-center gap-4 rounded-xl p-4"
-      style={{ backgroundColor: '#FFFFFF', border: '1px solid rgba(26,83,92,0.06)' }}
+      className="flex items-center gap-4 rounded-[12px] p-4"
+      style={{
+        backgroundColor: '#FFFFFF',
+        border: '1px solid rgba(26,83,92,0.10)',
+        boxShadow: '0 1px 2px rgba(20,40,40,0.04)',
+      }}
     >
       {content}
     </div>
