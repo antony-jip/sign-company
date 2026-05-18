@@ -747,6 +747,7 @@ export function FactuurEditor() {
 
   const currentStatus = existingFactuur?.status || 'concept'
   const isVervallen = existingFactuur ? existingFactuur.vervaldatum < getTodayString() && currentStatus !== 'betaald' && currentStatus !== 'gecrediteerd' : false
+  const isReadOnly = !!(existingFactuur && (currentStatus === 'betaald' || currentStatus === 'gecrediteerd'))
 
   const dagenVervallen = useMemo(() => {
     if (!existingFactuur) return 0
@@ -1694,16 +1695,6 @@ export function FactuurEditor() {
                     ? (isEditMode ? `Creditfactuur ${nummer}` : 'Nieuwe creditfactuur')
                     : (isEditMode ? `Factuur ${nummer}` : 'Nieuwe factuur')}
                 </h1>
-                {isCreditFactuur && (
-                  <Badge className="text-2xs px-1.5 h-5 bg-flame/10 text-flame border-flame-border">
-                    CREDIT
-                  </Badge>
-                )}
-                {isEditMode && existingFactuur && !isCreditFactuur && (
-                  <Badge className={cn('text-2xs px-1.5 h-5', STATUS_CONFIG[currentStatus]?.color)}>
-                    {isVervallen ? 'Vervallen' : STATUS_CONFIG[currentStatus]?.label || currentStatus}
-                  </Badge>
-                )}
               </div>
               <p className="text-xs font-mono text-muted-foreground">{nummer}</p>
             </div>
@@ -1866,7 +1857,8 @@ export function FactuurEditor() {
             <Button
               size="sm"
               onClick={handleSave}
-              disabled={isSaving}
+              disabled={isSaving || isReadOnly}
+              title={isReadOnly ? `Factuur is ${currentStatus} en kan niet meer worden gewijzigd` : undefined}
             >
               {isSaving ? (
                 <Loader2 className="h-4 w-4 mr-1 animate-spin" />
@@ -2016,6 +2008,12 @@ export function FactuurEditor() {
                 <div className="flex items-center gap-2 text-xs text-flame bg-flame-light rounded-lg px-3 py-2">
                   <MinusCircle className="h-3 w-3" />
                   Creditfactuur voor {creditVoorNummer}
+                </div>
+              )}
+              {isCreditFactuur && existingFactuur?.credit_reden && (
+                <div className="flex items-start gap-2 text-xs text-flame bg-flame-light rounded-lg px-3 py-2">
+                  <MinusCircle className="h-3 w-3 mt-0.5 shrink-0" />
+                  <span>Reden: {existingFactuur.credit_reden}</span>
                 </div>
               )}
             </CardContent>
@@ -2211,13 +2209,20 @@ export function FactuurEditor() {
                 <CardTitle className="text-sm font-medium">
                   Factuurregels ({items.length})
                 </CardTitle>
-                <Button size="sm" variant="outline" onClick={handleAddItem}>
-                  <Plus className="h-4 w-4 mr-1" />
-                  Regel
-                </Button>
+                {!isReadOnly && (
+                  <Button size="sm" variant="outline" onClick={handleAddItem}>
+                    <Plus className="h-4 w-4 mr-1" />
+                    Regel
+                  </Button>
+                )}
               </div>
             </CardHeader>
             <CardContent>
+              {isReadOnly && (
+                <div className="mb-3 rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
+                  Deze factuur is {currentStatus === 'betaald' ? 'betaald' : 'gecrediteerd'} en kan niet meer worden gewijzigd.
+                </div>
+              )}
               {/* Table header — kolomlabels in tertiary uppercase, geen gekleurd vlak */}
               <div className="hidden md:grid md:grid-cols-[1fr_70px_95px_60px_75px_100px_100px_36px] gap-2 px-3 py-2 mb-1 text-[11px] font-bold uppercase tracking-wider text-[#9B9B95] border-b border-[#EBEBEB]">
                 <span>Omschrijving</span>
@@ -2241,6 +2246,7 @@ export function FactuurEditor() {
                       onChange={(e) => handleUpdateItem(item.id, 'beschrijving', e.target.value)}
                       placeholder="Omschrijving..."
                       className="text-sm"
+                      disabled={isReadOnly}
                     />
                     <Input
                       type="number"
@@ -2249,6 +2255,7 @@ export function FactuurEditor() {
                       className="text-sm text-right"
                       min={0}
                       step="0.01"
+                      disabled={isReadOnly}
                     />
                     <Input
                       type="number"
@@ -2257,6 +2264,7 @@ export function FactuurEditor() {
                       className="text-sm text-right"
                       min={0}
                       step="0.01"
+                      disabled={isReadOnly}
                     />
                     <Input
                       type="number"
@@ -2265,6 +2273,7 @@ export function FactuurEditor() {
                       className="text-sm text-right"
                       min={0}
                       step="1"
+                      disabled={isReadOnly}
                     />
                     <Input
                       type="number"
@@ -2274,11 +2283,13 @@ export function FactuurEditor() {
                       min={0}
                       max={100}
                       step="1"
+                      disabled={isReadOnly}
                     />
                     {grootboekrekeningen.length > 0 ? (
                       <Select
                         value={item.grootboek_code || '_leeg'}
                         onValueChange={(val) => handleUpdateItem(item.id, 'grootboek_code', val === '_leeg' ? '' : val)}
+                        disabled={isReadOnly}
                       >
                         <SelectTrigger className="h-9 text-xs font-mono px-1.5 truncate">
                           <SelectValue placeholder="—" />
@@ -2299,25 +2310,29 @@ export function FactuurEditor() {
                       {formatCurrency(calcLineTotal(item))}
                     </div>
                     <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7"
-                        onClick={() => handleDuplicateItem(item.id)}
-                        title="Dupliceer"
-                      >
-                        <Copy className="h-3 w-3" />
-                      </Button>
-                      {items.length > 1 && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-destructive hover:text-destructive"
-                          onClick={() => handleRemoveItem(item.id)}
-                          title="Verwijder"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
+                      {!isReadOnly && (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={() => handleDuplicateItem(item.id)}
+                            title="Dupliceer"
+                          >
+                            <Copy className="h-3 w-3" />
+                          </Button>
+                          {items.length > 1 && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-destructive hover:text-destructive"
+                              onClick={() => handleRemoveItem(item.id)}
+                              title="Verwijder"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          )}
+                        </>
                       )}
                     </div>
                   </div>
@@ -2338,14 +2353,16 @@ export function FactuurEditor() {
                 </div>
               )}
 
-              <button
-                type="button"
-                onClick={handleAddItem}
-                className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-[#F15025] hover:text-[#D94520] transition-colors"
-              >
-                <Plus className="h-4 w-4" />
-                Regel toevoegen
-              </button>
+              {!isReadOnly && (
+                <button
+                  type="button"
+                  onClick={handleAddItem}
+                  className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-[#F15025] hover:text-[#D94520] transition-colors"
+                >
+                  <Plus className="h-4 w-4" />
+                  Regel toevoegen
+                </button>
+              )}
             </CardContent>
           </Card>
 
