@@ -72,7 +72,7 @@ export function useWeather(coords: Coords = DEFAULT_COORDS): WeatherSnapshot | n
       // localStorage unavailable or corrupt — fetch fresh
     }
 
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lon}&current=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min&forecast_days=3&timezone=Europe/Amsterdam`
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lon}&current=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min&forecast_days=8&timezone=Europe/Amsterdam`
 
     fetch(url)
       .then(r => r.json())

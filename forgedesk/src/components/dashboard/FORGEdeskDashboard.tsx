@@ -115,7 +115,7 @@ function FORGEdeskDashboardInner() {
   const dateCaps = dateStr.toUpperCase()
 
   return (
-    <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pb-8">
+    <div className="w-full px-4 sm:px-6 lg:px-8 pb-8">
       <div className="flex flex-col xl:flex-row gap-6">
         {/* ── Main column ── */}
         <main className="flex-1 min-w-0 space-y-5">
@@ -218,25 +218,34 @@ function FORGEdeskDashboardInner() {
                       {weather.label}
                     </p>
 
-                    {(weather.forecast?.length ?? 0) >= 3 && (
-                      <div className="mt-4 pt-3 grid grid-cols-2 gap-3" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                        {weather.forecast!.slice(1, 3).map((day, idx) => {
-                          const Icon = WEATHER_ICONS[day.iconKey]
-                          const tint = day.isRaining ? '#9DD3DA' : '#F5C460'
-                          return (
-                            <div key={day.date} className="min-w-0">
-                              <p className="text-[10px] uppercase tracking-wider text-white/55 font-mono">
-                                {idx === 0 ? 'Morgen' : 'Overmorgen'}
-                              </p>
-                              <div className="flex items-center gap-1.5 mt-1">
-                                <Icon className="w-4 h-4 flex-shrink-0" strokeWidth={1.6} style={{ color: tint }} />
-                                <span className="text-[15px] text-white font-mono">
-                                  {day.tempMax}<span className="text-white/55 text-[11px]">°</span>
-                                </span>
+                    {(weather.forecast?.length ?? 0) >= 2 && (
+                      <div className="mt-4 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                        <div className="flex gap-4 overflow-x-auto pb-1 -mx-1 px-1" style={{ scrollbarWidth: 'thin' }}>
+                          {weather.forecast!.slice(1).map((day, idx) => {
+                            const Icon = WEATHER_ICONS[day.iconKey]
+                            const tint = day.isRaining ? '#9DD3DA' : '#F5C460'
+                            const dateObj = new Date(day.date + 'T00:00:00')
+                            const dagNaam = ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za'][dateObj.getDay()]
+                            const dagLabel = idx === 0
+                              ? 'Morgen'
+                              : idx === 1
+                                ? 'Overmorgen'
+                                : `${dagNaam} ${dateObj.getDate()}`
+                            return (
+                              <div key={day.date} className="min-w-[72px] flex-shrink-0">
+                                <p className="text-[10px] uppercase tracking-wider text-white/55 font-mono whitespace-nowrap">
+                                  {dagLabel}
+                                </p>
+                                <div className="flex items-center gap-1.5 mt-1">
+                                  <Icon className="w-4 h-4 flex-shrink-0" strokeWidth={1.6} style={{ color: tint }} />
+                                  <span className="text-[15px] text-white font-mono">
+                                    {day.tempMax}<span className="text-white/55 text-[11px]">°</span>
+                                  </span>
+                                </div>
                               </div>
-                            </div>
-                          )
-                        })}
+                            )
+                          })}
+                        </div>
                       </div>
                     )}
                   </div>
