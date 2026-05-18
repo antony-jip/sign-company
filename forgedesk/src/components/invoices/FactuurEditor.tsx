@@ -452,8 +452,6 @@ export function FactuurEditor() {
                 const offerte = projectOffertes.find((o) => o.status === 'goedgekeurd') || projectOffertes[0]
                 if (offerte) {
                   setOfferteId(offerte.id)
-                  if (offerte.intro_tekst) setIntroTekst(offerte.intro_tekst)
-                  if (offerte.outro_tekst) setOutroTekst(offerte.outro_tekst)
 
                   const offerteItems = await getOfferteItems(offerte.id).catch(() => [])
                   if (offerteItems.length > 0) {
@@ -541,8 +539,6 @@ export function FactuurEditor() {
                 setShowKlantSelector(false)
                 setTitel(offerte.titel)
                 if (offerte.project_id) setProjectId(offerte.project_id)
-                if (offerte.intro_tekst) setIntroTekst(offerte.intro_tekst)
-                if (offerte.outro_tekst) setOutroTekst(offerte.outro_tekst)
                 if (offerte.notities) setNotities(offerte.notities)
 
                 if (offerteItems.length > 0) {

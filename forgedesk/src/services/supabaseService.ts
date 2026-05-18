@@ -208,8 +208,6 @@ export async function convertOfferteToFactuur(
     bron_offerte_id: offerteId,
     factuur_type: 'standaard',
     contactpersoon_id: offerte.contactpersoon_id,
-    intro_tekst: offerte.intro_tekst,
-    outro_tekst: offerte.outro_tekst,
   } as Omit<Factuur, 'id' | 'created_at' | 'updated_at'>)
   for (const item of items) {
     await createFactuurItem({
