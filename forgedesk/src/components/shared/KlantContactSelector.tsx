@@ -27,6 +27,9 @@ interface KlantContactSelectorProps {
   onVestigingChange?: (vId: string) => void
   klanten: Klant[]
   onKlantenRefresh?: () => void
+  /** Tekent het Contactpersoon-label in Flame zodat het in een
+   *  verzend-context (bv. factuur) als actie-emphasis leest. */
+  contactLabelAccent?: boolean
 }
 
 export function KlantContactSelector({
@@ -40,6 +43,7 @@ export function KlantContactSelector({
   onVestigingChange,
   klanten,
   onKlantenRefresh,
+  contactLabelAccent = false,
 }: KlantContactSelectorProps) {
   const { user } = useAuth()
   const [search, setSearch] = useState('')
@@ -428,8 +432,11 @@ export function KlantContactSelector({
       {/* Contactpersoon */}
       {selectedKlant && onContactpersoonChange && (
         <div>
-          <Label className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider" style={{ color: '#A0A098' }}>
-            Contactpersoon
+          <Label
+            className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider"
+            style={{ color: contactLabelAccent ? '#F15025' : '#A0A098' }}
+          >
+            {contactLabelAccent ? 'Verzenden naar' : 'Contactpersoon'}
           </Label>
 
           {contactpersonen.length > 0 && (() => {

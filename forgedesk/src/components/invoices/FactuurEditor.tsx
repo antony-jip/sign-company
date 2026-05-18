@@ -1932,6 +1932,7 @@ export function FactuurEditor() {
                 pinnedContactpersoonId={factuurStandaardCpId || undefined}
                 klanten={klanten}
                 onKlantenRefresh={() => getKlanten().then(setKlanten).catch(() => {})}
+                contactLabelAccent
               />
               {resolvedCp && (
                 <label className="mt-3 flex items-center gap-2 text-xs cursor-pointer text-muted-foreground">
