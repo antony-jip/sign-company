@@ -667,7 +667,7 @@ export function FactuurEditor() {
   // Open "Extra tekst" automatisch zodra de data geladen is met aanwezige content.
   // Voorwaarden wordt bewust uitgesloten — die wordt standaard gevuld vanuit settings.
   useEffect(() => {
-    if (!isLoading && (introTekst.trim() || outroTekst.trim() || notities.trim())) {
+    if (!isLoading && (outroTekst.trim() || notities.trim())) {
       setExtraTekstOpen(true)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -2168,6 +2168,23 @@ export function FactuurEditor() {
 
         {/* RIGHT PANEL: Items & Teksten */}
         <div className="space-y-4">
+          {/* Intro tekst — staat boven de regels zoals 'ie ook op de PDF verschijnt */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium">Intro tekst</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Textarea
+                value={introTekst}
+                onChange={(e) => setIntroTekst(e.target.value)}
+                placeholder="Optionele intro tekst bovenaan de factuur..."
+                rows={2}
+                className="text-sm"
+                enableAiTone={false}
+              />
+            </CardContent>
+          </Card>
+
           {/* Factureerpercentage (DEEL 2) */}
           {hasOfferteItems && paramProjectId && (
             <Card className={cn(
@@ -2378,7 +2395,7 @@ export function FactuurEditor() {
               <span className="text-sm font-medium">
                 Extra tekst
                 <span className="ml-2 text-xs text-muted-foreground font-normal">
-                  intro, outro, voorwaarden en notities
+                  outro, voorwaarden en notities
                 </span>
               </span>
               {extraTekstOpen ? (
@@ -2389,17 +2406,6 @@ export function FactuurEditor() {
             </button>
             {extraTekstOpen && (
               <CardContent className="space-y-4 pt-0">
-                <div>
-                  <Label className="text-xs text-muted-foreground">Intro tekst (boven de regels op de PDF)</Label>
-                  <Textarea
-                    value={introTekst}
-                    onChange={(e) => setIntroTekst(e.target.value)}
-                    placeholder="Optionele intro tekst bovenaan de factuur..."
-                    rows={2}
-                    className="text-sm mt-1"
-                    enableAiTone={false}
-                  />
-                </div>
                 <div>
                   <Label className="text-xs text-muted-foreground">Outro tekst (onder de regels op de PDF)</Label>
                   <Textarea
