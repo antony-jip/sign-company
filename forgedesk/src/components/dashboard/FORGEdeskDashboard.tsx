@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import {
@@ -10,6 +10,8 @@ import {
   CloudRain,
   CloudSnow,
   CloudLightning,
+  ChevronLeft,
+  ChevronRight,
   type LucideIcon,
 } from 'lucide-react'
 import { PortaalAlerts } from './PortaalAlerts'
@@ -99,6 +101,29 @@ function FORGEdeskDashboardInner() {
 
   const weather = useWeather()
   const WeatherIcon = weather ? WEATHER_ICONS[weather.iconKey] : null
+  const forecastScrollerRef = useRef<HTMLDivElement>(null)
+  const [forecastScroll, setForecastScroll] = useState({ atStart: true, atEnd: true })
+  useEffect(() => {
+    const el = forecastScrollerRef.current
+    if (!el) return
+    const update = () => {
+      const atStart = el.scrollLeft <= 4
+      const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 4
+      setForecastScroll({ atStart, atEnd })
+    }
+    update()
+    el.addEventListener('scroll', update, { passive: true })
+    window.addEventListener('resize', update)
+    return () => {
+      el.removeEventListener('scroll', update)
+      window.removeEventListener('resize', update)
+    }
+  }, [weather?.forecast?.length])
+  const scrollForecast = (dir: 1 | -1) => {
+    const el = forecastScrollerRef.current
+    if (!el) return
+    el.scrollBy({ left: dir * 160, behavior: 'smooth' })
+  }
 
   const { verb } = useMemo(() => getDagdeel(), [])
 
@@ -243,8 +268,12 @@ function FORGEdeskDashboardInner() {
                     </p>
 
                     {(weather.forecast?.length ?? 0) >= 2 && (
-                      <div className="mt-4 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                        <div className="flex gap-4 overflow-x-auto pb-1 -mx-1 px-1" style={{ scrollbarWidth: 'thin' }}>
+                      <div className="mt-4 pt-3 relative" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                        <div
+                          ref={forecastScrollerRef}
+                          className="flex gap-4 overflow-x-auto pb-1 -mx-1 px-1 scroll-smooth"
+                          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                        >
                           {weather.forecast!.slice(1).map((day, idx) => {
                             const Icon = WEATHER_ICONS[day.iconKey]
                             const tint = day.isRaining ? '#9DD3DA' : '#F5C460'
@@ -270,6 +299,26 @@ function FORGEdeskDashboardInner() {
                             )
                           })}
                         </div>
+                        {!forecastScroll.atStart && (
+                          <button
+                            type="button"
+                            onClick={() => scrollForecast(-1)}
+                            aria-label="Eerdere dagen"
+                            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1 h-7 w-7 rounded-full bg-white/10 hover:bg-white/20 text-white/80 backdrop-blur-sm flex items-center justify-center transition-all"
+                          >
+                            <ChevronLeft className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        {!forecastScroll.atEnd && (
+                          <button
+                            type="button"
+                            onClick={() => scrollForecast(1)}
+                            aria-label="Latere dagen"
+                            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1 h-7 w-7 rounded-full bg-white/10 hover:bg-white/20 text-white/80 backdrop-blur-sm flex items-center justify-center transition-all"
+                          >
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
