@@ -1027,6 +1027,10 @@ export function QuoteCreation() {
     if (isTrialBlocked) return
 
     saveLockRef.current = true
+    // Clear het dirty-signaal vóór de await, zodat wijzigingen die de gebruiker
+    // tijdens de lopende save typt opnieuw als dirty gemarkeerd worden (anders
+    // wist de "klaar"-set hieronder die latere mutaties).
+    hasUnsavedChangesRef.current = false
     setAutoSaveStatus('saving')
     try {
       const klant = klanten.find((k) => k.id === selectedKlantId)
@@ -1133,7 +1137,6 @@ export function QuoteCreation() {
         )
       }
 
-      hasUnsavedChangesRef.current = false
       setDirty(false)
       setAutoSaveStatus('saved')
       // Reset indicator after 3 seconds
@@ -1148,6 +1151,8 @@ export function QuoteCreation() {
         return // Stop autosave loop bij conflict
       }
       logger.error('Autosave failed:', err)
+      // Mark als nog niet opgeslagen zodat unmount of volgende cycle opnieuw probeert
+      hasUnsavedChangesRef.current = true
       setAutoSaveStatus('idle')
     } finally {
       saveLockRef.current = false
@@ -1170,7 +1175,7 @@ export function QuoteCreation() {
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current)
     autoSaveTimerRef.current = setTimeout(() => {
       performAutoSaveRef.current()
-    }, 2000)
+    }, 800)
 
     return () => {
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current)
@@ -1184,6 +1189,19 @@ export function QuoteCreation() {
         performAutoSaveRef.current()
       }
     }
+  }, [])
+
+  // Browser-warning bij tab-close / refresh met onopgeslagen wijzigingen.
+  // Voorkomt verlies bij Cmd+W / page-reload terwijl autosave nog niet rond was.
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChangesRef.current) {
+        e.preventDefault()
+        e.returnValue = ''
+      }
+    }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
   }, [])
 
 
