@@ -445,36 +445,44 @@ export function KlantContactSelector({
             {contactLabelAccent ? 'Verzenden naar' : 'Contactpersoon'}
           </Label>
 
-          {contactpersonen.length > 0 && compactContactList && (
-            <div className="mb-2">
-              <Select
-                value={contactpersoonId || '__none__'}
-                onValueChange={(v) => onContactpersoonChange(v === '__none__' ? '' : v)}
-              >
-                <SelectTrigger className="h-10 text-[13px] rounded-lg border-[#EBEBEB] bg-[#F8F7F5] focus:bg-white hover:bg-white transition-colors">
-                  <SelectValue placeholder="Kies een contactpersoon" />
-                </SelectTrigger>
-                <SelectContent>
-                  {selectedKlant?.email && (
-                    <SelectItem value="__none__" textValue={`Hoofdadres ${selectedKlant.email}`}>
-                      <div className="flex flex-col">
-                        <span className="text-[13px]">Hoofdadres</span>
-                        <span className="text-[11px] text-muted-foreground">{selectedKlant.email}</span>
-                      </div>
-                    </SelectItem>
-                  )}
-                  {contactpersonen.map((cp) => (
-                    <SelectItem key={cp.id} value={cp.id} textValue={`${cp.naam} ${cp.email || ''}`}>
-                      <div className="flex flex-col">
-                        <span className="text-[13px]">{cp.naam}</span>
-                        {cp.email && <span className="text-[11px] text-muted-foreground">{cp.email}</span>}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+          {contactpersonen.length > 0 && compactContactList && (() => {
+            const selectedCp = contactpersoonId ? contactpersonen.find((c) => c.id === contactpersoonId) : undefined
+            const triggerLabel = selectedCp
+              ? selectedCp.naam
+              : selectedKlant?.email
+                ? 'Hoofdadres'
+                : 'Kies een contactpersoon'
+            return (
+              <div className="mb-2">
+                <Select
+                  value={contactpersoonId || '__none__'}
+                  onValueChange={(v) => onContactpersoonChange(v === '__none__' ? '' : v)}
+                >
+                  <SelectTrigger className="h-10 text-[13px] rounded-lg border-[#EBEBEB] bg-[#F8F7F5] focus:bg-white hover:bg-white transition-colors">
+                    <span className="truncate text-left">{triggerLabel}</span>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {selectedKlant?.email && (
+                      <SelectItem value="__none__" textValue={`Hoofdadres ${selectedKlant.email}`}>
+                        <div className="flex flex-col">
+                          <span className="text-[13px]">Hoofdadres</span>
+                          <span className="text-[11px] text-muted-foreground">{selectedKlant.email}</span>
+                        </div>
+                      </SelectItem>
+                    )}
+                    {contactpersonen.map((cp) => (
+                      <SelectItem key={cp.id} value={cp.id} textValue={`${cp.naam} ${cp.email || ''}`}>
+                        <div className="flex flex-col">
+                          <span className="text-[13px]">{cp.naam}</span>
+                          {cp.email && <span className="text-[11px] text-muted-foreground">{cp.email}</span>}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )
+          })()}
 
           {contactpersonen.length > 0 && !compactContactList && (() => {
             const isPinnedSelected = !!pinnedContactpersoonId && contactpersoonId === pinnedContactpersoonId
