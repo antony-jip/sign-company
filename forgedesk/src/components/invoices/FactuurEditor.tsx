@@ -2049,8 +2049,8 @@ export function FactuurEditor() {
               ))}
               <Separator className="bg-sand" />
               <div className="flex justify-between items-baseline pt-1">
-                <span className="text-sm font-semibold text-petrol">Totaal incl. BTW</span>
-                <span className="text-xl font-bold font-mono tabular-nums text-petrol">{formatCurrency(totaal)}</span>
+                <span className="text-sm font-semibold text-[#F15025]">Totaal incl. BTW</span>
+                <span className="text-xl font-bold font-mono tabular-nums text-[#F15025]">{formatCurrency(totaal)}</span>
               </div>
               {existingFactuur && existingFactuur.betaald_bedrag > 0 && (
                 <>
