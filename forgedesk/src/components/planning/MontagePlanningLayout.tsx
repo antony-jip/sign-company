@@ -356,6 +356,8 @@ export function MontagePlanningLayout() {
   const [draggingAfspraakId, setDraggingAfspraakId] = useState<string | null>(null);
   const [draggingProjectId, setDraggingProjectId] = useState<string | null>(null);
   const [dragOverDate, setDragOverDate] = useState<string | null>(null);
+  // Snap-preview voor montage-drop in member view (toont tijd waar de afspraak landt)
+  const [montageDropSnap, setMontageDropSnap] = useState<{ date: string; time: string } | null>(null);
   const [nowTick, setNowTick] = useState(0);
   useEffect(() => {
     const id = setInterval(() => setNowTick((t) => t + 1), 60_000);
@@ -1150,7 +1152,12 @@ export function MontagePlanningLayout() {
     toast.success(`Status bijgewerkt naar ${STATUS_CONFIG[newStatus].label}`);
   }
 
-  async function handleDragDrop(dragId: string, newDate: string, targetMonteurId?: string) {
+  async function handleDragDrop(
+    dragId: string,
+    newDate: string,
+    targetMonteurId?: string,
+    newStartTime?: string,
+  ) {
     // Handle dragging a "te plannen" project onto a day column
     if (dragId.startsWith("project:")) {
       const projectId = dragId.replace("project:", "");
@@ -1165,17 +1172,36 @@ export function MontagePlanningLayout() {
     }
 
     const afspraak = afspraken.find((a) => a.id === dragId);
-    if (!afspraak || afspraak.datum === newDate) return;
+    if (!afspraak) return;
+    const sameDate = afspraak.datum === newDate;
+    const sameTime = !newStartTime || newStartTime === afspraak.start_tijd;
+    if (sameDate && sameTime) return;
+
+    // Bij time-precision drop: schuif start_tijd én eind_tijd met dezelfde delta
+    // zodat de duur van de afspraak intact blijft.
+    let updates: Partial<MontageAfspraak> = { datum: newDate };
+    let newEndTime = afspraak.eind_tijd;
+    let newStart = afspraak.start_tijd;
+    if (newStartTime) {
+      const oldStart = timeToMinutes(afspraak.start_tijd);
+      const oldEnd = timeToMinutes(afspraak.eind_tijd);
+      const duur = Math.max(15, oldEnd - oldStart);
+      const targetStart = timeToMinutes(newStartTime);
+      newStart = minutesToTime(targetStart);
+      newEndTime = minutesToTime(targetStart + duur);
+      updates = { datum: newDate, start_tijd: newStart, eind_tijd: newEndTime };
+    }
+
     const ok = await runOptimistic({
       snapshot: afspraken,
       apply: (prev) =>
         prev.map((a) =>
           a.id === afspraak.id
-            ? { ...a, datum: newDate, updated_at: new Date().toISOString() }
+            ? { ...a, ...updates, updated_at: new Date().toISOString() }
             : a
         ),
       commit: async () => {
-        await updateMontageAfspraak(afspraak.id, { datum: newDate });
+        await updateMontageAfspraak(afspraak.id, updates);
       },
       errorMessage: "Kon afspraak niet verplaatsen",
     });
@@ -1184,7 +1210,8 @@ export function MontagePlanningLayout() {
       return;
     }
     const dateObj = new Date(newDate + "T00:00:00");
-    toast.success(`Verplaatst naar ${formatDateDutch(dateObj)}`);
+    const timePart = newStartTime ? ` om ${newStart}` : '';
+    toast.success(`Verplaatst naar ${formatDateDutch(dateObj)}${timePart}`);
   }
 
   function timeToMinutes(t: string): number {
@@ -1808,23 +1835,55 @@ export function MontagePlanningLayout() {
                   e.preventDefault();
                   e.dataTransfer.dropEffect = feestdagInfo ? "none" : draggingProjectId ? "copy" : "move";
                   if (dragOverDate !== dateStr) setDragOverDate(dateStr);
+                  // Bereken tijd uit Y-positie en snap naar 15min raster (alleen voor afspraak-drag)
+                  if (draggingAfspraakId && !feestdagInfo) {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const y = e.clientY - rect.top;
+                    const minutesFromStart = (y / HOUR_HEIGHT) * 60;
+                    const snapped = Math.max(0, Math.round(minutesFromStart / 15) * 15);
+                    const totalMins = START_HOUR * 60 + snapped;
+                    const cappedMins = Math.min(totalMins, END_HOUR * 60 - 15);
+                    const snapTime = minutesToTime(cappedMins);
+                    setMontageDropSnap((prev) => (prev?.date === dateStr && prev?.time === snapTime ? prev : { date: dateStr, time: snapTime }));
+                  } else if (montageDropSnap) {
+                    setMontageDropSnap(null);
+                  }
                 }}
                 onDragLeave={(e) => {
                   if (!e.currentTarget.contains(e.relatedTarget as Node)) {
                     setDragOverDate(null);
+                    setMontageDropSnap(null);
                   }
                 }}
                 onDrop={(e) => {
                   e.preventDefault();
                   setDragOverDate(null);
+                  const snapTime = montageDropSnap?.date === dateStr ? montageDropSnap.time : undefined;
+                  setMontageDropSnap(null);
                   if (feestdagInfo) {
                     toast.error(`Kan niet inplannen op ${feestdagInfo.naam}`);
                     return;
                   }
                   const id = e.dataTransfer.getData("text/plain");
-                  if (id) handleDragDrop(id, dateStr);
+                  if (id) handleDragDrop(id, dateStr, undefined, snapTime);
                 }}
               >
+                {/* Snap-indicator: dun Petrol-lijntje + tijd-label op drop-positie */}
+                {montageDropSnap?.date === dateStr && !feestdagInfo && (() => {
+                  const snapMins = timeToMinutes(montageDropSnap.time);
+                  const top = (snapMins - START_HOUR * 60) * (HOUR_HEIGHT / 60);
+                  return (
+                    <div className="absolute left-0 right-0 z-30 pointer-events-none" style={{ top }}>
+                      <div className="flex items-center">
+                        <span className="bg-[#1A535C] text-white text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded-r-md tabular-nums">
+                          {montageDropSnap.time}
+                        </span>
+                        <div className="flex-1 h-0.5 bg-[#1A535C]" />
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 {/* Hour grid lines */}
                 {Array.from({ length: totalHours }, (_, i) => (
                   <div
