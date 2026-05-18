@@ -2,6 +2,7 @@ import { useState, useMemo, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Search, X, Plus, ChevronDown, ChevronUp, Building2, UserPlus, Check } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { createKlant, updateKlant, getContactpersonenByKlant } from '@/services/supabaseService'
@@ -444,10 +445,34 @@ export function KlantContactSelector({
             {contactLabelAccent ? 'Verzenden naar' : 'Contactpersoon'}
           </Label>
 
-          {contactpersonen.length > 0 && (() => {
+          {contactpersonen.length > 0 && compactContactList && (
+            <div className="mb-2">
+              <Select
+                value={contactpersoonId || '__none__'}
+                onValueChange={(v) => onContactpersoonChange(v === '__none__' ? '' : v)}
+              >
+                <SelectTrigger className="h-10 text-[13px]">
+                  <SelectValue placeholder="Kies een contactpersoon" />
+                </SelectTrigger>
+                <SelectContent>
+                  {selectedKlant?.email && (
+                    <SelectItem value="__none__">
+                      Hoofdadres{selectedKlant.email ? ` — ${selectedKlant.email}` : ''}
+                    </SelectItem>
+                  )}
+                  {contactpersonen.map((cp) => (
+                    <SelectItem key={cp.id} value={cp.id}>
+                      {cp.naam}{cp.email ? ` — ${cp.email}` : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {contactpersonen.length > 0 && !compactContactList && (() => {
             const isPinnedSelected = !!pinnedContactpersoonId && contactpersoonId === pinnedContactpersoonId
-            const compactCollapsed = compactContactList && !!contactpersoonId
-            const collapseList = (isPinnedSelected || compactCollapsed) && !expandedContacts
+            const collapseList = isPinnedSelected && !expandedContacts
             const visibleCps = collapseList
               ? contactpersonen.filter((c) => c.id === contactpersoonId)
               : contactpersonen
