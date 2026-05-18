@@ -84,6 +84,58 @@ function pickPlayfulGreeting(): string {
   return pool[Math.floor(Math.random() * pool.length)]
 }
 
+// Weer-context greetings — kleine pool per type, willekeurig gekozen
+// zodat het niet steeds dezelfde regel is bij elke refresh.
+const WEER_REGEN = [
+  'Binnenwerk-weer.',
+  'Mooi moment om offertes te typen.',
+  'Regenjas mee.',
+  'Goede dag voor de werkplaats.',
+]
+const WEER_SNEEUW = [
+  'Sneeuw — voorzichtig op het dak.',
+  'Witte dag, warme koffie.',
+]
+const WEER_MIST = [
+  'Mist boven het IJsselmeer — eerst koffie.',
+  'Even rustig opstarten.',
+]
+const WEER_ZON_WARM = [
+  'Lekker weertje voor buitenwerk.',
+  'Zon, schaduw en signs.',
+  'Goeie dag voor montage.',
+]
+const WEER_ZON_FRIS = [
+  'Frisse zon op de werkbus.',
+  'Helder maar trui aan.',
+]
+const WEER_ZON_KOUD = [
+  'Koud maar helder.',
+  'Handschoenen niet vergeten.',
+]
+const WEER_BEWOLKT = [
+  'Grijs maar prima werkweer.',
+  'Bedekt — geen excuus.',
+  'Wolken, geen drama.',
+]
+
+function pickWeerGreeting(iconKey: string | undefined, temp: number | undefined): string | null {
+  if (!iconKey) return null
+  let pool: string[] = []
+  if (iconKey === 'cloud-rain' || iconKey === 'cloud-drizzle') pool = WEER_REGEN
+  else if (iconKey === 'cloud-snow') pool = WEER_SNEEUW
+  else if (iconKey === 'cloud-fog') pool = WEER_MIST
+  else if (iconKey === 'sun' || iconKey === 'cloud-sun') {
+    if (temp === undefined) pool = WEER_ZON_FRIS
+    else if (temp >= 18) pool = WEER_ZON_WARM
+    else if (temp >= 8) pool = WEER_ZON_FRIS
+    else pool = WEER_ZON_KOUD
+  }
+  else if (iconKey === 'cloud') pool = WEER_BEWOLKT
+  if (pool.length === 0) return null
+  return pool[Math.floor(Math.random() * pool.length)]
+}
+
 export function FORGEdeskDashboard() {
   return (
     <DashboardDataProvider>
@@ -127,8 +179,14 @@ function FORGEdeskDashboardInner() {
 
   const { verb } = useMemo(() => getDagdeel(), [])
 
-  const [playfulGreeting] = useState<string>(() => pickPlayfulGreeting())
+  const [timeGreeting] = useState<string>(() => pickPlayfulGreeting())
   const [greetingVisible, setGreetingVisible] = useState(true)
+  // Weer-context-greeting heeft voorrang als 'er een weer-bucket past, anders
+  // valt 'ie terug op de tijd-van-de-dag greeting.
+  const playfulGreeting = useMemo(() => {
+    const weerLine = pickWeerGreeting(weather?.iconKey, weather?.temperature)
+    return weerLine || timeGreeting
+  }, [weather?.iconKey, weather?.temperature, timeGreeting])
 
   useEffect(() => {
     const t = setTimeout(() => setGreetingVisible(false), 5000)
