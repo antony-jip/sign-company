@@ -108,6 +108,7 @@ import {
   getKlanten,
   updateKlant,
   getContactpersonenByKlant,
+  updateContactpersoonDB,
   getTijdregistratiesByProject,
   getMedewerkers,
   getProjectToewijzingen,
@@ -1364,6 +1365,31 @@ export function ProjectDetail() {
                 setKlant({ ...klant, contactpersonen: updatedCps })
                 const updated = await updateProject(id!, { contactpersoon_id: cp.id })
                 setProject(updated)
+              }}
+              onContactpersoonEdit={async (cp) => {
+                const inJsonb = (klant.contactpersonen || []).some((c) => c.id === cp.id)
+                if (inJsonb) {
+                  const updatedCps = (klant.contactpersonen || []).map((c) => (c.id === cp.id ? { ...c, ...cp } : c))
+                  await updateKlant(klant.id, { contactpersonen: updatedCps })
+                  setKlant({ ...klant, contactpersonen: updatedCps })
+                } else {
+                  // DB-record uit contactpersonen-tabel — split naam best-effort
+                  const parts = cp.naam.trim().split(/\s+/)
+                  const voornaam = parts[0] || ''
+                  const achternaam = parts.slice(1).join(' ')
+                  await updateContactpersoonDB(cp.id, {
+                    voornaam,
+                    achternaam,
+                    email: cp.email,
+                    telefoon: cp.telefoon,
+                    functie: cp.functie,
+                  })
+                  setDbContacten((prev) => prev.map((r) =>
+                    r.id === cp.id
+                      ? { ...r, voornaam, achternaam, email: cp.email, telefoon: cp.telefoon, functie: cp.functie }
+                      : r,
+                  ))
+                }
               }}
               onMail={() => {
                 setMailComposerOpen(true)

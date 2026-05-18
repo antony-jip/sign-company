@@ -19,6 +19,7 @@ interface KlantCardProps {
   contactpersonen: Contactpersoon[]
   onContactpersoonChange: (cpId: string | null) => Promise<void>
   onContactpersoonAdd: (cp: Contactpersoon) => Promise<void>
+  onContactpersoonEdit?: (cp: Contactpersoon) => Promise<void>
   onMail?: () => void
 }
 
@@ -26,7 +27,7 @@ function getInitial(name?: string | null): string {
   return (name || '?').trim().charAt(0).toUpperCase() || '?'
 }
 
-export function KlantCard({ klant, project, contactpersonen, onContactpersoonChange, onContactpersoonAdd, onMail }: KlantCardProps) {
+export function KlantCard({ klant, project, contactpersonen, onContactpersoonChange, onContactpersoonAdd, onContactpersoonEdit, onMail }: KlantCardProps) {
   const { navigateWithTab } = useNavigateWithTab()
   const [showNieuwCp, setShowNieuwCp] = useState(false)
   const [nieuwCpNaam, setNieuwCpNaam] = useState('')
@@ -34,6 +35,11 @@ export function KlantCard({ klant, project, contactpersonen, onContactpersoonCha
   const [nieuwCpTelefoon, setNieuwCpTelefoon] = useState('')
   const [nieuwCpFunctie, setNieuwCpFunctie] = useState('')
   const [saving, setSaving] = useState(false)
+  const [editCpOpen, setEditCpOpen] = useState(false)
+  const [editNaam, setEditNaam] = useState('')
+  const [editEmail, setEditEmail] = useState('')
+  const [editTelefoon, setEditTelefoon] = useState('')
+  const [editFunctie, setEditFunctie] = useState('')
 
   const projectCp = project.contactpersoon_id
     ? contactpersonen.find(c => c.id === project.contactpersoon_id)
@@ -56,6 +62,40 @@ export function KlantCard({ klant, project, contactpersonen, onContactpersoonCha
       label: 'Nieuwe email',
       id: `/email/compose-${displayEmail}`,
     })
+  }
+
+  const openEditCp = () => {
+    if (!projectCp) return
+    setEditNaam(projectCp.naam || '')
+    setEditEmail(projectCp.email || '')
+    setEditTelefoon(projectCp.telefoon || '')
+    setEditFunctie(projectCp.functie || '')
+    setEditCpOpen(true)
+  }
+
+  const handleSaveCp = async () => {
+    if (!projectCp || !onContactpersoonEdit || saving) return
+    if (!editNaam.trim()) {
+      toast.error('Naam mag niet leeg zijn')
+      return
+    }
+    setSaving(true)
+    try {
+      await onContactpersoonEdit({
+        ...projectCp,
+        naam: editNaam.trim(),
+        email: editEmail.trim(),
+        telefoon: editTelefoon.trim(),
+        functie: editFunctie.trim(),
+      })
+      setEditCpOpen(false)
+      toast.success('Contactpersoon bijgewerkt')
+    } catch (err) {
+      logger.error('Kon contactpersoon niet bijwerken:', err)
+      toast.error('Kon contactpersoon niet bijwerken')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleAddCp = async () => {
@@ -212,6 +252,55 @@ export function KlantCard({ klant, project, contactpersonen, onContactpersoonCha
           <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#9B9B95] pointer-events-none" />
         </div>
 
+        {/* Inline-edit blok voor geselecteerde contactpersoon */}
+        {projectCp && onContactpersoonEdit && editCpOpen && (
+          <div className="mt-3 space-y-1.5">
+            <input
+              value={editNaam}
+              onChange={(e) => setEditNaam(e.target.value)}
+              placeholder="Naam"
+              autoFocus
+              className="w-full text-[12px] text-[#1A1A1A] placeholder:text-[#9B9B95] bg-white border border-[rgba(26,83,92,0.12)] rounded-lg px-3 py-2 outline-none focus:bg-white focus:border-[#1A535C] focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] transition-colors"
+            />
+            <input
+              value={editEmail}
+              onChange={(e) => setEditEmail(e.target.value)}
+              placeholder="Email"
+              type="email"
+              className="w-full text-[12px] text-[#1A1A1A] placeholder:text-[#9B9B95] bg-white border border-[rgba(26,83,92,0.12)] rounded-lg px-3 py-2 outline-none focus:bg-white focus:border-[#1A535C] focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] transition-colors"
+            />
+            <div className="flex gap-1.5">
+              <input
+                value={editTelefoon}
+                onChange={(e) => setEditTelefoon(e.target.value)}
+                placeholder="Telefoon"
+                className="flex-1 min-w-0 text-[12px] text-[#1A1A1A] placeholder:text-[#9B9B95] bg-white border border-[rgba(26,83,92,0.12)] rounded-lg px-3 py-2 outline-none focus:bg-white focus:border-[#1A535C] focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] transition-colors"
+              />
+              <input
+                value={editFunctie}
+                onChange={(e) => setEditFunctie(e.target.value)}
+                placeholder="Functie"
+                className="flex-1 min-w-0 text-[12px] text-[#1A1A1A] placeholder:text-[#9B9B95] bg-white border border-[rgba(26,83,92,0.12)] rounded-lg px-3 py-2 outline-none focus:bg-white focus:border-[#1A535C] focus:ring-[3px] focus:ring-[rgba(26,83,92,0.12)] transition-colors"
+              />
+            </div>
+            <div className="flex items-center justify-end gap-3 pt-1">
+              <button
+                onClick={() => setEditCpOpen(false)}
+                className="text-[11px] text-[#9B9B95] hover:text-[#1A1A1A] transition-colors"
+              >
+                Annuleren
+              </button>
+              <button
+                disabled={!editNaam.trim() || saving}
+                onClick={handleSaveCp}
+                className="text-[11px] font-semibold text-white bg-[#1A535C] hover:bg-[#237580] transition-colors px-3 py-1 rounded-md disabled:opacity-40"
+              >
+                {saving ? 'Bezig…' : 'Opslaan'}
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Mail-button — petrol full-width met duotone icon */}
         <button
           onClick={handleMail}
@@ -221,6 +310,16 @@ export function KlantCard({ klant, project, contactpersonen, onContactpersoonCha
           <PhEnvelope size={15} weight="duotone" />
           Mail contactpersoon
         </button>
+
+        {/* Bewerk-link — toont alleen als een cp geselecteerd is */}
+        {projectCp && onContactpersoonEdit && !editCpOpen && (
+          <button
+            onClick={openEditCp}
+            className="w-full mt-2 text-[12px] text-[#6B6B66] hover:text-[#1A1A1A] transition-colors text-left px-2 py-1"
+          >
+            ✎ Bewerk {projectCp.naam}
+          </button>
+        )}
 
         {/* Nieuw contactpersoon — collapsed default */}
         {!showNieuwCp ? (
