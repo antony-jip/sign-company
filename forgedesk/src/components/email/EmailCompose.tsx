@@ -494,14 +494,19 @@ export function EmailCompose({
 
   return (
     <div className="flex flex-col h-full bg-white min-w-0 [&:focus-visible]:shadow-none">
-        {/* Header — minimal, just back link */}
-        <div className="flex items-center px-6 h-11 flex-shrink-0">
+        {/* Panel header — title + back affordance, matches list-header pattern */}
+        <div className="flex items-center justify-between px-6 pt-4 pb-3 border-b border-[#EBEBEB]/60 flex-shrink-0">
+          <h1 className="font-heading text-[20px] font-bold tracking-[-0.01em] text-[#1A1A1A] leading-none">
+            Nieuw bericht<span className="text-[#F15025]">.</span>
+          </h1>
           <button
-            className="flex items-center gap-1.5 text-[13px] text-[#9B9B95] hover:text-[#6B6B66] transition-colors duration-150"
+            type="button"
+            className="inline-flex items-center gap-1.5 text-[13px] text-[#6B6B66] hover:text-[#1A1A1A] transition-colors duration-150"
             onClick={() => onOpenChange(false)}
+            title="Sluiten en terug naar inbox"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            Terug
+            Terug naar inbox
           </button>
         </div>
 

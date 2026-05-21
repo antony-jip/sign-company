@@ -15,6 +15,12 @@ const desktopSizeClasses: Record<FontSize, { name: string; subject: string; prev
   large: { name: 'md:text-xl', subject: 'md:text-lg', preview: 'md:text-lg', date: 'md:text-base' },
 }
 
+const stackedSizeClasses: Record<FontSize, { text: string; date: string }> = {
+  small: { text: 'text-[13px]', date: 'text-[11px]' },
+  medium: { text: 'text-[15px]', date: 'text-[12px]' },
+  large: { text: 'text-[17px]', date: 'text-[13px]' },
+}
+
 interface EmailListItemProps {
   email: Email & { threadCount?: number }
   isActive: boolean
@@ -62,6 +68,7 @@ export const EmailListItem = memo(function EmailListItem({
   const senderName = useMemo(() => extractSenderName(email.van), [email.van])
   const sizes = fontSizeClasses[fontSize]
   const mdSizes = desktopSizeClasses[fontSize]
+  const stackedSizes = stackedSizeClasses[fontSize]
   const avatarColor = getAvatarColor(senderName)
   const avatarStyle = getAvatarStyle(senderName)
 
@@ -180,6 +187,7 @@ export const EmailListItem = memo(function EmailListItem({
         onMouseLeave={handleMouseLeave}
         className={cn(
           'group relative flex items-center gap-2.5 pl-3 pr-3 h-[46px] cursor-pointer select-none',
+          'border-b border-[#EBEBEB]/55',
           'transition-all duration-150 ease-out',
           isActive
             ? 'bg-[#1A535C]/[0.06]'
@@ -224,20 +232,21 @@ export const EmailListItem = memo(function EmailListItem({
         {/* Sender */}
         <div className="flex items-center gap-1.5 w-[120px] md:w-[170px] flex-shrink-0 min-w-0">
           <span className={cn(
-            'truncate leading-none text-[15px] transition-colors duration-200',
+            'truncate leading-none tracking-[-0.005em] transition-colors duration-200',
+            stackedSizes.text,
             isUnread ? 'font-semibold text-[#1A1A1A]' : 'font-normal text-[#4A4A46]',
           )}>
             {senderName}
           </span>
           {email.threadCount && email.threadCount > 1 && (
-            <span className="text-[10px] tabular-nums flex-shrink-0 text-[#9B9B95] bg-[#F0EFEC] rounded px-1 py-px font-medium">
+            <span className="text-[10px] font-mono tabular-nums flex-shrink-0 text-[#6B6B66] bg-[#F0EFEC] rounded px-1 py-px font-medium">
               {email.threadCount}
             </span>
           )}
         </div>
 
         {/* Subject + preview */}
-        <div className="flex-1 min-w-0 truncate leading-none text-[15px]">
+        <div className={cn('flex-1 min-w-0 truncate leading-none', stackedSizes.text)}>
           {email.labels?.filter((l) => labelColors[l]).slice(0, 3).map((l) => (
             <span
               key={l}
@@ -246,8 +255,8 @@ export const EmailListItem = memo(function EmailListItem({
             />
           ))}
           <span className={cn(
-            'transition-colors duration-200',
-            isUnread ? 'font-semibold text-[#1A1A1A]' : 'font-normal text-[#3A3A36]',
+            'tracking-[-0.005em] transition-colors duration-200',
+            isUnread ? 'font-semibold text-[#1A1A1A]' : 'font-normal text-[#2A2A26]',
           )}>
             {email.onderwerp || '(geen onderwerp)'}
           </span>
@@ -269,7 +278,8 @@ export const EmailListItem = memo(function EmailListItem({
               <Paperclip className="h-3 w-3 text-[#C5C2BD]" />
             )}
             <span className={cn(
-              'tabular-nums min-w-[52px] text-right text-[13px] transition-colors duration-200',
+              'font-mono tabular-nums min-w-[52px] text-right transition-colors duration-200',
+              stackedSizes.date,
               isUnread ? 'text-[#1A535C] font-semibold' : 'text-[#8A8985]',
             )}>
               {formatShortDate(email.datum)}
@@ -325,7 +335,7 @@ export const EmailListItem = memo(function EmailListItem({
     )
   }
 
-  // Default two-line mode
+  // Default two-line mode — ruime 3-regel layout: afzender/tijd · onderwerp · preview
   return (
     <>
     <div
@@ -337,11 +347,11 @@ export const EmailListItem = memo(function EmailListItem({
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       className={cn(
-        'group relative flex items-center gap-3 px-4 py-3.5 md:py-2.5 cursor-pointer transition-colors duration-100 ease-out select-none',
-        'border-b border-[#EBEBEB]/40 last:border-b-0 md:border-b-0',
+        'group relative flex items-start gap-3 px-4 py-4 cursor-pointer transition-colors duration-100 ease-out select-none',
+        'border-b border-[#EBEBEB]/55 last:border-b-0',
         isActive
           ? 'bg-[#1A535C]/[0.05]'
-          : 'hover:bg-[#F0EFEC]/50 active:bg-[#F0EFEC]/60 md:active:bg-[#1A535C]/[0.05]',
+          : 'hover:bg-[#F8F7F5] active:bg-[#F0EFEC]/60 md:active:bg-[#1A535C]/[0.05]',
         isFocused && !isActive && 'bg-[#F0EFEC]/30',
         !isActive && (isUnread ? 'bg-white' : 'bg-white md:bg-transparent'),
         swipeX > SWIPE_THRESHOLD && 'bg-emerald-100',
@@ -353,22 +363,18 @@ export const EmailListItem = memo(function EmailListItem({
         transition: isDragging ? 'none' : 'transform 150ms ease-out, background-color 100ms ease-out',
       }}
     >
-      {/* Mobile-only Flame strip on unread rows */}
-      {isUnread && !isActive && (
-        <div className="md:hidden absolute left-0 top-[20%] bottom-[20%] w-[2px] rounded-full bg-[#F15025]/90" />
-      )}
       {/* Checkbox — overlays the avatar on hover */}
-      <div className="relative flex-shrink-0">
-        {/* Avatar */}
+      <div className="relative flex-shrink-0 mt-0.5">
+        {/* Avatar — rond, groter */}
         <div
           className={cn(
-            'w-9 h-9 rounded-md flex items-center justify-center transition-all duration-150',
+            'w-10 h-10 rounded-full flex items-center justify-center transition-all duration-150',
             'group-hover:opacity-0',
             isChecked && 'opacity-0',
           )}
           style={{ backgroundColor: avatarStyle.bg }}
         >
-          <span className="text-[13px] md:text-xs font-medium md:font-bold leading-none" style={{ color: avatarStyle.text }}>
+          <span className="text-[14px] font-semibold leading-none" style={{ color: avatarStyle.text }}>
             {senderName[0]?.toUpperCase()}
           </span>
         </div>
@@ -388,42 +394,35 @@ export const EmailListItem = memo(function EmailListItem({
         </div>
       </div>
 
-      {/* Content: two lines */}
-      <div className="flex-1 min-w-0">
-        {/* Line 1: sender + date */}
-        <div className="flex items-center justify-between gap-2 mb-0.5">
-          <div className="flex items-center gap-2 min-w-0">
-            <span className={cn(
-              'truncate leading-snug text-[14.5px] transition-colors duration-200',
-              mdSizes.name,
-              isUnread ? 'font-semibold text-[#1A1A1A]' : 'font-normal text-[#4A4A46]',
-            )}>
-              {senderName}
+      {/* Content: 3 regels */}
+      <div className="flex-1 min-w-0 pt-px">
+        {/* Regel 1: afzender · tijd · bijlage · thread */}
+        <div className="flex items-center gap-1.5 mb-1 min-w-0">
+          <span className={cn(
+            'truncate text-[13px] leading-none transition-colors duration-200',
+            isUnread ? 'font-semibold text-[#1A1A1A]' : 'font-medium text-[#4A4A46]',
+          )}>
+            {senderName}
+          </span>
+          <span className="text-[#C5C2BD] text-[11px] flex-shrink-0 leading-none">·</span>
+          <span className="text-[12px] font-mono tabular-nums text-[#9B9B95] flex-shrink-0 leading-none">
+            {formatShortDate(email.datum)}
+          </span>
+          {email.bijlagen > 0 && (
+            <Paperclip className="h-3 w-3 text-[#C5C2BD] flex-shrink-0" />
+          )}
+          {email.threadCount && email.threadCount > 1 && (
+            <span className="text-[10px] font-mono tabular-nums font-semibold text-[#6B6B66] bg-[#F0EFEC] rounded px-1 py-px leading-none flex-shrink-0">
+              {email.threadCount}
             </span>
-            {email.threadCount && email.threadCount > 1 && (
-              <span className="text-[10px] text-[#9B9B95] bg-[#F0EFEC] rounded-md px-1.5 py-0.5 flex-shrink-0 font-medium">
-                {email.threadCount}
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            {email.bijlagen > 0 && (
-              <Paperclip className="h-3.5 w-3.5 text-[#C5C2BD]" />
-            )}
-            <span className={cn(
-              'tabular-nums font-mono text-[12px] transition-colors duration-200',
-              mdSizes.date,
-              isUnread
-                ? 'text-[#6B6B66] md:text-[#1A535C] md:font-semibold'
-                : 'text-[#7A7975] md:text-[#8A8985]',
-            )}>
-              {formatShortDate(email.datum)}
-            </span>
-          </div>
+          )}
         </div>
 
-        {/* Line 2: subject + preview */}
-        <div className="flex items-center gap-1.5">
+        {/* Regel 2: onderwerp — prominent */}
+        <div className="flex items-center gap-1.5 mb-1 min-w-0">
+          {isUnread && (
+            <span className="w-1.5 h-1.5 rounded-full bg-[#F15025] flex-shrink-0" aria-hidden />
+          )}
           {email.labels?.filter((l) => labelColors[l]).slice(0, 3).map((l) => (
             <span
               key={l}
@@ -432,25 +431,17 @@ export const EmailListItem = memo(function EmailListItem({
             />
           ))}
           <span className={cn(
-            'truncate leading-snug text-[14px] transition-colors duration-200',
-            mdSizes.subject,
-            compact ? 'max-w-full' : 'max-w-full md:max-w-[55%] md:flex-shrink-0',
-            isUnread
-              ? 'font-semibold text-[#1A1A1A]'
-              : 'font-normal text-[#1A1A1A]/85 md:text-[#3A3A36]',
+            'truncate text-[14.5px] leading-snug tracking-[-0.005em] transition-colors duration-200',
+            isUnread ? 'font-bold text-[#1A1A1A]' : 'font-semibold text-[#3A3A36]',
           )}>
             {email.onderwerp || '(geen onderwerp)'}
           </span>
-          {!compact && preview && (
-            <span className="hidden md:contents">
-              <span className={cn('text-[#7A7975] truncate ml-2', sizes.preview)}>{preview}</span>
-            </span>
-          )}
         </div>
-        {/* Mobile-only third line: preview text below subject */}
-        {!compact && preview && (
-          <p className="md:hidden truncate mt-0.5 text-[13px] font-normal text-[#6B6B66]">
-            {preview}
+
+        {/* Regel 3: preview (altijd zichtbaar voor consistente row-hoogte) */}
+        {!compact && (
+          <p className="truncate text-[13px] leading-snug text-[#9B9B95] min-h-[18px]">
+            {preview || <span className="text-[#C5C2BD]">…</span>}
           </p>
         )}
       </div>

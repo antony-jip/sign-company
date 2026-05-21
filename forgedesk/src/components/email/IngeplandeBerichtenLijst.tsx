@@ -85,7 +85,7 @@ export function IngeplandeBerichtenLijst() {
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="px-6 py-4">
-        <h2 className="text-[15px] font-semibold text-[#1A1A1A] mb-3">Ingeplande berichten</h2>
+        <h2 className="font-heading text-[18px] font-bold text-[#1A1A1A] tracking-[-0.01em] mb-4">Ingeplande berichten</h2>
         <div className="space-y-2">
           {berichten.map(b => {
             const isWachtend = b.status === 'wachtend'

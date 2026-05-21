@@ -841,52 +841,11 @@ export function EmailReader({
   }
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // FULL-SCREEN REPLY MODE (like Pipedrive)
-  // When replying, the compose view takes over the entire screen.
-  // No email body visible — pure focus on writing.
+  // INLINE REPLY FORM — gerenderd boven de email body wanneer replyMode actief is.
+  // Body blijft zichtbaar eronder; geen mode-switch meer (was: full-screen takeover).
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  if (replyMode) {
-
-    return (
-      <div className="flex flex-col h-full min-w-0">
-          {/* Top action bar — sticky */}
-          <div className="flex items-center justify-between px-2 md:px-5 h-12 border-b border-[#F0EFEC] flex-shrink-0 bg-white sticky top-0 z-10">
-            <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="tap-press h-10 md:h-8 w-10 md:w-auto px-0 md:px-3 gap-1.5 text-[#6B6B66] hover:text-[#1A1A1A] hover:bg-[#F0EFEC]"
-                onClick={() => { hapticLight(); onBack?.() }}
-              >
-                <ArrowLeft className="h-5 w-5 md:h-4 md:w-4" />
-                <span className="text-[14px] hidden md:inline">Terug</span>
-              </Button>
-              <div className="w-px h-5 bg-[#F0EFEC] mx-1.5 hidden md:block" />
-              <Button variant="ghost" size="icon" className="tap-press h-10 w-10 md:h-8 md:w-8 text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F0EFEC] transition-colors duration-150" onClick={() => { hapticLight(); if (email) onArchive?.(email) }} title="Archiveren">
-                <Archive className="h-[18px] w-[18px] md:h-4 md:w-4" />
-              </Button>
-              <Button variant="ghost" size="icon" className="tap-press h-10 w-10 md:h-8 md:w-8 text-[#9B9B95] hover:text-[#C0451A] hover:bg-[#C0451A]/[0.06] transition-colors duration-150" onClick={() => { hapticMedium(); if (email) onDelete?.(email) }} title="Verwijderen">
-                <Trash2 className="h-[18px] w-[18px] md:h-4 md:w-4" />
-              </Button>
-              <Button variant="ghost" size="icon" className="tap-press h-10 w-10 md:h-8 md:w-8 text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F0EFEC] transition-colors duration-150" onClick={() => { hapticLight(); if (email) onToggleRead?.(email) }} title="Markeer als ongelezen">
-                <MailOpen className="h-[18px] w-[18px] md:h-4 md:w-4" />
-              </Button>
-            </div>
-            <div className="hidden md:flex items-center gap-1 text-[14px] text-[#B0ADA8]">
-              {emailIndex !== undefined && emailTotal !== undefined && (
-                <>
-                  <span className="tabular-nums">{emailIndex + 1}/{emailTotal}</span>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-[#B0ADA8] hover:text-[#6B6B66]" onClick={() => onNavigate?.('prev')} disabled={emailIndex <= 0}>
-                    <ChevronUp className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-[#B0ADA8] hover:text-[#6B6B66]" onClick={() => onNavigate?.('next')} disabled={emailIndex >= emailTotal - 1}>
-                    <ChevronDown className="h-4 w-4" />
-                  </Button>
-                </>
-              )}
-            </div>
-          </div>
-
+  const inlineReplyForm = replyMode ? (
+    <div className="border-y border-[#F0EFEC] bg-[#FAFAF8]/30">
           {/* ─── Compose fields ─── */}
           <div className="border-b border-[#F0EFEC] bg-white flex-shrink-0">
             {/* Aan field */}
@@ -1009,8 +968,8 @@ export function EmailReader({
             </div>
           </div>
 
-          {/* ─── Scrollable: editor + toolbar + original email ─── */}
-          <div className="flex-1 overflow-y-auto bg-white">
+          {/* ─── Editor + toolbar ─── */}
+          <div className="bg-white">
             {/* Editor */}
             <div
               ref={editorRef}
@@ -1220,24 +1179,9 @@ export function EmailReader({
               </div>
             </div>
 
-            {/* ─── Original email shown below toolbar ─── */}
-            {sanitizedBody && (
-              <div className="mx-4 md:mx-6 py-5">
-                <div className="pl-4 border-l-2 border-[#EBEBEB]">
-                  <div className="flex items-center gap-2 mb-3 text-[12px] text-[#B0ADA8]">
-                    <span>Op {formatShortDate(email.datum)} schreef {senderName}:</span>
-                  </div>
-                  <div
-                    className="text-[14px] leading-relaxed text-[#9B9B95] [&_img]:max-w-full [&_a]:text-[#1A535C]/50 [&_a]:underline [&_table]:w-full [&_blockquote]:border-l-2 [&_blockquote]:border-[#EBEBEB] [&_blockquote]:pl-3 [&_p]:mb-2"
-                    dangerouslySetInnerHTML={{ __html: sanitizedBody }}
-                  />
-                </div>
-              </div>
-            )}
           </div>
-      </div>
-    )
-  }
+    </div>
+  ) : null
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // READING MODE — shows email body with reply buttons
@@ -1402,7 +1346,7 @@ export function EmailReader({
             <div className="px-4 md:px-8 py-5 border-b border-[#F0EFEC]">
               {/* Subject row */}
               <div className="flex items-start justify-between gap-4 mb-4">
-                <h1 className="text-[20px] md:text-lg font-bold text-[#1A1A1A] leading-snug tracking-[-0.3px]">
+                <h1 className="font-heading text-[22px] md:text-[20px] font-bold text-[#1A1A1A] leading-snug tracking-[-0.3px]">
                   {email.onderwerp || '(geen onderwerp)'}
                 </h1>
                 <div className="flex items-center gap-1.5 flex-shrink-0 pt-0.5">
@@ -1460,6 +1404,9 @@ export function EmailReader({
                 </button>
               </div>
             </div>
+
+            {/* Inline reply form — verschijnt boven body wanneer replyMode actief is */}
+            {inlineReplyForm}
 
             {/* Email body content area */}
             <div className="px-4 md:px-8 py-6">
