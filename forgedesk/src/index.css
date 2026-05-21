@@ -16,7 +16,7 @@
 @layer base {
   :root {
     /* Font customization */
-    --font-family: 'IBM Plex Sans';
+    --font-family: 'Inter';
     --font-size: 14px;
 
     /* Achtergrond */
@@ -221,7 +221,7 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    font-family: 'Inter', 'IBM Plex Sans', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
@@ -245,7 +245,7 @@
     text-shadow: none;
   }
   h4 {
-    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    font-family: 'Inter', 'IBM Plex Sans', system-ui, sans-serif;
   }
   h1 { @apply text-[28px] font-extrabold leading-tight; }
   h2 { @apply text-xl font-bold; }

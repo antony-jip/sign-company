@@ -834,12 +834,12 @@ export function EmailCompose({
             {/* Schedule button */}
             <div className="relative">
               <button
-                className="h-9 w-9 flex items-center justify-center rounded-lg text-[#1A535C] bg-[#1A535C]/[0.08] hover:bg-[#1A535C]/[0.14] transition-colors duration-150 disabled:opacity-50"
+                className="h-10 w-10 md:h-9 md:w-9 flex items-center justify-center rounded-[10px] text-[#9B9B95] hover:text-[#1A535C] hover:bg-[#1A535C]/[0.08] transition-colors duration-150 disabled:opacity-50"
                 onClick={() => setShowScheduleMenu(s => !s)}
                 disabled={isSending}
                 title="Inplannen"
               >
-                <Clock className="h-4 w-4" />
+                <Clock className="h-[18px] w-[18px] md:h-4 md:w-4" />
               </button>
               {showScheduleMenu && (
                 <>
@@ -913,14 +913,14 @@ export function EmailCompose({
                 </>
               )}
             </div>
-            {/* Send button */}
+            {/* Send button — matcht inline reply (flame, terminal action) */}
             <button
-              className="px-5 py-2 rounded-lg text-[13px] font-medium text-white bg-[#1A535C] hover:opacity-90 active:opacity-85 transition-all duration-150 flex items-center gap-2 disabled:opacity-50"
+              className="tap-press h-10 md:h-9 px-5 md:px-6 rounded-[10px] text-[14px] md:text-[13px] font-semibold text-white bg-[#F15025] shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_12px_rgba(241,80,37,0.35)] hover:-translate-y-px active:translate-y-0 transition-all duration-150 flex items-center gap-2 disabled:opacity-50"
               onClick={handleSend}
               disabled={isSending}
             >
-              <Send className="h-3.5 w-3.5" />
-              {isSending ? 'Verzenden...' : 'Versturen'}
+              <Send className="h-4 w-4 md:h-3.5 md:w-3.5" />
+              {isSending ? 'Verzenden...' : 'Verzenden'}
             </button>
           </div>
         </div>

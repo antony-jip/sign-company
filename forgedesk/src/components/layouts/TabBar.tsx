@@ -21,7 +21,7 @@ function TabItem({
   return (
     <button
       className={cn(
-        'tab-bar-item group relative flex items-center gap-1.5 px-2.5 py-1 font-heading text-[12px] font-bold transition-colors duration-150 whitespace-nowrap max-w-[200px] min-w-[80px] select-none rounded-md',
+        'tab-bar-item group relative flex items-center gap-1.5 px-2.5 py-1 text-[12px] font-semibold tracking-[-0.01em] transition-colors duration-150 whitespace-nowrap max-w-[200px] min-w-[80px] select-none rounded-md',
         isActive
           ? 'bg-[#1A535C]/[0.07] text-[#1A535C]'
           : 'text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-black/[0.04]'

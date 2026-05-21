@@ -845,43 +845,45 @@ export function EmailReader({
   // Body blijft zichtbaar eronder; geen mode-switch meer (was: full-screen takeover).
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   const inlineReplyForm = replyMode ? (
-    <div className="border-y border-[#F0EFEC] bg-[#FAFAF8]/30">
-          {/* ─── Compose fields ─── */}
-          <div className="border-b border-[#F0EFEC] bg-white flex-shrink-0">
+    <div className="bg-white">
+          {/* ─── Compose fields (iOS-style: hairlines, ruime padding, duidelijke labels) ─── */}
+          <div className="bg-white flex-shrink-0">
             {/* Aan field */}
-            <div className="flex items-center px-4 md:px-6 py-3 md:py-2.5 border-b border-[#F0EFEC]">
-              <span className="text-[12px] text-[#9B9B95] w-10 flex-shrink-0">Aan</span>
+            <div className="flex items-center px-5 md:px-7 py-3 border-b border-black/[0.06]">
+              <span className="text-[13px] text-[#9B9B95] flex-shrink-0 mr-3 font-normal">Aan</span>
               <div className="flex-1 flex items-center gap-2 min-w-0">
                 <input
                   type="text"
                   value={replyTo}
                   onChange={(e) => setReplyTo(e.target.value)}
-                  className="flex-1 bg-transparent border-none outline-none text-[14px] text-[#1A1A1A] min-w-0 placeholder:text-[#B0ADA8]"
+                  className="flex-1 bg-transparent border-none outline-none text-[15px] text-[#1A1A1A] min-w-0 placeholder:text-[#B0ADA8]"
                   placeholder="ontvanger@voorbeeld.nl"
                 />
               </div>
-              {/* CC/BCC toggle + Reply mode switcher (desktop only — mobile uses Back to switch) */}
               {!showCcBcc && (
                 <button
                   onClick={() => setShowCcBcc(true)}
-                  className="text-[12px] text-[#9B9B95] hover:text-[#6B6B66] ml-2 flex-shrink-0"
+                  className="text-[13px] text-[#9B9B95] hover:text-[#6B6B66] ml-2 flex-shrink-0 transition-colors"
                 >
-                  CC / BCC
+                  Cc/Bcc
                 </button>
               )}
-              <div className="hidden md:flex items-center gap-1 ml-3 flex-shrink-0">
+              {/* Reply-mode segmented control — iOS-style pill */}
+              <div className="hidden md:flex items-center ml-3 flex-shrink-0 bg-[#F2F2F2] rounded-[8px] p-[2px]">
                 <button
                   onClick={() => {
                     setReplyMode('reply')
                     setReplyTo(extractSenderEmail(email.van))
                   }}
                   className={cn(
-                    'p-1.5 rounded-md transition-colors duration-150',
-                    replyMode === 'reply' ? 'text-[#1A535C] bg-[#1A535C]/[0.06]' : 'text-[#B0ADA8] hover:text-[#6B6B66] hover:bg-[#F0EFEC]',
+                    'flex items-center justify-center w-7 h-6 rounded-[6px] transition-all duration-200',
+                    replyMode === 'reply'
+                      ? 'bg-white text-[#1A1A1A] shadow-[0_1px_2px_rgba(0,0,0,0.06),0_0_0_0.5px_rgba(0,0,0,0.04)]'
+                      : 'text-[#9B9B95] hover:text-[#6B6B66]',
                   )}
                   title="Beantwoorden"
                 >
-                  <Reply className="h-4 w-4" />
+                  <Reply className="h-[14px] w-[14px]" />
                 </button>
                 <button
                   onClick={() => {
@@ -889,12 +891,14 @@ export function EmailReader({
                     setReplyTo(extractSenderEmail(email.van))
                   }}
                   className={cn(
-                    'p-1.5 rounded-md transition-colors duration-150',
-                    replyMode === 'reply-all' ? 'text-[#1A535C] bg-[#1A535C]/[0.06]' : 'text-[#B0ADA8] hover:text-[#6B6B66] hover:bg-[#F0EFEC]',
+                    'flex items-center justify-center w-7 h-6 rounded-[6px] transition-all duration-200',
+                    replyMode === 'reply-all'
+                      ? 'bg-white text-[#1A1A1A] shadow-[0_1px_2px_rgba(0,0,0,0.06),0_0_0_0.5px_rgba(0,0,0,0.04)]'
+                      : 'text-[#9B9B95] hover:text-[#6B6B66]',
                   )}
                   title="Allen beantwoorden"
                 >
-                  <ReplyAll className="h-4 w-4" />
+                  <ReplyAll className="h-[14px] w-[14px]" />
                 </button>
                 <button
                   onClick={() => {
@@ -902,12 +906,14 @@ export function EmailReader({
                     setReplyTo('')
                   }}
                   className={cn(
-                    'p-1.5 rounded-md transition-colors duration-150',
-                    replyMode === 'forward' ? 'text-[#1A535C] bg-[#1A535C]/[0.06]' : 'text-[#B0ADA8] hover:text-[#6B6B66] hover:bg-[#F0EFEC]',
+                    'flex items-center justify-center w-7 h-6 rounded-[6px] transition-all duration-200',
+                    replyMode === 'forward'
+                      ? 'bg-white text-[#1A1A1A] shadow-[0_1px_2px_rgba(0,0,0,0.06),0_0_0_0.5px_rgba(0,0,0,0.04)]'
+                      : 'text-[#9B9B95] hover:text-[#6B6B66]',
                   )}
                   title="Doorsturen"
                 >
-                  <Forward className="h-4 w-4" />
+                  <Forward className="h-[14px] w-[14px]" />
                 </button>
               </div>
             </div>
@@ -915,23 +921,23 @@ export function EmailReader({
             {/* CC / BCC fields */}
             {showCcBcc && (
               <>
-                <div className="flex items-center px-4 md:px-6 py-3 md:py-2.5 border-b border-[#F0EFEC]">
-                  <span className="text-[12px] text-[#9B9B95] w-10 flex-shrink-0">CC</span>
+                <div className="flex items-center px-5 md:px-7 py-3 border-b border-black/[0.06]">
+                  <span className="text-[13px] text-[#9B9B95] flex-shrink-0 mr-3">Cc</span>
                   <input
                     type="text"
                     value={replyCc}
                     onChange={(e) => setReplyCc(e.target.value)}
-                    className="flex-1 bg-transparent border-none outline-none text-[14px] text-[#1A1A1A] min-w-0 placeholder:text-[#B0ADA8]"
+                    className="flex-1 bg-transparent border-none outline-none text-[15px] text-[#1A1A1A] min-w-0 placeholder:text-[#B0ADA8]"
                     placeholder="cc@voorbeeld.nl"
                   />
                 </div>
-                <div className="flex items-center px-4 md:px-6 py-3 md:py-2.5 border-b border-[#F0EFEC]">
-                  <span className="text-[12px] text-[#9B9B95] w-10 flex-shrink-0">BCC</span>
+                <div className="flex items-center px-5 md:px-7 py-3 border-b border-black/[0.06]">
+                  <span className="text-[13px] text-[#9B9B95] flex-shrink-0 mr-3">Bcc</span>
                   <input
                     type="text"
                     value={replyBcc}
                     onChange={(e) => setReplyBcc(e.target.value)}
-                    className="flex-1 bg-transparent border-none outline-none text-[14px] text-[#1A1A1A] min-w-0 placeholder:text-[#B0ADA8]"
+                    className="flex-1 bg-transparent border-none outline-none text-[15px] text-[#1A1A1A] min-w-0 placeholder:text-[#B0ADA8]"
                     placeholder="bcc@voorbeeld.nl"
                   />
                 </div>
@@ -939,30 +945,30 @@ export function EmailReader({
             )}
 
             {/* Subject */}
-            <div className="flex items-center px-4 md:px-6 py-3 md:py-2.5 border-b border-[#F0EFEC] focus-within:border-[#1A535C] transition-colors duration-150">
-              <span className="text-[12px] text-[#9B9B95] w-10 flex-shrink-0">Ond</span>
+            <div className="flex items-center px-5 md:px-7 py-3 border-b border-black/[0.06]">
+              <span className="text-[13px] text-[#9B9B95] flex-shrink-0 mr-3">Onderwerp</span>
               <input
                 type="text"
                 value={replySubject}
                 onChange={(e) => setReplySubject(e.target.value)}
-                className="flex-1 bg-transparent border-none outline-none text-[14px] text-[#1A1A1A] min-w-0 placeholder:text-[#B0ADA8]"
+                className="flex-1 bg-transparent border-none outline-none text-[15px] text-[#1A1A1A] min-w-0 placeholder:text-[#B0ADA8]"
                 placeholder="Onderwerp..."
               />
             </div>
 
-            {/* Quick tools: AI schrijven */}
-            <div className="flex items-center gap-3 px-4 md:px-6 py-2">
+            {/* AI suggestion-chip — iOS-style: zachte achtergrond, sparkles in flame */}
+            <div className="flex items-center px-5 md:px-7 py-2.5 border-b border-black/[0.06]">
               <button
                 onClick={handleForgieWrite}
                 disabled={forgieLoading}
                 className={cn(
-                  'flex items-center gap-2 px-3 py-1.5 rounded-md text-[14px] transition-all duration-150',
+                  'tap-press inline-flex items-center gap-2 px-3.5 py-1.5 rounded-[10px] text-[13px] font-medium transition-all duration-200',
                   forgieLoading
-                    ? 'text-[#1A535C]/40'
-                    : 'text-[#1A535C]/70 hover:text-[#1A535C] hover:bg-[#1A535C]/[0.05]',
+                    ? 'bg-[#F2F2F2] text-[#9B9B95]'
+                    : 'bg-[#F15025]/[0.08] text-[#C0451A] hover:bg-[#F15025]/[0.14] active:scale-[0.97]',
                 )}
               >
-                {forgieLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                {forgieLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
                 Schrijf mijn e-mail
               </button>
             </div>
@@ -975,7 +981,7 @@ export function EmailReader({
               ref={editorRef}
               contentEditable
               suppressContentEditableWarning
-              className="min-h-[180px] py-5 px-4 md:px-6 text-[15px] leading-[1.7] text-[#1A1A1A] outline-none [&_img]:max-w-[400px] empty:before:content-[attr(data-placeholder)] empty:before:text-[#B0ADA8] empty:before:pointer-events-none"
+              className="min-h-[360px] md:min-h-[calc(100dvh-380px)] py-5 px-4 md:px-6 text-[15px] leading-[1.7] text-[#1A1A1A] outline-none [&_img]:max-w-[400px] empty:before:content-[attr(data-placeholder)] empty:before:text-[#B0ADA8] empty:before:pointer-events-none"
               data-placeholder="Schrijf je antwoord..."
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
@@ -1041,28 +1047,28 @@ export function EmailReader({
               </div>
             )}
 
-            {/* ─── Toolbar (inline, under signature) ─── */}
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-2 md:gap-0 px-3 md:px-5 py-2.5 border-t border-b border-[#F0EFEC] bg-[#F8F7F5]">
+            {/* ─── Toolbar (sticky bottom — iOS-style frosted material) ─── */}
+            <div className="sticky bottom-0 z-20 flex flex-col md:flex-row items-start md:items-center justify-between gap-2 md:gap-0 pl-3 pr-3 md:pl-5 md:pr-3 py-2.5 border-t border-black/[0.06] bg-white/85 backdrop-blur-xl shadow-[0_-1px_0_rgba(0,0,0,0.02),0_-8px_24px_-12px_rgba(0,0,0,0.08)]">
               <div className="flex items-center">
                 <div className="flex items-center gap-px mr-2">
-                  <button onClick={() => execCommand('undo')} className="h-8 w-8 flex items-center justify-center rounded-md text-[#B0ADA8] hover:text-[#6B6B66] hover:bg-[#F0EFEC] transition-colors duration-150" title="Ongedaan maken"><Undo2 className="h-4 w-4" /></button>
-                  <button onClick={() => execCommand('redo')} className="h-8 w-8 flex items-center justify-center rounded-md text-[#B0ADA8] hover:text-[#6B6B66] hover:bg-[#F0EFEC] transition-colors duration-150" title="Opnieuw"><Redo2 className="h-4 w-4" /></button>
+                  <button onClick={() => execCommand('undo')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-[#B0ADA8] hover:text-[#6B6B66] hover:bg-[#F0EFEC] transition-colors duration-150" title="Ongedaan maken"><Undo2 className="h-4 w-4" /></button>
+                  <button onClick={() => execCommand('redo')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-[#B0ADA8] hover:text-[#6B6B66] hover:bg-[#F0EFEC] transition-colors duration-150" title="Opnieuw"><Redo2 className="h-4 w-4" /></button>
                 </div>
                 <div className="w-px h-5 bg-[#F0EFEC] mr-2" />
                 <div className="flex items-center gap-px">
-                  <button onClick={() => execCommand('bold')} className="h-8 w-8 flex items-center justify-center rounded-md text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC] transition-colors duration-150" title="Vet"><Bold className="h-4 w-4" /></button>
-                  <button onClick={() => execCommand('italic')} className="h-8 w-8 flex items-center justify-center rounded-md text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC] transition-colors duration-150" title="Cursief"><Italic className="h-4 w-4" /></button>
-                  <button onClick={() => execCommand('underline')} className="h-8 w-8 flex items-center justify-center rounded-md text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC] transition-colors duration-150" title="Onderstrepen"><Underline className="h-4 w-4" /></button>
+                  <button onClick={() => execCommand('bold')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC] transition-colors duration-150" title="Vet"><Bold className="h-4 w-4" /></button>
+                  <button onClick={() => execCommand('italic')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC] transition-colors duration-150" title="Cursief"><Italic className="h-4 w-4" /></button>
+                  <button onClick={() => execCommand('underline')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC] transition-colors duration-150" title="Onderstrepen"><Underline className="h-4 w-4" /></button>
                 </div>
                 <div className="w-px h-5 bg-[#F0EFEC] mx-1" />
                 <div className="flex items-center gap-px">
-                  <button onClick={() => execCommand('insertUnorderedList')} className="h-8 w-8 flex items-center justify-center rounded-md text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC] transition-colors duration-150" title="Lijst"><List className="h-4 w-4" /></button>
-                  <button onClick={() => execCommand('insertOrderedList')} className="h-8 w-8 flex items-center justify-center rounded-md text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC] transition-colors duration-150" title="Genummerde lijst"><ListOrdered className="h-4 w-4" /></button>
+                  <button onClick={() => execCommand('insertUnorderedList')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC] transition-colors duration-150" title="Lijst"><List className="h-4 w-4" /></button>
+                  <button onClick={() => execCommand('insertOrderedList')} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC] transition-colors duration-150" title="Genummerde lijst"><ListOrdered className="h-4 w-4" /></button>
                 </div>
                 <div className="w-px h-5 bg-[#F0EFEC] mx-1" />
                 <div className="flex items-center gap-px">
-                  <button onClick={() => { const url = prompt('URL:'); if (url) execCommand('createLink', url) }} className="h-8 w-8 flex items-center justify-center rounded-md text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC] transition-colors duration-150" title="Link"><Link2 className="h-4 w-4" /></button>
-                  <button onClick={() => replyFileInputRef.current?.click()} className="h-8 w-8 flex items-center justify-center rounded-md text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC] transition-colors duration-150" title="Bijlage"><Paperclip className="h-4 w-4" /></button>
+                  <button onClick={() => { const url = prompt('URL:'); if (url) execCommand('createLink', url) }} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC] transition-colors duration-150" title="Link"><Link2 className="h-4 w-4" /></button>
+                  <button onClick={() => replyFileInputRef.current?.click()} className="h-8 w-8 flex items-center justify-center rounded-[10px] text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC] transition-colors duration-150" title="Bijlage"><Paperclip className="h-4 w-4" /></button>
                   <input
                     ref={replyFileInputRef}
                     type="file"
@@ -1080,7 +1086,7 @@ export function EmailReader({
               <div className="flex items-center gap-2 md:gap-3 w-full md:w-auto justify-end md:justify-start">
                 <button
                   onClick={() => setReplyMode(null)}
-                  className="h-10 w-10 md:h-8 md:w-8 flex items-center justify-center rounded-md text-[#B0ADA8] hover:text-[#C0451A] hover:bg-[#C0451A]/[0.06] transition-colors duration-150"
+                  className="h-10 w-10 md:h-8 md:w-8 flex items-center justify-center rounded-[10px] text-[#B0ADA8] hover:text-[#C0451A] hover:bg-[#C0451A]/[0.06] transition-colors duration-150"
                   title="Annuleren"
                 >
                   <Trash2 className="h-[18px] w-[18px] md:h-4 md:w-4" />
@@ -1090,7 +1096,7 @@ export function EmailReader({
                 </span>
                 <div className="relative">
                   <button
-                    className="h-10 w-10 md:h-9 md:w-9 flex items-center justify-center rounded-lg text-[#1A535C] bg-[#1A535C]/[0.08] hover:bg-[#1A535C]/[0.14] transition-colors duration-150 disabled:opacity-50"
+                    className="h-10 w-10 md:h-9 md:w-9 flex items-center justify-center rounded-[10px] text-[#9B9B95] hover:text-[#1A535C] hover:bg-[#1A535C]/[0.08] transition-colors duration-150 disabled:opacity-50"
                     onClick={() => setShowScheduleMenu(s => !s)}
                     disabled={isSending}
                     title="Inplannen"
@@ -1169,7 +1175,7 @@ export function EmailReader({
                   )}
                 </div>
                 <button
-                  className="tap-press h-10 md:h-9 px-5 md:px-6 rounded-xl text-[14px] md:text-[13px] font-semibold text-white bg-[#F15025] shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_12px_rgba(241,80,37,0.35)] hover:-translate-y-px active:translate-y-0 transition-all duration-150 flex items-center gap-2 disabled:opacity-50"
+                  className="tap-press h-10 md:h-9 px-5 md:px-6 rounded-[10px] text-[14px] md:text-[13px] font-semibold text-white bg-[#F15025] shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_12px_rgba(241,80,37,0.35)] hover:-translate-y-px active:translate-y-0 transition-all duration-150 flex items-center gap-2 disabled:opacity-50"
                   onClick={() => { hapticMedium(); handleSend() }}
                   disabled={isSending}
                 >
@@ -1190,7 +1196,7 @@ export function EmailReader({
     <div className="flex flex-col h-full min-w-0">
         {/* Top action bar — sticky, grouped */}
         <TooltipProvider delayDuration={300}>
-        <div className="flex items-center justify-between px-2 md:px-5 h-12 border-b border-[#F0EFEC] flex-shrink-0 bg-white sticky top-0 z-10">
+        <div className="flex items-center justify-between px-2 md:px-5 h-12 border-b border-black/[0.06] flex-shrink-0 bg-white/85 backdrop-blur-xl sticky top-0 z-10">
           {/* Left: Back + email-acties (markeer + organize) */}
           <div className="flex items-center gap-0.5"><Button
               variant="ghost"
@@ -1304,7 +1310,7 @@ export function EmailReader({
             <Button
               variant="ghost"
               size="sm"
-              className="h-10 w-10 md:h-8 md:w-auto px-0 md:px-3 gap-1.5 text-[13px] text-[#6B6B66] hover:text-[#1A535C] hover:bg-[#1A535C]/[0.06] rounded-md transition-colors duration-150"
+              className="h-10 w-10 md:h-8 md:w-auto px-0 md:px-3 gap-1.5 text-[13px] text-[#6B6B66] hover:text-[#1A535C] hover:bg-[#1A535C]/[0.06] rounded-[10px] transition-colors duration-150"
               onClick={handleSummarize}
               disabled={summaryLoading}
               title="Samenvatten (⌘⇧S)"
@@ -1315,7 +1321,7 @@ export function EmailReader({
             <Button
               variant="ghost"
               size="sm"
-              className="h-10 md:h-8 px-2.5 md:px-3 gap-1.5 text-[13px] text-[#6B6B66] hover:text-[#F15025] hover:bg-[#F15025]/[0.06] rounded-md transition-colors duration-150 disabled:opacity-50"
+              className="h-10 md:h-8 px-2.5 md:px-3 gap-1.5 text-[13px] text-[#6B6B66] hover:text-[#F15025] hover:bg-[#F15025]/[0.06] rounded-[10px] transition-colors duration-150 disabled:opacity-50"
               onClick={handleGenerateReplyFromReader}
               disabled={forgieLoading}
               title="Beantwoord met AI (⌘⇧R)"
@@ -1327,10 +1333,10 @@ export function EmailReader({
               <span className="hidden md:contents">
                 <div className="w-px h-5 bg-[#EBEBEB] mx-2" />
                 <span className="text-[12px] text-[#9B9B95] font-mono tabular-nums">{emailIndex + 1}/{emailTotal}</span>
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F0EFEC]/60 rounded-md" onClick={() => onNavigate?.('prev')} disabled={emailIndex <= 0}>
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F0EFEC]/60 rounded-[10px]" onClick={() => onNavigate?.('prev')} disabled={emailIndex <= 0}>
                   <ChevronUp className="h-3.5 w-3.5" />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F0EFEC]/60 rounded-md" onClick={() => onNavigate?.('next')} disabled={emailIndex >= emailTotal - 1}>
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-[#F0EFEC]/60 rounded-[10px]" onClick={() => onNavigate?.('next')} disabled={emailIndex >= emailTotal - 1}>
                   <ChevronDown className="h-3.5 w-3.5" />
                 </Button>
               </span>
@@ -1343,67 +1349,82 @@ export function EmailReader({
         <div className="flex-1 overflow-y-auto bg-white">
           <div className="w-full">
             {/* Header: subject + sender + reply actions */}
-            <div className="px-4 md:px-8 py-5 border-b border-[#F0EFEC]">
-              {/* Subject row */}
-              <div className="flex items-start justify-between gap-4 mb-4">
-                <h1 className="font-heading text-[22px] md:text-[20px] font-bold text-[#1A1A1A] leading-snug tracking-[-0.3px]">
-                  {email.onderwerp || '(geen onderwerp)'}
-                </h1>
-                <div className="flex items-center gap-1.5 flex-shrink-0 pt-0.5">
-                  <span className="text-[11px] text-[#B0ADA8] font-mono tabular-nums whitespace-nowrap">{formatShortDate(email.datum)}</span>
-                  <button
-                    onClick={() => onTogglePin?.(email)}
-                    title={email.pinned ? 'Losmaken' : 'Vastpinnen'}
-                    className={cn(
-                      'p-1 rounded-md transition-colors duration-150',
-                      email.pinned
-                        ? 'text-[#1A535C] hover:bg-[#1A535C]/10'
-                        : 'text-[#B0ADA8] hover:text-[#1A535C] hover:bg-[#F0EFEC]',
-                    )}
-                  >
-                    <Pin className={cn('h-3.5 w-3.5', email.pinned && 'fill-[#1A535C] -rotate-45')} />
+            {/* In reply-mode collapsen we naar één compacte regel — sender + onderwerp
+                staan toch al in de Aan/Ond-velden van het formulier eronder. */}
+            {replyMode ? (
+              <div className="flex items-center gap-3 px-5 md:px-7 py-3 border-b border-black/[0.06]">
+                <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: avatarStyle.bg }}>
+                  <span className="text-[11px] font-semibold leading-none tracking-tight" style={{ color: avatarStyle.text }}>{senderName[0]?.toUpperCase()}</span>
+                </div>
+                <div className="min-w-0 flex-1 flex items-baseline gap-1.5">
+                  <span className="text-[14px] font-semibold text-[#1A1A1A] truncate flex-shrink-0 tracking-[-0.01em]">{senderName}</span>
+                  <span className="text-[13px] text-[#9B9B95] truncate">· {email.onderwerp || '(geen onderwerp)'}</span>
+                </div>
+                <span className="text-[12px] text-[#9B9B95] tabular-nums whitespace-nowrap flex-shrink-0">{formatShortDate(email.datum)}</span>
+              </div>
+            ) : (
+              <div className="px-4 md:px-8 py-5 border-b border-[#F0EFEC]">
+                {/* Subject row */}
+                <div className="flex items-start justify-between gap-4 mb-4">
+                  <h1 className="font-heading text-[22px] md:text-[20px] font-bold text-[#1A1A1A] leading-snug tracking-[-0.3px]">
+                    {email.onderwerp || '(geen onderwerp)'}
+                  </h1>
+                  <div className="flex items-center gap-1.5 flex-shrink-0 pt-0.5">
+                    <span className="text-[11px] text-[#B0ADA8] font-mono tabular-nums whitespace-nowrap">{formatShortDate(email.datum)}</span>
+                    <button
+                      onClick={() => onTogglePin?.(email)}
+                      title={email.pinned ? 'Losmaken' : 'Vastpinnen'}
+                      className={cn(
+                        'p-1 rounded-[10px] transition-colors duration-150',
+                        email.pinned
+                          ? 'text-[#1A535C] hover:bg-[#1A535C]/10'
+                          : 'text-[#B0ADA8] hover:text-[#1A535C] hover:bg-[#F0EFEC]',
+                      )}
+                    >
+                      <Pin className={cn('h-3.5 w-3.5', email.pinned && 'fill-[#1A535C] -rotate-45')} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Sender info — larger avatar with accent ring */}
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ring-1 ring-black/[0.03]" style={{ backgroundColor: avatarStyle.bg }}>
+                    <span className="text-[14px] font-bold leading-none" style={{ color: avatarStyle.text }}>{senderName[0]?.toUpperCase()}</span>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-col md:flex-row md:items-baseline md:gap-2 min-w-0">
+                      <span className="text-[14px] font-semibold text-[#1A1A1A] leading-snug truncate">{senderName}</span>
+                      <span className="text-[12px] text-[#9B9B95] truncate leading-snug">{senderEmail}</span>
+                    </div>
+                    <div className="text-[11px] text-[#9B9B95] mt-0.5 truncate">aan {email.aan}</div>
+                  </div>
+                </div>
+
+                {/* Reply/Forward — primary on mobile is dominant, secondaries flank */}
+                <div className="flex items-stretch md:items-center gap-2 md:gap-1.5">
+                  <button onClick={() => { hapticLight(); handleReply('reply') }}
+                    className="tap-press flex-1 md:flex-none flex items-center justify-center gap-1.5 h-10 md:h-9 px-4 md:px-4 rounded-[10px] text-[14px] md:text-[13px] font-semibold text-white bg-[#1A535C] hover:bg-[#0F3C44] shadow-sm transition-colors duration-150"
+                    title="Beantwoorden (r)">
+                    <Reply className="h-4 w-4" />
+                    <span>Beantwoorden</span>
+                  </button>
+                  <button onClick={() => { hapticLight(); handleReply('reply-all') }}
+                    className="tap-press flex items-center justify-center gap-1.5 h-10 md:h-8 w-10 md:w-auto md:px-3 rounded-[10px] text-[12px] font-medium text-[#9B9B95] hover:text-[#4A4A46] hover:bg-[#F0EFEC] transition-colors duration-150"
+                    title="Allen beantwoorden"
+                    aria-label="Allen beantwoorden">
+                    <ReplyAll className="h-4 w-4 md:h-3.5 md:w-3.5" />
+                    <span className="hidden md:inline">Allen</span>
+                  </button>
+                  <button onClick={() => { hapticLight(); handleReply('forward') }}
+                    className="tap-press flex items-center justify-center gap-1.5 h-10 md:h-8 w-10 md:w-auto md:px-3 rounded-[10px] text-[12px] font-medium text-[#9B9B95] hover:text-[#4A4A46] hover:bg-[#F0EFEC] transition-colors duration-150"
+                    title="Doorsturen (f)"
+                    aria-label="Doorsturen">
+                    <Forward className="h-4 w-4 md:h-3.5 md:w-3.5" />
+                    <span className="hidden md:inline">Doorsturen</span>
                   </button>
                 </div>
               </div>
-
-              {/* Sender info — larger avatar with accent ring */}
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ring-1 ring-black/[0.03]" style={{ backgroundColor: avatarStyle.bg }}>
-                  <span className="text-[14px] font-bold leading-none" style={{ color: avatarStyle.text }}>{senderName[0]?.toUpperCase()}</span>
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-col md:flex-row md:items-baseline md:gap-2 min-w-0">
-                    <span className="text-[14px] font-semibold text-[#1A1A1A] leading-snug truncate">{senderName}</span>
-                    <span className="text-[12px] text-[#9B9B95] truncate leading-snug">{senderEmail}</span>
-                  </div>
-                  <div className="text-[11px] text-[#9B9B95] mt-0.5 truncate">aan {email.aan}</div>
-                </div>
-              </div>
-
-              {/* Reply/Forward — primary on mobile is dominant, secondaries flank */}
-              <div className="flex items-stretch md:items-center gap-2 md:gap-1.5">
-                <button onClick={() => { hapticLight(); handleReply('reply') }}
-                  className="tap-press flex-1 md:flex-none flex items-center justify-center gap-1.5 h-10 md:h-9 px-4 md:px-4 rounded-lg text-[14px] md:text-[13px] font-semibold text-white bg-[#1A535C] hover:bg-[#0F3C44] shadow-sm transition-colors duration-150"
-                  title="Beantwoorden (r)">
-                  <Reply className="h-4 w-4" />
-                  <span>Beantwoorden</span>
-                </button>
-                <button onClick={() => { hapticLight(); handleReply('reply-all') }}
-                  className="tap-press flex items-center justify-center gap-1.5 h-10 md:h-8 w-10 md:w-auto md:px-3 rounded-lg text-[12px] font-medium text-[#9B9B95] hover:text-[#4A4A46] hover:bg-[#F0EFEC] transition-colors duration-150"
-                  title="Allen beantwoorden"
-                  aria-label="Allen beantwoorden">
-                  <ReplyAll className="h-4 w-4 md:h-3.5 md:w-3.5" />
-                  <span className="hidden md:inline">Allen</span>
-                </button>
-                <button onClick={() => { hapticLight(); handleReply('forward') }}
-                  className="tap-press flex items-center justify-center gap-1.5 h-10 md:h-8 w-10 md:w-auto md:px-3 rounded-lg text-[12px] font-medium text-[#9B9B95] hover:text-[#4A4A46] hover:bg-[#F0EFEC] transition-colors duration-150"
-                  title="Doorsturen (f)"
-                  aria-label="Doorsturen">
-                  <Forward className="h-4 w-4 md:h-3.5 md:w-3.5" />
-                  <span className="hidden md:inline">Doorsturen</span>
-                </button>
-              </div>
-            </div>
+            )}
 
             {/* Inline reply form — verschijnt boven body wanneer replyMode actief is */}
             {inlineReplyForm}

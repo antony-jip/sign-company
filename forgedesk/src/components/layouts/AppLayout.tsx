@@ -13,6 +13,7 @@ import { InkoopAILimietBanner } from '@/components/shared/InkoopAILimietBanner'
 import { TabBar } from '@/components/layouts/TabBar'
 import { useSidebar } from '@/contexts/SidebarContext'
 import { useTabShortcuts } from '@/hooks/useTabShortcuts'
+import { cn } from '@/lib/utils'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import { WifiOff } from 'lucide-react'
 
@@ -33,6 +34,9 @@ export function AppLayout() {
   const isDesktop = useMediaQuery('(min-width: 768px)')
   // /email renders its own pill topbar on mobile — skip the global TopNav there.
   const hideTopNav = !isDesktop && location.pathname.startsWith('/email')
+  // Email-module verbreedt naar edge-to-edge (geen 1400px cap) zodat de
+  // folder-rail tegen de viewport-rand kan plakken.
+  const isEmailRoute = location.pathname.startsWith('/email')
   useTabShortcuts()
 
   const [stickyHeader, setStickyHeader] = useState<boolean>(() =>
@@ -56,12 +60,17 @@ export function AppLayout() {
           <OfflineBanner />
           <TrialBanner />
           <InkoopAILimietBanner variant="globaal" />
-          <main className="flex-1 overflow-y-auto overflow-x-hidden" style={{ position: 'relative', zIndex: 0 }}>
-            <div className={stickyHeader ? 'sticky top-0 z-30' : ''}>
+          <main className="flex-1 overflow-hidden flex flex-col min-h-0" style={{ position: 'relative', zIndex: 0 }}>
+            <div className={cn('flex-shrink-0', stickyHeader && 'sticky top-0 z-30')}>
               {!hideTopNav && <TopNav />}
               <TabBar />
             </div>
-            <div className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-8 py-3 sm:py-4 md:py-6 pb-20 md:pb-6 w-full max-w-full overflow-hidden page-content-enter">
+            <div className={cn(
+              'flex-1 min-h-0 w-full overflow-y-auto overflow-x-hidden page-content-enter',
+              isEmailRoute
+                ? 'p-0' // edge-to-edge voor email-module — geen padding
+                : 'max-w-[1400px] mx-auto px-4 sm:px-6 md:px-8 py-3 sm:py-4 md:py-6 pb-20 md:pb-6',
+            )}>
               <Outlet />
             </div>
           </main>
@@ -84,8 +93,8 @@ export function AppLayout() {
           <InkoopAILimietBanner variant="globaal" />
           <Header />
           <TabBar />
-          <main className="flex-1 overflow-y-auto overflow-x-hidden">
-            <div className="p-3 sm:p-4 md:p-6 pb-20 md:pb-6 w-full max-w-full overflow-hidden page-content-enter">
+          <main className="flex-1 overflow-hidden flex flex-col min-h-0">
+            <div className="flex-1 min-h-0 p-3 sm:p-4 md:p-6 pb-20 md:pb-6 w-full max-w-full overflow-y-auto overflow-x-hidden page-content-enter">
               <Outlet />
             </div>
           </main>

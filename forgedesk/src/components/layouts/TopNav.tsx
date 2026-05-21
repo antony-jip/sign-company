@@ -329,7 +329,7 @@ export function TopNav() {
               end={item.path === '/'}
               data-active={isActive}
               className={cn(
-                'group/tab relative flex flex-1 items-center justify-center font-heading text-[13px] font-bold transition-all duration-200 whitespace-nowrap',
+                'group/tab relative flex flex-1 items-center justify-center text-[13px] font-semibold tracking-[-0.01em] transition-all duration-200 whitespace-nowrap',
                 isActive
                   ? 'text-[#1A1A1A]'
                   : 'text-[#6B6B66] hover:text-[#1A1A1A]',
@@ -367,7 +367,7 @@ export function TopNav() {
                   to={item.path}
                   end={item.path === '/'}
                   className={cn(
-                    'flex items-center gap-3 px-3 py-3 rounded-[12px] font-heading text-[14px] font-bold transition-all duration-200',
+                    'flex items-center gap-3 px-3 py-3 rounded-[12px] text-[14px] font-semibold tracking-[-0.01em] transition-all duration-200',
                     isActive ? '' : 'text-muted-foreground/60 hover:text-foreground',
                   )}
                   style={isActive ? { background: `${item.color}10`, color: item.color } : undefined}
@@ -388,7 +388,7 @@ export function TopNav() {
             <NavLink
               to="/instellingen"
               className={cn(
-                'flex items-center gap-3 px-3 py-3 rounded-[12px] font-heading text-[14px] font-bold transition-colors',
+                'flex items-center gap-3 px-3 py-3 rounded-[12px] text-[14px] font-semibold tracking-[-0.01em] transition-colors',
                 location.pathname.startsWith('/instellingen') ? 'text-foreground bg-muted/50' : 'text-muted-foreground/50 hover:text-foreground',
               )}
             >
