@@ -102,6 +102,24 @@ export async function downloadFile(path: string): Promise<string> {
   return data.publicUrl
 }
 
+/**
+ * Resolve een opgeslagen portaal-bestand-waarde naar een publiek bruikbare URL.
+ *
+ * Spiegel van resolveStorageUrl in api/portaal-get.ts:303-312 — gebruikt aan de
+ * client-kant zodat interne users (in de cockpit) dezelfde URL krijgen die de
+ * publieke route al opbouwt voor klanten. Storage paths leveren we niet in de
+ * DB resolved op (zie REVIEW_NOTES); deze helper vangt dat read-side af.
+ */
+export function resolvePortaalBestandUrl(pathOrUrl: string | null | undefined): string | null {
+  if (!pathOrUrl) return null
+  if (pathOrUrl.startsWith('http://') || pathOrUrl.startsWith('https://') || pathOrUrl.startsWith('data:')) {
+    return pathOrUrl
+  }
+  if (!isSupabaseConfigured() || !supabase) return pathOrUrl
+  const { data } = supabase.storage.from(BUCKET).getPublicUrl(pathOrUrl)
+  return data.publicUrl
+}
+
 export async function getSignedUrl(path: string): Promise<string> {
   if (!isSupabaseConfigured() || !supabase) {
     const stored = JSON.parse(localStorage.getItem('doen_files') || '{}')

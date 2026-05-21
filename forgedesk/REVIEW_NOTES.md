@@ -6,6 +6,37 @@ expliciete vervolgsuggesties.
 
 ---
 
+## Portaal-bestanden read-side resolve (2026-05-21)
+
+Context: fix voor "interne user kan gedeeld portaal-bestand niet openen" (zie
+`src/services/portaalService.ts :: getPortaalItems`,
+`src/services/storageService.ts :: resolvePortaalBestandUrl`). Tijdens analyse
+twee items opgekomen die buiten scope blijven — hier genoteerd voor de
+security-sprint:
+
+- **`portaal_bestanden` RLS is `user_id`-scoped, niet `organisatie_id`-scoped.**
+  `supabase/migrations/049_portaal_rls_policies.sql:23-27` definieert:
+  `FOR ALL USING (portaal_item_id IN (SELECT id FROM portaal_items WHERE
+  user_id = auth.uid()))`. Werkt nu omdat alle reads via
+  `get_my_portaal_items` (SECURITY DEFINER, migration 056) lopen — die doet
+  eigen org-membership-check en omzeilt de RLS. Risico: zodra een toekomstige
+  query rechtstreeks op `portaal_bestanden` queryt (zonder die RPC), zien
+  collega's binnen dezelfde organisatie de bestanden niet meer. Te herzien
+  tijdens security-sprint, gelijktijdig met `portaal_items`, `project_portalen`
+  en `portaal_reacties` (allemaal hetzelfde patroon in 049).
+
+- **Bucket `documenten` is `public = true`** terwijl
+  `supabase/migrations/migration_046_documenten_bucket.sql:5-7` 'm op
+  `public = false` zet — alleen via `ON CONFLICT DO NOTHING`, dus de eerdere
+  `UPDATE storage.buckets SET public = true` uit
+  `supabase/migrations/011_handtekening_afbeelding_grootte.sql:11` blijft
+  effectief. De portaal-flow leunt impliciet op deze public-status (klant
+  zonder login moet bijlagen kunnen ophalen). Security-sprint topic: bewust
+  beslissen of bucket public blijft (huidige werking) of private wordt met
+  signed URLs voor zowel intern als publiek pad.
+
+---
+
 ## Fase 1 — `fix/email-html-multipart` (2026-05-15)
 
 Commits: `53022e2d`, `fa400894`.
