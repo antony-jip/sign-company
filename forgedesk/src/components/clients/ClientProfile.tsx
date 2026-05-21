@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Separator } from '@/components/ui/separator'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   Dialog,
   DialogContent,
@@ -492,8 +493,80 @@ export function ClientProfile() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      <div className="space-y-6 animate-fade-in-up">
+        {/* Back button */}
+        <Skeleton className="h-5 w-24" />
+
+        {/* Header: titel + status badge + actieknoppen */}
+        <div className="flex items-start gap-4">
+          <div className="flex-1 min-w-0 space-y-2">
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-8 w-64" />
+              <Skeleton className="h-5 w-16 rounded-full" />
+            </div>
+            <Skeleton className="h-4 w-48" />
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <Skeleton className="h-9 w-28" />
+            <Skeleton className="h-9 w-24" />
+          </div>
+        </div>
+
+        {/* Info Cards Row — 4 cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i} className="border-border dark:border-border">
+              <CardHeader className="pb-3">
+                <Skeleton className="h-4 w-32" />
+              </CardHeader>
+              <CardContent className="pt-0 space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-3 w-3/4" />
+                <Skeleton className="h-3 w-2/3" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Tab-strip */}
+        <div className="flex flex-wrap gap-2">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-9 w-24 rounded-md" />
+          ))}
+        </div>
+
+        {/* Hoofdcontent + zijbalk */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
+          {/* Tabel-rijen */}
+          <Card className="border-border dark:border-border">
+            <CardContent className="p-0">
+              <div className="divide-y divide-border">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-4 px-4 py-3">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-4 flex-1" />
+                    <Skeleton className="h-5 w-20 rounded-full" />
+                    <Skeleton className="h-4 w-20" />
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Zijbalk: Notities, Tags, Exporteren */}
+          <div className="space-y-4">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Card key={i} className="border-border dark:border-border">
+                <CardHeader className="pb-3">
+                  <Skeleton className="h-4 w-24" />
+                </CardHeader>
+                <CardContent className="pt-0 space-y-2">
+                  <Skeleton className="h-16 w-full" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
       </div>
     )
   }
@@ -1163,10 +1236,14 @@ export function ClientProfile() {
                     </thead>
                     <tbody className="divide-y divide-border dark:divide-border">
                       {clientFacturen.map((factuur) => (
-                        <tr key={factuur.id} className="hover:bg-background dark:hover:bg-muted/50 transition-colors">
+                        <tr
+                          key={factuur.id}
+                          className="hover:bg-background dark:hover:bg-muted/50 transition-colors cursor-pointer"
+                          onClick={() => navigate(`/facturen/${factuur.id}/bewerken`, { state: { from: `/klanten/${id}` } })}
+                        >
                           <td className="py-3 px-4">
                             <div className="flex items-center gap-1.5">
-                              <span className="text-sm font-medium font-mono text-blue-600 dark:text-blue-400">{factuur.nummer}</span>
+                              <span className="text-sm font-medium font-mono text-blue-600 dark:text-blue-400 hover:underline">{factuur.nummer}</span>
                             </div>
                           </td>
                           <td className="py-3 px-4 text-sm">{factuur.titel}</td>
