@@ -36,6 +36,7 @@ interface EmailContextSidebarProps {
   onCompose?: () => void
   unreadCount?: number
   reminderCount?: number
+  onClose?: () => void
 }
 
 // ── Inbox analysis types ──
@@ -55,14 +56,20 @@ const reminderOptions = [
   { label: '1 week', value: '1w' },
 ]
 
+const GENERIC_EMAIL_DOMAINS = [
+  'gmail.com', 'hotmail.com', 'outlook.com', 'yahoo.com',
+  'live.nl', 'ziggo.nl', 'kpnmail.nl', 'xs4all.nl', 'planet.nl',
+  'hetnet.nl', 'home.nl', 'upcmail.nl', 'casema.nl', 'quicknet.nl',
+  'tele2.nl', 'solcon.nl',
+]
+
 function extractCompanyName(senderName: string, email: string): string {
   const pipeMatch = senderName.match(/[|–—-]\s*(.+)$/)
   if (pipeMatch) return pipeMatch[1].trim()
-  const genericDomains = ['gmail.com', 'hotmail.com', 'outlook.com', 'yahoo.com', 'live.nl', 'ziggo.nl', 'kpnmail.nl', 'xs4all.nl', 'planet.nl', 'hetnet.nl', 'home.nl', 'upcmail.nl']
   const domainMatch = email.match(/@([^>]+)/)
   if (domainMatch) {
     const domain = domainMatch[1].toLowerCase()
-    if (!genericDomains.includes(domain)) {
+    if (!GENERIC_EMAIL_DOMAINS.includes(domain)) {
       const name = domain.split('.')[0]
       return name.charAt(0).toUpperCase() + name.slice(1)
     }
@@ -85,6 +92,7 @@ export function EmailContextSidebar({
   onCompose,
   unreadCount = 0,
   reminderCount = 0,
+  onClose,
 }: EmailContextSidebarProps) {
   const navigate = useNavigate()
   const { user } = useAuth()
@@ -145,9 +153,8 @@ export function EmailContextSidebar({
           k.email?.toLowerCase() === addr ||
           k.contactpersonen?.some(c => c.email?.toLowerCase() === addr)
         )
-        if (!match && domain) {
-          const generic = ['gmail.com', 'hotmail.com', 'outlook.com', 'yahoo.com', 'live.nl', 'ziggo.nl', 'kpnmail.nl', 'xs4all.nl', 'planet.nl', 'hetnet.nl', 'home.nl', 'upcmail.nl', 'casema.nl', 'quicknet.nl', 'tele2.nl', 'solcon.nl']
-          if (!generic.includes(domain)) match = klanten.find(k => k.email?.toLowerCase().endsWith('@' + domain))
+        if (!match && domain && !GENERIC_EMAIL_DOMAINS.includes(domain)) {
+          match = klanten.find(k => k.email?.toLowerCase().endsWith('@' + domain))
         }
         if (!cancelled) setLinkedKlant(match || null)
       } catch (err) { /* silent */ }
@@ -402,6 +409,18 @@ export function EmailContextSidebar({
   if (mode === 'idle') {
     return (
       <div className="w-[280px] border-l border-[#EBEBEB] bg-[#F8F7F5] flex-shrink-0 hidden xl:flex flex-col overflow-y-auto">
+        {onClose && (
+          <div className="sticky top-0 z-10 flex items-center justify-end px-3 py-2 border-b border-[#EBEBEB] bg-[#F8F7F5]/95 backdrop-blur-sm">
+            <button
+              type="button"
+              onClick={onClose}
+              className="h-7 w-7 flex items-center justify-center rounded-md text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-white transition-colors"
+              title="Sluiten"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
         <div className="px-5 py-5 space-y-5 flex-1">
 
           {/* ── Daan — Inbox analyseren ── */}
@@ -700,6 +719,18 @@ export function EmailContextSidebar({
   // ════════════════════════════════════════════
   return (
     <div className="w-[280px] border-l border-[#EBEBEB] bg-[#F8F7F5] flex-shrink-0 overflow-y-auto hidden xl:flex flex-col">
+      {onClose && (
+        <div className="sticky top-0 z-10 flex items-center justify-end px-3 py-2 border-b border-[#EBEBEB] bg-[#F8F7F5]/95 backdrop-blur-sm">
+          <button
+            type="button"
+            onClick={onClose}
+            className="h-7 w-7 flex items-center justify-center rounded-md text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-white transition-colors"
+            title="Sluiten"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
       <div className="px-5 py-5 space-y-4 flex-1">
 
         {/* ── CONTACT SECTION ── */}
@@ -817,37 +848,31 @@ export function EmailContextSidebar({
           />
         )}
 
-        {/* ── QUICK ACTIONS ── */}
+        {/* ── QUICK ACTIONS — schone tekst-links met subtiele iconen ── */}
         {activePanel === 'none' && (
           <div>
-            <h3 className="text-[11px] uppercase tracking-widest text-[#9B9B95] font-semibold mb-2.5">Acties</h3>
-            <div className="grid grid-cols-3 gap-2">
+            <h3 className="text-[10px] uppercase tracking-[0.08em] text-[#9B9B95] font-semibold mb-2">Acties</h3>
+            <div className="space-y-0.5">
               <button
                 onClick={() => openPanel('klant')}
-                className="flex flex-col items-center justify-center gap-1.5 bg-white rounded-xl py-3 hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 border border-[#F0EFEC]"
+                className="group w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-[13px] text-[#1A1A1A] hover:bg-white hover:text-[#1A535C] transition-colors"
               >
-                <div className="w-8 h-8 rounded-lg bg-[#E8EEF9] flex items-center justify-center">
-                  <UserPlus className="h-4 w-4 text-[#3A5A9A]" />
-                </div>
-                <span className="text-[10px] font-medium text-[#6B6B66]">Klant</span>
+                <UserPlus className="h-3.5 w-3.5 text-[#9B9B95] group-hover:text-[#1A535C] transition-colors" />
+                <span className="flex-1 text-left">Klant aanmaken</span>
               </button>
               <button
                 onClick={() => openPanel('project')}
-                className="flex flex-col items-center justify-center gap-1.5 bg-white rounded-xl py-3 hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 border border-[#F0EFEC]"
+                className="group w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-[13px] text-[#1A1A1A] hover:bg-white hover:text-[#1A535C] transition-colors"
               >
-                <div className="w-8 h-8 rounded-lg bg-[#E8F2EC] flex items-center justify-center">
-                  <FolderPlus className="h-4 w-4 text-[#3A7D52]" />
-                </div>
-                <span className="text-[10px] font-medium text-[#6B6B66]">Project</span>
+                <FolderPlus className="h-3.5 w-3.5 text-[#9B9B95] group-hover:text-[#1A535C] transition-colors" />
+                <span className="flex-1 text-left">Project aanmaken</span>
               </button>
               <button
                 onClick={() => openPanel('taak')}
-                className="flex flex-col items-center justify-center gap-1.5 bg-white rounded-xl py-3 hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 border border-[#F0EFEC]"
+                className="group w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-[13px] text-[#1A1A1A] hover:bg-white hover:text-[#1A535C] transition-colors"
               >
-                <div className="w-8 h-8 rounded-lg bg-[#F5F2E8] flex items-center justify-center">
-                  <ListPlus className="h-4 w-4 text-[#8A7A4A]" />
-                </div>
-                <span className="text-[10px] font-medium text-[#6B6B66]">Taak</span>
+                <ListPlus className="h-3.5 w-3.5 text-[#9B9B95] group-hover:text-[#1A535C] transition-colors" />
+                <span className="flex-1 text-left">Taak aanmaken</span>
               </button>
             </div>
           </div>

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import {
   Search, Pencil, Inbox, Send, FileEdit, Trash2,
   Loader2, Archive, RefreshCw, CheckCheck, X, Mail, MailOpen,
-  Rows3, StretchHorizontal, Clock, Moon, Menu, Edit3,
+  Rows3, StretchHorizontal, Clock, Moon, Menu, Edit3, ChevronLeft,
 } from 'lucide-react'
 import { IngeplandeBerichtenLijst } from './IngeplandeBerichtenLijst'
 import { sendEmail as sendEmailViaApi, fetchEmailsFromIMAP, readEmailFromIMAP } from '@/services/gmailService'
@@ -108,9 +108,44 @@ export function EmailLayout() {
   useEffect(() => {
     try { localStorage.setItem('doen_email_font_size', fontSize) } catch { /* no-op */ }
   }, [fontSize])
-  const [listStyle, setListStyle] = useState<'inline' | 'stacked'>(() => {
-    try { return (localStorage.getItem('email_list_style') as 'inline' | 'stacked') || 'stacked' } catch (err) { return 'stacked' }
+  // Stacked mode (1-regel compact) is afgeschaft sinds de 3-kolommen layout —
+  // de smalle lijst-kolom werkt alleen met de 3-regel weergave.
+  const [listStyle, setListStyle] = useState<'inline' | 'stacked'>('inline')
+  const [listWidth, setListWidth] = useState<number>(() => {
+    try {
+      const stored = parseInt(localStorage.getItem('doen_email_list_width') || '', 10)
+      if (stored >= 280 && stored <= 640) return stored
+    } catch { /* no-op */ }
+    return 360
   })
+  useEffect(() => {
+    try { localStorage.setItem('doen_email_list_width', String(listWidth)) } catch { /* no-op */ }
+  }, [listWidth])
+  const [contextOpen, setContextOpen] = useState<boolean>(() => {
+    try { return localStorage.getItem('doen_email_context_open') !== 'false' } catch { return true }
+  })
+  useEffect(() => {
+    try { localStorage.setItem('doen_email_context_open', String(contextOpen)) } catch { /* no-op */ }
+  }, [contextOpen])
+  const handleListResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    const startX = e.clientX
+    const startWidth = listWidth
+    document.body.style.userSelect = 'none'
+    document.body.style.cursor = 'col-resize'
+    const handleMouseMove = (ev: MouseEvent) => {
+      const newWidth = Math.max(280, Math.min(640, startWidth + (ev.clientX - startX)))
+      setListWidth(newWidth)
+    }
+    const handleMouseUp = () => {
+      document.body.style.userSelect = ''
+      document.body.style.cursor = ''
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+  }, [listWidth])
   const [focusModus, setFocusModus] = useState<boolean>(() => {
     try { return localStorage.getItem('doen_email_focus_modus') === 'true' } catch { return false }
   })
@@ -148,6 +183,9 @@ export function EmailLayout() {
   const [salesEmails, setSalesEmails] = useState<Email[]>([])
   const [salesBannerDismissed, setSalesBannerDismissed] = useState<boolean>(() => {
     try { return localStorage.getItem('doen_email_sales_inbox_banner_v1') === 'dismissed' } catch { return false }
+  })
+  const [salesTabSeen, setSalesTabSeen] = useState<boolean>(() => {
+    try { return localStorage.getItem('doen_email_sales_tab_seen_v1') === 'true' } catch { return false }
   })
 
   // ─── Location-based compose detection ───
@@ -1242,6 +1280,10 @@ export function EmailLayout() {
     setSearchInput('')
     clearChecked()
     setFolderDrawerOpen(false)
+    if (folder === 'sales-wacht' || folder === 'sales-beantwoord') {
+      setSalesTabSeen(true)
+      try { localStorage.setItem('doen_email_sales_tab_seen_v1', 'true') } catch { /* no-op */ }
+    }
     handleFolderLoad(folder)
   }, [clearChecked, handleFolderLoad])
 
@@ -1319,10 +1361,12 @@ export function EmailLayout() {
     const isActive = selectedFolder === folder.id
     const count = folderCounts[folder.id]
     const Icon = folder.icon
+    const showNewBadge = folder.id === 'sales-wacht' && !salesTabSeen
     return (
       <button
         key={folder.id}
         onClick={() => handleFolderChange(folder.id)}
+        title={showNewBadge ? 'Markeer mails die je opvolgt — krijg een ping als er antwoord komt' : undefined}
         className={cn(
           'w-full py-3 px-4 flex items-center gap-2.5 rounded-lg text-[13px] font-medium transition-colors',
           isActive
@@ -1332,6 +1376,11 @@ export function EmailLayout() {
       >
         <Icon className={cn('h-4 w-4 flex-shrink-0', isActive && 'text-[#1A535C]')} />
         <span className="flex-1 text-left">{folder.label}</span>
+        {showNewBadge && (
+          <span className="text-[10px] font-semibold text-[#F15025] tracking-wide">
+            Nieuw<span aria-hidden>.</span>
+          </span>
+        )}
         {count > 0 && folder.id !== 'inbox' && (
           <span className="text-[11px] font-mono px-1.5 py-0.5 rounded-full min-w-[20px] text-center text-[#9B9B95]">
             {count}
@@ -1394,10 +1443,12 @@ export function EmailLayout() {
             const isActive = selectedFolder === folder.id
             const count = folderCounts[folder.id]
             const Icon = folder.icon
+            const showNewBadge = folder.id === 'sales-wacht' && !salesTabSeen
             return (
               <button
                 key={folder.id}
                 onClick={() => handleFolderChange(folder.id)}
+                title={showNewBadge ? 'Markeer mails die je opvolgt — krijg een ping als er antwoord komt' : undefined}
                 className={cn(
                   'w-full h-[40px] flex items-center gap-2.5 px-3 rounded-lg text-[13px] font-medium transition-all duration-150',
                   isActive
@@ -1407,6 +1458,11 @@ export function EmailLayout() {
               >
                 <Icon className={cn('h-4 w-4 flex-shrink-0', isActive && 'text-[#1A535C]')} />
                 <span className="flex-1 text-left">{folder.label}</span>
+                {showNewBadge && (
+                  <span className="text-[10px] font-semibold text-[#F15025] tracking-wide">
+                    Nieuw<span aria-hidden>.</span>
+                  </span>
+                )}
                 {count > 0 && folder.id !== 'inbox' && (
                   <span className="text-[11px] font-mono px-1.5 py-0.5 rounded-full min-w-[20px] text-center text-[#9B9B95]">
                     {count}
@@ -1433,10 +1489,34 @@ export function EmailLayout() {
         </div>
       </nav>
 
-      <div className="p-4 md:px-4 md:py-3 border-t border-[#EBEBEB]">
+      <div className="p-4 md:px-4 md:py-3 border-t border-[#EBEBEB] space-y-2.5">
+        <button
+          type="button"
+          role="switch"
+          aria-checked={focusModus}
+          aria-label="Focus modus aan/uit"
+          onClick={() => setFocusModus(!focusModus)}
+          className="w-full flex items-center gap-2 text-[12px] md:text-[11px] text-[#9B9B95] md:text-[#B0ADA8] hover:text-[#1A1A1A] transition-colors"
+        >
+          <Moon className="h-3 w-3" />
+          <span className="flex-1 text-left">Focus modus</span>
+          <span
+            className={cn(
+              'relative inline-flex h-4 w-7 items-center rounded-full transition-colors flex-shrink-0',
+              focusModus ? 'bg-[#1A535C]' : 'bg-[#D4D3CE]'
+            )}
+          >
+            <span
+              className={cn(
+                'inline-block h-3 w-3 transform rounded-full bg-white shadow-sm transition-transform',
+                focusModus ? 'translate-x-[14px]' : 'translate-x-0.5'
+              )}
+            />
+          </span>
+        </button>
         <div className="flex items-center gap-2 text-[12px] md:text-[11px] text-[#9B9B95] md:text-[#B0ADA8]">
           <Mail className="h-3 w-3" />
-          <span>doen. mail</span>
+          <span>doen<span className="text-[#F15025]">.</span> mail</span>
         </div>
       </div>
     </>
@@ -1459,27 +1539,6 @@ export function EmailLayout() {
   // ─── UNIFIED 3-COLUMN LAYOUT ───
   return (
     <div className={cn('h-full flex flex-col -m-3 sm:-m-4 md:-m-6 overflow-hidden antialiased', viewMode === 'idle' || focusModus ? 'bg-[#F8F7F5]' : 'bg-white')}>
-      <div className="flex items-center justify-end gap-2 px-4 py-1.5 bg-white border-b border-[#EBEBEB] flex-shrink-0">
-        <span className="text-[11px] text-[#5F5E5A]">Focus modus</span>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={focusModus}
-          aria-label="Focus modus aan/uit"
-          onClick={() => setFocusModus(!focusModus)}
-          className={cn(
-            'relative inline-flex h-5 w-9 items-center rounded-full transition-colors',
-            focusModus ? 'bg-[#1A535C]' : 'bg-[#D4D3CE]'
-          )}
-        >
-          <span
-            className={cn(
-              'inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform',
-              focusModus ? 'translate-x-[18px]' : 'translate-x-0.5'
-            )}
-          />
-        </button>
-      </div>
       {focusModus ? (
         <EmailFocusKaart onUitzetten={() => setFocusModus(false)} />
       ) : (
@@ -1497,9 +1556,67 @@ export function EmailLayout() {
         />
       )}
       <div className="flex flex-1 min-h-0 overflow-hidden">
-      {/* Desktop sidebar — inline column */}
-      <div className="hidden md:flex w-[220px] bg-white border-r border-[#EBEBEB] flex-col flex-shrink-0">
-        {sidebarInner}
+      {/* Desktop folder-icon-sidebar — compact, alleen iconen + tooltips */}
+      <div className="hidden md:flex w-[56px] bg-white border-r border-[#EBEBEB] flex-col flex-shrink-0">
+        <nav className="flex-1 overflow-y-auto py-2 px-2 space-y-0.5">
+          {folderTabs.map(folder => {
+            const isActive = selectedFolder === folder.id
+            const count = folderCounts[folder.id]
+            const Icon = folder.icon
+            const showNewBadge = folder.id === 'sales-wacht' && !salesTabSeen
+            return (
+              <button
+                key={folder.id}
+                onClick={() => handleFolderChange(folder.id)}
+                title={`${folder.label}${count > 0 && folder.id !== 'inbox' ? ` (${count})` : ''}${showNewBadge ? ' — Nieuw' : ''}`}
+                className={cn(
+                  'relative w-full h-10 flex items-center justify-center rounded-lg transition-colors duration-150',
+                  isActive
+                    ? 'bg-[#1A535C]/[0.08] text-[#1A535C]'
+                    : 'text-[#6B6B66] hover:bg-[#F0EFEC]/60 hover:text-[#1A1A1A]',
+                )}
+              >
+                <Icon className="h-[18px] w-[18px]" />
+                {showNewBadge && (
+                  <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-[#F15025]" />
+                )}
+                {count > 0 && folder.id !== 'inbox' && !showNewBadge && (
+                  <span className="absolute top-0.5 right-0.5 text-[9px] font-mono font-semibold text-[#1A535C] bg-white rounded-full px-1 leading-none py-0.5">{count}</span>
+                )}
+              </button>
+            )
+          })}
+          <button
+            onClick={() => handleFolderChange('gepland')}
+            title="Ingeplande berichten"
+            className={cn(
+              'w-full h-10 flex items-center justify-center rounded-lg transition-colors duration-150',
+              selectedFolder === 'gepland'
+                ? 'bg-[#1A535C]/[0.08] text-[#1A535C]'
+                : 'text-[#6B6B66] hover:bg-[#F0EFEC]/60 hover:text-[#1A1A1A]',
+            )}
+          >
+            <Clock className="h-[18px] w-[18px]" />
+          </button>
+        </nav>
+
+        {/* Footer: Focus modus toggle */}
+        <div className="border-t border-[#EBEBEB] py-2 px-2">
+          <button
+            type="button"
+            role="switch"
+            aria-checked={focusModus}
+            aria-label="Focus modus aan/uit"
+            onClick={() => setFocusModus(!focusModus)}
+            title={focusModus ? 'Focus modus — aan' : 'Focus modus — uit'}
+            className={cn(
+              'w-full h-10 flex items-center justify-center rounded-lg transition-colors duration-150',
+              focusModus ? 'bg-[#1A535C]/[0.08] text-[#1A535C]' : 'text-[#6B6B66] hover:bg-[#F0EFEC]/60 hover:text-[#1A1A1A]',
+            )}
+          >
+            <Moon className="h-[18px] w-[18px]" />
+          </button>
+        </div>
       </div>
 
       {/* Mobile drawer + backdrop — portaled to body so the slide-over escapes
@@ -1543,70 +1660,40 @@ export function EmailLayout() {
         document.body,
       )}
 
-      {/* ─── MIDDLE: content area ─── */}
-      <div className="flex-1 bg-white flex flex-col min-w-0">
+      {/* ─── LIST COLUMN — altijd zichtbaar op desktop (resizable), op mobile alleen wanneer idle ─── */}
+      <div
+        className={cn(
+          'bg-white flex-col min-w-0 relative',
+          'md:flex-shrink-0 md:border-r md:border-[#EBEBEB] md:flex',
+          viewMode === 'idle' ? 'flex flex-1' : 'hidden',
+        )}
+        style={isDesktop ? { width: listWidth } : undefined}
+      >
 
-      {/* Compose view — full width like reader */}
-      {viewMode === 'composing' && (
-        <EmailCompose
-          open={true}
-          onOpenChange={(open) => { if (!open) handleBack() }}
-          defaultTo={composeDefaults.to}
-          defaultSubject={composeDefaults.subject}
-          defaultBody={composeDefaults.body}
-          onSend={handleSendEmail}
-          allEmails={emails}
-          onToChange={setComposeToAddress}
-          onRegisterActions={(a) => { composeActionsRef.current = a }}
-          onForgieLoadingChange={setComposeForgieLoading}
-        />
-      )}
-
-      {/* Reader view */}
-      {viewMode === 'reading' && selectedEmail && (() => {
-        // Bouw thread voor de geselecteerde mail: alle mails met hetzelfde
-        // thread_id, oudste eerst zodat het een natuurlijke conversatie is.
-        const threadEmails = selectedEmail.thread_id
-          ? emails
-              .filter((e) => e.thread_id === selectedEmail.thread_id)
-              .sort((a, b) => Date.parse(a.datum) - Date.parse(b.datum))
-          : []
-        return (
-          <EmailReader
-            email={selectedEmail}
-            threadEmails={threadEmails}
-            isLoadingBody={isLoadingBody}
-            emailIndex={emailIndex}
-            emailTotal={threadedEmails.length}
-            allEmails={emails}
-            imapFolder={IMAP_FOLDER_MAP[selectedFolder] || 'INBOX'}
-            prefetchedAttachmentBytes={attachmentBytesCacheRef.current.get(selectedEmail.id)}
-            prefetchedAttachmentUrls={attachmentUrlsCacheRef.current.get(selectedEmail.id)}
-            onTogglePin={handleTogglePin}
-            onSnooze={handleSnooze}
-            onUnsnooze={handleUnsnooze}
-            onToggleLabel={handleToggleLabel}
-            onToggleRead={handleToggleRead}
-            onDelete={handleDeleteAndNavigate}
-            onArchive={handleArchiveAndNavigate}
-            onBack={handleBack}
-            onNavigate={handleNavigate}
-            onSendReply={handleSendReply}
-            onSelectEmail={handleSelectEmail}
-          />
-        )
-      })()}
-
-      {/* Ingeplande berichten lijst (idle + gepland folder) */}
-      {viewMode === 'idle' && selectedFolder === 'gepland' && (
+      {/* Ingeplande berichten lijst (gepland folder) */}
+      {selectedFolder === 'gepland' && (
         <IngeplandeBerichtenLijst />
       )}
 
       {/* Email list (idle view) */}
-      {viewMode === 'idle' && selectedFolder !== 'gepland' && (<>
-        {/* Toolbar */}
-        {/* Toolbar */}
-        <div className="sticky top-0 z-20 bg-white hidden md:flex items-center justify-between px-4 h-12 border-b border-[#EBEBEB] flex-shrink-0">
+      {selectedFolder !== 'gepland' && (<>
+        {/* Sticky header + toolbar — desktop only */}
+        <div className="sticky top-0 z-20 bg-white border-b border-[#EBEBEB] flex-shrink-0 hidden md:block">
+          <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-[#EBEBEB]/60">
+            <h1 className="font-heading text-[20px] font-bold tracking-[-0.01em] text-[#1A1A1A] leading-none">
+              {folderTabs.find((f) => f.id === selectedFolder)?.label || 'Inbox'}
+            </h1>
+            <button
+              type="button"
+              onClick={() => handleCompose()}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-semibold text-white bg-[#F15025] hover:bg-[#D8421F] shadow-[0_1px_3px_rgba(241,80,37,0.18)] hover:shadow-[0_3px_10px_rgba(241,80,37,0.24)] transition-[background-color,box-shadow] duration-200"
+              title="Nieuw bericht opstellen (c)"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+              Nieuw bericht
+            </button>
+          </div>
+        <div className="flex items-center justify-between px-4 h-12">
           <div className="flex items-center gap-3">
             <input
               type="checkbox"
@@ -1632,7 +1719,7 @@ export function EmailLayout() {
                 </Button>
               </div>
             ) : (
-              <div className="flex items-center gap-0.5 bg-[#F8F7F5] rounded-xl p-0.5">
+              <div className="flex items-center gap-0.5 bg-[#F8F7F5] rounded-lg p-0.5">
                 {filtersList.map(f => {
                   const isActiveFilter = filter === f.id
                   return (
@@ -1640,7 +1727,7 @@ export function EmailLayout() {
                       key={f.id}
                       onClick={() => setFilter(f.id)}
                       className={cn(
-                        'px-3 py-1.5 rounded-xl text-[13px] transition-all duration-150',
+                        'px-2 py-1 rounded-md text-[11.5px] transition-all duration-150 whitespace-nowrap',
                         isActiveFilter
                           ? 'bg-white text-[#1A1A1A] font-semibold shadow-[0_1px_2px_rgba(0,0,0,0.06)]'
                           : 'text-[#9B9B95] hover:text-[#6B6B66]',
@@ -1655,57 +1742,8 @@ export function EmailLayout() {
           </div>
 
           <div className="flex items-center">
-            {/* List style */}
-            <div className="flex items-center mr-1">
-              <button
-                onClick={() => { setListStyle('stacked'); localStorage.setItem('email_list_style', 'stacked') }}
-                className={cn(
-                  'h-8 w-8 rounded-md flex items-center justify-center transition-colors duration-150',
-                  listStyle === 'stacked'
-                    ? 'text-[#1A1A1A] bg-[#F0EFEC]'
-                    : 'text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC]/60',
-                )}
-                title="Compact — alles op één regel"
-              >
-                <StretchHorizontal className="h-3.5 w-3.5" />
-              </button>
-              <button
-                onClick={() => { setListStyle('inline'); localStorage.setItem('email_list_style', 'inline') }}
-                className={cn(
-                  'h-8 w-8 rounded-md flex items-center justify-center transition-colors duration-150',
-                  listStyle === 'inline'
-                    ? 'text-[#1A1A1A] bg-[#F0EFEC]'
-                    : 'text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC]/60',
-                )}
-                title="Standaard — twee regels"
-              >
-                <Rows3 className="h-3.5 w-3.5" />
-              </button>
-            </div>
-
-            {/* Font-size toggle */}
-            <div className="hidden md:flex items-center mr-1">
-              {(['small', 'medium', 'large'] as const).map((size) => (
-                <button
-                  key={size}
-                  onClick={() => setFontSize(size)}
-                  className={cn(
-                    'h-8 w-8 rounded-md flex items-center justify-center transition-colors duration-150 font-semibold',
-                    size === 'small' && 'text-[10px]',
-                    size === 'medium' && 'text-[12px]',
-                    size === 'large' && 'text-[14px]',
-                    fontSize === size
-                      ? 'text-[#1A1A1A] bg-[#F0EFEC]'
-                      : 'text-[#9B9B95] hover:text-[#6B6B66] hover:bg-[#F0EFEC]/60',
-                  )}
-                  title={`Tekstgrootte: ${size === 'small' ? 'klein' : size === 'medium' ? 'normaal' : 'groot'}`}
-                >
-                  A
-                </button>
-              ))}
-            </div>
-
-            <span className="w-px h-5 bg-[#EBEBEB] mx-1" />
+            {/* List-style + font-size toggles — verborgen in 3-kolom layout (te smal).
+                Logica blijft intact, kan via settings/popover terug. */}
 
             {lastSyncAt && (
               <span
@@ -1726,6 +1764,7 @@ export function EmailLayout() {
               <RefreshCw className={cn('h-4 w-4', isRefreshing && 'animate-spin')} />
             </Button>
           </div>
+        </div>
         </div>
 
         {/* Search bar — desktop only; mobile uses the topbar pill */}
@@ -1823,7 +1862,7 @@ export function EmailLayout() {
               <div className="w-14 h-14 rounded-2xl bg-[#F0EFEC] flex items-center justify-center mb-5">
                 <Inbox className="h-6 w-6 text-[#B0ADA8]" />
               </div>
-              <h3 className="text-[14px] font-semibold text-[#1A1A1A] mb-1.5">
+              <h3 className="font-heading text-[16px] font-bold text-[#1A1A1A] tracking-[-0.01em] mb-1.5">
                 {searchQuery ? 'Geen resultaten' : filter !== 'alle' ? 'Geen emails met dit filter' : 'Inbox is leeg'}
               </h3>
               <p className="text-[13px] text-[#6B6B66] max-w-[260px] leading-relaxed">
@@ -1934,7 +1973,7 @@ export function EmailLayout() {
           <div className="fixed inset-0 z-50 bg-black/20 backdrop-blur-sm" onClick={() => setShowShortcuts(false)} />
           <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-white rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.08)] p-8 w-[360px]">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-[15px] font-semibold text-[#1A1A1A]">Sneltoetsen</h3>
+              <h3 className="font-heading text-[18px] font-bold text-[#1A1A1A] tracking-[-0.01em]">Sneltoetsen</h3>
               <button onClick={() => setShowShortcuts(false)} className="p-1.5 hover:bg-[#F0EFEC] rounded-lg transition-colors duration-150">
                 <X className="h-4 w-4 text-[#9B9B95]" />
               </button>
@@ -1951,6 +1990,86 @@ export function EmailLayout() {
         </>
       )}
       </>)}
+
+      {/* Resize handle — sleep om lijst-kolom breedte aan te passen (desktop only) */}
+      <div
+        onMouseDown={handleListResizeStart}
+        className="hidden md:block absolute top-0 right-0 bottom-0 w-1 cursor-col-resize hover:bg-[#1A535C]/20 active:bg-[#1A535C]/30 z-30 transition-colors"
+        title="Sleep om breedte aan te passen"
+      />
+      </div>
+
+      {/* ─── READER COLUMN — flex-1 op desktop, op mobile zichtbaar bij reading/composing ─── */}
+      <div className={cn(
+        'bg-white flex-col min-w-0',
+        'md:flex md:flex-1',
+        viewMode === 'idle' ? 'hidden md:flex' : 'flex flex-1',
+      )}>
+
+        {/* Compose view */}
+        {viewMode === 'composing' && (
+          <EmailCompose
+            open={true}
+            onOpenChange={(open) => { if (!open) handleBack() }}
+            defaultTo={composeDefaults.to}
+            defaultSubject={composeDefaults.subject}
+            defaultBody={composeDefaults.body}
+            onSend={handleSendEmail}
+            allEmails={emails}
+            onToChange={setComposeToAddress}
+            onRegisterActions={(a) => { composeActionsRef.current = a }}
+            onForgieLoadingChange={setComposeForgieLoading}
+          />
+        )}
+
+        {/* Reader view */}
+        {viewMode === 'reading' && selectedEmail && (() => {
+          const threadEmails = selectedEmail.thread_id
+            ? emails
+                .filter((e) => e.thread_id === selectedEmail.thread_id)
+                .sort((a, b) => Date.parse(a.datum) - Date.parse(b.datum))
+            : []
+          return (
+            <EmailReader
+              email={selectedEmail}
+              threadEmails={threadEmails}
+              isLoadingBody={isLoadingBody}
+              emailIndex={emailIndex}
+              emailTotal={threadedEmails.length}
+              allEmails={emails}
+              imapFolder={IMAP_FOLDER_MAP[selectedFolder] || 'INBOX'}
+              prefetchedAttachmentBytes={attachmentBytesCacheRef.current.get(selectedEmail.id)}
+              prefetchedAttachmentUrls={attachmentUrlsCacheRef.current.get(selectedEmail.id)}
+              onTogglePin={handleTogglePin}
+              onSnooze={handleSnooze}
+              onUnsnooze={handleUnsnooze}
+              onToggleLabel={handleToggleLabel}
+              onToggleRead={handleToggleRead}
+              onDelete={handleDeleteAndNavigate}
+              onArchive={handleArchiveAndNavigate}
+              onBack={handleBack}
+              onNavigate={handleNavigate}
+              onSendReply={handleSendReply}
+              onSelectEmail={handleSelectEmail}
+            />
+          )
+        })()}
+
+        {/* Empty state — desktop only, getoond wanneer geen mail is geselecteerd */}
+        {viewMode === 'idle' && (
+          <div className="hidden md:flex flex-1 flex-col items-center justify-center text-center px-8 bg-[#FAFAF8]">
+            <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center mb-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+              <Mail className="h-6 w-6 text-[#B0ADA8]" />
+            </div>
+            <h3 className="font-heading text-[16px] font-bold text-[#1A1A1A] tracking-[-0.01em] mb-1.5">
+              Geen mail geselecteerd
+            </h3>
+            <p className="text-[13px] text-[#6B6B66] max-w-[260px] leading-relaxed">
+              Klik een email in de lijst om hem te lezen.
+            </p>
+          </div>
+        )}
+
       </div>
 
       {/* Bulk action bar — verschijnt onderaan zodra er emails zijn aangevinkt.
@@ -2011,9 +2130,10 @@ export function EmailLayout() {
         </div>
       )}
 
-      {/* Right context sidebar — alleen tijdens lezen of compose, niet in
-          de inbox-idle view zodat de email lijst de volledige breedte krijgt. */}
-      {(viewMode === 'reading' || viewMode === 'composing') && (
+      {/* Right context sidebar — opent via toggle-knop in email-header.
+          Bevat klant-koppeling, project-aanmaken, taak-aanmaken, etc.
+          Default open, klap dicht via knop in reader. */}
+      {contextOpen && (viewMode === 'reading' || viewMode === 'composing') && (
         <EmailContextSidebar
           mode={viewMode === 'composing' ? 'compose' : 'reading'}
           composeToAddress={composeToAddress}
@@ -2028,7 +2148,21 @@ export function EmailLayout() {
           onSelectEmail={handleSelectEmail}
           onCompose={() => handleCompose()}
           unreadCount={emails.filter(e => !e.gelezen).length}
+          onClose={() => setContextOpen(false)}
         />
+      )}
+
+      {/* Re-open knop: zichtbaar wanneer context-sidebar gesloten is tijdens reading/composing */}
+      {!contextOpen && (viewMode === 'reading' || viewMode === 'composing') && (
+        <button
+          type="button"
+          onClick={() => setContextOpen(true)}
+          className="hidden xl:flex fixed right-3 top-1/2 -translate-y-1/2 z-30 items-center justify-center w-8 h-12 rounded-l-lg bg-white border border-r-0 border-[#EBEBEB] text-[#6B6B66] hover:text-[#1A535C] hover:bg-[#F0EFEC] shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-colors"
+          title="Klant info & acties tonen"
+          style={{ right: 0 }}
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </button>
       )}
       </div>
       </>
