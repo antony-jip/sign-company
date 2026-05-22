@@ -29,6 +29,118 @@ import {
 import { round2 } from '@/utils/budgetUtils'
 import { logger } from '@/utils/logger'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
+import { Skeleton } from '@/components/ui/skeleton'
+
+function DealDetailSkeleton() {
+  return (
+    <div className="space-y-6">
+      {/* BackButton placeholder */}
+      <Skeleton className="h-8 w-24 rounded-lg" />
+
+      {/* Header: icon + naam + status + actions */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-10 w-10 rounded-xl" />
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-6 w-48" />
+              <Skeleton className="h-5 w-16 rounded-full" />
+            </div>
+            <Skeleton className="h-4 w-56" />
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <Skeleton className="h-8 w-24 rounded-lg" />
+          <Skeleton className="h-8 w-24 rounded-lg" />
+          <Skeleton className="h-8 w-28 rounded-lg" />
+          <Skeleton className="h-8 w-24 rounded-lg" />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left: activiteit feed (2/3) */}
+        <div className="lg:col-span-2 space-y-4">
+          {/* Quick-add row (pipeline-stappen visualisatie) */}
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-4 w-28" />
+            <Skeleton className="h-8 w-24 rounded-lg" />
+            <Skeleton className="h-8 w-20 rounded-lg" />
+            <Skeleton className="h-8 w-24 rounded-lg" />
+            <Skeleton className="h-8 w-28 rounded-lg" />
+          </div>
+
+          {/* Activiteit card */}
+          <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <Skeleton className="h-4 w-28" />
+              <Skeleton className="h-8 w-24 rounded-lg" />
+            </div>
+            {Array.from({ length: 4 }).map((_, idx) => (
+              <div key={idx} className="flex gap-3">
+                <Skeleton className="h-8 w-8 rounded-lg flex-shrink-0" />
+                <div className="flex-1 min-w-0 space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-4 w-20 rounded-full" />
+                    <Skeleton className="h-3 w-28" />
+                  </div>
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-3/4" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Right: sidebar (1/3) */}
+        <div className="space-y-4">
+          {/* Waarde & Kans card */}
+          <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+            <Skeleton className="h-4 w-28" />
+            <div className="space-y-2">
+              <Skeleton className="h-3 w-24" />
+              <Skeleton className="h-9 w-full rounded-md" />
+              <Skeleton className="h-3 w-32" />
+            </div>
+            <div className="space-y-2">
+              <Skeleton className="h-3 w-32" />
+              <Skeleton className="h-2 w-full rounded-full" />
+            </div>
+            <div className="space-y-2">
+              <Skeleton className="h-3 w-32" />
+              <Skeleton className="h-9 w-full rounded-md" />
+            </div>
+          </div>
+
+          {/* Details card */}
+          <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+            <Skeleton className="h-4 w-20" />
+            {Array.from({ length: 3 }).map((_, idx) => (
+              <div key={idx} className="space-y-2">
+                <Skeleton className="h-3 w-20" />
+                <Skeleton className="h-9 w-full rounded-md" />
+              </div>
+            ))}
+          </div>
+
+          {/* Volgende actie card */}
+          <div className="rounded-xl border border-border bg-card p-6 space-y-3">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-9 w-full rounded-md" />
+            <Skeleton className="h-9 w-full rounded-md" />
+          </div>
+
+          {/* Koppelingen card */}
+          <div className="rounded-xl border border-border bg-card p-6 space-y-2">
+            <Skeleton className="h-4 w-28" />
+            <Skeleton className="h-4 w-48" />
+            <Skeleton className="h-4 w-40" />
+            <Skeleton className="h-8 w-full rounded-md mt-2" />
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 // ============ CONSTANTS ============
 
@@ -252,11 +364,7 @@ export function DealDetail() {
   // ============ RENDER ============
 
   if (isLoading || !deal) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-      </div>
-    )
+    return <DealDetailSkeleton />
   }
 
   const statusColor = deal.status === 'gewonnen' ? 'bg-emerald-100 text-emerald-700' :

@@ -164,6 +164,160 @@ import { logWijziging, logCreate } from '@/utils/auditLogger'
 import { getAuditLogForProject } from '@/services/supabaseService'
 import { useMedewerkers } from '@/contexts/MedewerkersContext'
 import { getStatusPillClass } from '@/utils/statusColors'
+import { Skeleton } from '@/components/ui/skeleton'
+
+function ProjectDetailSkeleton() {
+  return (
+    <div className="relative -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 bg-background">
+      <div>
+        {/* Header (breadcrumb + titel + subline + tabs) */}
+        <div className="px-8 pt-5">
+          <div className="flex items-center gap-1.5 mb-2">
+            <Skeleton className="h-3 w-20" />
+            <Skeleton className="h-4 w-24 rounded-md" />
+          </div>
+          <div className="flex items-baseline gap-4">
+            <Skeleton className="h-8 w-72" />
+          </div>
+          <div className="mt-2 flex items-center gap-2">
+            <Skeleton className="h-4 w-40" />
+            <Skeleton className="h-3 w-32" />
+          </div>
+          <div className="flex items-center gap-1 border-b border-[rgba(26,83,92,0.12)] mt-5">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="px-3 py-2.5">
+                <Skeleton className="h-4 w-20" />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Two-column body grid */}
+        <div className="flex flex-col lg:flex-row gap-8 px-8 py-8">
+          {/* Left column */}
+          <div className="flex-1 min-w-0 space-y-6">
+            {/* Voortgang/Fase card — 5 stage cirkels */}
+            <div className="doen-slate-surface rounded-2xl p-5">
+              <div className="flex items-center justify-between mb-4">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-20" />
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <React.Fragment key={i}>
+                    <div className="flex flex-col items-center gap-2 flex-shrink-0">
+                      <Skeleton className="h-10 w-10 rounded-full" />
+                      <Skeleton className="h-3 w-14" />
+                    </div>
+                    {i < 4 && <Skeleton className="h-[2px] flex-1" />}
+                  </React.Fragment>
+                ))}
+              </div>
+            </div>
+
+            {/* Briefing card */}
+            <div className="doen-slate-surface rounded-2xl p-5">
+              <div className="flex items-center justify-between mb-3">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-4 w-16" />
+              </div>
+              <div className="space-y-2">
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-4/5" />
+                <Skeleton className="h-3 w-3/5" />
+              </div>
+            </div>
+
+            {/* Taken + Offertes grid (2 columns op md+) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {Array.from({ length: 2 }).map((_, col) => (
+                <div key={col} className="doen-slate-surface rounded-2xl p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-6 w-16 rounded-md" />
+                  </div>
+                  <div className="space-y-3">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <div key={i} className="flex items-center gap-3">
+                        <Skeleton className="h-4 w-4 rounded" />
+                        <div className="flex-1 space-y-1.5">
+                          <Skeleton className="h-3 w-3/4" />
+                          <Skeleton className="h-2.5 w-1/3" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Activiteit feed */}
+            <div className="doen-slate-surface rounded-2xl p-5">
+              <div className="flex items-center justify-between mb-4">
+                <Skeleton className="h-4 w-24" />
+              </div>
+              <div className="space-y-3">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="flex items-start gap-3">
+                    <Skeleton className="h-8 w-8 rounded-lg flex-shrink-0" />
+                    <div className="flex-1 space-y-1.5">
+                      <Skeleton className="h-3 w-2/3" />
+                      <Skeleton className="h-2.5 w-1/4" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Right column */}
+          <div className="w-full lg:w-[300px] xl:w-[320px] flex-shrink-0 space-y-4 lg:self-start">
+            {/* Klant card */}
+            <div className="doen-slate-surface rounded-2xl p-5">
+              <Skeleton className="h-3 w-16 mb-3" />
+              <Skeleton className="h-5 w-40 mb-2" />
+              <Skeleton className="h-3 w-32 mb-4" />
+              <div className="space-y-2 pt-3 border-t border-border/40">
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-3/4" />
+              </div>
+            </div>
+
+            {/* Acties grid */}
+            <div className="doen-slate-surface rounded-2xl p-5">
+              <Skeleton className="h-3 w-16 mb-3" />
+              <div className="grid grid-cols-2 gap-2">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <Skeleton key={i} className="h-16 rounded-lg" />
+                ))}
+              </div>
+            </div>
+
+            {/* Bestanden */}
+            <div className="doen-slate-surface rounded-2xl p-5">
+              <div className="flex items-center justify-between mb-3">
+                <Skeleton className="h-3 w-20" />
+                <Skeleton className="h-4 w-16" />
+              </div>
+              <div className="space-y-2">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <Skeleton className="h-8 w-8 rounded-lg" />
+                    <div className="flex-1 space-y-1">
+                      <Skeleton className="h-3 w-3/4" />
+                      <Skeleton className="h-2.5 w-1/3" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 const statusLabels: Record<string, string> = {
   gepland: 'Gepland',
@@ -912,12 +1066,7 @@ export function ProjectDetail() {
   }, [id, isLoading, offerteIdsKey, werkbonIdsKey, factuurIdsKey, taakIdsKey])
 
   if (isLoading) {
-    return (
-      <div className="h-[calc(100dvh-122px)] flex flex-col items-center justify-center bg-background">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#1A535C] border-t-transparent" />
-        <p className="text-sm text-muted-foreground mt-4">Project laden...</p>
-      </div>
-    )
+    return <ProjectDetailSkeleton />
   }
 
   if (!project) {

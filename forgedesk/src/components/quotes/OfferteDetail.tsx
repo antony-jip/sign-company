@@ -66,6 +66,146 @@ import { ShareButton } from '@/components/shared/ShareButton'
 import { VisualisatieGallery } from '@/components/visualizer/VisualisatieGallery'
 import { OfferteOpvolgTimeline } from '@/components/quotes/OfferteOpvolgTimeline'
 import { SendOfferteDialog } from '@/components/quotes/SendOfferteDialog'
+import { Skeleton } from '@/components/ui/skeleton'
+
+function OfferteDetailSkeleton() {
+  return (
+    <div className="space-y-4 mod-strip mod-strip-offertes">
+      {/* BackButton placeholder */}
+      <Skeleton className="h-8 w-24 rounded-lg" />
+
+      {/* Top bar: nummer + status + actions */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-3">
+          <div className="space-y-1.5">
+            <Skeleton className="h-3 w-16" />
+            <Skeleton className="h-8 w-44" />
+          </div>
+          <Skeleton className="h-6 w-24 rounded-full" />
+          <Skeleton className="h-5 w-28 rounded-full" />
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Skeleton className="h-8 w-24 rounded-lg" />
+          <Skeleton className="h-8 w-36 rounded-lg" />
+          <Skeleton className="h-8 w-28 rounded-lg" />
+          <Skeleton className="h-8 w-24 rounded-lg" />
+          <Skeleton className="h-8 w-28 rounded-lg" />
+          <Skeleton className="h-8 w-28 rounded-lg" />
+          <Skeleton className="h-8 w-24 rounded-lg" />
+        </div>
+      </div>
+
+      {/* Status color strip */}
+      <Skeleton className="h-1 w-full rounded-t-lg" />
+
+      {/* Pipeline */}
+      <div className="flex items-center gap-2 py-3 px-2 bg-card rounded-xl border border-border/50">
+        {Array.from({ length: 5 }).map((_, idx) => (
+          <div key={idx} className="flex items-center gap-2 flex-1">
+            {idx > 0 && <Skeleton className="h-[2px] flex-1 min-w-4" />}
+            <div className="flex flex-col items-center gap-1.5 flex-shrink-0">
+              <Skeleton className="h-4 w-4 rounded-full" />
+              <Skeleton className="h-3 w-16" />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Client + Details grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Klant card */}
+        <div className="rounded-xl border border-border bg-card p-3.5 space-y-2.5">
+          <Skeleton className="h-8 w-full rounded-lg mb-3" />
+          <Skeleton className="h-5 w-3/5" />
+          <Skeleton className="h-4 w-2/5" />
+          <Skeleton className="h-4 w-1/2" />
+          <div className="flex gap-1 pt-1">
+            <Skeleton className="h-5 w-16 rounded-full" />
+            <Skeleton className="h-5 w-16 rounded-full" />
+          </div>
+          <Skeleton className="h-4 w-24 mt-2" />
+        </div>
+
+        {/* Details card */}
+        <div className="rounded-xl border border-border bg-card p-3.5 space-y-2.5">
+          <Skeleton className="h-8 w-full rounded-lg mb-3" />
+          {Array.from({ length: 4 }).map((_, idx) => (
+            <div key={idx} className="flex justify-between">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-4 w-20" />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Titel */}
+      <div className="rounded-xl border border-border bg-card p-5">
+        <Skeleton className="h-6 w-2/3" />
+      </div>
+
+      {/* Items table */}
+      <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="px-5 py-3 border-b border-border bg-muted/30">
+          <Skeleton className="h-4 w-32" />
+        </div>
+        <div className="px-4 py-3 border-b border-border flex gap-4">
+          <Skeleton className="h-4 w-10" />
+          <Skeleton className="h-4 flex-1" />
+          <Skeleton className="h-4 w-16" />
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-4 w-12" />
+          <Skeleton className="h-4 w-24" />
+        </div>
+        {Array.from({ length: 5 }).map((_, idx) => (
+          <div
+            key={idx}
+            className={`px-4 py-3 border-b border-border/50 flex gap-4 items-center ${idx % 2 === 1 ? 'bg-muted/20' : ''}`}
+          >
+            <Skeleton className="h-4 w-10" />
+            <Skeleton className="h-4 flex-1" />
+            <Skeleton className="h-4 w-16" />
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-4 w-12" />
+            <Skeleton className="h-4 w-24" />
+          </div>
+        ))}
+        {/* Totals block right */}
+        <div className="px-5 py-5 border-t border-border flex justify-end">
+          <div className="w-80 space-y-2.5">
+            <div className="flex justify-between">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-4 w-24" />
+            </div>
+            <div className="flex justify-between">
+              <Skeleton className="h-4 w-16" />
+              <Skeleton className="h-4 w-24" />
+            </div>
+            <div className="flex justify-between items-center pt-3">
+              <Skeleton className="h-4 w-28" />
+              <Skeleton className="h-7 w-32" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Notities */}
+      <div className="rounded-xl border border-border bg-card p-3.5 space-y-2">
+        <Skeleton className="h-8 w-full rounded-lg mb-3" />
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-11/12" />
+        <Skeleton className="h-4 w-3/4" />
+      </div>
+
+      {/* Voorwaarden / activiteit */}
+      <div className="rounded-xl border border-border bg-card p-3.5 space-y-2.5">
+        <Skeleton className="h-8 w-full rounded-lg mb-3" />
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-5/6" />
+        <Skeleton className="h-4 w-4/6" />
+      </div>
+    </div>
+  )
+}
 
 const STATUS_LABELS: Record<string, string> = {
   concept: 'Concept',
@@ -407,14 +547,7 @@ export function OfferteDetail() {
 
   // Loading
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Offerte laden...</p>
-        </div>
-      </div>
-    )
+    return <OfferteDetailSkeleton />
   }
 
   if (!offerte) {
