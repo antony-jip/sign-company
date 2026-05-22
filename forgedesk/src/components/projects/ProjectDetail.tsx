@@ -1618,7 +1618,7 @@ export function ProjectDetail() {
                       {(offerte.status === 'verzonden' || offerte.status === 'bekeken') && offerte.verstuurd_op && (() => {
                         const days = Math.floor((Date.now() - new Date(offerte.verstuurd_op).getTime()) / 86400000)
                         return (
-                          <div className={`flex items-center gap-2 mt-2 px-2.5 py-1.5 rounded-lg text-xs ${days > 7 ? 'bg-[#FEF3E8]' : 'bg-background'}`}>
+                          <div className={`flex items-center gap-2 mt-2 px-2.5 py-1.5 rounded-lg text-xs ${days > 7 ? 'bg-[hsl(var(--status-amber-bg))]' : 'bg-background'}`}>
                             <span className="flex items-center gap-1 font-mono font-semibold">
                               <Clock className="w-3 h-3 text-muted-foreground" />
                               {days}d open

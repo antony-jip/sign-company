@@ -85,7 +85,7 @@ export function TaskChecklistView({ taken, medewerkers, onStatusChange, onTaskCl
                   'flex-shrink-0 rounded-md border-[1.5px] transition-all flex items-center justify-center',
                   isDone
                     ? 'bg-[#1A535C] border-[#1A535C] text-white'
-                    : 'border-border hover:border-[#1A535C] hover:bg-[#E2F0F0]/30'
+                    : 'border-border hover:border-[#1A535C] hover:bg-[hsl(var(--status-green-bg))]/30'
                 )}
                 style={{ width: 20, height: 20 }}
               >

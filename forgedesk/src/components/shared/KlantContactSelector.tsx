@@ -325,7 +325,7 @@ export function KlantContactSelector({
               >
                 {/* Nieuw bedrijf optie */}
                 <button
-                  className="w-full text-left px-3 py-2.5 flex items-center gap-2 text-[#1A535C] hover:bg-[#E2F0F0]/50 transition-colors border-b"
+                  className="w-full text-left px-3 py-2.5 flex items-center gap-2 text-[#1A535C] hover:bg-[hsl(var(--status-green-bg))]/50 transition-colors border-b"
                   style={{ borderColor: '#E6E4E0' }}
                   onClick={() => {
                     setShowNieuwBedrijf(true)

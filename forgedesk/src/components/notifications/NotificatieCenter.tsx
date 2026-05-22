@@ -53,7 +53,7 @@ const typeConfig: Record<
   offerte_geaccepteerd: {
     icon: CheckCircle2,
     colorClass: "text-[#1A535C]",
-    bgClass: "bg-[#E2F0F0]",
+    bgClass: "bg-[hsl(var(--status-green-bg))]",
   },
   offerte_wijziging: {
     icon: AlertCircle,
@@ -73,17 +73,17 @@ const typeConfig: Record<
   nieuwe_email: {
     icon: Mail,
     colorClass: "text-[#2A5580]",
-    bgClass: "bg-[#E5ECF6]",
+    bgClass: "bg-[hsl(var(--status-blue-bg))]",
   },
   taak_voltooid: {
     icon: CheckCircle2,
     colorClass: "text-[#1A535C]",
-    bgClass: "bg-[#E2F0F0]",
+    bgClass: "bg-[hsl(var(--status-green-bg))]",
   },
   montage_gepland: {
     icon: Truck,
     colorClass: "text-[#2A5580]",
-    bgClass: "bg-[#E5ECF6]",
+    bgClass: "bg-[hsl(var(--status-blue-bg))]",
   },
   betaling_ontvangen: {
     icon: Banknote,
@@ -108,7 +108,7 @@ const typeConfig: Record<
   portaal_goedkeuring: {
     icon: CheckCircle2,
     colorClass: "text-[#1A535C]",
-    bgClass: "bg-[#E2F0F0]",
+    bgClass: "bg-[hsl(var(--status-green-bg))]",
   },
   portaal_revisie: {
     icon: RotateCcw,
@@ -118,7 +118,7 @@ const typeConfig: Record<
   portaal_bericht: {
     icon: MessageSquare,
     colorClass: "text-[#2A5580]",
-    bgClass: "bg-[#E5ECF6]",
+    bgClass: "bg-[hsl(var(--status-blue-bg))]",
   },
   portaal_bekeken: {
     icon: Eye,

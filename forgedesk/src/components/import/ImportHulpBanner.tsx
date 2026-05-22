@@ -18,7 +18,7 @@ export function ImportHulpBanner() {
       </div>
       <a
         href={MAILTO_HREF}
-        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-[#1A535C] bg-[#E2F0F0] hover:bg-[#D0E6E6] transition-colors whitespace-nowrap"
+        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-[#1A535C] bg-[hsl(var(--status-green-bg))] hover:bg-[#D0E6E6] transition-colors whitespace-nowrap"
       >
         <Mail className="w-4 h-4" />
         Mail ons

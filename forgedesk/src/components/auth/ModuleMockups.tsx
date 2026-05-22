@@ -124,7 +124,7 @@ export function KlantportaalMockup() {
         </div>
         {/* Company message (right) */}
         <div className="flex justify-end">
-          <div className="bg-[#E2F0F0] rounded-xl rounded-tr-sm px-2.5 py-1.5 max-w-[70%]">
+          <div className="bg-[hsl(var(--status-green-bg))] rounded-xl rounded-tr-sm px-2.5 py-1.5 max-w-[70%]">
             <p className="text-[7px]">Uw offerte is verstuurd. U kunt deze bekijken via de link.</p>
             <span className="text-[5px] text-muted-foreground mt-0.5 block">14:32</span>
           </div>
@@ -286,7 +286,7 @@ export function DaanAIMockup() {
                 <span className="text-[5px] uppercase font-bold text-[#2D6B48]/60">Waarde</span>
                 <p className="font-mono text-[8px] font-bold text-[#2D6B48]">&euro;24.5k</p>
               </div>
-              <div className="rounded-md px-1.5 py-1 bg-[#E5ECF6]">
+              <div className="rounded-md px-1.5 py-1 bg-[hsl(var(--status-blue-bg))]">
                 <span className="text-[5px] uppercase font-bold text-[#3A6B8C]/60">Conversie</span>
                 <p className="font-mono text-[8px] font-bold text-[#3A6B8C]">68%</p>
               </div>

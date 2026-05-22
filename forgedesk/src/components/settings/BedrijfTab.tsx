@@ -261,15 +261,15 @@ export function BedrijfTab() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-1.5">
               <Label htmlFor="bedrijfs-telefoon" className="text-[12px] font-semibold uppercase tracking-widest text-foreground/70">Telefoon</Label>
-              <Input id="bedrijfs-telefoon" type="tel" value={bedrijfsTelefoon} onChange={(e) => setBedrijfsTelefoon(e.target.value)} placeholder="+31 (0)20 1234567" className="bg-white" />
+              <Input id="bedrijfs-telefoon" type="tel" value={bedrijfsTelefoon} onChange={(e) => setBedrijfsTelefoon(e.target.value)} placeholder="+31 (0)20 1234567" className="bg-card" />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="bedrijfs-email" className="text-[12px] font-semibold uppercase tracking-widest text-foreground/70">E-mail</Label>
-              <Input id="bedrijfs-email" type="email" value={bedrijfsEmail} onChange={(e) => setBedrijfsEmail(e.target.value)} placeholder="info@bedrijf.nl" className="bg-white" />
+              <Input id="bedrijfs-email" type="email" value={bedrijfsEmail} onChange={(e) => setBedrijfsEmail(e.target.value)} placeholder="info@bedrijf.nl" className="bg-card" />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="bedrijfs-website" className="text-[12px] font-semibold uppercase tracking-widest text-foreground/70">Website</Label>
-              <Input id="bedrijfs-website" value={bedrijfsWebsite} onChange={(e) => setBedrijfsWebsite(e.target.value)} placeholder="www.bedrijf.nl" className="bg-white" />
+              <Input id="bedrijfs-website" value={bedrijfsWebsite} onChange={(e) => setBedrijfsWebsite(e.target.value)} placeholder="www.bedrijf.nl" className="bg-card" />
             </div>
           </div>
           {saveButton}
@@ -292,15 +292,15 @@ export function BedrijfTab() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-1.5">
               <Label htmlFor="kvk" className="text-[12px] font-semibold uppercase tracking-widest text-foreground/70">KvK Nummer</Label>
-              <Input id="kvk" value={kvkNummer} onChange={(e) => setKvkNummer(e.target.value)} placeholder="12345678" className="font-mono bg-white" />
+              <Input id="kvk" value={kvkNummer} onChange={(e) => setKvkNummer(e.target.value)} placeholder="12345678" className="font-mono bg-card" />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="btw" className="text-[12px] font-semibold uppercase tracking-widest text-foreground/70">BTW Nummer</Label>
-              <Input id="btw" value={btwNummer} onChange={(e) => setBtwNummer(e.target.value)} placeholder="NL123456789B01" className="font-mono bg-white" />
+              <Input id="btw" value={btwNummer} onChange={(e) => setBtwNummer(e.target.value)} placeholder="NL123456789B01" className="font-mono bg-card" />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="iban" className="text-[12px] font-semibold uppercase tracking-widest text-foreground/70">IBAN</Label>
-              <Input id="iban" value={iban} onChange={(e) => setIban(e.target.value)} placeholder="NL00 BANK 0123 4567 89" className="font-mono bg-white" />
+              <Input id="iban" value={iban} onChange={(e) => setIban(e.target.value)} placeholder="NL00 BANK 0123 4567 89" className="font-mono bg-card" />
             </div>
           </div>
           {saveButton}

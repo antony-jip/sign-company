@@ -677,8 +677,8 @@ export function WeergaveTab() {
                       className={cn(
                         'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium transition-all duration-150 border',
                         isOn
-                          ? 'bg-white text-foreground border-[rgba(26,83,92,0.18)] shadow-[0_1px_2px_rgba(20,62,71,0.06)] hover:border-[rgba(26,83,92,0.3)]'
-                          : 'bg-transparent text-muted-foreground border-[rgba(26,83,92,0.12)] border-dashed hover:text-foreground/70 hover:bg-white/50 hover:border-[rgba(26,83,92,0.2)]',
+                          ? 'bg-card text-foreground border-[rgba(26,83,92,0.18)] shadow-[0_1px_2px_rgba(20,62,71,0.06)] hover:border-[rgba(26,83,92,0.3)]'
+                          : 'bg-transparent text-muted-foreground border-[rgba(26,83,92,0.12)] border-dashed hover:text-foreground/70 hover:bg-card/50 hover:border-[rgba(26,83,92,0.2)]',
                       )}
                       aria-pressed={isOn}
                     >
@@ -700,7 +700,7 @@ export function WeergaveTab() {
         {/* Instellingen (altijd aan) — kleine fixed-footer */}
         <div className="flex items-center gap-2 pt-2 border-t border-[rgba(26,83,92,0.08)]">
           <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium bg-[rgba(26,83,92,0.05)] text-foreground/70 border border-[rgba(26,83,92,0.08)]">
-            <span aria-hidden className="w-1.5 h-1.5 rounded-full bg-[#9B9B95] flex-shrink-0" />
+            <span aria-hidden className="w-1.5 h-1.5 rounded-full bg-muted-foreground flex-shrink-0" />
             Instellingen
           </span>
           <span

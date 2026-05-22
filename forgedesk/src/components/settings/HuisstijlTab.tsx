@@ -107,7 +107,7 @@ function SliderWithInput({ label, unit, min, max, value, onChange }: {
               const n = parseInt(e.target.value)
               if (!Number.isNaN(n)) onChange(clamp(n))
             }}
-            className="w-12 h-6 text-[11px] font-mono text-right px-1.5 bg-background border border-border rounded-md focus:outline-none focus:border-[#1A535C]/40 focus:bg-white transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            className="w-12 h-6 text-[11px] font-mono text-right px-1.5 bg-background border border-border rounded-md focus:outline-none focus:border-[#1A535C]/40 focus:bg-card transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
           />
           <span className="text-[10px] text-muted-foreground font-mono w-4">{unit}</span>
         </div>
@@ -162,9 +162,9 @@ function TekeningPreview({ style, logoUrl }: { style: DocumentStyle; logoUrl: st
   const rightCol = sampleVelden.filter((_, i) => i % 2 === 1)
 
   return (
-    <div className="rounded-xl border border-border bg-white overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+    <div className="rounded-xl border border-border bg-card overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
       {/* Landscape A4 — aspect ratio 297:210 */}
-      <div className="relative bg-white" style={{ aspectRatio: '297 / 210' }}>
+      <div className="relative bg-card" style={{ aspectRatio: '297 / 210' }}>
         {/* Logo */}
         {showLogo && (
           <div
@@ -1112,10 +1112,10 @@ export function HuisstijlTab({ lockedSubTab }: HuisstijlTabProps = {}) {
                   <div className="relative group rounded-lg overflow-hidden border border-border bg-background">
                     <img src={style.briefpapier_url} alt="Briefpapier" className="w-full aspect-[210/297] object-cover" />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
-                      <button onClick={() => briefpapierInputRef.current?.click()} disabled={uploadingBriefpapier} className="px-3 py-1.5 text-xs font-medium bg-white rounded-md shadow-sm hover:bg-background transition-colors">
+                      <button onClick={() => briefpapierInputRef.current?.click()} disabled={uploadingBriefpapier} className="px-3 py-1.5 text-xs font-medium bg-card rounded-md shadow-sm hover:bg-background transition-colors">
                         {uploadingBriefpapier ? 'Uploaden...' : 'Wijzigen'}
                       </button>
-                      <button onClick={() => updateStyle({ briefpapier_url: '', briefpapier_modus: 'geen' })} className="px-3 py-1.5 text-xs font-medium bg-white text-[#C0451A] rounded-md shadow-sm hover:bg-[hsl(var(--status-flame-bg))] transition-colors">
+                      <button onClick={() => updateStyle({ briefpapier_url: '', briefpapier_modus: 'geen' })} className="px-3 py-1.5 text-xs font-medium bg-card text-[#C0451A] rounded-md shadow-sm hover:bg-[hsl(var(--status-flame-bg))] transition-colors">
                         Verwijder
                       </button>
                     </div>
@@ -1141,10 +1141,10 @@ export function HuisstijlTab({ lockedSubTab }: HuisstijlTabProps = {}) {
                   <div className="relative group rounded-lg overflow-hidden border border-border bg-background">
                     <img src={style.vervolgpapier_url} alt="Vervolgpapier" className="w-full aspect-[210/297] object-cover" />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
-                      <button onClick={() => vervolgpapierInputRef.current?.click()} disabled={uploadingVervolgpapier} className="px-3 py-1.5 text-xs font-medium bg-white rounded-md shadow-sm hover:bg-background transition-colors">
+                      <button onClick={() => vervolgpapierInputRef.current?.click()} disabled={uploadingVervolgpapier} className="px-3 py-1.5 text-xs font-medium bg-card rounded-md shadow-sm hover:bg-background transition-colors">
                         {uploadingVervolgpapier ? 'Uploaden...' : 'Wijzigen'}
                       </button>
-                      <button onClick={() => updateStyle({ vervolgpapier_url: '' })} className="px-3 py-1.5 text-xs font-medium bg-white text-[#C0451A] rounded-md shadow-sm hover:bg-[hsl(var(--status-flame-bg))] transition-colors">
+                      <button onClick={() => updateStyle({ vervolgpapier_url: '' })} className="px-3 py-1.5 text-xs font-medium bg-card text-[#C0451A] rounded-md shadow-sm hover:bg-[hsl(var(--status-flame-bg))] transition-colors">
                         Verwijder
                       </button>
                     </div>
@@ -1172,7 +1172,7 @@ export function HuisstijlTab({ lockedSubTab }: HuisstijlTabProps = {}) {
                   value={style.briefpapier_modus}
                   onValueChange={(v) => updateStyle({ briefpapier_modus: v as BriefpapierModus })}
                 >
-                  <SelectTrigger className="h-9 border-border bg-background focus:bg-white focus:border-[#1A535C]/30">
+                  <SelectTrigger className="h-9 border-border bg-background focus:bg-card focus:border-[#1A535C]/30">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -1339,7 +1339,7 @@ export function HuisstijlTab({ lockedSubTab }: HuisstijlTabProps = {}) {
                   value={style.tekening_logo_positie ?? 'linksboven'}
                   onValueChange={(v) => updateStyle({ tekening_logo_positie: v as 'linksboven' | 'rechtsboven' | 'geen' })}
                 >
-                  <SelectTrigger className="h-9 border-border bg-background focus:bg-white focus:border-[#1A535C]/30">
+                  <SelectTrigger className="h-9 border-border bg-background focus:bg-card focus:border-[#1A535C]/30">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -1357,7 +1357,7 @@ export function HuisstijlTab({ lockedSubTab }: HuisstijlTabProps = {}) {
                   value={style.tekening_specs_kleur_modus ?? 'brand'}
                   onValueChange={(v) => updateStyle({ tekening_specs_kleur_modus: v as 'brand' | 'neutraal' | 'eigen' })}
                 >
-                  <SelectTrigger className="h-9 border-border bg-background focus:bg-white focus:border-[#1A535C]/30">
+                  <SelectTrigger className="h-9 border-border bg-background focus:bg-card focus:border-[#1A535C]/30">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>

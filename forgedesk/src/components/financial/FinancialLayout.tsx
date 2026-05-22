@@ -292,16 +292,29 @@ export function FinancialLayout() {
                 <div className="h-[350px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={maandData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#F0EFEC" />
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                       <XAxis
                         dataKey="maand"
-                        tick={{ fontSize: 12, fill: '#9B9B95' }}
+                        stroke="hsl(var(--border))"
+                        tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
                       />
                       <YAxis
-                        tick={{ fontSize: 12, fill: '#9B9B95' }}
+                        stroke="hsl(var(--border))"
+                        tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
                         tickFormatter={(value) => value >= 1000 ? `€${(value / 1000).toFixed(0)}k` : `€${value}`}
                       />
-                      <Tooltip formatter={formatTooltipValue} />
+                      <Tooltip
+                        formatter={formatTooltipValue}
+                        contentStyle={{
+                          backgroundColor: 'hsl(var(--card))',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '6px',
+                          color: 'hsl(var(--foreground))',
+                        }}
+                        labelStyle={{ color: 'hsl(var(--foreground))' }}
+                        itemStyle={{ color: 'hsl(var(--foreground))' }}
+                        cursor={{ fill: 'hsl(var(--muted))', opacity: 0.3 }}
+                      />
                       <Bar
                         dataKey="gefactureerd"
                         name="Gefactureerd"
@@ -363,7 +376,17 @@ export function FinancialLayout() {
                           />
                         ))}
                       </Pie>
-                      <Tooltip formatter={formatTooltipValue} />
+                      <Tooltip
+                        formatter={formatTooltipValue}
+                        contentStyle={{
+                          backgroundColor: 'hsl(var(--card))',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '6px',
+                          color: 'hsl(var(--foreground))',
+                        }}
+                        labelStyle={{ color: 'hsl(var(--foreground))' }}
+                        itemStyle={{ color: 'hsl(var(--foreground))' }}
+                      />
                       <Legend
                         verticalAlign="bottom"
                         height={36}
@@ -387,7 +410,7 @@ export function FinancialLayout() {
                   <FileText className="w-5 h-5" />
                   Openstaande Offertes
                 </CardTitle>
-                <Badge variant="secondary" className="bg-[#E2F0F0] text-[#1A535C]">{openstaandeOffertes.length} open</Badge>
+                <Badge variant="secondary" className="bg-[hsl(var(--status-green-bg))] text-[#1A535C]">{openstaandeOffertes.length} open</Badge>
               </div>
             </CardHeader>
             <CardContent>

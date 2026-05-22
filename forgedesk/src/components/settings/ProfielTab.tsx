@@ -117,7 +117,7 @@ export function ProfielTab() {
             >
               {initials}
             </div>
-            <span className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-white border-2 border-white shadow-sm flex items-center justify-center">
+            <span className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-card border-2 border-card shadow-sm flex items-center justify-center">
               <span className="w-2 h-2 rounded-full bg-[#2D6B48] doen-pulse" aria-hidden />
             </span>
           </div>
@@ -145,7 +145,7 @@ export function ProfielTab() {
               {completionPct}%
             </span>
           </div>
-          <div className="h-1.5 rounded-full bg-[#E5E4E0] overflow-hidden">
+          <div className="h-1.5 rounded-full bg-muted overflow-hidden">
             <div
               className="h-full rounded-full transition-all duration-500 ease-out"
               style={{
@@ -163,16 +163,16 @@ export function ProfielTab() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label htmlFor="voornaam" className="text-[12px] font-semibold uppercase tracking-widest text-foreground/70">Voornaam</Label>
-              <Input id="voornaam" value={voornaam} onChange={(e) => setVoornaam(e.target.value)} className="bg-white" />
+              <Input id="voornaam" value={voornaam} onChange={(e) => setVoornaam(e.target.value)} className="bg-card" />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="achternaam" className="text-[12px] font-semibold uppercase tracking-widest text-foreground/70">Achternaam</Label>
-              <Input id="achternaam" value={achternaam} onChange={(e) => setAchternaam(e.target.value)} className="bg-white" />
+              <Input id="achternaam" value={achternaam} onChange={(e) => setAchternaam(e.target.value)} className="bg-card" />
             </div>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="functie" className="text-[12px] font-semibold uppercase tracking-widest text-foreground/70">Functie</Label>
-            <Input id="functie" value={functie} onChange={(e) => setFunctie(e.target.value)} placeholder="Bijv. Eigenaar, Projectleider, Verkoper" className="bg-white" />
+            <Input id="functie" value={functie} onChange={(e) => setFunctie(e.target.value)} placeholder="Bijv. Eigenaar, Projectleider, Verkoper" className="bg-card" />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
@@ -182,7 +182,7 @@ export function ProfielTab() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="telefoon" className="text-[12px] font-semibold uppercase tracking-widest text-foreground/70">Telefoon</Label>
-              <Input id="telefoon" value={telefoon} onChange={(e) => setTelefoon(e.target.value)} className="bg-white" />
+              <Input id="telefoon" value={telefoon} onChange={(e) => setTelefoon(e.target.value)} className="bg-card" />
             </div>
           </div>
         </div>
@@ -303,9 +303,9 @@ export function ProfielTab() {
                     <PhCheckCircle size={18} weight="duotone" />
                   </span>
                 ) : (
-                  <span className="w-[18px] h-[18px] rounded-full bg-[#E5E4E0] flex-shrink-0" />
+                  <span className="w-[18px] h-[18px] rounded-full bg-muted flex-shrink-0" />
                 )}
-                <span className={done ? 'text-foreground/80 line-through decoration-[#C0BDB8]' : 'text-foreground font-medium'}>
+                <span className={done ? 'text-foreground/80 line-through decoration-muted-foreground/80' : 'text-foreground font-medium'}>
                   {labels[f.key]}
                 </span>
               </div>

@@ -62,7 +62,7 @@ export function SubTabNav({ tabs, active, onChange, variant = 'pill' }: SubTabNa
               'flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[13px] font-semibold transition-all whitespace-nowrap',
               isActive
                 ? 'bg-card text-foreground shadow-[0_1px_3px_rgba(20,62,71,0.08),0_0_0_1px_rgba(26,83,92,0.06)]'
-                : 'text-foreground/70 hover:text-foreground hover:bg-white/50'
+                : 'text-foreground/70 hover:text-foreground hover:bg-card/50'
             )}
           >
             <Icon className={cn('h-3.5 w-3.5 transition-colors', isActive ? 'text-[#1A535C]' : 'text-muted-foreground')} />

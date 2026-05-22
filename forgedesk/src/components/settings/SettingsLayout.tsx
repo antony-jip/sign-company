@@ -259,7 +259,7 @@ export function SettingsLayout() {
                       'group w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-all duration-150 relative',
                       isActive
                         ? 'text-foreground font-semibold bg-card shadow-[0_1px_3px_rgba(20,62,71,0.08),0_0_0_1px_rgba(26,83,92,0.06)]'
-                        : 'text-foreground/70 hover:text-foreground hover:bg-white/50'
+                        : 'text-foreground/70 hover:text-foreground hover:bg-card/50'
                     )}
                   >
                     {isActive && (

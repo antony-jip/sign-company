@@ -38,7 +38,7 @@ export function TemplatesSubTab() {
           {triggers.length} systeem-templates. Klik om te bewerken.
         </p>
       </div>
-      <ul className="rounded-lg border border-border bg-white divide-y divide-[#E2E2DD]">
+      <ul className="rounded-lg border border-border bg-card divide-y divide-border">
         {triggers.map((key) => {
           const def = defaults[key]
           return (

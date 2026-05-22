@@ -384,7 +384,7 @@ export function QuoteSidebar({
                                     linkedFactuur.status === 'verzonden' && 'bg-[hsl(var(--status-blue-bg))] text-[#3A5A9A] border-[#3A5A9A]/20',
                                     linkedFactuur.status === 'concept' && 'bg-muted text-foreground/70 border-[#6B6B66]/15',
                                     linkedFactuur.status === 'vervallen' && 'bg-[hsl(var(--status-flame-bg))] text-[#C03A18] border-[#C03A18]/20',
-                                    linkedFactuur.status === 'gecrediteerd' && 'bg-[#FEF3E8] text-[#D4621A] border-[#D4621A]/20',
+                                    linkedFactuur.status === 'gecrediteerd' && 'bg-[hsl(var(--status-amber-bg))] text-[#D4621A] border-[#D4621A]/20',
                                   )}>
                                     {linkedFactuur.status.charAt(0).toUpperCase() + linkedFactuur.status.slice(1)}
                                   </Badge>

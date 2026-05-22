@@ -558,7 +558,7 @@ export function CalculatieModal({
                         index % 2 === 0
                           ? 'bg-card'
                           : 'bg-background/50 dark:bg-muted/20'
-                      } hover:bg-[#E2F0F0]/40 dark:hover:bg-[#1A5C5E]/10 transition-colors`}
+                      } hover:bg-[hsl(var(--status-green-bg))]/40 dark:hover:bg-[#1A5C5E]/10 transition-colors`}
                     >
                       {/* Product */}
                       <td className="px-2 py-1.5">
@@ -673,7 +673,7 @@ export function CalculatieModal({
             variant="outline"
             size="sm"
             onClick={addRegel}
-            className="w-full mt-3 border-dashed border-2 hover:border-[#1A5C5E]/40 hover:bg-[#E2F0F0]/50 dark:hover:bg-[#1A5C5E]/10"
+            className="w-full mt-3 border-dashed border-2 hover:border-[#1A5C5E]/40 hover:bg-[hsl(var(--status-green-bg))]/50 dark:hover:bg-[#1A5C5E]/10"
           >
             <Plus className="h-4 w-4 mr-1.5" />
             Regel toevoegen

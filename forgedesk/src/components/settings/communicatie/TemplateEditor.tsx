@@ -196,7 +196,7 @@ export function TemplateEditor({ triggerTaskNaam, open, onClose, onSaved }: Temp
                         key={key}
                         type="button"
                         onClick={() => insertPlaceholder(key)}
-                        className="inline-flex items-center rounded-md border border-border bg-white px-2 py-1 text-xs font-mono text-[#1A535C] hover:border-[#1A535C] hover:bg-background transition-colors"
+                        className="inline-flex items-center rounded-md border border-border bg-card px-2 py-1 text-xs font-mono text-[#1A535C] hover:border-[#1A535C] hover:bg-background transition-colors"
                       >
                         {`{{${key}}}`}
                       </button>
@@ -238,7 +238,7 @@ export function TemplateEditor({ triggerTaskNaam, open, onClose, onSaved }: Temp
               <Label className="text-xs uppercase tracking-wide text-muted-foreground">
                 Voorbeeld (met dummy-data)
               </Label>
-              <div className="rounded-lg border border-border bg-white overflow-hidden">
+              <div className="rounded-lg border border-border bg-card overflow-hidden">
                 <div className="border-b border-border bg-background px-4 py-2.5">
                   <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Onderwerp</p>
                   <p className="text-sm font-medium text-foreground mt-0.5">{previewOnderwerp || <span className="italic text-muted-foreground">leeg</span>}</p>

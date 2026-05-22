@@ -188,7 +188,7 @@ export function KennisbankTab() {
     return (
       <div className="space-y-5">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold" style={{ color: '#1A1A1A' }}>
+          <h3 className="text-lg font-bold text-foreground">
             {isNew ? 'Nieuw artikel' : 'Artikel bewerken'}
           </h3>
           <button onClick={closeEditor} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
@@ -199,7 +199,7 @@ export function KennisbankTab() {
         <div className="grid grid-cols-1 md:grid-cols-[1fr_200px] gap-4">
           <div className="space-y-3">
             <div>
-              <Label className="text-[11px] font-semibold uppercase tracking-wider mb-1 block" style={{ color: '#9B9B95' }}>Titel *</Label>
+              <Label className="text-[11px] font-semibold uppercase tracking-wider mb-1 block text-muted-foreground">Titel *</Label>
               <Input
                 value={formTitel}
                 onChange={e => setFormTitel(e.target.value)}
@@ -210,7 +210,7 @@ export function KennisbankTab() {
               />
             </div>
             <div>
-              <Label className="text-[11px] font-semibold uppercase tracking-wider mb-1 block" style={{ color: '#9B9B95' }}>Inhoud</Label>
+              <Label className="text-[11px] font-semibold uppercase tracking-wider mb-1 block text-muted-foreground">Inhoud</Label>
               <Textarea
                 value={formInhoud}
                 onChange={e => setFormInhoud(e.target.value)}
@@ -224,7 +224,7 @@ export function KennisbankTab() {
 
           <div className="space-y-3">
             <div>
-              <Label className="text-[11px] font-semibold uppercase tracking-wider mb-1 block" style={{ color: '#9B9B95' }}>Categorie</Label>
+              <Label className="text-[11px] font-semibold uppercase tracking-wider mb-1 block text-muted-foreground">Categorie</Label>
               <select
                 value={formCategoryId}
                 onChange={e => setFormCategoryId(e.target.value)}
@@ -238,7 +238,7 @@ export function KennisbankTab() {
               </select>
             </div>
             <div>
-              <Label className="text-[11px] font-semibold uppercase tracking-wider mb-1 block" style={{ color: '#9B9B95' }}>Tags</Label>
+              <Label className="text-[11px] font-semibold uppercase tracking-wider mb-1 block text-muted-foreground">Tags</Label>
               <Input
                 value={formTags}
                 onChange={e => setFormTags(e.target.value)}
@@ -246,7 +246,7 @@ export function KennisbankTab() {
                 className="h-9 text-[13px] rounded-lg"
                 style={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }}
               />
-              <p className="text-[10px] mt-1" style={{ color: '#9B9B95' }}>Komma-gescheiden</p>
+              <p className="text-[10px] mt-1 text-muted-foreground">Komma-gescheiden</p>
             </div>
           </div>
         </div>
@@ -260,7 +260,7 @@ export function KennisbankTab() {
           >
             {isSaving ? 'Opslaan...' : isNew ? 'Artikel aanmaken' : 'Opslaan'}
           </button>
-          <button onClick={closeEditor} className="h-9 px-4 text-[13px] font-medium rounded-lg" style={{ color: '#6B6B66' }}>
+          <button onClick={closeEditor} className="h-9 px-4 text-[13px] font-medium rounded-lg text-foreground/70">
             Annuleren
           </button>
         </div>
@@ -274,8 +274,8 @@ export function KennisbankTab() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-bold" style={{ color: '#1A1A1A' }}>Kennisbank</h3>
-          <p className="text-[13px]" style={{ color: '#9B9B95' }}>Artikelen, handleidingen en procedures</p>
+          <h3 className="text-lg font-bold text-foreground">Kennisbank</h3>
+          <p className="text-[13px] text-muted-foreground">Artikelen, handleidingen en procedures</p>
         </div>
         <button
           onClick={openNewArticle}
@@ -379,10 +379,10 @@ export function KennisbankTab() {
           {filtered.length === 0 ? (
             <div className="py-12 text-center">
               <BookOpen className="h-8 w-8 mx-auto mb-3 text-muted-foreground opacity-30" />
-              <p className="text-[14px] font-medium" style={{ color: '#6B6B66' }}>
+              <p className="text-[14px] font-medium text-foreground/70">
                 {search ? 'Geen artikelen gevonden' : 'Nog geen artikelen'}
               </p>
-              <p className="text-[12px] mt-1" style={{ color: '#9B9B95' }}>
+              <p className="text-[12px] mt-1 text-muted-foreground">
                 {search ? 'Probeer andere zoektermen' : 'Maak je eerste artikel aan'}
               </p>
               {!search && (
@@ -402,7 +402,7 @@ export function KennisbankTab() {
                 return (
                   <div
                     key={article.id}
-                    className="group bg-white rounded-xl p-4 border border-border/60 hover:border-[#1A535C]/20 hover:shadow-sm cursor-pointer transition-all"
+                    className="group bg-card rounded-xl p-4 border border-border/60 hover:border-[#1A535C]/20 hover:shadow-sm cursor-pointer transition-all"
                     onClick={() => openEditArticle(article)}
                   >
                     <div className="flex items-start justify-between gap-3">

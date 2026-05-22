@@ -1538,7 +1538,7 @@ export function QuotesPipeline() {
                                         className={cn(
                                           'inline-flex items-center justify-center text-[11px] font-mono font-semibold tabular-nums rounded-md px-2 py-0.5',
                                           urgent ? 'bg-[hsl(var(--status-flame-bg))] text-[#C03A18]' :
-                                          warning ? 'bg-[#FEF3E8] text-[#D4621A]' :
+                                          warning ? 'bg-[hsl(var(--status-amber-bg))] text-[#D4621A]' :
                                           'text-muted-foreground'
                                         )}
                                       >

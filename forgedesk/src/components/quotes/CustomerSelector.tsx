@@ -193,7 +193,7 @@ export function CustomerSelector({
                     </div>
                     {showKlantResults && !showNieuwBedrijf && (
                       <div className="absolute z-50 w-full mt-1 rounded-lg border bg-background shadow-lg max-h-[320px] overflow-y-auto" style={{ border: '1px solid hsl(var(--border))' }}>
-                        <button className="w-full text-left px-3 py-2.5 flex items-center gap-2 text-[#1A535C] hover:bg-[#E2F0F0]/50 transition-colors border-b" style={{ borderColor: '#EBEBEB' }} onClick={() => { setShowNieuwBedrijf(true); setNbData((p) => ({ ...p, bedrijfsnaam: klantSearch })) }}>
+                        <button className="w-full text-left px-3 py-2.5 flex items-center gap-2 text-[#1A535C] hover:bg-[hsl(var(--status-green-bg))]/50 transition-colors border-b" style={{ borderColor: '#EBEBEB' }} onClick={() => { setShowNieuwBedrijf(true); setNbData((p) => ({ ...p, bedrijfsnaam: klantSearch })) }}>
                           <Plus className="w-4 h-4" /><span className="text-[13px] font-medium">Nieuw bedrijf toevoegen{klantSearch.trim() ? `: "${klantSearch.trim()}"` : ''}</span>
                         </button>
                         {filteredKlanten.length === 0 ? (

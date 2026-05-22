@@ -101,8 +101,8 @@ export function AbonnementTab() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h2 className="text-[20px] font-bold tracking-tight" style={{ color: '#1A1A1A' }}>Abonnement</h2>
-        <p className="text-[13px]" style={{ color: '#9B9B95' }}>Plan, facturatie en gebruikers</p>
+        <h2 className="text-[20px] font-bold tracking-tight text-foreground">Abonnement</h2>
+        <p className="text-[13px] text-muted-foreground">Plan, facturatie en gebruikers</p>
       </div>
 
       {/* Status banner */}
@@ -151,30 +151,30 @@ export function AbonnementTab() {
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-8">
             {/* Left: pricing */}
             <div>
-              <h3 className="font-heading text-[22px] font-bold tracking-tight" style={{ color: '#1A1A1A' }}>
+              <h3 className="font-heading text-[22px] font-bold tracking-tight text-foreground">
                 Gewoon doen<span style={{ color: '#F15025' }}>.</span>
               </h3>
 
               <div className="flex items-baseline gap-1.5 mt-3">
-                <span className="text-[42px] font-bold font-mono tracking-tight" style={{ color: '#1A1A1A' }}>€79</span>
-                <span className="text-[15px]" style={{ color: '#9B9B95' }}>/ maand</span>
+                <span className="text-[42px] font-bold font-mono tracking-tight text-foreground">€79</span>
+                <span className="text-[15px] text-muted-foreground">/ maand</span>
               </div>
 
               <div className="flex items-center gap-2 mt-2 rounded-lg px-3 py-2" style={{ backgroundColor: 'hsl(var(--background))' }}>
                 <Users className="h-4 w-4" style={{ color: '#1A535C' }} />
-                <span className="text-[13px] font-medium" style={{ color: '#1A1A1A' }}>
+                <span className="text-[13px] font-medium text-foreground">
                   Tot <strong>10 gebruikers</strong> inbegrepen
                 </span>
               </div>
 
               <div className="flex items-center gap-2 mt-2 rounded-lg px-3 py-2" style={{ backgroundColor: 'hsl(var(--background))' }}>
                 <Plus className="h-4 w-4" style={{ color: '#1A535C' }} />
-                <span className="text-[13px] font-medium" style={{ color: '#1A1A1A' }}>
+                <span className="text-[13px] font-medium text-foreground">
                   Meer gebruikers? <strong>Staffel op maat</strong>
                 </span>
               </div>
 
-              <p className="text-[13px] mt-4" style={{ color: '#9B9B95' }}>
+              <p className="text-[13px] mt-4 text-muted-foreground">
                 Geen opzetkosten. Maandelijks opzegbaar. Eenvoudig data overzetten.
               </p>
 
@@ -194,10 +194,10 @@ export function AbonnementTab() {
 
             {/* Right: features */}
             <div className="flex-shrink-0 md:w-[300px]">
-              <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: '#9B9B95' }}>Wat je krijgt</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wider mb-3 text-muted-foreground">Wat je krijgt</p>
               <ul className="space-y-2.5">
                 {FEATURES.map(f => (
-                  <li key={f} className="flex items-center gap-2.5 text-[13px]" style={{ color: '#1A1A1A' }}>
+                  <li key={f} className="flex items-center gap-2.5 text-[13px] text-foreground">
                     <Check className="h-4 w-4 flex-shrink-0" style={{ color: '#1A535C' }} />
                     {f}
                   </li>

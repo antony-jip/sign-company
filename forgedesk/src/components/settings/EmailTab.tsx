@@ -1043,7 +1043,7 @@ function EmailSettingsInline({
                 <button
                   key={key}
                   onClick={() => handleProviderChange(key)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${provider === key ? 'bg-[#1A535C] text-white border-[#1A535C]' : 'bg-white text-foreground/70 border-border hover:border-[#1A535C]/30'}`}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${provider === key ? 'bg-[#1A535C] text-white border-[#1A535C]' : 'bg-card text-foreground/70 border-border hover:border-[#1A535C]/30'}`}
                 >
                   {label}
                 </button>
