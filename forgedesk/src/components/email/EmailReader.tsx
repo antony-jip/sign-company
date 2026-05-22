@@ -7,7 +7,7 @@ import {
   ChevronUp, ChevronDown, Reply, ReplyAll, Forward,
   Paperclip, Send, Bold, Italic, Underline,
   List, ListOrdered, Link2, Sparkles, Loader2, Download,
-  Undo2, Redo2, X, Clock, Tag,
+  Undo2, Redo2, X, Clock, Tag, UserPlus, FolderPlus, ListPlus, MoreHorizontal,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Email, EmailAttachment } from '@/types'
@@ -87,6 +87,7 @@ interface EmailReaderProps {
   onNavigate?: (direction: 'prev' | 'next') => void
   onSendReply?: (data: { to: string; cc?: string; bcc?: string; subject: string; body: string; html?: string; scheduledAt?: string; attachments?: Array<{ filename: string; storagePath?: string; content?: string; encoding?: 'base64'; size?: number }> }) => void
   onSelectEmail?: (email: Email) => void
+  onOpenContextPanel?: (panel: 'klant' | 'project' | 'taak') => void
 }
 
 export function EmailReader({
@@ -110,6 +111,7 @@ export function EmailReader({
   onNavigate,
   onSendReply,
   onSelectEmail,
+  onOpenContextPanel,
 }: EmailReaderProps) {
   const { emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, bedrijfsnaam } = useAppSettings()
 
@@ -179,6 +181,8 @@ export function EmailReader({
   const snoozeMenuRef = useRef<HTMLDivElement | null>(null)
   const [labelMenuOpen, setLabelMenuOpen] = useState(false)
   const labelMenuRef = useRef<HTMLDivElement | null>(null)
+  const [actionsMenuOpen, setActionsMenuOpen] = useState(false)
+  const actionsMenuRef = useRef<HTMLDivElement | null>(null)
 
   // Sluit het snooze-menu bij klik buiten het popover-bereik
   useEffect(() => {
@@ -199,6 +203,16 @@ export function EmailReader({
     document.addEventListener('mousedown', onDocClick)
     return () => document.removeEventListener('mousedown', onDocClick)
   }, [labelMenuOpen])
+
+  // Sluit het acties-menu bij klik buiten het popover-bereik
+  useEffect(() => {
+    if (!actionsMenuOpen) return
+    const onDocClick = (e: MouseEvent) => {
+      if (!actionsMenuRef.current?.contains(e.target as Node)) setActionsMenuOpen(false)
+    }
+    document.addEventListener('mousedown', onDocClick)
+    return () => document.removeEventListener('mousedown', onDocClick)
+  }, [actionsMenuOpen])
   const [downloadingAll, setDownloadingAll] = useState(false)
   const [previewAtt, setPreviewAtt] = useState<{ filename: string; url: string; contentType: string } | null>(null)
   // Cache van blob-URLs voor image-thumbnails per filename. Wordt gevuld bij open van email
@@ -1340,6 +1354,59 @@ export function EmailReader({
                   <ChevronDown className="h-3.5 w-3.5" />
                 </Button>
               </span>
+            )}
+
+            {/* Acties-dropdown: snelle entry naar Klant/Project/Taak aanmaken
+                zonder dat de zware context-sidebar permanent ruimte hoeft. */}
+            {onOpenContextPanel && (
+              <div ref={actionsMenuRef} className="relative">
+                <div className="w-px h-5 bg-[#EBEBEB] mx-2 hidden md:inline-block" />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="tap-press h-10 w-10 md:h-8 md:w-8 text-[#9B9B95] hover:text-[#1A535C] hover:bg-[#1A535C]/[0.06] rounded-[10px] transition-colors duration-150"
+                  onClick={() => setActionsMenuOpen(v => !v)}
+                  title="Acties — klant, project of taak aanmaken vanuit deze mail"
+                  aria-label="Acties"
+                >
+                  <MoreHorizontal className="h-[18px] w-[18px] md:h-4 md:w-4" />
+                </Button>
+                {actionsMenuOpen && (
+                  <div className="absolute top-full right-0 mt-1.5 min-w-[220px] bg-white/95 backdrop-blur-xl rounded-[12px] shadow-[0_8px_32px_-8px_rgba(0,0,0,0.16),0_0_0_0.5px_rgba(0,0,0,0.06)] py-1.5 z-50 overflow-hidden">
+                    <p className="px-3.5 pt-1.5 pb-1 text-[10px] uppercase tracking-[0.08em] text-[#9B9B95] font-semibold">Acties</p>
+                    <button
+                      type="button"
+                      onClick={() => { setActionsMenuOpen(false); onOpenContextPanel('klant') }}
+                      className="w-full flex items-center gap-3 px-3.5 py-2.5 text-[13px] text-[#1A1A1A] hover:bg-[#1A535C]/[0.06] transition-colors duration-150 active:scale-[0.99]"
+                    >
+                      <div className="w-7 h-7 rounded-[8px] flex items-center justify-center flex-shrink-0 bg-[#1A535C]/[0.08] text-[#1A535C]">
+                        <UserPlus className="h-3.5 w-3.5" />
+                      </div>
+                      <span className="font-medium">Klant aanmaken</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setActionsMenuOpen(false); onOpenContextPanel('project') }}
+                      className="w-full flex items-center gap-3 px-3.5 py-2.5 text-[13px] text-[#1A1A1A] hover:bg-[#1A535C]/[0.06] transition-colors duration-150 active:scale-[0.99]"
+                    >
+                      <div className="w-7 h-7 rounded-[8px] flex items-center justify-center flex-shrink-0 bg-[#1A535C]/[0.08] text-[#1A535C]">
+                        <FolderPlus className="h-3.5 w-3.5" />
+                      </div>
+                      <span className="font-medium">Project aanmaken</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setActionsMenuOpen(false); onOpenContextPanel('taak') }}
+                      className="w-full flex items-center gap-3 px-3.5 py-2.5 text-[13px] text-[#1A1A1A] hover:bg-[#1A535C]/[0.06] transition-colors duration-150 active:scale-[0.99]"
+                    >
+                      <div className="w-7 h-7 rounded-[8px] flex items-center justify-center flex-shrink-0 bg-[#1A535C]/[0.08] text-[#1A535C]">
+                        <ListPlus className="h-3.5 w-3.5" />
+                      </div>
+                      <span className="font-medium">Taak aanmaken</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>

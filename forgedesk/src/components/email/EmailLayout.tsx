@@ -131,12 +131,28 @@ export function EmailLayout() {
   useEffect(() => {
     try { localStorage.setItem('doen_email_list_width', String(listWidth)) } catch { /* no-op */ }
   }, [listWidth])
+  // Default: sidebar verborgen. Acties (Klant/Project/Taak aanmaken) zijn
+  // bereikbaar via de drie-puntjes dropdown rechtsboven in de reader. Sidebar
+  // opent on-demand wanneer een actie wordt getriggerd of expliciet geopend.
+  // Migratie v2: vorige key 'doen_email_context_open' stond default op true;
+  // door nieuwe key te gebruiken start iedereen schoon op false.
   const [contextOpen, setContextOpen] = useState<boolean>(() => {
-    try { return localStorage.getItem('doen_email_context_open') !== 'false' } catch { return true }
+    try { return localStorage.getItem('doen_email_context_open_v2') === 'true' } catch { return false }
   })
   useEffect(() => {
-    try { localStorage.setItem('doen_email_context_open', String(contextOpen)) } catch { /* no-op */ }
+    try { localStorage.setItem('doen_email_context_open_v2', String(contextOpen)) } catch { /* no-op */ }
   }, [contextOpen])
+
+  // Acties-dropdown rechtsboven in reader: trigger om de context-sidebar te
+  // openen op een specifiek panel (Klant/Project/Taak aanmaken). Versie-counter
+  // forceert remount zodat herhaalde clicks hetzelfde panel opnieuw openen.
+  const [requestedPanel, setRequestedPanel] = useState<'klant' | 'project' | 'taak' | undefined>(undefined)
+  const [panelKey, setPanelKey] = useState(0)
+  const handleOpenContextPanel = useCallback((panel: 'klant' | 'project' | 'taak') => {
+    setRequestedPanel(panel)
+    setPanelKey(k => k + 1)
+    setContextOpen(true)
+  }, [])
   const handleListResizeStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
     const startX = e.clientX
@@ -1619,11 +1635,14 @@ export function EmailLayout() {
         />
       )}
       <div className="flex flex-1 min-h-0 overflow-hidden">
-      {/* Desktop folder-icon-sidebar — iOS-inspired: subtiel off-white, soft
-          continuous-corner squircles voor actieve buttons, hairline-divider,
-          haptic press-feedback. */}
-      <div className="hidden md:flex w-[60px] bg-[#FAFAF8] border-r border-black/[0.05] flex-col flex-shrink-0">
-        <nav className="flex-1 overflow-y-auto pt-3 pb-2 px-2 space-y-1">
+      {/* Desktop folder-icon-sidebar — iOS-inspired met subtiele petrol-infusie:
+          zachte verticale gradient, petrol-tinted hairlines, cooler grey iconen,
+          en hover-state in petrol ipv neutraal zwart. */}
+      <div className="hidden md:flex w-[60px] bg-gradient-to-b from-[#F4F7F7] via-[#F1F5F5] to-[#ECF1F2] border-r border-[#1A535C]/[0.08] flex-col flex-shrink-0 relative">
+        {/* Subtiele binnen-highlight aan de linkerkant — geeft diepte */}
+        <div className="absolute inset-y-0 left-0 w-px bg-white/40 pointer-events-none" aria-hidden />
+
+        <nav className="flex-1 overflow-y-auto pt-3 pb-2 px-2 space-y-1 relative">
           {folderTabs.map(folder => {
             const isActive = selectedFolder === folder.id
             const count = folderCounts[folder.id]
@@ -1637,17 +1656,17 @@ export function EmailLayout() {
                 className={cn(
                   'tap-press relative w-full h-11 flex items-center justify-center rounded-[12px] transition-all duration-200 active:scale-[0.94]',
                   isActive
-                    ? 'bg-[#1A535C] text-white shadow-[0_2px_8px_-2px_rgba(26,83,92,0.35),0_0_0_0.5px_rgba(255,255,255,0.04)_inset]'
-                    : 'text-[#9B9B95] hover:text-[#1A535C] hover:bg-black/[0.04]',
+                    ? 'bg-gradient-to-b from-[#1F606A] to-[#164850] text-white shadow-[0_3px_10px_-2px_rgba(26,83,92,0.45),0_0_0_0.5px_rgba(255,255,255,0.06)_inset,0_-1px_0_rgba(0,0,0,0.05)_inset]'
+                    : 'text-[#8FA0A4] hover:text-[#1A535C] hover:bg-[#1A535C]/[0.06]',
                 )}
               >
                 <Icon className="h-[19px] w-[19px]" strokeWidth={isActive ? 2.2 : 1.8} />
                 {showNewBadge && (
-                  <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-[#F15025] ring-2 ring-[#FAFAF8]" />
+                  <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-[#F15025] ring-2 ring-[#F1F5F5]" />
                 )}
                 {count > 0 && folder.id !== 'inbox' && !showNewBadge && (
                   <span className={cn(
-                    'absolute top-0.5 right-0.5 text-[10px] font-semibold tabular-nums min-w-[16px] h-[16px] px-1 rounded-full inline-flex items-center justify-center leading-none ring-2 ring-[#FAFAF8]',
+                    'absolute top-0.5 right-0.5 text-[10px] font-semibold tabular-nums min-w-[16px] h-[16px] px-1 rounded-full inline-flex items-center justify-center leading-none ring-2 ring-[#F1F5F5]',
                     isActive ? 'bg-white text-[#1A535C]' : 'bg-[#F15025] text-white',
                   )}>{count}</span>
                 )}
@@ -1655,7 +1674,7 @@ export function EmailLayout() {
             )
           })}
 
-          <div className="my-2 mx-3 h-px bg-black/[0.06]" aria-hidden />
+          <div className="my-2 mx-3 h-px bg-gradient-to-r from-transparent via-[#1A535C]/[0.12] to-transparent" aria-hidden />
 
           <button
             onClick={() => handleFolderChange('gepland')}
@@ -1663,16 +1682,16 @@ export function EmailLayout() {
             className={cn(
               'tap-press w-full h-11 flex items-center justify-center rounded-[12px] transition-all duration-200 active:scale-[0.94]',
               selectedFolder === 'gepland'
-                ? 'bg-[#1A535C] text-white shadow-[0_2px_8px_-2px_rgba(26,83,92,0.35),0_0_0_0.5px_rgba(255,255,255,0.04)_inset]'
-                : 'text-[#9B9B95] hover:text-[#1A535C] hover:bg-black/[0.04]',
+                ? 'bg-gradient-to-b from-[#1F606A] to-[#164850] text-white shadow-[0_3px_10px_-2px_rgba(26,83,92,0.45),0_0_0_0.5px_rgba(255,255,255,0.06)_inset,0_-1px_0_rgba(0,0,0,0.05)_inset]'
+                : 'text-[#8FA0A4] hover:text-[#1A535C] hover:bg-[#1A535C]/[0.06]',
             )}
           >
             <Clock className="h-[19px] w-[19px]" strokeWidth={selectedFolder === 'gepland' ? 2.2 : 1.8} />
           </button>
         </nav>
 
-        {/* Footer: Focus modus toggle */}
-        <div className="border-t border-black/[0.05] py-2 px-2 bg-gradient-to-b from-transparent to-black/[0.015]">
+        {/* Footer: Focus modus toggle — subtieler petrol-tinted divider */}
+        <div className="border-t border-[#1A535C]/[0.08] py-2 px-2 bg-gradient-to-b from-transparent to-[#1A535C]/[0.04]">
           <button
             type="button"
             role="switch"
@@ -1683,8 +1702,8 @@ export function EmailLayout() {
             className={cn(
               'tap-press w-full h-11 flex items-center justify-center rounded-[12px] transition-all duration-200 active:scale-[0.94]',
               focusModus
-                ? 'bg-[#1A1A1A] text-white shadow-[0_2px_8px_-2px_rgba(0,0,0,0.25)]'
-                : 'text-[#9B9B95] hover:text-[#1A1A1A] hover:bg-black/[0.04]',
+                ? 'bg-gradient-to-b from-[#2A2A2A] to-[#141414] text-white shadow-[0_3px_10px_-2px_rgba(0,0,0,0.30),0_0_0_0.5px_rgba(255,255,255,0.06)_inset]'
+                : 'text-[#8FA0A4] hover:text-[#1A1A1A] hover:bg-black/[0.05]',
             )}
           >
             <Moon className="h-[19px] w-[19px]" strokeWidth={focusModus ? 2.2 : 1.8} />
@@ -2148,6 +2167,7 @@ export function EmailLayout() {
               onNavigate={handleNavigate}
               onSendReply={handleSendReply}
               onSelectEmail={handleSelectEmail}
+              onOpenContextPanel={handleOpenContextPanel}
             />
           )
         })()}
@@ -2232,6 +2252,8 @@ export function EmailLayout() {
           Default open, klap dicht via knop in reader. */}
       {contextOpen && (viewMode === 'reading' || viewMode === 'composing') && (
         <EmailContextSidebar
+          key={panelKey}
+          initialActivePanel={requestedPanel}
           mode={viewMode === 'composing' ? 'compose' : 'reading'}
           composeToAddress={composeToAddress}
           composeReminder={composeReminder}

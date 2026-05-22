@@ -37,6 +37,10 @@ interface EmailContextSidebarProps {
   unreadCount?: number
   reminderCount?: number
   onClose?: () => void
+  // Initiële panel-keuze — gezet vanuit de dropdown rechtsboven in de reader
+  // zodat acties (Klant/Project/Taak aanmaken) zonder zichtbare sidebar
+  // bereikbaar zijn. Gebruik via `key` remount voor herhaalde triggers.
+  initialActivePanel?: 'none' | 'klant' | 'project' | 'taak'
 }
 
 // ── Inbox analysis types ──
@@ -93,6 +97,7 @@ export function EmailContextSidebar({
   unreadCount = 0,
   reminderCount = 0,
   onClose,
+  initialActivePanel,
 }: EmailContextSidebarProps) {
   const navigate = useNavigate()
   const { user } = useAuth()
@@ -110,7 +115,7 @@ export function EmailContextSidebar({
   const [offerteCount, setOfferteCount] = useState(0)
 
   // ── Panels ──
-  const [activePanel, setActivePanel] = useState<'none' | 'klant' | 'project' | 'taak'>('none')
+  const [activePanel, setActivePanel] = useState<'none' | 'klant' | 'project' | 'taak'>(initialActivePanel ?? 'none')
   const [saving, setSaving] = useState(false)
 
   // ── Forms ──
