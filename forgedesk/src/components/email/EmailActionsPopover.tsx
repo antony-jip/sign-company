@@ -1,17 +1,17 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import {
   MoreHorizontal, UserPlus, FolderPlus, ListPlus, Link2,
-  ArrowLeft, X, Loader2,
+  ArrowLeft, X, Loader2, Building2, Search,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
-import type { Email, Medewerker } from '@/types'
+import type { Email, Medewerker, Klant } from '@/types'
 import { useAuth } from '@/contexts/AuthContext'
-import { createKlant, createTaak, getMedewerkers } from '@/services/supabaseService'
+import { createKlant, createTaak, getMedewerkers, getKlanten, updateKlant } from '@/services/supabaseService'
 import { logCreate } from '@/utils/auditLogger'
 import { logger } from '@/utils/logger'
-import { extractSenderName, extractSenderEmail } from './emailHelpers'
+import { extractSenderName, extractSenderEmail, getAvatarStyle } from './emailHelpers'
 import { EmailProjectKoppelingPanel } from './EmailProjectKoppelingPanel'
 import { hapticLight } from '@/utils/haptic'
 
@@ -41,12 +41,30 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
 
   // Form state — auto-filled wanneer view opent
   const [klantForm, setKlantForm] = useState({ bedrijfsnaam: '', contactpersoon: '', email: '', telefoon: '' })
+  const [klantStep, setKlantStep] = useState<'search' | 'add-to-existing' | 'create-new'>('search')
+  const [klantSearch, setKlantSearch] = useState('')
+  const [addToKlant, setAddToKlant] = useState<Klant | null>(null)
+  const [allKlanten, setAllKlanten] = useState<Klant[]>([])
   const [taakForm, setTaakForm] = useState({ titel: '', deadline: '', toegewezen_aan: '' })
   const [medewerkers, setMedewerkers] = useState<Medewerker[]>([])
 
   useEffect(() => {
     getMedewerkers().then(m => setMedewerkers(m.filter(mw => mw.status === 'actief'))).catch(() => {})
+    getKlanten().then(setAllKlanten).catch(() => {})
   }, [])
+
+  // Klant-suggestions: filtered list, max 5, default top-5 wanneer query leeg.
+  // Zoekt automatisch ook op het afzender-domein zodat een nieuwe contactpersoon
+  // van een bestaande klant meteen matcht.
+  const klantSuggestions = useMemo(() => {
+    const q = (klantSearch || senderDomain).toLowerCase().trim()
+    if (!q) return allKlanten.slice(0, 5)
+    return allKlanten.filter(k =>
+      k.bedrijfsnaam?.toLowerCase().includes(q) ||
+      k.contactpersoon?.toLowerCase().includes(q) ||
+      k.email?.toLowerCase().includes(q)
+    ).slice(0, 5)
+  }, [klantSearch, allKlanten, senderDomain])
 
   // Reset bij sluiten
   useEffect(() => {
@@ -56,6 +74,9 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
   // Auto-fill bij wisselen naar form-view
   useEffect(() => {
     if (view === 'klant') {
+      setKlantStep('search')
+      setKlantSearch('')
+      setAddToKlant(null)
       setKlantForm({ bedrijfsnaam: guessedBedrijf, contactpersoon: senderName, email: senderEmail, telefoon: '' })
       setTimeout(() => klantInputRef.current?.focus(), 50)
     } else if (view === 'taak') {
@@ -86,6 +107,33 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
   }, [open, view])
+
+  const handleAddContactToExisting = useCallback(async () => {
+    if (!addToKlant || !klantForm.contactpersoon.trim()) {
+      toast.error('Naam is verplicht')
+      return
+    }
+    setSaving(true)
+    try {
+      const bestaande = addToKlant.contactpersonen || []
+      const nieuw = {
+        id: crypto.randomUUID(),
+        naam: klantForm.contactpersoon,
+        functie: '',
+        email: klantForm.email,
+        telefoon: klantForm.telefoon,
+        is_primair: false,
+      }
+      await updateKlant(addToKlant.id, { contactpersonen: [...bestaande, nieuw] })
+      toast.success(`${klantForm.contactpersoon} toegevoegd aan ${addToKlant.bedrijfsnaam || addToKlant.contactpersoon}`)
+      setOpen(false)
+    } catch (err) {
+      logger.error('Contact toevoegen mislukt:', err)
+      toast.error('Contact toevoegen mislukt')
+    } finally {
+      setSaving(false)
+    }
+  }, [addToKlant, klantForm])
 
   const handleSaveKlant = useCallback(async () => {
     if (!klantForm.contactpersoon.trim() || !klantForm.email.trim()) {
@@ -182,41 +230,129 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
             </div>
           ) : view === 'klant' ? (
             <FormFrame
-              title="Klant aanmaken"
-              onBack={() => setView('menu')}
+              title={klantStep === 'search' ? 'Klant koppelen' : klantStep === 'add-to-existing' ? `Contact toevoegen` : 'Nieuwe klant'}
+              onBack={() => {
+                if (klantStep === 'search') setView('menu')
+                else { setKlantStep('search'); setAddToKlant(null) }
+              }}
               onClose={() => setOpen(false)}
             >
-              <div className="space-y-2.5">
-                <div>
-                  <label className={labelCls}>Bedrijf</label>
-                  <input ref={klantInputRef} value={klantForm.bedrijfsnaam} onChange={e => setKlantForm(f => ({ ...f, bedrijfsnaam: e.target.value }))}
-                    className={inputCls} placeholder="Bedrijfsnaam" />
+              {klantStep === 'search' ? (
+                <div className="space-y-2.5">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#9B9B95] pointer-events-none" />
+                    <input
+                      ref={klantInputRef}
+                      value={klantSearch}
+                      onChange={e => setKlantSearch(e.target.value)}
+                      className={cn(inputCls, 'pl-9')}
+                      placeholder="Zoek bestaande klant…"
+                    />
+                  </div>
+
+                  <div className="space-y-0.5 max-h-[260px] overflow-y-auto -mx-1">
+                    {klantSuggestions.length > 0 ? klantSuggestions.map(k => {
+                      const style = getAvatarStyle(k.bedrijfsnaam || k.contactpersoon || '')
+                      const displayName = k.bedrijfsnaam || k.contactpersoon || '(zonder naam)'
+                      return (
+                        <button
+                          key={k.id}
+                          type="button"
+                          onClick={() => {
+                            setAddToKlant(k)
+                            setKlantForm(f => ({ ...f, contactpersoon: senderName, email: senderEmail, telefoon: '' }))
+                            setKlantStep('add-to-existing')
+                          }}
+                          className="w-full flex items-center gap-2.5 px-2 py-2 rounded-[8px] text-left hover:bg-[#F8F7F5] transition-colors duration-150 active:scale-[0.99]"
+                        >
+                          <div className="w-8 h-8 rounded-[8px] flex items-center justify-center flex-shrink-0 text-[12px] font-bold" style={{ background: style.bg, color: style.text }}>
+                            {displayName[0]?.toUpperCase()}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[12px] font-semibold text-[#1A1A1A] truncate">{displayName}</p>
+                            <p className="text-[11px] text-[#9B9B95] truncate">{k.email || k.contactpersoon}</p>
+                          </div>
+                          <UserPlus className="h-3.5 w-3.5 text-[#1A535C] flex-shrink-0" />
+                        </button>
+                      )
+                    }) : (
+                      <p className="text-[11px] text-[#9B9B95] px-3 py-3 text-center">Geen klanten gevonden</p>
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setKlantStep('create-new')}
+                    className="w-full flex items-center justify-center gap-1.5 py-2 rounded-[8px] text-[12px] font-medium text-[#1A535C] hover:bg-[#1A535C]/[0.06] transition-colors duration-150"
+                  >
+                    <UserPlus className="h-3 w-3" />
+                    Nieuwe klant aanmaken
+                  </button>
                 </div>
-                <div>
-                  <label className={labelCls}>Contactpersoon *</label>
-                  <input value={klantForm.contactpersoon} onChange={e => setKlantForm(f => ({ ...f, contactpersoon: e.target.value }))}
-                    className={inputCls} placeholder="Naam" />
+              ) : klantStep === 'add-to-existing' && addToKlant ? (
+                <div className="space-y-2.5">
+                  <div className="flex items-center gap-2 px-2.5 py-2 bg-[#1A535C]/[0.06] rounded-[8px]">
+                    <Building2 className="h-3.5 w-3.5 text-[#1A535C] flex-shrink-0" />
+                    <span className="text-[12px] font-semibold text-[#1A535C] truncate flex-1">{addToKlant.bedrijfsnaam || addToKlant.contactpersoon}</span>
+                  </div>
+                  <div>
+                    <label className={labelCls}>Naam contactpersoon *</label>
+                    <input value={klantForm.contactpersoon} onChange={e => setKlantForm(f => ({ ...f, contactpersoon: e.target.value }))}
+                      className={inputCls} placeholder="Naam" autoFocus />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Email</label>
+                    <input type="email" value={klantForm.email} onChange={e => setKlantForm(f => ({ ...f, email: e.target.value }))}
+                      className={inputCls} placeholder="email@bedrijf.nl" />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Telefoon</label>
+                    <input type="tel" value={klantForm.telefoon} onChange={e => setKlantForm(f => ({ ...f, telefoon: e.target.value }))}
+                      className={inputCls} placeholder="06…" />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAddContactToExisting}
+                    disabled={saving}
+                    className="tap-press w-full h-9 rounded-[10px] bg-[#1A535C] text-white text-[13px] font-semibold flex items-center justify-center gap-2 shadow-[0_2px_8px_rgba(26,83,92,0.25)] hover:shadow-[0_4px_12px_rgba(26,83,92,0.35)] hover:-translate-y-px active:translate-y-0 disabled:opacity-50 transition-all duration-150 mt-2"
+                  >
+                    {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+                    {saving ? 'Toevoegen…' : 'Contact toevoegen'}
+                  </button>
                 </div>
-                <div>
-                  <label className={labelCls}>Email *</label>
-                  <input type="email" value={klantForm.email} onChange={e => setKlantForm(f => ({ ...f, email: e.target.value }))}
-                    className={inputCls} placeholder="email@bedrijf.nl" />
+              ) : (
+                <div className="space-y-2.5">
+                  <div>
+                    <label className={labelCls}>Bedrijf</label>
+                    <input value={klantForm.bedrijfsnaam} onChange={e => setKlantForm(f => ({ ...f, bedrijfsnaam: e.target.value }))}
+                      className={inputCls} placeholder="Bedrijfsnaam" autoFocus />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Contactpersoon *</label>
+                    <input value={klantForm.contactpersoon} onChange={e => setKlantForm(f => ({ ...f, contactpersoon: e.target.value }))}
+                      className={inputCls} placeholder="Naam" />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Email *</label>
+                    <input type="email" value={klantForm.email} onChange={e => setKlantForm(f => ({ ...f, email: e.target.value }))}
+                      className={inputCls} placeholder="email@bedrijf.nl" />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Telefoon</label>
+                    <input type="tel" value={klantForm.telefoon} onChange={e => setKlantForm(f => ({ ...f, telefoon: e.target.value }))}
+                      className={inputCls} placeholder="06…" />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleSaveKlant}
+                    disabled={saving}
+                    className="tap-press w-full h-9 rounded-[10px] bg-[#1A535C] text-white text-[13px] font-semibold flex items-center justify-center gap-2 shadow-[0_2px_8px_rgba(26,83,92,0.25)] hover:shadow-[0_4px_12px_rgba(26,83,92,0.35)] hover:-translate-y-px active:translate-y-0 disabled:opacity-50 transition-all duration-150 mt-2"
+                  >
+                    {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+                    {saving ? 'Aanmaken…' : 'Klant aanmaken'}
+                  </button>
                 </div>
-                <div>
-                  <label className={labelCls}>Telefoon</label>
-                  <input type="tel" value={klantForm.telefoon} onChange={e => setKlantForm(f => ({ ...f, telefoon: e.target.value }))}
-                    className={inputCls} placeholder="06..." />
-                </div>
-                <button
-                  type="button"
-                  onClick={handleSaveKlant}
-                  disabled={saving}
-                  className="tap-press w-full h-9 rounded-[10px] bg-[#F15025] text-white text-[13px] font-semibold flex items-center justify-center gap-2 shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_12px_rgba(241,80,37,0.35)] hover:-translate-y-px active:translate-y-0 disabled:opacity-50 transition-all duration-150 mt-2"
-                >
-                  {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
-                  {saving ? 'Aanmaken…' : 'Klant aanmaken'}
-                </button>
-              </div>
+              )}
             </FormFrame>
           ) : view === 'taak' ? (
             <FormFrame
@@ -284,7 +420,7 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
                   type="button"
                   onClick={handleSaveTaak}
                   disabled={saving}
-                  className="tap-press w-full h-9 rounded-[10px] bg-[#F15025] text-white text-[13px] font-semibold flex items-center justify-center gap-2 shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_12px_rgba(241,80,37,0.35)] hover:-translate-y-px active:translate-y-0 disabled:opacity-50 transition-all duration-150 mt-2"
+                  className="tap-press w-full h-9 rounded-[10px] bg-[#1A535C] text-white text-[13px] font-semibold flex items-center justify-center gap-2 shadow-[0_2px_8px_rgba(26,83,92,0.25)] hover:shadow-[0_4px_12px_rgba(26,83,92,0.35)] hover:-translate-y-px active:translate-y-0 disabled:opacity-50 transition-all duration-150 mt-2"
                 >
                   {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
                   {saving ? 'Aanmaken…' : 'Taak aanmaken'}
