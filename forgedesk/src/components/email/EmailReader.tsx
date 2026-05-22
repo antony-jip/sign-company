@@ -1364,7 +1364,7 @@ export function EmailReader({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="tap-press h-10 w-10 md:h-8 md:w-8 text-[#9B9B95] hover:text-[#1A535C] hover:bg-[#1A535C]/[0.06] rounded-[10px] transition-colors duration-150"
+                  className="tap-press h-10 w-10 md:h-8 md:w-8 text-[#F15025] hover:text-[#C0451A] hover:bg-[#F15025]/[0.08] rounded-[10px] transition-colors duration-150"
                   onClick={() => setActionsMenuOpen(v => !v)}
                   title="Acties — klant, project of taak aanmaken vanuit deze mail"
                   aria-label="Acties"

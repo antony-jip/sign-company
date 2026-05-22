@@ -547,185 +547,181 @@ export function EmailContextSidebar({
   // ════════════════════════════════════════════
   function renderInlinePanel() {
     if (activePanel === 'none' || activePanel === 'project') return null
+    return renderInlinePanelContent(activePanel as 'klant' | 'taak')
+  }
 
-    const inputCls = "w-full px-3 py-2 text-[13px] bg-white rounded-lg outline-none border border-[#EBEBEB] focus:border-[#1A535C] transition-colors duration-150 placeholder:text-[#9B9B95]"
-
-    const configs = {
-      klant: {
-        title: klantSearchMode ? 'Contact koppelen' : 'Nieuw contact',
-        onSave: klantSearchMode ? undefined : handleSaveKlant,
-        content: klantSearchMode ? (
-          <>
-            <div className="relative">
-              <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#9B9B95]" />
-              <input
-                value={klantForm.bedrijfsnaam}
-                onChange={e => setKlantForm(f => ({ ...f, bedrijfsnaam: e.target.value }))}
-                className="w-full pl-9 pr-3 py-2 text-[13px] bg-white rounded-lg outline-none border border-[#EBEBEB] focus:border-[#1A535C] transition-colors duration-150 placeholder:text-[#9B9B95]"
-                placeholder="Zoek klant..."
-                autoFocus
-              />
-            </div>
-            {addToExistingKlant ? (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 p-2 bg-[#1A535C]/[0.04] rounded-lg">
-                  <Building2 className="h-3.5 w-3.5 text-[#1A535C]" />
-                  <span className="text-[12px] font-medium text-[#1A535C] truncate">{addToExistingKlant.bedrijfsnaam}</span>
-                  <button onClick={() => setAddToExistingKlant(null)} className="ml-auto text-[#9B9B95] hover:text-[#1A1A1A]"><X className="h-3 w-3" /></button>
-                </div>
-                <input value={klantForm.contactpersoon} onChange={e => setKlantForm(f => ({ ...f, contactpersoon: e.target.value }))}
-                  className={inputCls} placeholder="Naam contactpersoon *" autoFocus />
-                <input value={klantForm.email} onChange={e => setKlantForm(f => ({ ...f, email: e.target.value }))}
-                  className={inputCls} placeholder="Email" />
-                <input value={klantForm.telefoon} onChange={e => setKlantForm(f => ({ ...f, telefoon: e.target.value }))}
-                  className={inputCls} placeholder="Telefoon" />
-                <button onClick={handleAddContactToKlant} disabled={saving}
-                  className="w-full py-2 rounded-lg bg-[#1A535C] text-white text-[12px] font-medium disabled:opacity-50 hover:opacity-90 transition-opacity">
-                  {saving ? 'Toevoegen...' : 'Contactpersoon toevoegen'}
-                </button>
+  // Render alleen de content (form + save button) — gebruikt door Dialog
+  // wrappers zodat klant/taak als centered modals verschijnen ipv sidebar-panels.
+  function renderInlinePanelContent(panel: 'klant' | 'taak') {
+    if (panel === 'klant' || panel === 'taak') {
+      const inputCls = "w-full px-3 py-2 text-[13px] bg-white rounded-lg outline-none border border-[#EBEBEB] focus:border-[#1A535C] transition-colors duration-150 placeholder:text-[#9B9B95]"
+      const configs = {
+        klant: {
+          onSave: klantSearchMode ? undefined : handleSaveKlant,
+          content: klantSearchMode ? (
+            <>
+              <div className="relative">
+                <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#9B9B95]" />
+                <input
+                  value={klantForm.bedrijfsnaam}
+                  onChange={e => setKlantForm(f => ({ ...f, bedrijfsnaam: e.target.value }))}
+                  className="w-full pl-9 pr-3 py-2 text-[13px] bg-white rounded-lg outline-none border border-[#EBEBEB] focus:border-[#1A535C] transition-colors duration-150 placeholder:text-[#9B9B95]"
+                  placeholder="Zoek klant..."
+                  autoFocus
+                />
               </div>
-            ) : (
-              <>
-                <div className="space-y-0.5 max-h-[180px] overflow-y-auto -mx-1">
-                  {klantSuggestions.length > 0 ? klantSuggestions.map(k => {
-                    const style = getAvatarStyle(k.bedrijfsnaam || k.contactpersoon || '')
-                    return (
-                      <div key={k.id} className="flex items-center gap-1 px-1">
-                        <button
-                          onClick={() => handleSelectKlant(k)}
-                          className="flex-1 flex items-center gap-2.5 px-2 py-2 rounded-lg text-left hover:bg-white transition-colors duration-150"
-                        >
-                          <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 text-[11px] font-bold" style={{ background: style.bg, color: style.text }}>
-                            {(k.bedrijfsnaam || k.contactpersoon)?.[0]?.toUpperCase()}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-[12px] font-medium text-[#1A1A1A] truncate">{k.bedrijfsnaam || k.contactpersoon}</p>
-                            <p className="text-[11px] text-[#9B9B95] truncate">{k.email}</p>
-                          </div>
-                        </button>
-                        <button
-                          onClick={() => { setAddToExistingKlant(k); setKlantForm(f => ({ ...f, contactpersoon: personName, email: contactEmail })) }}
-                          className="p-1.5 rounded-lg hover:bg-[#E8F2EC] transition-colors flex-shrink-0"
-                          title={`Contactpersoon toevoegen aan ${k.bedrijfsnaam}`}
-                        >
-                          <UserPlus className="h-3.5 w-3.5 text-[#3A7D52]" />
-                        </button>
-                      </div>
-                    )
-                  }) : (
-                    <p className="text-[11px] text-[#9B9B95] px-3 py-2">Geen resultaten</p>
-                  )}
+              {addToExistingKlant ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 p-2 bg-[#1A535C]/[0.04] rounded-lg">
+                    <Building2 className="h-3.5 w-3.5 text-[#1A535C]" />
+                    <span className="text-[12px] font-medium text-[#1A535C] truncate">{addToExistingKlant.bedrijfsnaam}</span>
+                    <button onClick={() => setAddToExistingKlant(null)} className="ml-auto text-[#9B9B95] hover:text-[#1A1A1A]"><X className="h-3 w-3" /></button>
+                  </div>
+                  <input value={klantForm.contactpersoon} onChange={e => setKlantForm(f => ({ ...f, contactpersoon: e.target.value }))}
+                    className={inputCls} placeholder="Naam contactpersoon *" autoFocus />
+                  <input value={klantForm.email} onChange={e => setKlantForm(f => ({ ...f, email: e.target.value }))}
+                    className={inputCls} placeholder="Email" />
+                  <input value={klantForm.telefoon} onChange={e => setKlantForm(f => ({ ...f, telefoon: e.target.value }))}
+                    className={inputCls} placeholder="Telefoon" />
+                  <button onClick={handleAddContactToKlant} disabled={saving}
+                    className="w-full py-2 rounded-lg bg-[#1A535C] text-white text-[12px] font-medium disabled:opacity-50 hover:opacity-90 transition-opacity">
+                    {saving ? 'Toevoegen...' : 'Contactpersoon toevoegen'}
+                  </button>
                 </div>
-                <button
-                  onClick={() => setKlantSearchMode(false)}
-                  className="w-full flex items-center justify-center gap-1.5 py-2 text-[12px] text-[#F15025] hover:underline transition-colors duration-150"
-                >
-                  <UserPlus className="h-3 w-3" />
-                  Nieuw contact aanmaken
-                </button>
-              </>
-            )}
-          </>
-        ) : (
-          <>
-            <button
-              onClick={() => setKlantSearchMode(true)}
-              className="flex items-center gap-1 text-[11px] text-[#9B9B95] hover:text-[#1A1A1A] transition-colors duration-150 mb-1"
-            >
-              <ArrowLeft className="h-3 w-3" />
-              Terug naar zoeken
-            </button>
-            {([
-              { key: 'bedrijfsnaam' as const, placeholder: 'Bedrijfsnaam' },
-              { key: 'contactpersoon' as const, placeholder: 'Contactpersoon *' },
-              { key: 'email' as const, placeholder: 'Email *' },
-              { key: 'telefoon' as const, placeholder: 'Telefoon' },
-            ] as const).map(({ key, placeholder }) => (
-              <input key={key} value={klantForm[key]} onChange={e => setKlantForm(f => ({ ...f, [key]: e.target.value }))}
-                className={inputCls} placeholder={placeholder} />
-            ))}
-          </>
-        ),
-      },
-      taak: {
-        title: 'Taak toevoegen',
-        onSave: handleSaveTaak,
-        content: (
-          <>
-            <input value={taakForm.titel} onChange={e => setTaakForm(f => ({ ...f, titel: e.target.value }))}
-              className={inputCls} placeholder="Taak titel *" />
-            <textarea value={taakForm.beschrijving} onChange={e => setTaakForm(f => ({ ...f, beschrijving: e.target.value }))}
-              className={`${inputCls} resize-none h-16`} placeholder="Beschrijving" />
-            <div>
-              <label className="text-[10px] text-[#9B9B95] block mb-1">Inplannen op</label>
-              <input type="date" value={taakForm.deadline} onChange={e => setTaakForm(f => ({ ...f, deadline: e.target.value }))}
-                className={inputCls} />
-              <div className="flex gap-1.5 mt-1.5">
-                {[
-                  { label: 'Vandaag', days: 0 },
-                  { label: 'Morgen', days: 1 },
-                  { label: '+7d', days: 7 },
-                ].map(({ label, days }) => {
-                  const d = new Date(); d.setDate(d.getDate() + days)
-                  const val = d.toISOString().split('T')[0]
-                  return (
-                    <button key={days} type="button" onClick={() => setTaakForm(f => ({ ...f, deadline: val }))}
-                      className={`flex-1 py-1.5 rounded-lg text-[10px] font-medium transition-all ${taakForm.deadline === val ? 'bg-[#1A535C]/[0.08] text-[#1A535C]' : 'bg-[#F8F7F5] text-[#6B6B66] hover:bg-[#F0EFEC]'}`}
-                    >{label}</button>
-                  )
-                })}
-              </div>
-            </div>
-            {medewerkers.length > 0 && (
+              ) : (
+                <>
+                  <div className="space-y-0.5 max-h-[240px] overflow-y-auto -mx-1">
+                    {klantSuggestions.length > 0 ? klantSuggestions.map(k => {
+                      const style = getAvatarStyle(k.bedrijfsnaam || k.contactpersoon || '')
+                      return (
+                        <div key={k.id} className="flex items-center gap-1 px-1">
+                          <button
+                            onClick={() => handleSelectKlant(k)}
+                            className="flex-1 flex items-center gap-2.5 px-2 py-2 rounded-lg text-left hover:bg-[#F8F7F5] transition-colors duration-150"
+                          >
+                            <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 text-[11px] font-bold" style={{ background: style.bg, color: style.text }}>
+                              {(k.bedrijfsnaam || k.contactpersoon)?.[0]?.toUpperCase()}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-[12px] font-medium text-[#1A1A1A] truncate">{k.bedrijfsnaam || k.contactpersoon}</p>
+                              <p className="text-[11px] text-[#9B9B95] truncate">{k.email}</p>
+                            </div>
+                          </button>
+                          <button
+                            onClick={() => { setAddToExistingKlant(k); setKlantForm(f => ({ ...f, contactpersoon: personName, email: contactEmail })) }}
+                            className="p-1.5 rounded-lg hover:bg-[#E8F2EC] transition-colors flex-shrink-0"
+                            title={`Contactpersoon toevoegen aan ${k.bedrijfsnaam}`}
+                          >
+                            <UserPlus className="h-3.5 w-3.5 text-[#3A7D52]" />
+                          </button>
+                        </div>
+                      )
+                    }) : (
+                      <p className="text-[11px] text-[#9B9B95] px-3 py-2">Geen resultaten</p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => setKlantSearchMode(false)}
+                    className="w-full flex items-center justify-center gap-1.5 py-2 text-[12px] text-[#F15025] hover:underline transition-colors duration-150"
+                  >
+                    <UserPlus className="h-3 w-3" />
+                    Nieuw contact aanmaken
+                  </button>
+                </>
+              )}
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => setKlantSearchMode(true)}
+                className="flex items-center gap-1 text-[11px] text-[#9B9B95] hover:text-[#1A1A1A] transition-colors duration-150 mb-1"
+              >
+                <ArrowLeft className="h-3 w-3" />
+                Terug naar zoeken
+              </button>
+              {([
+                { key: 'bedrijfsnaam' as const, placeholder: 'Bedrijfsnaam' },
+                { key: 'contactpersoon' as const, placeholder: 'Contactpersoon *' },
+                { key: 'email' as const, placeholder: 'Email *' },
+                { key: 'telefoon' as const, placeholder: 'Telefoon' },
+              ] as const).map(({ key, placeholder }) => (
+                <input key={key} value={klantForm[key]} onChange={e => setKlantForm(f => ({ ...f, [key]: e.target.value }))}
+                  className={inputCls} placeholder={placeholder} />
+              ))}
+            </>
+          ),
+        },
+        taak: {
+          onSave: handleSaveTaak,
+          content: (
+            <>
+              <input value={taakForm.titel} onChange={e => setTaakForm(f => ({ ...f, titel: e.target.value }))}
+                className={inputCls} placeholder="Taak titel *" autoFocus />
+              <textarea value={taakForm.beschrijving} onChange={e => setTaakForm(f => ({ ...f, beschrijving: e.target.value }))}
+                className={`${inputCls} resize-none h-16`} placeholder="Beschrijving" />
               <div>
-                <label className="text-[10px] text-[#9B9B95] block mb-1">Toewijzen aan</label>
-                <div className="flex flex-wrap gap-1.5">
-                  {medewerkers.map((mw) => {
-                    const selected = taakForm.toegewezen_aan === mw.naam
-                    const c = mw.naam.charCodeAt(0) % 5
-                    const colors = ['bg-[#E8F2EC] text-[#3A7D52]', 'bg-[#E8EEF9] text-[#3A5A9A]', 'bg-[#F5F2E8] text-[#8A7A4A]', 'bg-[#F0EFEC] text-[#6B6B66]', 'bg-[#EDE8F4] text-[#6A5A8A]']
+                <label className="text-[10px] text-[#9B9B95] block mb-1">Inplannen op</label>
+                <input type="date" value={taakForm.deadline} onChange={e => setTaakForm(f => ({ ...f, deadline: e.target.value }))}
+                  className={inputCls} />
+                <div className="flex gap-1.5 mt-1.5">
+                  {[
+                    { label: 'Vandaag', days: 0 },
+                    { label: 'Morgen', days: 1 },
+                    { label: '+7d', days: 7 },
+                  ].map(({ label, days }) => {
+                    const d = new Date(); d.setDate(d.getDate() + days)
+                    const val = d.toISOString().split('T')[0]
                     return (
-                      <button
-                        key={mw.id}
-                        type="button"
-                        onClick={() => setTaakForm(f => ({ ...f, toegewezen_aan: selected ? '' : mw.naam }))}
-                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium transition-all border ${selected ? 'border-[#1A535C] bg-[#1A535C]/[0.08] text-[#1A535C]' : 'border-transparent bg-[#F8F7F5] text-[#6B6B66] hover:bg-[#F0EFEC]'}`}
-                      >
-                        <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold uppercase ${colors[c]}`}>
-                          {mw.naam.charAt(0)}
-                        </span>
-                        {mw.naam.split(' ')[0]}
-                      </button>
+                      <button key={days} type="button" onClick={() => setTaakForm(f => ({ ...f, deadline: val }))}
+                        className={`flex-1 py-1.5 rounded-lg text-[10px] font-medium transition-all ${taakForm.deadline === val ? 'bg-[#1A535C]/[0.08] text-[#1A535C]' : 'bg-[#F8F7F5] text-[#6B6B66] hover:bg-[#F0EFEC]'}`}
+                      >{label}</button>
                     )
                   })}
                 </div>
               </div>
-            )}
-          </>
-        ),
-      },
-    }
-
-    const cfg = configs[activePanel as 'klant' | 'taak']
-    return (
-      <div className="bg-white rounded-xl p-4" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-[11px] uppercase tracking-wider text-[#9B9B95] font-medium">{cfg.title}</h3>
-          <button onClick={() => setActivePanel('none')} className="text-[#9B9B95] hover:text-[#1A1A1A] transition-colors duration-150 p-0.5">
-            <X className="h-3.5 w-3.5" />
-          </button>
-        </div>
-        <div className="space-y-2">
+              {medewerkers.length > 0 && (
+                <div>
+                  <label className="text-[10px] text-[#9B9B95] block mb-1">Toewijzen aan</label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {medewerkers.map((mw) => {
+                      const selected = taakForm.toegewezen_aan === mw.naam
+                      const c = mw.naam.charCodeAt(0) % 5
+                      const colors = ['bg-[#E8F2EC] text-[#3A7D52]', 'bg-[#E8EEF9] text-[#3A5A9A]', 'bg-[#F5F2E8] text-[#8A7A4A]', 'bg-[#F0EFEC] text-[#6B6B66]', 'bg-[#EDE8F4] text-[#6A5A8A]']
+                      return (
+                        <button
+                          key={mw.id}
+                          type="button"
+                          onClick={() => setTaakForm(f => ({ ...f, toegewezen_aan: selected ? '' : mw.naam }))}
+                          className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium transition-all border ${selected ? 'border-[#1A535C] bg-[#1A535C]/[0.08] text-[#1A535C]' : 'border-transparent bg-[#F8F7F5] text-[#6B6B66] hover:bg-[#F0EFEC]'}`}
+                        >
+                          <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold uppercase ${colors[c]}`}>
+                            {mw.naam.charAt(0)}
+                          </span>
+                          {mw.naam.split(' ')[0]}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </>
+          ),
+        },
+      }
+      const cfg = configs[panel]
+      return (
+        <>
           {cfg.content}
           {cfg.onSave && (
             <button onClick={cfg.onSave} disabled={saving}
-              className="w-full py-2 rounded-lg bg-[#1A535C] text-white text-[12px] font-medium disabled:opacity-50 hover:opacity-90 transition-opacity mt-1">
+              className="w-full py-2.5 rounded-lg bg-[#1A535C] text-white text-[13px] font-semibold disabled:opacity-50 hover:opacity-90 transition-opacity mt-2">
               {saving ? 'Opslaan...' : 'Opslaan'}
             </button>
           )}
-        </div>
-      </div>
-    )
+        </>
+      )
+    }
+    return null
   }
 
   // ════════════════════════════════════════════
@@ -895,8 +891,37 @@ export function EmailContextSidebar({
           </div>
         )}
 
-        {/* ── INLINE PANEL ── */}
-        {activePanel !== 'none' && renderInlinePanel()}
+        {/* ── KLANT MODAL ── */}
+        <Dialog open={activePanel === 'klant'} onOpenChange={(open) => !open && setActivePanel('none')} modal={false}>
+          <DialogContent className="max-w-md bg-white rounded-2xl p-0">
+            <div className="px-6 pt-6 pb-5">
+              <DialogHeader className="mb-4">
+                <DialogTitle className="text-[20px] font-bold tracking-tight text-[#1A1A1A]">
+                  {klantSearchMode ? <>Contact koppelen<span className="text-[#F15025]">.</span></> : <>Nieuw contact<span className="text-[#F15025]">.</span></>}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-2">
+                {activePanel === 'klant' && renderInlinePanelContent('klant')}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* ── TAAK MODAL ── */}
+        <Dialog open={activePanel === 'taak'} onOpenChange={(open) => !open && setActivePanel('none')} modal={false}>
+          <DialogContent className="max-w-md bg-white rounded-2xl p-0">
+            <div className="px-6 pt-6 pb-5">
+              <DialogHeader className="mb-4">
+                <DialogTitle className="text-[20px] font-bold tracking-tight text-[#1A1A1A]">
+                  Nieuwe taak<span className="text-[#F15025]">.</span>
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-2">
+                {activePanel === 'taak' && renderInlinePanelContent('taak')}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* ── PROJECT MODAL ── */}
         <Dialog open={activePanel === 'project'} onOpenChange={(open) => !open && setActivePanel('none')} modal={false}>

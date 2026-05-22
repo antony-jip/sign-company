@@ -2257,41 +2257,31 @@ export function EmailLayout() {
       {/* Right context sidebar — opent via toggle-knop in email-header.
           Bevat klant-koppeling, project-aanmaken, taak-aanmaken, etc.
           Default open, klap dicht via knop in reader. */}
-      {/* Drawer-overlay: sidebar verschijnt rechts als pop-up wanneer een
-          dropdown-actie wordt geklikt. Backdrop klik sluit 'm. Geen chevron
-          toggle meer — sidebar is puur on-demand. */}
+      {/* EmailContextSidebar wordt onzichtbaar gemount (display:none) wanneer
+          een dropdown-actie wordt geklikt. De Dialogs binnenin (Klant/Project/
+          Taak) gebruiken Radix Portal en renderen dus visible bovenop alles —
+          de sidebar zelf hoeft niet zichtbaar te zijn. */}
       {contextOpen && (viewMode === 'reading' || viewMode === 'composing') && (
-        <>
-          <div
-            className="fixed inset-0 z-40 bg-black/25 backdrop-blur-sm animate-in fade-in duration-150"
-            onClick={() => setContextOpen(false)}
-            aria-hidden
+        <div className="hidden" aria-hidden>
+          <EmailContextSidebar
+            key={panelKey}
+            initialActivePanel={requestedPanel}
+            mode={viewMode === 'composing' ? 'compose' : 'reading'}
+            composeToAddress={composeToAddress}
+            composeReminder={composeReminder}
+            onComposeReminderChange={setComposeReminder}
+            composeProjectId={composeProjectId}
+            onComposeProjectChange={setComposeProjectId}
+            allEmails={emails}
+            email={selectedEmail}
+            senderName={readerSenderName}
+            senderEmail={readerSenderEmail}
+            onSelectEmail={handleSelectEmail}
+            onCompose={() => handleCompose()}
+            unreadCount={emails.filter(e => !e.gelezen).length}
+            onClose={() => setContextOpen(false)}
           />
-          <div
-            className="fixed top-0 right-0 bottom-0 z-50 shadow-[0_0_40px_-8px_rgba(0,0,0,0.25)] animate-in slide-in-from-right duration-200"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <EmailContextSidebar
-              key={panelKey}
-              floating
-              initialActivePanel={requestedPanel}
-              mode={viewMode === 'composing' ? 'compose' : 'reading'}
-              composeToAddress={composeToAddress}
-              composeReminder={composeReminder}
-              onComposeReminderChange={setComposeReminder}
-              composeProjectId={composeProjectId}
-              onComposeProjectChange={setComposeProjectId}
-              allEmails={emails}
-              email={selectedEmail}
-              senderName={readerSenderName}
-              senderEmail={readerSenderEmail}
-              onSelectEmail={handleSelectEmail}
-              onCompose={() => handleCompose()}
-              unreadCount={emails.filter(e => !e.gelezen).length}
-              onClose={() => setContextOpen(false)}
-            />
-          </div>
-        </>
+        </div>
       )}
       </div>
       </>
