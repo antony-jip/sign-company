@@ -7,8 +7,9 @@ import {
   ChevronUp, ChevronDown, Reply, ReplyAll, Forward,
   Paperclip, Send, Bold, Italic, Underline,
   List, ListOrdered, Link2, Sparkles, Loader2, Download,
-  Undo2, Redo2, X, Clock, Tag, UserPlus, FolderPlus, ListPlus, MoreHorizontal,
+  Undo2, Redo2, X, Clock, Tag,
 } from 'lucide-react'
+import { EmailActionsPopover } from './EmailActionsPopover'
 import { cn } from '@/lib/utils'
 import type { Email, EmailAttachment } from '@/types'
 import { extractSenderName, extractSenderEmail, formatShortDate, getAvatarColor, getAvatarRingColor, getAvatarStyle, SNOOZE_OPTIONS, labelColors } from './emailHelpers'
@@ -1356,68 +1357,13 @@ export function EmailReader({
               </span>
             )}
 
-            {/* Acties-dropdown: snelle entry naar Klant/Project/Taak aanmaken
-                zonder dat de zware context-sidebar permanent ruimte hoeft. */}
+            {/* Acties-popover: Klant/Taak/Koppel renderen inline (morph),
+                Project blijft Dialog via onOpenContextPanel callback. */}
             {onOpenContextPanel && (
-              <div ref={actionsMenuRef} className="relative">
-                <div className="w-px h-5 bg-[#EBEBEB] mx-2 hidden md:inline-block" />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="tap-press h-10 w-10 md:h-8 md:w-8 text-[#F15025] hover:text-[#C0451A] hover:bg-[#F15025]/[0.08] rounded-[10px] transition-colors duration-150"
-                  onClick={() => setActionsMenuOpen(v => !v)}
-                  title="Acties — klant, project of taak aanmaken vanuit deze mail"
-                  aria-label="Acties"
-                >
-                  <MoreHorizontal className="h-[18px] w-[18px] md:h-4 md:w-4" />
-                </Button>
-                {actionsMenuOpen && (
-                  <div className="absolute top-full right-0 mt-1.5 min-w-[220px] bg-white/95 backdrop-blur-xl rounded-[12px] shadow-[0_8px_32px_-8px_rgba(0,0,0,0.16),0_0_0_0.5px_rgba(0,0,0,0.06)] py-1.5 z-50 overflow-hidden">
-                    <p className="px-3.5 pt-1.5 pb-1 text-[10px] uppercase tracking-[0.08em] text-[#9B9B95] font-semibold">Acties</p>
-                    <button
-                      type="button"
-                      onClick={() => { setActionsMenuOpen(false); onOpenContextPanel('klant') }}
-                      className="w-full flex items-center gap-3 px-3.5 py-2.5 text-[13px] text-[#1A1A1A] hover:bg-[#1A535C]/[0.06] transition-colors duration-150 active:scale-[0.99]"
-                    >
-                      <div className="w-7 h-7 rounded-[8px] flex items-center justify-center flex-shrink-0 bg-[#1A535C]/[0.08] text-[#1A535C]">
-                        <UserPlus className="h-3.5 w-3.5" />
-                      </div>
-                      <span className="font-medium">Klant aanmaken</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => { setActionsMenuOpen(false); onOpenContextPanel('project') }}
-                      className="w-full flex items-center gap-3 px-3.5 py-2.5 text-[13px] text-[#1A1A1A] hover:bg-[#1A535C]/[0.06] transition-colors duration-150 active:scale-[0.99]"
-                    >
-                      <div className="w-7 h-7 rounded-[8px] flex items-center justify-center flex-shrink-0 bg-[#1A535C]/[0.08] text-[#1A535C]">
-                        <FolderPlus className="h-3.5 w-3.5" />
-                      </div>
-                      <span className="font-medium">Project aanmaken</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => { setActionsMenuOpen(false); onOpenContextPanel('taak') }}
-                      className="w-full flex items-center gap-3 px-3.5 py-2.5 text-[13px] text-[#1A1A1A] hover:bg-[#1A535C]/[0.06] transition-colors duration-150 active:scale-[0.99]"
-                    >
-                      <div className="w-7 h-7 rounded-[8px] flex items-center justify-center flex-shrink-0 bg-[#1A535C]/[0.08] text-[#1A535C]">
-                        <ListPlus className="h-3.5 w-3.5" />
-                      </div>
-                      <span className="font-medium">Taak aanmaken</span>
-                    </button>
-                    <div className="my-1 mx-3.5 h-px bg-black/[0.06]" aria-hidden />
-                    <button
-                      type="button"
-                      onClick={() => { setActionsMenuOpen(false); onOpenContextPanel('koppel') }}
-                      className="w-full flex items-center gap-3 px-3.5 py-2.5 text-[13px] text-[#1A1A1A] hover:bg-[#1A535C]/[0.06] transition-colors duration-150 active:scale-[0.99]"
-                    >
-                      <div className="w-7 h-7 rounded-[8px] flex items-center justify-center flex-shrink-0 bg-[#1A535C]/[0.08] text-[#1A535C]">
-                        <Link2 className="h-3.5 w-3.5" />
-                      </div>
-                      <span className="font-medium">Aan project koppelen</span>
-                    </button>
-                  </div>
-                )}
-              </div>
+              <EmailActionsPopover
+                email={email}
+                onOpenProjectDialog={() => onOpenContextPanel('project')}
+              />
             )}
           </div>
         </div>
