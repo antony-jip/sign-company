@@ -141,6 +141,20 @@
     --prio-laag-border: #B0ADA8;
     --prio-laag-text: #6B6B66;
 
+    /* Status-badge tints — light pastels */
+    --status-flame-bg: #FDE8E2;
+    --status-flame-text: #C0451A;
+    --status-green-bg: #E8F2EC;
+    --status-green-text: #3A7D52;
+    --status-blue-bg: #E8EEF9;
+    --status-blue-text: #3A5A9A;
+    --status-violet-bg: #EDE8F4;
+    --status-violet-text: #6A5A8A;
+    --status-amber-bg: #F5F2E8;
+    --status-amber-text: #8A6A2A;
+    --status-neutral-bg: #F0EFEC;
+    --status-neutral-text: #6B6B66;
+
     /* Module accenten */
     --m-klant: #3A6B8C;
     --m-portaal: #6A5A8A;
@@ -184,8 +198,8 @@
     --muted-foreground: 190 12% 72%;     /* #A8BCBF — beter leesbaar in dark */
     --accent: 14 88% 55%;                /* Flame */
     --accent-foreground: 0 0% 100%;
-    --border: 190 25% 16%;               /* #1F343A petrol-hairline */
-    --input: 190 25% 16%;
+    --border: 190 25% 20%;               /* iets lichter petrol-hairline voor card-separation */
+    --input: 190 25% 18%;
     --destructive: 0 72% 55%;
     --destructive-foreground: 0 0% 100%;
     --popover: 190 30% 8%;
@@ -210,6 +224,20 @@
     --prio-laag-bg: rgba(176, 173, 168, 0.12);
     --prio-laag-border: #6A6D70;
     --prio-laag-text: #A8AAAC;
+
+    /* Status-badge dark — gedimde tints */
+    --status-flame-bg: rgba(241, 80, 37, 0.16);
+    --status-flame-text: #FF8866;
+    --status-green-bg: rgba(58, 125, 82, 0.16);
+    --status-green-text: #66BC85;
+    --status-blue-bg: rgba(74, 122, 199, 0.18);
+    --status-blue-text: #7FA8E6;
+    --status-violet-bg: rgba(106, 90, 138, 0.20);
+    --status-violet-text: #B098D0;
+    --status-amber-bg: rgba(196, 154, 48, 0.15);
+    --status-amber-text: #D4B566;
+    --status-neutral-bg: rgba(176, 173, 168, 0.12);
+    --status-neutral-text: #A8AAAC;
     --bg-hover: 190 25% 14%;
     --bg-subtle: 190 35% 5%;
 
@@ -246,6 +274,61 @@
   }
   html {
     font-size: var(--font-size);
+  }
+
+  /* Smooth theme transitie — body/cards/borders zachte fade tussen light/dark.
+     200ms voelt "premium", korter zou flikkerend voelen, langer voelt sluggish. */
+  body, .doen-slate-surface, [data-theme-transition] {
+    transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease;
+  }
+
+  /* Dark-mode scrollbar — petrol-tint ipv generieke grijs */
+  .dark ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  .dark ::-webkit-scrollbar-track {
+    background: hsl(190 35% 7%);
+  }
+  .dark ::-webkit-scrollbar-thumb {
+    background: hsl(190 25% 18%);
+    border-radius: 5px;
+    border: 2px solid hsl(190 35% 7%);
+  }
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background: hsl(190 30% 25%);
+  }
+
+  /* Focus ring zichtbaarder in dark — petrol-glow ipv standaard */
+  .dark *:focus-visible {
+    outline-color: hsl(187 56% 50%);
+  }
+
+  /* Primary CTA "lift" — flame/petrol buttons krijgen subtiele glow in dark */
+  .dark button[class*="bg-[#F15025]"]:not(:disabled):hover,
+  .dark a[class*="bg-[#F15025]"]:hover {
+    box-shadow: 0 4px 16px -2px rgba(241, 80, 37, 0.35), 0 0 24px -4px rgba(241, 80, 37, 0.18);
+  }
+  .dark button[class*="bg-[#1A535C]"]:not(:disabled):hover,
+  .dark a[class*="bg-[#1A535C]"]:hover {
+    box-shadow: 0 4px 16px -2px rgba(26, 83, 92, 0.40), 0 0 24px -4px rgba(95, 181, 192, 0.15);
+  }
+
+  /* PDF/print altijd light — klant ontvangt PDF, mag nooit donker */
+  @media print {
+    :root, .dark {
+      --background: 0 0% 100%;
+      --foreground: 0 0% 8%;
+      --card: 0 0% 100%;
+      --card-foreground: 0 0% 8%;
+      --muted: 0 0% 96%;
+      --muted-foreground: 0 0% 40%;
+      --border: 0 0% 88%;
+    }
+    body, .dark body {
+      background: white !important;
+      color: black !important;
+    }
   }
 
   body {
@@ -2721,6 +2804,14 @@ button, a, [role="button"], summary, label, input[type="checkbox"], input[type="
   background-size: 200% 100%;
   animation: skeleton-shimmer 1.5s ease-in-out infinite;
   border-radius: 8px;
+}
+
+.dark .skeleton-warm {
+  background: linear-gradient(90deg,
+    hsl(190 30% 14%) 25%,
+    hsl(190 35% 19%) 37%,
+    hsl(190 30% 14%) 63%);
+  background-size: 200% 100%;
 }
 
 /* Spectrum loading bar */

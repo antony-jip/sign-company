@@ -144,7 +144,7 @@ export function OfferteOpvolgTimeline({ offerteId, verstuurdOp, schemaId: _schem
                 ) : (
                   <span className={cn(
                     'flex h-3.5 w-3.5 items-center justify-center rounded-full border-2',
-                    isPast && actief ? 'border-[#F15025] bg-[#FDE8E2]' : 'border-border bg-background'
+                    isPast && actief ? 'border-[#F15025] bg-[hsl(var(--status-flame-bg))]' : 'border-border bg-background'
                   )} />
                 )}
               </div>

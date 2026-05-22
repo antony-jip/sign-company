@@ -1284,7 +1284,7 @@ export function ProjectDetail() {
                 <div className="space-y-1">
                   {verzonden.slice(0, 5).map((o) => (
                     <div key={`email-${o.id}`} className="flex items-center gap-3 text-[12.5px] px-2 py-2 rounded-lg hover:bg-card/60 transition-colors">
-                      <div className="w-8 h-8 rounded-lg bg-[#E8EEF9] border border-[#3A5A9A]/20 flex items-center justify-center flex-shrink-0">
+                      <div className="w-8 h-8 rounded-lg bg-[hsl(var(--status-blue-bg))] border border-[#3A5A9A]/20 flex items-center justify-center flex-shrink-0">
                         <Send className="h-3 w-3 text-[#3A5A9A]" />
                       </div>
                       <div className="min-w-0 flex-1">
@@ -1682,7 +1682,7 @@ export function ProjectDetail() {
                                 toast.error('Kon offerte niet verwijderen')
                               }
                             }}
-                            className="ml-auto inline-flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground/70 hover:bg-[#FDE8E4] hover:text-[#C03A18] transition-colors"
+                            className="ml-auto inline-flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground/70 hover:bg-[hsl(var(--status-flame-bg))] hover:text-[#C03A18] transition-colors"
                             title={`Offerte ${offerte.nummer} verwijderen`}
                             aria-label={`Offerte ${offerte.nummer} verwijderen`}
                           >
@@ -2097,11 +2097,11 @@ export function ProjectDetail() {
                   const selected = nieuweTaakToegewezen === mw.naam
                   const c = mw.naam.charCodeAt(0) % 5
                   const colors = [
-                    'bg-[#E8F2EC] text-[#3A7D52]',
-                    'bg-[#E8EEF9] text-[#3A5A9A]',
-                    'bg-[#F5F2E8] text-[#8A7A4A]',
+                    'bg-[hsl(var(--status-green-bg))] text-[#3A7D52]',
+                    'bg-[hsl(var(--status-blue-bg))] text-[#3A5A9A]',
+                    'bg-[hsl(var(--status-amber-bg))] text-[#8A7A4A]',
                     'bg-muted text-foreground/70',
-                    'bg-[#EDE8F4] text-[#6A5A8A]',
+                    'bg-[hsl(var(--status-violet-bg))] text-[#6A5A8A]',
                   ]
                   return (
                     <button

@@ -1681,7 +1681,7 @@ export function MontagePlanningLayout() {
                 key={dateStr}
                 className={cn(
                   "group relative text-center py-1.5 border-r last:border-r-0 border-border",
-                  feestdagInfo ? "bg-[#FDE8E2]/40" : isToday ? "bg-[#1A535C]/[0.04]" : "bg-white",
+                  feestdagInfo ? "bg-[hsl(var(--status-flame-bg))]/40" : isToday ? "bg-[#1A535C]/[0.04]" : "bg-white",
                   isToday && "border-t-2 border-t-[#F15025]"
                 )}
               >
@@ -1826,7 +1826,7 @@ export function MontagePlanningLayout() {
                 key={dateStr}
                 className={cn(
                   "relative border-r last:border-r-0 border-border transition-colors",
-                  feestdagInfo ? "bg-[#FDE8E2]/20" : isToday ? "bg-[#1A535C]/[0.02]" : "bg-white",
+                  feestdagInfo ? "bg-[hsl(var(--status-flame-bg))]/20" : isToday ? "bg-[#1A535C]/[0.02]" : "bg-white",
                   !feestdagInfo && dragOverDate === dateStr && "bg-[#1A535C]/[0.08] ring-2 ring-[#1A535C]/25 ring-inset",
                   feestdagInfo && dragOverDate === dateStr && "ring-2 ring-[#C03A18]/30 ring-inset"
                 )}
@@ -2080,7 +2080,7 @@ export function MontagePlanningLayout() {
                   "group relative border-b border-r border-border p-1.5 min-h-[96px] flex flex-col gap-0.5 transition-colors",
                   !isCurrentMonth && "bg-background/40",
                   isCurrentMonth && isWeekend && "bg-background/60",
-                  feestdagInfo && "bg-[#FDE8E2]/40",
+                  feestdagInfo && "bg-[hsl(var(--status-flame-bg))]/40",
                   isToday && "bg-[#1A535C]/[0.04] border-t-2 border-t-[#F15025]",
                   isTaakDragOver && "bg-[#1A535C]/[0.08] ring-2 ring-[#1A535C]/30 ring-inset"
                 )}
@@ -2292,7 +2292,7 @@ export function MontagePlanningLayout() {
                 key={dateStr}
                 className={cn(
                   "group relative text-center py-1.5 border-l border-border",
-                  feestdagInfo ? "bg-[#FDE8E2]/40" : isToday ? "bg-[#1A535C]/[0.04]" : "bg-white",
+                  feestdagInfo ? "bg-[hsl(var(--status-flame-bg))]/40" : isToday ? "bg-[#1A535C]/[0.04]" : "bg-white",
                   isToday && "border-t-2 border-t-[#F15025]"
                 )}
               >
@@ -2509,7 +2509,7 @@ export function MontagePlanningLayout() {
                       className={cn(
                         "border-l border-border transition-all duration-200",
                         isCollapsed ? "min-h-[30px]" : "p-1 min-h-[60px]",
-                        feestdagInfo ? "bg-[#FDE8E2]/15" : isToday && "bg-[#1A535C]/[0.02]",
+                        feestdagInfo ? "bg-[hsl(var(--status-flame-bg))]/15" : isToday && "bg-[#1A535C]/[0.02]",
                         !feestdagInfo && !isCollapsed && dragOverDate !== dragKey && "hover:bg-[#1A535C]/[0.03]",
                         !feestdagInfo && dragOverDate === dragKey && "bg-[#1A535C]/[0.08] ring-2 ring-[#1A535C]/25 ring-inset",
                         feestdagInfo && dragOverDate === dragKey && "ring-2 ring-[#C03A18]/30 ring-inset"
@@ -2555,7 +2555,7 @@ export function MontagePlanningLayout() {
             const unassignedHasConflict = unassigned.some((a) => conflictAfspraakIds.has(a.id));
             return (
               <div
-                className="grid border-b border-border bg-[#FDE8E2]/20"
+                className="grid border-b border-border bg-[hsl(var(--status-flame-bg))]/20"
                 style={{ gridTemplateColumns: '140px repeat(5, 1fr)' }}
               >
                 <div className={cn(
@@ -2708,7 +2708,7 @@ export function MontagePlanningLayout() {
                   asInput
                 />
                 {formData.datum && isFeestdag(formData.datum, feestdagen) && (
-                  <div className="flex items-center gap-1.5 text-[12px] text-[#C03A18] font-medium bg-[#FDE8E2] rounded-lg px-2.5 py-1.5 mt-1">
+                  <div className="flex items-center gap-1.5 text-[12px] text-[#C03A18] font-medium bg-[hsl(var(--status-flame-bg))] rounded-lg px-2.5 py-1.5 mt-1">
                     <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
                     Let op: {isFeestdag(formData.datum, feestdagen)!.naam}
                   </div>
@@ -2796,7 +2796,7 @@ export function MontagePlanningLayout() {
                 });
                 if (formConflicts.length === 0) return null;
                 return (
-                  <div className="mt-2 rounded-lg border border-[#F0C8BC] bg-[#FDE8E2]/60 p-3">
+                  <div className="mt-2 rounded-lg border border-[#F0C8BC] bg-[hsl(var(--status-flame-bg))]/60 p-3">
                     <div className="flex items-center gap-1.5 text-[12px] font-semibold text-[#C03A18] mb-1">
                       <AlertTriangle className="h-3.5 w-3.5" />
                       Overlap gedetecteerd
@@ -3290,7 +3290,7 @@ export function MontagePlanningLayout() {
         </div>
         {/* Conflict banner */}
         {conflicts.length > 0 && (
-          <div className="bg-[#FDE8E2] border-b border-[#F0C8BC] px-4 py-2 flex items-center gap-2">
+          <div className="bg-[hsl(var(--status-flame-bg))] border-b border-[#F0C8BC] px-4 py-2 flex items-center gap-2">
             <AlertTriangle className="h-3.5 w-3.5 text-[#C03A18] shrink-0" />
             <span className="text-xs text-[#C03A18]">
               <span className="font-semibold">{conflicts.length} overlap{conflicts.length !== 1 ? "s" : ""}</span>

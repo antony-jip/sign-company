@@ -1115,7 +1115,7 @@ export function HuisstijlTab({ lockedSubTab }: HuisstijlTabProps = {}) {
                       <button onClick={() => briefpapierInputRef.current?.click()} disabled={uploadingBriefpapier} className="px-3 py-1.5 text-xs font-medium bg-white rounded-md shadow-sm hover:bg-background transition-colors">
                         {uploadingBriefpapier ? 'Uploaden...' : 'Wijzigen'}
                       </button>
-                      <button onClick={() => updateStyle({ briefpapier_url: '', briefpapier_modus: 'geen' })} className="px-3 py-1.5 text-xs font-medium bg-white text-[#C0451A] rounded-md shadow-sm hover:bg-[#FDE8E4] transition-colors">
+                      <button onClick={() => updateStyle({ briefpapier_url: '', briefpapier_modus: 'geen' })} className="px-3 py-1.5 text-xs font-medium bg-white text-[#C0451A] rounded-md shadow-sm hover:bg-[hsl(var(--status-flame-bg))] transition-colors">
                         Verwijder
                       </button>
                     </div>
@@ -1144,7 +1144,7 @@ export function HuisstijlTab({ lockedSubTab }: HuisstijlTabProps = {}) {
                       <button onClick={() => vervolgpapierInputRef.current?.click()} disabled={uploadingVervolgpapier} className="px-3 py-1.5 text-xs font-medium bg-white rounded-md shadow-sm hover:bg-background transition-colors">
                         {uploadingVervolgpapier ? 'Uploaden...' : 'Wijzigen'}
                       </button>
-                      <button onClick={() => updateStyle({ vervolgpapier_url: '' })} className="px-3 py-1.5 text-xs font-medium bg-white text-[#C0451A] rounded-md shadow-sm hover:bg-[#FDE8E4] transition-colors">
+                      <button onClick={() => updateStyle({ vervolgpapier_url: '' })} className="px-3 py-1.5 text-xs font-medium bg-white text-[#C0451A] rounded-md shadow-sm hover:bg-[hsl(var(--status-flame-bg))] transition-colors">
                         Verwijder
                       </button>
                     </div>

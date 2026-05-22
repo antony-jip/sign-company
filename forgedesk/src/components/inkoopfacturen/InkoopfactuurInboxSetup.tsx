@@ -209,7 +209,7 @@ export function InkoopfactuurInboxSetup() {
 
           {/* Test result */}
           {testResult && (
-            <div className={`flex items-center gap-2 text-[12px] p-3 rounded-lg ${testResult.success ? 'bg-[#E4F0EA] text-[#2D6B48]' : 'bg-[#FDE8E2] text-[#C03A18]'}`}>
+            <div className={`flex items-center gap-2 text-[12px] p-3 rounded-lg ${testResult.success ? 'bg-[hsl(var(--status-green-bg))] text-[#2D6B48]' : 'bg-[hsl(var(--status-flame-bg))] text-[#C03A18]'}`}>
               {testResult.success ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
               {testResult.success
                 ? `Verbonden${testResult.label_gevonden ? `, label "${form.gmail_label}" gevonden` : ', maar label niet gevonden'}`

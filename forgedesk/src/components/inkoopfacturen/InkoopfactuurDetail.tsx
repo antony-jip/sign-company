@@ -384,7 +384,7 @@ export function InkoopfactuurDetail() {
                 variant="outline"
                 onClick={() => setShowAfwijsModal(true)}
                 disabled={isSaving}
-                className="text-[#C03A18] border-[#C03A18] hover:bg-[#FDE8E2]"
+                className="text-[#C03A18] border-[#C03A18] hover:bg-[hsl(var(--status-flame-bg))]"
               >
                 Afwijzen
               </Button>
@@ -399,7 +399,7 @@ export function InkoopfactuurDetail() {
           )}
 
           {factuur.status === 'goedgekeurd' && (
-            <div className="text-[12px] text-[#2D6B48] bg-[#E4F0EA] px-4 py-3 rounded-lg">
+            <div className="text-[12px] text-[#2D6B48] bg-[hsl(var(--status-green-bg))] px-4 py-3 rounded-lg">
               Goedgekeurd op {factuur.goedgekeurd_op ? new Date(factuur.goedgekeurd_op).toLocaleDateString('nl-NL') : '-'}. Toegevoegd aan uitgaven.
             </div>
           )}

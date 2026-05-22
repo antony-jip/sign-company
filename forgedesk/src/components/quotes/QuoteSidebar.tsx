@@ -380,10 +380,10 @@ export function QuoteSidebar({
                                     <span className="text-[12.5px] font-semibold text-foreground">{linkedFactuur.nummer}</span>
                                   </div>
                                   <Badge className={cn('text-[10px] font-semibold',
-                                    linkedFactuur.status === 'betaald' && 'bg-[#E8F2EC] text-[#2D6B48] border-[#2D6B48]/20',
-                                    linkedFactuur.status === 'verzonden' && 'bg-[#E8EEF9] text-[#3A5A9A] border-[#3A5A9A]/20',
+                                    linkedFactuur.status === 'betaald' && 'bg-[hsl(var(--status-green-bg))] text-[#2D6B48] border-[#2D6B48]/20',
+                                    linkedFactuur.status === 'verzonden' && 'bg-[hsl(var(--status-blue-bg))] text-[#3A5A9A] border-[#3A5A9A]/20',
                                     linkedFactuur.status === 'concept' && 'bg-muted text-foreground/70 border-[#6B6B66]/15',
-                                    linkedFactuur.status === 'vervallen' && 'bg-[#FDE8E2] text-[#C03A18] border-[#C03A18]/20',
+                                    linkedFactuur.status === 'vervallen' && 'bg-[hsl(var(--status-flame-bg))] text-[#C03A18] border-[#C03A18]/20',
                                     linkedFactuur.status === 'gecrediteerd' && 'bg-[#FEF3E8] text-[#D4621A] border-[#D4621A]/20',
                                   )}>
                                     {linkedFactuur.status.charAt(0).toUpperCase() + linkedFactuur.status.slice(1)}
@@ -534,7 +534,7 @@ export function QuoteSidebar({
                             </div>
                           </div>
                           {afrondingskorting !== 0 && (
-                            <div className="rounded-lg bg-[#F5F2E8] border border-[#8A6A2A]/15 p-2.5">
+                            <div className="rounded-lg bg-[hsl(var(--status-amber-bg))] border border-[#8A6A2A]/15 p-2.5">
                               <p className="text-[10px] uppercase tracking-widest text-[#8A6A2A] font-semibold">Afrondingskorting</p>
                               <p className="text-[13.5px] font-bold font-mono text-[#8A6A2A] mt-0.5 tabular-nums">{formatCurrency(afrondingskorting)}</p>
                             </div>

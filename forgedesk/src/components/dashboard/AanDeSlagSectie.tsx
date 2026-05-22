@@ -121,7 +121,7 @@ export function AanDeSlagSectie() {
               >
                 <div className="flex items-start justify-between gap-3 mb-2">
                   {klaar ? (
-                    <span className="inline-flex items-center justify-center w-7 h-7 rounded-md bg-[#E8F2EC]">
+                    <span className="inline-flex items-center justify-center w-7 h-7 rounded-md bg-[hsl(var(--status-green-bg))]">
                       <Check className="h-3.5 w-3.5 text-[#3A7D52]" strokeWidth={2.5} />
                     </span>
                   ) : (

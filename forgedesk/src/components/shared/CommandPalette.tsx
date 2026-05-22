@@ -404,7 +404,7 @@ export function CommandPalette() {
                         flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center
                         ${
                           isSelected
-                            ? 'bg-[#FDE8E2] dark:bg-primary/20 text-[#C03A18] dark:text-primary'
+                            ? 'bg-[hsl(var(--status-flame-bg))] dark:bg-primary/20 text-[#C03A18] dark:text-primary'
                             : 'bg-muted dark:bg-muted text-muted-foreground dark:text-muted-foreground/60'
                         }
                       `}

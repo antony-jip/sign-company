@@ -296,10 +296,10 @@ function getStatusBadgeColor(status?: string): string {
   switch (status) {
     case 'actief': case 'bezig': case 'onderweg': case 'definitief': return 'bg-[#E5ECF6] text-[#2A5580]'
     case 'goedgekeurd': case 'klaar': case 'betaald': case 'opgeleverd': return 'bg-[#E2F0F0] text-[#1A535C]'
-    case 'afgerond': case 'gefactureerd': case 'te-factureren': return 'bg-[#E4F0EA] text-[#2D6B48]'
+    case 'afgerond': case 'gefactureerd': case 'te-factureren': return 'bg-[hsl(var(--status-green-bg))] text-[#2D6B48]'
     case 'concept': case 'todo': case 'gepland': case 'verlopen': return 'bg-muted text-foreground/70'
-    case 'verzonden': case 'verstuurd': case 'afgewezen': case 'wijziging_gevraagd': return 'bg-[#FDE8E2] text-[#C03A18]'
-    case 'bekeken': case 'review': case 'in-review': case 'gecrediteerd': return 'bg-[#EEE8F5] text-[#5A4A78]'
+    case 'verzonden': case 'verstuurd': case 'afgewezen': case 'wijziging_gevraagd': return 'bg-[hsl(var(--status-flame-bg))] text-[#C03A18]'
+    case 'bekeken': case 'review': case 'in-review': case 'gecrediteerd': return 'bg-[hsl(var(--status-violet-bg))] text-[#5A4A78]'
     default: return 'bg-muted text-foreground/70'
   }
 }

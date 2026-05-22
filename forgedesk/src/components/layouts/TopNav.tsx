@@ -224,21 +224,21 @@ export function TopNav() {
 
           <button
             onClick={toggleStickyHeader}
-            className="hidden md:inline-flex w-7 h-7 rounded-md items-center justify-center hover:bg-black/[0.04] transition-colors"
+            className="hidden md:inline-flex w-7 h-7 rounded-md items-center justify-center hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors"
             title={stickyHeader ? 'Top-menu losmaken' : 'Top-menu vastpinnen'}
             aria-label={stickyHeader ? 'Top-menu losmaken' : 'Top-menu vastpinnen'}
           >
             {stickyHeader
-              ? <Pin className="w-3.5 h-3.5 text-[#1A535C]" />
-              : <PinOff className="w-3.5 h-3.5 text-muted-foreground" />}
+              ? <Pin className="w-3.5 h-3.5 text-[#1A535C] dark:text-[#5FB5C0]" />
+              : <PinOff className="w-3.5 h-3.5 text-muted-foreground dark:text-foreground/60" />}
           </button>
 
-          <div className="hidden md:block w-px h-4 bg-[#E5E4E0] mx-2" />
+          <div className="hidden md:block w-px h-4 bg-[#E5E4E0] dark:bg-border mx-2" />
 
           {/* Dark-mode toggle — desktop */}
           <DarkModeToggle className="hidden md:inline-flex" />
 
-          <div className="hidden md:block w-px h-4 bg-[#E5E4E0] mx-2" />
+          <div className="hidden md:block w-px h-4 bg-[#E5E4E0] dark:bg-border mx-2" />
 
           {/* User dropdown — desktop */}
           <div ref={userMenuRef} className="relative hidden md:block">

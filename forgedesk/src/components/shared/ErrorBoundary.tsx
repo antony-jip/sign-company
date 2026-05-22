@@ -65,7 +65,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
       return (
         <div role="alert" aria-live="assertive" className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center bg-background">
-          <div className="w-14 h-14 bg-[#FDE8E4] rounded-2xl flex items-center justify-center mb-5">
+          <div className="w-14 h-14 bg-[hsl(var(--status-flame-bg))] rounded-2xl flex items-center justify-center mb-5">
             <AlertTriangle className="w-7 h-7 text-[#C0451A]" />
           </div>
           <h2 className="text-xl font-bold text-foreground tracking-[-0.3px] mb-2">
@@ -75,7 +75,7 @@ export class ErrorBoundary extends Component<Props, State> {
             Er is een onverwachte fout opgetreden. Probeer het opnieuw of herlaad de pagina.
           </p>
           {this.state.error && (
-            <p className="text-xs text-[#C0451A] mb-5 font-mono max-w-lg break-all bg-[#FDE8E4]/50 px-3 py-2 rounded-lg">
+            <p className="text-xs text-[#C0451A] mb-5 font-mono max-w-lg break-all bg-[hsl(var(--status-flame-bg))]/50 px-3 py-2 rounded-lg">
               {this.state.error.message}
             </p>
           )}

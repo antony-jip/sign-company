@@ -1762,7 +1762,7 @@ export function FactuurEditor() {
                   existingFactuur.exact_synced_at ? (
                     <div className="flex items-center gap-1">
                       <Badge
-                        className="bg-[#E4F0EA] text-[#2D6B48] text-xs gap-1"
+                        className="bg-[hsl(var(--status-green-bg))] text-[#2D6B48] text-xs gap-1"
                         title={`Exact gesynchroniseerd op ${new Date(existingFactuur.exact_synced_at).toLocaleDateString('nl-NL')}`}
                       >
                         <CheckCircle2 className="w-3 h-3" />
@@ -1770,7 +1770,7 @@ export function FactuurEditor() {
                       </Badge>
                       {existingFactuur.exact_bijlage_gesynced_op ? (
                         <Badge
-                          className="bg-[#E4F0EA] text-[#2D6B48] text-xs gap-1"
+                          className="bg-[hsl(var(--status-green-bg))] text-[#2D6B48] text-xs gap-1"
                           title={`Bijlage gesynchroniseerd op ${new Date(existingFactuur.exact_bijlage_gesynced_op).toLocaleDateString('nl-NL')}`}
                         >
                           <CheckCircle2 className="w-3 h-3" />

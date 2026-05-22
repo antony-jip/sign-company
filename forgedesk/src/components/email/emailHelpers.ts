@@ -80,7 +80,7 @@ export function getAvatarRingColor(name: string): string {
 // DOEN Design System avatar palette — 8 onderscheidende muted tinten,
 // teal vervangen door petrol-tint voor brand-alignment, rood + lavendel
 // weggelaten (te schreeuwerig / te dicht bij paars).
-const DOEN_AVATAR_PALETTE = [
+const DOEN_AVATAR_PALETTE_LIGHT = [
   { bg: '#D6E5E7', text: '#1A535C' },  // petrol
   { bg: '#DCF0E4', text: '#2B6E44' },  // groen
   { bg: '#DBE6F5', text: '#2E5491' },  // blauw
@@ -91,16 +91,27 @@ const DOEN_AVATAR_PALETTE = [
   { bg: '#E8EDDF', text: '#5A6B44' },  // olijf
 ]
 
-const avatarStyleCache = new Map<string, { bg: string; text: string }>()
+// Dark variant — bgs gedimd naar lage-alpha tinten van het accent zelf
+// zodat ze niet als gloeiende pastel-blobs verschijnen op donker.
+const DOEN_AVATAR_PALETTE_DARK = [
+  { bg: 'rgba(26, 83, 92, 0.28)',  text: '#7FB5C0' },  // petrol
+  { bg: 'rgba(43, 110, 68, 0.28)', text: '#66BC85' },  // groen
+  { bg: 'rgba(46, 84, 145, 0.28)', text: '#7FA8E6' },  // blauw
+  { bg: 'rgba(125, 106, 46, 0.25)',text: '#D4B566' },  // goud
+  { bg: 'rgba(138, 61, 110, 0.28)',text: '#D48EB5' },  // mauve
+  { bg: 'rgba(90, 78, 145, 0.30)', text: '#B098D0' },  // paars
+  { bg: 'rgba(176, 92, 46, 0.28)', text: '#FF9A66' },  // oranje
+  { bg: 'rgba(90, 107, 68, 0.28)', text: '#A8C088' },  // olijf
+]
 
 export function getAvatarStyle(name: string): { bg: string; text: string } {
-  const cached = avatarStyleCache.get(name)
-  if (cached) return cached
   let hash = 0
   for (let i = 0; i < name.length; i++) hash += name.charCodeAt(i)
-  const style = DOEN_AVATAR_PALETTE[hash % DOEN_AVATAR_PALETTE.length]
-  avatarStyleCache.set(name, style)
-  return style
+  // Theme-aware: check .dark class op <html>. Pure function — geen cache —
+  // zodat re-renders bij theme-switch direct correcte kleuren oppikken.
+  const isDark = typeof document !== 'undefined' && document.documentElement.classList.contains('dark')
+  const palette = isDark ? DOEN_AVATAR_PALETTE_DARK : DOEN_AVATAR_PALETTE_LIGHT
+  return palette[hash % palette.length]
 }
 
 export function formatRelativeSync(timestamp: number, now: number): string {

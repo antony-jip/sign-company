@@ -150,7 +150,7 @@ export function QuoteHeader({
         {versioning.versieNummer > 1 && (
           <button
             onClick={() => versioning.setShowVersieHistorie(!versioning.showVersieHistorie)}
-            className="font-mono text-[11px] font-medium text-[#6A5A8A] bg-[#EEE8F5] border border-[#6A5A8A]/15 rounded-md px-1.5 py-0.5 hover:bg-[#E0D6EC] transition-colors"
+            className="font-mono text-[11px] font-medium text-[#6A5A8A] bg-[hsl(var(--status-violet-bg))] border border-[#6A5A8A]/15 rounded-md px-1.5 py-0.5 hover:bg-[#E0D6EC] transition-colors"
           >
             v{versioning.versieNummer}
           </button>
@@ -168,7 +168,7 @@ export function QuoteHeader({
 
             {/* Verstuurd-status pill */}
             {verstuurdOp && (
-              <span className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold text-[#3A5A9A] bg-[#E8EEF9] border border-[#3A5A9A]/20 px-2 py-0.5 rounded-md">
+              <span className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold text-[#3A5A9A] bg-[hsl(var(--status-blue-bg))] border border-[#3A5A9A]/20 px-2 py-0.5 rounded-md">
                 <PhSend size={11} weight="duotone" />
                 Verstuurd{verstuurdNaar ? ` · ${verstuurdNaar}` : ''} · {new Date(verstuurdOp).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}
               </span>
@@ -178,8 +178,8 @@ export function QuoteHeader({
             {geldigInfo && (
               <span className={cn(
                 'inline-flex items-center gap-1 text-[11.5px] font-medium px-2 py-0.5 rounded-md',
-                geldigInfo.accent === 'flame' && 'text-[#C0451A] bg-[#FDE8E2] border border-[#C0451A]/20 font-semibold',
-                geldigInfo.accent === 'amber' && 'text-[#8A6A2A] bg-[#F5F2E8] border border-[#8A6A2A]/15',
+                geldigInfo.accent === 'flame' && 'text-[#C0451A] bg-[hsl(var(--status-flame-bg))] border border-[#C0451A]/20 font-semibold',
+                geldigInfo.accent === 'amber' && 'text-[#8A6A2A] bg-[hsl(var(--status-amber-bg))] border border-[#8A6A2A]/15',
                 geldigInfo.accent === 'muted' && 'text-foreground/70',
               )}>
                 {geldigInfo.label}

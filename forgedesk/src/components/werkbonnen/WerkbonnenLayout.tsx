@@ -536,11 +536,11 @@ export function WerkbonnenLayout() {
                             const naam = getKlantNaam(wb.klant_id)
                             const c = naam.charCodeAt(0) % 5
                             const avatarColors = [
-                              'bg-[#E8F2EC] text-[#3A7D52]',
-                              'bg-[#E8EEF9] text-[#3A5A9A]',
-                              'bg-[#F5F2E8] text-[#8A7A4A]',
+                              'bg-[hsl(var(--status-green-bg))] text-[#3A7D52]',
+                              'bg-[hsl(var(--status-blue-bg))] text-[#3A5A9A]',
+                              'bg-[hsl(var(--status-amber-bg))] text-[#8A7A4A]',
                               'bg-muted text-foreground/70',
-                              'bg-[#EDE8F4] text-[#6A5A8A]',
+                              'bg-[hsl(var(--status-violet-bg))] text-[#6A5A8A]',
                             ]
                             return (
                               <span className={cn('flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold uppercase select-none', avatarColors[c])}>
@@ -582,7 +582,7 @@ export function WerkbonnenLayout() {
                             <Eye className="w-3.5 h-3.5 text-muted-foreground" />
                           </button>
                           <button
-                            className="p-1.5 rounded-lg hover:bg-[#FDE8E4] transition-all opacity-0 group-hover:opacity-100"
+                            className="p-1.5 rounded-lg hover:bg-[hsl(var(--status-flame-bg))] transition-all opacity-0 group-hover:opacity-100"
                             onClick={() => { setDeleteTarget(wb); setDeleteDialogOpen(true) }}
                           >
                             <Trash2 className="w-3.5 h-3.5 text-[#C03A18]" />

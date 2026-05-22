@@ -50,7 +50,7 @@ export function PortaalVerlopen({ token, bedrijfsnaam, telefoon, email, logoUrl 
         {logoUrl && (
           <img src={logoUrl} alt={bedrijfsnaam} className="h-10 w-auto mx-auto object-contain" />
         )}
-        <div className="w-16 h-16 rounded-full bg-[#FDE8E2] flex items-center justify-center mx-auto">
+        <div className="w-16 h-16 rounded-full bg-[hsl(var(--status-flame-bg))] flex items-center justify-center mx-auto">
           <Clock className="w-8 h-8 text-[#C03A18]" />
         </div>
         <div>

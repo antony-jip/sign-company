@@ -141,7 +141,7 @@ export function KlantportaalMockup() {
           <div className="bg-white rounded-xl border border-black/[0.05] px-2.5 py-2 max-w-[75%]" style={{ boxShadow: '0 1px 3px rgba(100,80,40,0.04)' }}>
             <div className="flex items-center justify-between mb-1">
               <span className="text-[7px] font-semibold">Factuur #F-2024-018</span>
-              <span className="text-[6px] font-bold px-1.5 py-0.5 rounded-full bg-[#E4F0EA] text-[#2D6B48]">
+              <span className="text-[6px] font-bold px-1.5 py-0.5 rounded-full bg-[hsl(var(--status-green-bg))] text-[#2D6B48]">
                 Betaald<span className="text-[#F15025]">.</span>
               </span>
             </div>
@@ -278,11 +278,11 @@ export function DaanAIMockup() {
           <div className="bg-white rounded-xl border border-black/[0.05] px-2 py-2 max-w-[85%]" style={{ boxShadow: '0 1px 3px rgba(100,80,40,0.04)' }}>
             <p className="text-[7px] text-ink/70 mb-1.5">Er staan 8 offertes open met een totaalwaarde van &euro;24.500.</p>
             <div className="grid grid-cols-2 gap-1">
-              <div className="rounded-md px-1.5 py-1 bg-[#FDE8E2]">
+              <div className="rounded-md px-1.5 py-1 bg-[hsl(var(--status-flame-bg))]">
                 <span className="text-[5px] uppercase font-bold text-[#F15025]/60">Open</span>
                 <p className="font-mono text-[8px] font-bold text-[#F15025]">8</p>
               </div>
-              <div className="rounded-md px-1.5 py-1 bg-[#E4F0EA]">
+              <div className="rounded-md px-1.5 py-1 bg-[hsl(var(--status-green-bg))]">
                 <span className="text-[5px] uppercase font-bold text-[#2D6B48]/60">Waarde</span>
                 <p className="font-mono text-[8px] font-bold text-[#2D6B48]">&euro;24.5k</p>
               </div>
@@ -290,7 +290,7 @@ export function DaanAIMockup() {
                 <span className="text-[5px] uppercase font-bold text-[#3A6B8C]/60">Conversie</span>
                 <p className="font-mono text-[8px] font-bold text-[#3A6B8C]">68%</p>
               </div>
-              <div className="rounded-md px-1.5 py-1 bg-[#EEE8F5]">
+              <div className="rounded-md px-1.5 py-1 bg-[hsl(var(--status-violet-bg))]">
                 <span className="text-[5px] uppercase font-bold text-[#6A5A8A]/60">Gem. dagen</span>
                 <p className="font-mono text-[8px] font-bold text-[#6A5A8A]">4.2</p>
               </div>

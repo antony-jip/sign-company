@@ -784,7 +784,7 @@ export function WerkbonDetail() {
       </div>
 
       {status === 'afgerond' && !isNew && (
-        <div className="flex items-center gap-2 px-4 py-2.5 mb-4 bg-[#E8F2EC] rounded-xl text-[13px] text-[#2D6B48] border border-[#C5E0D0]">
+        <div className="flex items-center gap-2 px-4 py-2.5 mb-4 bg-[hsl(var(--status-green-bg))] rounded-xl text-[13px] text-[#2D6B48] border border-[#C5E0D0]">
           <ClipboardCheck className="h-3.5 w-3.5 flex-shrink-0" />
           <span>Deze werkbon is <strong>afgerond</strong>. Zet de status terug naar Concept om te bewerken.</span>
         </div>

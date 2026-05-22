@@ -342,7 +342,7 @@ export function KennisbankTab() {
                   {editingCat ? 'Bijwerken' : 'Toevoegen'}
                 </button>
                 {editingCat && (
-                  <button onClick={() => handleDeleteCategory(editingCat)} className="h-7 px-2 text-[11px] font-medium rounded text-[#C03A18] hover:bg-[#FDE8E2]">
+                  <button onClick={() => handleDeleteCategory(editingCat)} className="h-7 px-2 text-[11px] font-medium rounded text-[#C03A18] hover:bg-[hsl(var(--status-flame-bg))]">
                     Verwijder
                   </button>
                 )}
@@ -431,7 +431,7 @@ export function KennisbankTab() {
                       </div>
                       <button
                         onClick={e => { e.stopPropagation(); handleDeleteArticle(article) }}
-                        className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-[#FDE8E2] transition-all"
+                        className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-[hsl(var(--status-flame-bg))] transition-all"
                       >
                         <Trash2 className="h-3.5 w-3.5 text-[#C03A18]" />
                       </button>

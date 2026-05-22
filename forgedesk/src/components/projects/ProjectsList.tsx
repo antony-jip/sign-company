@@ -1328,11 +1328,11 @@ export function ProjectsList() {
                                   {(() => {
                                     const c = klantNaam.charCodeAt(0) % 5
                                     const avatarColors = [
-                                      'bg-[#E8F2EC] text-[#3A7D52]',
-                                      'bg-[#E8EEF9] text-[#3A5A9A]',
-                                      'bg-[#F5F2E8] text-[#8A7A4A]',
+                                      'bg-[hsl(var(--status-green-bg))] text-[#3A7D52]',
+                                      'bg-[hsl(var(--status-blue-bg))] text-[#3A5A9A]',
+                                      'bg-[hsl(var(--status-amber-bg))] text-[#8A7A4A]',
                                       'bg-muted text-foreground/70',
-                                      'bg-[#EDE8F4] text-[#6A5A8A]',
+                                      'bg-[hsl(var(--status-violet-bg))] text-[#6A5A8A]',
                                     ]
                                     return (
                                       <span className={cn('flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold uppercase select-none', avatarColors[c])}>
@@ -1563,7 +1563,7 @@ export function ProjectsList() {
                           <td className="py-3.5 pr-5 align-middle" onClick={(e) => e.stopPropagation()}>
                             <button
                               onClick={() => handleDeleteProject(project)}
-                              className="h-7 w-7 rounded-md flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 focus-visible:opacity-100 text-muted-foreground/70 hover:bg-[#FDE8E4] hover:text-[#C03A18]"
+                              className="h-7 w-7 rounded-md flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 focus-visible:opacity-100 text-muted-foreground/70 hover:bg-[hsl(var(--status-flame-bg))] hover:text-[#C03A18]"
                               title="Project verwijderen"
                               aria-label={`Verwijder ${project.naam || 'project'}`}
                             >
@@ -1681,11 +1681,11 @@ export function ProjectsList() {
                   const selected = quickTaakToegewezen === mw.naam
                   const c = mw.naam.charCodeAt(0) % 5
                   const colors = [
-                    'bg-[#E8F2EC] text-[#3A7D52]',
-                    'bg-[#E8EEF9] text-[#3A5A9A]',
-                    'bg-[#F5F2E8] text-[#8A7A4A]',
+                    'bg-[hsl(var(--status-green-bg))] text-[#3A7D52]',
+                    'bg-[hsl(var(--status-blue-bg))] text-[#3A5A9A]',
+                    'bg-[hsl(var(--status-amber-bg))] text-[#8A7A4A]',
                     'bg-muted text-foreground/70',
-                    'bg-[#EDE8F4] text-[#6A5A8A]',
+                    'bg-[hsl(var(--status-violet-bg))] text-[#6A5A8A]',
                   ]
                   return (
                     <button

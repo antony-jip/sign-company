@@ -609,7 +609,7 @@ export function EmailContextSidebar({
                           </button>
                           <button
                             onClick={() => { setAddToExistingKlant(k); setKlantForm(f => ({ ...f, contactpersoon: personName, email: contactEmail })) }}
-                            className="p-1.5 rounded-lg hover:bg-[#E8F2EC] transition-colors flex-shrink-0"
+                            className="p-1.5 rounded-lg hover:bg-[hsl(var(--status-green-bg))] transition-colors flex-shrink-0"
                             title={`Contactpersoon toevoegen aan ${k.bedrijfsnaam}`}
                           >
                             <UserPlus className="h-3.5 w-3.5 text-[#3A7D52]" />
@@ -686,7 +686,7 @@ export function EmailContextSidebar({
                     {medewerkers.map((mw) => {
                       const selected = taakForm.toegewezen_aan === mw.naam
                       const c = mw.naam.charCodeAt(0) % 5
-                      const colors = ['bg-[#E8F2EC] text-[#3A7D52]', 'bg-[#E8EEF9] text-[#3A5A9A]', 'bg-[#F5F2E8] text-[#8A7A4A]', 'bg-muted text-foreground/70', 'bg-[#EDE8F4] text-[#6A5A8A]']
+                      const colors = ['bg-[hsl(var(--status-green-bg))] text-[#3A7D52]', 'bg-[hsl(var(--status-blue-bg))] text-[#3A5A9A]', 'bg-[hsl(var(--status-amber-bg))] text-[#8A7A4A]', 'bg-muted text-foreground/70', 'bg-[hsl(var(--status-violet-bg))] text-[#6A5A8A]']
                       return (
                         <button
                           key={mw.id}

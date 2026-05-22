@@ -72,7 +72,7 @@ function GlobaalBanner({ usage }: { usage: { extract: RouteUsage; analyze: Route
 
   return (
     <div
-      className="w-full flex items-center justify-center px-4 py-2 text-sm font-medium bg-[#FDE8E2] dark:bg-[#F15025]/20 text-[#C03A18] dark:text-[#F15025]"
+      className="w-full flex items-center justify-center px-4 py-2 text-sm font-medium bg-[hsl(var(--status-flame-bg))] dark:bg-[#F15025]/20 text-[#C03A18] dark:text-[#F15025]"
       style={{ minHeight: 36 }}
       role="alert"
     >

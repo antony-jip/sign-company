@@ -262,7 +262,7 @@ export function ClientApprovalPage() {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
         <Toaster position="top-center" richColors />
         <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
-          <div className="w-16 h-16 bg-[#FDE8E2] rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-[hsl(var(--status-flame-bg))] rounded-full flex items-center justify-center mx-auto mb-4">
             <FileText className="h-8 w-8 text-red-500" />
           </div>
           <h1 className="text-xl font-bold text-foreground mb-2">Link niet geldig</h1>
@@ -295,7 +295,7 @@ export function ClientApprovalPage() {
       {showSuccess && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm animate-in fade-in">
           <div className="bg-white rounded-3xl shadow-2xl p-10 text-center max-w-sm mx-4 animate-in zoom-in-95">
-            <div className="w-20 h-20 bg-[#E4F0EA] rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-20 h-20 bg-[hsl(var(--status-green-bg))] rounded-full flex items-center justify-center mx-auto mb-4">
               <Sparkles className="h-10 w-10 text-[#2D6B48]" />
             </div>
             <h2 className="text-2xl font-bold text-foreground mb-2">Goedgekeurd!</h2>
@@ -456,16 +456,16 @@ export function ClientApprovalPage() {
         {isDecided && (
           <div className={`rounded-xl p-5 ${
             goedkeuring.status === 'goedgekeurd'
-              ? 'bg-[#E4F0EA] border border-[#C0DBCC]'
-              : 'bg-[#FDE8E2] border border-[#F5C4B4]'
+              ? 'bg-[hsl(var(--status-green-bg))] border border-[#C0DBCC]'
+              : 'bg-[hsl(var(--status-flame-bg))] border border-[#F5C4B4]'
           }`}>
             <div className="flex items-center gap-3">
               {goedkeuring.status === 'goedgekeurd' ? (
-                <div className="h-10 w-10 rounded-full bg-[#E4F0EA] flex items-center justify-center flex-shrink-0">
+                <div className="h-10 w-10 rounded-full bg-[hsl(var(--status-green-bg))] flex items-center justify-center flex-shrink-0">
                   <CheckCircle2 className="h-5 w-5 text-[#2D6B48]" />
                 </div>
               ) : (
-                <div className="h-10 w-10 rounded-full bg-[#FDE8E2] flex items-center justify-center flex-shrink-0">
+                <div className="h-10 w-10 rounded-full bg-[hsl(var(--status-flame-bg))] flex items-center justify-center flex-shrink-0">
                   <RotateCcw className="h-5 w-5 text-[#C03A18]" />
                 </div>
               )}

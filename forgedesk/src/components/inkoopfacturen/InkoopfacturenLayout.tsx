@@ -595,7 +595,7 @@ export function InkoopfacturenLayout() {
                       />
                     ) : (
                       <div className="py-16 px-8 flex flex-col items-center text-center">
-                        <div className="w-16 h-16 rounded-2xl bg-[#FDE8E2] flex items-center justify-center mb-5">
+                        <div className="w-16 h-16 rounded-2xl bg-[hsl(var(--status-flame-bg))] flex items-center justify-center mb-5">
                           <FileText className="w-7 h-7 text-[#C44830]" />
                         </div>
                         <h3 className="text-[16px] font-bold text-foreground mb-2">
@@ -857,8 +857,8 @@ export function InkoopfacturenLayout() {
                     onClick={handleLightboxReject}
                     disabled={lightboxSaving}
                     className={cn(
-                      'w-full text-[#C03A18] border-[#C03A18]/30 hover:bg-[#FDE8E2] h-11 text-[14px] rounded-xl transition-colors duration-200 disabled:opacity-100',
-                      lightboxAction === 'rejected' && 'bg-[#FDE8E2]',
+                      'w-full text-[#C03A18] border-[#C03A18]/30 hover:bg-[hsl(var(--status-flame-bg))] h-11 text-[14px] rounded-xl transition-colors duration-200 disabled:opacity-100',
+                      lightboxAction === 'rejected' && 'bg-[hsl(var(--status-flame-bg))]',
                     )}
                   >
                     {lightboxAction === 'rejecting' ? (

@@ -1793,7 +1793,7 @@ export function FacturenLayout() {
                     <span
                       className={cn(
                         'text-[11px] font-mono font-semibold tabular-nums rounded-md px-2 py-0.5',
-                        mobileDagenOpen > 90 ? 'bg-[#FDE8E4] text-[#C03A18]' :
+                        mobileDagenOpen > 90 ? 'bg-[hsl(var(--status-flame-bg))] text-[#C03A18]' :
                         mobileDagenOpen > 30 ? 'bg-[#FEF3E8] text-[#D4621A]' :
                         'text-muted-foreground'
                       )}
@@ -1941,11 +1941,11 @@ export function FacturenLayout() {
                           const naam = factuur.klant_naam || 'Onbekend'
                           const c = naam.charCodeAt(0) % 5
                           const avatarColors = [
-                            'bg-[#E8F2EC] text-[#3A7D52]',
-                            'bg-[#E8EEF9] text-[#3A5A9A]',
-                            'bg-[#F5F2E8] text-[#8A7A4A]',
+                            'bg-[hsl(var(--status-green-bg))] text-[#3A7D52]',
+                            'bg-[hsl(var(--status-blue-bg))] text-[#3A5A9A]',
+                            'bg-[hsl(var(--status-amber-bg))] text-[#8A7A4A]',
                             'bg-muted text-foreground/70',
-                            'bg-[#EDE8F4] text-[#6A5A8A]',
+                            'bg-[hsl(var(--status-violet-bg))] text-[#6A5A8A]',
                           ]
                           return (
                             <span className={cn('flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold uppercase select-none', avatarColors[c])}>
@@ -1983,7 +1983,7 @@ export function FacturenLayout() {
                           <span
                             className={cn(
                               'inline-flex items-center justify-center text-[11px] font-mono font-semibold tabular-nums rounded-md px-2 py-0.5',
-                              urgent ? 'bg-[#FDE8E4] text-[#C03A18]' :
+                              urgent ? 'bg-[hsl(var(--status-flame-bg))] text-[#C03A18]' :
                               warning ? 'bg-[#FEF3E8] text-[#D4621A]' :
                               'text-muted-foreground'
                             )}

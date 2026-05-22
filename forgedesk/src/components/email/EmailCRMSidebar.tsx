@@ -503,8 +503,8 @@ export const CRMSidebar = memo(function CRMSidebar({
               <div className="flex items-center gap-1.5 flex-shrink-0">
                 <span className={cn(
                   'px-2 py-0.5 rounded-full text-[9px] font-semibold',
-                  linkedKlant.status === 'actief' ? 'bg-[#E8F2EC] text-[#3A7D52]' :
-                  linkedKlant.status === 'prospect' ? 'bg-[#F5F2E8] text-[#8A7A4A]' : 'bg-muted text-foreground/70'
+                  linkedKlant.status === 'actief' ? 'bg-[hsl(var(--status-green-bg))] text-[#3A7D52]' :
+                  linkedKlant.status === 'prospect' ? 'bg-[hsl(var(--status-amber-bg))] text-[#8A7A4A]' : 'bg-muted text-foreground/70'
                 )}>{linkedKlant.status || 'actief'}</span>
                 <ChevronRight className="h-3 w-3 text-muted-foreground/80 group-hover:text-foreground/70 transition-colors" />
               </div>

@@ -164,7 +164,7 @@ export function TakenOfferteGrid({
                         }}
                         title={`Offerte ${offerte.nummer} verwijderen`}
                         aria-label={`Offerte ${offerte.nummer} verwijderen`}
-                        className="opacity-0 group-hover:opacity-100 focus:opacity-100 h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground/70 hover:bg-[#FDE8E4] hover:text-[#C03A18] transition-all flex-shrink-0"
+                        className="opacity-0 group-hover:opacity-100 focus:opacity-100 h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground/70 hover:bg-[hsl(var(--status-flame-bg))] hover:text-[#C03A18] transition-all flex-shrink-0"
                       >
                         <PhTrash size={14} weight="duotone" />
                       </button>

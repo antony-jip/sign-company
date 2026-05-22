@@ -1768,7 +1768,7 @@ export function TasksLayout() {
                       >
                         <ChevronRight className={cn('w-3 h-3 text-muted-foreground transition-transform flex-shrink-0', !isCollapsed && 'rotate-90')} />
                         {isUnassigned ? (
-                          <span className="h-6 w-6 rounded-full flex items-center justify-center text-[9px] font-bold bg-[#FDE8E2] text-[#C03A18] flex-shrink-0">
+                          <span className="h-6 w-6 rounded-full flex items-center justify-center text-[9px] font-bold bg-[hsl(var(--status-flame-bg))] text-[#C03A18] flex-shrink-0">
                             ?
                           </span>
                         ) : (

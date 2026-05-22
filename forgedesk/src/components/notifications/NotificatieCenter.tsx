@@ -43,12 +43,12 @@ const typeConfig: Record<
   offerte_bekeken: {
     icon: Eye,
     colorClass: "text-[#5A4A78]",
-    bgClass: "bg-[#EEE8F5]",
+    bgClass: "bg-[hsl(var(--status-violet-bg))]",
   },
   offerte_verlopen: {
     icon: AlertTriangle,
     colorClass: "text-[#C03A18]",
-    bgClass: "bg-[#FDE8E2]",
+    bgClass: "bg-[hsl(var(--status-flame-bg))]",
   },
   offerte_geaccepteerd: {
     icon: CheckCircle2,
@@ -58,17 +58,17 @@ const typeConfig: Record<
   offerte_wijziging: {
     icon: AlertCircle,
     colorClass: "text-[#C03A18]",
-    bgClass: "bg-[#FDE8E2]",
+    bgClass: "bg-[hsl(var(--status-flame-bg))]",
   },
   factuur_vervallen: {
     icon: AlertCircle,
     colorClass: "text-[#C03A18]",
-    bgClass: "bg-[#FDE8E2]",
+    bgClass: "bg-[hsl(var(--status-flame-bg))]",
   },
   deadline_nadert: {
     icon: Clock,
     colorClass: "text-[#C03A18]",
-    bgClass: "bg-[#FDE8E2]",
+    bgClass: "bg-[hsl(var(--status-flame-bg))]",
   },
   nieuwe_email: {
     icon: Mail,
@@ -88,17 +88,17 @@ const typeConfig: Record<
   betaling_ontvangen: {
     icon: Banknote,
     colorClass: "text-[#2D6B48]",
-    bgClass: "bg-[#E4F0EA]",
+    bgClass: "bg-[hsl(var(--status-green-bg))]",
   },
   budget_waarschuwing: {
     icon: Wallet,
     colorClass: "text-[#C03A18]",
-    bgClass: "bg-[#FDE8E2]",
+    bgClass: "bg-[hsl(var(--status-flame-bg))]",
   },
   booking_nieuw: {
     icon: CalendarCheck,
     colorClass: "text-[#5A4A78]",
-    bgClass: "bg-[#EEE8F5]",
+    bgClass: "bg-[hsl(var(--status-violet-bg))]",
   },
   algemeen: {
     icon: Bell,
@@ -113,7 +113,7 @@ const typeConfig: Record<
   portaal_revisie: {
     icon: RotateCcw,
     colorClass: "text-[#C03A18]",
-    bgClass: "bg-[#FDE8E2]",
+    bgClass: "bg-[hsl(var(--status-flame-bg))]",
   },
   portaal_bericht: {
     icon: MessageSquare,
@@ -128,7 +128,7 @@ const typeConfig: Record<
   portaal_herinnering: {
     icon: BellRing,
     colorClass: "text-[#C03A18]",
-    bgClass: "bg-[#FDE8E2]",
+    bgClass: "bg-[hsl(var(--status-flame-bg))]",
   },
 };
 

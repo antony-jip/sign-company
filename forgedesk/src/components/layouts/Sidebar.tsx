@@ -394,17 +394,13 @@ export function Sidebar() {
               {userPopoverOpen && popoverPos && (
                 <div
                   data-user-popover
-                  className="fixed z-50 w-56 overflow-hidden"
+                  className="fixed z-50 w-56 overflow-hidden rounded-[14px] bg-popover border border-border shadow-[0_16px_48px_rgba(0,0,0,0.12),0_1px_2px_rgba(0,0,0,0.06)]"
                   style={{
                     left: popoverPos.left,
                     bottom: popoverPos.bottom,
-                    background: '#FFFFFF',
-                    border: '0.5px solid #EBEBEB',
-                    borderRadius: '14px',
-                    boxShadow: '0 16px 48px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0,0,0,0.04)',
                   }}
                 >
-                  <div className="px-4 py-3.5" style={{ borderBottom: '0.5px solid #EBEBEB' }}>
+                  <div className="px-4 py-3.5 border-b border-border">
                     <p className="text-[13px] font-semibold text-foreground truncate">{userName}</p>
                     <p className="text-[11px] text-muted-foreground truncate mt-0.5">{user.email}</p>
                   </div>
@@ -412,38 +408,38 @@ export function Sidebar() {
                   <div className="py-1">
                     <button
                       onClick={() => { setUserPopoverOpen(false); navigate('/instellingen') }}
-                      className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-foreground/70 hover:text-foreground hover:bg-background transition-all duration-200"
+                      className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-foreground/70 hover:text-foreground hover:bg-muted transition-all duration-200"
                     >
                       <PhSliders size={16} weight="duotone" color="#9B9B95" />
                       Profiel
                     </button>
                     <button
                       onClick={() => { setUserPopoverOpen(false); navigate('/instellingen?tab=abonnement') }}
-                      className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-foreground/70 hover:text-foreground hover:bg-background transition-all duration-200"
+                      className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-foreground/70 hover:text-foreground hover:bg-muted transition-all duration-200"
                     >
                       <CreditCard className="w-4 h-4 text-muted-foreground" />
                       Abonnement
                     </button>
                     <button
                       onClick={() => { setUserPopoverOpen(false); navigate('/kennisbank') }}
-                      className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-foreground/70 hover:text-foreground hover:bg-background transition-all duration-200"
+                      className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-foreground/70 hover:text-foreground hover:bg-muted transition-all duration-200"
                     >
                       <BookOpen className="w-4 h-4 text-muted-foreground" />
                       Kennisbank
                     </button>
                   </div>
 
-                  <div className="py-1" style={{ borderTop: '0.5px solid #EBEBEB' }}>
+                  <div className="py-1 border-t border-border">
                     <button
                       onClick={() => { setUserPopoverOpen(false); setLayoutMode('topnav') }}
-                      className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-foreground/70 hover:text-foreground hover:bg-background transition-all duration-200"
+                      className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-foreground/70 hover:text-foreground hover:bg-muted transition-all duration-200"
                     >
                       <PanelTop className="w-4 h-4 text-muted-foreground" />
                       Top navigatie
                     </button>
                   </div>
 
-                  <div className="py-1" style={{ borderTop: '0.5px solid #EBEBEB' }}>
+                  <div className="py-1 border-t border-border">
                     <button
                       onClick={() => { setUserPopoverOpen(false); logout() }}
                       className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-[#F15025] hover:bg-[#F15025]/[0.06] transition-all duration-200"

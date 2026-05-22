@@ -68,9 +68,9 @@ type FilterType = 'alle' | 'wacht' | 'revisie' | 'afgerond'
 function getPortaalStatus(items: PortaalItem[]): { label: string; color: string; icon: typeof CheckCircle2 } {
   if (items.length === 0) return { label: 'Leeg', color: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400', icon: Clock }
   const hasRevisie = items.some(i => i.status === 'revisie')
-  if (hasRevisie) return { label: 'Revisie gevraagd', color: 'bg-[#FDE8E2] text-[#C03A18]', icon: RotateCcw }
+  if (hasRevisie) return { label: 'Revisie gevraagd', color: 'bg-[hsl(var(--status-flame-bg))] text-[#C03A18]', icon: RotateCcw }
   const allDone = items.every(i => ['goedgekeurd', 'betaald', 'vervangen'].includes(i.status))
-  if (allDone) return { label: 'Afgerond', color: 'bg-[#E4F0EA] text-[#2D6B48]', icon: CheckCircle2 }
+  if (allDone) return { label: 'Afgerond', color: 'bg-[hsl(var(--status-green-bg))] text-[#2D6B48]', icon: CheckCircle2 }
   return { label: 'Wacht op reactie', color: 'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300', icon: Clock }
 }
 
@@ -320,8 +320,8 @@ export function PortalenOverzicht() {
   // ── Activity icon + color ──
   function getActIcon(type: ActiviteitItem['type']) {
     switch (type) {
-      case 'goedkeuring': return { icon: CheckCircle2, color: 'text-[#2D6B48]', bg: 'bg-[#E4F0EA]' }
-      case 'revisie': return { icon: RotateCcw, color: 'text-[#C03A18]', bg: 'bg-[#FDE8E2]' }
+      case 'goedkeuring': return { icon: CheckCircle2, color: 'text-[#2D6B48]', bg: 'bg-[hsl(var(--status-green-bg))]' }
+      case 'revisie': return { icon: RotateCcw, color: 'text-[#C03A18]', bg: 'bg-[hsl(var(--status-flame-bg))]' }
       case 'bericht': return { icon: MessageSquare, color: 'text-blue-500', bg: 'bg-blue-50 dark:bg-blue-950/30' }
       case 'bekeken': return { icon: Eye, color: 'text-gray-400', bg: 'bg-gray-50 dark:bg-gray-900/30' }
       case 'herinnering': return { icon: BellRing, color: 'text-orange-500', bg: 'bg-orange-50 dark:bg-orange-950/30' }
