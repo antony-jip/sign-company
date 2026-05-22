@@ -204,8 +204,7 @@ function FORGEdeskDashboardInner() {
         <main className="flex-1 min-w-0 space-y-5">
           {/* ── Hero — petrol-gradient card met omzet-overlay rechts ── */}
           <section
-            className="relative rounded-2xl overflow-hidden"
-            style={{ background: 'linear-gradient(135deg, #143E47 0%, #1A535C 55%, #2A6E78 100%)' }}
+            className="relative rounded-2xl overflow-hidden bg-[linear-gradient(135deg,#143E47_0%,#1A535C_55%,#2A6E78_100%)] dark:bg-[linear-gradient(135deg,#1A0805_0%,#4A1810_50%,#8C2818_100%)]"
           >
             {/* Rustige Flame-orbs die langzaam over de banner drijven —
                 vult de open vlakke ruimte op brede schermen subtiel op. */}

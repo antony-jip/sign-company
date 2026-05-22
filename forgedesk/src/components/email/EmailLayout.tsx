@@ -1645,9 +1645,9 @@ export function EmailLayout() {
       {/* Desktop folder-icon-sidebar — iOS-inspired met subtiele petrol-infusie:
           zachte verticale gradient, petrol-tinted hairlines, cooler grey iconen,
           en hover-state in petrol ipv neutraal zwart. */}
-      <div className="hidden md:flex w-[60px] bg-gradient-to-b from-[#F4F7F7] via-[#F1F5F5] to-[#ECF1F2] border-r border-[#1A535C]/[0.08] flex-col flex-shrink-0 relative">
+      <div className="hidden md:flex w-[60px] bg-gradient-to-b from-[#F4F7F7] via-[#F1F5F5] to-[#ECF1F2] dark:from-[hsl(190_40%_6%)] dark:via-[hsl(190_38%_5%)] dark:to-[hsl(190_42%_4%)] border-r border-[#1A535C]/[0.08] dark:border-[#1A535C]/[0.22] flex-col flex-shrink-0 relative">
         {/* Subtiele binnen-highlight aan de linkerkant — geeft diepte */}
-        <div className="absolute inset-y-0 left-0 w-px bg-white/40 pointer-events-none" aria-hidden />
+        <div className="absolute inset-y-0 left-0 w-px bg-white/40 dark:bg-white/[0.04] pointer-events-none" aria-hidden />
 
         <nav className="flex-1 overflow-y-auto pt-3 pb-2 px-2 space-y-1 relative">
           {folderTabs.map(folder => {
@@ -1664,16 +1664,16 @@ export function EmailLayout() {
                   'tap-press relative w-full h-11 flex items-center justify-center rounded-[12px] transition-all duration-200 active:scale-[0.94]',
                   isActive
                     ? 'bg-gradient-to-b from-[#1F606A] to-[#164850] text-white shadow-[0_3px_10px_-2px_rgba(26,83,92,0.45),0_0_0_0.5px_rgba(255,255,255,0.06)_inset,0_-1px_0_rgba(0,0,0,0.05)_inset]'
-                    : 'text-[#8FA0A4] hover:text-[#1A535C] hover:bg-[#1A535C]/[0.06]',
+                    : 'text-[#8FA0A4] hover:text-[#1A535C] hover:bg-[#1A535C]/[0.06] dark:text-[#6A8085] dark:hover:text-[#5FB5C0] dark:hover:bg-[#1A535C]/[0.22]',
                 )}
               >
                 <Icon className="h-[19px] w-[19px]" strokeWidth={isActive ? 2.2 : 1.8} />
                 {showNewBadge && (
-                  <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-[#F15025] ring-2 ring-[#F1F5F5]" />
+                  <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-[#F15025] ring-2 ring-[#F1F5F5] dark:ring-[hsl(190_40%_5%)]" />
                 )}
                 {count > 0 && folder.id !== 'inbox' && !showNewBadge && (
                   <span className={cn(
-                    'absolute top-0.5 right-0.5 text-[10px] font-semibold tabular-nums min-w-[16px] h-[16px] px-1 rounded-full inline-flex items-center justify-center leading-none ring-2 ring-[#F1F5F5]',
+                    'absolute top-0.5 right-0.5 text-[10px] font-semibold tabular-nums min-w-[16px] h-[16px] px-1 rounded-full inline-flex items-center justify-center leading-none ring-2 ring-[#F1F5F5] dark:ring-[hsl(190_40%_5%)]',
                     isActive ? 'bg-white text-[#1A535C]' : 'bg-[#F15025] text-white',
                   )}>{count}</span>
                 )}
@@ -1690,7 +1690,7 @@ export function EmailLayout() {
               'tap-press w-full h-11 flex items-center justify-center rounded-[12px] transition-all duration-200 active:scale-[0.94]',
               selectedFolder === 'gepland'
                 ? 'bg-gradient-to-b from-[#1F606A] to-[#164850] text-white shadow-[0_3px_10px_-2px_rgba(26,83,92,0.45),0_0_0_0.5px_rgba(255,255,255,0.06)_inset,0_-1px_0_rgba(0,0,0,0.05)_inset]'
-                : 'text-[#8FA0A4] hover:text-[#1A535C] hover:bg-[#1A535C]/[0.06]',
+                : 'text-[#8FA0A4] hover:text-[#1A535C] hover:bg-[#1A535C]/[0.06] dark:text-[#6A8085] dark:hover:text-[#5FB5C0] dark:hover:bg-[#1A535C]/[0.22]',
             )}
           >
             <Clock className="h-[19px] w-[19px]" strokeWidth={selectedFolder === 'gepland' ? 2.2 : 1.8} />

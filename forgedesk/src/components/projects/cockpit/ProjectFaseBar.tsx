@@ -50,7 +50,7 @@ export function ProjectFaseBar({ status, onStatusChange, totaalBedrag, deadline 
   const isCompleted = currentIdx === FASES.length - 1
 
   return (
-    <div className="rounded-2xl p-7 bg-white border border-[rgba(26,83,92,0.08)]">
+    <div className="rounded-2xl p-7 bg-card border border-border/50">
       <div className="flex items-baseline justify-between mb-8">
         <h3 className="font-heading text-[15px] font-bold text-foreground">
           Voortgang<span className="text-[#F15025]">.</span>
@@ -86,7 +86,7 @@ export function ProjectFaseBar({ status, onStatusChange, totaalBedrag, deadline 
               ? '#0F3C44'                 // donker Petrol "celebrate"
               : isPast
                 ? PETROL                  // solid Petrol
-                : '#FFFFFF'                // outline-only
+                : 'hsl(var(--card))'      // outline-only — blend met surface in beide themes
             const circleBorder = isFinalCompleted
               ? '#0F3C44'
               : isActive

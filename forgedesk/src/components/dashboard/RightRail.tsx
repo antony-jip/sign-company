@@ -265,7 +265,7 @@ function DezeWeekCard() {
     <section
       className="rounded-xl p-6"
       style={{
-        background: 'radial-gradient(ellipse 65% 50% at 0% 0%, rgba(26,83,92,0.04), transparent 70%), radial-gradient(ellipse 85% 65% at 100% 100%, rgba(241,80,37,0.055), transparent 65%), linear-gradient(180deg, #FFFFFF 0%, #F6F8F9 100%)',
+        backgroundImage: 'radial-gradient(ellipse 65% 50% at 0% 0%, rgba(26,83,92,0.06), transparent 70%), radial-gradient(ellipse 85% 65% at 100% 100%, rgba(241,80,37,0.06), transparent 65%)',
         border: '1px solid rgba(26,83,92,0.08)',
         boxShadow: '0 1px 2px rgba(20,62,71,0.04), 0 8px 24px rgba(20,62,71,0.025)',
       }}
@@ -507,7 +507,7 @@ function TeamCard() {
     <section
       className="rounded-xl p-6"
       style={{
-        background: 'radial-gradient(ellipse 65% 50% at 0% 0%, rgba(26,83,92,0.04), transparent 70%), radial-gradient(ellipse 85% 65% at 100% 100%, rgba(241,80,37,0.055), transparent 65%), linear-gradient(180deg, #FFFFFF 0%, #F6F8F9 100%)',
+        backgroundImage: 'radial-gradient(ellipse 65% 50% at 0% 0%, rgba(26,83,92,0.06), transparent 70%), radial-gradient(ellipse 85% 65% at 100% 100%, rgba(241,80,37,0.06), transparent 65%)',
         border: '1px solid rgba(26,83,92,0.08)',
         boxShadow: '0 1px 2px rgba(20,62,71,0.04), 0 8px 24px rgba(20,62,71,0.025)',
       }}

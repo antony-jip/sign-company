@@ -823,7 +823,7 @@ export function ProjectsList() {
                     onClick={() => setStatusFilter(isActive ? 'alle' : tile.key)}
                     className="group relative rounded-xl px-5 py-4 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F15025]/30 focus-visible:ring-offset-2"
                     style={{
-                      background: 'radial-gradient(ellipse 65% 50% at 0% 0%, rgba(26,83,92,0.04), transparent 70%), radial-gradient(ellipse 85% 65% at 100% 100%, rgba(241,80,37,0.055), transparent 65%), linear-gradient(180deg, #FFFFFF 0%, #F6F8F9 100%)',
+                      backgroundImage: 'radial-gradient(ellipse 65% 50% at 0% 0%, rgba(26,83,92,0.06), transparent 70%), radial-gradient(ellipse 85% 65% at 100% 100%, rgba(241,80,37,0.06), transparent 65%)',
                       border: isActive ? '1px solid rgba(26,83,92,0.22)' : '1px solid rgba(26,83,92,0.08)',
                       boxShadow: isActive
                         ? '0 1px 2px rgba(20,62,71,0.04), 0 8px 24px rgba(20,62,71,0.06)'
@@ -862,7 +862,7 @@ export function ProjectsList() {
           <div
             className="rounded-2xl p-5"
             style={{
-              background: 'radial-gradient(ellipse 65% 50% at 0% 0%, rgba(26,83,92,0.04), transparent 70%), radial-gradient(ellipse 85% 65% at 100% 100%, rgba(241,80,37,0.055), transparent 65%), linear-gradient(180deg, #FFFFFF 0%, #F6F8F9 100%)',
+              backgroundImage: 'radial-gradient(ellipse 65% 50% at 0% 0%, rgba(26,83,92,0.06), transparent 70%), radial-gradient(ellipse 85% 65% at 100% 100%, rgba(241,80,37,0.06), transparent 65%)',
               border: '1px solid rgba(26,83,92,0.08)',
               boxShadow: '0 1px 2px rgba(20,62,71,0.04), 0 8px 24px rgba(20,62,71,0.025)',
             }}
@@ -1073,7 +1073,7 @@ export function ProjectsList() {
             <div
               className="py-20 text-center rounded-2xl"
               style={{
-                background: 'radial-gradient(ellipse 65% 50% at 0% 0%, rgba(26,83,92,0.04), transparent 70%), radial-gradient(ellipse 85% 65% at 100% 100%, rgba(241,80,37,0.055), transparent 65%), linear-gradient(180deg, #FFFFFF 0%, #F6F8F9 100%)',
+                backgroundImage: 'radial-gradient(ellipse 65% 50% at 0% 0%, rgba(26,83,92,0.06), transparent 70%), radial-gradient(ellipse 85% 65% at 100% 100%, rgba(241,80,37,0.06), transparent 65%)',
                 border: '1px solid rgba(26,83,92,0.08)',
                 boxShadow: '0 1px 2px rgba(20,62,71,0.04), 0 8px 24px rgba(20,62,71,0.025)',
               }}
@@ -1109,7 +1109,7 @@ export function ProjectsList() {
                       className="doen-row rounded-xl p-4 cursor-pointer active:scale-[0.99] transition-all"
                       style={{
                         animationDelay: `${i * 30}ms`,
-                        background: 'radial-gradient(ellipse 65% 50% at 0% 0%, rgba(26,83,92,0.04), transparent 70%), radial-gradient(ellipse 85% 65% at 100% 100%, rgba(241,80,37,0.055), transparent 65%), linear-gradient(180deg, #FFFFFF 0%, #F6F8F9 100%)',
+                        backgroundImage: 'radial-gradient(ellipse 65% 50% at 0% 0%, rgba(26,83,92,0.06), transparent 70%), radial-gradient(ellipse 85% 65% at 100% 100%, rgba(241,80,37,0.06), transparent 65%)',
                         border: `1px solid rgba(26,83,92,0.08)`,
                         boxShadow: `0 1px 2px rgba(20,62,71,0.04), 0 8px 24px rgba(20,62,71,0.025), inset 3px 0 0 0 ${statusHex(project.status)}`,
                       }}
@@ -1149,7 +1149,7 @@ export function ProjectsList() {
               <div
                 className="hidden md:block rounded-2xl"
                 style={{
-                  background: 'radial-gradient(ellipse 65% 50% at 0% 0%, rgba(26,83,92,0.04), transparent 70%), radial-gradient(ellipse 85% 65% at 100% 100%, rgba(241,80,37,0.055), transparent 65%), linear-gradient(180deg, #FFFFFF 0%, #F6F8F9 100%)',
+                  backgroundImage: 'radial-gradient(ellipse 65% 50% at 0% 0%, rgba(26,83,92,0.06), transparent 70%), radial-gradient(ellipse 85% 65% at 100% 100%, rgba(241,80,37,0.06), transparent 65%)',
                   border: '1px solid rgba(26,83,92,0.08)',
                   boxShadow: '0 1px 2px rgba(20,62,71,0.04), 0 8px 24px rgba(20,62,71,0.025)',
                   clipPath: 'inset(0 round 16px)',
