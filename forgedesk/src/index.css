@@ -127,6 +127,20 @@
     --surface-soft: #F7F5EF;
     --surface-soft-border: #ECE8DF;
 
+    /* Taak-prioriteit kleuren — light mode pastels */
+    --prio-kritiek-bg: #FDE8E2;
+    --prio-kritiek-border: #E04A28;
+    --prio-kritiek-text: #C03A18;
+    --prio-hoog-bg: #F5F2E8;
+    --prio-hoog-border: #C49A30;
+    --prio-hoog-text: #8A6A2A;
+    --prio-medium-bg: #E8EEF9;
+    --prio-medium-border: #4A7AC7;
+    --prio-medium-text: #3A5A9A;
+    --prio-laag-bg: #F0EFEC;
+    --prio-laag-border: #B0ADA8;
+    --prio-laag-text: #6B6B66;
+
     /* Module accenten */
     --m-klant: #3A6B8C;
     --m-portaal: #6A5A8A;
@@ -182,6 +196,20 @@
     --border-subtle: 190 25% 18%;
     --text-placeholder: 190 8% 45%;
     --text-tertiary: 190 10% 62%;
+
+    /* Taak-prioriteit dark — gedimde tints, leesbare text op donker */
+    --prio-kritiek-bg: rgba(224, 74, 40, 0.18);
+    --prio-kritiek-border: #E04A28;
+    --prio-kritiek-text: #FF8866;
+    --prio-hoog-bg: rgba(196, 154, 48, 0.15);
+    --prio-hoog-border: #C49A30;
+    --prio-hoog-text: #D4B566;
+    --prio-medium-bg: rgba(74, 122, 199, 0.18);
+    --prio-medium-border: #4A7AC7;
+    --prio-medium-text: #7FA8E6;
+    --prio-laag-bg: rgba(176, 173, 168, 0.12);
+    --prio-laag-border: #6A6D70;
+    --prio-laag-text: #A8AAAC;
     --bg-hover: 190 25% 14%;
     --bg-subtle: 190 35% 5%;
 

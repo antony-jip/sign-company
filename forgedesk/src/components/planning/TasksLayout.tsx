@@ -87,11 +87,13 @@ type TaakPrioriteit = Taak['prioriteit']
 
 const PRIORITEIT_ORDER: Record<string, number> = { kritiek: 4, hoog: 3, medium: 2, laag: 1 }
 
+// Theme-aware via CSS-vars (zie .prio-* in index.css). bg/border/text
+// switchen automatisch per theme — pastel in light, gedimde versie in dark.
 const PRIORITEIT_COLORS: Record<TaakPrioriteit, { border: string; bg: string; text: string; dot: string }> = {
-  kritiek: { border: '#E04A28', bg: '#FDE8E2', text: '#C03A18', dot: '#E04A28' },
-  hoog: { border: '#C49A30', bg: '#F5F2E8', text: '#8A6A2A', dot: '#C49A30' },
-  medium: { border: '#4A7AC7', bg: '#E8EEF9', text: '#3A5A9A', dot: '#4A7AC7' },
-  laag: { border: '#B0ADA8', bg: '#F0EFEC', text: '#6B6B66', dot: '#B0ADA8' },
+  kritiek: { border: 'var(--prio-kritiek-border)', bg: 'var(--prio-kritiek-bg)', text: 'var(--prio-kritiek-text)', dot: '#E04A28' },
+  hoog:    { border: 'var(--prio-hoog-border)',    bg: 'var(--prio-hoog-bg)',    text: 'var(--prio-hoog-text)',    dot: '#C49A30' },
+  medium:  { border: 'var(--prio-medium-border)',  bg: 'var(--prio-medium-bg)',  text: 'var(--prio-medium-text)',  dot: '#4A7AC7' },
+  laag:    { border: 'var(--prio-laag-border)',    bg: 'var(--prio-laag-bg)',    text: 'var(--prio-laag-text)',    dot: '#B0ADA8' },
 }
 
 const PRIORITEIT_FLAG_COLORS: Record<TaakPrioriteit, string> = {

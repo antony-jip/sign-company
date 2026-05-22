@@ -886,8 +886,8 @@ export function ProjectDetail() {
   }
 
   const recenteActiviteiten = useMemo(
-    () => project ? buildActivityFeed(project, projectOffertes, projectMontages, projectWerkbonnen, projectFacturen, projectTaken, projectFotos, auditEntries) : [],
-    [project, projectOffertes, projectMontages, projectWerkbonnen, projectFacturen, projectTaken, projectFotos, auditEntries]
+    () => project ? buildActivityFeed(project, projectOffertes, projectMontages, projectWerkbonnen, projectFacturen, projectTaken, projectFotos, auditEntries, alleMedewerkers) : [],
+    [project, projectOffertes, projectMontages, projectWerkbonnen, projectFacturen, projectTaken, projectFotos, auditEntries, alleMedewerkers]
   )
 
   // Audit-events laden ná de initiële page-load. Stable deps via .join(',')

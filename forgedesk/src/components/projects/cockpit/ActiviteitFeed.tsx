@@ -221,8 +221,12 @@ export function buildActivityFeed(
   taken: Taak[],
   fotos: ProjectFoto[],
   auditEntries: AuditLogEntry[] = [],
+  medewerkers: Medewerker[] = [],
 ): ActivityEvent[] {
   const events: ActivityEvent[] = []
+  // Resolveer monteur-ids → naam zodat Activiteit-feed niet UUIDs toont
+  const medewerkerIdToNaam = new Map<string, string>()
+  for (const m of medewerkers) medewerkerIdToNaam.set(m.id, m.naam)
 
   // Project created
   events.push({
@@ -270,7 +274,9 @@ export function buildActivityFeed(
 
   // Montage
   for (const m of montageAfspraken) {
-    const monteurNamen = m.monteurs?.join(', ')
+    const monteurNamen = m.monteurs
+      ?.map(id => medewerkerIdToNaam.get(id) || id)
+      .join(', ')
     events.push({
       id: `montage-${m.id}`,
       tekst: `Montage ingepland: ${m.titel}`,

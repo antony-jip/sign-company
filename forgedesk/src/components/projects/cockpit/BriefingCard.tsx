@@ -31,6 +31,14 @@ export function BriefingCard({ beschrijving, projectNaam, klantNaam, onSave }: B
     try {
       await onSave(value)
       savedRef.current = value
+    } catch (err) {
+      // Niet stil falen — autosave fout was eerder onzichtbaar voor user
+      // (kwam vaak voor bij medewerkers door RLS op projecten-tabel).
+      console.error('Briefing autosave mislukt:', err)
+      const msg = err instanceof Error ? err.message : 'Onbekende fout'
+      // Lazy import om toast circular dep te voorkomen
+      const { toast } = await import('sonner')
+      toast.error(`Briefing niet opgeslagen: ${msg}`)
     } finally {
       setIsSaving(false)
     }
@@ -123,7 +131,7 @@ Antwoord ALLEEN met de briefing, niets anders.`
             <button
               disabled={isGenerating}
               onClick={handleDaan}
-              className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-foreground/70 hover:text-foreground bg-white border border-[rgba(26,83,92,0.1)] hover:border-[rgba(26,83,92,0.22)] transition-all rounded-lg px-2.5 py-1.5 shadow-[0_1px_2px_rgba(20,62,71,0.04)] hover:shadow-[0_2px_8px_rgba(20,62,71,0.08)] disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-foreground/70 hover:text-foreground bg-card border border-border hover:border-[#1A535C]/40 transition-all rounded-lg px-2.5 py-1.5 shadow-sm hover:shadow disabled:opacity-50"
             >
               {isGenerating ? (
                 <Loader2 className="h-3 w-3 animate-spin" />
@@ -143,7 +151,7 @@ Antwoord ALLEEN met de briefing, niets anders.`
         onChange={(e) => setText(e.target.value)}
         onBlur={handleBlur}
         placeholder="Wat moet er gemaakt worden? Waar? Welke materialen?"
-        className="resize-y text-[14px] leading-relaxed w-full min-h-[110px] px-4 py-3.5 bg-white border border-[rgba(26,83,92,0.12)] rounded-lg focus-visible:bg-white focus-visible:border-[#1A535C] focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] focus-visible:shadow-none transition-colors"
+        className="resize-y text-[14px] leading-relaxed w-full min-h-[110px] px-4 py-3.5 bg-card text-foreground border border-border rounded-lg focus-visible:bg-card focus-visible:border-[#1A535C] focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] focus-visible:shadow-none transition-colors placeholder:text-muted-foreground"
         onKeyDown={(e) => {
           if (e.key === 'Escape') {
             setText(savedRef.current)
