@@ -87,7 +87,7 @@ interface EmailReaderProps {
   onNavigate?: (direction: 'prev' | 'next') => void
   onSendReply?: (data: { to: string; cc?: string; bcc?: string; subject: string; body: string; html?: string; scheduledAt?: string; attachments?: Array<{ filename: string; storagePath?: string; content?: string; encoding?: 'base64'; size?: number }> }) => void
   onSelectEmail?: (email: Email) => void
-  onOpenContextPanel?: (panel: 'klant' | 'project' | 'taak') => void
+  onOpenContextPanel?: (panel: 'klant' | 'project' | 'taak' | 'koppel') => void
 }
 
 export function EmailReader({
@@ -1403,6 +1403,17 @@ export function EmailReader({
                         <ListPlus className="h-3.5 w-3.5" />
                       </div>
                       <span className="font-medium">Taak aanmaken</span>
+                    </button>
+                    <div className="my-1 mx-3.5 h-px bg-black/[0.06]" aria-hidden />
+                    <button
+                      type="button"
+                      onClick={() => { setActionsMenuOpen(false); onOpenContextPanel('koppel') }}
+                      className="w-full flex items-center gap-3 px-3.5 py-2.5 text-[13px] text-[#1A1A1A] hover:bg-[#1A535C]/[0.06] transition-colors duration-150 active:scale-[0.99]"
+                    >
+                      <div className="w-7 h-7 rounded-[8px] flex items-center justify-center flex-shrink-0 bg-[#1A535C]/[0.08] text-[#1A535C]">
+                        <Link2 className="h-3.5 w-3.5" />
+                      </div>
+                      <span className="font-medium">Aan project koppelen</span>
                     </button>
                   </div>
                 )}

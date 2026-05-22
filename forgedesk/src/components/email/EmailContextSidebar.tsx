@@ -17,6 +17,7 @@ import { getAvatarStyle, extractSenderName } from './emailHelpers'
 import { EmailProjectKoppelingPanel } from './EmailProjectKoppelingPanel'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
+import { cn } from '@/lib/utils'
 
 interface EmailContextSidebarProps {
   mode: 'compose' | 'reading' | 'idle'
@@ -41,6 +42,10 @@ interface EmailContextSidebarProps {
   // zodat acties (Klant/Project/Taak aanmaken) zonder zichtbare sidebar
   // bereikbaar zijn. Gebruik via `key` remount voor herhaalde triggers.
   initialActivePanel?: 'none' | 'klant' | 'project' | 'taak'
+  // Floating modus: sidebar rendert als drawer-overlay rechtsover de reader
+  // ipv als kolom in de flex-row. Altijd zichtbaar (geen xl-breakpoint guard)
+  // en breder (320px) voor betere UX.
+  floating?: boolean
 }
 
 // ── Inbox analysis types ──
@@ -98,6 +103,7 @@ export function EmailContextSidebar({
   reminderCount = 0,
   onClose,
   initialActivePanel,
+  floating,
 }: EmailContextSidebarProps) {
   const navigate = useNavigate()
   const { user } = useAuth()
@@ -413,7 +419,10 @@ export function EmailContextSidebar({
   // ════════════════════════════════════════════
   if (mode === 'idle') {
     return (
-      <div className="w-[280px] border-l border-[#EBEBEB] bg-[#F8F7F5] flex-shrink-0 hidden xl:flex flex-col overflow-y-auto">
+      <div className={cn(
+        'border-l border-[#EBEBEB] bg-[#F8F7F5] flex flex-col overflow-y-auto',
+        floating ? 'h-full w-[320px]' : 'w-[280px] flex-shrink-0 hidden xl:flex',
+      )}>
         {onClose && (
           <div className="sticky top-0 z-10 flex items-center justify-end px-3 py-2 border-b border-[#EBEBEB] bg-[#F8F7F5]/95 backdrop-blur-sm">
             <button
@@ -723,7 +732,10 @@ export function EmailContextSidebar({
   // COMPOSE + READING MODE
   // ════════════════════════════════════════════
   return (
-    <div className="w-[280px] border-l border-[#EBEBEB] bg-[#F8F7F5] flex-shrink-0 overflow-y-auto hidden xl:flex flex-col">
+    <div className={cn(
+      'border-l border-[#EBEBEB] bg-[#F8F7F5] overflow-y-auto flex flex-col',
+      floating ? 'h-full w-[320px]' : 'w-[280px] flex-shrink-0 hidden xl:flex',
+    )}>
       {onClose && (
         <div className="sticky top-0 z-10 flex items-center justify-end px-3 py-2 border-b border-[#EBEBEB] bg-[#F8F7F5]/95 backdrop-blur-sm">
           <button

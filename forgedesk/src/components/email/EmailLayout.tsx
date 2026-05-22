@@ -131,27 +131,34 @@ export function EmailLayout() {
   useEffect(() => {
     try { localStorage.setItem('doen_email_list_width', String(listWidth)) } catch { /* no-op */ }
   }, [listWidth])
-  // Default: sidebar verborgen. Acties (Klant/Project/Taak aanmaken) zijn
-  // bereikbaar via de drie-puntjes dropdown rechtsboven in de reader. Sidebar
-  // opent on-demand wanneer een actie wordt getriggerd of expliciet geopend.
-  // Migratie v2: vorige key 'doen_email_context_open' stond default op true;
-  // door nieuwe key te gebruiken start iedereen schoon op false.
-  const [contextOpen, setContextOpen] = useState<boolean>(() => {
-    try { return localStorage.getItem('doen_email_context_open_v2') === 'true' } catch { return false }
-  })
-  useEffect(() => {
-    try { localStorage.setItem('doen_email_context_open_v2', String(contextOpen)) } catch { /* no-op */ }
-  }, [contextOpen])
+  // Sidebar is ephemeral: opent alleen wanneer een actie in de drie-puntjes
+  // dropdown wordt geklikt (Klant/Project/Taak aanmaken). Geen localStorage
+  // persistentie — anders zou hij open blijven na refresh zodra je 'm één
+  // keer hebt geopend, wat de hele point van "dropdown ipv sidebar" tegenwerkt.
+  const [contextOpen, setContextOpen] = useState<boolean>(false)
 
   // Acties-dropdown rechtsboven in reader: trigger om de context-sidebar te
-  // openen op een specifiek panel (Klant/Project/Taak aanmaken). Versie-counter
-  // forceert remount zodat herhaalde clicks hetzelfde panel opnieuw openen.
+  // openen op een specifiek panel (Klant/Project/Taak aanmaken) of voor
+  // project-koppeling (default panel met EmailProjectKoppelingPanel).
+  // Versie-counter forceert remount zodat herhaalde clicks hetzelfde panel
+  // opnieuw openen.
   const [requestedPanel, setRequestedPanel] = useState<'klant' | 'project' | 'taak' | undefined>(undefined)
   const [panelKey, setPanelKey] = useState(0)
-  const handleOpenContextPanel = useCallback((panel: 'klant' | 'project' | 'taak') => {
-    setRequestedPanel(panel)
+  const handleOpenContextPanel = useCallback((panel: 'klant' | 'project' | 'taak' | 'koppel') => {
+    // 'koppel' = sidebar openen op default panel ('none') waar de auto-search
+    // project-koppeling panel verschijnt voor reading-mode threads.
+    setRequestedPanel(panel === 'koppel' ? undefined : panel)
     setPanelKey(k => k + 1)
     setContextOpen(true)
+  }, [])
+
+  // Belt-and-suspenders: forceer sidebar dicht bij elke mount, ongeacht of
+  // er nog state-residue is uit Fast Refresh of een eerdere mount-iteratie.
+  // Zonder dit hield Vite's HMR de oude contextOpen=true vast ondanks
+  // useState(false) in de declaratie.
+  useEffect(() => {
+    setContextOpen(false)
+    setRequestedPanel(undefined)
   }, [])
   const handleListResizeStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
@@ -2250,37 +2257,41 @@ export function EmailLayout() {
       {/* Right context sidebar — opent via toggle-knop in email-header.
           Bevat klant-koppeling, project-aanmaken, taak-aanmaken, etc.
           Default open, klap dicht via knop in reader. */}
+      {/* Drawer-overlay: sidebar verschijnt rechts als pop-up wanneer een
+          dropdown-actie wordt geklikt. Backdrop klik sluit 'm. Geen chevron
+          toggle meer — sidebar is puur on-demand. */}
       {contextOpen && (viewMode === 'reading' || viewMode === 'composing') && (
-        <EmailContextSidebar
-          key={panelKey}
-          initialActivePanel={requestedPanel}
-          mode={viewMode === 'composing' ? 'compose' : 'reading'}
-          composeToAddress={composeToAddress}
-          composeReminder={composeReminder}
-          onComposeReminderChange={setComposeReminder}
-          composeProjectId={composeProjectId}
-          onComposeProjectChange={setComposeProjectId}
-          allEmails={emails}
-          email={selectedEmail}
-          senderName={readerSenderName}
-          senderEmail={readerSenderEmail}
-          onSelectEmail={handleSelectEmail}
-          onCompose={() => handleCompose()}
-          unreadCount={emails.filter(e => !e.gelezen).length}
-          onClose={() => setContextOpen(false)}
-        />
-      )}
-
-      {/* Re-open knop: zichtbaar wanneer context-sidebar gesloten is tijdens reading/composing */}
-      {!contextOpen && (viewMode === 'reading' || viewMode === 'composing') && (
-        <button
-          type="button"
-          onClick={() => setContextOpen(true)}
-          className="hidden xl:flex fixed right-0 top-1/2 -translate-y-1/2 z-30 items-center justify-center w-6 h-10 rounded-l-[8px] bg-white/85 backdrop-blur-xl border border-r-0 border-black/[0.06] text-[#B0ADA8] hover:text-[#1A535C] hover:bg-white hover:w-7 shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-all duration-200 opacity-50 hover:opacity-100"
-          title="Klant info & acties tonen"
-        >
-          <ChevronLeft className="h-3 w-3" />
-        </button>
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/25 backdrop-blur-sm animate-in fade-in duration-150"
+            onClick={() => setContextOpen(false)}
+            aria-hidden
+          />
+          <div
+            className="fixed top-0 right-0 bottom-0 z-50 shadow-[0_0_40px_-8px_rgba(0,0,0,0.25)] animate-in slide-in-from-right duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <EmailContextSidebar
+              key={panelKey}
+              floating
+              initialActivePanel={requestedPanel}
+              mode={viewMode === 'composing' ? 'compose' : 'reading'}
+              composeToAddress={composeToAddress}
+              composeReminder={composeReminder}
+              onComposeReminderChange={setComposeReminder}
+              composeProjectId={composeProjectId}
+              onComposeProjectChange={setComposeProjectId}
+              allEmails={emails}
+              email={selectedEmail}
+              senderName={readerSenderName}
+              senderEmail={readerSenderEmail}
+              onSelectEmail={handleSelectEmail}
+              onCompose={() => handleCompose()}
+              unreadCount={emails.filter(e => !e.gelezen).length}
+              onClose={() => setContextOpen(false)}
+            />
+          </div>
+        </>
       )}
       </div>
       </>
