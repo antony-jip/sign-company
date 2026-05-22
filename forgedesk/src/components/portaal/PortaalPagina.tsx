@@ -202,7 +202,7 @@ export function PortaalPagina() {
   // ── Loading / Error / Expired / Closed ────────────────────────────────
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FAF9F7] flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
       </div>
     )
@@ -210,7 +210,7 @@ export function PortaalPagina() {
 
   if (error || !data) {
     return (
-      <div className="min-h-screen bg-[#FAF9F7] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="text-center space-y-4">
           <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto" />
           <p className="text-foreground/70">{error || 'Portaal niet gevonden'}</p>
@@ -251,7 +251,7 @@ export function PortaalPagina() {
 
   if (!bedrijf || !portaal) {
     return (
-      <div className="min-h-screen bg-[#FAF9F7] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="text-center space-y-4">
           <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto" />
           <p className="text-foreground/70">Portaal kon niet geladen worden</p>
@@ -276,7 +276,7 @@ export function PortaalPagina() {
     )
 
   return (
-    <div className="min-h-screen bg-[#FAF9F7] flex flex-col relative isolate">
+    <div className="min-h-screen bg-background flex flex-col relative isolate">
       <PortaalBackground />
       <PortaalHeader
         bedrijfNaam={bedrijf.naam}

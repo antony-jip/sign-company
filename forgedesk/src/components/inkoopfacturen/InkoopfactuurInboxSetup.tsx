@@ -148,7 +148,7 @@ export function InkoopfactuurInboxSetup() {
       </Card>
 
       {overlapWarning && (
-        <div className="flex items-start gap-2 text-[12px] p-3 rounded-lg bg-[#FFF8E1] text-[#8B6914] border border-[#FFE082]">
+        <div className="flex items-start gap-2 text-[12px] p-3 rounded-lg bg-[hsl(var(--status-amber-bg))] text-[#8B6914] border border-[#FFE082]">
           <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
           <span>Dit emailadres is ook gekoppeld als persoonlijke inbox. Weet je zeker dat je hem ook als inkoopfactuur inbox wilt gebruiken?</span>
         </div>

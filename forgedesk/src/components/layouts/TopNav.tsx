@@ -155,7 +155,12 @@ export function TopNav() {
         {/* Logo */}
         <NavLink to="/" className="relative flex items-center mr-5 flex-shrink-0 opacity-95 hover:opacity-100 transition-opacity">
           <img src="/logos/doen-logo.svg" alt="doen." className="h-[22px] dark:hidden" />
-          <img src="/logos/doen-logo-wit.svg" alt="doen." className="h-[22px] hidden dark:block" />
+          <img
+            src="/logos/doen-logo-wit.svg"
+            alt="doen."
+            className="h-[22px] hidden dark:block"
+            style={{ filter: 'drop-shadow(0 0 16px rgba(241, 80, 37, 0.18))' }}
+          />
         </NavLink>
 
         {/* Quick-add — mobile only */}

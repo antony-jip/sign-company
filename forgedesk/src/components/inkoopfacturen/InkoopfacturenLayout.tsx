@@ -800,7 +800,7 @@ export function InkoopfacturenLayout() {
               </span>
 
               {lightbox.factuur.extractie_opmerkingen && (
-                <div className="text-[12px] p-3 rounded-xl bg-[#FFF8E1] text-[#8B6914] border border-[#FFE082]">
+                <div className="text-[12px] p-3 rounded-xl bg-[hsl(var(--status-amber-bg))] text-[#8B6914] border border-[#FFE082]">
                   {lightbox.factuur.extractie_opmerkingen}
                 </div>
               )}
